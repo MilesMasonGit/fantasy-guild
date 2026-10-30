@@ -184,7 +184,7 @@ function buildBoard() {
     HeroManager.updateHeroFromSkills(fighter);
     fighter.hp.current = fighter.hp.max;
     const boss = fixtures.placeAt('firstkill_boss', 600, 500);
-    fixtures.plant(fighter.id, { x: boss.x, y: boss.y }, { pin: true });
+    fixtures.orderAt(fighter.id, { x: boss.x, y: boss.y });
     TileModifiers.rebuildAll();
 }
 

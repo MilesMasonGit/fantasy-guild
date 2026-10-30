@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } 
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
-import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as Respawn from '../systems/board/Respawn.js';
@@ -180,7 +180,7 @@ describe('a resting vein shows the shared empty rock', () => {
 describe('a vein refills all at once', () => {
     it('five ore, then a minute\'s rest at 0, then all five back in one step', () => {
         const vein = placeAt('mine_vein', VEIN.x, VEIN.y);
-        Placement.plantFlagAt('hero_1', VEIN);
+        Orders.orderAt('hero_1', VEIN);
         const charges = [];
         const off = EventBus.subscribe(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, (p) => { if (p.instanceId === vein.id) charges.push(p.remaining); });
         run(15000);
@@ -237,7 +237,7 @@ describe('a Mine doubles its vein\'s ore, never its gems', () => {
         const vein = placeAt('mine_rich_vein', VEIN.x, VEIN.y);
         for (const p of ring(4)) placeAt('mine_mine', p.x, p.y);
         TileModifiers.rebuildAll();
-        Placement.plantFlagAt('hero_1', VEIN);
+        Orders.orderAt('hero_1', VEIN);
         let cycles = 0;
         const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { if (p.instanceId === vein.id) cycles++; });
         run(12000);
@@ -264,7 +264,7 @@ describe('a Minecart shortens its vein\'s work time', () => {
         const vein = placeAt('mine_slow_vein', VEIN.x, VEIN.y);
         for (const p of ring(Math.max(carts, 1)).slice(0, carts)) placeAt('mine_cart', p.x, p.y);
         TileModifiers.rebuildAll();
-        Placement.plantFlagAt('hero_1', VEIN);
+        Orders.orderAt('hero_1', VEIN);
         expect(workedCycleMs(vein)).toBe(cycle);
     });
 
@@ -272,7 +272,7 @@ describe('a Minecart shortens its vein\'s work time', () => {
         const vein = placeAt('mine_slow_vein', VEIN.x, VEIN.y);
         placeAt('mine_cart', VEIN.x + 400, VEIN.y);
         TileModifiers.rebuildAll();
-        Placement.plantFlagAt('hero_1', VEIN);
+        Orders.orderAt('hero_1', VEIN);
         expect(workedCycleMs(vein)).toBe(10000);
     });
 });

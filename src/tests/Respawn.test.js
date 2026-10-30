@@ -5,6 +5,7 @@ import { GameState } from '../state/GameState.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Charges from '../systems/board/Charges.js';
@@ -143,7 +144,7 @@ function place(tile, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(typeId, uses === undefined ? tokenStartingUses(typeId) : uses);
     Placement.placeTokenAt(instance, C(tile));
     TileModifiers.rebuildAround([instance]);
-    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    if (heroId) Orders.orderAt(heroId, C(tile));
     return instance;
 }
 
@@ -258,16 +259,16 @@ describe('a refill Token rests where it stands and refills', () => {
         expect(events.resting).toEqual([expect.objectContaining({ instanceId: vein.id, typeId: 'respawn_vein', mode: 'refill', heroId: 'hero_1' })]);
     });
 
-    it('its hero lets go at once and picks the next thing; the resting skip is not one the player fixes', () => {
+    it('its hero lets go at once and takes nothing else; the resting skip is not one the player fixes', () => {
         const vein = place(10, 'respawn_vein', 'hero_1');
         expect(runUntil(() => BoardState.workerOf(vein.id) === 'hero_1', 20000)).toBe(true);
-        // Placed once the hero is at the vein, so the vein is the work they hold when it rests.
         const other = place(11, 'fixture_producer_alt');
         expect(runUntil(() => vein.usesRemaining === 0, 30000)).toBe(true);
         expect(claimOf('hero_1')).toBe(vein.id);
 
         BoardRunner.tick(100);
-        expect(claimOf('hero_1')).toBe(other.id);
+        expect(claimOf('hero_1')).toBeNull();
+        expect(BoardState.workerOf(other.id)).toBeNull();
         expect(Flags.skipsOf(vein.id)).toContainEqual({ heroId: 'hero_1', reason: ALERT.RESTING });
         expect(Flags.hasFixableSkip(vein)).toBe(false);
         expect(WorkCheck.FIXABLE.has(ALERT.RESTING)).toBe(false);
@@ -278,7 +279,7 @@ describe('a refill Token rests where it stands and refills', () => {
 
     it('a pinned hero waits by it and takes it back the moment it refills', () => {
         const vein = place(10, 'respawn_vein');
-        Placement.plantFlagAt('hero_1', C(10), { pin: true });
+        Orders.orderAt('hero_1', C(10));
         expect(BoardState.flagOf('hero_1').pinnedTo).toBe(vein.id);
         expect(runUntil(() => vein.usesRemaining === 0, 30000)).toBe(true);
 
@@ -307,7 +308,7 @@ describe('a refill Token rests where it stands and refills', () => {
 
     it('a Token a flag skipped for a fixable reason loses that badge when it starts resting', () => {
         const kiln = place(10, 'respawn_kiln');
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         expect(runUntil(() => kiln.alert === ALERT.INPUTS, 5000)).toBe(true);
         // Deplete it just after the flag looked, so its stale fixable skip is still on record.
         const r = BoardState.flagRuntime();
@@ -400,7 +401,7 @@ describe('a regrow Token becomes its `into`, which grows back into it', () => {
         expect(tree.origin).toBe('spawned');
         expect(SpawnerSystem.spawnerCounts(forest.id)).toEqual({ count: 1, cap: 1 });
 
-        Placement.plantFlagAt('hero_1', spot);
+        Orders.orderAt('hero_1', spot);
         expect(runUntil(() => !BoardState.getTokenById(tree.id), 30000)).toBe(true);
         const sapling = at(spot);
         expect(sapling.typeId).toBe('respawn_sapling');
@@ -418,7 +419,7 @@ describe('a regrow Token becomes its `into`, which grows back into it', () => {
         const forest = place(0, 'stump_forest');
         expect(runUntil(() => BoardState.tokens().some(t => t.typeId === 'stump_tree'), 10000)).toBe(true);
         const tree = BoardState.tokens().find(t => t.typeId === 'stump_tree');
-        Placement.plantFlagAt('hero_1', { x: tree.x, y: tree.y });
+        Orders.orderAt('hero_1', { x: tree.x, y: tree.y });
         expect(runUntil(() => BoardState.tokens().some(t => t.typeId === 'stump'), 30000)).toBe(true);
 
         run(15000);

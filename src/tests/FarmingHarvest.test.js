@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -21,7 +22,7 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { flagStatusLine } from '../ui/components/board/flagText.js';
 import { idleMomentOf } from '../ui/components/board/heroSpeech.js';
 import { skipHint } from '../ui/components/board/boardConstants.js';
@@ -77,6 +78,10 @@ const fieldType = (id, name, extra = {}) => ({
 registerTokenTypes({
     fh_field: fieldType('fh_field', 'Test Field'),
     fh_sickle_field: fieldType('fh_sickle_field', 'Test Sickle Field', { needsTool: { kind: 'sickle', minTier: 1 } }),
+    fh_farmstead: {
+        id: 'fh_farmstead', name: 'Test Farmstead', tokenType: 'camp', rarity: 'common', theme: 'fixture', uses: null,
+        sprite: 's_nature', requiresHero: false, config: null, camp: { skill: 'farming', reach: 320 }
+    },
     fh_beehive: {
         id: 'fh_beehive', name: 'Test Beehive', tokenType: 'buff', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         statements: [{ id: 'stm_fh_bees', keyword: 'provides', to: { mode: 'id', value: 'fh_field' }, reach: 'nearby',
@@ -107,7 +112,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 240);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -129,7 +133,7 @@ function ripeField({ seeds = 0, typeId = 'fh_field', at = FIELD, farmer = true }
     expect(StationRecipe.setSelectedRecipe(field, WHEAT)).toBe(true);
     run(20200);
     expect(Fields.stageOf(field)).toBe(Fields.STAGE.RIPE);
-    if (farmer) Flags.plant('farmer', { x: at.x, y: at.y });
+    if (farmer) Orders.orderAt('farmer', { x: at.x, y: at.y });
     return field;
 }
 
@@ -184,7 +188,7 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         expect(StationRecipe.setSelectedRecipe(field, SEEDY)).toBe(true);
         run(20200);
         expect(InventoryManager.getItemCount(SEED)).toBe(0);
-        Flags.plant('farmer', { x: FIELD.x, y: FIELD.y });
+        Orders.orderAt('farmer', { x: FIELD.x, y: FIELD.y });
         run(1200);
         expect(wheat()).toBe(1);
         expect(Fields.stageOf(field)).toBe(Fields.STAGE.GROWING);
@@ -192,11 +196,12 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         expect(Growth.growthAlertOf(field.id)).toBeNull();
     });
 
-    it('an area flag works the ripe Field while the other grows', () => {
+    it('a farmer sent to a Farmstead works the ripe Field while the other grows', () => {
         const a = ripeField({ seeds: 2, farmer: false });
         const b = put('fh_field', FIELD.x + 160, FIELD.y);
         expect(StationRecipe.setSelectedRecipe(b, WHEAT)).toBe(true);
-        Flags.plant('farmer', { x: FIELD.x + 80, y: FIELD.y });
+        const farmstead = put('fh_farmstead', FIELD.x + 80, FIELD.y + 160);
+        expect(Orders.orderAt('farmer', { x: farmstead.x, y: farmstead.y }).success).toBe(true);
         // A is ripe, B just sown: A is harvested; then B grows ripe while A grows, and B is worked.
         run(3500);
         expect(Fields.stageOf(a)).toBe(Fields.STAGE.GROWING);
@@ -206,9 +211,11 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         expect(Flags.statusOf('farmer')).toMatchObject({ state: 'working', instanceId: b.id });
     });
 
-    it('a hero without Farming does not wait on it', () => {
+    // Rewritten with classless heroes: every hero holds Farming now, so the hero who does not wait
+    // is one sent to a spot clear of the Field, not onto it.
+    it('a hero sent to a spot beside it does not wait on it', () => {
         ripeField({ seeds: 1, farmer: false });
-        Flags.plant('miner', { x: FIELD.x, y: FIELD.y + 60 });
+        Orders.orderAt('miner', { x: FIELD.x + 260, y: FIELD.y });
         run(1000);
         expect(Flags.waitingOf('miner')).toBeNull();
         expect(BoardRunner.isHeroIdle('miner')).toBe(true);

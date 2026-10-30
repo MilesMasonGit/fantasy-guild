@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as LoadoutMoments from '../systems/board/LoadoutMoments.js';
@@ -126,7 +127,7 @@ function place(typeId, at) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeTokenAt(instance, at);
     TileModifiers.rebuildAround([instance]);
-    Placement.plantFlagAt(hero.id, at);
+    Orders.orderAt(hero.id, at);
     return instance;
 }
 

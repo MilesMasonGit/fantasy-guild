@@ -4,6 +4,7 @@ import { registerTokenTypes, tokenStartingUses } from '../config/registries/toke
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -96,7 +97,7 @@ describe('Every drop line rolls on its own (TL-10)', () => {
             'fixture_enemy_two_lines', tokenStartingUses('fixture_enemy_two_lines'));
         Placement.placeTokenAt(enemy, at);
         TileModifiers.rebuildAround([enemy]);
-        Placement.plantFlagAt('hero_1', at);
+        Orders.orderAt('hero_1', at);
         for (let t = 0; t < 120000; t += 100) BoardRunner.tick(100);
         unsub();
 

@@ -9,6 +9,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -138,14 +139,15 @@ describe('⭐ on the mat (CR3-008)', () => {
 
     it('a hero’s walk moves their figure without re-rendering MatBoard', async () => {
         BoardState.setInstantArrival(false);
-        setMatTuning('flagRadius', 400);
         setMatTuning('walkSpeed', 120);
         setMatTuning('potterRadius', 0);
         GameState.state.heroes = [{ id: 'h1', name: 'h1', status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
         placeAt('fixture_producer', 1500, 500);
 
         const { container } = mount();
-        await act(async () => { Flags.plant('h1', { x: 1200, y: 500 }); });
+        // Standing on bare ground first, then sent to the Token 300 u away: they walk there.
+        await act(async () => { Orders.orderAt('h1', { x: 1200, y: 500 }); });
+        await act(async () => { Orders.orderAt('h1', { x: 1500, y: 500 }); });
         const fig = () => container.querySelector('[data-board-hero="h1"]');
         expect(fig()).not.toBeNull();
 

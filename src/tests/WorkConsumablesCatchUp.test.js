@@ -103,7 +103,7 @@ function buildBoard() {
     InventoryManager.addItem('cu6_birdwatcher', 30);
     InventoryManager.addItem('cu6_coffee', 2);
     const tree = fixtures.placeAt('cu6_tree', 400, 400);
-    fixtures.plant(forester.id, { x: tree.x, y: tree.y }, { pin: true });
+    fixtures.orderAt(forester.id, { x: tree.x, y: tree.y });
     TileModifiers.rebuildAll();
     return { tree: tree.id, forester: forester.id };
 }

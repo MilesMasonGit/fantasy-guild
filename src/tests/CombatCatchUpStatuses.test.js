@@ -127,7 +127,7 @@ function buildBoard() {
         HeroManager.updateHeroFromSkills(hero);
         hero.hp.current = hero.hp.max;
         const at = fixtures.placeAt(types[i], spots[i][0], spots[i][1]);
-        fixtures.plant(hero.id, { x: at.x, y: at.y }, { pin: true });
+        fixtures.orderAt(hero.id, { x: at.x, y: at.y });
     });
     TileModifiers.rebuildAll();
     return heroes.map(h => h.id);

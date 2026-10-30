@@ -62,7 +62,7 @@ function buildBoard() {
     fixtures.placeAt('fcu_forest', OAK.x + 150, OAK.y);
     fixtures.placeAt('fcu_oak', OAK.x, OAK.y);
     InventoryManager.addItem(SEEDLING, 1);
-    fixtures.plant(forester.id, { x: OAK.x, y: OAK.y });
+    fixtures.orderAt(forester.id, { x: OAK.x, y: OAK.y });
     TileModifiers.rebuildAll();
 }
 

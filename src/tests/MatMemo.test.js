@@ -6,6 +6,7 @@ import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -109,7 +110,7 @@ describe('⭐ on the mat: moving the hover between Tokens redraws no hero, flag 
         placeAt('fixture_producer', 900, 600);
         // High on the mat and far away: the flag sorts behind both Tokens, its
         // hero stays idle beside it, and neither moves when the hover does.
-        Flags.plant('h1', { x: 250, y: 200 });
+        Orders.orderAt('h1', { x: 250, y: 200 });
         expect(Flags.statusOf('h1').state).toBe('idle');
         SpriteLayer.addSprite('item', 'item_coal', 3, { centre: { x: 300, y: 800 } });
         const lootAlt = getItem('item_coal')?.name || 'item_coal';

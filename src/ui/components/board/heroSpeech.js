@@ -48,8 +48,8 @@ export function stackOf(moments, now) {
 /** The lines for the three moments. Plain and factual. */
 export const momentText = {
     arrived: (token) => `Working at ${token}.`,
-    idle: () => 'No work in range.',
-    // Going idle because the one fight in reach is taken: every fight is one-on-one. Also the
+    idle: () => 'Nothing to work here.',
+    // Going idle because the fight they were sent to is taken: every fight is one-on-one. Also the
     // Token an order names, which another hero is working.
     waiting: (enemy) => `Waiting for ${enemy}.`,
     // The Token an order named is gone for good: a new order is wanted.
@@ -57,10 +57,7 @@ export const momentText = {
     // Said by the hero whose work spent the Token's last charge.
     depleted: (token) => `${token} Depleted`,
     // The same moment for an enemy: the hero who beat it says so.
-    beaten: (enemy) => `${enemy} Beaten`,
-    // No wording of its own: the blocked sentence for its reason, already built by
-    // `heroBubbles.pinRefusedLineFor`, word for word.
-    pinRefused: (line) => line
+    beaten: (enemy) => `${enemy} Beaten`
 };
 
 /**
@@ -73,7 +70,7 @@ export const momentText = {
  * * a node that is resting or growing back, or an enemy camp's next spawn: nothing. They wait
  * silently and work it when it is back; the flag's hover and the roster say "Waiting for Copper
  * Vein" ("Waiting for Goblin");
- * * otherwise: "No work in range."
+ * * otherwise: "Nothing to work here."
  */
 export function idleMomentOf(waiting, name = null, { order = null, needsJob = false } = {}) {
     if (needsJob) return { kind: 'needsJob', key: 'idle', text: momentText.needsJob() };
@@ -90,16 +87,14 @@ export function idleMomentOf(waiting, name = null, { order = null, needsJob = fa
  * is `docs/reference/speech_bubble_lines.md`; keep the two in step.
  * * `arrived`: dropped (routine).
  * * `idle`: kept: a hero with nothing to do is worth knowing, but it also fires whenever the
- * last Token in range runs out.
+ * last Token in a camp's reach runs out.
  * A level-up is not a line: it floats over the hero as the skill's icon and number
  * (`levelUpFloats.js`), and the hero bar keeps the lasting alert.
  * * `waiting`: kept: said instead of `idle` when the hero goes idle because the enemy they would
  * fight is another hero's fight (every fight is one-on-one); they take it the moment it is free.
- * A gatherer whose node in reach is resting says nothing at all ({@link idleMomentOf}).
+ * A gatherer whose node is resting says nothing at all ({@link idleMomentOf}).
  * * `depleted`: kept: the hero who used a Token up says so.
  * * `beaten`: kept: `depleted` said of an enemy, by the hero who beat it.
- * * `pinRefused`: kept: a flag dropped on a Token its hero can't work plants as an area flag,
- * and the hero says why, once.
  */
 export const MOMENT_SPOKEN = Object.freeze({
     arrived: false,
@@ -107,8 +102,7 @@ export const MOMENT_SPOKEN = Object.freeze({
     waiting: true,
     depleted: true,
     beaten: true,
-    needsJob: true,
-    pinRefused: true
+    needsJob: true
 });
 
 /** Whether a moment of this kind (`momentText`'s key) is spoken at all. */

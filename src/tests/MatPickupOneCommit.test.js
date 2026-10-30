@@ -8,6 +8,7 @@ import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -62,12 +63,13 @@ afterEach(async () => {
 function scene() {
     GameState.state.heroes = [{
         id: 'h1', name: 'h1', spriteId: 'recruit', status: 'idle', level: 50,
-        skills: { mining: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
+        skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
     }];
-    // Its cloth over A's circle is not where the pointer goes; its button is what yields.
-    Flags.plant('h1', { x: 640, y: 380 });
     const a = placeAt('fixture_producer', 600, 400);
     const b = placeAt('fixture_producer', 1000, 500);
+    // The hero's job flag, on a third Token: every flag's button yields while the pointer is on a Token.
+    const job = placeAt('fixture_producer', 1500, 300);
+    Orders.orderAt('h1', { x: job.x, y: job.y });
     const view = render(h(DeckDndProvider, null, h(Board, { onInspectToken: () => {}, onClearInspect: () => {} })));
     view.container.querySelector('[data-board-origin]').getBoundingClientRect = () => box(0, 0, matW(), matH());
     view.container.querySelector('[data-mat-board]').getBoundingClientRect = () => box(0, 0, matW(), matH());

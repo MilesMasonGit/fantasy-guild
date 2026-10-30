@@ -8,6 +8,7 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -21,7 +22,6 @@ import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
 import { HERO_HIT_PX, HERO_BOX_PX } from '../ui/components/board/boardConstants.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
-import { ALERT } from '../systems/board/boardEvents.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 import { restHover } from './fixtures/hoverRest.js';
@@ -212,7 +212,7 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
 
     it('⭐ a working hero stands beside their Token, and the Token stays exactly where it is', () => {
         const tok = placeAt('fixture_producer', C(15).x, C(15).y);
-        Flags.plant('h1', C(15));
+        Orders.orderAt('h1', C(15));
         expect(Flags.statusOf('h1').state).toBe('working');
 
         const { container } = mount(h(MatBoard));
@@ -229,7 +229,7 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
     });
 
     it('an idle hero stands beside their own flag (FP-84)', () => {
-        Flags.plant('h1', { x: 500, y: 900 });          // bare ground: nothing to work
+        Orders.orderAt('h1', { x: 500, y: 900 });          // bare ground: nothing to work
         expect(Flags.statusOf('h1').state).toBe('idle');
 
         const { container } = mount(h(MatBoard));
@@ -247,7 +247,7 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
         try {
             placeAt('token_guild_hall', 880, 563);             // heroes come and go through it
             expect(HeroMotion.guildHallPoint()).toEqual({ x: 880, y: 563 });
-            Flags.plant('h1', { x: 1500, y: 900 });
+            Orders.orderAt('h1', { x: 1500, y: 900 });
             HeroMotion.tick(60000);                              // out of the Hall, beside the flag
             Flags.furl('h1');
             HeroMotion.tick(100);
@@ -256,7 +256,7 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
             expect(container.querySelector('[data-hero-limp]')).toBeNull();
             cleanup();
 
-            Flags.plant('h1', { x: 1500, y: 900 });              // turn round…
+            Orders.orderAt('h1', { x: 1500, y: 900 });              // turn round…
             HeroMotion.tick(60000);
             Flags.furl('h1', 'defeat');                          // …and fall
             HeroMotion.tick(100);
@@ -269,8 +269,8 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
 
     it('several heroes may stand on one Token — the one-per-spot rule went with the grid', () => {
         placeAt('fixture_producer', C(15).x, C(15).y);
-        Flags.plant('h1', C(15));
-        Flags.plant('h2', C(15));
+        Orders.orderAt('h1', C(15));
+        Orders.orderAt('h2', C(15));
 
         const { container } = mount(h(MatBoard));
         // h1 works it; h2 has nothing to do and stands at its flag. Both drawn.

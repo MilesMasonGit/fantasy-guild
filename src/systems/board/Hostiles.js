@@ -7,7 +7,6 @@ import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as EnemyMotion from './EnemyMotion.js';
 import * as Flags from './Flags.js';
-import * as FlagRules from './FlagRules.js';
 import * as HeroMotion from './HeroMotion.js';
 import * as Hand from './Hand.js';
 import { matTuning } from '../../config/matTuning.js';
@@ -25,11 +24,11 @@ import { matTuning } from '../../config/matTuning.js';
  * only work near a camp draws its goblins.
  *
  * Attacking is `Flags.ambush`: the hero drops their work and claims the enemy, walks up, and
- * `BoardCombat.tickToken` begins the fight on arrival; they fight back whatever their rules say. A
- * peaceful enemy never comes through here: it fights only when a hero with Fight allowed seeks it.
+ * `BoardCombat.tickToken` begins the fight on arrival; they fight back whatever their order says. A
+ * peaceful enemy never comes through here: it fights only when a hero is sent to it.
  *
- * Who is attacked: for each hostile enemy in arrival order, of the heroes whose flag is inside the
- * radius, the one standing nearest the enemy (the earlier-planted flag on a tie). One fight per
+ * Who is attacked: for each hostile enemy in arrival order, of the heroes whose order is inside the
+ * watch, the one standing nearest the enemy (the earlier order on a tie). One fight per
  * enemy and one enemy per hero, so enemies never gang up.
  *
  * Not attacked: heroes with no order (at the Guild Hall), heroes on a spot order, wounded heroes, heroes who cannot fight and heroes already
@@ -62,9 +61,9 @@ export function watchCentreOf(enemy) {
     return home ? { x: home.x, y: home.y } : { x: enemy.x, y: enemy.y };
 }
 
-/** Whether a hero is wounded (read without rehydrating, like `FlagRules.heroRecord`). */
+/** Whether a hero is wounded (read without rehydrating, like `Flags.heroRecord`). */
 function isWounded(heroId) {
-    const hero = FlagRules.heroRecord(heroId);
+    const hero = Flags.heroRecord(heroId);
     return !hero || hero.status === 'wounded' || (hero.hp?.current ?? 1) <= 0;
 }
 
@@ -85,7 +84,7 @@ function targets() {
     const out = [];
     for (const heroId of order) {
         if (HeroMotion.isReturning(heroId) || isWounded(heroId)) continue;
-        if (!FlagRules.canFight(heroId) || onEnemy(heroId)) continue;
+        if (!Flags.canFight(heroId) || onEnemy(heroId)) continue;
         const flag = flags[heroId];
         // Idling on open ground draws no attack: only a hero sent to work a Token does.
         if (Flags.isSpot(flag)) continue;

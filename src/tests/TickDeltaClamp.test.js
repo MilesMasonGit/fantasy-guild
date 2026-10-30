@@ -5,6 +5,7 @@ import { TimeManager } from '../systems/core/TimeManager.js';
 import { MAX_TICK_DELTA_MS } from '../config/loopConstants.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -172,7 +173,7 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
             const instance = BoardState.createTokenInstance('fixture_producer', tokenStartingUses('fixture_producer'));
             Placement.placeTokenAt(instance, POINT);
             TileModifiers.rebuildAround([instance]);
-            Placement.plantFlagAt('hero_1', POINT);
+            Orders.orderAt('hero_1', POINT);
 
             started = [];
             unsubscribe = EventBus.subscribe(BOARD_EVENTS.CYCLE_START, (p) => started.push(p));

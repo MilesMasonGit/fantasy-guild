@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
-import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
@@ -44,9 +44,9 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 const idAt = (i) => tokenAt(i)?.id ?? null;
 
-/** Put a Token on spot `i`, and plant a hero's flag there. */
+/** Put a Token on spot `i`, and send a hero there. */
 const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
-const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
+const sendTo = (heroId, i) => Orders.orderAt(heroId, C(i));
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -79,7 +79,7 @@ function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     put(tile, instance);
     TileModifiers.rebuildAround([tokenAt(tile)]);
-    if (heroId) plant(heroId, tile);
+    if (heroId) sendTo(heroId, tile);
     return tokenAt(tile);
 }
 
@@ -186,9 +186,8 @@ describe('2. ⭐ found by HERO, never by tile (G-43)', () => {
         // still names hero_1, but every by-Token lookup now says hero_1 is
         // working the bush.
         //
-        // Was: re-planting the flag on the bush. Since Free Playmat 1.4c a hero
-        // letting go of an enemy ends that fight in the same call, so a
-        // re-plant can no longer leave this state behind. The claim is set
+        // A hero letting go of an enemy ends that fight in the same call, so a
+        // new order can never leave this state behind. The claim is set
         // directly so the lookup-by-hero rule is still exercised.
         BoardState.setClaim('hero_1', { instanceId: bush.id, typeId: bush.typeId });
         expect(BoardState.workerOf(idAt(BUSH))).toBe('hero_1');

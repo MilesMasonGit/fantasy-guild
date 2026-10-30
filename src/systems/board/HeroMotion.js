@@ -441,8 +441,8 @@ export function placeAtFlag(heroId) {
 
 /**
  * A hero is being sent out: their body appears (at the Hall), or, still on their way home, turns
- * around. `Flags.plant` calls this BEFORE choosing, so nearest is measured from where they really
- * are.
+ * around. A new order (`Flags.orderToken`, `orderSpot`) calls this BEFORE choosing, so nearest is
+ * measured from where they really are.
  */
 export function enter(heroId) {
     return ensureBody(heroId);

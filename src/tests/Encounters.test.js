@@ -6,7 +6,7 @@ import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as Flags from '../systems/board/Flags.js';
-import * as FlagRules from '../systems/board/FlagRules.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as Hostiles from '../systems/board/Hostiles.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -173,7 +173,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     setMatTuning('potterRadius', 0);
     setMatTuning('enemyPotterRadius', 0);
     GameState.initNew();
@@ -198,14 +197,15 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('⭐ every fight is one-on-one', () => {
-    it('a second area flag at a busy enemy never joins or restarts the fight: it waits at its flag', () => {
+    it('a second hero sent to a busy enemy never joins or restarts the fight: they wait beside it', () => {
         const brute = placeAt('enc_brute', A.x, A.y);
-        Flags.plant('h1', A);
+        Orders.orderAt('h1', A);
         run(100);
         const fight = BoardCombat.getFight(brute.id);
         expect(fight?.assignedHeroId).toBe('h1');
 
-        Flags.plant('h2', { x: A.x + 40, y: A.y });
+        Orders.orderAt('h2', { x: A.x + 40, y: A.y });
+        expect(Flags.pinnedIdOf('h2')).toBe(brute.id);
         let lowest = fight.combat.enemyHp.current;
         for (let i = 0; i < 100; i++) {
             run(100);
@@ -224,22 +224,11 @@ describe('⭐ every fight is one-on-one', () => {
         expect(Flags.waitingFor('h1')).toBeNull();
     });
 
-    it('a second area flag with another enemy in reach fights that one instead', () => {
-        const first = placeAt('enc_brute', A.x, A.y);
-        const second = placeAt('enc_brute', A.x + 200, A.y);
-        Flags.plant('h1', { x: A.x - 20, y: A.y });
-        Flags.plant('h2', { x: A.x - 10, y: A.y });
-        run(200);
-        expect(BoardCombat.fightOfHero('h1')?.instanceId).toBe(first.id);
-        expect(BoardCombat.fightOfHero('h2')?.instanceId).toBe(second.id);
-        expect(Flags.waitingFor('h2')).toBeNull();
-    });
-
     it('a flag pinned to a busy enemy waits beside it, then meets it whole once its hero leaves', () => {
         const brute = placeAt('enc_brute', A.x, A.y);
-        Flags.plant('h1', A, { pin: true });
+        Orders.orderAt('h1', A);
         run(100);
-        Flags.plant('h2', A, { pin: true });
+        Orders.orderAt('h2', A);
         expect(Flags.pinnedIdOf('h2')).toBe(brute.id);
         expect(until(() => BoardCombat.getFight(brute.id)?.combat.enemyHp.current < BoardCombat.getFight(brute.id)?.combat.enemyHp.max, 30000)).toBe(true);
         expect(Flags.waitingFor('h2')).toBe(brute.id);
@@ -268,7 +257,7 @@ describe('⭐ every fight is one-on-one', () => {
         expect(Flags.waitingFor('h2')).toBe(brute.id);
     });
 
-    it('a hostile enemy attacks one hero only, however many flags stand by it', () => {
+    it('a hostile enemy attacks one hero only, however many work beside it', () => {
         registerTokenTypes({
             enc_hostile: {
                 id: 'enc_hostile', name: 'Encounter Raider', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
@@ -276,10 +265,10 @@ describe('⭐ every fight is one-on-one', () => {
             }
         });
         const raider = placeAt('enc_hostile', A.x, A.y);
-        FlagRules.heroRecord('h1').flagRules = { [FlagRules.FIGHT]: { allowed: false, priority: 3 } };
-        FlagRules.heroRecord('h2').flagRules = { [FlagRules.FIGHT]: { allowed: false, priority: 3 } };
-        Flags.plant('h1', { x: A.x + 30, y: A.y });
-        Flags.plant('h2', { x: A.x - 30, y: A.y });
+        const east = placeAt('enc_node', A.x + 160, A.y);
+        const west = placeAt('enc_node', A.x - 160, A.y);
+        Orders.orderAt('h1', east);
+        Orders.orderAt('h2', west);
         run(1000);
         const fighting = ['h1', 'h2'].filter(id => BoardCombat.fightOfHero(id)?.instanceId === raider.id);
         expect(fighting).toHaveLength(1);
@@ -308,7 +297,7 @@ describe('⭐ camps of one: bosses and guardians from ordinary spawners', () => 
         run(120000, 1000);
         expect(den.clocks?.spawnMs ?? 0).toBe(0);
         const [first] = enemiesOf('enc_boss');
-        Flags.plant('h1', { x: first.x, y: first.y }, { pin: true });
+        Orders.orderAt('h1', { x: first.x, y: first.y });
         expect(until(() => !BoardState.getTokenById(first.id))).toBe(true);
         Flags.furl('h1');
         run(58000, 1000);
@@ -345,10 +334,9 @@ describe('⭐ camps of one: bosses and guardians from ordinary spawners', () => 
         expect(guardian).toBeTruthy();
         // Nothing blocks the node: the work check has no word for a guardian.
         expect(WorkCheck.fixableReason(node.id, node).reason).toBeNull();
-        FlagRules.heroRecord('h1').flagRules = { [FlagRules.FIGHT]: { allowed: false, priority: 3 } };
-        Flags.plant('h1', node, { pin: true });
+        Orders.orderAt('h1', node);
         run(500);
-        // Its rule against fighting does not save the gatherer: a hostile guardian attacks.
+        // Sent to gather, not to fight, the gatherer is still attacked: a hostile guardian attacks.
         expect(Flags.ambusherOf('h1')).toBe(guardian.id);
         expect(until(() => !BoardState.getTokenById(guardian.id))).toBe(true);
         expect(until(() => BoardState.workTokenOf('h1') === node.id, 5000)).toBe(true);
@@ -360,8 +348,8 @@ describe('⭐ bosses: never first to attack, whole for every hero, called by a S
         expect(isBossEnemy({ enemy: { level: 1, boss: true } })).toBe(true);
         expect(isHostileEnemy({ enemy: { level: 1, boss: true, hostile: true } })).toBe(false);
         const boss = placeAt('enc_boss', A.x, A.y);
-        FlagRules.heroRecord('h1').flagRules = { [FlagRules.FIGHT]: { allowed: false, priority: 3 } };
-        Flags.plant('h1', { x: boss.x + 20, y: boss.y });
+        // A hero working right beside it.
+        Orders.orderAt('h1', placeAt('enc_node', boss.x + 160, boss.y));
         expect(Hostiles.scan()).toEqual([]);
         expect(Flags.ambush('h1', boss.id)).toBe(false);
         run(2000);
@@ -380,12 +368,12 @@ describe('⭐ bosses: never first to attack, whole for every hero, called by a S
         const boss = placeAt(strongBoss, A.x, A.y);
         const defeated = [];
         const off = EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, (p) => defeated.push(p.heroId));
-        Flags.plant('weak', A, { pin: true });
+        Orders.orderAt('weak', A);
         expect(until(() => defeated.includes('weak'), 60000)).toBe(true);
         off();
         expect(BoardCombat.getFight(boss.id)).toBeNull();
 
-        Flags.plant('h2', A, { pin: true });
+        Orders.orderAt('h2', A);
         run(100);
         const fight = BoardCombat.fightOfHero('h2');
         expect(fight?.instanceId).toBe(boss.id);
@@ -402,7 +390,7 @@ describe('⭐ bosses: never first to attack, whole for every hero, called by a S
         const circle = placeAt('enc_circle', A.x, A.y);
         // A station waits for its recipe to be picked; then anyone works it.
         expect(StationRecipe.setSelectedRecipe(circle, 'recipe_enc_summon')).toBe(true);
-        Flags.plant('r1', circle, { pin: true });
+        Orders.orderAt('r1', circle);
         expect(BoardState.workTokenOf('r1')).toBe(circle.id);
         run(3100);
         expect(InventoryManager.getItemCount('enc_summon_horn')).toBe(0);
@@ -414,7 +402,7 @@ describe('⭐ bosses: never first to attack, whole for every hero, called by a S
         expect(enemiesOf('enc_boss')).toHaveLength(1);
         expect(circle.alert).toBe(ALERT.INPUTS);
         // The boss it called is fought like any other, and is gone once beaten.
-        Flags.plant('h2', { x: boss.x, y: boss.y }, { pin: true });
+        Orders.orderAt('h2', { x: boss.x, y: boss.y });
         expect(until(() => !BoardState.getTokenById(boss.id))).toBe(true);
         run(10000, 1000);
         expect(enemiesOf('enc_boss')).toHaveLength(0);
@@ -427,7 +415,7 @@ describe('⭐ node ambushes: the enemy attacks the worker', () => {
         const node = placeAt(nodeType, A.x, A.y);
         const sprung = [];
         const off = EventBus.subscribe(BOARD_EVENTS.AMBUSHED, (p) => sprung.push(p));
-        Flags.plant('h1', A, { pin: true });
+        Orders.orderAt('h1', A);
         expect(BoardState.workTokenOf('h1')).toBe(node.id);
         run(1000);
         off();
@@ -448,8 +436,7 @@ describe('⭐ node ambushes: the enemy attacks the worker', () => {
     it('holds one ambusher at a time: while it stands, the rule rolls nothing and spawns nothing', () => {
         const nodeType = ambushNode('enc_imp', 50);
         const node = placeAt(nodeType, A.x, A.y);
-        FlagRules.heroRecord('h1').flagRules = { [FlagRules.FIGHT]: { allowed: false, priority: 3 } };
-        // Out of the way: the worker cannot fight, so the ambusher stays.
+        // No hero is sent: nobody fights it, so the ambusher stays.
         const cycle = () => EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: node.id, typeId: node.typeId, heroId: null, failed: false, produced: [] });
         const random = vi.spyOn(Math, 'random').mockReturnValue(0);
         cycle();
@@ -485,7 +472,7 @@ describe('⭐ node ambushes: the enemy attacks the worker', () => {
         EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: node.id, typeId: node.typeId, heroId: null, failed: false, produced: [] });
         const [imp] = enemiesOf('enc_imp');
         expect(imp.tether).toBe(node.id);
-        Flags.plant('h2', FAR);
+        Orders.orderAt('h2', FAR);
         run(1000);
         expect(BoardCombat.fightOfHero('h2')).toBeNull();
         expect(EnemyMotion.spawnerOf(imp.id)).toBeNull();

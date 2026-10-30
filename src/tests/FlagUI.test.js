@@ -3,7 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
-import * as BoardRunner from '../systems/board/BoardRunner.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -12,9 +12,8 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses, registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { SKIP_HINT, skipHint } from '../ui/components/board/boardConstants.js';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -37,6 +36,11 @@ registerTokenTypes({
     ft_ui_blank: {
         id: 'ft_ui_blank', name: 'Blank Bush', uses: 100, requiresHero: true,
         config: { skill: '', skillRequired: 1, cycleTimeMs: 12000, inputs: [], outputs: [] }
+    },
+    /** Worked with a skill cut from the game: every hero holds every other skill, so no hero holds this. */
+    ft_ui_cut: {
+        id: 'ft_ui_cut', name: 'Snare', uses: 100, requiresHero: true,
+        config: { skill: 'trapping', skillRequired: 1, cycleTimeMs: 12000, inputs: [], outputs: [] }
     }
 });
 
@@ -67,7 +71,6 @@ function put(tile, typeId) {
     return instance;
 }
 
-const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
 
 beforeAll(() => Flags.init());
 afterAll(() => { Flags.teardown(); resetMatTuning(); });
@@ -75,7 +78,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -89,7 +91,7 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
 });
 
-describe('hero_deployed is published by planting a flag (slice 1.5)', () => {
+describe('hero_deployed is published by every new order (slice 1.5)', () => {
     function counting(fn) {
         let n = 0;
         const unsub = EventBus.subscribe('hero_deployed', () => { n++; });
@@ -99,52 +101,49 @@ describe('hero_deployed is published by planting a flag (slice 1.5)', () => {
 
     it('fires exactly once for a hero dropped on a Token', () => {
         put(15, 'fixture_producer');
-        expect(counting(() => Placement.plantFlagAt('h1', C(15)))).toBe(1);
+        expect(counting(() => Orders.orderAt('h1', C(15)))).toBe(1);
     });
 
-    it('fires for a plant on bare ground and a pennant move, but not for an unchanged plant', () => {
-        expect(counting(() => Flags.plant('h1', C(20)))).toBe(1);
-        expect(counting(() => Flags.plant('h1', C(20)))).toBe(0);
-        expect(counting(() => Placement.plantFlagAt('h1', C(8)))).toBe(1);
+    it('fires for an order to bare ground and a pennant move, but not for an unchanged order', () => {
+        expect(counting(() => Orders.orderAt('h1', C(20)))).toBe(1);
+        expect(counting(() => Orders.orderAt('h1', C(20)))).toBe(0);
+        expect(counting(() => Orders.orderAt('h1', C(8)))).toBe(1);
     });
 });
 
-/**
- * ⚠️ `Placement.moveFlag` went with the index adapters in slice 1.6d-2. Dragging
- * a pennant lands through `plantFlagAt`, which is the one route a flag moves by
- * — so these say the same things through it. The third case, that `moveFlag`
- * refused a hero with no flag planted, pinned that adapter's own guard and went
- * with it: planting is always allowed.
- */
-describe('dragging the pennant (FLAG) just moves the point (FP-71)', () => {
-    it('moves the flag to the spot, with no skill written on it', () => {
-        Flags.plant('h1', C(14));
-        expect(Placement.plantFlagAt('h1', C(20)).success).toBe(true);
-        expect(BoardState.flagOf('h1')).toEqual({ ...C(20), plantedAt: expect.any(Number) });
+/** Dragging a pennant lands through `Orders.orderAt`, the one route an order changes by. */
+describe('dragging the pennant (FLAG) gives a new order (FP-71)', () => {
+    it('onto bare ground: a spot, with no skill written on it', () => {
+        Orders.orderAt('h1', C(14));
+        expect(Orders.orderAt('h1', C(20)).success).toBe(true);
+        expect(BoardState.flagOf('h1')).toEqual({ ...C(20), spot: true, plantedAt: expect.any(Number) });
     });
 
+    // Rewritten with classless heroes: a hero the game reads holds every skill it has, so the skill
+    // a hero lacks is a cut one.
     it('on a Token, the hero works it if they hold its skill, and not otherwise', () => {
         put(13, 'fixture_producer_alt');                     // mining
-        Flags.plant('h1', C(20));
-        Flags.plant('h2', C(20));
+        put(15, 'ft_ui_cut');                                // trapping: cut, so no hero holds it
+        Orders.orderAt('h1', C(20));
+        Orders.orderAt('h2', C(20));
 
-        Placement.plantFlagAt('h1', C(13));                  // h1 holds mining
+        Orders.orderAt('h1', C(13));                  // h1 holds mining
         expect(workTileOf('h1')).toBe(13);
 
-        Placement.recallHeroById('h1');
-        Placement.plantFlagAt('h2', C(13));                  // h2 holds only forestry
+        Orders.orderAt('h2', C(15));
         expect(workTileOf('h2')).toBeNull();
     });
 });
 
 describe('Flags.skipsOfHero — the pennant hover lines', () => {
-    it('lists what the flag passed over, nearest first, with the Token', () => {
-        const blank = put(15, 'ft_ui_blank');
-        put(16, 'fixture_producer');
-        Flags.plant('h1', C(14));
-        expect(workTileOf('h1')).toBe(16);
+    it('lists what the order passed over, with the Token: here, one another hero works', () => {
+        const busy = put(16, 'fixture_producer');
+        Orders.orderAt('h2', C(16));
+        expect(workTileOf('h2')).toBe(16);
+        Orders.orderAt('h1', C(16));
+        expect(workTileOf('h1')).toBeNull();
         expect(Flags.skipsOfHero('h1')).toEqual([
-            { instanceId: blank.id, reason: Flags.SKIP.NO_SKILL, typeId: 'ft_ui_blank' }
+            { instanceId: busy.id, reason: Flags.SKIP.CLAIMED, typeId: 'fixture_producer' }
         ]);
     });
 });
@@ -198,10 +197,5 @@ describe('every skip reason the engine can record has hover text', () => {
     it('names the hero holding a claimed Token', () => {
         expect(skipHint(Flags.SKIP.CLAIMED, { holder: 'Aria' })).toBe('being worked by Aria');
         expect(skipHint(Flags.SKIP.NO_SKILL)).toBe('names no skill');
-    });
-
-    it('names the hero whose rules switched a skill off (FPP-18)', () => {
-        expect(skipHint(Flags.SKIP.RULE_OFF, { hero: 'Aria' })).toBe('off in Aria’s Work Permissions');
-        expect(skipHint(Flags.SKIP.RULE_OFF)).toBe('off in the hero’s Work Permissions');
     });
 });

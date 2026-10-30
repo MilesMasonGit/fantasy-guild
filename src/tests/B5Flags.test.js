@@ -7,6 +7,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
@@ -20,11 +21,10 @@ import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { artRadiusOf } from '../config/matGeometry.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
-import { flagTooltip } from '../ui/components/board/flagText.js';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
@@ -89,7 +89,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -107,8 +106,8 @@ afterEach(() => cleanup());
 
 describe('FB-44 — a flag has no footprint', () => {
     it('a new Token dropped on a flag lands exactly there, not nudged', () => {
-        Flags.plant('h1', P(900, 500));
-        Flags.plant('h2', P(900, 500));
+        Orders.orderAt('h1', P(900, 500));
+        Orders.orderAt('h2', P(900, 500));
         const instance = BoardState.createTokenInstance('fixture_producer', 10);
         const res = dropOnMat({ kind: DRAG_KIND.TOKEN, typeId: 'fixture_producer', usesRemaining: 10 }, P(900, 500));
         expect(res.success).toBe(true);
@@ -118,7 +117,7 @@ describe('FB-44 — a flag has no footprint', () => {
 
     it('a Token on the mat moved onto a flag lands exactly there, and the flag does not move', () => {
         const t = put(P(500, 500), 'fixture_producer_alt');
-        Flags.plant('h1', P(1000, 700));
+        Orders.orderAt('h1', P(1000, 700));
         const res = dropOnMat({ kind: DRAG_KIND.TOKEN, typeId: t.typeId, from: { instanceId: t.id } }, P(1000, 700));
         expect(res.success).toBe(true);
         expect([t.x, t.y]).toEqual([1000, 700]);
@@ -127,8 +126,8 @@ describe('FB-44 — a flag has no footprint', () => {
 
     it('spot-finding never counts flags: a crowd of flags changes no answer', () => {
         const before = MatPlacement.findSpotAnywhere('fixture_producer', P(700, 600));
-        Flags.plant('h1', P(700, 600));
-        Flags.plant('h2', P(720, 610));
+        Orders.orderAt('h1', P(700, 600));
+        Orders.orderAt('h2', P(720, 610));
         const after = MatPlacement.findSpotAnywhere('fixture_producer', P(700, 600));
         expect(after).toEqual(before);
         expect([after.x, after.y]).toEqual([700, 600]);
@@ -179,13 +178,6 @@ describe('FB-45 — dropping a flag on a Token the hero can work pins it', () =>
         // Nothing else in radius is taken: the hero waits by their Token.
         expect(worked('h1')).not.toBe(BoardState.tokensAtPoint(760, 600)[0].id);
         expect(Flags.statusOf('h1').state).not.toBe('working');
-    });
-
-    it('a plain plant (not the player\'s drop) stays an area flag', () => {
-        const t = put(P(600, 600), 'fixture_producer');
-        Placement.plantFlagAt('h1', P(600, 600));
-        expect(BoardState.flagOf('h1').pinnedTo).toBeUndefined();
-        expect(worked('h1')).toBe(t.id);
     });
 });
 
@@ -321,25 +313,25 @@ describe('save and load', () => {
         expect(worked('h1')).not.toBe(nearer.id);
     });
 
-    it('an older save (no pinnedTo) loads as an area flag', async () => {
+    it('a record naming no Token (an old area flag) loads as a spot: the hero works nothing there', async () => {
         put(P(600, 600), 'fixture_producer');
-        Flags.plant('h1', P(600, 600));
-        const saved = JSON.parse(JSON.stringify(GameState.serialize()));
-        expect(saved.state.board.flags.h1.pinnedTo).toBeUndefined();
-        await GameState.initFromSave(migrateState(saved.state, saved.version));
-        EventBus.publish('game_loaded', { slot: 0 });
+        Orders.orderAt('h1', P(600, 600));
+        delete BoardState.flagOf('h1').pinnedTo;
+        await saveAndReload();
         expect(Flags.pinnedIdOf('h1')).toBeNull();
+        expect(Flags.statusOf('h1').order).toBe('spot');
         run(100);
-        expect(worked('h1')).toBeTruthy();
+        expect(worked('h1')).toBeNull();
     });
 
-    it('a saved pin naming a Token no longer on the mat lapses to an area flag', async () => {
+    it('a saved pin naming a Token no longer on the mat lapses: the hero needs a job', async () => {
         put(P(600, 600), 'fixture_producer');
-        Flags.plant('h1', P(600, 600));
+        Orders.orderAt('h1', P(600, 600));
         BoardState.flagOf('h1').pinnedTo = 'tok_missing';
         await saveAndReload();
         run(100);
         expect(BoardState.flagOf('h1').pinnedTo).toBeUndefined();
+        expect(Flags.needsJob('h1')).toBe(true);
     });
 });
 
@@ -368,12 +360,11 @@ describe('a pinned flag on the screen', () => {
         expect(t.x - mid.x).toBeLessThan(r);
         expect(container.querySelector('[data-flag-ring="h1"]')).toBeNull();
         expect(el.getAttribute('data-flag-order')).toBe('token');
-        expect(flagTooltip('h1').pin).toBeNull();
     });
 
-    it('an old area flag has no data-flag-pinned, and no ring is ever drawn', () => {
+    it('a spot order has no data-flag-pinned, and no ring is ever drawn', () => {
         put(P(600, 600), 'fixture_producer');
-        Flags.plant('h1', P(900, 900));
+        Orders.orderAt('h1', P(900, 900));
         const { container } = mount(h(FlagLayer, { inspectedHeroId: 'h1' }));
         expect(container.querySelector('[data-flag="h1"]').hasAttribute('data-flag-pinned')).toBe(false);
         expect(container.querySelector('[data-flag-ring]')).toBeNull();

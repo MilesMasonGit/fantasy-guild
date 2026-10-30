@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Flags from '../systems/board/Flags.js';
@@ -100,7 +101,7 @@ function place(tile, typeId, heroId = null, uses = undefined) {
     );
     Placement.placeTokenAt(instance, C(tile));
     TileModifiers.rebuildAround([instance]);
-    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    if (heroId) Orders.orderAt(heroId, C(tile));
     return instance;
 }
 
@@ -146,7 +147,7 @@ describe('Enemies are inert until targeted (D-14)', () => {
     it('starts fighting the moment a hero is placed on it', () => {
         place(10, 'fixture_enemy');
         run(5000);
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         run(1000);
 
         expect(BoardCombat.getFight(idAt(10))).not.toBeNull();
@@ -378,7 +379,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
 
         Placement.recallHeroById('hero_1');
         run(100);
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         run(100);
 
         const fresh = BoardCombat.getFight(idAt(10)).combat.enemyHp;
@@ -392,7 +393,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         // One hero per Token: hero_2 only gets the enemy once hero_1's flag is
         // taken down (Free Playmat 1.4b).
         Placement.recallHeroById('hero_1');
-        Placement.plantFlagAt('hero_2', C(10));
+        Orders.orderAt('hero_2', C(10));
         run(100);
 
         const fight = BoardCombat.getFight(idAt(10));

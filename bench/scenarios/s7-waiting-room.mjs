@@ -62,7 +62,7 @@ export default {
     name: 'Waiting for room',
     ticks: () => ({ warmup: 300, measure: 1500 }),
     build({ fixtures, setMatTuning }) {
-        const { placeAt, lattice, makeHeroes, plant } = fixtures;
+        const { placeAt, lattice, makeHeroes, orderAt } = fixtures;
         const { w, h } = pinMat(setMatTuning, MAT_STEPS);
         // ⚠️ The packed mat is over the game's Token cap (80); lifted, or the spawner would wait on
         // the cap and never run the no-room search this scenario measures.
@@ -97,6 +97,6 @@ export default {
         StationRecipe.setSelectedRecipe(BoardState.getTokenById(foundation.id), 'bench_build_big_station');
         fixtures.inventory.addItem('item_coal', 10, 'bench');
         const [builder] = makeHeroes(1, { construction: 50 });
-        plant(builder.id, { x: foundation.x, y: foundation.y }, { pin: true });
+        orderAt(builder.id, { x: foundation.x, y: foundation.y });
     }
 };

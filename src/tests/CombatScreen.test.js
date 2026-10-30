@@ -115,7 +115,7 @@ function buildFight() {
     HeroManager.updateHeroFromSkills(hero);
     hero.hp.current = hero.hp.max;
     const foe = fixtures.placeAt('cs_venom', 600, 400);
-    fixtures.plant(hero.id, { x: foe.x, y: foe.y }, { pin: true });
+    fixtures.orderAt(hero.id, { x: foe.x, y: foe.y });
     TileModifiers.rebuildAll();
     return { heroId: hero.id, enemyId: foe.id };
 }

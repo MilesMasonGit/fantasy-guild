@@ -1,12 +1,13 @@
-// Flags: heroes choose their own work
+// Flags: the heroes' orders, and the work each order claims
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { isBossEnemy } from '../../config/registries/enemyProfile.js';
 import { neededToolOf } from '../../config/registries/toolKinds.js';
-import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
 import { artRadiusOf } from '../../config/matGeometry.js';
+import { GameState } from '../../state/GameState.js';
+import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import * as BoardState from './BoardState.js';
 import * as HeroMotion from './HeroMotion.js';
 import { centreOf, distanceSq } from './nearby.js';
@@ -16,7 +17,6 @@ import * as Growth from './Growth.js';
 import * as Demolition from './Demolition.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
-import * as FlagRules from './FlagRules.js';
 import * as Camps from './Camps.js';
 import { ensureFlagColour } from './FlagColours.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
@@ -25,96 +25,52 @@ import { KEYWORD, statementsWith } from '../effects/statements.js';
 /**
  * Orders: the player drags a hero onto a Token and they work only it ({@link orderToken}), onto
  * bare ground and they go there and idle ({@link orderSpot}), or onto the Guild Hall and they go
- * home ({@link sendHome}). An order is saved as the hero's flag record: a Token order is a flag
- * pinned to that Token (`pinnedTo`), a spot order a flag marked `spot`; a hero with no record is at
- * the Guild Hall. When the ordered Token is gone for good the order becomes a spot at its last
- * place marked `needsJob`; when it becomes another Token in place that is still the hero's job (a
- * tree regrowing through a Stump and a Sapling) the order follows it ({@link followTransform}).
+ * home ({@link sendHome}). An order is saved as the hero's flag record (`BoardState`): a Token order
+ * is a flag pinned to that Token (`pinnedTo`); anything else is a spot (`spot`), worked nothing; a
+ * hero with no record is at the Guild Hall. While pinned the record's point is the Token's centre,
+ * and `BoardState` moves it with the Token, so a moved Token carries its hero.
+ *
+ * When the ordered Token is gone for good (used up, removed, demolished, built into something
+ * else) the order becomes a spot at its last place marked `needsJob` ({@link lapsePins}); when it
+ * becomes another Token in place that is still the hero's job (a tree regrowing through a Stump and
+ * a Sapling) the order follows it ({@link followTransform}).
  *
  * A Token order on a **camp** (`Camps.js`: a Logging Camp, a Farmstead, an enemy camp) is the same
  * record, pinned to the camp; the hero works the camp's Tokens one at a time instead of the camp
  * itself ({@link evaluate}): the nearest free one they can work, measured from where they stand
  * (from their idle spot while they potter, so a stroll never changes the choice), then the
- * earlier-placed. They keep it while it can run and while it stays in the camp's reach (no
- * switching for something nearer: a cycle is always finished), wait silently while what is left
- * rests or grows ({@link waitingOf}), and at an enemy camp wait for its next spawn.
+ * earlier-placed. They keep it while it can run and while it stays in the camp's reach (a cycle is
+ * always finished), wait silently while what is left rests or grows ({@link waitingOf}), and at an
+ * enemy camp wait for its next spawn.
  *
- * ⚠️ The area flag below (a flag with neither `pinnedTo` nor `spot`, working everything in the flag
- * radius by the hero's rules) is no longer made by any player route: an old save's area flags load
- * as spots (`SaveMigration.migrateStateToOrders`). It stays, dormant, for the tests that set scenes with it, until
- * the area-flag code is removed.
- *
- * Flags: a hero plants a flag, and works anything they can around it.
- *
- * The saved half (where each flag stands) and the runtime claim records live in `BoardState`; each
- * hero's rules live on the hero (`FlagRules`). This file is the behaviour: which Token a flag
- * claims, when it lets go, and which Tokens it passed over.
- *
- * A flag is a point on the mat and the global flag radius (Mat Tuner). A flag has no skill of its
- * own: the hero works every skill they hold, plus combat, shaped by their rules (allowed, priority
- * 1-5). One hero per Token. The hero appears at the Token they work.
- *
- * Choosing (phase 2 of `assign`): first the Guild Hall when it is under the flag's point (the
- * radius and the rules do not apply to it). Then every worked Token and enemy whose centre
- * is within the radius, ordered by priority (1 first), then distance, then the earlier-placed
- * Token. Each candidate's rule is its Token's skill, or `FlagRules.FIGHT` for an enemy. For each,
- * in order (cheap checks before `WorkCheck`):
+ * Claiming (`assign`, once per tick, before any Token ticks): the ordered Token, or each of a
+ * camp's, is checked in this order (cheap checks before `WorkCheck`):
  * 1. the player disallowed it: `disallowed`;
  * 2. a worked Token that names no skill: `no_skill`;
  * 3. the hero lacks that skill / cannot fight: `unskilled`;
- * 4. the hero's rule for it is off: `rule_off`;
- * 5. another flag already holds it: `claimed`;
- * 6. the shared `WorkCheck` says it cannot run: skipped with that reason (level too low, no tool
- * in hand for it, missing inputs, no recipe, charges, resting until it respawns); a no-tool skip
- * also says "Needs Pickaxe" over the Token (`TOOL_NEEDED`);
- * 7. otherwise claimed.
+ * 4. another hero already holds it: `claimed` (the newcomer waits beside it);
+ * 5. the shared `WorkCheck` says it cannot run: skipped with that reason (level too low, no tool in
+ * hand, missing inputs, no recipe, charges, resting until it respawns); a no-tool skip also says
+ * "Needs Pickaxe" over the Token (`TOOL_NEEDED`);
+ * 6. otherwise claimed.
+ * Nothing claimable: look again in a second of game time (or sooner, when the board changes).
  *
- * Nothing claimable: retry in a second of game time (or sooner, when the board changes: see dirty).
+ * Keeping a claim is sticky: kept while its Token is workable, wherever it now is. Let go when the
+ * Token stops being eligible (resting until it respawns included), the hero can no longer work it
+ * (skill, level, tool), or, for a fixable problem (inputs, charges, no recipe), only once another
+ * Token the order allows can run. If the claimed Token left the board and the same kind of Token
+ * stands at its last spot, unclaimed, that one is claimed.
  *
- * Keeping a claim (phase 1) is sticky: a claim is kept while its Token is workable, wherever that
- * Token now is, so a moved Token carries its hero, even outside the radius. It is let go when the
- * Token stops being eligible (resting until it respawns included), or the hero can no longer work
- * it (skill, level, tool, or its rule switched off), or, for a fixable problem (inputs, charges, no recipe),
- * only once another Token in range can run.
- *
- * Better work appears: a hero never leaves mid-cycle for a higher priority. When the hero's cycle
- * completes (a kill, for a fight), the next pass looks again, and they switch only to a strictly
- * better priority they can claim. The finished cycle has already zeroed the Token, so nothing is
- * lost.
- *
- * If the claimed Token is gone from the board: (a) the same kind of Token stands at its last spot,
- * unclaimed: claim that; (b) otherwise let go, and choose again this very pass.
- *
- * ⚠️ Leaving resets progress: every release (moving on, a re-plant, a recall) zeroes the released
- * Token's cycle. A moved Token that keeps its hero keeps its progress.
+ * ⚠️ Leaving resets progress: every release (a new order, a recall) zeroes the released Token's
+ * cycle. A moved Token that keeps its hero keeps its progress.
  *
  * ⚠️ No rebuild storms: `HERO_MOVED` makes `TileModifiers` rebuild two neighbourhoods, so it is
- * published only when a claim actually changes (and once per plant, furl or lapsed pin). A stable
+ * published only when a claim actually changes (and once per order, furl or lapsed pin). A stable
  * board publishes none (`Flags.test.js` runs 100 ticks).
  *
- * Pinned flags: a flag the player drops onto a Token (`plant(…, { pin: true })`, the drop route
- * only) is pinned to it (`flag.pinnedTo` is that Token's instance id) and the hero works only that
- * Token: the radius, the priorities, other Tokens, enemies they would seek and anything under the
- * flag's point are all ignored (`evaluate`).
- * - Only a Token the hero can work is pinned (`pinRefusal`): a worked Token or an enemy, not
- * disallowed, naming a skill, held at the level it asks, with the tool it needs in hand, with the
- * hero's rule on. A spawner (or anything else no hero works; the Guild Hall keeps its own
- * under-the-flag rule) is silently a normal area flag. A skill, level or tool refusal plants a normal area flag at the
- * drop point and publishes `PIN_REFUSED`, which the hero's speech bubble says. A fixable problem
- * (inputs, charges, no recipe) does not refuse: the hero can work it once it is fixed.
- * - While pinned the flag's point is the Token's centre: `BoardState` moves it with the Token, so a
- * moved Token carries its flag and the hero walks after it.
- * - When the pinned Token leaves the mat (used up, removed, demolished, or turned into something else:
- * a transform is a fresh instance, so a tree becoming a stump counts) the pin lapses at the start
- * of the next `assign`: the flag stays at the Token's last spot as a normal area flag and the hero
- * chooses again that same pass. Never re-pinned by itself.
- * - A pin whose Token is still there but can no longer be worked (disallowed later, a rule switched
- * off, another hero on it) is kept: the hero waits by it, and the flag's hover says why.
- *
  * Attacked heroes fight back: a hostile enemy (`Hostiles.js`) attacks a hero through {@link
- * ambush}: the hero drops their work and claims that enemy, and keeps it whatever their Fight rule
- * or pin says until the kill or the enemy is gone. The rules here still govern only what a hero
- * seeks.
+ * ambush}: the hero drops their work and claims that enemy, and keeps it whatever their order says
+ * until the kill or the enemy is gone, then goes back to their order.
  */
 
 /** How long a flag with nothing to do waits before looking again, in game ms. */
@@ -127,9 +83,7 @@ export const SKIP = Object.freeze({
     /** Another hero's flag already holds it. */
     CLAIMED: 'claimed',
     /** The player marked it "heroes may not work this". */
-    DISALLOWED: 'disallowed',
-    /** The hero's own rule for this skill (or Fight) is switched off. */
-    RULE_OFF: 'rule_off'
+    DISALLOWED: 'disallowed'
 });
 
 /**
@@ -145,25 +99,34 @@ export function isDisallowed(instance) {
 /** Fixable reasons: the ones that keep a red badge and earn a notice. */
 export const FIXABLE = WorkCheck.FIXABLE;
 
-/** The live flag radius, in mat units: the Mat Tuner's. */
-export function flagRadius() {
-    return matTuning('flagRadius');
+const rt = () => BoardState.flagRuntime();
+
+/**
+ * The hero record, read straight from state.
+ *
+ * ⚠️ Not through `HeroManager.getHero`: that rehydrates the hero as a side effect, and the
+ * chooser's hot path must not rebuild a hero's modifiers (or crash on a half-made hero record).
+ */
+export function heroRecord(heroId) {
+    if (!heroId) return null;
+    return (GameState.state?.heroes || []).find(h => h?.id === heroId) || null;
+}
+
+/** Whether the hero can fight at all (everyone can; see `CombatFormulas.canHeroFight`). */
+export function canFight(heroId) {
+    return CombatFormulas.canHeroFight(heroRecord(heroId));
 }
 
 /**
- * Whether a Token centred at `point` is within a flag's reach — its centre
- * inside the radius. The ONE test: heroes use it to find work, and the reach
- * ring uses it to decide whether to show while a Token is dragged.
+ * Whether the hero holds a work skill (at any level: the level is `WorkCheck`'s). Every hero holds
+ * every skill the game has, so this fails only for a skill it no longer has (a cut one).
  */
-export function flagReaches(flag, point) {
-    if (!flag || !point) return false;
-    const radius = flagRadius();
-    return distanceSq({ x: flag.x, y: flag.y }, point) <= radius * radius;
+function holdsSkill(heroId, skillId) {
+    const skills = heroRecord(heroId)?.skills;
+    return !!skillId && !!skills && typeof skills === 'object' && !!skills[skillId];
 }
 
-const rt = () => BoardState.flagRuntime();
-
-/** The instance id `heroId`'s flag is pinned to, or null (an area flag). */
+/** The instance id `heroId`'s order is pinned to, or null (a spot, or no order). */
 export function pinnedIdOf(heroId) {
     const id = BoardState.flagOf(heroId)?.pinnedTo;
     return typeof id === 'string' && id ? id : null;
@@ -175,9 +138,12 @@ export function pinnedTokenOf(heroId) {
     return id ? BoardState.getTokenById(id) : null;
 }
 
-/** Whether a flag record is a spot order: go there and idle, work nothing. */
+/**
+ * Whether a flag record is a spot order: go there and idle, work nothing. Every record not pinned
+ * to a Token is one (an old save's area flag loads as a spot: `SaveMigration.migrateStateToOrders`).
+ */
 export function isSpot(flag) {
-    return flag?.spot === true;
+    return !!flag && typeof flag.pinnedTo !== 'string';
 }
 
 /** Whether `heroId`'s ordered Token is gone for good and they wait for a new order. */
@@ -228,9 +194,8 @@ function hasWorkSkill(def, instance) {
 /**
  * 'enemy' | 'hall' | 'work' | null (nothing a hero works).
  *
- * 'hall': the Guild Hall has no work of its own today (its income is Passive Production, no hero
- * needed). Should it be given a work cycle, it is worked only when a flag is planted on it,
- * whatever the flag's skill.
+ * 'hall': the Guild Hall, which is home, never a job (its income is Passive Production, no hero
+ * needed): a drop on it sends the hero home.
  *
  * A Token marked for demolition is 'work' whatever it was (a spawner, an older Promotion Token, a
  * Passive Generator): the same order the runner checks in.
@@ -245,9 +210,6 @@ function kindOf(instance, def) {
     if (instance.typeId === 'token_guild_hall' || def.isGuildHall) return 'hall';
     return 'work';
 }
-
-/** Kinds worked only when the flag's point is on them, ignoring skill and radius. */
-const UNDER_POINT = new Set(['hall']);
 
 /** Whether a mat point sits on a Token: inside its art circle (`matGeometry.artRadiusOf`). */
 export function pointOnToken(instance, point) {
@@ -273,32 +235,13 @@ export function tokenAtPoint(point) {
 }
 
 /**
- * The rule a candidate answers to: the worked Token's skill, or Fight for an
- * enemy. Null for the kind the rules never touch (the hall) and for a work
- * Token naming no skill.
+ * Whether the hero can take this kind of work at all: an enemy, if they can fight; a worked
+ * Token, if they hold its skill.
  */
-function ruleIdOf(kind, def, instance) {
-    if (kind === 'enemy') return FlagRules.FIGHT;
-    if (kind === 'work' && hasWorkSkill(def, instance)) return workConfigOf(def, instance).skill;
-    return null;
-}
-
-/**
- * Where a claim ranks when looking for better work: 0 for anything under the flag's point (it
- * outranks every priority), else the priority of its rule. Lower is better.
- */
-function rankOf(heroId, kind, def, instance) {
-    if (UNDER_POINT.has(kind)) return 0;
-    const ruleId = ruleIdOf(kind, def, instance);
-    return ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_MAX + 1;
-}
-
-/**
- * Whether the hero may take this rule's work at all: holds it (or can fight)
- * and has not switched it off. The single eligibility test phase 1 uses.
- */
-function ruleAllows(heroId, ruleId) {
-    return FlagRules.holdsRule(heroId, ruleId) && FlagRules.ruleOf(heroId, ruleId).allowed;
+function canTake(heroId, kind, def, instance) {
+    if (kind === 'enemy') return canFight(heroId);
+    if (kind === 'work') return holdsSkill(heroId, workConfigOf(def, instance)?.skill);
+    return true;
 }
 
 /** Zero a Token's cycle: the forfeit when a hero leaves it. */
@@ -311,7 +254,7 @@ function resetProgress(instance) {
 /**
  * Let go of `heroId`'s claim, resetting the Token they leave, and ending their fight at once if it
  * was an enemy, so the enemy is whole the next time anyone engages it, including this hero
- * re-planting on it.
+ * ordered back onto it.
  */
 function release(heroId) {
     // A cycle-end mark belongs to the claim it was earned on, and so does an ambush: letting go of
@@ -328,8 +271,7 @@ function release(heroId) {
 }
 
 function claimToken(heroId, instance) {
-    // ⚠️ A new claim starts with no cycle-end mark, or the better-work check could switch the hero
-    // off it one tick into its first cycle.
+    // ⚠️ A new claim starts with no cycle-end mark, or an ambush on it would end one tick in.
     rt()?.cycleEnded.delete(heroId);
     BoardState.setClaim(heroId, { instanceId: instance.id, typeId: instance.typeId, x: instance.x, y: instance.y });
     // ⚠️ A Token a flag skipped carries that skip's red badge. It passed the check to be claimed,
@@ -422,28 +364,17 @@ export function hasFixableSkip(instance) {
 }
 
 /**
- * Walk a flag's candidates in order and return the first it can claim, with every skip recorded on
- * the way (see the file comment for the order).
+ * Walk an order's candidates and return the first it can claim, with every skip recorded on the
+ * way (see the file comment for the order). A Token order has one candidate, its Token; a camp
+ * order, what the camp hands out, nearest first; a spot, none. A pinned hero still passes every
+ * check, so they wait (with the reason recorded) rather than working something they cannot.
  *
  * @param {string|null} excludeInstanceId a Token not to consider (the one held)
- * @param {number} [belowRank] only consider candidates ranked strictly better than this (the look
- * for better work): the walk stops at the first candidate that is not
  */
-function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) {
-    // A spot order works nothing.
+function evaluate(heroId, flag, excludeInstanceId = null) {
     if (isSpot(flag)) return { pick: null, skips: [] };
-    const point = { x: flag.x, y: flag.y };
-    const from = HeroMotion.heroPointOf(heroId) || point;
-    const underPoint = [];
-    const inRange = [];
-
-    // A pinned flag has one candidate, its Token: no radius, no other Token, no enemy to seek,
-    // nothing under the point. It still passes every check below, so a pinned hero waits (with the
-    // reason recorded) rather than working something they cannot. A lapsed pin is an area flag
-    // again by the time anything calls this (`lapsePins`).
-    const pinnedId = typeof flag.pinnedTo === 'string' ? flag.pinnedTo : null;
-    // An order on a camp: its candidates are what the camp hands out, nearest first.
-    const camp = pinnedId ? Camps.campOfHero(heroId) : null;
+    const candidates = [];
+    const camp = Camps.campOfHero(heroId);
     if (camp) {
         const at = anchorOf(heroId, flag);
         for (const instance of Camps.campWork(camp)) {
@@ -451,56 +382,23 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
             const def = getTokenType(instance.typeId);
             const kind = kindOf(instance, def);
             if (kind !== 'work' && kind !== 'enemy') continue;
-            inRange.push({ instance, def, kind, d: distanceSq(at, centreOf(instance)), ruleId: ruleIdOf(kind, def, instance), rank: FlagRules.PRIORITY_DEFAULT });
+            candidates.push({ instance, def, kind, d: distanceSq(at, centreOf(instance)) });
         }
-    } else if (pinnedId) {
-        const instance = pinnedId === excludeInstanceId ? null : BoardState.getTokenById(pinnedId);
+        // Nearest, then the earlier-placed Token.
+        candidates.sort((a, b) => a.d - b.d || (a.instance.placedAt ?? 0) - (b.instance.placedAt ?? 0));
+    } else {
+        const instance = flag.pinnedTo === excludeInstanceId ? null : BoardState.getTokenById(flag.pinnedTo);
         const def = instance ? getTokenType(instance.typeId) : null;
         const kind = instance ? kindOf(instance, def) : null;
-        if (kind) {
-            const ruleId = ruleIdOf(kind, def, instance);
-            const rank = ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_DEFAULT;
-            inRange.push({ instance, def, kind, d: 0, ruleId, rank });
-        }
+        if (kind) candidates.push({ instance, def, kind });
     }
-
-    const under = pinnedId ? null : tokenAtPoint(point);
-
-    for (const instance of (pinnedId ? [] : BoardState.tokens())) {
-        if (!instance?.typeId || instance.id === excludeInstanceId) continue;
-        const def = getTokenType(instance.typeId);
-        const kind = kindOf(instance, def);
-        if (!kind) continue;
-
-        if (UNDER_POINT.has(kind)) {
-            if (instance === under) underPoint.push({ instance, def, kind, rank: 0 });
-            continue;
-        }
-
-        // Work and enemies alike: no split between combat and work.
-        const centre = centreOf(instance);
-        if (!centre || !flagReaches(flag, centre)) continue;
-        // Reach is measured from the flag; nearest from the hero.
-        const d = distanceSq(from, centre);
-        const ruleId = ruleIdOf(kind, def, instance);
-        const rank = ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_DEFAULT;
-        inRange.push({ instance, def, kind, d, ruleId, rank });
-    }
-
-    // Priority first, then nearest, then the earlier-placed Token.
-    inRange.sort((a, b) => a.rank - b.rank || a.d - b.d
-        || (a.instance.placedAt ?? 0) - (b.instance.placedAt ?? 0));
 
     const skips = [];
-    for (const c of [...underPoint, ...inRange]) {
-        if (c.rank >= belowRank) break;
+    for (const c of candidates) {
         const instanceId = c.instance.id;
         if (isDisallowed(c.instance)) { skips.push({ instanceId, reason: SKIP.DISALLOWED }); continue; }
-        if (c.kind === 'work' && !c.ruleId) { skips.push({ instanceId, reason: SKIP.NO_SKILL }); continue; }
-        if (c.ruleId) {
-            if (!FlagRules.holdsRule(heroId, c.ruleId)) { skips.push({ instanceId, reason: ALERT.UNSKILLED }); continue; }
-            if (!FlagRules.ruleOf(heroId, c.ruleId).allowed) { skips.push({ instanceId, reason: SKIP.RULE_OFF }); continue; }
-        }
+        if (c.kind === 'work' && !hasWorkSkill(c.def, c.instance)) { skips.push({ instanceId, reason: SKIP.NO_SKILL }); continue; }
+        if (!canTake(heroId, c.kind, c.def, c.instance)) { skips.push({ instanceId, reason: ALERT.UNSKILLED }); continue; }
         const holder = BoardState.heroOfInstance(instanceId);
         if (holder && holder !== heroId) { skips.push({ instanceId, reason: SKIP.CLAIMED }); continue; }
         if (c.kind === 'work') {
@@ -551,18 +449,6 @@ function choose(r, heroId) {
 }
 
 /**
- * The better-work switch: let go of the held Token (already at zero, a cycle just ended) and claim
- * `pick`. Skips are recorded, exactly as when choosing.
- */
-function switchTo(r, heroId, pick, skips) {
-    release(heroId);
-    recordSkips(r, heroId, skips);
-    claimToken(heroId, pick.instance);
-    r.nextTryAt.delete(heroId);
-    announceMoved(heroId);
-}
-
-/**
  * The unclaimed-or-not Token of `typeId` standing exactly on a remembered
  * point — what a hero whose Token left looks for at its last spot.
  */
@@ -576,15 +462,15 @@ function keepOrRelease(r, heroId, dirty) {
     const claim = BoardState.claimOfHero(heroId);
     const instance = BoardState.getTokenById(claim.instanceId);
 
-    // ⚠️ Fighting back: a hero a hostile enemy attacked holds that enemy whatever their rules or
-    // pin say, until a kill (its `CYCLE_COMPLETE`) or the enemy leaves the mat. Then the ambush is
-    // over and this same pass treats the claim like any other: kept if their own rules would keep
-    // it, else let go, and their flag (or pin) chooses again.
+    // ⚠️ Fighting back: a hero a hostile enemy attacked holds that enemy whatever their order says,
+    // until a kill (its `CYCLE_COMPLETE`) or the enemy leaves the mat. Then the ambush is over and
+    // this same pass treats the claim like any other: kept if their order would keep it, else let
+    // go, and their order claims again.
     const ambushId = r.ambushes.get(heroId);
     if (ambushId) {
         const over = ambushId !== claim.instanceId || !instance || r.cycleEnded.has(heroId);
         if (over) r.ambushes.delete(heroId);
-        else if (!isDisallowed(instance) && FlagRules.canFight(heroId)) {
+        else if (!isDisallowed(instance) && canFight(heroId)) {
             claim.x = instance.x;
             claim.y = instance.y;
             return;
@@ -597,17 +483,15 @@ function keepOrRelease(r, heroId, dirty) {
         const def = getTokenType(instance.typeId);
         const kind = kindOf(instance, def);
 
-        // A pinned hero holds nothing but their pinned Token, or, sent to a camp, what the camp
-        // hands out (in its reach: a Token the camp moved away from is let go).
-        const pinnedId = typeof flag?.pinnedTo === 'string' ? flag.pinnedTo : null;
-        // A spot order holds nothing (an ambush it fought back is over by now).
+        // A hero holds nothing but their ordered Token, or, sent to a camp, what the camp hands
+        // out (in its reach: a Token the camp moved away from is let go). A spot order holds
+        // nothing (an ambush it fought back is over by now).
         const eligible = !isSpot(flag) && !isDisallowed(instance)
-            && (!pinnedId || pinnedId === instance.id || campHolds(heroId, instance)) && (
-            (kind === 'hall')
-            || (kind === 'enemy' && ruleAllows(heroId, FlagRules.FIGHT))
-            || (kind === 'work' && hasWorkSkill(def, instance) && ruleAllows(heroId, workConfigOf(def, instance).skill)
+            && (flag.pinnedTo === instance.id || campHolds(heroId, instance)) && (
+            (kind === 'enemy' && canFight(heroId))
+            || (kind === 'work' && hasWorkSkill(def, instance) && canTake(heroId, kind, def, instance)
                 // A Token that ran out and rests until it respawns (or a Field with nothing ripe) is
-                // let go at once, with no badge: the hero works the next thing, or a pinned hero
+                // let go at once, with no badge: a camp hero works the next thing, an ordered hero
                 // waits by it. Unless it is marked for demolition, which a resting Token can still be.
                 && (Demolition.isMarked(instance) || !WorkCheck.isAway(instance, def)))
         );
@@ -620,16 +504,8 @@ function keepOrRelease(r, heroId, dirty) {
             return;
         }
 
-        // A cycle (or a kill) just ended: take strictly better work if any can be claimed. Checked
-        // here, at the start of the next pass and before any Token ticks, so the Token left behind
-        // is still at zero.
-        if (r.cycleEnded.delete(heroId)) {
-            const { pick, skips } = evaluate(heroId, flag, instance.id, rankOf(heroId, kind, def, instance));
-            if (pick) {
-                switchTo(r, heroId, pick, skips);
-                return;
-            }
-        }
+        // The cycle-end mark has done its work (ending an ambush, above).
+        r.cycleEnded.delete(heroId);
 
         if (kind !== 'work') return;
 
@@ -750,112 +626,6 @@ export function assignHero(heroId) {
 }
 
 /**
- * Plant `heroId`'s flag at a mat point, and let it choose at once.
- *
- * Planting the same flag at the same point changes nothing. Anything else is a re-plant: the old
- * claim is let go (its Token's progress reset), the notices re-arm, and the flag goes to the back
- * of the planting order. A flag carries no skill: what the hero works comes from their rules, which
- * a re-plant does not touch.
- */
-/**
- * Why `heroId`'s flag may not be pinned to `instance`, or null if it may. `{ reason, silent }`: a
- * `silent` refusal is a Token no flag is ever pinned to (a spawner, a Token no hero works, the
- * Guild Hall, which keeps its own under-the-flag rule), so the flag just
- * plants there with nothing said. Otherwise `reason` is a skip reason (`ALERT.UNSKILLED`,
- * `ALERT.ACCESS`, `SKIP.DISALLOWED`, `SKIP.RULE_OFF`), which the hero's bubble says where it has
- * words for it.
- *
- * The same gates `evaluate` applies (disallowed, the skill, the rule, the level via
- * `WorkCheck.heroReason`) minus the ones the player can fix later (inputs, charges, a recipe:
- * FIXABLE) and another hero working it, which a pinned hero simply waits out.
- */
-export function pinRefusal(heroId, instance) {
-    if (!heroId || !instance?.typeId) return { reason: null, silent: true };
-    const def = getTokenType(instance.typeId);
-    // Heroes never work a spawner itself, except to demolish it.
-    if (def?.spawner && !Demolition.isMarked(instance)) return { reason: null, silent: true };
-    const kind = kindOf(instance, def);
-    if (kind !== 'work' && kind !== 'enemy') return { reason: null, silent: true };
-    // A worked Token naming no skill is unfinished content: no pin, nothing said.
-    if (kind === 'work' && !hasWorkSkill(def, instance)) return { reason: SKIP.NO_SKILL, silent: true };
-    if (isDisallowed(instance)) return { reason: SKIP.DISALLOWED, silent: false };
-    const ruleId = ruleIdOf(kind, def, instance);
-    if (!FlagRules.holdsRule(heroId, ruleId)) return { reason: ALERT.UNSKILLED, silent: false };
-    if (!FlagRules.ruleOf(heroId, ruleId).allowed) return { reason: SKIP.RULE_OFF, silent: false };
-    if (kind === 'work') {
-        const reason = WorkCheck.heroReason(heroId, workConfigOf(def, instance), instance);
-        if (reason) return { reason, silent: false };
-    }
-    return null;
-}
-
-export function plant(heroId, point, { pin = false } = {}) {
-    if (!heroId || !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
-        return { success: false, reason: 'Nowhere to plant a flag' };
-    }
-    const r = rt();
-    if (!r) return { success: false, reason: 'No board' };
-
-    // A hero's first flag gets their lasting colour; later plants keep it.
-    ensureFlagColour(heroId);
-
-    // A drop inside a Token's art circle (the same test the mat uses for which Token is under the
-    // pointer) pins the flag to it when the hero can work it. A pinned flag stands on the Token's
-    // centre, so it moves with the Token (`BoardState`). A refused pin is an area flag at the drop
-    // point, and a loud refusal is said by the hero's bubble.
-    let pinTo = null;
-    let refused = null;
-    if (pin) {
-        const target = tokenAtPoint(point);
-        if (target) {
-            const refusal = pinRefusal(heroId, target);
-            if (!refusal) pinTo = target;
-            else if (!refusal.silent) refused = { instanceId: target.id, reason: refusal.reason };
-        }
-    }
-    const at = pinTo ? { x: pinTo.x, y: pinTo.y } : { x: point.x, y: point.y };
-
-    const previous = BoardState.flagOf(heroId);
-    if (previous && previous.x === at.x && previous.y === at.y
-        && (previous.pinnedTo || null) === (pinTo?.id || null)) {
-        if (refused) EventBus.publish(BOARD_EVENTS.PIN_REFUSED, { heroId, ...refused });
-        return { success: true, unchanged: true, pinnedTo: pinTo?.id ?? null, pinRefused: refused?.reason ?? null };
-    }
-
-    quiet++;
-    try {
-        release(heroId);
-        clearSkips(r, heroId);
-        r.nextTryAt.delete(heroId);
-        r.cycleEnded.delete(heroId);
-        BoardState.setFlag(heroId, {
-            x: at.x, y: at.y, plantedAt: BoardState.takeFlagOrder(),
-            ...(pinTo ? { pinnedTo: pinTo.id } : {})
-        });
-        r.dirty = true;
-        // Out of the Guild Hall (or turning round on the way home) BEFORE choosing, so nearest is
-        // measured from where they are.
-        HeroMotion.enter(heroId);
-        assignHero(heroId);
-        HeroMotion.settle(heroId);
-    } finally {
-        quiet--;
-    }
-    announceMoved(heroId);
-
-    // The quest action deploy a hero is planting a flag, by every route: a drop from the dock, a
-    // hero dragged on the board, a flag moved, the + badge. Published here, once, so no caller
-    // can forget it or announce it twice. An unchanged plant is not a deployment and returned
-    // above. Names the Token the flag was planted on by `instanceId` (and its type), or null for
-    // bare mat.
-    const under = tokenAtPoint(point);
-    EventBus.publish(ENGINE_EVENTS.HERO_DEPLOYED, { heroId, instanceId: under?.id ?? null, typeId: under?.typeId ?? null });
-    // Said after the plant, so the bubble finds the hero on the mat.
-    if (refused) EventBus.publish(BOARD_EVENTS.PIN_REFUSED, { heroId, ...refused });
-    return { success: true, pinnedTo: pinTo?.id ?? null, pinRefused: refused?.reason ?? null };
-}
-
-/**
  * Why `heroId` cannot be ordered onto `instance`, or null when they can: `{ reason }`, a skip reason
  * (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `ALERT.NO_TOOL`, `SKIP.DISALLOWED`) or {@link ORDER_NOTHING} for a Token no hero works (a spawner of no
  * enemy, a support, a quest, unfinished content naming no skill). The Guild Hall is home, not a
@@ -872,7 +642,7 @@ export function orderRefusal(heroId, instance) {
     // A camp is an order on what it hands out; an enemy camp, on the enemies it spawns.
     const camp = Camps.campOfInstance(instance);
     if (camp) return campRefusal(heroId, instance, camp);
-    if (Camps.isEnemyCamp(instance)) return FlagRules.canFight(heroId) ? null : { reason: ALERT.UNSKILLED };
+    if (Camps.isEnemyCamp(instance)) return canFight(heroId) ? null : { reason: ALERT.UNSKILLED };
     const def = getTokenType(instance.typeId);
     // Heroes never work a spawner itself, except to demolish it.
     if (def?.spawner && !Demolition.isMarked(instance)) return { reason: ORDER_NOTHING };
@@ -880,7 +650,7 @@ export function orderRefusal(heroId, instance) {
     if (!kind || kind === 'hall') return { reason: ORDER_NOTHING };
     if (kind === 'work' && !hasWorkSkill(def, instance)) return { reason: ORDER_NOTHING };
     if (isDisallowed(instance)) return { reason: SKIP.DISALLOWED };
-    if (kind === 'enemy') return FlagRules.canFight(heroId) ? null : { reason: ALERT.UNSKILLED };
+    if (kind === 'enemy') return canFight(heroId) ? null : { reason: ALERT.UNSKILLED };
     const reason = WorkCheck.heroReason(heroId, workConfigOf(def, instance), instance);
     return reason ? { reason } : null;
 }
@@ -892,7 +662,7 @@ export function orderRefusal(heroId, instance) {
  * camp with nothing in its reach yet takes the order: the hero waits there.
  */
 function campRefusal(heroId, camp, block) {
-    if (!FlagRules.holdsRule(heroId, block.skill)) return { reason: ALERT.UNSKILLED };
+    if (!holdsSkill(heroId, block.skill)) return { reason: ALERT.UNSKILLED };
     const centre = centreOf(camp);
     const work = Camps.campWork(camp).filter(t => !isDisallowed(t))
         .map(t => ({ t, d: distanceSq(centre, centreOf(t)) }))
@@ -915,7 +685,7 @@ function sameOrder(previous, next) {
 
 /**
  * Give `heroId` an order: `shape` is the record's own fields (`pinnedTo` or `spot`, and the point),
- * `target` the Token for a Token order. Like a plant: the old claim is let go (its Token's progress
+ * `target` the Token for a Token order. The old claim is let go (its Token's progress
  * reset), the hero sets out from where they stand (the Guild Hall, at home) and chooses at once.
  * Publishes `hero_deployed`, the tutorial's "send a hero out" step, once per real change.
  */
@@ -987,7 +757,7 @@ export function sendHome(heroId) {
 function stillTheJob(heroId, instance) {
     if (!orderRefusal(heroId, instance)) return true;
     const toward = Growth.growsTowardWork(instance.typeId);
-    return !!toward && ruleAllows(heroId, toward.config.skill)
+    return !!toward && holdsSkill(heroId, toward.config.skill)
         && !WorkCheck.heroReason(heroId, toward.config, { typeId: toward.id });
 }
 
@@ -1058,9 +828,8 @@ export function furl(heroId, reason = 'recall') {
  * for them) and `BoardCombat.tickToken` begins the fight on arrival.
  *
  * Until the kill, or the enemy leaving the mat, `keepOrRelease` keeps the claim whatever their
- * Fight rule or pin says: the rule governs only whether a hero seeks a fight. Then their flag
- * chooses again as normal, so they go back to work (or to their pinned Token). A re-plant, a recall
- * or a defeat ends it early, as any claim.
+ * order says. Then their order claims again as normal, so they go back to their job. A new order,
+ * a recall or a defeat ends it early, as any claim.
  *
  * Refused (false): no flag, no such enemy on the mat, a hero who cannot fight, or an enemy
  * another hero already holds.
@@ -1073,7 +842,7 @@ export function ambush(heroId, instanceId) {
     if (!r || !BoardState.flagOf(heroId) || !enemy || !BoardCombat.isEnemyToken(enemy)) return false;
     // A boss fights only when the player sends a hero: it never attacks first.
     if (isBossEnemy(getTokenType(enemy.typeId))) return false;
-    if (!FlagRules.canFight(heroId)) return false;
+    if (!canFight(heroId)) return false;
     const holder = BoardState.heroOfInstance(instanceId);
     if (holder && holder !== heroId) return false;
 
@@ -1115,17 +884,16 @@ function springAmbushes() {
 
 /**
  * What `heroId` is waiting for, or null: `{ instanceId, kind }` for a hero with nothing claimed
- * whose flag passed over something that will be theirs to work by itself, the first such in the
- * flag's own order.
- * - `'fight'`: an enemy another hero is fighting (`claimed`). Every fight is one-on-one, so a flag
- * pinned to that enemy waits beside it, and an area flag with nothing else in reach waits at its
- * flag; either takes the enemy the moment it is free.
+ * whose order passed over something that will be theirs to work by itself, the first such in the
+ * order's own order.
+ * - `'fight'`: an enemy another hero is fighting (`claimed`). Every fight is one-on-one, so a hero
+ * sent to that enemy (or to its camp) waits beside it and takes it the moment it is free.
  * - `'node'`: a Token resting until it respawns (`resting`) that the hero could work and that is
  * coming back by itself (`Respawn.isComingBack`: not a Bare tree with no Orchard in reach), or a
  * Field whose crop grows (`growing`): the skip reason is the Token's own, so the hero's skill,
- * level, tool and rule have already passed. They wait silently and work it the moment it is back
+ * level and tool have already passed. They wait silently and work it the moment it is back
  * (`TOKEN_RESPAWNED`, or the Field's `TILE_CHANGED` as it ripens, marks flags dirty). Failing
- * those, a Stump or Sapling in the flag's reach growing back into work they could do
+ * those, a Stump or Sapling (the ordered Token, or in a camp's reach) growing back into work they could do
  * ({@link growingFor}): its growth is a transform, whose `TILE_CHANGED` marks flags dirty, so they
  * work it the moment it stands.
  * - `'busy'`: the Token an order names, which another hero is working: the newcomer waits beside
@@ -1134,14 +902,13 @@ function springAmbushes() {
  * - `'spawn'`: sent to an enemy camp with nothing of its standing to fight: they wait silently for
  * its next spawn (`typeId` names the first enemy it spawns, for the words), and take it as it lands
  * (the spawn's `TILE_CHANGED` marks flags dirty).
- * For the flag's words, the hero's speech and the idle mark. A spot order waits for nothing.
+ * For the roster's words, the hero's speech and the idle mark. A spot order waits for nothing.
  */
 export function waitingOf(heroId) {
     if (!heroId || BoardState.claimOfHero(heroId)) return null;
     const flag = BoardState.flagOf(heroId);
     if (isSpot(flag)) return null;
-    const pinned = typeof flag?.pinnedTo === 'string';
-    const camp = pinned ? Camps.campOfHero(heroId) : null;
+    const camp = Camps.campOfHero(heroId);
     for (const s of skipsOfHero(heroId)) {
         if (s.reason === ALERT.RESTING) {
             if (Respawn.isComingBack(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'node' };
@@ -1151,7 +918,7 @@ export function waitingOf(heroId) {
         if (s.reason !== SKIP.CLAIMED) continue;
         if (BoardCombat.isEnemyToken(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'fight' };
         // An order onto a Token another hero works: the newcomer waits beside it.
-        if (pinned && !camp) return { instanceId: s.instanceId, kind: 'busy' };
+        if (!camp) return { instanceId: s.instanceId, kind: 'busy' };
     }
     if (camp && Camps.isEnemyCamp(camp)) {
         return { instanceId: camp.id, kind: 'spawn', typeId: Camps.enemiesOf(camp.typeId)[0] ?? null };
@@ -1160,14 +927,13 @@ export function waitingOf(heroId) {
 }
 
 /**
- * The Token in `heroId`'s flag's reach growing back into work they could do, as
- * `{ instanceId, kind: 'node' }`, or null: a Stump or Sapling (no work of its own) whose growth
- * chain reaches a Token of a skill the hero holds and allows, at a level they have, with the tool
- * in hand, and that is truly on its way (its Forest in reach, not stopped for want of its seedling:
- * `Growth.isGrowingBack`). In the flag's own order: priority, then nearest, then the earlier-placed.
- * A pinned flag waits only for its own Token.
+ * What grows back into `heroId`'s work, as `{ instanceId, kind: 'node' }`, or null: a Stump or
+ * Sapling (no work of its own) whose growth chain reaches a Token of a skill the hero holds, at a
+ * level they have, with the tool in hand, and that is truly on its way (its Forest in reach, not
+ * stopped for want of its seedling: `Growth.isGrowingBack`). A Token order waits only for its own
+ * Token; a camp order for the nearest in the camp's reach, then the earlier-placed.
  *
- * ⚠️ Worked out when asked (the flag's words, the speech, the idle mark), never on the flag's pass:
+ * ⚠️ Worked out when asked (the roster's words, the speech, the idle mark), never on the pass:
  * a hero with nothing to claim looks again every second, and a catch-up is 86,400 seconds.
  */
 function growingFor(heroId) {
@@ -1175,13 +941,11 @@ function growingFor(heroId) {
     if (!flag || isSpot(flag)) return null;
     // A camp order waits for what grows back in the camp's reach into the camp's kind of work.
     const camp = Camps.campOfHero(heroId);
-    const block = camp ? Camps.campOfInstance(camp) : null;
-    if (camp && !block) return null;
-    if (!camp && typeof flag.pinnedTo === 'string') return pinnedGrowing(heroId, BoardState.getTokenById(flag.pinnedTo));
-    const inReach = block
-        ? (centre, toward) => Camps.worksType(block, toward) && Camps.reaches(camp, block, centre)
-        : (centre) => flagReaches(flag, centre);
-    const from = block ? anchorOf(heroId, flag) : (HeroMotion.heroPointOf(heroId) || { x: flag.x, y: flag.y });
+    if (!camp) return pinnedGrowing(heroId, BoardState.getTokenById(flag.pinnedTo));
+    const block = Camps.campOfInstance(camp);
+    if (!block) return null;
+    const inReach = (centre, toward) => Camps.worksType(block, toward) && Camps.reaches(camp, block, centre);
+    const from = anchorOf(heroId, flag);
     const canWork = new Map();
     let best = null;
     for (const instance of BoardState.tokens()) {
@@ -1191,17 +955,14 @@ function growingFor(heroId) {
         if (!centre || !inReach(centre, toward) || isDisallowed(instance)) continue;
         let can = canWork.get(toward.id);
         if (can === undefined) {
-            can = ruleAllows(heroId, toward.config.skill)
+            can = holdsSkill(heroId, toward.config.skill)
                 && !WorkCheck.heroReason(heroId, toward.config, { typeId: toward.id });
             canWork.set(toward.id, can);
         }
         if (!can || !Growth.isGrowingBack(instance)) continue;
-        const rank = FlagRules.ruleOf(heroId, toward.config.skill).priority;
         const d = distanceSq(from, centre);
         const order = instance.placedAt ?? 0;
-        if (!best || rank < best.rank || (rank === best.rank && (d < best.d || (d === best.d && order < best.order)))) {
-            best = { instance, rank, d, order };
-        }
+        if (!best || d < best.d || (d === best.d && order < best.order)) best = { instance, d, order };
     }
     return best ? { instanceId: best.instance.id, kind: 'node' } : null;
 }
@@ -1214,7 +975,7 @@ function growingFor(heroId) {
 function pinnedGrowing(heroId, instance) {
     const toward = instance ? Growth.growsTowardWork(instance.typeId) : null;
     if (!toward || isDisallowed(instance) || !Growth.isGrowingBack(instance)) return null;
-    if (!ruleAllows(heroId, toward.config.skill) || WorkCheck.heroReason(heroId, toward.config, { typeId: toward.id })) return null;
+    if (!holdsSkill(heroId, toward.config.skill) || WorkCheck.heroReason(heroId, toward.config, { typeId: toward.id })) return null;
     return { instanceId: instance.id, kind: 'node' };
 }
 
@@ -1301,7 +1062,7 @@ export function statusOf(heroId) {
         const state = HeroMotion.isReturning(heroId) ? 'returning' : 'docked';
         return { state, instanceId: null, point: null, typeId: null, flag: null, order: null, needsJob: false, limping: HeroMotion.isLimping(heroId) };
     }
-    const order = typeof flag.pinnedTo === 'string' ? 'token' : (isSpot(flag) ? 'spot' : null);
+    const order = isSpot(flag) ? 'spot' : 'token';
     const extra = { order, needsJob: flag.needsJob === true, campId: order === 'token' ? (Camps.campOfHero(heroId)?.id ?? null) : null };
     const workId = BoardState.workTokenOf(heroId);
     if (workId) {
@@ -1325,13 +1086,12 @@ export function statusOf(heroId) {
 }
 
 /**
- * A hero finished a cycle (or a kill): their notices about that Token re-arm, and the next pass
- * looks for better work.
+ * A hero finished a cycle (or a kill): a fight-back ends with its kill (`keepOrRelease`).
  *
  * ⚠️ Only noted here, not acted on. This runs inside the runner's (or the fight's) completion,
  * which carries on after publishing; letting go of the Token from in here would pull it out from
- * under that code. The next `assign` runs before any Token ticks, so the switch still lands between
- * cycles.
+ * under that code. The next `assign` runs before any Token ticks, so the hero goes back to their
+ * order between cycles.
  */
 function cycleCompleted(heroId) {
     const r = rt();
@@ -1416,9 +1176,6 @@ export function init() {
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (payload = {}) => cycleCompleted(payload.heroId)));
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.AMBUSHED, ({ heroId, instanceId } = {}) => {
         if (heroId && instanceId) pendingAmbushes.push({ heroId, instanceId });
-    }));
-    unsubscribers.push(onMatTuningChanged((key) => {
-        if (key == null || key === 'flagRadius') markDirty();
     }));
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.TOKEN_TRANSFORMED, followTransform));
     unsubscribers.push(EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {

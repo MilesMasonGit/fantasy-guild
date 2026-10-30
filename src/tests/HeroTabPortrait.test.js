@@ -17,7 +17,7 @@ import { setPortraitCutter, PORTRAIT_PX } from '../ui/components/dock/heroPortra
 
 const h = React.createElement;
 const hero = (id, name, spriteId) => ({
-    id, name, spriteId, hp: { current: 100, max: 100 }, status: 'idle', equipment: {}, skills: {}, flagRules: {}
+    id, name, spriteId, hp: { current: 100, max: 100 }, status: 'idle', equipment: {}, skills: {}
 });
 
 /** Every sheet the stand-in cutter was asked for. jsdom has no canvas, so the cut is stood in for. */

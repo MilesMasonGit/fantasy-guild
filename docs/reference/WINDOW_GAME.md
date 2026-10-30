@@ -23,7 +23,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
   can't reach; prefer the dev panel or a QA fixture save for anything the
   owner will look at.
 
-## The entries (31)
+## The entries (30)
 
 | Entry | What it is | Reached for most |
 |---|---|---|
@@ -37,7 +37,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
 | `LootSystem` | kill loot rolls | `previewDrops(...)` |
 | `EquipmentManager` | hero gear | `equipItem`, `unequipItem`, `getAllEquipment` |
 | `BoardState` | what is on the mat | `tokens()`, `getTokenById(id)`, `tokensAtPoint(x, y)`, `heroesOnBoard()`, `createTokenInstance(typeId)` |
-| `BoardPlacement` | putting things on the mat | `placeTokenAt(instance, point)`, `moveTokenTo(id, point)`, `removePlacedToken(id)`, `plantFlagAt(heroId, point)`, `recallHeroById(heroId)` |
+| `BoardPlacement` | putting things on the mat | `placeTokenAt(instance, point)`, `moveTokenTo(id, point)`, `removePlacedToken(id)`, `recallHeroById(heroId)` |
 | `SpriteLayer` | loot lying on the mat | `getSprites()`, `collectAll()`, `countOnBoard(...)` |
 | `BoardRunner` | the per-Token work each tick | `isHeroIdle(...)` |
 | `InputAllocator` | which inputs a Token can draw on | `checkInputs`, `getStarvationStats()` |
@@ -46,8 +46,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
 | `BoardCombat` | fights on the mat | `getFight(...)`, `fightOfHero(heroId)`, `endFight(...)` |
 | `Orders` | the player's orders: a hero dropped on the mat | `orderAt(heroId, point)`, `sendHome`, `canOrderOnto`, `jobTokenOf` |
 | `Camps` | camps: what a camp hands the heroes sent to it | `campOf(def)`, `campWork(camp)`, `isEnemyCamp(instance)`, `reachRingOf(instance)`, `campOfHero(heroId)` |
-| `Flags` | heroes' orders, saved as flag records, and the dormant area flags | `orderToken`, `orderSpot`, `sendHome`, `statusOf`, `waitingOf`, `plant` (area flags, tests only) |
-| `FlagRules` | the retired work rules (dormant, read only by area flags) | `ruleOf` |
+| `Flags` | heroes' orders, saved as flag records | `orderToken`, `orderSpot`, `sendHome`, `statusOf`, `waitingOf` |
 | `Demolition` | taking Tokens down | `canDemolish`, `mark`, `unmark`, `markedTokens()` |
 | `QuestManager` | quests | `getActiveQuests()`, `claimQuest(...)`, `getTutorialStep()` |
 | `QuestTokens` | quests and bounties as Tokens on the mat | `questTokens()`, `spawnQuest`, `spawnBounty` |

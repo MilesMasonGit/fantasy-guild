@@ -6,6 +6,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -16,7 +17,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { flagStatusLine, dockStatusLine, waitingTypeOf } from '../ui/components/board/flagText.js';
 import { idleMomentOf, momentText } from '../ui/components/board/heroSpeech.js';
 import { calloutText, INPUT_CALLOUT_GAP_MS } from '../ui/components/board/callouts.js';
@@ -92,7 +93,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 240);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -109,7 +109,7 @@ beforeEach(() => {
 describe('a gatherer whose only vein rests waits silently', () => {
     function restedVein() {
         const vein = put('sw_vein', 800, 500);
-        Flags.plant('miner', { x: 800, y: 500 });
+        Orders.orderAt('miner', { x: 800, y: 500 });
         run(6000);
         expect(vein.usesRemaining).toBe(0);
         return vein;
@@ -148,19 +148,19 @@ describe('a gatherer whose only vein rests waits silently', () => {
 
     it('a pinned miner waits by the vein the same way', () => {
         const vein = put('sw_vein', 800, 500);
-        Flags.plant('miner', { x: 800, y: 500 }, { pin: true });
+        Orders.orderAt('miner', { x: 800, y: 500 });
         expect(BoardState.flagOf('miner').pinnedTo).toBe(vein.id);
         run(6000);
         expect(Flags.waitingOf('miner')).toEqual({ instanceId: vein.id, kind: 'node' });
         expect(BoardRunner.isHeroIdle('miner')).toBe(false);
     });
 
-    it('a hero with truly nothing in reach is still idle and says so', () => {
-        Flags.plant('miner', { x: 800, y: 500 });
+    it('a hero sent to bare ground waits for nothing and is idle there', () => {
+        Orders.orderAt('miner', { x: 800, y: 500 });
         run(1000);
         expect(Flags.waitingOf('miner')).toBeNull();
         expect(BoardRunner.isHeroIdle('miner')).toBe(true);
-        expect(flagStatusLine('miner')).toBe('Idle');
+        expect(flagStatusLine('miner')).toBe('Idle here');
         expect(idleMomentOf(null)).toEqual({ kind: 'idle', key: 'idle', text: momentText.idle() });
     });
 
@@ -179,7 +179,7 @@ describe('a station out of an input', () => {
         let smelted = 0;
         try {
             smelted = cyclesOf(furnace, () => {
-                Flags.plant('smith', { x: 800, y: 500 });
+                Orders.orderAt('smith', { x: 800, y: 500 });
                 run(8000);
             });
         } finally { off(); }
@@ -193,16 +193,19 @@ describe('a station out of an input', () => {
         expect(calloutText.needsInput('Coal')).toBe('Needs Coal');
     });
 
-    it('with a coal vein in reach: the hero mines, then comes back and smelts', () => {
+    it('one hero per link: the smith stays at the furnace while a miner on the vein feeds it', () => {
         const furnace = put('sw_furnace', 800, 500);
         InventoryManager.addItem('item_coal', 1);
-        Flags.plant('smith', { x: 800, y: 500 });
+        Orders.orderAt('smith', { x: 800, y: 500 });
         run(3000);
         expect(furnace.alert).toBe(ALERT.INPUTS);
         const vein = put('sw_coal_vein', 950, 500);
         run(1000);
-        expect(Flags.statusOf('smith').instanceId).toBe(vein.id);
-        // Two coal mined, the vein rests, and the hero is back at the furnace using them.
+        // The smith never leaves their order for the vein.
+        expect(BoardState.workerOf(furnace.id)).toBe('smith');
+        expect(BoardState.workerOf(vein.id)).toBeNull();
+        // Two coal mined by the miner, the vein rests, and the smith smelts them.
+        Orders.orderAt('miner', { x: 950, y: 500 });
         const smelted = cyclesOf(furnace, () => run(15000));
         expect(vein.usesRemaining).toBe(0);
         expect(smelted).toBe(2);
@@ -238,7 +241,7 @@ describe('the mat says it', () => {
         const y = matH() - 80;
         const furnace = put('sw_furnace', 800, y);
         InventoryManager.addItem('item_coal', 10);
-        Flags.plant('smith', { x: 800, y });
+        Orders.orderAt('smith', { x: 800, y });
         run(3000);
         expect(BoardState.workerOf(furnace.id)).toBe('smith');
         const plateTop = platePlace({ x: 800, y, typeId: 'sw_furnace', fit: 1, matH: matH() }).top;
@@ -254,7 +257,7 @@ describe('the mat says it', () => {
 
     it('a waiting miner going idle says nothing; a hero with nothing in reach still does', () => {
         const vein = put('sw_vein', 800, 500);
-        Flags.plant('miner', { x: 800, y: 500 });
+        Orders.orderAt('miner', { x: 800, y: 500 });
         run(6000);
         expect(Flags.waitingOf('miner')?.instanceId).toBe(vein.id);
         const busy = [
@@ -266,6 +269,6 @@ describe('the mat says it', () => {
         rerender(h(HeroBubbleLayer, { heroes: busy.map(x => ({ ...x, state: 'idle' })) }));
         const stack = (id) => [...container.querySelectorAll(`[data-hero-bubble-stack="${id}"] [data-hero-bubble]`)].map(n => n.textContent);
         expect(stack('miner')).toEqual([]);
-        expect(stack('smith')).toEqual(['No work in range.']);
+        expect(stack('smith')).toEqual(['Nothing to work here.']);
     });
 });

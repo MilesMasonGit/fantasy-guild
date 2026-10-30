@@ -805,11 +805,11 @@ export const KIT_SECTIONS = [
     {
         id: 'speech', title: 'Speech bubbles and callouts', status: 'unapproved',
         source: 'SpeechFrame: a hero’s speech on the mat, the hero bar’s level-up alerts, the mat’s callouts, the off-mat refusal',
-        rule: 'One line in the chamfer frame with its hard shadow, white words, and a stepped pixel tail under the bubble nearest what it is about. Bronze for news, gold when it asks to be looked at (a hero with no work, a level-up), red for a can’t (a refused flag, drop or equip). A callout rises and fades without scaling.',
+        rule: 'One line in the chamfer frame with its hard shadow, white words, and a stepped pixel tail under the bubble nearest what it is about. Bronze for news, gold when it asks to be looked at (a hero with no work, a level-up), red for a can’t (a refused order, drop or equip). A callout rises and fades without scaling.',
         Demo: () => (
             <div className="flex items-end gap-6 pb-3">
                 <SpeechFrame tail className="whitespace-nowrap ui-text-title font-bold">Fir Forest Depleted</SpeechFrame>
-                <SpeechFrame tail tone={SPEECH_TONE.ATTENTION} className="whitespace-nowrap ui-text-title font-bold">No work in range.</SpeechFrame>
+                <SpeechFrame tail tone={SPEECH_TONE.ATTENTION} className="whitespace-nowrap ui-text-title font-bold">Nothing to work here.</SpeechFrame>
                 <SpeechFrame tail tone={SPEECH_TONE.CANT} className="whitespace-nowrap ui-text-title font-bold">Too close to another Token</SpeechFrame>
             </div>
         )

@@ -7,6 +7,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -158,7 +159,7 @@ describe('the mat', () => {
     });
 
     it('a spot order’s flag is drawn with its pole foot on the spot', () => {
-        Flags.plant('h1', BARE);
+        Orders.orderAt('h1', BARE);
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         const box = markerBox(BARE, null, parseFloat(flag.style.width) / MARKER_ART_PX);

@@ -4,6 +4,7 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Restrictions from '../systems/board/Restrictions.js';
 import * as Flags from '../systems/board/Flags.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
@@ -426,8 +427,8 @@ describe('flags and the Guild Hall', () => {
     it('⭐ two flags may stand at the very same point — flags never nudge (FP-83)', () => {
         const point = { x: 900, y: 700 };
 
-        expect(Placement.plantFlagAt('h1', point).success).toBe(true);
-        expect(Placement.plantFlagAt('h2', point).success).toBe(true);
+        expect(Orders.orderAt('h1', point).success).toBe(true);
+        expect(Orders.orderAt('h2', point).success).toBe(true);
 
         expect(BoardState.flagOf('h1')).toMatchObject(point);
         expect(BoardState.flagOf('h2')).toMatchObject(point);

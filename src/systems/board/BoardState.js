@@ -401,8 +401,8 @@ export function tokensAtPoint(x, y) {
  * hero's flag stands, in mat units. A hero with no flag is in the Dock; the Dock is not a data
  * structure.
  *
- * `pinnedTo` is the instance id of the Token the flag is pinned to (its hero works only that Token)
- * and is absent on an area flag. While pinned, `x`/`y` are that Token's centre and follow it when
+ * `pinnedTo` is the instance id of the Token the order names (its hero works only that Token, or a
+ * camp's Tokens) and is absent on a spot order (`spot`, `needsJob`). While pinned, `x`/`y` are that Token's centre and follow it when
  * it moves (`afterPointChange`); `Flags.js` lapses the pin when the Token is gone.
  *
  * `plantedAt` comes from `board.nextFlagOrder`, a counter bumped on every plant, and is the order
@@ -472,10 +472,10 @@ function runtimeOf(b) {
             skips: new Map(),
             skipsByHero: new Map(),
             nextTryAt: new Map(),
-            // Heroes who just finished a cycle, to look for better work.
+            // Heroes who just finished a cycle (or a kill): it ends a fight-back.
             cycleEnded: new Set(),
             // Heroes a hostile enemy attacked, heroId → that enemy's instance id: they fight back
-            // whatever their rules say.
+            // whatever their order says.
             ambushes: new Map(),
             // Where each hero on the mat actually is: see Hero bodies below. Owned by
             // `HeroMotion.js`.

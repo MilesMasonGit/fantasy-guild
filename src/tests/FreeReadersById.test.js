@@ -10,11 +10,9 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as EffectActions from '../systems/board/EffectActions.js';
-import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
-import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
-import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -289,7 +287,7 @@ describe('⭐ quest events carry instanceId, and still count', () => {
         const off = EventBus.subscribe('hero_deployed', (p) => seen.push(p));
         const progress = vi.spyOn(QuestManager, 'reportProgress');
         try {
-            expect(Flags.plant('hero_1', C(14)).success).toBe(true);
+            expect(Orders.orderAt('hero_1', C(14)).success).toBe(true);
         } finally {
             off?.();
         }

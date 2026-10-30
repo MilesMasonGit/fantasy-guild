@@ -9,6 +9,7 @@ import * as LiveEffects from '../systems/effects/LiveEffects.js';
 import { registerStatusFixtures, POISON, BURN } from './fixtures/statusEffects.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -395,7 +396,7 @@ describe('Cleaver: a chance to double one item a kill or a cycle drops', () => {
         const cow = BoardState.createTokenInstance('gear_cow', tokenStartingUses('gear_cow'));
         Placement.placeTokenAt(cow, at);
         TileModifiers.rebuildAround([cow]);
-        Placement.plantFlagAt(hero.id, at);
+        Orders.orderAt(hero.id, at);
         const kills = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.LOOT_GENERATED, (p) => kills.push(p.drops.map(d => [d.itemId, d.quantity])));
         for (let t = 0; t < 30000; t += 100) BoardRunner.tick(100);
@@ -448,7 +449,7 @@ describe('Cleaver: a chance to double one item a kill or a cycle drops', () => {
         const block = BoardState.createTokenInstance('gear_butcher', tokenStartingUses('gear_butcher'));
         Placement.placeTokenAt(block, at);
         TileModifiers.rebuildAround([block]);
-        Placement.plantFlagAt(hero.id, at);
+        Orders.orderAt(hero.id, at);
         for (let t = 0; t < 12000; t += 100) BoardRunner.tick(100);
         const count = (id) => SpriteLayer.countOnBoard(id) + InventoryManager.getItemCount(id);
         const beef = count('item_raw_beef');

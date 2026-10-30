@@ -3,6 +3,7 @@
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { SaveManager } from '../../systems/core/SaveManager.js';
 import { getBackupKey } from '../../systems/core/SaveSlotHelper.js';
 import { GameState } from '../../state/GameState.js';
@@ -22,6 +23,8 @@ import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType, registerTokenTypes, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
+import { TUTORIAL_QUESTS } from '../../systems/quests/tutorialQuests.js';
+import * as QuestTokens from '../../systems/quests/QuestTokens.js';
 
 /** The QA Tokens these scenes lay: test types, gone on reload. */
 export const QA_ORDER_TYPES = Object.freeze({
@@ -120,6 +123,44 @@ export function knockOutAHero() {
     HeroManager.getHero(hero.id).hp.current = 0;
     BoardCombat.resolveStatusDefeat(hero.id);
     return { ok: true, name: hero.name };
+}
+
+/** The tutorial steps the QA panel can jump to: the two hero orders changed (brief 260 O3). */
+export const TUTORIAL_JUMPS = Object.freeze({ tree: 'cart_flag', camp: 'cart_camp' });
+
+const WOODAXE = 'item_copper_woodaxe';
+const OAK_WOOD = 'item_oak_wood';
+
+/**
+ * Jump the tutorial to `stepId`: every earlier step counted as claimed, the step on the mat now. The
+ * first hero is recruited if there is none, and holds the Woodaxe (the step before the tree asks for
+ * it); the camp step also puts 60 Oak Wood in the Bank (a Wood Foundation and a Logging Camp).
+ * ⚠️ Changes the game, like Spawn Party.
+ * @returns {{ok: boolean, error?: string, title?: string}}
+ */
+export function jumpTutorialTo(stepId) {
+    const index = TUTORIAL_QUESTS.findIndex(t => t.id === stepId);
+    const q = GameState.state?.quests;
+    if (index < 0 || !q) return { ok: false, error: 'No such tutorial step, or no game' };
+    if (!(HeroManager.getAllHeroes() || []).length && !GuildUpgradeManager.purchase('roster_size')?.success) {
+        return { ok: false, error: 'Could not recruit the first hero' };
+    }
+    const hero = (GameState.state.heroes || [])[0];
+    if (getItem(WOODAXE) && !(hero.equipment || []).includes(WOODAXE)) {
+        if (!InventoryManager.hasItem(WOODAXE, 1)) InventoryManager.addItem(WOODAXE, 1);
+        EquipmentManager.equipItem(hero.id, WOODAXE);
+    }
+    if (stepId === TUTORIAL_JUMPS.camp) InventoryManager.addItem(OAK_WOOD, 60);
+    for (const token of QuestTokens.tutorialTokens()) {
+        BoardState.removeToken(token.id);
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: token.id, x: token.x, y: token.y, typeId: null });
+    }
+    q.active = (q.active || []).filter(a => !a?.isTutorial);
+    q.completedTutorials = TUTORIAL_QUESTS.slice(0, index).map(t => t.id);
+    QuestTokens.ensure();
+    EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, {});
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_tutorial_jump' });
+    return { ok: true, title: TUTORIAL_QUESTS[index].title };
 }
 
 /** Every healing hero healed now, as their wound time running out does. */

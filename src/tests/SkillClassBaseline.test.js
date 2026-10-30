@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -74,7 +75,7 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeTokenAt(instance, C(tile));
-    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    if (heroId) Orders.orderAt(heroId, C(tile));
     return instance;
 }
 
@@ -117,14 +118,14 @@ describe('Hero Level is the average of the skills a hero HOLDS', () => {
 
 describe('The gate is possession first, then level', () => {
     /**
-     * ⚠️ Under flags (Free Playmat 1.4b) a hero who cannot run a Token does not
-     * stand on it with a red mark: their flag skips it and records why, for
-     * hover. Where the hero lacks the skill, the flag is planted with the
-     * Token's skill directly — a drop would keep the hero's own skill and the
-     * Token would not even be a candidate.
+     * ⚠️ A hero who cannot run a Token does not stand on it with a red mark: the order onto it
+     * is refused with the reason (said over the Token), and the hero stays where they were.
      */
-    const plantFor = (heroId, tile, skill) => Flags.plant(heroId, C(tile), { skill });
-    const skipReasons = (token) => Flags.skipsOf(token.id).map(s => s.reason);
+    const plantFor = (heroId, tile) => Orders.orderAt(heroId, C(tile));
+    const skipReasons = (token) => {
+        expect(Flags.pinnedIdOf('hero_1')).toBeNull();
+        return [Flags.orderRefusal('hero_1', token)?.reason];
+    };
 
     it('refuses a hero whose level is too low, and calls it ACCESS', () => {
         // `fixture_gated` wants a Starting skill at 25.
@@ -142,7 +143,7 @@ describe('The gate is possession first, then level', () => {
         // them and can never fix the other, so they must not look alike.
         GameState.state.heroes = [makeRecruit('hero_1', 99)];
         const token = place(10, 'fixture_cut_gated');
-        plantFor('hero_1', 10, CUT);
+        plantFor('hero_1', 10);
 
         run(25000);
         expect(skipReasons(token)).toEqual([BoardRunner.ALERT.UNSKILLED]);
@@ -166,7 +167,7 @@ describe('The gate is possession first, then level', () => {
         // skill worked the Token anyway.
         GameState.state.heroes = [makeRecruit('hero_1', 99)];
         const token = place(10, 'fixture_cut_ungated');
-        plantFor('hero_1', 10, CUT);
+        plantFor('hero_1', 10);
 
         run(11000);
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);

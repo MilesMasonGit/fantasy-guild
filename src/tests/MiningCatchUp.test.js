@@ -102,7 +102,7 @@ function buildBoard() {
     fixtures.placeAt('mcu_cart', VEIN.x + 150, VEIN.y);
     fixtures.placeAt('mcu_mine', VEIN.x - 150, VEIN.y);
     fixtures.placeAt('mcu_mine', VEIN.x, VEIN.y + 150);
-    fixtures.plant(miner.id, { x: VEIN.x, y: VEIN.y }, { pin: true });
+    fixtures.orderAt(miner.id, { x: VEIN.x, y: VEIN.y });
     TileModifiers.rebuildAll();
     return vein.id;
 }

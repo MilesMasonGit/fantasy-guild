@@ -116,8 +116,8 @@ function buildBoard() {
     fighter.hp.current = fighter.hp.max;
     const a = fixtures.placeAt('catchup_duel_enemy', 400, 400);
     const b = fixtures.placeAt('catchup_duel_enemy', 1300, 400);
-    fixtures.plant(fighter.id, { x: a.x, y: a.y }, { pin: true });
-    fixtures.plant(recruit.id, { x: b.x, y: b.y }, { pin: true });
+    fixtures.orderAt(fighter.id, { x: a.x, y: a.y });
+    fixtures.orderAt(recruit.id, { x: b.x, y: b.y });
     TileModifiers.rebuildAll();
     return { fighterId: fighter.id, recruitId: recruit.id };
 }

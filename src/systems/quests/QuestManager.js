@@ -7,6 +7,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
 import { tutorialTemplate } from './tutorialQuests.js';
 import { getTokenType, isLandmarkType } from '../../config/registries/tokenRegistry.js';
+import { campOf } from '../../config/registries/tokenConstants.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { toolOf } from '../../config/registries/toolKinds.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
@@ -147,11 +148,15 @@ export const QuestManager = {
                 this.reportProgress('token_purchased', 1, { typeId: data?.typeId });
             }),
             // A Foundation became what it built, or Farmland what was planted
-            // (published by `BoardRunner`).
+            // (published by `BoardRunner`). `camp`: whether what was built is a camp.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_BUILT, (data) => {
-                this.reportProgress('token_built', 1, { typeId: data?.typeId, fromTypeId: data?.fromTypeId });
+                this.reportProgress('token_built', 1, { typeId: data?.typeId, fromTypeId: data?.fromTypeId, camp: !!campOf(getTokenType(data?.typeId)) });
             }),
-            EventBus.subscribe(ENGINE_EVENTS.HERO_DEPLOYED, () => this.reportProgress('hero_deployed')),
+            // A new order. `skill`: the work skill of the Token the hero was sent to (null for bare
+            // ground, an enemy or a camp), so a step can ask for a tree.
+            EventBus.subscribe(ENGINE_EVENTS.HERO_DEPLOYED, (data) => {
+                this.reportProgress('hero_deployed', 1, { typeId: data?.typeId ?? null, skill: getTokenType(data?.typeId)?.config?.skill || null });
+            }),
             // A finished cycle: gathering, crafting, exploring, a kill. A failed
             // cycle counts for nothing. The Token's type and skill, whether it was
             // gathering (a resource that is not an endgame site) or crafting (a station

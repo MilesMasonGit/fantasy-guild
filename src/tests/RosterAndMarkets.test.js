@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -48,7 +49,7 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeTokenAt(instance, C(tile));
-    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    if (heroId) Orders.orderAt(heroId, C(tile));
     return instance;
 }
 
@@ -141,17 +142,19 @@ describe('A Market is worked like any Token (D-259 retired)', () => {
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
-    it('one still worked with the cut Commerce runs for no hero, and says so on hover only', () => {
+    it('one still worked with the cut Commerce runs for no hero: the order is refused, with no red mark', () => {
         registerTokenTypes({
             fixture_cut_market: { ...getAllTokenTypes().fixture_market, id: 'fixture_cut_market', config: { ...getAllTokenTypes().fixture_market.config, skill: 'commerce' } }
         });
         GameState.state.heroes = [makeHero('hero_1', HERO_SKILL_IDS, 99)];
         const token = place(10, 'fixture_cut_market');
-        Flags.plant('hero_1', C(10));
+        // The drop is refused as UNSKILLED (said over the Token) rather than raising a red mark.
+        expect(Orders.orderAt('hero_1', C(10)).success).toBe(false);
         InventoryManager.addItem('fixture_market_goods', 100);
         run(20000);
 
-        expect(Flags.skipsOf(token.id).map(s => s.reason)).toEqual([BoardRunner.ALERT.UNSKILLED]);
+        expect(Flags.orderRefusal('hero_1', token)).toEqual({ reason: BoardRunner.ALERT.UNSKILLED });
+        expect(Flags.pinnedIdOf('hero_1')).toBeNull();
         expect(token.alert).toBeFalsy();
         expect(InventoryManager.getItemCount('fixture_market_goods')).toBe(100);
     });

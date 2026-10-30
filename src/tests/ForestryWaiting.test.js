@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -12,7 +13,7 @@ import * as Growth from '../systems/board/Growth.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { flagStatusLine } from '../ui/components/board/flagText.js';
 import { idleMomentOf } from '../ui/components/board/heroSpeech.js';
 
@@ -42,7 +43,8 @@ registerTokenTypes({
     fw_stump: plain('fw_stump', 'Test Oak Stump', { grows: { into: 'fw_sapling', afterMs: 20000, needsNearby: ['fw_forest'], cost: [{ itemId: SEEDLING, quantity: 1 }] } }),
     fw_sapling: plain('fw_sapling', 'Test Oak Sapling', { artSize: 'small', grows: { into: 'fw_tree', afterMs: 10000 } }),
     fw_axe_tree: plain('fw_axe_tree', 'Test Axe Oak', { uses: 2, requiresHero: true, config: felling, needsTool: { kind: 'woodaxe', minTier: 1 }, respawn: { mode: 'regrow', into: 'fw_axe_stump' } }),
-    fw_axe_stump: plain('fw_axe_stump', 'Test Axe Stump', { grows: { into: 'fw_axe_tree', afterMs: 20000 } })
+    fw_axe_stump: plain('fw_axe_stump', 'Test Axe Stump', { grows: { into: 'fw_axe_tree', afterMs: 20000 } }),
+    fw_logging: plain('fw_logging', 'Test Logging Camp', { tokenType: 'camp', requiresHero: false, config: null, camp: { skill: 'forestry', reach: 300 } })
 });
 
 function hero(id, skills) {
@@ -68,7 +70,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 240);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -83,12 +84,12 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
 });
 
-/** A Forest and an Oak beside it, a forester flagged on the Oak, run until it is a Stump. */
+/** A Forest and an Oak beside it, a forester sent to the Oak, run until it is a Stump. */
 function felledInAForest({ seedlings = 1, forest = true } = {}) {
     if (seedlings) InventoryManager.addItem(SEEDLING, seedlings);
     if (forest) put('fw_forest', TREE.x + 150, TREE.y);
     put('fw_tree', TREE.x, TREE.y);
-    Flags.plant('forester', { x: TREE.x, y: TREE.y });
+    Orders.orderAt('forester', { x: TREE.x, y: TREE.y });
     run(3000);
     expect(at(TREE.x, TREE.y)?.typeId).toBe('fw_stump');
     return at(TREE.x, TREE.y);
@@ -119,9 +120,10 @@ describe('⭐ a forester waits silently for the felled Oak to grow back', () => 
         expect(InventoryManager.getItemCount(SEEDLING)).toBe(0);
     });
 
-    it('waits for a Forest\'s fresh Sapling too, though nothing was felled', () => {
+    it('sent to a Logging Camp, waits for a Forest\'s fresh Sapling in its reach, though nothing was felled', () => {
         const sapling = put('fw_sapling', TREE.x, TREE.y);
-        Flags.plant('forester', { x: TREE.x, y: TREE.y });
+        const camp = put('fw_logging', TREE.x, TREE.y + 160);
+        expect(Orders.orderAt('forester', { x: camp.x, y: camp.y }).success).toBe(true);
         run(200);
         expect(Flags.waitingOf('forester')).toEqual({ instanceId: sapling.id, kind: 'node' });
         expect(BoardRunner.isHeroIdle('forester')).toBe(false);
@@ -148,27 +150,28 @@ describe('nothing on its way back is nothing to wait for', () => {
         expect(BoardRunner.isHeroIdle('forester')).toBe(true);
     });
 
-    // Rewritten with classless heroes: every hero holds Forestry now, so the hero who cannot take
-    // the work is one whose Forestry rule is off.
-    it('a hero with Forestry switched off does not wait on it', () => {
+    // Rewritten with classless heroes and orders: every hero holds Forestry, and work permissions
+    // are gone, so the hero who does not wait is one sent to a spot beside it, not to the Token.
+    it('a hero sent to a spot beside it does not wait on it', () => {
         felledInAForest();
-        GameState.state.heroes.find(h => h.id === 'miner').flagRules = { forestry: { allowed: false, priority: 3 } };
-        Flags.plant('miner', { x: TREE.x, y: TREE.y + 60 });
+        Orders.orderAt('miner', { x: TREE.x, y: TREE.y + 60 });
         run(1000);
         expect(Flags.waitingOf('miner')).toBeNull();
         expect(BoardRunner.isHeroIdle('miner')).toBe(true);
     });
 
-    it("nor one out of the flag's reach", () => {
+    it("nor one out of a camp's reach", () => {
         felledInAForest();
-        Flags.plant('forester', { x: TREE.x + 700, y: TREE.y });
+        const camp = put('fw_logging', TREE.x + 700, TREE.y);
+        expect(Orders.orderAt('forester', { x: camp.x, y: camp.y }).success).toBe(true);
         run(200);
         expect(Flags.waitingOf('forester')).toBeNull();
     });
 
     it('a hero who could not fell what it grows into (no woodaxe in hand) does not wait on it', () => {
         put('fw_axe_stump', TREE.x, TREE.y);
-        Flags.plant('forester', { x: TREE.x, y: TREE.y });
+        const camp = put('fw_logging', TREE.x, TREE.y + 160);
+        expect(Orders.orderAt('forester', { x: camp.x, y: camp.y }).success).toBe(true);
         run(1000);
         expect(Flags.waitingOf('forester')).toBeNull();
         expect(BoardRunner.isHeroIdle('forester')).toBe(true);

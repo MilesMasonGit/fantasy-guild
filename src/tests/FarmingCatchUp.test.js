@@ -133,7 +133,7 @@ function buildBoard() {
     // Sown before the time away starts: a pick sows on the next tick, whatever its size.
     TimedChanges.tick(1);
     expect(Fields.stageOf(BoardState.getTokenById(field.id))).toBe('growing');
-    fixtures.plant(farmer.id, { x: FIELD.x, y: FIELD.y }, { pin: true });
+    fixtures.orderAt(farmer.id, { x: FIELD.x, y: FIELD.y });
     return field.id;
 }
 

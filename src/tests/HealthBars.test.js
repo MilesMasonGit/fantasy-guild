@@ -15,6 +15,7 @@ import { healthFraction, healthText, healthPercent, healthFillPx, enemyBarPlace,
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { resetMatTuning } from '../config/matTuning.js';
@@ -296,7 +297,7 @@ describe('⭐ on the mat: the hero bar follows the hero’s health and the point
     });
 
     it('none at full health; one once hurt; one while hovered at full health', async () => {
-        Flags.plant('h1', { x: 600, y: 400 });
+        Orders.orderAt('h1', { x: 600, y: 400 });
         const { container } = mount(h(MatBoard));
         const figure = container.querySelector('[data-board-hero="h1"]');
         expect(figure).not.toBeNull();

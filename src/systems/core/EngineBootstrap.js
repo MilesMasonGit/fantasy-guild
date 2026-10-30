@@ -32,7 +32,6 @@ import * as BoardCombat from '../board/BoardCombat.js';
 import * as LoadoutMoments from '../board/LoadoutMoments.js';
 import * as MatResize from '../board/MatResize.js';
 import * as Flags from '../board/Flags.js';
-import * as FlagRules from '../board/FlagRules.js';
 import * as Orders from '../board/Orders.js';
 import * as Camps from '../board/Camps.js';
 // Marking Tokens for demolition from the console (`Game.Demolition.mark(id)`).
@@ -89,7 +88,6 @@ export const EngineBootstrap = {
             RecipeResolver,
             BoardCombat,
             Flags,
-            FlagRules,
             Orders,
             Camps,
             Demolition,
