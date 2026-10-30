@@ -178,9 +178,13 @@ const movesTip = (moves) => (moves?.length
     ? [t('fight.tip.enemyMoves'), ...moves.map(m => `${m.name}: ${[m.hits ? damageTypeName(m.type) : t('fight.moves.noHit'), m.effect].filter(Boolean).join(', ')}`)]
     : undefined);
 
-/** An enemy's moves, the one its last swing made bright, each with the type it hits with or a star. */
+/**
+ * An enemy's moves, the one its last swing made bright, each with the type it hits with or (a move
+ * that does not hit) a plain star, set off by a faint line from the kinds and the gold-starred effects
+ * on it below: Flutter the move and Flutter carried read apart.
+ */
 const MoveList = ({ moves, last }) => (
-    <div className="flex flex-col items-end gap-0.5" data-fight-moves>
+    <div className="flex flex-col items-end gap-0.5 self-stretch pb-1 border-b border-white/10" data-fight-moves>
         {moves.map((m, i) => {
             const isLast = m.name === last;
             return (
@@ -200,7 +204,7 @@ const MoveList = ({ moves, last }) => (
                         data-fight-move-last={isLast ? 'true' : 'false'}
                     >
                         {m.name}
-                        <CombatGlyph name={m.hits ? damageTypeGlyph(m.type) : 'star'} colour={m.hits ? GLYPH_COLOUR.text : GLYPH_COLOUR.gold} />
+                        <CombatGlyph name={m.hits ? damageTypeGlyph(m.type) : 'star'} colour={GLYPH_COLOUR.text} />
                     </span>
                 </Tooltip>
             );

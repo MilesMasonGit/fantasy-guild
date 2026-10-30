@@ -18,7 +18,7 @@ const StepLine = ({ line }) => (
 const MoveLine = ({ move }) => (
     <span className="inline-flex items-center gap-1 flex-wrap" data-enemy-card-move={move.name}>
         <span className="font-bold">{move.name}</span>
-        <CombatGlyph name={move.hits ? damageTypeGlyph(move.type) : 'star'} colour={move.hits ? GLYPH_COLOUR.text : GLYPH_COLOUR.gold} />
+        <CombatGlyph name={move.hits ? damageTypeGlyph(move.type) : 'star'} colour={GLYPH_COLOUR.text} />
         <span className="ui-text-small text-gi-muted">
             {[move.hits ? damageTypeName(move.type) : null, move.effect].filter(Boolean).join(', ')}
         </span>
