@@ -224,8 +224,10 @@ draws). No floor: a resisted hit can do 0.
 - **Defaults for untyped weapons** as above, so content from before keeps fighting as it did.
 - **Armoured = Physical resistance 50 %** (it was +2 armour: on copper weapons 50 % hits as hard as
   the old armour did).
-- **The level table's armour (1 per 30 levels) is gone** with flat armour; no shipped enemy is that
-  high.
+- **The level table's armour (1 per 30 levels) became 4 HP per 30 levels**: without it the even
+  fight at the start of the gold, mythril, adamantine and darkmetal tiers fell to about 9.4 swings,
+  under the owner's 10 (`CombatRules.test.js` checks every level). No shipped enemy is level 30 or
+  more, so nothing shipped changes.
 - **The floats' words are about the target**: "Weak!" when its weaknesses outweigh its resistances
   across the hit's parts, "Resisted" the other way; the attacker's own Type Damage % says nothing.
 - **A landed hit that does 0 is still a hit**: On Hit rules and Venomous fire on it.
