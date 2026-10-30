@@ -20,6 +20,8 @@ import { skillPurpose } from '../../../config/registries/skillRegistry.js';
 import { heroSkillList, skillLevelText, skillXpView, skillDetail } from '../dock/heroPanelSkills.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
 import { CloseX } from '../base/CloseX.jsx';
+import { skillPerkView, perkLines } from '../dock/heroPerks.js';
+import { t } from '../../../i18n/index.js';
 
 /** The specialist rows' own background. */
 const TIER_BG = {
@@ -178,15 +180,25 @@ const HeroFigure = ({ hero, heroId, size }) => {
     );
 };
 
+/** `10/99 Clean Felling`: one perk as the sheet names it. */
+const perkAtText = (p) => t('heroPanel.perkAt', { level: skillLevelText(p.level), perk: p.title });
+
 /**
- * `[icon] Forestry 25/99` over a thin XP bar, the XP in the game's own tooltip on hover. A click
- * opens it to its exact numbers.
+ * `[icon] Forestry 25/99` over a thin XP bar, the XP and the skill's milestone perks (those held,
+ * then the next) in the game's own tooltip on hover. A click opens it to its exact numbers and
+ * what each perk held does.
  */
 const SkillRow = ({ row, heroId, expanded = false, onToggle }) => {
     const xp = skillXpView(row.xp);
     // What the skill is for comes first: the line the old Work Permissions headers carried.
     const purpose = skillPurpose(row.id);
-    const tipLines = [...(purpose ? [purpose] : []), xp.title];
+    const perks = skillPerkView(row.id, row.level);
+    const tipLines = [
+        ...(purpose ? [purpose] : []),
+        xp.title,
+        ...perks.earned.map(perkAtText),
+        ...perks.next.map(p => t('heroPanel.nextPerk', { perk: perkAtText(p) }))
+    ];
     return (
         <Tooltip title={row.name} lines={tipLines}>
         <div
@@ -212,6 +224,7 @@ const SkillRow = ({ row, heroId, expanded = false, onToggle }) => {
                 </div>
             </div>
             {expanded && <SkillDetail heroId={heroId} row={row} />}
+            {expanded && <SkillPerks perks={perks} />}
         </div>
         </Tooltip>
     );
@@ -237,6 +250,31 @@ const SkillDetail = ({ heroId, row }) => {
                 </div>
             ))}
         </dl>
+    );
+};
+
+/** An opened row's milestone perks: each held one with what it does, then the next. Rows never boxed. */
+const SkillPerks = ({ perks }) => {
+    if (!perks.earned.length && !perks.next.length) return null;
+    return (
+        <div data-skill-perks className="ml-1 mr-1 mb-1 flex flex-col gap-1 leading-tight">
+            {perks.earned.length > 0 && (
+                <span className="text-(length:--font-size-xs) text-gi-muted">{t('heroPanel.perks')}</span>
+            )}
+            {perks.earned.map(p => (
+                <div key={`${p.level}:${p.effectId}`} data-skill-perk={p.effectId} className="flex flex-col">
+                    <span className="text-(length:--font-size-sm) font-bold text-gi-gold">{perkAtText(p)}</span>
+                    {perkLines(p).map((line, i) => (
+                        <span key={i} className="text-(length:--font-size-xs) text-white/80">{line}</span>
+                    ))}
+                </div>
+            ))}
+            {perks.next.map(p => (
+                <span key={`${p.level}:${p.effectId}`} data-skill-next-perk={p.effectId} className="text-(length:--font-size-xs) text-gi-muted">
+                    {t('heroPanel.nextPerk', { perk: perkAtText(p) })}
+                </span>
+            ))}
+        </div>
     );
 };
 

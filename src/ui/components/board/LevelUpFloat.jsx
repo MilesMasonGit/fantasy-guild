@@ -12,8 +12,9 @@ const ROLL_FRAMES_PER_VALUE = 8;
 /**
  * One levelled skill over a hero's head: its icon and its level, free of any frame. The old
  * level flashes a gold outline, then rolls up like an odometer to the new one; at the end of
- * its time it fades. Every step is a CSS animation that starts when the float is first drawn,
- * so nothing here re-renders while it plays.
+ * its time it fades. A milestone perk it reached is named underneath, in gold. Every step is a
+ * CSS animation that starts when the float is first drawn, so nothing here re-renders while it
+ * plays.
  * `unit` is one art pixel in mat units (`boardScaleAt`), `fit` the mat's fit, for the icon's
  * hard shadow.
  */
@@ -35,14 +36,14 @@ const LevelUpFloat = memo(function LevelUpFloat({ f, unit, fit }) {
             data-level-float={f.key}
             data-level-from={f.from}
             data-level-to={f.to}
-            className="gi-lvl-float flex items-center"
+            className="gi-lvl-float flex flex-col items-center"
             style={{
-                gap: unit * 2,
                 '--lvl-u': `${unit}px`,
                 animationDelay: `${fadeDelay}ms`,
                 animationDuration: `${FADE_MS}ms`
             }}
         >
+            <div className="flex items-center" style={{ gap: unit * 2 }}>
             <span className="relative inline-block shrink-0" style={{ width: iconPx, height: iconPx }}>
                 {shadow && <span aria-hidden="true" style={layerStyle(shadow.url, shadow.offset, shadow.offset, iconPx, iconPx)} />}
                 {src ? (
@@ -84,6 +85,16 @@ const LevelUpFloat = memo(function LevelUpFloat({ f, unit, fit }) {
                     </span>
                 )}
             </span>
+            </div>
+            {(f.perks || []).map(title => (
+                <span
+                    key={title}
+                    data-level-perk={title}
+                    className="gi-lvl-perk ui-text-title font-bold whitespace-nowrap"
+                >
+                    {title}
+                </span>
+            ))}
         </div>
     );
 });

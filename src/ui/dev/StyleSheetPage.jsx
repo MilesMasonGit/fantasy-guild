@@ -355,12 +355,12 @@ const AlertOutlineDemo = () => (
     </div>
 );
 
-/** The mat's level-up float, two skills side by side over a patch of ground. */
+/** The mat's level-up float, two skills side by side over a patch of ground, one naming a perk it reached. */
 const LevelUpFloatPatch = () => {
     const [floats] = useState(() => {
         const at = Date.now();
         return [
-            { key: 'mining', skillId: 'mining', skillName: 'Mining', from: 49, to: 50, at, held: false },
+            { key: 'mining', skillId: 'mining', skillName: 'Mining', from: 49, to: 50, at, held: false, perks: ['Steady Pick'] },
             { key: 'logging', skillId: 'logging', skillName: 'Logging', from: 12, to: 15, at, held: false }
         ];
     });
@@ -799,7 +799,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'level-up-float', title: 'Level-up float', status: 'unapproved', source: 'LevelUpFloat (over a hero on the mat)',
-        rule: 'The skill icon at 2× and the level in the display size, no frame, hard shadow. The old number flashes a 1-art-pixel gold outline, rolls up in stepped jumps to the new one, stays about 30 s, then fades in steps.',
+        rule: 'The skill icon at 2× and the level in the display size, no frame, hard shadow. The old number flashes a 1-art-pixel gold outline, rolls up in stepped jumps to the new one, stays about 30 s, then fades in steps. A milestone perk the level-up reached is named underneath in gold, the title size, with the same hard shadow (new, unapproved).',
         Demo: LevelUpFloatDemo
     },
     {

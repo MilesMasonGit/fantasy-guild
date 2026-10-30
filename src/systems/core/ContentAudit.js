@@ -29,6 +29,8 @@ import { toolFindings } from './toolRule.js';
 import { isSpentCategory, isAlwaysOn, ALWAYS_ON_IDLE_WHY } from './consumableRule.js';
 import { SKILLS } from '../../config/registries/skillRegistry.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
+import { authoredSkillPerks } from '../../config/registries/perkRegistry.js';
+import { perkFindings } from './perkRule.js';
 
 /**
  * ContentAudit — one pass over every cross-reference in the content set,
@@ -742,13 +744,24 @@ function auditTools(out) {
 }
 
 /**
+ * Milestone perks: a table on a skill the game does not have, a perk at a level no hero reaches or
+ * naming a missing effect, a rule that does nothing on a hero. The rule lives in `perkRule.js`,
+ * shared with the CMS Economy Audit.
+ */
+function auditPerks(out) {
+    for (const f of perkFindings({ skillPerks: authoredSkillPerks(), effects: EFFECTS })) {
+        out.push(finding(`Skill "${f.entityId}"`, f.message));
+    }
+}
+
+/**
  * Walk everything and return the findings.
  * Exported separately from the reporting so a test can assert on the list.
  */
 export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
-        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems, auditTools,
+        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems, auditTools, auditPerks,
         auditHardcodedLists, (o) => auditStarterCamp(o, starterCamp)
     ];
     for (const step of steps) {

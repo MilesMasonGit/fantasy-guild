@@ -211,5 +211,13 @@
         "idle": "Idle",
         "hurt": "Hurt",
         "busy": "Busy"
+    },
+    "heroBar": {
+        "perk": "Perk: {perk}"
+    },
+    "heroPanel": {
+        "perks": "Perks",
+        "nextPerk": "Next perk: {perk}",
+        "perkAt": "{level} {perk}"
     }
 }

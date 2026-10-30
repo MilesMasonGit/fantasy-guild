@@ -10,18 +10,26 @@ import { perkRowsOf } from '../../systems/hero/perkTable.js';
  *
  * ⚠️ **Never hand-edit `data/skillPerks.json`.** The CMS writes it wholesale on Sync.
  */
-function loadSkillPerks() {
-    const tables = {};
+function loadAuthored() {
+    const authored = {};
     for (const [path, module] of Object.entries(DatabaseManager.skillPerkFilesSingle || {})) {
         try {
-            const data = module.default || module;
-            for (const [skillId, record] of Object.entries(data || {})) {
-                const rows = perkRowsOf(record);
-                if (rows.length) tables[skillId] = rows;
-            }
+            Object.assign(authored, module.default || module);
         } catch (error) {
             console.warn(`[PerkRegistry] Error loading perks from ${path}:`, error);
         }
+    }
+    return authored;
+}
+
+/** The tables as the file holds them, bad rows included, for the boot audit. */
+const AUTHORED = loadAuthored();
+
+function runnable(authored) {
+    const tables = {};
+    for (const [skillId, record] of Object.entries(authored)) {
+        const rows = perkRowsOf(record);
+        if (rows.length) tables[skillId] = rows;
     }
     return tables;
 }
@@ -31,7 +39,12 @@ function loadSkillPerks() {
  * a skill's table for test fixtures and the dev QA scenes.
  * @type {Record<string, ReadonlyArray<{ level: number, effectId: string, scale: number }>>}
  */
-export const SKILL_PERKS = loadSkillPerks();
+export const SKILL_PERKS = runnable(AUTHORED);
+
+/** The perk tables as authored (`{ forestry: { perks } }`), what the audits read. */
+export function authoredSkillPerks() {
+    return AUTHORED;
+}
 
 const NONE = Object.freeze([]);
 
