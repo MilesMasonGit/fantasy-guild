@@ -128,6 +128,31 @@ export function getFilterKind(id) {
     return FILTER_KINDS.find(f => f.id === id) || null;
 }
 
+/**
+ * A selector's single primary mode against a Token definition: untargeted, every Token, an id, a
+ * Token type or a tag. The board (`TileModifiers.matchesTokenTarget`) and the progression ledger's
+ * rate calculator both ask it, before the stacked filters.
+ *
+ * ⚠️ An unknown mode matches NOTHING. A typo in a target spec should make a buff visibly inert, not
+ * silently universal, which would turn a narrow, large effect into a board-wide one.
+ */
+export function targetModeMatches(spec, def) {
+    if (!spec || !spec.mode) return true;   // untargeted
+    if (spec.mode === 'all') return !!def; // every nearby Token
+    if (!def) return false;
+
+    switch (spec.mode) {
+        case 'id':
+            return def.id === spec.value;
+        case 'tokenType':
+            return def.tokenType === spec.value;
+        case 'tag':
+            return (def.tags || []).includes(spec.value);
+        default:
+            return false;
+    }
+}
+
 /** A statement's stacked filters, normalised. Tolerates absence and rubbish. */
 export function filtersOf(spec) {
     const raw = Array.isArray(spec?.filters) ? spec.filters : [];

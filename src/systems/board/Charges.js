@@ -5,10 +5,8 @@ import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers, neverWearsOutType } from '../../config/registries/tokenRegistry.js';
 import { neighbourIds } from './nearby.js';
 import { contextRequirementsOf } from '../../config/registries/recipePoolRegistry.js';
-import { DEFAULT_STATEMENT_CHARGE_DELTA, statementsOf } from '../effects/statements.js';
-import {
-    CHARGE_MOMENT, chargeDeltaOf,
-} from '../../config/registries/chargeMomentRegistry.js';
+import { DEFAULT_STATEMENT_CHARGE_DELTA } from '../effects/statements.js';
+import { DEFAULT_STATION_CHARGE_COST, statementChargeDelta, statementCycleCost } from './cycleCharges.js';
 import * as BoardState from './BoardState.js';
 import * as Hand from './Hand.js';
 import * as Respawn from './Respawn.js';
@@ -31,8 +29,8 @@ import * as Respawn from './Respawn.js';
  * that is why planning and committing are two functions.
  */
 
-/** What a station spends per cycle when its recipe does not say. */
-export const DEFAULT_STATION_CHARGE_COST = 1;
+// What one cycle costs a Token lives in a pure module the progression ledger's rate calculator shares.
+export { DEFAULT_STATION_CHARGE_COST, statementChargeDelta, statementCycleCost };
 
 /**
  * What a triggered statement spends when it does not author a `chargeDelta`: -1, one charge per
@@ -91,45 +89,6 @@ export function canAfford(instance, amount) {
     return instance.usesRemaining >= amount;
 }
 
-/**
- * The charge delta a statement applies at its moment.
- *
- * ⚠️ An absent `chargeDelta` does not mean one thing: it means -1 for a rule that fires and 0 for a
- * rule that does not, because those are what the two kinds of rule have always cost (see
- * `DEFAULT_CHARGE_DELTA_BY_MOMENT`). A single default in either direction would silently re-cost
- * authored content.
- *
- * An authored number always wins, `0` included.
- */
-export function statementChargeDelta(statement) {
-    // One reading, shared with the CMS cost strip: see `chargeDeltaOf`.
-    return chargeDeltaOf(statement, DEFAULT_STATEMENT_CHARGE_DELTA);
-}
-
-/**
- * What this Token's own rules cost it per completed cycle.
- *
- * Only rules that name the per-cycle moment, and only ever a cost: a positive delta is a restore,
- * and a rule that hands its Token charges back every cycle is a perpetual-motion machine rather
- * than an effect. Restores stay on a firing, where something had to happen first.
- *
- * @returns {number} charges per cycle, 0 or more
- */
-export function statementCycleCost(def) {
-    let cost = 0;
-    for (const statement of statementsOf(def)) {
-        // ⚠️ The moment must be AUTHORED, not inferred, to cost anything. An ambient `Grants` (no
-        // `When` clause) can carry a dormant `chargeDelta: -1` that nothing ever spends, because
-        // the only reader of that number is `TriggerSystem.fireStatement`. Inferring per-cycle from
-        // the absence of a `When` clause would turn that dormant -1 into a live cost. So a
-        // per-cycle cost is opt-in: the author picks the moment, the editor writes `chargeWhen`
-        // beside the number, and content that predates the field costs nothing.
-        if (statement?.chargeWhen !== CHARGE_MOMENT.PER_CYCLE) continue;
-        const delta = statementChargeDelta(statement);
-        if (delta < 0) cost += -delta;
-    }
-    return cost;
-}
 
 /**
  * Whether a statement's own charge cost is payable right now. A negative delta gates the effect: it

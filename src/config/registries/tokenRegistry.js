@@ -254,50 +254,8 @@ export function productionRoutes(typeId) {
     }];
 }
 
-/**
- * An output entry's quantity range, as `{ min, max }`.
- *
- * ## Why a range
- * The CMS authors outputs as
- * `{ itemId, chance, minQty, maxQty }` so a Token can yield "2–4 Oak Wood"
- * rather than always exactly 2 — the variability that makes a completion worth
- * watching.
- *
- * **Backwards compatible on purpose:** an entry with only `quantity` reads as
- * the degenerate range `{ min: q, max: q }`.
- *
- * ⚠️ Per-entry `chance` is a **separate** axis and already independent — each
- * output rolls its own chance, so one cycle can yield several different items
- * This is deliberately not the legacy "pick exactly one" cluster
- * behaviour, which stays orphaned.
- */
-export function outputRange(output) {
-    const fallback = output?.quantity ?? 1;
-    const min = output?.minQty ?? fallback;
-    const max = output?.maxQty ?? fallback;
-    // Tolerate an inverted range rather than silently yielding nothing.
-    return min <= max ? { min, max } : { min: max, max: min };
-}
-
-/**
- * A uniform roll within an output's range — what the runtime actually yields
- * before adjacency modifiers are applied.
- */
-export function rollOutputQuantity(output, random = Math.random) {
-    const { min, max } = outputRange(output);
-    return min + Math.floor(random() * (max - min + 1));
-}
-
-/**
- * An output's average quantity per successful roll, ignoring `chance`.
- *
- * Content validation reasons about rates rather than single rolls, so it needs
- * the expected value where the runtime needs a sample.
- */
-export function expectedOutputQuantity(output) {
-    const { min, max } = outputRange(output);
-    return (min + max) / 2;
-}
+// Pure, so the progression ledger's rate calculator reads outputs exactly as the board rolls them.
+export { outputRange, rollOutputQuantity, expectedOutputQuantity } from './tokenConstants.js';
 
 /**
  * ⚠️ Nothing calls this: the statements shape replaced effect blocks. Reads
