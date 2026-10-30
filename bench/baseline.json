@@ -191,6 +191,43 @@
             "cycles"
           ]
         }
+      },
+      {
+        "ticket": "brief270-K1",
+        "commit": "3db1e1c7",
+        "branch": "feat/classless-k1",
+        "dirty": false,
+        "date": "2026-10-30T08:19:16.231Z",
+        "node": "v24.11.1",
+        "scenarios": {
+          "S1": [
+            "heroHash"
+          ],
+          "S2": [
+            "heroHash"
+          ],
+          "S3": [
+            "heroHash"
+          ],
+          "S5": [
+            "heroHash"
+          ],
+          "S6": [
+            "heroHash"
+          ],
+          "S7": [
+            "heroHash"
+          ],
+          "S8": [
+            "heroHash"
+          ],
+          "S8L": [
+            "heroHash"
+          ],
+          "S8F": [
+            "heroHash"
+          ]
+        }
       }
     ]
   },
@@ -207,7 +244,7 @@
         "gameTimeMs": 700000,
         "tokensHash": "60e2ec3c",
         "bankHash": "811c9dc5",
-        "heroHash": "fa9153bf",
+        "heroHash": "fe8ec1a4",
         "spriteHash": "46d39f2f",
         "binHash": "811c9dc5",
         "randomDraws": 256
@@ -228,7 +265,7 @@
         "gameTimeMs": 400000,
         "tokensHash": "0c23b890",
         "bankHash": "4902cc3d",
-        "heroHash": "957d75ff",
+        "heroHash": "937b1c7a",
         "spriteHash": "c0b1bbff",
         "binHash": "811c9dc5",
         "randomDraws": 2227
@@ -249,7 +286,7 @@
         "gameTimeMs": 80000,
         "tokensHash": "d5f4926b",
         "bankHash": "ffb7d0ac",
-        "heroHash": "7df174ba",
+        "heroHash": "e7a686ec",
         "spriteHash": "9b7913f1",
         "binHash": "811c9dc5",
         "randomDraws": 1269
@@ -304,7 +341,7 @@
         "gameTimeMs": 200000,
         "tokensHash": "ec694282",
         "bankHash": "b14aebaf",
-        "heroHash": "68c974d7",
+        "heroHash": "a817ba46",
         "spriteHash": "4bf845f7",
         "binHash": "811c9dc5",
         "randomDraws": 1139
@@ -325,7 +362,7 @@
         "gameTimeMs": 1900000,
         "tokensHash": "d084f2c0",
         "bankHash": "36cf0322",
-        "heroHash": "893a5aac",
+        "heroHash": "a5b03f1e",
         "spriteHash": "027c9747",
         "binHash": "811c9dc5",
         "randomDraws": 10398
@@ -347,7 +384,7 @@
         "gameTimeMs": 180000,
         "tokensHash": "53e3e4e4",
         "bankHash": "1a04e1fb",
-        "heroHash": "b21828d7",
+        "heroHash": "1ed2f9b2",
         "spriteHash": "21a96a91",
         "binHash": "811c9dc5",
         "randomDraws": 3215
@@ -367,7 +404,7 @@
         "gameTimeMs": 3700000,
         "tokensHash": "ba31122c",
         "bankHash": "59b83bab",
-        "heroHash": "94b6f746",
+        "heroHash": "36d8ab30",
         "spriteHash": "28dbf25c",
         "binHash": "811c9dc5",
         "randomDraws": 20329,
@@ -389,7 +426,7 @@
         "gameTimeMs": 3700000,
         "tokensHash": "ba31122c",
         "bankHash": "59b83bab",
-        "heroHash": "94b6f746",
+        "heroHash": "36d8ab30",
         "spriteHash": "28dbf25c",
         "binHash": "811c9dc5",
         "randomDraws": 20329,
@@ -411,7 +448,7 @@
         "gameTimeMs": 3700000,
         "tokensHash": "2701f92a",
         "bankHash": "59b83bab",
-        "heroHash": "1211701b",
+        "heroHash": "92f974cf",
         "spriteHash": "ba10e015",
         "binHash": "811c9dc5",
         "randomDraws": 20356,
