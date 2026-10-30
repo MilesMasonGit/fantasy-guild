@@ -93,6 +93,18 @@ describe('checks on the fixture world', () => {
         expect(on(checksOf(ledgerWorkspace()), itemKey('item_iron_ingot'), 'leak')).toHaveLength(0);
     });
 
+    it('B: a map item may arrive one stage before its Region, not two', () => {
+        // The Volcano Map (plane 2) drops from the Goblin Chief on the Mountain Map (plane 1): by design.
+        expect(on(checksOf(ledgerWorkspace()), itemKey('map_volcano'), 'leak')).toHaveLength(0);
+        const ws = ledgerWorkspace();
+        ws.items.map_volcano.plan = { tier: 3 };
+        expect(on(checksOf(ws), itemKey('map_volcano'), 'leak')[0].message).toMatch(/^Reachable at Plane 1, before its tier \(Plane 3\)/);
+        // Anything else one stage early is still a leak.
+        const copper = ledgerWorkspace();
+        copper.items.item_copper_ingot.plan = { tier: 1 };
+        expect(on(checksOf(copper), itemKey('item_copper_ingot'), 'leak')).toHaveLength(1);
+    });
+
     it('B and C: a one-off find is no leak; an entry only one gets is luck only', () => {
         const ws = withIronChest();
         // The Mountain Map's chest gives Iron Ore at plane 1, but the Volcano's veins are the way the plan means.

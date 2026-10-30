@@ -3,6 +3,7 @@
 import { planOf, PLAN_STATUS, tierLabel } from './plan.js';
 import { HOW, LEDGER_ENGINE_TEXT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey, isOneOff, oneOffFindOf } from './engine.js';
 import { toolOf } from '../../../config/registries/toolKinds.js';
+import { isMapItem } from '../../atlas/mapItems.js';
 
 export { isOneOff };
 
@@ -249,7 +250,9 @@ export function runChecks(ledger, content = {}, { extra = [], luckBelow = LUCK_B
         // Plan against data.
         if (reachable && plan.tier !== null) {
             const path = ledger.pathOf(key);
-            if (at.tier < plan.tier) add('leak', key, `Reachable at ${tierLabel(at.tier)}, before its tier (${tierLabel(plan.tier)}): ${path}.`);
+            // Tutorial, bounty and boss first-kill maps are handed out a stage before their Region by design.
+            const early = kind === 'item' && isMapItem(def) ? 1 : 0;
+            if (at.tier < plan.tier - early) add('leak', key, `Reachable at ${tierLabel(at.tier)}, before its tier (${tierLabel(plan.tier)}): ${path}.`);
             if (at.tier > plan.tier) add('late', key, `First reachable at ${tierLabel(at.tier)}, later than its tier (${tierLabel(plan.tier)}): ${path}.`);
         }
         if (kind === 'item' && plan.tier !== null && reachable) {
