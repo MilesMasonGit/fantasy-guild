@@ -21,10 +21,10 @@ export function SeverityChip({ severity }) {
 
 /**
  * The problems list: every finding of the ledger's checks (integrity, plan against data, luck and
- * access), filtered by severity, group, check and text; a name opens the entry's page. Parked entries
- * are silenced and never listed.
+ * access, pacing), filtered by severity, group, check and text; a name opens the entry's page, a
+ * skill its row on the Pace page. Parked entries are silenced and never listed.
  */
-export default function LedgerProblems({ report, onRefresh, onOpen }) {
+export default function LedgerProblems({ report, onRefresh, onOpen, onOpenSkill = () => {} }) {
   const [severity, setSeverity] = useState('');
   const [group, setGroup] = useState('');
   const [check, setCheck] = useState('');
@@ -88,9 +88,9 @@ export default function LedgerProblems({ report, onRefresh, onOpen }) {
               <tr key={f.id} className="hover:bg-white/[0.03]" data-finding={f.check}>
                 <td style={cell}><SeverityChip severity={f.severity} /></td>
                 <td style={{ ...cell, color: 'var(--color-text-primary)' }}>
-                  {f.key.includes(':') && !f.key.startsWith('camp:') ? (
+                  {/^(item|token|recipe|skill):/.test(f.key) ? (
                     <button
-                      onClick={() => onOpen(f.key)}
+                      onClick={() => (f.key.startsWith('skill:') ? onOpenSkill(f.key.slice(6)) : onOpen(f.key))}
                       className="underline text-left"
                       title={f.key}
                       style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', font: 'inherit' }}

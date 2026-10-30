@@ -21,6 +21,7 @@
     "bench:drag": "node bench/drag.mjs",
     "bench:profile": "node bench/profile.mjs",
     "bench:crisp": "node bench/crisp.mjs",
+    "bench:calibrate": "node bench/calibrate.mjs",
     "bench:micro": "vitest bench --config bench/micro/vitest.config.mjs --run",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",

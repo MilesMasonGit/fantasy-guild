@@ -12,11 +12,13 @@ import { sourcesOf, usesOf, effectiveTier, effortText, firstReachText } from '..
 import { SeverityChip } from './LedgerProblems';
 import LedgerTree, { tierColor } from './LedgerTree';
 import { openInEditor, writePlan } from './ledgerActions';
+import LedgerRates, { LedgerPathTime } from './LedgerRates';
 
 /**
  * An entry's page in the Ledger: its status and set tier against the tier it is first reached at, the
- * path there, its problems, every source and every use, and for an item its whole ingredient tree as
- * a layered diagram with its effort. Any name on it opens that entry's page.
+ * path there, its path time at each profile, its rates (a Token's or recipe's work with every
+ * factor switchable; an item's supply), its problems, every source and every use, and for an item its
+ * whole ingredient tree as a layered diagram with its effort. Any name on it opens that entry's page.
  * ⚠️ Reach, trees and problems are the report's (worked out when the tab opened or on Refresh); the
  * status and tier selects write the record at once and show the new value, the rest after Refresh.
  */
@@ -35,6 +37,8 @@ export default function LedgerItemPage({ entryKey, report, onOpen, onBack, onRef
   const uses = useMemo(() => usesOf(ledger, entryKey, index), [ledger, entryKey, index]);
   const tree = useMemo(() => (kind === 'item' && at && !at.planned ? ledger.treeOf(id) : null), [ledger, kind, id, at]);
   const findings = report.byKey.get(entryKey) || [];
+  // A pacing problem filed under a skill or a stage that names this entry among what waits on it.
+  const waitsOn = report.findings.filter((f) => f.key !== entryKey && f.group === 'D' && (f.related || []).includes(entryKey));
 
   if (!row) {
     return (
@@ -131,6 +135,8 @@ export default function LedgerItemPage({ entryKey, report, onOpen, onBack, onRef
           <LedgerTree tree={tree.tree} tierOf={tierOf} luckOf={luckOf} rootTier={tierOf(entryKey)} onOpen={(k) => k !== entryKey && onOpen(k)} />
         </div>
       )}
+      {report.pace && at && !at.planned && <LedgerPathTime pace={report.pace} ledger={ledger} entryKey={entryKey} onOpen={onOpen} />}
+      {report.pace && <LedgerRates pace={report.pace} ledger={ledger} entryKey={entryKey} onOpen={onOpen} />}
       <div className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Problems">
         <h4 className={sectionHead}>Problems ({findings.length})</h4>
         {findings.length === 0 && <p className="text-[11px] text-gray-500">The checks find nothing here.</p>}
@@ -138,6 +144,14 @@ export default function LedgerItemPage({ entryKey, report, onOpen, onBack, onRef
           <div key={f.id} className="flex items-start gap-2 text-[11px]" data-finding={f.check}>
             <SeverityChip severity={f.severity} />
             <span style={{ color: 'var(--color-text-muted)', minWidth: 190 }}>{f.group}. {CHECKS[f.check]?.label}</span>
+            <span style={{ color: 'var(--color-text-secondary)' }}>{f.message}</span>
+          </div>
+        ))}
+        {waitsOn.length > 0 && <p className="text-[10px] text-gray-500 pt-1">It waits on these, filed under what holds it up:</p>}
+        {waitsOn.map((f) => (
+          <div key={f.id} className="flex items-start gap-2 text-[11px]" data-waits-on={f.check}>
+            <SeverityChip severity={f.severity} />
+            <span style={{ color: 'var(--color-text-muted)', minWidth: 190 }}>{f.name}: {CHECKS[f.check]?.label}</span>
             <span style={{ color: 'var(--color-text-secondary)' }}>{f.message}</span>
           </div>
         ))}

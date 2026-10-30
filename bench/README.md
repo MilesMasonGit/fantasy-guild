@@ -320,6 +320,22 @@ Two scripts in `bench/catchup/` time a long run of game time, for offline progre
 - `time.mjs` and the `ui` / `muted` modes put a virtual wall clock in place (Date.now() moves
   with game time), as the bench does.
 
+## Calibrating the ledger's rate calculator
+
+`npm run bench:calibrate` (`bench/calibrate.mjs`) is not a bench: it times nothing. It plays eight
+small boards of **shipped** content (`bench/calibration/setups.mjs`: a vein, a vein and smelter, a
+forest from its camp, drinks and potions, a Mining Camp over three veins, the Coast, a Wild Wheat
+Patch) through the game's own catch-up, 3 seeds × 8 game-hours each, each in its own process, and
+prints items and XP an hour, engine against the progression ledger's calculator. Exit 1 when a
+number differs by more than 15 % (a known engine fault is marked, not counted), 3 when a run fails.
+About a minute and a half. `--only=vein,coast --hours=4 --seeds=1,2` narrows it; `--trace` keeps a
+run's board events.
+
+A run of every setup writes `bench/calibration/stamp.json`: commit it. It holds each result and a
+hash of every file the calculator imports or follows (`CALIBRATED_FILES` in
+`src/systems/progression/ledger/calibration.js`); the CMS Ledger says the calibration is stale once
+any of them changes. Heavy enough to move timing numbers: never beside a bench.
+
 ## Drawing and drag benches
 
 Two commands drive the real game in the installed **Chrome, headless**, over the
