@@ -34,14 +34,14 @@ describe('QA panel: Hire Random Hero', () => {
         fireEvent.click(view.getByText('Hire Random Hero'));
     }
 
-    it('adds a Recruit on a fresh game with a roster cap of 0', () => {
+    it('adds a hero on a fresh game with a roster cap of 0', () => {
         const game = rosterOf(0);
         hire();
         expect(game.heroes()).toHaveLength(1);
         expect(game.ranks.roster_size).toBe(1);
     });
 
-    it('adds a Recruit to a full roster, raising the cap by exactly one', () => {
+    it('adds a hero to a full roster, raising the cap by exactly one', () => {
         const game = rosterOf(3);
         hire();
         expect(game.heroes()).toHaveLength(4);

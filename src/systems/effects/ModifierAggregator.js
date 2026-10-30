@@ -193,7 +193,7 @@ export class ModifierAggregator {
     /**
      * Collect this aggregator's contributions to the MULTIPLIER bucket as raw
      * factors, so callers can merge them with factors from non-aggregator
-     * sources (tools, mastery) before summing. Returning an array rather than a
+     * sources (tools) before summing. Returning an array rather than a
      * number matters: an EMPTY bucket means ×1, and only the final combiner can
      * know whether the merged bucket is empty.
      *

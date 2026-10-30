@@ -27,8 +27,8 @@ import * as fixtures from '../../bench/fixtures.mjs';
 /**
  * Fights during time away end exactly where the same time played live ends: every swing's miss
  * and crit come from `Math.random` in a fixed order, so a catch-up that replays the same steps
- * replays the same fights. A promoted hero wins a run of duels with two elixirs working; a
- * Recruit eats, loses one and is carried home, wounded.
+ * replays the same fights. A Melee 30 hero wins a run of duels with two elixirs working; a
+ * new hero eats, loses one and is carried home, wounded.
  */
 
 const NOW = 1_800_000_000_000;
@@ -91,7 +91,7 @@ function seeded() {
 const realRandom = Math.random;
 
 /**
- * A Melee 30 hero with a sword and both elixirs, and a Recruit with bread, ale and a Valor, each
+ * A Melee 30 hero with a sword and both elixirs, and a new hero with bread, ale and a Valor, each
  * pinned to a level 5 enemy of their own (six of it), far apart.
  */
 function buildBoard() {
@@ -195,14 +195,14 @@ describe('fights during a catch-up', () => {
         expect(caughtUp).toEqual(plain);
 
         // And the fights really happened: the fighter won several duels and earned XP; the
-        // Recruit lost and was carried home.
+        // new hero lost and was carried home.
         expect(plain.seen.kills).toBeGreaterThanOrEqual(3);
         expect(plain.seen.defeats).toBeGreaterThanOrEqual(1);
         expect(plain.seen.misses).toBeGreaterThan(0);
         expect(plain.heroes[ids.fighterId].xp).toBeGreaterThan(xpForLevel(30));
 
-        // And the supplies were used: both of the fighter's elixirs and the Recruit's Valor were
-        // drunk, and the Recruit ate but never drank (drinks do not heal in a fight).
+        // And the supplies were used: both of the fighter's elixirs and the new hero's Valor were
+        // drunk, and the new hero ate but never drank (drinks do not heal in a fight).
         expect(plain.seen.elixirs).toBeGreaterThanOrEqual(3);
         expect(plain.heroes[ids.fighterId].elixirFights.catchup_valor).toBeLessThan(10);
         expect(plain.heroes[ids.fighterId].elixirFights.catchup_ironskin).toBeLessThan(10);

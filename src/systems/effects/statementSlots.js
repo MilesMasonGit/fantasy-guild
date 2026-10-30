@@ -887,14 +887,6 @@ function chargeHint(delta, moment, rolls = false) {
     const firing = moment === CHARGE_MOMENT.ON_FIRE;
     const n = Math.abs(delta);
     const charges = `${n} charge${n === 1 ? '' : 's'}`;
-    if (moment === CHARGE_MOMENT.ON_PROMOTE) {
-        const promote = delta < 0
-            ? `Spends ${charges} each time a hero accepts a promotion here, and cannot promote anyone with fewer left. This is the whole price of the job.`
-            : delta === 0
-                ? 'Free — this Token promotes any number of heroes and never wears down.'
-                : 'A promotion can only cost charges, never give them back — this spends nothing.';
-        return `${promote} Declining spends nothing. A Token with unlimited charges never runs out. Type a number to set the price.`;
-    }
     const body = delta < 0
         ? firing
             ? `Spends ${charges} each time it fires, and cannot fire at all with fewer left.${rolls ? ' A missed roll is not a firing: it spends nothing.' : ''}`
@@ -947,7 +939,7 @@ export function costSlots(statement) {
         {
             id: 'chargeWhen', kind: SLOT_KIND.VOCABULARY, label: 'spent',
             value: moment,
-            options: chargeMomentsFor(!!statement.when, keyword.id).map(m => option(m.id, m.label, m.hint)),
+            options: chargeMomentsFor(!!statement.when).map(m => option(m.id, m.label, m.hint)),
             patch: v => ({ chargeWhen: v })
         }
     ];

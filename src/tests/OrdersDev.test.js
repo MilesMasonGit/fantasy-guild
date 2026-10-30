@@ -113,7 +113,7 @@ describe('the hero orders QA section', () => {
 });
 
 describe('the tutorial jumps (brief 260 O3)', () => {
-    it('jump to Build a Camp, then back to Send Your Recruit to a Tree: the step on the mat, a hero with the Woodaxe, wood for the camp', () => {
+    it('jump to Build a Camp, then back to Send Your Hero to a Tree: the step on the mat, a hero with the Woodaxe, wood for the camp', () => {
         resetMatTuning();
         GameState.initNew();
         InventoryManager.init();
@@ -126,7 +126,7 @@ describe('the tutorial jumps (brief 260 O3)', () => {
         expect(hero.equipment).toContain('item_copper_woodaxe');
         expect(InventoryManager.getItemCount('item_oak_wood')).toBeGreaterThanOrEqual(60);
 
-        expect(jumpTutorialTo(TUTORIAL_JUMPS.tree)).toMatchObject({ ok: true, title: 'Send Your Recruit to a Tree' });
+        expect(jumpTutorialTo(TUTORIAL_JUMPS.tree)).toMatchObject({ ok: true, title: 'Send Your Hero to a Tree' });
         expect(QuestTokens.tutorialTokens().map(t => t.quest.id)).toEqual(['cart_flag']);
         expect(GameState.state.heroes).toHaveLength(1);
     });

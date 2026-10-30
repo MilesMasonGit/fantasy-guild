@@ -72,7 +72,7 @@ export function OrdersDevSection() {
                         setStatus(r.ok ? `Tutorial at "${r.title}": the first hero holds the Woodaxe; drag them onto a tree` : r.error);
                     }}
                 >
-                    Tutorial: jump to Send Your Recruit to a Tree
+                    Tutorial: jump to Send Your Hero to a Tree
                 </button>
                 <button
                     type="button"

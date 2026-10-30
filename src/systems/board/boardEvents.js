@@ -26,7 +26,7 @@ export const BOARD_EVENTS = {
      * and cycle counting.
      *
      * Payload: `{ instanceId, typeId, heroId, failed, produced }`. ⚠️ Only the work runner
-     * (`BoardRunner`) sends `produced`; combat's kill and a promotion's training cycle omit it, so
+     * (`BoardRunner`) sends `produced`; combat's kill omits it, so
      * a reader must default it.
      */
     CYCLE_COMPLETE: 'board:cycle_complete',
@@ -205,7 +205,7 @@ export const BOARD_EVENTS = {
      * High-frequency cycle progress, for ref-based UI updates only.
      * Payload: `{ instanceId, percent }`, plus `elapsedMs, cycleTimeMs` from the
      * work runner, or `combat: true, enemyHp, enemyMaxHp` from a fight. A reset
-     * to zero (a promotion answered, a flag moved) sends `percent: 0` alone.
+     * to zero (a flag moved) sends `percent: 0` alone.
      */
     PROGRESS: 'board:progress',
 

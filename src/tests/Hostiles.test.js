@@ -75,7 +75,7 @@ function fighter(id) {
     return hero;
 }
 
-/** A Recruit who logs: no combat skill, so they fight as a level 1 fighter. */
+/** A logger with no combat skill on their sheet, so they fight at level 1. */
 function recruit(id) {
     return { id, name: id, status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } };
 }
@@ -241,8 +241,8 @@ describe('⭐ a hostile enemy attacks a hero ordered inside its camp\'s watch (T
     });
 });
 
-describe('everyone fights: a Recruit gatherer is attacked and defends themselves', () => {
-    it('a Recruit logging inside the radius is attacked and fights back', () => {
+describe('everyone fights: a gatherer is attacked and defends themselves', () => {
+    it('a hero logging inside the radius is attacked and fights back', () => {
         GameState.state.heroes = [recruit('r1')];
         const { enemy } = campWith();
         logging('r1', NEAR);

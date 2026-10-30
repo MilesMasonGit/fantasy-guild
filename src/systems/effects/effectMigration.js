@@ -1,4 +1,4 @@
-import { KEYWORD, statementsOf, makeStatement } from './statements.js';
+import { KEYWORD, statementsOf } from './statements.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { EFFECT_ID_PREFIX } from './effectLibrary.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
@@ -59,8 +59,6 @@ export function provisionalName(statement, nameOf = titleCase) {
             return payload.stationKind
                 ? `${stationKindLabel(payload.stationKind)} Station`
                 : `${titleCase(payload.skill) || 'Station'} Station`;
-        case KEYWORD.PROMOTES:
-            return payload.jobId ? `${titleCase(payload.jobId)} Training` : 'Promotion';
         case KEYWORD.PROVIDES: {
             const entry = getPaletteEntry(payload.type);
             const label = entry?.label || titleCase(payload.type) || 'Effect';
@@ -166,79 +164,6 @@ export function migrateBearers(bearers = {}, { existing = {}, nameOf = titleCase
     }
 
     return { effects, bearers: out, moved };
-}
-
-/**
- * A Token's `promotion` field becomes a library effect holding a Promotes rule, so nothing
- * already authored under the old field is lost.
- *
- * ⚠️ Run on the CMS workspace by `useEntityStore` like `migrateBearers`; if the CMS and `data/`
- * disagreed, the next "Sync to Game" would overwrite one with the other.
- *
- * ⚠️ Deterministic ids, not random ones: both copies run this independently, so anything
- * random (`newStatementId`) would give the same rule two ids and churn every sync. The
- * statement id comes from the job; the effect id from its name, made unique against the
- * library it is added to.
- *
- * Rules:
- * - A Token whose `promotion` names a job loses the field and gains a reference.
- * - Every Token promoting to the same job shares one effect; an existing effect holding
- *   exactly one Promotes rule for that job is reused.
- * - A Token whose field names no job is left exactly as it is.
- * - An unknown job still converts (the rule then reads loudly on screen).
- * - Idempotent: a Token with no `promotion` field passes through untouched.
- *
- * @param {Record<string, object>} tokens
- * @param {object} [options]
- * @param {Record<string, object>} [options.existing] the library to add to
- * @returns {{ effects: Record<string, object>, tokens: Record<string, object>, moved: number }}
- */
-export function migratePromotionFields(tokens = {}, { existing = {} } = {}) {
-    const effects = { ...existing };
-    const out = {};
-    let moved = 0;
-
-    const effectFor = (jobId) => Object.keys(effects).find((id) => {
-        const statements = statementsOf(effects[id]);
-        return statements.length === 1
-            && statements[0]?.keyword === KEYWORD.PROMOTES
-            && statements[0]?.payload?.jobId === jobId;
-    });
-
-    const uniqueId = (base) => {
-        let candidate = base;
-        let n = 2;
-        while (effects[candidate]) candidate = `${base}_${n++}`;
-        return candidate;
-    };
-
-    for (const [tokenId, def] of Object.entries(tokens)) {
-        const jobId = def?.promotion?.jobId;
-        if (!def || !Object.prototype.hasOwnProperty.call(def, 'promotion') || typeof jobId !== 'string' || !jobId) {
-            out[tokenId] = def;
-            continue;
-        }
-
-        let effectId = effectFor(jobId);
-        if (!effectId) {
-            const statement = makeStatement(KEYWORD.PROMOTES, {
-                id: `stm_promotes_${slug(jobId)}`,
-                payload: { jobId }
-            });
-            const name = provisionalName(statement);
-            effectId = uniqueId(`${EFFECT_ID_PREFIX}_${slug(name)}`);
-            effects[effectId] = { id: effectId, name, statements: [statement], autoSyncId: true };
-        }
-
-        const refs = Array.isArray(def.effects) ? def.effects : [];
-        const already = refs.some((ref) => (typeof ref === 'string' ? ref : ref?.effectId) === effectId);
-        const next = { ...def, effects: already ? refs : [...refs, { effectId, scale: 1 }] };
-        delete next.promotion;
-        out[tokenId] = next;
-        moved += 1;
-    }
-
-    return { effects, tokens: out, moved };
 }
 
 /**

@@ -88,7 +88,7 @@ registerTokenTypes({
 const VEIN = { x: 400, y: 400 };
 const TREE = { x: 560, y: 400 };
 
-/** A Recruit, or with `combat` a promoted hero of that style: a Recruit holds no weapon. */
+/** A new hero, with `combat` written on their sheet at level 1 when given. */
 function addHero(combat = null) {
     const hero = generateHero();
     if (combat) hero.skills[combat] = { level: 1, xp: 0 };

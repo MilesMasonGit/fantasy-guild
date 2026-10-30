@@ -88,7 +88,6 @@ export {
 // ⚠️ The migration is imported, never reimplemented: it runs over `data/` and over the workspace in the browser (`useEntityStore`), and a second implementation would let the two produce different libraries.
 export {
   migrateBearers,
-  migratePromotionFields,
   migrateAppliesTargetsIn,
   provisionalName,
 } from '../../../src/systems/effects/effectMigration.js';

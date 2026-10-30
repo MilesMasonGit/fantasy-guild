@@ -81,7 +81,7 @@ export function createWorkBar(now = () => performance.now()) {
         },
         /**
          * The engine's progress on a plain cycle: `{ elapsedMs, cycleTimeMs, percent }`. With no
-         * cycle length (a promotion's payload, a reset) the bar holds at `percent`. `live`: a
+         * cycle length (a reset) the bar holds at `percent`. `live`: a
          * hero works it, so it runs on between ticks.
          */
         progress(p, live) {

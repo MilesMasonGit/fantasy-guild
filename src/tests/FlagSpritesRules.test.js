@@ -324,7 +324,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
         Orders.orderAt('h1', C(20));
         expect(flagColourOf('h1')).not.toBe('purplite');
         const board = mount(h(FlagLayer)).container;
-        mount(h(HeroEditModal, { heroId: 'h1', isOpen: true, onClose: () => {}, onChangeJob: () => {} }));
+        mount(h(HeroEditModal, { heroId: 'h1', isOpen: true, onClose: () => {} }));
 
         const swatches = document.querySelectorAll('[data-flag-swatch]');
         expect([...swatches].map(s => s.getAttribute('data-flag-swatch'))).toEqual([...FLAG_COLOURS]);
@@ -350,7 +350,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
         Orders.orderAt('h1', C(20));
         const was = flagColourOf('h1');
         const onClose = vi.fn();
-        mount(h(HeroEditModal, { heroId: 'h1', isOpen: true, onClose, onChangeJob: () => {} }));
+        mount(h(HeroEditModal, { heroId: 'h1', isOpen: true, onClose }));
         await act(async () => { fireEvent.click(document.querySelector('[data-flag-swatch="orange"]')); });
         await act(async () => { fireEvent.click(document.querySelector('[data-flag-swatch="yelpur"]')); });
         expect(flagColourOf('h1')).toBe('yelpur');

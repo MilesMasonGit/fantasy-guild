@@ -134,8 +134,7 @@ export const TokenBubbles = ({
                 }
                 return;
             }
-            // A plain cycle. A payload with no cycle time (promotion training, a reset) keeps the
-            // one the bar knew.
+            // A plain cycle. A payload with no cycle time (a reset) keeps the one the bar knew.
             if (p?.cycleTimeMs) setFight(false);
             if (liveRef.current.blocked) return;   // held while blocked
             bar.progress(p, liveRef.current.hasHero);

@@ -168,7 +168,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(EquipmentManager.equipItem(heroId, AXE).success).toBe(true);
         claim('cart_tool');
 
-        // 3. Send the Recruit to a tree: the player's drop onto an Oak Tree. Bare ground does not
+        // 3. Send the hero to a tree: the player's drop onto an Oak Tree. Bare ground does not
         // count.
         expect(Orders.orderAt(heroId, { x: 600, y: 300 })).toMatchObject({ success: true, order: 'spot' });
         expect(complete('cart_flag')).toBe(false);
@@ -262,7 +262,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
 
         // 11. Beat a goblin. A Cow (it never attacks first) does not count; a Goblin does, and
         // pays the maps given by the tutorial.
-        // ⚠️ Fixture: a Recruit fights as a level 1 fighter and is often knocked out before the
+        // ⚠️ Fixture: a new hero fights at level 1 and is often knocked out before the
         // first kill, so the hero is lent a combat skill at level 40.
         GameState.heroes[0].skills[COMBAT_SKILL_IDS[0]] = { xp: 0, level: 40 };
         // And fed, as the step tells the player ("Give a Hero food first"): the Steak equipped in

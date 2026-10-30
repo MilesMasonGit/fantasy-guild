@@ -38,8 +38,8 @@ Token's problem mark says each of these instead, and its hover gives the exact r
 | 4 | {token} has nothing to make. | Same situation as 3, when the game can't name what is missing. | **Retired** |
 | 5 | {token} has too few charges left. | The Token, or a Token next to it that the recipe uses, hasn't enough charges for one more cycle. | **Retired** |
 | 6 | There is no room for what {token} makes. | A finished cycle makes a Token and there is nowhere for it to go (mat full or too crowded around it), or a Foundation's building has nowhere legal to stand. | **Retired** |
-| 7 | My {skill} level is too low to work {token}. | The hero has the skill but not a high enough level (also used by promotion Tokens). If the Token names no skill it reads "My level is too low to work {token}." (FB-54). | **Retired** |
-| 8 | I don't have the {skill} skill to work {token}. | The hero doesn't have that skill at all (also used by promotion Tokens). If the Token names no skill it reads "I don't have the skill to work {token}." (FB-54). | **Retired** |
+| 7 | My {skill} level is too low to work {token}. | The hero has the skill but not a high enough level. If the Token names no skill it reads "My level is too low to work {token}." (FB-54). | **Retired** |
+| 8 | I don't have the {skill} skill to work {token}. | The hero doesn't have that skill at all. If the Token names no skill it reads "I don't have the skill to work {token}." (FB-54). | **Retired** |
 | 9 | Choose a recipe for {token}. | A hero is on a station that has no recipe chosen. *(The Q1 line.)* | **Dropped (FB-21)** — after Q1 you ruled that an unset station shows only its gear, with no alert: it is waiting, not broken. The hero now keeps quiet too, to match. Rare anyway: heroes don't go to unset stations, so this only happened if a recipe was cleared while a hero was working. **Retired** with the rest: the yellow mark says "Choose a recipe". |
 | 10 | Choose what to build on {token}. | The same for a Foundation with nothing chosen. | **Dropped (FB-21)** — the same ruling covered Foundations ("Choose what to build" alert replaced by the gear), so we treated it the same way. **Retired** with the rest: the yellow mark says "Choose what to build". |
 
@@ -63,8 +63,7 @@ arrives. A red problem beats a yellow one when a Token has both.
 | A spawner with nowhere to put a spawn | red | No room to spawn |
 | A spawner at the mat's Token cap | red | Token cap full |
 
-Every problem the engine raises has a mark, a promotion Token's included (its skill and
-charges rows above). A resting Token is not a problem: it is drawn greyed, with no mark.
+Every problem the engine raises has a mark. A resting Token is not a problem: it is drawn greyed, with no mark.
 
 ## 2. Moments (things that happened)
 

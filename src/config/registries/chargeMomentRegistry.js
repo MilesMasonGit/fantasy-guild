@@ -26,8 +26,7 @@
 
 export const CHARGE_MOMENT = Object.freeze({
     ON_FIRE: 'on_fire',
-    PER_CYCLE: 'per_cycle',
-    ON_PROMOTE: 'on_promote'
+    PER_CYCLE: 'per_cycle'
 });
 
 /**
@@ -56,20 +55,6 @@ export const CHARGE_MOMENTS = Object.freeze([
         phrase: 'every cycle of this Token',
         requiresTrigger: false,
         hint: 'Spent alongside the Token’s own work cost, each cycle it completes. A Token with no work cycle never completes one, so a cost here is never charged.'
-    },
-    {
-        /**
- * ⭐ **The price of a promotion.**
-         * `BoardPromotion.accept` spends it, and nothing else does. It belongs
-         * to the `promotes` keyword alone (`keyword`), so no other rule is
-         * offered it and a `Promotes` rule is offered nothing else.
-         */
-        id: CHARGE_MOMENT.ON_PROMOTE,
-        label: 'Each hero promoted',
-        phrase: 'per hero promoted',
-        requiresTrigger: false,
-        keyword: 'promotes',
-        hint: 'Spent when the player accepts a promotion on this Token — the whole price of the job. Declining spends nothing.'
     }
 ]);
 
@@ -78,14 +63,9 @@ export function getChargeMoment(id) {
     return CHARGE_MOMENTS.find(m => m.id === id) || null;
 }
 
-/**
- * The moments a statement may legally use, given whether it carries a trigger
- * and, for a keyword that owns a moment, which keyword it is.
- */
-export function chargeMomentsFor(hasTrigger, keywordId = null) {
-    const owned = CHARGE_MOMENTS.filter(m => m.keyword && m.keyword === keywordId);
-    if (owned.length) return owned;
-    return CHARGE_MOMENTS.filter(m => !m.keyword && (hasTrigger ? true : !m.requiresTrigger));
+/** The moments a statement may legally use, given whether it carries a trigger. */
+export function chargeMomentsFor(hasTrigger) {
+    return CHARGE_MOMENTS.filter(m => hasTrigger || !m.requiresTrigger);
 }
 
 /**
@@ -102,15 +82,13 @@ export function chargeMomentsFor(hasTrigger, keywordId = null) {
  *   carrying an aura — content the owner authored on the understanding that an
  *   aura is free.
  *
- * So the default is per moment: firing costs one, everything else costs nothing,
- * a promotion included (an Academy promotes for free unless its author prices it).
+ * So the default is per moment: firing costs one, everything else costs nothing.
  * An author who wants otherwise writes a number, and an explicit `0` remains
  * distinguishable from a blank exactly as it was.
  */
 export const DEFAULT_CHARGE_DELTA_BY_MOMENT = Object.freeze({
     [CHARGE_MOMENT.ON_FIRE]: -1,
-    [CHARGE_MOMENT.PER_CYCLE]: 0,
-    [CHARGE_MOMENT.ON_PROMOTE]: 0
+    [CHARGE_MOMENT.PER_CYCLE]: 0
 });
 
 /**
@@ -121,8 +99,6 @@ export const DEFAULT_CHARGE_DELTA_BY_MOMENT = Object.freeze({
  * every statement without `chargeWhen` keeps its behaviour.
  */
 export function chargeMomentOf(statement) {
-    // A Promotes rule spends at one moment only, whatever else it carries.
-    if (statement?.keyword === 'promotes') return CHARGE_MOMENT.ON_PROMOTE;
     const authored = statement?.chargeWhen;
     if (getChargeMoment(authored)) return authored;
     return statement?.when ? CHARGE_MOMENT.ON_FIRE : CHARGE_MOMENT.PER_CYCLE;
@@ -133,10 +109,7 @@ export function chargeMomentOf(statement) {
  * by the board (`Charges.statementChargeDelta`) and the CMS cost strip
  * (`costSlots`), so the number an author sees is the number the game spends.
  *
- * An authored `chargeDelta` wins, `0` included — with one exception.
- *
- * ## ⚠️ A Promotes rule's number counts only once its moment is authored
- * `makeStatement` stamps a `chargeDelta` on keywords that cannot fire, so an absent `chargeWhen` means "never set": the default, which is free. Typing a cost in the strip writes `chargeWhen` beside it, and from then on the number is the author's price. `Charges.statementCycleCost` applies the same opt-in rule to per-cycle costs.
+ * An authored `chargeDelta` wins, `0` included.
  *
  * @param {object} statement
  * @param {number} fallback  used when a moment declares no default
@@ -144,8 +117,6 @@ export function chargeMomentOf(statement) {
 export function chargeDeltaOf(statement, fallback = -1) {
     const moment = chargeMomentOf(statement);
     const authored = statement?.chargeDelta;
-    const counts = typeof authored === 'number'
-        && (moment !== CHARGE_MOMENT.ON_PROMOTE || statement?.chargeWhen === CHARGE_MOMENT.ON_PROMOTE);
-    if (counts) return authored;
+    if (typeof authored === 'number') return authored;
     return DEFAULT_CHARGE_DELTA_BY_MOMENT[moment] ?? fallback;
 }
