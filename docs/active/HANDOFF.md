@@ -19,22 +19,15 @@ file and `STATUS.md`, then verify with `git worktree list` and `git log
 - Brief 290 was revised twice by planning tonight (S0 spike first; a rate
   calculator replaces the pretend player in L5). L1–L3 as built are unaffected.
 
-## Overnight (timers in this session; logs in its scratchpad, which a new session cannot see)
+## Overnight (done, Fri 01:05–01:30)
 
-1. 01:05 **O3** (`feat/hero-orders-o3`, `tb1`): `bench --compare`, expect same
-   work → merge to `main` (owner okayed), push, remove `tb1`.
-2. Then **K1 classless heroes** (`feat/classless-k1`, `k1`, holds O3, `main` and
-   the tags Sync): `bench --compare`, expect heroHash only (20 skills, start HP
-   11) → accept under `brief270-K1` (`--accept` per bench/README) → merge, push.
-   **Owner okayed the look**, all questions A. Then archive
-   `docs/active/eyecheck/2026-10-30_classless-ledger.md` and tell the owner the
-   CMS to-do in it.
-3. Then **Bank at scale** (`feat/bank-b1`, `b1`): `bench --compare` (expect same)
-   and `bench:drag --kinds=equip`. Waits for the owner's look (with perks).
-4. Then **perks** (`k4`): `bench --compare`, expect same work.
-
-**If a timer did not run** (session ended): run them by hand in a bench window,
-in that order, one at a time.
+- **O3 and K1 merged** to `main` 7920232e (pushed): O3 same work; K1 heroHash
+  only, accepted under `brief270-K1`; gate on the merged result 6581 tests.
+  Worktrees `tb1` and `k1` removed. Classless record archived with the owner's
+  CMS to-do: `docs/archive/eyecheck/2026-10-30_classless-ledger.md`.
+- **Bank** (`b1`): same work, drag `equip` 50/50. **Perks** (`k4`): hero hashes
+  identical to K1's, so same work against the new baseline. Both wait for the
+  owner's look; when merging, merge `main` in first and re-run the gate.
 
 ## Building
 
