@@ -2989,6 +2989,158 @@
     }
   },
   {
+    "id": "recipe_build_logging_camp",
+    "name": "Build Logging Camp",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 20
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_logging_camp",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 60000,
+    "stationChargeCost": 1,
+    "xp": 10,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_mining_camp",
+    "name": "Build Mining Camp",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_stone",
+        "quantity": 15
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 10
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_mining_camp",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 90000,
+    "stationChargeCost": 1,
+    "xp": 10,
+    "foundationKinds": [
+      "stone"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_fishing_hut",
+    "name": "Build Fishing Hut",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 15
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_fishing_hut",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 60000,
+    "stationChargeCost": 1,
+    "xp": 10,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_farmstead",
+    "name": "Build Farmstead",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 20
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_farmstead",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 60000,
+    "stationChargeCost": 1,
+    "xp": 10,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
     "id": "recipe_birdwatcher",
     "name": "Birdwatcher",
     "skill": "alchemy",
