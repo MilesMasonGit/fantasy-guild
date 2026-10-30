@@ -884,7 +884,16 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
               }
               // ⚠️ The plan never goes into `data/`, even when a caller puts it among the files.
               const { [PLAN_SYNC_KEY]: stray, ...files } = parsed.files;
-              const plan = parsed.plan ?? stray ?? null;
+              let plan = parsed.plan ?? stray ?? null;
+              // ⚠️ A workspace that never set the Ledger settings sends none: the file's own are kept, never wiped.
+              if (plan && typeof plan === 'object' && !plan.settings) {
+                try {
+                  const onDisk = readPlan();
+                  if (onDisk?.settings) plan = { ...plan, settings: onDisk.settings };
+                } catch {
+                  // An unreadable plan file has no settings to keep.
+                }
+              }
 
               // A stale browser workspace once synced over newer content and silently dropped it, so a Sync that would
               // remove anything the game has writes nothing until the author confirms.

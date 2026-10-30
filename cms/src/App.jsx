@@ -8,6 +8,7 @@ import EffectEditor from './components/editors/EffectEditor';
 import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
 import AuditPanel from './components/audit/AuditPanel';
 import ProgressionPanel from './components/progression/ProgressionPanel';
+import LedgerPanel from './components/ledger/LedgerPanel';
 import StarterCampPage from './components/starterCamp/StarterCampPage';
 import ChangesPage from './components/changes/ChangesPage';
 import { useEntityStore } from './stores/useEntityStore';
@@ -27,6 +28,7 @@ function App() {
       {({ currentView, openGenerate, setCurrentView }) => {
         if (currentView === 'recipes') return <RecipeEditor />;
         if (currentView === 'progression') return <ProgressionPanel />;
+        if (currentView === 'ledger') return <LedgerPanel setCurrentView={setCurrentView} />;
         if (currentView === 'starterCamp') return <div className="h-full overflow-y-auto"><StarterCampPage /></div>;
         if (currentView === 'changes') return <ChangesPage setCurrentView={setCurrentView} />;
         if (currentView === 'sprites') return <SpriteAuditDashboard />;

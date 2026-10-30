@@ -14,6 +14,7 @@ export function snapshot(state) {
     effects: state.effects,
     recipePools: state.recipePools,
     starterCamp: state.starterCamp,
+    planSettings: state.planSettings,
   };
 }
 
