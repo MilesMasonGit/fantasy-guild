@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 
 import { useEntityStore } from '../../stores/useEntityStore';
@@ -7,6 +7,14 @@ import { effectiveTier } from '../../engine/ledgerPage';
 import { hoursText } from '../../engine/ledgerPace';
 import { tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import { tierColor } from './LedgerTree';
+import { useLedgerWatchStore } from '../../stores/useLedgerWatchStore';
+import { compareSnapshots, moveText } from '../../engine/ledgerCompare';
+import LedgerChanges, { EARLIER, LATER, GONE, NEW } from './LedgerChanges';
+
+/** What the ghosts compare with: nothing, the workspace before the last edit, or what the last Sync wrote. */
+const COMPARE = [['off', 'Off'], ['edit', 'Before the last edit'], ['sync', 'Since the last Sync']];
+const GHOST_COLOR = { earlier: EARLIER, later: LATER, lane: '#e5e7eb', gone: GONE };
+const MAX_GHOSTS = 250;
 
 const sectionHead = 'text-[10px] font-black uppercase tracking-wider text-gray-400';
 const cell = { padding: '4px 8px', fontSize: 11, borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'top' };
@@ -32,12 +40,26 @@ const CURVE = '#60a5fa';
  * tier; walls hatched red and labelled with what holds them up; crowded spots glowing, empty
  * stretches grey; the stages' finish and budget as lines across. A dot or a wall's label opens the
  * entry's page; a lane's name its row on the Pace page.
+ * Before and after: ghost dots where entries were before the last edit or at the last Sync, with an
+ * arrow to where they are now, and the moved entries listed below (`useLedgerWatchStore`, worked
+ * out in the ledger's Worker after every edit).
  */
 export default function LedgerTimeline({ report, onRefresh, onOpen, onOpenSkill = () => {} }) {
   const items = useEntityStore((s) => s.items);
   const tokens = useEntityStore((s) => s.tokens);
   const recipePools = useEntityStore((s) => s.recipePools);
   const { pace, ledger, findings } = report;
+  const [compare, setCompare] = useState('off');
+  const current = useLedgerWatchStore((s) => s.current);
+  const previous = useLedgerWatchStore((s) => s.previous);
+  const sync = useLedgerWatchStore((s) => s.sync);
+  const syncLoading = useLedgerWatchStore((s) => s.syncLoading);
+  const syncError = useLedgerWatchStore((s) => s.syncError);
+  const busy = useLedgerWatchStore((s) => s.busy);
+  const loadSync = useLedgerWatchStore((s) => s.loadSync);
+  useEffect(() => { if (compare === 'sync' && !sync && !syncLoading && !syncError) loadSync(); }, [compare, sync, syncLoading, syncError, loadSync]);
+  const base = compare === 'edit' ? previous : compare === 'sync' ? sync : null;
+  const diff = useMemo(() => (base && current ? compareSnapshots(base, current) : null), [base, current]);
   const timeline = useMemo(() => {
     if (!pace) return null;
     const state = { items, tokens, recipePools };
@@ -63,10 +85,21 @@ export default function LedgerTimeline({ report, onRefresh, onOpen, onOpenSkill 
       </div>
 
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Timeline">
-        <h3 className={sectionHead}>Timeline at Typical</h3>
-        <Legend />
-        <TimelineChart timeline={timeline} onOpen={onOpen} onOpenSkill={onOpenSkill} />
+        <div className="flex items-center justify-between gap-3">
+          <h3 className={sectionHead}>Timeline at Typical</h3>
+          <CompareBar compare={compare} setCompare={setCompare} />
+        </div>
+        <Legend ghosts={!!diff} />
+        <CompareNote compare={compare} diff={diff} current={current} base={base} report={report} busy={busy} syncLoading={syncLoading} syncError={syncError} onRetry={loadSync} />
+        <TimelineChart timeline={timeline} onOpen={onOpen} onOpenSkill={onOpenSkill} diff={diff} />
       </section>
+
+      {diff && (
+        <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Before and after">
+          <h3 className={sectionHead}>{compare === 'edit' ? 'What the last edit moved' : 'What moved since the last Sync'}</h3>
+          <LedgerChanges diff={diff} onOpen={onOpen} />
+        </section>
+      )}
 
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Lanes">
         <h3 className={sectionHead}>By skill</h3>
@@ -107,7 +140,53 @@ export default function LedgerTimeline({ report, onRefresh, onOpen, onOpenSkill 
   );
 }
 
-function Legend() {
+function CompareBar({ compare, setCompare }) {
+  return (
+    <div className="flex items-center gap-1" role="group" aria-label="Before and after">
+      <span className="text-[10px] text-gray-500 mr-1">Ghosts:</span>
+      {COMPARE.map(([key, label]) => (
+        <button
+          key={key}
+          onClick={() => setCompare(key)}
+          aria-pressed={compare === key}
+          className="px-2 py-1 rounded text-[11px] font-bold"
+          style={{
+            background: compare === key ? 'var(--color-accent-muted)' : 'transparent',
+            color: compare === key ? 'var(--color-accent-hover)' : 'var(--color-text-muted)',
+            border: '1px solid var(--color-border-subtle)', cursor: 'pointer',
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** What the ghosts are showing, or why there are none yet. */
+function CompareNote({ compare, diff, current, base, report, busy, syncLoading, syncError, onRetry }) {
+  if (compare === 'off') return null;
+  let text;
+  if (compare === 'sync' && syncError) {
+    return (
+      <p className="text-[11px]" style={{ color: 'var(--color-error)' }}>
+        Could not read what the last Sync wrote: {syncError}. <button className="underline" style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }} onClick={onRetry}>Try again</button>
+      </p>
+    );
+  }
+  if (compare === 'sync' && syncLoading) text = 'Working out what the last Sync wrote…';
+  else if (!current) text = busy ? 'Working out the ledger in the background…' : 'The before-and-after is not worked out yet.';
+  else if (compare === 'edit' && !base) text = 'No edit since the CMS opened: the ghosts show where entries were before your next edit.';
+  else if (diff) {
+    text = diff.moved.length
+      ? `Hollow dots: where ${diff.moved.length} entr${diff.moved.length === 1 ? 'y was' : 'ies were'} ${compare === 'edit' ? 'before the last edit' : 'at the last Sync'}; the arrow points to where it is now.`
+      : `Nothing has moved ${compare === 'edit' ? 'with the last edit' : 'since the last Sync'}.`;
+    if (current.at > report.at.getTime()) text += ' The dots are as of the last Refresh; Refresh to draw them where they are now.';
+  }
+  return <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }} data-compare-note>{text}{busy && current ? ' (updating…)' : ''}</p>;
+}
+
+function Legend({ ghosts = false }) {
   const item = (swatch, text) => (
     <span className="inline-flex items-center gap-1.5 mr-4">{swatch}<span>{text}</span></span>
   );
@@ -120,6 +199,10 @@ function Legend() {
       {item(<svg width={18} height={10}><rect width={18} height={10} fill="url(#ledger-hatch-legend)" /><defs><Hatch id="ledger-hatch-legend" /></defs></svg>, 'wall')}
       {item(<svg width={18} height={10}><rect width={18} height={10} rx={3} fill={CROWD} opacity={0.22} /></svg>, `crowded (${CROWD_MIN}+ at once)`)}
       {item(<svg width={18} height={10}><rect width={18} height={10} fill="rgba(156,163,175,0.16)" /></svg>, `empty (nothing new for ${EMPTY_LEVELS} curve levels)`)}
+      {ghosts && item(<svg width={22} height={10}><circle cx={5} cy={5} r={3.5} fill="none" stroke={EARLIER} strokeDasharray="2 1.5" /><line x1={10} y1={5} x2={21} y2={5} stroke={EARLIER} /></svg>, 'was here, now earlier')}
+      {ghosts && item(<svg width={22} height={10}><circle cx={5} cy={5} r={3.5} fill="none" stroke={LATER} strokeDasharray="2 1.5" /><line x1={10} y1={5} x2={21} y2={5} stroke={LATER} /></svg>, 'now later')}
+      {ghosts && item(<svg width={10} height={10}><circle cx={5} cy={5} r={3.5} fill="none" stroke={GONE} strokeDasharray="2 1.5" /></svg>, 'no longer reached')}
+      {ghosts && item(<svg width={12} height={12}><circle cx={6} cy={6} r={5} fill="none" stroke={NEW} strokeWidth={1.5} /></svg>, 'newly reached')}
     </p>
   );
 }
@@ -133,7 +216,14 @@ function Hatch({ id }) {
   );
 }
 
-function TimelineChart({ timeline, onOpen, onOpenSkill }) {
+function laneY(lane, top, plot, level) {
+  const bottom = top + plot;
+  return lane.top > 1 ? bottom - 4 - ((level - 1) / (lane.top - 1)) * (plot - WALL_BAR - 8) : bottom - plot / 2;
+}
+
+const otherY = (top, i) => top + 8 + (i % OTHER_ROWS) * 9;
+
+function TimelineChart({ timeline, onOpen, onOpenSkill, diff = null }) {
   const lo = 1 / 60;
   const hi = Math.max(timeline.maxHours * 1.15, 1);
   const x0 = GUTTER;
@@ -179,16 +269,77 @@ function TimelineChart({ timeline, onOpen, onOpenSkill }) {
       {lanes.map(({ lane, top, plot }) => (
         <Lane key={lane.id} lane={lane} top={top} plot={plot} x={x} x0={x0} x1={x1} onOpen={onOpen} onOpenSkill={onOpenSkill} />
       ))}
+
+      {diff && <Ghosts diff={diff} lanes={lanes} x={x} onOpen={onOpen} />}
     </svg>
+  );
+}
+
+/**
+ * The ghosts of a comparison: a hollow dot where each moved entry was, an arrow to where it is
+ * drawn now (or, when the dots are older than the comparison, to where it is now), and a ring
+ * round each newly reached one.
+ */
+function Ghosts({ diff, lanes, x, onOpen }) {
+  const geo = new Map(lanes.map((g) => [g.lane.id, g]));
+  const drawn = new Map();
+  for (const { lane, top, plot } of lanes) {
+    lane.dots.forEach((d, i) => drawn.set(d.key, { x: x(d.hours), y: lane.id === OTHER_LANE ? otherY(top, i) : laneY(lane, top, plot, d.level ?? 1) }));
+  }
+  const at = (where) => {
+    if (!where) return null;
+    const g = geo.get(where.lane);
+    if (!g) return null;
+    return { x: x(where.hours), y: where.lane === OTHER_LANE ? otherY(g.top, 1) : laneY(g.lane, g.top, g.plot, where.level ?? 1) };
+  };
+  const moved = diff.moved.filter((m) => m.change !== 'new').slice(0, MAX_GHOSTS);
+  const fresh = diff.moved.filter((m) => m.change === 'new').slice(0, MAX_GHOSTS);
+
+  return (
+    <g data-ghosts>
+      <defs>
+        {Object.entries(GHOST_COLOR).map(([change, color]) => (
+          <marker key={change} id={`ledger-arrow-${change}`} viewBox="0 0 6 6" refX={5} refY={3} markerWidth={5} markerHeight={5} orient="auto">
+            <path d="M0,0 L6,3 L0,6 z" fill={color} />
+          </marker>
+        ))}
+      </defs>
+      {moved.map((m) => {
+        const from = at(m.from);
+        if (!from) return null;
+        const to = m.change === 'gone' ? null : drawn.get(m.key) ?? at(m.to);
+        const color = GHOST_COLOR[m.change];
+        const len = to ? Math.hypot(to.x - from.x, to.y - from.y) : 0;
+        const k = len > 9 ? (len - 5) / len : 0;
+        return (
+          <g key={m.key} data-ghost={m.key} style={{ cursor: 'pointer' }} onClick={() => onOpen(m.key)}>
+            <title>{`${m.name}: ${moveText(m)}`}</title>
+            {to && k > 0 && (
+              <line x1={from.x} y1={from.y} x2={from.x + (to.x - from.x) * k} y2={from.y + (to.y - from.y) * k} stroke={color} strokeOpacity={0.75} strokeWidth={1} markerEnd={`url(#ledger-arrow-${m.change})`} />
+            )}
+            <circle cx={from.x} cy={from.y} r={4} fill="rgba(15,15,18,0.6)" stroke={color} strokeWidth={1.25} strokeDasharray="2 1.5" />
+          </g>
+        );
+      })}
+      {fresh.map((m) => {
+        const to = drawn.get(m.key) ?? at(m.to);
+        if (!to) return null;
+        return (
+          <circle key={m.key} cx={to.x} cy={to.y} r={6.5} fill="none" stroke={NEW} strokeWidth={1.5} data-ghost-new={m.key} pointerEvents="none">
+            <title>{`${m.name}: ${moveText(m)}`}</title>
+          </circle>
+        );
+      })}
+    </g>
   );
 }
 
 function Lane({ lane, top, plot, x, x0, x1, onOpen, onOpenSkill }) {
   const other = lane.id === OTHER_LANE;
   const bottom = top + plot;
-  const y = (level) => (lane.top > 1 ? bottom - 4 - ((level - 1) / (lane.top - 1)) * (plot - WALL_BAR - 8) : bottom - plot / 2);
+  const y = (level) => laneY(lane, top, plot, level);
   const line = (points) => points.filter((p) => Number.isFinite(p.hours)).map((p) => `${x(p.hours).toFixed(1)},${y(p.level).toFixed(1)}`).join(' ');
-  const dotY = (d, i) => (other ? top + 8 + (i % OTHER_ROWS) * 9 : y(d.level ?? 1));
+  const dotY = (d, i) => (other ? otherY(top, i) : y(d.level ?? 1));
 
   return (
     <g data-lane={lane.id}>

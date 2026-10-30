@@ -8,12 +8,14 @@ import { SKILLS } from '../../utils/constants';
 import {
   rowState, accept, force, applyEarly, reject, acceptAll, rejectAll, finish, planUndo, undo,
 } from '../../engine/packReview';
+import { workspaceFingerprint } from '../../engine/packGate';
+import PackGate, { GateBadge } from './PackGate';
 
 /**
  * Changes to review: agents' change packs (`cms/incoming/`), one row per entry, accepted or
  * rejected here or opened in the normal editor to tweak first. Finish applies the accepted entries
  * to this workspace (the owner then Syncs as usual) and archives the pack; Undo puts an archived
- * pack's entries back as they were.
+ * pack's entries back as they were. The agent gate runs again when a pack opens (`PackGate`).
  */
 
 const OP_LOOK = {
@@ -45,7 +47,8 @@ function useWorkspace() {
   const recipePools = useEntityStore((s) => s.recipePools);
   const starterCamp = useEntityStore((s) => s.starterCamp);
   const skillPerks = useEntityStore((s) => s.skillPerks);
-  return useMemo(() => ({ items, tokens, effects, recipePools, starterCamp, skillPerks }), [items, tokens, effects, recipePools, starterCamp, skillPerks]);
+  const planSettings = useEntityStore((s) => s.planSettings);
+  return useMemo(() => ({ items, tokens, effects, recipePools, starterCamp, skillPerks, planSettings }), [items, tokens, effects, recipePools, starterCamp, skillPerks, planSettings]);
 }
 
 /** Write review results into the workspace; an open editor on an entity that just went away is closed. */
@@ -81,6 +84,8 @@ export default function ChangesPage({ setCurrentView }) {
   const [selected, setSelected] = useState(null);
   const [pack, setPack] = useState(null);
   const [error, setError] = useState('');
+  const ws = useWorkspace();
+  const fingerprintNow = useMemo(() => workspaceFingerprint(ws), [ws]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -116,7 +121,7 @@ export default function ChangesPage({ setCurrentView }) {
         {listingError && <p className="text-xs" style={{ color: 'var(--color-error)' }}>Could not read the inbox: {listingError}</p>}
         {inbox.length === 0 && <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Nothing waiting. Agents put packs in <code>cms/incoming/</code>.</p>}
         {inbox.map((p) => (
-          <PackCard key={p.file} summary={p} active={selected?.where === 'inbox' && selected.file === p.file} onClick={() => open('inbox', p.file)} />
+          <PackCard key={p.file} summary={p} fingerprintNow={fingerprintNow} active={selected?.where === 'inbox' && selected.file === p.file} onClick={() => open('inbox', p.file)} />
         ))}
 
         <h3 className="text-xs font-semibold uppercase tracking-wider pt-2 flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
@@ -144,7 +149,7 @@ export default function ChangesPage({ setCurrentView }) {
   );
 }
 
-function PackCard({ summary, archived, active, onClick }) {
+function PackCard({ summary, archived, active, onClick, fingerprintNow = null }) {
   const bad = summary.errors?.length > 0;
   return (
     <button
@@ -163,6 +168,7 @@ function PackCard({ summary, archived, active, onClick }) {
           ? `${summary.review?.applied ?? 0} of ${summary.entries} applied · ${when(summary.review?.finishedAt)}`
           : `${summary.entries} entr${summary.entries === 1 ? 'y' : 'ies'} · ${when(summary.createdAt)}`}
       </div>
+      {!bad && !archived && <GateBadge summary={summary} fingerprintNow={fingerprintNow} />}
       {bad && (
         <ul className="text-[11px] mt-1 list-disc pl-4" style={{ color: 'var(--color-error)' }}>
           {summary.errors.slice(0, 4).map((e) => <li key={e}>{e}</li>)}
@@ -265,6 +271,8 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
         )}
         {error && <p className="text-xs" style={{ color: 'var(--color-error)' }}>{error}</p>}
       </header>
+
+      <PackGate file={file} pack={pack} />
 
       {rows.map(({ entry, index, state }) => (
         <EntryRow

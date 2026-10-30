@@ -8,6 +8,7 @@
 import { normaliseStarterCamp, isEmptyStarterCamp } from '../../../src/config/starterCampShape.js';
 import { PLAN_STATUSES, statusOrNull, tierOrNull } from '../../../src/systems/progression/ledger/plan.js';
 import { mergePlanFile } from './planFile.js';
+import { intentErrors } from './packIntent.js';
 import { isSkillId } from '../../../src/config/registries/skillRegistry.js';
 import { isPerkLevel } from '../../../src/systems/hero/perkTable.js';
 import { MAX_SCALE } from '../../../src/systems/effects/effectLibrary.js';
@@ -127,6 +128,7 @@ export function validatePack(pack, { fileName } = {}) {
         errors.push('"createdAt" must be a date-time string, like "2026-10-20T15:00:00Z".');
     }
     if (typeof pack.asked !== 'string' || !pack.asked.trim()) errors.push('"asked" must say what the owner asked for.');
+    errors.push(...intentErrors(pack.intent));
     if (!Array.isArray(pack.entries) || pack.entries.length === 0) {
         errors.push('"entries" must be a list with at least one entry.');
         return { ok: false, errors };
