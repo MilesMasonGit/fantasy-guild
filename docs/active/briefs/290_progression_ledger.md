@@ -1,3 +1,5 @@
+> ⚠️ **On hold (owner, 2026-10-29)**: a deeper analysis of the whole system is under way; this brief will be revised from it. Do not start.
+
 # Brief 290 — Progression ledger: every item planned, traced and checked in the CMS
 
 *Written 2026-10-28, **rewritten 2026-10-29** by the planning agent after the
