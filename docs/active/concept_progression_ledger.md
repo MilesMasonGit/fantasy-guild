@@ -211,6 +211,72 @@ fights), path time per unlock, the pace curve and checks D, and turns `bench/cal
 its own processes and never loads the bench's fixtures (their recipe pools take over shipped skills).
 Nothing to throw away.
 
+## The pace in full (L5, 2026-10-30)
+
+*Engineer's notes for brief 290 phase L5. Measured: the calibration table and the numbers on
+today's data. Reasoned: the rules below, each a choice the owner can overrule in the Ledger
+settings or by answer.*
+
+**What the Ledger now says.** For every Token and recipe, its rate at three profiles with every
+factor named and switchable; for every entry, when a new game first has it (path time) at each
+profile, step by step; per skill, how long each level takes and where the XP comes from; and the
+pacing problems (group D) beside checks A to C. A **Pace** page shows the stages against their
+budgets, the per-skill breakdown and the Guild Hall's paybacks. The timeline is L6.
+
+**Every kind of work is rated** (`rates.js`): veins, trees and bushes as before, and now water (one
+catch a cycle by weight, Catch Weight read, bait spent), Fields (harvested their load, then regrown;
+Crop Load and Grow Time read; the seed paid once a sowing), builds on a Foundation (the recipe and
+the Foundation's Shop price are its inputs, so Construction XP has a rate), Passive Production (the
+Guild Hall's lines and the Wishing Well's Water by rank) and fights (coarse: one kill a fight
+cycle, as fast as the enemy's camp spawns it, first-kill drops not a rate, combat XP listed as
+unread). A camp hands one hero several copies of a vein or Field (`campMembers`, default 3) or a
+forest's whole family.
+
+**The profiles** (`profiles.js`). **Bare**: only what the work needs to run (the Forest a stump
+regrows beside, the camp that spawns an enemy, the Hall ranks that are free), one copy, the lowest
+tool. **Typical, a sensible investor**: boosts are tried one at a time, the quickest payback first,
+each against what is already chosen; a building, camp, better tool or gear is taken when its price
+(in Bare hours of work, the starter camp's own buildings free) over the hours it adds an hour is
+within `paybackHours` (default 2 h); a drink or work potion when it adds more than it costs as it is
+drunk. **Maxed**: Typical's choices plus every other boost that lifts the rate, whatever it costs (one
+drink, every helpful potion, the best of each gear slot, every support once). A boost the guild
+cannot make by then is never on offer. What a boost adds is the items' worth (each at the Bare hours
+one takes) plus XP (an hour's worth at the rate before it), times the share of the work the guild
+can feed.
+
+**Supply and path time** (`pace.js`). An item's supply at a stage is its best source reachable by
+then, fed by one hero on the best source of each input (one job per hero; a loop's own input taken
+as in stock). A skill's level takes the XP it needs over the best fed XP an hour among the work open
+at that level and reachable by the stage that first asks for it. An entry's path time follows the
+path the reach engine shows: a step starts once everything it needs is had and its level gates are
+reached (skills level side by side), then takes its own time (gathering a one-off price, a build, a
+cycle, a chance at average luck). Heroes work through check-ins and nights; a step that waits on the
+player is not delayed (owner question below).
+
+**Checks D.** A **wall**: a run of levels whose Typical time is over `wallFactor` times the curve,
+filed under the skill with what waits on it (and shown on each waiting entry's page). A **long wait
+for one unlock**: a step's own time over `wallFactor` times what the curve gives a level where the
+player is by then, at least a check-in. A **stage off its budget**: the slowest entry planned for it
+at Typical against the cumulative budget, ±tolerance. **Bare or Maxed out of bounds**: the time to
+the top level each stage asks, against the curve, beyond `profileBounds`. A **Guild Hall rank slow
+to pay back** (only the ranks that add a rate: Bunk Beds a hero, the Wishing Well Water; the rest
+are listed as not a rate). A **boost over its target** (by kind and stage, at Maxed, once per set of
+boosts with every work it lifts). **What the calculator cannot read**, per entry. **Calibration
+stale**: `npm run bench:calibrate` writes `bench/calibration/stamp.json` with a hash of every file
+the calculator imports or follows; when one changes, the Ledger says so until it is run again.
+
+**Calibration, measured** (`npm run bench:calibrate`, 3 seeds × 8 game-hours each, engine against
+calculator): the five S0 setups as before (all within 1 %, bird nests -6.9 % by luck, Beer's known
+engine fault), and three new ones: a Mining Camp working three Copper Ore Veins (ore -0.1 %, XP
+0.0 %), one fisher on the Coast (catches -5.1 % to +0.4 %, XP 0.0 %), one farmer on a Wild Wheat
+Patch (wheat -0.3 %, seeds +2.4 %, XP -0.8 %). Builds, fights and Passive Production are not
+calibrated.
+
+**Not modelled, each listed rather than dropped**: triggered rules, statuses a Token puts on its
+worker, filters on a Token's live charges, effects that last a time, combat XP and whether a fight is
+won, bounties and trading maps up (their steps are untimed, so a path through them is a floor),
+taking a building down, walking, several heroes queueing on one family.
+
 ## The system design (owner, 2026-10-29)
 
 *From the analyst's [system plan](research/ledger_system_plan_2026-10-29.md);
