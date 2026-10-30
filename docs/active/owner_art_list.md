@@ -174,7 +174,8 @@ swapping a picture in for one is a small code change.
 | Hit (a burst) | **NEW** | The versus card's hit row and the log's hits |
 | Armour (a shield) | **NEW** | The versus card's resistances row (flat armour is gone) |
 | Heart | **NEW** | The versus card's health row; the log's meals and heals |
-| Poison drop | **NEW** | A poison tick's float (red, outlined), a poisoned fighter's status, the log's poison lines |
+| Venom drop | **NEW** | A Venom tick's float (red, outlined), a fighter's Venom status, the log's Venom lines (the status once named Poison) |
+| Sunder (a cracked shield) | **NEW** | A fighter's Sunder status (each stack lowers their resistances) on the panel, its landing in the log (brief 280 V2) |
 | Burn flame | **NEW** | A burn tick's float, a burning fighter's status, the log's burn lines |
 | Crit star | **NEW** | The log's crits and boss moves |
 | Miss dash | **NEW** | The log's misses |

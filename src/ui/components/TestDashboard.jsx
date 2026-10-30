@@ -30,6 +30,7 @@ import { SuppliesDevSection } from '../dev/SuppliesDevSection.jsx';
 import { StatusesDevSection } from '../dev/StatusesDevSection.jsx';
 import { CombatScreenDevSection } from '../dev/CombatScreenDevSection.jsx';
 import { DamageTypesDevSection } from '../dev/DamageTypesDevSection.jsx';
+import { GearDefenceDevSection } from '../dev/GearDefenceDevSection.jsx';
 import { SkillLoopsDevSection } from '../dev/SkillLoopsDevSection.jsx';
 import { ForestryDevSection } from '../dev/ForestryDevSection.jsx';
 import { MiningDevSection } from '../dev/MiningDevSection.jsx';
@@ -322,6 +323,7 @@ export const TestDashboard = React.memo(() => {
                         {import.meta.env.DEV && <StatusesDevSection />}
                         {import.meta.env.DEV && <CombatScreenDevSection />}
                         {import.meta.env.DEV && <DamageTypesDevSection />}
+                        {import.meta.env.DEV && <GearDefenceDevSection />}
                         {import.meta.env.DEV && <SkillLoopsDevSection />}
                         {import.meta.env.DEV && <ForestryDevSection />}
                         {import.meta.env.DEV && <MiningDevSection />}

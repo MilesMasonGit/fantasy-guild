@@ -234,3 +234,77 @@ draws). No floor: a resisted hit can do 0.
 - **Resistances show on the enemy card from the start**, before the guild has fought one (kinds
   still wait for a fight).
 - **A Deals rule's damage is untyped** and lands whole (its "ignoring armour" is gone with armour).
+
+## Gear and defence (built in V2, 2026-10-30; for the V5 content author)
+
+*What the CMS writes and the game reads. Nothing in `data/` uses it yet. The shapes live in
+`src/config/registries/gearDefence.js`; the audit in `src/systems/core/gearDefenceRule.js`.*
+
+**Any worn piece** (a hand item, a hat, a chest, a trinket) gains two fields, the CMS Item editor's
+Defence block:
+
+| Field | Type | Meaning | Default when absent |
+|---|---|---|---|
+| `resistances` | `{ <type or group>: <whole number, −99 to 99, not 0> }` | percent off hits of that type the wearer takes; negative is a weakness. **Lines add**: `{ physical: 20, slash: 10 }` resists Slash 30, Crush and Stab 20 (the Type Resistance % rows add the same way; an enemy's lines differ: a type's replaces its group's) | none |
+| `damageCut` | `{ <combat style>: <whole number, 1 to 100> }` | percent off the wearer's hits while they fight in that style (the weapon's; Melee barehanded), the whole hit, an arrow's part included. Cuts from several pieces add; 100 or more leaves nothing. Shown red in the tooltip | none |
+
+**An off-hand item** is a hand item with `offHand: true` (CMS: Held as, "An off-hand item"): it takes
+one hand, is never swung, and lends its resistances, cuts and rules like a piece of armour (a shield;
+a quiver or a focus orb lends its rules). It carries no weapon numbers (the audit names any) and may
+ask a level like armour (`skillRequired` and `levelRequired`).
+
+**The hands** (owner: off-hand items only in the second hand):
+- **Only the weapon swung lends anything**: the first weapon in the hands the hero meets the level
+  of. A weapon in the second hand lends nothing, whatever its style (closes the loophole where a
+  second dagger lent its crit).
+- **Taking up a weapon puts the one held down**, in its place; taking up an off-hand item puts the
+  one held down. A tool stays beside either. A two-hander still clears both hands, and a one-hand item
+  taken up still puts a two-hander down. An older save holding two weapons keeps them until the next
+  weapon is taken up; the second lends nothing meanwhile.
+
+**Sunder** is a status the CMS authors (a library effect with a Status block), with the new Rules row
+**Sunder** (Provides, flat, points): every resistance the bearer has is that much lower, never below 0;
+a weakness, or no resistance, is untouched. A status's rules count once per stack, so "Sunder:
+stacks up to 3, lasts the fight; Provides Sunder 10" takes up to 30 off. It lands like any status: a
+spear's "On Hit: applies Sunder to the enemy", an arrow's (below), an enemy's on the hero. The retired
+**Pierce** row's audit line points at it. The QA scene's is Sunder 10, 3 stacks.
+
+**An arrow's rules count on the shot that spends it**: carried, an arrow lends nothing; its moment
+rules (On Swing, On Hit) join the hero's for the swing that shoots it, even when that shot spends the
+last one. So a "Sundering Bodkin" with "On Hit: applies Sunder to the enemy" sunders only when shot,
+never for a sword hero carrying it, and never when another arrow ahead of it in the grid is the one
+shot.
+
+**Venom** is the status once named Poison (Poison is a damage type now). **A content migration**
+(`src/systems/effects/effectIdMigration.js`, beside the Logging → Forestry one) reads `effect_poison`
+as `effect_venom` wherever content names it: the library entry (keeping its place, its name following
+while it is still "Poison"), a bearer's effects list, an Applies or Removes, a Status Immunity or Stack
+Limit's narrowing, a perk row. It runs over `data/` as the game loads and over the CMS workspace on
+every load path, so the owner's next Sync writes `effect_venom` into `data/`. No save needs it: every
+status ends with its fight and is taken off on load. The Venomous kind names `effect_venom`.
+
+**The audit** (boot and the CMS Economy Audit, Critical): for every damage type and group, the best
+stack a hero could wear: the best hat, chest, two trinkets, and the best hands (one weapon and one
+off-hand item or tool, or a two-hander), each piece's own lines plus its always-on Type Resistance %
+rows at its scale, plus every milestone perk (a hero at 99 holds them all). Any type at 100 % or more
+is named with the pieces. Elixirs and statuses last a fight and are left out; two pieces sharing one
+effect are counted twice, so the sum can only overstate. Also named: a line on an unknown type, off
+the range or not whole; resistances or a cut on something that is not worn gear; a cut on a non-combat
+style; an off-hand mark on a non-hand item or a tool; weapon numbers on an off-hand item. Today's
+content: no finding (shipped armour still carries the retired Armor rows).
+
+**Choices made in V2 the rulings did not spell out** (each small to change):
+
+- **Gear's resistances and cuts are fields of the item**, not Rules rows, so each piece reads as the
+  owner's example does ("Iron Chestplate: Physical resist 20 %; Magic damage −30 %"). The Type
+  Resistance % row still works on gear too, and the audit counts both.
+- **Gear lines add** (a group's beside a type's), unlike an enemy's, where a type's replaces its
+  group's: gear stacks across pieces, so adding is the only reading that works for a stack.
+- **The cut is on the whole hit**, after the matchup and buffs, before the crit, on every part (an
+  arrow's too); untyped Deals rules and status ticks are not cut.
+- **Sunder never makes a weakness**: it strips resistance to 0 at most (Pierce, which it replaces,
+  never made armour negative). It lowers a hero's resistances the same way when an enemy lands it.
+- **A weapon taken up replaces the one held** rather than being refused, so swapping weapons stays one
+  drag.
+- **The fight panel shows an enemy's resistances as they stand** in a live fight (after effects on it
+  and Sunder); the enemy card still shows what was authored.

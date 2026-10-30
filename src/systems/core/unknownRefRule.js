@@ -8,7 +8,7 @@ import { isDamageTypeId, isTypeOrGroupId, resistanceProblems } from '../../confi
 import { RETIRED_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
 import { isConsumableCategory } from '../../config/registries/equipmentCategories.js';
 import { statementsOf, stationSkillOf, KEYWORD } from '../effects/statements.js';
-import { TARGET_CATEGORIES } from '../effects/constants.js';
+import { TARGET_CATEGORIES, EFFECT_TYPES } from '../effects/constants.js';
 
 /**
  * The one rule behind "this names a skill or job that does not exist", shared
@@ -69,7 +69,10 @@ function effectRowFindings(entry, push) {
         const payload = statement?.payload || {};
         const row = statement?.keyword === KEYWORD.PROVIDES ? getPaletteEntry(payload.type) : null;
         if (row?.retired) {
-            push('statements', `provides ${row.label}, retired with damage types: it does nothing. Use Type Resistance % instead (Physical for metal armour), or delete the rule in the CMS.`);
+            const instead = row.type === EFFECT_TYPES.PIERCE
+                ? 'Land a Sunder status instead (a status that provides Sunder)'
+                : 'Use Type Resistance % instead (Physical for metal armour), or give the piece resistances';
+            push('statements', `provides ${row.label}, retired with damage types: it does nothing. ${instead}, or delete the rule in the CMS.`);
         }
         if (row?.categories === 'damageType' && hasValue(payload.category) && !isTypeOrGroupId(payload.category)) {
             push('statements', `has a rule aimed at the damage type "${payload.category}", which does not exist — the rule matches nothing. Pick the type again in the CMS.`);
