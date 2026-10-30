@@ -136,10 +136,10 @@ function sendFighter(name, itemIds, target, food) {
  */
 export function setUpGearDefenceScene() {
     registerQaContent();
-    const rat = placeBesideHall(QA_V2.RAT, -360, 230);
-    const bare = placeBesideHall(QA_V2.DUMMY, -120, 330);
-    const plated = placeBesideHall(QA_V2.DUMMY, 140, 330);
-    const crab = placeBesideHall(QA_V2.CRAB, 380, 230);
+    const rat = placeBesideHall(QA_V2.RAT, -500, 240);
+    const bare = placeBesideHall(QA_V2.DUMMY, -170, 330);
+    const plated = placeBesideHall(QA_V2.DUMMY, 170, 330);
+    const crab = placeBesideHall(QA_V2.CRAB, 500, 240);
     if (!rat || !bare || !plated || !crab) return { ok: false, error: 'No room below the Guild Hall for the scene' };
 
     const ranks = GuildUpgradeManager.getRanks();
