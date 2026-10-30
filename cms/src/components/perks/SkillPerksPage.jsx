@@ -32,16 +32,11 @@ export default function SkillPerksPage({ setCurrentView }) {
   const removeRow = useEntityStore((s) => s.removeSkillPerkRow);
   const addEffect = useEntityStore((s) => s.addEffect);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
-  const focus = useEntityStore((s) => s.perkFocus);
-  const focusPerks = useEntityStore((s) => s.focusPerks);
-  const [skillId, setSkillId] = useState(focus || SKILLS[0]?.id);
-
-  // The change-pack review's Open in editor lands on its skill.
+  // Opened on the skill something asked for (the change-pack review's Open in the editor), else the first.
+  const [skillId, setSkillId] = useState(() => useEntityStore.getState().perkFocus || SKILLS[0]?.id);
   useEffect(() => {
-    if (!focus) return;
-    setSkillId(focus);
-    focusPerks(null);
-  }, [focus, focusPerks]);
+    if (useEntityStore.getState().perkFocus) useEntityStore.getState().focusPerks(null);
+  }, []);
 
   const names = useMemo(() => ({
     token: (id) => tokens[id]?.name || id,
