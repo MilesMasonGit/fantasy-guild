@@ -15,6 +15,8 @@ build green) · bench-queued · eye-check · merged.*
 | 300 E1+E2: the encyclopedia and collection log | builder | `feat/encyclopedia` (`k4`) | **eye-check** ([file](eyecheck/2026-10-30_encyclopedia.md)), owner looks later. Engine **same work**. Draw compare read ~2× slower everywhere, but a back-to-back control showed `main` equally slow (4× S2 93.5 vs 81.8 fps, bank 78.7 vs 86.9): machine load, not the branch | Fri | |
 | 290 S0: rate calculator spike | engineer | `spike/ledger-s0` | **merged** 122f03a8: work check **same** (13:40). Calculator within 1 % of the engine; `rates.js`, `bench/calibrate.mjs`; T-273 filed | Fri | Fri |
 | 280 V1: damage types (nine types, one per weapon, arrows as ammo, enemy resistances and weaknesses on the card) | engineer | `feat/combat-v1` (`c1`) | **eye-check** ([file](eyecheck/2026-10-30_combat-v1.md)). Director gate with `main`: 6723 tests, cycles 0, builds; engine work **same** (14:4x). Flat armour, Pierce and the floor of 1 retired; shipped armour inert until re-authored (owner question e) | Fri | |
+| 280 V2: gear and defence (resistances from gear, cuts to named styles, shields in the off-hand, Venom, Sunder) | engineer | `feat/combat-v2` (`c2`, on V1) | **building** | Fri | |
+| 290 L6: timeline and hubs views; default pace curve set to the owner's pick | builder | `cms/ledger-l6` (`l5`) | **building** | Fri | |
 | 290 L5: the rate calculator in full (profiles, path time, checks D, calibration) | engineer | `cms/ledger-l5` | **merged** 8f1db55e on the gate (6687 tests, cycles 0, builds; no game code imports it). Calibration within 1 % (+3 new setups); Construction 15 wall 4× at Typical; owner sets the pace curve (questions in STATUS) | Fri | Fri |
 | T-271 + T-272: ledger first reach skips one-off finds; maps may arrive a stage early | builder | `cms/ledger-reach-fixes` | **merged** on the gate (6637 tests, cycles 0, builds). With the first fill: 32 leaks left, none maps (copper gear 16, Alchemy 7, Workbench 4, Brewery 2, Herb Garden 2, Salmon 1: all for L8). Side effect: Meadow, Flower Meadow and Cherry Grove maps now read luck-only (bounties only, 0.4–1.6 %) | Fri | Fri |
 | 270 K1: classless heroes (no jobs or promotion, every skill from level 1, the weapon decides the style, gear level requirements, HP 10 + best combat skill, old saves keep levels) | engineer | `feat/classless-k1` | **merged** 7920232e with O3 (owner okayed, [record](../archive/eyecheck/2026-10-30_classless-ledger.md)). Gate on the merged result: 6581 tests, cycles 0, builds. Bench: only heroHash on every hero scenario, S8 = S8L, accepted under brief270-K1. Owner CMS to-do in the record | Thu | Fri |
@@ -387,7 +389,7 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 
 - **Ticket candidate (not urgent):** `npm run cms:restore` (`scripts/backport-game-to-cms.mjs`) reads `workspace.maps`, which no longer exists, and ignores the plan file.
 
-- **Ledger L5 (recommendation first):** (1) pace-curve points: level 1: 3 min, 10: 8 min, 20: 30 min, 40: 3 h, 60: 1 day, 99: 3 days (level 10 at 43 min; Construction 15 stays a 3.7× wall), or match today's Typical (almost every wall disappears), or keep the placeholder; (2) steps that need the player don't wait for a check-in (an attentive player), or half a check-in per step after the first stage; (3) payback horizon a fixed 2 h of work, or the stage's length, or levels on the curve; (4) a camp works 3 veins or Fields at Typical, or 2, or 5; (5) keep the Beer finding (+100 % through the XP floor) as a reminder, or raise the consumable target.
+- **Ledger L5 answered (owner 2026-10-30):** the analyst's pace curve (1: 3 min, 10: 8 min, 20: 30 min, 40: 3 h, 60: 1 day, 99: 3 days), set as the default in L6; the other four as built (no check-in waits, 2 h payback, camps work 3, keep the Beer finding).
 
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
@@ -418,6 +420,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Fri 2026-10-30, mid-afternoon: combat part 2 beside the ledger views.** Where we are: `main` 2d2ed237 has the full rate calculator. Waiting for the owner's looks: the encyclopedia (`feat/encyclopedia`) and combat part 1 (`feat/combat-v1`), both same work. Now: combat V2 on V1 (`c2`) and ledger L6 (`l5`). Owner chose the analyst's pace curve. Bench: quiet draw check of `main` at 01:00.
 
 **Fri 2026-10-30, afternoon: combat v2 beside the full calculator.** Where we are: `main` 6c813f10, work check same (13:00). Waiting: the encyclopedia look (owner later; bench running), the S0 spike's work check, then its merge. Now: combat V1 (`c1`) and ledger L5 (`l5`). Owner ruled the parked ledger calls are not issues: XP floor, forest reach and luck-only Meadow maps stay as they are. Owner: the encyclopedia look; two packs in the CMS inbox.
 
