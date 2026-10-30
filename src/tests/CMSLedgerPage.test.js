@@ -144,7 +144,8 @@ describe('the tab', { timeout: 20000 }, () => {
         expect(shown.length).toBeGreaterThan(0);
         expect(shown.every((c) => ['luck-only', 'fragile', 'first-kill-only', 'shop-only'].includes(c))).toBe(true);
         fireEvent.change(view.getByLabelText('Filter by check'), { target: { value: 'fragile' } });
-        fireEvent.click(view.getByText('Iron Ore'));
+        // The hubs chart beside the list names Iron Ore too: the problem's own link is the one in the list.
+        fireEvent.click(view.getAllByText('Iron Ore').find((el) => el.closest('[data-finding]')));
         expect(view.getByLabelText('Ledger page of Iron Ore')).toBeTruthy();
     });
 

@@ -16,6 +16,8 @@ import LedgerSettings from './LedgerSettings';
 import LedgerProblems, { SEVERITY_COLOR } from './LedgerProblems';
 import LedgerItemPage from './LedgerItemPage';
 import LedgerPace from './LedgerPace';
+import LedgerTimeline from './LedgerTimeline';
+import LedgerHubs, { hubScope } from './LedgerHubs';
 import { openInEditor, writePlan } from './ledgerActions';
 
 /** The reach engine and every check over the workspace as it stands, stamped with the time. */
@@ -27,7 +29,7 @@ function workOutReport() {
 /**
  * The Ledger: every item, map, Token, enemy and recipe with the owner's plan for it (status, tier,
  * note), edited in place and written as the same `plan` block the editors' Plan section writes; the
- * problems the checks find; the pace (stage times, where each skill's rate comes from, the Hall's
+ * problems the checks find beside the hubs; the timeline (a lane per skill against the pace curve); the pace (stage times, where each skill's rate comes from, the Hall's
  * paybacks); a page per entry; and the Ledger settings. Planned stubs are added here; Sync keeps
  * them out of `data/`.
  * ⚠️ First reach, the pace and the problems are worked out when the tab opens and on Refresh, not
@@ -38,7 +40,8 @@ export default function LedgerPanel({ setCurrentView }) {
   const [report, setReport] = useState(workOutReport);
   const [openKey, setOpenKey] = useState(null);
   const [focusSkill, setFocusSkill] = useState(null);
-  const refresh = () => setReport(workOutReport());
+  const [hub, setHub] = useState(null);
+  const refresh = () => { setReport(workOutReport()); setHub(null); };
   const openSkill = (skill) => { setOpenKey(null); setFocusSkill(skill); setPage('pace'); };
   const serious = report.findings.filter((f) => f.severity !== 'info').length;
 
@@ -57,7 +60,7 @@ export default function LedgerPanel({ setCurrentView }) {
             </p>
           </div>
           <div className="flex gap-1" role="tablist">
-            {[['entries', 'Entries'], ['problems', `Problems (${serious})`], ['pace', 'Pace'], ['settings', 'Settings']].map(([key, label]) => (
+            {[['entries', 'Entries'], ['problems', `Problems (${serious})`], ['timeline', 'Timeline'], ['pace', 'Pace'], ['settings', 'Settings']].map(([key, label]) => (
               <button
                 key={key}
                 role="tab"
@@ -87,7 +90,17 @@ export default function LedgerPanel({ setCurrentView }) {
           />
         )}
         {!openKey && page === 'entries' && <LedgerEntries setCurrentView={setCurrentView} report={report} onRefresh={refresh} onOpenPage={setOpenKey} />}
-        {!openKey && page === 'problems' && <LedgerProblems report={report} onRefresh={refresh} onOpen={setOpenKey} onOpenSkill={openSkill} />}
+        {!openKey && page === 'problems' && (
+          <div className="flex gap-4 items-start">
+            <div style={{ width: 340, flexShrink: 0 }}>
+              <LedgerHubs report={report} onOpen={setOpenKey} selected={hub?.key ?? null} onSelect={(key, h) => setHub(key ? hubScope(h) : null)} />
+            </div>
+            <div className="flex-1 min-w-0 space-y-3">
+              <LedgerProblems report={report} onRefresh={refresh} onOpen={setOpenKey} onOpenSkill={openSkill} scope={hub} onClearScope={() => setHub(null)} />
+            </div>
+          </div>
+        )}
+        {!openKey && page === 'timeline' && <LedgerTimeline report={report} onRefresh={refresh} onOpen={setOpenKey} onOpenSkill={openSkill} />}
         {!openKey && page === 'pace' && <LedgerPace report={report} onRefresh={refresh} onOpen={setOpenKey} focusSkill={focusSkill} />}
         {!openKey && page === 'settings' && <LedgerSettings />}
       </div>

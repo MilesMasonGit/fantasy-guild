@@ -209,6 +209,14 @@ describe('the settings', () => {
         expect(settingsOf(undefined)).toEqual(settingsOf(DEFAULT_LEDGER_SETTINGS));
     });
 
+    it('default to the owner pace curve, and keep a saved curve as it was', () => {
+        const d = settingsOf(null);
+        expect(d.paceCurve.map((p) => [p.level, p.minutesPerLevel])).toEqual([[1, 3], [10, 8], [20, 30], [40, 180], [60, 1440], [99, 4320]]);
+        expect(minutesPerLevelAt(d, 30)).toBeCloseTo(Math.sqrt(30 * 180));
+        const saved = [{ level: 1, minutesPerLevel: 1 }, { level: 99, minutesPerLevel: 99 }];
+        expect(settingsOf({ paceCurve: saved }).paceCurve).toEqual(saved);
+    });
+
     it('mend what cannot be read and keep fields they do not know', () => {
         const s = settingsOf({ tolerancePct: 'x', stages: [{ tier: 1, budgetMinutes: 90 }, { tier: 0, budgetMinutes: 30 }, { tier: 'a' }], paceCurve: [{ level: 10, minutesPerLevel: 5 }, { level: 0, minutesPerLevel: 1 }], later: { x: 1 } });
         expect(s.tolerancePct).toBe(25);
