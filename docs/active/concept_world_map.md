@@ -269,8 +269,9 @@ the player to **make nodes**.*
   reward: the first ring opening).
 - **Keep, inside generation**: region modifiers and treasures, as hidden
   extras of a generated region.
-- **The Cartography Table upgrade becomes "see further"**: it reveals the
-  options of fog cells further ahead.
+- ~~The Cartography Table upgrade becomes "see further"~~ **retired** (owner,
+  2026-10-29, Guild Hall interview): every cell's contents are visible, so
+  there is nothing to reveal ahead.
 - **The Atlas tome becomes the world map screen.**
 - Travel between settled places stays free and instant; one place, one
   Region (above).
