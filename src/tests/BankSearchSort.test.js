@@ -25,6 +25,8 @@ const FIXTURES = {
     srt_club: item('srt_club', 'Srt Club', 'weapon', { equipSlot: 'hand' }),
     srt_axe: item('srt_axe', 'Srt Axe', 'weapon', { equipSlot: 'hand', tier: 1 }),
     srt_pick: item('srt_pick', 'Srt Pickaxe', 'tool', { equipSlot: 'hand', tool: { kind: 'pickaxe', tier: 1 } }),
+    srt_pick_fe: item('srt_pick_fe', 'Srt Iron Pickaxe', 'tool', { equipSlot: 'hand', tool: { kind: 'pickaxe', tier: 2 } }),
+    srt_pick_cu: item('srt_pick_cu', 'Srt Copper Pickaxe', 'tool', { equipSlot: 'hand', tool: { kind: 'pickaxe', tier: 1 } }),
     srt_ore: item('srt_ore', 'Srt Copper Ore', 'material', { tags: ['Ore', 'Metal'] }),
     srt_bread: item('srt_bread', 'Srt Bread', 'food', { equipSlot: 'food' }),
     srt_apple: item('srt_apple', 'Srt Apple', 'food', { equipSlot: 'food', tags: ['Fruit'] })
@@ -59,6 +61,18 @@ describe('the Bank search', () => {
         expect(bankSearchMatches(FIXTURES.srt_bread, 'Food')).toBe(true);
     });
 
+    it('matches from the start of a word, case-blind, words in order', () => {
+        const forestMap = item('srt_map', 'Forest Map', 'map');
+        const ironOre = item('srt_ironore', 'Iron Ore', 'material');
+        expect(bankSearchMatches(ironOre, 'ore')).toBe(true);
+        expect(bankSearchMatches(FIXTURES.srt_ore, 'ORE')).toBe(true);
+        expect(bankSearchMatches(forestMap, 'ore')).toBe(false);
+        expect(bankSearchMatches(FIXTURES.srt_dagger_cu, 'Dagger')).toBe(true);
+        expect(bankSearchMatches(FIXTURES.srt_dagger_cu, 'agger')).toBe(false);
+        expect(bankSearchMatches(FIXTURES.srt_dagger_cu, 'Srt Copper Dagger')).toBe(true);
+        expect(bankSearchMatches(FIXTURES.srt_dagger_cu, 'dagger copper')).toBe(false);
+    });
+
     it('finds every weapon across tabs, every hand item, and one item by name', () => {
         ALL.forEach(id => InventoryManager.addItem(id, 1));
         const [, second] = inv().groupOrder;
@@ -69,7 +83,7 @@ describe('the Bank search', () => {
         fireEvent.change(search, { target: { value: 'Weapon' } });
         expect(shownIds(view).sort()).toEqual(['srt_axe', 'srt_club', 'srt_dagger_cu', 'srt_sword_fe']);
         fireEvent.change(search, { target: { value: 'Hand' } });
-        expect(shownIds(view).sort()).toEqual(['srt_axe', 'srt_club', 'srt_dagger_cu', 'srt_pick', 'srt_sword_fe']);
+        expect(shownIds(view).sort()).toEqual(['srt_axe', 'srt_club', 'srt_dagger_cu', 'srt_pick', 'srt_pick_cu', 'srt_pick_fe', 'srt_sword_fe']);
         fireEvent.change(search, { target: { value: 'Srt Copper Dagger' } });
         expect(shownIds(view)).toEqual(['srt_dagger_cu']);
     });
@@ -81,9 +95,17 @@ describe('Bank order', () => {
         expect(sorted).toEqual([
             'srt_apple', 'srt_bread',                                 // Food
             'srt_ore',                                                // Material
-            'srt_pick',                                               // Tool
+            'srt_pick_cu', 'srt_pick', 'srt_pick_fe',                 // Tool: tool tier 1, 1, 2
+
             'srt_axe', 'srt_dagger_cu', 'srt_sword_fe', 'srt_club'     // Weapon: tier 1, 1, 2, then none
         ]);
+    });
+
+    it('sorts a tool with no tier of its own by its tool tier, copper before iron', () => {
+        expect(sortForBank(['srt_pick_fe', 'srt_pick_cu'], getItem)).toEqual(['srt_pick_cu', 'srt_pick_fe']);
+        const none = item('srt_toolless', 'Srt Aaa Tool', 'tool');
+        registerItems({ srt_toolless: none });
+        expect(sortForBank(['srt_toolless', 'srt_pick_fe'], getItem)).toEqual(['srt_pick_fe', 'srt_toolless']);
     });
 
     it('puts an id it does not know last', () => {

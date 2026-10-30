@@ -1,4 +1,5 @@
 import { itemTypeLabel } from './ItemTip.jsx';
+import { toolOf } from '../../../config/registries/toolKinds.js';
 import { categoryOfItem, getCategoryInfo } from '../../../config/registries/equipmentConstants.js';
 
 /**
@@ -17,15 +18,35 @@ export function bankSearchWords(item) {
     ].filter(w => typeof w === 'string' && w);
 }
 
-/** Whether an item matches a search: any of its {@link bankSearchWords} contains the term. */
+const wordsOf = (text) => text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+
+/**
+ * Whether an item matches a search: the words typed are, in order, the starts of words in one of
+ * its {@link bankSearchWords} ("Ore" finds "Iron Ore", not "Forest Map"), whatever the case.
+ */
 export function bankSearchMatches(item, term) {
-    const needle = (term || '').trim().toLowerCase();
-    if (!needle) return true;
-    return bankSearchWords(item).some(w => w.toLowerCase().includes(needle));
+    const typed = wordsOf(term || '');
+    if (!typed.length) return true;
+    return bankSearchWords(item).some(text => {
+        const words = wordsOf(text);
+        let at = 0;
+        for (const t of typed) {
+            while (at < words.length && !words[at].startsWith(t)) at++;
+            if (at === words.length) return false;
+            at++;
+        }
+        return true;
+    });
+}
+
+/** An item's own `tier`, else its tool tier when it is a tool; Infinity when it has neither. */
+function bankTier(item) {
+    if (Number.isFinite(item?.tier)) return item.tier;
+    return toolOf(item)?.tier ?? Infinity;
 }
 
 /**
- * Bank order: by type (its label, A to Z), then by the item's own `tier` (low first; an item
+ * Bank order: by type (its label, A to Z), then by the item's own `tier`, or its tool tier (low first; an item
  * without one after those of its type that have one), then by name.
  * @param {object} a an item template
  * @param {object} b an item template
@@ -33,8 +54,7 @@ export function bankSearchMatches(item, term) {
 export function compareForBank(a, b) {
     const type = itemTypeLabel(a).localeCompare(itemTypeLabel(b));
     if (type) return type;
-    const ta = Number.isFinite(a?.tier) ? a.tier : Infinity;
-    const tb = Number.isFinite(b?.tier) ? b.tier : Infinity;
+    const ta = bankTier(a), tb = bankTier(b);
     if (ta !== tb) return ta < tb ? -1 : 1;
     return (a?.name || a?.id || '').localeCompare(b?.name || b?.id || '');
 }
