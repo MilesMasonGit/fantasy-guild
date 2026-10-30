@@ -66,8 +66,6 @@ export default function MapEditor() {
     <div className="max-w-3xl mx-auto space-y-6 pb-10">
       <Header name={map.name} id={map.id} sprite={map.sprite} onDelete={() => deleteItem(activeId)} />
 
-      <LedgerFields record={map} onChange={(ledger) => update('ledger', ledger)} />
-
       <Section title="Identity" icon={<Settings2 size={14} />}>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Display Name">
@@ -242,6 +240,8 @@ export default function MapEditor() {
           enemy, add it to that enemy&apos;s Drops in the Token editor.
         </p>
       </Section>
+
+      <LedgerFields record={map} onChange={(ledger) => update('ledger', ledger)} />
 
       <SpritePickerModal
         isOpen={isPickerOpen}

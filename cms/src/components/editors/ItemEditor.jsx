@@ -205,8 +205,6 @@ export default function ItemEditor() {
         onDelete={() => deleteItem(activeId)}
       />
 
-      <LedgerFields record={item} onChange={(ledger) => update('ledger', ledger)} />
-
       <Section title="Identity" icon={<Settings2 size={14} />}>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Display Name" className="col-span-2">
@@ -406,6 +404,8 @@ export default function ItemEditor() {
           <ChainInspector itemId={item.id} />
         </div>
       </Section>
+
+      <LedgerFields record={item} onChange={(ledger) => update('ledger', ledger)} />
 
       <SpritePickerModal
         isOpen={isPickerOpen}

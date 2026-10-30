@@ -70,8 +70,6 @@ export default function TokenEditor() {
     <div className="max-w-2xl mx-auto space-y-6 pb-10">
       <Header name={token.name} id={token.id} sprite={token.sprite} size={token.size} onDelete={() => deleteToken(activeId)} />
 
-      <LedgerFields record={token} onChange={(ledger) => update('ledger', ledger)} />
-
       {/* Read-only summary of what the simulator decided. ⚠️ Renders nothing at all when there is nothing to say, heading included. */}
       <TokenSummary token={token} derived={derived} needsSkill={isWorkedWithoutSkill(expanded)} />
 
@@ -788,6 +786,8 @@ export default function TokenEditor() {
       </Section>
 
       <LifecycleBlocks token={token} onChange={update} />
+
+      <LedgerFields record={token} onChange={(ledger) => update('ledger', ledger)} />
 
       <SpritePickerModal
         isOpen={pickerFor != null}
