@@ -69,7 +69,7 @@ registerItems({
     cs_elixir: { id: 'cs_elixir', name: 'Elixir of Testing', type: 'potion', sprite: 'i_potion_sun_red', stackable: true, equipSlot: 'consumable', effects: [{ effectId: 'cs_fx_elixir' }] }
 });
 registerEffects({
-    cs_fx_buff: { id: 'cs_fx_buff', name: 'Tested', statements: [providesFlat('stm_cs_buff', EFFECT_TYPES.ARMOR, 1)] },
+    cs_fx_buff: { id: 'cs_fx_buff', name: 'Tested', statements: [{ ...providesFlat('stm_cs_buff', EFFECT_TYPES.TYPE_RESIST, 25), payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 25, category: 'physical' } }] },
     cs_fx_elixir: {
         id: 'cs_fx_elixir', name: 'Elixir of Testing', statements: [{
             ...makeStatement(KEYWORD.APPLIES), id: 'stm_cs_elixir',
@@ -302,12 +302,14 @@ describe('the panel, the plate and the floats read the real fight', () => {
         const view = fightPanelView(heroId, fightsOf(heroId));
         expect(view.live).toBe(true);
         expect(view.title).toBe(`${HeroManager.getHero(heroId).name} vs Screen Venomous`);
-        // Screen Sword 3 + level 20's step of 1; armour 1 from the elixir's buff; a normal swing.
-        expect(view.hero).toMatchObject({ style: 'melee', level: 20, hit: 4, armour: 1, swingMs: 3000 });
+        // Screen Sword 3 + level 20's step of 1, Slash; Physical 25 % from the elixir's buff (it was
+        // armour 1 before damage types); a normal swing.
+        expect(view.hero).toMatchObject({ style: 'melee', level: 20, hit: 4, resists: [{ id: 'physical', value: 25 }], swingMs: 3000 });
+        expect(view.hero.hitParts).toEqual([{ type: 'slash', hit: 4, arrow: false }]);
         // Ten fights to a dose, this one counted (owner, 2026-10-25); nine more after it.
         expect(view.hero.elixirs).toEqual([{ itemId: 'cs_elixir', name: 'Elixir of Testing', left: 9, count: 10 }]);
-        // Level 10 from the table: 30 health, a hit of 1, no armour; Venomous shows once fought.
-        expect(view.enemy).toMatchObject({ level: 10, hit: 1, armour: 0, swingMs: 3000 });
+        // Level 10 from the table: 30 health, a Physical hit of 1, no resistances; Venomous shows once fought.
+        expect(view.enemy).toMatchObject({ level: 10, hit: 1, hitType: 'physical', resists: [], swingMs: 3000 });
         expect(view.enemy.hp.max).toBe(30);
         expect(view.enemy.kinds.map(k => k.id)).toEqual(['venomous']);
         stop();

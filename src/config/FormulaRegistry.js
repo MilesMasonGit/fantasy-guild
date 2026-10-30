@@ -115,14 +115,19 @@ export function matchupMultiplier(attackerType, defenderType) {
  * What an enemy of a level has before the author changes anything (the CMS will fill these and
  * let any be overridden). Tuned so an even fight, a hero with their tier's
  * normal-speed weapon against an enemy of their own level, lasts 10+ swings and 30 s or more:
- *   HP      = 20 + level        (10 more than a hero of that level)
+ *   HP      = 20 + level        (10 more than a hero of that level), + 4 per 30 levels
  *   hit     = 1 + 1 per 20 levels
  *   speed   = normal (3 s)
  *   XP      = 10 × 1.065^(level − 1), rounded
  * The worked duels are in `concept_combat.md` ("The level table and weapon tiers").
+ * ⚠️ The 4 HP per 30 levels stands where 1 armour per 30 levels stood before damage types: without
+ * it the even fight at the start of the gold, mythril, adamantine and darkmetal tiers drops under
+ * the owner's 10 swings (`CombatRules.test.js` checks every level).
  */
 export const ENEMY_LEVEL_TABLE = Object.freeze({
     HP_BASE: 20,
+    HP_LEVELS_PER_STEP: 30,
+    HP_PER_STEP: 4,
     HIT_LEVELS_PER_STEP: 20,
     XP_BASE: 10,
     XP_GROWTH: 1.065
@@ -136,7 +141,7 @@ export function enemyLevelStats(level) {
     const L = Math.max(1, Math.floor(level || 1));
     const t = ENEMY_LEVEL_TABLE;
     return {
-        hp: t.HP_BASE + L,
+        hp: t.HP_BASE + L + t.HP_PER_STEP * Math.floor(L / t.HP_LEVELS_PER_STEP),
         hit: 1 + Math.floor(L / t.HIT_LEVELS_PER_STEP),
         speed: DEFAULT_ATTACK_SPEED,
         attackSpeedMs: attackSpeedMs(DEFAULT_ATTACK_SPEED),

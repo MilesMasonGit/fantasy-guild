@@ -10,6 +10,7 @@ import { filtersPhrase } from '../../config/registries/filterRegistry.js';
 import { magnitudeParts, MAGNITUDE_KIND } from '../../config/registries/magnitudeRegistry.js';
 import { getPlacement, placementOf } from '../../config/registries/placementRegistry.js';
 import { EFFECT_TYPES } from './constants.js';
+import { damageTypeLabel } from '../../config/registries/damageTypes.js';
 import { articleOf } from './toolNames.js';
 import { stationKindLabel } from '../../config/registries/tokenConstants.js';
 
@@ -567,6 +568,26 @@ function bodySegments(statement, names) {
                 const change = shift < 0 ? `at most ${-shift} lower` : shift > 0 ? `up to ${shift} higher` : 'no different';
                 return segs(d('Provides', K), ' ', d(statusName(payload.category, names), categorySlot(statement)), ' ',
                     d('stacks', 'type'), ' ', d(change, 'value'), COMBAT_REACH);
+            }
+
+            // "Provides 15% more Poison damage", "Provides 20% Physical resistance": a type row names its type.
+            if (payload.type === EFFECT_TYPES.TYPE_DAMAGE || payload.type === EFFECT_TYPES.TYPE_RESIST) {
+                const n = Number(payload.value) || 0;
+                const size = `${Math.abs(n)}%`;
+                const type = d(payload.category ? damageTypeLabel(payload.category) : 'every type', categorySlot(statement));
+                let phrase;
+                if (payload.type === EFFECT_TYPES.TYPE_DAMAGE) {
+                    const more = n < 0 ? 'less' : 'more';
+                    phrase = payload.category
+                        ? segs(d(`${size} ${more}`, 'value'), ' ', type, ' ', d('damage', 'type'))
+                        : segs(d(`${size} ${more}`, 'value'), ' ', d('damage', 'type'), ' of ', type);
+                } else {
+                    const noun = n < 0 ? 'weakness' : 'resistance';
+                    phrase = payload.category
+                        ? segs(n < 0 ? 'a ' : '', d(size, 'value'), ' ', type, ' ', d(noun, 'type'))
+                        : segs(n < 0 ? 'a ' : '', d(size, 'value'), ' ', d(noun, 'type'), ' to ', type);
+                }
+                return segs(d('Provides', K), ' ', phrase, ' in combat', COMBAT_REACH);
             }
 
             if (entry?.heroOnly) {

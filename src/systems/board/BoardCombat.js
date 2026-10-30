@@ -136,7 +136,8 @@ const fightSource = (instanceId) => `fight:${instanceId}`;
  *
  * An enemy is a Token, and a Token's rules are named library effects. Its combat-axis `Provides`
  * are registered onto the hero's aggregator for as long as the fight lasts, so an enemy authored
- * with `Provides Armor -2` makes its hero softer, using numbers `CombatFormulas` already reads.
+ * with `Provides -25 Type Resistance % on Physical` makes its hero softer, using numbers
+ * `CombatFormulas` already reads.
  * Registered per fight and removed with it, so the debuff cannot outlive the creature that imposed
  * it.
  */
@@ -353,8 +354,8 @@ export function tickToken(instance, delta, heroId) {
     fight.assignedHeroId = heroId;
 
     // ⚠️ The stat block is re-derived every tick and the aggregator is not, so they have to be
-    // joined back up here. Without this line `heroHitDamage` reads a profile with no aggregator
-    // and an enemy's carried armour is silently zero, which looks exactly like the feature working.
+    // joined back up here. Without this line `heroBlow` reads a profile with no aggregator and an
+    // enemy's carried resistances are silently zero, which looks exactly like the feature working.
     enemy.aggregator = fight.aggregator;
     enemy.effects = fight.effects;
 

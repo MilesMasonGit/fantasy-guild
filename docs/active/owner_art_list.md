@@ -172,7 +172,7 @@ swapping a picture in for one is a small code change.
 |---|---|---|
 | Fight icon (crossed swords) | **NEW** | On the chip beside each fight's enemy (opens the fight panel), the panel's header and the log's "beats" line. Placeholder: gold crossed lines |
 | Hit (a burst) | **NEW** | The versus card's hit row and the log's hits |
-| Armour (a shield) | **NEW** | The versus card's armour row |
+| Armour (a shield) | **NEW** | The versus card's resistances row (flat armour is gone) |
 | Heart | **NEW** | The versus card's health row; the log's meals and heals |
 | Poison drop | **NEW** | A poison tick's float (red, outlined), a poisoned fighter's status, the log's poison lines |
 | Burn flame | **NEW** | A burn tick's float, a burning fighter's status, the log's burn lines |
@@ -182,6 +182,7 @@ swapping a picture in for one is a small code change.
 | Loot bag | **NEW** | The log's "Drops" line |
 | Knocked out (a down arrow) | **NEW** | The log's knockout and the "While you were away" Knocked out line |
 | Enemy animation sheets | **NEW** (as wanted) | Only the Cow has one today (`e_cow_sheet`); every other enemy stands still in the fight panel's strip and loops nothing on the mat. A sheet is 4 × 4 frames of 64 px (rows 0–1 idle, 2–3 attack); registering one is a one-line code change |
+| Damage type icons (12) | **NEW** | One per type and group: Slash, Crush, Stab, Fire, Ice, Electric, Poison, Light, Dark, Physical, Elemental, Special. Beside every hit's number in the floats (two for a bow's shot), on the versus card's hit and resistances rows, on the enemy card's hit, Resists and Weak to rows. 8 × 8 at 2× like the others; placeholders drawn in code (`combatGlyphs.js`, `dt_<type>`), shown on the style sheet page |
 
 ## 6. Hero orders (brief 260 O1)
 

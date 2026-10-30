@@ -46,7 +46,6 @@ describe('Dynamic Registry Loading', () => {
         const scale = def.enemy.budgetScale ?? 1;
         if (def.enemy.hp == null) expect(enemy.hp).toBe(Math.max(1, roundHalfUp(table.hp * scale)));
         if (def.enemy.xp == null) expect(enemy.xpAwarded).toBe(Math.max(1, roundHalfUp(table.xp * scale)));
-        if (def.enemy.armor == null) expect(enemy.armor).toBe(table.armor);
     });
 
     // The quest-loading case is gone with the authored quest pipeline:

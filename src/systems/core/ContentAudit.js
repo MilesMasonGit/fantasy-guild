@@ -730,7 +730,7 @@ function auditLifecycle(out) {
  * in `unknownRefRule.js`, shared with the CMS Economy Audit.
  */
 function auditUnknownRefs(out) {
-    for (const f of findUnknownRefs({ tokens: TOKENS, items: ITEMS, recipes: listRecipes() })) {
+    for (const f of findUnknownRefs({ tokens: TOKENS, items: ITEMS, recipes: listRecipes(), effects: EFFECTS })) {
         out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
     }
 }

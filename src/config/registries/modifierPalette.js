@@ -104,13 +104,22 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  *   status it blocks.
  * * `'item'`   — `OutputRules.doubleItemDrop` passes the id of each item a
  *   cycle or kill dropped, which is how `DOUBLE_DROP` names its item.
+ * * `'damageType'` — `CombatFormulas` passes a hit's damage type, which is how
+ *   Type Damage % and Type Resistance % name a type; a group's row counts on its
+ *   types (`ModifierAggregator._isParentOf`).
  *
  * Declaring the vocabulary per row is what lets the CMS show a skill
  * picker on Yield and a status picker on Immunity without knowing either list.
  *
  * A row without `categories` offers no narrowing at all, which is right for the
- * combat axes — their readers call `query('ARMOR')` with no category, so
+ * other combat axes — their readers call `query('ACCURACY')` with no category, so
  * anything but ALL would be registered and never matched.
+ *
+ * ## `retired` — still read as a sentence, never offered
+ *
+ * A row the game no longer reads (flat Armor, Resistance and Pierce, gone with
+ * damage types) stays here so content carrying one still renders and the audits
+ * can name it; `paletteForKeyword` leaves it out of the editor's choices.
  *
  * ## `heroOnly` — the axis reaches a person, never a tile
  *
@@ -273,8 +282,8 @@ export const MODIFIER_PALETTE = [
 
     // --- Combat ---------------------------------------------------------
     //
-    // ⚠️ Every row here has a live reader in `CombatFormulas` or
-    // `CombatAttackProcessor`, queried off `hero.aggregator`.
+    // ⚠️ Every row here but the retired ones has a live reader in `CombatFormulas`
+    // or `CombatAttackProcessor`, queried off `hero.aggregator`.
     //
     // `buckets: ['flat']` on all of them because `ModifierAggregator.query` —
     // which is what combat calls — sums flats and SKIPS percentage and

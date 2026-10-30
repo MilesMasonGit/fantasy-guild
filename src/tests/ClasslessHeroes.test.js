@@ -142,11 +142,12 @@ describe('the weapon decides the style', () => {
 
     it('the matchup follows the weapon: a bow is weak against the melee enemy, a sword even', () => {
         const h = hero({ melee: 1, ranged: 1 }, ['k1_bow']);
-        // 2 × 0.75 = 1.5, rounded halves up: 2. The enemy's 1 against ranged: 1 × 1.25 = 1.25 → 1.
-        expect(CombatFormulas.heroHitDamage(h, { ...enemy(), combatType: 'magic' })).toBe(3);
-        expect(CombatFormulas.heroHitDamage(h, { ...enemy(), combatType: 'melee', armor: 0 })).toBe(2);
+        // Rewritten for damage types: a hit keeps its fraction and rolls it as it lands, so the
+        // blow is checked before the roll. 2 × 1.25 = 2.5 on magic; 2 × 0.75 = 1.5 on melee.
+        expect(CombatFormulas.heroBlow(h, { ...enemy(), combatType: 'magic' }).exact).toBe(2.5);
+        expect(CombatFormulas.heroBlow(h, { ...enemy(), combatType: 'melee' }).exact).toBe(1.5);
         h.equipment[0] = 'k1_sword';
-        expect(CombatFormulas.heroHitDamage(h, { ...enemy(), combatType: 'magic', armor: 0 })).toBe(2);
+        expect(CombatFormulas.heroHitDamage(h, { ...enemy(), combatType: 'magic' })).toBe(2);
     });
 });
 

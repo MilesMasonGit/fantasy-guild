@@ -174,3 +174,61 @@ Throwing Daggers, Motes or off-hand items.
 
 1. ~~Damage-type analysis and interview~~ done 2026-10-28.
 2. ~~Owner approval~~ approved 2026-10-28; [brief 280](briefs/280_combat_v2.md), after brief 270 K1.
+
+## Damage types (built in V1, 2026-10-30; for the V5 content author)
+
+*What the CMS writes and the game reads. Nothing in `data/` uses it yet. The list lives in
+`src/config/registries/damageTypes.js`.*
+
+**A weapon** gains one field:
+
+| Field | Type | Meaning | Default when absent |
+|---|---|---|---|
+| `damageType` | one of `slash`, `crush`, `stab`, `fire`, `ice`, `electric`, `poison`, `light`, `dark` | every hit's type (the CMS Weapon block's Damage type) | by its style: Melee `slash`, Ranged `stab`, Magic `fire`, Stealth `stab`; a fist is `crush` |
+
+**An arrow** is a Consumable with an `arrow` block (CMS: the item's Arrow tick):
+
+| Field | Type | Meaning | Default when absent |
+|---|---|---|---|
+| `arrow.damage` | whole number ≥ 1 | added to the bow's damage on every shot, in the arrow's type | 0 (adds nothing; the audit says so) |
+| `arrow.damageType` | a damage type | the arrow's part of the shot | `stab` |
+
+A hero whose weapon is Ranged and who carries arrows in consumable cells shoots the first in grid
+order the Bank still holds, one per shot, hit or miss. A shot = the bow's damage (plus the level
+step and gear's flat Damage) in the bow's type + the arrow's damage in the arrow's type. With none
+left the bow shoots its own part alone (owner question parked in the V1 report).
+
+**An enemy** gains one field; `armor` and `pierce` retire (ignored, named by the audits):
+
+| Field | Type | Meaning | Default when absent |
+|---|---|---|---|
+| `resistances` | `{ <type or group>: <step> }`, steps `100`, `50`, `25` (resist) and `-25`, `-50` (weak) | `{ physical: 50, crush: -50 }`: a type's line replaces its group's for that type | none; the Armoured kind gives `{ physical: 50 }`, and the author's line on the same key replaces it |
+
+An enemy's plain swing is a Physical hit (the group as a whole: a hero's Physical resistance takes
+from it, a resistance to Slash alone does not) until V3 gives enemies moves.
+
+**Two Rules rows** (Provides, flat number = percent, aimed at a type, a group, or every type):
+**Type Damage %** (the bearer's hits of that type: "Poisoner's Cloak: Poison 15") and **Type
+Resistance %** (hits of that type the bearer takes; negative is a weakness). A group's row counts on
+each of its types. On an enemy (through a lingering effect, a boss move) they work the same.
+**Armor**, **Resistance** (flat) and **Pierce** are no longer offered, do nothing, and the audits
+name the rules that still provide them (today: Leather, Copper Plate, Iron Plate, Ironskin).
+
+**The hit**: (weapon or hit + level step + flat Damage) × the matchup × Damage % buffs → × 2 on a
+crit → each part × its type factor (1 + attacker's Type Damage % − target's resistance; never below
+0) → summed → the fraction rolls (one draw, only when there is a fraction, after the miss and crit
+draws). No floor: a resisted hit can do 0.
+
+**Choices made in V1 the rulings did not spell out** (each small to change):
+
+- **Defaults for untyped weapons** as above, so content from before keeps fighting as it did.
+- **Armoured = Physical resistance 50 %** (it was +2 armour: on copper weapons 50 % hits as hard as
+  the old armour did).
+- **The level table's armour (1 per 30 levels) is gone** with flat armour; no shipped enemy is that
+  high.
+- **The floats' words are about the target**: "Weak!" when its weaknesses outweigh its resistances
+  across the hit's parts, "Resisted" the other way; the attacker's own Type Damage % says nothing.
+- **A landed hit that does 0 is still a hit**: On Hit rules and Venomous fire on it.
+- **Resistances show on the enemy card from the start**, before the guild has fought one (kinds
+  still wait for a fight).
+- **A Deals rule's damage is untyped** and lands whole (its "ignoring armour" is gone with armour).

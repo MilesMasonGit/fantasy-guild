@@ -58,7 +58,8 @@ registerStatusFixtures();
 
 // The families: one library effect each, every tier pointing at it with its own scale.
 registerEffects({
-    gear_spear: { id: 'gear_spear', name: 'Spear', statements: [provides(EFFECT_TYPES.PIERCE, 1)] },
+    // Pierce is retired with damage types: the spear's family ability is +10 % Stab damage a tier.
+    gear_spear: { id: 'gear_spear', name: 'Spear', statements: [provides(EFFECT_TYPES.TYPE_DAMAGE, 10, { category: 'stab' })] },
     gear_bow: { id: 'gear_bow', name: 'Bow', statements: [provides(EFFECT_TYPES.ACCURACY, 5)] },
     gear_rapier: { id: 'gear_rapier', name: 'Rapier', statements: [provides(EFFECT_TYPES.CRIT_CHANCE, 5)] },
     gear_cleaver: { id: 'gear_cleaver', name: 'Cleaver', statements: [provides(EFFECT_TYPES.DOUBLE_DROP, 50, { category: 'item_raw_beef' })] },
@@ -73,8 +74,8 @@ const ITEMS = {
     gear_copper_wand: weapon('gear_copper_wand', 'Copper Wand', { styles: ['magic'], damage: 1, speed: 'fast' }),
     gear_old_bow: weapon('gear_old_bow', 'Old Bow', { skillRequired: 'ranged', damage: 2 }),
     gear_stick: weapon('gear_stick', 'Training Stick', { damage: 1 }),
-    gear_copper_spear: weapon('gear_copper_spear', 'Copper Spear', { styles: ['melee'], damage: 2, effects: [{ effectId: 'gear_spear', scale: 1 }] }),
-    gear_iron_spear: weapon('gear_iron_spear', 'Iron Spear', { styles: ['melee'], damage: 3, effects: [{ effectId: 'gear_spear', scale: 2 }] }),
+    gear_copper_spear: weapon('gear_copper_spear', 'Copper Spear', { styles: ['melee'], damage: 2, damageType: 'stab', effects: [{ effectId: 'gear_spear', scale: 1 }] }),
+    gear_iron_spear: weapon('gear_iron_spear', 'Iron Spear', { styles: ['melee'], damage: 3, damageType: 'stab', effects: [{ effectId: 'gear_spear', scale: 2 }] }),
     gear_copper_bow: weapon('gear_copper_bow', 'Copper Bow', { styles: ['ranged'], damage: 2, effects: [{ effectId: 'gear_bow', scale: 1 }] }),
     gear_copper_rapier: weapon('gear_copper_rapier', 'Copper Rapier', { styles: ['stealth'], damage: 2, effects: [{ effectId: 'gear_rapier', scale: 1 }] }),
     gear_iron_rapier: weapon('gear_iron_rapier', 'Iron Rapier', { styles: ['stealth'], damage: 3, effects: [{ effectId: 'gear_rapier', scale: 2 }] }),
@@ -93,7 +94,7 @@ const ITEMS = {
     t1_wand: weapon('t1_wand', 'Tier Copper Wand', { tier: 1, styles: ['magic'], damage: 1, speed: 'fast' }),
     t2_sword: weapon('t2_sword', 'Iron Sword', { tier: 2, styles: ['melee'], damage: 3 }),
     t2_gated_sword: weapon('t2_gated_sword', 'Gated Iron Sword', { tier: 2, styles: ['melee'], damage: 3, levelRequired: 15 }),
-    t2_gated_spear: weapon('t2_gated_spear', 'Gated Iron Spear', { tier: 2, styles: ['melee'], damage: 3, levelRequired: 15, effects: [{ effectId: 'gear_spear', scale: 2 }] })
+    t2_gated_spear: weapon('t2_gated_spear', 'Gated Iron Spear', { tier: 2, styles: ['melee'], damage: 3, damageType: 'stab', levelRequired: 15, effects: [{ effectId: 'gear_spear', scale: 2 }] })
 };
 registerItems(ITEMS);
 
@@ -251,7 +252,8 @@ describe('a new hero swings what they hold, in its style', () => {
         equipOk(hero, 't1_bow');
         const side = heroSide(hero);
         expect(side).toMatchObject({ style: 'ranged', armed: true, hit: 2 });
-        expect(side.hitLines[0]).toBe('Tier Copper Bow: 2');
+        // The weapon's type follows its damage: an untyped bow shoots Stab (damage types).
+        expect(side.hitLines[0]).toBe('Tier Copper Bow: 2 Stab');
     });
 });
 
@@ -269,22 +271,23 @@ describe('in a fight a hero swings the first weapon they can use', () => {
         expect(CF.getHeroCombatLevel(fighter)).toBe(1);
         expect(CF.getHeroCombatLevel(rogue)).toBe(30);
         expect(CF.heroAttackSpeedMs(fighter)).toBe(2000);
-        // Stealth beats melee: 1 + the level step 1 = 2, × 1.25 = 2.5 → 3 for the Rogue.
-        expect(CF.heroHitDamage(rogue, enemy('melee'))).toBe(3);
+        // Stealth beats melee: 1 + the level step 1 = 2, × 1.25 = 2.5 for the Rogue (its fraction
+        // rolls as it lands, so the blow is read before the roll).
+        expect(CF.heroBlow(rogue, enemy('melee')).exact).toBe(2.5);
     });
 
     it('a weapon held below its level (an older save) is not swung, and its family\'s ability is off', () => {
         const hero = addHero('Bram', 'melee', 20);
         give('t2_gated_spear');
         equipOk(hero, 't2_gated_spear');
-        expect(CF.heroPierce(hero)).toBe(2);
+        expect(CF.typeDamageBoost(hero, 'stab')).toBe(20);
 
         hero.skills.melee = { level: 5, xp: 0 };
         EquipmentManager.recalculateEquipmentModifiers(hero);
         expect(CF.getHeroWeapon(hero)).toBeNull();
         expect(CF.heroBaseDamage(hero)).toBe(1);
         expect(CF.getHeroCombatStyle(hero)).toBe('melee');
-        expect(CF.heroPierce(hero)).toBe(0);
+        expect(CF.typeDamageBoost(hero, 'stab')).toBe(0);
         expect(HeroEffects.loadoutStatements(hero)).toEqual([]);
     });
 
@@ -317,16 +320,19 @@ describe('in a fight a hero swings the first weapon they can use', () => {
 describe('a family\'s ability is a Rules effect on the item; the tier raises the number', () => {
     const enemy = (more = {}) => enemyProfileOf({ id: 'e', name: 'E', enemy: { level: 1, style: 'magic', ...more } });
 
-    it('Spear: Pierce 1 at copper, 2 at iron; against armour 2 the iron spear hits through', () => {
+    // Rewritten for damage types: Pierce and flat armour are retired; the family ability that shows
+    // the tier's scale is a Type Damage % on the spear's Stab.
+    it('Spear: +10 % Stab at copper, +20 % at iron; it shows on every hit', () => {
         const a = addHero('A', 'melee');
         const b = addHero('B', 'melee');
         equipOk(a, 'gear_copper_spear');
         equipOk(b, 'gear_iron_spear');
-        expect(CF.heroPierce(a)).toBe(1);
-        expect(CF.heroPierce(b)).toBe(2);
-        // Copper 2 - (armour 2 - pierce 1) = 1; iron 3 - (2 - 2) = 3.
-        expect(CF.heroHitDamage(a, enemy({ armor: 2 }))).toBe(1);
-        expect(CF.heroHitDamage(b, enemy({ armor: 2 }))).toBe(3);
+        expect(CF.typeDamageBoost(a, 'stab')).toBe(10);
+        expect(CF.typeDamageBoost(b, 'stab')).toBe(20);
+        // Copper 2 × 1.1 = 2.2; iron 3 × 1.2 = 3.6; on a Physical resistance of 50 %: 2 × (1 + 10 % − 50 %).
+        expect(CF.heroBlow(a, enemy()).exact).toBeCloseTo(2.2, 9);
+        expect(CF.heroBlow(b, enemy()).exact).toBeCloseTo(3.6, 9);
+        expect(CF.heroBlow(a, enemy({ resistances: { physical: 50 } })).exact).toBeCloseTo(1.2, 9);
     });
 
     it('Bow: +5 Accuracy takes 5 points off the miss chance', () => {
@@ -460,11 +466,13 @@ describe('Cleaver: a chance to double one item a kill or a cycle drops', () => {
 });
 
 describe('the Rules editor offers the new modifiers', () => {
-    it('Dodge, Pierce and Crit Chance are combat rows read as flat sums; Double Item Chance and Status Stack Limit are offered too', () => {
+    // Rewritten for damage types: Pierce is retired (still read as a sentence, never offered).
+    it('Dodge and Crit Chance are combat rows read as flat sums; Double Item Chance and Status Stack Limit are offered too', () => {
         const offered = paletteForKeyword(KEYWORD.PROVIDES).map(e => e.type);
-        for (const type of ['DODGE', 'PIERCE', 'CRIT_CHANCE', 'DOUBLE_DROP', 'STATUS_MAX_STACKS']) {
+        for (const type of ['DODGE', 'CRIT_CHANCE', 'DOUBLE_DROP', 'STATUS_MAX_STACKS']) {
             expect(offered, type).toContain(type);
         }
+        expect(offered).not.toContain('PIERCE');
         for (const type of ['DODGE', 'PIERCE', 'CRIT_CHANCE']) {
             expect(getPaletteEntry(type)).toMatchObject({ group: 'Combat', heroOnly: true, buckets: ['flat'] });
         }
@@ -476,8 +484,8 @@ describe('the Rules editor offers the new modifiers', () => {
     it('picking a combat axis starts the rule as a flat amount, the only bucket combat reads', () => {
         const statement = makeStatement(KEYWORD.PROVIDES);
         const typeSlot = slotsOf(statement).find(s => s.id === 'type');
-        const picked = typeSlot.patch('PIERCE');
-        expect(picked.payload).toEqual({ type: 'PIERCE', bucket: 'flat', value: 0 });
+        const picked = typeSlot.patch('CRIT_CHANCE');
+        expect(picked.payload).toEqual({ type: 'CRIT_CHANCE', bucket: 'flat', value: 0 });
     });
 
     it('the item narrowing offers "Any item" and the items, and the sentence names the item', () => {

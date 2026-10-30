@@ -37,7 +37,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 const stats = (level, kinds, more = {}) => enemyProfileOf({ id: 'e', name: 'E', enemy: { level, style: 'melee', kinds, ...more } });
-const pick = (p) => ({ hp: p.hp, hit: p.hit, armor: p.armor, speed: p.speed, xp: p.xpAwarded, dodge: p.dodge });
+const pick = (p) => ({ hp: p.hp, hit: p.hit, resistances: p.resistances, speed: p.speed, xp: p.xpAwarded, dodge: p.dodge });
+const PHYS_50 = { physical: 50 };
 
 describe('the five kinds, all from the start', () => {
     it('Armoured, Nimble, Swift, Brute, Venomous; at most two per enemy', () => {
@@ -47,20 +48,22 @@ describe('the five kinds, all from the start', () => {
 });
 
 describe('how a kind combines with the level table', () => {
-    it('no kind: exactly the level table (level 1: 21 HP, hit 1, armour 0, 3 s, 10 XP)', () => {
-        expect(pick(stats(1, undefined))).toEqual({ hp: 21, hit: 1, armor: 0, speed: 'normal', xp: 10, dodge: 0 });
+    it('no kind: exactly the level table (level 1: 21 HP, hit 1, no resistances, 3 s, 10 XP)', () => {
+        expect(pick(stats(1, undefined))).toEqual({ hp: 21, hit: 1, resistances: {}, speed: 'normal', xp: 10, dodge: 0 });
         expect(stats(1, []).kinds).toEqual([]);
         expect(stats(1, []).onHit).toBeUndefined();
     });
 
-    it('Armoured: +2 armour and a slow swing, its hit unchanged; HP and XP untouched', () => {
-        expect(pick(stats(1, ['armoured']))).toEqual({ hp: 21, hit: 1, armor: 2, speed: 'slow', xp: 10, dodge: 0 });
-        expect(pick(stats(30, ['armoured']))).toMatchObject({ armor: 3, hit: 2, speed: 'slow' });
+    // Rewritten for damage types: Armoured's +2 armour became a Physical resistance step, and the
+    // level table no longer brings armour.
+    it('Armoured: Physical resistance 50 % and a slow swing, its hit unchanged; HP and XP untouched', () => {
+        expect(pick(stats(1, ['armoured']))).toEqual({ hp: 21, hit: 1, resistances: PHYS_50, speed: 'slow', xp: 10, dodge: 0 });
+        expect(pick(stats(30, ['armoured']))).toMatchObject({ resistances: PHYS_50, hit: 2, speed: 'slow' });
         expect(stats(1, ['armoured']).attackSpeed).toBe(4000);
     });
 
     it('Nimble: +15 Dodge, so a hero misses it 15 points more', () => {
-        expect(pick(stats(1, ['nimble']))).toEqual({ hp: 21, hit: 1, armor: 0, speed: 'normal', xp: 10, dodge: 15 });
+        expect(pick(stats(1, ['nimble']))).toEqual({ hp: 21, hit: 1, resistances: {}, speed: 'normal', xp: 10, dodge: 15 });
         const hero = { skills: { melee: { level: 1 } } };
         expect(CF.heroMissChance(hero, stats(1, ['nimble']))).toBe(CF.heroMissChance(hero, stats(1, [])) + 15);
     });
@@ -82,22 +85,22 @@ describe('how a kind combines with the level table', () => {
         expect(pick(stats(1, ['venomous']))).toEqual(pick(stats(1, [])));
     });
 
-    it('two kinds apply in the order ticked: Armoured Brute at 20 is armour 2, hit 3, slow', () => {
-        expect(pick(stats(20, ['armoured', 'brute']))).toMatchObject({ armor: 2, hit: 3, speed: 'slow' });
-        expect(pick(stats(1, ['nimble', 'armoured']))).toMatchObject({ armor: 2, dodge: 15, speed: 'slow' });
+    it('two kinds apply in the order ticked: Armoured Brute at 20 resists Physical 50, hits 3, slow', () => {
+        expect(pick(stats(20, ['armoured', 'brute']))).toMatchObject({ resistances: PHYS_50, hit: 3, speed: 'slow' });
+        expect(pick(stats(1, ['nimble', 'armoured']))).toMatchObject({ resistances: PHYS_50, dodge: 15, speed: 'slow' });
         expect(stats(1, ['nimble', 'armoured']).kinds).toEqual(['nimble', 'armoured']);
     });
 
     it('a number the author typed wins outright over the level and the kinds', () => {
-        expect(pick(stats(1, ['armoured'], { armor: 5 }))).toMatchObject({ armor: 5, speed: 'slow' });
-        expect(pick(stats(1, ['armoured'], { speed: 'fast' }))).toMatchObject({ armor: 2, speed: 'fast' });
+        expect(pick(stats(1, ['armoured'], { resistances: { physical: 25 } }))).toMatchObject({ resistances: { physical: 25 }, speed: 'slow' });
+        expect(pick(stats(1, ['armoured'], { speed: 'fast' }))).toMatchObject({ resistances: PHYS_50, speed: 'fast' });
         expect(pick(stats(1, ['brute'], { hit: 9 }))).toMatchObject({ hit: 9 });
         expect(pick(stats(1, ['nimble'], { dodge: 0 }))).toMatchObject({ dodge: 0 });
     });
 
     it('older content\'s budgetScale scales the level first; a Brute is still at least 1 harder than that', () => {
         // The Goblin: level 1 × 0.3 → 6 HP, hit 1, 3 XP; as a Brute, hit 2.
-        expect(pick(stats(1, ['brute'], { budgetScale: 0.3 }))).toEqual({ hp: 6, hit: 2, armor: 0, speed: 'slow', xp: 3, dodge: 0 });
+        expect(pick(stats(1, ['brute'], { budgetScale: 0.3 }))).toEqual({ hp: 6, hit: 2, resistances: {}, speed: 'slow', xp: 3, dodge: 0 });
     });
 
     it('an unknown kind, a repeat and a third kind are ignored; clashing speeds let the later win', () => {
@@ -110,7 +113,7 @@ describe('how a kind combines with the level table', () => {
     });
 
     it('the CMS reads the same defaults the fight starts from', () => {
-        expect(enemyFilledStats({ level: 20, kinds: ['armoured'] })).toMatchObject({ hp: 40, hit: 2, armor: 2, speed: 'slow', xp: 33 });
+        expect(enemyFilledStats({ level: 20, kinds: ['armoured'] })).toMatchObject({ hp: 40, hit: 2, resistances: PHYS_50, speed: 'slow', xp: 33 });
     });
 });
 
@@ -177,11 +180,11 @@ describe('a fight against each kind', () => {
         }
     });
 
-    it('Armoured takes 2 off every hit the hero lands (unarmed level 99: 1 + 4 = 5, so 3)', () => {
+    it('Armoured halves every Physical hit the hero lands (a level 99 fist, Crush: 1 + 4 = 5, so 2.5, rolled to 2 or 3)', () => {
         const plain = duel('kind_none').heroHits.filter(h => !h.crit).map(h => h.damage);
         const plated = duel('kind_armoured').heroHits.filter(h => !h.crit).map(h => h.damage);
         expect(new Set(plain)).toEqual(new Set([5]));
-        expect(new Set(plated)).toEqual(new Set([3]));
+        expect([...new Set(plated)].sort()).toEqual([2, 3]);
     });
 
     it('Venomous poisons the hero on the hits it lands, up to 3 stacks; the others never do', () => {

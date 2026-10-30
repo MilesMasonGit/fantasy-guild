@@ -29,8 +29,8 @@ import { TARGET_CATEGORIES } from '../effects/constants.js';
  *
  * ## Output
  * `[{ entityType, entityId, entityName, field, message }]`, `entityType` being
- * `'Token'`, `'Item'` or `'Recipe'`, and `message` a sentence that does not
- * repeat the entity's name.
+ * `'Effect'`, `'Token'`, `'Item'` or `'Recipe'`, and `message` a sentence that
+ * does not repeat the entity's name.
  */
 
 /** Shop entries without a skill section fall under this one (`Shop.GENERAL_SECTION`). */
@@ -56,12 +56,23 @@ function statementFindings(def, push) {
             && !isScopeCategory(payload.category)) {
             push('statements', `one of its rules is narrowed to the skill "${payload.category}", which does not exist — the rule matches nothing. Pick the skill again in the CMS.`);
         }
-        const entry = statement?.keyword === KEYWORD.PROVIDES ? getPaletteEntry(payload.type) : null;
-        if (entry?.retired) {
-            push('statements', `one of its rules provides ${entry.label}, retired with damage types: it does nothing. Use Type Resistance % instead (Physical for metal armour), or delete the rule in the CMS.`);
+    }
+}
+
+/**
+ * Findings for a library effect's rows: a row retired with damage types, or a Type row aimed at a
+ * type that does not exist. Read off the library, not each bearer, so an effect carried by six
+ * pieces of armour is named once.
+ */
+function effectRowFindings(entry, push) {
+    for (const statement of statementsOf(entry)) {
+        const payload = statement?.payload || {};
+        const row = statement?.keyword === KEYWORD.PROVIDES ? getPaletteEntry(payload.type) : null;
+        if (row?.retired) {
+            push('statements', `provides ${row.label}, retired with damage types: it does nothing. Use Type Resistance % instead (Physical for metal armour), or delete the rule in the CMS.`);
         }
-        if (entry?.categories === 'damageType' && hasValue(payload.category) && !isTypeOrGroupId(payload.category)) {
-            push('statements', `one of its rules is aimed at the damage type "${payload.category}", which does not exist — the rule matches nothing. Pick the type again in the CMS.`);
+        if (row?.categories === 'damageType' && hasValue(payload.category) && !isTypeOrGroupId(payload.category)) {
+            push('statements', `has a rule aimed at the damage type "${payload.category}", which does not exist — the rule matches nothing. Pick the type again in the CMS.`);
         }
     }
 }
@@ -125,11 +136,18 @@ function enemyKindFindings(def, push) {
 /**
  * Every skill and job reference in the content that does not resolve.
  *
- * @param {{ tokens?: object, items?: object, recipes?: object }} content
+ * @param {{ tokens?: object, items?: object, recipes?: object, effects?: object }} content
  * @returns {Array<{ entityType: string, entityId: string, entityName: string, field: string, message: string }>}
  */
-export function findUnknownRefs({ tokens, items, recipes } = {}) {
+export function findUnknownRefs({ tokens, items, recipes, effects } = {}) {
     const out = [];
+
+    for (const entry of asList(effects)) {
+        if (!entry || typeof entry !== 'object') continue;
+        effectRowFindings(entry, (field, message) => out.push({
+            entityType: 'Effect', entityId: entry.id, entityName: entry.name || entry.id, field, message
+        }));
+    }
 
     for (const def of asList(tokens)) {
         if (!def || typeof def !== 'object') continue;

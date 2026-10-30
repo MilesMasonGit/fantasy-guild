@@ -225,7 +225,9 @@ describe('⭐ the Token editor: an enemy\'s numbers, filled from the level and k
         const p = enemyProfileOf(store().tokens[cow]);
         expect(field(container, 'enemy-hp').value).toBe(String(p.hp));
         expect(field(container, 'enemy-hit').value).toBe(String(p.hit));
-        expect(field(container, 'enemy-armor').value).toBe(String(p.armor));
+        // Flat armour and Pierce are retired with damage types: no box for either.
+        expect(field(container, 'enemy-armor')).toBeNull();
+        expect(field(container, 'enemy-pierce')).toBeNull();
         expect(field(container, 'enemy-xp').value).toBe(String(p.xpAwarded));
         expect(field(container, 'enemy-dodge').value).toBe('0');
         expect(field(container, 'enemy-critChance').value).toBe('5');
@@ -251,9 +253,9 @@ describe('⭐ the Token editor: an enemy\'s numbers, filled from the level and k
         const { container } = tokenEditor(cow);
         fireEvent.change(field(container, 'enemy-xp'), { target: { value: '7' } });
         fireEvent.change(field(container, 'enemy-level'), { target: { value: '30' } });
-        expect(field(container, 'enemy-hp').value).toBe('50');
+        // 20 + 30, and 4 more HP per 30 levels where 1 armour was.
+        expect(field(container, 'enemy-hp').value).toBe('54');
         expect(field(container, 'enemy-hit').value).toBe('2');
-        expect(field(container, 'enemy-armor').value).toBe('1');
         expect(field(container, 'enemy-xp').value).toBe('7');
     });
 
@@ -278,13 +280,16 @@ describe('⭐ the Token editor: an enemy\'s numbers, filled from the level and k
 describe('⭐ the kinds: none, one or two presets', () => {
     const cow = 'token_cow';
 
-    it('ticking Armoured writes it and the numbers follow (+2 armour, a 4 s swing)', () => {
+    // Rewritten for damage types: Armoured's +2 armour became a Physical resistance of 50 %.
+    it('ticking Armoured writes it and the numbers follow (Physical resistance 50 %, a 4 s swing)', () => {
         const { container } = tokenEditor(cow);
         fireEvent.click(field(container, 'enemy-kind-armoured'));
         expect(store().tokens[cow].enemy.kinds).toEqual(['armoured']);
-        expect(field(container, 'enemy-armor').value).toBe('2');
+        expect(field(container, 'enemy-resist-physical-step').value).toBe('');
+        expect(field(container, 'enemy-resist-physical-step').selectedOptions[0].textContent).toBe('Resist 50% (from kinds)');
         expect(field(container, 'enemy-speed').selectedOptions[0].textContent).toBe('Slow (4 s)');
-        expect(field(container, 'enemy-armor-source').textContent).toBe('from level + kinds');
+        expect(field(container, 'enemy-speed-source').textContent).toBe('from level + kinds');
+        expect(store().tokens[cow].enemy).not.toHaveProperty('resistances');
     });
 
     it('Swift cannot go with Armoured (both set the swing); a third kind cannot be ticked', () => {
@@ -333,5 +338,74 @@ describe('⭐ the kinds: none, one or two presets', () => {
             effects: { ...s.effects, effect_poison: { id: 'effect_poison', name: 'Poison', status: { stacks: 3, ticks: 0 }, statements: [] } }
         })));
         expect(box().textContent).toContain('On hitPoison');
+    });
+});
+
+describe('⭐ damage types in the CMS: a weapon\'s type, an arrow, an enemy\'s resistances', () => {
+    const cow = 'token_cow';
+
+    it('a weapon\'s Damage type: blank is its style\'s default; a pick is written; blank removes it', () => {
+        const id = store().addItem({ name: 'Wand Fixture', equipSlot: 'hand' });
+        const { container } = itemEditor(id);
+        fireEvent.change(field(container, 'weapon-style'), { target: { value: 'magic' } });
+        expect(field(container, 'weapon-damage-type').value).toBe('');
+        expect(field(container, 'weapon-damage-type').selectedOptions[0].textContent).toBe("Magic's default (Fire)");
+        fireEvent.change(field(container, 'weapon-damage-type'), { target: { value: 'ice' } });
+        expect(store().items[id]).toMatchObject({ type: 'weapon', damageType: 'ice' });
+        fireEvent.change(field(container, 'weapon-damage-type'), { target: { value: '' } });
+        expect(store().items[id].damageType).toBeUndefined();
+    });
+
+    it('a Consumable may be an arrow: ticked it writes damage 1, Stab; its fields write; unticked removes it', () => {
+        const id = store().addItem({ name: 'Arrow Fixture', equipSlot: 'consumable' });
+        const { container } = itemEditor(id);
+        expect(field(container, 'arrow-damage')).toBeNull();
+        fireEvent.click(field(container, 'arrow'));
+        expect(store().items[id].arrow).toEqual({ damage: 1, damageType: 'stab' });
+        fireEvent.change(field(container, 'arrow-damage'), { target: { value: '2' } });
+        fireEvent.change(field(container, 'arrow-damage-type'), { target: { value: 'fire' } });
+        expect(store().items[id].arrow).toEqual({ damage: 2, damageType: 'fire' });
+        fireEvent.click(field(container, 'arrow'));
+        expect(store().items[id].arrow).toBeUndefined();
+
+        const hat = store().addItem({ name: 'Hat Fixture', equipSlot: 'hat' });
+        cleanup();
+        expect(field(itemEditor(hat).container, 'arrow')).toBeNull();
+    });
+
+    it('an enemy\'s resistances: add a line, change its step, take it away; nothing written until then', () => {
+        const before = JSON.stringify(store().tokens[cow].enemy);
+        const { container } = tokenEditor(cow);
+        expect(JSON.stringify(store().tokens[cow].enemy)).toBe(before);
+        fireEvent.change(field(container, 'enemy-resist-add'), { target: { value: 'fire' } });
+        expect(store().tokens[cow].enemy.resistances).toEqual({ fire: 50 });
+        fireEvent.change(field(container, 'enemy-resist-fire-step'), { target: { value: '100' } });
+        fireEvent.change(field(container, 'enemy-resist-add'), { target: { value: 'ice' } });
+        fireEvent.change(field(container, 'enemy-resist-ice-step'), { target: { value: '-50' } });
+        expect(store().tokens[cow].enemy.resistances).toEqual({ fire: 100, ice: -50 });
+        expect(enemyProfileOf(store().tokens[cow]).resistances).toEqual({ fire: 100, ice: -50 });
+        fireEvent.change(field(container, 'enemy-resist-fire-step'), { target: { value: '' } });
+        fireEvent.change(field(container, 'enemy-resist-ice-step'), { target: { value: '' } });
+        expect(store().tokens[cow].enemy).not.toHaveProperty('resistances');
+    });
+
+    it('an older enemy\'s typed Armour is said to be retired, and one click removes it', () => {
+        store().updateToken(cow, { enemy: { level: 1, style: 'melee', armor: 2 } });
+        const { container } = tokenEditor(cow);
+        expect(field(container, 'enemy-retired-numbers').textContent).toContain('Armour 2: retired');
+        fireEvent.click(within(field(container, 'enemy-retired-numbers')).getByRole('button'));
+        expect(store().tokens[cow].enemy).not.toHaveProperty('armor');
+    });
+
+    it('a weapon\'s type, an arrow and resistances survive Recalculate, Sync and a reload unchanged', () => {
+        const wand = store().addItem({ name: 'Wand Fixture', equipSlot: 'hand' });
+        store().updateItem(wand, { type: 'weapon', styles: ['magic'], damage: 2, damageType: 'ice' });
+        const arrow = store().addItem({ name: 'Arrow Fixture', equipSlot: 'consumable' });
+        store().updateItem(arrow, { arrow: { damage: 1, damageType: 'stab' } });
+        store().updateToken(cow, { enemy: { level: 1, style: 'melee', kinds: ['armoured'], resistances: { crush: -50 } } });
+        const synced = expectStableRoundTrip();
+        expect(synced['items.json'][wand]).toMatchObject({ damageType: 'ice' });
+        expect(synced['items.json'][arrow]).toMatchObject({ arrow: { damage: 1, damageType: 'stab' } });
+        expect(synced['tokens.json'][cow].enemy).toMatchObject({ kinds: ['armoured'], resistances: { crush: -50 } });
     });
 });

@@ -75,6 +75,24 @@ describe('floats: what each says and its colour', () => {
         expect(statusIcon('effect_poison')).toBe('drop');
     });
 
+    it('a hit carries its type\'s glyph; a shot two; the target\'s weakness says Weak! in gold, a resistance Resisted', () => {
+        const plain = float({ kind: MOMENT.HIT, on: 'enemy', amount: 2, types: ['slash'] });
+        expect([...plain.querySelectorAll('[data-fight-float-type]')].map(e => e.getAttribute('data-fight-float-type'))).toEqual(['slash']);
+        expect(q(plain, '[data-glyph="dt_slash"]')).not.toBeNull();
+        expect(plain.textContent).toBe('2');
+        const shot = float({ kind: MOMENT.HIT, on: 'enemy', amount: 2, types: ['electric', 'stab'] });
+        expect([...shot.querySelectorAll('[data-fight-float-type]')].map(e => e.getAttribute('data-fight-float-type'))).toEqual(['electric', 'stab']);
+        const weak = float({ kind: MOMENT.HIT, on: 'enemy', amount: 3, types: ['ice'], verdict: 'weak' });
+        expect(weak.getAttribute('data-fight-float-verdict')).toBe('weak');
+        expect(q(weak, '.gi-ff-weak-word').textContent).toBe(t('fight.float.weak'));
+        expect(q(weak, '.gi-ff-number').textContent).toBe('3');
+        const resisted = float({ kind: MOMENT.CRIT, on: 'hero', amount: 0, types: ['physical'], verdict: 'resisted' });
+        expect(q(resisted, '.gi-ff-crit-word').textContent).toBe(t('fight.float.crit'));
+        expect(q(resisted, '.gi-ff-resisted-word').textContent).toBe(t('fight.float.resisted'));
+        expect(q(resisted, '.gi-ff-crit-number').textContent).toBe('0');
+        expect(resisted.className).toContain('gi-ff-red');
+    });
+
     it('starts hidden: it shows only while it rises', () => {
         expect(float({ kind: MOMENT.HIT, on: 'enemy', amount: 3 }).style.visibility).toBe('hidden');
     });
@@ -84,11 +102,15 @@ describe('the fight panel', () => {
     const kit = () => render(React.createElement(CombatKit)).container;
     const panels = (root) => root.querySelectorAll('[data-fight-panel]');
 
-    it('the versus card reads across: level and style, health as "number · %", hit, armour, swing', () => {
+    // Rewritten for damage types: the hit row carries its type's glyph, and resistances stand where
+    // armour stood.
+    it('the versus card reads across: level and style, health as "number · %", hit with its type, resistances, swing', () => {
         const panel = panels(kit())[0];
         const row = (id) => [...panel.querySelectorAll(`[data-fight-row="${id}"] [data-fight-side]`)].map(text);
         expect(row('hit')).toEqual(['4', '3']);
-        expect(row('armour')).toEqual(['2', '0']);
+        expect([...panel.querySelectorAll('[data-fight-row="hit"] [data-fight-hit-type]')].map(e => e.getAttribute('data-fight-hit-type'))).toEqual(['slash', 'physical']);
+        expect(row('resists')).toEqual(['25%', '50%−25%']);
+        expect([...panel.querySelectorAll('[data-fight-side="enemy"] [data-fight-resist]')].map(e => e.getAttribute('data-fight-resist'))).toEqual(['fire', 'slash']);
         expect(row('swing')).toEqual(['3 s', '4 s']);
         expect(text(q(panel, '[data-fight-hp="hero"]'))).toBe('17 · 57%');
         expect(text(q(panel, '[data-fight-hp="enemy"]'))).toBe('24 · 60%');
@@ -175,9 +197,11 @@ describe('the enemy card', () => {
     it('its numbers are the level table\'s and the kinds\' (level 20 Brute: 40 health, hits 3 every 4 s)', () => {
         GameState.initNew();
         const card = enemyCardView('cs_ui_brute');
-        expect(card).toMatchObject({ level: 20, style: 'melee', hp: 40, hit: 3, armour: 0, swingMs: 4000 });
+        expect(card).toMatchObject({ level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'physical', resists: [], swingMs: 4000 });
         const root = render(React.createElement(EnemyCardRows, { card })).container;
         expect(text(q(root, '[data-enemy-card-level]'))).toBe('20/99');
+        expect(q(root, '[data-enemy-card-resists="none"]')).not.toBeNull();
+        expect(q(root, '[data-enemy-card-armour]')).toBeNull();
         expect(text(q(root, '[data-enemy-card-swing]'))).toBe('every 4 s');
     });
 });
@@ -219,7 +243,7 @@ describe('the style sheet', () => {
         expect(existsSync(path.join(HERE, '..', 'ui', 'dev', 'CombatMockups.jsx'))).toBe(false);
         const root = render(React.createElement(CombatKit)).container;
         expect(root.querySelectorAll('[data-kit-combat="mat"] [data-health-bar]')).toHaveLength(2);
-        expect(root.querySelectorAll('[data-kit-float]')).toHaveLength(9);
+        expect(root.querySelectorAll('[data-kit-float]')).toHaveLength(12);
         expect(root.querySelectorAll('[data-fight-panel]')).toHaveLength(2);
         expect(root.querySelectorAll('[data-enemy-card]')).toHaveLength(2);
     });

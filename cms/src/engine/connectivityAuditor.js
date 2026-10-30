@@ -134,7 +134,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
   }
 
   // A skill or job the game does not have (a renamed or dropped one). The game's own rule (`unknownRefRule.js`), so this tab and the boot audit name the same things.
-  for (const f of findUnknownRefs({ tokens: expandedTokens, items, recipes })) {
+  for (const f of findUnknownRefs({ tokens: expandedTokens, items, recipes, effects })) {
     issues.push({
       entityId: f.entityId,
       entityName: f.entityName,
