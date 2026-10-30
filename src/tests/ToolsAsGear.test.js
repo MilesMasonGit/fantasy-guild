@@ -25,7 +25,7 @@ import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegi
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
 import { getPrimaryWeapon } from '../config/registries/equipmentConstants.js';
 import { setStarterCampForTests, resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import {
     TOOL_KINDS, HANDS, toolOf, neededToolOf, toolMeets, handsOf, toolNeedPhrase, toolItemFor, starterToolIds
 } from '../config/registries/toolKinds.js';

@@ -9,7 +9,6 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as WorkCheck from '../systems/board/WorkCheck.js';
-import * as Flags from '../systems/board/Flags.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';

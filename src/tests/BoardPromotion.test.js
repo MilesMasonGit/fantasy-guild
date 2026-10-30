@@ -11,7 +11,7 @@ import * as PromotionSystem from '../systems/hero/PromotionSystem.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
-import { getPromotionCost, getPromotionGateSkills, getJobSkills, getJobSheet } from '../config/registries/jobRegistry.js';
+import { getPromotionCost, getPromotionGateSkills, getJobSheet } from '../config/registries/jobRegistry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { chargeDeltaOf } from '../config/registries/chargeMomentRegistry.js';
 

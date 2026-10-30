@@ -6,7 +6,7 @@ import { render, cleanup, act } from '@testing-library/react';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';

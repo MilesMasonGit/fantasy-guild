@@ -15,7 +15,7 @@ import { ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { SKIP_HINT } from '../ui/components/board/boardConstants.js';
 import { blockedText } from '../ui/components/board/heroBubbles.js';

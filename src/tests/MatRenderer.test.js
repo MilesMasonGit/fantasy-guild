@@ -22,7 +22,6 @@ import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
 import { HERO_HIT_PX, HERO_BOX_PX } from '../ui/components/board/boardConstants.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
-import { ALERT } from '../systems/board/boardEvents.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 import { restHover } from './fixtures/hoverRest.js';

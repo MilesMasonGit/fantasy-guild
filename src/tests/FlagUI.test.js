@@ -4,7 +4,6 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
-import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -13,9 +12,8 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses, registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { SKIP_HINT, skipHint } from '../ui/components/board/boardConstants.js';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -68,7 +66,6 @@ function put(tile, typeId) {
     return instance;
 }
 
-const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
 
 beforeAll(() => Flags.init());
 afterAll(() => { Flags.teardown(); resetMatTuning(); });

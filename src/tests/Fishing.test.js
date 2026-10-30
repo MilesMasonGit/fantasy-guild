@@ -18,7 +18,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { MAX_SPEED_UP_CUT } from '../config/loopConstants.js';
 import {
     catchPoolsOf, hasCatchPools, catchToolKinds, poolFor, baitsFor, catchItemIds, baitItemIds, pickCatchIndex

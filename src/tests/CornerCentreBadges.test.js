@@ -20,7 +20,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';

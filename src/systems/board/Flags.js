@@ -284,8 +284,7 @@ function release(heroId) {
 }
 
 function claimToken(heroId, instance) {
-    // ⚠️ A new claim starts with no cycle-end mark, or the better-work check could switch the hero
-    // off it one tick into its first cycle.
+    // ⚠️ A new claim starts with no cycle-end mark, or an ambush on it would end one tick in.
     rt()?.cycleEnded.delete(heroId);
     BoardState.setClaim(heroId, { instanceId: instance.id, typeId: instance.typeId, x: instance.x, y: instance.y });
     // A different hero taking a Promotion Token is the gesture that asks again. The same hero
@@ -1127,13 +1126,12 @@ export function statusOf(heroId) {
 }
 
 /**
- * A hero finished a cycle (or a kill): their notices about that Token re-arm, and the next pass
- * looks for better work.
+ * A hero finished a cycle (or a kill): a fight-back ends with its kill (`keepOrRelease`).
  *
  * ⚠️ Only noted here, not acted on. This runs inside the runner's (or the fight's) completion,
  * which carries on after publishing; letting go of the Token from in here would pull it out from
- * under that code. The next `assign` runs before any Token ticks, so the switch still lands between
- * cycles.
+ * under that code. The next `assign` runs before any Token ticks, so the hero goes back to their
+ * order between cycles.
  */
 function cycleCompleted(heroId) {
     const r = rt();

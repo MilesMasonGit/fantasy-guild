@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardState from '../systems/board/BoardState.js';
-import * as Flags from '../systems/board/Flags.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -40,14 +39,14 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 /** The Token standing exactly on spot `i`, and its instance id. */
 const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 
-/** Put a Token on spot `i`, and plant a hero's flag there. */
+/** Put a Token on spot `i`, and send a hero there. */
 // The player picks a station's recipe; a non-station is untouched.
 const put = (i, instance) => {
     const res = Placement.placeTokenAt(instance, C(i));
     pickRecipe(instance);
     return res;
 };
-const plant = (heroId, i) => Orders.orderAt(heroId, C(i));
+const sendTo = (heroId, i) => Orders.orderAt(heroId, C(i));
 
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 
@@ -88,7 +87,7 @@ describe('On-Board Tile Event Alerts', () => {
         // Create token with 1 charge
         const tok = BoardState.createTokenInstance('fixture_producer', 1);
         put(8, tok);
-        plant('hero_1', 8);
+        sendTo('hero_1', 8);
 
         // Run cycle to completion (fixture_producer cycleTime is 12s)
         for (let t = 0; t < 13000; t += 100) BoardRunner.tick(100);
@@ -232,7 +231,7 @@ describe('On-Board Tile Event Alerts', () => {
         // Place station with recipe context
         const station = BoardState.createTokenInstance('fixture_station');
         put(8, station);
-        plant('hero_1', 8);
+        sendTo('hero_1', 8);
 
         // The context Token it needs on tile 9, and a gathering node with an aura on tile 14, both
         // on their last charge: help is free (brief 230 S1a), so serving the station spends neither.

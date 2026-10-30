@@ -16,7 +16,7 @@ import { ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

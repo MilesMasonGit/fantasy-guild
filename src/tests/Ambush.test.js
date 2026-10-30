@@ -427,12 +427,11 @@ describe('⭐ the ambusher belongs to its node and attacks its gatherer', () => 
         // taken.
         BoardState.setTokenPoint(ambusher.id, 2 * node.x - ambusher.x, 2 * node.y - ambusher.y);
 
-        // A radius that holds the hero around the node but not around the ambusher.
+        // The watch is measured round the node, against the hero's order (the node itself), never
+        // round the ambusher: at the smallest watch the gatherer is still attacked.
         const hero = HeroMotion.heroPointOf('h1') || BoardState.displayPointOf('h1');
-        const fromNode = Math.hypot(hero.x - node.x, hero.y - node.y);
-        const fromAmbusher = Math.hypot(hero.x - ambusher.x, hero.y - ambusher.y);
-        expect(fromNode).toBeLessThan(fromAmbusher);
-        setMatTuning('flagRadius', Math.round((fromNode + fromAmbusher) / 2));
+        expect(Math.hypot(hero.x - node.x, hero.y - node.y)).toBeLessThan(Math.hypot(hero.x - ambusher.x, hero.y - ambusher.y));
+        setMatTuning('watchRadius', 100);
 
         expect(Hostiles.scan()).toEqual([{ enemyId: ambusher.id, heroId: 'h1' }]);
     });

@@ -21,7 +21,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { useTokenDetail } from '../ui/components/board/useTokenDetail.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

@@ -31,9 +31,9 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 /** Where the Guild Hall stands: clear of every `C(i)` a test uses. */
 const HALL = { x: 1500, y: 950 };
 
-/** Put a Token on spot `i`, and plant a hero's flag there. */
+/** Put a Token on spot `i`, and send a hero there. */
 const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
-const plant = (heroId, i) => Orders.orderAt(heroId, C(i));
+const sendTo = (heroId, i) => Orders.orderAt(heroId, C(i));
 
 const ids = TUTORIAL_QUESTS.map(t => t.id);
 const find = (id) => QuestManager.getActiveQuests().find(q => q.id === id);
@@ -233,7 +233,7 @@ describe('Quest System (quest Tokens since B6.1)', () => {
         const quest = probe('hero_deployed');
         GameState.state.heroes = [{ id: 'hero_1', name: 'Tester', status: 'idle' }];
         // Sent to bare ground beside the Forest (a Forest itself is nobody's work).
-        const res = plant('hero_1', 11);
+        const res = sendTo('hero_1', 11);
         expect(res.success).toBe(true);
         expect(quest.currentCount).toBe(1);
     });

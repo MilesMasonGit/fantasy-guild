@@ -17,7 +17,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { flagStatusLine, dockStatusLine, waitingTypeOf } from '../ui/components/board/flagText.js';
 import { idleMomentOf, momentText } from '../ui/components/board/heroSpeech.js';
 import { calloutText, INPUT_CALLOUT_GAP_MS } from '../ui/components/board/callouts.js';

@@ -16,7 +16,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { clearMat } from './fixtures/mat.js';
 import { centreOf } from '../systems/board/nearby.js';

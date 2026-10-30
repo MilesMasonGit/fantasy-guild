@@ -24,9 +24,9 @@ const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 
 /** What ran dry on spot `i`, or null. */
 
-/** Put a Token on spot `i`, and plant a hero's flag there. */
+/** Put a Token on spot `i`, and send a hero there. */
 const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
-const plant = (heroId, i) => Orders.orderAt(heroId, C(i));
+const sendTo = (heroId, i) => Orders.orderAt(heroId, C(i));
 
 /**
  * The board's cycle engine — Tokens working, and what stops them.
@@ -55,7 +55,7 @@ function makeHero(id, level = 50) {
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     put(tile, instance);
-    if (heroId) plant(heroId, tile);
+    if (heroId) sendTo(heroId, tile);
     return tokenAt(tile);
 }
 
@@ -183,7 +183,7 @@ describe('A hero is a GATE (D-53, D-57)', () => {
     it('starts working the moment a hero arrives', () => {
         place(10, 'fixture_producer');
         run(30000);
-        plant('hero_1', 10);
+        sendTo('hero_1', 10);
         run(13000);
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
     });
@@ -351,7 +351,7 @@ describe('Charges and depletion (D-176, D-118)', () => {
     it('the Token DISAPPEARS when its last charge is spent, leaving the spot empty', () => {
         const token = BoardState.createTokenInstance('fixture_producer', 1);
         put(10, token);
-        plant('hero_1', 10);
+        sendTo('hero_1', 10);
 
         run(13000);
 
@@ -363,14 +363,14 @@ describe('Charges and depletion (D-176, D-118)', () => {
     it('leaves the hero standing ON the empty spot, idle (D-60)', () => {
         const token = BoardState.createTokenInstance('fixture_producer', 1);
         put(10, token);
-        plant('hero_1', 10);
+        sendTo('hero_1', 10);
         run(13000);
 
         // Heroes never move themselves, and since Phase 7 they do not get moved
         // BY a Token vanishing either — the player returns to a person standing
-        // on nothing, which is what the yellow mark is for. Under flags (1.4b)
-        // the flag stays planted there; with nothing to work and no Manager to
-        // wait for, the hero idles at it.
+        // on nothing, which is what the yellow mark is for. Their order lapses
+        // to where the Token stood, and with nothing to work they idle there,
+        // needing a job.
         expect(BoardState.displayPointOf('hero_1')).toEqual(C(10));
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
         expect(BoardRunner.isHeroIdle('hero_1')).toBe(true);
@@ -379,7 +379,7 @@ describe('Charges and depletion (D-176, D-118)', () => {
     it('owes the spot nothing once it runs dry (Managers retired, 9.2)', () => {
         const token = BoardState.createTokenInstance('fixture_producer', 1);
         put(10, token);
-        plant('hero_1', 10);
+        sendTo('hero_1', 10);
         run(13000);
 
         expect(BoardState.tokensAtPoint(C(10).x, C(10).y)).toEqual([]);

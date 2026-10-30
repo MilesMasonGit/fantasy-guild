@@ -20,7 +20,7 @@ import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { respawnOf } from '../config/registries/tokenConstants.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { flagStatusLine } from '../ui/components/board/flagText.js';
 import { cardLifecycle, liveCardSources } from '../ui/components/board/tokenCard.js';

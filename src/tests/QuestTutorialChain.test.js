@@ -23,10 +23,10 @@ import * as Shop from '../systems/board/Shop.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import { isMapItem } from '../systems/atlas/mapItems.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
-import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),

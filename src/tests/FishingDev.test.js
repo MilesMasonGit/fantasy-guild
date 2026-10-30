@@ -6,7 +6,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as Flags from '../systems/board/Flags.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { setUpFishingScene, fishingReadout, QA_FISHING } from '../ui/dev/fishingDev.js';
 import { clearMat } from './fixtures/mat.js';
 

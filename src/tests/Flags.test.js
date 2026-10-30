@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
-import { GAME_VERSION } from '../state/StateSchema.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
@@ -12,7 +11,6 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Charges from '../systems/board/Charges.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
-import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -91,9 +89,8 @@ function put(tile, typeId, uses = undefined) {
     return instance;
 }
 
-const plant = (heroId, tile) => Orders.orderAt(heroId, C(tile));
+const sendTo = (heroId, tile) => Orders.orderAt(heroId, C(tile));
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
-const reasons = (instance) => Flags.skipsOf(instance.id).map(s => s.reason);
 
 beforeAll(() => Flags.init());
 afterAll(() => { Flags.teardown(); resetMatTuning(); });
@@ -116,22 +113,22 @@ describe('an order onto a Token the hero cannot work is refused (FP-47, FP-60, F
         const blank = put(15, 'ft_blank');
         const mine = put(13, 'fixture_producer_alt');      // mining: h1 holds only forestry
 
-        expect(plant('h1', 15)).toMatchObject({ success: false, reason: 'Nothing to work here', instanceId: blank.id });
+        expect(sendTo('h1', 15)).toMatchObject({ success: false, reason: 'Nothing to work here', instanceId: blank.id });
         expect(Flags.orderRefusal('h1', blank)).toEqual({ reason: Flags.ORDER_NOTHING });
-        expect(plant('h1', 13)).toMatchObject({ success: false, instanceId: mine.id });
+        expect(sendTo('h1', 13)).toMatchObject({ success: false, instanceId: mine.id });
         expect(Flags.orderRefusal('h1', mine)).toEqual({ reason: ALERT.UNSKILLED });
         expect(BoardState.flagOf('h1')).toBeNull();
     });
 
     it('a passive Token is nothing to work', () => {
         const passive = put(15, 'fixture_passive');
-        expect(plant('h1', 15)).toMatchObject({ success: false, reason: 'Nothing to work here', instanceId: passive.id });
+        expect(sendTo('h1', 15)).toMatchObject({ success: false, reason: 'Nothing to work here', instanceId: passive.id });
     });
 
     it('a Token the hero is too low for is refused, and leaves no red mark (FP-48)', () => {
         GameState.state.heroes = [hero('h1', { mining: 5 })];
         const gated = put(15, 'fixture_gated');            // wants mining 25
-        expect(plant('h1', 15).success).toBe(false);
+        expect(sendTo('h1', 15).success).toBe(false);
         expect(Flags.orderRefusal('h1', gated)).toEqual({ reason: ALERT.ACCESS });
         run(2000);
         expect(workTileOf('h1')).toBeNull();
@@ -148,7 +145,7 @@ describe('a Promotion Token is worked by the hero sent to it (FP-61)', () => {
             GameState.state.heroes[0].skills[skill] = { level: cost.skillLevel, xp: 0 };
         }
         put(20, 'fixture_promotion');
-        plant('h1', 20);
+        sendTo('h1', 20);
         expect(workTileOf('h1')).toBe(20);
     });
 });
@@ -156,8 +153,8 @@ describe('a Promotion Token is worked by the hero sent to it (FP-61)', () => {
 describe('one hero per Token (FP-25)', () => {
     it('a second hero sent to a worked Token skips it as claimed and waits beside it', () => {
         const forest = put(15, 'fixture_producer');
-        plant('h1', 15);
-        plant('h2', 15);
+        sendTo('h1', 15);
+        sendTo('h2', 15);
 
         expect(workTileOf('h1')).toBe(15);
         expect(workTileOf('h2')).toBeNull();
@@ -190,7 +187,7 @@ describe('order of orders, and claims are sticky', () => {
 describe('⭐ leaving resets progress; a moved Token keeps it (FP-68)', () => {
     it('a worked Token moved 3 steps away keeps its hero and its progress', () => {
         const forest = put(14, 'fixture_producer');
-        plant('h1', 14);
+        sendTo('h1', 14);
         run(5000);
         const progress = forest.cycleElapsedMs;
         expect(progress).toBeGreaterThan(0);
@@ -204,15 +201,15 @@ describe('⭐ leaving resets progress; a moved Token keeps it (FP-68)', () => {
 
     it('a new order zeroes the Token left behind', () => {
         const forest = put(14, 'fixture_producer');
-        plant('h1', 14);
+        sendTo('h1', 14);
         run(5000);
-        plant('h1', 0);
+        sendTo('h1', 0);
         expect(forest.cycleElapsedMs).toBe(0);
     });
 
     it('a recall zeroes it', () => {
         const forest = put(14, 'fixture_producer');
-        plant('h1', 14);
+        sendTo('h1', 14);
         run(5000);
         Placement.recallHeroById('h1');
         expect(forest.cycleElapsedMs).toBe(0);
@@ -220,7 +217,7 @@ describe('⭐ leaving resets progress; a moved Token keeps it (FP-68)', () => {
 
     it('letting go by themselves zeroes it', () => {
         const forest = put(14, 'fixture_producer');
-        plant('h1', 14);
+        sendTo('h1', 14);
         run(5000);
         GameState.state.heroes[0].skills.forestry.level = 0;  // now below skillRequired 1
         run(300);
@@ -235,7 +232,7 @@ describe('fixable problems (FP-69, FPP-1, FPP-2, FPP-5)', () => {
         InventoryManager.addItem('item_coal', 10);
         const hungry = put(14, 'ft_hungry');
         put(16, 'fixture_producer');       // free work nearby: not this hero's order
-        plant('h1', 14);
+        sendTo('h1', 14);
         run(1000);
         expect(workTileOf('h1')).toBe(14);
 
@@ -256,7 +253,7 @@ describe('⭐ a hero whose Token is gone for good needs a job (SP-55, 9.2)', () 
     it('takes no other work, and is idle with the "needs a job" mark', () => {
         const first = put(14, 'fixture_producer', 1);
         put(20, 'fixture_producer');
-        plant('h1', 14);
+        sendTo('h1', 14);
         expect(workTileOf('h1')).toBe(14);
 
         Charges.destroyToken(first, { heroId: 'h1' });
@@ -288,9 +285,9 @@ describe('⭐ no rebuild storms', () => {
     it('publishes zero HERO_MOVED over 100 stable ticks', () => {
         put(0, 'fixture_producer');
         put(35, 'fixture_producer');
-        plant('h1', 0);
-        plant('h2', 35);
-        plant('h3', 18);          // bare ground: idle there
+        sendTo('h1', 0);
+        sendTo('h2', 35);
+        sendTo('h3', 18);          // bare ground: idle there
 
         let moved = 0;
         const off = EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, () => { moved++; });

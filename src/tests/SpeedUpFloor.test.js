@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
-import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as Flags from '../systems/board/Flags.js';

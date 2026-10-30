@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
@@ -24,9 +23,9 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 const idAt = (i) => tokenAt(i)?.id ?? null;
 
-/** Put a Token on spot `i`, and plant a hero's flag there. */
+/** Put a Token on spot `i`, and send a hero there. */
 const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
-const plant = (heroId, i) => Orders.orderAt(heroId, C(i));
+const sendTo = (heroId, i) => Orders.orderAt(heroId, C(i));
 
 describe('Guild Hall Mobile Token (New Token System)', () => {
     beforeEach(() => {
@@ -70,7 +69,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         const gh = BoardState.createTokenInstance('token_guild_hall');
         put(20, gh);
 
-        const heroRes = plant('hero_test_1', 20);
+        const heroRes = sendTo('hero_test_1', 20);
         expect(heroRes).toMatchObject({ success: true, order: 'home' });
         expect(BoardState.flagOf('hero_test_1')).toBeNull();
         expect(BoardState.workTokenOf('hero_test_1')).toBeNull();
@@ -158,7 +157,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
             GuildUpgradeManager.purchase('wishing_well');
             const gh = BoardState.createTokenInstance('token_guild_hall');
             put(24, gh);
-            plant('hero_test_1', 24);
+            sendTo('hero_test_1', 24);
 
             BoardRunner.tick(10000);
             expect(gh.cycleElapsedMs || 0).toBe(0);

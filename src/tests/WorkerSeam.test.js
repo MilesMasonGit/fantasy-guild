@@ -4,7 +4,6 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
-import * as Flags from '../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 

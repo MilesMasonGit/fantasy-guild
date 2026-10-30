@@ -11,7 +11,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MAT_Z, STACK_PLACES, placeZ, matStackOrder, createMatStack, heroZ } from '../ui/components/board/matLayers.js';

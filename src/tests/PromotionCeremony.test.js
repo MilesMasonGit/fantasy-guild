@@ -6,7 +6,6 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as BoardState from '../systems/board/BoardState.js';
-import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';

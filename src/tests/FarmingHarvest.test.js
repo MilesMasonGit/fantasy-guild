@@ -22,7 +22,7 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { flagStatusLine } from '../ui/components/board/flagText.js';
 import { idleMomentOf } from '../ui/components/board/heroSpeech.js';
 import { skipHint } from '../ui/components/board/boardConstants.js';

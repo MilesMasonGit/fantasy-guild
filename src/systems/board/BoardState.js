@@ -472,10 +472,10 @@ function runtimeOf(b) {
             skips: new Map(),
             skipsByHero: new Map(),
             nextTryAt: new Map(),
-            // Heroes who just finished a cycle, to look for better work.
+            // Heroes who just finished a cycle (or a kill): it ends a fight-back.
             cycleEnded: new Set(),
             // Heroes a hostile enemy attacked, heroId → that enemy's instance id: they fight back
-            // whatever their rules say.
+            // whatever their order says.
             ambushes: new Map(),
             // Where each hero on the mat actually is: see Hero bodies below. Owned by
             // `HeroMotion.js`.

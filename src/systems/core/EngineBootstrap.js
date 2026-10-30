@@ -6,7 +6,6 @@ import * as CatchUp from './CatchUp.js';
 import { GuildUpgradeManager } from '../progression/GuildUpgradeManager.js';
 import { SaveManager } from './SaveManager.js';
 import { GameState } from '../../state/GameState.js';
-import * as NotificationSystem from './NotificationSystem.js';
 import './NotificationSubscriptions.js';
 
 // === Logic Systems ===

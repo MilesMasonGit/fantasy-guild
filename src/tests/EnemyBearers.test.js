@@ -34,9 +34,9 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 const idAt = (i) => tokenAt(i)?.id ?? null;
 
-/** Put a Token on spot `i`, and plant a hero's flag there. */
+/** Put a Token on spot `i`, and send a hero there. */
 const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
-const plant = (heroId, i) => Orders.orderAt(heroId, C(i));
+const sendTo = (heroId, i) => Orders.orderAt(heroId, C(i));
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -81,7 +81,7 @@ function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     put(tile, instance);
     TileModifiers.rebuildAround([tokenAt(tile)]);
-    if (heroId) plant(heroId, tile);
+    if (heroId) sendTo(heroId, tile);
     return tokenAt(tile);
 }
 

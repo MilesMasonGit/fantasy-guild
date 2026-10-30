@@ -9,7 +9,6 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as Charges from '../systems/board/Charges.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { applyDefeatPenalties } from '../systems/combat/DefeatPenalties.js';

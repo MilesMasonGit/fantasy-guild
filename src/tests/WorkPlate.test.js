@@ -19,7 +19,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { WorkPlateLayer } from '../ui/components/board/WorkPlateLayer.jsx';

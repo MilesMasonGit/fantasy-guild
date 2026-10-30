@@ -13,7 +13,7 @@ import * as Growth from '../systems/board/Growth.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { flagStatusLine } from '../ui/components/board/flagText.js';
 import { idleMomentOf } from '../ui/components/board/heroSpeech.js';
 

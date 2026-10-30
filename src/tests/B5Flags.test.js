@@ -21,7 +21,7 @@ import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { artRadiusOf } from '../config/matGeometry.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
