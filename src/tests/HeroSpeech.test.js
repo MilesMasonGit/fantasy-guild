@@ -35,7 +35,7 @@ describe('A hero’s stack of speech bubbles', () => {
 
     it('words the moments plainly', () => {
         expect(momentText.arrived('Campfire')).toBe('Working at Campfire.');
-        expect(momentText.idle()).toBe('No work in range.');
+        expect(momentText.idle()).toBe('Nothing to work here.');
         expect(momentText.depleted('Oak Tree')).toBe('Oak Tree Depleted');
         expect(momentText.beaten('Goblin')).toBe('Goblin Beaten');
         expect(momentText.waiting('Goblin')).toBe('Waiting for Goblin.');
@@ -61,6 +61,6 @@ describe('bubble numbers', () => {
             { text: ' Melee! ', num: false },
             { text: '(+49)', num: true }
         ]);
-        expect(splitNumbers('No work in range.')).toEqual([{ text: 'No work in range.', num: false }]);
+        expect(splitNumbers('Nothing to work here.')).toEqual([{ text: 'Nothing to work here.', num: false }]);
     });
 });

@@ -58,8 +58,12 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
    *(`StarterCamp.js`, `EngineBootstrap.createDefaultGameData`)*
 2. **Recruit** in the Guild Hall: the first Bunk Beds rank is free and
    generates a Recruit immediately. The tutorial's first quest asks for this.
-3. **Plant a flag**: drag a hero from the dock onto the mat. The hero walks out
-   of the Hall and works suitable Tokens within the flag's radius.
+3. **Send a hero to a job**: drag a hero (their figure on the mat, or on the
+   hero bar) onto a Token. They walk out of the Hall and work only that Token:
+   a tree, a vein, a station, a Field, an enemy. Dragged onto a **camp** (a
+   Logging Camp, a Mining Camp, a Fishing Hut, a Farmstead), they work every
+   Token of its kind around it, one at a time. Onto bare ground, they go there
+   and wait; onto the Guild Hall, they go home.
 4. **Work makes loot**: each finished cycle drops items as loot on the mat. The
    player hovers loot to collect it into the Bank (auto-collect is optional).
 5. **Spend items** in the Shop (drag a Token onto the mat, pay on drop), on
@@ -419,7 +423,7 @@ nothing and is the owner's to delete in the CMS.
   **max 8** (`ROSTER_MAX`). Rank 1 is free. *(`guildUpgrades.js`)*
 - Every recruit is identical: a **Recruit** with the 9 Starting skills at
   level 1, 10 HP, a random name. Differences are earned. No retirement.
-- One flag colour per hero (8 colours).
+- One flag colour per hero (8 colours): the small flag that marks their job.
 
 ### Skills — Built
 **25 skills** in four layers *(`skillRegistry.js`, the source of truth;
@@ -542,11 +546,12 @@ has none yet), melee, magic and commerce have content today.
   and what it did ("+5 ♥", or the item's name), tinted by the item's kind, for
   1.5 s, one at a time per hero. A work potion shows it every cycle it is drunk
   for. Not drawn during a catch-up. *(`matFx.js`)*
-- **Defeat** (0 HP): the hero's flag is furled, they limp home, lose 25 % of
+- **Defeat** (0 HP): the hero loses their job, limps home, loses 25 % of
   the whole Bank stack of each carried food and drink (elixirs exempt), a
-  10 % chance per gear piece to lose that piece (the hero's own copy), and are
+  10 % chance per gear piece to lose that piece (the hero's own copy), and is
   **wounded for 5 minutes** of game time, returning at 50 % HP (*placeholder*
-  numbers).
+  numbers). Healed, they wait at the Hall for a new job; a healing hero takes
+  no job ("Ana is healing: 0:42").
 
 ### Equipment — Partial
 A 3×3 loadout grid with category caps (hand 2 — two hands: a tool takes one,
@@ -577,33 +582,66 @@ Fishing).
   materials, maps and one potion); the first come as a CMS change pack (brief
   220 C0).
 
-### How heroes choose work — Built (the heart of the game)
-- A **flag** has no skill: the hero works every skill they hold within the
-  **flag radius (240 u: all eight neighbours; +40 u per Scouting Flags rank)**, shaped by per-skill
-  **rules** (allowed on/off, priority 1–5, default 3; one combined Fight rule).
-- Choice order: a Promotion Token or the Hall directly under the flag first;
-  then by priority, distance, and placement order. One hero per Token.
-- **Sticky**: a hero never leaves mid-cycle for something better; they switch
-  at cycle end, only to a strictly better priority. Leaving resets progress.
-- **Pinned flags**: drop a flag on a Token to work only that Token; the flag
-  follows it, and turns into an area flag when the Token is gone.
-- **Waiting** (brief 230 S1b): a hero with nothing to work waits for what will
-  come back by itself, the first in the flag's own order: a fight another hero
-  holds ("Waiting for Goblin.", said out loud) or a resting node they could
-  work ("Waiting for Copper Vein" on the flag and the Dock, said silently, not
-  counted idle). Only a hero with truly nothing says "No work in range."
-- **A station out of an input** stops with its progress kept and says what is
-  missing over itself, "Needs Coal", in the "Needs Pickaxe" callout's look
-  (about once every 8 s while its hero stands there). The hero waits there
-  unless other work in their flag's reach can run: then they do that and come
-  back when the station can run again (a hero who mines and smelts never
-  deadlocks). *(`Flags.keepOrRelease`, `CalloutLayer`)*
+### Orders: how heroes get work — Built (the heart of the game)
+Heroes do not choose their own work: **the player sends each hero to a job by
+dragging them** (hero orders, brief 260; owner 2026-10-28: one hero, one job,
+less micromanagement than area flags).
+- **Heroes live on the mat.** One with no job waits in a row in front of the
+  Guild Hall. The hero bar is the roster: it finds a hero on the mat, opens
+  their sheet, says Idle, Busy or Hurt, and can be dragged from.
+- **Drag a hero onto a Token** they can work (their figure, their job flag, or
+  their figure on the hero bar): they walk there and work **only that Token**,
+  a tree, a vein, a station, a Field, a Promotion Token, an enemy or a boss.
+  Onto **bare ground**: they walk there and wait (the flag marks the spot until
+  they arrive). Onto the **Guild Hall**: they go home. **Right-click** a hero
+  to send them home.
+- **While a hero is carried**, every Token they could work glows, a dashed gold
+  line runs from the hero to the pointer, and the flag snaps onto a Token they
+  can work; over one they cannot, a red bubble says why. **A drop on a Token
+  they cannot work is refused** with the reason ("Needs Pickaxe", "Mining level
+  too low (needs 25)", "Nothing to work here" for a Token no hero works) and
+  they keep the job they had.
+- **One hero per Token.** A hero sent to a Token another hero works waits
+  beside it and takes it the moment it is free.
+- **The job flag** (Lucide's triangle flag, in the hero's colour) peeks out from
+  behind the top-left corner of the job's Token, drawn behind its art. Hovering
+  a hero, on the mat or the hero bar, outlines their job.
+- **When the job stops, the hero waits there** with the words for why: a resting
+  vein, a regrowing tree, a growing Field, a station out of an input ("Needs
+  Coal" over the station), an enemy waiting to respawn ("Waiting for Copper
+  Vein", said silently; "Waiting for Goblin.", said out loud). A felled tree is
+  followed through its Stump and Sapling and felled again when it stands. **A
+  Token gone for good** (used up, removed, demolished, or a Foundation built:
+  the build ends the builder's job) leaves the hero where it stood with a
+  yellow **"needs a job"** mark, and they say "I need a job."
+- **One hero per link** (owner): a hero no longer mines and then smelts on
+  their own. A miner feeds the Bank and the Furnace's hero draws from it.
+- **Sticky**: a hero never leaves mid-cycle. A new order or a recall resets
+  the progress of the Token left behind; a moved Token keeps its hero and its
+  progress (the hero walks after it).
+- **Camps** (brief 260 O2) are Tokens built on a Foundation, each naming a
+  skill and a reach (CMS: the Camp block): **Logging Camp** (Forestry),
+  **Mining Camp** (Mining), **Fishing Hut** (Fishing), **Farmstead** (Farming:
+  it harvests the ripe Fields and picks the bushes in its reach). A hero sent
+  to a camp works the **nearest free Token of its skill they can work within
+  its reach**, finishes each cycle and keeps the Token while it can run, then
+  moves to the next; with only resting or growing Tokens left they wait
+  silently by the camp; with everything taken they say "Nothing to work near
+  Logging Camp". **Any number of heroes** may work from one camp, one hero per
+  Token. A drop on a camp whose Tokens the hero can work none of says why; an
+  empty camp takes the order. Hovering a camp, or a hero working from one,
+  shows its **reach ring**.
+- **Enemy camps** (a Goblin Camp, a boss's den) take the same order: the hero
+  hunts what the camp spawns, one at a time, and waits beside it for the next.
 - **Walking costs time**: heroes walk at 120 u/s (≈15 s across the mat) in
   straight lines; the cycle starts on arrival. Idle heroes potter within 80 u.
   *(`HeroMotion.js`)*
-- **Speech bubbles** explain why a hero is stuck ("I need Copper Ore…"), plus
-  a few moments (idle, level-up). Max 3 per hero. Lines:
-  [`speech_bubble_lines.md`](speech_bubble_lines.md).
+- **Returning to a Region**, heroes take up their jobs there again. An old
+  save's flags load as orders: a flag on a Token becomes a job on it, an area
+  flag a hero waiting where it stood.
+- **Speech bubbles** are for moments (going idle, a job gone, a Token used
+  up). Max 3 per hero. Lines: [`speech_bubble_lines.md`](speech_bubble_lines.md).
+- *(`Flags.js`, the orders and the claims; `Orders.js`, the drop; `Camps.js`)*
 
 ---
 
@@ -694,9 +732,11 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
 
 - Goblins come from the Goblin Camp; enemies potter within 128 u of their
   spawner at half of 90 u/s and walk back if moved.
-- **Hostile** enemies ambush a hero inside the flag radius around their
-  spawner; the hero fights back even if their Fight rule is off. Recruits are
-  ambushed too and fight back barehanded.
+- **Hostile** enemies ambush a hero **sent to work a Token** inside the camp's
+  watch (240 u round their spawner, a Mat Tuner row); the hero fights back,
+  then goes back to their job. A hero sent to a spot on open ground is never
+  ambushed, however near a camp (owner, 2026-10-28). Recruits are ambushed too
+  and fight back barehanded.
 - **Boss** (`enemy.boss: true`, a CMS tick): fights only the heroes sent at
   it. Never hostile (the Hostile box greys out), never made by a rule, so it
   never ambushes. Comes from a camp of its own or a Summoning Circle
@@ -712,14 +752,12 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
 
 ### Encounters — Built (brief 220 C5)
 - **Every fight is one-on-one**, bosses and guardians included: a Token holds
-  one hero's claim. A second hero whose area flag reaches a busy enemy takes
-  the next thing in reach (another enemy, or work, by their priorities); with
-  nothing else, they wait at their flag. A flag pinned to the busy enemy waits
-  beside it. Either takes the enemy within a second of it coming free, and
-  meets it at full HP. No random roll. The waiting hero says "Waiting for
-  {enemy}.", their flag reads "Waiting for {enemy}" and its hover "{enemy} —
-  {hero} is fighting it"; the Dock line says the same. A save holding two
-  heroes on one enemy loads into one fight (the second chooses again).
+  one hero's claim. A second hero sent to a busy enemy waits beside it, takes
+  it within a second of it coming free, and meets it at full HP. No random
+  roll. The waiting hero says "Waiting for {enemy}.", their job flag's hover
+  reads "{enemy} — {hero} is fighting it", and the roster line says "Waiting
+  for {enemy}". A save holding two heroes on one enemy loads into one fight
+  (the second waits).
 - **Bosses and guardians come from camps of one**: an ordinary spawner (a
   "Warlord's Den", a "Guardian's Hollow") whose spawn list names the one enemy,
   allowance 1, on its own interval: the same machinery and CMS fields as any
@@ -728,8 +766,8 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   while the camp is full, so a beaten boss or guardian comes back one whole
   interval after it falls (§3, Spawners).
 - **A guardian** is simply a tough enemy whose camp stands by a rich node. It
-  blocks nothing; if its type is hostile it attacks whoever works nearby (the
-  flag watch around its camp, as any hostile enemy).
+  blocks nothing; if its type is hostile it attacks whoever is sent to work
+  nearby (the watch around its camp, as any hostile enemy).
 - **A Summoning Circle** is an ordinary station whose recipe uses up a
   summon item (its input) and makes its boss beside it (a Token output). It
   works as a Starting skill, so any hero may work it (it becomes the
@@ -741,11 +779,12 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   ambush (a chance on a finished cycle, about **2 %**, is the usual shape; set
   per Token in the Rules line). The enemy attacks the hero the moment names (the
   one who finished the cycle) on the next tick, hostile or not; that hero
-  fights back whatever their rules or pin say, then goes back to work. An
+  fights back whatever their order says, then goes back to work. An
   ambusher is beaten in one kill, and while it stands its node springs no
   other (its rules roll nothing). With no hero named it waits by its node
   (hostile ones watch around it). Never a boss.
-- **Camps are unchanged**; lure buildings are parked.
+- **Enemy camps** are spawners; a hero sent to one hunts what it spawns (§4,
+  Orders). Lure buildings are parked.
 - **A beaten enemy**: the hero who beat it says "{enemy} Beaten" (a Token used
   up says "{token} Depleted").
 
@@ -974,6 +1013,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 
 - The Hall stands in the middle of the mat, can't be moved off it or demolished,
   and is excluded from the cap.
+- **Scouting Flags is retired** (it widened the area flags that orders and camps
+  replaced): a save's bought ranks are dropped without a refund.
 - **Upgrade web** (separate full-screen view): nodes unlock when linked to the
   Hall or to a bought node. Price: rank *n* costs 10 × *n* Oak Wood
   (*placeholder*), except the **Token Cap** and the **Cartography Table**,
@@ -986,15 +1027,15 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 | Bunk Beds | 8 | +1 hero per rank (rank 1 free) |
 | Bank Slots | 10 | +32 Bank slots per rank |
 | Bank Tabs | 15 | +1 Bank tab per rank |
-| Scouting Flags | 5 | +40 u flag radius per rank |
 | Wishing Well | 10 | 10 × *rank* Water every 5 min as Passive Production, no hero needed (rank 1 free) |
 | Notice Board | 3 | +1 bounty quest cap per rank |
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*
   - **Tutorial** (the cartographer's, `tutorialQuests.js`): 13 steps, one at
-    a time: recruit, equip a tool, plant a flag, gather, collect loot, buy a
-    Foundation, build a station, craft, inspect an endgame site; then the
+    a time: recruit, equip a Woodaxe, **send your Recruit to a tree**, gather,
+    collect loot, buy a Foundation, build a station, craft, **build a first
+    camp** (a Logging Camp on a Wood Foundation; any camp counts); then the
     Starter Camp's end, **make a first tool** (copper, the camp's metal) and
     **beat a Goblin**, which pays the **first maps** (one of each Base Map
     ticked "given by the tutorial"; while none is ticked, each Base Map nothing
@@ -1019,9 +1060,9 @@ drawers**. The menu can be flipped to the right.
 - **Bubble menu**: Guild Hall, Item Bank, Shop, Settings.
 - **Top bar**: Tokens / cap, upkeep per minute, disallow mode.
 - **Notification column**: toasts (collapse / clear all).
-- **Hero dock** (bottom): heroes as standing figures with HP bars; drag onto
-  the mat to deploy, drop a flag or hero on it to recall. Click → **hero
-  sheet** (loadout grid, skills with XP rates, banked skills) → Edit (rename,
+- **Hero bar** (bottom): the roster, heroes as standing figures with HP bars,
+  each with their job flag and Idle, Busy or Hurt; drag a figure onto the mat
+  to give that hero a job. Click → **hero sheet** (loadout grid, skills with XP rates, banked skills) → Edit (rename,
   portrait, flag colour, Change Job planner).
 - **Bank drawer**: tabbed item lists, search, reorder; drag an item onto a hero
   to equip. While open, the mat is locked and a vertical hero panel appears.
@@ -1029,7 +1070,8 @@ drawers**. The menu can be flipped to the right.
   carry an item over the mat.
 - **Guild Hall view**: the upgrade web, Hall effects panel, upgrade inspector.
 - **On the mat**: click a Token to inspect it; a station's gear badge opens the
-  recipe picker; a flag is only dragged (hover shows its hero and reach);
+  recipe picker; a job flag is only dragged, to give its hero a new job (hover
+  shows its hero and what they are doing);
   alerts sit on Tokens until fixed; loot is collected by hovering.
 - **Settings** (5 tabs): typography and fonts, all caps, autosave, background,
   menu side, particles, volume (**master volume defaults to 0**: the game
@@ -1201,22 +1243,25 @@ stub rows), not the Token count.
 | **Foundation** | A placed Token built into a station by choosing a build recipe. |
 | **Station** | A Token whose work is a recipe the player picks. |
 | **Context Token** | A tool or support Token used by nearby work. |
-| **Flag** | A hero's work anchor: an area (radius) or pinned to one Token. |
-| **Rules (flag)** | Per-skill allowed/priority settings for one hero. |
+| **Order / job** | Where the player sent a hero: a Token (they work only it), a camp (they work its kind of Token in its reach), a spot (they wait there) or home. |
+| **Job flag** | The small flag in the hero's colour marking their job, behind the top-left of the job's Token (or on the spot). Dragging it gives the hero a new job. |
+| **Camp** | A Token built on a Foundation that names a skill and a reach: a hero sent to it works every Token of that skill in its reach, one at a time. An enemy camp is a spawner of enemies; a hero sent to it hunts them. |
+| **Needs a job** | A hero whose job's Token is gone for good, waiting where it stood for a new order. |
 | **Rules (Token) / effect / statement** | A Token's behaviours, written as sentences in the CMS. |
 | **Bank** | The guild's item store; one slot per kind. |
 | **Loot** | Items lying on the mat, collected by hovering. |
 | **Recruit / job / promotion** | Starting job; the job tree; changing job on a Promotes Token. |
 | **Banked skill** | A skill set aside by a job change, kept at its level. |
-| **Hostile / ambush** | An enemy that attacks heroes near its spawner. |
+| **Hostile / ambush** | An enemy that attacks heroes sent to work near its spawner (the camp's watch). |
 | **Wounded** | 5 minutes out after defeat. |
 | **Catch-up** | Playing time away (a closed game or a sleeping PC, up to 24 h) on return, with a loading bar and a "While you were away" summary. |
 | **Tempo / purpose / anchor** | CMS economy terms: a cycle-time band; what a producer is for; the source that sets an item's value. |
 | **Atlas / Region** | Planned: crafting and moving between generated maps. |
 
 Retired words still found in code and old docs: tile, grid, Tray, Vault,
-deck, card, area, gold, Manager, Map burst. Don't use them for current
-mechanics.
+deck, card, area, area flag, flag radius, Work Permissions, Scouting Flags,
+gold, Manager, Map burst. Don't use them for current mechanics. In code a
+hero's order is still saved as their "flag" record (`board.flags`).
 
 ---
 

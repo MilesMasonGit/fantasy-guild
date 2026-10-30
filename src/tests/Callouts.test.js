@@ -162,12 +162,12 @@ describe('level-ups on the mat', () => {
 });
 
 describe('a hero left with no work in range', () => {
-    it('says "No work in range." once, over their head, and it goes by itself', () => {
+    it('says "Nothing to work here." once, over their head, and it goes by itself', () => {
         const { container, rerender } = render(h(HeroBubbleLayer, { heroes }));
         later();
         const idle = heroes.map(x => (x.heroId === 'h1' ? { ...x, state: 'idle' } : x));
         rerender(h(HeroBubbleLayer, { heroes: idle }));
-        expect(stackOf(container, 'h1')).toEqual(['No work in range.']);
+        expect(stackOf(container, 'h1')).toEqual(['Nothing to work here.']);
         expect(stackOf(container, 'h2')).toEqual([]);
         act(() => { vi.advanceTimersByTime(5000 + 600); });
         expect(stackOf(container, 'h1')).toEqual([]);

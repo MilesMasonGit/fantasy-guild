@@ -45,8 +45,8 @@ describe('Hero speech bubbles', () => {
             expect(heroBubbles[gone], gone).toBeUndefined();
         }
         // A hero's stack holds moments only.
-        const moments = [{ key: 'idle', text: 'No work in range.', until: 10 }];
-        expect(stackOf(moments, 0)).toEqual([{ id: 'idle', text: 'No work in range.', kind: 'moment' }]);
+        const moments = [{ key: 'idle', text: 'Nothing to work here.', until: 10 }];
+        expect(stackOf(moments, 0)).toEqual([{ id: 'idle', text: 'Nothing to work here.', kind: 'moment' }]);
     });
 
     it('the retired lines keep their wording as the record (and 7 and 8 serve the pin-refused moment)', () => {

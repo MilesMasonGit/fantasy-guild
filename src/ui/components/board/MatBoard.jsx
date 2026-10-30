@@ -600,7 +600,7 @@ export const MatBoard = React.memo(function MatBoard({
             {/* `MAT_Z.RINGS`: and a marching dashed line from them to where they would be sent. */}
             <OrderDragLine matRef={rootRef} />
 
-            {/* `MAT_Z.RINGS`: the Near ring. Flag radius rings are FlagLayer's. */}
+            {/* `MAT_Z.RINGS`: the Near ring. A camp's reach ring is `CampReachRing`. */}
             {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} matRef={rootRef} />}
             {ringsDrawn && <SupportLinkLayer matRef={rootRef} />}
             {/* `MAT_Z.RINGS`: a camp's reach, while it or a hero working from it is hovered. */}

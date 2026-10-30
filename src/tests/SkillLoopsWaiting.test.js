@@ -269,6 +269,6 @@ describe('the mat says it', () => {
         rerender(h(HeroBubbleLayer, { heroes: busy.map(x => ({ ...x, state: 'idle' })) }));
         const stack = (id) => [...container.querySelectorAll(`[data-hero-bubble-stack="${id}"] [data-hero-bubble]`)].map(n => n.textContent);
         expect(stack('miner')).toEqual([]);
-        expect(stack('smith')).toEqual(['No work in range.']);
+        expect(stack('smith')).toEqual(['Nothing to work here.']);
     });
 });
