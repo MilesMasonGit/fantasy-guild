@@ -10,6 +10,7 @@ import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import LifecycleBlocks from './LifecycleBlocks';
 import CatchPoolsBlock from './CatchPoolsBlock';
+import EnemyMovesFields, { movesText } from './EnemyMovesFields';
 import PlanFields from '../shared/PlanFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
@@ -712,6 +713,8 @@ export default function TokenEditor() {
 
             <EnemyResistances enemy={enemy} onChange={(next) => update('enemy', next)} />
 
+            <EnemyMovesFields enemy={enemy} effects={effects} onChange={(next) => update('enemy', next)} />
+
             {/* A hostile enemy attacks a hero sent to work a Token inside the camp watch around its spawner (or itself); a peaceful one fights only when attacked. Written ONLY when ticked; missing means peaceful, which is what the game reads. A boss never attacks first, so the box is off and greyed for one. */}
             <label className={`flex items-center gap-2.5 select-none mt-3 ${enemy?.boss === true ? 'opacity-50' : 'cursor-pointer'}`}>
               <input
@@ -764,7 +767,7 @@ export default function TokenEditor() {
                 </div>
                 <div className="grid grid-cols-5 gap-3 text-[11px]">
                   <div><div className="text-gray-600 text-[10px]">HP</div><div className="text-gray-200 font-semibold">{enemyStats.hp}</div></div>
-                  <div><div className="text-gray-600 text-[10px]">Hit</div><div className="text-gray-200 font-semibold">{enemyStats.hit} Physical</div></div>
+                  <div><div className="text-gray-600 text-[10px]">Hit</div><div className="text-gray-200 font-semibold" data-field="enemy-preview-hit">{enemyStats.hit} {movesText(enemyStats.moves) ? `· ${movesText(enemyStats.moves)}` : 'Physical'}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Resists</div><div className="text-gray-200 font-semibold" data-field="enemy-preview-resists">{resistancesText(enemyStats.resistances)}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Attacks every</div><div className="text-gray-200 font-semibold">{(enemyStats.attackSpeed / 1000).toFixed(1)}s</div></div>
                   <div><div className="text-gray-600 text-[10px]">XP</div><div className="text-gray-200 font-semibold">{enemyStats.xpAwarded}</div></div>

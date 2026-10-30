@@ -140,6 +140,9 @@ export {
   isTypeOrGroupId,
 } from '../../../src/config/registries/damageTypes.js';
 
+// Enemy moves: the few attacks an enemy picks from each swing (a type to hit with, an effect to land), their shapes and the audit's sentences. The game's own.
+export { MOVE_TARGETS, MOVE_LASTS, moveLastsFor, moveProblems, enemyMovesOf } from '../../../src/config/registries/enemyMoves.js';
+
 // Enemy kinds (Armoured, Nimble, Swift, Brute, Venomous): the presets the Token editor offers, none to two per enemy, and which pairs clash.
 export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, VENOM_EFFECT_ID } from '../../../src/config/registries/enemyKinds.js';
 

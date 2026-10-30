@@ -397,7 +397,13 @@ function performRename(state, oldId, newId, kind) {
             })
         );
 
-        patch.tokens = repoint(state.tokens);
+        // An enemy's moves name the effect each lands.
+        const repointMoves = (token) => {
+            const moves = token?.enemy?.moves;
+            if (!Array.isArray(moves) || !moves.some((m) => m?.effectId === oldId)) return token;
+            return { ...token, enemy: { ...token.enemy, moves: moves.map((m) => (m?.effectId === oldId ? { ...m, effectId: newId } : m)) } };
+        };
+        patch.tokens = Object.fromEntries(Object.entries(repoint(state.tokens)).map(([id, token]) => [id, repointMoves(token)]));
         patch.items = repoint(state.items);
         // A perk table names its effects too.
         if (state.skillPerks) {
