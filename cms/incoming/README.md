@@ -85,6 +85,16 @@ points in mat units on the mat it was saved from, no `id`. Copy the current one 
 review lists the Tokens added, moved and removed and the Bank lines that change, and the owner can
 open the Starter Camp page to tweak it before finishing.
 
+### The plan (the ledger)
+
+An item, map, Token or recipe may carry `"ledger": { "status", "tier", "note" }` in its `value`
+(`src/systems/atlas/ledger.js`): `status` is `planned`, `draft`, `live` or `parked` (lower case;
+no status means Live), `tier` a whole number from 0 (0 the Starter Camp, 1 plane 1, and so on), set
+by the owner's plan, and `note` text. A **Planned** entry is a stub (a `create` whose record has at least a `name`, an item's `type`
+and a `ledger`; a recipe needs its `skill` too) that never reaches the game: Sync keeps it, and every
+`ledger` block, in `data/ledger.json`, which the game never loads. To set a tier on an existing
+entity, `edit` it with its whole record plus the `ledger` block, as for any edit.
+
 Numbers are a proposal: the owner runs Recalculate after accepting.
 
 ## The helper

@@ -9,6 +9,7 @@ import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayo
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import ChainInspector from '../shared/ChainInspector';
+import LedgerFields from '../shared/LedgerFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /** The Item editor: simplified field set. Value is derived by the balance engine and cannot be typed; inputs and recipes match on exact item IDs, so there are no tags. */
@@ -203,6 +204,8 @@ export default function ItemEditor() {
         sprite={item.sprite}
         onDelete={() => deleteItem(activeId)}
       />
+
+      <LedgerFields record={item} onChange={(ledger) => update('ledger', ledger)} />
 
       <Section title="Identity" icon={<Settings2 size={14} />}>
         <div className="grid grid-cols-2 gap-4">

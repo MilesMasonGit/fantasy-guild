@@ -4,6 +4,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import BannerPicker from '../shared/BannerPicker';
+import LedgerFields from '../shared/LedgerFields';
 import { defaultBannerFor } from '../../../../src/config/areaBanners.js';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 import { STARTING_TOKEN_CAP } from '../../utils/constants';
@@ -64,6 +65,8 @@ export default function MapEditor() {
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-10">
       <Header name={map.name} id={map.id} sprite={map.sprite} onDelete={() => deleteItem(activeId)} />
+
+      <LedgerFields record={map} onChange={(ledger) => update('ledger', ledger)} />
 
       <Section title="Identity" icon={<Settings2 size={14} />}>
         <div className="grid grid-cols-2 gap-4">

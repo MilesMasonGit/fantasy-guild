@@ -10,6 +10,7 @@ import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import LifecycleBlocks from './LifecycleBlocks';
 import CatchPoolsBlock from './CatchPoolsBlock';
+import LedgerFields from '../shared/LedgerFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /** The Token editor. */
@@ -68,6 +69,8 @@ export default function TokenEditor() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-10">
       <Header name={token.name} id={token.id} sprite={token.sprite} size={token.size} onDelete={() => deleteToken(activeId)} />
+
+      <LedgerFields record={token} onChange={(ledger) => update('ledger', ledger)} />
 
       {/* Read-only summary of what the simulator decided. ⚠️ Renders nothing at all when there is nothing to say, heading included. */}
       <TokenSummary token={token} derived={derived} needsSkill={isWorkedWithoutSkill(expanded)} />
