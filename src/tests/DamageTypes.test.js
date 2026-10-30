@@ -34,6 +34,7 @@ import {
 } from '../config/registries/damageTypes.js';
 import { nextArrowOf } from '../systems/combat/Arrows.js';
 import { heroSide, enemyCardView, heroResistLines } from '../ui/components/combat/fightView.js';
+import { itemTipFacts } from '../ui/components/drawer/ItemTip.jsx';
 
 /**
  * Damage types: nine types in three groups; one per weapon, two per shot (the bow's and the
@@ -454,6 +455,15 @@ describe('what the screen shows', () => {
         expect(side.resists).toEqual([{ id: 'physical', value: 20 }]);
         expect(heroResistLines(archer)).toEqual([{ id: 'physical', value: 20 }]);
         expect(side).not.toHaveProperty('armour');
+    });
+
+    it('the item tooltip says what a weapon hits with and what an arrow adds', () => {
+        expect(itemTipFacts({ id: 'dt_ember_wand', equipSlot: 'hand', styles: ['magic'], damage: 2, damageType: 'fire' }).hits)
+            .toBe('Hits 2 Fire, as Magic');
+        expect(itemTipFacts({ id: 'dt_sword', equipSlot: 'hand', styles: ['melee'], damage: 2 }).hits).toBe('Hits 2 Slash, as Melee');
+        expect(itemTipFacts({ id: 'dt_arrow', equipSlot: 'consumable', arrow: { damage: 1, damageType: 'stab' } }).arrow)
+            .toBe('Arrow: +1 Stab a shot, from a bow');
+        expect(itemTipFacts({ id: 'x', equipSlot: 'hat' })).toMatchObject({ hits: null, arrow: null });
     });
 
     it('the enemy card: its hit\'s type and its lines as written, groups first', () => {
