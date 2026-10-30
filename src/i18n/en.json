@@ -16,7 +16,16 @@
     },
     "bank": {
         "searchPlaceholder": "Search items…",
-        "clearSearch": "Clear search"
+        "clearSearch": "Clear search",
+        "sort": "Sort",
+        "sortTip": "Sort by type, then tier, then name",
+        "sortTab": "This tab",
+        "sortAll": "Entire Bank",
+        "tabFull": "That tab is full ({slots} kinds)",
+        "tabFullMany": "That tab is full: {count} items stayed where they were",
+        "countTab": "Item kinds in this tab / its {slots} slots",
+        "countBank": "Whole Bank: {used}/{total}",
+        "countSearch": "Item kinds in the Bank / its {total} slots"
     },
     "workPlate": {
         "skill": "{hero}: {skill} {level}",

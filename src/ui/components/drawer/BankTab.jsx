@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -10,13 +10,15 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
-import { Landmark, Lock, Check, BoxSelect, X } from 'lucide-react';
+import { Landmark, Lock, Check, BoxSelect, X, ArrowDownUp } from 'lucide-react';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BANK_TAB_SLOTS, BANK_TAB_CAP, homeTabOf, bankTabLayout } from '../../../systems/inventory/bankTabs.js';
 import { t } from '../../../i18n/index.js';
 import { ItemTipContent } from './ItemTip.jsx';
 import { itemTintName, itemTintStyle } from '../base/itemTint.js';
+import { bankSearchMatches, sortForBank } from './bankSort.js';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
 
 /**
  * Bank pane: the guild bank as user-sortable tabs of compact reorderable item lists. Tabs
@@ -84,14 +86,9 @@ export const BankTab = () => {
     const activeSearch = (searchQuery || '').trim();
     const searching = activeSearch.length > 0;
     const visible = useMemo(() => {
-        let list = searching
-            ? stocked.filter(e => {
-                const term = activeSearch.toLowerCase();
-                return e.template.name.toLowerCase().includes(term)
-                    || e.template.tags?.some(tag => tag.toLowerCase().includes(term));
-            })
+        return searching
+            ? stocked.filter(e => bankSearchMatches(e.template, activeSearch))
             : (tabItems[currentTabId] || []);
-        return list;
     }, [searching, activeSearch, stocked, tabItems, currentTabId]);
 
     // Manual sorting is only meaningful on the plain tab view.
@@ -145,6 +142,14 @@ export const BankTab = () => {
         }
     };
 
+    /** Put one tab, or every tab, in Bank order; items stay in their tabs. */
+    const sortTabs = (tabIds) => {
+        for (const gid of tabIds) {
+            const ids = (tabItems[gid] || []).map(e => e.id);
+            InventoryManager.setGroupOrder(gid, sortForBank(ids, getItem));
+        }
+    };
+
     const toggleSelected = (itemId) => {
         setSelectedIds(prev => {
             const next = new Set(prev);
@@ -188,6 +193,10 @@ export const BankTab = () => {
                     <BoxSelect size={11} /> {selectMode ? 'Done' : 'Select'}
                 </button>
                 </Tooltip>
+                <BankSortButton
+                    onSortTab={() => sortTabs([currentTabId])}
+                    onSortAll={() => sortTabs(bank.groupOrder)}
+                />
                 {/**
                  * No Sell button: nothing sells to the merchant. Select mode only moves
                  * stacks.
@@ -197,8 +206,8 @@ export const BankTab = () => {
                 )}
                 <BankSearch value={searchQuery} onChange={setSearchQuery} />
                 <Tooltip lines={searching
-                    ? [`Item kinds in the Bank / its ${bank.maxSlots} slots`]
-                    : [`Item kinds in this tab / its ${BANK_TAB_SLOTS} slots`, `Whole Bank: ${stocked.length}/${bank.maxSlots}`]}>
+                    ? [t('bank.countSearch', { total: bank.maxSlots })]
+                    : [t('bank.countTab', { slots: BANK_TAB_SLOTS }), t('bank.countBank', { used: stocked.length, total: bank.maxSlots })]}>
                 <span
                     data-bank-slot-count
                     className={cn(
@@ -273,7 +282,7 @@ export const BankTab = () => {
 /** Say a refused move where it happened: the tab it was dropped on is full. */
 function announceTabFull(count) {
     EventBus.publish(UI_EVENTS.UI_SCREEN_CALLOUT, {
-        text: count > 1 ? `That tab is full: ${count} items stayed where they were` : `That tab is full (${BANK_TAB_SLOTS} kinds)`
+        text: count > 1 ? t('bank.tabFullMany', { count }) : t('bank.tabFull', { slots: BANK_TAB_SLOTS })
     });
 }
 
@@ -432,6 +441,51 @@ const BankTabButtonBody = memo(function BankTabButtonBody({ tab, index, first, a
         </button>
     );
 });
+
+/**
+ * The Bank's Sort button, beside Select: a press opens a small menu asking this tab or the entire
+ * Bank. Sorting is type, then tier, then name; the manual order holds until it is pressed.
+ */
+export const BankSortButton = ({ onSortTab, onSortAll }) => {
+    const [open, setOpen] = useState(false);
+    const box = useRef(null);
+    useEscapeLayer(open, () => setOpen(false));
+    useEffect(() => {
+        if (!open) return undefined;
+        const away = (e) => { if (!box.current?.contains(e.target)) setOpen(false); };
+        document.addEventListener('pointerdown', away, true);
+        return () => document.removeEventListener('pointerdown', away, true);
+    }, [open]);
+    const choose = (fn) => { setOpen(false); fn(); };
+    const option = 'block w-full text-left px-2 py-1 whitespace-nowrap text-gi-muted hover:text-gi-text hover:bg-white/10 cursor-pointer';
+    return (
+        <div ref={box} className="relative">
+            <Tooltip lines={[t('bank.sortTip')]}>
+            <button
+                data-bank-sort
+                aria-expanded={open}
+                onClick={() => setOpen(o => !o)}
+                className={cn(
+                    'ui-pixel-edge flex items-center gap-1.5 px-2 py-1 text-(length:--font-size-xs) font-bold uppercase tracking-wide transition-colors cursor-pointer',
+                    open ? 'border-[var(--color-ui-white)] bg-white/15 text-gi-text' : 'text-gi-muted hover:text-gi-text'
+                )}
+            >
+                <ArrowDownUp size={11} /> {t('bank.sort')}
+            </button>
+            </Tooltip>
+            {open && (
+                <div
+                    data-bank-sort-menu
+                    role="menu"
+                    className="ui-pixel-edge absolute left-0 top-full mt-1 z-50 py-1 bg-gi-base text-(length:--font-size-xs) font-bold uppercase tracking-wide"
+                >
+                    <button role="menuitem" data-bank-sort-tab className={option} onClick={() => choose(onSortTab)}>{t('bank.sortTab')}</button>
+                    <button role="menuitem" data-bank-sort-all className={option} onClick={() => choose(onSortAll)}>{t('bank.sortAll')}</button>
+                </div>
+            )}
+        </div>
+    );
+};
 
 // ⚠️ Inline, because the unlayered input reset in `styles/main.css` outranks Tailwind classes.
 const SEARCH_INPUT_STYLE = { padding: 0, border: 'none', background: 'transparent', fontSize: 'var(--font-size-xs)' };

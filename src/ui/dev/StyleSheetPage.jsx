@@ -34,6 +34,7 @@ import { PixelGlyph, GLYPHS, SLOT_GLYPHS } from '../components/base/PixelGlyph.j
 import { pixelRingPath } from '../components/board/pixelRing.js';
 import { itemTintStyle } from '../components/base/itemTint.js';
 import { ItemTipContent } from '../components/drawer/ItemTip.jsx';
+import { BankSortButton } from '../components/drawer/BankTab.jsx';
 import { TokenCard } from '../components/board/TokenCard.jsx';
 import { RecipeList } from '../components/board/RecipeList.jsx';
 import { listSkillOf } from '../../systems/board/RecipeList.js';
@@ -868,6 +869,12 @@ export const KIT_SECTIONS = [
         source: 'ui-item-tile + itemTint.js (the Bank’s tiles, a hero’s loadout slots); ItemTip (the Bank’s tooltip)',
         rule: 'Each tile is square, with the frames’ 1-art-pixel line, and sits on a dark, low-colour surface chosen by the item’s type (material, tool, food, drink, potion, map; anything else plain); on hover the surface is a little lighter and the line white, so a sprite’s dark outline reads. A surface, not a colour meaning. Hover shows everything about the item: name, type and count, Equippable: <slot>, its tool or what it restores, tags, description, and for a map what it writes.',
         Demo: ItemTilesDemo
+    },
+    {
+        id: 'bank-sort', title: 'Bank Sort button and its menu', status: 'unapproved',
+        source: 'BankSortButton (the Bank, beside Select)',
+        rule: 'New, unapproved (brief 310). A small boxed button like Select, its words muted, white on hover; a press opens a menu under it with two lines, This tab and Entire Bank, muted words white on hover. A choice sorts and closes the menu; Escape or a press elsewhere closes it.',
+        Demo: () => <div className="h-24"><BankSortButton onSortTab={() => {}} onSortAll={() => {}} /></div>
     },
     {
         id: 'kit-controls', title: 'Buttons, switch, slider, boxes, slots', status: 'unapproved',

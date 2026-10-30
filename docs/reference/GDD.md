@@ -625,6 +625,11 @@ Fishing).
   (brief 310): an old save's ranks are dropped and a tab holding more than 64
   spills into tabs with room, the rest kept until moved. *(Inventory,
   `bankTabs.js`)*
+- **Bank search and Sort** (brief 310): one search across all tabs matches
+  name, tag, type and how the item is worn ("Hand"). Sort (beside Select)
+  orders this tab or every tab in place by type, then the item's own tier
+  (none last), then name; the dragged order holds until Sort is pressed.
+  *(`bankSort.js`)*
 - **Supply is automatic**: Tokens take inputs from the Bank, then from loot on
   the mat. A cycle is all-or-nothing; first come, first served.
 - **Recipes** (25, `data/tokenRecipes.json`): smithing 10 (copper → darkmetal
