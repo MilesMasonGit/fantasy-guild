@@ -15,11 +15,11 @@ const head = { ...cell, fontSize: 9, fontWeight: 900, textTransform: 'uppercase'
 const W = 1080;
 const GUTTER = 118;
 const RIGHT = 14;
-const AXIS = 44;
 const PLOT = 62;
 const LABEL_ROW = 14;
 const LANE_GAP = 10;
 const OTHER_ROWS = 4;
+const WALL_BAR = 9;
 const WALL = '#ef4444';
 const CROWD = '#facc15';
 const TRACK = '#e5e7eb';
@@ -75,7 +75,7 @@ export default function LedgerTimeline({ report, onRefresh, onOpen, onOpenSkill 
             <tr>
               <th style={{ ...head, textAlign: 'left', width: 120 }}>Skill</th>
               <th style={{ ...head, textAlign: 'left', width: 70 }}>Unlocks</th>
-              <th style={{ ...head, textAlign: 'left', width: 210 }}>To the top level asked</th>
+              <th style={{ ...head, textAlign: 'left', width: 270 }}>To the top level asked</th>
               <th style={{ ...head, textAlign: 'left' }}>Walls</th>
               <th style={{ ...head, textAlign: 'left', width: 170 }}>Crowded · empty</th>
             </tr>
@@ -127,8 +127,8 @@ function Legend() {
 function Hatch({ id }) {
   return (
     <pattern id={id} width={6} height={6} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-      <rect width={6} height={6} fill="rgba(239,68,68,0.10)" />
-      <line x1={0} y1={0} x2={0} y2={6} stroke={WALL} strokeWidth={2} strokeOpacity={0.55} />
+      <rect width={6} height={6} fill="rgba(239,68,68,0.18)" />
+      <line x1={0} y1={0} x2={0} y2={6} stroke={WALL} strokeWidth={2.5} strokeOpacity={0.9} />
     </pattern>
   );
 }
@@ -141,6 +141,7 @@ function TimelineChart({ timeline, onOpen, onOpenSkill }) {
   const x = (h) => x0 + ((Math.log(Math.max(h, lo)) - Math.log(lo)) / (Math.log(hi) - Math.log(lo))) * (x1 - x0);
   const ticks = timeTicks(lo, hi);
 
+  const AXIS = 18 + Math.max(1, timeline.stages.length) * 13;
   let y = AXIS;
   const lanes = timeline.lanes.map((lane) => {
     const plot = lane.id === OTHER_LANE ? OTHER_ROWS * 9 + 8 : PLOT;
@@ -149,7 +150,7 @@ function TimelineChart({ timeline, onOpen, onOpenSkill }) {
     return { lane, top, plot };
   });
   const height = y + 22;
-  const stageBits = timeline.stages.map((s, i) => ({ ...s, color: tierColor(s.tier), row: i % 2 }));
+  const stageBits = timeline.stages.map((s, i) => ({ ...s, color: tierColor(s.tier), row: i }));
 
   return (
     <svg viewBox={`0 0 ${W} ${height}`} width="100%" role="img" aria-label="Timeline: a lane per skill against the pace curve" style={{ display: 'block' }}>
@@ -185,7 +186,7 @@ function TimelineChart({ timeline, onOpen, onOpenSkill }) {
 function Lane({ lane, top, plot, x, x0, x1, onOpen, onOpenSkill }) {
   const other = lane.id === OTHER_LANE;
   const bottom = top + plot;
-  const y = (level) => (lane.top > 1 ? bottom - 4 - ((level - 1) / (lane.top - 1)) * (plot - 10) : bottom - plot / 2);
+  const y = (level) => (lane.top > 1 ? bottom - 4 - ((level - 1) / (lane.top - 1)) * (plot - WALL_BAR - 8) : bottom - plot / 2);
   const line = (points) => points.filter((p) => Number.isFinite(p.hours)).map((p) => `${x(p.hours).toFixed(1)},${y(p.level).toFixed(1)}`).join(' ');
   const dotY = (d, i) => (other ? top + 8 + (i % OTHER_ROWS) * 9 : y(d.level ?? 1));
 
@@ -217,11 +218,17 @@ function Lane({ lane, top, plot, x, x0, x1, onOpen, onOpenSkill }) {
           <title>{`${c.count} first reaches in ${lane.name} between ${hoursText(c.startHours)} and ${hoursText(c.endHours)}.`}</title>
         </rect>
       ))}
-      {lane.walls.map((w) => (
-        <rect key={`w${w.from}`} x={x(w.startHours)} y={top} width={Math.max(2, x(w.endHours) - x(w.startHours))} height={plot} fill="url(#ledger-hatch)" data-wall={`${lane.id}|${w.from}`}>
-          <title>{`${w.label}. Held up by: ${w.blocker}.`}</title>
-        </rect>
-      ))}
+      {lane.walls.map((w) => {
+        const wx = x(w.startHours);
+        const ww = Math.max(2, x(w.endHours) - wx);
+        return (
+          <g key={`w${w.from}`} data-wall={`${lane.id}|${w.from}`}>
+            <title>{`${w.label}. Held up by: ${w.blocker}.`}</title>
+            <rect x={wx} y={top} width={ww} height={plot} fill={WALL} opacity={0.05} />
+            <rect x={wx} y={top} width={ww} height={WALL_BAR} fill="url(#ledger-hatch)" stroke={WALL} strokeOpacity={0.6} strokeWidth={0.75} />
+          </g>
+        );
+      })}
 
       {!other && lane.curve.length > 1 && <polyline points={line(lane.curve)} fill="none" stroke={CURVE} strokeWidth={1.25} strokeDasharray="4 3" data-curve={lane.id} />}
       {!other && lane.track.length > 1 && <polyline points={line(lane.track)} fill="none" stroke={TRACK} strokeWidth={1.5} data-track={lane.id} />}
@@ -245,11 +252,12 @@ function Lane({ lane, top, plot, x, x0, x1, onOpen, onOpenSkill }) {
       ))}
 
       {lane.walls.map((w, i) => {
-        const lx = Math.min(x(w.startHours) + 2, x1 - 4);
+        const late = x(w.startHours) > x1 - 560;
         return (
           <text
             key={`l${w.from}`}
-            x={lx}
+            x={late ? Math.min(x(w.endHours), x1) : x(w.startHours) + 2}
+            textAnchor={late ? 'end' : 'start'}
             y={bottom + 11 + i * LABEL_ROW}
             fontSize={10}
             fill={WALL}
