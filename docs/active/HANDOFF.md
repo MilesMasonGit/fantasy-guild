@@ -1,95 +1,85 @@
 # HANDOFF — what a fresh director resumes from
 
-> **Two directors (owner, 2026-10-17).** This file is the terrain director's
-> (ground, world generation, placement, the mat's look). The features director
-> (briefs 100–170) resumes from [HANDOFF_features.md](HANDOFF_features.md).
+*Replaced whole each time a director session ends. Written 2026-10-29 evening
+at the close of the director session of 28–29 October (briefs 250 and 260).
+The older per-director handoffs (`HANDOFF_systems.md`, `HANDOFF_backlog.md`,
+`HANDOFF_features.md`) are history now: this file is the one to resume from.
+Read `CLAUDE.md`, this file and `STATUS.md`, then verify with
+`git worktree list` and `git log --oneline -5`.*
 
-*Replaced whole each time a director session ends, never stacked. Written
-2026-10-19 by the terrain director (session of 15–19 October). Read
-`CLAUDE.md`, this file and `STATUS.md`, then verify each worktree with
-`git -C .claude/worktrees/<name> status --short` and
-`git log --oneline main..<branch>` before trusting anything here.*
+## On `main` (pushed; suite green, 6675 tests before O3)
 
-## On `main` (pushed, 00c41b9c plus this handoff)
+- **Brief 250 Token bars, complete**: one plate for every Token (idle Tokens on
+  hover, no output icon, round rings retired); enemies show no charges; Token
+  names over the art's bottom edge, just above the plate; one gear size (the
+  '!' footprint) and the '!' → gear swap is instant on hover.
+- **Card wording** (S9 rough edges #4, #5, #9, #10, #11, #12).
+- **Brief 260 Hero orders, O1 and O2 merged** (88918eea): drag a hero onto a job;
+  roster dock; camps (Logging Camp, Mining Camp, Fishing Hut, Farmstead; enemy
+  camps as hunting grounds); Scouting Flags retired; old saves migrate. The job
+  flag is Lucide `FlagTriangleRight` in each hero's colour (owner's pick; dark
+  green drawn pink), behind the top-left of the job's Token, fanned when heroes
+  share a Token, on the hero bar; a marching gold dashed order line while
+  dragging; the flag snaps to a workable Token (steady) and a red bubble says why
+  not ("Needs Pickaxe", "Farming level too low (needs 15)").
+- **T-264** frozen goblins fixed (645900d2). Bench work changes accepted under
+  `brief260-O1-O2` and `T-264`; bench baselines retaken 2026-10-29 01:30.
+- **Owner Syncs checked**: stumps Art size Small (a4a124be), the camps pack
+  (e7517dc3: exactly 4 Tokens + 4 recipes); content tests fixed (09bfa810).
+- Icon audit for planning: `docs/active/research/icon_audit_2026-10-29.md`;
+  the owner's icon rule is in `owner_feedback.md` (pixel for the game world,
+  Lucide for meta marks such as the job flag and gear slot icons; to be planned).
 
-- **Generated ground** for every biome (brief 180 G3, G4): meadow, forest,
-  mountain, coast, flower meadow, cherry grove, Yellowstone, volcano.
-- **Water in every Region** (G5): lakes with bays and islands, rivers (across,
-  from a lake, split, from a spring), ponds, tarns, sulphur lakes as real
-  water, the Coast's smooth shore, a small water in each smaller biome's
-  ground after placing, a pond at a new game's Starter Camp.
-- **Placement** (G7): natural clumps (one kind per grove), kinds where they
-  belong (ore on rock, berries by water, trees on grass; leaning keeps its
-  own ground, owner A), a map's one-or-two kinds out towards the edge, the
-  camp tucked into a grove at the edge, the chest on an island or hidden.
-- **Blended biome borders** (G6): mixed band, islands, fingers, lawn between,
-  fade; one per pair by seed; beaches at every sea.
-- **Playmat style** (brief 190 P1 + P3, merged 00c41b9c): Clean ground colours,
-  the ground drawn at 2× pixel size, quieter decorations, a darker rim; ambient
-  life (water shimmer, leaves, petals, embers and lava pulse, small birds
-  visiting idle Tokens, an occasional gust moving only grass pieces, small
-  cloud shadows), each with a Ground tuner switch and sliders. The P3 lag
-  (React's dev build listing the ground plan on every new picture, 3–6 s
-  freezes on travel) is fixed; production builds level with `main`.
-- Gate on the final merge: 5399 tests, cycles, build; engine work check same.
+## Waiting to merge: brief 260 O3
 
-## Branches and worktrees
+`feat/hero-orders-o3` in worktree `tb1` (f0c22ad5, `main` merged in): tutorial
+steps "Send Your Recruit to a Tree" and "Build a Camp", the area-flag engine
+and FlagRules removed, ~102 tests moved to orders, GDD §2/§4/§6/§8/§9 and the
+glossary rewritten. Gate on the merged result: 6663 tests, cycles 0, build.
+**Owner said merge** after the engine work check. The check runs at 01:05 Fri
+(timer in the closing session; log `…/scratchpad/o3_bench.log`, which a new
+session cannot see). **If O3 is not on `main` when you start**: in a bench
+window run `npm run bench -- --compare` in `tb1`; expect **same work** (the
+builder's reasoning: bench heroes never had area flags or rules); then merge
+`main` into it, `git merge --ff-only` on `main`, push, and remove `tb1`
+(junctions first). Owner: tutorial wording is fine as built (the tutorial will
+be overhauled once the early game is set); "Nothing to work here." is approved.
 
-- `p23b`: the director's scratch worktree, detached at 00c41b9c, clean.
-- `ar` (`art/asset-reorg`), `pp` (`planning`): not this session's; untouched.
-- `crunch/style-p2` (local only, no worktree): the shadows phase the owner
-  **dropped** after the look (no shadow at rest, the basic hard shadow while
-  dragging, as the game was). Kept as a record; never merge.
-- Removed this session: `wg`, `pl`, `bl`, `sp`, `an`, `sh` (all merged or
-  dropped). Feature branches of merged work remain locally.
+## Next (owner 2026-10-29)
 
-## Eye-checks waiting
+1. **Brief 270, classless heroes** (`docs/active/briefs/270_classless_heroes.md`;
+   needs 260 O1, done). Propose its phases as one multiple-choice batch.
+2. Then 280 combat v2 and 290 (progression ledger, content fixes) per the queue.
+3. **Small tickets wait**: owner rule 2026-10-29: let them accumulate until the
+   existing briefs are done, then one pass. Open from this session: T-265 (round
+   spawn points), T-266 (each enemy camp counts its own enemies; owner chose this),
+   T-267 (drawer inspection: enemy charges, "Nothing yet").
 
-None. All archived with verdicts in `docs/archive/eyecheck/` (G5, G6, G7,
-P1, P2 dropped, P3).
+## Waiting on the owner
 
-## Owner to-dos
+- K4 play-through and S9 skill-loops eye-check verdicts (files in
+  `docs/active/eyecheck/`; not blocking).
+- Shorter rest/regrow/respawn times and the Bunk Beds price, as they play orders.
+- Ambushes: the owner may remove them with the new controls; left as built.
 
-- Restart the art bench page with `npm run art:bench` when wanted (its
-  process had run since 15 Oct at a full core and was stopped with the owner's
-  approval on 18 Oct, along with an orphaned console).
-- From earlier: author maps for the new biomes in the CMS on `main` and Sync
-  (the director checks the Sync's counts); recolour `p_bush` and other props;
-  drag `_art_leftovers/` out of the project.
+## Worktrees
 
-## Next (in the owner's order of interest)
-
-1. **Follow-ups from the G6/G7 looks** (queued in STATUS): store each cell's
-   biome so same-ground pairs (meadow + forest) get their own look and blends;
-   a river along a biome border as real water carved after placing (the owner
-   wants rivers to allow water Tokens).
-2. **On-map scenery** (the owner's idea, V6): non-workable scenery placed on
-   the map itself; a design round first.
-3. **Bench owed**: the draw A/B in a quiet window was done by the P3 engineer
-   (level); a quiet-machine **baseline retake** (`npm run bench --
-   --save-baseline`, `npm run bench:draw -- --save-baseline` on `main`) is due
-   at the next 01:00 window: the baselines date from 16 Oct and every run since
-   reads 10–20 % slow on unchanged code. Also tickets: a draw-bench scene with
-   water, lava and particles (`?region=` in `perfHarness.js`, six lines); and
-   `bench:crisp` failing on `main` itself (spawn, turn, quest cases).
+- `tb1`: O3, above. `p23b`: the director's scratch worktree, detached.
+- `pp`, `pcm`, `pco`, `psk`: the planning agents'. Removed this session: tb2–tb4.
 
 ## Lessons
 
-- **React dev-build cost**: never pass a large typed-array structure (a ground
-  plan) as a React prop; React 19's dev build lists every changed prop into the
-  performance timeline. Hand it over through a small store
-  (`useSyncExternalStore`). Guard: `GroundPictureDevCost.test.js`.
-- The owner judges art by eye on real captures: mock-ups from the game's own
-  canvas (`docs/active/research/ground_gen/capture_biomes.mjs`) beat
-  re-generated prototypes.
-- Never stage with `git add -A` (refused by the permission layer and against
-  `CLAUDE.md`); stage by name.
-- Engine work verdicts are deterministic and decide merges; timings under load
-  are noise (control runs of `main` read the same).
-- Leftover processes (art bench, orphaned consoles) can hold a core for days:
-  check `wmic` before benching.
-- Design pages: `ground` https://claude.ai/artifact/LefBh8qULf3JCdqUBb9jFY,
-  `world` https://claude.ai/artifact/XFe5Kj6P1RC9KiMREUTTmc, `placement`
-  https://claude.ai/artifact/4BLxWmqzGpvF4gdin4tKdQ, `mat scale`
-  https://claude.ai/artifact/JEQkqL5BpZBS3d2VBWZ4se, `style` V1–V9 (linked in
-  brief 190).
+- **The owner's CMS tab can lose its server**: a "Sync Error" with nothing
+  written meant the tab's port (5174) had no server. Start the CMS on the tab's
+  port from the main folder (`npm --prefix cms run dev -- --port <port>
+  --strictPort`, Bash background); the workspace lives in that origin's storage.
+- **Timing under load lies**: a 13:00 run read S2 p99 ×10; the cure is a `main`
+  control run, then the branch, back to back, or interleaved single-scenario
+  worker runs. The work check decides; an unexplained draw-count jump is worth a
+  diagnosis (it found T-264).
+- **Fold late fixes into the pending bench**: fast-forward the bench worktree to
+  the newest commit before the window opens; one bench covers the stack.
+- Headless screenshots: wait ~1.1 s after advancing time, or loot hops show as
+  black ground shadows in the stills.
+- The owner reviews by phone: send 1920×1080 frames plus tight crops with
+  SendUserFile, a caption per check, and ask verdicts as multiple choice.

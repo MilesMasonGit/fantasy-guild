@@ -9,9 +9,9 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| O1: orders (drag a hero onto a job; flags and Work Permissions retire; roster dock; old saves migrate) | engineer | `feat/hero-orders-o1` (`tb1`) | **bench-queued** 13:00 Thu (2c7fa845, `main` merged in; builder gate 6607 tests, cycles, build). Owner looked at 17 shots by phone; owner 2026-10-29: merge without playing. Owner calls: non-work drop refuses, built Foundation ends the order, right-click sends home, spot orders never ambushed (22af5033); ambushes otherwise left for a later decision. WORK CHANGED expected (accept under brief260-O1 if it matches the engineer's per-scenario prediction) | Wed | |
-| O2: camps; Scouting Flags retires; camps content pack | engineer | `feat/hero-orders-o2` (`tb2`), on O1 | building | Thu | |
-| O3: clean-up (tutorial, dead code, GDD) | builder | after O2 | queued | | |
+| O1: orders (drag a hero onto a job; flags and Work Permissions retire; roster dock; old saves migrate) | engineer | `feat/hero-orders-o1` (`tb1`) | **merged** 88918eea (was bench-queued 13:00 Thu, 2c7fa845, `main` merged in; builder gate 6607 tests, cycles, build). Owner looked at 17 shots by phone; owner 2026-10-29: merge without playing. Owner calls: non-work drop refuses, built Foundation ends the order, right-click sends home, spot orders never ambushed (22af5033); ambushes otherwise left for a later decision. WORK CHANGED expected (accept under brief260-O1 if it matches the engineer's per-scenario prediction) | Wed | |
+| O2: camps; Scouting Flags retires; camps content pack | engineer | `feat/hero-orders-o2` | **merged** 88918eea with O1 and the flag follow-ups; owner synced the pack e7517dc3 | Thu | Thu |
+| O3: clean-up (tutorial, dead code, GDD) | builder | `feat/hero-orders-o3` (`tb1`) | **bench-queued** 01:05 Fri (f0c22ad5: 6663 tests, cycles, build); owner said merge after the work check (expect same work) | Thu | |
 
 ## Director, Token bars (brief 250; owner chose 2026-10-28: all three phases, then the card-wording fixes) — **merged 90f7a7dd, owner okayed**
 
@@ -391,6 +391,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Thu 2026-10-29, evening: director session closed (context full).** Where we are: `main` has briefs 250 and 260 O1–O2 with the owner's flag and drag follow-ups, T-264, the stumps and camps Syncs; O3 waits for its 01:05 work check, then merges (owner okayed). Next: brief 270 classless heroes (owner's go); small tickets accumulate until the briefs are done (owner rule). Owner: K4/S9 verdicts when convenient. Handoff: [HANDOFF.md](HANDOFF.md).
 
 **Thu 2026-10-29, afternoon: Hero orders parts 1 and 2 merged, camps pack in the inbox.** Where we are: `main` 645900d2 (pushed) has orders, camps, the Lucide job flag in hero colours (pink for the old dark green), flags fanned on a shared camp and on the hero bar, the marching order line, the drag snap with its reason bubble, Token names over the art, one gear size, and T-264 (frozen goblins). Bench: work change accepted under brief260-O1-O2 (identity same, fidelity ok; interleaved timing level, the 13:00 reading was load) and T-264. Owner: review and Sync the camps pack on `main` (CMS on 5174 from this session), then the director id-diffs. Next: brief 260 O3 (tutorial, dead flag code, GDD) on the owner's go; tickets T-265 to T-267.
 
