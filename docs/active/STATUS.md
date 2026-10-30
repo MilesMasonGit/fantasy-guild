@@ -9,9 +9,11 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 270 K5: classless clean-up (GDD, glossary, tutorial wording, dormant promotion code) | builder | `feat/classless-k5` (`k4`) | **building** | Fri | |
-| 290 L4: first-fill pack (`plan.tier` on every live entry, Planned stubs) | builder writes, owner accepts | `content/ledger-l4` (`l1`) | **building** | Fri | |
-| T-268 + T-269: Bank sort by tool tier, search from the start of a word | builder-lite | — | queued after one of the two above | Fri | |
+| 270 K5: classless clean-up (GDD, glossary, tutorial wording, dormant promotion code) | builder | `feat/classless-k5` | **merged** 7dd76c98 on the gate (6628 tests, cycles 0, builds; engine: the retired ON_PROMOTE moment only, never spent). **Brief 270 complete.** Owner CMS: delete the two Academies, their Training effects and the Fighter's Academy recipe; the Shrimp Market's skill | Fri | Fri |
+| 290 L4: first-fill pack | builder writes, owner accepts | `cms/incoming/2026-10-30-ledger-first-fill.json` (copy in the scratchpad) | **in the owner's inbox**: 367 entries tiered (110 inferred, noted), 15 Planned stubs. Owner 2026-10-30: apples and bee products Starter Camp (director edited 8 entries), copper gear, Alchemy and Lavender stay planned for the fix pack (L8), the rest as recommended (T-272 map rule; one "later" tier; 9 endgame sites; owner Parks the legacy entries). First Sync should change only `cms/plan/plan.json` | Fri | |
+| T-268 + T-269: Bank sort by tool tier, search from the start of a word | builder-lite | `fix/bank-sort-search` | **merged** 15438bd5 on the gate (6630 tests, cycles 0, build) | Fri | Fri |
+| 300 E1+E2: the encyclopedia and collection log | builder | `feat/encyclopedia` (`k4`) | **building**; one look after E2 | Fri | |
+| T-271 + T-272: ledger first reach skips one-off finds; maps may arrive a stage early | builder | `cms/ledger-reach-fixes` | **merged** on the gate (6637 tests, cycles 0, builds). With the first fill: 32 leaks left, none maps (copper gear 16, Alchemy 7, Workbench 4, Brewery 2, Herb Garden 2, Salmon 1: all for L8). Side effect: Meadow, Flower Meadow and Cherry Grove maps now read luck-only (bounties only, 0.4–1.6 %) | Fri | Fri |
 | 270 K1: classless heroes (no jobs or promotion, every skill from level 1, the weapon decides the style, gear level requirements, HP 10 + best combat skill, old saves keep levels) | engineer | `feat/classless-k1` | **merged** 7920232e with O3 (owner okayed, [record](../archive/eyecheck/2026-10-30_classless-ledger.md)). Gate on the merged result: 6581 tests, cycles 0, builds. Bench: only heroHash on every hero scenario, S8 = S8L, accepted under brief270-K1. Owner CMS to-do in the record | Thu | Fri |
 | 270 K4: milestone perks | engineer | `feat/classless-k4` | **merged** 468bf6ec (owner okayed, [record](../archive/eyecheck/2026-10-30_perks-bank.md), all A; T-270 wording pass). Gate on the merged result 6630 tests, cycles 0, builds; bench same work (01:12). Example pack copied to `cms/incoming/` | Thu | Fri |
 | 310 B1+B2: Bank at scale | builder | `feat/bank-b1` | **merged** 38f87ac9 (owner okayed, all A; T-268 tool-tier sort and T-269 word-start search to build). Gate on the merged result 6647 tests, cycles 0, builds; bench same work, drag 50/50. Work check of `main` queued 13:00 | Thu | Fri |
@@ -380,6 +382,7 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 
 - **Pennant flag (P2), parked for the eye-check:** (a) the carried pennant is centred on the cursor, so on drop it jumps ~23 px right, 31 px up (the old flag jumped more); hold its pole foot on the cursor instead? (b) the Edit Hero colour swatches now change nothing visible: keep until the flag rework, or hide? (c) the idle hero now stands over the right half of the smaller pennant: move the idle spot (engine movement; bench work check would change)?
 
+- **For the next proposal:** (1) Meadow, Flower Meadow and Cherry Grove maps come only from Hall bounties (0.4–1.6 %), so the ledger now reads them and everything on them luck-only: give them a sure source in the fix pack (recommended) or accept luck; (2) does a Token with many charges and no respawn (a 1000-use vein) count as a one-off find? (recommended: only below a small number, e.g. 10 uses).
 - **Ticket candidate (not urgent):** `npm run cms:restore` (`scripts/backport-game-to-cms.mjs`) reads `workspace.maps`, which no longer exists, and ignores the plan file.
 
 *Design questions the director cannot answer, as multiple choice, recommendation
@@ -409,6 +412,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Fri 2026-10-30, late morning: brief 270 done; encyclopedia beside the ledger fixes.** Where we are: `main` ec53a140 has briefs 260, 270 (all), 290 L1–L3, 310 with T-268/T-269. The ledger first-fill pack and the example perks pack wait in the owner's CMS inbox. Now: encyclopedia E1+E2 (`k4`), ledger T-271/T-272 (`l1`). Next: ledger S0 spike (rate calculator), combat v2. Bench: work check of `main` at 13:00.
 
 **Fri 2026-10-30, morning: perks and the Bank at scale merged; classless clean-up beside the ledger fill.** Where we are: `main` e18f7a74 has briefs 260, 270 K1+K4, 290 L1–L3, 310; tickets T-268 to T-271 from the looks. Now: K5 (`k4`) and the L4 first-fill pack (`l1`); T-268/T-269 next. Owner: accept the example perks pack in the CMS on `main`; the classless CMS to-do. Bench: work check of `main` at 13:00.
 

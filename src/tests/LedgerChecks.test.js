@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 
 import { buildLedger, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
 import { runChecks, CHECKS, filterFindings, findingsByKey, STARTER_CAMP_KEY } from '../systems/progression/ledger/checks.js';
-import { ledgerWorkspace } from './fixtures/ledgerWorld.js';
+import { ledgerWorkspace, withIronChest } from './fixtures/ledgerWorld.js';
 
 /**
  * The ledger's checks A to C (`ledger/checks.js`) on the fixture world (`fixtures/ledgerWorld.js`),
@@ -91,6 +91,31 @@ describe('checks on the fixture world', () => {
         // In its tier, nothing to say.
         expect(on(checksOf(ledgerWorkspace()), itemKey('item_iron_ingot'), 'late')).toHaveLength(0);
         expect(on(checksOf(ledgerWorkspace()), itemKey('item_iron_ingot'), 'leak')).toHaveLength(0);
+    });
+
+    it('B: a map item may arrive one stage before its Region, not two', () => {
+        // The Volcano Map (plane 2) drops from the Goblin Chief on the Mountain Map (plane 1): by design.
+        expect(on(checksOf(ledgerWorkspace()), itemKey('map_volcano'), 'leak')).toHaveLength(0);
+        const ws = ledgerWorkspace();
+        ws.items.map_volcano.plan = { tier: 3 };
+        expect(on(checksOf(ws), itemKey('map_volcano'), 'leak')[0].message).toMatch(/^Reachable at Plane 1, before its tier \(Plane 3\)/);
+        // Anything else one stage early is still a leak.
+        const copper = ledgerWorkspace();
+        copper.items.item_copper_ingot.plan = { tier: 1 };
+        expect(on(checksOf(copper), itemKey('item_copper_ingot'), 'leak')).toHaveLength(1);
+    });
+
+    it('B and C: a one-off find is no leak; an entry only one gets is luck only', () => {
+        const ws = withIronChest();
+        // The Mountain Map's chest gives Iron Ore at plane 1, but the Volcano's veins are the way the plan means.
+        expect(on(checksOf(ws), itemKey('item_iron_ore'), 'leak')).toHaveLength(0);
+        expect(on(checksOf(ws), itemKey('item_iron_ore'), 'luck-only')).toHaveLength(0);
+        ws.items.map_volcano.cartography.nodes = ws.items.map_volcano.cartography.nodes.filter((n) => n.typeId !== 'token_iron_vein');
+        const findings = checksOf(ws);
+        const ore = on(findings, itemKey('item_iron_ore'), 'luck-only')[0];
+        expect(ore).toMatchObject({ severity: 'warn' });
+        expect(ore.message).toBe('Only ever through a one-off find (Iron Chest), which wears out for good, and no sure way.');
+        expect(on(findings, itemKey('item_iron_ingot'), 'luck-only')[0].message).toMatch(/one-off find \(Iron Chest\)/);
     });
 
     it('B: Live content that needs a Planned entry is a Block; stubs nothing points to, and items with no tier, are noted', () => {

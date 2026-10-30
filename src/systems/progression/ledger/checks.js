@@ -1,9 +1,11 @@
 // the progression ledger's checks A to C: integrity, plan against data, luck and access
 
 import { planOf, PLAN_STATUS, tierLabel } from './plan.js';
-import { HOW, LEDGER_ENGINE_TEXT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey } from './engine.js';
-import { respawnOf } from '../../../config/registries/tokenConstants.js';
+import { HOW, LEDGER_ENGINE_TEXT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey, isOneOff, oneOffFindOf } from './engine.js';
 import { toolOf } from '../../../config/registries/toolKinds.js';
+import { isMapItem } from '../../atlas/mapItems.js';
+
+export { isOneOff };
 
 /**
  * Automatic checks over a ledger (`buildLedger`) and the content it was built from. Each finding names
@@ -161,11 +163,6 @@ function placesOf(index, reach, luckBelow) {
     return (key) => of(key, new Set());
 }
 
-/** Whether a Token wears out for good: it has Charges and nothing brings it back (a chest). */
-export function isOneOff(def) {
-    return isObject(def) && def.uses !== undefined && def.uses !== null && !respawnOf(def) && !isObject(def.enemy);
-}
-
 /**
  * Every finding of checks A to C, worst first, then by entry name.
  *
@@ -253,7 +250,9 @@ export function runChecks(ledger, content = {}, { extra = [], luckBelow = LUCK_B
         // Plan against data.
         if (reachable && plan.tier !== null) {
             const path = ledger.pathOf(key);
-            if (at.tier < plan.tier) add('leak', key, `Reachable at ${tierLabel(at.tier)}, before its tier (${tierLabel(plan.tier)}): ${path}.`);
+            // Tutorial, bounty and boss first-kill maps are handed out a stage before their Region by design.
+            const early = kind === 'item' && isMapItem(def) ? 1 : 0;
+            if (at.tier < plan.tier - early) add('leak', key, `Reachable at ${tierLabel(at.tier)}, before its tier (${tierLabel(plan.tier)}): ${path}.`);
             if (at.tier > plan.tier) add('late', key, `First reachable at ${tierLabel(at.tier)}, later than its tier (${tierLabel(plan.tier)}): ${path}.`);
         }
         if (kind === 'item' && plan.tier !== null && reachable) {
@@ -267,7 +266,9 @@ export function runChecks(ledger, content = {}, { extra = [], luckBelow = LUCK_B
         if (reachable && at.luckOnly) {
             const how = at.firstKill ? LEDGER_ENGINE_TEXT.firstKill : Number.isFinite(at.chance) ? LEDGER_ENGINE_TEXT.chance(at.chance) : '';
             const from = at.via ? ` from ${nameOf(at.via)}` : '';
-            if (at.sureTier === null) add('luck-only', key, `Only ever by luck: ${how}${from}, and no sure way.`);
+            const find = at.oneOffOnly ? oneOffFindOf(reach, key) : null;
+            if (find) add('luck-only', key, `Only ever through a one-off find (${nameOf(find)}), which wears out for good, and no sure way.`, { related: [find] });
+            else if (at.sureTier === null) add('luck-only', key, `Only ever by luck: ${how}${from}, and no sure way.`);
             else add('luck-only', key, `Only by luck at ${tierLabel(at.tier)} (${how}${from}); a sure way from ${tierLabel(at.sureTier)}.`, { severity: SEVERITY.INFO });
         }
         if (kind === 'item' && reachable) {
