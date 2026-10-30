@@ -13,7 +13,8 @@ import { AudioSystem } from '../systems/core/AudioSystem.js';
 import { getBackupKey } from '../systems/core/SaveSlotHelper.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
-import { setUpOrdersScene, knockOutAHero, healEveryone, loadOldFlagsSave, QA_ORDER_TYPES } from '../ui/dev/ordersDev.js';
+import { setUpOrdersScene, knockOutAHero, healEveryone, loadOldFlagsSave, QA_ORDER_TYPES, jumpTutorialTo, TUTORIAL_JUMPS } from '../ui/dev/ordersDev.js';
+import * as QuestTokens from '../systems/quests/QuestTokens.js';
 
 /**
  * The QA panel's hero orders section (brief 260 O1): what the owner clicks to check orders in the
@@ -108,5 +109,25 @@ describe('the hero orders QA section', () => {
         // The game before is the slot's backup: no area flag in it.
         const backup = JSON.parse(localStorage.getItem(getBackupKey(1)));
         expect(Object.keys((backup.state || backup).board.flags)).toEqual([]);
+    });
+});
+
+describe('the tutorial jumps (brief 260 O3)', () => {
+    it('jump to Build a Camp, then back to Send Your Recruit to a Tree: the step on the mat, a hero with the Woodaxe, wood for the camp', () => {
+        resetMatTuning();
+        GameState.initNew();
+        InventoryManager.init();
+        BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 560);
+
+        expect(jumpTutorialTo(TUTORIAL_JUMPS.camp)).toMatchObject({ ok: true, title: 'Build a Camp' });
+        expect(QuestTokens.tutorialTokens().map(t => t.quest.id)).toEqual(['cart_camp']);
+        expect(GameState.state.quests.completedTutorials).toContain('cart_craft');
+        const hero = GameState.state.heroes[0];
+        expect(hero.equipment).toContain('item_copper_woodaxe');
+        expect(InventoryManager.getItemCount('item_oak_wood')).toBeGreaterThanOrEqual(60);
+
+        expect(jumpTutorialTo(TUTORIAL_JUMPS.tree)).toMatchObject({ ok: true, title: 'Send Your Recruit to a Tree' });
+        expect(QuestTokens.tutorialTokens().map(t => t.quest.id)).toEqual(['cart_flag']);
+        expect(GameState.state.heroes).toHaveLength(1);
     });
 });
