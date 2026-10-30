@@ -95,7 +95,7 @@ export default function LedgerTimeline({ report, onRefresh, onOpen, onOpenSkill 
       </section>
 
       {diff && (
-        <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Before and after">
+        <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="What moved">
           <h3 className={sectionHead}>{compare === 'edit' ? 'What the last edit moved' : 'What moved since the last Sync'}</h3>
           <LedgerChanges diff={diff} onOpen={onOpen} />
         </section>
@@ -290,7 +290,8 @@ function Ghosts({ diff, lanes, x, onOpen }) {
     if (!where) return null;
     const g = geo.get(where.lane);
     if (!g) return null;
-    return { x: x(where.hours), y: where.lane === OTHER_LANE ? otherY(g.top, 1) : laneY(g.lane, g.top, g.plot, where.level ?? 1) };
+    // A lane is as tall as the top level asked now, so a ghost at a level no longer asked sits at its top.
+    return { x: x(where.hours), y: where.lane === OTHER_LANE ? otherY(g.top, 1) : laneY(g.lane, g.top, g.plot, Math.min(where.level ?? 1, g.lane.top)) };
   };
   const moved = diff.moved.filter((m) => m.change !== 'new').slice(0, MAX_GHOSTS);
   const fresh = diff.moved.filter((m) => m.change === 'new').slice(0, MAX_GHOSTS);

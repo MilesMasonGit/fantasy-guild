@@ -73,9 +73,9 @@ function findingsBeyond(a, b) {
 }
 
 /**
- * A stage's move. `beyond` when it moved by more than the tolerance either way, or when more of
- * its entries lost their time (a stage time is its slowest timed entry, so an entry dropping out
- * would otherwise read as the stage getting faster).
+ * A stage's move: `beyond` when it moved by more than the tolerance either way. ⚠️ A stage time is
+ * its slowest timed entry, so when entries lose their time (`lost`) and the time drops, the drop is
+ * those entries falling out, not the stage getting faster: it reads as slower.
  */
 function stageMove(before, after, tolerancePct) {
     const b = before.hours;
@@ -86,8 +86,8 @@ function stageMove(before, after, tolerancePct) {
     else if (b === null && a !== null) pct = -Infinity;
     else if (b !== null && a === null) pct = Infinity;
     if (Number.isFinite(pct) && Math.abs(pct) < 0.005) pct = 0;
-    const beyond = lost || (pct !== null && Math.abs(pct) * 100 > tolerancePct);
-    const direction = lost || pct > 0 ? 'slower' : pct < 0 ? 'faster' : null;
+    const beyond = pct !== null && Math.abs(pct) * 100 > tolerancePct;
+    const direction = pct > 0 || (lost && pct < 0) ? 'slower' : pct < 0 ? 'faster' : null;
     return { pct, beyond, direction, lost };
 }
 
