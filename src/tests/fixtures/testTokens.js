@@ -607,8 +607,8 @@ export const FIXTURE_TOKENS = {
     },
 
     /**
-     * Promotion fixtures (Promotes rule P3) — Tokens whose Promotes rule makes a
-     * hero a Fighter.
+     * An older Promotion Token, as the two Academies still in `data/` are: its Promotes rule is
+     * retired, so no hero works it.
      */
     fixture_promotion: {
         id: 'fixture_promotion', name: 'Fixture Training Yard', tokenType: 'promotion',
@@ -616,24 +616,6 @@ export const FIXTURE_TOKENS = {
         requiresHero: true,
         statements: [
             { id: 'stm_fixture_promotes', keyword: 'promotes', payload: { jobId: 'fighter' }, chargeDelta: 0 }
-        ],
-        config: { skill: '', skillRequired: 1, cycleTimeMs: 20000, xp: 0, inputs: [], outputs: [] }
-    },
-    fixture_promotion_costly: {
-        id: 'fixture_promotion_costly', name: 'Fixture Costly Yard', tokenType: 'promotion',
-        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_leadership',
-        requiresHero: true,
-        statements: [
-            { id: 'stm_fixture_promotes_costly', keyword: 'promotes', payload: { jobId: 'fighter' }, chargeDelta: -2, chargeWhen: 'on_promote' }
-        ],
-        config: { skill: '', skillRequired: 1, cycleTimeMs: 20000, xp: 0, inputs: [], outputs: [] }
-    },
-    fixture_promotion_free: {
-        id: 'fixture_promotion_free', name: 'Fixture Free Yard', tokenType: 'promotion',
-        rarity: 'rare', theme: 'fixture', uses: 1, sprite: 'skill_leadership',
-        requiresHero: true,
-        statements: [
-            { id: 'stm_fixture_promotes_free', keyword: 'promotes', payload: { jobId: 'fighter' }, chargeDelta: 0, chargeWhen: 'on_promote' }
         ],
         config: { skill: '', skillRequired: 1, cycleTimeMs: 20000, xp: 0, inputs: [], outputs: [] }
     },

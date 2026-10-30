@@ -33,7 +33,7 @@ const idAt = (i) => tokenAt(i)?.id ?? null;
 /** What ran dry on spot `i`, or null. */
 
 registerTokenTypes({
-    /** A level 1 enemy at a quarter of the budget: weak enough for a fresh Recruit to beat. */
+    /** A level 1 enemy at a quarter of the budget: weak enough for a new hero to beat. */
     fixture_enemy_weak: {
         id: 'fixture_enemy_weak', name: 'Fixture Weak Enemy', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 20, sprite: 's_occult',
@@ -61,7 +61,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * A hero strong enough to win, or weak enough to lose.
  *
- * ⚠️ **`generateHero` makes a Recruit**, who fights only as a level 1 fighter.
+ * ⚠️ **`generateHero` makes a new hero**, every skill at level 1.
  * Every hero in this suite is therefore given a combat skill by hand.
  */
 function makeHero(id, { level = 50, hp = 100, style = 'melee' } = {}) {
@@ -74,7 +74,7 @@ function makeHero(id, { level = 50, hp = 100, style = 'melee' } = {}) {
     return hero;
 }
 
-/** A hero who has NOT been promoted: no combat skill, so they fight as a level 1 fighter. */
+/** A new hero: every combat skill at level 1. */
 function makeRecruit(id, { hp = 100 } = {}) {
     const hero = generateHero({ name: id });
     hero.id = id;
@@ -168,7 +168,7 @@ describe('Everyone fights: a new hero punches as Melee', () => {
         return hero;
     }
 
-    it('a Recruit on an enemy starts a fight', () => {
+    it('a new hero on an enemy starts a fight', () => {
         place(10, 'fixture_enemy', 'recruit_1');
         run(1000);
 

@@ -18,7 +18,12 @@ import {
 } from '../config/registries/skillRegistry.js';
 import { weaponStyleOf, authoredWeaponStyles, gearLevelRequirement, unmetGearRequirement } from '../config/registries/weaponStyles.js';
 import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
-import { KEYWORD, KEYWORDS, getKeyword } from '../systems/effects/statements.js';
+import { KEYWORD, KEYWORDS, getKeyword, statementsOf, statementsWith } from '../systems/effects/statements.js';
+import { expandBearer } from '../systems/effects/effectLibrary.js';
+import { deriveTokenType } from '../config/registries/tokenTypeDerivation.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 
@@ -320,5 +325,25 @@ describe('the Promotes rule is retired', () => {
         expect(KEYWORDS.filter(k => k.retired).map(k => k.id)).toEqual([KEYWORD.PROMOTES]);
         expect(renderStatement({ keyword: KEYWORD.PROMOTES, payload: { jobId: 'fighter' } })).toBe('Promotes the hero to Fighter.');
         expect(renderStatement({ keyword: KEYWORD.PROMOTES, payload: { jobId: 'not_a_job' } })).toBe('Promotes the hero to not_a_job.');
+    });
+});
+
+describe('the shipped data', () => {
+    const data = (file) => JSON.parse(readFileSync(join(process.cwd(), 'data', file), 'utf8'));
+    const jobOf = (def) => statementsWith(def, KEYWORD.PROMOTES)[0]?.payload?.jobId ?? null;
+
+    // The Academies are the owner's to delete in the CMS, so this reads whichever shipped Tokens
+    // still carry the rule rather than naming them.
+    it('each shipped Token with a Promotes rule loads as a retired promotion Token', () => {
+        const tokens = data('tokens.json');
+        const effects = data('effects.json');
+        const promoting = Object.keys(tokens).filter((id) => jobOf(expandBearer(tokens[id], effects)));
+        for (const id of promoting) {
+            const def = getTokenType(id);
+            const job = jobOf(def);
+            expect(job, id).toBeTruthy();
+            expect(deriveTokenType(def).type, id).toBe('promotion');
+            expect(statementsOf(def).map((st) => renderStatement(st)), id).toEqual([`Promotes the hero to ${job[0].toUpperCase()}${job.slice(1)}.`]);
+        }
     });
 });

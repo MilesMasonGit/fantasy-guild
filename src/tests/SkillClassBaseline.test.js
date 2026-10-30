@@ -63,7 +63,7 @@ function makeHero(id, held, level = 50) {
     return { id, name: id, status: 'idle', level, skills, hp: { current: 100, max: 100 } };
 }
 
-/** A Recruit: the Starting skills and nothing else. */
+/** A hero holding the Starting skills and nothing else. */
 const makeRecruit = (id, level = 50) => makeHero(id, STARTING_SKILL_IDS, level);
 
 /**

@@ -185,7 +185,7 @@ describe('every skip reason the engine can record has hover text', () => {
     /**
      * Derived from the engine, not listed by hand: `Flags.SKIP` holds the
      * reasons only flags record, and every `ALERT` value is a reason
-     * `WorkCheck` or promotion can return. A new reason fails here until it
+     * `WorkCheck` can return. A new reason fails here until it
      * has a sentence.
      */
     const REASONS = [...Object.values(Flags.SKIP), ...Object.values(ALERT)];

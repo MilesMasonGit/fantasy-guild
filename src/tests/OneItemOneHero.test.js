@@ -65,7 +65,7 @@ function addHero(name, id = null) {
     return hero;
 }
 
-/** A promoted hero: a Recruit holds no weapon, so a test about weapons in the hands needs one. */
+/** A hero with Melee written on their sheet, for the tests about weapons in the hands. */
 function addFighter(name) {
     const hero = addHero(name);
     hero.skills.melee = { level: 1, xp: 0 };

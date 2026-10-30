@@ -334,7 +334,7 @@ describe('the panel, the plate and the floats read the real fight', () => {
         expect(kinds(fightPlateCells({ ...plate, side: 1 }))).toEqual(['enemy:melee', CELL.DIVIDER, 'hero:melee', CELL.ELIXIR]);
         expect(kinds(fightPlateCells({ ...plate, side: -1 }))).toEqual([CELL.ELIXIR, 'hero:melee', CELL.DIVIDER, 'enemy:melee']);
         expect(fightPlateCells({ ...plate, side: 1 }).at(-1).count).toBe(10);
-        // A Recruit has no style: the enemy's alone, then the elixirs.
+        // A hero with no style: the enemy's alone, then the elixirs.
         expect(kinds(fightPlateCells({ ...plate, heroStyle: null, side: 1 }))).toEqual(['enemy:melee', CELL.DIVIDER, CELL.ELIXIR]);
         expect(kinds(fightPlateCells({ ...plate, heroStyle: null, elixirs: [], side: 1 }))).toEqual(['enemy:melee']);
     });

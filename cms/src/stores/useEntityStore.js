@@ -16,7 +16,7 @@ import { useSimulationStore } from './useSimulationStore';
 import { composeTokenDescription } from '../engine/descriptionDictionary';
 import {
     deriveTokenType, statementsOf, makeStatement, KEYWORD,
-    migrateBearers, migratePromotionFields, migrateAppliesTargetsIn, migrateSkillIdsIn, migrateRecipePools,
+    migrateBearers, migrateAppliesTargetsIn, migrateSkillIdsIn, migrateRecipePools,
     expandBearer, expandAll, effectRefsOf, provisionalName,
     normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_DEFAULTS, CAMP_REACH_DEFAULT,
 } from '../utils/constants';
@@ -632,20 +632,6 @@ function seedEffectLibrary(state = {}) {
 }
 
 /**
- * A Token's retired `promotion: { jobId }` field becomes a Promotes rule in the library.
- * ⚠️ Runs after `seedEffectLibrary` on the same three load paths, and calls the shared pure function in `effectMigration.js`, so this workspace and `data/` convert identically. Idempotent.
- */
-function seedPromotionRules(state = {}) {
-    const tokens = state.tokens || {};
-    const needsMigration = Object.values(tokens)
-        .some((t) => t && Object.prototype.hasOwnProperty.call(t, 'promotion'));
-    if (!needsMigration) return state;
-
-    const { effects, tokens: next } = migratePromotionFields(tokens, { existing: state.effects || {} });
-    return { ...state, tokens: next, effects };
-}
-
-/**
  * The retired `target: 'enemy'` flag on `Applies` becomes the enemy role.
  * ⚠️ Runs on the same three load paths and calls the same pure function the game's registries call on load: Sync to Game writes this workspace wholesale, so a workspace still holding the flag would write it back into `data/`. Idempotent.
  */
@@ -1011,12 +997,12 @@ export const useEntityStore = create(
              * ⚠️ This path bypasses the persist `migrate` hook entirely: an imported workspace never touches localStorage on the way in, so `seedSimIntent` runs here as well as on the persist config's `merge`; the two together are the whole coverage.
              */
             hydrate: (data = {}) => {
-                const seeded = seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSkillIds(seedSimIntent({
+                const seeded = seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent({
                     items: data.items || {},
                     tokens: data.tokens || {},
                     effects: data.effects || {},
                     recipePools: data.recipePools || {},
-                })))));
+                }))));
                 set({
                     items: seeded.items,
                     tokens: seeded.tokens,
@@ -1186,10 +1172,10 @@ export const useEntityStore = create(
             /** The default merge plus the seeding. The spread order is zustand's own default (persisted wins over the fresh store, so actions survive and data is replaced); only `seedSimIntent` is added. */
             merge: (persistedState, currentState) => ({
                 ...currentState,
-                ...seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState)))))),
+                ...seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState))))),
             }),
             /** Reached only by a numbered version that is not 1. Seeds anyway: the normaliser is idempotent, and a future migration should never be the reason intent went missing. */
-            migrate: (persistedState) => seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState)))))),
+            migrate: (persistedState) => seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState))))),
             /**
              * What survives a reload.
              * ⚠️ `activeEntityId` is in here deliberately: without it, anything that re-created this module (registering a sprite writes `sprite-manifest.js`, which the editors import, so Vite reloaded them) dropped the selection and closed the editor.

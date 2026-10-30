@@ -150,7 +150,7 @@ beforeEach(() => {
     clearMat();
     GameState.state.heroes = [makeHero('hero_1')];
     GameState.state.inventory.maxSlots = 50;
-    events = { demolished: [], depleted: [], resting: [], respawned: [], alerts: [], cycles: [], spawnerAlerts: [], promotion: [] };
+    events = { demolished: [], depleted: [], resting: [], respawned: [], alerts: [], cycles: [], spawnerAlerts: [] };
     offs.push(EventBus.subscribe(BOARD_EVENTS.TOKEN_DEMOLISHED, p => events.demolished.push(p)));
     offs.push(EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, p => events.depleted.push(p)));
     offs.push(EventBus.subscribe(BOARD_EVENTS.TOKEN_RESTING, p => events.resting.push(p)));
@@ -158,7 +158,6 @@ beforeEach(() => {
     offs.push(EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, p => events.alerts.push(p)));
     offs.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, p => events.cycles.push(p)));
     offs.push(EventBus.subscribe(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, p => events.spawnerAlerts.push(p)));
-    offs.push(EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, p => events.promotion.push(p)));
 });
 
 afterEach(() => {
@@ -377,13 +376,12 @@ describe('a marked Token is Construction work', () => {
         expect(events.demolished.map(d => d.instanceId)).toEqual([forest.id]);
     });
 
-    it('a Promotion Token marked for demolition is demolished, not trained on, by a hero sent to it', () => {
+    it('an older Promotion Token marked for demolition is demolished by a hero sent to it', () => {
         const yard = place(10, 'fixture_promotion');
         Demolition.mark(yard.id);
         Orders.orderAt('hero_1', C(10));
         expect(claimOf('hero_1')).toBe(yard.id);
         expect(runUntil(() => !on(yard), Demolition.DEMOLISH_MS + 1000)).toBe(true);
-        expect(events.promotion).toEqual([]);
         expect(events.demolished.map(d => d.instanceId)).toEqual([yard.id]);
     });
 

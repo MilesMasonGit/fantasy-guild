@@ -26,9 +26,9 @@ export const TUTORIAL_TEXT = Object.freeze({
             instruction: 'Open the Item Bank (yellow orb) and drag the Woodaxe onto your Hero. A Hero needs the right tool in hand to chop, mine, fish or reap.'
         }),
         cart_flag: Object.freeze({
-            title: 'Send Your Recruit to a Tree',
+            title: 'Send Your Hero to a Tree',
             says: 'A tree. Any tree. Point them at it, and the wood will follow.',
-            instruction: 'Drag your Recruit (on the mat, or from the hero bar) onto a tree. They walk there and chop it.'
+            instruction: 'Drag your Hero (on the mat, or from the hero bar) onto a tree. They walk there and chop it.'
         }),
         cart_gather: Object.freeze({
             title: 'Gather',

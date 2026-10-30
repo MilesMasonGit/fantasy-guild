@@ -31,7 +31,7 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
 }));
 
 /**
- * A new Recruit sent at a Goblin by the player's drop: from the hero bar, or by moving their
+ * A new hero sent at a Goblin by the player's drop: from the hero bar, or by moving their
  * pennant. Everyone fights, so dropped ON the Goblin they are ordered onto it and fight it. Dropped
  * NEAR it, they go to that spot and idle, and the Goblin's watch decides (`Hostiles.js`).
  */
@@ -105,7 +105,7 @@ beforeEach(() => {
     GameState.state.heroes = [recruit('r1')];
     GameState.state.inventory.maxSlots = 50;
     // Fed, so every fight here is a sure win: what these tests check is the drop and the flag,
-    // not combat odds (unfed, a Recruit loses to this Goblin about one time in forty). A Steak is
+    // not combat odds (unfed, a new hero loses to this Goblin about one time in forty). A Steak is
     // eaten from the Bank below a quarter HP and fills the bar; the Goblin hits for 1, a crit 2.
     InventoryManager.addItem('item_steak', 10);
     expect(EquipmentManager.equipItem('r1', 'item_steak').success).toBe(true);
@@ -113,7 +113,7 @@ beforeEach(() => {
 });
 afterEach(() => BoardState.setInstantArrival(true));
 
-describe('a Recruit dropped ON a Goblin fights it and wins', () => {
+describe('a new hero dropped ON a Goblin fights it and wins', () => {
     it('from the hero bar: pinned to the Goblin, fights, kills it, earns Melee XP', () => {
         const goblin = placeAt('fixture_drop_goblin', GOBLIN.x, GOBLIN.y);
         const skillsBefore = JSON.stringify(GameState.state.heroes[0].skills);
@@ -139,7 +139,7 @@ describe('a Recruit dropped ON a Goblin fights it and wins', () => {
     });
 });
 
-describe('a Recruit sent to work NEAR a hostile Goblin: it watches the ordered Token, the same on every side', () => {
+describe('a new hero sent to work NEAR a hostile Goblin: it watches the ordered Token, the same on every side', () => {
     /**
      * A hostile enemy attacks a hero whose ORDER, a Token they work, stands inside its watch,
      * wherever the hero's body is. A spot order on open ground is never attacked (owner,
@@ -148,7 +148,7 @@ describe('a Recruit sent to work NEAR a hostile Goblin: it watches the ordered T
     const SIDES = { right: [1, 0], left: [-1, 0], above: [0, -1], below: [0, 1] };
     const WHERE = { right: 'right of it', left: 'left of it', above: 'above it', below: 'below it' };
 
-    /** The Recruit out on the mat far up and to the right, then sent to work a Producer beside the Goblin. */
+    /** The hero out on the mat far up and to the right, then sent to work a Producer beside the Goblin. */
     function nearDrop(side, distance) {
         expect(barDrop('r1', { x: 1500, y: 300 }).success).toBe(true);
         for (let i = 0; i < 50; i++) BoardRunner.tick(100);
@@ -173,14 +173,14 @@ describe('a Recruit sent to work NEAR a hostile Goblin: it watches the ordered T
     }
 
     for (const side of Object.keys(SIDES)) {
-        it(`${WHERE[side]}, the Token inside its watch: the Goblin attacks and the Recruit wins`, () => {
+        it(`${WHERE[side]}, the Token inside its watch: the Goblin attacks and the hero wins`, () => {
             const goblin = nearDrop(side, 160);
             const { fought, gone } = play('r1', goblin);
             expect(fought).toBe(true);
             expect(gone).toBe(true);
         });
 
-        it(`${WHERE[side]}, the Token outside its watch: the Goblin leaves the Recruit alone`, () => {
+        it(`${WHERE[side]}, the Token outside its watch: the Goblin leaves the hero alone`, () => {
             const goblin = nearDrop(side, 280);
             const { fought, gone } = play('r1', goblin, 30000);
             expect(fought).toBe(false);
@@ -199,7 +199,7 @@ describe('a Recruit sent to work NEAR a hostile Goblin: it watches the ordered T
         });
     }
 
-    it('attacked as soon as the ordered Token lands inside its watch, while the Recruit is still far away', () => {
+    it('attacked as soon as the ordered Token lands inside its watch, while the hero is still far away', () => {
         const goblin = nearDrop('left', 160);
         BoardRunner.tick(300);
         expect(Flags.ambusherOf('r1')).toBe(goblin.id);

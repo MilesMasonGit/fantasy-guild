@@ -6,9 +6,8 @@
  * `resolveSpritePath` maps any `hf_`/`hm_`/`hn_` prefixed id straight to
  * `assets/heroes/<id>.png`: the id IS the file name.
  *
- * Free choice across the whole set: classes are
- * cosmetic in this game, so restricting portraits by class would protect no
- * rule and would leave several classes with one or two options.
+ * Free choice across the whole set: a portrait is cosmetic and says nothing
+ * about what a hero can do.
  *
  * Prefixes are the art's own naming (female, male, neutral;
  * `docs/reference/ASSET_NAMING.md`), not a game concept. They are deliberately

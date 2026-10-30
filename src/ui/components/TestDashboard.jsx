@@ -134,7 +134,7 @@ export const TestDashboard = React.memo(() => {
     };
 
     /**
-     * "Spawn Party": four heroes, one in each class's old art, each already at level 50 in every
+     * "Spawn Party": four heroes in the fighter, wizard, ranger and rogue art, each already at level 50 in every
      * skill. Bumps the roster cap first if the incoming four would not fit.
      */
     const spawnParty = () => {

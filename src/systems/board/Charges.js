@@ -102,8 +102,7 @@ export function canAfford(instance, amount) {
  * An authored number always wins, `0` included.
  */
 export function statementChargeDelta(statement) {
-    // One reading, shared with the CMS cost strip: see `chargeDeltaOf`, which also carries the
-    // Promotes exception.
+    // One reading, shared with the CMS cost strip: see `chargeDeltaOf`.
     return chargeDeltaOf(statement, DEFAULT_STATEMENT_CHARGE_DELTA);
 }
 

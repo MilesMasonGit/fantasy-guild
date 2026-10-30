@@ -22,7 +22,7 @@ import { centreOf, distanceSq } from './nearby.js';
  * A camp's work is a Token whose own work names the camp's skill: a tree, a vein, water, a berry
  * bush. Never a station, which takes a recipe and its inputs (a Windmill, a Furnace), except a
  * **Field**, whose harvest is its crop: a Farmstead harvests the ripe Fields in its reach. Never a
- * Foundation, a spawner, an enemy, a Promotion Token, the Guild Hall or a Token marked for
+ * Foundation, a spawner, an enemy, the Guild Hall or a Token marked for
  * demolition (that is the demolisher's job).
  *
  * An **enemy camp** is any working spawner of enemies (the Goblin Camp, a boss's camp of one): no
@@ -81,7 +81,6 @@ export function isCampLike(instance) {
 export function worksType(block, def) {
     if (!block || !def) return false;
     if (def.config?.skill !== block.skill || def.requiresHero === false) return false;
-    // A Promotion Token trains through its rule and authors no work of its own, so it never matches.
     if (isEnemyDef(def) || def.spawner || def.foundation || def.camp || def.isGuildHall) return false;
     return !stationSkillOf(def) || fieldOf(def) != null;
 }

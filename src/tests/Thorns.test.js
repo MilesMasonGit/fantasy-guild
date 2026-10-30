@@ -71,11 +71,10 @@ const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); }
 const hp = (id) => HeroManager.getHero(id).hp.current;
 
 /**
- * A promoted hero who can actually fight.
+ * A hero who can actually fight.
  *
- * ⚠️ `hero.skills.melee` must be **added**, not merely levelled. A hero holding
- * no combat skill fights as a level 1 fighter whatever their other skills'
- * levels, so a hero built without this line fights far weaker than assumed.
+ * Every skill at 50, Melee included: a new hero's combat skills start at level 1, so
+ * a hero built without this fights far weaker than assumed.
  */
 function makeFighter(id) {
     const hero = generateHero({ name: id });

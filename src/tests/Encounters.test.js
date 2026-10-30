@@ -381,7 +381,7 @@ describe('⭐ bosses: never first to attack, whole for every hero, called by a S
     });
 
     it('a Summoning Circle: any hero works it, a Horn is used up, the boss stands beside it, and without a Horn it waits', () => {
-        // A Recruit: no combat skill, nothing but the Starting skills every hero holds.
+        // A new hero: every skill at level 1, no combat training.
         const recruit = generateHero({ name: 'r1' });
         recruit.id = 'r1';
         recruit.status = 'idle';

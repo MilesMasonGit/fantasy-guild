@@ -16,8 +16,8 @@ import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js'
  *
  * ## Who is exempt
  * * **Enemies** — they are fought by combat flags, not worked with a skill.
- * * **Promotion Tokens** — a hero trains there; the Promotes
- *   rule, not a skill, decides who may.
+ * * **Older Promotion Tokens** — their Promotes rule is retired, so no hero
+ *   works them.
  * * **Tokens with no work cycle** (maps, buffs, pickaxes, stations drawing a
  *   recipe pool) — there is nothing for a hero to work, so there is no skill to
  *   name.

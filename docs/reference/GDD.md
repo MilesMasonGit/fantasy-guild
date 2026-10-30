@@ -42,7 +42,7 @@ on return** (real offline progress, a crunch track; see §10).
 
 **Long-term pull.** Exploring new Regions through the Atlas (§13): set up a
 Region, exhaust it, move the guild to a better one. **The Atlas is not built.**
-Today the pull is skill levels, Guild Hall upgrades and promotions.
+Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
 
 ---
 
@@ -56,8 +56,9 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
    a Copper Mine either side (320 u away), and 3 Oak Seed, 10 Oak Wood and
    2 Wheat Seed in the Bank. There are **no heroes** (`ROSTER_BASE = 0`).
    *(`StarterCamp.js`, `EngineBootstrap.createDefaultGameData`)*
-2. **Recruit** in the Guild Hall: the first Bunk Beds rank is free and
-   generates a Recruit immediately. The tutorial's first quest asks for this.
+2. **Recruit a hero** in the Guild Hall: the first Bunk Beds rank is free and
+   a new hero arrives at once, every skill at level 1. The tutorial's first
+   quest asks for this.
 3. **Send a hero to a job**: drag a hero (their figure on the mat, or on the
    hero bar) onto a Token. They walk out of the Hall and work only that Token:
    a tree, a vein, a station, a Field, an enemy. Dragged onto a **camp** (a
@@ -280,7 +281,7 @@ station in place (30 s, level 1). *(`Foundations.js`)*
 | Foundation | Price | Builds |
 |---|---|---|
 | Wood Foundation | 15 Oak Wood | Workbench, Cooking Pot (5 Oak Wood each) |
-| Stone Foundation | 10 Stone + 5 Oak Wood | Furnace (5 Stone), Fighter's Academy (10 Stone + 10 Oak Wood) |
+| Stone Foundation | 10 Stone + 5 Oak Wood | Furnace (5 Stone), Fighter's Academy (10 Stone + 10 Oak Wood; retired, for the owner to delete) |
 | Farmland | 10 Oak Wood | Wheat Field (1 Wheat Seed), Apple Orchard (1 Apple Seed) |
 
 ### Fishing — Built (brief 230 S5); no content yet
@@ -445,17 +446,18 @@ Forestry is the old Logging, renamed with its id (it keeps the Logging art);
 Explore and the other v1 skills were dropped. Only the Starting skills (Alchemy
 has none yet) and melee have content today.
 
-- A hero can only do work for a skill they **hold**, at a high enough level.
+- **If the skill is high enough, the hero can do it**: the gate on any work is
+  the skill level, a tool or an item, never a class.
 - XP comes from work cycles (the recipe's or Token's `xp`) and kills (into the
   style the hero fought in: their weapon's, Melee barehanded). Level cap 99; XP to level 99 ≈ 13 million
   (RuneScape-style curve, `XPCurve.js`).
 - A skill level gives no work speed: a cycle takes its authored time whoever works it (owner 2026-10-09, T-125).
-- **Hero level** = the average of held skills (display only).
+- **Hero level** = the average of all their skills (display only).
 - **Content that still says `logging`** (data/ and the CMS workspace, until the
   owner's next Sync) is read as `forestry` as it loads
-  (`skillIdMigration.js`, to be removed under T-114). Content naming a skill or
-  job that does not exist is listed by the boot audit and the CMS Economy
-  Audit.
+  (`skillIdMigration.js`, to be removed under T-114). Content naming a skill
+  that does not exist, or carrying a retired Promotes rule, is listed by the
+  boot audit and the CMS Economy Audit.
 
 ### Milestone perks — Built (brief 270 K4); no perks authored yet
 - **Each skill may carry a perk table**: fixed perks at set levels (the CMS offers 10, 25, 50, 75
@@ -470,15 +472,18 @@ has none yet) and melee have content today.
 - **Shown**: the level-up number over the hero names the perk underneath, the hero bar gives it an
   alert of its own, and the hero sheet's skill row lists the perks held and the next one.
 
-### Jobs and promotion — Retired (brief 270 K1)
-Jobs, promotion, Promotion Tokens, the Change Job planner, banked skills and
-Mastery are gone: **if the skill is high enough, the hero can do it**
+### Classes and promotion — Retired (brief 270 K1, K5)
+The class jobs (Recruit, the basic and master classes), promotion, Promotion
+Tokens, the Change Job planner, banked skills and Mastery are gone ("job" now
+means only a hero's order, below): **if the skill is high enough, the hero can do it**
 (`concept_classless_heroes.md`). A Token's Promotes rule does nothing; it still
 reads as it did, the CMS no longer offers it and marks it retired, and the
 audits name the Tokens carrying one (the Fighter's and Wizard Academies, for the
 owner to delete). An older save keeps every level: banked skills come back onto
-the sheet, the job and cut skills are dropped. Milestone perks (K4) take
-promotion's place as the milestone.
+the sheet, the class and cut skills are dropped. Milestone perks (K4) take
+promotion's place as the milestone. A Promotes rule's own charge moment ("Each
+hero promoted") is gone with it (K5): a Promotes rule, like any rule that never
+fires, spends nothing.
 
 ### Health, food, defeat — Built
 - **Max HP = 10 + the hero's best combat skill** (the highest of the four,
@@ -1024,7 +1029,7 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*
   - **Tutorial** (the cartographer's, `tutorialQuests.js`): 13 steps, one at
-    a time: recruit, equip a Woodaxe, **send your Recruit to a tree**, gather,
+    a time: recruit a hero, equip a Woodaxe, **send your hero to a tree**, gather,
     collect loot, buy a Foundation, build a station, craft, **build a first
     camp** (a Logging Camp on a Wood Foundation; any camp counts); then the
     Starter Camp's end, **make a first tool** (copper, the camp's metal) and
@@ -1034,8 +1039,9 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   - **Bounties**: random "collect N items" or "defeat N Goblins", each paying
     10 Oak Wood (*placeholder*). Cap 2 (+1 per Notice Board rank, max 5); a
     new one every 3 min of game time.
-- **No unlocks**: progression is skill levels (recipe and Token level
-  requirements), Hall upgrades, and affording things. The smithing ladder
+- **No unlocks and no classes**: progression is skill levels (recipe, Token
+  and gear level requirements), each skill's milestone perks (§4), Hall
+  upgrades, and affording things. Every hero can grow into anything. The smithing ladder
   (ingots at levels 1, 15, 30, 45, 60, 75, 90) is the longest content ladder.
 
 ---
@@ -1053,8 +1059,8 @@ drawers**. The menu can be flipped to the right.
 - **Notification column**: toasts (collapse / clear all).
 - **Hero bar** (bottom): the roster, heroes as standing figures with HP bars,
   each with their job flag and Idle, Busy or Hurt; drag a figure onto the mat
-  to give that hero a job. Click → **hero sheet** (loadout grid, skills with XP rates, banked skills) → Edit (rename,
-  portrait, flag colour, Change Job planner).
+  to give that hero a job. Click → **hero sheet** (loadout grid, every skill with
+  its XP rate and its perks, held and next) → Edit (rename, portrait, flag colour).
 - **Bank drawer**: tabbed item lists, search, reorder; drag an item onto a hero
   to equip. While open, the mat is locked and a vertical hero panel appears.
 - **Shop drawer**: drag a row onto the mat to buy; it slides aside while you
@@ -1154,10 +1160,10 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
   hand-made Starter Camp opens the game. Roadmap and owner answers:
   [`atlas_roadmap.md`](../active/atlas_roadmap.md). Built so far: Regions and
   travel (§10), from the dev console; the Starter Camp and landmarks (A7).
-- **Skill and class rework v2 — Engine built (brief 20, 2026-10-08)**:
-  [`docs/active/concept_skill_and_class_rework_v2.md`](../active/concept_skill_and_class_rework_v2.md)
-  and its [roadmap](../active/class_rework_v2_roadmap.md). The 4 Academies and
-  8 master-class Tokens are owner content still to author.
+- **Classless heroes — Built (brief 270)**:
+  [`docs/active/concept_classless_heroes.md`](../active/concept_classless_heroes.md).
+  The class tree of the skill and class rework v2 (brief 20) is retired (§4);
+  the two Academies still in `data/` are the owner's to delete in the CMS.
 - **Real offline progress — Built (brief 40)**; see section 10.
 - **Terrain — Built** (brief 80): the ground is drawn (T2); "Stands on" placement
   and its grid while placing follow (T3, T4).
@@ -1241,8 +1247,7 @@ stub rows), not the Token count.
 | **Rules (Token) / effect / statement** | A Token's behaviours, written as sentences in the CMS. |
 | **Bank** | The guild's item store; one slot per kind. |
 | **Loot** | Items lying on the mat, collected by hovering. |
-| **Recruit / job / promotion** | Starting job; the job tree; changing job on a Promotes Token. |
-| **Banked skill** | A skill set aside by a job change, kept at its level. |
+| **Perk** | A skill's milestone reward at a set level (10, 25, 50…), held by every hero at or above it, read off their levels. |
 | **Hostile / ambush** | An enemy that attacks heroes sent to work near its spawner (the camp's watch). |
 | **Wounded** | 5 minutes out after defeat. |
 | **Catch-up** | Playing time away (a closed game or a sleeping PC, up to 24 h) on return, with a loading bar and a "While you were away" summary. |
@@ -1251,7 +1256,8 @@ stub rows), not the Token count.
 
 Retired words still found in code and old docs: tile, grid, Tray, Vault,
 deck, card, area, area flag, flag radius, Work Permissions, Scouting Flags,
-gold, Manager, Map burst. Don't use them for current mechanics. In code a
+gold, Manager, Map burst, Recruit (as a title), class, job tree, promotion,
+Promotion Token, banked skill, Mastery, Change Job. Don't use them for current mechanics. In code a
 hero's order is still saved as their "flag" record (`board.flags`).
 
 ---
@@ -1267,8 +1273,7 @@ crunch plan):
 | Time Bank | Replace with real offline progress (crunch track). |
 | Gear | Coming; keep the system. |
 | Item sinks | Upgrades and construction; no selling. |
-| Promotion content | 4 Academies (Fighter, Wizard, Rogue, Ranger) on Wood or Stone Foundations, with skill & class rework v2 (crunch track). |
-| Promotion cost | Free. |
+| Promotion content | **Retired** with classes (owner 2026-10-28, brief 270): every hero holds every skill, the weapon decides the style, milestone perks are the reward. |
 | Kill loot | Neighbour bonuses apply to kills like work (T-017). |
 | Energy and drinks | Remove energy, separate slots (T-098); drinks never heal, in fights or out (owner 2026-10-24); they are work buffs lasting 10 work cycles, a placeholder (brief 230 S6b). |
 | Dormant Maps | Retire (T-002). |
