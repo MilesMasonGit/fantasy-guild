@@ -82,6 +82,10 @@
             "enemyHits": "{enemy} hits {hero}",
             "enemyCrits": "{enemy} crits {hero}",
             "enemyMisses": "{enemy} misses {hero}",
+            "enemyMoveHits": "{enemy}'s {move} hits {hero}",
+            "enemyMoveCrits": "{enemy}'s {move} crits {hero}",
+            "enemyMoveMisses": "{enemy}'s {move} misses {hero}",
+            "enemyUsesMove": "{enemy} uses {move}",
             "eats": "{hero} eats {item}",
             "drinks": "{hero} drinks {item}",
             "statusLands": "{status} on {who}",
@@ -100,6 +104,20 @@
             "miss": "Miss",
             "weak": "Weak!",
             "resisted": "Resisted"
+        },
+        "moves": {
+            "unnamed": "Attack",
+            "selfAttack": "{effect} on itself, for one attack",
+            "selfSwing": "{effect} on itself, for the swing",
+            "selfFight": "{effect} on itself, for the fight",
+            "selfStatus": "{effect} on itself",
+            "heroAttack": "{effect} on the hero, for one attack",
+            "heroSwing": "{effect} on the hero, for the swing",
+            "heroFight": "{effect} on the hero, for the fight",
+            "heroStatus": "{effect} on the hero",
+            "noHit": "No hit",
+            "share": "{n}% of its swings",
+            "lastMove": "Its last move"
         },
         "types": {
             "slash": "Slash",
@@ -143,6 +161,7 @@
             "hp": "{name}: {cur} of {max} health",
             "heroHit": "Hits for {hit} before the matchup and the enemy's resistances",
             "enemyHit": "Hits for {hit} before the matchup and your resistances",
+            "enemyMoves": "Each swing makes one of its moves, picked at random",
             "weapon": "{item}: {n}",
             "fist": "Fist: 1",
             "levelStep": "Combat level: +{n}",
@@ -183,6 +202,7 @@
             "noResists": "Nothing",
             "swing": "Swing",
             "kinds": "Kinds",
+            "moves": "Moves",
             "every": "every {time}",
             "step": "{type} {n}%"
         },

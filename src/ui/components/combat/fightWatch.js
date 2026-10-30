@@ -6,13 +6,15 @@ import * as HeroManager from '../../../systems/hero/HeroManager.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
+import { t } from '../../../i18n/index.js';
 
 /**
  * What the combat screen knows about each fight, read from the engine's events: who swung, what
  * landed, what was eaten or drunk, which statuses landed and ticked, how it ended. One record per
  * fight, kept per hero: the fight they are in now and the one before it ("This fight" / "Last
  * fight" in the panel's log), in memory only and never saved. The same reading feeds the mat's
- * floating numbers as "moments" (`subscribeMoments`).
+ * floating numbers as "moments" (`subscribeMoments`). An enemy's swing names its move when it has
+ * moves (the log line, the float and the record's `lastMove`, which the panel marks).
  * ⚠️ Every listener is a UI listener: a catch-up (a quiet bus) records and draws nothing. A fight
  * that was already running when the watch started, or that a catch-up started, is picked up at
  * its next event (`joinedLate`).
@@ -27,8 +29,8 @@ const LATE_TICK_MS = 1500;
 /** What a log line's number says and its colour: a hit on the enemy, on the hero, a heal, nothing. */
 export const TONE = Object.freeze({ HIT: 'hit', HURT: 'hurt', HEAL: 'heal', MISS: 'miss', NOTE: 'note' });
 
-/** A moment's kind, for the mat's floating numbers. */
-export const MOMENT = Object.freeze({ HIT: 'hit', CRIT: 'crit', MISS: 'miss', HEAL: 'heal', TICK: 'tick' });
+/** A moment's kind, for the mat's floating numbers: `move` is an enemy's move that does not hit (its name alone). */
+export const MOMENT = Object.freeze({ HIT: 'hit', CRIT: 'crit', MISS: 'miss', HEAL: 'heal', TICK: 'tick', MOVE: 'move' });
 
 /** How a fight ended. */
 export const OUTCOME = Object.freeze({ WON: 'won', LOST: 'lost', LEFT: 'left' });
@@ -111,7 +113,8 @@ function makeRecord(heroId, instanceId, typeId = null, joinedLate = false) {
             enemy: { cur: hp?.current ?? enemyMax, max: enemyMax }
         },
         log: [],
-        trimmed: 0
+        trimmed: 0,
+        lastMove: null
     };
 }
 
@@ -226,20 +229,35 @@ function onHeroSwing(p) {
     changed(record.heroId);
 }
 
+/** The move an enemy's swing names, as the screen calls it, or null for a swing without moves. */
+const moveNameOf = (p) => (p?.move == null ? null : (String(p.move).trim() || t('fight.moves.unnamed')));
+
 function onEnemySwing(p) {
     const instanceId = p?.instanceId ?? BoardCombat.fightOfHero(p?.heroId)?.instanceId;
     const record = ensure(p?.heroId, instanceId);
     if (!record) return;
-    const vars = { hero: record.heroName, enemy: record.enemyName };
+    const move = moveNameOf(p);
+    const vars = { hero: record.heroName, enemy: record.enemyName, ...(move ? { move } : {}) };
+    if (move) record.lastMove = move;
+    if (move && p.effectOnly) {
+        say(record, { icon: 'star', tone: TONE.NOTE, key: 'enemyUsesMove', vars });
+        moment({ heroId: record.heroId, instanceId: record.instanceId, by: 'enemy', on: 'enemy', kind: MOMENT.MOVE, move });
+        changed(record.heroId);
+        return;
+    }
     const damage = Math.round(Number(p.damage) || 0);
     const typed = p.hit ? typesOf(p) : { types: [], verdict: null };
     if (!p.hit) {
-        say(record, { icon: 'miss', tone: TONE.MISS, key: 'enemyMisses', vars });
+        say(record, { icon: 'miss', tone: TONE.MISS, key: move ? 'enemyMoveMisses' : 'enemyMisses', vars });
     } else {
-        say(record, { icon: p.crit ? 'star' : 'hit', tone: TONE.HURT, key: p.crit ? 'enemyCrits' : 'enemyHits', vars, amount: `−${damage}`, ...typed });
+        const key = move ? (p.crit ? 'enemyMoveCrits' : 'enemyMoveHits') : (p.crit ? 'enemyCrits' : 'enemyHits');
+        say(record, { icon: p.crit ? 'star' : 'hit', tone: TONE.HURT, key, vars, amount: `−${damage}`, ...typed });
     }
     if (Number.isFinite(p.heroHpRemaining)) record.hp.hero.cur = Math.max(0, p.heroHpRemaining);
-    moment({ heroId: record.heroId, instanceId: record.instanceId, by: 'enemy', on: 'hero', kind: !p.hit ? MOMENT.MISS : p.crit ? MOMENT.CRIT : MOMENT.HIT, amount: damage, ...typed });
+    moment({
+        heroId: record.heroId, instanceId: record.instanceId, by: 'enemy', on: 'hero',
+        kind: !p.hit ? MOMENT.MISS : p.crit ? MOMENT.CRIT : MOMENT.HIT, amount: damage, ...typed, ...(move ? { move } : {})
+    });
     changed(record.heroId);
 }
 

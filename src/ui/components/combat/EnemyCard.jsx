@@ -14,15 +14,28 @@ const StepLine = ({ line }) => (
     </span>
 );
 
+/** One move: its name, then the type it hits with, or a star and what its effect does. */
+const MoveLine = ({ move }) => (
+    <span className="inline-flex items-center gap-1 flex-wrap" data-enemy-card-move={move.name}>
+        <span className="font-bold">{move.name}</span>
+        <CombatGlyph name={move.hits ? damageTypeGlyph(move.type) : 'star'} colour={move.hits ? GLYPH_COLOUR.text : GLYPH_COLOUR.gold} />
+        <span className="ui-text-small text-gi-muted">
+            {[move.hits ? damageTypeName(move.type) : null, move.effect].filter(Boolean).join(', ')}
+        </span>
+    </span>
+);
+
 /**
  * The enemy card's rows (owner, 2026-10-25, option B's table): level, style, health, hit with its
- * damage type, what it resists and is weak to (rows only when it has some; "Nothing" when it has
- * neither), swing, and its kinds once the guild has fought one (until then "? fight one to learn").
+ * damage type (each of its moves' types), its moves when it has some (what each hits with or does),
+ * what it resists and is weak to (rows only when it has some; "Nothing" when it has neither), swing,
+ * and its kinds once the guild has fought one (until then "? fight one to learn").
  * No forecast: the player does the sums. `card` is `fightView.enemyCardView`'s.
  */
 export const EnemyCardRows = ({ card }) => {
     const resists = (card.resists || []).filter(l => l.value > 0);
     const weak = (card.resists || []).filter(l => l.value < 0);
+    const hitTypes = card.hitTypes?.length ? card.hitTypes : [card.hitType];
     return (
         <div data-enemy-card={card.typeId} className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 ui-text-body text-white" style={{ minWidth: 220 }}>
             <span className="text-gi-muted">{t('fight.card.level')}</span>
@@ -37,9 +50,15 @@ export const EnemyCardRows = ({ card }) => {
             <span className="text-gi-muted">{t('fight.card.hit')}</span>
             <span className="inline-flex items-center gap-1 font-bold tabular-nums" data-enemy-card-hit>
                 {damageText(card.hit)}
-                <CombatGlyph name={damageTypeGlyph(card.hitType)} colour={GLYPH_COLOUR.text} />
-                <span className="ui-text-small font-normal text-gi-muted">{damageTypeName(card.hitType)}</span>
+                {hitTypes.map(type => <CombatGlyph key={type} name={damageTypeGlyph(type)} colour={GLYPH_COLOUR.text} />)}
+                {hitTypes.length === 1 && <span className="ui-text-small font-normal text-gi-muted">{damageTypeName(hitTypes[0])}</span>}
             </span>
+            {card.moves?.length > 0 && (
+                <>
+                    <span className="text-gi-muted">{t('fight.card.moves')}</span>
+                    <span className="flex flex-col" data-enemy-card-moves>{card.moves.map((m, i) => <MoveLine key={`${m.name}-${i}`} move={m} />)}</span>
+                </>
+            )}
             {resists.length === 0 && weak.length === 0 && (
                 <>
                     <span className="text-gi-muted">{t('fight.card.resists')}</span>

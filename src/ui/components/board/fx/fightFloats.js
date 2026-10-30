@@ -13,7 +13,8 @@ import { t } from '../../../../i18n/index.js';
  * A fight's floating numbers on the mat (owner, 2026-10-25): every hit both ways, "Miss", a big
  * "Crit!", green heals and the red poison and burn ticks with their drop or flame. A hit carries
  * its damage types' glyphs beside the number (two for a shot with an arrow), and "Weak!" or
- * "Resisted" over it when the target's weaknesses or resistances moved it. Each rises at
+ * "Resisted" over it when the target's weaknesses or resistances moved it, and an enemy's move names
+ * itself over its hit or miss, or alone beside the enemy for a move that does not hit. Each rises at
  * its fighter's OUTER side (away from the other fighter, clear of the flag over the enemy), a
  * hero's blow on the strike frame of their swing, and is gone in half a second. White on the
  * enemy, red on the hero. Built from the fight watch's moments (`fightWatch.js`), drawn in the
@@ -66,13 +67,16 @@ export function buildFloat(m) {
     const verdictWord = () => (m.verdict === 'weak'
         ? span('gi-ff-weak-word', t('fight.float.weak'))
         : m.verdict === 'resisted' ? span('gi-ff-resisted-word', t('fight.float.resisted')) : null);
+    const moveWord = () => (m.move ? span('gi-ff-move-word', m.move) : null);
+    if (m.move) el.setAttribute('data-fight-float-move', m.move);
     switch (m.kind) {
         case MOMENT.CRIT:
         case MOMENT.HIT: {
             const crit = m.kind === MOMENT.CRIT;
             const verdict = verdictWord();
+            const move = moveWord();
             const number = span(crit ? 'gi-ff-crit-number' : 'gi-ff-number', String(m.amount));
-            if (!crit && !verdict) {
+            if (!crit && !verdict && !move) {
                 el.className = `gi-fight-float ${tone}`;
                 el.append(number, ...typeGlyphs());
                 break;
@@ -81,6 +85,7 @@ export function buildFloat(m) {
             if (verdict) el.setAttribute('data-fight-float-verdict', m.verdict);
             const words = document.createElement('div');
             words.className = 'gi-ff-words';
+            if (move) words.appendChild(move);
             if (crit) words.appendChild(span('gi-ff-crit-word', t('fight.float.crit')));
             if (verdict) words.appendChild(verdict);
             const row = document.createElement('div');
@@ -89,9 +94,16 @@ export function buildFloat(m) {
             el.append(words, row);
             break;
         }
-        case MOMENT.MISS:
-            el.className = 'gi-fight-float gi-fight-float-miss gi-ff-white';
+        case MOMENT.MISS: {
+            el.className = `gi-fight-float gi-fight-float-miss gi-ff-white${m.move ? ' gi-fight-float-crit' : ''}`;
+            const move = moveWord();
+            if (move) el.appendChild(move);
             el.appendChild(span('gi-ff-word', t('fight.float.miss')));
+            break;
+        }
+        case MOMENT.MOVE:
+            el.className = 'gi-fight-float gi-fight-float-move gi-ff-white';
+            el.appendChild(span('gi-ff-move-word', m.move || ''));
             break;
         case MOMENT.HEAL:
             el.className = 'gi-fight-float gi-ff-green';
@@ -139,7 +151,7 @@ export function floatPoint(m, unit = fxArtUnit()) {
 
 /** Play one moment's float. @returns {Animation|null} */
 export function playFloat(m, now = performance.now()) {
-    if (!m || (m.amount == null && m.kind !== MOMENT.MISS)) return null;
+    if (!m || (m.amount == null && m.kind !== MOMENT.MISS && m.kind !== MOMENT.MOVE)) return null;
     const unit = fxArtUnit();
     const at = floatPoint(m, unit);
     if (!at) return null;

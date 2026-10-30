@@ -15,6 +15,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { tokenName, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
+import { statusBlockOf } from '../../../systems/effects/effectLibrary.js';
 import { GameState } from '../../../state/GameState.js';
 import { resolveAnimationPath, resolveSpritePath, resolveEnemyAnimationPath } from '../../../utils/AssetManager.js';
 import { healthText } from '../board/healthBar.js';
@@ -165,6 +166,45 @@ export function statusesView(target) {
     }));
 }
 
+const LASTS_KEY = Object.freeze({ attack: 'Attack', swing: 'Swing', fight: 'Fight' });
+
+/**
+ * What a move's effect does, in the player's words: "Flutter on itself, for one attack", "Venom on
+ * the hero" (a status keeps its own lifetime). Null for a move with no effect.
+ */
+export function moveEffectText(move) {
+    if (!move?.effectId) return null;
+    const entry = EFFECTS[move.effectId];
+    const effect = entry?.name || move.effectId;
+    const on = move.target === 'self' ? 'self' : 'hero';
+    const lasts = statusBlockOf(entry) ? 'Status' : (LASTS_KEY[move.lasts] || LASTS_KEY.fight);
+    return t(`fight.moves.${on}${lasts}`, { effect });
+}
+
+/**
+ * An enemy's moves as the screen lists them (`enemyMoves.js`), or null for an enemy without: each
+ * one's name, the type it hits with (null when it does not hit), what its effect does and its share
+ * of the swings in whole percent.
+ * @returns {Array<{name: string, hits: boolean, type: string|null, effect: string|null, share: number}>|null}
+ */
+export function movesView(moves) {
+    if (!Array.isArray(moves) || moves.length === 0) return null;
+    const total = moves.reduce((sum, m) => sum + (m.weight || 0), 0) || moves.length;
+    return moves.map(m => ({
+        name: m.name || t('fight.moves.unnamed'),
+        hits: !!m.hits,
+        type: m.hits ? m.type : null,
+        effect: moveEffectText(m),
+        share: Math.round(((m.weight || 0) / total) * 100)
+    }));
+}
+
+/** The types an enemy's swings hit with: its moves' that hit, each once, or the plain Physical swing's. */
+export function enemyHitTypes(moves) {
+    if (!Array.isArray(moves) || moves.length === 0) return [PLAIN_ENEMY_HIT_TYPE];
+    return [...new Set(moves.filter(m => m.hits).map(m => m.type))];
+}
+
 /** What lingers on an enemy for the fight besides statuses (a boss's Stone Skin, its Enrage). */
 function enemyBuffs(fight) {
     return (fight?.effects || [])
@@ -227,6 +267,7 @@ export function enemySide(typeId, fight = null) {
     const flat = live ? CombatFormulas.damageMultiplierOf(profile) : 1;
     const hit = Math.max(0, (profile.hit ?? 1) * flat);
     const known = hasFought(typeId);
+    const hitTypes = enemyHitTypes(profile.moves);
     return {
         typeId,
         name: profile.name || tokenName(typeId),
@@ -236,7 +277,9 @@ export function enemySide(typeId, fight = null) {
             ? { cur: Math.max(0, fight.combat?.enemyHp?.current ?? 0), max: fight.combat?.enemyHp?.max ?? profile.hp }
             : { cur: profile.hp, max: profile.hp },
         hit,
-        hitType: PLAIN_ENEMY_HIT_TYPE,
+        hitType: hitTypes[0] ?? PLAIN_ENEMY_HIT_TYPE,
+        hitTypes,
+        moves: movesView(profile.moves),
         resists: live ? liveEnemyResistLines(profile) : enemyResistLines(profile.resistances),
         swingMs: live ? CombatFormulas.enemyAttackSpeedMs(profile) : (profile.attackSpeed || 3000),
         kinds: known ? (profile.kinds || []).map(kindView).filter(Boolean) : null,
@@ -263,6 +306,8 @@ export function enemyCardView(typeId) {
         hp: side.hp.max,
         hit: side.hit,
         hitType: side.hitType,
+        hitTypes: side.hitTypes,
+        moves: side.moves,
         resists: side.resists,
         swingMs: side.swingMs,
         kinds: side.kinds
@@ -299,7 +344,7 @@ export function fightPanelView(heroId, fights, now = Date.now()) {
     };
     const enemyView = enemySide(record.typeId, liveFight) || {
         typeId: record.typeId, name: record.enemyName, style: 'melee', level: null, hp: record.hp.enemy,
-        hit: 0, hitType: PLAIN_ENEMY_HIT_TYPE, resists: [], swingMs: 0, kinds: null, statuses: [], buffs: []
+        hit: 0, hitType: PLAIN_ENEMY_HIT_TYPE, hitTypes: [PLAIN_ENEMY_HIT_TYPE], moves: null, resists: [], swingMs: 0, kinds: null, statuses: [], buffs: []
     };
     if (!live) {
         heroView.hp = { ...record.hp.hero };
@@ -315,7 +360,7 @@ export function fightPanelView(heroId, fights, now = Date.now()) {
         clock: clockText((record.endedAt ?? now) - record.startedAt),
         ended: live ? null : { outcome: record.outcome },
         hero: { ...heroView, hpText: healthText(heroView.hp.cur, heroView.hp.max), art: heroArt(heroView.sprite) },
-        enemy: { ...enemyView, hpText: healthText(enemyView.hp.cur, enemyView.hp.max), sheet: enemySheet(record.typeId) },
+        enemy: { ...enemyView, hpText: healthText(enemyView.hp.cur, enemyView.hp.max), sheet: enemySheet(record.typeId), lastMove: record.lastMove ?? null },
         instanceId: record.instanceId
     };
 }

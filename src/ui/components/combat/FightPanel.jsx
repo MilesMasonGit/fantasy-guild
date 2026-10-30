@@ -25,9 +25,9 @@ import { t } from '../../../i18n/index.js';
  * always on the left facing right, each moving as on the mat (idle, and a swing per real swing);
  * under it the versus card, one shared icon column so the hero's numbers and the enemy's read across
  * (level and style, health, hit with its damage types, resistances, swing), then the hero's elixirs
- * and statuses beside the
- * enemy's kinds (once fought), statuses and buffs; and the log, closed until asked for, holding the
- * whole of this fight and the last one. Opens over the playmat (`FightPanelPopup`).
+ * and statuses beside the enemy's moves (the last one made bright), kinds (once fought), statuses
+ * and buffs; and the log, closed until asked for, holding the whole of this fight and the last one.
+ * Opens over the playmat (`FightPanelPopup`).
  */
 
 /** The panel's width inside its frame. */
@@ -157,6 +157,57 @@ const HitParts = ({ parts }) => (
     </span>
 );
 
+/** An enemy's hit: as a hit's parts for one type; for moves in several types, the hit and each type's glyph. */
+const EnemyHit = ({ enemy }) => {
+    const types = enemy.hitTypes?.length ? enemy.hitTypes : [enemy.hitType];
+    if (types.length <= 1) return <HitParts parts={[{ type: types[0] ?? enemy.hitType, hit: enemy.hit }]} />;
+    return (
+        <span className="inline-flex items-center gap-1" data-fight-hit-parts>
+            {damageText(enemy.hit)}
+            {types.map(type => (
+                <span key={type} className="inline-flex" data-fight-hit-type={type}>
+                    <CombatGlyph name={damageTypeGlyph(type)} colour={GLYPH_COLOUR.text} />
+                </span>
+            ))}
+        </span>
+    );
+};
+
+/** What each of an enemy's moves does, one line each, for the hit row's tooltip. */
+const movesTip = (moves) => (moves?.length
+    ? [t('fight.tip.enemyMoves'), ...moves.map(m => `${m.name}: ${[m.hits ? damageTypeName(m.type) : t('fight.moves.noHit'), m.effect].filter(Boolean).join(', ')}`)]
+    : undefined);
+
+/** An enemy's moves, the one its last swing made bright, each with the type it hits with or a star. */
+const MoveList = ({ moves, last }) => (
+    <div className="flex flex-col items-end gap-0.5" data-fight-moves>
+        {moves.map((m, i) => {
+            const isLast = m.name === last;
+            return (
+                <Tooltip
+                    key={`${m.name}-${i}`}
+                    title={m.name}
+                    lines={[
+                        m.hits ? damageTypeName(m.type) : t('fight.moves.noHit'),
+                        m.effect,
+                        t('fight.moves.share', { n: m.share }),
+                        isLast ? t('fight.moves.lastMove') : null
+                    ]}
+                >
+                    <span
+                        className={`inline-flex items-center gap-1 cursor-help ${isLast ? 'font-bold text-white' : 'text-gi-text'}`}
+                        data-fight-move={m.name}
+                        data-fight-move-last={isLast ? 'true' : 'false'}
+                    >
+                        {m.name}
+                        <CombatGlyph name={m.hits ? damageTypeGlyph(m.type) : 'star'} colour={m.hits ? GLYPH_COLOUR.text : GLYPH_COLOUR.gold} />
+                    </span>
+                </Tooltip>
+            );
+        })}
+    </div>
+);
+
 /** A side's resistances as glyph chips: `[fire] 100%`, a weakness `[ice] −50%` in gold; `–` for none. */
 const ResistChips = ({ lines, align = 'start' }) => (lines.length === 0
     ? <span className="text-gi-muted" data-fight-resists="none">–</span>
@@ -227,8 +278,8 @@ export const VersusCard = ({ view }) => {
                 id="hit"
                 glyph="hit"
                 hero={hero.hitParts?.length ? <HitParts parts={hero.hitParts} /> : damageText(hero.hit)}
-                enemy={<HitParts parts={[{ type: enemy.hitType, hit: enemy.hit }]} />}
-                tips={[t('fight.tip.heroHit', { hit: damageText(hero.hit) }), t('fight.tip.enemyHit', { hit: damageText(enemy.hit) }), hero.hitLines]}
+                enemy={<EnemyHit enemy={enemy} />}
+                tips={[t('fight.tip.heroHit', { hit: damageText(hero.hit) }), t('fight.tip.enemyHit', { hit: damageText(enemy.hit) }), hero.hitLines, movesTip(enemy.moves)]}
             />
             <VsRow
                 id="resists"
@@ -253,6 +304,7 @@ export const VersusCard = ({ view }) => {
                     {hero.statuses.map(s => <StatusChip key={s.id} s={s} />)}
                 </div>
                 <div className="flex flex-col items-end gap-1 text-right" data-fight-effects="enemy">
+                    {enemy.moves?.length > 0 && <MoveList moves={enemy.moves} last={enemy.lastMove} />}
                     {enemy.kinds == null ? (
                         <span className="ui-text-small text-gi-muted" data-fight-kinds="unknown">{t('fight.panel.unknownKinds')}</span>
                     ) : enemy.kinds.map(k => (
