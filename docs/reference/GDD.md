@@ -456,8 +456,8 @@ has none yet) and melee have content today.
 ### Jobs and promotion — Retired (brief 270 K1)
 Jobs, promotion, Promotion Tokens, the Change Job planner, banked skills and
 Mastery are gone: **if the skill is high enough, the hero can do it**
-(`concept_classless_heroes.md`). A Token's Promotes rule does nothing; it reads
-"Promotes the hero to fighter (retired).", the CMS no longer offers it, and the
+(`concept_classless_heroes.md`). A Token's Promotes rule does nothing; it still
+reads as it did, the CMS no longer offers it and marks it retired, and the
 audits name the Tokens carrying one (the Fighter's and Wizard Academies, for the
 owner to delete). An older save keeps every level: banked skills come back onto
 the sheet, the job and cut skills are dropped. Milestone perks (K4) take
