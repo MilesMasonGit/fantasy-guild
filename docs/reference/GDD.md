@@ -417,33 +417,33 @@ nothing and is the owner's to delete in the CMS.
 ### Roster — Built
 - Heroes come from the **Bunk Beds** Hall upgrade: each rank adds one hero,
   **max 8** (`ROSTER_MAX`). Rank 1 is free. *(`guildUpgrades.js`)*
-- Every recruit is identical: a **Recruit** with the 9 Starting skills at
-  level 1, 10 HP, a random name. Differences are earned. No retirement.
+- Every new hero is identical: every skill at level 1 (below), 11 HP, a random
+  name. Differences are earned. No retirement. (Classless heroes, brief 270
+  K1; the "Recruit" title is gone.)
 - One flag colour per hero (8 colours).
 
 ### Skills — Built
-**25 skills** in four layers *(`skillRegistry.js`, the source of truth;
-class rework v2, brief 20)*:
+**20 skills** in three layers, and **every hero holds every one** from level 1
+*(`skillRegistry.js`, the source of truth; classless heroes, brief 270 K1)*:
 - **Starting (9)**: mining, forestry, fishing, smithing, crafting, cooking,
-  farming, alchemy, construction. Every hero holds all nine, always.
-- **Combat (4)**: melee, ranged, magic, stealth. A promoted hero holds one.
-- **Advanced (4)**: leadership, fletching, enchanting, crime. One on a basic
-  class, two on a master class.
-- **Master (8)**: faith, trapping, summoning, taming, commerce, science,
-  armory, shadowcraft. One master class each.
+  farming, alchemy, construction.
+- **Combat (4)**: melee, ranged, magic, stealth. The style a hero fights in is
+  their weapon's (see Equipment and The fight).
+- **Specialist (7)**: fletching, faith, summoning, enchanting, crime, taming,
+  science. **Placeholders** (owner ruling D7): names, descriptions and emoji
+  icons that work like any skill, with no mechanics of their own until the
+  owner's specialist-skill rework. Shown at level 1 so players see what is coming.
 
-The Advanced and Master skills are **placeholders** (owner ruling D7): names,
-descriptions and emoji icons that work like any skill (Tokens and recipes can
-name them; XP; levels), with no mechanics of their own until the owner's
-specialist-skill rework. Stealth fights like the other three styles and
-takes its place in the four-way matchup cycle (see The fight).
+Leadership, Commerce, Trapping, Armory and Shadowcraft were **cut** (K1): content
+naming one is listed by the boot audit and the CMS Economy Audit, and an older
+save's levels in them are dropped on load.
 Forestry is the old Logging, renamed with its id (it keeps the Logging art);
 Explore and the other v1 skills were dropped. Only the Starting skills (Alchemy
-has none yet), melee, magic and commerce have content today.
+has none yet) and melee have content today.
 
 - A hero can only do work for a skill they **hold**, at a high enough level.
 - XP comes from work cycles (the recipe's or Token's `xp`) and kills (into the
-  hero's one combat skill). Level cap 99; XP to level 99 ≈ 13 million
+  style the hero fought in: their weapon's, Melee barehanded). Level cap 99; XP to level 99 ≈ 13 million
   (RuneScape-style curve, `XPCurve.js`).
 - A skill level gives no work speed: a cycle takes its authored time whoever works it (owner 2026-10-09, T-125).
 - **Hero level** = the average of held skills (display only).
@@ -453,52 +453,19 @@ has none yet), melee, magic and commerce have content today.
   job that does not exist is listed by the boot audit and the CMS Economy
   Audit.
 
-### Jobs and promotion — Built, mostly without content
-- Job tree *(`jobRegistry.js`)*: **Recruit** → 4 basic classes → 8 master
-  classes:
-
-  | Basic class | Its skills | Master classes (adds) |
-  |---|---|---|
-  | Fighter | melee + leadership | Paladin (enchanting + faith), Knight (fletching + armory) |
-  | Ranger | ranged + fletching | Beastmaster (enchanting + taming), Hunter (crime + trapping) |
-  | Wizard | magic + enchanting | Necromancer (crime + summoning), Scholar (leadership + science) |
-  | Rogue | stealth + crime | Merchant (leadership + commerce), Assassin (fletching + shadowcraft) |
-
-- A hero holds the 9 Starting skills plus their class's skills: Recruit 9,
-  basic class 11 (+1 combat, +1 advanced), master class 13 (+1 more advanced,
-  +1 master). A Recruit fights barehanded: a punch of 1 every 3 s, with no
-  style and no combat XP (see The fight).
-- **Promotion is a Token rule**: "Promotes the hero to Fighter." A qualified
-  hero trains on the Token for one cycle (30 s default), then a ceremony asks
-  Accept / Not yet. *(`BoardPromotion.js`, `PromotionSystem.js`)*
-- **Gate**: a basic class needs two named Starting skills at 10 (ruling D3):
-  Fighter Mining + Smithing, Ranger Forestry + Crafting, Wizard Alchemy +
-  Cooking, Rogue Fishing + Crafting. The pairs are the `gateSkills` of each
-  job in the job table. A master class needs its parent's combat and advanced
-  skill at 25. Re-training passes the same gate as a first promotion, and
-  banked skills count. The Change Job planner shows what is missing
-  ("Needs Mining 4/10, Smithing 0/10").
-- **Price**: free (ruling D4). A Promotes rule costs nothing unless its author
-  sets a price in the CMS cost strip, so an unpriced Academy keeps its uses
-  and never wears out. An authored price is spent on accepting, and a Token
-  that cannot pay does not train.
-- Changing branch banks the skills the new job doesn't use, at their level;
-  they return if the hero comes back. The Change Job screen only plans; the
-  act happens on the board.
-- **Mastery** (ruling D2): an Advanced or Master skill at level 99 is never
-  banked. It stays on the hero through every later job change, on top of the
-  new class's skills, so a hero can hold more than 13. Combat skills are
-  excluded and bank as usual (a hero fights with exactly one combat skill).
-  The promotion preview lists a mastered skill as kept, not set aside.
-- **Content**: Fighter's Academy (buildable on a Stone Foundation) and Wizard
-  Academy (no source found) are the only promotion Tokens. The Ranger and
-  Rogue Academies and the eight master-class Tokens are the owner's CMS work
-  (brief 20 R3; ruling D5).
-- Skill and job icons for the new skills and classes are emoji placeholders.
+### Jobs and promotion — Retired (brief 270 K1)
+Jobs, promotion, Promotion Tokens, the Change Job planner, banked skills and
+Mastery are gone: **if the skill is high enough, the hero can do it**
+(`concept_classless_heroes.md`). A Token's Promotes rule does nothing; it reads
+"Promotes the hero to fighter (retired).", the CMS no longer offers it, and the
+audits name the Tokens carrying one (the Fighter's and Wizard Academies, for the
+owner to delete). An older save keeps every level: banked skills come back onto
+the sheet, the job and cut skills are dropped. Milestone perks (K4) take
+promotion's place as the milestone.
 
 ### Health, food, defeat — Built
-- **Max HP = 10 + combat level** (the held combat skill; a Recruit, holding
-  none, is level 0): 10 for a Recruit, 11 at level 1, 109 at 99. Recomputed on
+- **Max HP = 10 + the hero's best combat skill** (the highest of the four,
+  whatever is in their hands): 11 for a new hero, 109 at 99. Recomputed on
   every level-up (a level adds headroom, not a heal) and on load (an older
   save's stored max is replaced and current HP clamped to it).
   *(`FormulaRegistry.js`, `CombatFormulas.js`)*
@@ -556,16 +523,18 @@ per hero: equipping takes the copy out of the Bank. **Bait** for fishing is
 carried in a consumable cell and spent from the Bank, one per catch (§3,
 Fishing).
 - **A weapon** is anything held in the hands that is not a gathering tool. It
-  names its **style(s)** (`styles`: a Dagger is Melee and Stealth), its
-  **damage** and its **speed** (fast 2 s, normal 3 s, slow 4 s). **A hero
-  equips only weapons of their own style**; a weapon naming no style suits any
-  promoted hero. **A Recruit holds no weapon** ("Recruits fight barehanded:
-  promote Bjorn to use the Copper Sword"); a hero of another style is told
-  whose weapon it is ("Mira fights with Magic: the Copper Sword is a Melee
-  weapon"). A weapon of another style still in a hero's hands (from before a
-  re-training) is not swung and its ability is off. Older content's single
-  `skillRequired` style is read as a one-style list. *(`weaponStyles.js`,
-  `EquipmentValidator.js`)*
+  names **one style** (`styles: ['melee']`; an older list of two, the Dagger's,
+  fights in its first and the audits say so), its **damage** and its **speed**
+  (fast 2 s, normal 3 s, slow 4 s). **The weapon decides the style**: any hero
+  may hold any weapon, and fights in its style. A weapon naming no style is
+  Melee. Older content's single `skillRequired` style is read as its style.
+- **Level requirement** (K1): a weapon may ask a level in its own style
+  (`levelRequired`: "Iron Sword: Melee 15"); armour and trinkets name the style
+  (`skillRequired`) beside the level. Equipping below it is refused, "Needs
+  Melee 15". Gear held below its level (an older save, or a level added later)
+  stays in its slot, lends nothing, and a weapon is not swung. A second weapon
+  in hand of another style than the one swung lends nothing either.
+  *(`weaponStyles.js`, `EquipmentValidator.js`)*
 - **A family's ability is a Rules effect on the item.** Every tier of a family
   points at the same library effect (a "Spear" effect: Provides 1 more Pierce),
   each with its own **scale** (copper 1, iron 2…), so the tier raises the
@@ -581,7 +550,7 @@ Fishing).
 - A **flag** has no skill: the hero works every skill they hold within the
   **flag radius (240 u: all eight neighbours; +40 u per Scouting Flags rank)**, shaped by per-skill
   **rules** (allowed on/off, priority 1–5, default 3; one combined Fight rule).
-- Choice order: a Promotion Token or the Hall directly under the flag first;
+- Choice order: the Hall directly under the flag first;
   then by priority, distance, and placement order. One hero per Token.
 - **Sticky**: a hero never leaves mid-cycle for something better; they switch
   at cycle end, only to a strictly better priority. Leaving resets progress.
@@ -695,8 +664,8 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
 - Goblins come from the Goblin Camp; enemies potter within 128 u of their
   spawner at half of 90 u/s and walk back if moved.
 - **Hostile** enemies ambush a hero inside the flag radius around their
-  spawner; the hero fights back even if their Fight rule is off. Recruits are
-  ambushed too and fight back barehanded.
+  spawner; the hero fights back even if their Fight rule is off, barehanded if
+  their hands are empty.
 - **Boss** (`enemy.boss: true`, a CMS tick): fights only the heroes sent at
   it. Never hostile (the Hostile box greys out), never made by a rule, so it
   never ambushes. Comes from a camp of its own or a Summoning Circle
@@ -751,8 +720,8 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
 
 ### The fight — Built
 - **Swings.** A hero swings at their weapon's speed: fast 2 s, normal 3 s,
-  slow 4 s (barehanded: 3 s). The weapon swung is the first in the hands of
-  the hero's own style; one of another style is ignored. An enemy swings at
+  slow 4 s (barehanded: 3 s). The weapon swung is the first in the hands the
+  hero may hold (its level met); its style is the hero's for the fight. An enemy swings at
   its own speed (3 s unless a kind or the author says otherwise).
 - **Damage is fixed**: the weapon's damage (a fist is 1) + 1 per 20 combat
   levels + flat Damage from gear, times any damage buffs and the matchup,
@@ -767,15 +736,14 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   least 1. **Pierce** ignores that many armour points. Flat Resistance comes
   off after armour.
 - Every percentage rounds to the nearest whole, halves up.
-- **Recruits punch for 1 every 3 s**, whatever is in their hands, with no
-  style (even with every enemy) and no combat XP. A promoted hero with no
-  weapon punches too: 1 + the level step, on their own style.
+- **Barehanded is a Melee punch**: 1 + the Melee level step, every 3 s, on the
+  melee side of the cycle, earning Melee XP. A hero's level for the damage step
+  and the miss gap, both ways, is their level in the style they fight in.
 - **A four-way cycle: melee > ranged > magic > stealth > melee**: +25 %
   damage for the favoured side, −25 % for the other (a 2 becomes 3, or stays 2).
   Opposite pairs (melee and magic, ranged and stealth) are even, so each style
-  has one good matchup, one bad one, and two even. A hero always fights on
-  their own combat skill's side (a Dagger is melee for a Fighter, stealth for a
-  Rogue). An enemy's Style is one of the four combat skills (the CMS dropdown
+  has one good matchup, one bad one, and two even. A hero fights on their
+  weapon's side (Melee barehanded). An enemy's Style is one of the four combat skills (the CMS dropdown
   follows the skill registry). Every shipped enemy is melee.
 - **No regen in a fight**: below 25 % HP the hero eats food instead of
   swinging; drinks never heal. Elixirs are drunk as a fight starts
@@ -783,7 +751,7 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
 - Each swing draws one random number for the miss and, on a hit, one for the
   crit, from the game's random stream in a fixed order, so a catch-up replays
   the same fights as live play.
-- Kills give XP to the hero's combat skill and count as a work cycle for
+- Kills give XP to the style fought in (the weapon's) and count as a work cycle for
   neighbour rules. Loot drops on the mat, through the same yield, double-loot,
   double-item (a Cleaver's) and bonus-drop rules as a station's output (T-017).
   A double-item chance draws one random number per item it names that landed,
@@ -850,8 +818,7 @@ Statuses are not drawn on the board.
   fighter. The **fight plate** stands in the work plate's place under the two
   fighters' feet: both styles with a divider, then the hero's working elixirs
   with the fights each has left, the one under way counted (a fresh dose shows
-  10, its last fight 1; between fights, the fights still to come). A Recruit
-  shows no style. Speech, callouts (a status landing, a boss move) and "used"
+  10, its last fight 1; between fights, the fights still to come). Speech, callouts (a status landing, a boss move) and "used"
   bubbles over a fighter stand above its number and the chip, never on them.
   A small
   **crossed-swords chip** beside the enemy's bar, on its far side from the
@@ -900,7 +867,7 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 
 - **16 verbs**: provides, grants, acts_as, requires, restocks, converts,
   cannot, applies, deals, heals, restores, removes, spawns, transforms,
-  station, promotes.
+  station, promotes (retired with jobs: it reads, does nothing, and is not offered).
 - **16 moments** (On Cycle, On Neighbour's Cycle, On Depleted, On Neighbour's
   Kill, On Engaged, On Tick, On Bank Holds…, the three fight moments: On
   Swing and On Hit, each "every Nth", and On Health Below X % once a fight,
@@ -941,7 +908,7 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   one that does).
 - **What ships**: tool tiers (`acts_as`), station skills, two neighbour buffs
   (Coast −5 % work time; Windmill +5 double loot on Fields), a placement limit
-  (≤ 2 Coasts nearby), bonus drops, Minecart restocking, the two promotions,
+  (≤ 2 Coasts nearby), bonus drops, Minecart restocking, the two (retired) promotions,
   and **Thorns** (1 damage to the hero on finishing a Redberry Bush or Thorn
   Elemental). **Everything else in the grammar is Latent.**
 - **Items carry rules too** (a hero's loadout): a carried rule on On
