@@ -8,6 +8,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -124,7 +125,7 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
             skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
         }];
         // Far from the carried Token's path, high on the mat: it sorts behind every Token.
-        Flags.plant('h1', { x: 250, y: 150 });
+        Orders.orderAt('h1', { x: 250, y: 150 });
         const a = placeAt('fixture_producer', 600, 400);
         const b = placeAt('fixture_producer', 1000, 500);
         const c = placeAt('fixture_producer', 600, 900);
@@ -280,7 +281,7 @@ describe('⭐ re-stacking redraws no Token: their z is written, not rendered, an
             id: 'h1', name: 'h1', spriteId: 'recruit', status: 'idle', level: 50,
             skills: { mining: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
         }];
-        Flags.plant('h1', { x: 250, y: 150 });
+        Orders.orderAt('h1', { x: 250, y: 150 });
         const a = placeAt('fixture_producer', 600, 400);
         const b = placeAt('fixture_producer', 1000, 500);
         const d = placeAt('fixture_producer', 900, 700);

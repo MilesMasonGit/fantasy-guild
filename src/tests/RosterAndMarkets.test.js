@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -49,7 +50,7 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeTokenAt(instance, C(tile));
-    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    if (heroId) Orders.orderAt(heroId, C(tile));
     return instance;
 }
 
@@ -146,7 +147,7 @@ describe('A Market demands Commerce (D-259)', () => {
         // A Commerce flag, so the Market is a candidate; the flag skips it as
         // UNSKILLED for hover rather than raising a red mark (Free Playmat
         // 1.4b).
-        Flags.plant('hero_1', C(10), { skill: 'commerce' });
+        Orders.orderAt('hero_1', C(10), { skill: 'commerce' });
         InventoryManager.addItem('fixture_market_goods', 100);
         run(20000);
 

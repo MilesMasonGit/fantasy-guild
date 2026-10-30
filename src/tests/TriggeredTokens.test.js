@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -52,7 +53,7 @@ function place(tile, typeId, heroId = null, uses = undefined) {
     // Mirrors the adjacency suite: nothing subscribes ADJACENCY_DIRTY here, so
     // the neighbourhood is rebuilt explicitly.
     TileModifiers.rebuildAround([instance]);
-    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    if (heroId) Orders.orderAt(heroId, C(tile));
     return instance;
 }
 

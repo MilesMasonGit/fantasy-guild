@@ -6,6 +6,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -104,7 +105,7 @@ function startFight(typeId) {
     const enemy = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeTokenAt(enemy, AT);
     TileModifiers.rebuildAround([enemy]);
-    Placement.plantFlagAt(hero.id, AT);
+    Orders.orderAt(hero.id, AT);
     return { hero, enemy };
 }
 

@@ -94,7 +94,7 @@ function buildBoard() {
     fixtures.placeAt('cu_cart', REST.x - 150, REST.y);
     const vein = fixtures.placeAt('cu_vein', VEIN.x, VEIN.y);
     for (const p of ring(VEIN, 5)) fixtures.placeAt('cu_minecart', p.x, p.y);
-    fixtures.plant(miner.id, { x: VEIN.x, y: VEIN.y });
+    fixtures.orderAt(miner.id, { x: VEIN.x, y: VEIN.y });
     TileModifiers.rebuildAll();
     return { vein, rest };
 }

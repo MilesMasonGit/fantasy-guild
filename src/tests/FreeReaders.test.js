@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as RecipeResolver from '../systems/board/RecipeResolver.js';
@@ -375,7 +376,7 @@ describe('⭐ flags claim by instance id and wait by spot id', () => {
 
     it('a claim names the instance, and follows its point when it moves (FP-68)', () => {
         const forest = at('fixture_producer', P(2, 2));
-        Flags.plant('h1', P(2, 2));
+        Orders.orderAt('h1', P(2, 2));
 
         expect(BoardState.claimOfHero('h1')).toEqual({ instanceId: forest.id, typeId: 'fixture_producer', ...P(2, 2) });
         expect(BoardState.workTokenOf('h1')).toBe(forest.id);
@@ -391,7 +392,7 @@ describe('⭐ flags claim by instance id and wait by spot id', () => {
     it('a hero whose Token ran dry lets go of it by id — no wait for a restock (SP-55, 9.2)', () => {
         const spot = P(2, 2);
         const forest = at(BoardState.createTokenInstance('fixture_producer', 1), spot);
-        Flags.plant('h1', spot);
+        Orders.orderAt('h1', spot);
         expect(BoardState.workTokenOf('h1')).toBe(forest.id);
 
         Charges.destroyToken(forest, { heroId: 'h1' });

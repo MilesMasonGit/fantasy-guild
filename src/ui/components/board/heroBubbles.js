@@ -1,17 +1,10 @@
-
 import { ALERT } from '../../../systems/board/boardEvents.js';
-import * as BoardState from '../../../systems/board/BoardState.js';
-import { workConfigOf } from '../../../systems/board/StationRecipe.js';
-import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
-import { getSkill } from '../../../config/registries/skillRegistry.js';
-import { getAllItems } from '../../../config/registries/itemRegistry.js';
-import { neededToolOf, toolNeedPhrase } from '../../../config/registries/toolKinds.js';
 
 /**
  * A hero's sentence for a Token they cannot work. Heroes no longer speak a Token's problems (its
- * problem mark says them); what is left is the moment a flag dropped on a Token could not be
- * pinned to it ({@link pinRefusedLineFor}). The other sentences stay in {@link blockedText} as
- * the record of the retired lines (`docs/reference/speech_bubble_lines.md`).
+ * problem mark says them, and a refused order says its reason over the Token: `Orders.js`); the
+ * sentences stay in {@link blockedText} as the record of the retired lines
+ * (`docs/reference/speech_bubble_lines.md`).
  */
 
 /** "A", "A and B", "A, B and C". */
@@ -57,25 +50,4 @@ export function blockedText(alert, { token, missing = null, skill = null, tool =
         default:
             return null;
     }
-}
-
-/**
- * What a hero says when their flag, dropped on a Token, could not be pinned to it: the **same
- * sentence** they would say stuck on that Token for that reason (level too low, skill not
- * held, no tool for it in hand; see `docs/reference/speech_bubble_lines.md`). Null for a reason with no wording (a
- * Token the player disallowed, or the hero's own rule switched off): the flag's hover still
- * says it. Spoken as a moment (`heroSpeech.MOMENT_SPOKEN.pinRefused`).
- */
-export function pinRefusedLineFor(tokenId, reason) {
-    if (!tokenId || !reason) return null;
-    const token = BoardState.getTokenById(tokenId);
-    if (!token) return null;
-    const def = getTokenType(token.typeId);
-    const skillId = workConfigOf(def, token)?.skill;
-    const need = neededToolOf(def);
-    return blockedText(reason, {
-        token: def?.name || tokenName(token.typeId) || token.typeId,
-        skill: skillId ? (getSkill(skillId)?.name || skillId) : undefined,
-        tool: need ? toolNeedPhrase(need, getAllItems()) : undefined
-    });
 }

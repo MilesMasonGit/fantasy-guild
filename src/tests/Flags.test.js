@@ -4,6 +4,7 @@ import { GameState } from '../state/GameState.js';
 import { GAME_VERSION } from '../state/StateSchema.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -93,7 +94,7 @@ function put(tile, typeId, uses = undefined) {
     return instance;
 }
 
-const plant = (heroId, tile) => Flags.plant(heroId, C(tile));
+const plant = (heroId, tile) => Orders.orderAt(heroId, C(tile));
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
 const reasons = (instance) => Flags.skipsOf(instance.id).map(s => s.reason);
 
@@ -103,7 +104,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     setMatTuning('nearRadius', 272);
     GameState.initNew();
     InventoryManager.init();
@@ -348,7 +348,7 @@ describe('dropping a hero plants their flag — a flag has no skill (FP-71)', ()
         // (Free Playmat 1.4c).
         GameState.state.heroes = [hero('h1', { forestry: 50, melee: 30 })];
         put(14, 'fixture_enemy');
-        Placement.plantFlagAt('h1', C(14));
+        Orders.orderAt('h1', C(14));
         expect(BoardState.flagOf('h1')).toEqual({ ...C(14), plantedAt: expect.any(Number) });
         expect(BoardState.workerOf(idAt(14))).toBe('h1');
     });
@@ -356,7 +356,7 @@ describe('dropping a hero plants their flag — a flag has no skill (FP-71)', ()
     it('dropped on a Token whose skill the hero lacks, they do not work it, and it says unskilled', () => {
         GameState.state.heroes = [hero('h1', { mining: 30 })];
         const forest = put(14, 'fixture_producer');
-        Placement.plantFlagAt('h1', C(14));
+        Orders.orderAt('h1', C(14));
         expect(BoardState.flagOf('h1').skill).toBeUndefined();
         expect(BoardState.workerOf(idAt(14))).toBeNull();
         expect(reasons(forest)).toEqual([ALERT.UNSKILLED]);

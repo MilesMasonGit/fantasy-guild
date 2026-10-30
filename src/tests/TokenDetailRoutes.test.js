@@ -6,6 +6,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -97,7 +98,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -124,7 +124,7 @@ describe('each MatToken detail field updates on its own event (CR3-304)', () => 
         const station = put(P(600, 600), 'fixture_station');
         const read = await probe(station);
         expect(read(station).alert).toBeNull();
-        await doing(() => { Placement.plantFlagAt('h1', P(600, 600)); run(1000); });
+        await doing(() => { Orders.orderAt('h1', P(600, 600)); run(1000); });
         expect(station.alert).toBeTruthy();
         expect(read(station).alert).toBe(station.alert);
     });
@@ -141,13 +141,13 @@ describe('each MatToken detail field updates on its own event (CR3-304)', () => 
         const t = put(P(600, 600), 'fixture_producer');
         const read = await probe(t);
         expect(read(t).heroId).toBeNull();
-        await doing(() => Placement.plantFlagAt('h1', P(600, 600)));
+        await doing(() => Orders.orderAt('h1', P(600, 600)));
         expect(read(t).heroId).toBe('h1');
     });
 
     it('heroId — the Token a hero LEAVES lets go of them (HERO_MOVED names only the hero)', async () => {
         const t = put(P(600, 600), 'fixture_producer');
-        await doing(() => Placement.plantFlagAt('h1', P(600, 600)));
+        await doing(() => Orders.orderAt('h1', P(600, 600)));
         const read = await probe(t);
         expect(read(t).heroId).toBe('h1');
         await doing(() => Placement.recallHeroById('h1'));
@@ -158,10 +158,10 @@ describe('each MatToken detail field updates on its own event (CR3-304)', () => 
     it('heroId — moving a hero flag to another Token updates both Tokens', async () => {
         const a = put(P(600, 600), 'fixture_producer');
         const b = put(P(1400, 600), 'fixture_producer');
-        await doing(() => Placement.plantFlagAt('h1', P(600, 600)));
+        await doing(() => Orders.orderAt('h1', P(600, 600)));
         const read = await probe(a, b);
         expect([read(a).heroId, read(b).heroId]).toEqual(['h1', null]);
-        await doing(() => { Placement.plantFlagAt('h1', P(1400, 600)); run(1000); });
+        await doing(() => { Orders.orderAt('h1', P(1400, 600)); run(1000); });
         expect(BoardState.workTokenOf('h1')).toBe(b.id);
         expect([read(a).heroId, read(b).heroId]).toEqual([null, 'h1']);
     });

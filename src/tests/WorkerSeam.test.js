@@ -3,6 +3,7 @@ import { sourceFiles, readSource, rel, setScanTimeout } from './fixtures/sourceS
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Flags from '../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
@@ -71,7 +72,7 @@ describe('the worker seam answers from flags and claims', () => {
     it('1×1: the hero working a Token is its worker, and it is their work Token and display point', () => {
         const small = put('fixture_seam_small', A, 10);
         const other = put('fixture_seam_small', ELSEWHERE, 10);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
 
         expect(BoardState.workerOf(small.id)).toBe('hero_1');
         expect(BoardState.workTokenOf('hero_1')).toBe(small.id);
@@ -82,7 +83,7 @@ describe('the worker seam answers from flags and claims', () => {
     it('⚠️ the mat’s corner is a real answer, not "nowhere"', () => {
         const corner = { x: 64, y: 64 };
         const small = put('fixture_seam_small', corner, 10);
-        Placement.plantFlagAt('hero_1', corner);
+        Orders.orderAt('hero_1', corner);
 
         expect(BoardState.workerOf(small.id)).toBe('hero_1');
         expect(BoardState.workTokenOf('hero_1')).toBe(small.id);
@@ -93,7 +94,7 @@ describe('the worker seam answers from flags and claims', () => {
         // There is no footprint to search any more (slice 1.6d-2) — a Token of
         // any size is one circle at one point, named by one instance id.
         const large = put('fixture_seam_large', A, 50);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
 
         expect(BoardState.workerOf(large.id)).toBe('hero_1');
         expect(BoardState.workTokenOf('hero_1')).toBe(large.id);
@@ -101,7 +102,7 @@ describe('the worker seam answers from flags and claims', () => {
     });
 
     it('⭐ bare ground has no worker, even with a flag planted on it (1.4b)', () => {
-        Flags.plant('hero_2', B);
+        Orders.orderAt('hero_2', B);
 
         expect(BoardState.tokensAtPoint(B.x, B.y)).toHaveLength(0);
         expect(BoardState.workTokenOf('hero_2')).toBeNull();
@@ -111,7 +112,7 @@ describe('the worker seam answers from flags and claims', () => {
 
     it('recall clears all three answers', () => {
         const small = put('fixture_seam_small', A, 10);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
         Placement.recallHeroById('hero_1');
 
         expect(BoardState.workerOf(small.id)).toBeNull();

@@ -17,10 +17,9 @@ export const SPEECH_FILL = '#0d0a08';
 
 /**
  * A hero's moment by its key (`heroSpeech.js`): going idle (or waiting for a fight) asks the player
- * to give them work; a refused flag is a "can't"; the rest are plain news.
+ * to give them work; the rest are plain news.
  */
 export function momentTone(key) {
     if (key === 'idle') return SPEECH_TONE.ATTENTION;
-    if (key === 'pinRefused') return SPEECH_TONE.CANT;
     return SPEECH_TONE.PLAIN;
 }

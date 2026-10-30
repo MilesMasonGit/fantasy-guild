@@ -128,10 +128,10 @@ export function tickToken(instance, delta, heroId) {
 
     // Nobody here. Reset the cycle so the next hero starts from zero rather than inheriting a
     // stranger's progress.
-    // ⚠️ The offer is NOT dropped: under flags a tick with nobody here is not the player's gesture
-    // (a claim can lapse for a tick on its own), and clearing on it would re-ask a player who said
-    // not yet. An offer is cleared only by a DIFFERENT hero claiming the Token, or by a flag being
-    // planted on it (`Flags.plant`).
+    // ⚠️ The offer is NOT dropped: a tick with nobody here is not the player's gesture (a claim can
+    // lapse for a tick on its own), and clearing on it would re-ask a player who said not yet. An
+    // offer is cleared only by a DIFFERENT hero claiming the Token, or by a hero being ordered onto
+    // it (`Flags.orderToken`).
     if (!heroId) {
         instance.cycleElapsedMs = 0;
         return { alert: null };

@@ -97,8 +97,8 @@ function buildBoard() {
     const grove = fixtures.placeAt('ocu_tree', GROVE.x, GROVE.y);
     fixtures.placeAt('ocu_orchard', GROVE.x + 150, GROVE.y);
     const lone = fixtures.placeAt('ocu_tree', LONE.x, LONE.y);
-    fixtures.plant(a.id, { x: GROVE.x, y: GROVE.y }, { pin: true });
-    fixtures.plant(b.id, { x: LONE.x, y: LONE.y }, { pin: true });
+    fixtures.orderAt(a.id, { x: GROVE.x, y: GROVE.y });
+    fixtures.orderAt(b.id, { x: LONE.x, y: LONE.y });
     TileModifiers.rebuildAll();
     return { grove: grove.id, lone: lone.id };
 }

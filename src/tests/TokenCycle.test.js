@@ -3,6 +3,7 @@ import { FIXTURE_TOKENS } from './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -25,7 +26,7 @@ const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 
 /** Put a Token on spot `i`, and plant a hero's flag there. */
 const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
-const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
+const plant = (heroId, i) => Orders.orderAt(heroId, C(i));
 
 /**
  * The board's cycle engine — Tokens working, and what stops them.
@@ -312,7 +313,7 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
         // staffed by a claim made directly — the runner's tally of a STAFFED
         // Token going hungry is what this pins (Free Playmat 1.4b).
         const deep = place(20, 'fixture_deep_consumer');
-        Flags.plant('hero_2', C(20), { skill: 'smithing' });
+        Orders.orderAt('hero_2', C(20), { skill: 'smithing' });
         BoardState.setClaim('hero_2', { instanceId: deep.id, typeId: deep.typeId });
         run(5000);
 

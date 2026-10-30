@@ -9,6 +9,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -319,7 +320,7 @@ describe('on the mat: no shadow at rest; outlines from the game’s own state', 
 
     it('worked: green on the Token and its hero; in alert: red on the Token; selected: white', () => {
         const t = put(TOKEN, 'fixture_producer');
-        Flags.plant('h1', TOKEN);
+        Orders.orderAt('h1', TOKEN);
         const first = mount(h(MatBoard));
         const art = () => first.container.querySelector(`[data-token-art][data-token-id="${t.id}"]`);
         expect(art().getAttribute('data-outline')).toBe('work');

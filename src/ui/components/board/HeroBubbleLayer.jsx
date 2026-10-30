@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MAT_Z } from './matLayers.js';
-import { pinRefusedLineFor } from './heroBubbles.js';
 import { addMoment, liveMoments, stackOf, momentText, speaksMoment, idleMomentOf, DEPLETED_TTL_MS } from './heroSpeech.js';
 import { floatsOf, anyFloats, subscribeFloats } from './levelUpFloats.js';
 import { LevelUpFloats } from './LevelUpFloat.jsx';
@@ -110,13 +109,6 @@ export const HeroBubbleLayer = ({ heroes }) => {
                 if (!token) return;
                 const name = getTokenType(token.typeId)?.name || tokenName(token.typeId) || token.typeId;
                 sayRef.current(p.heroId, 'arrived', { key: 'arrived', text: momentText.arrived(name) });
-            }, UI_LISTENER),
-            // The flag could not be pinned to the Token it was dropped on, so the hero says
-            // why in their stuck-line words.
-            EventBus.subscribe(BOARD_EVENTS.PIN_REFUSED, (p) => {
-                if (!p?.heroId) return;
-                const text = pinRefusedLineFor(p.instanceId, p.reason);
-                if (text) sayRef.current(p.heroId, 'pinRefused', { key: 'pinRefused', text: momentText.pinRefused(text) });
             }, UI_LISTENER)
         ];
         return () => unsubs.forEach(u => u());

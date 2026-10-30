@@ -9,6 +9,7 @@ import { InventoryStore } from '../systems/inventory/InventoryStore.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
@@ -32,7 +33,7 @@ const HALL = { x: 1500, y: 950 };
 
 /** Put a Token on spot `i`, and plant a hero's flag there. */
 const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
-const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
+const plant = (heroId, i) => Orders.orderAt(heroId, C(i));
 
 const ids = TUTORIAL_QUESTS.map(t => t.id);
 const find = (id) => QuestManager.getActiveQuests().find(q => q.id === id);

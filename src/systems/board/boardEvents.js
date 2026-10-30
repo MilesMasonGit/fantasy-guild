@@ -84,14 +84,6 @@ export const BOARD_EVENTS = {
     ENEMIES_WALKED: 'board:enemies_walked',
 
     /**
-     * A flag dropped on a Token was NOT pinned to it because its hero cannot work it: it stands
-     * there as a normal area flag instead. Payload: `{ heroId, instanceId, reason }`, `reason` a
-     * skip reason (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `ALERT.NO_TOOL`, `disallowed`, `rule_off`). The hero's speech
-     * bubble says why (`HeroBubbleLayer`). Published by `Flags.plant`.
-     */
-    PIN_REFUSED: 'board:pin_refused',
-
-    /**
      * A flag passed over a Token because its hero holds no tool that can work it (`ALERT.NO_TOOL`).
      * Payload: `{ instanceId, heroId, kind, minTier }`, the Token's need. Published by `Flags` each
      * time a flag records that skip, so an idle hero's flag says it about once a second; the mat's

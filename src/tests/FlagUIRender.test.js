@@ -7,6 +7,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -83,7 +84,7 @@ beforeEach(() => {
 describe('the idle mark (FP-29)', () => {
     it('draws no idle glow on a board hero whose Token is stuck', () => {
         const forest = put(TOKEN,'fixture_producer');
-        Flags.plant('h1', TOKEN);
+        Orders.orderAt('h1', TOKEN);
         expect(Flags.statusOf('h1').state).toBe('working');
 
         // A hero on a Token that cannot run gets no glow: the Token's own red
@@ -100,7 +101,7 @@ describe('the idle mark (FP-29)', () => {
 
     it('keeps the working glow — as a green outline (Wave 5)', () => {
         put(TOKEN,'fixture_producer');
-        Flags.plant('h1', TOKEN);
+        Orders.orderAt('h1', TOKEN);
 
         const { container } = mount(h(MatBoard));
         const hero = container.querySelector('[data-board-hero="h1"]');
@@ -110,7 +111,7 @@ describe('the idle mark (FP-29)', () => {
 
     it('an idle flag is the job flag, has no chip, and its hero stands beside it at 128 px with no glow', () => {
         GameState.state.heroes[0].spriteId = 'hero_recruit_0';   // rehydration's default portrait
-        Flags.plant('h1', BARE);                             // bare ground, nothing in range
+        Orders.orderAt('h1', BARE);                             // bare ground, nothing in range
         expect(Flags.statusOf('h1').state).toBe('idle');
 
         const { container } = mount(h(FlagLayer));
@@ -135,7 +136,7 @@ describe('the idle mark (FP-29)', () => {
 
     it('a working flag shows no chip and leaves its hero to the Token', () => {
         put(TOKEN,'fixture_producer');
-        Flags.plant('h1', BESIDE);
+        Orders.orderAt('h1', BESIDE);
         expect(Flags.statusOf('h1').state).toBe('working');
 
         const { container } = mount(h(FlagLayer));
@@ -145,8 +146,8 @@ describe('the idle mark (FP-29)', () => {
     });
 
     it('⭐ two flags planted on one point simply overlap — no fan-out (FP-83)', () => {
-        Flags.plant('h1', BARE);
-        Flags.plant('fighter', BARE);
+        Orders.orderAt('h1', BARE);
+        Orders.orderAt('fighter', BARE);
         const { container } = mount(h(FlagLayer));
         const a = container.querySelector('[data-flag="h1"]');
         const b = container.querySelector('[data-flag="fighter"]');
@@ -161,7 +162,7 @@ describe('the idle mark (FP-29)', () => {
 
 describe('no reach ring (hero orders, brief 260 O1)', () => {
     it('is never drawn: hovered, inspected or dragged, an order has no reach', () => {
-        Flags.plant('h1', BESIDE);
+        Orders.orderAt('h1', BESIDE);
         const { container } = mount(h(FlagLayer, { hoverHeroId: 'h1', inspectedHeroId: 'h1' }));
         expect(container.querySelector('[data-flag-ring]')).toBeNull();
     });
@@ -175,7 +176,7 @@ describe('the flag is just something to drag (brief 30 H4)', () => {
     const extras = () => document.body.querySelector('[data-flag-gear], [data-flag-idle-chip]');
 
     it('draws no gear and no idle chip, idle, hovered or inspected', () => {
-        Flags.plant('h1', BARE);
+        Orders.orderAt('h1', BARE);
         expect(Flags.statusOf('h1').state).toBe('idle');
         const { container } = mount(h(FlagLayer, { hoverHeroId: 'h1', inspectedHeroId: 'h1' }));
         const flag = container.querySelector('[data-flag="h1"]');
@@ -187,7 +188,7 @@ describe('the flag is just something to drag (brief 30 H4)', () => {
 
     it('on hover shows the hard outline and the hero name, and clears them on leave', () => {
         GameState.state.heroes[0].name = 'Aela';
-        Flags.plant('h1', BESIDE);
+        Orders.orderAt('h1', BESIDE);
         const Hovering = () => {
             const [id, setId] = React.useState(null);
             return h(FlagLayer, { hoverHeroId: id, onHoverHero: setId });
@@ -211,7 +212,7 @@ describe('the flag is just something to drag (brief 30 H4)', () => {
 
 describe('the flag has no skill since slice 1.5b (FP-71)', () => {
     it('draws no skill disc, clicking it opens nothing, and its tooltip title is the hero name', () => {
-        Flags.plant('h1', BARE);
+        Orders.orderAt('h1', BARE);
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         expect(flag.querySelector('[data-flag-skill]')).toBeNull();

@@ -6,6 +6,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
@@ -405,7 +406,7 @@ describe('⭐ a hero fishing when the Coast turns back loses the cycle and moves
         const other = BoardState.createTokenInstance('fixture_seafood_producer', 3000);
         Placement.placeTokenAt(other, { x: 560, y: 400 });
         TileModifiers.rebuildAround([{ x: 400, y: 400 }, { x: 560, y: 400 }]);
-        Placement.plantFlagAt('hero_1', { x: 400, y: 400 });
+        Orders.orderAt('hero_1', { x: 400, y: 400 });
 
         const completions = [];
         const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => completions.push(p));

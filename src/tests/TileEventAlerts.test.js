@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -46,7 +47,7 @@ const put = (i, instance) => {
     pickRecipe(instance);
     return res;
 };
-const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
+const plant = (heroId, i) => Orders.orderAt(heroId, C(i));
 
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 
@@ -119,7 +120,7 @@ describe('On-Board Tile Event Alerts', () => {
      */
     function staff(tile, heroId) {
         const instance = tokenAt(tile);
-        Flags.plant(heroId, C(tile));
+        Orders.orderAt(heroId, C(tile));
         BoardState.setClaim(heroId, { instanceId: instance.id, typeId: instance.typeId });
     }
 

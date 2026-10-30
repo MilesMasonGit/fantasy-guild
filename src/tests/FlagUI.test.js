@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -75,7 +76,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -99,13 +99,13 @@ describe('hero_deployed is published by planting a flag (slice 1.5)', () => {
 
     it('fires exactly once for a hero dropped on a Token', () => {
         put(15, 'fixture_producer');
-        expect(counting(() => Placement.plantFlagAt('h1', C(15)))).toBe(1);
+        expect(counting(() => Orders.orderAt('h1', C(15)))).toBe(1);
     });
 
     it('fires for a plant on bare ground and a pennant move, but not for an unchanged plant', () => {
-        expect(counting(() => Flags.plant('h1', C(20)))).toBe(1);
-        expect(counting(() => Flags.plant('h1', C(20)))).toBe(0);
-        expect(counting(() => Placement.plantFlagAt('h1', C(8)))).toBe(1);
+        expect(counting(() => Orders.orderAt('h1', C(20)))).toBe(1);
+        expect(counting(() => Orders.orderAt('h1', C(20)))).toBe(0);
+        expect(counting(() => Orders.orderAt('h1', C(8)))).toBe(1);
     });
 });
 
@@ -118,21 +118,21 @@ describe('hero_deployed is published by planting a flag (slice 1.5)', () => {
  */
 describe('dragging the pennant (FLAG) just moves the point (FP-71)', () => {
     it('moves the flag to the spot, with no skill written on it', () => {
-        Flags.plant('h1', C(14));
-        expect(Placement.plantFlagAt('h1', C(20)).success).toBe(true);
+        Orders.orderAt('h1', C(14));
+        expect(Orders.orderAt('h1', C(20)).success).toBe(true);
         expect(BoardState.flagOf('h1')).toEqual({ ...C(20), plantedAt: expect.any(Number) });
     });
 
     it('on a Token, the hero works it if they hold its skill, and not otherwise', () => {
         put(13, 'fixture_producer_alt');                     // mining
-        Flags.plant('h1', C(20));
-        Flags.plant('h2', C(20));
+        Orders.orderAt('h1', C(20));
+        Orders.orderAt('h2', C(20));
 
-        Placement.plantFlagAt('h1', C(13));                  // h1 holds mining
+        Orders.orderAt('h1', C(13));                  // h1 holds mining
         expect(workTileOf('h1')).toBe(13);
 
         Placement.recallHeroById('h1');
-        Placement.plantFlagAt('h2', C(13));                  // h2 holds only forestry
+        Orders.orderAt('h2', C(13));                  // h2 holds only forestry
         expect(workTileOf('h2')).toBeNull();
     });
 });
@@ -141,7 +141,7 @@ describe('Flags.skipsOfHero — the pennant hover lines', () => {
     it('lists what the flag passed over, nearest first, with the Token', () => {
         const blank = put(15, 'ft_ui_blank');
         put(16, 'fixture_producer');
-        Flags.plant('h1', C(14));
+        Orders.orderAt('h1', C(14));
         expect(workTileOf('h1')).toBe(16);
         expect(Flags.skipsOfHero('h1')).toEqual([
             { instanceId: blank.id, reason: Flags.SKIP.NO_SKILL, typeId: 'ft_ui_blank' }

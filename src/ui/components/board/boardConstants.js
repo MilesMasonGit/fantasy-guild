@@ -90,10 +90,9 @@ export const SKIP_HINT = {
     no_skill: 'names no skill',
     disallowed: 'heroes not allowed',
     claimed: 'being worked by {holder}',
-    // `claimed` said of an enemy: every fight is one-on-one, so the flag waits for it.
+    // `claimed` said of an enemy: every fight is one-on-one, so the hero waits for it.
     claimed_fight: '{holder} is fighting it',
-    same_job: 'already holds this job',
-    rule_off: 'off in {hero}’s Work Permissions'
+    same_job: 'already holds this job'
 };
 
 /**

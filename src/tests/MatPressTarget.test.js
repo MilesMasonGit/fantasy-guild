@@ -11,6 +11,7 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -217,7 +218,7 @@ describe('⭐ a press through a hero\'s see-through pixel reaches what is beneat
             id, name: id, spriteId: 'hm_fighter_por', status: 'idle', level: 50,
             skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
         }];
-        Flags.plant(id, flagPoint);
+        Orders.orderAt(id, flagPoint);
     }
 
     /** What started, by draggable id, in the real drag provider (8 px activation, alpha test). */
@@ -370,7 +371,7 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
         const tok = placeAt('fixture_producer', 600, 600);
         // A hero who cannot work it, so the Token stays at rest (a worked Token is drawn in front of every flag).
         GameState.state.heroes = [{ id: 'h1', name: 'h1', spriteId: 'hm_fighter_por', status: 'idle', level: 50, skills: { mining: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
-        Flags.plant('h1', flagPoint);
+        Orders.orderAt('h1', flagPoint);
         return tok;
     }
     function boxFlag(container, flagPoint) {
@@ -491,7 +492,7 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
 describe('⭐ a hero\'s art takes no pointer outside the hero\'s box', () => {
     it('the figure draws wider than its 64 × 128 box, and only the box catches presses', () => {
         GameState.state.heroes = [{ id: 'h1', name: 'h1', spriteId: 'hm_fighter_por', status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
-        Flags.plant('h1', { x: 500, y: 900 });
+        Orders.orderAt('h1', { x: 500, y: 900 });
         const { container } = mountAt(OWNER_FIT);
         const hero = container.querySelector('[data-board-hero="h1"]');
         expect(hero).not.toBeNull();

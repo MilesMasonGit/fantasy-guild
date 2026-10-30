@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -57,7 +58,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     BoardState.setInstantArrival(false);
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     setMatTuning('walkSpeed', SPEED);
     // Pottering off unless a test is about it: a random stroll must never move
     // a hero these scenarios expect to be standing still.
@@ -81,7 +81,7 @@ afterEach(() => {
 describe('⭐ walking costs work time (FP-26)', () => {
     it('claims the Token on setting off, but works it only on arrival', () => {
         const tok = put({ x: 800, y: 500 });
-        Flags.plant('h1', { x: 500, y: 500 });
+        Orders.orderAt('h1', { x: 500, y: 500 });
 
         // Claimed at once — but walking, so nobody works it yet.
         expect(BoardState.claimOfHero('h1')?.instanceId).toBe(tok.id);
@@ -104,7 +104,7 @@ describe('⭐ walking costs work time (FP-26)', () => {
 
     it('covers the distance at the tuned speed', () => {
         put({ x: 800, y: 500 });
-        Flags.plant('h1', { x: 500, y: 500 });
+        Orders.orderAt('h1', { x: 500, y: 500 });
         const start = { ...HeroMotion.heroPointOf('h1') };
         run(1000);
         const now = HeroMotion.heroPointOf('h1');
@@ -113,7 +113,7 @@ describe('⭐ walking costs work time (FP-26)', () => {
 
     it('a very long tick (the game was asleep) arrives in one step, not in fast-forward', () => {
         const tok = put({ x: 1400, y: 900 });
-        Flags.plant('h1', { x: 1100, y: 700 });
+        Orders.orderAt('h1', { x: 1100, y: 700 });
         BoardRunner.tick(60000);
         expect(BoardState.workerOf(tok.id)).toBe('h1');
         expect(body('h1').moving).toBe(false);
@@ -123,7 +123,7 @@ describe('⭐ walking costs work time (FP-26)', () => {
 describe('⭐ beside the Token, from the side they came (HM-2)', () => {
     it('coming from the left, they stand on the left; the Token never moves', () => {
         const tok = put({ x: 800, y: 500 });
-        Flags.plant('h1', { x: 500, y: 500 });
+        Orders.orderAt('h1', { x: 500, y: 500 });
         run(3000);
         expect(body('h1')).toMatchObject({ x: 800 - STAND, y: 500 });
         expect(body('h1').facing).toBe(1);
@@ -132,7 +132,7 @@ describe('⭐ beside the Token, from the side they came (HM-2)', () => {
 
     it('coming from the right, they stand on the right, facing left', () => {
         put({ x: 800, y: 500 });
-        Flags.plant('h1', { x: 1100, y: 500 });
+        Orders.orderAt('h1', { x: 1100, y: 500 });
         run(3000);
         expect(body('h1')).toMatchObject({ x: 800 + STAND, y: 500 });
         expect(body('h1').facing).toBe(-1);
@@ -146,16 +146,16 @@ describe('⭐ beside the Token, from the side they came (HM-2)', () => {
 describe('claims, moves and choices while walking', () => {
     it('two heroes never race for one Token: the walker already holds it (FP-25, HMP-2)', () => {
         const tok = put({ x: 800, y: 500 });
-        Flags.plant('h1', { x: 450, y: 500 });
+        Orders.orderAt('h1', { x: 450, y: 500 });
         // h2 plants right beside it, but h1 claimed it the moment they set off.
-        Flags.plant('h2', { x: 900, y: 500 });
+        Orders.orderAt('h2', { x: 900, y: 500 });
         expect(BoardState.claimOfHero('h2')).toBeNull();
         expect(Flags.skipsOf(tok.id).map(s => s.reason)).toContain(Flags.SKIP.CLAIMED);
     });
 
     it('a Token moved while they walk: they follow it (HMP-3)', () => {
         const tok = put({ x: 800, y: 500 });
-        Flags.plant('h1', { x: 500, y: 500 });
+        Orders.orderAt('h1', { x: 500, y: 500 });
         run(500);
         BoardState.setTokenPoint(tok.id, 800, 700);
         run(4000);
@@ -165,7 +165,7 @@ describe('claims, moves and choices while walking', () => {
 
     it('a Token moved after they arrived keeps its hero working while they catch up (FP-68)', () => {
         const tok = put({ x: 800, y: 500 });
-        Flags.plant('h1', { x: 500, y: 500 });
+        Orders.orderAt('h1', { x: 500, y: 500 });
         run(3000);
         const progress = tok.cycleElapsedMs;
         BoardState.setTokenPoint(tok.id, 800, 600);
@@ -177,22 +177,22 @@ describe('claims, moves and choices while walking', () => {
     it('⭐ "nearest" is measured from the hero, not the flag (HM-4)', () => {
         const nearFlag = put({ x: 450, y: 500 });     // 150 u from the flag
         const nearHero = put({ x: 780, y: 500 });     // 180 u from the flag, 120 from the hero
-        Flags.plant('h1', { x: 1500, y: 900 });       // somewhere with nothing to do
+        Orders.orderAt('h1', { x: 1500, y: 900 });       // somewhere with nothing to do
         body('h1').x = 900;                            // the hero stands here…
         body('h1').y = 500;
-        Flags.plant('h1', { x: 600, y: 500 });        // …when the flag is moved
+        Orders.orderAt('h1', { x: 600, y: 500 });        // …when the flag is moved
         expect(BoardState.claimOfHero('h1')?.instanceId).toBe(nearHero.id);
         expect(nearFlag.id).not.toBe(nearHero.id);
     });
 
     it('a new hero appears beside their flag (slice M3 walks them out of the Guild Hall)', () => {
-        Flags.plant('h1', { x: 500, y: 500 });
+        Orders.orderAt('h1', { x: 500, y: 500 });
         expect(body('h1')).toMatchObject(HeroMotion.idleSpot({ x: 500, y: 500 }));
     });
 
     it('a recall mid-walk takes them off the mat and lets go of the Token', () => {
         const tok = put({ x: 800, y: 500 });
-        Flags.plant('h1', { x: 500, y: 500 });
+        Orders.orderAt('h1', { x: 500, y: 500 });
         run(500);
         Flags.furl('h1');
         expect(body('h1')).toBeNull();
@@ -201,7 +201,7 @@ describe('claims, moves and choices while walking', () => {
 
     it('with nothing to do they walk back to the flag, and that counts as idle', () => {
         const tok = put({ x: 800, y: 500 });
-        Flags.plant('h1', { x: 500, y: 500 });
+        Orders.orderAt('h1', { x: 500, y: 500 });
         run(3000);
         BoardState.removeToken(tok.id);
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, {});
@@ -217,7 +217,7 @@ describe('claims, moves and choices while walking', () => {
 
     it('⭐ standing beside their Token, they turn to face it', () => {
         const tok = put({ x: 800, y: 500 });
-        Flags.plant('h1', { x: 1100, y: 500 });
+        Orders.orderAt('h1', { x: 1100, y: 500 });
         run(3000);
         expect(body('h1').x).toBeGreaterThan(tok.x);
         // Knocked the wrong way round (a mat edge sending them to the far side
@@ -231,7 +231,7 @@ describe('claims, moves and choices while walking', () => {
 describe('⚠️ no rebuild storms', () => {
     it('a whole walk publishes one HERO_MOVED (on arrival) and a HEROES_WALKED per step', () => {
         put({ x: 800, y: 500 });
-        Flags.plant('h1', { x: 500, y: 500 });
+        Orders.orderAt('h1', { x: 500, y: 500 });
         let moved = 0;
         let walked = 0;
         const offA = EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, () => { moved++; });
@@ -258,7 +258,7 @@ describe('⭐ coming and going through the Guild Hall (M3)', () => {
 
     it('a hero sent out appears at the Hall and walks to their first job (HMP-1)', () => {
         const tok = put({ x: 1300, y: 600 });
-        Flags.plant('h1', { x: 1300, y: 700 });
+        Orders.orderAt('h1', { x: 1300, y: 700 });
         expect(HeroMotion.heroPointOf('h1')).toEqual(HALL);
         expect(Flags.statusOf('h1')).toMatchObject({ state: 'walking', instanceId: tok.id });
         run(5000);
@@ -270,14 +270,14 @@ describe('⭐ coming and going through the Guild Hall (M3)', () => {
     it('⭐ "nearest" for the first job is measured from the Hall they walk out of (HM-4)', () => {
         const nearFlag = put({ x: 1450, y: 600 });     // 100 u from the flag
         const nearHall = put({ x: 1250, y: 600 });     // 100 u from the flag too, 350 from the Hall
-        Flags.plant('h1', { x: 1350, y: 600 });
+        Orders.orderAt('h1', { x: 1350, y: 600 });
         expect(BoardState.claimOfHero('h1')?.instanceId).toBe(nearHall.id);
         expect(nearFlag.id).not.toBe(nearHall.id);
     });
 
     it('⭐ sent home: the order is gone at once, and the hero walks back to their place by the Hall (HM-5, brief 260 O1)', () => {
         put({ x: 1300, y: 600 });
-        Flags.plant('h1', { x: 1300, y: 700 });
+        Orders.orderAt('h1', { x: 1300, y: 700 });
         run(5000);
         Flags.furl('h1');
 
@@ -299,12 +299,12 @@ describe('⭐ coming and going through the Guild Hall (M3)', () => {
 
     it('sent out again on the way home, they turn around — same figure, no jump (HM-5)', () => {
         put({ x: 1300, y: 600 });
-        Flags.plant('h1', { x: 1300, y: 700 });
+        Orders.orderAt('h1', { x: 1300, y: 700 });
         run(5000);
         Flags.furl('h1');
         run(1000);
         const turning = { ...HeroMotion.heroPointOf('h1') };
-        Flags.plant('h1', { x: 1300, y: 700 });
+        Orders.orderAt('h1', { x: 1300, y: 700 });
         expect(HeroMotion.heroPointOf('h1')).toEqual(turning);
         expect(HeroMotion.isReturning('h1')).toBe(false);
         run(5000);
@@ -312,7 +312,7 @@ describe('⭐ coming and going through the Guild Hall (M3)', () => {
     });
 
     it('⭐ a defeated hero limps home at half speed, looking wounded (HM-6)', () => {
-        Flags.plant('h1', { x: 1300, y: 600 });
+        Orders.orderAt('h1', { x: 1300, y: 600 });
         run(5000);
         const start = { ...HeroMotion.heroPointOf('h1') };
         Flags.furl('h1', 'defeat');
@@ -324,7 +324,7 @@ describe('⭐ coming and going through the Guild Hall (M3)', () => {
     });
 
     it('walks home to wherever the Hall now stands, and simply vanishes if it is gone', () => {
-        Flags.plant('h1', { x: 1300, y: 600 });
+        Orders.orderAt('h1', { x: 1300, y: 600 });
         run(5000);
         Flags.furl('h1');
         BoardState.setTokenPoint(hall.id, 400, 300);
@@ -350,7 +350,7 @@ describe('⭐ idle heroes potter near their flag (M4, HM-1)', () => {
     it('pauses, then strolls to a spot within reach of the flag, then pauses again', () => {
         // random() = 0.5 every time: a 4 s pause, a stroll of 80·√0.5 ≈ 57 u.
         HeroMotion.setRandomForTests(() => 0.5);
-        Flags.plant('h1', FLAG);
+        Orders.orderAt('h1', FLAG);
         expect(HeroMotion.heroPointOf('h1')).toEqual(HOME);
 
         run(3900);
@@ -365,7 +365,7 @@ describe('⭐ idle heroes potter near their flag (M4, HM-1)', () => {
 
     it('a stroll is still idle: the dock, the idle count and the status all say so', () => {
         HeroMotion.setRandomForTests(() => 0.5);
-        Flags.plant('h1', FLAG);
+        Orders.orderAt('h1', FLAG);
         run(4500);
         expect(body('h1').moving).toBe(true);
         expect(Flags.statusOf('h1').state).toBe('idle');
@@ -374,7 +374,7 @@ describe('⭐ idle heroes potter near their flag (M4, HM-1)', () => {
 
     it('strolls at half walking speed', () => {
         HeroMotion.setRandomForTests(() => 0.99);                    // a long stroll
-        Flags.plant('h1', FLAG);
+        Orders.orderAt('h1', FLAG);
         run(6000);                                                  // pause ≈ 5.96 s, then off
         const start = { ...HeroMotion.heroPointOf('h1') };
         run(500);
@@ -385,7 +385,7 @@ describe('⭐ idle heroes potter near their flag (M4, HM-1)', () => {
     it('never wanders further than the tuned reach, over a long random watch', () => {
         let seed = 7;
         HeroMotion.setRandomForTests(() => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; });
-        Flags.plant('h1', FLAG);
+        Orders.orderAt('h1', FLAG);
         let furthest = 0;
         let movingTicks = 0;
         for (let t = 0; t < 120000; t += 100) {
@@ -401,7 +401,7 @@ describe('⭐ idle heroes potter near their flag (M4, HM-1)', () => {
 
     it('work appearing mid-stroll comes first: they go and do it', () => {
         HeroMotion.setRandomForTests(() => 0.5);
-        Flags.plant('h1', FLAG);
+        Orders.orderAt('h1', FLAG);
         run(4500);
         expect(HeroMotion.isPottering('h1')).toBe(true);
         const tok = put({ x: 800, y: 700 });
@@ -414,9 +414,9 @@ describe('⭐ idle heroes potter near their flag (M4, HM-1)', () => {
 
     it('strolls go with the flag when it is moved', () => {
         HeroMotion.setRandomForTests(() => 0.5);
-        Flags.plant('h1', FLAG);
+        Orders.orderAt('h1', FLAG);
         run(8000);
-        Flags.plant('h1', { x: 1200, y: 800 });
+        Orders.orderAt('h1', { x: 1200, y: 800 });
         run(15000);
         const p = HeroMotion.heroPointOf('h1');
         const newHome = HeroMotion.idleSpot({ x: 1200, y: 800 });
@@ -425,14 +425,14 @@ describe('⭐ idle heroes potter near their flag (M4, HM-1)', () => {
 
     it('Idle wander at 0 means they stand still beside the flag', () => {
         setMatTuning('potterRadius', 0);
-        Flags.plant('h1', FLAG);
+        Orders.orderAt('h1', FLAG);
         run(30000);
         expect(HeroMotion.heroPointOf('h1')).toEqual(HOME);
     });
 
     it('pottering never announces HERO_MOVED (no rebuild storms)', () => {
         HeroMotion.setRandomForTests(() => 0.5);
-        Flags.plant('h1', FLAG);
+        Orders.orderAt('h1', FLAG);
         let moved = 0;
         const off = EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, () => { moved++; });
         run(30000);
@@ -456,7 +456,7 @@ describe('⭐ saves remember what each hero is working (M5, HM-7)', () => {
 
     it('⭐ a hero mid-cycle is back at their Token after a reload, the bar where it was', async () => {
         const tok = put({ x: 1300, y: 700 });
-        Flags.plant('h1', { x: 1100, y: 700 });
+        Orders.orderAt('h1', { x: 1100, y: 700 });
         run(12000);                                   // out of the Hall, there, and working
         expect(BoardState.workerOf(tok.id)).toBe('h1');
         const side = body('h1').x > tok.x ? 1 : -1;
@@ -478,7 +478,7 @@ describe('⭐ saves remember what each hero is working (M5, HM-7)', () => {
 
     it('a hero still walking to their Token when saved starts beside their flag instead', async () => {
         const tok = put({ x: 1300, y: 700 });
-        Flags.plant('h1', { x: 1100, y: 700 });
+        Orders.orderAt('h1', { x: 1100, y: 700 });
         run(1500);                                    // on the way, not there yet
         expect(Flags.statusOf('h1').state).toBe('walking');
 
@@ -489,7 +489,7 @@ describe('⭐ saves remember what each hero is working (M5, HM-7)', () => {
     });
 
     it('an idle hero starts beside their flag, not at the Guild Hall', async () => {
-        Flags.plant('h1', { x: 1400, y: 900 });
+        Orders.orderAt('h1', { x: 1400, y: 900 });
         run(20000);
         await saveAndReload();
         expect(HeroMotion.heroPointOf('h1')).toEqual(HeroMotion.idleSpot({ x: 1400, y: 900 }));
@@ -497,7 +497,7 @@ describe('⭐ saves remember what each hero is working (M5, HM-7)', () => {
 
     it('a saved note that no longer fits is dropped, and the hero chooses afresh', async () => {
         const tok = put({ x: 1300, y: 700 });
-        Flags.plant('h1', { x: 1100, y: 700 });
+        Orders.orderAt('h1', { x: 1100, y: 700 });
         run(12000);
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
         delete saved.state.board.tokens[tok.id];      // the Token is gone in the save
@@ -510,7 +510,7 @@ describe('⭐ saves remember what each hero is working (M5, HM-7)', () => {
 
     it('letting go of the Token erases the note, so a reload does not put them back', async () => {
         const tok = put({ x: 1300, y: 700 });
-        Flags.plant('h1', { x: 1100, y: 700 });
+        Orders.orderAt('h1', { x: 1100, y: 700 });
         run(12000);
         expect(BoardState.savedWorkClaims()).toEqual([['h1', expect.objectContaining({ instanceId: tok.id })]]);
         Flags.furl('h1');

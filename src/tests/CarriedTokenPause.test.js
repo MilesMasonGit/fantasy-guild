@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Charges from '../systems/board/Charges.js';
@@ -59,7 +60,7 @@ function place(tile, typeId, heroId = null, uses = undefined) {
     );
     Placement.placeTokenAt(instance, C(tile));
     TileModifiers.rebuildAround([instance]);
-    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    if (heroId) Orders.orderAt(heroId, C(tile));
     return instance;
 }
 

@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as BoardPromotion from '../systems/board/BoardPromotion.js';
@@ -111,7 +112,7 @@ function put(tile, typeId, uses = undefined) {
     return instance;
 }
 
-const fightAt = (heroId, tile) => Flags.plant(heroId, C(tile));
+const fightAt = (heroId, tile) => Orders.orderAt(heroId, C(tile));
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
 const reasons = (instance) => Flags.skipsOf(instance.id).map(s => s.reason);
 
@@ -146,7 +147,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     setMatTuning('nearRadius', 272);
     GameState.initNew();
     GameState.state.progress.rosterLimit = 20;
@@ -317,7 +317,7 @@ describe('⭐ recall mid-fight (FP-43, G-4)', () => {
         expect(BoardCombat.fightOfHero('h1')).toBeNull();
         expect(BoardCombat.getFight(idAt(14))).toBeNull();
 
-        Placement.plantFlagAt('h1', C(14));
+        Orders.orderAt('h1', C(14));
         run(100);
         const fresh = BoardCombat.getFight(idAt(14)).combat.enemyHp;
         expect(fresh.current).toBe(fresh.max);
@@ -397,7 +397,7 @@ describe('⭐ defeat furls the flag, with one knock-out banner (FP-42)', () => {
 describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
     function declined(heroId = 'h1', uses = 2) {
         const academy = put(14, 'fixture_promotion', uses);
-        Placement.plantFlagAt(heroId, C(14));
+        Orders.orderAt(heroId, C(14));
         expect(train()).toHaveLength(1);
         BoardPromotion.decline(idAt(14));
         return academy;
@@ -425,7 +425,7 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
     it('a flag planted on it asks again — even on the spot it already stands on', () => {
         const academy = declined();
 
-        Placement.plantFlagAt('h1', C(14));
+        Orders.orderAt('h1', C(14));
 
         expect(BoardPromotion.isPaused(academy)).toBe(false);
         expect(train()).toHaveLength(1);
@@ -446,7 +446,7 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
 
     it('after accepting, the hero skips the Token and works normally (PR-8)', () => {
         const academy = put(14, 'fixture_promotion', 2);
-        Placement.plantFlagAt('h1', C(14));
+        Orders.orderAt('h1', C(14));
         expect(train()).toHaveLength(1);
         expect(BoardPromotion.accept(idAt(14)).success).toBe(true);
 
@@ -470,7 +470,7 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
 
     it('accepting with the last charge leaves the hero free for other work (FPP-12)', () => {
         put(14, 'fixture_promotion_costly', 2);   // priced 2: an unpriced Academy never runs out
-        Placement.plantFlagAt('h1', C(14));
+        Orders.orderAt('h1', C(14));
         expect(train()).toHaveLength(1);
 
         expect(BoardPromotion.accept(idAt(14)).success).toBe(true);
@@ -491,7 +491,7 @@ describe('⭐ disallow (FP-35)', () => {
     it('releases the hero at once, resets progress, announces itself, and the hero works elsewhere', () => {
         const forest = put(14, 'fixture_producer');
         put(16, 'fixture_producer');
-        Flags.plant('h1', C(14));
+        Orders.orderAt('h1', C(14));
         run(5000);
         expect(forest.cycleElapsedMs).toBeGreaterThan(0);
 
@@ -525,7 +525,7 @@ describe('⭐ disallow (FP-35)', () => {
         const academy = put(14, 'fixture_promotion', 2);
         Flags.setDisallowed(idAt(14), true);
 
-        Placement.plantFlagAt('h1', C(14));
+        Orders.orderAt('h1', C(14));
 
         expect(workTileOf('h1')).toBeNull();
         expect(reasons(academy)).toEqual([Flags.SKIP.DISALLOWED]);
@@ -553,7 +553,7 @@ describe('⭐ disallow (FP-35)', () => {
 
         const reloaded = tokenAt(14);
         expect(reloaded.disallowed).toBe(true);
-        Flags.plant('h1', C(14));
+        Orders.orderAt('h1', C(14));
         expect(workTileOf('h1')).toBeNull();
         expect(reasons(reloaded)).toEqual([Flags.SKIP.DISALLOWED]);
         // (It also pinned that a trip through the Vault dropped the mark; the

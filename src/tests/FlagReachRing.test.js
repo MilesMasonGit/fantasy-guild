@@ -3,9 +3,9 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { pixelRingCells, pixelRingPath } from '../ui/components/board/pixelRing.js';
 
 /**
- * The flag's reach ring is drawn in whole art pixels (`pixelRing.js`), and the reach itself ships
- * at 240 u. A device whose Mat Tuner stored the old untouched defaults (flag radius 164, hitbox
- * 80%) gets the new ones; any other stored number is still a choice and is kept.
+ * A reach ring is drawn in whole art pixels (`pixelRing.js`). A device whose Mat Tuner stored the
+ * old untouched hitbox default (80%) gets the new one; any other stored number is still a choice
+ * and is kept. The retired flag radius is no row at all.
  */
 
 describe('the pixel ring', () => {
@@ -55,7 +55,7 @@ describe('the pixel ring', () => {
     });
 });
 
-describe('the flag reach and the hitbox ship at their new defaults', () => {
+describe('the hitbox ships at its new default', () => {
     const TUNING_KEY = 'fantasy_guild_mat_tuning';
 
     async function loadWith(stored) {
@@ -72,24 +72,27 @@ describe('the flag reach and the hitbox ship at their new defaults', () => {
         vi.resetModules();
     });
 
-    it('240 u flag radius and 90% hitbox by default', async () => {
+    it('90% hitbox by default', async () => {
         const tuning = await loadWith({});
-        expect(tuning.matTuningDefault('flagRadius')).toBe(240);
         expect(tuning.matTuningDefault('hitboxPct')).toBe(90);
-        expect(tuning.matTuning('flagRadius')).toBe(240);
     });
 
-    it('a stored old default (164 u, 80%) gives way to the new one', async () => {
-        const tuning = await loadWith({ flagRadius: 164, hitboxPct: 80, nearRadius: 164 });
-        expect(tuning.matTuning('flagRadius')).toBe(240);
+    it('the retired flag radius is no longer a tuner row: a stored one is ignored', async () => {
+        const tuning = await loadWith({ flagRadius: 300 });
+        expect(tuning.MAT_TUNABLES.some(t => t.key === 'flagRadius')).toBe(false);
+        expect(tuning.matTuning('flagRadius')).toBeUndefined();
+        expect(tuning.isMatTuned()).toBe(false);
+    });
+
+    it('a stored old default (80%) gives way to the new one', async () => {
+        const tuning = await loadWith({ hitboxPct: 80, nearRadius: 164 });
         expect(tuning.matTuning('hitboxPct')).toBe(90);
         expect(tuning.matTuning('nearRadius')).toBe(164);
         expect(tuning.isMatTuned()).toBe(false);
     });
 
     it('any other stored number is a choice, and stays', async () => {
-        const tuning = await loadWith({ flagRadius: 300, hitboxPct: 70 });
-        expect(tuning.matTuning('flagRadius')).toBe(300);
+        const tuning = await loadWith({ hitboxPct: 70 });
         expect(tuning.matTuning('hitboxPct')).toBe(70);
     });
 });

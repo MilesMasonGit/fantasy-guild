@@ -93,12 +93,12 @@ function buildRegionA() {
     const camp = fixtures.placeAt('bench_camp', c.x, c.y - 360);
     fixtures.prefillSpawners();
     const heroes = fixtures.makeHeroes(3);
-    fixtures.plant(heroes[0].id, { x: producer.x, y: producer.y }, { pin: true });
-    fixtures.plant(heroes[1].id, { x: alt.x, y: alt.y }, { pin: true });
+    fixtures.orderAt(heroes[0].id, { x: producer.x, y: producer.y });
+    fixtures.orderAt(heroes[1].id, { x: alt.x, y: alt.y });
     // Sent at one of the camp's goblins, so a fight is on (a hero idling on a spot is never
     // attacked, owner 2026-10-28).
     const goblin = BoardState.tokens().find(t => t.typeId === 'bench_goblin');
-    fixtures.plant(heroes[2].id, { x: goblin.x, y: goblin.y });
+    fixtures.orderAt(heroes[2].id, { x: goblin.x, y: goblin.y });
     TileModifiers.rebuildAll();
     // As a new game does: this board is the first Region.
     Atlas.createStarterRegion();

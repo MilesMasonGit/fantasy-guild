@@ -4,6 +4,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as PromotionSystem from '../systems/hero/PromotionSystem.js';
@@ -73,7 +74,7 @@ function setup(hero, { uses = 1, typeId = 'fixture_promotion' } = {}) {
     const instance = BoardState.addToken(
         { typeId, usesRemaining: uses, cycleElapsedMs: 0 }, C(TILE).x, C(TILE).y
     );
-    Placement.plantFlagAt(hero.id, C(TILE));
+    Orders.orderAt(hero.id, C(TILE));
     return instance;
 }
 
@@ -432,7 +433,7 @@ describe('Declining costs nothing and moves nobody (PR-7)', () => {
         BoardPromotion.decline(idAt(TILE));
 
         Placement.recallHeroById(hero.id);
-        Placement.plantFlagAt(hero.id, C(TILE));
+        Orders.orderAt(hero.id, C(TILE));
         expect(BoardPromotion.isPaused(tokenAt(TILE))).toBe(false);
 
         expect(trainToOffer(hero.id)).toHaveLength(1);
@@ -501,7 +502,7 @@ describe('The offer survives a reload', () => {
         BoardPromotion.decline(idAt(TILE));
 
         Placement.recallHeroById(hero.id);
-        Placement.plantFlagAt(hero.id, C(TILE));
+        Orders.orderAt(hero.id, C(TILE));
         expect(BoardPromotion.isDeclined(tokenAt(TILE))).toBe(false);
         expect(trainToOffer(hero.id)).toHaveLength(1);
         expect(BoardPromotion.getOffer(idAt(TILE))).not.toBeNull();

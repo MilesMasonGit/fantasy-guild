@@ -135,7 +135,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); restoreShippedMaps(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 220);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -205,7 +204,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         // 7. Build a station on it (a Workbench).
         StationRecipe.setSelectedRecipe(foundation, 'recipe_muily2pb');
         give('item_oak_wood', 5);
-        Flags.plant(heroId, SPOT.build);
+        Orders.orderAt(heroId, SPOT.build);
         expect(runUntil(() => complete('cart_station'), 2 * 60_000)).toBe(true);
         expect(onMat('token_workbench')).toHaveLength(1);
         claim('cart_station');
@@ -229,7 +228,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(Placement.placeTokenAt(smithy, SPOT.forge).success).toBe(true);
         expect(StationRecipe.setSelectedRecipe(BoardState.getTokenById(smithy.id), 'recipe_copper_pickaxe')).toBe(true);
         give('item_copper_ingot', 4);
-        expect(Flags.plant(heroId, SPOT.forge).success).toBe(true);
+        expect(Orders.orderAt(heroId, SPOT.forge).success).toBe(true);
         expect(runUntil(() => complete('cart_copper_tool'), 2 * 60_000)).toBe(true);
         expect(claim('cart_copper_tool').rewardItems.some(r => isMapItem(getAllItems()[r.itemId]))).toBe(false);
         Flags.furl(heroId);
@@ -245,7 +244,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         give('item_steak', 10);
         const cow = BoardState.createTokenInstance('token_cow', tokenStartingUses('token_cow'));
         Placement.placeTokenAt(cow, SPOT.fight);
-        expect(Flags.plant(heroId, SPOT.fight).success).toBe(true);
+        expect(Orders.orderAt(heroId, SPOT.fight).success).toBe(true);
         const kills = [];
         const off = EventBus.subscribe('combat_victory', (d) => kills.push(d.enemyId));
         expect(runUntil(() => kills.length > 0, 5 * 60_000)).toBe(true);
@@ -253,7 +252,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         Flags.furl(heroId);
         Placement.removePlacedToken(cow.id);
         Placement.placeTokenAt(BoardState.createTokenInstance('token_goblin', tokenStartingUses('token_goblin')), SPOT.fight);
-        expect(Flags.plant(heroId, SPOT.fight).success).toBe(true);
+        expect(Orders.orderAt(heroId, SPOT.fight).success).toBe(true);
         expect(runUntil(() => complete('cart_goblin'), 5 * 60_000)).toBe(true);
         off();
         const paid = claim('cart_goblin').rewardItems.map(r => r.itemId);

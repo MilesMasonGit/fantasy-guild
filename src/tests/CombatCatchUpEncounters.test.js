@@ -147,12 +147,12 @@ function buildBoard() {
     SpawnerSystem.attemptSpawn(camp, getTokenType(camp.typeId));
     SpawnerSystem.attemptSpawn(den, getTokenType(den.typeId));
     const boss = BoardState.tokens().find(t => t.typeId === 'cu_enc_boss');
-    fixtures.plant(heroes[0].id, { x: vein.x, y: vein.y + 40 });
-    fixtures.plant(heroes[1].id, { x: haunted.x, y: haunted.y }, { pin: true });
-    fixtures.plant(heroes[2].id, { x: boss.x, y: boss.y }, { pin: true });
-    fixtures.plant(heroes[3].id, { x: boss.x, y: boss.y }, { pin: true });
-    fixtures.plant(heroes[4].id, { x: circle.x, y: circle.y }, { pin: true });
-    fixtures.plant(heroes[5].id, { x: circle.x + 160, y: circle.y });
+    fixtures.orderAt(heroes[0].id, { x: vein.x, y: vein.y + 40 });
+    fixtures.orderAt(heroes[1].id, { x: haunted.x, y: haunted.y });
+    fixtures.orderAt(heroes[2].id, { x: boss.x, y: boss.y });
+    fixtures.orderAt(heroes[3].id, { x: boss.x, y: boss.y });
+    fixtures.orderAt(heroes[4].id, { x: circle.x, y: circle.y });
+    fixtures.orderAt(heroes[5].id, { x: circle.x + 160, y: circle.y });
     playerResends([heroes[2].id, heroes[3].id, heroes[5].id]);
     TileModifiers.rebuildAll();
     return { heroes, camp, vein, haunted, den, circle };
@@ -265,7 +265,7 @@ describe('encounters during a catch-up', () => {
             const den = fixtures.placeAt('cu_enc_den', 600, 500);
             SpawnerSystem.attemptSpawn(den, getTokenType(den.typeId));
             const boss = BoardState.tokens().find(t => t.typeId === 'cu_enc_boss');
-            fixtures.plant(hunter.id, { x: boss.x, y: boss.y }, { pin: true });
+            fixtures.orderAt(hunter.id, { x: boss.x, y: boss.y });
             playerResends([hunter.id]);
             TileModifiers.rebuildAll();
             return hunter;

@@ -7,6 +7,7 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as EffectActions from '../systems/board/EffectActions.js';
 import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Hostiles from '../systems/board/Hostiles.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as MatCap from '../systems/board/MatCap.js';
@@ -399,7 +400,7 @@ describe('⭐ the ambusher belongs to its node and attacks its gatherer', () => 
     it('attacks the hero gathering the node, who fights back', () => {
         const { typeId } = ambushNode({ chance: 50 });
         const node = placeAt(typeId, NODE.x, NODE.y);
-        Flags.plant('h1', NODE);
+        Orders.orderAt('h1', NODE);
         expect(BoardState.workTokenOf('h1')).toBe(node.id);
 
         vi.spyOn(Math, 'random').mockReturnValue(0);
@@ -417,7 +418,7 @@ describe('⭐ the ambusher belongs to its node and attacks its gatherer', () => 
     it('⚠️ watches around the NODE: a gatherer out of its own reach is still attacked', () => {
         const { typeId } = ambushNode({ chance: 50 });
         const node = placeAt(typeId, NODE.x, NODE.y);
-        Flags.plant('h1', NODE);
+        Orders.orderAt('h1', NODE);
         vi.spyOn(Math, 'random').mockReturnValue(0);
         cycle(node, 'h1');
         Math.random.mockRestore();
@@ -439,7 +440,7 @@ describe('⭐ the ambusher belongs to its node and attacks its gatherer', () => 
     it('happens offline too: through catch-up steps the gatherer is ambushed and fights', () => {
         const { typeId } = ambushNode({ chance: 50 });
         placeAt(typeId, NODE.x, NODE.y);
-        Flags.plant('h1', NODE);
+        Orders.orderAt('h1', NODE);
         const engaged = [];
         const off = EventBus.subscribe(BOARD_EVENTS.COMBAT_ENGAGED, (p) => engaged.push(p));
         vi.spyOn(Math, 'random').mockImplementation(seeded(7));
@@ -459,7 +460,7 @@ describe('⭐ with a seeded roll, a 5% rule fires about 5% of cycles', () => {
     it('worked for 2000 one-second cycles at the catch-up step', () => {
         const { typeId } = ambushNode({ typeId: 'fixture_pebble', chance: 5 }, { uses: null });
         const node = placeAt(typeId, NODE.x, NODE.y);
-        Flags.plant('h1', NODE);
+        Orders.orderAt('h1', NODE);
         let cycles = 0;
         const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { if (p?.instanceId === node.id) cycles++; });
         let spawned = 0;

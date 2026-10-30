@@ -7,6 +7,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -279,7 +280,7 @@ describe('⭐ the inspection’s time and XP rings draw the bar’s cycle', () =
     it('⭐ within an art pixel of the bar in the same frame: running, blocked, and after CYCLE_COMPLETE', () => {
         const forest = BoardState.createTokenInstance('fixture_producer', tokenStartingUses('fixture_producer'));
         Placement.placeTokenAt(forest, AT);
-        Flags.plant('h1', AT);
+        Orders.orderAt('h1', AT);
         expect(BoardState.workerOf(forest.id)).toBe('h1');
         const matToken = (extra = {}) => ({ typeId: 'fixture_producer', instanceId: forest.id, heroId: 'h1', alert: null, usesRemaining: 5000, ...extra });
         const both = (extra) => tree(

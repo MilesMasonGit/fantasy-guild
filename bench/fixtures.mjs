@@ -174,11 +174,9 @@ export function makeHeroes(n, skills = HERO_SKILLS) {
 
 /**
  * Give a hero an order at a point, as the player's drop does (`Orders.orderAt`): on a Token they
- * can work, they work only it; on bare ground, they go there and idle. The scenarios' old
- * `{ pin: true }` asked for exactly this, and their old area flags all stood on a Token's centre
- * or on bare ground beside a camp, so the boards keep their working heroes (brief 260 O1).
+ * can work, they work only it; on bare ground, they go there and idle.
  */
-export function plant(heroId, point, _options = {}) {
+export function orderAt(heroId, point) {
     return Orders.orderAt(heroId, point);
 }
 

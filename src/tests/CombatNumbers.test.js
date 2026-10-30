@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -220,7 +221,7 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
         const instance = BoardState.createTokenInstance('fixture_corrosive_enemy', tokenStartingUses('fixture_corrosive_enemy'));
         Placement.placeTokenAt(instance, C(TILE));
         TileModifiers.rebuildAround([C(TILE)]);
-        Placement.plantFlagAt('hero_1', C(TILE));
+        Orders.orderAt('hero_1', C(TILE));
         BoardRunner.tick(100);
 
         // The enemy's -2 stacks with the hero's own +3.
@@ -236,7 +237,7 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
         const instance = BoardState.createTokenInstance('fixture_corrosive_enemy', tokenStartingUses('fixture_corrosive_enemy'));
         Placement.placeTokenAt(instance, C(TILE));
         TileModifiers.rebuildAround([C(TILE)]);
-        Placement.plantFlagAt('hero_1', C(TILE));
+        Orders.orderAt('hero_1', C(TILE));
         BoardRunner.tick(100);
         expect(hero.aggregator.query('ARMOR')).toBe(1);
 
@@ -251,7 +252,7 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
         const instance = BoardState.createTokenInstance('fixture_corrosive_enemy', tokenStartingUses('fixture_corrosive_enemy'));
         Placement.placeTokenAt(instance, C(TILE));
         TileModifiers.rebuildAround([C(TILE)]);
-        Placement.plantFlagAt('hero_1', C(TILE));
+        Orders.orderAt('hero_1', C(TILE));
         BoardRunner.tick(100);
         expect(hero.aggregator.query('ARMOR')).toBe(-2);
 

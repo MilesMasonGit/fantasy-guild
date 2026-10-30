@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Flags from '../systems/board/Flags.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -109,7 +110,7 @@ describe('⭐ Nothing is displaced any more (slice 1.6d-1)', () => {
 
     it('a working hero keeps the Token they were on when something lands beside it', () => {
         const worked = place('fixture_producer', A);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
         expect(BoardState.workerOf(worked.id)).toBe('hero_1');
 
         const result = Placement.placeTokenAt(token('fixture_buff_yield'), A);
@@ -154,7 +155,7 @@ describe('Forfeited cycles (D-54, D-131)', () => {
 
     it('pulling a hero off forfeits that Token’s cycle', () => {
         const forest = place('fixture_producer', A);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
         BoardState.getTokenById(forest.id).cycleElapsedMs = 7000;
 
         Placement.recallHeroById('hero_1');
@@ -166,10 +167,10 @@ describe('Forfeited cycles (D-54, D-131)', () => {
         const forest = place('fixture_producer', A);
         // Far enough from A that the new flag cannot choose it again.
         place('fixture_buff_yield', FAR);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
         BoardState.getTokenById(forest.id).cycleElapsedMs = 7000;
 
-        Placement.plantFlagAt('hero_1', FAR);
+        Orders.orderAt('hero_1', FAR);
 
         expect(BoardState.getTokenById(forest.id).cycleElapsedMs).toBe(0);
         expect(BoardState.workerOf(forest.id)).toBeNull();
@@ -192,7 +193,7 @@ describe('Moving a Token', () => {
         // "A moved token keeps its progress. It brings the Hero with it, and it
         // stays on the token even if outside of the flag radius." (owner)
         const forest = place('fixture_producer', A);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
 
         const result = Placement.moveTokenTo(forest.id, FAR);
 
@@ -228,15 +229,15 @@ describe('Moving a Token', () => {
 describe('Planting a hero’s flag (D-111, D-147)', () => {
     it('puts a hero on a Token', () => {
         const forest = place('fixture_producer', A);
-        expect(Placement.plantFlagAt('hero_1', A).success).toBe(true);
+        expect(Orders.orderAt('hero_1', A).success).toBe(true);
         expect(BoardState.workerOf(forest.id)).toBe('hero_1');
     });
 
     it('one hero per Token: a second hero dropped there does not take it (FP-25)', () => {
         const forest = place('fixture_producer', A);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
 
-        const result = Placement.plantFlagAt('hero_2', A);
+        const result = Orders.orderAt('hero_2', A);
 
         expect(result.success).toBe(true);
         expect(BoardState.workerOf(forest.id)).toBe('hero_1');
@@ -248,18 +249,18 @@ describe('Planting a hero’s flag (D-111, D-147)', () => {
         // The game's most frequent action must cost one drag, not two.
         const first = place('fixture_producer', A);
         const second = place('fixture_producer', FAR);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
 
-        Placement.plantFlagAt('hero_1', FAR);
+        Orders.orderAt('hero_1', FAR);
 
         expect(BoardState.workTokenOf('hero_1')).toBe(second.id);
         expect(BoardState.workerOf(first.id)).toBeNull();
     });
 
     it('never leaves a hero standing in two places at once', () => {
-        Placement.plantFlagAt('hero_1', A);
-        Placement.plantFlagAt('hero_1', B);
-        Placement.plantFlagAt('hero_1', FAR);
+        Orders.orderAt('hero_1', A);
+        Orders.orderAt('hero_1', B);
+        Orders.orderAt('hero_1', FAR);
 
         const standing = BoardState.heroesOnBoard()
             .filter(([heroId]) => heroId === 'hero_1');
@@ -268,7 +269,7 @@ describe('Planting a hero’s flag (D-111, D-147)', () => {
     });
 
     it('allows planting on empty ground, where they simply do nothing (D-57)', () => {
-        const result = Placement.plantFlagAt('hero_1', A);
+        const result = Orders.orderAt('hero_1', A);
         expect(result.success).toBe(true);
         // They are genuinely THERE and genuinely doing nothing — two different
         // facts. Empty ground and the Dock are not the same place.
@@ -280,7 +281,7 @@ describe('Planting a hero’s flag (D-111, D-147)', () => {
         // The same courtesy a Manager extends, arrived at from the player's
         // side: drop a Forest under a flag and its hero starts on it.
         GameState.state.heroes = [makeHero('hero_1', ['forestry'])];
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
         const forest = place('fixture_producer', A);
         Flags.assign(1000);
 
@@ -290,7 +291,7 @@ describe('Planting a hero’s flag (D-111, D-147)', () => {
 
     it('plants a hero on the Guild Hall token', () => {
         const hall = place('token_guild_hall', A);
-        expect(Placement.plantFlagAt('hero_1', A).success).toBe(true);
+        expect(Orders.orderAt('hero_1', A).success).toBe(true);
         // A Hall with no Wishing Well rank has no work cycle: the flag stands
         // there with nothing to claim.
         expect(BoardState.displayPointOf('hero_1')).toEqual({ x: hall.x, y: hall.y });
@@ -298,24 +299,24 @@ describe('Planting a hero’s flag (D-111, D-147)', () => {
 
     it('planting a hero where they already are is a no-op, not a forfeit', () => {
         const forest = place('fixture_producer', A);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
         BoardState.getTokenById(forest.id).cycleElapsedMs = 4000;
 
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
 
         expect(BoardState.getTokenById(forest.id).cycleElapsedMs).toBe(4000);
         expect(BoardState.workerOf(forest.id)).toBe('hero_1');
     });
 
     it('refuses a plant with no point', () => {
-        expect(Placement.plantFlagAt('hero_1', null).success).toBe(false);
+        expect(Orders.orderAt('hero_1', null).success).toBe(false);
     });
 });
 
 describe('Recalling a hero', () => {
     it('returns them to the Dock', () => {
         const forest = place('fixture_producer', A);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
 
         expect(Placement.recallHeroById('hero_1').heroId).toBe('hero_1');
         expect(BoardState.flagOf('hero_1')).toBeNull();
@@ -325,7 +326,7 @@ describe('Recalling a hero', () => {
 
     it('recallHeroById finds them wherever they are', () => {
         place('fixture_producer', FAR);
-        Placement.plantFlagAt('hero_1', FAR);
+        Orders.orderAt('hero_1', FAR);
 
         expect(Placement.recallHeroById('hero_1').success).toBe(true);
         expect(BoardState.flagOf('hero_1')).toBeNull();
@@ -341,7 +342,7 @@ describe('Recalling a hero', () => {
     /** Moved here from `TokenHeroDisplacement.test.js`, deleted with the push in 1.6d-1. */
     it('flies them to the Dock as a particle on a direct recall (right click)', () => {
         place('fixture_producer', A);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
 
         const collected = [];
         const unsub = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, e => collected.push(e));
@@ -373,7 +374,7 @@ describe('Taking a Token off the mat (removePlacedToken)', () => {
         // Lifting a Token is a statement about the Token. `recallHero` is how a
         // hero goes to the Dock.
         const forest = place('fixture_producer', A);
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
 
         const result = Placement.removePlacedToken(forest.id);
         Flags.assign(0);
@@ -418,14 +419,14 @@ describe('Passive vs Active Token Hero Constraints', () => {
     it('a hero may be dropped on a passive token, but never works it (1.4b)', () => {
         const pick = place('fixture_pickaxe_t1', A);
 
-        const result = Placement.plantFlagAt('hero_1', A);
+        const result = Orders.orderAt('hero_1', A);
         expect(result.success).toBe(true);
         expect(BoardState.workerOf(pick.id)).toBeNull();
         expect(BoardState.displayPointOf('hero_1')).toEqual(A);
     });
 
     it('a passive token placed on a planted flag leaves the flag where it is', () => {
-        Placement.plantFlagAt('hero_1', A);
+        Orders.orderAt('hero_1', A);
         expect(BoardState.displayPointOf('hero_1')).toEqual(A);
 
         const pick = token('fixture_pickaxe_t1');
@@ -438,7 +439,7 @@ describe('Passive vs Active Token Hero Constraints', () => {
     it('allows planting a hero on an active token (requiresHero === true)', () => {
         const forest = place('fixture_producer', A);
 
-        const result = Placement.plantFlagAt('hero_1', A);
+        const result = Orders.orderAt('hero_1', A);
         expect(result.success).toBe(true);
         expect(BoardState.workTokenOf('hero_1')).toBe(forest.id);
     });

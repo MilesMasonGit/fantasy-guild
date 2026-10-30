@@ -90,8 +90,8 @@ function buildBoard() {
     InventoryManager.addItem('cu5_worm', 5);
     const a = fixtures.placeAt('cu5_lake', 400, 400);
     const b = fixtures.placeAt('cu5_lake', 1300, 400);
-    fixtures.plant(angler.id, { x: a.x, y: a.y }, { pin: true });
-    fixtures.plant(netter.id, { x: b.x, y: b.y }, { pin: true });
+    fixtures.orderAt(angler.id, { x: a.x, y: a.y });
+    fixtures.orderAt(netter.id, { x: b.x, y: b.y });
     TileModifiers.rebuildAll();
     return { a: a.id, b: b.id, angler: angler.id };
 }

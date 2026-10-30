@@ -58,8 +58,8 @@ function buildBoard() {
     const [a, b] = fixtures.makeHeroes(2);
     const vein = fixtures.placeAt('catchup_respawn_vein', 400, 400);
     const plain = fixtures.placeAt('catchup_plain_vein', 1200, 400);
-    fixtures.plant(a.id, { x: vein.x, y: vein.y });
-    fixtures.plant(b.id, { x: plain.x, y: plain.y });
+    fixtures.orderAt(a.id, { x: vein.x, y: vein.y });
+    fixtures.orderAt(b.id, { x: plain.x, y: plain.y });
     TileModifiers.rebuildAll();
     return vein;
 }

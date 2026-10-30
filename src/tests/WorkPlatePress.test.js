@@ -9,6 +9,7 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { matW, matH } from '../config/matGeometry.js';
@@ -98,7 +99,7 @@ afterEach(async () => {
 /** Token A worked by h1 (its plate below their feet), and Token B whose circle reaches up under the plate. */
 function scene({ withB = true } = {}) {
     const a = placeAt('fixture_producer', A.x, A.y);
-    Flags.plant('h1', A, { pin: true });
+    Orders.orderAt('h1', A);
     expect(BoardState.workerOf(a.id)).toBe('h1');
     const at = platePoint(PLATE.H / 2);
     const b = withB ? placeAt('plate_press_rock', at.x, at.y + 50) : null;

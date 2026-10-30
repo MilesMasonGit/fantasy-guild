@@ -11,6 +11,7 @@ import { MAX_SCALE } from '../systems/effects/effectLibrary.js';
 import './fixtures/testTokens.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
@@ -229,7 +230,7 @@ describe('a carried rule reaches the Token its hero is working', () => {
         // The hero arrives carrying a +5% Yield effect at scale 2 — the number
         // travels with the person, not the ground, which is the whole reason
         // the hero is a third scope rather than a cached Token modifier.
-        Placement.plantFlagAt('hero_1', C(TILE));
+        Orders.orderAt('hero_1', C(TILE));
         expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 10)).toBeCloseTo(11);
     });
 
@@ -244,7 +245,7 @@ describe('a carried rule reaches the Token its hero is working', () => {
         const instance = BoardState.createTokenInstance('fixture_producer', 100);
         Placement.placeTokenAt(instance, C(TILE));
         TileModifiers.rebuildAround([C(TILE)]);
-        Placement.plantFlagAt('hero_1', C(TILE));
+        Orders.orderAt('hero_1', C(TILE));
 
         expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 10)).toBeCloseTo(11);
 

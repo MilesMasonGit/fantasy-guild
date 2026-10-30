@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Flags from '../systems/board/Flags.js';
@@ -46,7 +47,7 @@ function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeTokenAt(instance, C(tile));
     TileModifiers.rebuildAround([instance]);
-    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    if (heroId) Orders.orderAt(heroId, C(tile));
     return instance;
 }
 
@@ -99,7 +100,7 @@ describe('Letting go of a fight', () => {
         place(14, 'fixture_producer');
         untilFighting(hero);
 
-        Placement.plantFlagAt('hero_1', C(14));
+        Orders.orderAt('hero_1', C(14));
         run(100);
 
         expect(BoardCombat.getFight(idAt(10))).toBeNull();
@@ -112,7 +113,7 @@ describe('Letting go of a fight', () => {
         place(14, 'fixture_enemy');
         untilFighting(hero);
 
-        Placement.plantFlagAt('hero_1', C(14));
+        Orders.orderAt('hero_1', C(14));
         run(2000);
 
         expect(BoardCombat.getFight(idAt(10))).toBeNull();

@@ -8,6 +8,7 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -132,7 +133,7 @@ describe('⭐ on the mat', () => {
     it('a Token a hero works loops from an element with will-change: contents, and nothing above it up to its box asks for a layer', () => {
         const forest = BoardState.createTokenInstance('fixture_producer', tokenStartingUses('fixture_producer'));
         Placement.placeTokenAt(forest, AT);
-        Flags.plant('h1', AT);
+        Orders.orderAt('h1', AT);
         expect(BoardState.workerOf(forest.id)).toBe('h1');
 
         const { container } = render(tree(h(MatBoard, {})));

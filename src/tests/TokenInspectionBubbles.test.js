@@ -7,6 +7,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -97,7 +98,7 @@ describe('inspection bubbles', () => {
     it('time and XP fill with the work cycle while a hero works the Token', async () => {
         vi.useFakeTimers();
         const forest = put(TOKEN, 'fixture_producer');
-        Flags.plant('h1', TOKEN);
+        Orders.orderAt('h1', TOKEN);
         expect(BoardState.workerOf(forest.id)).toBe('h1');
         const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer', instanceId: forest.id }));
         expect(fraction(container, 'time')).toBe(0);

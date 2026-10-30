@@ -7,6 +7,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -78,7 +79,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -170,7 +170,7 @@ describe('⭐ on the mat', () => {
         const { container } = mount();
         expect(container.querySelector('[data-work-plate]')).toBeNull();
 
-        Flags.plant('h1', P(700, 500));
+        Orders.orderAt('h1', P(700, 500));
         run(200);
         await flush();
         expect(BoardState.workerOf(t.id)).toBe('h1');
@@ -186,7 +186,7 @@ describe('⭐ on the mat', () => {
     it('it replaces the worked Token’s own work bar, "!" and charges ring', async () => {
         vi.useFakeTimers();
         const t = put('fixture_producer', AT, 12);
-        Flags.plant('h1', P(700, 500));
+        Orders.orderAt('h1', P(700, 500));
         run(200);
         const { container } = mount();
         await act(async () => { await vi.advanceTimersByTimeAsync(0); });
@@ -212,7 +212,7 @@ describe('⭐ on the mat', () => {
     it('waiting on an input: the missing item with its have/need in red, the frame gold, the cycle held grey', async () => {
         const t = put('fixture_consumer', AT);
         InventoryManager.addItem('fixture_oak_wood', 2);
-        Flags.plant('h1', P(700, 500));
+        Orders.orderAt('h1', P(700, 500));
         run(20000);
         expect(t.alert).toBe(ALERT.INPUTS);
         expect(BoardState.workerOf(t.id)).toBe('h1');
@@ -239,7 +239,7 @@ describe('⭐ on the mat', () => {
 
     it('the charges tick down in the plate, and nothing floats', async () => {
         const t = put('fixture_producer', AT, 12);
-        Flags.plant('h1', P(700, 500));
+        Orders.orderAt('h1', P(700, 500));
         run(200);
         const { container } = mount();
         await flush();
@@ -267,7 +267,7 @@ describe('⭐ on the mat', () => {
     it('resting the pointer on the hero opens the full line, the time to the next one included; the names drop below it', async () => {
         vi.useFakeTimers();
         const t = put('fixture_producer', AT, 12);
-        Flags.plant('h1', P(700, 500));
+        Orders.orderAt('h1', P(700, 500));
         run(200);
         const { container } = mount();
         await act(async () => { await vi.advanceTimersByTimeAsync(0); });
@@ -289,7 +289,7 @@ describe('⭐ on the mat', () => {
     it('a Token being taken down shows the work, not what it would have made, and no charges', () => {
         GameState.state.heroes = [hero('h1', { forestry: 50, construction: 50 })];
         const t = put('fixture_producer', AT, 12);
-        Flags.plant('h1', P(700, 500));
+        Orders.orderAt('h1', P(700, 500));
         run(200);
         expect(workPlateOf(t.id)).toMatchObject({ skill: 'forestry', charges: 12 });
         expect(workPlateOf(t.id)).not.toHaveProperty('output');
@@ -302,7 +302,7 @@ describe('⭐ on the mat', () => {
     it('an enemy’s hidden use count is never its charges (concept_token_bars rule 6)', () => {
         GameState.state.heroes = [hero('h1', { melee: 50 })];
         const e = put('fixture_enemy', AT, 20);
-        Flags.plant('h1', P(700, 500));
+        Orders.orderAt('h1', P(700, 500));
         run(200);
         expect(BoardState.workerOf(e.id)).toBe('h1');
         expect(BoardState.getTokenById(e.id).usesRemaining).toBeGreaterThan(0);
@@ -311,7 +311,7 @@ describe('⭐ on the mat', () => {
 
     it('its draw switch stops drawing it, and nothing else', async () => {
         const t = put('fixture_producer', AT, 12);
-        Flags.plant('h1', P(700, 500));
+        Orders.orderAt('h1', P(700, 500));
         run(200);
         setDrawn('workPlate', false);
         const { container } = mount();
@@ -325,7 +325,7 @@ describe('⭐ on the mat', () => {
 describe('the layer on its own', () => {
     it('pressing a plate hands its Token to the mat’s grab, like pressing the Token', async () => {
         const t = put('fixture_producer', AT, 12);
-        Flags.plant('h1', P(700, 500));
+        Orders.orderAt('h1', P(700, 500));
         run(200);
         const onPress = vi.fn();
         const { container } = render(h('div', { 'data-mat-board': '' },

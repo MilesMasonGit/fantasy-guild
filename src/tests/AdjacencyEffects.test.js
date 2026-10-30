@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as RecipeResolver from '../systems/board/RecipeResolver.js';
@@ -50,7 +51,7 @@ function place(point, typeId, heroId = null, uses = undefined) {
     Placement.placeTokenAt(instance, point);
     pickRecipe(instance);   // the player picks a station's recipe
     TileModifiers.rebuildAround([instance]);
-    if (heroId) Placement.plantFlagAt(heroId, point);
+    if (heroId) Orders.orderAt(heroId, point);
     return instance;
 }
 

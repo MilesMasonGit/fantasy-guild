@@ -3,6 +3,7 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -25,7 +26,7 @@ const idAt = (i) => tokenAt(i)?.id ?? null;
 
 /** Put a Token on spot `i`, and plant a hero's flag there. */
 const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
-const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
+const plant = (heroId, i) => Orders.orderAt(heroId, C(i));
 
 describe('Guild Hall Mobile Token (New Token System)', () => {
     beforeEach(() => {

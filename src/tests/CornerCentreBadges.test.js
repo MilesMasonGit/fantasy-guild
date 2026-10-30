@@ -120,7 +120,6 @@ afterEach(() => { cleanup(); vi.useRealTimers(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();

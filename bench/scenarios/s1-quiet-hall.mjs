@@ -11,7 +11,7 @@ export default {
     ticks: () => ({ warmup: 2000, measure: 5000 }),
 
     build({ fixtures, setMatTuning }) {
-        const { placeAt, makeHeroes, plant } = fixtures;
+        const { placeAt, makeHeroes, orderAt } = fixtures;
         // The reference 11-step mat is 1760 × 1126; the Hall stands in the middle.
         pinMat(setMatTuning);
         placeAt('bench_hall', 880, 563);
@@ -22,6 +22,6 @@ export default {
         placeAt('bench_mill', 1200, 563);
 
         const [hero] = makeHeroes(1);
-        plant(hero.id, { x: 560, y: 563 });
+        orderAt(hero.id, { x: 560, y: 563 });
     }
 };

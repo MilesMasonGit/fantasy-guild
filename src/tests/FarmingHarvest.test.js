@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -107,7 +108,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 240);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -129,7 +129,7 @@ function ripeField({ seeds = 0, typeId = 'fh_field', at = FIELD, farmer = true }
     expect(StationRecipe.setSelectedRecipe(field, WHEAT)).toBe(true);
     run(20200);
     expect(Fields.stageOf(field)).toBe(Fields.STAGE.RIPE);
-    if (farmer) Flags.plant('farmer', { x: at.x, y: at.y });
+    if (farmer) Orders.orderAt('farmer', { x: at.x, y: at.y });
     return field;
 }
 
@@ -184,7 +184,7 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         expect(StationRecipe.setSelectedRecipe(field, SEEDY)).toBe(true);
         run(20200);
         expect(InventoryManager.getItemCount(SEED)).toBe(0);
-        Flags.plant('farmer', { x: FIELD.x, y: FIELD.y });
+        Orders.orderAt('farmer', { x: FIELD.x, y: FIELD.y });
         run(1200);
         expect(wheat()).toBe(1);
         expect(Fields.stageOf(field)).toBe(Fields.STAGE.GROWING);
@@ -196,7 +196,7 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         const a = ripeField({ seeds: 2, farmer: false });
         const b = put('fh_field', FIELD.x + 160, FIELD.y);
         expect(StationRecipe.setSelectedRecipe(b, WHEAT)).toBe(true);
-        Flags.plant('farmer', { x: FIELD.x + 80, y: FIELD.y });
+        Orders.orderAt('farmer', { x: FIELD.x + 80, y: FIELD.y });
         // A is ripe, B just sown: A is harvested; then B grows ripe while A grows, and B is worked.
         run(3500);
         expect(Fields.stageOf(a)).toBe(Fields.STAGE.GROWING);
@@ -208,7 +208,7 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
 
     it('a hero without Farming does not wait on it', () => {
         ripeField({ seeds: 1, farmer: false });
-        Flags.plant('miner', { x: FIELD.x, y: FIELD.y + 60 });
+        Orders.orderAt('miner', { x: FIELD.x, y: FIELD.y + 60 });
         run(1000);
         expect(Flags.waitingOf('miner')).toBeNull();
         expect(BoardRunner.isHeroIdle('miner')).toBe(true);

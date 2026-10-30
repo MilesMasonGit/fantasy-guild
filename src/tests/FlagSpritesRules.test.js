@@ -7,6 +7,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -141,7 +142,7 @@ beforeEach(() => {
 describe('FP-76 — the player never moves a hero: dragging one drags their flag', () => {
     it('a hero on a Token starts a FLAG drag, not a HERO drag', () => {
         put(15, FOREST);
-        Placement.plantFlagAt('h1', C(15));
+        Orders.orderAt('h1', C(15));
         mount(h(MatBoard));
 
         const heroDrag = dnd.drags.find(d => d.id === 'hero-h1');
@@ -150,7 +151,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
     });
 
     it('an idle hero beside their flag starts a FLAG drag too', () => {
-        Flags.plant('h1', C(20));
+        Orders.orderAt('h1', C(20));
         expect(Flags.statusOf('h1').state).toBe('idle');
         // Drawn by MatBoard like every hero since Hero Movement M2.
         mount(h(MatBoard));
@@ -162,7 +163,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         // side neighbour, 160 u away.
         put(13, FOREST);
         put(22, FOREST);
-        Placement.plantFlagAt('h1', C(13));
+        Orders.orderAt('h1', C(13));
         expect(workTileOf('h1')).toBe(13);
 
         mount(h(MatBoard));
@@ -189,7 +190,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
 
     it('left-click on a board hero still opens the sheet, right-click sends them home', () => {
         put(15, FOREST);
-        Placement.plantFlagAt('h1', C(15));
+        Orders.orderAt('h1', C(15));
         const inspected = [];
         const unsub = EventBus.subscribe('inspect_hero', (p) => inspected.push(p.heroId));
         const { container } = mount(h(MatBoard));
@@ -206,7 +207,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
 
 describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
     it('a hero holding a colour draws the job flag, at 24 px at the natural fit', () => {
-        Flags.plant('h1', C(20));
+        Orders.orderAt('h1', C(20));
         const colour = flagColourOf('h1');
         expect(FLAG_COLOURS).toContain(colour);
 
@@ -220,8 +221,8 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
     });
 
     it('each hero’s flag on the mat is filled with their own colour, over the one dark edge', async () => {
-        Flags.plant('h1', C(20));
-        Flags.plant('h2', C(8));
+        Orders.orderAt('h1', C(20));
+        Orders.orderAt('h2', C(8));
         expect(flagColourOf('h1')).not.toBe(flagColourOf('h2'));
         const { container } = mount(h(FlagLayer));
         for (const id of ['h1', 'h2']) {
@@ -244,7 +245,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
     });
 
     it('in the hand the flag is its hero’s colour; a hero with no colour carries the pale flag', () => {
-        Flags.plant('h1', C(20));
+        Orders.orderAt('h1', C(20));
         const held = mount(h(FlagGhost, { payload: { heroId: 'h1' } })).container;
         expect(held.querySelector('[data-flag-mark]').getAttribute('data-flag-colour')).toBe(flagColourOf('h1'));
         const svgs = held.querySelectorAll('[data-flag-mark] svg');
@@ -273,7 +274,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
     });
 
     it('the drag ghost is the flag at the mat’s size', () => {
-        Flags.plant('h1', C(20));
+        Orders.orderAt('h1', C(20));
         const { container } = mount(h(FlagGhost, { payload: { heroId: 'h1' } }));
         expect(container.querySelector('[data-flag-mark]').style.width).toBe(container.querySelector('[data-flag-ghost]').style.width);
         expect(parseFloat(container.querySelector('[data-flag-ghost]').style.width) % MARKER_ART_PX).toBe(0);
@@ -281,30 +282,30 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
 
     it('is given at the first plant — the first colour nobody else holds — and kept on re-plants', () => {
         expect(flagColourOf('h1')).toBeNull();
-        Flags.plant('h1', C(20));
-        Flags.plant('h2', C(8));
+        Orders.orderAt('h1', C(20));
+        Orders.orderAt('h2', C(8));
         expect(flagColourOf('h1')).toBe(FLAG_COLOURS[0]);
         expect(flagColourOf('h2')).toBe(FLAG_COLOURS[1]);
 
         Flags.furl('h1');
-        Flags.plant('h1', C(14));
+        Orders.orderAt('h1', C(14));
         expect(flagColourOf('h1')).toBe(FLAG_COLOURS[0]);
     });
 
     it('skips a colour another hero already holds, and the ninth hero onward reuses in order', () => {
         GameState.state.heroes[1].flagColour = FLAG_COLOURS[0];
-        Flags.plant('h1', C(20));
+        Orders.orderAt('h1', C(20));
         expect(flagColourOf('h1')).toBe(FLAG_COLOURS[1]);
 
         GameState.state.heroes = Array.from({ length: 9 }, (_, i) => hero(`r${i}`, { forestry: 1 }));
         GameState.state.heroes.slice(0, 8).forEach((x, i) => { x.flagColour = FLAG_COLOURS[i]; });
-        Flags.plant('r8', C(20));
+        Orders.orderAt('r8', C(20));
         expect(flagColourOf('r8')).toBe(FLAG_COLOURS[0]);
     });
 
     it('is not tied to roster position: reordering the Dock repaints nothing', () => {
-        Flags.plant('h1', C(20));
-        Flags.plant('h2', C(8));
+        Orders.orderAt('h1', C(20));
+        Orders.orderAt('h2', C(8));
         const before = [flagColourOf('h1'), flagColourOf('h2')];
         HeroManager.reorderHero('h2', 0);
         expect(GameState.state.heroes[0].id).toBe('h2');
@@ -312,7 +313,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
     });
 
     it('survives a save and reload', async () => {
-        Flags.plant('h1', C(20));
+        Orders.orderAt('h1', C(20));
         HeroManager.updateHeroProfile('h1', { flagColour: 'orange' });
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
         await GameState.initFromSave(migrateState(saved.state, saved.version));
@@ -320,7 +321,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
     });
 
     it('the Edit Hero modal offers the job flag in each of the eight colours; a pick changes the flag at once, Save keeps it', async () => {
-        Flags.plant('h1', C(20));
+        Orders.orderAt('h1', C(20));
         expect(flagColourOf('h1')).not.toBe('purplite');
         const board = mount(h(FlagLayer)).container;
         mount(h(HeroEditModal, { heroId: 'h1', isOpen: true, onClose: () => {}, onChangeJob: () => {} }));
@@ -346,7 +347,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
     });
 
     it('Cancel in Edit Hero puts back the colour the hero had when it opened', async () => {
-        Flags.plant('h1', C(20));
+        Orders.orderAt('h1', C(20));
         const was = flagColourOf('h1');
         const onClose = vi.fn();
         mount(h(HeroEditModal, { heroId: 'h1', isOpen: true, onClose, onChangeJob: () => {} }));
@@ -361,7 +362,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
     });
 
     it('updateHeroProfile refuses a colour that is not one of the eight', () => {
-        Flags.plant('h1', C(20));
+        Orders.orderAt('h1', C(20));
         const colour = flagColourOf('h1');
         HeroManager.updateHeroProfile('h1', { flagColour: 'chartreuse' });
         expect(flagColourOf('h1')).toBe(colour);
@@ -394,13 +395,13 @@ describe('several heroes on one Token: their flags fan out', () => {
 
     it('three heroes on one Token: three flags at three places, in roster order; one hero alone keeps the corner', () => {
         const t = put(20, FOREST);
-        Flags.plant('h1', { x: t.x, y: t.y }, { pin: true });
+        Orders.orderAt('h1', { x: t.x, y: t.y });
         const lone = mount(h(FlagLayer)).container;
         const alone = lone.querySelector('[data-flag="h1"]');
         const corner = { left: alone.style.left, top: alone.style.top };
         cleanup();
-        Flags.plant('h2', { x: t.x, y: t.y }, { pin: true });
-        Flags.plant('h3', { x: t.x, y: t.y }, { pin: true });
+        Orders.orderAt('h2', { x: t.x, y: t.y });
+        Orders.orderAt('h3', { x: t.x, y: t.y });
         const { container } = mount(h(FlagLayer));
         const flags = ['h1', 'h2', 'h3'].map(id => container.querySelector(`[data-flag="${id}"]`));
         expect(flags.map(f => f.getAttribute('data-flag-pinned'))).toEqual([t.id, t.id, t.id]);
@@ -423,7 +424,7 @@ describe('FP-83 — a flag stands exactly where it was dropped', () => {
     });
 
     it('the drawn flag sits where markerBox says', () => {
-        Flags.plant('h1', C(14));
+        Orders.orderAt('h1', C(14));
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         const { left, top } = markerBox(C(14), null, parseFloat(flag.style.width) / MARKER_ART_PX);
@@ -433,7 +434,7 @@ describe('FP-83 — a flag stands exactly where it was dropped', () => {
 
     it('a flag planted off the old grid stands there too — no snapping', () => {
         const odd = { x: 137, y: 909 };
-        Flags.plant('h1', odd);
+        Orders.orderAt('h1', odd);
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         const size = parseFloat(flag.style.width);
@@ -449,7 +450,7 @@ describe('the flag answers clicks on its drawn square', () => {
      * pointer through except on its cloth (`MatLayering.test.js`, `MatPressTarget.test.js`).
      */
     it('is the flag’s own square, and does not opt into alpha hit-testing', () => {
-        Flags.plant('h1', C(20));
+        Orders.orderAt('h1', C(20));
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         expect(flag.getAttribute('data-alpha-test')).toBeNull();
@@ -460,7 +461,7 @@ describe('the flag answers clicks on its drawn square', () => {
     });
 
     it('a click on the flag is kept, never passed to what is underneath', () => {
-        Flags.plant('h1', C(20));
+        Orders.orderAt('h1', C(20));
         const beneath = vi.fn();
         const { container } = render(
             h(DndContext, null, h('div', { onClick: beneath }, h(FlagLayer)))
@@ -479,7 +480,7 @@ describe('the flag answers clicks on its drawn square', () => {
 describe('several flags on one point (FP-83)', () => {
     it('⭐ all five are drawn, in the same place, with no "+N" chip', () => {
         const ids = ['h1', 'h2', 'h3', 'h4', 'fighter'];
-        for (const id of ids) Flags.plant(id, C(20));
+        for (const id of ids) Orders.orderAt(id, C(20));
         const { container } = mount(h(FlagLayer));
 
         const drawn = ids.map(id => container.querySelector(`[data-flag="${id}"]`));

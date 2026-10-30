@@ -8,6 +8,7 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as Flags from '../systems/board/Flags.js';
@@ -111,7 +112,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 220);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -286,7 +286,7 @@ describe('the gate: only a hero holding the tool may work the Token', () => {
     it('the runner and the chooser agree: a hero on the vein without a pickaxe raises the no-tool mark', () => {
         const hero = addHero();
         const vein = put('fx_vein', VEIN);
-        Flags.plant(hero.id, VEIN);
+        Orders.orderAt(hero.id, VEIN);
         BoardState.setClaim(hero.id, { instanceId: vein.id, typeId: vein.typeId, x: vein.x, y: vein.y });
         expect(WorkCheck.whyCannotRun(vein.id, vein, hero.id, getTokenType('fx_vein').config)).toBe(ALERT.NO_TOOL);
         BoardRunner.tick(100);
@@ -309,7 +309,7 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
         const vein = put('fx_vein', VEIN);
         const tree = put('fx_tree', TREE);
         // On the vein, so the vein is the nearer and is looked at first (priorities are gone).
-        Flags.plant(hero.id, VEIN);
+        Orders.orderAt(hero.id, VEIN);
 
         expect(BoardState.claimOfHero(hero.id)?.instanceId).toBe(tree.id);
         expect(Flags.skipsOf(vein.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);
@@ -326,7 +326,7 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
         const hero = addHero();
         const near = put('fx_vein', VEIN);
         const far = put('fx_vein', TREE);
-        Flags.plant(hero.id, { x: 420, y: 400 });
+        Orders.orderAt(hero.id, { x: 420, y: 400 });
         expect(Flags.skipsOf(near.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);
         expect(Flags.skipsOf(far.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);
         expect(heard).toHaveLength(1);
@@ -338,7 +338,7 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
         // In the Bank already: taking it up is the only change, and it alone wakes the flag.
         give('fx_pick');
         const vein = put('fx_vein', VEIN);
-        Flags.plant(hero.id, VEIN);
+        Orders.orderAt(hero.id, VEIN);
         tick(3);
         expect(BoardState.claimOfHero(hero.id)).toBeNull();
         expect(heard.length).toBeGreaterThan(0);
@@ -352,7 +352,7 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
         const hero = addHero();
         equip(hero.id, 'fx_pick');
         const vein = put('fx_vein', VEIN);
-        Flags.plant(hero.id, VEIN);
+        Orders.orderAt(hero.id, VEIN);
         tick(3);
         expect(BoardState.claimOfHero(hero.id)?.instanceId).toBe(vein.id);
 
@@ -369,7 +369,7 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
         const said = [];
         const offPin = EventBus.subscribe(BOARD_EVENTS.PIN_REFUSED, (p) => said.push(p));
         try {
-            const res = Flags.plant(hero.id, VEIN, { pin: true });
+            const res = Orders.orderAt(hero.id, VEIN);
             expect(res.pinnedTo).toBeNull();
             expect(res.pinRefused).toBe(ALERT.NO_TOOL);
         } finally { offPin(); }
@@ -391,7 +391,7 @@ describe('the old tool Tokens are retired', () => {
         equip(hero.id, 'fx_pick');
         const vein = put('fx_vein', VEIN);
         const old = put('fx_pick_token', TREE);
-        Flags.plant(hero.id, VEIN, { pin: true });
+        Orders.orderAt(hero.id, VEIN);
         let cycles = 0;
         const offCycle = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { if (p.instanceId === vein.id) cycles++; });
         try { tick(60); } finally { offCycle(); }
@@ -534,7 +534,7 @@ describe('an old save with a tool Token on the mat', () => {
         const ghost = BoardState.createTokenInstance('token_removed_by_sync', 40);
         BoardState.addToken(ghost, TREE.x, TREE.y);
         const vein = put('fx_vein', VEIN);
-        Flags.plant(hero.id, FLAG);
+        Orders.orderAt(hero.id, FLAG);
         expect(() => tick(30)).not.toThrow();
         expect(BoardState.claimOfHero(hero.id)?.instanceId).toBe(vein.id);
         expect(BoardState.getTokenById(ghost.id)).toBeTruthy();

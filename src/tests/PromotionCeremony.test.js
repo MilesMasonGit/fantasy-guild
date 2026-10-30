@@ -7,6 +7,7 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
@@ -59,7 +60,7 @@ function qualifiedHero() {
 /** Train a hero to the offer on a fixture Token; returns the offer. */
 function standingOffer(hero, { typeId = 'fixture_promotion', uses = 2 } = {}) {
     BoardState.addToken({ typeId, usesRemaining: uses, cycleElapsedMs: 0 }, C(TILE).x, C(TILE).y);
-    Placement.plantFlagAt(hero.id, C(TILE));
+    Orders.orderAt(hero.id, C(TILE));
     for (let i = 0; i < 25 && !BoardPromotion.getOffer(idAt(TILE)); i++) {
         BoardPromotion.tickToken(tokenAt(TILE), 1000, hero.id);
     }

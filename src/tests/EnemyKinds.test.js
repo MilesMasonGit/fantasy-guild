@@ -5,6 +5,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -152,7 +153,7 @@ describe('a fight against each kind', () => {
         const enemy = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
         Placement.placeTokenAt(enemy, at);
         TileModifiers.rebuildAround([enemy]);
-        Placement.plantFlagAt(h.id, at);
+        Orders.orderAt(h.id, at);
         const seen = { enemySwings: [], heroHits: [], statuses: [] };
         let t = 0;
         const offs = [

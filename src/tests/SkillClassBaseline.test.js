@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -52,7 +53,7 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeTokenAt(instance, C(tile));
-    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    if (heroId) Orders.orderAt(heroId, C(tile));
     return instance;
 }
 
@@ -101,7 +102,7 @@ describe('The gate is possession first, then level', () => {
      * Token's skill directly — a drop would keep the hero's own skill and the
      * Token would not even be a candidate.
      */
-    const plantFor = (heroId, tile, skill) => Flags.plant(heroId, C(tile), { skill });
+    const plantFor = (heroId, tile, skill) => Orders.orderAt(heroId, C(tile), { skill });
     const skipReasons = (token) => Flags.skipsOf(token.id).map(s => s.reason);
 
     it('refuses a hero whose level is too low, and calls it ACCESS', () => {

@@ -6,6 +6,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -64,7 +65,6 @@ afterEach(() => cleanup());
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -115,7 +115,7 @@ describe('removePlacedToken (slice 5.2)', () => {
         // let them be worked again.
         Flags.setDisallowed(east.id, true);
         Flags.setDisallowed(west.id, true);
-        Flags.plant('h1', centreOf(forest));
+        Orders.orderAt('h1', centreOf(forest));
         expect(BoardState.workTokenOf('h1')).toBe(forest.id);
         Flags.setDisallowed(east.id, false);
         Flags.setDisallowed(west.id, false);

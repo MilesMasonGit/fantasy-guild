@@ -55,8 +55,7 @@ afterEach(() => {
 });
 
 describe('the speech family wears the pixel frame', () => {
-    it('a hero speaks in a chamfer frame with a pixel tail: gold going idle, red for a refused flag, bronze for news', () => {
-        const forge = placeAt('fixture_producer', 700, 500);
+    it('a hero speaks in a chamfer frame with a pixel tail: gold going idle, bronze for news', () => {
         const heroes = [
             { heroId: 'h1', state: 'working', x: 300, y: 500, moving: false, tokenId: null, alert: null },
             { heroId: 'h2', state: 'working', x: 700, y: 500, moving: false, tokenId: null, alert: null }
@@ -65,7 +64,6 @@ describe('the speech family wears the pixel frame', () => {
         act(() => { vi.advanceTimersByTime(10); });
         act(() => {
             EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'o', x: 1, y: 1, typeId: 'fixture_producer', exhaustedBy: 'h1' });
-            EventBus.publish(BOARD_EVENTS.PIN_REFUSED, { heroId: 'h2', instanceId: forge.id, reason: ALERT.ACCESS });
         });
         // The layer re-reads on a changed clock; frozen fake time would never change it.
         act(() => { vi.advanceTimersByTime(10); });
@@ -73,12 +71,11 @@ describe('the speech family wears the pixel frame', () => {
         const bubbles = [...view.container.querySelectorAll('[data-hero-bubble]')];
         expect(bubbles.map(b => [b.getAttribute('data-hero-bubble'), b.getAttribute('data-speech-tone')])).toEqual([
             ['depleted:fixture_producer', SPEECH_TONE.PLAIN],
-            ['idle', SPEECH_TONE.ATTENTION],
-            ['pinRefused', SPEECH_TONE.CANT]
+            ['idle', SPEECH_TONE.ATTENTION]
         ]);
         for (const b of bubbles) expect(framed(b)).toMatchObject({ frame: true, shadow: true });
         // The tail only on the bubble nearest the head.
-        expect(bubbles.map(b => framed(b).tail)).toEqual([false, true, true]);
+        expect(bubbles.map(b => framed(b).tail)).toEqual([false, true]);
         expect(softness(view.container)).toEqual([]);
     });
 
@@ -131,9 +128,8 @@ describe('the speech family wears the pixel frame', () => {
         expect(pop).not.toMatch(/scale/);
     });
 
-    it('a moment\'s tone: idle asks to be looked at, a refused flag is a can\'t', () => {
+    it('a moment\'s tone: idle asks to be looked at, the rest are plain news', () => {
         expect(momentTone('idle')).toBe(SPEECH_TONE.ATTENTION);
-        expect(momentTone('pinRefused')).toBe(SPEECH_TONE.CANT);
         expect(momentTone('depleted:token_oak')).toBe(SPEECH_TONE.PLAIN);
         expect(momentTone('arrived')).toBe(SPEECH_TONE.PLAIN);
     });

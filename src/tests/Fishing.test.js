@@ -6,6 +6,7 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
@@ -166,7 +167,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 240);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -259,7 +259,7 @@ describe('a cycle at the water lands one catch from the pool', () => {
     it('the catch replaces the Token\'s own Outputs: a rod with no bait lands only the basic pool\'s fish', () => {
         const lake = put('s5_lake');
         setHeroes(hero('fisher', ['s5_rod']));
-        Flags.plant('fisher', LAKE);
+        Orders.orderAt('fisher', LAKE);
         const landed = catchesOf(lake, () => run(40_000));
         expect(landed.length).toBeGreaterThanOrEqual(30);
         expect(new Set(landed)).not.toContain('fixture_copper_ore');
@@ -269,7 +269,7 @@ describe('a cycle at the water lands one catch from the pool', () => {
     it('a rare catch drops like any other item: no rare-drop signal, however small its share (owner, 2026-10-24)', () => {
         const lake = put('s5_lake');
         setHeroes(hero('fisher', ['s5_rod']));
-        Flags.plant('fisher', LAKE);
+        Orders.orderAt('fisher', LAKE);
         let rare = 0;
         const off = EventBus.subscribe(BOARD_EVENTS.RARE_DROP, () => { rare++; });
         let landed;
@@ -307,7 +307,7 @@ describe('a cycle at the water lands one catch from the pool', () => {
         const lake = put('s5_lake');
         setHeroes(hero('fisher', ['s5_rod', 's5_worm']));
         InventoryManager.addItem('s5_worm', 3);
-        Flags.plant('fisher', LAKE);
+        Orders.orderAt('fisher', LAKE);
         const landed = catchesOf(lake, () => run(30_000));
         expect(landed.slice(0, 3)).toEqual(['s5_salmon', 's5_salmon', 's5_salmon']);
         expect(InventoryManager.getItemCount('s5_worm')).toBe(0);
@@ -333,8 +333,8 @@ describe('a cycle at the water lands one catch from the pool', () => {
         const lake = put('s5_lake');
         const sea = put('s5_sea', { x: 1400, y: 500 });
         setHeroes(hero('netter', ['s5_net']), hero('trapper', ['s5_trap']));
-        Flags.plant('netter', LAKE);
-        Flags.plant('trapper', { x: 1400, y: 500 });
+        Orders.orderAt('netter', LAKE);
+        Orders.orderAt('trapper', { x: 1400, y: 500 });
         let seaLanded;
         const lakeLanded = catchesOf(lake, () => { seaLanded = catchesOf(sea, () => run(10_000)); });
         expect(new Set(lakeLanded)).toEqual(new Set(['s5_shrimp']));
@@ -353,7 +353,7 @@ describe('a cycle at the water lands one catch from the pool', () => {
         TileModifiers.rebuildAll();
         setHeroes(hero('fisher', ['s5_rod', 's5_worm']));
         InventoryManager.addItem('s5_worm', 3);
-        Flags.plant('fisher', LAKE);
+        Orders.orderAt('fisher', LAKE);
         const landed = catchesOf(lake, () => run(10_000));
         expect(landed.length).toBeGreaterThan(3);
         expect(new Set(landed)).toEqual(new Set(['-']));
@@ -368,7 +368,7 @@ describe('a cycle at the water lands one catch from the pool', () => {
             TileModifiers.clearAll();
             const water = put(typeId);
             setHeroes(hero('fisher', grid));
-            Flags.plant('fisher', LAKE);
+            Orders.orderAt('fisher', LAKE);
             run(3000);
             const real = Math.random;
             let draws = 0;
@@ -391,7 +391,7 @@ describe('a Dock in reach speeds fishing, stacking to the standard floor', () =>
         for (let i = 0; i < docks; i++) put('s5_dock', { x: LAKE.x + (i % 2 ? -160 : 160), y: LAKE.y + (i > 1 ? 160 : 0) });
         TileModifiers.rebuildAll();
         setHeroes(hero('fisher', ['s5_rod']));
-        Flags.plant('fisher', LAKE);
+        Orders.orderAt('fisher', LAKE);
         const at = [];
         let now = 0;
         const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { if (p.instanceId === lake.id) at.push(now); });
@@ -420,7 +420,7 @@ describe('water never runs out and does not shift', () => {
         Charges.clearNeverWearingCharges();
         expect(lake.usesRemaining).toBeNull();
         setHeroes(hero('fisher', ['s5_rod']));
-        Flags.plant('fisher', LAKE);
+        Orders.orderAt('fisher', LAKE);
         run(10_000);
         expect(BoardState.getTokenById(lake.id)).not.toBeNull();
         expect(lake.usesRemaining).toBeNull();

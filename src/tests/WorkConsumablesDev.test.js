@@ -29,7 +29,6 @@ afterAll(() => { Flags.teardown(); LoadoutMoments.teardown(); resetMatTuning(); 
 
 beforeEach(() => {
     resetMatTuning();
-    setMatTuning('flagRadius', 240);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();

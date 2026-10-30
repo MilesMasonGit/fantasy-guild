@@ -17,7 +17,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
  */
 
 const TUNING_KEY = 'fantasy_guild_mat_tuning';
-const TUNED = { matSteps: 6, matAspect: 0.5, questCap: 9, questCapMax: 9, questEverySec: 30, flagRadius: 900 };
+const TUNED = { matSteps: 6, matAspect: 0.5, questCap: 9, questCapMax: 9, questEverySec: 30, nearRadius: 500 };
 
 /** The tuning, geometry and quest modules as a build of `mode` loads them, with `TUNED` stored. */
 async function loadAs(mode) {
@@ -62,7 +62,7 @@ describe('a shipped build uses the game values whatever the tuner once stored', 
         expect(geometry.matH()).toBe(1040);
         expect(quests.questCap()).toBe(2);
         expect(quests.questIntervalMs()).toBe(180_000);
-        expect(tuning.matTuning('flagRadius')).toBe(tuning.matTuningDefault('flagRadius'));
+        expect(tuning.matTuning('nearRadius')).toBe(tuning.matTuningDefault('nearRadius'));
         expect(tuning.setMatTuning('matSteps', 8)).toBe(false);
         expect(geometry.matSteps()).toBe(12);
     });
@@ -73,7 +73,7 @@ describe('a shipped build uses the game values whatever the tuner once stored', 
         expect(geometry.matH()).toBe(480);
         expect(quests.questCap()).toBe(9);
         expect(quests.questIntervalMs()).toBe(30_000);
-        expect(tuning.matTuning('flagRadius')).toBe(900);
+        expect(tuning.matTuning('nearRadius')).toBe(500);
     });
 
     it('so does a perf build (the measuring build, never shipped)', async () => {

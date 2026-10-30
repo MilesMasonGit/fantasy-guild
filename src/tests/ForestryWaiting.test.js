@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -68,7 +69,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 240);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -88,7 +88,7 @@ function felledInAForest({ seedlings = 1, forest = true } = {}) {
     if (seedlings) InventoryManager.addItem(SEEDLING, seedlings);
     if (forest) put('fw_forest', TREE.x + 150, TREE.y);
     put('fw_tree', TREE.x, TREE.y);
-    Flags.plant('forester', { x: TREE.x, y: TREE.y });
+    Orders.orderAt('forester', { x: TREE.x, y: TREE.y });
     run(3000);
     expect(at(TREE.x, TREE.y)?.typeId).toBe('fw_stump');
     return at(TREE.x, TREE.y);
@@ -121,7 +121,7 @@ describe('⭐ a forester waits silently for the felled Oak to grow back', () => 
 
     it('waits for a Forest\'s fresh Sapling too, though nothing was felled', () => {
         const sapling = put('fw_sapling', TREE.x, TREE.y);
-        Flags.plant('forester', { x: TREE.x, y: TREE.y });
+        Orders.orderAt('forester', { x: TREE.x, y: TREE.y });
         run(200);
         expect(Flags.waitingOf('forester')).toEqual({ instanceId: sapling.id, kind: 'node' });
         expect(BoardRunner.isHeroIdle('forester')).toBe(false);
@@ -150,7 +150,7 @@ describe('nothing on its way back is nothing to wait for', () => {
 
     it('a hero without Forestry does not wait on it', () => {
         felledInAForest();
-        Flags.plant('miner', { x: TREE.x, y: TREE.y + 60 });
+        Orders.orderAt('miner', { x: TREE.x, y: TREE.y + 60 });
         run(1000);
         expect(Flags.waitingOf('miner')).toBeNull();
         expect(BoardRunner.isHeroIdle('miner')).toBe(true);
@@ -158,14 +158,14 @@ describe('nothing on its way back is nothing to wait for', () => {
 
     it("nor one out of the flag's reach", () => {
         felledInAForest();
-        Flags.plant('forester', { x: TREE.x + 700, y: TREE.y });
+        Orders.orderAt('forester', { x: TREE.x + 700, y: TREE.y });
         run(200);
         expect(Flags.waitingOf('forester')).toBeNull();
     });
 
     it('a hero who could not fell what it grows into (no woodaxe in hand) does not wait on it', () => {
         put('fw_axe_stump', TREE.x, TREE.y);
-        Flags.plant('forester', { x: TREE.x, y: TREE.y });
+        Orders.orderAt('forester', { x: TREE.x, y: TREE.y });
         run(1000);
         expect(Flags.waitingOf('forester')).toBeNull();
         expect(BoardRunner.isHeroIdle('forester')).toBe(true);

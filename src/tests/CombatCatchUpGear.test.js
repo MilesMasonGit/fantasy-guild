@@ -105,7 +105,7 @@ function buildBoard() {
     HeroManager.updateHeroFromSkills(fighter);
     fighter.hp.current = fighter.hp.max;
     const a = fixtures.placeAt('gearcatchup_enemy', 400, 400);
-    fixtures.plant(fighter.id, { x: a.x, y: a.y }, { pin: true });
+    fixtures.orderAt(fighter.id, { x: a.x, y: a.y });
     TileModifiers.rebuildAll();
     return fighter.id;
 }
