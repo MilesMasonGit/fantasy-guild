@@ -6,7 +6,7 @@
 import { isTypeOrGroupId, PLAIN_ENEMY_HIT_TYPE } from './damageTypes.js';
 
 /**
- * An enemy may list a few moves (owner, brief 280: a chicken's Peck, Stab; Scratch, Slash; Flutter,
+ * An enemy may list a few moves (the owner's chicken: Peck, Stab; Scratch, Slash; Flutter,
  * +50 % Physical resistance for one attack). Each swing makes one, picked at random by weight. An
  * enemy with none swings as it always has: a plain Physical hit.
  *

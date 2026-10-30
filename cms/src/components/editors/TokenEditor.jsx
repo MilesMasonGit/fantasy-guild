@@ -10,7 +10,7 @@ import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import LifecycleBlocks from './LifecycleBlocks';
 import CatchPoolsBlock from './CatchPoolsBlock';
-import EnemyMovesFields, { movesText } from './EnemyMovesFields';
+import EnemyMovesFields from './EnemyMovesFields';
 import PlanFields from '../shared/PlanFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
@@ -861,6 +861,12 @@ const ENEMY_NUMBER_FIELDS = [
   { field: 'accuracy', label: 'Accuracy', min: 0 },
   { field: 'critChance', label: 'Crit %', min: 0 },
 ];
+
+/** `Peck Stab, Scratch Slash, Flutter`: an enemy's moves (the profile's) for the preview, or null without any. */
+function movesText(moves) {
+  if (!Array.isArray(moves) || !moves.length) return null;
+  return moves.map((m) => `${m.name || 'Attack'}${m.hits ? ` ${damageTypeLabel(m.type)}` : ''}`).join(', ');
+}
 
 /** `Physical 50%, Crush weak 50%`, or `none`: a resistances map as the author wrote it. */
 function resistancesText(map) {

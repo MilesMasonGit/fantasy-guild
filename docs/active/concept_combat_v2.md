@@ -308,3 +308,48 @@ content: no finding (shipped armour still carries the retired Armor rows).
   drag.
 - **The fight panel shows an enemy's resistances as they stand** in a live fight (after effects on it
   and Sunder); the enemy card still shows what was authored.
+
+## Enemy moves (built in V3, 2026-10-30; for the V5 content author)
+
+*What the CMS writes and the game reads. Nothing in `data/` uses it yet. The shape lives in
+`src/config/registries/enemyMoves.js`; the engine in `combat/CombatAttackProcessor.js` and
+`board/FightMoments.js`.*
+
+**An enemy** gains one field, the CMS Token editor's Moves block:
+
+| Field | Type | Meaning | Default when absent |
+|---|---|---|---|
+| `moves` | a list of moves (below) | each swing makes one, picked at random by weight | none: a plain Physical hit, as before |
+| `moves[].name` | text | what the float, the log, the panel and the card call it | "Attack" on screen (the audit names it) |
+| `moves[].hits` | `false` or absent | `false`: no damage, nothing rolled (Flutter) | a hit |
+| `moves[].damageType` | a damage type or group | the hit's type: the enemy's Hit (+ flat Damage), × matchup and buffs, crit, × the hero's resistance to that type, the fraction rolls | Physical (the group: only a hero's Physical lines count) |
+| `moves[].effectId` | a library effect id (a status too) | an effect the move lands | none |
+| `moves[].target` | `self` or `hero` | on itself as the move is made (before the roll); on the hero with the hit that lands, or as a move that does not hit is made | `hero` |
+| `moves[].lasts` | `attack`, `swing` or `fight` | `attack`: until the next attack on its bearer is over, hit or miss (on itself, the hero's next swing; on the hero, the enemy's next swing after this one); `swing`: this swing (on itself only: a heavy strike); `fight`. A status keeps its own lifetime | `fight` |
+| `moves[].weight` | a number above 0 | how likely against the others (2 is twice as likely as 1) | 1 |
+
+The owner's chicken, as the QA scene authors it: `[{ name: 'Peck', damageType: 'stab' }, { name: 'Scratch',
+damageType: 'slash' }, { name: 'Flutter', hits: false, effectId: <Flutter: Provides Type Resistance % Physical 50>,
+target: 'self', lasts: 'attack' }]`. The concept's Ice Elemental: Blizzard `ice`, Smash `crush` (or `physical`).
+
+**The draw**: one random number a swing, first in the swing (before its On Swing rules), and only for an enemy
+with two moves or more; one move or none draws nothing, so content without moves fights and draws exactly as
+before. A move's effect always lands (no chance roll). Boss rules on the fight moments (every Nth swing, On Hit,
+On Health Below) still run on every swing whatever the move; a move that does not hit counts as a swing, not a hit.
+
+**The audit** (boot and CMS Economy Audit, Critical) names: moves that are not a list; a move that is not one; no
+name; `hits` neither yes nor no; an unknown type; a move that neither hits nor lands an effect; an effect not in
+the library; an unknown target or lifetime; an effect on the hero "for the swing" (over before it matters; a
+status passes); a weight not above 0.
+
+**Choices made in V3 the rulings did not spell out** (each small to change):
+
+- **A move may hit and land an effect at once** (a Venom Bite: Poison, Venom on the hero with the bite), and
+  an effect on itself may ride a hit (a Smash: Crush, Heavy Strike for the swing).
+- **A weight per move** (1 when blank), so a boss's big move can be rare.
+- **"For one attack" is a new lifetime, for moves only** (the Rules line does not offer it): spent by a miss
+  as surely as a hit; a hero who eats instead of swinging has not attacked, so it stays.
+- **A move's type may be a group** (Physical, Elemental, Special), read like the plain swing: only that
+  group's lines resist it.
+- **The moves show on the enemy card from the start**, like resistances (kinds still wait for a fight).
+- **A move's hit is the enemy's Hit**: no per-move damage; a heavier move is an effect on itself for the swing.

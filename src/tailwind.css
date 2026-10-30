@@ -757,7 +757,7 @@
 .gi-fight-float .gi-ff-row { display: flex; align-items: center; gap: calc(var(--fx-scale, 1) * 4px); }
 .gi-fight-float .gi-ff-weak-word { color: var(--color-ui-gold); font-size: calc(var(--font-size-xs) * var(--fx-scale, 1)); }
 .gi-fight-float .gi-ff-resisted-word { color: var(--color-ui-muted); font-size: calc(var(--font-size-xs) * var(--fx-scale, 1)); }
-/* An enemy's move by name: the panel's text colour, over its hit or alone beside the enemy. */
+/* An enemy's move by name, in white: small over its hit or miss, a number's size alone beside the enemy. */
 .gi-fight-float .gi-ff-move-word { color: var(--color-ui-white); font-size: calc(var(--font-size-xs) * var(--fx-scale, 1)); }
 .gi-fight-float-move .gi-ff-move-word { font-size: calc(var(--font-size-sm) * var(--fx-scale, 1)); }
 .gi-fight-float .gi-ff-icon {

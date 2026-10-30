@@ -1,4 +1,4 @@
-import { DAMAGE_TYPES, DAMAGE_GROUPS, damageTypeLabel, isTypeOrGroupId, statusBlockOf, MOVE_TARGETS, moveLastsFor, moveProblems } from '../../utils/constants';
+import { DAMAGE_TYPES, DAMAGE_GROUPS, isTypeOrGroupId, statusBlockOf, MOVE_TARGETS, moveLastsFor, moveProblems } from '../../utils/constants';
 
 const TARGET_WORDS = { self: 'Itself', hero: 'The hero' };
 const LASTS_WORDS = { attack: 'For one attack', swing: 'For the swing', fight: 'For the fight' };
@@ -180,10 +180,4 @@ export default function EnemyMovesFields({ enemy, effects, onChange }) {
       </p>
     </div>
   );
-}
-
-/** `Peck Stab, Scratch Slash, Flutter`: an enemy's moves for the read-only preview, or null without any. */
-export function movesText(moves) {
-  if (!Array.isArray(moves) || !moves.length) return null;
-  return moves.map((m) => `${m.name || 'Attack'}${m.hits ? ` ${damageTypeLabel(m.type)}` : ''}`).join(', ');
 }
