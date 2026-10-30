@@ -7,6 +7,7 @@ import { BAKE_KEY, splitLibrary } from './paletteBrighten.js';
 import { resolveSpritePath, currentSpriteName } from '../src/utils/AssetManager.js';
 import { studioAssetPath } from './assetNaming.js';
 import { compareSync } from './src/engine/syncGuard.js';
+import { mergeLedgerFile, plannedKeysOf, LEDGER_FILE } from './src/engine/ledgerFile.js';
 import { listPacks, getPack, archivePack, restorePack } from './changePackInbox.js';
 
 
@@ -840,6 +841,10 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
               ? JSON.parse(fs.readFileSync(path.join(dataDir, 'starterCamp.json'), 'utf8'))
               : null;
 
+            const ledger = fs.existsSync(path.join(dataDir, LEDGER_FILE))
+              ? JSON.parse(fs.readFileSync(path.join(dataDir, LEDGER_FILE), 'utf8'))
+              : null;
+
             const recipePools = {};
             for (const recipe of tokenRecipes) {
               const skill = recipe.skill || 'general';
@@ -847,14 +852,15 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
               recipePools[skill].push(recipe);
             }
 
+            // The plan (ledger blocks and Planned stubs) is kept out of the game's files, so it is laid back on here.
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({
+            res.end(JSON.stringify(mergeLedgerFile({
               items,
               tokens,
               effects,
               recipePools,
               starterCamp,
-            }));
+            }, ledger)));
           } catch (err) {
             res.statusCode = 500;
             res.end(JSON.stringify({ error: 'Failed to load game data: ' + err.message }));
@@ -927,7 +933,8 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
                 items: size(files['items.json']),
                 maps: Object.values(files['items.json'] || {}).filter(isMap).length,
                 recipes: size(files['tokenRecipes.json']),
-                'Starter Camp Tokens': size(files['starterCamp.json']?.tokens)
+                'Starter Camp Tokens': size(files['starterCamp.json']?.tokens),
+                'Planned entries': plannedKeysOf(files[LEDGER_FILE]).size
               };
 
               const committing = dataDir

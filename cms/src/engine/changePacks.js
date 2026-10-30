@@ -6,6 +6,8 @@
  */
 
 import { normaliseStarterCamp, isEmptyStarterCamp } from '../../../src/config/starterCampShape.js';
+import { LEDGER_STATUSES, statusOrNull, tierOrNull } from '../../../src/systems/atlas/ledger.js';
+import { mergeLedgerFile } from './ledgerFile.js';
 
 export const PACK_FORMAT = 'fantasy-guild-change-pack';
 export const PACK_VERSION = 1;
@@ -64,6 +66,23 @@ export function collectionOf(kind) {
 }
 
 /**
+ * What is wrong with a record's `ledger` block (`src/systems/atlas/ledger.js`), as sentences.
+ * ⚠️ A status the ledger does not know would read as Live and reach the game, so a misspelt "planned" is refused here rather than synced.
+ */
+function ledgerErrors(ledger, label, kind) {
+    if (ledger === undefined) return [];
+    if (kind === 'effect') return [`${label}: only items, maps, Tokens and recipes carry a "ledger".`];
+    if (!isPlainObject(ledger)) return [`${label}: "value.ledger" must be an object: { "status", "tier", "note" }.`];
+    const out = [];
+    if (ledger.status !== undefined && (ledger.status !== statusOrNull(ledger.status) || !LEDGER_STATUSES.includes(ledger.status))) {
+        out.push(`${label}: "value.ledger.status" must be one of ${LEDGER_STATUSES.join(', ')} (lower case).`);
+    }
+    if (ledger.tier !== undefined && tierOrNull(ledger.tier) !== ledger.tier) out.push(`${label}: "value.ledger.tier" must be a whole number from 0 (0 is the Starter Camp).`);
+    if (ledger.note !== undefined && typeof ledger.note !== 'string') out.push(`${label}: "value.ledger.note" must be text.`);
+    return out;
+}
+
+/**
  * Check a parsed pack. Returns `{ ok: true }` or `{ ok: false, errors: [...] }`, each error a
  * sentence an agent can act on. `fileName`, when given, must be `<pack id>.json`.
  */
@@ -117,6 +136,7 @@ export function validatePack(pack, { fileName } = {}) {
                 if (kind === 'map' && !isMapValue(value)) errors.push(`${label}: a map's "value.type" must be "map" or "modifier".`);
                 if (kind === 'item' && isMapValue(value)) errors.push(`${label}: this is a map or modifier; use "kind": "map".`);
                 if (kind === 'recipe' && (typeof value.skill !== 'string' || !value.skill)) errors.push(`${label}: a recipe's "value.skill" must name its skill pool.`);
+                errors.push(...ledgerErrors(value.ledger, label, kind));
             }
         }
         if (kind === 'starterCamp') {
@@ -214,9 +234,9 @@ export function changedFields(before, after) {
     return [...keys].filter((k) => canonicalJson(before?.[k]) !== canonicalJson(after?.[k])).sort();
 }
 
-/** Build the workspace a pack was made against from the game's `data/` files (as `/api/load-game-data` and the store's load do). */
-export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null }) {
+/** Build the workspace a pack was made against from the game's `data/` files (as `/api/load-game-data` and the store's load do), the ledger laid back on (`ledgerFile.js`). */
+export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null, ledger = null }) {
     const recipePools = {};
     for (const recipe of tokenRecipes || []) (recipePools[recipe.skill || 'general'] ||= []).push(recipe);
-    return { items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp) };
+    return mergeLedgerFile({ items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp) }, ledger);
 }

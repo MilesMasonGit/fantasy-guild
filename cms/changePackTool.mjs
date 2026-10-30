@@ -46,6 +46,7 @@ function loadWorkspace(from) {
             effects: opt('effects.json', {}),
             tokenRecipes: opt('tokenRecipes.json', []),
             starterCamp: opt('starterCamp.json', null),
+            ledger: opt('ledger.json', null),
         }),
     };
 }
