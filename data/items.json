@@ -3,7 +3,9 @@
     "name": "Water",
     "description": "",
     "type": "drink",
-    "tags": [],
+    "tags": [
+      "Drink"
+    ],
     "sprite": "i_water",
     "stackable": true,
     "restoreAmount": 1,
@@ -25,7 +27,10 @@
     "name": "Copper Ore",
     "description": "",
     "type": "material",
-    "tags": [],
+    "tags": [
+      "Ore",
+      "Metal"
+    ],
     "sprite": "i_ore_copper",
     "stackable": true,
     "restoreAmount": 0,
@@ -41,7 +46,10 @@
     "name": "Copper Ingot",
     "description": "",
     "type": "material",
-    "tags": [],
+    "tags": [
+      "Ingot",
+      "Metal"
+    ],
     "sprite": "i_ingot_copper",
     "stackable": true,
     "restoreAmount": 0,
@@ -64,7 +72,10 @@
     "value": 1,
     "autoSyncId": true,
     "id": "item_oak_wood",
-    "valueSource": "token_oak_tree"
+    "valueSource": "token_oak_tree",
+    "tags": [
+      "Wood"
+    ]
   },
   "item_charcoal": {
     "name": "Charcoal",
@@ -77,7 +88,10 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_charcoal",
-    "valueSource": null
+    "valueSource": null,
+    "tags": [
+      "Fuel"
+    ]
   },
   "item_raw_shrimp": {
     "name": "Raw Shrimp",
@@ -90,7 +104,11 @@
     "value": 1,
     "autoSyncId": true,
     "id": "item_raw_shrimp",
-    "valueSource": "token_shrimp_coast"
+    "valueSource": "token_shrimp_coast",
+    "tags": [
+      "Seafood",
+      "Raw"
+    ]
   },
   "item_shrimp": {
     "name": "Shrimp",
@@ -103,7 +121,12 @@
     "value": 2,
     "autoSyncId": true,
     "id": "item_shrimp",
-    "valueSource": "recipe_shrimp"
+    "valueSource": "recipe_shrimp",
+    "tags": [
+      "Food",
+      "Seafood",
+      "Cooked"
+    ]
   },
   "item_wheat": {
     "name": "Wheat",
@@ -116,7 +139,10 @@
     "value": 1,
     "autoSyncId": true,
     "id": "item_wheat",
-    "valueSource": "token_ripe_wheat"
+    "valueSource": "token_ripe_wheat",
+    "tags": [
+      "Grain"
+    ]
   },
   "item_flour": {
     "name": "Flour",
@@ -129,7 +155,11 @@
     "value": 5,
     "autoSyncId": true,
     "id": "item_flour",
-    "valueSource": "recipe_flour"
+    "valueSource": "recipe_flour",
+    "tags": [
+      "Baking",
+      "Grain"
+    ]
   },
   "item_blueberry": {
     "name": "Blueberry",
@@ -142,7 +172,12 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_blueberry",
-    "valueSource": null
+    "valueSource": null,
+    "tags": [
+      "Food",
+      "Fruit",
+      "Berry"
+    ]
   },
   "item_blueberry_pie": {
     "name": "Blueberry Pie",
@@ -155,7 +190,11 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_blueberry_pie",
-    "valueSource": null
+    "valueSource": null,
+    "tags": [
+      "Food",
+      "Baked"
+    ]
   },
   "item_dough": {
     "name": "Dough",
@@ -168,7 +207,10 @@
     "value": 14,
     "autoSyncId": true,
     "id": "item_dough",
-    "valueSource": "recipe_dough"
+    "valueSource": "recipe_dough",
+    "tags": [
+      "Baking"
+    ]
   },
   "item_redberry": {
     "name": "Redberry",
@@ -181,7 +223,12 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_redberry",
-    "valueSource": null
+    "valueSource": null,
+    "tags": [
+      "Food",
+      "Fruit",
+      "Berry"
+    ]
   },
   "item_shrimp_trawler_potion": {
     "name": "Shrimp Trawler Potion",
@@ -194,7 +241,10 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_shrimp_trawler_potion",
-    "valueSource": null
+    "valueSource": null,
+    "tags": [
+      "Potion"
+    ]
   },
   "item_clay": {
     "name": "Clay",
@@ -207,7 +257,10 @@
     "value": 1,
     "autoSyncId": true,
     "id": "item_clay",
-    "valueSource": "token_clay_deposit"
+    "valueSource": "token_clay_deposit",
+    "tags": [
+      "Material"
+    ]
   },
   "item_quartz": {
     "name": "Quartz",
@@ -220,7 +273,11 @@
     "value": 1,
     "autoSyncId": true,
     "id": "item_quartz",
-    "valueSource": "token_quartz_deposit"
+    "valueSource": "token_quartz_deposit",
+    "tags": [
+      "Gem",
+      "Stone"
+    ]
   },
   "item_coal": {
     "name": "Coal",
@@ -233,7 +290,10 @@
     "value": 1,
     "autoSyncId": true,
     "id": "item_coal",
-    "valueSource": "token_coal_vein"
+    "valueSource": "token_coal_vein",
+    "tags": [
+      "Fuel"
+    ]
   },
   "item_coins": {
     "name": "Coins",
@@ -246,7 +306,10 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_coins",
-    "valueSource": null
+    "valueSource": null,
+    "tags": [
+      "Currency"
+    ]
   },
   "item_blackberry": {
     "name": "Blackberry",
@@ -259,7 +322,12 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_blackberry"
+    "id": "item_blackberry",
+    "tags": [
+      "Food",
+      "Fruit",
+      "Berry"
+    ]
   },
   "item_apple": {
     "name": "Apple",
@@ -272,7 +340,11 @@
     "value": 1,
     "valueSource": "token_apple_tree",
     "autoSyncId": true,
-    "id": "item_apple"
+    "id": "item_apple",
+    "tags": [
+      "Food",
+      "Fruit"
+    ]
   },
   "item_banana": {
     "name": "Banana",
@@ -285,7 +357,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_banana"
+    "id": "item_banana",
+    "tags": [
+      "Food",
+      "Fruit"
+    ]
   },
   "item_cherry": {
     "name": "Cherry",
@@ -298,7 +374,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_cherry"
+    "id": "item_cherry",
+    "tags": [
+      "Food",
+      "Fruit"
+    ]
   },
   "item_coconut": {
     "name": "Coconut",
@@ -311,7 +391,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_coconut"
+    "id": "item_coconut",
+    "tags": [
+      "Food",
+      "Fruit"
+    ]
   },
   "item_grapes": {
     "name": "Grapes",
@@ -324,7 +408,11 @@
     "value": 1,
     "valueSource": "token_grapevine",
     "autoSyncId": true,
-    "id": "item_grapes"
+    "id": "item_grapes",
+    "tags": [
+      "Food",
+      "Fruit"
+    ]
   },
   "item_lemon": {
     "name": "Lemon",
@@ -337,7 +425,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_lemon"
+    "id": "item_lemon",
+    "tags": [
+      "Fruit",
+      "Citrus"
+    ]
   },
   "item_lime": {
     "name": "Lime",
@@ -350,7 +442,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_lime"
+    "id": "item_lime",
+    "tags": [
+      "Fruit",
+      "Citrus"
+    ]
   },
   "item_watermelon": {
     "name": "Watermelon",
@@ -363,7 +459,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_watermelon"
+    "id": "item_watermelon",
+    "tags": [
+      "Food",
+      "Fruit"
+    ]
   },
   "item_orange": {
     "name": "Orange",
@@ -376,7 +476,12 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_orange"
+    "id": "item_orange",
+    "tags": [
+      "Food",
+      "Fruit",
+      "Citrus"
+    ]
   },
   "item_peach": {
     "name": "Peach",
@@ -389,7 +494,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_peach"
+    "id": "item_peach",
+    "tags": [
+      "Food",
+      "Fruit"
+    ]
   },
   "item_pineapple": {
     "name": "Pineapple",
@@ -402,7 +511,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_pineapple"
+    "id": "item_pineapple",
+    "tags": [
+      "Food",
+      "Fruit"
+    ]
   },
   "item_raspberry": {
     "name": "Raspberry",
@@ -415,7 +528,12 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_raspberry"
+    "id": "item_raspberry",
+    "tags": [
+      "Food",
+      "Fruit",
+      "Berry"
+    ]
   },
   "item_strawberry": {
     "name": "Strawberry",
@@ -428,7 +546,12 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_strawberry"
+    "id": "item_strawberry",
+    "tags": [
+      "Food",
+      "Fruit",
+      "Berry"
+    ]
   },
   "item_fir_wood": {
     "name": "Fir Wood",
@@ -441,7 +564,10 @@
     "value": 1,
     "valueSource": "token_fir_tree",
     "autoSyncId": true,
-    "id": "item_fir_wood"
+    "id": "item_fir_wood",
+    "tags": [
+      "Wood"
+    ]
   },
   "item_maple_wood": {
     "name": "Maple Wood",
@@ -454,7 +580,10 @@
     "value": 52,
     "valueSource": "token_maple_tree",
     "autoSyncId": true,
-    "id": "item_maple_wood"
+    "id": "item_maple_wood",
+    "tags": [
+      "Wood"
+    ]
   },
   "item_mahogany_wood": {
     "name": "Mahogany Wood",
@@ -467,7 +596,10 @@
     "value": 422,
     "valueSource": "token_mahogany_tree",
     "autoSyncId": true,
-    "id": "item_mahogany_wood"
+    "id": "item_mahogany_wood",
+    "tags": [
+      "Wood"
+    ]
   },
   "item_ebony_wood": {
     "name": "Ebony Wood",
@@ -480,7 +612,10 @@
     "value": 619,
     "valueSource": "token_ebony_tree",
     "autoSyncId": true,
-    "id": "item_ebony_wood"
+    "id": "item_ebony_wood",
+    "tags": [
+      "Wood"
+    ]
   },
   "item_cedar_wood": {
     "name": "Cedar Wood",
@@ -493,7 +628,10 @@
     "value": 161,
     "valueSource": "token_cedar_tree",
     "autoSyncId": true,
-    "id": "item_cedar_wood"
+    "id": "item_cedar_wood",
+    "tags": [
+      "Wood"
+    ]
   },
   "item_birch_wood": {
     "name": "Birch Wood",
@@ -506,7 +644,10 @@
     "value": 15,
     "valueSource": "token_birch_forest",
     "autoSyncId": true,
-    "id": "item_birch_wood"
+    "id": "item_birch_wood",
+    "tags": [
+      "Wood"
+    ]
   },
   "item_iron_ore": {
     "name": "Iron Ore",
@@ -519,7 +660,11 @@
     "value": 4,
     "valueSource": "token_iron_ore_vein",
     "autoSyncId": true,
-    "id": "item_iron_ore"
+    "id": "item_iron_ore",
+    "tags": [
+      "Ore",
+      "Metal"
+    ]
   },
   "item_silver_ore": {
     "name": "Silver Ore",
@@ -532,7 +677,11 @@
     "value": 15,
     "valueSource": "token_silver_ore_vein",
     "autoSyncId": true,
-    "id": "item_silver_ore"
+    "id": "item_silver_ore",
+    "tags": [
+      "Ore",
+      "Metal"
+    ]
   },
   "item_gold_ore": {
     "name": "Gold Ore",
@@ -545,7 +694,11 @@
     "value": 52,
     "valueSource": "token_gold_ore_vein",
     "autoSyncId": true,
-    "id": "item_gold_ore"
+    "id": "item_gold_ore",
+    "tags": [
+      "Ore",
+      "Metal"
+    ]
   },
   "item_mythril_ore": {
     "name": "Mythril Ore",
@@ -558,7 +711,11 @@
     "value": 161,
     "valueSource": "token_mythril_ore_vein",
     "autoSyncId": true,
-    "id": "item_mythril_ore"
+    "id": "item_mythril_ore",
+    "tags": [
+      "Ore",
+      "Metal"
+    ]
   },
   "item_adamantine_ore": {
     "name": "Adamantine Ore",
@@ -571,7 +728,11 @@
     "value": 633,
     "valueSource": "token_adamantine_ore_vein",
     "autoSyncId": true,
-    "id": "item_adamantine_ore"
+    "id": "item_adamantine_ore",
+    "tags": [
+      "Ore",
+      "Metal"
+    ]
   },
   "item_darkmetal_ore": {
     "name": "Darkmetal Ore",
@@ -584,7 +745,11 @@
     "value": 619,
     "valueSource": "token_darkmetal_ore_vein",
     "autoSyncId": true,
-    "id": "item_darkmetal_ore"
+    "id": "item_darkmetal_ore",
+    "tags": [
+      "Ore",
+      "Metal"
+    ]
   },
   "item_iron_ingot": {
     "name": "Iron Ingot",
@@ -597,7 +762,11 @@
     "value": 33,
     "valueSource": "recipe_mtp8qjj0",
     "autoSyncId": true,
-    "id": "item_iron_ingot"
+    "id": "item_iron_ingot",
+    "tags": [
+      "Ingot",
+      "Metal"
+    ]
   },
   "item_mythril_ingot": {
     "name": "Mythril Ingot",
@@ -610,7 +779,11 @@
     "value": 1856,
     "valueSource": "recipe_mtp8qjj3",
     "autoSyncId": true,
-    "id": "item_mythril_ingot"
+    "id": "item_mythril_ingot",
+    "tags": [
+      "Ingot",
+      "Metal"
+    ]
   },
   "item_gold_ingot": {
     "name": "Gold Ingot",
@@ -623,7 +796,11 @@
     "value": 496,
     "valueSource": "recipe_mtp8qjj1",
     "autoSyncId": true,
-    "id": "item_gold_ingot"
+    "id": "item_gold_ingot",
+    "tags": [
+      "Ingot",
+      "Metal"
+    ]
   },
   "item_silver_ingot": {
     "name": "Silver Ingot",
@@ -636,7 +813,11 @@
     "value": 144,
     "valueSource": "recipe_mtp8qjj2",
     "autoSyncId": true,
-    "id": "item_silver_ingot"
+    "id": "item_silver_ingot",
+    "tags": [
+      "Ingot",
+      "Metal"
+    ]
   },
   "item_adamantine_ingot": {
     "name": "Adamantine Ingot",
@@ -649,7 +830,11 @@
     "value": 8742,
     "valueSource": "recipe_mtp8qjj4",
     "autoSyncId": true,
-    "id": "item_adamantine_ingot"
+    "id": "item_adamantine_ingot",
+    "tags": [
+      "Ingot",
+      "Metal"
+    ]
   },
   "item_darkmetal_ingot": {
     "name": "Darkmetal Ingot",
@@ -662,7 +847,11 @@
     "value": 11399,
     "valueSource": "recipe_mtp8qjj5",
     "autoSyncId": true,
-    "id": "item_darkmetal_ingot"
+    "id": "item_darkmetal_ingot",
+    "tags": [
+      "Ingot",
+      "Metal"
+    ]
   },
   "item_apple_juice": {
     "name": "Apple Juice",
@@ -681,6 +870,10 @@
         "effectId": "effect_apple_juice_drink",
         "scale": 1
       }
+    ],
+    "tags": [
+      "Drink",
+      "Juice"
     ]
   },
   "item_lemonade": {
@@ -700,6 +893,10 @@
         "effectId": "effect_lemonade_drink",
         "scale": 1
       }
+    ],
+    "tags": [
+      "Drink",
+      "Juice"
     ]
   },
   "item_limeade": {
@@ -719,6 +916,10 @@
         "effectId": "effect_limeade_drink",
         "scale": 1
       }
+    ],
+    "tags": [
+      "Drink",
+      "Juice"
     ]
   },
   "item_beer": {
@@ -738,6 +939,10 @@
         "effectId": "effect_beer_drink",
         "scale": 1
       }
+    ],
+    "tags": [
+      "Drink",
+      "Alcohol"
     ]
   },
   "item_raw_beef": {
@@ -751,7 +956,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_raw_beef"
+    "id": "item_raw_beef",
+    "tags": [
+      "Meat",
+      "Raw"
+    ]
   },
   "item_steak": {
     "name": "Steak",
@@ -764,7 +973,12 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_steak"
+    "id": "item_steak",
+    "tags": [
+      "Food",
+      "Meat",
+      "Cooked"
+    ]
   },
   "item_bones": {
     "name": "Bones",
@@ -777,7 +991,10 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_bones"
+    "id": "item_bones",
+    "tags": [
+      "Material"
+    ]
   },
   "item_oak_seedling": {
     "name": "Oak Seedling",
@@ -790,7 +1007,11 @@
     "value": 1,
     "valueSource": "token_oak_tree",
     "autoSyncId": true,
-    "id": "item_oak_seedling"
+    "id": "item_oak_seedling",
+    "tags": [
+      "Seed",
+      "Tree"
+    ]
   },
   "item_stone": {
     "name": "Stone",
@@ -803,7 +1024,10 @@
     "value": 1,
     "valueSource": "token_stone_outcrop",
     "autoSyncId": true,
-    "id": "item_stone"
+    "id": "item_stone",
+    "tags": [
+      "Stone"
+    ]
   },
   "item_wheat_seed": {
     "name": "Wheat Seed",
@@ -816,7 +1040,10 @@
     "value": 1,
     "valueSource": "token_ripe_wheat",
     "autoSyncId": true,
-    "id": "item_wheat_seed"
+    "id": "item_wheat_seed",
+    "tags": [
+      "Seed"
+    ]
   },
   "item_apple_seed": {
     "name": "Apple Seed",
@@ -829,7 +1056,10 @@
     "value": 1,
     "valueSource": "token_apple_tree",
     "autoSyncId": true,
-    "id": "item_apple_seed"
+    "id": "item_apple_seed",
+    "tags": [
+      "Seed"
+    ]
   },
   "item_torch": {
     "name": "Torch",
@@ -842,7 +1072,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_torch"
+    "id": "item_torch",
+    "tags": [
+      "Material",
+      "Light"
+    ]
   },
   "item_copper_nails": {
     "name": "Copper Nails",
@@ -855,7 +1089,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_copper_nails"
+    "id": "item_copper_nails",
+    "tags": [
+      "Material",
+      "Construction"
+    ]
   },
   "item_beeswax_comb": {
     "name": "Beeswax Comb",
@@ -868,7 +1106,11 @@
     "value": 1,
     "valueSource": "token_beehive",
     "autoSyncId": true,
-    "id": "item_beeswax_comb"
+    "id": "item_beeswax_comb",
+    "tags": [
+      "Material",
+      "Bee"
+    ]
   },
   "item_birch_seedling": {
     "name": "Birch Seedling",
@@ -881,7 +1123,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_birch_seedling"
+    "id": "item_birch_seedling",
+    "tags": [
+      "Seed",
+      "Tree"
+    ]
   },
   "item_fir_seedling": {
     "name": "Fir Seedling",
@@ -894,7 +1140,11 @@
     "value": 29,
     "valueSource": "token_fir_tree",
     "autoSyncId": true,
-    "id": "item_fir_seedling"
+    "id": "item_fir_seedling",
+    "tags": [
+      "Seed",
+      "Tree"
+    ]
   },
   "item_maple_seedling": {
     "name": "Maple Seedling",
@@ -907,7 +1157,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_maple_seedling"
+    "id": "item_maple_seedling",
+    "tags": [
+      "Seed",
+      "Tree"
+    ]
   },
   "item_ebony_seedling": {
     "name": "Ebony Seedling",
@@ -920,7 +1174,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_ebony_seedling"
+    "id": "item_ebony_seedling",
+    "tags": [
+      "Seed",
+      "Tree"
+    ]
   },
   "item_cedar_seedling": {
     "name": "Cedar Seedling",
@@ -933,7 +1191,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_cedar_seedling"
+    "id": "item_cedar_seedling",
+    "tags": [
+      "Seed",
+      "Tree"
+    ]
   },
   "item_mahogany_seedling": {
     "name": "Mahogany Seedling",
@@ -946,7 +1208,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_mahogany_seedling"
+    "id": "item_mahogany_seedling",
+    "tags": [
+      "Seed",
+      "Tree"
+    ]
   },
   "item_copper_pickaxe": {
     "name": "Copper Pickaxe",
@@ -964,7 +1230,11 @@
       "kind": "pickaxe",
       "tier": 1,
       "starter": true
-    }
+    },
+    "tags": [
+      "Tool",
+      "Mining"
+    ]
   },
   "map_forest": {
     "id": "map_forest",
@@ -1392,7 +1662,11 @@
     "tool": {
       "kind": "pickaxe",
       "tier": 2
-    }
+    },
+    "tags": [
+      "Tool",
+      "Mining"
+    ]
   },
   "item_mythril_pickaxe": {
     "name": "Mythril Pickaxe",
@@ -1409,7 +1683,11 @@
     "tool": {
       "kind": "pickaxe",
       "tier": 3
-    }
+    },
+    "tags": [
+      "Tool",
+      "Mining"
+    ]
   },
   "item_adamantium_pickaxe": {
     "name": "Adamantium Pickaxe",
@@ -1426,7 +1704,11 @@
     "tool": {
       "kind": "pickaxe",
       "tier": 4
-    }
+    },
+    "tags": [
+      "Tool",
+      "Mining"
+    ]
   },
   "item_darkmetal_pickaxe": {
     "name": "Darkmetal Pickaxe",
@@ -1443,7 +1725,11 @@
     "tool": {
       "kind": "pickaxe",
       "tier": 5
-    }
+    },
+    "tags": [
+      "Tool",
+      "Mining"
+    ]
   },
   "item_copper_woodaxe": {
     "name": "Copper Woodaxe",
@@ -1461,7 +1747,11 @@
       "kind": "woodaxe",
       "tier": 1,
       "starter": true
-    }
+    },
+    "tags": [
+      "Tool",
+      "Woodcutting"
+    ]
   },
   "item_fishing_rod": {
     "name": "Fishing Rod",
@@ -1479,7 +1769,11 @@
       "kind": "fishing_rod",
       "tier": 1,
       "starter": true
-    }
+    },
+    "tags": [
+      "Tool",
+      "Fishing"
+    ]
   },
   "item_copper_sickle": {
     "name": "Copper Sickle",
@@ -1497,7 +1791,11 @@
       "kind": "sickle",
       "tier": 1,
       "starter": true
-    }
+    },
+    "tags": [
+      "Tool",
+      "Farming"
+    ]
   },
   "item_copper_sword": {
     "name": "Copper Sword",
@@ -1515,7 +1813,11 @@
     ],
     "damage": 2,
     "id": "item_copper_sword",
-    "tier": 1
+    "tier": 1,
+    "tags": [
+      "Weapon",
+      "Sword"
+    ]
   },
   "item_copper_dagger": {
     "name": "Copper Dagger",
@@ -1541,7 +1843,11 @@
       }
     ],
     "id": "item_copper_dagger",
-    "tier": 1
+    "tier": 1,
+    "tags": [
+      "Weapon",
+      "Dagger"
+    ]
   },
   "item_copper_cleaver": {
     "name": "Copper Cleaver",
@@ -1566,7 +1872,11 @@
       }
     ],
     "id": "item_copper_cleaver",
-    "tier": 1
+    "tier": 1,
+    "tags": [
+      "Weapon",
+      "Cleaver"
+    ]
   },
   "item_copper_greatsword": {
     "name": "Copper Greatsword",
@@ -1586,7 +1896,11 @@
     "speed": "slow",
     "hands": 2,
     "id": "item_copper_greatsword",
-    "tier": 1
+    "tier": 1,
+    "tags": [
+      "Weapon",
+      "Greatsword"
+    ]
   },
   "item_copper_bow": {
     "name": "Copper Bow",
@@ -1610,7 +1924,11 @@
       }
     ],
     "id": "item_copper_bow",
-    "tier": 1
+    "tier": 1,
+    "tags": [
+      "Weapon",
+      "Bow"
+    ]
   },
   "item_copper_wand": {
     "name": "Copper Wand",
@@ -1629,7 +1947,11 @@
     "damage": 1,
     "speed": "fast",
     "id": "item_copper_wand",
-    "tier": 1
+    "tier": 1,
+    "tags": [
+      "Weapon",
+      "Wand"
+    ]
   },
   "item_leather_hat": {
     "name": "Leather Hat",
@@ -1648,7 +1970,11 @@
         "scale": 1
       }
     ],
-    "id": "item_leather_hat"
+    "id": "item_leather_hat",
+    "tags": [
+      "Armour",
+      "Hat"
+    ]
   },
   "item_leather_chest": {
     "name": "Leather Chest",
@@ -1667,7 +1993,11 @@
         "scale": 1
       }
     ],
-    "id": "item_leather_chest"
+    "id": "item_leather_chest",
+    "tags": [
+      "Armour",
+      "Chestplate"
+    ]
   },
   "item_elixir_of_valor": {
     "name": "Elixir of Valor",
@@ -1686,7 +2016,11 @@
         "scale": 1
       }
     ],
-    "id": "item_elixir_of_valor"
+    "id": "item_elixir_of_valor",
+    "tags": [
+      "Potion",
+      "Elixir"
+    ]
   },
   "item_elixir_of_ironskin": {
     "name": "Elixir of Ironskin",
@@ -1705,7 +2039,11 @@
         "scale": 1
       }
     ],
-    "id": "item_elixir_of_ironskin"
+    "id": "item_elixir_of_ironskin",
+    "tags": [
+      "Potion",
+      "Elixir"
+    ]
   },
   "item_birdwatcher": {
     "name": "Birdwatcher",
@@ -1724,7 +2062,10 @@
         "scale": 1
       }
     ],
-    "id": "item_birdwatcher"
+    "id": "item_birdwatcher",
+    "tags": [
+      "Potion"
+    ]
   },
   "item_bird_nest": {
     "name": "Bird Nest",
@@ -1737,7 +2078,10 @@
     "value": 10,
     "valueSource": "token_apple_tree",
     "autoSyncId": true,
-    "id": "item_bird_nest"
+    "id": "item_bird_nest",
+    "tags": [
+      "Material"
+    ]
   },
   "item_honey": {
     "name": "Honey",
@@ -1750,7 +2094,11 @@
     "value": 1,
     "valueSource": "token_beehive",
     "autoSyncId": true,
-    "id": "item_honey"
+    "id": "item_honey",
+    "tags": [
+      "Ingredient",
+      "Bee"
+    ]
   },
   "item_lavender": {
     "name": "Lavender",
@@ -1763,7 +2111,10 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_lavender"
+    "id": "item_lavender",
+    "tags": [
+      "Herb"
+    ]
   },
   "item_lavender_seed": {
     "name": "Lavender Seed",
@@ -1776,7 +2127,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_lavender_seed"
+    "id": "item_lavender_seed",
+    "tags": [
+      "Seed",
+      "Herb"
+    ]
   },
   "item_trout": {
     "name": "Trout",
@@ -1789,7 +2144,11 @@
     "value": 1,
     "valueSource": "token_lake",
     "autoSyncId": true,
-    "id": "item_trout"
+    "id": "item_trout",
+    "tags": [
+      "Fish",
+      "Seafood"
+    ]
   },
   "item_salmon": {
     "name": "Salmon",
@@ -1802,7 +2161,11 @@
     "value": 5,
     "valueSource": "token_lake",
     "autoSyncId": true,
-    "id": "item_salmon"
+    "id": "item_salmon",
+    "tags": [
+      "Fish",
+      "Seafood"
+    ]
   },
   "item_tropical_fish": {
     "name": "Tropical Fish",
@@ -1815,7 +2178,11 @@
     "value": 1,
     "valueSource": "token_coast",
     "autoSyncId": true,
-    "id": "item_tropical_fish"
+    "id": "item_tropical_fish",
+    "tags": [
+      "Fish",
+      "Seafood"
+    ]
   },
   "item_lobster": {
     "name": "Lobster",
@@ -1828,7 +2195,10 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_lobster"
+    "id": "item_lobster",
+    "tags": [
+      "Seafood"
+    ]
   },
   "item_swordfish": {
     "name": "Swordfish",
@@ -1841,7 +2211,11 @@
     "value": 7,
     "valueSource": "token_coast",
     "autoSyncId": true,
-    "id": "item_swordfish"
+    "id": "item_swordfish",
+    "tags": [
+      "Fish",
+      "Seafood"
+    ]
   },
   "item_worm": {
     "name": "Worm",
@@ -1854,7 +2228,10 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_worm"
+    "id": "item_worm",
+    "tags": [
+      "Bait"
+    ]
   },
   "item_worm_bait": {
     "name": "Worm Bait",
@@ -1867,7 +2244,10 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_worm_bait"
+    "id": "item_worm_bait",
+    "tags": [
+      "Bait"
+    ]
   },
   "item_shrimp_bait": {
     "name": "Shrimp Bait",
@@ -1880,7 +2260,10 @@
     "value": 1,
     "valueSource": "recipe_shrimp_bait",
     "autoSyncId": true,
-    "id": "item_shrimp_bait"
+    "id": "item_shrimp_bait",
+    "tags": [
+      "Bait"
+    ]
   },
   "item_trap": {
     "name": "Trap",
@@ -1899,7 +2282,11 @@
       "starter": true
     },
     "isRoot": true,
-    "id": "item_trap"
+    "id": "item_trap",
+    "tags": [
+      "Tool",
+      "Trap"
+    ]
   },
   "item_fine_fishing_rod": {
     "name": "Fine Fishing Rod",
@@ -1922,7 +2309,11 @@
         "scale": 1
       }
     ],
-    "id": "item_fine_fishing_rod"
+    "id": "item_fine_fishing_rod",
+    "tags": [
+      "Tool",
+      "Fishing"
+    ]
   },
   "item_game_meat": {
     "name": "Game Meat",
@@ -1935,7 +2326,11 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_game_meat"
+    "id": "item_game_meat",
+    "tags": [
+      "Meat",
+      "Raw"
+    ]
   },
   "item_roast_meat": {
     "name": "Roast Meat",
@@ -1948,7 +2343,12 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_roast_meat"
+    "id": "item_roast_meat",
+    "tags": [
+      "Food",
+      "Meat",
+      "Cooked"
+    ]
   },
   "item_crab_meat": {
     "name": "Crab Meat",
@@ -1961,7 +2361,12 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_crab_meat"
+    "id": "item_crab_meat",
+    "tags": [
+      "Meat",
+      "Seafood",
+      "Raw"
+    ]
   },
   "item_cooked_crab": {
     "name": "Cooked Crab",
@@ -1974,7 +2379,12 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_cooked_crab"
+    "id": "item_cooked_crab",
+    "tags": [
+      "Food",
+      "Seafood",
+      "Cooked"
+    ]
   },
   "item_honey_bread": {
     "name": "Honey Bread",
@@ -1987,7 +2397,11 @@
     "value": 18,
     "valueSource": "recipe_honey_bread",
     "autoSyncId": true,
-    "id": "item_honey_bread"
+    "id": "item_honey_bread",
+    "tags": [
+      "Food",
+      "Baked"
+    ]
   },
   "item_copper_helmet": {
     "name": "Copper Helmet",
@@ -2006,7 +2420,11 @@
         "scale": 1
       }
     ],
-    "id": "item_copper_helmet"
+    "id": "item_copper_helmet",
+    "tags": [
+      "Armour",
+      "Helmet"
+    ]
   },
   "item_copper_chestplate": {
     "name": "Copper Chestplate",
@@ -2025,7 +2443,11 @@
         "scale": 1
       }
     ],
-    "id": "item_copper_chestplate"
+    "id": "item_copper_chestplate",
+    "tags": [
+      "Armour",
+      "Chestplate"
+    ]
   },
   "map_bog": {
     "name": "Bog Map",
@@ -2079,7 +2501,10 @@
     "value": 40,
     "valueSource": "token_grapevine",
     "autoSyncId": true,
-    "id": "item_grape_seed"
+    "id": "item_grape_seed",
+    "tags": [
+      "Seed"
+    ]
   },
   "item_lizard_scale": {
     "name": "Lizard Scale",
@@ -2092,7 +2517,10 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_lizard_scale"
+    "id": "item_lizard_scale",
+    "tags": [
+      "Material"
+    ]
   },
   "item_leather": {
     "name": "Leather",
@@ -2105,7 +2533,10 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_leather"
+    "id": "item_leather",
+    "tags": [
+      "Material"
+    ]
   },
   "item_cooked_trout": {
     "name": "Cooked Trout",
@@ -2118,7 +2549,12 @@
     "value": 8,
     "valueSource": "recipe_cooked_trout",
     "autoSyncId": true,
-    "id": "item_cooked_trout"
+    "id": "item_cooked_trout",
+    "tags": [
+      "Food",
+      "Fish",
+      "Cooked"
+    ]
   },
   "item_grape_juice": {
     "name": "Grape Juice",
@@ -2137,7 +2573,11 @@
         "scale": 1
       }
     ],
-    "id": "item_grape_juice"
+    "id": "item_grape_juice",
+    "tags": [
+      "Drink",
+      "Juice"
+    ]
   },
   "item_iron_woodaxe": {
     "name": "Iron Woodaxe",
@@ -2154,7 +2594,11 @@
       "kind": "woodaxe",
       "tier": 2
     },
-    "id": "item_iron_woodaxe"
+    "id": "item_iron_woodaxe",
+    "tags": [
+      "Tool",
+      "Woodcutting"
+    ]
   },
   "item_iron_sickle": {
     "name": "Iron Sickle",
@@ -2171,7 +2615,11 @@
       "kind": "sickle",
       "tier": 2
     },
-    "id": "item_iron_sickle"
+    "id": "item_iron_sickle",
+    "tags": [
+      "Tool",
+      "Farming"
+    ]
   },
   "item_iron_sword": {
     "name": "Iron Sword",
@@ -2189,7 +2637,11 @@
     ],
     "damage": 3,
     "id": "item_iron_sword",
-    "tier": 2
+    "tier": 2,
+    "tags": [
+      "Weapon",
+      "Sword"
+    ]
   },
   "item_iron_dagger": {
     "name": "Iron Dagger",
@@ -2215,7 +2667,11 @@
       }
     ],
     "id": "item_iron_dagger",
-    "tier": 2
+    "tier": 2,
+    "tags": [
+      "Weapon",
+      "Dagger"
+    ]
   },
   "item_iron_cleaver": {
     "name": "Iron Cleaver",
@@ -2240,7 +2696,11 @@
       }
     ],
     "id": "item_iron_cleaver",
-    "tier": 2
+    "tier": 2,
+    "tags": [
+      "Weapon",
+      "Cleaver"
+    ]
   },
   "item_iron_greatsword": {
     "name": "Iron Greatsword",
@@ -2260,7 +2720,11 @@
     "speed": "slow",
     "hands": 2,
     "id": "item_iron_greatsword",
-    "tier": 2
+    "tier": 2,
+    "tags": [
+      "Weapon",
+      "Greatsword"
+    ]
   },
   "item_iron_bow": {
     "name": "Iron Bow",
@@ -2284,7 +2748,11 @@
       }
     ],
     "id": "item_iron_bow",
-    "tier": 2
+    "tier": 2,
+    "tags": [
+      "Weapon",
+      "Bow"
+    ]
   },
   "item_iron_wand": {
     "name": "Iron Wand",
@@ -2303,7 +2771,11 @@
     "damage": 2,
     "speed": "fast",
     "id": "item_iron_wand",
-    "tier": 2
+    "tier": 2,
+    "tags": [
+      "Weapon",
+      "Wand"
+    ]
   },
   "item_iron_helmet": {
     "name": "Iron Helmet",
@@ -2322,7 +2794,11 @@
         "scale": 1
       }
     ],
-    "id": "item_iron_helmet"
+    "id": "item_iron_helmet",
+    "tags": [
+      "Armour",
+      "Helmet"
+    ]
   },
   "item_iron_chestplate": {
     "name": "Iron Chestplate",
@@ -2341,7 +2817,11 @@
         "scale": 1
       }
     ],
-    "id": "item_iron_chestplate"
+    "id": "item_iron_chestplate",
+    "tags": [
+      "Armour",
+      "Chestplate"
+    ]
   },
   "mod_rich_veins": {
     "id": "mod_rich_veins",
