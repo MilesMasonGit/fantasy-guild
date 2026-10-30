@@ -1,85 +1,92 @@
 # HANDOFF — what a fresh director resumes from
 
-*Replaced whole each time a director session ends. Written 2026-10-29 evening
-at the close of the director session of 28–29 October (briefs 250 and 260).
-The older per-director handoffs (`HANDOFF_systems.md`, `HANDOFF_backlog.md`,
-`HANDOFF_features.md`) are history now: this file is the one to resume from.
-Read `CLAUDE.md`, this file and `STATUS.md`, then verify with
-`git worktree list` and `git log --oneline -5`.*
+*Replaced whole each time a director session ends. Written 2026-10-29 late
+evening by the director session of 29–30 October (briefs 270, 290, 310), early,
+while overnight benches and two agents run; the owner is asleep and approved
+picking up new briefs, with a big review in the morning. Read `CLAUDE.md`, this
+file and `STATUS.md`, then verify with `git worktree list` and `git log
+--oneline -5`.*
 
-## On `main` (pushed; suite green, 6675 tests before O3)
+## On `main` (pushed; suite green 6749 at 05034597)
 
-- **Brief 250 Token bars, complete**: one plate for every Token (idle Tokens on
-  hover, no output icon, round rings retired); enemies show no charges; Token
-  names over the art's bottom edge, just above the plate; one gear size (the
-  '!' footprint) and the '!' → gear swap is instant on hover.
-- **Card wording** (S9 rough edges #4, #5, #9, #10, #11, #12).
-- **Brief 260 Hero orders, O1 and O2 merged** (88918eea): drag a hero onto a job;
-  roster dock; camps (Logging Camp, Mining Camp, Fishing Hut, Farmstead; enemy
-  camps as hunting grounds); Scouting Flags retired; old saves migrate. The job
-  flag is Lucide `FlagTriangleRight` in each hero's colour (owner's pick; dark
-  green drawn pink), behind the top-left of the job's Token, fanned when heroes
-  share a Token, on the hero bar; a marching gold dashed order line while
-  dragging; the flag snaps to a workable Token (steady) and a red bubble says why
-  not ("Needs Pickaxe", "Farming level too low (needs 15)").
-- **T-264** frozen goblins fixed (645900d2). Bench work changes accepted under
-  `brief260-O1-O2` and `T-264`; bench baselines retaken 2026-10-29 01:30.
-- **Owner Syncs checked**: stumps Art size Small (a4a124be), the camps pack
-  (e7517dc3: exactly 4 Tokens + 4 recipes); content tests fixed (09bfa810).
-- Icon audit for planning: `docs/active/research/icon_audit_2026-10-29.md`;
-  the owner's icon rule is in `owner_feedback.md` (pixel for the game world,
-  Lucide for meta marks such as the job flag and gear slot icons; to be planned).
+- **Brief 290 ledger L1 complete**: the plan block (status, `plan.tier`, note),
+  Planned stubs kept out of `data/` in `cms/plan/plan.json`, the Plan section in
+  four editors, the reach/tree/hubs engines (`src/systems/progression/ledger/`),
+  the Ledger tab and settings. Owner answered the five ledger questions: as built.
+- **The owner's item tags Sync** (pack `2026-10-29-item-search-tags`, brief 310):
+  it landed on `feat/classless-k1` by mistake (the folder was on the eye-check
+  branch) and was copied to `main` as 05034597; only `tags` on 125 items.
+- Brief 290 was revised twice by planning tonight (S0 spike first; a rate
+  calculator replaces the pretend player in L5). L1–L3 as built are unaffected.
 
-## Waiting to merge: brief 260 O3
+## Overnight (timers in this session; logs in its scratchpad, which a new session cannot see)
 
-`feat/hero-orders-o3` in worktree `tb1` (f0c22ad5, `main` merged in): tutorial
-steps "Send Your Recruit to a Tree" and "Build a Camp", the area-flag engine
-and FlagRules removed, ~102 tests moved to orders, GDD §2/§4/§6/§8/§9 and the
-glossary rewritten. Gate on the merged result: 6663 tests, cycles 0, build.
-**Owner said merge** after the engine work check. The check runs at 01:05 Fri
-(timer in the closing session; log `…/scratchpad/o3_bench.log`, which a new
-session cannot see). **If O3 is not on `main` when you start**: in a bench
-window run `npm run bench -- --compare` in `tb1`; expect **same work** (the
-builder's reasoning: bench heroes never had area flags or rules); then merge
-`main` into it, `git merge --ff-only` on `main`, push, and remove `tb1`
-(junctions first). Owner: tutorial wording is fine as built (the tutorial will
-be overhauled once the early game is set); "Nothing to work here." is approved.
+1. 01:05 **O3** (`feat/hero-orders-o3`, `tb1`): `bench --compare`, expect same
+   work → merge to `main` (owner okayed), push, remove `tb1`.
+2. Then **K1 classless heroes** (`feat/classless-k1`, `k1`, holds O3, `main` and
+   the tags Sync): `bench --compare`, expect heroHash only (20 skills, start HP
+   11) → accept under `brief270-K1` (`--accept` per bench/README) → merge, push.
+   **Owner okayed the look**, all questions A. Then archive
+   `docs/active/eyecheck/2026-10-30_classless-ledger.md` and tell the owner the
+   CMS to-do in it.
+3. Then **Bank at scale** (`feat/bank-b1`, `b1`): `bench --compare` (expect same)
+   and `bench:drag --kinds=equip`. Waits for the owner's look (with perks).
+4. Then **perks** (`k4`): `bench --compare`, expect same work.
 
-## Next (owner 2026-10-29)
+**If a timer did not run** (session ended): run them by hand in a bench window,
+in that order, one at a time.
 
-1. **Brief 270, classless heroes** (`docs/active/briefs/270_classless_heroes.md`;
-   needs 260 O1, done). Propose its phases as one multiple-choice batch.
-2. Then 280 combat v2 and 290 (progression ledger, content fixes) per the queue.
-3. **Small tickets wait**: owner rule 2026-10-29: let them accumulate until the
-   existing briefs are done, then one pass. Open from this session: T-265 (round
-   spawn points), T-266 (each enemy camp counts its own enemies; owner chose this),
-   T-267 (drawer inspection: enemy charges, "Nothing yet").
+## Building
 
-## Waiting on the owner
+- **270 K4 milestone perks**: `feat/classless-k4` in `k4` (on K1), verified
+  (6604 tests, cycles, builds), bench-queued 4th tonight (expect same work),
+  eye-check with the Bank: [file](eyecheck/2026-10-30_perks-bank.md). Its example
+  pack is git-ignored in `k4/cms/incoming/2026-10-29-example-skill-perks.json`:
+  copy it to `main`'s `cms/incoming/` after the merge, before removing `k4`.
+- **290 L3 checks A–C and the item page**: builder, `cms/ledger-l3` in `l1`.
+  CMS look.
 
-- K4 play-through and S9 skill-loops eye-check verdicts (files in
-  `docs/active/eyecheck/`; not blocking).
-- Shorter rest/regrow/respawn times and the Bunk Beds price, as they play orders.
-- Ambushes: the owner may remove them with the new controls; left as built.
+## Waiting on the owner (morning review)
+
+- Look: perks + the Bank at scale ([file](eyecheck/2026-10-30_perks-bank.md),
+  two branches; switch the folder only when the owner says ready, and back to
+  `main` right after), and the ledger L3 CMS look.
+- Bank questions from its builder (STATUS row): tools sort by their tier,
+  search from the start of a word (both recommended, not built).
+- After K1 merges: the CMS to-do in the classless eye-check file (dagger styles,
+  gear level requirements, Goblin retune, the Academies and Shrimp Market).
+- K4/S9 older eye-checks still open, not blocking.
+
+## Next
+
+Session stopped starting new work at ~60 % context after K4 (rule).
+
+1. 270 K5 classless clean-up (tutorial "Send Your Recruit", the retired
+   `promotes` keyword, ON_PROMOTE, promotion fixtures, GDD §2/§8/§16, glossary,
+   `Demolition.test.js` subscribing to a removed event), builder, after K4.
+2. 290 S0 spike, then L4 first-fill pack; 300 encyclopedia (needs L2: done).
+3. 280 combat v2 (needs K1).
+Small tickets keep accumulating until the briefs are done (owner rule). Ticket
+candidate: `npm run cms:restore` reads `workspace.maps` (gone) and ignores the
+plan file.
 
 ## Worktrees
 
-- `tb1`: O3, above. `p23b`: the director's scratch worktree, detached.
-- `pp`, `pcm`, `pco`, `psk`: the planning agents'. Removed this session: tb2–tb4.
+- `tb1` O3 (bench tonight, then remove). `k1` K1 (bench, merge, then remove).
+- `k4` perks, `b1` Bank, `l1` ledger L3: agents' or waiting.
+- `p23b`: director's scratch, detached. `pp`, `pcm`, `pco`, `psk`: planning.
+- Remove a worktree: kill its servers, `cmd /c rmdir` both junctions (full
+  Windows path, PowerShell), confirm real `node_modules`, `git worktree remove`.
 
 ## Lessons
 
-- **The owner's CMS tab can lose its server**: a "Sync Error" with nothing
-  written meant the tab's port (5174) had no server. Start the CMS on the tab's
-  port from the main folder (`npm --prefix cms run dev -- --port <port>
-  --strictPort`, Bash background); the workspace lives in that origin's storage.
-- **Timing under load lies**: a 13:00 run read S2 p99 ×10; the cure is a `main`
-  control run, then the branch, back to back, or interleaved single-scenario
-  worker runs. The work check decides; an unexplained draw-count jump is worth a
-  diagnosis (it found T-264).
-- **Fold late fixes into the pending bench**: fast-forward the bench worktree to
-  the newest commit before the window opens; one bench covers the stack.
-- Headless screenshots: wait ~1.1 s after advancing time, or loot hops show as
-  black ground shadows in the stills.
-- The owner reviews by phone: send 1920×1080 frames plus tight crops with
-  SendUserFile, a caption per check, and ask verdicts as multiple choice.
+- **Switching the owner's folder to an eye-check branch at night is risky**: the
+  owner accepted a CMS pack and synced onto the branch. Switch back to `main`
+  as soon as the look is done, or switch only when the owner says they're ready.
+- **Planning rewrites briefs while they build**: re-read the brief from `main`
+  when a report comes back, and tell agents to read the current text.
+- A big merge between two briefs (O3 into K1: 15 conflicts) is best sent back to
+  the engineer who wrote one side; it resolved cleanly with notes per file.
+- The app can crash mid-session: background timers and agents die with it.
+  Resume agents with SendMessage; restart timers.
+- Mklink from Git Bash fails on the path; use PowerShell `cmd /c mklink /J`.
