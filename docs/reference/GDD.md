@@ -457,6 +457,19 @@ has none yet) and melee have content today.
   job that does not exist is listed by the boot audit and the CMS Economy
   Audit.
 
+### Milestone perks — Built (brief 270 K4); no perks authored yet
+- **Each skill may carry a perk table**: fixed perks at set levels (the CMS offers 10, 25, 50, 75
+  and 99; any whole level from 2 to 99), each a **library effect** (§7). Every hero who reaches the
+  level holds the perk and keeps it; no choices. *(`data/skillPerks.json`, written by the CMS's
+  Skill Perks page and Sync; `perkTable.js`, `HeroPerks.js`)*
+- **Held, not granted**: a hero's perks are read off their levels whenever asked, never saved, so a
+  level-up, a load and a catch-up agree and none is granted twice.
+- A perk's rules reach the hero **as a carried item's do** (the Token they work, their fights, On
+  Work Start, the combat numbers), and it spends nothing. A work rule should be narrowed to its
+  skill; the audits say when one is not.
+- **Shown**: the level-up number over the hero names the perk underneath, the hero bar gives it an
+  alert of its own, and the hero sheet's skill row lists the perks held and the next one.
+
 ### Jobs and promotion — Retired (brief 270 K1)
 Jobs, promotion, Promotion Tokens, the Change Job planner, banked skills and
 Mastery are gone: **if the skill is high enough, the hero can do it**
@@ -951,6 +964,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   (≤ 2 Coasts nearby), bonus drops, Minecart restocking, the two (retired) promotions,
   and **Thorns** (1 damage to the hero on finishing a Redberry Bush or Thorn
   Elemental). **Everything else in the grammar is Latent.**
+- **A hero's milestone perks carry rules too** (§4): library effects held from a skill level,
+  read exactly as the loadout's, free of any cost.
 - **Items carry rules too** (a hero's loadout): a carried rule on On
   Neighbour's Fight fires as its hero's fight starts. An `Applies` of a
   library effect may last **for the fight** (until that fight ends, at the kill
