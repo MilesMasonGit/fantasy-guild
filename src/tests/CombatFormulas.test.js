@@ -13,11 +13,12 @@ import {
  * crits, armour, speed, the level table) are covered in `CombatRules.test.js`.
  */
 describe('Combat formulas', () => {
-    it('a new hero: 10 HP, no style (a Recruit), a 3 s swing', () => {
+    // Rewritten with classless heroes: every skill at 1, so 11 HP, and barehanded is Melee.
+    it('a new hero: 11 HP, a Melee punch, a 3 s swing', () => {
         const hero = generateHero();
-        expect(hero.hp.max).toBe(10);
-        expect(heroMaxHpFromSkills(hero.skills)).toBe(10);
-        expect(getHeroCombatStyle(hero)).toBeNull();
+        expect(hero.hp.max).toBe(11);
+        expect(heroMaxHpFromSkills(hero.skills)).toBe(11);
+        expect(getHeroCombatStyle(hero)).toBe('melee');
         expect(heroAttackSpeedMs(hero)).toBe(3000);
     });
 

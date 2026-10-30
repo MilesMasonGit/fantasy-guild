@@ -12,8 +12,8 @@ import { INITIAL_STATE } from '../state/StateSchema.js';
 import {
     STARTING_SKILL_IDS,
     COMBAT_SKILL_IDS,
-    ADVANCED_SKILL_IDS,
-    MASTER_SKILL_IDS
+    HERO_SKILL_IDS,
+    RETIRED_SKILL_IDS
 } from '../config/registries/skillRegistry.js';
 
 describe('Hero System Enhancements', () => {
@@ -22,38 +22,30 @@ describe('Hero System Enhancements', () => {
         vi.clearAllMocks();
     });
 
-    it('generates a Recruit: the Starting skills at level 1, and nothing else', () => {
+    // Rewritten with classless heroes: a new hero holds every skill from level 1, combat and
+    // specialist included; there are no Recruits and no promotion.
+    it('generates a hero holding every skill at level 1', () => {
         const hero = generateHero();
 
         // Derived, not a literal count — the list is expected to change.
-        expect(Object.keys(hero.skills).sort()).toEqual([...STARTING_SKILL_IDS].sort());
+        expect(Object.keys(hero.skills).sort()).toEqual([...HERO_SKILL_IDS].sort());
         for (const skill of Object.values(hero.skills)) {
             expect(skill.level).toBe(1);
         }
     });
 
-    it('a new Recruit holds the nine Starting skills at level 1, alchemy and construction included, and no combat skill', () => {
+    it('a new hero holds the nine Starting skills, alchemy and construction included, and all four combat skills', () => {
         const hero = generateHero();
         const expected = ['mining', 'forestry', 'fishing', 'smithing', 'crafting',
             'cooking', 'farming', 'alchemy', 'construction'];
 
-        expect(Object.keys(hero.skills).sort()).toEqual([...expected].sort());
         for (const id of expected) expect(hero.skills[id].level, id).toBe(1);
-        for (const id of COMBAT_SKILL_IDS) expect(hero.skills[id], id).toBeUndefined();
+        for (const id of COMBAT_SKILL_IDS) expect(hero.skills[id], id).toEqual({ xp: 0, level: 1 });
     });
 
-    it('a Recruit holds NO combat skill (they fight as a level 1 fighter until promoted)', () => {
+    it('a new hero holds no cut skill', () => {
         const hero = generateHero();
-        for (const combatId of COMBAT_SKILL_IDS) {
-            expect(hero.skills[combatId]).toBeUndefined();
-        }
-    });
-
-    it('a Recruit holds no class skill either — those come from promotion', () => {
-        const hero = generateHero();
-        for (const id of [...ADVANCED_SKILL_IDS, ...MASTER_SKILL_IDS]) {
-            expect(hero.skills[id]).toBeUndefined();
-        }
+        for (const id of RETIRED_SKILL_IDS) expect(hero.skills[id], id).toBeUndefined();
     });
 
     // Was "should NOT apply class/trait modifiers (cosmetic only)", and passed
@@ -137,11 +129,11 @@ describe('Roster cap without a bench', () => {
         expect(HeroManager.isRosterFull()).toBe(true);
     });
 
-    it('refuses XP in a skill the hero does not hold', () => {
-        const hero = generateHero();          // a Recruit: Starting only
+    it('refuses XP in a skill the hero does not hold (a cut one)', () => {
+        const hero = generateHero();
         vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
 
-        const result = SkillSystem.addXP(hero.id, COMBAT_SKILL_IDS[0], 100);
+        const result = SkillSystem.addXP(hero.id, RETIRED_SKILL_IDS[0], 100);
         expect(result.success).toBe(false);
         expect(result.error).toBe('SKILL_NOT_HELD');
     });
@@ -162,7 +154,7 @@ describe('Roster cap without a bench', () => {
         vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
 
         const held = STARTING_SKILL_IDS[0];
-        const notHeld = MASTER_SKILL_IDS[0];
+        const notHeld = RETIRED_SKILL_IDS[0];
 
         expect(SkillSystem.requirementFailure(hero.id, { skill: held, level: 1 })).toBeNull();
         expect(SkillSystem.requirementFailure(hero.id, { skill: held, level: 50 })).toBe('LEVEL');

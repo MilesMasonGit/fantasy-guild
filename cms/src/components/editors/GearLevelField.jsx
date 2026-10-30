@@ -2,10 +2,10 @@ import { SKILLS, ENEMY_STYLES, HAND_CATEGORY, isWeapon, weaponStyleOf } from '..
 import { Field } from '../shared/EditorLayout';
 
 /** The worn categories besides the hands that may ask a level of their wearer. */
-export const ARMOUR_CATEGORIES = new Set(['hat', 'chest', 'trinket']);
+const ARMOUR_CATEGORIES = new Set(['hat', 'chest', 'trinket']);
 
 /** Whether an item may carry a level requirement: a weapon, or armour and trinkets. */
-export function takesLevelRequirement(item) {
+function takesLevelRequirement(item) {
   if (!item) return false;
   if (item.equipSlot === HAND_CATEGORY) return isWeapon(item);
   return ARMOUR_CATEGORIES.has(item.equipSlot);

@@ -20,7 +20,7 @@ import { wireNotifications, unwireNotifications } from '../systems/notifications
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
-import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

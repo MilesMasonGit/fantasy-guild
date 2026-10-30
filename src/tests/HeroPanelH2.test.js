@@ -15,7 +15,7 @@ import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import {
-    heroSkillList, skillLevelText, skillXpView, skillDetail, formatEta, setLockedListOpen
+    heroSkillList, skillLevelText, skillXpView, skillDetail, formatEta
 } from '../ui/components/dock/heroPanelSkills.js';
 import { getSkillIdsByLayer, SKILL_LAYERS } from '../config/registries/skillRegistry.js';
 import { xpForLevel } from '../utils/XPCurve.js';
@@ -34,12 +34,12 @@ const recruit = (id, name) => ({
     skills: startingSkills()
 });
 
-/** A master-class hero: combat, two advanced and a master skill on top of the Starting nine. */
+/** A trained hero: Melee and two specialist skills on top of the Starting nine. */
 const master = (id, name) => ({
     ...recruit(id, name),
-    // Held out of layer order on purpose: the panel orders them, not the save.
-    skills: { faith: lvl(3), ...startingSkills(), leadership: lvl(12), melee: lvl(25, 10), fletching: lvl(99) },
-    bankedSkills: { ranged: lvl(30) }
+    // Held out of layer order on purpose: the panel orders them, not the save. Leadership was cut:
+    // a record still carrying it lists without it.
+    skills: { faith: lvl(3), ...startingSkills(), leadership: lvl(12), melee: lvl(25, 10), fletching: lvl(99) }
 });
 
 
@@ -57,10 +57,9 @@ beforeEach(() => {
     GameState.initNew();
     GameState.state.heroes = [master('h1', 'Aldric'), recruit('h2', 'Brenna')];
     setLiveMatFit(1);
-    setLockedListOpen(false);
     XpRateTracker.clearAll();
 });
-afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); setLockedListOpen(false); });
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); });
 
 describe('H2: one hero panel, in one place', () => {
     it('opens in the same box from the bar (Bank shut) as from the Bank', () => {
@@ -111,7 +110,7 @@ describe('H2: one hero panel, in one place', () => {
             h(BankHeroPanel, { menuRight: false, showTabs: false, selectedHeroId: 'h1', onCloseHero }),
             h('div', { 'data-testid': 'mat' }, 'mat')
         ));
-        fireEvent.pointerDown(view.container.querySelector('[data-hero-panel-body] [data-locked-toggle]'));
+        fireEvent.pointerDown(view.container.querySelector('[data-hero-panel-body] [data-skill-row="mining"]'));
         fireEvent.pointerDown(view.container.querySelector('[data-dock-hero="h2"]'));
         expect(onCloseHero).not.toHaveBeenCalled();
         fireEvent.pointerDown(view.container.querySelector('[data-testid="mat"]'));
@@ -162,24 +161,27 @@ describe('H2: a closed panel registers no drop targets (T-104)', () => {
     });
 });
 
+// Rewritten with classless heroes: every hero holds every skill, so the panel lists all of them in
+// one list; the set-aside and locked lists are gone.
 describe('H2: skills', () => {
     const ALL = [
-        ...getSkillIdsByLayer(SKILL_LAYERS.COMBAT), ...STARTING,
-        ...getSkillIdsByLayer(SKILL_LAYERS.ADVANCED), ...getSkillIdsByLayer(SKILL_LAYERS.MASTER)
+        ...getSkillIdsByLayer(SKILL_LAYERS.COMBAT), ...STARTING, ...getSkillIdsByLayer(SKILL_LAYERS.SPECIALIST)
     ];
 
-    it('lists held skills in one list: combat, then the Starting nine, then the specialist layers', () => {
+    it('lists every skill in one list: combat, then the Starting nine, then the specialist ones', () => {
         const g = heroSkillList(master('x', 'X'));
-        expect(g.rows.map(r => r.id)).toEqual(['melee', ...STARTING, 'leadership', 'fletching', 'faith']);
+        expect(g.rows.map(r => r.id)).toEqual(ALL);
+        expect(ALL).toHaveLength(20);
         expect(STARTING.length).toBe(9);
-        expect(g.bankedRows.map(r => [r.id, r.level])).toEqual([['ranged', 30]]);
+        const level = (id) => g.rows.find(r => r.id === id).level;
+        expect([level('melee'), level('ranged'), level('mining'), level('fletching'), level('faith'), level('science')])
+            .toEqual([25, 1, 5, 99, 3, 1]);
+        expect(Object.keys(g)).toEqual(['rows']);
     });
 
-    it('lists every skill never held as locked, in the same order', () => {
+    it('never lists a cut skill, even one an older record still carries', () => {
         const g = heroSkillList(master('x', 'X'));
-        const held = new Set(['melee', ...STARTING, 'leadership', 'fletching', 'faith', 'ranged']);
-        expect(g.lockedRows.map(r => r.id)).toEqual(ALL.filter(id => !held.has(id)));
-        expect(g.lockedRows.length).toBeGreaterThan(0);
+        expect(g.rows.map(r => r.id)).not.toContain('leadership');
     });
 
     it('reads levels as 25/99 and keeps the XP number for the hover', () => {
@@ -233,48 +235,28 @@ describe('H2: skills', () => {
         expect(document.body.querySelector('[data-tooltip]')).toBeNull();
     });
 
-    it('shows one flat list with no Starting drawer, set aside skills, then the locked list shut', () => {
+    it('shows one flat list with no Starting drawer, and nothing set aside or locked', () => {
         const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
         const root = r.container;
         expect(root.querySelector('[data-starting-toggle]')).toBeNull();
-        expect(rowIds(root, 'held')).toEqual(['melee', ...STARTING, 'leadership', 'fletching', 'faith']);
+        expect(rowIds(root, 'held')).toEqual(ALL);
         const groups = [...root.querySelectorAll('[data-skill-group]')].map(el => el.getAttribute('data-skill-group'));
-        expect(groups).toEqual(['held', 'banked', 'locked']);
-
-        const banked = root.querySelector('[data-skill-group="banked"]');
-        expect(banked.textContent).toContain('Set aside');
-        const ranged = banked.querySelector('[data-skill-row="ranged"]');
-        expect(ranged.getAttribute('data-skill-banked')).toBe('true');
-        expect(ranged.querySelector('[data-skill-level]').textContent).toBe('30/99');
-
-        const toggle = root.querySelector('[data-locked-toggle]');
-        expect(toggle.getAttribute('aria-expanded')).toBe('false');
-        expect(rowIds(root, 'locked')).toEqual([]);
+        expect(groups).toEqual(['held']);
+        expect(root.querySelector('[data-locked-toggle]')).toBeNull();
+        expect(root.querySelector('[data-skill-banked], [data-skill-locked]')).toBeNull();
+        expect(root.textContent).not.toMatch(/Set aside|Locked|Recruit/);
     });
 
-    it('opens the locked list on a click and remembers it for the session', () => {
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
-        const locked = heroSkillList(GameState.state.heroes[0]).lockedRows.map(x => x.id);
-        expect(r.container.querySelector('[data-locked-toggle]').textContent).toContain(String(locked.length));
-        fireEvent.click(r.container.querySelector('[data-locked-toggle]'));
-        expect(rowIds(r.container, 'locked')).toEqual(locked);
-        expect(r.container.querySelector(`[data-skill-row="${locked[0]}"]`).getAttribute('data-skill-locked')).toBe('true');
-        cleanup();
-        const again = render(panel({ selectedHeroId: 'h2', showTabs: false }));
-        expect(again.container.querySelector('[data-locked-toggle]').getAttribute('aria-expanded')).toBe('true');
-    });
-
-    it('gives Advanced and Master rows their own background and draws no mastered star', () => {
+    it('gives the specialist rows their own background and draws no mastered star', () => {
         const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
         const row = (id) => r.container.querySelector(`[data-skill-group="held"] [data-skill-row="${id}"]`);
-        expect(row('leadership').getAttribute('data-skill-tier')).toBe('advanced');
-        expect(row('fletching').getAttribute('data-skill-tier')).toBe('advanced');
-        expect(row('faith').getAttribute('data-skill-tier')).toBe('master');
+        expect(row('fletching').getAttribute('data-skill-tier')).toBe('specialist');
+        expect(row('faith').getAttribute('data-skill-tier')).toBe('specialist');
         expect(row('melee').getAttribute('data-skill-tier')).toBeNull();
+        expect(row('mining').getAttribute('data-skill-tier')).toBeNull();
         const bg = (el) => el.className.split(' ').filter(c => c.startsWith('bg-')).join(' ');
-        expect(bg(row('leadership'))).not.toBe('');
-        expect(bg(row('faith'))).not.toBe('');
-        expect(bg(row('faith'))).not.toBe(bg(row('leadership')));
+        expect(bg(row('fletching'))).not.toBe('');
+        expect(bg(row('faith'))).toBe(bg(row('fletching')));
         expect(bg(row('melee'))).toBe('');
         expect(r.container.querySelector('[data-skill-mark]')).toBeNull();
         expect(r.container.textContent).not.toContain('★');

@@ -148,8 +148,11 @@ describe('nothing on its way back is nothing to wait for', () => {
         expect(BoardRunner.isHeroIdle('forester')).toBe(true);
     });
 
-    it('a hero without Forestry does not wait on it', () => {
+    // Rewritten with classless heroes: every hero holds Forestry now, so the hero who cannot take
+    // the work is one whose Forestry rule is off.
+    it('a hero with Forestry switched off does not wait on it', () => {
         felledInAForest();
+        GameState.state.heroes.find(h => h.id === 'miner').flagRules = { forestry: { allowed: false, priority: 3 } };
         Flags.plant('miner', { x: TREE.x, y: TREE.y + 60 });
         run(1000);
         expect(Flags.waitingOf('miner')).toBeNull();

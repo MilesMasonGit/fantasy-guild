@@ -48,7 +48,7 @@ registerTokenTypes({
 
 const GOBLIN = { x: 880, y: 560 };
 
-/** A freshly hired Recruit: no combat skill, Fight rule as hired (on). */
+/** A freshly hired hero: every skill at 1, nothing in their hands, Fight rule as hired (on). */
 function recruit(id) {
     const hero = generateHero({ name: id });
     hero.id = id;
@@ -76,8 +76,12 @@ function expectRecruitWon(heroId, enemy, skillsBefore) {
     expect(gone).toBe(true);
     const hero = GameState.state.heroes.find(h => h.id === heroId);
     expect(hero.status).not.toBe('wounded');
-    // No combat XP until promotion: no skill moved and no combat skill appeared.
-    expect(JSON.stringify(hero.skills)).toBe(skillsBefore);
+    // Rewritten with classless heroes: a punch is Melee, so the kill trains Melee and nothing else.
+    const before = JSON.parse(skillsBefore);
+    expect(hero.skills.melee.xp).toBeGreaterThan(before.melee.xp);
+    const { melee: _m, ...rest } = hero.skills;
+    const { melee: _b, ...restBefore } = before;
+    expect(rest).toEqual(restBefore);
 }
 
 beforeAll(() => {
@@ -110,7 +114,7 @@ beforeEach(() => {
 afterEach(() => BoardState.setInstantArrival(true));
 
 describe('a Recruit dropped ON a Goblin fights it and wins', () => {
-    it('from the hero bar: pinned to the Goblin, fights, kills it, earns no combat XP', () => {
+    it('from the hero bar: pinned to the Goblin, fights, kills it, earns Melee XP', () => {
         const goblin = placeAt('fixture_drop_goblin', GOBLIN.x, GOBLIN.y);
         const skillsBefore = JSON.stringify(GameState.state.heroes[0].skills);
 

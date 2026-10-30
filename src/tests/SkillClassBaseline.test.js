@@ -9,19 +9,41 @@ import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as SkillSystem from '../systems/hero/SkillSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { tokenStartingUses, registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { generateHero } from '../systems/hero/HeroGenerator.js';
+import * as HeroManager from '../systems/hero/HeroManager.js';
 import { calculateHeroLevel } from '../systems/hero/HeroGenerator.js';
 import * as CombatFormulas from '../utils/CombatFormulas.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import {
     STARTING_SKILL_IDS,
     COMBAT_SKILL_IDS,
-    MASTER_SKILL_IDS
+    HERO_SKILL_IDS,
+    RETIRED_SKILL_IDS
 } from '../config/registries/skillRegistry.js';
 
 /**
- * **The Skill & Class rework's moving parts, pinned.**
+ * **The Skill & Class rework's moving parts, pinned**, as classless heroes left them: every hero
+ * holds every skill, so possession now fails only for a skill the game does not have (a cut one),
+ * and the weapon in the hands decides the style.
  */
+
+// A Token still worked with a cut skill: possession is the one gate no hero passes.
+const CUT = RETIRED_SKILL_IDS[0];
+registerTokenTypes({
+    fixture_cut_gated: {
+        id: 'fixture_cut_gated', name: 'Fixture Cut Gated', tokenType: 'resource',
+        rarity: 'rare', theme: 'fixture', uses: 2000, sprite: 's_crime',
+        config: { skill: CUT, skillRequired: 25, cycleTimeMs: 20000, xp: 30, inputs: [],
+            outputs: [{ itemId: 'item_coal', quantity: 6, chance: 100 }] }
+    },
+    fixture_cut_ungated: {
+        id: 'fixture_cut_ungated', name: 'Fixture Cut Ungated', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 2000, sprite: 's_industry',
+        config: { skill: CUT, skillRequired: 0, cycleTimeMs: 10000, xp: 3, inputs: [],
+            outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }] }
+    }
+});
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -115,12 +137,12 @@ describe('The gate is possession first, then level', () => {
         expect(SpriteLayer.countOnBoard('item_coal')).toBe(0);
     });
 
-    it('refuses a hero who does not hold the skill, and calls it UNSKILLED', () => {
+    it('refuses a hero who does not hold the skill (a cut one), and calls it UNSKILLED', () => {
         // Two different problems, two different reasons. Levelling fixes one of
         // them and can never fix the other, so they must not look alike.
-        GameState.state.heroes = [makeHero('hero_1', MASTER_SKILL_IDS.slice(0, 2), 99)];
-        const token = place(10, 'fixture_gated');
-        plantFor('hero_1', 10, 'mining');
+        GameState.state.heroes = [makeRecruit('hero_1', 99)];
+        const token = place(10, 'fixture_cut_gated');
+        plantFor('hero_1', 10, CUT);
 
         run(25000);
         expect(skipReasons(token)).toEqual([BoardRunner.ALERT.UNSKILLED]);
@@ -142,9 +164,9 @@ describe('The gate is possession first, then level', () => {
         // `heroMeetsRequirement` returned true the moment `required <= 0` and
         // never looked at the hero's skills, so a hero who did not hold the
         // skill worked the Token anyway.
-        GameState.state.heroes = [makeHero('hero_1', MASTER_SKILL_IDS.slice(0, 1), 99)];
-        const token = place(10, 'fixture_ungated');
-        plantFor('hero_1', 10, 'crafting');
+        GameState.state.heroes = [makeRecruit('hero_1', 99)];
+        const token = place(10, 'fixture_cut_ungated');
+        plantFor('hero_1', 10, CUT);
 
         run(11000);
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
@@ -165,7 +187,7 @@ describe('The gate is possession first, then level', () => {
     it('names the two failures apart at the SkillSystem level too', () => {
         GameState.state.heroes = [makeRecruit('hero_1', 10)];
         const held = STARTING_SKILL_IDS[0];
-        const notHeld = MASTER_SKILL_IDS[0];
+        const notHeld = CUT;
 
         expect(SkillSystem.requirementFailure('hero_1', { skill: held, level: 5 })).toBeNull();
         expect(SkillSystem.requirementFailure('hero_1', { skill: held, level: 50 })).toBe('LEVEL');
@@ -173,24 +195,26 @@ describe('The gate is possession first, then level', () => {
     });
 });
 
+// Rewritten with classless heroes: the style is the weapon's (barehanded Melee), and max HP the
+// best of the four combat skills.
 describe('One combat skill supplies both halves (Phase 2)', () => {
-    it('attack and defence read the same number: one combat level', () => {
+    it('attack and defence read the same number: the level of the style fought in', () => {
         const hero = { skills: { [COMBAT_SKILL_IDS[0]]: { level: 30 } } };
 
         expect(CombatFormulas.getHeroCombatLevel(hero)).toBe(30);
     });
 
-    it('a Recruit holds no combat skill, yet fights (at combat level 0), whatever their work skills', () => {
-        const recruit = {
+    it('a record with no combat skill fights barehanded as Melee at level 0, whatever its work skills', () => {
+        const worker = {
             skills: Object.fromEntries(STARTING_SKILL_IDS.map(id => [id, { level: 40 }]))
         };
 
-        expect(CombatFormulas.getHeroCombatSkillEntry(recruit)).toEqual({ id: null, level: 0 });
-        expect(CombatFormulas.getHeroCombatLevel(recruit)).toBe(0);
-        expect(CombatFormulas.canHeroFight(recruit)).toBe(true);
+        expect(CombatFormulas.getHeroCombatSkillEntry(worker)).toEqual({ id: 'melee', level: 0 });
+        expect(CombatFormulas.getHeroCombatLevel(worker)).toBe(0);
+        expect(CombatFormulas.canHeroFight(worker)).toBe(true);
     });
 
-    it('max HP tracks the combat skill, and production skills never touch it', () => {
+    it('max HP tracks the combat skills, and production skills never touch it', () => {
         const fighter = { [COMBAT_SKILL_IDS[0]]: { level: 20 } };
         const miner = Object.fromEntries(STARTING_SKILL_IDS.map(id => [id, { level: 99 }]));
 
@@ -198,28 +222,17 @@ describe('One combat skill supplies both halves (Phase 2)', () => {
         const minerHp = CombatFormulas.heroMaxHpFromSkills(miner);
 
         expect(fighterHp).toBeGreaterThan(minerHp);
-        // A Recruit still has a body: 10 HP rather than zero, because they stand
-        // on the board, fight and heal.
+        // A body even with no combat level: 10 HP rather than zero.
         expect(minerHp).toBe(CombatFormulas.heroMaxHpFromSkills({}));
         expect(minerHp).toBeGreaterThan(0);
     });
 
-    it('an unarmed hero fights in their own style, not a hardcoded melee', () => {
-        const ranged = COMBAT_SKILL_IDS[1];
-        expect(CombatFormulas.getHeroCombatStyle({ skills: { [ranged]: { level: 5 } } }))
-            .toBe(ranged);
+    it('an unarmed hero punches as Melee, whatever their best style', () => {
+        const ranger = { skills: { melee: { level: 2 }, [COMBAT_SKILL_IDS[1]]: { level: 50 } } };
+        expect(CombatFormulas.getHeroCombatSkillEntry(ranger)).toEqual({ id: 'melee', level: 2 });
     });
 
-    it('an unarmed stealth hero fights stealth', () => {
-        const rogue = { skills: { stealth: { level: 12 } } };
-        expect(CombatFormulas.getHeroCombatStyle(rogue)).toBe('stealth');
-        expect(CombatFormulas.getHeroCombatSkillEntry(rogue)).toEqual({ id: 'stealth', level: 12 });
-        expect(CombatFormulas.canHeroFight(rogue)).toBe(true);
-    });
-
-    // Rewritten for the gear pass: a hero swings only weapons of their own style, so a weapon no
-    // longer changes the side of the cycle its wielder fights on.
-    it('a hero fights their own style: a Dagger (melee and stealth) is melee for a Fighter and stealth for a Rogue', () => {
+    it('the weapon decides: a Dagger reads its first style for anyone; an old stealth-only one is stealth', () => {
         registerItems({
             fixture_shiv: {
                 id: 'fixture_shiv', name: 'Shiv', type: 'weapon', equipSlot: 'hand',
@@ -230,40 +243,42 @@ describe('One combat skill supplies both halves (Phase 2)', () => {
                 styles: ['melee', 'stealth'], damage: 1, speed: 'fast'
             }
         });
-        const fighter = { skills: { melee: { level: 12 } }, equipment: ['fixture_dagger'] };
-        const rogue = { skills: { stealth: { level: 12 } }, equipment: ['fixture_dagger'] };
+        const fighter = { skills: { melee: { level: 12 }, stealth: { level: 3 } }, equipment: ['fixture_dagger'] };
+        const rogue = { skills: { melee: { level: 3 }, stealth: { level: 12 } }, equipment: ['fixture_dagger'] };
         expect(CombatFormulas.getHeroCombatStyle(fighter)).toBe('melee');
-        expect(CombatFormulas.getHeroCombatStyle(rogue)).toBe('stealth');
-        expect(CombatFormulas.getHeroWeapon(fighter)?.id).toBe('fixture_dagger');
-        expect(CombatFormulas.getHeroWeapon(rogue)?.id).toBe('fixture_dagger');
+        expect(CombatFormulas.getHeroCombatStyle(rogue)).toBe('melee');
+        expect(CombatFormulas.getHeroCombatLevel(rogue)).toBe(3);
 
-        // An older stealth-only weapon in a Fighter's hands is not swung: they punch, as melee.
-        const holdingShiv = { skills: { melee: { level: 12 } }, equipment: ['fixture_shiv'] };
-        expect(CombatFormulas.getHeroWeapon(holdingShiv)).toBeNull();
-        expect(CombatFormulas.getHeroCombatStyle(holdingShiv)).toBe('melee');
+        const holdingShiv = { skills: { melee: { level: 12 }, stealth: { level: 4 } }, equipment: ['fixture_shiv'] };
+        expect(CombatFormulas.getHeroWeapon(holdingShiv)?.id).toBe('fixture_shiv');
+        expect(CombatFormulas.getHeroCombatSkillEntry(holdingShiv)).toEqual({ id: 'stealth', level: 4 });
     });
 });
 
-describe('A hero holds some skills, not all of them', () => {
-    it('a Recruit holds the Starting skills and no others', () => {
-        GameState.state.heroes = [makeRecruit('hero_1', 1)];
-        const hero = GameState.state.heroes[0];
+describe('Every hero holds every skill', () => {
+    it('a new hero, and any hero the game reads, holds all twenty and no cut one', () => {
+        const hero = generateHero({ name: 'h' });
+        hero.id = 'hero_1';
+        GameState.state.heroes = [hero];
+        expect(Object.keys(hero.skills).sort()).toEqual([...HERO_SKILL_IDS].sort());
 
-        expect(Object.keys(hero.skills).sort()).toEqual([...STARTING_SKILL_IDS].sort());
-        for (const id of [...COMBAT_SKILL_IDS, ...MASTER_SKILL_IDS]) {
-            expect(hero.skills[id]).toBeUndefined();
-        }
+        const bare = makeRecruit('hero_2', 1);
+        bare.skills[CUT] = { level: 5, xp: 0 };
+        GameState.state.heroes.push(bare);
+        const read = HeroManager.getHero('hero_2');
+        expect(Object.keys(read.skills).sort()).toEqual([...HERO_SKILL_IDS].sort());
+        expect(read.skills[CUT]).toBeUndefined();
     });
 
     it('the deleted ids are gone from the registry', () => {
         // Content or a save still naming one of these must fail loudly, not
         // resolve to something approximate. The first five went with the
         // sub-skill funnel; the rest with the class rework v2, where Logging
-        // became Forestry and Explore left for the Atlas.
+        // became Forestry and Explore left for the Atlas, and with classless heroes.
         const { SKILLS } = require('../config/registries/skillRegistry.js');
         for (const dead of ['labor', 'aquatic', 'forge', 'defense', 'social',
             'logging', 'explore', 'nature', 'occult', 'inscription', 'beastmaster',
-            'survival', 'brewing', 'astrology', 'engineering']) {
+            'survival', 'brewing', 'astrology', 'engineering', ...RETIRED_SKILL_IDS]) {
             expect(SKILLS[dead], dead).toBeUndefined();
         }
     });

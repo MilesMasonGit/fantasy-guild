@@ -46,6 +46,12 @@ registerTokenTypes({
     b5_spawner: {
         id: 'b5_spawner', name: 'B5 Grove', uses: null,
         spawner: { spawns: [{ typeId: 'fixture_producer', weight: 1 }], allowance: 1, intervalMs: 99999999, upkeep: [] }
+    },
+    /** Worked with a skill cut from the game: every hero holds every other skill, so no hero holds this. */
+    b5_cut_skill: {
+        id: 'b5_cut_skill', name: 'B5 Snare', uses: 10, requiresHero: true,
+        config: { skill: 'trapping', skillRequired: 1, cycleTimeMs: 4000, xp: 1, inputs: [],
+            outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }] }
     }
 });
 
@@ -195,8 +201,9 @@ describe('a drop on a Token the hero cannot work is refused (hero orders, brief 
         expect(worked('h1')).toBe(other.id);
     });
 
+    // Rewritten with classless heroes: only a skill the game no longer has is one a hero lacks.
     it('skill not held: refused, and the hero, who had no order, stays at home', () => {
-        put(P(600, 600), 'fixture_consumer');
+        put(P(600, 600), 'b5_cut_skill');
         const res = dropFlag('h1', P(600, 600));
         expect(res.success).toBe(false);
         expect(res.reason).toMatch(/^Needs /);
@@ -267,7 +274,7 @@ describe('the ordered Token is gone for good: the hero needs a job (brief 260 O1
     it('transformed into something they cannot work: the order lapses, needing a job', () => {
         const t = put(P(600, 600), 'fixture_producer');
         dropFlag('h1', P(600, 600));
-        const next = EffectActions.transformInstance(t, 'fixture_consumer');   // alchemy: not theirs
+        const next = EffectActions.transformInstance(t, 'b5_cut_skill');   // a cut skill: no one's
         expect(next).toBeTruthy();
         run(100);
         expect(BoardState.flagOf('h1')).toMatchObject({ x: 600, y: 600, spot: true, needsJob: true });
