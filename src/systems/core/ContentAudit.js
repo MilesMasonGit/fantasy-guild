@@ -305,6 +305,8 @@ function auditCombatAxes(out, where, def) {
  * (mid-authoring content is normal), reported so forgotten entries can be found.
  */
 function auditEffects(out) {
+    const perkEffects = new Set(Object.values(authoredSkillPerks() || {})
+        .flatMap(record => (Array.isArray(record?.perks) ? record.perks : []).map(row => row?.effectId)));
     for (const [effectId, entry] of Object.entries(EFFECTS || {})) {
         const where = `Effect "${entry?.name || effectId}"`;
 
@@ -320,7 +322,7 @@ function auditEffects(out) {
         // tripwires have to read the library too.
         auditAppliesTargetShape(out, where, entry);
 
-        if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0) {
+        if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0 && !perkEffects.has(effectId)) {
             out.push(finding(where, 'is not used by anything. Not a fault if you are still ' +
                 'building what it is for — but nothing references it today.'));
         }

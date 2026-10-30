@@ -63,7 +63,7 @@ export default function SkillPerksPage({ setCurrentView }) {
     setCurrentView?.('editor');
   };
   const newEffect = (row) => {
-    const effectId = addEffect({ name: `${skillName(skillId)} ${row.level} Perk`, statements: [] });
+    const effectId = addEffect({ name: `${skillName(skillId)} ${row.level} Perk` });
     setRow(skillId, row.index, { ...row, effectId });
     openEffect(effectId);
   };
