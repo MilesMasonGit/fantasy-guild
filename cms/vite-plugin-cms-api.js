@@ -7,6 +7,7 @@ import { BAKE_KEY, splitLibrary } from './paletteBrighten.js';
 import { resolveSpritePath, currentSpriteName } from '../src/utils/AssetManager.js';
 import { studioAssetPath } from './assetNaming.js';
 import { compareSync } from './src/engine/syncGuard.js';
+import { mergePlanFile, plannedKeysOf, PLAN_FILE, PLAN_DIR, PLAN_SYNC_KEY } from './src/engine/planFile.js';
 import { listPacks, getPack, archivePack, restorePack } from './changePackInbox.js';
 
 
@@ -39,7 +40,7 @@ import { listPacks, getPack, archivePack, restorePack } from './changePackInbox.
  * successful write into an error the author has to interpret. Every failure
  * path logs and resolves, and the HTTP response reports what happened.
  */
-function commitSync(projectRoot, counts) {
+function commitSync(projectRoot, counts, paths = ['data']) {
   const run = (args) =>
     new Promise((resolve) => {
       execFile('git', args, { cwd: projectRoot }, (err, stdout, stderr) =>
@@ -48,11 +49,11 @@ function commitSync(projectRoot, counts) {
     });
 
   return (async () => {
-    const staged = await run(['add', '--', 'data']);
+    const staged = await run(['add', '--', ...paths]);
     if (!staged.ok) return { committed: false, reason: 'git add failed: ' + staged.err };
 
     // `--cached --quiet` exits NON-zero when there IS something staged.
-    const diff = await run(['diff', '--cached', '--quiet', '--', 'data']);
+    const diff = await run(['diff', '--cached', '--quiet', '--', ...paths]);
     if (diff.ok) return { committed: false, reason: 'no content changed' };
 
     const summary = Object.entries(counts)
@@ -64,11 +65,11 @@ function commitSync(projectRoot, counts) {
       'CMS sync' + (summary ? ': ' + summary : ''),
       '',
       'Written by "Sync to Game" (CMS-53: one-way full-file write from the',
-      'CMS workspace). Content only -- this commit stages `data/` and nothing',
-      'else, so it can be rolled back without touching code.'
+      'CMS workspace). Content only -- this commit stages `data/` and the plan',
+      '(`cms/plan/`) and nothing else, so it can be rolled back without touching code.'
     ].join('\n');
 
-    const done = await run(['commit', '-m', message, '--', 'data']);
+    const done = await run(['commit', '-m', message, '--', ...paths]);
     if (!done.ok) return { committed: false, reason: 'git commit failed: ' + done.err };
 
     const sha = await run(['rev-parse', '--short', 'HEAD']);
@@ -209,16 +210,19 @@ const STUDIO_ROUTES = ['/api/custom-palettes', '/api/palette-groups', '/api/pale
  * @param {string} [options.palettesDir] the Material Library's files (default `data/palettes/`)
  * @param {string} [options.dataDir] the game's content files read by Restore from Game and written by Sync
  *        (default `data/`). ⚠️ When set, Sync does not commit: the commit stages the project's `data/`, not this folder.
+ * @param {string} [options.planDir] the ledger's plan, kept out of `data/` (default `cms/plan/`); written and read beside `data/`
  * @param {boolean} [options.studio] the Studio's server: refuses every API route outside `STUDIO_ROUTES`
  * @param {string} [options.incomingDir] the change-pack inbox (default `cms/incoming/`; archive in its `applied/`)
  * @param {string} [options.backupsDir] workspace backups and autosaves (default `backups/` under the server's folder)
  */
-export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dataDir, incomingDir, backupsDir: backupsDirOption, studio = false } = {}) {
+export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dataDir, planDir, incomingDir, backupsDir: backupsDirOption, studio = false } = {}) {
   const projectRoot = process.cwd().endsWith('cms') ? path.resolve(process.cwd(), '..') : process.cwd();
   const inbox = inboxDir || path.resolve(projectRoot, 'cms', 'inbox');
   const paletteInbox = paletteInboxDir || path.resolve(projectRoot, 'cms', 'palettes-inbox');
   const palettesRoot = palettesDir || path.resolve(projectRoot, 'data', 'palettes');
   const dataRoot = dataDir || path.resolve(projectRoot, 'data');
+  const planRoot = planDir || path.resolve(projectRoot, ...PLAN_DIR.split('/'));
+  const readPlan = () => (fs.existsSync(path.join(planRoot, PLAN_FILE)) ? JSON.parse(fs.readFileSync(path.join(planRoot, PLAN_FILE), 'utf8')) : null);
   const incoming = incomingDir || path.resolve(projectRoot, 'cms', 'incoming');
   const library = libraryFiles(palettesRoot);
   return {
@@ -840,6 +844,8 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
               ? JSON.parse(fs.readFileSync(path.join(dataDir, 'starterCamp.json'), 'utf8'))
               : null;
 
+            const plan = readPlan();
+
             const recipePools = {};
             for (const recipe of tokenRecipes) {
               const skill = recipe.skill || 'general';
@@ -847,14 +853,15 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
               recipePools[skill].push(recipe);
             }
 
+            // The plan (plan blocks and Planned stubs) is kept out of data/, so it is laid back on here.
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({
+            res.end(JSON.stringify(mergePlanFile({
               items,
               tokens,
               effects,
               recipePools,
               starterCamp,
-            }));
+            }, plan)));
           } catch (err) {
             res.statusCode = 500;
             res.end(JSON.stringify({ error: 'Failed to load game data: ' + err.message }));
@@ -868,12 +875,16 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
           req.on('data', (chunk) => (body += chunk));
           req.on('end', () => {
             try {
-              const { files, confirmRemovals } = JSON.parse(body);
-              if (!files || typeof files !== 'object') {
+              const parsed = JSON.parse(body);
+              const { confirmRemovals } = parsed;
+              if (!parsed.files || typeof parsed.files !== 'object') {
                 res.statusCode = 400;
                 res.end(JSON.stringify({ error: 'Missing or invalid files payload' }));
                 return;
               }
+              // ⚠️ The plan never goes into `data/`, even when a caller puts it among the files.
+              const { [PLAN_SYNC_KEY]: stray, ...files } = parsed.files;
+              const plan = parsed.plan ?? stray ?? null;
 
               // A stale browser workspace once synced over newer content and silently dropped it, so a Sync that would
               // remove anything the game has writes nothing until the author confirms.
@@ -886,7 +897,14 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
                     current[name] = null;
                   }
                 }
-                const diff = compareSync(current, files);
+                if (plan) {
+                  try {
+                    current[PLAN_SYNC_KEY] = readPlan();
+                  } catch {
+                    current[PLAN_SYNC_KEY] = null;
+                  }
+                }
+                const diff = compareSync(current, plan ? { ...files, [PLAN_SYNC_KEY]: plan } : files);
                 if (diff.hasRemovals) {
                   res.statusCode = 409;
                   res.setHeader('Content-Type', 'application/json');
@@ -915,7 +933,13 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
                 filesWritten.push(relPath);
               }
 
-              console.log(`[CMS Sync] Successfully wrote ${filesWritten.length} file(s) to data/: ${filesWritten.join(', ')}`);
+              if (plan) {
+                if (!fs.existsSync(planRoot)) fs.mkdirSync(planRoot, { recursive: true });
+                fs.writeFileSync(path.join(planRoot, PLAN_FILE), JSON.stringify(plan, null, 2), 'utf8');
+                filesWritten.push(PLAN_SYNC_KEY);
+              }
+
+              console.log(`[CMS Sync] Successfully wrote ${filesWritten.length} file(s): ${filesWritten.join(', ')}`);
 
               // Count what went in, so the commit message says what changed
               // rather than just "sync". Shapes differ per file: tokens and
@@ -927,12 +951,13 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
                 items: size(files['items.json']),
                 maps: Object.values(files['items.json'] || {}).filter(isMap).length,
                 recipes: size(files['tokenRecipes.json']),
-                'Starter Camp Tokens': size(files['starterCamp.json']?.tokens)
+                'Starter Camp Tokens': size(files['starterCamp.json']?.tokens),
+                'Planned entries': plannedKeysOf(plan).size
               };
 
               const committing = dataDir
                 ? Promise.resolve({ committed: false, reason: 'data folder overridden' })
-                : commitSync(projectRoot, counts);
+                : commitSync(projectRoot, counts, fs.existsSync(path.join(planRoot, PLAN_FILE)) && !planDir ? ['data', PLAN_DIR] : ['data']);
               committing.then((commit) => {
                 if (commit.committed) {
                   console.log(`[CMS Sync] Committed as ${commit.sha}`);

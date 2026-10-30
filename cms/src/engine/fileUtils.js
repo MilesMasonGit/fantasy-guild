@@ -2,6 +2,7 @@ import { saveAs } from 'file-saver';
 import { useEntityStore } from '../stores/useEntityStore';
 import { useGlobalStore } from '../stores/useGlobalStore';
 import { syncFiles } from './recipeSync';
+import { PLAN_SYNC_KEY } from './planFile';
 
 /** Workspace save, load, and one-way game data sync. */
 
@@ -51,12 +52,16 @@ export async function restoreFromGame() {
   useEntityStore.getState().hydrate(await res.json());
 }
 
-/** Send files built by `syncFiles` to `data/`. A 409 with `needsConfirm` is an answer, not an error: the Sync would remove content and wrote nothing. */
+/**
+ * Send files built by `syncFiles` to `data/`, and the plan beside them to `cms/plan/`. A 409 with `needsConfirm` is an answer, not an error: the Sync would remove content and wrote nothing.
+ * ⚠️ The plan rides apart (`plan`), never among `data/`'s files: Planned stubs never reach `data/`.
+ */
 export async function sendSync(files, { confirmRemovals = false } = {}) {
+  const { [PLAN_SYNC_KEY]: plan, ...gameFiles } = files || {};
   const response = await fetch('/api/sync-game-data', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ files, confirmRemovals }),
+    body: JSON.stringify({ files: gameFiles, ...(plan ? { plan } : {}), confirmRemovals }),
   });
 
   if (response.status === 409) {

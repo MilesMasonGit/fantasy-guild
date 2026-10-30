@@ -85,6 +85,17 @@ points in mat units on the mat it was saved from, no `id`. Copy the current one 
 review lists the Tokens added, moved and removed and the Bank lines that change, and the owner can
 open the Starter Camp page to tweak it before finishing.
 
+### The plan (the ledger)
+
+An item, map, Token or recipe may carry `"plan": { "status", "tier", "note" }` in its `value`
+(`src/systems/progression/ledger/plan.js`): `status` is `planned`, `draft`, `live` or `parked`
+(no status means Live), `tier` a whole number from 0 (0 the Starter Camp, 1 plane 1, and so on), set
+by the owner's plan, and `note` text. `plan.tier` is not the item's or Token's own `tier`. A
+**Planned** entry is a stub (a `create` whose record has at least a `name`, an item's `type` and a
+`plan`; a recipe needs its `skill` too) that never reaches `data/`: Sync keeps it, and every `plan`
+block, in `cms/plan/plan.json`. To set a tier on an existing entity, `edit` it with its whole record
+plus the `plan` block, as for any edit.
+
 Numbers are a proposal: the owner runs Recalculate after accepting.
 
 ## The helper

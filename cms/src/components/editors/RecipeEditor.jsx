@@ -15,6 +15,7 @@ import SupplyChainColumn from '../layout/SupplyChainColumn';
 import { Field } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
+import PlanFields from '../shared/PlanFields';
 
 /** Pooled recipes: authoring and review on one screen. A recipe is owned by its skill, not by any Token, so this is a top-level screen. It has a stable global `id`, minted on create and never edited here. */
 export default function RecipeEditor() {
@@ -221,6 +222,8 @@ export default function RecipeEditor() {
                 onChange={(patch) => updateRecipe(activeSkill, idx, patch)}
                 onDelete={() => { deleteRecipe(activeSkill, idx); setActiveIdx(0); }}
               />
+
+              <PlanFields record={activeRecipe} onChange={(plan) => updateRecipe(activeSkill, idx, { plan })} />
             </>
           )}
         </div>

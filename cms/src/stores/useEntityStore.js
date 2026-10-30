@@ -24,6 +24,7 @@ import { seedSimIntent } from './simIntentNormaliser';
 import { isMapItem, blankCartography } from '../../../src/systems/atlas/mapItems.js';
 import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
 import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRenames';
+import { splitPlanned, rejoinPlanned } from '../engine/planFile';
 
 /** The CMS's authored content, in one store: the keyed collections `items` and `tokens`, the named effect library, and the per-skill recipe pools. Enemy is a filtered view of the Token list, and a Map or Modifier is an item (type `map` / `modifier`) that only the Map editor edits: one record, so nothing keeps two copies in step. */
 
@@ -1011,7 +1012,10 @@ export const useEntityStore = create(
              * ⚠️ The write-back also strips retired fields: Sync writes from this store, so a stale workspace heals on its first Recalculate.
              */
             recalculateEconomy: (globals = {}) => {
-                const state = useEntityStore.getState();
+                const workspace = useEntityStore.getState();
+                // ⚠️ Planned stubs never reach the game, so the line never sees them: no price, no audit row, no description naming one. They are set aside here and put back unchanged at the end.
+                const { live, planned } = splitPlanned(workspace);
+                const state = { ...workspace, ...live };
 
                 // The legacy `isPrimarySource` flag becomes the `anchor` intent flag BEFORE the passes run, because the anchor election reads `anchor`.
                 const migrated = migrateLegacyIntent(state);
@@ -1110,9 +1114,9 @@ export const useEntityStore = create(
                     simChains: Object.fromEntries(buildChainTrails(sim)),
                 });
 
-                set({ items, tokens: finalTokens, recipePools, effects: library });
+                set({ ...rejoinPlanned(workspace, { items, tokens: finalTokens, recipePools }), effects: library });
 
-                return { items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp };
+                return { items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp, planned };
             },
 
             /**

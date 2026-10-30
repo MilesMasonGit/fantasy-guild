@@ -6,6 +6,8 @@
  */
 
 import { normaliseStarterCamp, isEmptyStarterCamp } from '../../../src/config/starterCampShape.js';
+import { PLAN_STATUSES, statusOrNull, tierOrNull } from '../../../src/systems/progression/ledger/plan.js';
+import { mergePlanFile } from './planFile.js';
 
 export const PACK_FORMAT = 'fantasy-guild-change-pack';
 export const PACK_VERSION = 1;
@@ -64,6 +66,23 @@ export function collectionOf(kind) {
 }
 
 /**
+ * What is wrong with a record's `plan` block (`src/systems/progression/ledger/plan.js`), as sentences.
+ * ⚠️ A status the ledger does not know would read as Live and reach the game, so a misspelt "planned" is refused here rather than synced.
+ */
+function planErrors(plan, label, kind) {
+    if (plan === undefined) return [];
+    if (kind === 'effect') return [`${label}: only items, maps, Tokens and recipes carry a "plan".`];
+    if (!isPlainObject(plan)) return [`${label}: "value.plan" must be an object: { "status", "tier", "note" }.`];
+    const out = [];
+    if (plan.status !== undefined && !statusOrNull(plan.status)) {
+        out.push(`${label}: "value.plan.status" must be one of ${PLAN_STATUSES.join(', ')}.`);
+    }
+    if (plan.tier !== undefined && tierOrNull(plan.tier) !== plan.tier) out.push(`${label}: "value.plan.tier" must be a whole number from 0 (0 is the Starter Camp).`);
+    if (plan.note !== undefined && typeof plan.note !== 'string') out.push(`${label}: "value.plan.note" must be text.`);
+    return out;
+}
+
+/**
  * Check a parsed pack. Returns `{ ok: true }` or `{ ok: false, errors: [...] }`, each error a
  * sentence an agent can act on. `fileName`, when given, must be `<pack id>.json`.
  */
@@ -117,6 +136,7 @@ export function validatePack(pack, { fileName } = {}) {
                 if (kind === 'map' && !isMapValue(value)) errors.push(`${label}: a map's "value.type" must be "map" or "modifier".`);
                 if (kind === 'item' && isMapValue(value)) errors.push(`${label}: this is a map or modifier; use "kind": "map".`);
                 if (kind === 'recipe' && (typeof value.skill !== 'string' || !value.skill)) errors.push(`${label}: a recipe's "value.skill" must name its skill pool.`);
+                errors.push(...planErrors(value.plan, label, kind));
             }
         }
         if (kind === 'starterCamp') {
@@ -214,9 +234,9 @@ export function changedFields(before, after) {
     return [...keys].filter((k) => canonicalJson(before?.[k]) !== canonicalJson(after?.[k])).sort();
 }
 
-/** Build the workspace a pack was made against from the game's `data/` files (as `/api/load-game-data` and the store's load do). */
-export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null }) {
+/** Build the workspace a pack was made against from the game's `data/` files (as `/api/load-game-data` and the store's load do), the plan laid back on (`planFile.js`). */
+export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null, plan = null }) {
     const recipePools = {};
     for (const recipe of tokenRecipes || []) (recipePools[recipe.skill || 'general'] ||= []).push(recipe);
-    return { items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp) };
+    return mergePlanFile({ items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp) }, plan);
 }

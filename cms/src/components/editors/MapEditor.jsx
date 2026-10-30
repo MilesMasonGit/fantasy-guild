@@ -4,6 +4,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import BannerPicker from '../shared/BannerPicker';
+import PlanFields from '../shared/PlanFields';
 import { defaultBannerFor } from '../../../../src/config/areaBanners.js';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 import { STARTING_TOKEN_CAP } from '../../utils/constants';
@@ -239,6 +240,8 @@ export default function MapEditor() {
           enemy, add it to that enemy&apos;s Drops in the Token editor.
         </p>
       </Section>
+
+      <PlanFields record={map} onChange={(plan) => update('plan', plan)} />
 
       <SpritePickerModal
         isOpen={isPickerOpen}

@@ -10,6 +10,7 @@ import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import ChainInspector from '../shared/ChainInspector';
 import GearLevelField from './GearLevelField';
+import PlanFields from '../shared/PlanFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /** The Item editor: simplified field set. Value is derived by the balance engine and cannot be typed; inputs and recipes match on exact item IDs, so there are no tags. */
@@ -408,6 +409,8 @@ export default function ItemEditor() {
           <ChainInspector itemId={item.id} />
         </div>
       </Section>
+
+      <PlanFields record={item} onChange={(plan) => update('plan', plan)} />
 
       <SpritePickerModal
         isOpen={isPickerOpen}

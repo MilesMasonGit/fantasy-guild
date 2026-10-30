@@ -214,23 +214,33 @@ each across the three inner rings: 1 + 2 + 3), tier rising outward.
 Wood and Gold Ore at once can't if no mat has both. Answer: more ways for
 the player to **make nodes**.*
 
-- **Each skill has its own rule for building its nodes** (owner):
-  - **Farming and Forestry: plant anywhere** (Fields, planted Forests; Farming
-    already works this way).
-  - **Mining: barriers**: a mineshaft needs **Stone terrain**.
-  - **Fishing: a hard limit**: it needs **water** on the mat.
-  - **The other skills follow the same idea** (owner): Alchemy herbs plant like
-    Farming (the Herb Garden); a built enemy camp (a lure, or the Summoning
-    Circle) needs a token from that enemy and free ground; stations (Smithing,
-    Cooking, Crafting) already build anywhere. The planning agent drafts each
-    skill's rule for the owner's review.
-- **The unlock is an item from the place** (owner): working the wild resource
-  yields its seed (Fir Seedlings from fir trees, a Gold Vein Sample from gold
-  veins); the build recipe uses it. Finding the place once stays the gate;
+- **Each skill has its own rule for building its nodes** (owner; the
+  per-skill table settled 2026-10-29):
+
+  | Skill | What is built | Unlocked by | Where it may go | Against wild |
+  |---|---|---|---|---|
+  | **Forestry** | a planted Forest of that species | its Seedling (wild trees, bird nests) | anywhere (Farmland) | weaker |
+  | **Farming** | a Field or Orchard of that crop | its seed (wild plants, Farmer enemies, altars) | anywhere (Farmland) | weaker |
+  | **Alchemy** (herbs) | an herb bed | its herb seed | anywhere (Farmland) | weaker |
+  | **Mining** (metals, gems) | a mine for that ore | **a prospecting map item**, which may come from fighting a powerful enemy rather than from mining (owner) | **on a Stone terrain feature**, a feature of the mat like water (owner) | weaker |
+  | **Mining** (stone, clay, sand) | a quarry, clay pit, sand pit | none (basic) | quarry on Stone terrain; clay and sand near water (planning agent's default) | weaker |
+  | **Fishing** | nothing: water comes only from the mat | none | **only on mats with water**; the Dock and Fishing Hut still help | — |
+  | **Combat** | **a copy of the original spawner** (owner): a **Goblin Banner**, a rare drop, builds a Goblin Camp **the same as the one on the map** | a rare drop from the creature | any free ground | **the same** (owner) |
+  | **Arcane** (motes, crystals) | a crystal growth or mote well | a seed crystal or mote from the wild | **within reach of an Arcane node** (a leyline, an altar), like water for fishing (owner) | weaker |
+  | Smithing, Cooking, Crafting, Construction | stations | none (as today) | anywhere | — |
+
+  ⚠️ **Stone terrain** is new: the mat's ground must be able to hold rock
+  features as it holds water (terrain and Layout work). Today's Copper Mine,
+  Coal Mine and Quarry build anywhere from oak and stone; they change to
+  these rules.
+- **The unlock is an item from the wild** (owner): a seed, seedling, seed
+  crystal, a prospecting map (mines) or a creature's rare drop (camps); the
+  build recipe uses it. Finding the place once stays the gate;
   the ledger tracks the seed like any item.
 - **A built node is weaker, but always yours** (owner): it yields less or
   rests longer than a wild one, so rich wild places (and the wild outer
-  rings) still matter.
+  rings) still matter. **Exception: a built creature camp is the same as the
+  wild one** (owner), since its unlock is a rare drop.
 - **Most inner mats have some Stone terrain and some water** (owner):
   archetypes lean (Highland much stone, Riverside much water), a few lack
   one.

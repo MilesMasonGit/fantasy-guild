@@ -4,6 +4,8 @@
  * fields changed is neither removed nor added.
  */
 
+import { plannedKeysOf, PLAN_SYNC_KEY } from './planFile.js';
+
 /** The collections compared, in the order the panel lists them. */
 export const SYNC_COLLECTIONS = [
   { key: 'tokens', label: 'Token', plural: 'Tokens' },
@@ -12,7 +14,11 @@ export const SYNC_COLLECTIONS = [
   { key: 'recipes', label: 'recipe', plural: 'recipes' },
   { key: 'effects', label: 'effect', plural: 'effects' },
   { key: 'starterCamp', label: 'Starter Camp Token', plural: 'Starter Camp Tokens' },
+  { key: 'planned', label: 'Planned entry', plural: 'Planned entries' },
 ];
+
+/** The plan file's key for a game collection's entity, so a stub that became content (or content sent back to the plan) is not counted as lost. */
+const PLANNED_KEY = { tokens: 'tokens', items: 'items', maps: 'items', recipes: 'recipes' };
 
 const isObject = (v) => v && typeof v === 'object' && !Array.isArray(v);
 const isMap = (def) => def?.type === 'map' || def?.type === 'modifier';
@@ -61,6 +67,7 @@ function collections(files) {
     recipes: keyedRecipes(files['tokenRecipes.json']),
     effects: keyed(files['effects.json']),
     starterCamp: keyedPlacements(files['starterCamp.json']),
+    planned: plannedKeysOf(files[PLAN_SYNC_KEY]),
   };
 }
 
@@ -74,14 +81,26 @@ export function compareSync(current = {}, incoming = {}) {
   const after = collections(incoming || {});
   const removed = {};
   const added = {};
+  // Planned stubs that became content, and content sent back to the plan, by game collection key.
+  const nowIn = (key, id) => after[key].has(id);
+  const promoted = (plannedKey) => {
+    const [kind, ...rest] = plannedKey.split(':');
+    const id = rest.join(':');
+    return Object.entries(PLANNED_KEY).some(([key, k]) => k === kind && nowIn(key, id));
+  };
   for (const { key } of SYNC_COLLECTIONS) {
-    // A Starter Camp the Sync does not write stays on disk untouched.
-    if (key === 'starterCamp' && !incoming?.['starterCamp.json']) {
+    // A Starter Camp (or a plan) the Sync does not write stays on disk untouched.
+    if ((key === 'starterCamp' && !incoming?.['starterCamp.json']) || (key === 'planned' && !incoming?.[PLAN_SYNC_KEY])) {
       removed[key] = [];
       added[key] = [];
       continue;
     }
-    removed[key] = [...before[key]].filter(([id]) => !after[key].has(id)).map(([id, name]) => ({ id, name }));
+    const kept = (id) => {
+      if (after[key].has(id)) return true;
+      if (key === 'planned') return promoted(id);
+      return !!PLANNED_KEY[key] && after.planned.has(`${PLANNED_KEY[key]}:${id}`);
+    };
+    removed[key] = [...before[key]].filter(([id]) => !kept(id)).map(([id, name]) => ({ id, name }));
     added[key] = [...after[key]].filter(([id]) => !before[key].has(id)).map(([id, name]) => ({ id, name }));
   }
   const hasRemovals = Object.values(removed).some((list) => list.length > 0);
