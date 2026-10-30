@@ -56,6 +56,45 @@ system needs. These goals steer it.*
   economic simulator, Recalculate) so XP returns and other pacing elements
   give balanced gameplay.
 
+## Pathing and a rate calculator, not a pretend player (owner, 2026-10-29)
+
+*Supersedes every "pretend player" / "simulated player" line in the sections
+below (kept as the record). The owner's worry: a pretend player cannot model
+every factor in gameplay rates, would create bad data and throw off
+decisions. The owner's answer: "we really just need pathing and a good rate
+calculator to balance XP and cycle time for tokens and recipes", also used
+to tune how effective boosts should be.*
+
+- **Pathing**: the reach and tree engine (what leads to what, at which level).
+- **A rate calculator with factor switches** (owner): for every Token and
+  recipe, cycle time, items per hour and XP per hour, from the data and **the
+  game's own formulas and rules code** (shared, not rewritten), listing every
+  factor applied. Factors switch on or off: buildings and supports, perks,
+  Guild Hall upgrades, consumables, tools and gear. **Balance around the full
+  spectrum of possible rates** (owner).
+- **Profiles**: **Bare** (levels and basic tools), **Typical** (a sensible
+  investor at that point: upgrades and supports that pay back in reasonable
+  time, consumables that pay for themselves) and **Maxed** (every boost).
+  **The pace curve aims at Typical**; Bare must stay playable and Maxed must
+  not trivialise it, within bounds that are settings (default: at most 3x
+  slower or faster than the curve) (owner).
+- **Boost strength by kind** (owner): targets for how much each kind of boost
+  contributes at each tier (e.g. buildings up to +30 %, consumables +20 %,
+  Hall up to +100 % late); the calculator shows where actual boosts sit
+  against them, and balancing later adjusts them.
+- **Walls and stage times come from path time at each profile** (owner): for
+  each unlock, the time along its path (levels to gain, items to gather) at
+  that profile's rates; a wall is a step over twice the curve's expectation;
+  a stage's time is the sum along its path. Static and readable, every step
+  shown.
+- **An "unmodelled factor" check** (planning agent's default, from the trust
+  discussion): any rule, effect or mechanic the calculator can't interpret is
+  listed, never silently ignored.
+- **Report first, balance after proof** (owner): automatic balancing starts
+  only after the calculator agrees with real play on a few milestones (the
+  test build's comparison with the real engine, and real play); until then
+  its proposals are a preview.
+
 ## The system design (owner, 2026-10-29)
 
 *From the analyst's [system plan](research/ledger_system_plan_2026-10-29.md);

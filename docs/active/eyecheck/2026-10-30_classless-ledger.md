@@ -19,28 +19,28 @@ bow fight, the sheet, the refusal, the old Knight).
    one list of all 20 skills at level 1: the four combat skills, the nine
    Starting skills, the seven specialist ones (tinted). No job title, no
    "Change job", no locked or set-aside skills. HP 11.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-29: "Looks good")
 2. **The weapon decides the style.** QA panel → Classless heroes → "New hero vs
    Goblins: sword, then bow". The hero with a Copper Sword fights the first
    Goblin; on their sheet Melee XP climbs. Drag the Copper Bow from the Bank
    onto them, then drag them onto the next Goblin: Ranged XP climbs, Melee
    stays.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-29: "Looks good")
 3. **Gear can ask a level.** QA panel → "QA Iron Sword asking Melee 15", then
    drag it from the Bank onto a new hero. It is refused with "Needs Melee 15"
    and stays in the Bank.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-29: "Looks good")
 4. **Barehanded.** Send a hero with empty hands at a Goblin: they punch with
    their Melee level and earn Melee XP.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-29: "Looks good")
 5. **An old save.** In another empty slot: QA panel → "Old save: a promoted
    Knight". Open the Knight's sheet: Melee 25, Magic 33, Enchanting 7, Fletching
    18, every Starting skill 12; no Leadership, Armory or Commerce; no job; 43 HP.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-29: "Looks good")
 6. **Promotion is gone.** The Fighter's and Wizard Academies are still in the
    content but do nothing: dragging a hero onto one is refused ("Nothing to work
    here"). They wait for your CMS to-do below.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-29: "Looks good")
 
 ## The CMS (the Ledger tab, already on `main`)
 
@@ -51,12 +51,12 @@ the CMS tab first.
    stage and note; edit one in place; filter to Planned; add a "+ Planned stub";
    promote it to Draft with the arrow. "First reach" reads Starter Camp almost
    everywhere until map stages are set (expected).
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-29: "Looks good")
 8. **Ledger settings**: stage budgets, ±25 %, the target player, the pace curve
    (placeholder points for you to set).
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-29: "Looks good")
 
-## Questions (recommendation first)
+## Questions (recommendation first) — **owner 2026-10-29: as built (A) on all seven**
 
 a. Armour's level requirement: (A) the author picks one of the four styles per
    piece (built); (B) the hero's best combat skill; (C) no armour requirement
