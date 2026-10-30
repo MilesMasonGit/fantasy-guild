@@ -702,7 +702,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const rows = [];
         for (const work of works) {
             if (work.tier === null || !counted(work.entry)) continue;
-            for (const kind of BOOSTED) {
+            // A camp changes how many Tokens one hero works, and the Wishing Well's ranks pay Water, not a share
+            // of a work's rate: neither has a strength target.
+            for (const kind of BOOSTED.filter(k => k !== BOOST_KIND.CAMP && k !== BOOST_KIND.HALL)) {
                 const g = kindGain(work, PROFILE.MAXED, work.tier, kind);
                 if (!g) continue;
                 rows.push({ work, entry: work.entry, kind, tier: work.tier, ...g, target: boostTargetAt(settings, kind, work.tier) });

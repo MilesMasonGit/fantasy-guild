@@ -160,7 +160,7 @@ export default function LedgerSettings() {
         </div>
       </Card>
 
-      <Card title="Boost targets" help="How much each kind of boost should add to a piece of work at most, from a stage on (Maxed, against Bare). A boost beyond its target by more than the tolerance is a problem.">
+      <Card title="Boost targets" help="How much each kind of boost should add to a piece of work at most, from a stage on (Maxed, against Bare). A boost beyond its target by more than the tolerance is a problem. Camps have none (they change how many Tokens one hero works); the Guild Hall's applies once a Hall upgrade moves a rate, which none does today.">
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr>

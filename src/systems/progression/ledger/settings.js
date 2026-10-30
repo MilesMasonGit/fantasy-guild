@@ -51,7 +51,7 @@ const DEFAULT_PACE_CURVE = [
 
 /** The kinds of boost a target can be set for, with their words. */
 export const BOOST_TARGET_KINDS = Object.freeze([
-    Object.freeze({ id: 'support', label: 'Buildings and camps' }),
+    Object.freeze({ id: 'support', label: 'Buildings' }),
     Object.freeze({ id: 'consumable', label: 'Consumables' }),
     Object.freeze({ id: 'tool', label: 'Tools' }),
     Object.freeze({ id: 'gear', label: 'Gear' }),
