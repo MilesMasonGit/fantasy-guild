@@ -134,3 +134,14 @@ export function ledgerWorkspace() {
         starterCamp: structuredClone(PLAN_STARTER_CAMP),
     };
 }
+
+/** The fixture with an Iron Chest (one Charge, never back) as a treasure on the Mountain Map. */
+export function withIronChest() {
+    const ws = ledgerWorkspace();
+    ws.tokens.token_iron_chest = {
+        id: 'token_iron_chest', name: 'Iron Chest', uses: 1,
+        config: { skill: 'crafting', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [{ itemId: 'item_iron_ore', chance: 100, minQty: 4, maxQty: 8 }] },
+    };
+    ws.items.map_mountain.cartography.treasures = [{ typeId: 'token_iron_chest', count: 1 }];
+    return ws;
+}

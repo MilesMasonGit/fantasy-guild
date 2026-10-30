@@ -148,11 +148,16 @@ export function effortText(ms) {
     return min % 60 ? `${h} h ${min % 60} min` : `${h} h`;
 }
 
-/** First reach in words: "Plane 1 · Mining 15, Smithing 10", or "Never" / "Planned". */
+/**
+ * First reach in words: "Plane 1 · Mining 15, Smithing 10", or "Never" / "Planned", with an earlier
+ * one-off find on the side: "… · a one-off find at Plane 1 (Iron Chest)".
+ */
 export function firstReachText(at, tierLabel) {
     if (!at) return '—';
     if (at.planned) return 'Planned';
     if (at.tier === null) return 'Never';
     const levels = Object.entries(at.levels || {}).sort((a, b) => b[1] - a[1]).map(([skill, level]) => LEDGER_ENGINE_TEXT.level(skill, level));
-    return [tierLabel(at.tier) + (at.luckOnly ? ' (luck)' : ''), levels.join(', ')].filter(Boolean).join(' · ');
+    const find = at.oneOffFind && !at.oneOffOnly && at.oneOffFind.tier < at.tier
+        ? `a one-off find at ${tierLabel(at.oneOffFind.tier)} (${at.oneOffFind.name})` : '';
+    return [tierLabel(at.tier) + (at.luckOnly ? ' (luck)' : ''), levels.join(', '), find].filter(Boolean).join(' · ');
 }

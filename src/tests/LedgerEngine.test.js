@@ -8,7 +8,7 @@ import {
     itemKey, tokenKey, recipeKey, BOUNTY_MAP_CHANCE, LUCK_BELOW,
 } from '../systems/progression/ledger/engine.js';
 import { BOUNTY_MAP_REWARD } from '../systems/quests/questBounties.js';
-import { ledgerWorkspace } from './fixtures/ledgerWorld.js';
+import { ledgerWorkspace, withIronChest } from './fixtures/ledgerWorld.js';
 
 /**
  * The ledger's engines on a small fixture world (`fixtures/ledgerWorld.js`): reach (the earliest
@@ -123,6 +123,34 @@ describe('reach: maps and the tiers they open', () => {
     });
 });
 
+describe('reach: one-off finds', () => {
+    it('leaves a one-off find out of first reach and keeps it on the side', () => {
+        const l = buildLedger(withIronChest());
+        const iron = l.reachOf(itemKey('item_iron_ore'));
+        expect(iron).toMatchObject({ tier: 2, sureTier: 2, luckOnly: false, via: tokenKey('token_iron_vein'), oneOffOnly: false });
+        expect(iron.oneOffFind).toEqual({ tier: 1, via: tokenKey('token_iron_chest'), name: 'Iron Chest' });
+        expect(l.pathOf(itemKey('item_iron_ore'))).not.toMatch(/Iron Chest/);
+        // The chest itself is still had on the map.
+        expect(l.reachOf(tokenKey('token_iron_chest'))).toMatchObject({ tier: 1, luckOnly: false });
+        expect(l.reachOf(itemKey('item_copper_ore')).oneOffFind).toBeNull();
+    });
+
+    it('reads an entry only a one-off find gets as luck only, down the chain', () => {
+        const ws = withIronChest();
+        ws.items.map_volcano.cartography.nodes = ws.items.map_volcano.cartography.nodes.filter((n) => n.typeId !== 'token_iron_vein');
+        const l = buildLedger(ws);
+        expect(l.reachOf(itemKey('item_iron_ore'))).toMatchObject({ tier: 1, sureTier: null, luckOnly: true, oneOffOnly: true, via: tokenKey('token_iron_chest') });
+        expect(l.reachOf(itemKey('item_iron_ingot'))).toMatchObject({ tier: 1, sureTier: null, luckOnly: true, oneOffOnly: true });
+    });
+
+    it('counts a one-off Token the player can get again (bought, built) as a sure way', () => {
+        const ws = withIronChest();
+        ws.tokens.token_iron_chest.shop = { price: [], section: 'general' };
+        const l = buildLedger(ws);
+        expect(l.reachOf(itemKey('item_iron_ore'))).toMatchObject({ tier: 0, luckOnly: false, via: tokenKey('token_iron_chest'), oneOffFind: null });
+    });
+});
+
 describe('reach: luck, never and Planned', () => {
     it('calls a drop under 5 % with no sure way luck only, and says when a sure way comes', () => {
         const honey = reachOf(itemKey('item_honey'));
@@ -190,6 +218,18 @@ describe('over the shipped content', () => {
         const ingot = l.treeOf('item_iron_ingot');
         expect(ingot.origins.map((o) => o.id).sort()).toEqual(['item_coal', 'item_iron_ore']);
         expect(ingot.effortMs).toBeGreaterThan(0);
+    });
+
+    it('reaches Iron Ore without the Iron Chest, which stays on the side as a one-off find', () => {
+        const content = {
+            items: read('items.json'), tokens: read('tokens.json'), recipes: read('tokenRecipes.json'),
+            effects: read('effects.json'), starterCamp: read('starterCamp.json'),
+        };
+        const l = buildLedger(content);
+        const iron = l.reachOf(itemKey('item_iron_ore'));
+        expect(iron.via).not.toBe(tokenKey('token_iron_chest'));
+        expect(l.pathOf(itemKey('item_iron_ore'))).not.toMatch(/Iron Chest|Copper Chest/);
+        expect(iron.oneOffFind).toMatchObject({ via: tokenKey('token_iron_chest') });
     });
 });
 

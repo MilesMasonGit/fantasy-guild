@@ -196,12 +196,18 @@ function outputKey(entry) {
 
 const weightOf = (entry) => Math.max(0, finite(Number(entry?.weight), 1));
 
+/** Whether a Token wears out for good: it has Charges and nothing brings it back (a chest). */
+export function isOneOff(def) {
+    return isObject(def) && def.uses !== undefined && def.uses !== null && !respawnOf(def) && !isObject(def.enemy);
+}
+
 /**
  * The content as the engines read it: every record by key, its name, and the rules that make
  * things. Planned records are kept by name only (`planned`) and make nothing.
  *
  * A rule: `{ id, how, via, needs: key[], tool: key|null, gives: [{ key, chance, firstKill, perCycle }],
- * floor, gates: [{ skill, level }], cycleMs, inputs: [{ key, quantity }], passive }`. It fires at the
+ * floor, gates: [{ skill, level }], cycleMs, inputs: [{ key, quantity }], passive, oneOff }`. `oneOff`
+ * marks the work of a one-off find (a chest a map places). It fires at the
  * lowest tier where every need (and its tool) is reached, and never below its `floor`. `via` is the
  * record that does the work, which a path follows back; `inputs` what one cycle spends, which a tree
  * follows down.
@@ -240,7 +246,7 @@ export function buildWorld(content = {}, { bountyMapChance = BOUNTY_MAP_CHANCE }
 
     const rules = [];
     const add = (rule) => rules.push({
-        needs: [], tool: null, gives: [], floor: 0, gates: [], cycleMs: null, inputs: [], passive: false, ...rule
+        needs: [], tool: null, gives: [], floor: 0, gates: [], cycleMs: null, inputs: [], passive: false, oneOff: false, ...rule
     });
     const inputsOf = (entries) => list(entries)
         .filter(e => text(e.itemId))
@@ -527,6 +533,23 @@ export function buildWorld(content = {}, { bountyMapChance = BOUNTY_MAP_CHANCE }
         const gives = [...toolNeeds].filter(([, need]) => toolMeets(tool, need)).map(([key]) => ({ key, chance: 1 }));
         if (gives.length) add({ id: `hold:${id}`, how: HOW.HOLD, via: itemKey(id), needs: [itemKey(id)], gives });
     }
+    // A one-off find: a Token that wears out for good, which only a map or a modifier places. Its work
+    // is there once, by chance, so reach keeps it on the side rather than as a way in.
+    const placedBy = new Map();
+    for (const rule of rules) {
+        for (const give of rule.gives) {
+            if (!placedBy.has(give.key)) placedBy.set(give.key, []);
+            placedBy.get(give.key).push(rule.how);
+        }
+    }
+    for (const rule of rules) {
+        if ((rule.how !== HOW.WORK && rule.how !== HOW.CATCH) || !rule.via?.startsWith('token:')) continue;
+        const placers = placedBy.get(rule.via) || [];
+        if (isOneOff(tokens[parseKey(rule.via).id]) && placers.length && placers.every(how => how === HOW.MAP || how === HOW.MODIFIER)) {
+            rule.oneOff = true;
+        }
+    }
+
     for (const [key, need] of toolNeeds) names.set(key, need.kinds ? need.kinds.join(' or ') : `${need.kind} ${need.minTier}+`);
     names.set(REGION, LEDGER_ENGINE_TEXT.region);
 
@@ -549,14 +572,16 @@ const needsOf = (rule) => (rule.tool ? [...rule.needs, rule.tool] : rule.needs);
 
 /**
  * The fixpoint: for every key the best way in (`better`), over the rules, sure gives only when
- * `sureOnly`. Values only ever improve and are finitely many, so it ends; a key nothing reaches is absent.
+ * `sureOnly`; a one-off find's work left out, or taken as luck when `finds`. Values only ever improve
+ * and are finitely many, so it ends; a key nothing reaches is absent.
  */
-function settle(world, { luckBelow, sureOnly }) {
+function settle(world, { luckBelow, sureOnly, finds = false }) {
     const best = new Map();
     let changed = true;
     while (changed) {
         changed = false;
         for (const rule of world.rules) {
+            if (rule.oneOff && !finds) continue;
             let tier = rule.floor;
             let luck = false;
             let gateLevel = rule.gates.reduce((top, g) => Math.max(top, g.level), 0);
@@ -574,7 +599,7 @@ function settle(world, { luckBelow, sureOnly }) {
             for (const give of rule.gives) {
                 const sure = isSure(give, luckBelow);
                 if (sureOnly && !sure) continue;
-                const cand = { tier, luck: luck || !sure, gate: gateLevel, depth: depth + 1, rule, give };
+                const cand = { tier, luck: luck || !sure || rule.oneOff, gate: gateLevel, depth: depth + 1, rule, give };
                 if (better(cand, best.get(give.key))) {
                     best.set(give.key, cand);
                     changed = true;
@@ -588,7 +613,11 @@ function settle(world, { luckBelow, sureOnly }) {
 /**
  * When every entry is first reachable.
  *
- * @returns {Map<string, {key, kind, id, name, planned, tier, sureTier, luckOnly, how, via, chance, firstKill, levels, gate, depth, rule}>}
+ * A one-off find (`rule.oneOff`) is no way in: reach is worked out without it, and an entry it gives
+ * earliest carries it on the side (`oneOffFind`). An entry only a one-off find gets, itself or down
+ * its chain, is reached through it, as luck only (`oneOffOnly`).
+ *
+ * @returns {Map<string, {key, kind, id, name, planned, tier, sureTier, luckOnly, oneOffOnly, oneOffFind, how, via, chance, firstKill, levels, gate, depth, rule}>}
  *   one entry per item, Token and recipe key (and the tool and Region keys rules need). `tier` is
  *   null when it is never reachable; `sureTier` the lowest tier without luck (null: only ever by luck,
  *   or never); `luckOnly` that at its tier only a drop under `luckBelow` gets it (luck anywhere on its
@@ -599,11 +628,13 @@ function settle(world, { luckBelow, sureOnly }) {
 export function computeReach(world, { luckBelow = LUCK_BELOW } = {}) {
     const any = settle(world, { luckBelow, sureOnly: false });
     const sure = settle(world, { luckBelow, sureOnly: true });
+    const withFinds = world.rules.some(r => r.oneOff) ? settle(world, { luckBelow, sureOnly: false, finds: true }) : any;
+    const bestOf = (key) => any.get(key) ?? withFinds.get(key);
 
     const levelsMemo = new Map();
     const levelsOf = (key, seen) => {
         if (levelsMemo.has(key)) return levelsMemo.get(key);
-        const at = any.get(key);
+        const at = bestOf(key);
         const out = {};
         if (!at || seen.has(key)) return out;
         seen.add(key);
@@ -627,10 +658,10 @@ export function computeReach(world, { luckBelow = LUCK_BELOW } = {}) {
     for (const key of keys) {
         const { kind, id } = parseKey(key);
         const base = { key, kind, id, name: world.names.get(key) ?? id };
-        const at = world.planned.has(key) ? null : any.get(key);
+        const at = world.planned.has(key) ? null : bestOf(key);
         if (!at) {
             out.set(key, {
-                ...base, planned: world.planned.has(key), tier: null, sureTier: null, luckOnly: false,
+                ...base, planned: world.planned.has(key), tier: null, sureTier: null, luckOnly: false, oneOffOnly: false, oneOffFind: null,
                 how: null, via: null, chance: null, firstKill: false, levels: {}, gate: null, depth: 0, rule: null
             });
             continue;
@@ -644,6 +675,8 @@ export function computeReach(world, { luckBelow = LUCK_BELOW } = {}) {
             tier: at.tier,
             sureTier: surely ? surely.tier : null,
             luckOnly: !surely || surely.tier > at.tier,
+            oneOffOnly: !any.has(key),
+            oneOffFind: null,
             how: at.rule.how,
             via: at.rule.via,
             chance: at.give.chance,
@@ -654,7 +687,40 @@ export function computeReach(world, { luckBelow = LUCK_BELOW } = {}) {
             rule: at.rule
         });
     }
+
+    for (const rule of world.rules) {
+        if (!rule.oneOff) continue;
+        let tier = rule.floor;
+        for (const need of needsOf(rule)) tier = Math.max(tier, out.get(need)?.tier ?? NaN);
+        if (!Number.isInteger(tier)) continue;
+        for (const give of rule.gives) {
+            const entry = out.get(give.key);
+            if (entry && entry.tier !== null && !(entry.oneOffFind && entry.oneOffFind.tier <= tier)) {
+                entry.oneOffFind = { tier, via: rule.via, name: world.names.get(rule.via) ?? parseKey(rule.via).id };
+            }
+        }
+    }
     return out;
+}
+
+/**
+ * The one-off find an entry only it gets is reached through (the chest itself, or the chest an
+ * ingredient comes from): its key, or null when the entry has a way in without one.
+ */
+export function oneOffFindOf(reach, key) {
+    const seen = new Set();
+    const walk = (k) => {
+        const at = reach.get(k);
+        if (!at?.oneOffOnly || !at.rule || seen.has(k)) return null;
+        seen.add(k);
+        if (at.rule.oneOff) return at.rule.via;
+        for (const need of needsOf(at.rule)) {
+            const hit = walk(need);
+            if (hit) return hit;
+        }
+        return null;
+    };
+    return walk(key);
 }
 
 /**
