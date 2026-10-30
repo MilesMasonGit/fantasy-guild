@@ -4,6 +4,8 @@
  * the current task.
  */
 
+import { runLedgerJobNow } from './ledgerJobs.js';
+
 let worker = null;
 let nextId = 1;
 const waiting = new Map();
@@ -38,7 +40,7 @@ export function hasLedgerWorker() {
 /** Run one job: a promise of its result. */
 export function runLedgerJob(type, payload) {
     const w = workerOrNull();
-    if (!w) return import('./ledgerJobs.js').then((m) => new Promise((resolve) => setTimeout(resolve, 0)).then(() => m.runLedgerJobNow(type, payload)));
+    if (!w) return new Promise((resolve) => setTimeout(resolve, 0)).then(() => runLedgerJobNow(type, payload));
     const id = nextId++;
     return new Promise((resolve, reject) => {
         waiting.set(id, { resolve, reject });
