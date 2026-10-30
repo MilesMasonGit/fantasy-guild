@@ -1,4 +1,4 @@
-Status: briefed 2026-10-28 (ledger and content fixes approved 2026-10-28; brief 290). Gating section still open.
+Status: briefed 2026-10-28 (ledger and content fixes approved 2026-10-28; amended 2026-10-29: the plan lives in the CMS; brief 290 rewritten). Gating moved to concept_world_map.md.
 
 # Progression ledger: tracking when content arrives
 
@@ -32,35 +32,55 @@ otherwise) is a separate open question**, below.*
   game already records where each item came from (a collection-log base,
   `RegistryManager.js`), unshown.
 
-## The ledger (owner)
+## The ledger (owner; amended 2026-10-29)
 
-- **A spreadsheet file in the repo** (`docs/`, opens in Excel or Google
-  Sheets) holds the plan: every item, Token, enemy and recipe, including
-  things not yet authored, with its intended **stage** (Starter Camp, Plane 1,
-  Plane 2, … or Parked) and, where it matters, a target time.
-- **A time budget per stage** (owner): camp about 30 minutes, plane 1 about
-  1.5 hours, plane 2 about a day (from
-  [concept_progression.md](concept_progression.md)); an optional target on a
-  single entity.
-- **The CMS reads the spreadsheet and flags disagreements** (owner): a "reach
-  engine" works out when each thing is actually first reachable and by what
-  path ("Iron Ore ← Iron Vein (Mining 15) ← Volcano map ← Goblin Chief first
-  kill"), and lists:
-  - reachable earlier than planned (a leak), later, or never (a break);
-  - reachable only by luck;
-  - a level gate the skill cannot reach inside its stage's time budget (the
-    simulator's XP rates);
-  - a tool no recipe makes; produced but unused, used but never produced;
-  - in the plan but not in the CMS, or in the CMS but not in the plan.
-  Parked rows are silenced.
-- **Views**: a chain view (stages as columns, filter by skill) and a pacing
-  strip per skill (level gates against the level expected at each stage's
-  time).
-- **The game's encyclopedia and collection log** later read the same reach
-  engine, so the player's "found on …" matches the owner's ledger path.
-- An agent drafts the first spreadsheet from
-  [concept_basic_content.md](concept_basic_content.md)'s tables and the data;
-  the owner reviews it.
+*Amended 2026-10-29 (owner): the plan lives **inside the CMS**, not in a
+separate spreadsheet. The owner's reasons: the world map's origins and
+complex crafted items need a bigger solution than rows in a sheet.*
+
+**What it must do** (owner, all four): show **every item's sources and
+uses**; show a **crafted item's whole tree** down to its origins; **plan
+where things belong**, including things not yet authored; **catch problems
+automatically**. "Prioritize" means **when the player gets things** and
+**what matters most to balance** (owner).
+
+- **The plan lives in the CMS** (owner). Every item, Token, enemy and recipe,
+  authored or only planned, is an entry with a **status: Planned, Draft,
+  Live or Parked**. A Planned entry is a stub (a name, a tier, a note) that a
+  later content pack fills in. Parked entries are silenced in the checks. An
+  export to a spreadsheet stays possible for overviews.
+- **Every item gets a tier set by the owner** (owner: always hand-set, crafted
+  items included). The tool **computes the tree** behind each item and checks
+  it against the set tier.
+- **Computed from the tree** (owner): each item's **total effort** (time across
+  all its ingredients down to the origins; the simulator already prices
+  effort), **the skills it touches**, **its depth**, and **its earliest reach**
+  (tier, levels, and later wedge and ring): "42 min of work, 4 skills, needs
+  tier-2 ores and tier-1 herbs".
+- **A time budget per stage** (owner, 2026-10-28): camp about 30 minutes,
+  plane 1 about 1.5 hours, plane 2 about a day; stages are tiers for now.
+- **The reach engine** works out when each thing is actually first reachable
+  and by what path ("Iron Ore ← Iron Vein (Mining 15) ← …"), as one shared
+  module the CMS and later the game's encyclopedia and collection log use.
+- **Automatic checks**: reachable earlier than its tier (a leak), later or
+  never (a break); a tree whose ingredients come from a later tier than the
+  item's; luck-only sources; a level gate unreachable inside its stage's
+  budget; a tool no recipe makes; produced-but-unused, used-but-never-produced;
+  Planned stubs nothing points to.
+- **Views, in the owner's order of use** (owner):
+  1. **Item page**: all sources (wild nodes, drops, side sources, recipes), all
+     uses, the full tree, effort, earliest reach, status, set tier.
+  2. **Progression timeline**: every item by when a player first reaches it
+     (time and levels), per skill; crowded and empty stretches stand out.
+  3. **Economy hubs and problems**: items ranked by how many recipes depend on
+     them (where balance hinges), and the list of automatic problems.
+  4. Later, with the world map: a **World plan** grid of wedges by ring.
+- **The world map comes later** (owner): the ledger is built on tiers now;
+  when [concept_world_map.md](concept_world_map.md) is approved, **wedge and
+  ring** are added to origins and the World plan view arrives. Meanwhile the
+  ledger helps price the world map's cells.
+- Tiers will move as content settles (owner): Ores and Trees are mostly
+  settled; Crops and Herbs are still undefined.
 
 ## Content fixes (owner: the recommended set, one agent pack)
 
