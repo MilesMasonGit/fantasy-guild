@@ -220,7 +220,7 @@ function tileRules(book, targetDef, setup, hero, notes) {
                 const match = targetMatch(statement.to, targetDef, hero);
                 if (!match.ok) continue;
                 if (copy === 0 && match.live) {
-                    notes.unmodelled.push({ source: source.id, what: statement.keyword, why: 'its filter reads live state (charges, who works it); taken at full charges', statementId: statement.id ?? null });
+                    notes.unmodelled.push({ source: source.id, what: statement.keyword, why: 'its filter reads how many charges the Token holds; taken at full charges', statementId: statement.id ?? null });
                 }
                 if (copy === 0 && statement.upkeep) {
                     notes.assumptions.push({ source: source.id, what: 'upkeep', why: 'its upkeep is taken as paid', statementId: statement.id ?? null });
@@ -567,6 +567,19 @@ function hasNearby(setup, typeIds) {
  * hero standing by it: unlimited; refilled after a rest (a vein); regrown through a chain of growths
  * back to itself (a felled tree, its stump, its sapling); or worn out for good (a chest).
  */
+/**
+ * How many of a spawner's family take turns being worked: `family.members` when the setup says,
+ * else the spawner's `allowance` (every one of them standing where the hero can reach), else one.
+ */
+function familyMembers(book, setup) {
+    const family = isObject(setup.family) ? setup.family : null;
+    if (!family) return 1;
+    const asked = Math.floor(Number(family.members));
+    if (asked >= 1) return asked;
+    const allowance = Math.floor(Number(book.token(family.spawner)?.spawner?.allowance));
+    return allowance >= 1 ? allowance : 1;
+}
+
 function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes) {
     const uses = neverWearsOut(def) ? null : (def.uses ?? null);
     const cost = ownCycleCost(def, recipe);
@@ -603,8 +616,7 @@ function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes) {
         }
         if (!ok) return { kind: LIFECYCLE.ONE_OFF, cycles, supplyPerHour: 0, used, why: 'its regrowth never comes back to it' };
         const growMs = steps.reduce((sum, s) => sum + s.ms, 0);
-        const family = isObject(setup.family) ? setup.family : null;
-        const members = family ? Math.max(1, Math.floor(Number(family.members) || 1)) : 1;
+        const members = familyMembers(book, setup);
         return {
             kind: LIFECYCLE.REGROW, cycles, steps, growMs, members, costs,
             supplyPerHour: members * HOUR_MS * cycles / (cycles * cycleMs + growMs), used
@@ -633,6 +645,56 @@ function expectedYield(output, resolve, skill) {
 }
 
 /**
+ * Everything one piece of work's rate is worked out from: the Token and recipe, the cycle's terms, the
+ * gates, and the resolver over every scope. `refused` holds the answer instead when the work cannot be
+ * rated (no such Token, a kind the calculator does not model, no cycle time).
+ */
+function prepare(book, target, setup) {
+    const notes = { unmodelled: [], assumptions: [] };
+    const refuse = (reason, unmodelled = []) => ({ refused: { ok: false, reason, target, unmodelled, assumptions: [] } });
+    const def = book.token(target.token);
+    if (!def) return refuse('no such Token');
+    const recipe = text(target.recipe) ? book.recipes[target.recipe] ?? null : null;
+    if (text(target.recipe) && !recipe) return refuse('no such recipe');
+
+    const kindWhy = unmodelledKind(def, recipe);
+    if (kindWhy) return refuse(kindWhy, [{ source: def.id, what: 'work', why: kindWhy }]);
+
+    const config = def.config;
+    if (recipe && !(stationSkillOf(def) === recipe.skill && stationKindOffers(stationKindOf(def), recipe))) {
+        return refuse('the station does not offer the recipe');
+    }
+    // The cycle's terms as `RecipeResolver.effectiveIO` reads them: the recipe's own, else the Token's.
+    const io = {
+        inputs: list(recipe?.inputs ?? config.inputs),
+        outputs: list(recipe?.outputs ?? config.outputs),
+        cycleTimeMs: recipe?.durationMs ?? config.cycleTimeMs,
+        xp: recipe?.xp ?? config.xp
+    };
+    const baseCycleMs = Number(io.cycleTimeMs) || Number(config.cycleTimeMs);
+    if (!(baseCycleMs > 0)) return refuse('no cycle time', [{ source: def.id, what: 'cycleTimeMs', why: 'no cycle time authored' }]);
+
+    const gates = gatesOf(book, def, config, recipe, setup);
+    const hero = heroRules(book, gates.skill, setup, gates, notes);
+    const reaching = tileRules(book, def, setup, hero, notes);
+    const tile = tileScope(reaching.modifiers);
+    const guild = guildScope(setup, notes);
+    const resolve = makeResolver(tile, guild, hero);
+    return { def, recipe, io, baseCycleMs, gates, hero, tileGrants: reaching.grants, guild, resolve, notes };
+}
+
+/**
+ * One axis as the board resolves it on the worked Token (`TileModifiers.resolveAxis`), under a setup:
+ * `resolve(effectType, base, category)` gives the number, before any floor. Null when the work cannot
+ * be rated. For checking the calculator against the board, and for the ledger's breakdown views.
+ */
+export function axisResolverOf(book, target, setup = {}) {
+    const prepared = prepare(book, target, setup);
+    if (prepared.refused) return null;
+    return (effectType, base, category = TARGET_CATEGORIES.ALL) => prepared.resolve(effectType, base, category).value;
+}
+
+/**
  * The rate of one piece of work.
  *
  * @param {object} target  `{ token }` (a vein, a tree, a bush) or `{ token, recipe }` (a recipe at a station)
@@ -643,45 +705,17 @@ function expectedYield(output, resolve, skill) {
  *   - `supports`: Tokens standing within Near of the worked one, each an id or `{ id, count, distant }`
  *   - `region`: a Region's rules (statements); `guild`: guild-wide modifiers
  *   - `perks`: false to leave milestone perks out (default in)
- *   - `family`: `{ members }`, how many of a spawner's family stand in reach to be worked in turn
+ *   - `family`: `{ spawner, members }`, a spawner's family worked in turn; `members` defaults to the
+ *     spawner's allowance (all of them in the hero's reach)
  *   - `heroes`: how many heroes work it (default 1; only a family can take more than one)
  *   - `off`: factor ids or kinds switched off (`support:token_copper_mine`, `consumable`, …)
  * @returns {object} the rate, its factors and what it could not read
  */
 function rateOf(book, target = {}, setup = {}) {
-    const notes = { unmodelled: [], assumptions: [] };
-    const def = book.token(target.token);
-    if (!def) return { ok: false, reason: 'no such Token', target, unmodelled: notes.unmodelled, assumptions: notes.assumptions };
-    const recipe = text(target.recipe) ? book.recipes[target.recipe] ?? null : null;
-    if (text(target.recipe) && !recipe) return { ok: false, reason: 'no such recipe', target, unmodelled: [], assumptions: [] };
-
-    const kindWhy = unmodelledKind(def, recipe);
-    if (kindWhy) return { ok: false, reason: kindWhy, target, unmodelled: [{ source: def.id, what: 'work', why: kindWhy }], assumptions: [] };
-
-    const config = def.config;
-    if (recipe && !(stationSkillOf(def) === recipe.skill && stationKindOffers(stationKindOf(def), recipe))) {
-        return { ok: false, reason: 'the station does not offer the recipe', target, unmodelled: [], assumptions: [] };
-    }
-    // The cycle's terms as `RecipeResolver.effectiveIO` reads them: the recipe's own, else the Token's.
-    const io = {
-        inputs: list(recipe?.inputs ?? config.inputs),
-        outputs: list(recipe?.outputs ?? config.outputs),
-        cycleTimeMs: recipe?.durationMs ?? config.cycleTimeMs,
-        xp: recipe?.xp ?? config.xp
-    };
-    const baseCycleMs = Number(io.cycleTimeMs) || Number(config.cycleTimeMs);
-    if (!(baseCycleMs > 0)) {
-        return { ok: false, reason: 'no cycle time', target, unmodelled: [{ source: def.id, what: 'cycleTimeMs', why: 'no cycle time authored' }], assumptions: [] };
-    }
-
-    const gates = gatesOf(book, def, config, recipe, setup);
+    const prepared = prepare(book, target, setup);
+    if (prepared.refused) return prepared.refused;
+    const { def, recipe, io, baseCycleMs, gates, hero, tileGrants, guild, resolve, notes } = prepared;
     const skill = gates.skill;
-    const hero = heroRules(book, skill, setup, gates, notes);
-    const reaching = tileRules(book, def, setup, hero, notes);
-    const tile = tileScope(reaching.modifiers);
-    const tileGrants = reaching.grants;
-    const guild = guildScope(setup, notes);
-    const resolve = makeResolver(tile, guild, hero);
     const category = skill || TARGET_CATEGORIES.ALL;
     const usedBy = new Map();
     const note = (axis, used) => {

@@ -264,6 +264,7 @@ export async function runSetup({ id, seed = 1, hours = 8, root, trace = false })
         },
         calc: {
             made: calc.made,
+            spent: calc.spent,
             net: calc.net,
             xp: calc.xp,
             works: calc.works.map(w => ({

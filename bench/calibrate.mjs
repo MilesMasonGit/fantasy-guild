@@ -66,16 +66,18 @@ for (const setup of setups) {
     const line = (kind, key, engineValues, calcValue) => {
         const engine = mean(engineValues);
         const d = pct(calcValue, engine);
+        const known = setup.known?.[`${kind} ${key}`] ?? null;
         const bad = Math.abs(d) > tolerance;
-        if (bad) outside = true;
-        rows.push({ kind, key, engine, engineValues, calc: calcValue, diff: d, outside: bad });
-        console.log(`  ${pad(`${kind} ${key}`, 26)}${pad(num(engine), 12)}${pad(num(calcValue), 12)}${pad(`${(d * 100).toFixed(1)}%`, 9)}${engineValues.map(num).join(' / ')}${bad ? '   OUTSIDE' : ''}`);
+        if (bad && !known) outside = true;
+        rows.push({ kind, key, engine, engineValues, calc: calcValue, diff: d, outside: bad, known });
+        console.log(`  ${pad(`${kind} ${key}`, 26)}${pad(num(engine), 12)}${pad(num(calcValue), 12)}${pad(`${(d * 100).toFixed(1)}%`, 9)}${engineValues.map(num).join(' / ')}${bad ? (known ? `   KNOWN: ${known}` : '   OUTSIDE') : ''}`);
     };
     for (const item of setup.compare.items) line('item', item, mine.map(r => r.engine.made[item] || 0), mine[0].calc.made[item] || 0);
+    for (const item of setup.compare.spent || []) line('spent', item, mine.map(r => -(r.engine.net[item] || 0)), mine[0].calc.spent[item] || 0);
     for (const skill of setup.compare.skills) line('xp', skill, mine.map(r => r.engine.xp[skill] || 0), mine[0].calc.xp[skill] || 0);
     const calcWorks = mine[0].calc.works.map(w => `${w.target.recipe || w.target.token} ${num(w.cyclesPerHour)} cycles/h (${w.limitedBy}${w.fed ? ', fed by the chain' : ''})`);
     console.log(`  calculator: ${calcWorks.join('; ')}`);
-    console.log(`  engine cycles/h: ${Object.entries(mine[0].engine.cyclesPerHour).map(([k, v]) => `${k} ${num(mean(mine.map(r => r.engine.cyclesPerHour[k] || 0)))}`).join('; ')}`);
+    console.log(`  engine cycles/h: ${Object.keys(mine[0].engine.cyclesPerHour).map((k) => `${k} ${num(mean(mine.map(r => r.engine.cyclesPerHour[k] || 0)))}`).join('; ')}`);
     const unmodelled = mine[0].calc.works.flatMap(w => w.unmodelled.map(u => `${u.source}: ${u.why}`));
     if (unmodelled.length) console.log(`  unmodelled: ${[...new Set(unmodelled)].join('; ')}`);
     console.log(`  engine: ${num(mean(mine.map(r => r.engine.playMsPerGameHour)))} ms per game-hour of catch-up`);

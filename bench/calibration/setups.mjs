@@ -53,7 +53,7 @@ export const SETUPS = [
         name: 'A spawner forest: an Oak Forest worked from a Logging Camp by one forester',
         warmupMs: 30 * 60_000,
         compare: { items: ['item_oak_wood', 'item_oak_seedling', 'item_bird_nest'], skills: ['forestry'] },
-        works: [{ target: { token: 'token_oak_tree' }, setup: { level: 10, supports: ['token_oak_forest'], family: { members: 5 } } }],
+        works: [{ target: { token: 'token_oak_tree' }, setup: { level: 10, supports: ['token_oak_forest'], family: { spawner: 'token_oak_forest' } } }],
         // Seedlings pay the Forest's spawns and each stump's regrowth; the trees drop more as they are felled.
         bank: { item_oak_seedling: 100 },
         build({ place, hero, order, prefillSpawners }) {
@@ -62,6 +62,37 @@ export const SETUPS = [
             const camp = place('token_logging_camp', 800 + STEP, 560);
             prefillSpawners();
             const forester = hero('Forester', { forestry: 10 }, ['item_copper_woodaxe']);
+            order(forester, camp);
+        }
+    },
+    {
+        id: 'vein-beer',
+        name: 'The vein again, the miner drinking Beer (+10 % XP, on the XP floor)',
+        warmupMs: 10 * 60_000,
+        compare: { items: ['item_copper_ore'], skills: ['mining'], spent: ['item_beer'] },
+        // The engine announces a cycle start twice when a vein refills at the end of a step, so a drink's
+        // dose counts one extra cycle per refill (about 20 % more Beer here). An engine fault, not the calculator's.
+        known: { 'spent item_beer': 'the engine counts a cycle start twice after each refill' },
+        works: [{ target: { token: 'token_copper_ore_vein' }, setup: { level: 10, consumables: ['item_beer'] } }],
+        bank: { item_beer: 1000 },
+        build({ place, hero, order }) {
+            const vein = place('token_copper_ore_vein', 800, 560);
+            const miner = hero('Miner', { mining: 10 }, ['item_copper_pickaxe', 'item_beer']);
+            order(miner, vein);
+        }
+    },
+    {
+        id: 'forest-potions',
+        name: 'The forest again, the forester on Lemonade (+10 % Forestry yield) and Birdwatcher potions (25 % Bird Nest)',
+        warmupMs: 30 * 60_000,
+        compare: { items: ['item_oak_wood', 'item_oak_seedling', 'item_bird_nest'], skills: ['forestry'], spent: ['item_lemonade', 'item_birdwatcher'] },
+        works: [{ target: { token: 'token_oak_tree' }, setup: { level: 10, supports: ['token_oak_forest'], family: { spawner: 'token_oak_forest' }, consumables: ['item_lemonade', 'item_birdwatcher'] } }],
+        bank: { item_oak_seedling: 100, item_lemonade: 1000, item_birdwatcher: 10000 },
+        build({ place, hero, order, prefillSpawners }) {
+            place('token_oak_forest', 800, 560);
+            const camp = place('token_logging_camp', 800 + STEP, 560);
+            prefillSpawners();
+            const forester = hero('Forester', { forestry: 10 }, ['item_copper_woodaxe', 'item_lemonade', 'item_birdwatcher']);
             order(forester, camp);
         }
     }
