@@ -537,9 +537,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const bound = settings.profileBounds;
             const tops = new Map();
             for (const a of track.asks) if (Number.isInteger(a.tier) && a.level > 1) tops.set(a.tier, Math.max(tops.get(a.tier) || 1, a.level));
+            let lastTop = 1;
             for (const [tier, level] of [...tops].sort((x, y) => x[0] - y[0])) {
                 const row = track.levels[level - 2];
-                if (!row) continue;
+                // A later stage asking no higher level adds nothing to say.
+                if (!row || level <= lastTop) continue;
+                lastTop = level;
                 const curve = minutesToReach(settings, level);
                 const bare = row.cumulative.bare * 60 / curve;
                 const maxed = curve / (row.cumulative.maxed * 60);
@@ -717,7 +720,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const track = trackOf(skill);
             const stages = new Map();
             for (const row of track.levels) stages.set(row.tier, row.level);
-            if (!stages.size) stages.set(maxTier, 1);
+            if (!stages.size) {
+                // A skill no entry asks a level of: read it where its first work is reached.
+                const first = Math.min(...(skillsOfWork.get(skill) || []).map(w => w.tier).filter(Number.isInteger));
+                stages.set(Number.isFinite(first) ? first : maxTier, 1);
+            }
             for (const [tier, level] of [...stages].sort((a, b) => a[0] - b[0])) {
                 const row = { skill, tier, level, profiles: {} };
                 for (const profile of [PROFILE.TYPICAL, PROFILE.MAXED]) {
