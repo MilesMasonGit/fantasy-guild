@@ -56,6 +56,43 @@ system needs. These goals steer it.*
   economic simulator, Recalculate) so XP returns and other pacing elements
   give balanced gameplay.
 
+## The system design (owner, 2026-10-29)
+
+*From the analyst's [system plan](research/ledger_system_plan_2026-10-29.md);
+the owner's answers to its questions.*
+
+- **A planning desk in the CMS** with a `plan` block on every entity
+  (status, `plan.tier` kept apart from the existing gear `tier` field, note,
+  optional targets, later wedge and ring), a shared reach-and-tree engine,
+  a **pretend player** (a fast abstract model of a guild, not the real engine,
+  kept honest by calibration against the real engine), about thirty checks
+  in six groups, four views (item page, timeline, hubs and problems,
+  before-and-after) and an agent gate.
+- **Drafts sync into the game like Live** (owner); only Planned stubs stay
+  out. The ledger labels Drafts.
+- **The budgets assume the target player** (owner): game open in the
+  background, checks in every 30–60 minutes, away 8 hours overnight.
+- **A stage turns red beyond ±25 % of its budget** (owner).
+- **Pacing philosophy** (owner): **players fly through the first levels; the
+  last levels need specialised setups and resources to gain a level every few
+  days.** The tool holds a **target time-per-level curve** (a few points the
+  owner sets; the curve drawn between them); **a wall** is where the pretend
+  player waits much longer than the curve expects for its next unlock or
+  level (default: more than twice the expected time).
+- **Luck: average only** (owner): luck averages out over long play; no
+  bad-luck runs.
+- **Balancing is automatic** (owner): "I don't want control over individual
+  numbers. A human won't be able to plan that well, we need it
+  algorithmically balanced." Later, Recalculate **sets the numbers itself**
+  (XP returns, level requirements, costs, times) to bring pacing onto the
+  curve, as today's Recalculate already writes prices back. The owner sets the
+  curve and the plan; the algorithm sets the numbers.
+- **Build: a test build first, and tied into the CMS as early as possible**
+  (owner): the ledger lives in a CMS tab from its first phase, and every later
+  phase adds to that tab.
+- The virtual guild follows the game's real roster rules (planning agent's
+  default).
+
 ## The ledger (owner; amended 2026-10-29)
 
 *Amended 2026-10-29 (owner): the plan lives **inside the CMS**, not in a
