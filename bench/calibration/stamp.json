@@ -1,0 +1,359 @@
+{
+  "commit": "87f5de9e",
+  "date": "2026-10-30T21:19:23.324Z",
+  "hours": 8,
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "tolerance": 0.15,
+  "passed": true,
+  "setups": [
+    {
+      "id": "vein",
+      "name": "One hero on a Copper Ore Vein",
+      "rows": [
+        {
+          "kind": "item",
+          "key": "item_copper_ore",
+          "engine": 359,
+          "calc": 360,
+          "diff": 0.3,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "xp",
+          "key": "mining",
+          "engine": 240,
+          "calc": 240,
+          "diff": 0,
+          "outside": false,
+          "known": null
+        }
+      ]
+    },
+    {
+      "id": "mine-smelt",
+      "name": "Mine plus smelt: a vein with a Minecart and a Copper Mine in reach, a Furnace on Copper Ingots",
+      "rows": [
+        {
+          "kind": "item",
+          "key": "item_copper_ore",
+          "engine": 466.5,
+          "calc": 468.8,
+          "diff": 0.5,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "item",
+          "key": "item_copper_ingot",
+          "engine": 116.6,
+          "calc": 117.2,
+          "diff": 0.5,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "xp",
+          "key": "mining",
+          "engine": 250,
+          "calc": 250,
+          "diff": 0,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "xp",
+          "key": "smithing",
+          "engine": 116.6,
+          "calc": 117.2,
+          "diff": 0.5,
+          "outside": false,
+          "known": null
+        }
+      ]
+    },
+    {
+      "id": "forest",
+      "name": "A spawner forest: an Oak Forest worked from a Logging Camp by one forester",
+      "rows": [
+        {
+          "kind": "item",
+          "key": "item_oak_wood",
+          "engine": 565.8,
+          "calc": 562.5,
+          "diff": -0.6,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "item",
+          "key": "item_oak_seedling",
+          "engine": 76.2,
+          "calc": 75,
+          "diff": -1.6,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "item",
+          "key": "item_bird_nest",
+          "engine": 12.1,
+          "calc": 11.3,
+          "diff": -6.9,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "xp",
+          "key": "forestry",
+          "engine": 377.6,
+          "calc": 375,
+          "diff": -0.7,
+          "outside": false,
+          "known": null
+        }
+      ]
+    },
+    {
+      "id": "vein-beer",
+      "name": "The vein again, the miner drinking Beer (+10 % XP, on the XP floor)",
+      "rows": [
+        {
+          "kind": "item",
+          "key": "item_copper_ore",
+          "engine": 359,
+          "calc": 360,
+          "diff": 0.3,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "spent",
+          "key": "item_beer",
+          "engine": 28.9,
+          "calc": 24,
+          "diff": -16.9,
+          "outside": true,
+          "known": "the engine counts a cycle start twice after each refill"
+        },
+        {
+          "kind": "xp",
+          "key": "mining",
+          "engine": 480,
+          "calc": 480,
+          "diff": 0,
+          "outside": false,
+          "known": null
+        }
+      ]
+    },
+    {
+      "id": "forest-potions",
+      "name": "The forest again, the forester on Lemonade (+10 % Forestry yield) and Birdwatcher potions (25 % Bird Nest)",
+      "rows": [
+        {
+          "kind": "item",
+          "key": "item_oak_wood",
+          "engine": 624,
+          "calc": 618.8,
+          "diff": -0.8,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "item",
+          "key": "item_oak_seedling",
+          "engine": 84.9,
+          "calc": 82.5,
+          "diff": -2.8,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "item",
+          "key": "item_bird_nest",
+          "engine": 106,
+          "calc": 106.1,
+          "diff": 0.1,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "spent",
+          "key": "item_lemonade",
+          "engine": 37.8,
+          "calc": 37.5,
+          "diff": -0.7,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "spent",
+          "key": "item_birdwatcher",
+          "engine": 377.5,
+          "calc": 375,
+          "diff": -0.7,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "xp",
+          "key": "forestry",
+          "engine": 377.6,
+          "calc": 375,
+          "diff": -0.7,
+          "outside": false,
+          "known": null
+        }
+      ]
+    },
+    {
+      "id": "mining-camp",
+      "name": "A Mining Camp with three Copper Ore Veins in its reach, one miner working them in turn",
+      "rows": [
+        {
+          "kind": "item",
+          "key": "item_copper_ore",
+          "engine": 1081,
+          "calc": 1080,
+          "diff": -0.1,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "xp",
+          "key": "mining",
+          "engine": 720,
+          "calc": 720,
+          "diff": 0,
+          "outside": false,
+          "known": null
+        }
+      ]
+    },
+    {
+      "id": "coast",
+      "name": "Water: one fisher on the Coast with a Fishing Rod and no bait",
+      "rows": [
+        {
+          "kind": "item",
+          "key": "item_tropical_fish",
+          "engine": 380.9,
+          "calc": 382.5,
+          "diff": 0.4,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "item",
+          "key": "item_salmon",
+          "engine": 45.4,
+          "calc": 45,
+          "diff": -0.9,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "item",
+          "key": "item_swordfish",
+          "engine": 23.7,
+          "calc": 22.5,
+          "diff": -5.1,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "xp",
+          "key": "fishing",
+          "engine": 450,
+          "calc": 450,
+          "diff": 0,
+          "outside": false,
+          "known": null
+        }
+      ]
+    },
+    {
+      "id": "field",
+      "name": "A Field: one farmer on a Wild Wheat Patch, harvesting its load and waiting out each regrowth",
+      "rows": [
+        {
+          "kind": "item",
+          "key": "item_wheat",
+          "engine": 14.9,
+          "calc": 14.9,
+          "diff": -0.3,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "item",
+          "key": "item_wheat_seed",
+          "engine": 3.9,
+          "calc": 4,
+          "diff": 2.4,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "item",
+          "key": "item_worm",
+          "engine": 1,
+          "calc": 1,
+          "diff": -0.8,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "xp",
+          "key": "farming",
+          "engine": 10,
+          "calc": 9.9,
+          "diff": -0.8,
+          "outside": false,
+          "known": null
+        }
+      ]
+    }
+  ],
+  "files": {
+    "src/systems/progression/ledger/rates.js": "05e4c822",
+    "src/systems/effects/ModifierAggregator.js": "b8d0de6f",
+    "src/systems/effects/statements.js": "67affaeb",
+    "src/systems/effects/effectLibrary.js": "6d4ee7ef",
+    "src/systems/board/workTime.js": "36d599d6",
+    "src/systems/board/cycleCharges.js": "0dcab499",
+    "src/systems/hero/xpBonus.js": "e252e41e",
+    "src/systems/hero/perkTable.js": "917450ad",
+    "src/systems/atlas/regionModifiers.js": "88698fe6",
+    "src/systems/core/consumableRule.js": "0616d59c",
+    "src/systems/core/wearRule.js": "bd32256d",
+    "src/config/registries/tokenConstants.js": "01064910",
+    "src/config/registries/filterRegistry.js": "16fffa4c",
+    "src/config/registries/reachRegistry.js": "f9f7508f",
+    "src/config/registries/toolKinds.js": "69973919",
+    "src/config/registries/catchPools.js": "825094d4",
+    "src/config/guildUpgrades.js": "d61bb2ac",
+    "src/systems/board/BoardRunner.js": "8f6120e3",
+    "src/systems/board/TileModifiers.js": "a9ad5fd6",
+    "src/systems/board/TimedChanges.js": "1be0bfed",
+    "src/systems/board/Respawn.js": "3891c6ff",
+    "src/systems/board/Growth.js": "a58bc50f",
+    "src/systems/board/Fields.js": "adb26942",
+    "src/systems/board/Fishing.js": "aca698ed",
+    "src/systems/board/OutputRules.js": "70a7e634",
+    "src/systems/board/PassiveProduction.js": "fdba2610",
+    "src/systems/board/SpawnerSystem.js": "06b73d66",
+    "src/systems/board/Camps.js": "1c5cb3fb",
+    "src/systems/board/Flags.js": "80d85342",
+    "src/systems/hero/HeroEffects.js": "911d99a4",
+    "src/systems/effects/LiveEffects.js": "4fd3f0c9",
+    "src/systems/core/CatchUp.js": "2f47dfd2",
+    "bench/calibration/setups.mjs": "5829313a",
+    "bench/calibration/engine.mjs": "bc569f95"
+  }
+}
