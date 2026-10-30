@@ -1,49 +1,36 @@
 # NOW — start here
 
-*Updated 2026-10-27. One screen: what is next and where the project stands.
-The features director resumes from [HANDOFF_features.md](HANDOFF_features.md),
-the terrain director from [HANDOFF.md](HANDOFF.md); the living table and
-summaries are [STATUS.md](STATUS.md); finished work lives in git, the
+*Updated 2026-10-29. One screen: what is next and where the project stands.
+A director resumes from [HANDOFF.md](HANDOFF.md); the living table and
+summaries are [STATUS.md](STATUS.md); the queue is the order table in
+[briefs/README.md](briefs/README.md); finished work lives in git, the
 changelog and `docs/archive/`.*
 
 ## Where the project is
 
-- **The crunch is done.** Every brief in the queue is built or parked, and the
-  Performance Envelope is measured and written as rules in
-  [GDD §14](../reference/GDD.md). The outstanding list was wrapped up
-  2026-10-20/21 (two rounds of four agents).
-- **Version** 0.8.x on `main`. **Tests:** 6,601, all green, seeded per test (T-250).
-- **Bench baselines:** engine retaken 2026-10-21 13:00, draw 2026-10-22 01:00,
-  both on a quiet machine.
+- **Version** 0.8.x on `main`. **Tests:** ~6,670, green, seeded per test.
+- **Done lately:** combat (220), skill loops (230), basic content (240, the
+  K4 play-through waits for the owner's verdicts), Token bars (250), and hero
+  orders (260): heroes are sent to a job by dragging them onto a Token; camps
+  give area work; the job flag is a small Lucide flag in each hero's colour.
+  260's last phase (O3: tutorial, old flag code, GDD) merges after its 01:05
+  29→30 Oct work check.
+- **Bench baselines** retaken 2026-10-29 01:30 on a quiet machine; work
+  changes since accepted under `brief260-O1-O2` and `T-264`.
 
-## Next (owner, 2026-10-22)
+## Next (owner, 2026-10-29)
 
-The owner's Backlog Intake was triaged into brief 210 and five new sessions:
+1. **Brief 270, classless heroes** (no jobs or promotion, the weapon decides the
+   style, armour families, perks), then **280 combat v2**, then **290**
+   (progression ledger, content fixes), in the queue's order.
+2. **Small tickets accumulate** until the existing briefs are done, then one
+   pass (owner rule 2026-10-29).
+3. **Planning**: the owner's icon rule and the icon audit
+   ([research/icon_audit_2026-10-29.md](research/icon_audit_2026-10-29.md)),
+   from `owner_feedback.md`; gating and the world map are in planning.
 
-1. **Backlog director: brief 210 done 2026-10-24.** All six batches and the
-   follow-ups the owner approved are on `main` (the wider mat and top bar,
-   quieter Tokens, one item one hero, the Hall glide, the Atlas spread, pixel
-   frames everywhere, the work plate). Left: T-255 (one render test's timeout).
-   State: [HANDOFF_backlog.md](HANDOFF_backlog.md).
-2. **Three planning agents**, interviewing the owner over several rounds,
-   each in its own worktree and branch:
-   combat ([concept_combat.md](concept_combat.md), "The detail pass"),
-   skill loops ([concept_skill_loops.md](concept_skill_loops.md), "The next
-   pass"), basic content ([concept_basic_content.md](concept_basic_content.md)).
-3. **Systems director: briefs 220 (combat) and 230 (skill loops) built, 240
-   (basic content) built and synced except K4.** A **fresh director** runs K4,
-   the full-game play-through. State: [HANDOFF_systems.md](HANDOFF_systems.md).
-   Owner: verdicts on the skill-loops eye-check
-   ([2026-10-26_skill-loops-s9.md](eyecheck/2026-10-26_skill-loops-s9.md)).
-4. Still in the backlog ([TICKETS.md](../reference/TICKETS.md)): the
-   Envelope's optimisation tickets (T-197 to T-201), the quest board (brief
-   170, postponed), T-193, T-119, T-195.
-5. **Owner, before release:** ZapSplat needs an in-game credit
-   (`CREDITS.md`); the background music is AI-generated placeholder, replaced
-   in the music pass (owner 2026-10-22).
+## Owner to-dos
 
-## Ground rules
-
-- Content must not make a Region cost more than the reference board (GDD §14).
-- The engine work check is `npm run bench -- --compare` after every merge.
-- Rules for agents, tiers, benches and eye-checks are in `CLAUDE.md`.
+- Verdicts on the K4 and S9 eye-checks (`docs/active/eyecheck/`).
+- While playing orders: shorter rest/regrow/respawn times, the Bunk Beds price;
+  decide later whether ambushes stay.
