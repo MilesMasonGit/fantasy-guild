@@ -95,6 +95,122 @@ to tune how effective boosts should be.*
   test build's comparison with the real engine, and real play); until then
   its proposals are a preview.
 
+## The rate calculator, proved against the engine (S0 spike, 2026-10-30)
+
+*Engineer's findings for brief 290 phase S0. Measured: every number below came from a run;
+reasoned: the decision and the notes for L5.*
+
+**In plain words.** The calculator works out, from the content alone, what one hero earns on any
+Token or recipe: how long a cycle takes, how many cycles an hour the work can offer, the items and
+XP an hour, what it spends, and which factor moved each number. It was played against the real
+engine on five small boards of shipped content, eight game-hours each, three luck seeds: every rate
+agrees within 1 %, far inside the ±15 % the brief asked. It rates all of today's content in about
+5 ms. It found one engine fault and one placement trap on the way.
+
+**The numbers** (engine = the game's own catch-up, mean of seeds 1-3 × 8 game-hours after a warm-up;
+calculator = `chainRates` on the same setup; per hour):
+
+| Setup | Rate | Engine | Calculator | Diff |
+|---|---|---|---|---|
+| One hero on a Copper Ore Vein | ore | 359.0 | 360.0 | +0.3 % |
+| | Mining XP | 240.0 | 240.0 | 0.0 % |
+| Vein with a Minecart and a Copper Mine in reach, feeding a Furnace on Copper Ingots (coal in stock) | ore | 466.5 | 468.8 | +0.5 % |
+| | ingots | 116.6 | 117.2 | +0.5 % |
+| | Mining XP | 250.0 | 250.0 | 0.0 % |
+| | Smithing XP | 116.6 | 117.2 | +0.5 % |
+| Oak Forest worked from a Logging Camp by one forester | oak wood | 565.8 | 562.5 | -0.6 % |
+| | oak seedlings | 76.2 | 75.0 | -1.6 % |
+| | bird nests (3 %) | 12.1 | 11.3 | -6.9 % (luck: ~95 nests a seed) |
+| | Forestry XP | 377.6 | 375.0 | -0.7 % |
+| The vein with Beer (+10 % XP) | Mining XP | 480.0 | 480.0 | 0.0 % |
+| | Beer drunk | 28.9 | 24.0 | -16.9 % (engine fault, below) |
+| The forest with Lemonade and Birdwatcher potions | oak wood | 624.0 | 618.8 | -0.8 % |
+| | bird nests | 106.0 | 106.1 | +0.1 % |
+| | Lemonade / Birdwatcher drunk | 37.8 / 377.5 | 37.5 / 375.0 | -0.7 % |
+| | Forestry XP | 377.6 | 375.0 | -0.7 % |
+
+Cycle counts match exactly on the veins (240 and 250 an hour) and within 0.7 % on the forest; what
+is left is luck on the rolls. Re-run with `node bench/calibrate.mjs` (all five, about a minute);
+`--only=vein --hours=4 --seeds=1,2` narrows it; `--trace` records the board events of a run.
+
+**How it works** (`src/systems/progression/ledger/rates.js`, pure, data passed in like the reach
+engine): for a Token or a recipe at a station it collects the rules that reach the worked Token
+(its own `self` rules and the supports named in the setup), the hero's (the tool and worn gear, the
+effect a drink or work potion puts on them for each cycle, milestone perks at their level) and the
+guild-wide ones (a Region's rules, guild modifiers), resolves each axis through one set of buckets
+as the board does, and takes every chance at its average. A work's rate is the smaller of the hero's
+pace (an hour over the cycle) and what the Token can offer between rests: a vein's charges over its
+charges' work plus its rest, a felled tree's charges over its work plus the grow times of its stump
+and sapling (times the spawner's family taking turns), unlimited for a station. `chainRates` runs
+several works off one Bank and slows a station to the inputs the works beside it make.
+
+**The game's own code, shared, not copied.** The three buckets (`ModifierAggregator`), the speed-up
+and one-second floors, the XP floor, the output range, a cycle's charge cost, the reach and filter
+rules, the dose rules and a Region's rules are imported. Five of them lived in modules that load the
+board, so they moved, unchanged, into small pure modules the board now reads from (`workTime.js`,
+`xpBonus.js`, `cycleCharges.js`, `regionModifiers.js`, `tokenConstants.outputRange`, and
+`filterRegistry.targetModeMatches`). Two pieces could not be shared without reworking a hot path:
+which ambient rules reach a Token (`TileModifiers.applicableStatements`) and what a hero's items add
+(`heroContributions`). The calculator follows them step by step, and `LedgerRates.test.js` places
+the same supports (near, far, a no-stack copy twice, a self-only rule, a board-wide rule), worn
+gear, a drink, a perk and a Region rule on a real board and checks every axis against
+`TileModifiers.resolveAxis`, and the grow times against `growTimeOf`. Neutering the reach check, the
+no-stack guard, the XP floor or the hero's skill narrowing each fails that test.
+
+**Factors modelled** (each switchable by id or by kind, `off: ['support:token_copper_mine']`,
+`off: ['consumable']`): supports in reach (and board-wide ones), the tool (its tier gates the work;
+no shipped tool speeds work yet), worn gear, drinks and work potions (with what they cost an hour),
+milestone perks (none shipped yet; tested on a fixture table), a Region's rules (none shipped yet),
+guild-wide modifiers (no Hall upgrade moves a rate today), the hero's level (a gate only: a level
+adds no work speed in the game), failure chance, double loot, one-item doubles, bonus drops, input
+cost, refill and regrow times, a spawner's family. **Not modelled yet, each listed in the result's
+`unmodelled` rather than dropped**: fights (until brief 280), water and its catch pools, Fields and
+crop loads, builds on a Foundation (paid once), Passive Production, triggered rules (an ambush on a
+vein's cycle), statuses a Token puts on its worker, filters that read a Token's charges, effects that
+last a time rather than a cycle, gear level requirements, more than one hero on one family
+(queueing), and walking (measured: inside the 1 % above on these boards).
+
+**Speed** (i7-8700, Node 24): every Token and recipe of today's content (228 asked, 153 rated, the
+rest not work or not modelled) in 23 ms cold and about 5 ms warm; a busier setup (three supports and
+a drink) about 9 ms; one rate 0.09 ms. All 99 levels × 3 profiles × every rate is 1.7 s, so L5
+should rate per profile and per gate change, not per level (rates do not change with level today).
+The engine plays a game-hour of these small boards in 0.14-0.29 s.
+
+**Workspace size with stubs** (the CMS's localStorage copy, built from today's `data/` and the
+first-fill pack, `2026-10-30-ledger-first-fill.json`, 367 edits and 15 creates): 207,242 characters
+before, 239,626 after (+32,384, +15.6 %): about 28,500 for the plan blocks and 4,600 for the 15
+Planned stubs (about 300 each). That is 4.6 % of a 5 MiB quota counted in characters, 9.1 % counted
+in bytes; about 7,700 more stubs would fit at the strict reading. No size problem. The Sync strip
+(Planned stubs and plan blocks kept out of `data/`) was built in L1 (`cms/src/engine/planFile.js`)
+and is unchanged.
+
+**Found on the way.**
+- **Engine fault: a vein that refills at the end of a step announces its next cycle twice.** The
+  refill tick leaves the cycle's clock at exactly zero, so the next tick starts it again
+  (`BoardRunner.tick`, the negative carry from `TimedChanges.lateRefillsThisTick`). Nothing is made
+  twice, but a drink's dose counts one cycle too many and a work potion is drunk twice after every
+  refill: Beer goes 20 % faster than its rule on a copper vein. Measured on the catch-up's 1 s steps
+  (traced: two cycle starts at every refill); live 100 ms ticks should land the 60 s rest on a tick
+  boundary the same way (reasoned, not measured). Proposed as a ticket; the calibration marks it
+  known.
+- **A camp must reach the whole family.** With the Logging Camp two steps from the Oak Forest, two of
+  the five trees stood outside its 360 u reach, were never felled and still counted against the
+  forest's allowance: the forest ran at 60 % (225 cycles an hour against 375). One step away, all
+  five are worked. The calculator takes the family's size from the setup (the allowance by default);
+  where things stand on the mat is the player's, not the calculator's.
+- **The XP floor doubles a +10 % XP drink on a 1-XP cycle**: Beer takes copper mining from 240 to
+  480 XP an hour (a positive bonus always adds at least 1 XP). The calculator shows it because it
+  uses the game's floor; whether that is wanted is a balance question.
+
+**Decision: build L5 on this calculator, keep the calibration.** The rate calculator is the right
+core: it agrees with the engine to within 1 % on every setup, runs in milliseconds, runs Planned
+stubs as soon as they carry numbers, and names every factor. L5 adds the profiles (Bare, Typical by
+payback, Maxed) as setups, the remaining kinds of work (water, Fields, Passive Production, coarse
+fights), path time per unlock, the pace curve and checks D, and turns `bench/calibrate.mjs` into
+`npm run bench:calibrate` with its stamp and the "calibration stale" check. The calibration runs in
+its own processes and never loads the bench's fixtures (their recipe pools take over shipped skills).
+Nothing to throw away.
+
 ## The system design (owner, 2026-10-29)
 
 *From the analyst's [system plan](research/ledger_system_plan_2026-10-29.md);
