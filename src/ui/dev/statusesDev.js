@@ -29,7 +29,7 @@ import { xpForLevel } from '../../utils/XPCurve.js';
  * - Poison (`effect_poison`, the id Venomous names) and Burn, unless the content already has them;
  * - a Venomous goblin, a fire imp whose every 2nd hit burns, and a boss carrying the four moves
  *   (every 4th swing a heavy strike; every 3rd hit a burn; below half health it heals 8 and gains
- *   2 armour; below 30 % it enrages, swinging twice as fast);
+ *   a Physical resistance of 50 %; below 30 % it enrages, swinging twice as fast);
  * - a sword for the heroes.
  */
 const QA_BURN = 'qa_fx_burn';
@@ -65,7 +65,7 @@ function registerQaContent() {
     const burn = burnId();
     registerEffects({
         qa_fx_heavy_strike: { id: 'qa_fx_heavy_strike', name: 'Heavy Strike', statements: [provides('stm_qa_heavy', EFFECT_TYPES.DAMAGE, 'percentage', 1)] },
-        qa_fx_stone_skin: { id: 'qa_fx_stone_skin', name: 'Stone Skin', statements: [provides('stm_qa_skin', EFFECT_TYPES.ARMOR, 'flat', 2)] },
+        qa_fx_stone_skin: { id: 'qa_fx_stone_skin', name: 'Stone Skin', statements: [{ ...provides('stm_qa_skin', EFFECT_TYPES.TYPE_RESIST, 'flat', 50), payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 50, category: 'physical' } }] },
         qa_fx_enrage: { id: 'qa_fx_enrage', name: 'Enrage', statements: [provides('stm_qa_enrage', EFFECT_TYPES.SWING_TIME, 'percentage', -0.5)] },
         qa_fx_burning_touch: { id: 'qa_fx_burning_touch', name: 'Burning Touch', statements: [
             rule('stm_qa_touch', KEYWORD.APPLIES, { event: 'FIGHT_HIT', every: 2 }, ROLE.ACTOR, { effectId: burn, chance: 100 })] },

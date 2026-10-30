@@ -1,9 +1,12 @@
-// Content that names a skill or a job the game does not have, or a rule or style it no longer reads.
+// Content that names a skill, a job or a damage type the game does not have, or a rule, style or number it no longer reads.
 
 import { isSkillId, COMBAT_SKILL_IDS, getSkill } from '../../config/registries/skillRegistry.js';
 import { getEnemyKind, kindsClash, MAX_ENEMY_KINDS } from '../../config/registries/enemyKinds.js';
 import { isWeapon, authoredWeaponStyles, weaponStyleOf } from '../../config/registries/weaponStyles.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
+import { isDamageTypeId, isTypeOrGroupId, resistanceProblems } from '../../config/registries/damageTypes.js';
+import { RETIRED_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
+import { isConsumableCategory } from '../../config/registries/equipmentCategories.js';
 import { statementsOf, stationSkillOf, KEYWORD } from '../effects/statements.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
 
@@ -53,6 +56,53 @@ function statementFindings(def, push) {
             && !isScopeCategory(payload.category)) {
             push('statements', `one of its rules is narrowed to the skill "${payload.category}", which does not exist — the rule matches nothing. Pick the skill again in the CMS.`);
         }
+        const entry = statement?.keyword === KEYWORD.PROVIDES ? getPaletteEntry(payload.type) : null;
+        if (entry?.retired) {
+            push('statements', `one of its rules provides ${entry.label}, retired with damage types: it does nothing. Use Type Resistance % instead (Physical for metal armour), or delete the rule in the CMS.`);
+        }
+        if (entry?.categories === 'damageType' && hasValue(payload.category) && !isTypeOrGroupId(payload.category)) {
+            push('statements', `one of its rules is aimed at the damage type "${payload.category}", which does not exist — the rule matches nothing. Pick the type again in the CMS.`);
+        }
+    }
+}
+
+/** Findings for an enemy's resistances, and numbers it carries that the fight no longer reads. */
+function enemyResistanceFindings(def, push) {
+    if (!def?.enemy || typeof def.enemy !== 'object') return;
+    for (const problem of resistanceProblems(def.enemy.resistances)) {
+        push('enemy.resistances', `${problem} — that line is ignored. Pick it again in the CMS.`);
+    }
+    for (const field of RETIRED_ENEMY_FIELDS) {
+        const value = def.enemy[field];
+        if (value != null && value !== '') {
+            const what = field === 'armor' ? 'Armour' : 'Pierce';
+            push(`enemy.${field}`, `has ${what} ${value}, retired with damage types: the fight ignores it. Give it a Physical resistance instead, or remove the number in the CMS.`);
+        }
+    }
+}
+
+/** Findings for a weapon's damage type and an arrow's block. */
+function damageTypeFindings(def, push) {
+    if (hasValue(def.damageType) && !isDamageTypeId(def.damageType)) {
+        push('damageType', `hits with the damage type "${def.damageType}", which does not exist — it hits with its style's default. Pick its type again in the CMS.`);
+    } else if (hasValue(def.damageType) && !isWeapon(def)) {
+        push('damageType', 'names a damage type but is not a weapon — only weapons and arrows give a hit its type, so it is ignored.');
+    }
+    const arrow = def.arrow;
+    if (arrow == null) return;
+    if (typeof arrow !== 'object' || Array.isArray(arrow)) {
+        push('arrow', 'has an arrow block that is not one — it is not an arrow. Tick Arrow again in the CMS.');
+        return;
+    }
+    if (!isConsumableCategory(def.equipSlot)) {
+        push('arrow', 'is an arrow but not a Consumable, so no hero can carry it to shoot. Make it a Consumable in the CMS.');
+    }
+    if (hasValue(arrow.damageType) && !isDamageTypeId(arrow.damageType)) {
+        push('arrow', `is an arrow of the damage type "${arrow.damageType}", which does not exist — it shoots as Stab. Pick its type again in the CMS.`);
+    }
+    const n = Number(arrow.damage);
+    if (!(Number.isFinite(n) && n > 0)) {
+        push('arrow', 'is an arrow with no damage of its own — it adds nothing to a shot. Give it a damage in the CMS.');
     }
 }
 
@@ -100,6 +150,7 @@ export function findUnknownRefs({ tokens, items, recipes } = {}) {
             push('shop.section', `is sold in the Shop section "${section}", which is neither a skill nor General — the Shop heads it with that raw id. Pick its section again in the CMS.`);
         }
         enemyKindFindings(def, push);
+        enemyResistanceFindings(def, push);
         statementFindings(def, push);
     }
 
@@ -126,6 +177,7 @@ export function findUnknownRefs({ tokens, items, recipes } = {}) {
             const first = getSkill(weaponStyleOf(def))?.name || weaponStyleOf(def);
             push('styles', `names ${authoredWeaponStyles(def).length} styles; a weapon has one, so it fights as ${first} (the first). Pick its one style in the CMS.`);
         }
+        damageTypeFindings(def, push);
         statementFindings(def, push);
     }
 

@@ -122,7 +122,21 @@ export { fieldOf, cropTermsOf, CROP_DEFAULTS, CROP_MIN_GROW_MS } from '../../../
 export { campOf, CAMP_REACH_DEFAULT } from '../../../src/config/registries/tokenConstants.js';
 
 // An enemy is a Token: it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the Style dropdown and `enemyProfileOf` powers the editor's read-only stat preview, imported from the game so the numbers shown are the numbers the fight uses.
-export { ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_OVERRIDE_FIELDS } from '../../../src/config/registries/enemyProfile.js';
+export { ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_OVERRIDE_FIELDS, RETIRED_ENEMY_FIELDS } from '../../../src/config/registries/enemyProfile.js';
+
+// Damage types: the nine types in three groups, a weapon's and an arrow's type, an enemy's resistance steps and the type a weapon with none hits with. The game's own list.
+export {
+  DAMAGE_TYPES,
+  DAMAGE_GROUPS,
+  RESISTANCE_STEPS,
+  DEFAULT_DAMAGE_TYPE_BY_STYLE,
+  DEFAULT_ARROW_DAMAGE_TYPE,
+  damageTypeLabel,
+  weaponDamageTypeOf,
+  arrowOf,
+  normaliseResistances,
+  isTypeOrGroupId,
+} from '../../../src/config/registries/damageTypes.js';
 
 // Enemy kinds (Armoured, Nimble, Swift, Brute, Venomous): the presets the Token editor offers, none to two per enemy, and which pairs clash.
 export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, VENOM_EFFECT_ID } from '../../../src/config/registries/enemyKinds.js';

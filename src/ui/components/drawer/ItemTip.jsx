@@ -4,6 +4,10 @@ import { matCap } from '../../../systems/board/MatCap.js';
 import { isMapItem, whatItWrites, MAP_TEXT } from '../../../systems/atlas/mapItems.js';
 import { categoryOfItem, getCategoryInfo } from '../../../config/registries/equipmentConstants.js';
 import { toolOf, toolKindLabel, handsOf, HANDS } from '../../../config/registries/toolKinds.js';
+import { weaponStyleOf } from '../../../config/registries/weaponStyles.js';
+import { weaponDamageTypeOf, arrowOf } from '../../../config/registries/damageTypes.js';
+import { getSkill } from '../../../config/registries/skillRegistry.js';
+import { UNARMED_DAMAGE } from '../../../config/FormulaRegistry.js';
 
 /** What kind of item it is, in the player's words. */
 export function itemTypeLabel(item) {
@@ -21,11 +25,20 @@ export function itemTipFacts(item, { cap = undefined } = {}) {
     const category = categoryOfItem(item?.id);
     const tool = toolOf(item);
     const hands = handsOf(item);
+    const style = weaponStyleOf(item);
+    const arrow = arrowOf(item);
     return {
         type: itemTypeLabel(item),
         equippable: category ? getCategoryInfo(category).label : null,
         tool: tool ? t('itemTip.tool', { kind: toolKindLabel(tool.kind), tier: tool.tier }) : null,
         twoHanded: hands >= HANDS,
+        // What a weapon hits with, and what an arrow adds to a bow's shot: the damage and its type.
+        hits: style ? t('itemTip.weaponHits', {
+            damage: Number(item.damage) > 0 ? Number(item.damage) : UNARMED_DAMAGE,
+            type: t(`fight.types.${weaponDamageTypeOf(item, style)}`),
+            style: getSkill(style)?.name || style
+        }) : null,
+        arrow: arrow ? t('itemTip.arrow', { damage: arrow.damage, type: t(`fight.types.${arrow.damageType}`) }) : null,
         // A drink never heals, so its leftover restore amount is not offered as a promise.
         restores: item?.restoreAmount > 0 && category !== 'drink' ? item.restoreAmount : null,
         tags: Array.isArray(item?.tags) ? item.tags.filter(Boolean) : [],
@@ -55,6 +68,8 @@ export const ItemTipContent = ({ item, count = null, hint = null, cap }) => {
                 <div data-item-tip-equip className="text-white">{t('itemTip.equippable', { slot: facts.equippable })}</div>
             )}
             {facts.tool && <div className="text-white">{facts.tool}</div>}
+            {facts.hits && <div data-item-tip-hits className="text-white">{facts.hits}</div>}
+            {facts.arrow && <div data-item-tip-arrow className="text-white">{facts.arrow}</div>}
             {facts.twoHanded && <div className="text-white/70">{t('itemTip.twoHanded')}</div>}
             {facts.restores != null && (
                 <div className="text-white">{t('itemTip.restores', { amount: facts.restores })}</div>

@@ -4,6 +4,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import {
   EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStyleOf, authoredWeaponStyles, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS,
   expandBearer, statementsOf, doseKindsOf, DOSE_WHY, noDoseWhy, isSpentCategory,
+  DAMAGE_TYPES, DAMAGE_GROUPS, DEFAULT_DAMAGE_TYPE_BY_STYLE, DEFAULT_ARROW_DAMAGE_TYPE, damageTypeLabel, isConsumableCategory,
 } from '../../utils/constants';
 import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
@@ -19,7 +20,18 @@ import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 const RESTORING_CATEGORIES = new Set(['food', 'consumable']);
 
 /** A weapon's own fields, cleared when the item stops being one (out of the hands, or made a tool). */
-const WEAPON_CLEARED = { styles: undefined, damage: undefined, speed: undefined, tier: undefined, levelRequired: undefined };
+const WEAPON_CLEARED = { styles: undefined, damage: undefined, damageType: undefined, speed: undefined, tier: undefined, levelRequired: undefined };
+
+/** The nine damage types as dropdown options, grouped under Physical, Elemental and Special. */
+function DamageTypeOptions() {
+  return DAMAGE_GROUPS.map((g) => (
+    <optgroup key={g.id} label={g.label}>
+      {DAMAGE_TYPES.filter((t) => t.group === g.id).map((t) => (
+        <option key={t.id} value={t.id}>{t.label}</option>
+      ))}
+    </optgroup>
+  ));
+}
 
 const styleName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
 const SPEED_WORDS = { fast: 'Fast', normal: 'Normal', slow: 'Slow' };
@@ -29,7 +41,8 @@ const SPEED_WORDS = { fast: 'Fast', normal: 'Normal', slow: 'Slow' };
  * hits and how often. The style is written as a one-entry `styles` list; an older item naming two
  * (the Dagger was Melee and Stealth) fights in the first until one is picked here, and an older
  * single `skillRequired` style is folded in on the first pick. `speed` is written only when it is
- * not Normal. `tier` (1 copper, 2 iron, and so on) is written only when typed.
+ * not Normal. `tier` (1 copper, 2 iron, and so on) is written only when typed. `damageType` is
+ * written only when picked; blank hits with its style's default.
  */
 function WeaponFields({ item, onChange }) {
   const style = weaponStyleOf(item);
@@ -70,6 +83,22 @@ function WeaponFields({ item, onChange }) {
         )}
       </Field>
 
+      <Field label="Damage type" className="col-span-1">
+        <select
+          aria-label="Damage type"
+          data-field="weapon-damage-type"
+          value={item.damageType || ''}
+          onChange={(e) => onChange({ type: 'weapon', damageType: e.target.value || undefined })}
+          className="w-full"
+        >
+          <option value="">{styleName(style)}'s default ({damageTypeLabel(DEFAULT_DAMAGE_TYPE_BY_STYLE[style])})</option>
+          <DamageTypeOptions />
+        </select>
+        <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+          Every hit is this type: enemies resist or are weak to it. A bow's shot adds its arrow's type too.
+        </p>
+      </Field>
+
       <Field label="Damage" className="col-span-1">
         <input
           type="number"
@@ -85,7 +114,7 @@ function WeaponFields({ item, onChange }) {
           className="w-full"
         />
         <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-          What every hit does before the level step, the matchup and armour. Blank hits like a fist (1).
+          What every hit does before the level step, the matchup and the enemy's resistances. Blank hits like a fist (1).
           Proposed tiers, fast/normal/slow: {tierLine}.
         </p>
       </Field>
@@ -125,6 +154,65 @@ function WeaponFields({ item, onChange }) {
           A fast weapon hits about 2/3 as hard as a normal one, a slow one about 4/3.
         </p>
       </Field>
+    </div>
+  );
+}
+
+/**
+ * An arrow: a Consumable a hero with a Ranged weapon carries, one spent per shot, adding its own
+ * damage in its own type to the bow's. Written `arrow: { damage, damageType }`; unticked removes it.
+ */
+function ArrowFields({ item, onChange }) {
+  const arrow = item.arrow && typeof item.arrow === 'object' ? item.arrow : null;
+  const set = (patch) => onChange({ arrow: { damage: arrow?.damage ?? 1, damageType: arrow?.damageType ?? DEFAULT_ARROW_DAMAGE_TYPE, ...patch } });
+  return (
+    <div className="col-span-2 grid grid-cols-2 gap-4" data-field="arrow-block">
+      <label className="col-span-2 flex items-center gap-2 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          aria-label="Arrow"
+          data-field="arrow"
+          checked={!!arrow}
+          onChange={(e) => onChange({ arrow: e.target.checked ? { damage: 1, damageType: DEFAULT_ARROW_DAMAGE_TYPE } : undefined })}
+          className="rounded border-white/10 text-emerald-500 cursor-pointer"
+        />
+        <span className="text-xs text-gray-300">Arrow: a hero with a bow carries it and shoots one a shot</span>
+      </label>
+      {arrow && (
+        <>
+          <Field label="Arrow damage" className="col-span-1">
+            <input
+              type="number"
+              min={1}
+              aria-label="Arrow damage"
+              data-field="arrow-damage"
+              value={arrow.damage ?? ''}
+              onChange={(e) => {
+                const n = Math.floor(Number(e.target.value));
+                set({ damage: n >= 1 ? n : 1 });
+              }}
+              className="w-full"
+            />
+            <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+              Added to the bow's damage on every shot. Bow and arrow each about half a comparable weapon.
+            </p>
+          </Field>
+          <Field label="Arrow damage type" className="col-span-1">
+            <select
+              aria-label="Arrow damage type"
+              data-field="arrow-damage-type"
+              value={arrow.damageType || DEFAULT_ARROW_DAMAGE_TYPE}
+              onChange={(e) => set({ damageType: e.target.value })}
+              className="w-full"
+            >
+              <DamageTypeOptions />
+            </select>
+            <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+              Usually Physical (Stab): a ghost immune to Physical still takes the bow's part.
+            </p>
+          </Field>
+        </>
+      )}
     </div>
   );
 }
@@ -181,6 +269,8 @@ export default function ItemEditor() {
       restoreAmount: RESTORING_CATEGORIES.has(slot) ? (item.restoreAmount || 5) : 0,
       // Tools and weapons are held in the hands; out of them, none of these means anything.
       ...(slot === HAND_CATEGORY ? {} : { tool: undefined, hands: undefined, ...WEAPON_CLEARED }),
+      // Only a Consumable is shot from a bow.
+      ...(isConsumableCategory(slot) ? {} : { arrow: undefined }),
       // A level requirement's style is the weapon's or the armour's own: a new category starts without one.
       ...(slot === item.equipSlot ? {} : { levelRequired: undefined, skillRequired: undefined }),
     });
@@ -367,6 +457,10 @@ export default function ItemEditor() {
                 Flat HP restored when consumed by a hero.
               </p>
             </Field>
+          )}
+
+          {isConsumableCategory(item.equipSlot) && (
+            <ArrowFields item={item} onChange={(patch) => updateItem(activeId, patch)} />
           )}
 
           <DoseLine item={item} effects={effects} />

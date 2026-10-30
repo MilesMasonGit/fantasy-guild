@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isTypeOrGroupId, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -710,6 +710,8 @@ export default function TokenEditor() {
 
             <EnemyNumbers enemy={enemy} onChange={(next) => update('enemy', next)} />
 
+            <EnemyResistances enemy={enemy} onChange={(next) => update('enemy', next)} />
+
             {/* A hostile enemy attacks a hero sent to work a Token inside the camp watch around its spawner (or itself); a peaceful one fights only when attacked. Written ONLY when ticked; missing means peaceful, which is what the game reads. A boss never attacks first, so the box is off and greyed for one. */}
             <label className={`flex items-center gap-2.5 select-none mt-3 ${enemy?.boss === true ? 'opacity-50' : 'cursor-pointer'}`}>
               <input
@@ -762,15 +764,14 @@ export default function TokenEditor() {
                 </div>
                 <div className="grid grid-cols-5 gap-3 text-[11px]">
                   <div><div className="text-gray-600 text-[10px]">HP</div><div className="text-gray-200 font-semibold">{enemyStats.hp}</div></div>
-                  <div><div className="text-gray-600 text-[10px]">Hit</div><div className="text-gray-200 font-semibold">{enemyStats.hit}</div></div>
-                  <div><div className="text-gray-600 text-[10px]">Armour</div><div className="text-gray-200 font-semibold">{enemyStats.armor}</div></div>
+                  <div><div className="text-gray-600 text-[10px]">Hit</div><div className="text-gray-200 font-semibold">{enemyStats.hit} Physical</div></div>
+                  <div><div className="text-gray-600 text-[10px]">Resists</div><div className="text-gray-200 font-semibold" data-field="enemy-preview-resists">{resistancesText(enemyStats.resistances)}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Attacks every</div><div className="text-gray-200 font-semibold">{(enemyStats.attackSpeed / 1000).toFixed(1)}s</div></div>
                   <div><div className="text-gray-600 text-[10px]">XP</div><div className="text-gray-200 font-semibold">{enemyStats.xpAwarded}</div></div>
                 </div>
-                <div className="grid grid-cols-5 gap-3 text-[11px] mt-2">
+                <div className="grid grid-cols-4 gap-3 text-[11px] mt-2">
                   <div><div className="text-gray-600 text-[10px]">Dodge</div><div className="text-gray-200 font-semibold">{enemyStats.dodge}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Accuracy</div><div className="text-gray-200 font-semibold">{enemyStats.accuracy}</div></div>
-                  <div><div className="text-gray-600 text-[10px]">Pierce</div><div className="text-gray-200 font-semibold">{enemyStats.pierce}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Crit</div><div className="text-gray-200 font-semibold">{enemyStats.critChance}%</div></div>
                   <div><div className="text-gray-600 text-[10px]">On hit</div><div className="text-gray-200 font-semibold">{enemyStats.onHit?.length ? enemyStats.onHit.map((s) => effects[s.effectId]?.name || `${s.effectId} (missing)`).join(', ') : '—'}</div></div>
                 </div>
@@ -851,14 +852,121 @@ function EnemyKinds({ enemy, onChange }) {
 const ENEMY_NUMBER_FIELDS = [
   { field: 'hp', label: 'HP', min: 1 },
   { field: 'hit', label: 'Hit', min: 1 },
-  { field: 'armor', label: 'Armour', min: 0 },
   { field: 'xp', label: 'XP', min: 0 },
   { field: 'speed', label: 'Speed', wide: true },
   { field: 'dodge', label: 'Dodge', min: 0 },
   { field: 'accuracy', label: 'Accuracy', min: 0 },
-  { field: 'pierce', label: 'Pierce', min: 0 },
   { field: 'critChance', label: 'Crit %', min: 0 },
 ];
+
+/** `Physical 50%, Crush weak 50%`, or `none`: a resistances map as the author wrote it. */
+function resistancesText(map) {
+  const ids = [...DAMAGE_GROUPS, ...DAMAGE_TYPES].map((x) => x.id).filter((id) => map?.[id]);
+  if (!ids.length) return 'none';
+  return ids.map((id) => (map[id] < 0 ? `${damageTypeLabel(id)} weak ${-map[id]}%` : `${damageTypeLabel(id)} ${map[id]}%`)).join(', ');
+}
+
+const STEP_WORDS = { 100: 'Resist 100% (immune)', 50: 'Resist 50%', 25: 'Resist 25%', '-25': 'Weak 25%', '-50': 'Weak 50%' };
+
+/**
+ * What the enemy resists and is weak to, by damage type or group, in the owner's fixed steps:
+ * resist 25, 50 or 100 %, weak 25 or 50 %. Written as `resistances: { physical: 50, crush: -50 }`;
+ * a line on one type replaces its group's line for that type ("Physical 50, Crush weak 50" reads as
+ * written). A kind's line (Armoured: Physical 50) shows greyed until the author writes that type.
+ * Removing the last line drops the key. Retired numbers (Armour, Pierce) still on older content
+ * show here with a button to remove them.
+ */
+function EnemyResistances({ enemy, onChange }) {
+  const own = enemy?.resistances && typeof enemy.resistances === 'object' ? enemy.resistances : {};
+  const fromKinds = enemyFilledStats(enemy).resistances || {};
+  const write = (next) => {
+    const copy = { ...enemy };
+    if (Object.keys(next).length) copy.resistances = next; else delete copy.resistances;
+    onChange(copy);
+  };
+  const setLine = (id, step) => {
+    const next = { ...own };
+    if (step === '') delete next[id]; else next[id] = Number(step);
+    write(next);
+  };
+  const ids = [...DAMAGE_GROUPS, ...DAMAGE_TYPES].map((x) => x.id);
+  const rows = ids.filter((id) => own[id] != null || fromKinds[id] != null);
+  const unknown = Object.keys(own).filter((id) => !isTypeOrGroupId(id));
+  const free = ids.filter((id) => own[id] == null);
+  const retired = RETIRED_ENEMY_FIELDS.filter((f) => enemy?.[f] != null && enemy?.[f] !== '');
+
+  return (
+    <div className="mt-3" data-field="enemy-resistances">
+      <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Resistances and weaknesses</span>
+      <div className="flex flex-col gap-1.5">
+        {rows.map((id) => {
+          const mine = own[id] != null;
+          return (
+            <div key={id} className="flex items-center gap-2" data-field={`enemy-resist-${id}`}>
+              <span className="text-[11px] text-gray-300 w-24">{damageTypeLabel(id)}</span>
+              <select
+                aria-label={`${damageTypeLabel(id)} resistance`}
+                data-field={`enemy-resist-${id}-step`}
+                value={mine ? String(own[id]) : ''}
+                onChange={(e) => setLine(id, e.target.value)}
+                className={`flex-1 ${mine ? '' : 'text-gray-500 italic'}`}
+              >
+                <option value="">{fromKinds[id] != null ? `${STEP_WORDS[fromKinds[id]]} (from kinds)` : 'None'}</option>
+                {RESISTANCE_STEPS.map((step) => (
+                  <option key={step} value={String(step)}>{STEP_WORDS[step]}</option>
+                ))}
+              </select>
+            </div>
+          );
+        })}
+        {unknown.map((id) => (
+          <div key={id} className="text-[11px]" style={{ color: 'var(--color-warning)' }} data-field="enemy-resist-unknown">
+            {`"${id}" is not a damage type or group. `}
+            <button type="button" className="hover:underline" onClick={() => setLine(id, '')}>Remove it</button>
+          </div>
+        ))}
+        {free.length > 0 && (
+          <select
+            aria-label="Add a resistance"
+            data-field="enemy-resist-add"
+            value=""
+            onChange={(e) => e.target.value && setLine(e.target.value, '50')}
+            className="w-full text-gray-400"
+          >
+            <option value="">Add a resistance or weakness…</option>
+            {DAMAGE_GROUPS.map((g) => (
+              <optgroup key={g.id} label={g.label}>
+                {free.includes(g.id) && <option value={g.id}>{g.label} (the whole group)</option>}
+                {DAMAGE_TYPES.filter((t) => t.group === g.id && free.includes(t.id)).map((t) => (
+                  <option key={t.id} value={t.id}>{t.label}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        )}
+      </div>
+      <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+        Shown on the enemy&apos;s card. A type&apos;s line replaces its group&apos;s for that type. Keep most enemies to 0 or 1 lines, bosses up to 3, and never shut out every type a style can reach.
+      </p>
+      {retired.length > 0 && (
+        <p className="text-[11px] mt-1 leading-relaxed" style={{ color: 'var(--color-warning)' }} data-field="enemy-retired-numbers">
+          {retired.map((f) => (f === 'armor' ? `Armour ${enemy.armor}` : `Pierce ${enemy.pierce}`)).join(', ')}: retired, the fight ignores it (use a Physical resistance).{' '}
+          <button
+            type="button"
+            className="hover:underline"
+            onClick={() => {
+              const copy = { ...enemy };
+              for (const f of retired) delete copy[f];
+              onChange(copy);
+            }}
+          >
+            Remove
+          </button>
+        </p>
+      )}
+    </div>
+  );
+}
 const SPEED_WORDS = { fast: 'Fast', normal: 'Normal', slow: 'Slow' };
 const speedWords = (id) => `${SPEED_WORDS[id] || id} (${(ATTACK_SPEED_MS[id] || 0) / 1000} s)`;
 

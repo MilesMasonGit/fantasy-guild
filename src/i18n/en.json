@@ -42,6 +42,8 @@
         "tool": "{kind}, tier {tier}",
         "twoHanded": "Takes both hands",
         "restores": "Restores {amount} HP",
+        "weaponHits": "Hits {damage} {type}, as {style}",
+        "arrow": "Arrow: +{damage} {type} a shot, from a bow",
         "clickToSelect": "Click to select",
         "clickToDeselect": "Click to deselect",
         "type": {
@@ -91,7 +93,23 @@
         },
         "float": {
             "crit": "Crit!",
-            "miss": "Miss"
+            "miss": "Miss",
+            "weak": "Weak!",
+            "resisted": "Resisted"
+        },
+        "types": {
+            "slash": "Slash",
+            "crush": "Crush",
+            "stab": "Stab",
+            "fire": "Fire",
+            "ice": "Ice",
+            "electric": "Electric",
+            "poison": "Poison",
+            "light": "Light",
+            "dark": "Dark",
+            "physical": "Physical",
+            "elemental": "Elemental",
+            "special": "Special"
         },
         "panel": {
             "title": "{hero} vs {enemy}",
@@ -119,14 +137,22 @@
             "noStyleArmed": "{name} fights with no style",
             "enemyStyle": "{name} fights {style}",
             "hp": "{name}: {cur} of {max} health",
-            "heroHit": "Hits for {hit} before the enemy's armour",
-            "enemyHit": "Hits for {hit} before your armour",
+            "heroHit": "Hits for {hit} before the matchup and the enemy's resistances",
+            "enemyHit": "Hits for {hit} before the matchup and your resistances",
             "weapon": "{item}: {n}",
             "fist": "Fist: 1",
             "levelStep": "Combat level: +{n}",
             "moreDamage": "Elixirs and gear: {n}",
-            "heroArmour": "Armour {armour}: takes {armour} off each enemy hit",
-            "enemyArmour": "Armour {armour}: takes {armour} off each of your hits",
+            "arrow": "{item}: +{n} {type}",
+            "arrowsLeft": {
+                "one": "{count} arrow in the Bank",
+                "other": "{count} arrows in the Bank"
+            },
+            "noArrows": "No arrows: the bow shoots its own part alone",
+            "typeBoost": "{type} damage: {n}",
+            "heroResists": "What {name} resists, from gear and elixirs",
+            "enemyResists": "What {name} resists and is weak to",
+            "fraction": "A fraction rolls: 1.5 hits 1 or 2, half the time each",
             "swing": "Swings every {time}",
             "elixir": {
                 "one": "{item}: {count} fight left",
@@ -147,15 +173,18 @@
             "style": "Style",
             "health": "Health",
             "hit": "Hit",
-            "armour": "Armour",
+            "resists": "Resists",
+            "weakTo": "Weak to",
+            "noResists": "Nothing",
             "swing": "Swing",
             "kinds": "Kinds",
-            "every": "every {time}"
+            "every": "every {time}",
+            "step": "{type} {n}%"
         },
         "kinds": {
             "armoured": {
                 "name": "Armoured",
-                "tip": "+2 armour, slow swings"
+                "tip": "Resists Physical 50%, slow swings"
             },
             "nimble": {
                 "name": "Nimble",

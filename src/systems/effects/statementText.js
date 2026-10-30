@@ -647,11 +647,6 @@ function bodySegments(statement, names) {
 
         case KEYWORD.DEALS: {
             /**
-             * ⚠️ The armour clause appears only when it is TRUE: damage respects armour by default, so
-             * saying so on every rule would be noise.
-             */
-            const pierce = payload.ignoresArmor ? segs(', ', d('ignoring armour', 'ignoresArmor')) : [];
-            /**
              * A computed magnitude says where its number came from:
              *
              *   flat   "deals 1 damage to the hero"
@@ -672,7 +667,7 @@ function bodySegments(statement, names) {
             } else {
                 amount = segs(d(String(flat), 'amount'), ' damage');
             }
-            return segs(d('Deals', K), ' ', amount, ' to ', roleSegments(statement), pierce);
+            return segs(d('Deals', K), ' ', amount, ' to ', roleSegments(statement));
         }
 
         case KEYWORD.HEALS: {

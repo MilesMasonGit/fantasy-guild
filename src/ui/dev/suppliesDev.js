@@ -20,7 +20,7 @@ import { xpForLevel } from '../../utils/XPCurve.js';
 
 /**
  * Two test elixirs, made in memory for this check only (never written to `data/`, gone on reload):
- * Valor (+1 Damage) and Ironskin (+1 Armour), each "When a fight starts, applies … to the hero for
+ * Valor (+1 Damage) and Ironskin (Physical resistance 25 %), each "When a fight starts, applies … to the hero for
  * the fight", as the combat content pack will author them.
  */
 export const QA_ELIXIRS = Object.freeze(['qa_elixir_valor', 'qa_elixir_ironskin']);
@@ -34,7 +34,7 @@ function registerQaElixirs() {
     });
     registerEffects({
         qa_fx_valor: { id: 'qa_fx_valor', name: 'Valor', statements: [provides('DAMAGE')] },
-        qa_fx_ironskin: { id: 'qa_fx_ironskin', name: 'Ironskin', statements: [provides('ARMOR')] },
+        qa_fx_ironskin: { id: 'qa_fx_ironskin', name: 'Ironskin', statements: [{ ...provides('TYPE_RESIST'), payload: { type: 'TYPE_RESIST', bucket: 'flat', value: 25, category: 'physical' } }] },
         qa_fx_elixir_valor: { id: 'qa_fx_elixir_valor', name: 'Elixir of Valor', statements: [forTheFight('qa_fx_valor')] },
         qa_fx_elixir_ironskin: { id: 'qa_fx_elixir_ironskin', name: 'Elixir of Ironskin', statements: [forTheFight('qa_fx_ironskin')] }
     });

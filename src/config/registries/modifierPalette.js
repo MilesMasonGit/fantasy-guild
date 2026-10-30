@@ -287,9 +287,10 @@ export const MODIFIER_PALETTE = [
         scales: 'value',
         buckets: ['flat'],
         heroOnly: true,
+        retired: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Flat damage subtracted from every hit the hero takes.'
+        hint: 'Retired with damage types: does nothing. Use Type Resistance % (Physical for metal armour).'
     },
     {
         type: EFFECT_TYPES.RESIST_FLAT,
@@ -298,9 +299,10 @@ export const MODIFIER_PALETTE = [
         scales: 'value',
         buckets: ['flat'],
         heroOnly: true,
+        retired: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Further flat damage subtracted, after Armor.'
+        hint: 'Retired with damage types: does nothing. Use Type Resistance %.'
     },
     {
         type: EFFECT_TYPES.ACCURACY,
@@ -351,9 +353,10 @@ export const MODIFIER_PALETTE = [
         scales: 'value',
         buckets: ['flat'],
         heroOnly: true,
+        retired: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Armour points the hero\'s hits ignore. A hit still does at least 1.'
+        hint: 'Retired with damage types: does nothing (armour is gone; Sunder comes later).'
     },
     {
         type: EFFECT_TYPES.CRIT_CHANCE,
@@ -364,7 +367,36 @@ export const MODIFIER_PALETTE = [
         heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Percentage points added to the hero\'s 5% chance to crit (a crit doubles the hit before armour).'
+        hint: 'Percentage points added to the hero\'s 5% chance to crit (a crit doubles the hit).'
+    },
+    {
+        /**
+         * Percent points, in the flat bucket like Crit Chance: the loadout registers flats only.
+         * The type or group is the rule's category; a group's row counts on each of its types
+         * (`ModifierAggregator._isParentOf`).
+         */
+        type: EFFECT_TYPES.TYPE_DAMAGE,
+        label: 'Type Damage %',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOnly: true,
+        categories: 'damageType',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Percent more damage on hits of one damage type or group: 15 means +15% (a Poisoner\'s Cloak: Poison 15). Pick which type.'
+    },
+    {
+        type: EFFECT_TYPES.TYPE_RESIST,
+        label: 'Type Resistance %',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOnly: true,
+        categories: 'damageType',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Percent off hits of one damage type or group taken: 20 means 20% less, a negative number a weakness. Pick which type. An enemy\'s plain swing is Physical.'
     },
     {
         /**

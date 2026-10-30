@@ -161,6 +161,13 @@ function recordOfEnemy(instanceId) {
 }
 
 const statusName = (statusId) => EFFECTS[statusId]?.name || statusId;
+
+/** What a landed hit's event says about its damage types, for its log line and float. */
+function typesOf(p) {
+    const types = Array.isArray(p?.types) ? p.types.filter(Boolean) : [];
+    const verdict = p?.verdict === 'weak' || p?.verdict === 'resisted' ? p.verdict : null;
+    return { types, verdict };
+}
 const itemName = (itemId) => getItem(itemId)?.name || itemId;
 
 /** Which side a status event is about, and its record (the last fight's for a tick that ended it). */
@@ -208,13 +215,14 @@ function onHeroSwing(p) {
     if (!record) return;
     const vars = { hero: record.heroName, enemy: record.enemyName };
     const damage = Math.round(Number(p.damage) || 0);
+    const typed = p.hit ? typesOf(p) : { types: [], verdict: null };
     if (!p.hit) {
         say(record, { icon: 'miss', tone: TONE.MISS, key: 'heroMisses', vars });
     } else {
-        say(record, { icon: p.crit ? 'star' : 'hit', tone: TONE.HIT, key: p.crit ? 'heroCrits' : 'heroHits', vars, amount: `${damage}` });
+        say(record, { icon: p.crit ? 'star' : 'hit', tone: TONE.HIT, key: p.crit ? 'heroCrits' : 'heroHits', vars, amount: `${damage}`, ...typed });
     }
     if (Number.isFinite(p.enemyHpRemaining)) record.hp.enemy.cur = Math.max(0, p.enemyHpRemaining);
-    moment({ heroId: record.heroId, instanceId: record.instanceId, by: 'hero', on: 'enemy', kind: !p.hit ? MOMENT.MISS : p.crit ? MOMENT.CRIT : MOMENT.HIT, amount: damage });
+    moment({ heroId: record.heroId, instanceId: record.instanceId, by: 'hero', on: 'enemy', kind: !p.hit ? MOMENT.MISS : p.crit ? MOMENT.CRIT : MOMENT.HIT, amount: damage, ...typed });
     changed(record.heroId);
 }
 
@@ -224,13 +232,14 @@ function onEnemySwing(p) {
     if (!record) return;
     const vars = { hero: record.heroName, enemy: record.enemyName };
     const damage = Math.round(Number(p.damage) || 0);
+    const typed = p.hit ? typesOf(p) : { types: [], verdict: null };
     if (!p.hit) {
         say(record, { icon: 'miss', tone: TONE.MISS, key: 'enemyMisses', vars });
     } else {
-        say(record, { icon: p.crit ? 'star' : 'hit', tone: TONE.HURT, key: p.crit ? 'enemyCrits' : 'enemyHits', vars, amount: `−${damage}` });
+        say(record, { icon: p.crit ? 'star' : 'hit', tone: TONE.HURT, key: p.crit ? 'enemyCrits' : 'enemyHits', vars, amount: `−${damage}`, ...typed });
     }
     if (Number.isFinite(p.heroHpRemaining)) record.hp.hero.cur = Math.max(0, p.heroHpRemaining);
-    moment({ heroId: record.heroId, instanceId: record.instanceId, by: 'enemy', on: 'hero', kind: !p.hit ? MOMENT.MISS : p.crit ? MOMENT.CRIT : MOMENT.HIT, amount: damage });
+    moment({ heroId: record.heroId, instanceId: record.instanceId, by: 'enemy', on: 'hero', kind: !p.hit ? MOMENT.MISS : p.crit ? MOMENT.CRIT : MOMENT.HIT, amount: damage, ...typed });
     changed(record.heroId);
 }
 

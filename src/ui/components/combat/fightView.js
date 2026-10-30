@@ -4,7 +4,10 @@ import * as LiveEffects from '../../../systems/effects/LiveEffects.js';
 import { isFightElixir } from '../../../systems/hero/ConsumptionSystem.js';
 import { MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
-import { roundHalfUp, levelDamageBonus, UNARMED_DAMAGE } from '../../../config/FormulaRegistry.js';
+import { levelDamageBonus, UNARMED_DAMAGE } from '../../../config/FormulaRegistry.js';
+import { DAMAGE_GROUPS, DAMAGE_TYPES, PLAIN_ENEMY_HIT_TYPE, arrowOf } from '../../../config/registries/damageTypes.js';
+import { nextArrowOf, shootsArrows, carriedArrowIds } from '../../../systems/combat/Arrows.js';
+import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { getEquippedEntries, isConsumableCategory } from '../../../config/registries/equipmentConstants.js';
 import { getEnemyProfile } from '../../../config/registries/enemyProfile.js';
 import { getEnemyKind } from '../../../config/registries/enemyKinds.js';
@@ -23,9 +26,62 @@ import { t } from '../../../i18n/index.js';
  * the fight panel's versus card, the enemy card, the hero's elixirs for the bubble row. No React:
  * the views here are handed to components (`FightPanel.jsx`, `EnemyCard.jsx`, `FightLayer.jsx`),
  * which a test or the style sheet page can also feed a fixture.
- * The numbers are the ones the fight uses (`CombatFormulas`), before the other side's armour and
- * the matchup: the player does the sums (no forecast).
+ * The numbers are the ones the fight uses (`CombatFormulas`), before the other side's resistances
+ * and the matchup: the player does the sums (no forecast).
  */
+
+/** A hit's size as the screen shows it: `2`, `2.5`, `1.88` (a fraction rolls when it lands). */
+export function damageText(n) {
+    const v = Math.max(0, Number(n) || 0);
+    return String(Math.round(v * 100) / 100);
+}
+
+/** A damage type's or group's name in the player's words. */
+export const damageTypeName = (id) => t(`fight.types.${id}`);
+
+/** Resistance lines in reading order, groups before types: `[{ id, value }]`, a weakness negative. */
+function orderedLines(valueOf) {
+    const out = [];
+    for (const { id } of [...DAMAGE_GROUPS, ...DAMAGE_TYPES]) {
+        const value = valueOf(id);
+        if (value) out.push({ id, value });
+    }
+    return out;
+}
+
+/** An enemy's resistances as written (a type's line beside its group's, as the author put it). */
+export function enemyResistLines(resistances) {
+    return orderedLines(id => Number(resistances?.[id]) || 0);
+}
+
+/**
+ * A hero's resistances from what they carry: each group's rows, then each type's own rows beyond
+ * its group's (the aggregator counts a group's row on its types, so a type's own is the difference).
+ */
+export function heroResistLines(hero) {
+    const groupValue = {};
+    for (const g of DAMAGE_GROUPS) groupValue[g.id] = CombatFormulas.heroTypeResistance(hero, g.id);
+    return orderedLines(id => {
+        if (groupValue[id] != null) return groupValue[id];
+        const type = DAMAGE_TYPES.find(x => x.id === id);
+        return Math.round((CombatFormulas.heroTypeResistance(hero, id) - (groupValue[type.group] || 0)) * 100) / 100;
+    });
+}
+
+/**
+ * A Ranged hero's arrows: the one their next shot spends and how many the Bank holds, or none left.
+ * Null for any other style.
+ * @returns {{itemId: string|null, name: string|null, count: number, arrow: object|null}|null}
+ */
+export function arrowsView(hero) {
+    if (!hero || !shootsArrows(hero)) return null;
+    const itemId = nextArrowOf(hero);
+    if (!itemId) {
+        const carried = carriedArrowIds(hero);
+        return { itemId: carried[0] || null, name: carried[0] ? getItem(carried[0])?.name || carried[0] : null, count: 0, arrow: null };
+    }
+    return { itemId, name: getItem(itemId)?.name || itemId, count: InventoryManager.getItemCount(itemId), arrow: arrowOf(getItem(itemId)) };
+}
 
 /** `3 s`, `1.5 s`: a swing time. */
 export function secondsText(ms) {
@@ -100,16 +156,21 @@ function enemyBuffs(fight) {
 }
 
 /** The hero's side of the versus card, read live. */
-export function heroSide(hero, enemy = null) {
+export function heroSide(hero) {
     if (!hero) return null;
     const { id: style, level } = CombatFormulas.getHeroCombatSkillEntry(hero);
     const weapon = CombatFormulas.getHeroWeapon(hero);
-    const base = CombatFormulas.heroBaseDamage(hero);
-    const hit = Math.max(1, roundHalfUp(base * CombatFormulas.damageMultiplierOf(hero)));
+    const buffs = CombatFormulas.damageMultiplierOf(hero);
+    const arrows = arrowsView(hero);
+    const hitParts = CombatFormulas.heroHitParts(hero, arrows?.arrow || null)
+        .map(p => ({ type: p.type, hit: Math.max(0, p.base * buffs), arrow: !!p.arrow }));
+    const hit = hitParts.reduce((sum, p) => sum + p.hit, 0);
     const weaponDamage = weapon && Number(weapon.damage) > 0 ? Number(weapon.damage) : UNARMED_DAMAGE;
     const levelStep = levelDamageBonus(CombatFormulas.getHeroCombatLevel(hero));
-    const more = hit - weaponDamage - levelStep;
-    const armour = CombatFormulas.heroFlatArmor(hero);
+    const more = Math.round((hitParts[0].hit - weaponDamage - levelStep) * 100) / 100;
+    const boosts = [...new Set(hitParts.map(p => p.type))]
+        .map(type => ({ type, n: CombatFormulas.typeDamageBoost(hero, type) }))
+        .filter(b => b.n);
     const swingMs = CombatFormulas.heroAttackSpeedMs(hero);
     return {
         id: hero.id,
@@ -119,17 +180,22 @@ export function heroSide(hero, enemy = null) {
         sprite: hero.spriteId || hero.classId || null,
         hp: { cur: Math.max(0, hero.hp?.current ?? 0), max: hero.hp?.max ?? 0 },
         hit,
+        hitParts,
+        arrows,
         armed: !!weapon,
         hitLines: [
-            weapon ? t('fight.tip.weapon', { item: weapon.name, n: weaponDamage }) : t('fight.tip.fist'),
+            weapon ? t('fight.tip.weapon', { item: weapon.name, n: `${weaponDamage} ${damageTypeName(hitParts[0].type)}` }) : t('fight.tip.fist'),
             levelStep ? t('fight.tip.levelStep', { n: levelStep }) : null,
-            more ? t('fight.tip.moreDamage', { n: `${more > 0 ? '+' : ''}${more}` }) : null
+            more ? t('fight.tip.moreDamage', { n: `${more > 0 ? '+' : '−'}${damageText(Math.abs(more))}` }) : null,
+            arrows?.arrow ? t('fight.tip.arrow', { item: arrows.name, n: damageText(arrows.arrow.damage), type: damageTypeName(arrows.arrow.damageType) }) : null,
+            arrows ? (arrows.count > 0 ? t('fight.tip.arrowsLeft', { count: arrows.count }) : t('fight.tip.noArrows')) : null,
+            ...boosts.map(b => t('fight.tip.typeBoost', { type: damageTypeName(b.type), n: `${b.n > 0 ? '+' : ''}${b.n}%` })),
+            hitParts.some(p => Math.abs(p.hit - Math.round(p.hit)) > 1e-9) ? t('fight.tip.fraction') : null
         ].filter(Boolean),
-        armour,
+        resists: heroResistLines(hero),
         swingMs,
         elixirs: activeElixirsOf(hero),
-        statuses: statusesView(hero),
-        enemyArmour: enemy ? CombatFormulas.enemyFlatArmor(enemy) : null
+        statuses: statusesView(hero)
     };
 }
 
@@ -139,7 +205,7 @@ export function enemySide(typeId, fight = null) {
     if (!profile) return null;
     const live = !!fight;
     const flat = live ? CombatFormulas.damageMultiplierOf(profile) : 1;
-    const hit = Math.max(1, roundHalfUp((profile.hit ?? 1) * flat));
+    const hit = Math.max(0, (profile.hit ?? 1) * flat);
     const known = hasFought(typeId);
     return {
         typeId,
@@ -150,7 +216,8 @@ export function enemySide(typeId, fight = null) {
             ? { cur: Math.max(0, fight.combat?.enemyHp?.current ?? 0), max: fight.combat?.enemyHp?.max ?? profile.hp }
             : { cur: profile.hp, max: profile.hp },
         hit,
-        armour: live ? CombatFormulas.enemyFlatArmor(profile) : (profile.armor || 0),
+        hitType: PLAIN_ENEMY_HIT_TYPE,
+        resists: enemyResistLines(profile.resistances),
         swingMs: live ? CombatFormulas.enemyAttackSpeedMs(profile) : (profile.attackSpeed || 3000),
         kinds: known ? (profile.kinds || []).map(kindView).filter(Boolean) : null,
         statuses: live ? statusesView(fight) : [],
@@ -175,7 +242,8 @@ export function enemyCardView(typeId) {
         style: side.style,
         hp: side.hp.max,
         hit: side.hit,
-        armour: side.armour,
+        hitType: side.hitType,
+        resists: side.resists,
         swingMs: side.swingMs,
         kinds: side.kinds
     };
@@ -205,13 +273,13 @@ export function fightPanelView(heroId, fights, now = Date.now()) {
     const hero = HeroManager.getHero(heroId);
     const fight = live ? BoardCombat.getFight(record.instanceId) : null;
     const liveFight = fight && fight.assignedHeroId === heroId ? fight : null;
-    const heroView = heroSide(hero, liveFight?.enemy || null) || {
+    const heroView = heroSide(hero) || {
         id: heroId, name: record.heroName, style: null, level: null, sprite: null, hp: record.hp.hero,
-        hit: 0, hitLines: [], armour: 0, swingMs: 0, elixirs: [], statuses: [], enemyArmour: null
+        hit: 0, hitParts: [], arrows: null, hitLines: [], resists: [], swingMs: 0, elixirs: [], statuses: []
     };
     const enemyView = enemySide(record.typeId, liveFight) || {
         typeId: record.typeId, name: record.enemyName, style: 'melee', level: null, hp: record.hp.enemy,
-        hit: 0, armour: 0, swingMs: 0, kinds: null, statuses: [], buffs: []
+        hit: 0, hitType: PLAIN_ENEMY_HIT_TYPE, resists: [], swingMs: 0, kinds: null, statuses: [], buffs: []
     };
     if (!live) {
         heroView.hp = { ...record.hp.hero };

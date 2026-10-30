@@ -6,12 +6,14 @@ import { tokenSizeFor, TOKEN_SURFACE } from '../../base/TokenSprite.jsx';
 import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
 import { playAt, fxArtUnit } from './matFx.js';
 import { startFightWatch, subscribeMoments, MOMENT, statusIcon } from '../../combat/fightWatch.js';
-import { glyphSrc, GLYPH_COLOUR } from '../../combat/combatGlyphs.js';
+import { glyphSrc, GLYPH_COLOUR, damageTypeGlyph } from '../../combat/combatGlyphs.js';
 import { t } from '../../../../i18n/index.js';
 
 /**
  * A fight's floating numbers on the mat (owner, 2026-10-25): every hit both ways, "Miss", a big
- * "Crit!", green heals and the red poison and burn ticks with their drop or flame. Each rises at
+ * "Crit!", green heals and the red poison and burn ticks with their drop or flame. A hit carries
+ * its damage types' glyphs beside the number (two for a shot with an arrow), and "Weak!" or
+ * "Resisted" over it when the target's weaknesses or resistances moved it. Each rises at
  * its fighter's OUTER side (away from the other fighter, clear of the flag over the enemy), a
  * hero's blow on the strike frame of their swing, and is gone in half a second. White on the
  * enemy, red on the hero. Built from the fight watch's moments (`fightWatch.js`), drawn in the
@@ -49,12 +51,44 @@ export function buildFloat(m) {
         s.textContent = text;
         return s;
     };
+    const tone = onHero ? 'gi-ff-red' : 'gi-ff-white';
+    const typeGlyphs = () => (Array.isArray(m.types) ? m.types : []).map(type => {
+        const icon = document.createElement('img');
+        const name = damageTypeGlyph(type);
+        icon.src = glyphSrc(name, onHero ? GLYPH_COLOUR.red : GLYPH_COLOUR.white, true);
+        icon.alt = '';
+        icon.draggable = false;
+        icon.className = 'gi-ff-icon';
+        icon.setAttribute('data-glyph', name);
+        icon.setAttribute('data-fight-float-type', type);
+        return icon;
+    });
+    const verdictWord = () => (m.verdict === 'weak'
+        ? span('gi-ff-weak-word', t('fight.float.weak'))
+        : m.verdict === 'resisted' ? span('gi-ff-resisted-word', t('fight.float.resisted')) : null);
     switch (m.kind) {
         case MOMENT.CRIT:
-            el.className = `gi-fight-float gi-fight-float-crit ${onHero ? 'gi-ff-red' : 'gi-ff-white'}`;
-            el.appendChild(span('gi-ff-crit-word', t('fight.float.crit')));
-            el.appendChild(span('gi-ff-crit-number', String(m.amount)));
+        case MOMENT.HIT: {
+            const crit = m.kind === MOMENT.CRIT;
+            const verdict = verdictWord();
+            const number = span(crit ? 'gi-ff-crit-number' : 'gi-ff-number', String(m.amount));
+            if (!crit && !verdict) {
+                el.className = `gi-fight-float ${tone}`;
+                el.append(number, ...typeGlyphs());
+                break;
+            }
+            el.className = `gi-fight-float gi-fight-float-crit ${tone}`;
+            if (verdict) el.setAttribute('data-fight-float-verdict', m.verdict);
+            const words = document.createElement('div');
+            words.className = 'gi-ff-words';
+            if (crit) words.appendChild(span('gi-ff-crit-word', t('fight.float.crit')));
+            if (verdict) words.appendChild(verdict);
+            const row = document.createElement('div');
+            row.className = 'gi-ff-row';
+            row.append(number, ...typeGlyphs());
+            el.append(words, row);
             break;
+        }
         case MOMENT.MISS:
             el.className = 'gi-fight-float gi-fight-float-miss gi-ff-white';
             el.appendChild(span('gi-ff-word', t('fight.float.miss')));
@@ -77,7 +111,7 @@ export function buildFloat(m) {
             break;
         }
         default:
-            el.className = `gi-fight-float ${onHero ? 'gi-ff-red' : 'gi-ff-white'}`;
+            el.className = `gi-fight-float ${tone}`;
             el.appendChild(span('gi-ff-number', String(m.amount)));
     }
     el.style.visibility = 'hidden';

@@ -54,7 +54,7 @@ function registerQaContent() {
     if (!getItem('item_elixir_of_valor') || !getItem('item_elixir_of_ironskin')) {
         registerEffects({
             qa_c6_fx_valor: { id: 'qa_c6_fx_valor', name: 'Valor', statements: [provides('DAMAGE')] },
-            qa_c6_fx_ironskin: { id: 'qa_c6_fx_ironskin', name: 'Ironskin', statements: [provides('ARMOR')] },
+            qa_c6_fx_ironskin: { id: 'qa_c6_fx_ironskin', name: 'Ironskin', statements: [{ ...provides('TYPE_RESIST'), payload: { type: 'TYPE_RESIST', bucket: 'flat', value: 25, category: 'physical' } }] },
             qa_c6_fx_elixir_valor: { id: 'qa_c6_fx_elixir_valor', name: 'Elixir of Valor', statements: [forTheFight('qa_c6_fx_valor')] },
             qa_c6_fx_elixir_ironskin: { id: 'qa_c6_fx_elixir_ironskin', name: 'Elixir of Ironskin', statements: [forTheFight('qa_c6_fx_ironskin')] }
         });
@@ -83,7 +83,7 @@ function registerQaContent() {
 }
 
 /** A hero in the Fighter's art at `level` in every skill, full health, named. */
-function fighterAt(level, name) {
+export function fighterAt(level, name) {
     const hero = generateHero({ spriteId: 'fighter' });
     for (const id of Object.keys(hero.skills || {})) hero.skills[id] = { ...hero.skills[id], level, xp: xpForLevel(level) };
     const maxHp = heroMaxHpFromSkills(hero.skills);
@@ -93,7 +93,7 @@ function fighterAt(level, name) {
 }
 
 /** Place a Token of `typeId` at a point beside the Guild Hall. */
-function placeBesideHall(typeId, dx, dy) {
+export function placeBesideHall(typeId, dx, dy) {
     const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall' || getTokenType(t.typeId)?.isGuildHall);
     const c = hall ? { x: hall.x, y: hall.y } : { x: 880, y: 560 };
     const inst = BoardState.createTokenInstance(typeId, getTokenType(typeId)?.uses ?? null);
