@@ -761,6 +761,10 @@ export const useEntityStore = create(
             /** The Starter Camp (`engine/starterCamp.js`). ⚠️ Null means this workspace never held one, and Sync then leaves `data/starterCamp.json` alone; Clear sets an empty camp instead. */
             starterCamp: null,
 
+            /** The Ledger settings (`ledger/settings.js`), kept in `cms/plan/plan.json`. ⚠️ Null means this workspace never set any: Sync then sends none and the server keeps the file's own. */
+            planSettings: null,
+            setPlanSettings: (settings) => set({ planSettings: settings && typeof settings === 'object' ? settings : null }),
+
             activeEntityId: null,
             activeEntityType: null,
 
@@ -1002,6 +1006,7 @@ export const useEntityStore = create(
                     effects: seeded.effects,
                     recipePools: seeded.recipePools,
                     starterCamp: normaliseStarterCamp(data.starterCamp),
+                    planSettings: data.planSettings && typeof data.planSettings === 'object' ? data.planSettings : null,
                     activeEntityId: null,
                     activeEntityType: null,
                 });
@@ -1116,7 +1121,7 @@ export const useEntityStore = create(
 
                 set({ ...rejoinPlanned(workspace, { items, tokens: finalTokens, recipePools }), effects: library });
 
-                return { items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp, planned };
+                return { items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp, planned, planSettings: state.planSettings ?? null };
             },
 
             /**
@@ -1145,6 +1150,7 @@ export const useEntityStore = create(
                     tokens: {},
                     recipePools: {},
                     starterCamp: null,
+                    planSettings: null,
                     activeEntityId: null,
                     activeEntityType: null,
                 }),
@@ -1174,6 +1180,7 @@ export const useEntityStore = create(
                 effects: state.effects,
                 recipePools: state.recipePools,
                 starterCamp: state.starterCamp,
+                planSettings: state.planSettings,
                 activeEntityId: state.activeEntityId,
                 activeEntityType: state.activeEntityType,
             }),

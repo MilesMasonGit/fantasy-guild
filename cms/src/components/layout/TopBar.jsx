@@ -10,6 +10,7 @@ const VIEWS = [
   { key: 'editor', label: 'Editor' },
   { key: 'recipes', label: 'Recipes' },
   { key: 'progression', label: 'Progression' },
+  { key: 'ledger', label: 'Ledger' },
   { key: 'starterCamp', label: 'Starter Camp' },
   { key: 'audit', label: 'Economy Audit' },
   { key: 'sprites', label: 'Sprite Audit' },

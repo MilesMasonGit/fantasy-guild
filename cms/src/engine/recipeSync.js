@@ -18,7 +18,7 @@ export function recipesToFile(recipePools = {}) {
 }
 
 /**
- * The full set of files one sync writes to `data/`. `balanced` is the output of `recalculateEconomy`, including the recipe pools and the Planned stubs it set aside (`planned`).
+ * The full set of files one sync writes to `data/`. `balanced` is the output of `recalculateEconomy`, including the recipe pools, the Planned stubs it set aside (`planned`) and the Ledger settings (`planSettings`).
  * ⚠️ Planned stubs never reach the game's files: they are split off here again, whatever the caller did, and go with every plan block into `cms/plan/plan.json`, outside `data/` (under `PLAN_SYNC_KEY`, which `sendSync` sends on its own).
  */
 export function syncFiles(balanced = {}) {
@@ -28,7 +28,7 @@ export function syncFiles(balanced = {}) {
         items: { ...(setAside.items || {}), ...planned.items },
         tokens: { ...(setAside.tokens || {}), ...planned.tokens },
         recipes: [...(setAside.recipes || []), ...planned.recipes],
-    });
+    }, balanced.planSettings ?? null);
     return {
         'items.json': stripPlanBlocks(live.items),
         'tokens.json': stripPlanBlocks(live.tokens),

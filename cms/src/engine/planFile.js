@@ -122,8 +122,9 @@ export function stripPlanFromList(list = []) {
  * loaded the plan cannot write an empty one over it (Sync then leaves the file alone).
  * @param {{ items, tokens, recipePools }} live  the records the game gets (after `splitPlanned`)
  * @param {{ items, tokens, recipes }} planned    the stubs
+ * @param {object|null} settings                  the Ledger settings (`ledger/settings.js`); null when the workspace never set any
  */
-export function buildPlanFile(live = {}, planned = {}) {
+export function buildPlanFile(live = {}, planned = {}, settings = null) {
     const blocks = { items: {}, tokens: {}, recipes: {} };
     for (const key of ['items', 'tokens']) {
         for (const [id, def] of entries(live[key])) {
@@ -138,10 +139,12 @@ export function buildPlanFile(live = {}, planned = {}) {
         }
     }
     const anyBlock = Object.values(blocks).some((b) => Object.keys(b).length > 0);
-    if (!anyBlock && !hasPlanned(planned)) return null;
+    const hasSettings = isObject(settings);
+    if (!anyBlock && !hasPlanned(planned) && !hasSettings) return null;
     return {
         format: PLAN_FORMAT,
         version: PLAN_FILE_VERSION,
+        ...(hasSettings ? { settings } : {}),
         entries: blocks,
         planned: {
             items: { ...(planned.items || {}) },
@@ -155,6 +158,7 @@ export function buildPlanFile(live = {}, planned = {}) {
  * A workspace built from the game's files, with the plan file laid back over it: each plan block
  * onto its record, each Planned stub back into its collection. A stub whose id the game's files
  * already hold is skipped (the game's record wins), and so is a block whose record is gone.
+ * The Ledger settings come back as the workspace's `planSettings`.
  * Returns the workspace unchanged when there is no plan file.
  */
 export function mergePlanFile(workspace = {}, file = null) {
@@ -191,6 +195,7 @@ export function mergePlanFile(workspace = {}, file = null) {
         (pools[skill] ||= []).push(recipe);
     }
     next.recipePools = pools;
+    if (isObject(file.settings)) next.planSettings = file.settings;
     return next;
 }
 
