@@ -32,6 +32,30 @@ otherwise) is a separate open question**, below.*
   game already records where each item came from (a collection-log base,
   `RegistryManager.js`), unshown.
 
+## The tool's goals (owner interview, 2026-10-29)
+
+*Before a deeper analysis; the owner asked for an analyst to plan what the
+system needs. These goals steer it.*
+
+- **For**: the owner, planning and balancing; and **content agents**, whose
+  change packs **must pass its checks** (and the simulated player) before they
+  reach the owner's CMS inbox.
+- **The key question: is the game well paced?** When a player reaches each
+  thing; walls, empty stretches and crowded spots, per skill and per tier.
+- **Horizon: the whole game**, including unmade content as Planned stubs, so
+  the full shape can be judged before content exists.
+- **Timing by a simulated player**: a virtual guild plays through the content
+  (heroes, one job each, levels, travel, building) and reports first-reach
+  times and how long each wall lasts.
+- **Changes show a before-and-after of pacing**: what moved earlier or later,
+  walls that grew or shrank, checks that turned red or green, before syncing.
+- **Visual first, tables underneath**: a timeline per skill, a tree diagram per
+  item, sortable tables a click away.
+- **Success** (owner's words): "I want the content to make sense, be robust,
+  and well balanced." **Later it is tied to the calculator** (the CMS's
+  economic simulator, Recalculate) so XP returns and other pacing elements
+  give balanced gameplay.
+
 ## The ledger (owner; amended 2026-10-29)
 
 *Amended 2026-10-29 (owner): the plan lives **inside the CMS**, not in a
