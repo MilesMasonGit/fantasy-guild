@@ -1,4 +1,4 @@
-Status: briefed 2026-10-29 (encyclopedia and collection log revisited and approved 2026-10-29; brief 300). The dependency map moved to the progression ledger (brief 290).
+Status: briefed 2026-10-29 (encyclopedia and collection log revisited and approved 2026-10-29; brief 300). The Bank at scale approved 2026-10-29, brief 310. The dependency map moved to the progression ledger (brief 290).
 
 # Knowledge: dependency map, encyclopedia, collection log
 
@@ -48,7 +48,22 @@ its source. Brief 300.*
 ([concept_progression_ledger.md](concept_progression_ledger.md), brief 290),
 which plans, traces, checks and simulates every entry in the CMS.*
 
-## The Bank at scale
+## The Bank at scale (owner, 2026-10-29)
 
-Several hundred items after loops and gear: **search and filters** (name,
-skill, type), **automatic sorting** on demand, and player-made **tabs stay**.
+*Built today (checked in `BankTab.jsx`): named tabs, drag to reorder, drag
+onto a tab to file, a search across all tabs, a multi-select to move stacks.
+Brief 310.*
+
+- **Each tab holds 64 item kinds** (owner): a Bank Tabs rank adds a tab and its
+  64 slots; 16 tabs hold 1,024 kinds, and more tabs can be added if content
+  grows. **The Bank Slots upgrade retires** (one upgrade instead of two). A
+  new kind with no free slot still stays on the mat as loot.
+- **One tab to start** (owner), as now; tabs come from Bank Tabs ranks and the
+  player names them.
+- **Search matches name, tag and type** (owner): "Copper Dagger", "Weapon" and
+  "Hand" all find the dagger. One search box across all tabs, no separate
+  filter chips.
+- **A small Sort button beside Select** (owner): clicking it asks **this tab or
+  the entire Bank**. Sorting is **type, then tier, then name**; sorting the
+  entire Bank sorts every tab **in place** (items stay in their tabs). Manual
+  order holds until Sort is pressed.
