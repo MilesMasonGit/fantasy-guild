@@ -5,6 +5,13 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Director, classless heroes and the ledger (briefs 270 and 290; owner chose 2026-10-29 evening: K1 beside L1)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 270 K1: classless heroes (no jobs or promotion, every skill from level 1, the weapon decides the style, gear level requirements, HP 10 + best combat skill, old saves keep levels) | engineer | `feat/classless-k1` (`k1`) | **building**. WORK CHANGED expected (accept under brief270-K1 if it matches the engineer's prediction). Eye-check | Thu | |
+| 290 L1: the ledger's data and engines (status and hand-set tier in the CMS, reach and tree engines) | engineer | `cms/ledger-l1` (`l1`) | **building** (CMS only; no eye-check until L2's item page) | Thu | |
+
 ## Director, Hero orders (brief 260; owner 2026-10-28: merge Token bars, move on to the next brief)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
@@ -391,6 +398,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Thu 2026-10-29, night: fresh director read in; classless heroes beside the ledger.** Where we are: `main` 8bc6d1ad, suite green (6675). Now: brief 270 K1 (`k1`) and brief 290 L1 (`l1`), engineers, side by side. O3 work check on the 01:05 timer (`tb1`), then merge as okayed. Owner: K4/S9 verdicts when convenient; the K1 look when it is ready. Blockers: none.
 
 **Thu 2026-10-29, evening: director session closed (context full).** Where we are: `main` has briefs 250 and 260 O1–O2 with the owner's flag and drag follow-ups, T-264, the stumps and camps Syncs; O3 waits for its 01:05 work check, then merges (owner okayed). Next: brief 270 classless heroes (owner's go); small tickets accumulate until the briefs are done (owner rule). Owner: K4/S9 verdicts when convenient. Handoff: [HANDOFF.md](HANDOFF.md).
 
