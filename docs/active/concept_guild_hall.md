@@ -1,4 +1,4 @@
-Status: briefed 2026-10-14 for Transitions and The look of the sky (brief 160); the rest approved 2026-10-09, brief after the crunch
+Status: briefed 2026-10-14 for Transitions and The look of the sky (brief 160); the rest approved 2026-10-09; **draft amendment 2026-10-29: upgrades as a main driver** (below)
 
 # The Guild Hall: constellation screen, upgrades, transitions
 
@@ -7,6 +7,63 @@ Status: briefed 2026-10-14 for Transitions and The look of the sky (brief 160); 
 [concept_progression.md](concept_progression.md) (Hall upgrades are a surplus
 sink, not a main chase; 2–3 heroes on the first day, the rest over the first
 couple of weeks).*
+
+> ⚠️ **Draft amendment, 2026-10-29 (owner interview): "Upgrades as a main
+> driver" below changes the role, the list and the pricing of the sky.** Where
+> it differs from the sections after it, the amendment wins. Status of the
+> amendment: draft; the star list comes with the content work.
+
+## Upgrades as a main driver (owner, 2026-10-29; draft)
+
+- **Hall upgrades are a main driver of progression** (owner), no longer a
+  surplus sink. **Guild upgrades to XP rates, drop rates and work rates are
+  essentially necessary for the late-game levels** (owner): the pace curve
+  (the progression ledger, brief 290) assumes the player has them. This
+  replaces "global boosts: few and felt".
+- **What runs through the Hall** (owner): guild size, the per-skill rate
+  boosts, hero capability, passive production, storage. **Not** the Token cap
+  (fixed, no star), world-map reach (cell requirements are enough), building
+  tiers, or quests.
+- **Gates** (owner, unchanged): a star opens when a neighbouring star is lit;
+  later stars and ranks cost materials from later tiers, so they wait
+  naturally for fir, iron, gold.
+- **Prices are set by the algorithm** (owner): the owner decides which tier
+  each star rank belongs to; the ledger's automatic balancing picks the
+  amounts and materials for each rank's place on the pace curve.
+
+### The sky
+
+- **A constellation per skill** (owner), linked to the pole star like the
+  others and opening from the Hall at once (its first star buyable, the rest by
+  the neighbour rule). Each holds that skill's:
+  - **rate boosts, per skill** (owner): XP, yield (drops) and work speed, each
+    ranked, **large at the top, earned over the whole run** (e.g. +100 % XP,
+    +50 % yield, −40 % cycle time; the algorithm sets the real numbers);
+  - **Token upgrades** for that skill's Tokens (owner): shorter ore-vein
+    respawn, faster tree regrowth, a wider camp range, and so on.
+- **The Hearth** (heroes): **Bunk Beds** (re-priced so a second hero comes
+  early, brief 260), an **Infirmary** (shorter wound time after a defeat),
+  **loadout slots** (an extra trinket, more consumable room, a second food
+  slot) (owner).
+- **The Vault** (storage): **Bank Tabs only** (owner): 15 ranks to 16 tabs of
+  64 kinds (brief 310); sorting and search are free.
+- **The Well** (passive production): **a diverse selection of basic outputs**,
+  each upgradable for more (owner): oak wood, copper ore, coal and so on,
+  beside the Wishing Well's water, so a guild's basics never run dry.
+- **Retired** (owner): **Scouting Flags** (brief 260), **Bank Slots** (brief
+  310), **the Token Cap star** (fixed cap), **the Cartography Table** (every
+  world-map cell's contents are visible, so "see further" has nothing to
+  reveal), **the Notice Board** (bounty slots), and with them **the Compass**
+  constellation.
+
+### Open
+
+- The star list per skill (how many ranks of each boost, which Token
+  upgrades), the Hearth's and the Well's ranks: content, priced by the ledger,
+  settled with the content work.
+- The engine side (per-skill constellations, the boost effects, Token
+  upgrades, the Well's outputs, the retirements) is briefed once the list's
+  shape is clear.
 
 ## The sky
 

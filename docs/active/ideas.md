@@ -93,17 +93,10 @@ the first outside playtest, modding.
   progression ledger (brief 290); the world map that replaces map items as
   the gate is a draft, [concept_world_map.md](concept_world_map.md).
 
-- **Gate and price the Guild Hall upgrades** (owner, 2026-10-29: "not ready
-  to plan this out yet"). Listed, to interview later. Ground it starts from:
-  the upgrade web's placeholder prices (10 × rank Oak Wood; Token Cap and the
-  Cartography Table priced by plane) in
-  [concept_guild_hall.md](concept_guild_hall.md) and GDD §8; changes already
-  decided that touch it: **Bank Slots retires** (brief 310: 64 kinds per Bank
-  tab), **Scouting Flags retires** (brief 260), **the Cartography Table becomes
-  "see further"** on the world map ([concept_world_map.md](concept_world_map.md),
-  draft), **Bunk Beds re-priced** so a second hero comes early (brief 260). The
-  progression ledger (brief 290) will price and pace upgrades with everything
-  else (balancing is automatic; the owner sets gates and the curve).
+- **Gate and price the Guild Hall upgrades**: moved on 2026-10-29 to a draft
+  amendment of [concept_guild_hall.md](concept_guild_hall.md), "Upgrades as a
+  main driver" (per-skill constellations of large rate boosts and Token
+  upgrades, algorithmic prices; the star list comes with the content work).
 
 ### Quick changes and rulings
 
