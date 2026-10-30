@@ -5,6 +5,7 @@ import { enemyLevelStats, attackSpeedMs, ATTACK_SPEED_MS, BASE_CRIT_CHANCE, roun
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 import { enemyKindsOf } from './enemyKinds.js';
 import { normaliseResistances } from './damageTypes.js';
+import { enemyMovesOf } from './enemyMoves.js';
 
 /**
  * The combat stat block for an enemy Token.
@@ -24,7 +25,8 @@ import { normaliseResistances } from './damageTypes.js';
  * (`FormulaRegistry.enemyLevelStats`), and the level is also what the miss chance compares with
  * the hero's combat level. `kinds` (none, one or two of `enemyKinds.js`) twist those numbers, and
  * any one number can be written beside the level to replace the result. `resistances` (a damage
- * type or group → a signed step, `damageTypes.js`) say what the enemy shrugs off or is weak to.
+ * type or group → a signed step, `damageTypes.js`) say what the enemy shrugs off or is weak to, and
+ * `moves` (`enemyMoves.js`) what it does with each swing.
  *
  * ## Drops
  * Not here. A kill is a cycle, so a kill's loot is the cycle's output:
@@ -147,6 +149,7 @@ export function enemyProfileOf(def) {
     const style = ENEMY_STYLES.includes(authored.style) ? authored.style : 'melee';
     const speed = ATTACK_SPEED_MS[authored.speed] ? authored.speed : filled.speed;
     const kinds = enemyKindsOf(authored).map(k => k.id);
+    const moves = enemyMovesOf(authored);
 
     return {
         id: def.id,
@@ -171,6 +174,8 @@ export function enemyProfileOf(def) {
         kinds,
         // What a landed hit puts on the hero (Venomous), by library effect; `FightMoments` lands it.
         ...(filled.onHit.length ? { onHit: filled.onHit } : {}),
+        // The moves it picks from each swing (`enemyMoves.js`); without any, a plain Physical hit.
+        ...(moves.length ? { moves } : {}),
         // `traits` is read by the attack processor's thorns branch and must be
         // present. Enemy traits are not authorable yet; an empty array is the
         // right value.

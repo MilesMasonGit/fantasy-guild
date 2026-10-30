@@ -20,7 +20,8 @@ import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
  * - The library entry moves to the new id, keeping its place; its name follows only while it is
  *   still the old name (an author's own name stays).
  * - Every reference moves with it: a bearer's `effects` list, a statement's `payload.effectId`
- *   (Applies, Removes), a status row's narrowing (Status Immunity, Status Stack Limit), a perk row.
+ *   (Applies, Removes), a status row's narrowing (Status Immunity, Status Stack Limit), a perk row,
+ *   an enemy move's effect.
  * - ⚠️ A library already holding the new id keeps both entries as they are, and references still
  *   move to the new one: content that made its own Venom meant that one.
  * - Idempotent, and returns the SAME object when nothing changed, so a loader can call it on
@@ -72,9 +73,19 @@ function migrateRefs(list) {
     return next.some((r, i) => r !== list[i]) ? next : list;
 }
 
+/** An enemy block with its moves' effects renamed, or the same block. */
+function migrateEnemy(enemy) {
+    if (!enemy || typeof enemy !== 'object' || !Array.isArray(enemy.moves)) return enemy;
+    const moves = enemy.moves.map((move) => {
+        const effectId = renamedEffectId(move?.effectId);
+        return move && effectId !== move.effectId ? { ...move, effectId } : move;
+    });
+    return moves.some((m, i) => m !== enemy.moves[i]) ? { ...enemy, moves } : enemy;
+}
+
 /**
- * Every effect a definition names: a bearer's `effects` list and its inline `statements`, and for a
- * library entry its own statements. A library entry's own id and name move in
+ * Every effect a definition names: a bearer's `effects` list and its inline `statements`, an enemy's
+ * moves, and for a library entry its own statements. A library entry's own id and name move in
  * {@link migrateEffectLibrary}, which knows whether the new id is taken.
  * @param {object} def a Token, an item or a library entry
  * @returns {object} the same object when nothing changed
@@ -83,10 +94,12 @@ export function migrateEffectIds(def) {
     if (!def || typeof def !== 'object') return def;
     const effects = migrateRefs(def.effects);
     const statements = migrateStatements(def.statements);
-    if (effects === def.effects && statements === def.statements) return def;
+    const enemy = migrateEnemy(def.enemy);
+    if (effects === def.effects && statements === def.statements && enemy === def.enemy) return def;
     const next = { ...def };
     if (effects !== def.effects) next.effects = effects;
     if (statements !== def.statements) next.statements = statements;
+    if (enemy !== def.enemy) next.enemy = enemy;
     return next;
 }
 

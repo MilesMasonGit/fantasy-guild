@@ -337,14 +337,14 @@ export function heroBlow(hero, enemy, { crit = false, arrow = null } = {}) {
 
 /**
  * An enemy's landed blow on a hero, before the fraction sub-roll: its hit plus any flat Damage lent
- * to it, as one Physical hit (an enemy has no moves yet), × the matchup and any Damage percentage
- * (a heavy strike, an enrage), crit, then the hero's resistance to Physical.
- * @param {{ crit?: boolean }} [options]
+ * to it, in one type (its move's, `type`; a plain swing is Physical), × the matchup and any Damage
+ * percentage (a heavy strike, an enrage), crit, then the hero's resistance to that type.
+ * @param {{ crit?: boolean, type?: string|null }} [options]
  */
-export function enemyBlow(enemy, hero, { crit = false } = {}) {
+export function enemyBlow(enemy, hero, { crit = false, type = null } = {}) {
     const multiplier = damageMultiplierOf(enemy) * matchupMultiplier(enemy?.combatType, getHeroCombatStyle(hero));
     const base = (enemy?.hit ?? 1) + axis(enemy, EFFECT_TYPES.DAMAGE);
-    return landedBlow([{ type: PLAIN_ENEMY_HIT_TYPE, base }], multiplier, crit,
+    return landedBlow([{ type: type || PLAIN_ENEMY_HIT_TYPE, base }], multiplier, crit,
         (type) => typeDamageBoost(enemy, type),
         (type) => heroTypeResistance(hero, type));
 }
@@ -377,7 +377,7 @@ export function heroHitDamage(hero, enemy, options = {}) {
 
 /**
  * An enemy's landed hit on a hero, as a whole number. ⚠️ Draws for a fraction ({@link rollFraction}).
- * @param {{ crit?: boolean }} [options]
+ * @param {{ crit?: boolean, type?: string|null }} [options]
  */
 export function enemyHitDamage(enemy, hero, options = {}) {
     return rollFraction(enemyBlow(enemy, hero, options).exact);

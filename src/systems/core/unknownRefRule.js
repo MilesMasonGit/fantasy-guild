@@ -1,4 +1,4 @@
-// Content that names a skill, a job or a damage type the game does not have, or a rule, style or number it no longer reads.
+// Content that names a skill, a job or a damage type the game does not have, or a rule, style or number it no longer reads; an enemy's malformed moves.
 
 import { isSkillId, COMBAT_SKILL_IDS, getSkill } from '../../config/registries/skillRegistry.js';
 import { getEnemyKind, kindsClash, MAX_ENEMY_KINDS } from '../../config/registries/enemyKinds.js';
@@ -6,6 +6,8 @@ import { isWeapon, authoredWeaponStyles, weaponStyleOf } from '../../config/regi
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { isDamageTypeId, isTypeOrGroupId, resistanceProblems } from '../../config/registries/damageTypes.js';
 import { RETIRED_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
+import { moveProblems } from '../../config/registries/enemyMoves.js';
+import { statusBlockOf } from '../effects/effectLibrary.js';
 import { isConsumableCategory } from '../../config/registries/equipmentCategories.js';
 import { statementsOf, stationSkillOf, KEYWORD } from '../effects/statements.js';
 import { TARGET_CATEGORIES, EFFECT_TYPES } from '../effects/constants.js';
@@ -95,6 +97,16 @@ function enemyResistanceFindings(def, push) {
     }
 }
 
+/**
+ * Findings for an enemy's moves (`enemyMoves.js`): one that is not a move, has no name, hits with an
+ * unknown type, does nothing, lands an effect the library does not hold, or aims or lasts in a way
+ * the fight cannot read. Effects are checked only when the library is given.
+ */
+function enemyMoveFindings(def, push, library) {
+    if (!def?.enemy || typeof def.enemy !== 'object') return;
+    for (const problem of moveProblems(def.enemy.moves, library)) push('enemy.moves', `${problem}.`);
+}
+
 /** Findings for a weapon's damage type and an arrow's block. */
 function damageTypeFindings(def, push) {
     if (hasValue(def.damageType) && !isDamageTypeId(def.damageType)) {
@@ -144,6 +156,12 @@ function enemyKindFindings(def, push) {
  */
 export function findUnknownRefs({ tokens, items, recipes, effects } = {}) {
     const out = [];
+    const effectById = !effects ? null : Array.isArray(effects)
+        ? new Map(effects.filter(e => e?.id).map(e => [e.id, e]))
+        : new Map(Object.entries(effects));
+    const library = effectById
+        ? { hasEffect: (id) => effectById.has(id), isStatus: (id) => !!statusBlockOf(effectById.get(id)) }
+        : {};
 
     for (const entry of asList(effects)) {
         if (!entry || typeof entry !== 'object') continue;
@@ -172,6 +190,7 @@ export function findUnknownRefs({ tokens, items, recipes, effects } = {}) {
         }
         enemyKindFindings(def, push);
         enemyResistanceFindings(def, push);
+        enemyMoveFindings(def, push, library);
         statementFindings(def, push);
     }
 

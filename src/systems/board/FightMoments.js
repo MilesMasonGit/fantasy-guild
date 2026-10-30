@@ -20,10 +20,10 @@ import { SIDE, setFightMomentRunner, talliesOf } from '../combat/FightHooks.js';
  * The fight moments (`FIGHT_MOMENT`: On Swing, On Hit, On Health Below), run for one side of a
  * fight when the combat engine says so (`combat/FightHooks.js`).
  *
- * A side's rules: an enemy's are its Token's own rules, any lingering effect on it and its kinds'
- * (Venomous: "On Hit: applies Poison to the hero"); a hero's are their items' and their lingering
- * effects'. In that order, each in authored order, so the random numbers a chance draws come out
- * the same in a catch-up as live.
+ * A side's rules: an enemy's are its Token's own rules, any lingering effect on it, its kinds'
+ * (Venomous: "On Hit: applies Venom to the hero") and the effect of the move its swing makes; a
+ * hero's are their items', the arrow being shot and their lingering effects'. In that order, each in
+ * authored order, so the random numbers a chance draws come out the same in a catch-up as live.
  *
  * Not routed through `TriggerSystem`: a fight moment spends no Token charge and has no cooldown
  * (its own count is its rhythm), and its roles are the two fighters: `itself` is the side carrying
@@ -57,7 +57,8 @@ function rulesOf(fight, side) {
         return [
             ...statementsOf(getTokenType(fight.enemyId)),
             ...LiveEffects.liveStatements(fight),
-            ...kindStatements(fight)
+            ...kindStatements(fight),
+            ...moveStatements(fight)
         ];
     }
     const hero = HeroManager.getHero(fight.assignedHeroId);
@@ -74,6 +75,33 @@ function arrowStatements(fight) {
     const arrowId = talliesOf(fight).arrowId;
     if (!arrowId) return [];
     return HeroEffects.itemStatements(arrowId).filter(s => s?.when?.event);
+}
+
+/**
+ * The effect of the move the enemy's swing makes (`talliesOf(fight).move`, set for the swing by the
+ * combat engine), as one Applies on the moment it lands: on itself as the move is made (before the
+ * roll, so a heavy strike counts); on the hero with the hit that lands, or as a move that does not
+ * hit is made. Always lands (no chance roll, so no draw), and says nothing over the enemy: the move's
+ * name is said with its swing.
+ *
+ * "For one attack" lasts through the next attack on its bearer: on itself, the hero's next swing; on
+ * the hero, the enemy's next swing after this one.
+ */
+function moveStatements(fight) {
+    const tallies = talliesOf(fight);
+    const move = tallies.move;
+    if (!move?.effectId) return [];
+    const onSelf = move.target === 'self';
+    const lifetime = move.lasts === 'swing' ? { forSwing: true }
+        : move.lasts === 'attack' ? { forAttack: (onSelf ? tallies.swings.hero : tallies.swings.enemy) + 1 }
+            : { forFight: true };
+    return [{
+        id: 'enemy_move',
+        keyword: KEYWORD.APPLIES,
+        when: { event: onSelf || !move.hits ? FIGHT_MOMENT.SWING : FIGHT_MOMENT.HIT, scope: 'self' },
+        target: { role: onSelf ? ROLE.OPPONENT : ROLE.ACTOR },
+        payload: { effectId: move.effectId, chance: 100, ...lifetime }
+    }];
 }
 
 /** Who a side's rules name. */
