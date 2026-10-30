@@ -5,7 +5,6 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
-import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Charges from '../systems/board/Charges.js';
@@ -22,9 +21,7 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
-import { isCombatSkill } from '../config/registries/skillRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -39,7 +36,7 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
 }));
 
 /**
- * ⭐ Free Playmat slice 1.4c — combat flags, promotion offers, disallow.
+ * ⭐ Free Playmat slice 1.4c — combat flags and disallow (promotion offers retired with jobs).
  *
  * ⚠️ Laid out on the old reaches — flag radius 400 u, Near 272 u (a Token on a
  * diagonal) — so `beforeEach` sets both. The flag radius ships at 240 u, Near at 164 u.
@@ -78,25 +75,12 @@ function fighter(id, { level = 50, hp = 100 } = {}) {
     return hero;
 }
 
-/** A Recruit: no combat skill at all, so they fight as a level 1 fighter. */
+/** A new hero: every skill at level 1, nothing in their hands. */
 function recruit(id) {
     const hero = generateHero({ name: id });
     hero.id = id;
     hero.status = 'idle';
     hero.hp = { current: 100, max: 100 };
-    return hero;
-}
-
-/** A hero the Promotion fixture would make a Fighter. */
-function qualified(id) {
-    const hero = generateHero({ name: id });
-    hero.id = id;
-    hero.status = 'idle';
-    const cost = getPromotionCost('fighter');
-    for (const skill of getPromotionGateSkills('fighter')) {
-        if (!hero.skills[skill]) hero.skills[skill] = { xp: 0, level: 0 };
-        hero.skills[skill].level = cost.skillLevel;
-    }
     return hero;
 }
 
@@ -123,18 +107,6 @@ function untilDamaged(heroId) {
         if (fight && fight.combat.enemyHp.current < fight.combat.enemyHp.max) return fight;
     }
     throw new Error('the enemy never took damage');
-}
-
-/** Tick the real board until a Promotion Token offers; returns the offers. */
-function train(ms = 40000) {
-    const offers = [];
-    const off = EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, d => offers.push(d));
-    try {
-        for (let t = 0; t < ms && !offers.length; t += 1000) BoardRunner.tick(1000);
-    } finally {
-        off?.();
-    }
-    return offers;
 }
 
 beforeAll(() => {
@@ -205,7 +177,7 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         expect(Flags.skipsOf(bear.id)).toEqual([{ heroId: 'h2', reason: Flags.SKIP.CLAIMED }]);
     });
 
-    it('a Recruit, holding no combat skill, fights the nearest enemy like anyone (everyone fights)', () => {
+    it('a new hero, barehanded, fights the nearest enemy like anyone (everyone fights)', () => {
         GameState.state.heroes = [recruit('r1')];
         const a = put(15, 'fixture_enemy');
         const b = put(16, 'fixture_enemy');
@@ -394,95 +366,6 @@ describe('⭐ defeat furls the flag, with one knock-out banner (FP-42)', () => {
     });
 });
 
-describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
-    function declined(heroId = 'h1', uses = 2) {
-        const academy = put(14, 'fixture_promotion', uses);
-        Placement.plantFlagAt(heroId, C(14));
-        expect(train()).toHaveLength(1);
-        BoardPromotion.decline(idAt(14));
-        return academy;
-    }
-
-    beforeEach(() => {
-        GameState.state.heroes = [qualified('h1'), qualified('h2')];
-    });
-
-    it('a declined offer survives a tick with nobody claiming the Token, and is not asked again', () => {
-        const academy = declined();
-
-        // What the runner does for a Token nobody claims this tick.
-        BoardState.setClaim('h1', null);
-        BoardPromotion.tickToken(academy, 100, null);
-
-        expect(BoardPromotion.isPaused(academy)).toBe(true);
-        expect(BoardPromotion.isDeclined(academy)).toBe(true);
-
-        expect(train(60000)).toHaveLength(0);
-        expect(workTileOf('h1')).toBe(14);
-        expect(BoardPromotion.isDeclined(academy)).toBe(true);
-    });
-
-    it('a flag planted on it asks again — even on the spot it already stands on', () => {
-        const academy = declined();
-
-        Placement.plantFlagAt('h1', C(14));
-
-        expect(BoardPromotion.isPaused(academy)).toBe(false);
-        expect(train()).toHaveLength(1);
-    });
-
-    it('a different hero claiming it asks again', () => {
-        const academy = declined();
-        Placement.recallHeroById('h1');
-        expect(BoardPromotion.isPaused(academy)).toBe(true);   // recall alone does not
-
-        BoardState.setFlag('h2', { ...C(14), plantedAt: 99 });
-        Flags.markDirty();
-        Flags.assign(0);
-
-        expect(workTileOf('h2')).toBe(14);
-        expect(BoardPromotion.isPaused(academy)).toBe(false);
-    });
-
-    it('after accepting, the hero skips the Token and works normally (PR-8)', () => {
-        const academy = put(14, 'fixture_promotion', 2);
-        Placement.plantFlagAt('h1', C(14));
-        expect(train()).toHaveLength(1);
-        expect(BoardPromotion.accept(idAt(14)).success).toBe(true);
-
-        // Any work skill the promoted hero holds: they work them all.
-        const skill = Object.keys(GameState.state.heroes[0].skills).find(s => !isCombatSkill(s));
-        registerTokenTypes({
-            ft_after_promotion: {
-                id: 'ft_after_promotion', name: 'Ordinary Work', uses: 100, requiresHero: true,
-                config: { skill, skillRequired: 0, cycleTimeMs: 12000, xp: 1, inputs: [],
-                    outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }] }
-            }
-        });
-        put(15, 'ft_after_promotion');
-
-        Flags.markDirty();
-        Flags.assign(0);
-
-        expect(workTileOf('h1')).toBe(15);
-        expect(reasons(academy)).toContain(Flags.SKIP.SAME_JOB);
-    });
-
-    it('accepting with the last charge leaves the hero free for other work (FPP-12)', () => {
-        put(14, 'fixture_promotion_costly', 2);   // priced 2: an unpriced Academy never runs out
-        Placement.plantFlagAt('h1', C(14));
-        expect(train()).toHaveLength(1);
-
-        expect(BoardPromotion.accept(idAt(14)).success).toBe(true);
-        expect(tokenAt(14)).toBeNull();
-
-        Flags.assign(0);
-
-        expect(Flags.statusOf('h1').state).toBe('idle');
-        expect(workTileOf('h1')).toBeNull();
-    });
-});
-
 describe('⭐ disallow (FP-35)', () => {
     beforeEach(() => {
         GameState.state.heroes = [logger('h1')];
@@ -520,15 +403,17 @@ describe('⭐ disallow (FP-35)', () => {
         expect(forest.disallowed).toBeUndefined();
     });
 
+    // Rewritten with classless heroes: a Promotion Token (a retired Promotes rule) is nothing a hero
+    // works, so it is no candidate at all: not claimed, nothing recorded, and not offered the toggle.
     it('is never claimed as a Promotion Token either', () => {
-        GameState.state.heroes = [qualified('h1')];
         const academy = put(14, 'fixture_promotion', 2);
+        expect(Flags.isHeroWorkable(academy)).toBe(false);
         Flags.setDisallowed(idAt(14), true);
 
         Placement.plantFlagAt('h1', C(14));
 
         expect(workTileOf('h1')).toBeNull();
-        expect(reasons(academy)).toEqual([Flags.SKIP.DISALLOWED]);
+        expect(reasons(academy)).toEqual([]);
     });
 
     it('does not stop the Token’s own Provides', () => {

@@ -11,7 +11,7 @@ import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import { SKILLS } from '../config/registries/skillRegistry.js';
 import { getTokenType, getProvidedTagsWithTiers, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { recipesForToken, registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { stationSkillOf, promotedJobOf } from '../systems/effects/statements.js';
+import { stationSkillOf } from '../systems/effects/statements.js';
 
 /**
  * Token Lifecycle slices 7.5 (Processing) and 6.2 (Academies), pinned from the
@@ -277,14 +277,6 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(verdict.reason).toBeUndefined();
             expect(verdict.recipe.id).toBe('recipe_copper_ingot');
         });
-    });
-});
-
-describe("Academies (6.2, SP-62)", () => {
-    it("the Fighter's Academy still promotes to Fighter, with its charges as before", () => {
-        expect(promotedJobOf(getTokenType('token_fighter_s_academy'))).toBe('fighter');
-        expect(tokens.token_fighter_s_academy.uses).toBe(10);
-        expect(tokens.token_fighter_s_academy.shop).toBeUndefined();
     });
 });
 

@@ -661,7 +661,7 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_market', name: 'Fixture Market', tokenType: 'market',
         rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 's_social',
         config: {
-            skill: 'commerce', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
+            skill: 'cooking', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
             inputs: [{ itemId: 'fixture_market_goods', quantity: 10 }],
             outputs: [{ currency: 'gold', quantity: 120, chance: 100 }]
         }

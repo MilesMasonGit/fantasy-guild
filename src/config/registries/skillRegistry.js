@@ -217,6 +217,13 @@ export const SKILL_CATEGORIES = {
     }
 };
 
+/**
+ * Skills cut when heroes became classless. ⚠️ Not skills any more: an older save's levels in them
+ * are dropped on load (`HeroRehydration.settleSkillSheet`), and content still naming one is listed
+ * by the boot audit and the CMS Economy Audit as a skill that does not exist.
+ */
+export const RETIRED_SKILL_IDS = Object.freeze(['leadership', 'commerce', 'trapping', 'armory', 'shadowcraft']);
+
 /** How many skills exist in the world. */
 export const SKILL_COUNT = Object.keys(SKILLS).length;
 

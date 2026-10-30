@@ -721,7 +721,8 @@ function auditLifecycle(out) {
 }
 
 /**
- * Skills and jobs named in content that the game does not have. The rule lives
+ * Skills named in content that the game does not have, retired Promotes rules and weapons naming
+ * two styles. The rule lives
  * in `unknownRefRule.js`, shared with the CMS Economy Audit.
  */
 function auditUnknownRefs(out) {

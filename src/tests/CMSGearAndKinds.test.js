@@ -12,11 +12,13 @@ import { syncFiles } from '../../cms/src/engine/recipeSync';
 import ItemEditor from '../../cms/src/components/editors/ItemEditor.jsx';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
-import { weaponStylesOf, weaponTierOf, weaponRefusal } from '../config/registries/weaponStyles.js';
+import { weaponStyleOf, gearLevelRequirement } from '../config/registries/weaponStyles.js';
+import { KEYWORD, statementsWith } from '../systems/effects/statements.js';
+import { expandBearer } from '../systems/effects/effectLibrary.js';
 
 /**
- * ⭐ Gear and enemies in the CMS (brief 220, C2): a hand item that is not a tool is a weapon with
- * styles, damage and speed; an enemy's numbers are filled from its level and kinds, shown as
+ * ⭐ Gear and enemies in the CMS (brief 220, C2; classless heroes): a hand item that is not a tool is
+ * a weapon with one style, damage and speed, and gear asks a level in its style; an enemy's numbers are filled from its level and kinds, shown as
  * defaults, and any can be typed over; the kinds are presets, none to two. Everything written
  * survives Recalculate, Sync and a reload unchanged.
  *
@@ -72,34 +74,49 @@ function expectStableRoundTrip() {
     return first;
 }
 
-describe('⭐ the item editor: a weapon has styles, damage and speed', () => {
+// Rewritten with classless heroes: a weapon's style is one choice (it decides the style any hero
+// fights in), the Recruit's tier rule is gone, and weapons and armour carry a level requirement.
+describe('⭐ the item editor: a weapon has one style, damage and speed', () => {
     it('a hand item that is not a tool shows the Weapon fields; a tool or a hat does not', () => {
         const id = store().addItem({ name: 'Weapon Fixture', equipSlot: 'hand' });
         const { container, rerender } = itemEditor(id);
-        for (const name of ['weapon-style-melee', 'weapon-style-ranged', 'weapon-style-magic', 'weapon-style-stealth', 'weapon-damage', 'weapon-speed', 'weapon-tier']) {
+        for (const name of ['weapon-style', 'weapon-damage', 'weapon-speed', 'weapon-tier', 'gear-level']) {
             expect(field(container, name), name).not.toBeNull();
         }
+        expect(field(container, 'gear-level-style')).toBeNull();
 
         fireEvent.change(field(container, 'tool-kind'), { target: { value: 'pickaxe' } });
         rerender(React.createElement(ItemEditor));
         expect(field(container, 'weapon-damage')).toBeNull();
+        expect(field(container, 'gear-level')).toBeNull();
 
         const hat = store().addItem({ name: 'Hat Fixture', equipSlot: 'hat' });
         cleanup();
-        expect(field(itemEditor(hat).container, 'weapon-damage')).toBeNull();
+        const hatEditor = itemEditor(hat).container;
+        expect(field(hatEditor, 'weapon-damage')).toBeNull();
+        expect(field(hatEditor, 'gear-level')).not.toBeNull();
+        expect(field(hatEditor, 'gear-level-style')).not.toBeNull();
     });
 
-    it('ticking Stealth then Melee writes both in the game\'s order, as a weapon; none ticked removes the key', () => {
+    it('picking a style writes that one, as a weapon; none written reads Melee', () => {
         const id = store().addItem({ name: 'Dagger Fixture', equipSlot: 'hand' });
         const { container } = itemEditor(id);
-        fireEvent.click(field(container, 'weapon-style-stealth'));
-        fireEvent.click(field(container, 'weapon-style-melee'));
-        expect(store().items[id]).toMatchObject({ type: 'weapon', styles: ['melee', 'stealth'] });
-        expect(field(container, 'weapon-style-melee').checked).toBe(true);
-
-        fireEvent.click(field(container, 'weapon-style-melee'));
-        fireEvent.click(field(container, 'weapon-style-stealth'));
+        expect(field(container, 'weapon-style').value).toBe('melee');
         expect(store().items[id].styles).toBeUndefined();
+        fireEvent.change(field(container, 'weapon-style'), { target: { value: 'stealth' } });
+        expect(store().items[id]).toMatchObject({ type: 'weapon', styles: ['stealth'] });
+        fireEvent.change(field(container, 'weapon-style'), { target: { value: 'ranged' } });
+        expect(store().items[id].styles).toEqual(['ranged']);
+    });
+
+    it('an older two-style weapon says it fights as its first; picking one keeps one', () => {
+        const id = store().addItem({ name: 'Old Dagger Fixture', equipSlot: 'hand', styles: ['melee', 'stealth'] });
+        const { container } = itemEditor(id);
+        expect(field(container, 'weapon-style').value).toBe('melee');
+        expect(field(container, 'weapon-style-many').textContent).toMatch(/Melee and Stealth.*fights as Melee/);
+        fireEvent.change(field(container, 'weapon-style'), { target: { value: 'stealth' } });
+        expect(store().items[id].styles).toEqual(['stealth']);
+        expect(field(container, 'weapon-style-many')).toBeNull();
     });
 
     it('damage and speed are written as typed; Normal speed and a blank damage write nothing', () => {
@@ -131,45 +148,68 @@ describe('⭐ the item editor: a weapon has styles, damage and speed', () => {
         expect(store().items[id].tier).toBeUndefined();
     });
 
-    it('an older item\'s skillRequired style shows ticked and is folded into styles on the first change', () => {
+    it('an older item\'s skillRequired style shows chosen and is folded into styles on the first pick', () => {
         const id = store().addItem({ name: 'Old Bow Fixture', equipSlot: 'hand', skillRequired: 'ranged' });
         const { container } = itemEditor(id);
-        expect(field(container, 'weapon-style-ranged').checked).toBe(true);
-        fireEvent.click(field(container, 'weapon-style-melee'));
-        expect(store().items[id].styles).toEqual(['melee', 'ranged']);
+        expect(field(container, 'weapon-style').value).toBe('ranged');
+        fireEvent.change(field(container, 'weapon-style'), { target: { value: 'melee' } });
+        expect(store().items[id].styles).toEqual(['melee']);
         expect(store().items[id].skillRequired).toBeUndefined();
     });
 
-    it('making it a tool, or moving it out of the hands, clears the weapon fields', () => {
-        const id = store().addItem({ name: 'Sword Fixture', equipSlot: 'hand', styles: ['melee'], damage: 2, speed: 'slow', tier: 1 });
+    it('a weapon\'s level is in its own style; blank or 0 writes none', () => {
+        const id = store().addItem({ name: 'Iron Sword Fixture', equipSlot: 'hand', styles: ['melee'] });
+        const { container } = itemEditor(id);
+        fireEvent.change(field(container, 'gear-level'), { target: { value: '15' } });
+        expect(store().items[id]).toMatchObject({ levelRequired: 15 });
+        expect(store().items[id].skillRequired).toBeUndefined();
+        expect(field(container, 'gear-level').parentElement.textContent).toMatch(/Needs Melee 15/);
+        fireEvent.change(field(container, 'weapon-style'), { target: { value: 'ranged' } });
+        expect(gearLevelRequirement(store().items[id])).toEqual({ skill: 'ranged', level: 15 });
+        fireEvent.change(field(container, 'gear-level'), { target: { value: '0' } });
+        expect(store().items[id].levelRequired).toBeUndefined();
+    });
+
+    it('armour names its style beside the level', () => {
+        const id = store().addItem({ name: 'Helm Fixture', equipSlot: 'hat' });
+        const { container } = itemEditor(id);
+        fireEvent.change(field(container, 'gear-level-style'), { target: { value: 'magic' } });
+        fireEvent.change(field(container, 'gear-level'), { target: { value: '30' } });
+        expect(store().items[id]).toMatchObject({ skillRequired: 'magic', levelRequired: 30 });
+        expect(gearLevelRequirement(store().items[id])).toEqual({ skill: 'magic', level: 30 });
+        fireEvent.change(field(container, 'gear-level'), { target: { value: '' } });
+        expect(store().items[id].levelRequired).toBeUndefined();
+        expect(store().items[id].skillRequired).toBeUndefined();
+    });
+
+    it('making it a tool, or moving it out of the hands, clears the weapon fields and its level', () => {
+        const id = store().addItem({ name: 'Sword Fixture', equipSlot: 'hand', styles: ['melee'], damage: 2, speed: 'slow', tier: 1, levelRequired: 15 });
         const { container } = itemEditor(id);
         fireEvent.change(field(container, 'tool-kind'), { target: { value: 'woodaxe' } });
         expect(store().items[id]).toMatchObject({ tool: { kind: 'woodaxe', tier: 1 } });
-        for (const key of ['styles', 'damage', 'speed', 'tier']) expect(store().items[id][key], key).toBeUndefined();
+        for (const key of ['styles', 'damage', 'speed', 'tier', 'levelRequired']) expect(store().items[id][key], key).toBeUndefined();
 
-        const other = store().addItem({ name: 'Sword Fixture Two', equipSlot: 'hand', styles: ['melee'], damage: 2, tier: 2 });
+        const other = store().addItem({ name: 'Sword Fixture Two', equipSlot: 'hand', styles: ['melee'], damage: 2, tier: 2, levelRequired: 15 });
         cleanup();
         const second = itemEditor(other).container;
         fireEvent.change(second.querySelector('select'), { target: { value: 'chest' } });
-        for (const key of ['styles', 'damage', 'speed', 'tier']) expect(store().items[other][key], key).toBeUndefined();
+        for (const key of ['styles', 'damage', 'speed', 'tier', 'levelRequired']) expect(store().items[other][key], key).toBeUndefined();
     });
 
-    it('a weapon reaches items.json as written and survives a reload; the game reads its styles', () => {
+    it('a weapon reaches items.json as written and survives a reload; the game reads its style and level', () => {
         const id = store().addItem({ name: 'Round Trip Dagger', equipSlot: 'hand' });
         const { container } = itemEditor(id);
-        fireEvent.click(field(container, 'weapon-style-melee'));
-        fireEvent.click(field(container, 'weapon-style-stealth'));
+        fireEvent.change(field(container, 'weapon-style'), { target: { value: 'stealth' } });
         fireEvent.change(field(container, 'weapon-damage'), { target: { value: '1' } });
         fireEvent.change(field(container, 'weapon-speed'), { target: { value: 'fast' } });
         fireEvent.change(field(container, 'weapon-tier'), { target: { value: '1' } });
+        fireEvent.change(field(container, 'gear-level'), { target: { value: '15' } });
 
         const files = expectStableRoundTrip();
         const written = files['items.json'][id];
-        expect(written).toMatchObject({ type: 'weapon', equipSlot: 'hand', styles: ['melee', 'stealth'], damage: 1, speed: 'fast', tier: 1 });
-        expect(weaponStylesOf(written)).toEqual(['melee', 'stealth']);
-        // Tier 1 is copper: the game lets a Recruit (no style) hold it.
-        expect(weaponTierOf(written)).toBe(1);
-        expect(weaponRefusal(written, null)).toBeNull();
+        expect(written).toMatchObject({ type: 'weapon', equipSlot: 'hand', styles: ['stealth'], damage: 1, speed: 'fast', tier: 1, levelRequired: 15 });
+        expect(weaponStyleOf(written)).toBe('stealth');
+        expect(gearLevelRequirement(written)).toEqual({ skill: 'stealth', level: 15 });
         // Nothing else moved.
         const before = shipped()['items.json'];
         for (const other of Object.keys(before)) {
@@ -274,7 +314,11 @@ describe('⭐ the kinds: none, one or two presets', () => {
         expect(written.enemy).toEqual({ level: 1, style: 'melee', kinds: ['brute', 'venomous'], dodge: 5 });
         expect(enemyProfileOf(written)).toMatchObject({ hit: 2, speed: 'slow', dodge: 5, kinds: ['brute', 'venomous'] });
         const before = shipped()['tokens.json'];
-        for (const other of Object.keys(before).filter(t => t !== cow)) {
+        // ⚠️ A Token still carrying a retired Promotes rule re-describes itself on its next Sync (the
+        // rule now reads "… (retired)"), whatever this edit does: left out until the owner deletes it.
+        const effects = shipped()['effects.json'];
+        const retired = (t) => statementsWith(expandBearer(before[t], effects), KEYWORD.PROMOTES).length > 0;
+        for (const other of Object.keys(before).filter(t => t !== cow && !retired(t))) {
             expect(JSON.stringify(files['tokens.json'][other]), other).toBe(JSON.stringify(before[other]));
         }
     });

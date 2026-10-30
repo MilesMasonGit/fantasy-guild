@@ -595,7 +595,7 @@ function bodySegments(statement, names) {
         // "Promotes the hero to fighter (retired)." Jobs are gone; older content keeps its words on
         // screen so the author can find and delete it.
         case KEYWORD.PROMOTES:
-            return segs(d('Promotes', K), ' the hero to ', d(payload.jobId || '…', 'jobId'), ' (retired)');
+            return segs(d('Promotes', K), ' the hero to ', payload.jobId || '…', ' (retired)');
 
         /**
          * ⚠️ Two wordings. The CMS editor passes no `tool` name and shows the tier as a number to

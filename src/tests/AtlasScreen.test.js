@@ -460,7 +460,7 @@ describe('the Region list', () => {
 describe('the Atlas screen', () => {
     const screen = ({ dragging = false, ...props } = {}) => render(React.createElement(
         DeckDndContext.Provider, { value: { activePayload: dragging ? { kind: 'token' } : null, isDragging: dragging } },
-        React.createElement(AtlasScreen, { onClose: vi.fn(), closePromotion: vi.fn(), ...props })
+        React.createElement(AtlasScreen, { onClose: vi.fn(), ...props })
     ));
 
     it('travels from the list and closes', async () => {
@@ -478,17 +478,16 @@ describe('the Atlas screen', () => {
         const starter = Atlas.activeRegionId();
         catchUp.running = true;
         const onClose = vi.fn();
-        const closePromotion = vi.fn();
-        const { container } = screen({ onClose, closePromotion });
+        const { container } = screen({ onClose });
         pick(container, region.id);
         await act(async () => { pressTravel(container, region.id); });
         expect(Atlas.activeRegionId()).toBe(starter);
         expect(q(container, '[data-region-message]').textContent).toBe(TEXT.REFUSE_CATCHING_UP);
         expect(onClose).not.toHaveBeenCalled();
-        expect(closePromotion).not.toHaveBeenCalled();
     });
 
-    it('ends a drag and closes the promotion ceremony before the guild travels', async () => {
+    // Rewritten with classless heroes: there is no promotion ceremony left to close.
+    it('ends a drag before the guild travels', async () => {
         const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM] });
         const order = [];
         const onKey = (e) => { if (e.key === 'Escape' && e.code === 'Escape') order.push('drag ended'); };
@@ -497,15 +496,14 @@ describe('the Atlas screen', () => {
         try {
             const { container } = screen({
                 dragging: true,
-                onClose: () => order.push('closed'),
-                closePromotion: () => order.push('promotion closed')
+                onClose: () => order.push('closed')
             });
             pick(container, region.id);
             await act(async () => {
                 pressTravel(container, region.id);
                 await new Promise(r => setTimeout(r, 120));
             });
-            expect(order).toEqual(['drag ended', 'promotion closed', 'travelled', 'closed']);
+            expect(order).toEqual(['drag ended', 'travelled', 'closed']);
         } finally {
             document.removeEventListener('keydown', onKey);
             off();

@@ -67,7 +67,6 @@ describe('the routing table', () => {
             [ENGINE_EVENTS.ITEM_DISCOVERED]: 'stub:new',
             [ENGINE_EVENTS.HERO_LEVELED]: 'banner:recipe',
             [ENGINE_EVENTS.HERO_RECRUITED]: 'banner:hero',
-            [ENGINE_EVENTS.HERO_PROMOTED]: 'banner:promotion',
             [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED]: 'banner:upgrade',
             [BOARD_EVENTS.HERO_DEFEATED]: 'banner:knockout',
             [ENGINE_EVENTS.BANK_FULL]: 'banner:bankFull'
@@ -172,17 +171,16 @@ describe('level-ups stay on the hero; a recipe unlock is a banner', () => {
 });
 
 describe('milestones and problems are banners', () => {
-    it('a new hero, a promotion and a guild upgrade are gold', () => {
+    // Rewritten with classless heroes: promotion is retired, so its banner is gone.
+    it('a new hero and a guild upgrade are gold', () => {
         GameState.heroes.push(heroWith('h1', 'Aela', 1));
         EventBus.publish(ENGINE_EVENTS.HERO_RECRUITED, { heroId: 'h1', name: 'Aela' });
-        EventBus.publish(ENGINE_EVENTS.HERO_PROMOTED, { heroId: 'h1', heroName: 'Aela', toJobName: 'Knight' });
         EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId: 'bank_slots', rank: 1 });
         const all = Banners.getAll();
         expect(all.map(b => [b.kind, b.tone])).toEqual([
-            ['upgrade', 'milestone'], ['promotion', 'milestone'], ['hero', 'milestone']
+            ['upgrade', 'milestone'], ['hero', 'milestone']
         ]);
-        expect(all[1].line).toBe('Aela is now a Knight');
-        expect(all[2].sprite).toEqual({ kind: 'src', src: '/assets/heroes/hn_bard_por.png' });
+        expect(all[1].sprite).toEqual({ kind: 'src', src: '/assets/heroes/hn_bard_por.png' });
     });
 
     it('a Roster Size rank says only its new hero', () => {

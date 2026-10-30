@@ -4,7 +4,7 @@ import { heroMaxHpFromSkills } from '../../../utils/CombatFormulas.js';
 import { GameState } from '../../../state/GameState.js';
 import { createEmptyEquipment } from '../../../config/registries/equipmentConstants.js';
 import { normaliseHeldCopies } from '../../equipment/heldCopies.js';
-import { HERO_SKILL_IDS, isSkillId } from '../../../config/registries/skillRegistry.js';
+import { HERO_SKILL_IDS, RETIRED_SKILL_IDS, isSkillId } from '../../../config/registries/skillRegistry.js';
 import { xpForLevel } from '../../../utils/XPCurve.js';
 
 /**
@@ -14,8 +14,8 @@ import { xpForLevel } from '../../../utils/XPCurve.js';
 /**
  * Bring a hero's sheet to today's shape, as every load and every new hero does: every skill in the
  * registry held, at level 1 where the hero has none. An older save's levels are kept: skills set
- * aside at a job change (`bankedSkills`) come back (a held copy wins), levels in a skill the game
- * no longer has are dropped, and the job is dropped. Villagers are left alone.
+ * aside at a job change (`bankedSkills`) come back (a held copy wins), levels in a cut skill
+ * (`RETIRED_SKILL_IDS`) are dropped, and the job is dropped. Villagers are left alone.
  *
  * @returns {{ restored: string[], dropped: string[], added: string[] }} skill ids
  */
@@ -29,8 +29,8 @@ export function settleSkillSheet(hero) {
         result.restored.push(skillId);
     }
     delete hero.bankedSkills;
-    for (const skillId of Object.keys(hero.skills)) {
-        if (isSkillId(skillId)) continue;
+    for (const skillId of RETIRED_SKILL_IDS) {
+        if (!hero.skills[skillId]) continue;
         delete hero.skills[skillId];
         result.dropped.push(skillId);
     }

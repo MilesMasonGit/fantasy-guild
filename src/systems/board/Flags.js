@@ -20,6 +20,7 @@ import * as FlagRules from './FlagRules.js';
 import * as Camps from './Camps.js';
 import { ensureFlagColour } from './FlagColours.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { KEYWORD, statementsWith } from '../effects/statements.js';
 
 /**
  * Orders: the player drags a hero onto a Token and they work only it ({@link orderToken}), onto
@@ -231,12 +232,15 @@ function hasWorkSkill(def, instance) {
  * needed). Should it be given a work cycle, it is worked only when a flag is planted on it,
  * whatever the flag's skill.
  *
- * A Token marked for demolition is 'work' whatever it was (a spawner, a Passive Generator): the
- * same order the runner checks in.
+ * A Token marked for demolition is 'work' whatever it was (a spawner, an older Promotion Token, a
+ * Passive Generator): the same order the runner checks in.
  */
 function kindOf(instance, def) {
     if (BoardCombat.isEnemyToken(instance)) return 'enemy';
     if (Demolition.isMarked(instance)) return 'work';
+    // An older Promotion Token: its Promotes rule is retired, so no hero works it (it can still be
+    // demolished, above).
+    if (statementsWith(def, KEYWORD.PROMOTES).length) return null;
     if (!workConfigOf(def, instance) || def.requiresHero === false) return null;
     if (instance.typeId === 'token_guild_hall' || def.isGuildHall) return 'hall';
     return 'work';

@@ -144,16 +144,17 @@ describe('CR2-040: hero loadout survives rehydration at its own indices', () => 
     });
 });
 
-describe('a hero with no job reads Recruit', () => {
+// Rewritten with classless heroes: a hero has no class title at all (no "Recruit").
+describe('a hero carries no class title', () => {
     beforeEach(() => {
         GameState.initNew();
     });
 
-    it('names the class Recruit, never Adventurer', () => {
+    it('a hero has none, and an older save’s Recruit title is dropped', () => {
         const hero = generateHero();
-        delete hero.jobId;
+        hero.className = 'Recruit';
         rehydrateHero(hero);
-        expect(hero.className).toBe('Recruit');
+        expect(hero).not.toHaveProperty('className');
     });
 
     it('a villager still reads Villager', () => {

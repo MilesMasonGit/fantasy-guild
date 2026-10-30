@@ -17,7 +17,6 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -169,19 +168,15 @@ describe('what a flag never chooses by itself', () => {
         expect(workTileOf('h1')).toBe(16);
     });
 
-    it('works a Promotion Token only when the flag point is on it (FP-61)', () => {
-        // A hero the Token could promote: an unqualified one is now skipped
-        // (Free Playmat 1.4c), which is not what this test is about.
-        const cost = getPromotionCost('fighter');
-        for (const skill of getPromotionGateSkills('fighter')) {
-            GameState.state.heroes[0].skills[skill] = { level: cost.skillLevel, xp: 0 };
-        }
+    // Rewritten with classless heroes: a Promotes rule is retired, so a Promotion Token is worked
+    // by no flag, even one planted on it.
+    it('never works a Promotion Token, even with the flag point on it (FP-61 retired)', () => {
         put(20, 'fixture_promotion');
         plant('h1', 14);
         expect(workTileOf('h1')).toBeNull();
 
         plant('h1', 20);
-        expect(workTileOf('h1')).toBe(20);
+        expect(workTileOf('h1')).toBeNull();
     });
 });
 

@@ -34,7 +34,7 @@ export default function GearLevelField({ item, onChange }) {
   };
 
   return (
-    <div className="col-span-2 grid grid-cols-2 gap-4" data-field="gear-level">
+    <div className="col-span-2 grid grid-cols-2 gap-4" data-gear-level>
       {!weapon && (
         <Field label="Required style" className="col-span-1">
           <select

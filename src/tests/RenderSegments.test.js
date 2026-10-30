@@ -78,9 +78,8 @@ describe('⚠️ every clickable word opens a slot that exists', () => {
             // P4: every decision the retired forms held now has a word.
             // `target` is gone: it was the retired enemy flag's word (V10b); the
             // enemy is now the `role` word.
-            'quantity', 'itemId', 'chance', 'skill', 'tier', 'tokenIds', 'max',
-            // Promotes rule P1.
-            'jobId'
+            'quantity', 'itemId', 'chance', 'skill', 'tier', 'tokenIds', 'max'
+            // `jobId` is gone: the Promotes rule is retired with jobs, its job no decision to edit.
         ]) {
             expect(seen.has(slot), `no word in the whole corpus is tagged "${slot}"`).toBe(true);
         }

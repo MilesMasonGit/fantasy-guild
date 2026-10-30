@@ -114,7 +114,6 @@ describe('the words', () => {
     it('says each kind', () => {
         expect(bannerText('recipe', { heroes: ['Aela'], recipes: ['Cider'] })).toEqual({ title: 'New Recipe!', line: 'Aela unlocked Cider' });
         expect(bannerText('recipe', { heroes: ['Aela'], recipes: ['Cider', 'Apple Pie'] }).line).toBe('Aela unlocked Cider, Apple Pie');
-        expect(bannerText('promotion', { heroes: ['Aela'], job: 'Knight' }).line).toBe('Aela is now a Knight');
         expect(bannerText('knockout', { heroes: ['Aela'], lost: ['Iron Sword'] }).line).toBe('Aela was carried home, injured. Lost: Iron Sword.');
         expect(bannerText('knockout', { heroes: ['Aela'], lost: [] }).line).toBe('Aela was carried home, injured. Nothing was lost.');
     });
