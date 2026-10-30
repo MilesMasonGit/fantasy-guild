@@ -152,7 +152,7 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
         return { success: false, error: 'Out of stock' };
     }
 
-    let slot = null;
+    let slot;
     // A weapon taken up goes where the weapon held was, and an off-hand item where the off-hand item
     // was: one of each in the hands.
     const rival = rivalHandSlot(hero, itemId);

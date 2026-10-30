@@ -71,7 +71,7 @@ function effectRowFindings(entry, push) {
         if (row?.retired) {
             const instead = row.type === EFFECT_TYPES.PIERCE
                 ? 'Land a Sunder status instead (a status that provides Sunder)'
-                : 'Use Type Resistance % instead (Physical for metal armour), or give the piece resistances';
+                : 'Use Type Resistance % instead (Physical for metal armour; a piece of armour can carry its own resistances)';
             push('statements', `provides ${row.label}, retired with damage types: it does nothing. ${instead}, or delete the rule in the CMS.`);
         }
         if (row?.categories === 'damageType' && hasValue(payload.category) && !isTypeOrGroupId(payload.category)) {
