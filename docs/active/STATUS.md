@@ -9,9 +9,10 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 270 K1: classless heroes (no jobs or promotion, every skill from level 1, the weapon decides the style, gear level requirements, HP 10 + best combat skill, old saves keep levels; job and promotion code already deleted) | engineer | `feat/classless-k1` (`k1`) | **owner okayed** ([file](eyecheck/2026-10-30_classless-ledger.md), all A) and **bench-queued** after O3 tonight (6540b4f1 holds O3 and `main`: director gate 6555 tests, cycles 0, builds; read the Flags merge). WORK CHANGED expected: heroHash only (20 skills, start HP 11); accept under brief270-K1 if so | Thu | |
-| 270 K4: milestone perks (a perk table per skill at 10/25/50/75/99, granted on level-up and on load, named on the level-up and hero bar, listed on the sheet; example perks pack) | engineer | `feat/classless-k4` (`k4`, from K1) | **building** | Thu | |
-| 310 B1+B2: Bank at scale (64 kinds per tab, Bank Slots retires; search by name, tag, type; Sort) | builder | `feat/bank-b1` (`b1`) | **building** (no engine change expected) | Thu | |
+| 270 K1: classless heroes (no jobs or promotion, every skill from level 1, the weapon decides the style, gear level requirements, HP 10 + best combat skill, old saves keep levels) | engineer | `feat/classless-k1` | **merged** 7920232e with O3 (owner okayed, [record](../archive/eyecheck/2026-10-30_classless-ledger.md)). Gate on the merged result: 6581 tests, cycles 0, builds. Bench: only heroHash on every hero scenario, S8 = S8L, accepted under brief270-K1. Owner CMS to-do in the record | Thu | Fri |
+| 270 K4: milestone perks (a perk table per skill at 10/25/50/75/99, granted on level-up and on load, named on the level-up and hero bar, listed on the sheet; example perks pack) | engineer | `feat/classless-k4` (`k4`, from K1) | **eye-check** ([file](eyecheck/2026-10-30_perks-bank.md)) and **eye-check**; bench: hero hashes identical to K1's, so **same work** against the new baseline (22f537ba: director gate 6604 tests, cycles 0, builds; read the HeroEffects, LoadoutMoments and SkillSystem diffs). Same work expected (no `data/skillPerks.json` yet). Pack `2026-10-29-example-skill-perks.json` is git-ignored in `k4/cms/incoming/` (copy also in the session scratchpad): copy to `main`'s inbox after the merge; accepting it will change bench work (bench heroes hold level-10 perks). ⚠️ Perk refs are recomputed on every loadout read: watch the cost once perks are authored | Thu | |
+| 310 B1+B2: Bank at scale (64 kinds per tab, Bank Slots retires; search by name, tag, type; Sort) | builder | `feat/bank-b1` (`b1`) | **eye-check** ([file](eyecheck/2026-10-30_perks-bank.md)); bench **same work**, drag `equip` 50/50 (63706298 with `main`: director gate 6765 tests + 1 known load flake green alone, cycles 0, builds; read the InventoryManager diff). Engine work expected same; drag bench `--kinds=equip` (the Bank's drop handlers changed). Eye-check with perks. Builder's owner questions: Bank Tabs beside the Hall (built); tools sort by their tier when they have none of their own (recommended, not built); search from the start of a word (recommended, not built); types A to Z (built) | Thu | |
+| 290 L3: checks A–C and the item page in the Ledger tab | builder | `cms/ledger-l3` | **merged** on the gate (director: 6775 tests, cycles 0, builds; CMS only, the one game-side file `ledger/checks.js` is imported by no game code). 313 findings today, 107 Block/Warn; Iron Ore "only from the Volcano Map" reproduced; leaks wait for L4's tiers. CMS look in the morning (shots `docs/active/research/ledger_l3/`) | Thu | Thu |
 | 290 L1a: the plan in the CMS (status, `plan.tier`, note; Planned stubs kept out of `data/` in `cms/plan/plan.json`; Plan section in four editors) plus most of the rewritten brief's L2 (reach, tree and hubs engines) | engineer | `cms/ledger-l1` | **merged** 0c5c9202 on the gate (director: 6733 tests, cycles 0, build, CMS build; read the Sync-path diff; no game file uses the new modules, so no bench). Brief 290 was rewritten while it built (S0 spike first, the Ledger tab in L1) | Thu | Thu |
 | 290 L1b: the Ledger tab and settings (stages and budgets, tolerance, target player, pace curve) | builder | `cms/ledger-l1b` | **merged** 34985051 on the gate (director: 6749 tests, cycles 0, build, CMS build; read the Sync-path diff). CMS look with K1's batch; First reach reads Starter Camp everywhere until L4 sets map tiers; pace-curve points are placeholders for the owner | Thu | Thu |
 
@@ -21,7 +22,7 @@ build green) · bench-queued · eye-check · merged.*
 |---|---|---|---|---|---|
 | O1: orders (drag a hero onto a job; flags and Work Permissions retire; roster dock; old saves migrate) | engineer | `feat/hero-orders-o1` (`tb1`) | **merged** 88918eea (was bench-queued 13:00 Thu, 2c7fa845, `main` merged in; builder gate 6607 tests, cycles, build). Owner looked at 17 shots by phone; owner 2026-10-29: merge without playing. Owner calls: non-work drop refuses, built Foundation ends the order, right-click sends home, spot orders never ambushed (22af5033); ambushes otherwise left for a later decision. WORK CHANGED expected (accept under brief260-O1 if it matches the engineer's per-scenario prediction) | Wed | |
 | O2: camps; Scouting Flags retires; camps content pack | engineer | `feat/hero-orders-o2` | **merged** 88918eea with O1 and the flag follow-ups; owner synced the pack e7517dc3 | Thu | Thu |
-| O3: clean-up (tutorial, dead code, GDD) | builder | `feat/hero-orders-o3` (`tb1`) | **bench-queued** 01:05 Fri (f0c22ad5: 6663 tests, cycles, build); owner said merge after the work check (expect same work) | Thu | |
+| O3: clean-up (tutorial, dead code, GDD) | builder | `feat/hero-orders-o3` | **merged** 7920232e (inside K1): bench **same work** on every scenario (01:05 Fri); S4 timing flags checked with interleaved runs against `main`: level (noise) | Thu | Fri |
 
 ## Director, Token bars (brief 250; owner chose 2026-10-28: all three phases, then the card-wording fixes) — **merged 90f7a7dd, owner okayed**
 
@@ -376,6 +377,7 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 
 - **Pennant flag (P2), parked for the eye-check:** (a) the carried pennant is centred on the cursor, so on drop it jumps ~23 px right, 31 px up (the old flag jumped more); hold its pole foot on the cursor instead? (b) the Edit Hero colour swatches now change nothing visible: keep until the flag rework, or hide? (c) the idle hero now stands over the right half of the smaller pennant: move the idle spot (engine movement; bench work check would change)?
 
+- **Ledger L3 (builder's questions, recommendation first):** (1) first reach skips one-off finds (a 50 % Iron Chest) and shows them on the side, a small engine ticket before L4 (recommended), or keep as is; (2) a row's name opens the item page, a pencil opens the editor (built), or the reverse; (3) a single-map source warns only when something spends the item, else Info (built), or always Warn, or always Info.
 - **Ticket candidate (not urgent):** `npm run cms:restore` (`scripts/backport-game-to-cms.mjs`) reads `workspace.maps`, which no longer exists, and ignores the plan file.
 
 *Design questions the director cannot answer, as multiple choice, recommendation
@@ -385,6 +387,8 @@ None open. (Ruled 2026-10-19: Token outlines red for problems, gold for attentio
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
+
+**Fri 01:05 (director, timers in this session):** (1) O3 `bench --compare` in `tb1` (expect same work; then merge); (2) K1 `bench --compare` in `k1` (expect heroHash only; accept under brief270-K1, then merge); (3) Bank `bench --compare` and `bench:drag --kinds=equip` in `b1` (expect same work); (4) perks `bench --compare` in `k4` (expect same work). Logs in the session scratchpad.
 
 **Thu 01:00 (director, 2026-10-28):** (1) `feat/token-bars` engine `--compare` and `bench:draw -- --compare` (cost-log line) against the current baselines; (2) then the baseline retake on `main`, machine quiet: `npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline`; commit with the date. Then the Token bars draw compare when P3 is ready.
 
@@ -403,6 +407,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Fri 2026-10-30, 01:30: overnight benches done; classless heroes and the orders clean-up on `main`.** Where we are: `main` 7920232e has K1 + O3 (bench accepted under brief270-K1) and ledger L1–L3. Waiting for the owner's look: perks (`k4`) and the Bank at scale (`b1`), both benched (same work; drag 50/50). Owner: the look, the classless CMS to-do (archived record), the ledger look; questions in STATUS and the eye-check file. ⚠️ Two O3 timers fired at once (one survived the app crash); the work check still ran clean. Next: K5 classless clean-up, ledger S0/L4, encyclopedia.
 
 **Thu 2026-10-29, late: classless and the Ledger tab okayed; perks beside the Bank.** Where we are: `main` has the ledger L1 (plan block, engines, Ledger tab and settings) and the owner's tags Sync; K1 okayed (all questions A), merges after its bench (queued after O3's 01:05 check). Now: perks (`k4`, engineer, on K1) and the Bank at scale B1+B2 (`b1`, builder). Owner: the CMS to-do in the eye-check file after K1 merges. Blockers: none.
 

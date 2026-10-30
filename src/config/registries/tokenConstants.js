@@ -46,7 +46,7 @@ export const TOKEN_TYPES = Object.freeze([
     'market',     // output is currency (D-141)
     'enemy',      // runs the combat engine; still just a Token (D-104)
     'map',        // ⚠️ derived by nothing now (maps are items); kept while a Token in data/ still stores it
-    'promotion',  // trains the hero on it into one job, and IS that job's price (PR-6)
+    'promotion',  // ⚠️ an older Token with a retired Promotes rule; jobs are gone, no hero works it
     'spawner',    // puts other Tokens on the mat on a clock (Token lifecycle §3.1)
     'camp',       // heroes sent to it work the Tokens of its skill in its reach (brief 260)
 ]);

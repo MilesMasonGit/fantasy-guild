@@ -1,65 +1,40 @@
-import { useSyncExternalStore } from 'react';
 import { getSkill, getSkillIdsByLayer, SKILL_LAYERS } from '../../../config/registries/skillRegistry.js';
-import { isMastered, MASTERY_LEVEL } from '../../../systems/hero/PromotionSystem.js';
-import { getAllJobIds, getJob, grantsOf } from '../../../config/registries/jobRegistry.js';
-import { getXpProgress, xpForLevel } from '../../../utils/XPCurve.js';
+import { getXpProgress, xpForLevel, MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 
-/** The panel's one list: combat, then the Starting skills, then the specialist layers. */
-const LIST_LAYERS = [SKILL_LAYERS.COMBAT, SKILL_LAYERS.STARTING, SKILL_LAYERS.ADVANCED, SKILL_LAYERS.MASTER];
+/** The panel's one list: combat, then the Starting skills, then the specialist ones. */
+const LIST_LAYERS = [SKILL_LAYERS.COMBAT, SKILL_LAYERS.STARTING, SKILL_LAYERS.SPECIALIST];
 
 /** Layers whose rows get their own background colour. */
-export const TIER_LAYERS = new Set([SKILL_LAYERS.ADVANCED, SKILL_LAYERS.MASTER]);
+export const TIER_LAYERS = new Set([SKILL_LAYERS.SPECIALIST]);
 
 const orderedIds = (layers) => layers.flatMap(layer => getSkillIdsByLayer(layer));
 
 /**
- * A hero's skills as the hero panel lists them, each in the registry's own order within a layer:
- * * `rows`: every skill held, in one list (combat, Starting, Advanced, Master);
- * * `bankedRows`: skills set down at a job change (`bankedSkills`), at the level they reached;
- * * `lockedRows`: skills the hero has never held, for the collapsed list at the bottom.
- * @param {{ skills?: object, bankedSkills?: object }} hero
+ * A hero's skills as the hero panel lists them: every skill, combat first, then Starting, then
+ * specialist, each layer in the registry's order. A skill the record lacks (a hero not yet
+ * settled by a load) reads level 1.
+ * @param {{ skills?: object }} hero
+ * @returns {{ rows: Array<{ id: string, name: string, layer: string|null, tier: string|null, level: number, xp: number }> }}
  */
 export function heroSkillList(hero) {
     const held = hero?.skills || {};
-    const banked = hero?.bankedSkills || {};
-    const row = (id, state) => {
+    const rows = orderedIds(LIST_LAYERS).map(id => {
         const layer = getSkill(id)?.layer || null;
+        const state = held[id];
         return {
             id,
             name: getSkill(id)?.name || id,
             layer,
             tier: TIER_LAYERS.has(layer) ? layer : null,
             level: Math.max(1, Math.floor(state?.level ?? 1)),
-            xp: state?.xp ?? 0,
-            mastered: isMastered(id, state)
+            xp: state?.xp ?? 0
         };
-    };
-    const all = orderedIds(LIST_LAYERS);
-    return {
-        rows: all.filter(id => held[id]).map(id => row(id, held[id])),
-        bankedRows: all.filter(id => banked[id] && !held[id]).map(id => ({ ...row(id, banked[id]), mastered: false })),
-        lockedRows: all.filter(id => !held[id] && !banked[id]).map(id => ({ ...row(id, null), mastered: false }))
-    };
-}
-
-/**
- * The classes whose promotion grants `skillId`, in the job list's order: a basic class that has
- * it, and any master class that adds it from another branch.
- */
-export function classesGranting(skillId) {
-    return getAllJobIds().filter(id => getJob(id)?.parent && grantsOf(id).includes(skillId)).map(id => getJob(id).name);
-}
-
-/** A locked skill's tooltip line: `Requires Ranger.`, or `Requires Wizard, Paladin or Beastmaster.` */
-export function requiresText(skillId) {
-    const names = classesGranting(skillId);
-    if (names.length === 0) return 'Not on this hero’s job.';
-    const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
-    return `Requires ${list}.`;
+    });
+    return { rows };
 }
 
 /** `25/99`: the panel's level text. */
-export const skillLevelText = (level) => `${Math.max(1, Math.floor(level || 1))}/${MASTERY_LEVEL}`;
+export const skillLevelText = (level) => `${Math.max(1, Math.floor(level || 1))}/${MAX_SKILL_LEVEL}`;
 
 const n = (v) => Math.max(0, Math.floor(v || 0)).toLocaleString('en-US');
 
@@ -67,7 +42,7 @@ const n = (v) => Math.max(0, Math.floor(v || 0)).toLocaleString('en-US');
 export function skillXpView(xp) {
     const total = Math.max(0, Math.floor(xp || 0));
     const prog = getXpProgress(total);
-    if (prog.level >= MASTERY_LEVEL) {
+    if (prog.level >= MAX_SKILL_LEVEL) {
         return { fill: 1, title: `${n(total)} XP` };
     }
     return {
@@ -98,7 +73,7 @@ export function formatEta(seconds) {
 export function skillDetail(xp, ratePerHour = 0) {
     const total = Math.max(0, Math.floor(xp || 0));
     const prog = getXpProgress(total);
-    if (prog.level >= MASTERY_LEVEL) {
+    if (prog.level >= MAX_SKILL_LEVEL) {
         return { level: null, toNext: null, total: n(total), rate: null, eta: null, nextLevel: null };
     }
     const span = Math.round(prog.nextLevelXp);
@@ -112,22 +87,4 @@ export function skillDetail(xp, ratePerHour = 0) {
         rate: rate > 0 ? `+${Math.round(rate).toLocaleString('en-US')}` : null,
         eta: rate > 0 ? formatEta((left / rate) * 3600) : null
     };
-}
-
-/**
- * Whether the locked list (skills never held) is open. Shut until the player opens it, then
- * remembered for the session (module memory, so a reload starts shut).
- */
-let lockedOpen = false;
-const listeners = new Set();
-
-export function setLockedListOpen(open) {
-    lockedOpen = Boolean(open);
-    listeners.forEach(fn => fn());
-}
-
-const subscribe = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
-
-export function useLockedListOpen() {
-    return useSyncExternalStore(subscribe, () => lockedOpen, () => lockedOpen);
 }

@@ -6,6 +6,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -83,7 +84,7 @@ function startFight() {
     const enemy = BoardState.createTokenInstance('st_enemy', tokenStartingUses('st_enemy'));
     Placement.placeTokenAt(enemy, AT);
     TileModifiers.rebuildAround([enemy]);
-    Placement.plantFlagAt(hero.id, AT);
+    Orders.orderAt(hero.id, AT);
     for (let t = 0; t < 20000 && !BoardCombat.fightOfHero(hero.id); t += 100) BoardRunner.tick(100);
     expect(BoardCombat.fightOfHero(hero.id), 'the hero reached the enemy').toBeTruthy();
     return { hero, enemy, fight: BoardCombat.fightOfHero(hero.id) };

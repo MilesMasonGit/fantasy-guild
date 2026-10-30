@@ -91,7 +91,7 @@ export function fightPlaced(n) {
  * left, the rest on producers spread across the list.
  */
 function buildEnvelope({ fixtures, setMatTuning }, { placed, cap = BASE_CAP, heroes: heroCount = 8, fighters = 0 }) {
-    const { placeAt, makeHeroes, plant, lattice } = fixtures;
+    const { placeAt, makeHeroes, orderAt, lattice } = fixtures;
     setMatTuning('tokenCap', cap);
     const matSteps = REFERENCE_STEPS;
     const { w, h } = pinMat(setMatTuning, matSteps);
@@ -118,14 +118,14 @@ function buildEnvelope({ fixtures, setMatTuning }, { placed, cap = BASE_CAP, her
     if (bruteCamps.length < fighters) throw new Error(`envelope board: ${fighters} fighters but ${bruteCamps.length} brute camps`);
 
     const queue = [...heroes];
-    for (let i = 0; i < fighters && queue.length; i++) plant(queue.shift().id, { x: bruteCamps[i].x + STEP, y: bruteCamps[i].y });
-    if (queue.length && smelter) plant(queue.shift().id, { x: smelter.x, y: smelter.y }, { pin: true });
-    for (let i = 0; i < 2 && queue.length && camps[i]; i++) plant(queue.shift().id, { x: camps[i].x + (i ? -STEP : STEP), y: camps[i].y });
+    for (let i = 0; i < fighters && queue.length; i++) orderAt(queue.shift().id, { x: bruteCamps[i].x + STEP, y: bruteCamps[i].y });
+    if (queue.length && smelter) orderAt(queue.shift().id, { x: smelter.x, y: smelter.y });
+    for (let i = 0; i < 2 && queue.length && camps[i]; i++) orderAt(queue.shift().id, { x: camps[i].x + (i ? -STEP : STEP), y: camps[i].y });
     const rest = queue.length;
     const spots = producers.length ? producers : tokens;
     queue.forEach((hero, i) => {
         const target = spots[Math.floor((i + 0.5) * spots.length / rest)];
-        plant(hero.id, { x: target.x, y: target.y });
+        orderAt(hero.id, { x: target.x, y: target.y });
     });
     return { tokens, heroes, hall };
 }

@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MAT_Z } from './matLayers.js';
-import { pinRefusedLineFor } from './heroBubbles.js';
 import { addMoment, liveMoments, stackOf, momentText, speaksMoment, idleMomentOf, DEPLETED_TTL_MS } from './heroSpeech.js';
 import { floatsOf, anyFloats, subscribeFloats } from './levelUpFloats.js';
 import { LevelUpFloats } from './LevelUpFloat.jsx';
@@ -53,9 +52,9 @@ const guessSize = (stack, floats, unit) => {
  * A hero who has just levelled a skill has its icon and number floating at the top of their
  * stack (`levelUpFloats.js`, `LevelUpFloat.jsx`), drawn with the speech so it follows the hero
  * and is kept off the other stacks the same way.
- * Heroes speak only of **moments** (going idle, a flag that could not be pinned, a Token the hero
- * used up), timed and gone by themselves (`heroSpeech.js`). A Token's problem is never spoken: its
- * problem mark and the mark's hover say it. Routine moments are filtered out by `speaksMoment`,
+ * Heroes speak only of **moments** (going idle, a job gone for good, a Token the hero used up),
+ * timed and gone by themselves (`heroSpeech.js`). A Token's problem is never spoken: its problem
+ * mark and the mark's hover say it. Routine moments are filtered out by `speaksMoment`,
  * and every line with its status is listed in `docs/reference/speech_bubble_lines.md`.
  * Stacks are kept off each other and inside the mat (`bubbleLayout.js`); a nudged stack's
  * little tail still points at its hero.
@@ -110,20 +109,13 @@ export const HeroBubbleLayer = ({ heroes }) => {
                 if (!token) return;
                 const name = getTokenType(token.typeId)?.name || tokenName(token.typeId) || token.typeId;
                 sayRef.current(p.heroId, 'arrived', { key: 'arrived', text: momentText.arrived(name) });
-            }, UI_LISTENER),
-            // The flag could not be pinned to the Token it was dropped on, so the hero says
-            // why in their stuck-line words.
-            EventBus.subscribe(BOARD_EVENTS.PIN_REFUSED, (p) => {
-                if (!p?.heroId) return;
-                const text = pinRefusedLineFor(p.instanceId, p.reason);
-                if (text) sayRef.current(p.heroId, 'pinRefused', { key: 'pinRefused', text: momentText.pinRefused(text) });
             }, UI_LISTENER)
         ];
         return () => unsubs.forEach(u => u());
     }, []);
 
     // Going idle is a change of state rather than an event: a hero who was busy
-    // (walking to a job, working) and now stands at their flag with nothing to
+    // (walking to a job, working) and now stands at their job with nothing to
     // do. Judged on `state` alone — an idle hero strolling about (`moving`) has
     // not gone idle again.
     useEffect(() => {

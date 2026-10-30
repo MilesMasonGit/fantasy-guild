@@ -232,7 +232,7 @@ describe('⭐ never per frame', () => {
         fixtures.placeAt('bench_forest', centre.x - 480, centre.y);
         fixtures.prefillSpawners();
         const heroes = fixtures.makeHeroes(2);
-        fixtures.plant(heroes[0].id, { x: producer.x, y: producer.y }, { pin: true });
+        fixtures.orderAt(heroes[0].id, { x: producer.x, y: producer.y });
         TileModifiers.rebuildAll();
         mountMat();
         plans.mockClear();

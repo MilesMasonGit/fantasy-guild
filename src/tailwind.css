@@ -557,6 +557,12 @@
   text-shadow: var(--text-outline-dark), calc(2 * var(--lvl-u, 2px)) calc(2 * var(--lvl-u, 2px)) 0 #000 !important;
 }
 
+/* A milestone perk named under the float: gold for an upgrade, with the number's own hard shadow. */
+.gi-lvl-perk {
+  color: var(--color-ui-gold);
+  text-shadow: var(--text-outline-dark), calc(2 * var(--lvl-u, 2px)) calc(2 * var(--lvl-u, 2px)) 0 #000 !important;
+}
+
 .gi-lvl-gold {
   text-shadow:
     calc(-1 * var(--lvl-u, 2px)) 0 0 var(--color-ui-gold),

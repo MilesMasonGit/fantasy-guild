@@ -101,7 +101,7 @@ function qaFighter(name, level) {
     const ranks = GameState.state.progress.guildUpgrades || (GameState.state.progress.guildUpgrades = {});
     ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
     GuildUpgradeManager.recompute();
-    const hero = generateHero({ jobId: 'fighter', spriteId: 'fighter', name });
+    const hero = generateHero({ spriteId: 'fighter', name });
     for (const id of Object.keys(hero.skills || {})) hero.skills[id] = { ...hero.skills[id], level, xp: xpForLevel(level) };
     const maxHp = heroMaxHpFromSkills(hero.skills);
     hero.hp = { current: maxHp, max: maxHp };

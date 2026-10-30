@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { migratePromotionFields } from '../systems/effects/effectMigration.js';
-import { KEYWORD, statementsOf, promotedJobOf } from '../systems/effects/statements.js';
+import { KEYWORD, statementsOf, statementsWith } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { expandBearer } from '../systems/effects/effectLibrary.js';
 import { deriveTokenType } from '../config/registries/tokenTypeDerivation.js';
@@ -12,8 +12,12 @@ import { useEntityStore } from '../../cms/src/stores/useEntityStore.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 
 /**
- * ⭐ **The Academies become rules** (Promotes rule P2).
+ * ⭐ **The Academies become rules** (Promotes rule P2). Jobs are retired since (classless heroes):
+ * the rule still reads as it did, does nothing, and the audits and the CMS say it is retired.
  */
+
+/** The job a bearer's (retired) Promotes rule names, or null. */
+const jobOf = (def) => statementsWith(def, KEYWORD.PROMOTES)[0]?.payload?.jobId ?? null;
 
 const academy = (id, jobId, extra = {}) => ({
     id, name: `${jobId} academy`, tokenType: 'buff', uses: 10, size: 2, requiresHero: true,
@@ -43,7 +47,7 @@ describe('converting one Token', () => {
 
     it('makes the Token a promotion Token that names its job, once expanded', () => {
         const expanded = expandBearer(token, effects);
-        expect(promotedJobOf(expanded)).toBe('wizard');
+        expect(jobOf(expanded)).toBe('wizard');
         expect(deriveTokenType(expanded).type).toBe('promotion');
     });
 });
@@ -181,25 +185,21 @@ describe('the shipped data', () => {
         expect(Object.values(tokens).filter((t) => 'promotion' in t).map((t) => t.id)).toEqual([]);
     });
 
-    it('names the jobs the Academies were authored with', () => {
-        const tokens = data('tokens.json');
-        const effects = data('effects.json');
-        expect(promotedJobOf(expandBearer(tokens.token_wizard_academy, effects))).toBe('wizard');
-        expect(promotedJobOf(expandBearer(tokens.token_fighter_s_academy, effects))).toBe('fighter');
-    });
-
-    it('⭐ reaches the game: its own Token registry loads both Academies as promotion Tokens', () => {
+    // Rewritten with classless heroes: the Academies are the owner's to delete in the CMS, so this
+    // reads whichever shipped Tokens still carry the rule rather than naming them.
+    it('⭐ reaches the game: each shipped Token with a Promotes rule loads as a (retired) promotion Token', () => {
         // The path the board uses — the loader expands library references into
         // statements once, at load. No window.Game handle exposes a Token def,
         // so this is where "the game sees the rule" is proved.
-        for (const [id, jobId, sentence] of [
-            ['token_wizard_academy', 'wizard', 'Promotes the hero to Wizard.'],
-            ['token_fighter_s_academy', 'fighter', 'Promotes the hero to Fighter.'],
-        ]) {
+        const tokens = data('tokens.json');
+        const effects = data('effects.json');
+        const promoting = Object.keys(tokens).filter((id) => jobOf(expandBearer(tokens[id], effects)));
+        for (const id of promoting) {
             const def = getTokenType(id);
-            expect(promotedJobOf(def), id).toBe(jobId);
+            const job = jobOf(def);
+            expect(job, id).toBeTruthy();
             expect(deriveTokenType(def).type, id).toBe('promotion');
-            expect(statementsOf(def).map((st) => renderStatement(st)), id).toEqual([sentence]);
+            expect(statementsOf(def).map((st) => renderStatement(st)), id).toEqual([`Promotes the hero to ${job[0].toUpperCase()}${job.slice(1)}.`]);
             expect('promotion' in def, id).toBe(false);
         }
     });

@@ -5,7 +5,7 @@ import { checkInputs } from '../../../systems/board/InputAllocator.js';
 import { workConfigOf } from '../../../systems/board/StationRecipe.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import { STAND_GAP } from '../../../systems/board/HeroMotion.js';
-import { MASTERY_LEVEL } from '../../../systems/hero/PromotionSystem.js';
+import { MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import * as HeroManager from '../../../systems/hero/HeroManager.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
@@ -181,7 +181,7 @@ export function plateTip(cell, instanceId, cycle = null) {
             const hero = heroId ? HeroManager.getHero(heroId) : null;
             const level = hero?.skills?.[cell.id]?.level ?? 1;
             const xp = effectiveIO(instanceId, instance).xp;
-            const vars = { hero: hero?.name || '', skill: getSkill(cell.id)?.name || cell.id, level: `${level}/${MASTERY_LEVEL}`, xp };
+            const vars = { hero: hero?.name || '', skill: getSkill(cell.id)?.name || cell.id, level: `${level}/${MAX_SKILL_LEVEL}`, xp };
             return xp ? t('workPlate.skillXp', vars) : t('workPlate.skill', vars);
         }
         case CELL.MISSING:

@@ -3,12 +3,12 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as WorkCheck from '../systems/board/WorkCheck.js';
-import * as Flags from '../systems/board/Flags.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -54,8 +54,7 @@ function put(tile, typeId, uses = undefined) {
 
 /** A hero already working the Token on TILE, set up directly. */
 function staff(instance) {
-    const skill = getTokenType(instance.typeId).config.skill;
-    Flags.plant('h1', C(TILE), { skill });
+    Orders.orderAt('h1', C(TILE));
     BoardState.setClaim('h1', { instanceId: instance.id, typeId: instance.typeId });
 }
 

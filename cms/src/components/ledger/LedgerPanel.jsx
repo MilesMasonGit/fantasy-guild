@@ -1,26 +1,42 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, Search, Plus, RefreshCw, ArrowUpCircle } from 'lucide-react';
+import { BookOpen, Search, Plus, RefreshCw, ArrowUpCircle, Pencil } from 'lucide-react';
 
 import { useEntityStore } from '../../stores/useEntityStore';
+import { useSimulationStore } from '../../stores/useSimulationStore';
 import { SKILLS } from '../../utils/constants';
 import {
   PLAN_STATUS, PLAN_STATUSES, PLAN_TIERS, PLAN_TEXT, tierLabel, tierOrNull,
 } from '../../../../src/systems/progression/ledger/plan.js';
 import {
-  ledgerRows, filterLedgerRows, planPatch, stubPlan, reachText, LEDGER_KINDS, LEDGER_KIND_TEXT,
+  ledgerRows, filterLedgerRows, stubPlan, reachText, LEDGER_KINDS, LEDGER_KIND_TEXT,
 } from '../../engine/ledgerRows';
-import { workspaceLedger } from '../../engine/ledgerReport';
+import { workspaceReport } from '../../engine/ledgerReport';
+import { findingsByKey } from '../../../../src/systems/progression/ledger/checks.js';
 import LedgerSettings from './LedgerSettings';
+import LedgerProblems, { SEVERITY_COLOR } from './LedgerProblems';
+import LedgerItemPage from './LedgerItemPage';
+import { openInEditor, writePlan } from './ledgerActions';
+
+/** The reach engine and every check over the workspace as it stands, stamped with the time. */
+function workOutReport() {
+  const report = workspaceReport(useEntityStore.getState(), { simRows: useSimulationStore.getState().simRows });
+  return { ...report, byKey: findingsByKey(report.findings), at: new Date() };
+}
 
 /**
  * The Ledger: every item, map, Token, enemy and recipe with the owner's plan for it (status, tier,
- * note), edited in place and written as the same `plan` block the editors' Plan section writes, and
- * the Ledger settings. Planned stubs are added here; Sync keeps them out of `data/`.
- * ⚠️ The reach column is worked out when the tab opens and on Refresh, not on every edit: it is the
- * whole reach engine over the workspace.
+ * note), edited in place and written as the same `plan` block the editors' Plan section writes; the
+ * problems the checks find; a page per entry; and the Ledger settings. Planned stubs are added here;
+ * Sync keeps them out of `data/`.
+ * ⚠️ First reach and the problems are worked out when the tab opens and on Refresh, not on every
+ * edit: it is the whole reach engine and every check over the workspace.
  */
 export default function LedgerPanel({ setCurrentView }) {
   const [page, setPage] = useState('entries');
+  const [report, setReport] = useState(workOutReport);
+  const [openKey, setOpenKey] = useState(null);
+  const refresh = () => setReport(workOutReport());
+  const serious = report.findings.filter((f) => f.severity !== 'info').length;
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar" style={{ background: '#0f0f12' }}>
@@ -37,16 +53,16 @@ export default function LedgerPanel({ setCurrentView }) {
             </p>
           </div>
           <div className="flex gap-1" role="tablist">
-            {[['entries', 'Entries'], ['settings', 'Settings']].map(([key, label]) => (
+            {[['entries', 'Entries'], ['problems', `Problems (${serious})`], ['settings', 'Settings']].map(([key, label]) => (
               <button
                 key={key}
                 role="tab"
-                aria-selected={page === key}
-                onClick={() => setPage(key)}
+                aria-selected={page === key && !openKey}
+                onClick={() => { setPage(key); setOpenKey(null); }}
                 className="px-3 py-1.5 rounded-lg text-xs font-bold"
                 style={{
-                  background: page === key ? 'var(--color-accent-muted)' : 'transparent',
-                  color: page === key ? 'var(--color-accent-hover)' : 'var(--color-text-muted)',
+                  background: page === key && !openKey ? 'var(--color-accent-muted)' : 'transparent',
+                  color: page === key && !openKey ? 'var(--color-accent-hover)' : 'var(--color-text-muted)',
                   border: '1px solid var(--color-border-subtle)', cursor: 'pointer',
                 }}
               >
@@ -56,13 +72,25 @@ export default function LedgerPanel({ setCurrentView }) {
           </div>
         </div>
 
-        {page === 'entries' ? <LedgerEntries setCurrentView={setCurrentView} /> : <LedgerSettings />}
+        {openKey && (
+          <LedgerItemPage
+            entryKey={openKey}
+            report={report}
+            onOpen={setOpenKey}
+            onBack={() => setOpenKey(null)}
+            onRefresh={refresh}
+            setCurrentView={setCurrentView}
+          />
+        )}
+        {!openKey && page === 'entries' && <LedgerEntries setCurrentView={setCurrentView} report={report} onRefresh={refresh} onOpenPage={setOpenKey} />}
+        {!openKey && page === 'problems' && <LedgerProblems report={report} onRefresh={refresh} onOpen={setOpenKey} />}
+        {!openKey && page === 'settings' && <LedgerSettings />}
       </div>
     </div>
   );
 }
 
-function LedgerEntries({ setCurrentView }) {
+function LedgerEntries({ setCurrentView, report, onRefresh, onOpenPage }) {
   const items = useEntityStore((s) => s.items);
   const tokens = useEntityStore((s) => s.tokens);
   const recipePools = useEntityStore((s) => s.recipePools);
@@ -72,12 +100,6 @@ function LedgerEntries({ setCurrentView }) {
   const [status, setStatus] = useState('');
   const [tier, setTier] = useState('');
   const [adding, setAdding] = useState(false);
-
-  const workOutReach = () => {
-    const ledger = workspaceLedger(useEntityStore.getState());
-    return { reachOf: ledger.reachOf, at: new Date() };
-  };
-  const [reach, setReach] = useState(workOutReach);
 
   const rows = useMemo(() => ledgerRows({ items, tokens, recipePools }), [items, tokens, recipePools]);
   const shown = useMemo(() => filterLedgerRows(rows, { kind, status, tier, search }), [rows, kind, status, tier, search]);
@@ -93,16 +115,7 @@ function LedgerEntries({ setCurrentView }) {
     return out;
   }, [rows]);
 
-  const open = (row) => {
-    const store = useEntityStore.getState();
-    if (row.kind === 'recipe') {
-      store.focusRecipe(row.id);
-      setCurrentView?.('recipes');
-    } else {
-      store.setActiveEntity(row.id, row.collection === 'items' ? 'item' : 'token');
-      setCurrentView?.('editor');
-    }
-  };
+  const edit = (row) => openInEditor(row.ledgerKey, setCurrentView);
 
   return (
     <>
@@ -155,8 +168,8 @@ function LedgerEntries({ setCurrentView }) {
                 <span className="flex items-center gap-1.5">
                   First reach
                   <button
-                    onClick={() => setReach(workOutReach())}
-                    title={`Worked out at ${reach.at.toLocaleTimeString()}. Work it out again after edits.`}
+                    onClick={onRefresh}
+                    title={`Worked out at ${report.at.toLocaleTimeString()}. Work it out again after edits.`}
                     aria-label="Refresh first reach"
                     style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--color-text-muted)' }}
                   >
@@ -164,12 +177,22 @@ function LedgerEntries({ setCurrentView }) {
                   </button>
                 </span>
               </th>
+              <th style={{ ...head, textAlign: 'center', width: 70 }} title="What the checks found: Block and Warn, then Info">Problems</th>
               <th style={{ ...head, textAlign: 'left' }}>Note</th>
+              <th style={{ ...head, width: 28 }} />
             </tr>
           </thead>
           <tbody>
             {shown.map((row) => (
-              <LedgerRow key={row.rowKey} row={row} reach={reach.reachOf(row.ledgerKey)} tiers={tiers} onOpen={open} />
+              <LedgerRow
+                key={row.rowKey}
+                row={row}
+                reach={report.ledger.reachOf(row.ledgerKey)}
+                findings={report.byKey.get(row.ledgerKey) || []}
+                tiers={tiers}
+                onOpen={() => onOpenPage(row.ledgerKey)}
+                onEdit={edit}
+              />
             ))}
           </tbody>
         </table>
@@ -183,22 +206,7 @@ const cell = { padding: '5px 10px', fontSize: 11, borderBottom: '1px solid rgba(
 const head = { ...cell, fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)' };
 const STATUS_COLOR = { planned: 'var(--color-warning)', draft: 'var(--color-accent-hover)', live: 'var(--color-text-primary)', parked: 'var(--color-text-muted)' };
 
-/** Write part of one row's plan block, where its record lives. */
-function writePlan(row, patch) {
-  const store = useEntityStore.getState();
-  if (row.kind === 'recipe') {
-    const record = (store.recipePools[row.poolSkill] || [])[row.index];
-    if (record) store.updateRecipe(row.poolSkill, row.index, planPatch(record, patch));
-  } else if (row.collection === 'items') {
-    const record = store.items[row.id];
-    if (record) store.updateItem(row.id, planPatch(record, patch));
-  } else {
-    const record = store.tokens[row.id];
-    if (record) store.updateToken(row.id, planPatch(record, patch));
-  }
-}
-
-function LedgerRow({ row, reach, tiers, onOpen }) {
+function LedgerRow({ row, reach, findings, tiers, onOpen, onEdit }) {
   const [note, setNote] = useState(row.note);
   const [noteFor, setNoteFor] = useState(row.note);
   if (row.note !== noteFor) {
@@ -211,9 +219,9 @@ function LedgerRow({ row, reach, tiers, onOpen }) {
     <tr className="hover:bg-white/[0.03]" data-row={row.rowKey}>
       <td style={{ ...cell, color: 'var(--color-text-primary)' }}>
         <button
-          onClick={() => onOpen(row)}
+          onClick={onOpen}
           className="underline text-left"
-          title={row.id}
+          title={`${row.id}: open its page`}
           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', font: 'inherit' }}
         >
           {row.name}
@@ -254,6 +262,9 @@ function LedgerRow({ row, reach, tiers, onOpen }) {
         </select>
       </td>
       <td style={{ ...cell, color: reachColor(row, reach) }} data-reach={row.ledgerKey}>{reachText(reach, tierLabel)}</td>
+      <td style={{ ...cell, textAlign: 'center' }}>
+        <ProblemCount findings={findings} onOpen={onOpen} name={row.name} />
+      </td>
       <td style={cell}>
         <input
           type="text"
@@ -266,7 +277,38 @@ function LedgerRow({ row, reach, tiers, onOpen }) {
           style={{ padding: '2px 6px', fontSize: 11 }}
         />
       </td>
+      <td style={cell}>
+        <button
+          onClick={() => onEdit(row)}
+          title="Open in its editor"
+          aria-label={`Edit ${row.name}`}
+          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--color-text-muted)' }}
+        >
+          <Pencil size={11} />
+        </button>
+      </td>
     </tr>
+  );
+}
+
+/** A row's problems in one cell: Block and Warn counted in the worst one's colour, Info in grey beside. */
+function ProblemCount({ findings, onOpen, name }) {
+  if (!findings.length) return <span style={{ color: 'var(--color-text-muted)', opacity: 0.4 }}>·</span>;
+  const serious = findings.filter((f) => f.severity !== 'info');
+  const info = findings.length - serious.length;
+  const worst = serious.some((f) => f.severity === 'block') ? 'block' : 'warn';
+  return (
+    <button
+      onClick={onOpen}
+      aria-label={`Problems of ${name}`}
+      title={findings.map((f) => `${f.severity}: ${f.message}`).join('\n')}
+      data-problems={serious.length}
+      data-info={info}
+      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', fontSize: 11 }}
+    >
+      {serious.length > 0 && <span style={{ color: SEVERITY_COLOR[worst], fontWeight: 700 }}>{serious.length}</span>}
+      {info > 0 && <span style={{ color: 'var(--color-text-muted)', marginLeft: serious.length ? 4 : 0 }}>{serious.length ? `+${info}` : info}</span>}
+    </button>
   );
 }
 

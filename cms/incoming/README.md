@@ -15,7 +15,7 @@ Design: `docs/active/concept_cms_agent_authoring.md`. Code: `cms/src/engine/chan
 The owner's unsynced work is in the newest **`cms/backups/autosave_*.json`** (the CMS
 writes one every few minutes while they edit, keeping the last five). Read your
 "before" values from there, not from `data/`, so you see what the owner sees. Its shape:
-`{ items, tokens, effects, recipePools, starterCamp }`; maps are items with
+`{ items, tokens, effects, recipePools, starterCamp, skillPerks }`; maps are items with
 `type: "map"` or `"modifier"`; recipes sit in `recipePools[skill]`, each with an `id`.
 
 ## The file
@@ -63,7 +63,8 @@ One JSON file per pack, named after its id: `cms/incoming/<id>.json`.
   - **`op`**: `create`, `edit` or `delete`.
   - **`kind`**: `item`, `token`, `recipe`, `effect` or `map` (a Base Map or Modifier;
     its `value.type` is `map` or `modifier`; a plain item must not be one).
-    Or `starterCamp`: the Starter Camp, one record (see below).
+    Or `starterCamp`: the Starter Camp, one record (see below). Or `skillPerks`: one skill's
+    milestone perk table (see below).
   - **`id`**: the entity's id. For a recipe, its `id` field (recipes live in pools).
   - **`value`** (create, edit): the entity's **whole** new record, as it sits in the
     workspace. An edit replaces the record, so copy the current one and change it.
@@ -84,6 +85,16 @@ is the whole camp in the shape of `src/config/starterCampShape.js` (the autosave
 points in mat units on the mat it was saved from, no `id`. Copy the current one and change it; the
 review lists the Tokens added, moved and removed and the Bank lines that change, and the owner can
 open the Starter Camp page to tweak it before finishing.
+
+### A skill's perks
+
+One entry per skill, `"kind": "skillPerks"`, `"id"` the skill's id (`forestry`), `create` when the
+workspace has no table for that skill yet, else `edit` (copy the current table and change it). Its
+`value` is `{ "perks": [{ "level": 10, "effectId": "effect_...", "scale": 1 }] }`: whole levels from
+2 to 99 (the CMS offers 10, 25, 50, 75 and 99 by default), each a library effect (create it in the same
+pack with `"kind": "effect"`), `scale` 1 to 5 and optional. Shape and meaning:
+`src/systems/hero/perkTable.js`. A perk reaches its hero as a carried item's rule does, so narrow a work
+rule to its skill (`payload.category`), and it spends nothing.
 
 ### The plan (the ledger)
 

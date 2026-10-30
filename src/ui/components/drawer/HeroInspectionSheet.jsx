@@ -2,7 +2,6 @@ import { memo, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
-import { getJob } from '../../../config/registries/jobRegistry.js';
 import { ART_PX } from '../../../config/matGeometry.js';
 import { DockEquipmentGrid } from '../dock/DockEquipmentGrid.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
@@ -15,29 +14,24 @@ import { VitalBar, vitalTone } from '../base/VitalBar.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { Feather, ChevronRight } from 'lucide-react';
+import { Feather } from 'lucide-react';
 import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
 import { skillPurpose } from '../../../config/registries/skillRegistry.js';
-import {
-    heroSkillList, skillLevelText, skillXpView, skillDetail, requiresText,
-    useLockedListOpen, setLockedListOpen
-} from '../dock/heroPanelSkills.js';
+import { heroSkillList, skillLevelText, skillXpView, skillDetail } from '../dock/heroPanelSkills.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
 import { CloseX } from '../base/CloseX.jsx';
+import { skillPerkView, perkLines } from '../dock/heroPerks.js';
+import { t } from '../../../i18n/index.js';
 
-/** Advanced and Master rows' own backgrounds. */
+/** The specialist rows' own background. */
 const TIER_BG = {
-    advanced: 'bg-sky-900/30',
-    master: 'bg-fuchsia-900/30'
+    specialist: 'bg-sky-900/30'
 };
 
 /**
- * The hero panel's contents: the hero idling at twice the mat size with their flag behind, name,
- * job and HP; the loadout grid; then one list of the skills held (combat, Starting, specialist),
- * skills set aside at a job change, and the skills never held, shut until opened. A row opens on
- * a click to its exact XP and rate.
- * A banked level is still the hero's: it shows with its level, because promotion is reversible
- * and the player has no other way to see it here.
+ * The hero panel's contents: the hero idling at twice the mat size with their flag behind, name
+ * and HP; the loadout grid; then one list of every skill (combat, Starting, specialist). A row
+ * opens on a click to its exact XP and rate.
  */
 // Memoised: the panel around it holds a drop target, which dnd-kit redraws at every drag start,
 // end and change of target.
@@ -49,28 +43,24 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
             const h = (state.heroes || []).find(x => x.id === heroId);
             if (!h) return null;
             return JSON.stringify({
-                name: h.name, jobId: h.jobId || null, className: h.className || null,
+                name: h.name,
                 spriteId: h.spriteId || null, icon: h.icon || null, classId: h.classId || null,
                 flagColour: h.flagColour || null,
                 hp: Math.max(0, Math.round(h.hp?.current ?? 0)), hpMax: Math.max(1, h.hp?.max ?? 100),
-                skills: Object.fromEntries(Object.entries(h.skills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }])),
-                bankedSkills: Object.fromEntries(Object.entries(h.bankedSkills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }]))
+                skills: Object.fromEntries(Object.entries(h.skills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }]))
             });
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.HERO_PROMOTED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.GAME_RESET],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_LEVELED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
     );
     const hero = signature ? JSON.parse(signature) : null;
-    const { rows, bankedRows, lockedRows } = heroSkillList(hero);
-    const lockedOpen = useLockedListOpen();
+    const { rows } = heroSkillList(hero);
     const [expandedId, setExpandedId] = useState(null);
     const fit = useLiveMatFit();
 
     if (!hero) return null;
 
-    const job = hero.jobId ? getJob(hero.jobId) : null;
-    const jobTitle = job ? job.name : (hero.className || 'Recruit');
     const toggle = (id) => setExpandedId(prev => (prev === id ? null : id));
 
     return (
@@ -99,7 +89,6 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                 <div className="flex flex-col gap-1 pb-2.5">
                     <div className="flex items-baseline gap-2 min-w-0">
                         <h3 className="min-w-0 text-sm font-bold text-white truncate">{hero.name}</h3>
-                        <span data-hero-panel-job className="ml-auto shrink-0 text-xs text-gi-muted truncate">{jobTitle}</span>
                     </div>
                     <VitalBar value={hero.hp} max={hero.hpMax} barClass={vitalTone(hero.hp, hero.hpMax)} />
                 </div>
@@ -121,34 +110,6 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                         />
                     ))}
                 </div>
-
-                {bankedRows.length > 0 && (
-                    <div data-skill-group="banked" className="py-2 border-t border-white/5 flex flex-col gap-0.5">
-                        <span className="text-(length:--font-size-sm) font-bold gi-caps tracking-wider text-gi-muted">Set aside</span>
-                        {bankedRows.map(r => <SkillRow key={r.id} row={r} heroId={heroId} kind="banked" />)}
-                    </div>
-                )}
-
-                {lockedRows.length > 0 && (
-                    <div data-skill-group="locked" className="py-1 border-t border-white/5">
-                        <button
-                            type="button"
-                            data-locked-toggle
-                            aria-expanded={lockedOpen}
-                            onClick={() => setLockedListOpen(!lockedOpen)}
-                            className="w-full flex items-center gap-1 py-1 text-(length:--font-size-sm) font-bold gi-caps tracking-wider text-gi-muted hover:text-gi-text transition-colors cursor-pointer"
-                        >
-                            <ChevronRight size={12} className={cn('transition-transform', lockedOpen && 'rotate-90')} />
-                            <span>Locked</span>
-                            <span className="ml-auto tabular-nums font-normal">{lockedRows.length}</span>
-                        </button>
-                        {lockedOpen && (
-                            <div className="flex flex-col gap-0.5 pt-1">
-                                {lockedRows.map(r => <SkillRow key={r.id} row={r} heroId={heroId} kind="locked" />)}
-                            </div>
-                        )}
-                    </div>
-                )}
             </div>
         </div>
     );
@@ -219,39 +180,35 @@ const HeroFigure = ({ hero, heroId, size }) => {
     );
 };
 
+/** `10/99 Clean Felling`: one perk as the sheet names it. */
+const perkAtText = (p) => t('heroPanel.perkAt', { level: skillLevelText(p.level), perk: p.title });
+
 /**
- * `[icon] Forestry 25/99` over a thin XP bar, the XP in the game's own tooltip on hover. A held
- * skill opens on a click to its exact numbers. `kind`: `held`, `banked` (set aside, with the level
- * it reached) or `locked` (never held).
+ * `[icon] Forestry 25/99` over a thin XP bar, the XP and the skill's milestone perks (those held,
+ * then the next) in the game's own tooltip on hover. A click opens it to its exact numbers and
+ * what each perk held does.
  */
-const SkillRow = ({ row, heroId, kind = 'held', expanded = false, onToggle }) => {
-    const held = kind === 'held';
+const SkillRow = ({ row, heroId, expanded = false, onToggle }) => {
     const xp = skillXpView(row.xp);
     // What the skill is for comes first: the line the old Work Permissions headers carried.
     const purpose = skillPurpose(row.id);
+    const perks = skillPerkView(row.id, row.level);
     const tipLines = [
         ...(purpose ? [purpose] : []),
-        ...(kind === 'banked'
-            ? [`Set aside at ${skillLevelText(row.level)}.`, 'A job that uses it again gets it back as it was.']
-            : kind === 'locked'
-                ? [requiresText(row.id)]
-                : [xp.title, ...(row.mastered ? ['Mastered: kept on every job.'] : [])])
+        xp.title,
+        ...perks.earned.map(perkAtText),
+        ...perks.next.map(p => t('heroPanel.nextPerk', { perk: perkAtText(p) }))
     ];
     return (
         <Tooltip title={row.name} lines={tipLines}>
         <div
             data-skill-row={row.id}
-            data-skill-tier={held && row.tier ? row.tier : undefined}
-            data-skill-banked={kind === 'banked' || undefined}
-            data-skill-locked={kind === 'locked' || undefined}
-            aria-expanded={held ? expanded : undefined}
-            onClick={held ? onToggle : undefined}
+            data-skill-tier={row.tier || undefined}
+            aria-expanded={expanded}
+            onClick={onToggle}
             className={cn(
-                'flex flex-col gap-1 px-1 py-0.5',
-                held && 'cursor-pointer hover:bg-white/5',
-                held && row.tier && TIER_BG[row.tier],
-                kind === 'banked' && 'opacity-60 grayscale',
-                kind === 'locked' && 'opacity-40 grayscale'
+                'flex flex-col gap-1 px-1 py-0.5 cursor-pointer hover:bg-white/5',
+                row.tier && TIER_BG[row.tier]
             )}
         >
             <div className="flex items-center gap-2">
@@ -259,24 +216,21 @@ const SkillRow = ({ row, heroId, kind = 'held', expanded = false, onToggle }) =>
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
                     <div className="flex items-baseline gap-1.5 text-xs leading-none">
                         <span className="truncate font-medium">{row.name}</span>
-                        {kind !== 'locked' && (
-                            <span data-skill-level className="ml-auto tabular-nums font-bold">{skillLevelText(row.level)}</span>
-                        )}
+                        <span data-skill-level className="ml-auto tabular-nums font-bold">{skillLevelText(row.level)}</span>
                     </div>
-                    {held && (
-                        <div className="h-[3px] w-full bg-black/60 overflow-hidden">
-                            <div className="h-full bg-gi-primary" style={{ width: `${Math.round(xp.fill * 100)}%` }} />
-                        </div>
-                    )}
+                    <div className="h-[3px] w-full bg-black/60 overflow-hidden">
+                        <div className="h-full bg-gi-primary" style={{ width: `${Math.round(xp.fill * 100)}%` }} />
+                    </div>
                 </div>
             </div>
-            {held && expanded && <SkillDetail heroId={heroId} row={row} />}
+            {expanded && <SkillDetail heroId={heroId} row={row} />}
+            {expanded && <SkillPerks perks={perks} />}
         </div>
         </Tooltip>
     );
 };
 
-/** A held skill's exact numbers, read when the row opens (`skillDetail`). */
+/** A skill's exact numbers, read when the row opens (`skillDetail`). */
 const SkillDetail = ({ heroId, row }) => {
     const d = skillDetail(row.xp, XpRateTracker.getRate(heroId, row.id));
     const lines = [
@@ -296,6 +250,31 @@ const SkillDetail = ({ heroId, row }) => {
                 </div>
             ))}
         </dl>
+    );
+};
+
+/** An opened row's milestone perks: each held one with what it does, then the next. Rows never boxed. */
+const SkillPerks = ({ perks }) => {
+    if (!perks.earned.length && !perks.next.length) return null;
+    return (
+        <div data-skill-perks className="ml-1 mr-1 mb-1 flex flex-col gap-1 leading-tight">
+            {perks.earned.length > 0 && (
+                <span className="text-(length:--font-size-xs) text-gi-muted">{t('heroPanel.perks')}</span>
+            )}
+            {perks.earned.map(p => (
+                <div key={`${p.level}:${p.effectId}`} data-skill-perk={p.effectId} className="flex flex-col">
+                    <span className="text-(length:--font-size-sm) font-bold text-gi-gold">{perkAtText(p)}</span>
+                    {perkLines(p).map((line, i) => (
+                        <span key={i} className="text-(length:--font-size-xs) text-white/80">{line}</span>
+                    ))}
+                </div>
+            ))}
+            {perks.next.map(p => (
+                <span key={`${p.level}:${p.effectId}`} data-skill-next-perk={p.effectId} className="text-(length:--font-size-xs) text-gi-muted">
+                    {t('heroPanel.nextPerk', { perk: perkAtText(p) })}
+                </span>
+            ))}
+        </div>
     );
 };
 

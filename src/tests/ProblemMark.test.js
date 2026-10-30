@@ -6,6 +6,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
@@ -17,7 +18,7 @@ import { ALERT } from '../systems/board/boardEvents.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { getSkill } from '../config/registries/skillRegistry.js';
-import { MASTERY_LEVEL } from '../systems/hero/PromotionSystem.js';
+import { MAX_SKILL_LEVEL } from '../utils/XPCurve.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import {
     problemOf, problemText, PROBLEM_SEVERITY, PROBLEM_SPRITE, PROBLEM_COLOUR, SEVERITY
@@ -161,7 +162,7 @@ describe('⭐ the hover says exactly what, from the engine', () => {
     it('⭐ the hero’s level too low: the skill and the level it needs, as levels read', () => {
         const gated = put('fixture_gated');
         const mining = getSkill('mining')?.name || 'mining';
-        expect(text(ALERT.ACCESS, gated.id)).toBe(`Needs ${mining} 25/${MASTERY_LEVEL}`);
+        expect(text(ALERT.ACCESS, gated.id)).toBe(`Needs ${mining} 25/${MAX_SKILL_LEVEL}`);
         expect(text(ALERT.UNSKILLED, gated.id)).toBe(`Needs the ${mining} skill`);
     });
 
@@ -175,7 +176,7 @@ describe('⭐ the hover says exactly what, from the engine', () => {
     it('⭐ a station a hero is stuck on, run by the engine: the mark’s kind is the engine’s alert', () => {
         GameState.state.heroes = [{ id: 'h1', name: 'h1', status: 'idle', level: 50, skills: { alchemy: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
         const station = put('fixture_consumer');
-        Flags.plant('h1', AT);
+        Orders.orderAt('h1', AT);
         for (let i = 0; i < 20; i++) BoardRunner.tick(100);
         expect(station.alert).toBe(ALERT.INPUTS);
         const problem = problemOf({ alert: station.alert });

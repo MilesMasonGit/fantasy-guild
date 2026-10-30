@@ -128,8 +128,8 @@ export { ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_OVERRIDE_FIELDS }
 // Enemy kinds (Armoured, Nimble, Swift, Brute, Venomous): the presets the Token editor offers, none to two per enemy, and which pairs clash.
 export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, VENOM_EFFECT_ID } from '../../../src/config/registries/enemyKinds.js';
 
-// Weapons: which combat styles a weapon belongs to (a Dagger is Melee and Stealth), for the item editor's Weapon block.
-export { isWeapon, weaponStylesOf } from '../../../src/config/registries/weaponStyles.js';
+// Weapons: the one style a weapon fights in, and the level gear asks of its wearer, for the item editor's Weapon and Requirement blocks.
+export { isWeapon, weaponStyleOf, authoredWeaponStyles, gearLevelRequirement } from '../../../src/config/registries/weaponStyles.js';
 // The three swing speeds and the proposed weapon tiers' damage, so the Weapon block offers what the fight reads.
 export { ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS } from '../../../src/config/FormulaRegistry.js';
 
@@ -142,7 +142,7 @@ export { neverWearsReason, NEVER_WEARS_WHY } from '../../../src/systems/core/wea
 // The content checks for the six lifecycle blocks: the game's own rules and wording, so the Economy Audit and the boot audit report the same problems.
 export { auditLifecycleBlocks } from '../../../src/systems/core/lifecycleAudit.js';
 
-// Content naming a skill or job the game does not have (a renamed or dropped one). The game's own rule and wording.
+// Content naming a skill the game does not have (a renamed or dropped one), a retired Promotes rule or a weapon with two styles. The game's own rule and wording.
 export { findUnknownRefs } from '../../../src/systems/core/unknownRefRule.js';
 
 // Gathering tools: the kinds an item's Tool and a Token's Needs tool may name, and the content checks for them. The game's own vocabulary, rule and wording.
@@ -156,6 +156,9 @@ export {
   tierValue,
 } from '../../../src/config/registries/toolKinds.js';
 export { toolFindings } from '../../../src/systems/core/toolRule.js';
+// Milestone perks: the shape of a skill's perk table and the content checks for one. The game's own rules and wording.
+export { DEFAULT_PERK_LEVELS, MIN_PERK_LEVEL, isPerkLevel, perkRowsOf, normaliseSkillPerks } from '../../../src/systems/hero/perkTable.js';
+export { perkFindings } from '../../../src/systems/core/perkRule.js';
 // A water Token's catch pools (tool kind × bait → a weighted catch): the game's own reader, so the Catch pools block and the game read the same pools.
 export { catchPoolsOf, hasCatchPools, catchItemIds, baitItemIds } from '../../../src/config/registries/catchPools.js';
 // Bait is carried in a Consumable cell: the Catch pools block offers only items of a consumable category.

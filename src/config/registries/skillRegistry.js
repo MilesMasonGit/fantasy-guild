@@ -1,48 +1,40 @@
 // Fantasy Guild - Skill Registry
 
 /**
- * SkillRegistry — the world's skills, in four layers.
+ * SkillRegistry: the world's skills, in three layers.
  *
- * ## The one rule that matters
- * **A hero holds SOME skills, not all of them.** A skill a hero does not hold
- * is work they cannot do at any level — this is *possession*, as distinct from level.
+ * ## Every hero holds every skill
+ * A hero holds every skill here from level 1: the gate on any work, Token or piece of gear is a
+ * skill level, a tool or an item, never what the hero is. `hero.skills[id]` absent means only that
+ * the id is not a skill (a cut one, or content's typo).
  *
- * ## The four layers
+ * | Layer | Count | What it is |
+ * | :-- | :-- | :-- |
+ * | `starting`   | 9 | The work every guild does from the first day |
+ * | `combat`     | 4 | The four styles: a hero fights in the style of the weapon in their hands |
+ * | `specialist` | 7 | Placeholders until the specialist-skill rework gives each its mechanics |
  *
- * | Layer | Count | Who holds it | Granted by |
- * | :-- | :-- | :-- | :-- |
- * | `starting` | 9 | Every hero, on every job | The starting state |
- * | `combat`   | 4 | Exactly one per promoted hero | Basic promotion |
- * | `advanced` | 4 | One on a basic class, two on a master class | Promotion |
- * | `master`   | 8 | Exactly one master class each | Master promotion |
+ * ## ⚠️ The specialist skills are placeholders
+ * They are names, descriptions and placeholder icons that work like any other skill (Tokens and
+ * recipes that name them; XP; levels), with no mechanics of their own yet. **Nothing outside this
+ * file may hardcode a skill id or a count.** Adding, renaming or re-layering a skill must be an
+ * edit to this file and nothing else: derive from `SKILLS`, `SKILL_LAYERS` and the helpers below
+ * rather than writing a literal.
  *
- * A Recruit holds **every Starting skill** (`RECRUIT_SKILL_SLOTS`, nine), and
- * **promotion never takes one away**: a basic class holds 11, a master class
- * 13 (`jobRegistry.getJobSheet`).
- *
- * ## ⚠️ The Advanced and Master skills are placeholders
- * They are names, descriptions and placeholder icons that work like any other
- * skill (Tokens and recipes that name them; XP; levels), with no mechanics of
- * their own yet. **Nothing outside this file may hardcode a skill id or a
- * count.** Adding, renaming or re-layering a skill must be an edit to this
- * file and nothing else — derive from `SKILLS`, `SKILL_LAYERS` and the helpers
- * below rather than writing a literal.
- *
- * ⚠️ Renaming an id strands every piece of content naming the old one. A
- * rename also needs an entry in `skillIdMigration.js`, which rewrites the old
- * id in `data/` and in the CMS workspace as they load.
+ * ⚠️ Renaming an id strands every piece of content naming the old one. A rename also needs an
+ * entry in `skillIdMigration.js`, which rewrites the old id in `data/` and in the CMS workspace as
+ * they load. A dropped id is listed by the boot audit and the CMS Economy Audit
+ * (`unknownRefRule.js`), and an older save's levels in it are dropped on load.
  */
 
-/** The four layers, in the order a hero acquires them. */
 export const SKILL_LAYERS = {
     STARTING: 'starting',
     COMBAT: 'combat',
-    ADVANCED: 'advanced',
-    MASTER: 'master'
+    SPECIALIST: 'specialist'
 };
 
 export const SKILLS = {
-    // === Starting (9) — every hero holds all of these, always =============
+    // === Starting (9) =====================================================
     mining: {
         id: 'mining', name: 'Mining', layer: SKILL_LAYERS.STARTING,
         description: 'Extracting ore, stone and gems from veins and quarries.',
@@ -105,9 +97,9 @@ export const SKILLS = {
         icon: '🧱'
     },
 
-    // === Combat (4) — exactly one per promoted hero =======================
-    // There is no Defence skill: a hero's combat skill supplies both halves.
-    // A Melee 30 hero attacks at 30 and defends at 30.
+    // === Combat (4): the style is the weapon's =============================
+    // There is no Defence skill: the style a hero fights in supplies both halves. A hero with a
+    // sword at Melee 30 attacks at 30 and defends at 30.
     melee: {
         id: 'melee', name: 'Melee', layer: SKILL_LAYERS.COMBAT,
         description: 'Frontline fighting with blades, axes and hammers.',
@@ -132,77 +124,50 @@ export const SKILLS = {
         icon: '🗡️'
     },
 
-    // === Advanced (4) — one per basic class; a master class holds two =====
-    leadership: {
-        id: 'leadership', name: 'Leadership', layer: SKILL_LAYERS.ADVANCED,
-        description: 'Banners, standards and drills that steady those nearby.',
-        icon: '🚩'
-    },
+    // === Specialist (7): placeholders until the specialist-skill rework =====
     fletching: {
-        id: 'fletching', name: 'Fletching', layer: SKILL_LAYERS.ADVANCED,
+        id: 'fletching', name: 'Fletching', layer: SKILL_LAYERS.SPECIALIST,
         description: 'Arrows, bows and hunting gear, made and tuned by hand.',
         icon: '🪶'
     },
+    faith: {
+        id: 'faith', name: 'Faith', layer: SKILL_LAYERS.SPECIALIST,
+        description: 'Shrines, altars and wards that bless the heroes and Tokens around them.',
+        icon: '✝️'
+    },
+    summoning: {
+        id: 'summoning', name: 'Summoning', layer: SKILL_LAYERS.SPECIALIST,
+        description: 'Raising thralls and spirits that fight in a hero’s place.',
+        icon: '👻'
+    },
     enchanting: {
-        id: 'enchanting', name: 'Enchanting', layer: SKILL_LAYERS.ADVANCED,
+        id: 'enchanting', name: 'Enchanting', layer: SKILL_LAYERS.SPECIALIST,
         description: 'Binding gems and dust into gear to make it more than it was.',
         icon: '🔮'
     },
     crime: {
-        id: 'crime', name: 'Crime', layer: SKILL_LAYERS.ADVANCED,
+        id: 'crime', name: 'Crime', layer: SKILL_LAYERS.SPECIALIST,
         description: 'Locks, contraband and the things other people would rather keep.',
         icon: '🗝️',
         sprite: 'assets/skills/s_crime.png'
     },
-
-    // === Master (8) — exclusive to one master class each ==================
-    faith: {
-        id: 'faith', name: 'Faith', layer: SKILL_LAYERS.MASTER,
-        description: 'Shrines, altars and wards that bless the heroes and Tokens around them.',
-        icon: '✝️'
-    },
-    trapping: {
-        id: 'trapping', name: 'Trapping', layer: SKILL_LAYERS.MASTER,
-        description: 'Snares, pits and caltrops that weaken foes and strip their charges.',
-        icon: '🪤'
-    },
-    summoning: {
-        id: 'summoning', name: 'Summoning', layer: SKILL_LAYERS.MASTER,
-        description: 'Raising thralls and spirits that fight in a hero\'s place.',
-        icon: '👻'
-    },
     taming: {
-        id: 'taming', name: 'Taming', layer: SKILL_LAYERS.MASTER,
+        id: 'taming', name: 'Taming', layer: SKILL_LAYERS.SPECIALIST,
         description: 'Beasts of burden that harvest, haul and graze unattended.',
         icon: '🐾'
     },
-    commerce: {
-        id: 'commerce', name: 'Commerce', layer: SKILL_LAYERS.MASTER,
-        description: 'Markets and charters that turn surplus goods into gold.',
-        icon: '💰'
-    },
     science: {
-        id: 'science', name: 'Science', layer: SKILL_LAYERS.MASTER,
+        id: 'science', name: 'Science', layer: SKILL_LAYERS.SPECIALIST,
         description: 'Laboratories that convert goods in bulk into other materials.',
         icon: '⚗️'
-    },
-    armory: {
-        id: 'armory', name: 'Armory', layer: SKILL_LAYERS.MASTER,
-        description: 'Anvils and racks that reforge plate, shields and smithed weapons.',
-        icon: '🛡️'
-    },
-    shadowcraft: {
-        id: 'shadowcraft', name: 'Shadowcraft', layer: SKILL_LAYERS.MASTER,
-        description: 'Workbenches and cauldrons that rework cloaks, daggers and poisoned blades.',
-        icon: '🌑'
     }
 };
 
 /**
  * What fighting is for, the one line every combat skill's row shows on the hero sheet: a hero
- * fights with whichever combat skill they hold.
+ * fights in the style of the weapon in their hands, barehanded as Melee.
  */
-export const COMBAT_PURPOSE = 'Fights the enemies the hero is sent to, or that attack them, for loot, Maps and combat XP.';
+export const COMBAT_PURPOSE = 'Fights with a weapon of this style (barehanded is Melee), for loot, Maps and its XP. The best of the four sets the hero’s health.';
 
 /**
  * A skill's one line for the hero sheet's skill list: its `purpose` (what it does and what it
@@ -227,47 +192,52 @@ export function getSkillIdsByLayer(layer) {
 
 export const STARTING_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.STARTING);
 export const COMBAT_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.COMBAT);
-export const ADVANCED_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.ADVANCED);
-export const MASTER_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.MASTER);
+export const SPECIALIST_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.SPECIALIST);
+
+/** Every skill a hero holds: all of them, in registry order. */
+export const HERO_SKILL_IDS = getAllSkillIds();
 
 /**
  * Layer groupings for UI, **derived**: adding a skill to `SKILLS` puts it in
- * the right group with no edit here. `hint` says who holds the layer; the CMS
+ * the right group with no edit here. `hint` says what the layer is; the CMS
  * skill pickers show it beside the name.
  */
 export const SKILL_CATEGORIES = {
     [SKILL_LAYERS.STARTING]: {
-        id: SKILL_LAYERS.STARTING, name: 'Starting', hint: 'every hero has these',
+        id: SKILL_LAYERS.STARTING, name: 'Starting', hint: 'the everyday work',
         skills: STARTING_SKILL_IDS
     },
     [SKILL_LAYERS.COMBAT]: {
-        id: SKILL_LAYERS.COMBAT, name: 'Combat', hint: 'one per class',
+        id: SKILL_LAYERS.COMBAT, name: 'Combat', hint: 'the weapon decides the style',
         skills: COMBAT_SKILL_IDS
     },
-    [SKILL_LAYERS.ADVANCED]: {
-        id: SKILL_LAYERS.ADVANCED, name: 'Advanced', hint: 'one per basic class, two per master class',
-        skills: ADVANCED_SKILL_IDS
-    },
-    [SKILL_LAYERS.MASTER]: {
-        id: SKILL_LAYERS.MASTER, name: 'Master', hint: 'one master class each',
-        skills: MASTER_SKILL_IDS
+    [SKILL_LAYERS.SPECIALIST]: {
+        id: SKILL_LAYERS.SPECIALIST, name: 'Specialist', hint: 'placeholders, no mechanics yet',
+        skills: SPECIALIST_SKILL_IDS
     }
 };
+
+/**
+ * Skills cut when heroes became classless. ⚠️ Not skills any more: an older save's levels in them
+ * are dropped on load (`HeroRehydration.settleSkillSheet`), and content still naming one is listed
+ * by the boot audit and the CMS Economy Audit as a skill that does not exist.
+ */
+export const RETIRED_SKILL_IDS = Object.freeze(['leadership', 'commerce', 'trapping', 'armory', 'shadowcraft']);
 
 /** How many skills exist in the world. */
 export const SKILL_COUNT = Object.keys(SKILLS).length;
 
 /**
- * How many skills a **Recruit** holds: the whole Starting layer.
- * Every promoted hero holds these too.
- */
-export const RECRUIT_SKILL_SLOTS = STARTING_SKILL_IDS.length;
-
-/**
- * The skill a hero demolishes a marked Token with (`board/Demolition.js`). ⚠️ It must stay a
- * Starting skill: every hero holds it, so any hero can clear a Token away.
+ * The skill a hero demolishes a marked Token with (`board/Demolition.js`): any hero can clear a
+ * Token away.
  */
 export const DEMOLITION_SKILL_ID = SKILLS.construction.id;
+
+/**
+ * The style a hero fights in with no weapon in their hands (a punch), and the one a weapon naming
+ * no style fights in.
+ */
+export const BAREHANDED_STYLE_ID = SKILLS.melee.id;
 
 /** Whether `skillId` names a real skill. */
 export function isSkillId(skillId) {

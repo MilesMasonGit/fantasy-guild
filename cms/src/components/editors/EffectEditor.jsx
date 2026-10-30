@@ -2,7 +2,8 @@ import { Sparkles, ScrollText, Library, Boxes, Flame } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import { StatementList } from './Statements';
-import { rulesLinesOf, effectRefsOf, hasWorkingStatements, statusBlockOf, MAX_STATUS_STACKS, VENOM_EFFECT_ID } from '../../utils/constants';
+import { rulesLinesOf, effectRefsOf, hasWorkingStatements, statusBlockOf, MAX_STATUS_STACKS, VENOM_EFFECT_ID, SKILLS } from '../../utils/constants';
+import { perkUsersOf } from '../../engine/skillPerks';
 
 /**
  * The Effect editor: one named entry in the effect library.
@@ -14,6 +15,7 @@ export default function EffectEditor() {
   const effect = useEntityStore((s) => s.effects[activeId]);
   const tokens = useEntityStore((s) => s.tokens);
   const items = useEntityStore((s) => s.items);
+  const skillPerks = useEntityStore((s) => s.skillPerks);
   const updateEffect = useEntityStore((s) => s.updateEffect);
   const deleteEffect = useEntityStore((s) => s.deleteEffect);
   const setEffectStatements = useEntityStore((s) => s.setEffectStatements);
@@ -29,6 +31,8 @@ export default function EffectEditor() {
   const users = Object.values(tokens)
     .map((t) => ({ token: t, ref: effectRefsOf(t).find((r) => r.effectId === effect.id) }))
     .filter((u) => u.ref);
+
+  const perkUsers = perkUsersOf(effect.id, skillPerks, (id) => SKILLS.find((s) => s.id === id)?.name || id);
 
   const lines = rulesLinesOf(effect, names);
   const backed = hasWorkingStatements(effect);
@@ -59,12 +63,17 @@ export default function EffectEditor() {
       </Section>
 
       <Section title="Used by" icon={<Library size={14} />}>
-        {users.length === 0 ? (
+        {perkUsers.length > 0 && (
+          <p data-perk-users className="text-[11px] text-gray-400 leading-relaxed mb-2">
+            A milestone perk: {perkUsers.map((u) => u.name).join(', ')} (the Skill Perks page).
+          </p>
+        )}
+        {users.length === 0 ? (perkUsers.length > 0 ? null : (
           <p className="text-[11px] text-gray-500 leading-relaxed">
             Nothing uses this effect yet. Not a problem if you are still building
             what it is for — add it from a Token&rsquo;s Rules section.
           </p>
-        ) : (
+        )) : (
           <>
             <p className="text-[11px] text-gray-400 leading-relaxed mb-2">
               {users.length === 1

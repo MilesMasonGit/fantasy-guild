@@ -22,14 +22,13 @@ export const TUTORIAL_TEXT = Object.freeze({
         }),
         cart_tool: Object.freeze({
             title: 'Equip a Tool',
-            says: 'Bare hands move nothing. Give them a pick, or an axe. Whichever you trust.',
-            instruction: 'Open the Item Bank (yellow orb) and drag a Pickaxe or a Woodaxe onto your Hero. A Hero needs the right tool in hand to mine, chop, fish or reap.'
+            says: 'Bare hands move nothing. Give them an axe. The trees will not wait for ever.',
+            instruction: 'Open the Item Bank (yellow orb) and drag the Woodaxe onto your Hero. A Hero needs the right tool in hand to chop, mine, fish or reap.'
         }),
-        // ⚠️ A stopgap for hero orders (brief 260 O1): the tutorial's rewrite is O3.
         cart_flag: Object.freeze({
-            title: 'Send Your Hero to Work',
-            says: 'Put them somewhere. Not anywhere. Somewhere with work in it.',
-            instruction: 'Drag your Hero (on the mat, or from the hero bar) onto a tree or a vein. They walk there and work it.'
+            title: 'Send Your Recruit to a Tree',
+            says: 'A tree. Any tree. Point them at it, and the wood will follow.',
+            instruction: 'Drag your Recruit (on the mat, or from the hero bar) onto a tree. They walk there and chop it.'
         }),
         cart_gather: Object.freeze({
             title: 'Gather',
@@ -49,12 +48,17 @@ export const TUTORIAL_TEXT = Object.freeze({
         cart_station: Object.freeze({
             title: 'Build a Station',
             says: 'A floor is only a promise. Build something on it. Something useful, mind.',
-            instruction: 'Click the Wood Foundation, choose what to build, and let a Hero build it.'
+            instruction: 'Click the Wood Foundation, choose what to build, then drag a Hero onto it to build it.'
         }),
         cart_craft: Object.freeze({
             title: 'Craft Something',
             says: 'Now make a thing that was not there before. That is the whole trick, really.',
-            instruction: 'Click your new station, choose a recipe, and let a Hero craft it once.'
+            instruction: 'Click your new station, choose a recipe, then drag a Hero onto it to craft it once.'
+        }),
+        cart_camp: Object.freeze({
+            title: 'Build a Camp',
+            says: 'One tree at a time? The forest will outlive you. Build them a camp among the trees.',
+            instruction: 'Put a Wood Foundation near some trees, click it, choose the Logging Camp, and drag a Hero onto it to build it. Then drag a Hero onto the camp: they chop every tree around it, one after another.'
         }),
         // ⚠️ A draft: the owner rewrites it at the eye-check.
         cart_copper_tool: Object.freeze({

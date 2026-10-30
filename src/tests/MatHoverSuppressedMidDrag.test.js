@@ -6,6 +6,7 @@ import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -68,7 +69,7 @@ describe('hovering a hero mid-drag does not show its reach ring (CR3-410)', () =
     it('a hero hover ring shows normally, but not while a Token is being dragged', () => {
         const token = placeAt('fixture_producer', 900, 600);
         // Far from the dragged Token, so no "would land in this flag's reach" case.
-        Flags.plant('h1', { x: 250, y: 200 });
+        Orders.orderAt('h1', { x: 250, y: 200 });
         expect(Flags.statusOf('h1').state).toBe('idle');
 
         const { container } = mount(h(MatBoard));

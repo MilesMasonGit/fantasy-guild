@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
-import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -76,7 +76,7 @@ function scene(veinType, cartType, carts) {
     const vein = placeAt(veinType, VEIN.x, VEIN.y);
     for (const p of ring(carts)) placeAt(cartType, p.x, p.y);
     TileModifiers.rebuildAll();
-    Placement.plantFlagAt('hero_1', VEIN);
+    Orders.orderAt('hero_1', VEIN);
     return vein;
 }
 

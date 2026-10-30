@@ -2,7 +2,7 @@ import * as HeroManager from '../../../systems/hero/HeroManager.js';
 import * as BoardCombat from '../../../systems/board/BoardCombat.js';
 import * as LiveEffects from '../../../systems/effects/LiveEffects.js';
 import { isFightElixir } from '../../../systems/hero/ConsumptionSystem.js';
-import { MASTERY_LEVEL } from '../../../systems/hero/PromotionSystem.js';
+import { MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import { roundHalfUp, levelDamageBonus, UNARMED_DAMAGE } from '../../../config/FormulaRegistry.js';
 import { getEquippedEntries, isConsumableCategory } from '../../../config/registries/equipmentConstants.js';
@@ -40,7 +40,7 @@ export function clockText(ms) {
 }
 
 /** `20/99`. */
-export const levelText = (level) => `${Math.max(0, Math.round(Number(level) || 0))}/${MASTERY_LEVEL}`;
+export const levelText = (level) => `${Math.max(0, Math.round(Number(level) || 0))}/${MAX_SKILL_LEVEL}`;
 
 /** A combat style's name (`Melee`), or null. */
 export const styleName = (style) => (style ? getSkill(style)?.name || style : null);

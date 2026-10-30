@@ -36,7 +36,9 @@ describe('A skill level adds no work speed', () => {
         hero.skills.mining.level = 99;
         updateHeroFromSkills(hero);
         expect(hero.aggregator.getPercentageBucket(EFFECT_TYPES.SPEED, 'mining')).toBe(1);
-        expect(hero.level).toBe(99);
+        // Rewritten with classless heroes: the hero level averages all twenty skills, the other
+        // nineteen at 1.
+        expect(hero.level).toBe((99 + 19) / 20);
     });
 });
 

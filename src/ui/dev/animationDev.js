@@ -69,8 +69,8 @@ export function setUpAnimationScene() {
     ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 4);
     GuildUpgradeManager.recompute();
     const targets = [placed[0], placed[1], placed[2], placed[3]];
-    ['fighter', 'wizard', 'ranger', 'rogue'].forEach((jobId, i) => {
-        const hero = generateHero({ jobId, spriteId: jobId });
+    ['fighter', 'wizard', 'ranger', 'rogue'].forEach((spriteId, i) => {
+        const hero = generateHero({ spriteId });
         // Level 50 set before they join, so no level-up is said for every skill at once.
         for (const id of Object.keys(hero.skills || {})) hero.skills[id] = { ...hero.skills[id], level: 50, xp: xpForLevel(50) };
         const maxHp = heroMaxHpFromSkills(hero.skills);

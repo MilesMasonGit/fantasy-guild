@@ -9,6 +9,7 @@ import * as LiveEffects from '../systems/effects/LiveEffects.js';
 import { registerStatusFixtures, POISON, BURN } from './fixtures/statusEffects.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -22,8 +23,7 @@ import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { isWeapon, weaponStylesOf, weaponRefusal, weaponTierOf, WEAPON_REFUSAL } from '../config/registries/weaponStyles.js';
-import { promote } from '../systems/hero/PromotionSystem.js';
+import { isWeapon, weaponStyleOf, authoredWeaponStyles } from '../config/registries/weaponStyles.js';
 import { heroSide } from '../ui/components/combat/fightView.js';
 import { MODIFIER_PALETTE, getPaletteEntry } from '../config/registries/modifierPalette.js';
 import { makeStatement, KEYWORD, paletteForKeyword } from '../systems/effects/statements.js';
@@ -35,9 +35,10 @@ import { equipOrAnnounce } from '../ui/components/dock/dockEquip.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
 
 /**
- * Gear (brief 220, C2): a weapon names its style(s) and only a hero of that style holds it; a
- * weapon or armour family's ability is a Rules effect on the item, shared by every tier with the
- * tier's scale raising the number, and an ability may touch work as well as fights.
+ * Gear (brief 220, C2; classless heroes, brief 270 K1): a weapon names one style, any hero holds it
+ * at the level it asks in that style, and fights in its style; a weapon or armour family's ability
+ * is a Rules effect on the item, shared by every tier with the tier's scale raising the number, and
+ * an ability may touch work as well as fights.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -90,7 +91,9 @@ const ITEMS = {
     t1_greatsword: weapon('t1_greatsword', 'Tier Copper Greatsword', { tier: 1, styles: ['melee'], damage: 3, speed: 'slow', hands: 2 }),
     t1_bow: weapon('t1_bow', 'Tier Copper Bow', { tier: 1, styles: ['ranged'], damage: 2, effects: [{ effectId: 'gear_bow', scale: 1 }] }),
     t1_wand: weapon('t1_wand', 'Tier Copper Wand', { tier: 1, styles: ['magic'], damage: 1, speed: 'fast' }),
-    t2_sword: weapon('t2_sword', 'Iron Sword', { tier: 2, styles: ['melee'], damage: 3 })
+    t2_sword: weapon('t2_sword', 'Iron Sword', { tier: 2, styles: ['melee'], damage: 3 }),
+    t2_gated_sword: weapon('t2_gated_sword', 'Gated Iron Sword', { tier: 2, styles: ['melee'], damage: 3, levelRequired: 15 }),
+    t2_gated_spear: weapon('t2_gated_spear', 'Gated Iron Spear', { tier: 2, styles: ['melee'], damage: 3, levelRequired: 15, effects: [{ effectId: 'gear_spear', scale: 2 }] })
 };
 registerItems(ITEMS);
 
@@ -149,221 +152,165 @@ beforeEach(() => {
 });
 afterEach(() => vi.restoreAllMocks());
 
-describe('a weapon names its style(s)', () => {
-    it('reads `styles`, in the game\'s style order; an older item\'s one `skillRequired`; nothing else', () => {
-        expect(weaponStylesOf(ITEMS.gear_copper_dagger)).toEqual(['melee', 'stealth']);
-        expect(weaponStylesOf(ITEMS.gear_old_bow)).toEqual(['ranged']);
-        expect(weaponStylesOf(ITEMS.gear_stick)).toEqual([]);
-        expect(weaponStylesOf(weapon('x', 'X', { styles: ['melee', 'mining', 'nonsense'] }))).toEqual(['melee']);
+// Rewritten with classless heroes: style no longer gates who holds a weapon (the Recruit and
+// own-style rules are gone); the weapon decides the style, and a level in that style gates it.
+describe('a weapon names one style', () => {
+    it('reads `styles` in the order written (its first counts), an older item\'s `skillRequired`; none is Melee', () => {
+        expect(authoredWeaponStyles(ITEMS.gear_copper_dagger)).toEqual(['stealth', 'melee']);
+        expect(weaponStyleOf(ITEMS.gear_copper_dagger)).toBe('stealth');
+        expect(weaponStyleOf(ITEMS.gear_old_bow)).toBe('ranged');
+        expect(authoredWeaponStyles(ITEMS.gear_stick)).toEqual([]);
+        expect(weaponStyleOf(ITEMS.gear_stick)).toBe('melee');
+        expect(authoredWeaponStyles(weapon('x', 'X', { styles: ['melee', 'mining', 'nonsense'] }))).toEqual(['melee']);
         // A tool and a chest piece are not weapons, whatever they say.
         expect(isWeapon(ITEMS.gear_pick)).toBe(false);
         expect(isWeapon(ITEMS.gear_hide_vest)).toBe(false);
-        expect(weaponStylesOf({ ...ITEMS.gear_pick, styles: ['melee'] })).toEqual([]);
-    });
-
-    it('refuses a Recruit any weapon not of tier 1, and a hero a weapon of another style; a style-less weapon suits any promoted hero', () => {
-        // No tier is not tier 1: nothing changes for a Recruit until the owner sets the tiers.
-        expect(weaponRefusal(ITEMS.gear_copper_sword, null)).toBe(WEAPON_REFUSAL.RECRUIT);
-        expect(weaponRefusal(ITEMS.gear_stick, null)).toBe(WEAPON_REFUSAL.RECRUIT);
-        expect(weaponRefusal(ITEMS.t2_sword, null)).toBe(WEAPON_REFUSAL.RECRUIT);
-        expect(weaponRefusal(ITEMS.t1_sword, null)).toBeNull();
-        expect(weaponRefusal(ITEMS.t1_wand, null)).toBeNull();
-        // The tier never loosens a promoted hero's style.
-        expect(weaponRefusal(ITEMS.t1_sword, 'magic')).toBe(WEAPON_REFUSAL.STYLE);
-        expect(weaponRefusal(ITEMS.gear_copper_sword, 'magic')).toBe(WEAPON_REFUSAL.STYLE);
-        expect(weaponRefusal(ITEMS.gear_copper_dagger, 'melee')).toBeNull();
-        expect(weaponRefusal(ITEMS.gear_copper_dagger, 'stealth')).toBeNull();
-        expect(weaponRefusal(ITEMS.gear_copper_dagger, 'ranged')).toBe(WEAPON_REFUSAL.STYLE);
-        expect(weaponRefusal(ITEMS.gear_stick, 'magic')).toBeNull();
-        // A tool is never refused here: Recruits gather with them.
-        expect(weaponRefusal(ITEMS.gear_pick, null)).toBeNull();
+        expect(weaponStyleOf({ ...ITEMS.gear_pick, styles: ['melee'] })).toBeNull();
     });
 });
 
-describe('the equip paths: own style allowed, another style refused with a clear message', () => {
-    it('a Fighter takes a Copper Sword: the copy leaves the Bank (one item, one hero)', () => {
-        const fighter = addHero('Bram', 'melee');
+describe('the equip paths: any hero, at the level the weapon asks in its style', () => {
+    it('any hero takes a Copper Sword: the copy leaves the Bank (one item, one hero)', () => {
+        const wizard = addHero('Mira', 'magic', 30);
         give('gear_copper_sword');
-        equipOk(fighter, 'gear_copper_sword');
-        expect(fighter.equipment).toContain('gear_copper_sword');
+        equipOk(wizard, 'gear_copper_sword');
+        expect(wizard.equipment).toContain('gear_copper_sword');
         expect(InventoryManager.getItemCount('gear_copper_sword')).toBe(0);
     });
 
-    it('a Wizard is refused the sword, saying whose style it is; nothing moves', () => {
-        const wizard = addHero('Mira', 'magic');
-        give('gear_copper_sword');
-        const res = EquipmentManager.equipItem(wizard.id, 'gear_copper_sword');
-        expect(res).toEqual({ success: false, error: 'Mira fights with Magic: the Copper Sword is a Melee weapon' });
+    it('a hero below its level is refused, saying the level; nothing moves', () => {
+        const wizard = addHero('Mira', 'magic', 40);
+        give('t2_gated_sword');
+        const res = EquipmentManager.equipItem(wizard.id, 't2_gated_sword');
+        expect(res).toEqual({ success: false, error: 'Needs Melee 15' });
         expect(wizard.equipment.every(s => s === null)).toBe(true);
-        expect(InventoryManager.getItemCount('gear_copper_sword')).toBe(1);
+        expect(InventoryManager.getItemCount('t2_gated_sword')).toBe(1);
+
+        const fighter = addHero('Bram', 'melee', 15);
+        equipOk(fighter, 't2_gated_sword');
     });
 
-    it('a Dagger is Melee and Stealth: a Fighter and a Rogue both take one; a Ranger is told both styles', () => {
-        const fighter = addHero('Bram', 'melee');
-        const rogue = addHero('Vex', 'stealth');
-        const ranger = addHero('Lark', 'ranged');
-        give('gear_copper_dagger', 3);
-        equipOk(fighter, 'gear_copper_dagger');
-        equipOk(rogue, 'gear_copper_dagger');
-        expect(EquipmentManager.equipItem(ranger.id, 'gear_copper_dagger').error)
-            .toBe('Lark fights with Ranged: the Copper Dagger is a Melee or Stealth weapon');
-    });
-
-    it('a Recruit is refused a weapon with no tier or above tier 1, saying why, but still takes a tool', () => {
-        const recruit = addHero('Pip');
-        give('gear_copper_sword');
-        expect(EquipmentManager.equipItem(recruit.id, 'gear_copper_sword').error)
-            .toBe('Recruits can hold only copper weapons: promote Pip to use the Copper Sword');
-        give('t2_sword');
-        expect(EquipmentManager.equipItem(recruit.id, 't2_sword').error)
-            .toBe('Recruits can hold only copper weapons: promote Pip to use the Iron Sword');
-        expect(recruit.equipment).not.toContain('t2_sword');
-        expect(InventoryManager.getItemCount('t2_sword')).toBe(1);
-        equipOk(recruit, 'gear_pick');
-    });
-
-    it('an older item\'s skillRequired style is honoured: a Ranger takes the Old Bow, a Fighter does not', () => {
-        const ranger = addHero('Lark', 'ranged');
-        const fighter = addHero('Bram', 'melee');
-        give('gear_old_bow', 2);
-        equipOk(ranger, 'gear_old_bow');
-        expect(EquipmentManager.equipItem(fighter.id, 'gear_old_bow').success).toBe(false);
-    });
-
-    it('a hand-over from another hero\'s slot is refused for the wrong style, and the giver keeps the copy', () => {
-        const fighter = addHero('Bram', 'melee');
-        const wizard = addHero('Mira', 'magic');
-        give('gear_copper_sword');
-        equipOk(fighter, 'gear_copper_sword');
-        const slot = fighter.equipment.indexOf('gear_copper_sword');
-        const res = EquipmentManager.equipItem(wizard.id, 'gear_copper_sword', null, { heroId: fighter.id, slot });
+    it('a hand-over from another hero\'s slot is refused below the level, and the giver keeps the copy', () => {
+        const fighter = addHero('Bram', 'melee', 20);
+        const novice = addHero('Pip');
+        give('t2_gated_sword');
+        equipOk(fighter, 't2_gated_sword');
+        const slot = fighter.equipment.indexOf('t2_gated_sword');
+        const res = EquipmentManager.equipItem(novice.id, 't2_gated_sword', null, { heroId: fighter.id, slot });
         expect(res.success).toBe(false);
-        expect(fighter.equipment[slot]).toBe('gear_copper_sword');
-        expect(wizard.equipment).not.toContain('gear_copper_sword');
+        expect(fighter.equipment[slot]).toBe('t2_gated_sword');
+        expect(novice.equipment).not.toContain('t2_gated_sword');
     });
 
-    it('a dropped weapon of the wrong style says why where it was let go (the dock callout)', () => {
-        const wizard = addHero('Mira', 'magic');
-        give('gear_copper_sword');
+    it('a dropped weapon below the level says why where it was let go (the dock callout)', () => {
+        const novice = addHero('Pip');
+        give('t2_gated_sword');
         const said = [];
         const off = EventBus.subscribe(UI_EVENTS.UI_SCREEN_CALLOUT, ({ text }) => said.push(text));
-        expect(equipOrAnnounce(EquipmentManager, wizard.id, 'gear_copper_sword')).toBe(false);
+        expect(equipOrAnnounce(EquipmentManager, novice.id, 't2_gated_sword')).toBe(false);
         off();
-        expect(said).toEqual(['Mira fights with Magic: the Copper Sword is a Melee weapon']);
+        expect(said).toEqual(['Needs Melee 15']);
+    });
+
+    it('a tool is never refused here', () => {
+        equipOk(addHero('Pip'), 'gear_pick');
     });
 });
 
-describe('a Recruit may hold a copper (tier 1) weapon of any style', () => {
+describe('a new hero swings what they hold, in its style', () => {
     const enemy = (style = 'melee', more = {}) => enemyProfileOf({ id: 'e', name: 'E', enemy: { level: 1, style, ...more } });
-
-    it('reads the tier only off a weapon: absent or nonsense is none', () => {
-        expect(weaponTierOf(ITEMS.t1_sword)).toBe(1);
-        expect(weaponTierOf(ITEMS.t2_sword)).toBe(2);
-        expect(weaponTierOf(ITEMS.gear_copper_sword)).toBeNull();
-        expect(weaponTierOf(weapon('x', 'X', { tier: 0 }))).toBeNull();
-        expect(weaponTierOf(weapon('x', 'X', { tier: '1' }))).toBeNull();
-        expect(weaponTierOf(ITEMS.gear_pick)).toBeNull();
-    });
 
     it.each([
-        ['t1_sword', 2, 3000],
-        ['t1_dagger', 1, 2000],
-        ['t1_cleaver', 2, 4000],
-        ['t1_greatsword', 3, 4000],
-        ['t1_bow', 2, 3000],
-        ['t1_wand', 1, 2000]
-    ])('equips %s and swings it: its damage (%i) and its speed (%i ms), with no style', (id, damage, swingMs) => {
-        const recruit = addHero('Pip');
-        equipOk(recruit, id);
-        expect(CF.getHeroWeapon(recruit).id).toBe(id);
-        expect(CF.getHeroCombatStyle(recruit)).toBeNull();
-        expect(CF.heroBaseDamage(recruit)).toBe(damage);
-        expect(CF.heroAttackSpeedMs(recruit)).toBe(swingMs);
-        // No style is even with every enemy: the weapon's damage lands as it is (no armour at level 1).
-        for (const style of ['melee', 'ranged', 'magic', 'stealth']) {
-            expect(CF.heroHitDamage(recruit, enemy(style)), style).toBe(damage);
-        }
+        ['t1_sword', 'melee', 2, 3000],
+        ['t1_dagger', 'melee', 1, 2000],
+        ['t1_cleaver', 'melee', 2, 4000],
+        ['t1_greatsword', 'melee', 3, 4000],
+        ['t1_bow', 'ranged', 2, 3000],
+        ['t1_wand', 'magic', 1, 2000]
+    ])('equips %s and swings it as %s: its damage (%i) and its speed (%i ms)', (id, style, damage, swingMs) => {
+        const hero = addHero('Pip');
+        equipOk(hero, id);
+        expect(CF.getHeroWeapon(hero).id).toBe(id);
+        expect(CF.getHeroCombatStyle(hero)).toBe(style);
+        expect(CF.heroBaseDamage(hero)).toBe(damage);
+        expect(CF.heroAttackSpeedMs(hero)).toBe(swingMs);
+        // Even against an opposite style: the weapon's damage lands as it is (no armour at level 1).
+        const opposite = { melee: 'magic', ranged: 'stealth', magic: 'melee' }[style];
+        expect(CF.heroHitDamage(hero, enemy(opposite))).toBe(damage);
     });
 
-    it('a copper weapon\'s family ability reaches the Recruit (the bow\'s +5 Accuracy)', () => {
-        const recruit = addHero('Pip');
-        equipOk(recruit, 't1_bow');
-        expect(CF.heroAccuracy(recruit)).toBe(5);
+    it('a weapon\'s family ability reaches whoever holds it (the bow\'s +5 Accuracy)', () => {
+        const hero = addHero('Pip');
+        equipOk(hero, 't1_bow');
+        expect(CF.heroAccuracy(hero)).toBe(5);
     });
 
-    it('the fight card names the weapon and does not call an armed Recruit barehanded', () => {
-        const recruit = addHero('Pip');
-        expect(heroSide(recruit)).toMatchObject({ style: null, armed: false });
-        equipOk(recruit, 't1_sword');
-        const side = heroSide(recruit);
-        expect(side).toMatchObject({ style: null, armed: true, hit: 2 });
-        expect(side.hitLines[0]).toBe('Tier Copper Sword: 2');
-    });
-
-    it('promoted to Fighter: a copper sword is swung as melee; a copper bow stays in hand unused, its ability off', () => {
-        const swordsman = addHero('Bram');
-        const archer = addHero('Lark');
-        for (const hero of [swordsman, archer]) {
-            hero.skills.mining = { level: 10, xp: 0 };
-            hero.skills.smithing = { level: 10, xp: 0 };
-        }
-        equipOk(swordsman, 't1_sword');
-        equipOk(archer, 't1_bow');
-        expect(CF.heroAccuracy(archer)).toBe(5);
-
-        expect(promote(swordsman.id, 'fighter').success).toBe(true);
-        expect(promote(archer.id, 'fighter').success).toBe(true);
-
-        expect(CF.getHeroCombatStyle(swordsman)).toBe('melee');
-        expect(CF.getHeroWeapon(swordsman).id).toBe('t1_sword');
-        expect(CF.heroBaseDamage(swordsman)).toBe(2);
-
-        expect(archer.equipment).toContain('t1_bow');
-        expect(CF.getHeroWeapon(archer)).toBeNull();
-        expect(CF.heroBaseDamage(archer)).toBe(1);
-        expect(CF.heroAccuracy(archer)).toBe(0);
+    it('the fight card names the weapon and its style; barehanded is Melee', () => {
+        const hero = addHero('Pip');
+        expect(heroSide(hero)).toMatchObject({ style: 'melee', level: 1, armed: false });
+        equipOk(hero, 't1_bow');
+        const side = heroSide(hero);
+        expect(side).toMatchObject({ style: 'ranged', armed: true, hit: 2 });
+        expect(side.hitLines[0]).toBe('Tier Copper Bow: 2');
     });
 });
 
-describe('in a fight a hero swings only their own style', () => {
+describe('in a fight a hero swings the first weapon they can use', () => {
     const enemy = (style = 'melee', more = {}) => enemyProfileOf({ id: 'e', name: 'E', enemy: { level: 1, style, ...more } });
 
-    it('a Fighter with a Dagger fights melee with it (1 every 2 s); a Rogue with the same Dagger fights stealth', () => {
-        const fighter = addHero('Bram', 'melee');
-        const rogue = addHero('Vex', 'stealth');
+    it('the same Dagger is the same style for everyone: its first, Stealth', () => {
+        const fighter = addHero('Bram', 'melee', 30);
+        const rogue = addHero('Vex', 'stealth', 30);
         give('gear_copper_dagger', 2);
         equipOk(fighter, 'gear_copper_dagger');
         equipOk(rogue, 'gear_copper_dagger');
-        expect(CF.getHeroCombatStyle(fighter)).toBe('melee');
+        expect(CF.getHeroCombatStyle(fighter)).toBe('stealth');
         expect(CF.getHeroCombatStyle(rogue)).toBe('stealth');
+        expect(CF.getHeroCombatLevel(fighter)).toBe(1);
+        expect(CF.getHeroCombatLevel(rogue)).toBe(30);
         expect(CF.heroAttackSpeedMs(fighter)).toBe(2000);
-        expect(CF.heroBaseDamage(rogue)).toBe(1);
-        // Stealth beats melee: the Rogue's 1 becomes 1.25, rounded to 1; against ranged the Fighter's 1 is 1.25 → 1.
-        expect(CF.heroHitDamage(rogue, enemy('melee'))).toBe(1);
+        // Stealth beats melee: 1 + the level step 1 = 2, × 1.25 = 2.5 → 3 for the Rogue.
+        expect(CF.heroHitDamage(rogue, enemy('melee'))).toBe(3);
     });
 
-    it('a weapon held from before a re-training is not swung, and its family\'s ability is off', () => {
-        const hero = addHero('Bram', 'melee');
-        give('gear_copper_spear');
-        equipOk(hero, 'gear_copper_spear');
-        expect(CF.heroPierce(hero)).toBe(1);
+    it('a weapon held below its level (an older save) is not swung, and its family\'s ability is off', () => {
+        const hero = addHero('Bram', 'melee', 20);
+        give('t2_gated_spear');
+        equipOk(hero, 't2_gated_spear');
+        expect(CF.heroPierce(hero)).toBe(2);
 
-        // Re-trained to Wizard: the spear stays in hand (an older save, or a re-training) but does nothing.
-        delete hero.skills.melee;
-        hero.skills.magic = { level: 1, xp: 0 };
+        hero.skills.melee = { level: 5, xp: 0 };
         EquipmentManager.recalculateEquipmentModifiers(hero);
         expect(CF.getHeroWeapon(hero)).toBeNull();
         expect(CF.heroBaseDamage(hero)).toBe(1);
-        expect(CF.getHeroCombatStyle(hero)).toBe('magic');
+        expect(CF.getHeroCombatStyle(hero)).toBe('melee');
         expect(CF.heroPierce(hero)).toBe(0);
         expect(HeroEffects.loadoutStatements(hero)).toEqual([]);
     });
 
-    it('of two weapons in hand, the first of the hero\'s own style is swung', () => {
-        const hero = addHero('Vex', 'stealth');
-        hero.equipment[0] = 'gear_copper_sword';     // another style, from an older save
+    it('of two weapons in hand, the first is swung; a second of another style lends nothing', () => {
+        const hero = addHero('Vex', 'stealth', 10);
+        hero.equipment[0] = 'gear_copper_sword';
+        hero.equipment[1] = 'gear_copper_bow';
+        hero.heldCopies = [true, true, false, false, false, false, false, false, false];
+        EquipmentManager.recalculateEquipmentModifiers(hero);
+        expect(CF.getHeroWeapon(hero).id).toBe('gear_copper_sword');
+        expect(CF.getHeroCombatStyle(hero)).toBe('melee');
+        expect(CF.heroAccuracy(hero)).toBe(0);
+
+        hero.equipment[0] = 'gear_copper_bow';
+        hero.equipment[1] = 'gear_copper_sword';
+        EquipmentManager.recalculateEquipmentModifiers(hero);
+        expect(CF.getHeroCombatStyle(hero)).toBe('ranged');
+        expect(CF.heroAccuracy(hero)).toBe(5);
+    });
+
+    it('a weapon the hero is below the level for is passed over for the next one', () => {
+        const hero = addHero('Vex', 'melee', 3);
+        hero.equipment[0] = 't2_gated_sword';
         hero.equipment[1] = 'gear_copper_rapier';
         expect(CF.getHeroWeapon(hero).id).toBe('gear_copper_rapier');
+        expect(CF.getHeroCombatStyle(hero)).toBe('stealth');
     });
 });
 
@@ -449,7 +396,7 @@ describe('Cleaver: a chance to double one item a kill or a cycle drops', () => {
         const cow = BoardState.createTokenInstance('gear_cow', tokenStartingUses('gear_cow'));
         Placement.placeTokenAt(cow, at);
         TileModifiers.rebuildAround([cow]);
-        Placement.plantFlagAt(hero.id, at);
+        Orders.orderAt(hero.id, at);
         const kills = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.LOOT_GENERATED, (p) => kills.push(p.drops.map(d => [d.itemId, d.quantity])));
         for (let t = 0; t < 30000; t += 100) BoardRunner.tick(100);
@@ -502,7 +449,7 @@ describe('Cleaver: a chance to double one item a kill or a cycle drops', () => {
         const block = BoardState.createTokenInstance('gear_butcher', tokenStartingUses('gear_butcher'));
         Placement.placeTokenAt(block, at);
         TileModifiers.rebuildAround([block]);
-        Placement.plantFlagAt(hero.id, at);
+        Orders.orderAt(hero.id, at);
         for (let t = 0; t < 12000; t += 100) BoardRunner.tick(100);
         const count = (id) => SpriteLayer.countOnBoard(id) + InventoryManager.getItemCount(id);
         const beef = count('item_raw_beef');

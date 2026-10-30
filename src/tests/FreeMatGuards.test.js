@@ -326,7 +326,7 @@ describe('⚠️ the grid scan actually fires (neutering proof)', () => {
                 'Placement.moveTokenTo(id, point);',
                 'Placement.returnTokenToTrayById(id);',
                 'Placement.returnTokenToVaultById(id);',
-                'Placement.plantFlagAt(heroId, point);',
+                'Orders.orderAt(heroId, point);',
                 'BoardState.addToken(instance, x, y);',
                 'BoardState.getTokenById(id);',
                 'BoardState.setTokenPoint(id, x, y);',

@@ -38,6 +38,8 @@ import { StationsDevSection } from '../dev/StationsDevSection.jsx';
 import { WorkConsumablesDevSection } from '../dev/WorkConsumablesDevSection.jsx';
 import { FarmingDevSection } from '../dev/FarmingDevSection.jsx';
 import { OrdersDevSection } from '../dev/OrdersDevSection.jsx';
+import { ClasslessDevSection } from '../dev/ClasslessDevSection.jsx';
+import { PerksDevSection } from '../dev/PerksDevSection.jsx';
 import { CampsDevSection } from '../dev/CampsDevSection.jsx';
 import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
@@ -132,22 +134,17 @@ export const TestDashboard = React.memo(() => {
     };
 
     /**
-     * "Spawn Party" — a Fighter, Wizard, Ranger and Rogue, each already at
-     * level 50 in every skill their job holds. Unlike a Recruit (no combat
-     * skill at all — see `grantCombatSkill` below), each of these jobs
-     * already includes its own combat skill (melee, magic, ranged, ranged),
-     * so no separate "grant combat" step is needed to make them fight.
-     *
-     * Bumps the roster cap first if the incoming four would not fit.
+     * "Spawn Party": four heroes, one in each class's old art, each already at level 50 in every
+     * skill. Bumps the roster cap first if the incoming four would not fit.
      */
     const spawnParty = () => {
-        const jobIds = ['fighter', 'wizard', 'ranger', 'rogue'];
+        const sprites = ['fighter', 'wizard', 'ranger', 'rogue'];
 
-        ensureRosterRoom(jobIds.length);
+        ensureRosterRoom(sprites.length);
 
         let added = 0;
-        jobIds.forEach(jobId => {
-            const hero = generateHero({ jobId, spriteId: jobId });
+        sprites.forEach(spriteId => {
+            const hero = generateHero({ spriteId });
             if (!HeroManager.addHero(hero)) return;
             added++;
             Object.keys(hero.skills || {}).forEach(skillId => {
@@ -155,28 +152,13 @@ export const TestDashboard = React.memo(() => {
                 const xpNeeded = xpForLevel(50) - skill.xp;
                 if (xpNeeded > 0) SkillSystem.addXP(hero.id, skillId, xpNeeded);
             });
-            // Leveling the combat skill raises max HP (it's derived from it);
+            // Leveling the combat skills raises max HP (it's derived from them);
             // top current HP back up too, or a freshly "spawned" hero reads
             // as already wounded.
             if (hero.hp) hero.hp.current = hero.hp.max;
         });
         EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_spawn_party' });
         console.log(`[Dev] Spawned a party of ${added} hero(es) at level 50`);
-    };
-
-    /**
-     * ⚠️ Dev scaffolding: grants a combat skill directly; the only other way to gain one is a
-     * promotion.
-     */
-    const grantCombatSkill = (skillId) => {
-        const heroes = HeroManager.getAllHeroes().filter(h => !h.isVillager);
-        heroes.forEach(hero => {
-            if (!hero.skills[skillId]) {
-                hero.skills[skillId] = { xp: xpForLevel(1), level: 1 };
-            }
-        });
-        EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_grant_combat' });
-        console.log(`[Dev] Granted ${skillId} to ${heroes.length} hero(es)`);
     };
 
     const onGiveItem = () => {
@@ -237,14 +219,6 @@ export const TestDashboard = React.memo(() => {
         {
             label: "⬆️⬆️ Level All Skills +10",
             onClick: () => levelAllHeroes(10)
-        },
-        {
-            label: "⚔️ Grant Melee (temp)",
-            onClick: () => grantCombatSkill('melee')
-        },
-        {
-            label: "🏹 Grant Ranged (temp)",
-            onClick: () => grantCombatSkill('ranged')
         },
         {
             label: "🎞️ Sprite Animation Studio",
@@ -334,6 +308,8 @@ export const TestDashboard = React.memo(() => {
                         {(import.meta.env.DEV || import.meta.env.MODE === 'perf') && <PerfDevSection />}
                         {import.meta.env.DEV && <MatTunerDevSection />}
                         {import.meta.env.DEV && <StarterCampDevSection />}
+                        {import.meta.env.DEV && <ClasslessDevSection />}
+                        {import.meta.env.DEV && <PerksDevSection />}
                         {import.meta.env.DEV && <OrdersDevSection />}
                         {import.meta.env.DEV && <CampsDevSection />}
                         {import.meta.env.DEV && <AtlasDevSection />}

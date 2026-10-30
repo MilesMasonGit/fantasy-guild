@@ -3,7 +3,6 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import { FLAG_COLOURS } from '../systems/board/FlagColours.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
@@ -226,10 +225,12 @@ describe('a hero round-trips through a save (CR3-266)', () => {
         GameState.initNew();
     });
 
-    it('keeps banked skills, the wound timer and the flag colour; drops the old status engine statuses', async () => {
-        const banked = COMBAT_SKILL_IDS[0];
+    // Rewritten with classless heroes: a banked skill comes back onto the sheet at load.
+    it('brings banked skills back, keeps the wound timer and the flag colour; drops the old status engine statuses', async () => {
+        const banked = COMBAT_SKILL_IDS[1];
         const a = hero('hero_rt_a');
         a.statuses = [{ id: 'poison', stacks: 2, remaining: 3 }, { id: 'well_fed', stacks: 1 }];
+        delete a.skills[banked];
         a.bankedSkills = { [banked]: { level: 7, xp: 123 } };
         a.flagColour = FLAG_COLOURS[3];
         const b = hero('hero_rt_b');
@@ -242,31 +243,11 @@ describe('a hero round-trips through a save (CR3-266)', () => {
 
         // Statuses ride on `effects` now and end with their fight; an older save's outlasted it.
         expect(la.statuses).toEqual([]);
-        // A non-foundation skill stays banked: only banked foundation skills go
-        // back on the sheet at load.
-        expect(la.bankedSkills).toEqual({ [banked]: { level: 7, xp: 123 } });
+        expect(la.skills[banked]).toEqual({ level: 7, xp: 123 });
+        expect(la).not.toHaveProperty('bankedSkills');
         expect(la.flagColour).toBe(FLAG_COLOURS[3]);
         expect(lb.status).toBe('wounded');
         expect(lb.woundedRemainingMs).toBe(12345);
-    });
-
-    it('keeps a paused promotion offer on its Token', async () => {
-        GameState.state.heroes = [hero('hero_rt_a')];
-        GameState.state.board.tokens = {
-            tok_yard: {
-                id: 'tok_yard', typeId: 'fixture_promotion', x: 400, y: 300, placedAt: 0,
-                usesRemaining: null, cycleElapsedMs: 0, promotionPaused: true, promotionHeroId: 'hero_rt_a'
-            }
-        };
-        GameState.state.board.nextTokenOrder = 1;
-
-        const loaded = await saveAndLoad();
-        const yard = loaded.board.tokens.tok_yard;
-
-        expect(yard.promotionPaused).toBe(true);
-        expect(yard.promotionHeroId).toBe('hero_rt_a');
-        expect(BoardPromotion.isPaused(yard)).toBe(true);
-        expect(BoardPromotion.getOffer('tok_yard')).toMatchObject({ instanceId: 'tok_yard', heroId: 'hero_rt_a' });
     });
 
     it('puts carried gear back on the aggregator combat reads', async () => {

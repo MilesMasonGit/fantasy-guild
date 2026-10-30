@@ -51,7 +51,7 @@ const MARGIN = 80;
  *        for a player at the cap. Unset: lifted out of the way (2000).
  */
 export function buildBoard({ fixtures, setMatTuning }, { placed = REALISTIC_PLACED, extra = [], late = [], matSteps = REFERENCE_STEPS, cap = null } = {}) {
-    const { placeAt, makeHeroes, plant, lattice } = fixtures;
+    const { placeAt, makeHeroes, orderAt, lattice } = fixtures;
 
     const { w, h } = pinMat(setMatTuning, matSteps);
     // ⚠️ These boards hold more than the game's Token cap (80, spawned Tokens included), so the
@@ -97,16 +97,15 @@ export function buildBoard({ fixtures, setMatTuning }, { placed = REALISTIC_PLAC
     const camps = tokens.filter(t => t.typeId === 'bench_camp' || t.typeId === 'bench_warcamp');
     const smelter = tokens.find(t => t.typeId === 'bench_smelter');
 
-    // Hero 0: pinned to a smelter that will run dry.
-    plant(heroes[0].id, { x: smelter.x, y: smelter.y }, { pin: true });
-    // Heroes 1–2: beside goblin camps, where the goblins will find them.
-    plant(heroes[1].id, { x: camps[0].x + STEP, y: camps[0].y });
-    plant(heroes[2].id, { x: camps[1].x - STEP, y: camps[1].y });
-    // Heroes 3–7: on producers spread across the list. A flag reaches its
-    // producer and the cells beside it, where spawned trees and rocks land.
+    // Hero 0: ordered onto a smelter that will run dry.
+    orderAt(heroes[0].id, { x: smelter.x, y: smelter.y });
+    // Heroes 1–2: sent to bare ground beside goblin camps (a spot order: never ambushed).
+    orderAt(heroes[1].id, { x: camps[0].x + STEP, y: camps[0].y });
+    orderAt(heroes[2].id, { x: camps[1].x - STEP, y: camps[1].y });
+    // Heroes 3–7: each ordered onto a producer, spread across the list.
     for (let i = 3; i < 8; i++) {
         const target = producers[Math.floor((i - 3 + 0.5) * producers.length / 5)];
-        plant(heroes[i].id, { x: target.x, y: target.y });
+        orderAt(heroes[i].id, { x: target.x, y: target.y });
     }
 
     return { tokens, heroes, hall };

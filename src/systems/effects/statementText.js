@@ -4,7 +4,6 @@ import { MODIFIER_SHAPES } from '../../config/registries/modifierPalette.js';
 import { getTriggerEvent, isFightMoment, isCarriedMoment, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
 import { getRestrictionKind, limitOf } from '../../config/registries/restrictionPalette.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
-import { getJob } from '../../config/registries/jobRegistry.js';
 import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
 import { filtersPhrase } from '../../config/registries/filterRegistry.js';
@@ -593,11 +592,13 @@ function bodySegments(statement, names) {
             return segs(d('Works as', K), ' a ', d(payload.skill ? (skill?.name || payload.skill) : '…', 'skill'), ' station', kind);
         }
 
-        // "Promotes the hero to Knight." A job the registry no longer has keeps its id on screen
-        // rather than vanishing.
-        case KEYWORD.PROMOTES:
-            return segs(d('Promotes', K), ' the hero to ',
-                d(payload.jobId ? (getJob(payload.jobId)?.name || payload.jobId) : '…', 'jobId'));
+        // "Promotes the hero to Knight." Jobs are retired, so the rule does nothing: its words stay
+        // as they were (a Token's description is written from them, so a Sync changes nothing) and
+        // the audits and the CMS say it is retired. A former job id is one lowercase word.
+        case KEYWORD.PROMOTES: {
+            const job = payload.jobId || '…';
+            return segs(d('Promotes', K), ' the hero to ', /^[a-z]+$/.test(job) ? job[0].toUpperCase() + job.slice(1) : job);
+        }
 
         /**
          * ⚠️ Two wordings. The CMS editor passes no `tool` name and shows the tier as a number to

@@ -4,7 +4,6 @@ import { useGameState } from '../../hooks/useGameState.js';
 import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
 import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { getJob } from '../../../config/registries/jobRegistry.js';
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Flags from '../../../systems/board/Flags.js';
@@ -19,9 +18,9 @@ import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/e
 
 /**
  * HeroDockTab: a hero's tab in the hero column beside the Bank (`BankHeroPanel`): a portrait (the
- * head and shoulders of the hero's own class sheet, facing left, cut once per sheet) and the
+ * head and shoulders of the hero's own sheet, facing left, cut once per sheet) and the
  * name, nothing else, in one thin frame. Hover lights the frame and shows the game's tooltip
- * (job, what they are doing, HP, items); nothing slides out. Click opens the hero panel; drag
+ * (what they are doing, HP, items); nothing slides out. Click opens the hero panel; drag
  * gives the hero an order (dropped on the mat); an item dropped on it equips, another tab
  * reorders. Hovering outlines the hero on the mat and lights their job.
  */
@@ -131,8 +130,6 @@ function useTabHero(heroId) {
                 heroSprite: h.heroSprite,
                 classId: h.classId,
                 status: h.status,
-                jobId: h.jobId,
-                className: h.className,
                 equippedCount,
                 hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
             };
@@ -188,8 +185,6 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
     );
 
     const isWounded = hero.status === 'wounded';
-    const job = hero.jobId ? getJob(hero.jobId) : null;
-    const jobTitle = job ? job.name : (hero.className || 'Recruit');
     const sprite = hero.spriteId || hero.classId || null;
     const sheet = sprite ? resolveAnimationPath(sprite) : null;
     const cut = useHeroPortrait(sheet);
@@ -199,7 +194,6 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
 
     const statusLine = isWounded ? flagStatusLine(heroId) : dockStatusLine(status);
     const tipLines = [
-        jobTitle,
         statusLine,
         `${hp.toLocaleString('en-US')} / ${hpMax.toLocaleString('en-US')} HP`,
         `${hero.equippedCount}/9 items`

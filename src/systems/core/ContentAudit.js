@@ -29,6 +29,8 @@ import { toolFindings } from './toolRule.js';
 import { isSpentCategory, isAlwaysOn, ALWAYS_ON_IDLE_WHY } from './consumableRule.js';
 import { SKILLS } from '../../config/registries/skillRegistry.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
+import { authoredSkillPerks } from '../../config/registries/perkRegistry.js';
+import { perkFindings } from './perkRule.js';
 
 /**
  * ContentAudit — one pass over every cross-reference in the content set,
@@ -303,6 +305,8 @@ function auditCombatAxes(out, where, def) {
  * (mid-authoring content is normal), reported so forgotten entries can be found.
  */
 function auditEffects(out) {
+    const perkEffects = new Set(Object.values(authoredSkillPerks() || {})
+        .flatMap(record => (Array.isArray(record?.perks) ? record.perks : []).map(row => row?.effectId)));
     for (const [effectId, entry] of Object.entries(EFFECTS || {})) {
         const where = `Effect "${entry?.name || effectId}"`;
 
@@ -318,7 +322,7 @@ function auditEffects(out) {
         // tripwires have to read the library too.
         auditAppliesTargetShape(out, where, entry);
 
-        if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0) {
+        if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0 && !perkEffects.has(effectId)) {
             out.push(finding(where, 'is not used by anything. Not a fault if you are still ' +
                 'building what it is for — but nothing references it today.'));
         }
@@ -721,7 +725,8 @@ function auditLifecycle(out) {
 }
 
 /**
- * Skills and jobs named in content that the game does not have. The rule lives
+ * Skills named in content that the game does not have, retired Promotes rules and weapons naming
+ * two styles. The rule lives
  * in `unknownRefRule.js`, shared with the CMS Economy Audit.
  */
 function auditUnknownRefs(out) {
@@ -741,13 +746,24 @@ function auditTools(out) {
 }
 
 /**
+ * Milestone perks: a table on a skill the game does not have, a perk at a level no hero reaches or
+ * naming a missing effect, a rule that does nothing on a hero. The rule lives in `perkRule.js`,
+ * shared with the CMS Economy Audit.
+ */
+function auditPerks(out) {
+    for (const f of perkFindings({ skillPerks: authoredSkillPerks(), effects: EFFECTS })) {
+        out.push(finding(`Skill "${f.entityId}"`, f.message));
+    }
+}
+
+/**
  * Walk everything and return the findings.
  * Exported separately from the reporting so a test can assert on the list.
  */
 export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
-        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems, auditTools,
+        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems, auditTools, auditPerks,
         auditHardcodedLists, (o) => auditStarterCamp(o, starterCamp)
     ];
     for (const step of steps) {

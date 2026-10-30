@@ -710,7 +710,7 @@ export default function TokenEditor() {
 
             <EnemyNumbers enemy={enemy} onChange={(next) => update('enemy', next)} />
 
-            {/* A hostile enemy attacks a hero whose flag stands inside the flag radius around its spawner (or itself); a peaceful one fights only when attacked. Written ONLY when ticked; missing means peaceful, which is what the game reads. A boss never attacks first, so the box is off and greyed for one. */}
+            {/* A hostile enemy attacks a hero sent to work a Token inside the camp watch around its spawner (or itself); a peaceful one fights only when attacked. Written ONLY when ticked; missing means peaceful, which is what the game reads. A boss never attacks first, so the box is off and greyed for one. */}
             <label className={`flex items-center gap-2.5 select-none mt-3 ${enemy?.boss === true ? 'opacity-50' : 'cursor-pointer'}`}>
               <input
                 type="checkbox"

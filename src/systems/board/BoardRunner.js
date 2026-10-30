@@ -16,7 +16,6 @@ import * as TriggerSystem from './TriggerSystem.js';
 import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
-import * as BoardPromotion from './BoardPromotion.js';
 import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
 import * as EnemyMotion from './EnemyMotion.js';
@@ -526,22 +525,11 @@ export function tick(delta) {
             continue;
         }
 
-        // Marked for demolition: its own work (recipe, build, training, passive cycle) stops and the
+        // Marked for demolition: its own work (recipe, build, passive cycle) stops and the
         // demolition runs in its place. After enemies, which can never be marked, and before the
-        // Promotion Tokens and Passive Generators, which can.
+        // Passive Generators, which can.
         if (Demolition.isMarked(instance)) {
             tickDemolition(instance, def, delta, heroId, publishProgress);
-            continue;
-        }
-
-        // A Token with a Promotes rule runs its own cycle rather than a recipe: what it produces is
-        // a different hero, and routing that through `RecipeResolver` would teach recipes about
-        // jobs. Called unconditionally for the same reason as combat: `tickToken` also owns
-        // STOPPING: resetting a half-finished cycle when the hero leaves, and clearing an offer so
-        // the next hero is asked afresh.
-        if (BoardPromotion.isPromotionToken(instance)) {
-            const { alert } = BoardPromotion.tickToken(instance, delta, heroId);
-            setAlert(instance,heroId ? alert : null);
             continue;
         }
 

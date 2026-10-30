@@ -4,6 +4,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { useReviewStore } from '../../stores/useReviewStore';
 import { currentValue, proposedValue, changedFields, canonicalJson } from '../../engine/changePacks';
 import { starterCampDiff } from '../../engine/starterCamp';
+import { SKILLS } from '../../utils/constants';
 import {
   rowState, accept, force, applyEarly, reject, acceptAll, rejectAll, finish, planUndo, undo,
 } from '../../engine/packReview';
@@ -20,10 +21,16 @@ const OP_LOOK = {
   edit: { word: 'Changed', color: 'var(--color-info)' },
   delete: { word: 'Deleted', color: 'var(--color-error)' },
 };
-const KIND_WORD = { item: 'Item', token: 'Token', recipe: 'Recipe', effect: 'Effect', map: 'Map', starterCamp: 'Layout' };
+const KIND_WORD = { item: 'Item', token: 'Token', recipe: 'Recipe', effect: 'Effect', map: 'Map', starterCamp: 'Layout', skillPerks: 'Perks' };
 
-/** What a row calls its entity: its name, or for the Starter Camp (one record, no name) the page's. */
-const entityName = (kind, record, id) => (kind === 'starterCamp' ? 'Starter Camp' : record?.name || id);
+const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
+
+/** What a row calls its entity: its name, for the Starter Camp (one record, no name) the page's, for a perk table its skill's. */
+const entityName = (kind, record, id) => {
+  if (kind === 'starterCamp') return 'Starter Camp';
+  if (kind === 'skillPerks') return `${skillName(id)} perks`;
+  return record?.name || id;
+};
 
 const when = (v) => {
   if (!v) return '';
@@ -37,7 +44,8 @@ function useWorkspace() {
   const effects = useEntityStore((s) => s.effects);
   const recipePools = useEntityStore((s) => s.recipePools);
   const starterCamp = useEntityStore((s) => s.starterCamp);
-  return useMemo(() => ({ items, tokens, effects, recipePools, starterCamp }), [items, tokens, effects, recipePools, starterCamp]);
+  const skillPerks = useEntityStore((s) => s.skillPerks);
+  return useMemo(() => ({ items, tokens, effects, recipePools, starterCamp, skillPerks }), [items, tokens, effects, recipePools, starterCamp, skillPerks]);
 }
 
 /** Write review results into the workspace; an open editor on an entity that just went away is closed. */
@@ -45,6 +53,7 @@ function writeWorkspace(ws) {
   const s = useEntityStore.getState();
   const patch = { items: ws.items, tokens: ws.tokens, effects: ws.effects, recipePools: ws.recipePools };
   if ('starterCamp' in ws) patch.starterCamp = ws.starterCamp;
+  if ('skillPerks' in ws) patch.skillPerks = ws.skillPerks;
   const type = s.activeEntityType;
   const key = type === 'token' ? 'tokens' : type === 'effect' ? 'effects' : 'items';
   if (s.activeEntityId && type && !patch[key]?.[s.activeEntityId]) Object.assign(patch, { activeEntityId: null, activeEntityType: null });
@@ -177,6 +186,7 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
   const accepted = rows.filter((r) => r.state.decision === 'accepted').length;
   const pending = rows.filter((r) => r.state.decision === 'pending').length;
   const art = rows.filter((r) => r.entry.placeholderArt).length;
+  const packEffects = Object.fromEntries(pack.entries.filter((e) => e.kind === 'effect' && e.value?.name).map((e) => [e.id, e.value.name]));
 
   const step = (result) => {
     if (!result) return;
@@ -196,6 +206,9 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
       setCurrentView('recipes');
     } else if (entry.kind === 'starterCamp') {
       setCurrentView('starterCamp');
+    } else if (entry.kind === 'skillPerks') {
+      useEntityStore.getState().focusPerks(entry.id);
+      setCurrentView('perks');
     } else {
       useEntityStore.getState().setActiveEntity(entry.id, entry.kind);
       setCurrentView('editor');
@@ -260,6 +273,7 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
           index={index}
           state={state}
           ws={ws}
+          packEffects={packEffects}
           onAccept={() => step({ session: accept(ws, pack, session, index) })}
           onForce={() => step({ session: force(session, index) })}
           onReject={() => step(reject(useEntityStore.getState(), pack, session, index))}
@@ -270,7 +284,7 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
   );
 }
 
-function EntryRow({ entry, index, state, ws, onAccept, onForce, onReject, onOpen }) {
+function EntryRow({ entry, index, state, ws, packEffects, onAccept, onForce, onReject, onOpen }) {
   const look = OP_LOOK[entry.op];
   const now = currentValue(ws, entry.kind, entry.id);
   const before = state.appliedEarly ? state.before : now;
@@ -320,7 +334,9 @@ function EntryRow({ entry, index, state, ws, onAccept, onForce, onReject, onOpen
 
       {entry.kind === 'starterCamp'
         ? <CampDiff before={before} after={after} ws={ws} />
-        : <BeforeAfter op={entry.op} before={before} after={after} />}
+        : entry.kind === 'skillPerks'
+          ? <PerksDiff before={before} after={after} ws={ws} packEffects={packEffects} />
+          : <BeforeAfter op={entry.op} before={before} after={after} />}
 
       <div className="flex gap-2">
         <button className="btn-ghost flex items-center gap-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed" disabled={state.decision === 'accepted' || (state.conflict && !state.forced)} onClick={onAccept}><Check size={13} /> Accept</button>
@@ -375,6 +391,27 @@ function BeforeAfter({ op, before, after }) {
         ))}
       </tbody>
     </table>
+  );
+}
+
+/** A perk table's before / after: one line per perk, by level, with the effect's name. */
+function PerksDiff({ before, after, ws, packEffects = {} }) {
+  const effectName = (id) => ws.effects?.[id]?.name || packEffects[id] || id;
+  const line = (row) => `${row.level}: ${effectName(row.effectId)}${row.scale > 1 ? ` x${row.scale}` : ''}`;
+  const lines = (record) => (record?.perks || []).filter((row) => row?.effectId).map(line);
+  const was = lines(before);
+  const now = lines(after);
+  const removed = was.filter((l) => !now.includes(l));
+  const added = now.filter((l) => !was.includes(l));
+  const kept = now.filter((l) => was.includes(l));
+  return (
+    <div className="text-xs space-y-0.5" data-testid="perks-diff">
+      {added.map((l) => <div key={`a${l}`} style={{ color: 'var(--color-success)' }}>Perk at level {l}</div>)}
+      {removed.map((l) => <div key={`r${l}`} style={{ color: 'var(--color-error)', textDecoration: 'line-through' }}>Perk at level {l}</div>)}
+      {kept.map((l) => <div key={`k${l}`} style={{ color: 'var(--color-text-secondary)' }}>Unchanged: level {l}</div>)}
+      {!added.length && !removed.length && <p style={{ color: 'var(--color-text-muted)' }}>No perk differs from the workspace.</p>}
+      <p style={{ color: 'var(--color-text-muted)' }}>Each perk is a library effect; accept its effect too, or the perk does nothing.</p>
+    </div>
   );
 }
 

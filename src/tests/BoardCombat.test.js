@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Flags from '../systems/board/Flags.js';
@@ -100,7 +101,7 @@ function place(tile, typeId, heroId = null, uses = undefined) {
     );
     Placement.placeTokenAt(instance, C(tile));
     TileModifiers.rebuildAround([instance]);
-    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    if (heroId) Orders.orderAt(heroId, C(tile));
     return instance;
 }
 
@@ -146,19 +147,20 @@ describe('Enemies are inert until targeted (D-14)', () => {
     it('starts fighting the moment a hero is placed on it', () => {
         place(10, 'fixture_enemy');
         run(5000);
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         run(1000);
 
         expect(BoardCombat.getFight(idAt(10))).not.toBeNull();
     });
 });
 
-describe('Everyone fights: a Recruit fights as a level 1 fighter', () => {
+// Rewritten with classless heroes: a new hero fights barehanded as Melee, and earns Melee XP.
+describe('Everyone fights: a new hero punches as Melee', () => {
     beforeEach(() => {
         GameState.state.heroes = [makeRecruit('recruit_1'), makeHero('fighter_1')];
     });
 
-    /** A real new Recruit, HP as generated, not the suite's padded 100. */
+    /** A real new hero, HP as generated, not the suite's padded 100. */
     function freshRecruit(id) {
         const hero = generateHero({ name: id });
         hero.id = id;
@@ -175,10 +177,10 @@ describe('Everyone fights: a Recruit fights as a level 1 fighter', () => {
         expect(Flags.skipsOf(idAt(10))).toEqual([]);
     });
 
-    it('a fresh Recruit beats a weak enemy, the loot is paid, and no combat XP is awarded', () => {
+    it('a fresh hero beats a weak enemy, the loot is paid, and the punches earn Melee XP only', () => {
         const recruit = freshRecruit('recruit_new');
         GameState.state.heroes = [recruit];
-        const skillsBefore = JSON.stringify(recruit.skills);
+        const skillsBefore = JSON.parse(JSON.stringify(recruit.skills));
         const victories = [];
         const unsub = EventBus.subscribe('combat_victory', p => victories.push(p));
 
@@ -186,7 +188,7 @@ describe('Everyone fights: a Recruit fights as a level 1 fighter', () => {
         const random = vi.spyOn(Math, 'random').mockImplementation(mulberry32(1));
         try {
             const enemy = place(10, 'fixture_enemy_weak', 'recruit_new');
-            // Until the first kill: a fresh Recruit wins one with most of their HP left.
+            // Until the first kill: a fresh hero wins one with most of their HP left.
             for (let t = 0; t < 60000 && !victories.length; t += 100) BoardRunner.tick(100);
             unsub();
 
@@ -195,19 +197,21 @@ describe('Everyone fights: a Recruit fights as a level 1 fighter', () => {
             expect(enemy.usesRemaining).toBeLessThan(tokenStartingUses('fixture_enemy_weak'));
             // The kill's loot lands on the board as for anyone.
             expect(SpriteLayer.countOnBoard('item_blackberry')).toBeGreaterThan(0);
-            // No combat skill appeared and no skill gained XP from the fights.
-            expect(JSON.stringify(recruit.skills)).toBe(skillsBefore);
+            // Melee is the one skill the fights trained.
+            expect(recruit.skills.melee.xp).toBeGreaterThan(0);
+            const { melee: _m, ...rest } = recruit.skills;
+            const { melee: _b, ...restBefore } = skillsBefore;
+            expect(rest).toEqual(restBefore);
         } finally {
             random.mockRestore();
         }
     });
 
-    it('promoting the Recruit keeps the same hero fighting, now on the real skill', () => {
+    it('a level gained mid-fight keeps the same hero fighting', () => {
         place(10, 'fixture_enemy', 'recruit_1');
         run(1000);
         expect(BoardCombat.getFight(idAt(10))).not.toBeNull();
 
-        // What a first promotion does: grant one combat skill.
         GameState.state.heroes.find(h => h.id === 'recruit_1')
             .skills.melee = { level: 20, xp: 0 };
         run(1000);
@@ -375,7 +379,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
 
         Placement.recallHeroById('hero_1');
         run(100);
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         run(100);
 
         const fresh = BoardCombat.getFight(idAt(10)).combat.enemyHp;
@@ -389,7 +393,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         // One hero per Token: hero_2 only gets the enemy once hero_1's flag is
         // taken down (Free Playmat 1.4b).
         Placement.recallHeroById('hero_1');
-        Placement.plantFlagAt('hero_2', C(10));
+        Orders.orderAt('hero_2', C(10));
         run(100);
 
         const fight = BoardCombat.getFight(idAt(10));

@@ -68,9 +68,8 @@ export function deriveTokenType(def) {
 
     if (isEnemyDef(def)) return { type: 'enemy', why: 'it is a creature a hero can fight' };
 
-    // ⚠️ Above the work-cycle rungs: a promotion Token HAS a cycle — the hero's
-    // training — and would otherwise file itself as a station or a passive.
-    if (has(KEYWORD.PROMOTES)) return { type: 'promotion', why: 'it promotes the hero standing on it to a job' };
+    // An older Promotion Token: its Promotes rule is retired (jobs are gone), so no hero works it.
+    if (has(KEYWORD.PROMOTES)) return { type: 'promotion', why: 'it carries a retired Promotes rule: no hero works it' };
 
     // A spawner is its own
     // kind: what it does is put other Tokens on the mat, which no rung below

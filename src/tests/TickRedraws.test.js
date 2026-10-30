@@ -8,6 +8,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -198,7 +199,7 @@ describe('⭐ on the mat: a change to one hero\'s flag redraws that flag alone',
             skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
         }));
         // Each on a row of its own: a flag moved sideways keeps its place in the stack.
-        ids.forEach((id, i) => Flags.plant(id, { x: 300 + i * 400, y: 200 + i * 200 }));
+        ids.forEach((id, i) => Orders.orderAt(id, { x: 300 + i * 400, y: 200 + i * 200 }));
         const view = render(
             h(DeckDndProvider, null,
                     h(Board, { onInspectToken: () => {}, onClearInspect: () => {} }))
@@ -213,7 +214,7 @@ describe('⭐ on the mat: a change to one hero\'s flag redraws that flag alone',
         await flush();
         expect(BoardState.heroesOnBoard().length).toBe(4);
         renders.start();
-        act(() => { Flags.plant('h2', { x: 760, y: 400 }); });
+        act(() => { Orders.orderAt('h2', { x: 760, y: 400 }); });
         await flush();
         renders.stop();
         expect(BoardState.flagOf('h2')).toMatchObject({ x: 760, y: 400 });
@@ -260,7 +261,7 @@ describe('⭐ a charge spent: the Token and its plate redraw, its art does not, 
         GameState.state.heroes = [{ id: 'h1', name: 'h1', status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
         const t = placeAt('fixture_producer', 600, 400);
         placeAt('fixture_producer', 1000, 400);
-        Flags.plant('h1', { x: 620, y: 400 });
+        Orders.orderAt('h1', { x: 620, y: 400 });
         expect(BoardState.workerOf(t.id)).toBe('h1');
         const view = render(
             h(DeckDndProvider, null,

@@ -84,14 +84,6 @@ export const BOARD_EVENTS = {
     ENEMIES_WALKED: 'board:enemies_walked',
 
     /**
-     * A flag dropped on a Token was NOT pinned to it because its hero cannot work it: it stands
-     * there as a normal area flag instead. Payload: `{ heroId, instanceId, reason }`, `reason` a
-     * skip reason (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `ALERT.NO_TOOL`, `disallowed`, `rule_off`). The hero's speech
-     * bubble says why (`HeroBubbleLayer`). Published by `Flags.plant`.
-     */
-    PIN_REFUSED: 'board:pin_refused',
-
-    /**
      * A flag passed over a Token because its hero holds no tool that can work it (`ALERT.NO_TOOL`).
      * Payload: `{ instanceId, heroId, kind, minTier }`, the Token's need. Published by `Flags` each
      * time a flag records that skip, so an idle hero's flag says it about once a second; the mat's
@@ -254,16 +246,6 @@ export const BOARD_EVENTS = {
     TOKEN_CHARGES_CHANGED: 'board:token_charges_changed',
 
     /**
-     * A hero finished training on a Token with a Promotes rule, and the game is asking whether to
-     * go through with it. Payload: `{ instanceId, heroId, jobId, typeId }`
-     *
-     * ⚠️ Nothing has happened yet when this fires. No skills have moved and nothing has been spent:
-     * the tile is holding. `BoardPromotion.accept` and `.decline` are the two ways out, and the
-     * offer survives a reload because it lives on the Token instance.
-     */
-    PROMOTION_READY: 'board:promotion_ready',
-
-    /**
      * A named effect just did something on a Token — `{ instanceId, title }`.
      *
      * ⚠️ **Not an alert.** `TILE_EVENT_ALERT` is for problems a player has to
@@ -311,8 +293,8 @@ export const ALERT = {
     /** The hero holds the skill but is not high enough level yet. */
     ACCESS: 'access',
     /**
-     * The hero does not hold the required skill at all, so no amount of
-     * levelling fixes it. A different hero, or a promotion, is the answer.
+     * The hero does not hold the required skill at all (a skill the game no
+     * longer has, which no hero holds), so no amount of levelling fixes it.
      */
     UNSKILLED: 'unskilled',
     /**

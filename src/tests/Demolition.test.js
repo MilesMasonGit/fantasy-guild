@@ -4,12 +4,12 @@ import { GameState } from '../state/GameState.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Charges from '../systems/board/Charges.js';
 import * as Demolition from '../systems/board/Demolition.js';
 import * as Flags from '../systems/board/Flags.js';
-import * as FlagRules from '../systems/board/FlagRules.js';
 import * as Landmarks from '../systems/board/Landmarks.js';
 import * as MatCap from '../systems/board/MatCap.js';
 import * as Respawn from '../systems/board/Respawn.js';
@@ -20,7 +20,7 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
 import * as WorkCheck from '../systems/board/WorkCheck.js';
 import { problemText } from '../ui/components/board/problemMark.js';
-import { MASTERY_LEVEL } from '../systems/hero/PromotionSystem.js';
+import { MAX_SKILL_LEVEL } from '../utils/XPCurve.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
@@ -106,7 +106,7 @@ function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeTokenAt(instance, C(tile));
     TileModifiers.rebuildAround([instance]);
-    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    if (heroId) Orders.orderAt(heroId, C(tile));
     return instance;
 }
 
@@ -257,7 +257,7 @@ describe('a marked Token is Construction work', () => {
         const before = { count: MatCap.tokenCount(), bank: bank(), sprites: spriteCount(), xp: hero().skills.construction.xp };
         const spot = { x: tree.x, y: tree.y };
 
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         expect(claimOf('hero_1')).toBe(tree.id);
         expect(workingSkillOf('hero_1')).toBe(DEMOLITION_SKILL_ID);
         expect(Flags.skipsOf(tree.id)).toEqual([]);
@@ -279,40 +279,52 @@ describe('a marked Token is Construction work', () => {
         expect(events.alerts.filter(a => a.instanceId === tree.id)).toEqual([]);
     });
 
-    it('its hero lets go when it is gone and works the next thing', () => {
+    it('its hero lets go when it is gone, takes nothing else, and needs a job', () => {
         const tree = place(10, 'demo_tree');
-        const other = place(11, 'fixture_producer_alt');
+        place(11, 'fixture_producer_alt');
         Demolition.mark(tree.id);
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         expect(claimOf('hero_1')).toBe(tree.id);
         expect(runUntil(() => !on(tree), Demolition.DEMOLISH_MS + 1000)).toBe(true);
         BoardRunner.tick(100);
-        expect(claimOf('hero_1')).toBe(other.id);
+        expect(claimOf('hero_1')).toBeNull();
+        expect(Flags.needsJob('hero_1')).toBe(true);
     });
 
-    it('a hero without Construction skips it as unskilled; one below the level as access', () => {
+    it('a hero without Construction is refused as unskilled; one below the level as access', () => {
         const tree = place(10, 'demo_tree');
         Demolition.mark(tree.id);
 
         delete hero().skills.construction;
-        Placement.plantFlagAt('hero_1', C(10));
+        expect(Flags.orderRefusal('hero_1', tree)).toEqual({ reason: ALERT.UNSKILLED });
+        expect(Orders.orderAt('hero_1', C(10)).success).toBe(false);
         expect(claimOf('hero_1')).toBeNull();
-        expect(Flags.skipsOf(tree.id)).toEqual([{ heroId: 'hero_1', reason: ALERT.UNSKILLED }]);
 
         hero().skills.construction = { level: Demolition.DEMOLISH_LEVEL - 1, xp: 0 };
-        Flags.assignHero('hero_1');
+        expect(Flags.orderRefusal('hero_1', tree)).toEqual({ reason: ALERT.ACCESS });
+        expect(Orders.orderAt('hero_1', C(10)).success).toBe(false);
         expect(claimOf('hero_1')).toBeNull();
-        expect(Flags.skipsOf(tree.id)).toEqual([{ heroId: 'hero_1', reason: ALERT.ACCESS }]);
 
         hero().skills.construction = { level: Demolition.DEMOLISH_LEVEL, xp: 0 };
-        Flags.assignHero('hero_1');
+        expect(Orders.orderAt('hero_1', C(10)).success).toBe(true);
         expect(claimOf('hero_1')).toBe(tree.id);
+    });
+
+    it('a hero who loses Construction while sent there skips it as unskilled, and waits by it', () => {
+        const tree = place(10, 'demo_tree');
+        Demolition.mark(tree.id);
+        Orders.orderAt('hero_1', C(10));
+        delete hero().skills.construction;
+        Flags.assignHero('hero_1');
+        expect(claimOf('hero_1')).toBeNull();
+        expect(Flags.skipsOf(tree.id)).toEqual([{ heroId: 'hero_1', reason: ALERT.UNSKILLED }]);
+        expect(Flags.pinnedIdOf('hero_1')).toBe(tree.id);
     });
 
     it('a hero who falls below the level mid-demolition stops, says so, and lets go', () => {
         const tree = place(10, 'demo_tree');
         Demolition.mark(tree.id);
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         run(2000);
         const progress = tree.cycleElapsedMs;
         expect(progress).toBeGreaterThan(0);
@@ -347,29 +359,28 @@ describe('a marked Token is Construction work', () => {
         const tree = place(10, 'demo_tree');
         Demolition.mark(tree.id);
         expect(problemText({ kind: ALERT.ACCESS }, tree.id))
-            .toBe(`Needs Construction ${Demolition.DEMOLITION_CONFIG.skillRequired}/${MASTERY_LEVEL}`);
+            .toBe(`Needs Construction ${Demolition.DEMOLITION_CONFIG.skillRequired}/${MAX_SKILL_LEVEL}`);
         expect(problemText({ kind: ALERT.UNSKILLED }, tree.id)).toBe('Needs the Construction skill');
     });
 
-    it('a spawner, which no hero works, becomes work a flag claims and a pin holds', () => {
+    it('a spawner, which no hero works, becomes work an order claims and holds', () => {
         const forest = place(10, 'demo_forest');
         expect(Flags.isHeroWorkable(forest)).toBe(false);
         Demolition.mark(forest.id);
         expect(Flags.isHeroWorkable(forest)).toBe(true);
-        expect(Flags.pinRefusal('hero_1', forest)).toBeNull();
+        expect(Flags.orderRefusal('hero_1', forest)).toBeNull();
 
-        Placement.plantFlagAt('hero_1', C(10), { pin: true });
+        Orders.orderAt('hero_1', C(10));
         expect(BoardState.flagOf('hero_1').pinnedTo).toBe(forest.id);
         expect(claimOf('hero_1')).toBe(forest.id);
         expect(runUntil(() => !on(forest), Demolition.DEMOLISH_MS + 1000)).toBe(true);
         expect(events.demolished.map(d => d.instanceId)).toEqual([forest.id]);
     });
 
-    it('a Promotion Token is demolished, not trained on, by a hero whose flag merely reaches it', () => {
+    it('a Promotion Token marked for demolition is demolished, not trained on, by a hero sent to it', () => {
         const yard = place(10, 'fixture_promotion');
         Demolition.mark(yard.id);
-        // Beside it, not on it: unmarked, a Promotion Token is worked only from a flag on it.
-        Placement.plantFlagAt('hero_1', C(11));
+        Orders.orderAt('hero_1', C(10));
         expect(claimOf('hero_1')).toBe(yard.id);
         expect(runUntil(() => !on(yard), Demolition.DEMOLISH_MS + 1000)).toBe(true);
         expect(events.promotion).toEqual([]);
@@ -384,7 +395,7 @@ describe('a marked Token is Construction work', () => {
         expect(spriteCount()).toBe(0);
         expect(events.cycles).toEqual([]);
 
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         expect(claimOf('hero_1')).toBe(passive.id);
         expect(runUntil(() => !on(passive), Demolition.DEMOLISH_MS + 1000)).toBe(true);
     });
@@ -410,7 +421,7 @@ describe('unmarking', () => {
     it('loses the half-done demolition: marked again, it takes the full time', () => {
         const tree = place(10, 'demo_tree');
         Demolition.mark(tree.id);
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         run(Demolition.DEMOLISH_MS / 2);
         expect(tree.cycleElapsedMs).toBeGreaterThan(0);
 
@@ -430,7 +441,7 @@ describe('a marked Token stands still', () => {
         const kitchen = place(10, 'fixture_kitchen');
         pickRecipe(kitchen, 'pooled_stew');
         place(11, 'fixture_context_a');
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         expect(runUntil(() => kitchen.cycleElapsedMs > 3000, 10000)).toBe(true);
         // A hero who cannot demolish (no Construction), so nobody removes it.
         delete hero().skills.construction;
@@ -449,7 +460,7 @@ describe('a marked Token stands still', () => {
         const kitchen = place(10, 'fixture_kitchen');
         pickRecipe(kitchen, 'pooled_stew');
         place(11, 'fixture_context_a');
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         expect(runUntil(() => kitchen.cycleElapsedMs > 3000, 10000)).toBe(true);
 
         Demolition.mark(kitchen.id);
@@ -506,7 +517,7 @@ describe('a resting Token', () => {
         expect(WorkCheck.fixableReason(vein.id, vein).reason).toBeNull();
         expect(WorkCheck.whyCannotRun(vein.id, vein, 'hero_1', StationRecipe.workConfigOf(getTokenType('demo_vein'), vein))).toBeNull();
 
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         expect(claimOf('hero_1')).toBe(vein.id);
         run(Demolition.DEMOLISH_MS / 2);
         expect(claimOf('hero_1')).toBe(vein.id);
@@ -532,7 +543,7 @@ describe('save and load', () => {
     it('a marked Token keeps its mark and its progress, and finishes on time', () => {
         const tree = place(10, 'demo_tree');
         Demolition.mark(tree.id);
-        Placement.plantFlagAt('hero_1', C(10));
+        Orders.orderAt('hero_1', C(10));
         run(Demolition.DEMOLISH_MS / 2);
         const progress = tree.cycleElapsedMs;
         expect(progress).toBeGreaterThan(0);
@@ -557,11 +568,5 @@ describe('the console', () => {
     it('exposes Demolition on the engine', async () => {
         const { EngineBootstrap } = await import('../systems/core/EngineBootstrap.js');
         expect(EngineBootstrap.getEngine().Demolition).toBe(Demolition);
-    });
-});
-
-describe('FlagRules still know Construction as a rule every hero holds', () => {
-    it('so the rules panel can switch demolition off per hero', () => {
-        expect(FlagRules.holdsRule('hero_1', DEMOLITION_SKILL_ID)).toBe(true);
     });
 });

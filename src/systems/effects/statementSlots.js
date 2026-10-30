@@ -18,7 +18,6 @@ import { FILTER_KINDS, filtersOf } from '../../config/registries/filterRegistry.
 import { MAGNITUDE_KIND, statsForRoles } from '../../config/registries/magnitudeRegistry.js';
 import { PLACEMENTS, placementOf } from '../../config/registries/placementRegistry.js';
 import { getAllSkills } from '../../config/registries/skillRegistry.js';
-import { JOBS } from '../../config/registries/jobRegistry.js';
 import { STATION_KINDS, stationKindLabel } from '../../config/registries/tokenConstants.js';
 
 /**
@@ -503,20 +502,6 @@ function payloadSlots(statement, ctx) {
                     if (v) next.stationKind = v; else delete next.stationKind;
                     return { payload: next };
                 }
-            }];
-
-        /**
-         * `Promotes`: which job. Every job that HAS a parent (the Recruit has none, so nothing
-         * promotes a hero to it). Read from `jobRegistry`, so a new job is offered with no editor change.
-         */
-        case KEYWORD.PROMOTES:
-            return [{
-                id: 'jobId', kind: SLOT_KIND.VOCABULARY, label: 'which job',
-                value: payload.jobId || '',
-                options: Object.values(JOBS)
-                    .filter(job => job.parent)
-                    .map(job => option(job.id, job.name, `from ${JOBS[job.parent]?.name || job.parent}`)),
-                patch: v => ({ payload: { ...payload, jobId: v } })
             }];
 
         default:

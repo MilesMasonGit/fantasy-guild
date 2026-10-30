@@ -6,11 +6,12 @@ import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MAT_Z, STACK_PLACES, placeZ, matStackOrder, createMatStack, heroZ } from '../ui/components/board/matLayers.js';
@@ -190,7 +191,6 @@ describe('on the mat', () => {
         vi.clearAllMocks();
         resetMatTuning();
         // A flag drawn over a Token 170 u away, its hero idle: outside a 164 u reach.
-        setMatTuning('flagRadius', 164);
         GameState.initNew();
         InventoryManager.init();
         SpriteLayer.init();
@@ -203,8 +203,8 @@ describe('on the mat', () => {
     it('FB-1: a flag higher on the mat than a Token draws behind it; one lower draws in front', () => {
         const tok = placeAt('fixture_producer', 600, 600);
         // 170 u away: past the flag radius set above, so both heroes stay idle.
-        Flags.plant('h1', { x: 600, y: 430 });
-        Flags.plant('h2', { x: 600, y: 770 });
+        Orders.orderAt('h1', { x: 600, y: 430 });
+        Orders.orderAt('h2', { x: 600, y: 770 });
         expect(Flags.statusOf('h1').state).toBe('idle');
         expect(Flags.statusOf('h2').state).toBe('idle');
 
@@ -222,7 +222,7 @@ describe('on the mat', () => {
     it('FB-2: a worked Token and its hero draw above a lower neighbour; when work stops, the order is normal again', async () => {
         const worked = placeAt('fixture_producer', 600, 500);
         const front = placeAt('fixture_producer', 660, 560);       // lower: normally in front
-        Flags.plant('h1', { x: 600, y: 500 });
+        Orders.orderAt('h1', { x: 600, y: 500 });
         expect(Flags.statusOf('h1')).toMatchObject({ state: 'working', instanceId: worked.id });
 
         const { container } = mount(h(MatBoard));
@@ -237,8 +237,8 @@ describe('on the mat', () => {
 
     it('a worked Token also rises above a flag standing lower on the mat', () => {
         const worked = placeAt('fixture_producer', 600, 500);
-        Flags.plant('h1', { x: 600, y: 500 });
-        Flags.plant('h2', { x: 900, y: 700 });                      // lower, and far enough to stay idle
+        Orders.orderAt('h1', { x: 600, y: 500 });
+        Orders.orderAt('h2', { x: 900, y: 700 });                      // lower, and far enough to stay idle
         expect(Flags.statusOf('h2').state).toBe('idle');
 
         const { container } = mount(h(MatBoard));
@@ -253,8 +253,9 @@ describe('on the mat', () => {
      */
     it('FB-44: the pointer on a flag over a Token hovers the Token, and every flag lets it through', () => {
         const tok = placeAt('fixture_producer', 600, 600);
-        Flags.plant('h1', { x: 600, y: 770 });
-        const { container } = mount(h(MatBoard));
+        // A spot order just below the Token; the hero's panel is open, so the spot's flag stays shown.
+        Orders.orderAt('h1', { x: 600, y: 770 });
+        const { container } = mount(h(MatBoard, { inspectedHeroId: 'h1' }));
         const root = container.querySelector('[data-mat-board]');
         root.getBoundingClientRect = () => ({ left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0 });
 

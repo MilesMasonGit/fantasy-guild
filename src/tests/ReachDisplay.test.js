@@ -1,11 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import './fixtures/testTokens.js';
-import { GameState } from '../state/GameState.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { showsNearRing } from '../systems/board/reachDisplay.js';
 import { caresAboutNeighbours, KEYWORD } from '../systems/effects/statements.js';
-import * as Flags from '../systems/board/Flags.js';
-import { resetMatTuning } from '../config/matTuning.js';
 
 /**
  * ⭐ Which Tokens show a reach ring: "only tokens that care about reach" — read
@@ -63,28 +60,5 @@ describe('showsNearRing — which Tokens show their reach', () => {
 
     it('an unknown Token does not', () => {
         expect(showsNearRing('nope_not_a_token')).toBe(false);
-    });
-});
-
-describe('Flags.flagReaches — the one in-reach test', () => {
-    beforeEach(() => {
-        GameState.initNew();
-        resetMatTuning();
-    });
-
-    it('is the same centre-inside-the-radius test the heroes use', () => {
-        const flag = { x: 500, y: 500 };
-        const r = Flags.flagRadius();
-        expect(Flags.flagReaches(flag, { x: 500 + r, y: 500 })).toBe(true);
-        expect(Flags.flagReaches(flag, { x: 500 + r + 1, y: 500 })).toBe(false);
-        expect(Flags.flagReaches(null, { x: 0, y: 0 })).toBe(false);
-    });
-
-    it('no longer follows the retired Scouting Flags upgrade (brief 260 O2): an old bonus widens nothing', () => {
-        const flag = { x: 500, y: 500 };
-        const r = Flags.flagRadius();
-        const beyond = { x: 500 + r + 20, y: 500 };
-        GameState.state.progress.flagRadiusBonus = 40;
-        expect(Flags.flagReaches(flag, beyond)).toBe(false);
     });
 });

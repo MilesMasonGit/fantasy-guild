@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -14,7 +15,7 @@ import { ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { SKIP_HINT } from '../ui/components/board/boardConstants.js';
 import { blockedText } from '../ui/components/board/heroBubbles.js';
@@ -89,7 +90,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -108,7 +108,7 @@ describe('a new station waits for the player (TL-15)', () => {
 
     it('with nothing picked, a hero in range does not work it and nothing is made', () => {
         const bench = put('fixture_nr_bench');
-        Flags.plant('h1', AT);
+        Orders.orderAt('h1', AT);
         run(10000);
 
         expect(BoardState.workTokenOf('h1')).toBeFalsy();
@@ -121,7 +121,7 @@ describe('a new station waits for the player (TL-15)', () => {
 
     it('once the player picks, the hero starts, and the pick stays', () => {
         const bench = put('fixture_nr_bench');
-        Flags.plant('h1', AT);
+        Orders.orderAt('h1', AT);
         run(3000);
         expect(coalMade()).toBe(0);
 
@@ -137,7 +137,7 @@ describe('a new station waits for the player (TL-15)', () => {
     it('a station built on a Foundation arrives with no recipe too', () => {
         const f = put('fixture_nr_foundation');
         StationRecipe.setSelectedRecipe(f, 'fixture_nr_build_bench');
-        Flags.plant('h1', AT);
+        Orders.orderAt('h1', AT);
         run(4000);
 
         const [bench] = onMat('fixture_nr_bench');

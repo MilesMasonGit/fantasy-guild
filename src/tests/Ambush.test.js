@@ -7,6 +7,7 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as EffectActions from '../systems/board/EffectActions.js';
 import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Hostiles from '../systems/board/Hostiles.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as MatCap from '../systems/board/MatCap.js';
@@ -399,7 +400,7 @@ describe('⭐ the ambusher belongs to its node and attacks its gatherer', () => 
     it('attacks the hero gathering the node, who fights back', () => {
         const { typeId } = ambushNode({ chance: 50 });
         const node = placeAt(typeId, NODE.x, NODE.y);
-        Flags.plant('h1', NODE);
+        Orders.orderAt('h1', NODE);
         expect(BoardState.workTokenOf('h1')).toBe(node.id);
 
         vi.spyOn(Math, 'random').mockReturnValue(0);
@@ -417,7 +418,7 @@ describe('⭐ the ambusher belongs to its node and attacks its gatherer', () => 
     it('⚠️ watches around the NODE: a gatherer out of its own reach is still attacked', () => {
         const { typeId } = ambushNode({ chance: 50 });
         const node = placeAt(typeId, NODE.x, NODE.y);
-        Flags.plant('h1', NODE);
+        Orders.orderAt('h1', NODE);
         vi.spyOn(Math, 'random').mockReturnValue(0);
         cycle(node, 'h1');
         Math.random.mockRestore();
@@ -426,12 +427,11 @@ describe('⭐ the ambusher belongs to its node and attacks its gatherer', () => 
         // taken.
         BoardState.setTokenPoint(ambusher.id, 2 * node.x - ambusher.x, 2 * node.y - ambusher.y);
 
-        // A radius that holds the hero around the node but not around the ambusher.
+        // The watch is measured round the node, against the hero's order (the node itself), never
+        // round the ambusher: at the smallest watch the gatherer is still attacked.
         const hero = HeroMotion.heroPointOf('h1') || BoardState.displayPointOf('h1');
-        const fromNode = Math.hypot(hero.x - node.x, hero.y - node.y);
-        const fromAmbusher = Math.hypot(hero.x - ambusher.x, hero.y - ambusher.y);
-        expect(fromNode).toBeLessThan(fromAmbusher);
-        setMatTuning('flagRadius', Math.round((fromNode + fromAmbusher) / 2));
+        expect(Math.hypot(hero.x - node.x, hero.y - node.y)).toBeLessThan(Math.hypot(hero.x - ambusher.x, hero.y - ambusher.y));
+        setMatTuning('watchRadius', 100);
 
         expect(Hostiles.scan()).toEqual([{ enemyId: ambusher.id, heroId: 'h1' }]);
     });
@@ -439,7 +439,7 @@ describe('⭐ the ambusher belongs to its node and attacks its gatherer', () => 
     it('happens offline too: through catch-up steps the gatherer is ambushed and fights', () => {
         const { typeId } = ambushNode({ chance: 50 });
         placeAt(typeId, NODE.x, NODE.y);
-        Flags.plant('h1', NODE);
+        Orders.orderAt('h1', NODE);
         const engaged = [];
         const off = EventBus.subscribe(BOARD_EVENTS.COMBAT_ENGAGED, (p) => engaged.push(p));
         vi.spyOn(Math, 'random').mockImplementation(seeded(7));
@@ -459,7 +459,7 @@ describe('⭐ with a seeded roll, a 5% rule fires about 5% of cycles', () => {
     it('worked for 2000 one-second cycles at the catch-up step', () => {
         const { typeId } = ambushNode({ typeId: 'fixture_pebble', chance: 5 }, { uses: null });
         const node = placeAt(typeId, NODE.x, NODE.y);
-        Flags.plant('h1', NODE);
+        Orders.orderAt('h1', NODE);
         let cycles = 0;
         const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { if (p?.instanceId === node.id) cycles++; });
         let spawned = 0;

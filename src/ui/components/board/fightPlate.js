@@ -39,7 +39,7 @@ export function fightPlateOf(heroId, instanceId) {
 
 /**
  * The plate's cells, each under its own fighter: the enemy's style, a divider, the hero's style
- * and their elixirs, mirrored when the hero stands on the enemy's left. A Recruit has no style.
+ * and their elixirs, mirrored when the hero stands on the enemy's left.
  */
 export function fightPlateCells(plate) {
     if (!plate) return [];

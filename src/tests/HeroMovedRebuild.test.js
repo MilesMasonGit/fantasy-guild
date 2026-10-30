@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -80,7 +81,6 @@ afterAll(() => {
 
 beforeEach(() => {
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     setMatTuning('potterRadius', 0);
     GameState.initNew();
     InventoryManager.init();
@@ -106,7 +106,7 @@ describe('⭐ CR3-250: a HERO_MOVED rebuilds only when the Token a hero works ch
         put({ x: 1060, y: 500 }, WORKED_BUFF);
         TileModifiers.rebuildAll();
 
-        expect(Flags.plant('h1', { x: 900, y: 500 }, { pin: true }).success).toBe(true);
+        expect(Orders.orderAt('h1', { x: 900, y: 500 }).success).toBe(true);
         // Pinned: the flag stands on the Token's centre, the hero is walking.
         expect(BoardState.displayPointOf('h1')).toEqual({ x: 900, y: 500 });
         expect(BoardState.workerOf(work.id)).toBeNull();
@@ -123,7 +123,7 @@ describe('⭐ CR3-250: a HERO_MOVED rebuilds only when the Token a hero works ch
         put({ x: 1060, y: 500 });
         put({ x: 740, y: 500 }, WORKED_BUFF);
         TileModifiers.rebuildAll();
-        expect(Flags.plant('h1', { x: 900, y: 500 }).success).toBe(true);
+        expect(Orders.orderAt('h1', { x: 900, y: 500 }).success).toBe(true);
         expect(BoardState.workerOf(work.id)).toBe('h1');
         expect(yieldOf(work)).toBeCloseTo(105);
 
@@ -139,7 +139,7 @@ describe('⭐ CR3-250: a HERO_MOVED rebuilds only when the Token a hero works ch
         put({ x: 740, y: 500 }, WORKED_BUFF);
         TileModifiers.rebuildAll();
 
-        expect(rebuildsDuring(() => Flags.plant('h1', { x: 900, y: 500 }))).toBeGreaterThan(0);
+        expect(rebuildsDuring(() => Orders.orderAt('h1', { x: 900, y: 500 }))).toBeGreaterThan(0);
         expect(yieldOf(work)).toBeCloseTo(105);
 
         expect(rebuildsDuring(() => Flags.furl('h1'))).toBeGreaterThan(0);
@@ -150,7 +150,7 @@ describe('⭐ CR3-250: a HERO_MOVED rebuilds only when the Token a hero works ch
     it('clearAll (before a rehydrate) forgets what each hero worked, so the next event rebuilds', () => {
         put({ x: 900, y: 500 });
         put({ x: 740, y: 500 }, WORKED_BUFF);
-        expect(Flags.plant('h1', { x: 900, y: 500 }).success).toBe(true);
+        expect(Orders.orderAt('h1', { x: 900, y: 500 }).success).toBe(true);
         expect(rebuildsDuring(() => EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId: 'h1' }))).toBe(0);
 
         TileModifiers.clearAll();

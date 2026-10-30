@@ -1,11 +1,13 @@
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { subscribeLevelUps } from './levelUpFeed.js';
+import { perksReachedBy } from '../dock/heroPerks.js';
 
 /**
  * The level-up moment on the mat, as data: each hero's levelled skills, floating over their head
  * for `FLOAT_MS` as the skill's icon and a number that rolls from the old level to the new one.
- * One float per skill; several skills sit side by side, each on its own timer. Drawn by
+ * One float per skill; several skills sit side by side, each on its own timer. A milestone perk
+ * the level-up reached is named under its number, for as long as the float is up. Drawn by
  * `HeroBubbleLayer` (`LevelUpFloat.jsx`), which reads this when it draws.
  * Kept here rather than in the layer so a catch-up's level-ups, which arrive before the mat is
  * back, are waiting for it. A catch-up that shows "While you were away" holds its floats until
@@ -49,7 +51,7 @@ export const rollMs = (values) => Math.min(ROLL_MAX_MS, Math.max(0, values.lengt
  * Add a level-up to one hero's floats (left to right). A skill already up keeps its place: if
  * its number has not started rolling yet (several levels in one go) it keeps its old number and
  * rolls to the newest; otherwise it rolls on from the number it shows. Either way its time
- * starts again.
+ * starts again, and the perks it named stay named beside any this level-up reached.
  *
  * @returns a new list; the input is untouched
  */
@@ -58,11 +60,23 @@ export function addFloat(list, { skillId, skillName, oldLevel, newLevel }, now, 
     const kept = list.filter(f => f.held || f.at + FLOAT_MS > now);
     const i = kept.findIndex(f => f.key === key);
     const earlier = i === -1 ? null : kept[i];
-    let from = Number.isFinite(oldLevel) ? oldLevel : newLevel - 1;
+    const reachedFrom = Number.isFinite(oldLevel) ? oldLevel : newLevel - 1;
+    let from = reachedFrom;
     if (earlier) from = (earlier.held || now - earlier.at < FLASH_MS) ? earlier.from : earlier.to;
-    const next = { key, skillId, skillName, from, to: newLevel, at: now, held };
+    const perks = withPerks(earlier?.perks, perksReachedBy(skillId, reachedFrom, newLevel));
+    const next = { key, skillId, skillName, from, to: newLevel, at: now, held, perks };
     if (i === -1) return [...kept, next];
     return kept.map((f, j) => (j === i ? next : f));
+}
+
+const NO_PERKS = Object.freeze([]);
+
+/** A float's perk titles, the earlier ones first, each once. */
+function withPerks(earlier = NO_PERKS, reached = NO_PERKS) {
+    if (!reached.length) return earlier;
+    const titles = [...earlier];
+    for (const { title } of reached) if (!titles.includes(title)) titles.push(title);
+    return titles;
 }
 
 /** The floats showing at `now`: not held for a summary, not run out. */

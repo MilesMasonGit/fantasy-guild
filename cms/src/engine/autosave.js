@@ -6,7 +6,7 @@
  */
 
 export const AUTOSAVE_EVERY_MS = 3 * 60 * 1000;
-const COLLECTIONS = ['items', 'tokens', 'effects', 'recipePools', 'starterCamp'];
+const COLLECTIONS = ['items', 'tokens', 'effects', 'recipePools', 'starterCamp', 'skillPerks'];
 
 /** `autosave_2026-10-20T15-04-05-123Z`: sorts by time, and the server's name filter keeps it intact. */
 export function autosaveName(now = new Date()) {

@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as MatCap from '../systems/board/MatCap.js';
@@ -122,7 +123,7 @@ function bench(recipeId) {
     );
     Placement.placeTokenAt(instance, C(STATION));
     instance.selectedRecipeId = recipeId;
-    Placement.plantFlagAt('hero_1', C(STATION));
+    Orders.orderAt('hero_1', C(STATION));
     return instance;
 }
 

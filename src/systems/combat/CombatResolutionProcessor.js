@@ -15,16 +15,12 @@ export function handleHeroWounded(fight, heroId) {
 export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
     if (!fight.combat) return;
 
-    // The full award goes into the hero's single combat skill (Defence is folded
-    // into it, so there is no second bar). ⚠️ A hero holding no combat skill (a Recruit, who
-    // fights barehanded) gets nothing: no combat XP until promotion.
+    // The full award goes into the style the hero fought in, the weapon's (barehanded is Melee):
+    // Defence is folded into it, so there is no second bar.
     assignedHeroIds.forEach(id => {
         const h = HeroManager.getHero(id);
         if (h) {
-            const { id: combatSkillId } = CombatFormulas.getHeroCombatSkillEntry(h);
-            if (combatSkillId) {
-                SkillSystem.addXP(id, combatSkillId, CombatFormulas.getCombatXpAward(enemy));
-            }
+            SkillSystem.addXP(id, CombatFormulas.getHeroCombatStyle(h), CombatFormulas.getCombatXpAward(enemy));
         }
     });
 

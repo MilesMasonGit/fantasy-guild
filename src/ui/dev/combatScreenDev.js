@@ -82,9 +82,9 @@ function registerQaContent() {
     });
 }
 
-/** A promoted Fighter at `level`, full health, named. */
+/** A hero in the Fighter's art at `level` in every skill, full health, named. */
 function fighterAt(level, name) {
-    const hero = generateHero({ jobId: 'fighter', spriteId: 'fighter' });
+    const hero = generateHero({ spriteId: 'fighter' });
     for (const id of Object.keys(hero.skills || {})) hero.skills[id] = { ...hero.skills[id], level, xp: xpForLevel(level) };
     const maxHp = heroMaxHpFromSkills(hero.skills);
     hero.hp = { current: maxHp, max: maxHp };

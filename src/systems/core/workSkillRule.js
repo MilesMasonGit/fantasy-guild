@@ -34,10 +34,7 @@ export function isWorkedWithoutSkill(def) {
     if (!def.config || typeof def.config !== 'object') return false;
     if (def.requiresHero === false) return false;
     if (isEnemyDef(def)) return false;
-    // ⚠️ Through the type classifier, NOT by reading the Promotes rule here:
-    // a test pins that only `BoardPromotion` reads that rule among the engine
-    // systems (`BoardPromotion.test.js` scans for it by name). The classifier
-    // already knows what a Promotion Token is, so this asks it.
+    // An older Promotion Token (a retired Promotes rule) is nothing a hero works: no skill wanted.
     if (deriveTokenType(def)?.type === 'promotion') return false;
 
     const skill = def.config.skill;

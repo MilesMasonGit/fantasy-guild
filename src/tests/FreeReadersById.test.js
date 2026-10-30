@@ -9,20 +9,16 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
-import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import * as EffectActions from '../systems/board/EffectActions.js';
-import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
-import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
-import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
-import { getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
@@ -72,18 +68,6 @@ function fighter(id) {
     return hero;
 }
 
-function qualified(id) {
-    const hero = generateHero({ name: id });
-    hero.id = id;
-    hero.status = 'idle';
-    const cost = getPromotionCost('fighter');
-    for (const skillId of getPromotionGateSkills('fighter')) {
-        if (!hero.skills[skillId]) hero.skills[skillId] = { xp: 0, level: 0 };
-        hero.skills[skillId].level = cost.skillLevel;
-    }
-    return hero;
-}
-
 beforeEach(() => {
     GameState.initNew();
     GameState.state.progress.rosterLimit = 20;
@@ -123,37 +107,6 @@ describe('⭐ a fight is keyed by the enemy Token’s instance id (FPP-4)', () =
         const combat = fs.readFileSync(path.resolve(here, '../systems/board/BoardCombat.js'), 'utf8');
         const placement = fs.readFileSync(path.resolve(here, '../systems/board/Placement.js'), 'utf8');
         expect(combat + placement).not.toMatch(/moveFight|detachFight|attachFight/);
-    });
-});
-
-describe('⭐ a promotion offer is found by the Token’s instance id (PR-7, FP-61)', () => {
-    it('after the Academy moves: the offer is still there, and a declined one is not asked again', () => {
-        clearMat();
-        const hero = qualified('hero_p');
-        GameState.state.heroes = [hero];
-        const academy = placeAt({ typeId: 'fixture_promotion', usesRemaining: 2, cycleElapsedMs: 0 }, C(14).x, C(14).y);
-
-        const offers = [];
-        const off = EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, (p) => offers.push(p));
-        try {
-            for (let i = 0; i < 40 && !offers.length; i++) BoardPromotion.tickToken(academy, 1000, hero.id);
-            expect(offers).toHaveLength(1);
-            expect(offers[0]).toMatchObject({ instanceId: academy.id, heroId: hero.id, jobId: 'fighter' });
-            expect(offers[0]).not.toHaveProperty('tile');
-
-            BoardState.setTokenPoint(academy.id, C(20).x, C(20).y);
-            expect(BoardPromotion.getOffer(academy.id)).toMatchObject({ instanceId: academy.id, heroId: hero.id });
-
-            expect(BoardPromotion.decline(academy.id).success).toBe(true);
-            BoardState.setTokenPoint(academy.id, C(8).x, C(8).y);
-            for (let i = 0; i < 60; i++) BoardPromotion.tickToken(academy, 1000, hero.id);
-        } finally {
-            off?.();
-        }
-
-        expect(offers, 'a declined offer was asked again').toHaveLength(1);
-        expect(BoardPromotion.isDeclined(academy)).toBe(true);
-        expect(BoardPromotion.getOffer(academy.id)).toBeNull();
     });
 });
 
@@ -334,7 +287,7 @@ describe('⭐ quest events carry instanceId, and still count', () => {
         const off = EventBus.subscribe('hero_deployed', (p) => seen.push(p));
         const progress = vi.spyOn(QuestManager, 'reportProgress');
         try {
-            expect(Flags.plant('hero_1', C(14)).success).toBe(true);
+            expect(Orders.orderAt('hero_1', C(14)).success).toBe(true);
         } finally {
             off?.();
         }

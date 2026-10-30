@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -15,7 +16,7 @@ import { ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -101,7 +102,6 @@ beforeEach(() => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 400);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -123,7 +123,7 @@ describe('a Foundation never picks for the player', () => {
     it('with nothing picked, nobody works it and nothing happens', () => {
         InventoryManager.addItem('item_coal', 10);
         const f = put('fixture_bip_stone_foundation');
-        Flags.plant('h1', AT);
+        Orders.orderAt('h1', AT);
         run(10000);
 
         expect(BoardState.workTokenOf('h1')).toBeFalsy();
@@ -140,7 +140,7 @@ describe('building in place (DP-6)', () => {
         const f = put('fixture_bip_stone_foundation');
         const { x, y } = f;
         expect(StationRecipe.setSelectedRecipe(f, 'fixture_bip_build_furnace')).toBe(true);
-        Flags.plant('h1', AT);
+        Orders.orderAt('h1', AT);
         expect(BoardState.workTokenOf('h1')).toBe(f.id);
 
         run(2500);
@@ -167,7 +167,7 @@ describe('building in place (DP-6)', () => {
     it('Farmland is the same with Farming (SP-47)', () => {
         const f = put('fixture_bip_farmland');
         StationRecipe.setSelectedRecipe(f, 'fixture_bip_plant_onion');
-        Flags.plant('h1', AT);
+        Orders.orderAt('h1', AT);
         run(2500);
         expect(BoardState.getTokenById(f.id)).toBeNull();
         expect(onMat('fixture_bip_crop')).toHaveLength(1);
@@ -183,13 +183,13 @@ describe('the level gate is the recipe’s (SP-49)', () => {
         InventoryManager.addItem('item_coal', 10);
         const f = put('fixture_bip_stone_foundation');
         StationRecipe.setSelectedRecipe(f, 'fixture_bip_build_furnace');
-        Flags.plant('h1', AT);
+        expect(Orders.orderAt('h1', AT).success).toBe(false);
         run(10000);
 
         expect(BoardState.workTokenOf('h1')).toBeFalsy();
         expect(BoardState.getTokenById(f.id)).toBeTruthy();
         expect(InventoryManager.getItemCount('item_coal')).toBe(10);
-        expect(Flags.skipsOf(f.id).map(s => s.reason)).toContain(ALERT.ACCESS);
+        expect(Flags.orderRefusal('h1', f)).toEqual({ reason: ALERT.ACCESS });
     });
 
     it('the list shows the recipe as a locked silhouette, with its level', () => {
@@ -208,7 +208,7 @@ describe('no room to stand', () => {
         InventoryManager.addItem('item_coal', 10);
         const f = put('fixture_bip_stone_foundation');
         StationRecipe.setSelectedRecipe(f, 'fixture_bip_build_furnace');
-        Flags.plant('h1', AT);
+        Orders.orderAt('h1', AT);
 
         const spy = vi.spyOn(MatPlacement, 'forceSpot').mockReturnValue(null);
         run(5000);

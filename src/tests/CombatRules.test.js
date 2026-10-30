@@ -52,6 +52,7 @@ function hero({ skill = null, level = 1, weapon = null } = {}) {
     h.aggregator = new ModifierAggregator(h.id);
     return h;
 }
+/** A new hero: every skill at level 1. */
 const recruit = (weapon = null) => hero({ weapon });
 const give = (entity, type, value) => {
     if (!entity.aggregator) entity.aggregator = new ModifierAggregator('e');
@@ -69,19 +70,22 @@ describe('rounding: nearest whole, halves up', () => {
     });
 });
 
-describe('HP: 10 + combat level', () => {
-    it('a Recruit has 10, a level 1 fighter 11, a level 99 fighter 109', () => {
-        expect(recruit().hp).toEqual({ current: 10, max: 10 });
-        expect(CF.heroMaxHpFromSkills(recruit().skills)).toBe(10);
+// Rewritten with classless heroes: HP is 10 + the best of the four combat skills, so a new hero
+// (every skill at 1) has 11; the Recruit's 10 is gone.
+describe('HP: 10 + the best combat skill', () => {
+    it('a new hero has 11, a level 99 fighter 109, whichever style is best', () => {
+        expect(recruit().hp).toEqual({ current: 11, max: 11 });
+        expect(CF.heroMaxHpFromSkills(recruit().skills)).toBe(11);
         expect(CF.heroMaxHpFromSkills(hero({ skill: 'melee', level: 1 }).skills)).toBe(11);
         expect(CF.heroMaxHpFromSkills(hero({ skill: 'stealth', level: 99 }).skills)).toBe(109);
+        expect(CF.heroMaxHpFromSkills({})).toBe(10);
         expect(heroMaxHp(0)).toBe(10);
     });
 
-    it('only the combat skill counts: mining 60 adds nothing', () => {
+    it('only the combat skills count: mining 60 adds nothing', () => {
         const miner = recruit();
         miner.skills.mining = { level: 60, xp: xpForLevel(60) };
-        expect(CF.heroMaxHpFromSkills(miner.skills)).toBe(10);
+        expect(CF.heroMaxHpFromSkills(miner.skills)).toBe(11);
     });
 
     it('follows a level-up as it happens: max +1, current kept (headroom, not a heal)', () => {
@@ -94,11 +98,11 @@ describe('HP: 10 + combat level', () => {
         expect(h.hp).toEqual({ current: 7, max: 15 });
     });
 
-    it('an old save is recomputed on load: 50/50 Recruit → 10/10, 144/144 Melee 25 → 35/35, a hurt hero keeps their HP', () => {
+    it('an old save is recomputed on load: 50/50 new hero → 11/11, 144/144 Melee 25 → 35/35, a hurt hero keeps their HP', () => {
         const oldRecruit = recruit();
         oldRecruit.hp = { current: 50, max: 50 };
         rehydrateHero(oldRecruit);
-        expect(oldRecruit.hp).toEqual({ current: 10, max: 10 });
+        expect(oldRecruit.hp).toEqual({ current: 11, max: 11 });
 
         const veteran = hero({ skill: 'melee', level: 25 });
         veteran.hp = { current: 144, max: 144 };
@@ -134,31 +138,36 @@ describe('damage: the weapon, +1 per 20 levels, fixed', () => {
         expect(CF.heroHitDamage(h, enemy(1))).toBe(3);
     });
 
-    it('a promoted hero with no weapon punches for 1 (+ the level step), on their own side of the cycle', () => {
-        const h = hero({ skill: 'ranged', level: 25 });
+    // Rewritten with classless heroes: barehanded is a Melee punch on the Melee level.
+    it('a hero with no weapon punches for 1 (+ the Melee level step), as Melee', () => {
+        const h = hero({ skill: 'melee', level: 25 });
+        h.skills.ranged = { level: 60, xp: xpForLevel(60) };
         expect(CF.heroBaseDamage(h)).toBe(2);
-        expect(CF.getHeroCombatStyle(h)).toBe('ranged');
+        expect(CF.getHeroCombatStyle(h)).toBe('melee');
         expect(CF.heroAttackSpeedMs(h)).toBe(3000);
     });
 });
 
-describe('Recruits punch for 1 every 3 s: no weapon, no style', () => {
-    it('ignores a weapon in their hands, even a fast one', () => {
+// Rewritten with classless heroes: the Recruit is gone. A new hero swings whatever weapon is in
+// their hands, at its speed and in its style, at their level 1 in that style.
+describe('a new hero swings what they hold', () => {
+    it('a fast weapon swings fast, its damage at level 1', () => {
         const r = recruit('rules_dagger');
-        expect(CF.fightsAsRecruit(r)).toBe(true);
-        expect(CF.getHeroWeapon(r)).toBeNull();
+        expect(CF.getHeroWeapon(r)?.id).toBe('rules_dagger');
         expect(CF.heroBaseDamage(r)).toBe(1);
-        expect(CF.heroAttackSpeedMs(r)).toBe(3000);
-        expect(CF.getHeroCombatLevel(r)).toBe(0);
+        expect(CF.heroAttackSpeedMs(r)).toBe(2000);
+        expect(CF.getHeroCombatLevel(r)).toBe(1);
     });
 
-    it('has no style: even with every enemy both ways', () => {
+    it('a bow fights Ranged: the cycle counts both ways', () => {
         const r = recruit('rules_bow');
-        expect(CF.getHeroCombatStyle(r)).toBeNull();
-        for (const style of ['melee', 'ranged', 'magic', 'stealth']) {
-            expect(CF.heroHitDamage(r, enemy(1, { style }))).toBe(1);
-            expect(CF.enemyHitDamage(enemy(40, { style }), r)).toBe(3);
-        }
+        expect(CF.getHeroCombatStyle(r)).toBe('ranged');
+        // 2 against magic (good) 2.5 → 3, against melee (bad) 1.5 → 2.
+        expect(CF.heroHitDamage(r, enemy(1, { style: 'magic' }))).toBe(3);
+        expect(CF.heroHitDamage(r, enemy(1, { style: 'melee' }))).toBe(2);
+        // A level 40 hit of 3: melee is strong against ranged, 3.75 → 4; magic weak, 2.25 → 2.
+        expect(CF.enemyHitDamage(enemy(40, { style: 'melee' }), r)).toBe(4);
+        expect(CF.enemyHitDamage(enemy(40, { style: 'magic' }), r)).toBe(2);
     });
 });
 
@@ -179,8 +188,9 @@ describe('the style cycle: ±25 %, rounded halves up', () => {
     });
 
     it('works for the enemy too: a hit of 6 against a weak style is 8, against a strong one 5', () => {
+        registerItems({ rules_shiv: { id: 'rules_shiv', name: 'Shiv', type: 'weapon', equipSlot: 'hand', styles: ['stealth'], damage: 1 } });
         const ranger = hero({ skill: 'ranged', level: 1, weapon: 'rules_bow' });
-        const stealthy = hero({ skill: 'stealth', level: 1 });
+        const stealthy = hero({ skill: 'stealth', level: 1, weapon: 'rules_shiv' });
         const brute = enemy(1, { style: 'melee', hit: 6 });
         expect(CF.enemyHitDamage(brute, ranger)).toBe(8);     // 7.5 → 8
         expect(CF.enemyHitDamage(brute, stealthy)).toBe(5);   // 4.5 → 5
@@ -251,9 +261,11 @@ describe('misses: 10 % ± the level gap + Dodge − Accuracy, 5-40 %', () => {
         expect(CF.enemyMissChance(enemy(10, { accuracy: 1 }), h)).toBe(15);
     });
 
-    it('a Recruit is combat level 0 for the gap', () => {
-        expect(CF.heroMissChance(recruit(), enemy(1))).toBe(11);
-        expect(CF.enemyMissChance(enemy(1), recruit())).toBe(9);
+    // Rewritten with classless heroes: a new hero is level 1 in every style, so an even fight.
+    it('a new hero is combat level 1 for the gap', () => {
+        expect(CF.heroMissChance(recruit(), enemy(1))).toBe(10);
+        expect(CF.enemyMissChance(enemy(1), recruit())).toBe(10);
+        expect(CF.heroMissChance({ skills: {} }, enemy(1))).toBe(11);
     });
 
     it('a swing draws one number for the miss and, only on a hit, one for the crit', () => {

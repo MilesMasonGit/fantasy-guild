@@ -8,11 +8,14 @@
 import { normaliseStarterCamp, isEmptyStarterCamp } from '../../../src/config/starterCampShape.js';
 import { PLAN_STATUSES, statusOrNull, tierOrNull } from '../../../src/systems/progression/ledger/plan.js';
 import { mergePlanFile } from './planFile.js';
+import { isSkillId } from '../../../src/config/registries/skillRegistry.js';
+import { isPerkLevel } from '../../../src/systems/hero/perkTable.js';
+import { MAX_SCALE } from '../../../src/systems/effects/effectLibrary.js';
 
 export const PACK_FORMAT = 'fantasy-guild-change-pack';
 export const PACK_VERSION = 1;
 export const OPS = Object.freeze(['create', 'edit', 'delete']);
-export const KINDS = Object.freeze(['item', 'token', 'recipe', 'effect', 'map', 'starterCamp']);
+export const KINDS = Object.freeze(['item', 'token', 'recipe', 'effect', 'map', 'starterCamp', 'skillPerks']);
 
 /**
  * The Starter Camp is one record, not a collection: its entry's id is always this, its value the
@@ -62,7 +65,30 @@ export function collectionOf(kind) {
     if (kind === 'effect') return 'effects';
     if (kind === 'recipe') return 'recipePools';
     if (kind === 'starterCamp') return 'starterCamp';
+    if (kind === 'skillPerks') return 'skillPerks';
     return null;
+}
+
+/**
+ * What is wrong with a skill's perk table (`value.perks`), as sentences: each row a whole level from
+ * 2 to 99, a library effect's id and an optional scale of 1 to 5.
+ */
+function perkTableErrors(value, label) {
+    if (!Array.isArray(value.perks)) return [`${label}: a perk table's "value.perks" must be a list of { "level", "effectId", "scale" }.`];
+    const out = [];
+    value.perks.forEach((row, i) => {
+        const at = `${label}: perk ${i + 1}`;
+        if (!isPlainObject(row)) {
+            out.push(`${at} must be an object: { "level", "effectId", "scale" }.`);
+            return;
+        }
+        if (!isPerkLevel(row.level)) out.push(`${at}: "level" must be a whole level from 2 to 99.`);
+        if (typeof row.effectId !== 'string' || !row.effectId.trim()) out.push(`${at}: "effectId" must name a library effect.`);
+        if (row.scale !== undefined && !(Number.isInteger(row.scale) && row.scale >= 1 && row.scale <= MAX_SCALE)) {
+            out.push(`${at}: "scale" must be a whole number from 1 to ${MAX_SCALE}.`);
+        }
+    });
+    return out;
 }
 
 /**
@@ -136,8 +162,16 @@ export function validatePack(pack, { fileName } = {}) {
                 if (kind === 'map' && !isMapValue(value)) errors.push(`${label}: a map's "value.type" must be "map" or "modifier".`);
                 if (kind === 'item' && isMapValue(value)) errors.push(`${label}: this is a map or modifier; use "kind": "map".`);
                 if (kind === 'recipe' && (typeof value.skill !== 'string' || !value.skill)) errors.push(`${label}: a recipe's "value.skill" must name its skill pool.`);
-                errors.push(...planErrors(value.plan, label, kind));
+                if (kind === 'skillPerks') {
+                    errors.push(...perkTableErrors(value, label));
+                    if (value.plan !== undefined) errors.push(`${label}: only items, maps, Tokens and recipes carry a "plan".`);
+                } else {
+                    errors.push(...planErrors(value.plan, label, kind));
+                }
             }
+        }
+        if (kind === 'skillPerks' && typeof id === 'string' && id && !isSkillId(id)) {
+            errors.push(`${label}: a perk table's "id" must be a skill's id, and "${id}" is not one.`);
         }
         if (kind === 'starterCamp') {
             if (id !== STARTER_CAMP_ID) errors.push(`${label}: a Starter Camp entry's "id" must be "${STARTER_CAMP_ID}".`);
@@ -235,8 +269,8 @@ export function changedFields(before, after) {
 }
 
 /** Build the workspace a pack was made against from the game's `data/` files (as `/api/load-game-data` and the store's load do), the plan laid back on (`planFile.js`). */
-export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null, plan = null }) {
+export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null, skillPerks = null, plan = null }) {
     const recipePools = {};
     for (const recipe of tokenRecipes || []) (recipePools[recipe.skill || 'general'] ||= []).push(recipe);
-    return mergePlanFile({ items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp) }, plan);
+    return mergePlanFile({ items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp), skillPerks }, plan);
 }

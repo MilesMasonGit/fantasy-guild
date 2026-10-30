@@ -19,7 +19,7 @@ import { showsNearRing } from '../../../systems/board/reachDisplay.js';
  * that is the cursor itself when there is room, and the nudged spot when there is not, so the
  * ring is an honest preview of the drop rather than a copy of the pointer. When there is no
  * room within nudge reach the drop would fly back, and there is no ring to draw.
- * Flag radius rings are `FlagLayer`'s: they belong to the flag, not to the mat.
+ * A camp's reach ring is `CampReachRing`'s.
  */
 
 /** The live Near radius, following the Mat Tuner. */

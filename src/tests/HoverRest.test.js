@@ -8,6 +8,7 @@ import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -211,7 +212,7 @@ describe('⭐ resting on a hero or an enemy adds the HP bar', () => {
             id: 'h1', name: 'Aela', spriteId: 'recruit', status: 'idle', level: 5,
             skills: {}, hp: { current: 100, max: 100 }
         }];
-        Flags.plant('h1', { x: 600, y: 400 });
+        Orders.orderAt('h1', { x: 600, y: 400 });
         const { container } = mount();
         const figure = container.querySelector('[data-board-hero="h1"]');
         const bar = () => figure.querySelector('[data-health-bar="hero"]');

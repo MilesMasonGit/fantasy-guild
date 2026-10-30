@@ -11,6 +11,7 @@ import { DragGhost } from '../ui/dnd/DragGhost.jsx';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -93,7 +94,7 @@ function Item({ id = 'item-src', itemId = 'item_coal' }) {
 function scene() {
     GameState.state.heroes = [hero('h1')];
     // High on the mat, clear of the Tokens and of the paths below.
-    Flags.plant('h1', { x: 250, y: 150 });
+    Orders.orderAt('h1', { x: 250, y: 150 });
     const a = placeAt('fixture_producer', 600, 400);
     placeAt('fixture_producer', 1000, 500);
     placeAt('fixture_producer', 600, 900);

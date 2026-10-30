@@ -65,7 +65,7 @@ export const TOKEN_BAR_GAP_U = 8;
  * Why a flag passed a Token over, as the tail of one hover line, e.g. 'Iron Forge — needs
  * materials'.
  * Keyed by every reason `Flags` can record: its own `SKIP` values plus the `ALERT` values
- * `WorkCheck` and promotion return. `FlagUI.test.js` derives that list from the engine, so a
+ * `WorkCheck` returns. `FlagUI.test.js` derives that list from the engine, so a
  * new reason without a sentence fails. Kept short, because up to five of these stack in one
  * tooltip.
  */
@@ -90,21 +90,18 @@ export const SKIP_HINT = {
     no_skill: 'names no skill',
     disallowed: 'heroes not allowed',
     claimed: 'being worked by {holder}',
-    // `claimed` said of an enemy: every fight is one-on-one, so the flag waits for it.
-    claimed_fight: '{holder} is fighting it',
-    same_job: 'already holds this job',
-    rule_off: 'off in {hero}’s Work Permissions'
+    // `claimed` said of an enemy: every fight is one-on-one, so the hero waits for it.
+    claimed_fight: '{holder} is fighting it'
 };
 
 /**
  * One skip as a sentence tail. `holder` names the hero who has a `claimed` Token; without one
- * it reads 'another hero'. `hero` names the hero whose rules switched it off (`rule_off`);
- * without one, 'the hero'. `tool` names the tool a `no_tool` skip wants, with its article
+ * it reads 'another hero'. `tool` names the tool a `no_tool` skip wants, with its article
  * ('a Pickaxe'); without one, 'a tool'.
  */
-export function skipHint(reason, { holder = null, hero = null, tool = null } = {}) {
+export function skipHint(reason, { holder = null, tool = null } = {}) {
     const text = SKIP_HINT[reason] || 'can’t work it';
-    return text.replace('{holder}', holder || 'another hero').replace('{hero}', hero || 'the hero').replace('{tool}', tool || 'a tool');
+    return text.replace('{holder}', holder || 'another hero').replace('{tool}', tool || 'a tool');
 }
 
 /** Alerts drawn in warning yellow; every other alert is drawn in red. */

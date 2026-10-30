@@ -88,8 +88,11 @@ export function fire(instanceId, heroId, eventId) {
         : workStart ? ConsumptionSystem.startWorkDoses(heroId, skill) : [];
     const isDoseItem = fightStart ? (id) => isConsumableCategory(categoryOfItem(id))
         : workStart ? ConsumptionSystem.isWorkDose : null;
+    // ⚠️ A perk names no item, and `[].every` is true: without the length check a perk's own
+    // On Work Start rule would be taken for a dose's and never fire.
     const fromDosesOnly = (statement) => !!isDoseItem
-        && (statement.sourceItemIds || []).every(isDoseItem);
+        && (statement.sourceItemIds || []).length > 0
+        && statement.sourceItemIds.every(isDoseItem);
     const statements = [
         ...HeroEffects.loadoutStatements(hero).filter(s => !fromDosesOnly(s)),
         ...doses.flatMap(id => HeroEffects.itemStatements(id).map(s => ({ ...s, dosed: true })))

@@ -44,14 +44,6 @@ export const BANNER_KINDS = Object.freeze({
         }),
         merge: (a, b) => ({ heroes: union(a.heroes, b.heroes) })
     },
-    promotion: {
-        tone: TONE.MILESTONE,
-        text: ({ heroes = [], job = null }) => ({
-            title: 'Promotion!',
-            line: heroes.length === 1 && job ? `${heroes[0]} is now a ${job}` : `${nameList(heroes)} were promoted`
-        }),
-        merge: (a, b) => ({ heroes: union(a.heroes, b.heroes), job: a.job === b.job ? a.job : null })
-    },
     upgrade: {
         tone: TONE.MILESTONE,
         text: ({ upgrades = [], detail = null }) => ({

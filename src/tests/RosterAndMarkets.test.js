@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -12,16 +13,15 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
-import { tokenStartingUses, getAllTokenTypes } from '../config/registries/tokenRegistry.js';
-import { getAllJobIds, getJobSkills, STARTING_JOB_ID } from '../config/registries/jobRegistry.js';
-import { STARTING_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { tokenStartingUses, getAllTokenTypes, registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { HERO_SKILL_IDS } from '../config/registries/skillRegistry.js';
 
 /**
  * Phase 6 — the roster, recruitment, and what a Market now costs to run.
  *
  * These three are grouped because they are the same decision seen from three
- * angles: the guild is bigger, its people arrive identical, and the thing that
- * turns goods into gold is now locked behind a specific job.
+ * angles: the guild is bigger, its people arrive identical, and a Market is
+ * worked like any other Token.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -49,7 +49,7 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeTokenAt(instance, C(tile));
-    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    if (heroId) Orders.orderAt(heroId, C(tile));
     return instance;
 }
 
@@ -107,14 +107,14 @@ describe('The roster runs to eight (owner, 2026-09-21; D-251 had twelve)', () =>
     });
 });
 
-describe('Recruits are interchangeable', () => {
-    it('every new hero is a Recruit holding the same nine Starting skills', () => {
+describe('New heroes are interchangeable', () => {
+    it('every new hero holds the same twenty skills at level 1, and no job', () => {
         const candidates = Array.from({ length: 3 }, () => generateHero());
         expect(candidates).toHaveLength(3);
 
         for (const c of candidates) {
-            expect(c.jobId).toBe(STARTING_JOB_ID);
-            expect(Object.keys(c.skills).sort()).toEqual([...STARTING_SKILL_IDS].sort());
+            expect(c).not.toHaveProperty('jobId');
+            expect(Object.keys(c.skills).sort()).toEqual([...HERO_SKILL_IDS].sort());
             for (const s of Object.values(c.skills)) expect(s.level).toBe(1);
         }
     });
@@ -128,38 +128,12 @@ describe('Recruits are interchangeable', () => {
     });
 });
 
-describe('A Market demands Commerce (D-259)', () => {
-    it('a Market asks for Commerce', () => {
-        // ⚠️ Deliberately the fixture, not "every Market in the content set".
-        // Reading live content here made this suite fail whenever the owner was
-        // mid-way through authoring a Market — an engine test breaking because
-        // content is half-written, which is exactly what the fixture split
-        // exists to stop. `ContentRules.test.js` is where shipped Tokens are
-        // checked for being well-formed.
-        expect(getAllTokenTypes().fixture_market.config.skill).toBe('commerce');
-    });
-
-    it('refuses a hero without Commerce, however good they are otherwise', () => {
-        // The whole point: a Market is not a thing any hero can run.
-        GameState.state.heroes = [makeHero('hero_1', STARTING_SKILL_IDS, 99)];
-        const token = place(10, 'fixture_market');
-        // A Commerce flag, so the Market is a candidate; the flag skips it as
-        // UNSKILLED for hover rather than raising a red mark (Free Playmat
-        // 1.4b).
-        Flags.plant('hero_1', C(10), { skill: 'commerce' });
-        InventoryManager.addItem('fixture_market_goods', 100);
-        run(20000);
-
-        expect(Flags.skipsOf(token.id).map(s => s.reason)).toEqual([BoardRunner.ALERT.UNSKILLED]);
-        expect(token.alert).toBeFalsy();
-        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
-    });
-
-    // ⚠️ Changed in slice 2.2. This used to assert the Market paid out gold.
-    // Gold is retired, so it now proves the Market still RUNS for a Commerce
-    // hero (it eats its goods) while crediting no gold.
-    it('runs for a hero who holds Commerce, and pays no gold (SP-65)', () => {
-        GameState.state.heroes = [makeHero('hero_1', ['commerce'], 50)];
+// Rewritten with classless heroes: Commerce is cut and every hero holds every skill, so a Market is
+// an ordinary Token any hero runs with its skill, and a Token still naming Commerce runs for no one.
+describe('A Market is worked like any Token (D-259 retired)', () => {
+    it('runs for any hero, and pays no gold (SP-65)', () => {
+        GameState.state.heroes = [generateHero({ name: 'hero_1' })];
+        GameState.state.heroes[0].id = 'hero_1';
         place(10, 'fixture_market', 'hero_1');
         InventoryManager.addItem('fixture_market_goods', 100);
         run(20000);
@@ -168,10 +142,21 @@ describe('A Market demands Commerce (D-259)', () => {
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
-    it('a Merchant is the only job that brings Commerce', () => {
-        const withCommerce = getAllJobIds().filter(id => getJobSkills(id).includes('commerce'));
+    it('one still worked with the cut Commerce runs for no hero: the order is refused, with no red mark', () => {
+        registerTokenTypes({
+            fixture_cut_market: { ...getAllTokenTypes().fixture_market, id: 'fixture_cut_market', config: { ...getAllTokenTypes().fixture_market.config, skill: 'commerce' } }
+        });
+        GameState.state.heroes = [makeHero('hero_1', HERO_SKILL_IDS, 99)];
+        const token = place(10, 'fixture_cut_market');
+        // The drop is refused as UNSKILLED (said over the Token) rather than raising a red mark.
+        expect(Orders.orderAt('hero_1', C(10)).success).toBe(false);
+        InventoryManager.addItem('fixture_market_goods', 100);
+        run(20000);
 
-        expect(withCommerce).toEqual(['merchant']);
+        expect(Flags.orderRefusal('hero_1', token)).toEqual({ reason: BoardRunner.ALERT.UNSKILLED });
+        expect(Flags.pinnedIdOf('hero_1')).toBeNull();
+        expect(token.alert).toBeFalsy();
+        expect(InventoryManager.getItemCount('fixture_market_goods')).toBe(100);
     });
 });
 

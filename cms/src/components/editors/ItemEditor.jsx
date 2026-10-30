@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Settings2, Shield, HelpCircle, Lock, Sparkles } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import {
-  EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStylesOf, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS,
+  EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStyleOf, authoredWeaponStyles, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS,
   expandBearer, statementsOf, doseKindsOf, DOSE_WHY, noDoseWhy, isSpentCategory,
 } from '../../utils/constants';
 import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import ChainInspector from '../shared/ChainInspector';
+import GearLevelField from './GearLevelField';
 import PlanFields from '../shared/PlanFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
@@ -18,26 +19,25 @@ import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 const RESTORING_CATEGORIES = new Set(['food', 'consumable']);
 
 /** A weapon's own fields, cleared when the item stops being one (out of the hands, or made a tool). */
-const WEAPON_CLEARED = { styles: undefined, damage: undefined, speed: undefined, tier: undefined };
+const WEAPON_CLEARED = { styles: undefined, damage: undefined, speed: undefined, tier: undefined, levelRequired: undefined };
 
 const styleName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
 const SPEED_WORDS = { fast: 'Fast', normal: 'Normal', slow: 'Slow' };
 
 /**
- * A weapon: which combat styles may hold it (a Dagger is Melee and Stealth), how hard it hits and how
- * often. `styles` is written in the game's style order and only when one is ticked (none means any
- * promoted hero); an older item's single `skillRequired` style shows ticked and is folded into
- * `styles` on the first change. `speed` is written only when it is not Normal. `tier` (1 copper,
- * 2 iron, and so on) is written only when typed; a Recruit may hold only a tier 1 weapon.
+ * A weapon: the one style it fights in (any hero may hold it; kills train that style), how hard it
+ * hits and how often. The style is written as a one-entry `styles` list; an older item naming two
+ * (the Dagger was Melee and Stealth) fights in the first until one is picked here, and an older
+ * single `skillRequired` style is folded in on the first pick. `speed` is written only when it is
+ * not Normal. `tier` (1 copper, 2 iron, and so on) is written only when typed.
  */
 function WeaponFields({ item, onChange }) {
-  const styles = weaponStylesOf(item);
-  const toggleStyle = (id) => {
-    const next = styles.includes(id) ? styles.filter((s) => s !== id) : [...styles, id];
-    const ordered = ENEMY_STYLES.filter((s) => next.includes(s));
+  const style = weaponStyleOf(item);
+  const authored = authoredWeaponStyles(item);
+  const pickStyle = (id) => {
     onChange({
       type: 'weapon',
-      styles: ordered.length ? ordered : undefined,
+      styles: [id],
       // The style lives in `styles` now; an older item's one-style field would only shadow it.
       ...(ENEMY_STYLES.includes(item.skillRequired) ? { skillRequired: undefined } : {}),
     });
@@ -47,26 +47,27 @@ function WeaponFields({ item, onChange }) {
 
   return (
     <div className="col-span-2 grid grid-cols-2 gap-4">
-      <Field label="Weapon styles" className="col-span-2">
-        <div className="flex flex-wrap gap-4">
+      <Field label="Weapon style" className="col-span-2">
+        <select
+          aria-label="Weapon style"
+          data-field="weapon-style"
+          value={style}
+          onChange={(e) => pickStyle(e.target.value)}
+          className="w-full"
+        >
           {ENEMY_STYLES.map((id) => (
-            <label key={id} className="flex items-center gap-1.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                aria-label={`${styleName(id)} weapon`}
-                data-field={`weapon-style-${id}`}
-                checked={styles.includes(id)}
-                onChange={() => toggleStyle(id)}
-                className="rounded border-white/10 text-emerald-500 cursor-pointer"
-              />
-              <span className="text-xs text-gray-300">{styleName(id)}</span>
-            </label>
+            <option key={id} value={id}>{styleName(id)}</option>
           ))}
-        </div>
+        </select>
         <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-          Only a hero of a ticked style may hold it (a Dagger is Melee and Stealth); a Recruit holds only a Tier 1 weapon, of any style.
-          {styles.length === 0 && ' None ticked: any promoted hero may hold it.'}
+          The style any hero holding it fights in: its kills train that skill, and it decides the matchup.
+          {authored.length === 0 && ' None written yet: it fights as Melee.'}
         </p>
+        {authored.length > 1 && (
+          <p data-field="weapon-style-many" className="text-[11px] mt-1 leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+            Older content names {authored.map(styleName).join(' and ')}; a weapon has one, so it fights as {styleName(style)}. Pick its style to keep one.
+          </p>
+        )}
       </Field>
 
       <Field label="Damage" className="col-span-1">
@@ -104,7 +105,7 @@ function WeaponFields({ item, onChange }) {
           className="w-full"
         />
         <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-          1 copper, 2 iron, and so on down the tiers beside Damage. A Recruit may hold only Tier 1; blank means no tier, which a Recruit may not hold.
+          1 copper, 2 iron, and so on down the tiers beside Damage; blank means no tier.
         </p>
       </Field>
 
@@ -180,6 +181,8 @@ export default function ItemEditor() {
       restoreAmount: RESTORING_CATEGORIES.has(slot) ? (item.restoreAmount || 5) : 0,
       // Tools and weapons are held in the hands; out of them, none of these means anything.
       ...(slot === HAND_CATEGORY ? {} : { tool: undefined, hands: undefined, ...WEAPON_CLEARED }),
+      // A level requirement's style is the weapon's or the armour's own: a new category starts without one.
+      ...(slot === item.equipSlot ? {} : { levelRequired: undefined, skillRequired: undefined }),
     });
   };
 
@@ -334,6 +337,8 @@ export default function ItemEditor() {
           {isHand && !isTool && (
             <WeaponFields item={item} onChange={(patch) => updateItem(activeId, patch)} />
           )}
+
+          <GearLevelField item={item} onChange={(patch) => updateItem(activeId, patch)} />
 
           {isTool && (
             <label className="col-span-2 flex items-center gap-2 cursor-pointer select-none">

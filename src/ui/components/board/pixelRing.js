@@ -1,4 +1,4 @@
-// A circle drawn as whole art pixels: the flag's reach ring.
+// A circle drawn as whole art pixels: a camp's reach ring.
 
 /**
  * The cells of a one-pixel ring of radius `r` art pixels, by the midpoint circle algorithm: every

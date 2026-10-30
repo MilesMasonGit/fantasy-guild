@@ -356,12 +356,12 @@ const AlertOutlineDemo = () => (
     </div>
 );
 
-/** The mat's level-up float, two skills side by side over a patch of ground. */
+/** The mat's level-up float, two skills side by side over a patch of ground, one naming a perk it reached. */
 const LevelUpFloatPatch = () => {
     const [floats] = useState(() => {
         const at = Date.now();
         return [
-            { key: 'mining', skillId: 'mining', skillName: 'Mining', from: 49, to: 50, at, held: false },
+            { key: 'mining', skillId: 'mining', skillName: 'Mining', from: 49, to: 50, at, held: false, perks: ['Steady Pick'] },
             { key: 'logging', skillId: 'logging', skillName: 'Logging', from: 12, to: 15, at, held: false }
         ];
     });
@@ -800,17 +800,17 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'level-up-float', title: 'Level-up float', status: 'unapproved', source: 'LevelUpFloat (over a hero on the mat)',
-        rule: 'The skill icon at 2× and the level in the display size, no frame, hard shadow. The old number flashes a 1-art-pixel gold outline, rolls up in stepped jumps to the new one, stays about 30 s, then fades in steps.',
+        rule: 'The skill icon at 2× and the level in the display size, no frame, hard shadow. The old number flashes a 1-art-pixel gold outline, rolls up in stepped jumps to the new one, stays about 30 s, then fades in steps. A milestone perk the level-up reached is named underneath in gold, the title size, with the same hard shadow (new, unapproved).',
         Demo: LevelUpFloatDemo
     },
     {
         id: 'speech', title: 'Speech bubbles and callouts', status: 'unapproved',
         source: 'SpeechFrame: a hero’s speech on the mat, the hero bar’s level-up alerts, the mat’s callouts, the off-mat refusal',
-        rule: 'One line in the chamfer frame with its hard shadow, white words, and a stepped pixel tail under the bubble nearest what it is about. Bronze for news, gold when it asks to be looked at (a hero with no work, a level-up), red for a can’t (a refused flag, drop or equip). A callout rises and fades without scaling.',
+        rule: 'One line in the chamfer frame with its hard shadow, white words, and a stepped pixel tail under the bubble nearest what it is about. Bronze for news, gold when it asks to be looked at (a hero with no work, a level-up), red for a can’t (a refused order, drop or equip). A callout rises and fades without scaling.',
         Demo: () => (
             <div className="flex items-end gap-6 pb-3">
                 <SpeechFrame tail className="whitespace-nowrap ui-text-title font-bold">Fir Forest Depleted</SpeechFrame>
-                <SpeechFrame tail tone={SPEECH_TONE.ATTENTION} className="whitespace-nowrap ui-text-title font-bold">No work in range.</SpeechFrame>
+                <SpeechFrame tail tone={SPEECH_TONE.ATTENTION} className="whitespace-nowrap ui-text-title font-bold">Nothing to work here.</SpeechFrame>
                 <SpeechFrame tail tone={SPEECH_TONE.CANT} className="whitespace-nowrap ui-text-title font-bold">Too close to another Token</SpeechFrame>
             </div>
         )

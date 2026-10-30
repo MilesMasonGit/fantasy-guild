@@ -53,8 +53,7 @@ function projectFlags() {
         // A lapsed order reads as a job gone even before the next tick takes the pin off.
         const pinned = Flags.pinnedTokenOf(heroId);
         const status = Flags.statusOf(heroId);
-        // An old area flag (made only by tests now) is drawn as it always was.
-        const order = pinned ? 'token' : (Flags.isSpot(flag) ? (flag.needsJob ? null : 'spot') : 'area');
+        const order = pinned ? 'token' : (flag.needsJob || !Flags.isSpot(flag) ? null : 'spot');
         if (!order) continue;
         out.push({
             heroId,

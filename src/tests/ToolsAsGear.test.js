@@ -8,6 +8,7 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as Flags from '../systems/board/Flags.js';
@@ -24,13 +25,13 @@ import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegi
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
 import { getPrimaryWeapon } from '../config/registries/equipmentConstants.js';
 import { setStarterCampForTests, resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import {
     TOOL_KINDS, HANDS, toolOf, neededToolOf, toolMeets, handsOf, toolNeedPhrase, toolItemFor, starterToolIds
 } from '../config/registries/toolKinds.js';
 import { toolFindings } from '../systems/core/toolRule.js';
 import { problemText, PROBLEM_SEVERITY, SEVERITY } from '../ui/components/board/problemMark.js';
-import { blockedText, pinRefusedLineFor } from '../ui/components/board/heroBubbles.js';
+import { blockedText } from '../ui/components/board/heroBubbles.js';
 import { SKIP_HINT, skipHint } from '../ui/components/board/boardConstants.js';
 import { skipLine, tokenSkipLines } from '../ui/components/board/flagText.js';
 import { calloutText, dueAgain, TOOL_CALLOUT_GAP_MS } from '../ui/components/board/callouts.js';
@@ -73,6 +74,10 @@ registerTokenTypes({
     fx_deep_vein: worked('fx_deep_vein', 'Fixture Deep Vein', 'mining', { kind: 'pickaxe', minTier: 2 }),
     fx_tree: worked('fx_tree', 'Fixture Tree', 'forestry', { kind: 'woodaxe', minTier: 1 }),
     fx_plain: worked('fx_plain', 'Fixture Plain Node', 'forestry', null),
+    fx_mining_camp: {
+        id: 'fx_mining_camp', name: 'Fixture Mining Camp', tokenType: 'camp', rarity: 'common', theme: 'fixture',
+        uses: null, size: 1, sprite: 's_nature', requiresHero: false, config: null, camp: { skill: 'mining', reach: 300 }
+    },
     // The retired shape: a pickaxe Token that serves the Tokens beside it, and wears doing so.
     fx_pick_token: {
         id: 'fx_pick_token', name: 'Fixture Pickaxe Token', tokenType: 'context', rarity: 'common', theme: 'fixture',
@@ -82,7 +87,6 @@ registerTokenTypes({
 
 const VEIN = { x: 400, y: 400 };
 const TREE = { x: 560, y: 400 };
-const FLAG = { x: 480, y: 400 };
 
 /** A Recruit, or with `combat` a promoted hero of that style: a Recruit holds no weapon. */
 function addHero(combat = null) {
@@ -111,7 +115,6 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 220);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -286,7 +289,7 @@ describe('the gate: only a hero holding the tool may work the Token', () => {
     it('the runner and the chooser agree: a hero on the vein without a pickaxe raises the no-tool mark', () => {
         const hero = addHero();
         const vein = put('fx_vein', VEIN);
-        Flags.plant(hero.id, VEIN);
+        Orders.orderAt(hero.id, VEIN);
         BoardState.setClaim(hero.id, { instanceId: vein.id, typeId: vein.typeId, x: vein.x, y: vein.y });
         expect(WorkCheck.whyCannotRun(vein.id, vein, hero.id, getTokenType('fx_vein').config)).toBe(ALERT.NO_TOOL);
         BoardRunner.tick(100);
@@ -294,7 +297,7 @@ describe('the gate: only a hero holding the tool may work the Token', () => {
     });
 });
 
-describe('choosing work: the hero does other allowed work, and the Token says what it needs', () => {
+describe('a hero without the tool: refused, or passing the Token over, and the Token says what it needs', () => {
     let heard;
     let off;
     beforeEach(() => {
@@ -303,20 +306,25 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
     });
     afterEach(() => off?.());
 
-    it('holding only a woodaxe, the hero works the tree and passes the vein over with no tool', () => {
+    /** A hero sent to the vein with a pickaxe, who then puts it down: their order passes it over. */
+    function sentThenDisarmed() {
         const hero = addHero();
-        equip(hero.id, 'fx_axe');
+        equip(hero.id, 'fx_pick');
         const vein = put('fx_vein', VEIN);
-        const tree = put('fx_tree', TREE);
-        // On the vein, so the vein is the nearer and is looked at first (priorities are gone).
-        Flags.plant(hero.id, VEIN);
+        Orders.orderAt(hero.id, VEIN);
+        expect(BoardState.claimOfHero(hero.id)?.instanceId).toBe(vein.id);
+        EquipmentManager.unequipItem(hero.id, hero.equipment.indexOf('fx_pick'));
+        tick(3);
+        return { hero, vein };
+    }
 
-        expect(BoardState.claimOfHero(hero.id)?.instanceId).toBe(tree.id);
+    it('a hero whose pickaxe is put down passes the vein over with no tool, and both hovers name it', () => {
+        const { hero, vein } = sentThenDisarmed();
+        expect(BoardState.claimOfHero(hero.id)).toBeNull();
         expect(Flags.skipsOf(vein.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);
         expect(heard).toContainEqual({ instanceId: vein.id, heroId: hero.id, kind: 'pickaxe', minTier: 1 });
-        // The flag's hover and the vein's own hover name the tool.
-        expect(skipLine({ instanceId: vein.id, reason: ALERT.NO_TOOL, typeId: 'fx_vein' }, hero.id)).toBe('Fixture Vein — needs a Pickaxe in hand');
-        expect(tokenSkipLines(vein.id)).toEqual([`${hero.name}’s flag skipped this: needs a Pickaxe in hand`]);
+        expect(skipLine({ instanceId: vein.id, reason: ALERT.NO_TOOL, typeId: 'fx_vein' })).toBe('Fixture Vein — needs a Pickaxe in hand');
+        expect(tokenSkipLines(vein.id)).toEqual([`${hero.name} skipped this: needs a Pickaxe in hand`]);
         // The pass-over is not a badge on the vein: the problem is the hero's.
         tick(5);
         expect(vein.alert ?? null).toBeNull();
@@ -324,25 +332,25 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
 
     it('only the Token the hero would have worked says it: one bubble per look, however many veins', () => {
         const hero = addHero();
+        equip(hero.id, 'fx_pick');
         const near = put('fx_vein', VEIN);
         const far = put('fx_vein', TREE);
-        Flags.plant(hero.id, { x: 420, y: 400 });
+        const camp = put('fx_mining_camp', { x: VEIN.x, y: VEIN.y + 160 });
+        expect(Orders.orderAt(hero.id, { x: camp.x, y: camp.y }).success).toBe(true);
+        EquipmentManager.unequipItem(hero.id, hero.equipment.indexOf('fx_pick'));
+        heard.length = 0;
+        tick(3);
         expect(Flags.skipsOf(near.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);
         expect(Flags.skipsOf(far.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);
         expect(heard).toHaveLength(1);
         expect([near.id, far.id]).toContain(heard[0].instanceId);
     });
 
-    it('an idle hero takes the vein as soon as a pickaxe is in hand', () => {
-        const hero = addHero();
-        // In the Bank already: taking it up is the only change, and it alone wakes the flag.
-        give('fx_pick');
-        const vein = put('fx_vein', VEIN);
-        Flags.plant(hero.id, VEIN);
-        tick(3);
+    it('takes the vein back as soon as a pickaxe is in hand again', () => {
+        const { hero, vein } = sentThenDisarmed();
         expect(BoardState.claimOfHero(hero.id)).toBeNull();
         expect(heard.length).toBeGreaterThan(0);
-
+        // In the Bank already: taking it up is the only change, and it alone wakes the order.
         equip(hero.id, 'fx_pick');
         tick(1);
         expect(BoardState.claimOfHero(hero.id)?.instanceId).toBe(vein.id);
@@ -352,7 +360,7 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
         const hero = addHero();
         equip(hero.id, 'fx_pick');
         const vein = put('fx_vein', VEIN);
-        Flags.plant(hero.id, VEIN);
+        Orders.orderAt(hero.id, VEIN);
         tick(3);
         expect(BoardState.claimOfHero(hero.id)?.instanceId).toBe(vein.id);
 
@@ -363,18 +371,14 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
         expect(vein.alert ?? null).toBeNull();
     });
 
-    it('a flag dropped on the vein without a pickaxe is not pinned, and the hero says what they need', () => {
+    it('a hero dropped on the vein without a pickaxe is refused, and the reason names the tool', () => {
         const hero = addHero();
         const vein = put('fx_vein', VEIN);
-        const said = [];
-        const offPin = EventBus.subscribe(BOARD_EVENTS.PIN_REFUSED, (p) => said.push(p));
-        try {
-            const res = Flags.plant(hero.id, VEIN, { pin: true });
-            expect(res.pinnedTo).toBeNull();
-            expect(res.pinRefused).toBe(ALERT.NO_TOOL);
-        } finally { offPin(); }
-        expect(said).toEqual([{ heroId: hero.id, instanceId: vein.id, reason: ALERT.NO_TOOL }]);
-        expect(pinRefusedLineFor(vein.id, ALERT.NO_TOOL)).toBe('I need a Pickaxe to work Fixture Vein.');
+        const res = Orders.orderAt(hero.id, VEIN);
+        expect(res).toMatchObject({ success: false, reason: 'Needs Pickaxe', instanceId: vein.id });
+        expect(BoardState.flagOf(hero.id)).toBeNull();
+        // The retired speech line for the same reason, kept as the record (`heroBubbles.blockedText`).
+        expect(blockedText(ALERT.NO_TOOL, { token: 'Fixture Vein', tool: 'Pickaxe' })).toBe('I need a Pickaxe to work Fixture Vein.');
     });
 });
 
@@ -391,7 +395,7 @@ describe('the old tool Tokens are retired', () => {
         equip(hero.id, 'fx_pick');
         const vein = put('fx_vein', VEIN);
         const old = put('fx_pick_token', TREE);
-        Flags.plant(hero.id, VEIN, { pin: true });
+        Orders.orderAt(hero.id, VEIN);
         let cycles = 0;
         const offCycle = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { if (p.instanceId === vein.id) cycles++; });
         try { tick(60); } finally { offCycle(); }
@@ -528,13 +532,13 @@ describe('content: the rules the audit checks', () => {
 });
 
 describe('an old save with a tool Token on the mat', () => {
-    it('a Token whose type the Sync removed stands inert: ticks and flags carry on', () => {
+    it('a Token whose type the Sync removed stands inert: ticks and orders carry on', () => {
         const hero = addHero();
         equip(hero.id, 'fx_pick');
         const ghost = BoardState.createTokenInstance('token_removed_by_sync', 40);
         BoardState.addToken(ghost, TREE.x, TREE.y);
         const vein = put('fx_vein', VEIN);
-        Flags.plant(hero.id, FLAG);
+        Orders.orderAt(hero.id, VEIN);
         expect(() => tick(30)).not.toThrow();
         expect(BoardState.claimOfHero(hero.id)?.instanceId).toBe(vein.id);
         expect(BoardState.getTokenById(ghost.id)).toBeTruthy();

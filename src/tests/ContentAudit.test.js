@@ -208,9 +208,10 @@ describe('The audit names content pointing at a skill or job that does not exist
             expect.stringMatching(/skill "fx_no_such_recipe_skill", which does not exist/));
     });
 
-    it('names a Promotes rule whose job does not exist', () => {
+    // Rewritten with classless heroes: every Promotes rule is retired, whatever job it names.
+    it('names a Promotes rule as retired', () => {
         expect(at('Token "fixture_unknown_job"')).toContainEqual(
-            expect.stringMatching(/job "fx_no_such_job", which does not exist/));
+            expect.stringMatching(/promotes the hero to "fx_no_such_job": jobs are retired/));
     });
 
     it('names a rule scoped to an unknown skill', () => {

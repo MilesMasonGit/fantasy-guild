@@ -53,8 +53,6 @@ import { useDrawn } from './dev/perf/drawSwitches.js';
 import SettingsModal from './modals/SettingsModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import HeroEditModal from './modals/HeroEditModal.jsx';
-import JobChangeModal from './modals/JobChangeModal.jsx';
-import PromotionCeremonyModal from './modals/PromotionCeremonyModal.jsx';
 import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 
 /** The nav's views that Escape closes; Settings is a window and closes itself. */
@@ -337,7 +335,7 @@ export const ReactRoot = () => {
                         <AnimatePresence>
                             {isAtlasOpen && (
                                 <ErrorBoundary key="atlas" label="AtlasScreen">
-                                    <AtlasScreen onClose={ui.fullscreen.close} closePromotion={ui.dock.closePromotion} />
+                                    <AtlasScreen onClose={ui.fullscreen.close} />
                                 </ErrorBoundary>
                             )}
                         </AnimatePresence>
@@ -423,37 +421,8 @@ export const ReactRoot = () => {
                     heroId={ui.dock.editHeroId}
                     isOpen
                     onClose={ui.dock.closeEdit}
-                    onChangeJob={() => { ui.dock.closeEdit(); ui.dock.openJob(ui.dock.editHeroId); }}
                 />
             )}
-            {ui.dock.jobHeroId && (
-                <JobChangeModal
-                    heroId={ui.dock.jobHeroId}
-                    isOpen
-                    onClose={ui.dock.closeJob}
-                />
-            )}
-
-            {/**
-             * The ceremony, at the end of a Promotes Token's training cycle. Opened by the
-             * board, not by a menu: the player did not ask for this window, they finished
-             * the work that earns it.
-             */}
-            {ui.dock.promotionOffer && (
-                <PromotionCeremonyModal
-                    // ⚠️ Keyed on the offer, so a NEW offer gets a NEW
-                    // component. The ceremony keeps local state (whether it
-                    // has been answered, and any refusal), and without this
-                    // key that state survived into the next offer — decline,
-                    // get asked again, and the window still showed the old
-                    // answer with only a "Done" button. Found by playing, on
-                    // the branch this was ported from.
-                    key={`${ui.dock.promotionOffer.instanceId}:${ui.dock.promotionOffer.heroId}:${ui.dock.promotionOffer.jobId}`}
-                    offer={ui.dock.promotionOffer}
-                    onClose={ui.dock.closePromotion}
-                />
-            )}
-
             {/* Over everything: the loading bar while time away is caught up, then the summary. */}
             <CatchUpOverlay />
 

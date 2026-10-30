@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -102,7 +103,7 @@ describe('2×2 Large Token Mechanics', () => {
             const large = BoardState.createTokenInstance('fixture_large_fortress', 50);
             Placement.placeTokenAt(large, big(0));
 
-            const res = Placement.plantFlagAt('hero_1', big(0));
+            const res = Orders.orderAt('hero_1', big(0));
             expect(res.success).toBe(true);
 
             expect(BoardState.workTokenOf('hero_1')).toBe(large.id);
@@ -113,11 +114,11 @@ describe('2×2 Large Token Mechanics', () => {
             const large = BoardState.createTokenInstance('fixture_large_fortress', 50);
             Placement.placeTokenAt(large, big(0));
 
-            Placement.plantFlagAt('hero_1', big(0));
+            Orders.orderAt('hero_1', big(0));
             expect(BoardState.workTokenOf('hero_1')).toBe(large.id);
 
             // Nobody is displaced any more (1.4b): the second flag simply stands there.
-            const res2 = Placement.plantFlagAt('hero_2', big(0));
+            const res2 = Orders.orderAt('hero_2', big(0));
             expect(res2.success).toBe(true);
 
             expect(BoardState.workTokenOf('hero_1')).toBe(large.id);
@@ -125,14 +126,14 @@ describe('2×2 Large Token Mechanics', () => {
             expect(BoardState.flagOf('hero_2')).not.toBeNull();
         });
 
-        it('a hero dropped on a passive 2×2 token plants there but never works it', () => {
+        it('a hero dropped on a passive 2×2 token is refused: nothing to work there, and no order', () => {
             const passiveLarge = BoardState.createTokenInstance('fixture_large_passive_monolith', 100);
             Placement.placeTokenAt(passiveLarge, big(0));
 
-            const res = Placement.plantFlagAt('hero_1', big(0));
-            expect(res.success).toBe(true);
+            const res = Orders.orderAt('hero_1', big(0));
+            expect(res).toMatchObject({ success: false, reason: 'Nothing to work here', instanceId: passiveLarge.id });
             expect(BoardState.workerOf(passiveLarge.id)).toBeNull();
-            expect(BoardState.flagOf('hero_1')).not.toBeNull();
+            expect(BoardState.flagOf('hero_1')).toBeNull();
         });
     });
 });

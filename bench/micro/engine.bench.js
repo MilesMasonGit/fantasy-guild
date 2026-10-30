@@ -8,7 +8,7 @@
 //   BoardState.tokens()               — the copy/filter/sort list (CR3-001)
 //   nearby.tokensWithin               — "what is near this point" (CR3-003)
 //   MatPlacement.forceSpot            — the push solver, via its public API (CR3-003)
-//   Flags choosing                    — a re-plant, which releases and chooses again (CR3-002)
+//   Flags choosing                    — a new order, which releases and chooses again (CR3-002)
 //   TileModifiers.rebuildAll          — with and without a board-reach aura (CR3-004)
 
 import '../lib/prelude.mjs';
@@ -18,7 +18,7 @@ import * as fixtures from '../fixtures.mjs';
 import * as BoardState from '../../src/systems/board/BoardState.js';
 import * as MatPlacement from '../../src/systems/board/MatPlacement.js';
 import * as TileModifiers from '../../src/systems/board/TileModifiers.js';
-import * as Flags from '../../src/systems/board/Flags.js';
+import * as Orders from '../../src/systems/board/Orders.js';
 import { tokensWithin } from '../../src/systems/board/nearby.js';
 import { setMatTuning } from '../../src/config/matTuning.js';
 import { pinMat } from '../scenarios/referenceMat.mjs';
@@ -81,9 +81,9 @@ for (const n of SIZES) {
         }, { ...options(), time: 1000 });
 
         let flip = false;
-        bench('Flags choosing (re-plant, release + choose)', () => {
+        bench('Flags choosing (a new order, release + choose)', () => {
             flip = !flip;
-            Flags.plant(ctx.heroId, flip ? CENTRE : { x: CENTRE.x + 500, y: CENTRE.y });
+            Orders.orderAt(ctx.heroId, flip ? CENTRE : { x: CENTRE.x + 500, y: CENTRE.y });
         }, options());
 
         bench('TileModifiers.rebuildAll', () => {

@@ -28,10 +28,9 @@ const CLOSE_SPRITE = '/assets/ui/u_cancel_red.png';
  *
  * @param {object} props
  * @param {() => void} props.onClose
- * @param {() => void} [props.closePromotion]  closes the promotion ceremony before a travel
  * @param {string} [props.initialTab]
  */
-export const AtlasScreen = ({ onClose, closePromotion, initialTab = ATLAS_TAB.REGIONS }) => {
+export const AtlasScreen = ({ onClose, initialTab = ATLAS_TAB.REGIONS }) => {
     const version = useAtlasRefresh();
     const { isDragging } = useActiveDrag();
     const [tab, setTab] = useState(initialTab);
@@ -46,7 +45,7 @@ export const AtlasScreen = ({ onClose, closePromotion, initialTab = ATLAS_TAB.RE
     }, [onClose]);
 
     const travel = async (regionId) => {
-        const result = await travelFromScreen(regionId, { isDragging, closePromotion });
+        const result = await travelFromScreen(regionId, { isDragging });
         if (result?.success) {
             setMessage(null);
             onClose?.();
