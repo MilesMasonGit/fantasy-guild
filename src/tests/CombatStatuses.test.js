@@ -25,11 +25,11 @@ import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { statusBlockOf } from '../systems/effects/effectLibrary.js';
 import { getEffect } from '../config/registries/effectRegistry.js';
-import { registerStatusFixtures, POISON, BURN } from './fixtures/statusEffects.js';
+import { registerStatusFixtures, VENOM, BURN } from './fixtures/statusEffects.js';
 
 /**
- * Poison and Burn as Rules-system statuses (brief 220, C4): library effects carrying a `status`
- * block. Poison stacks to 3 and deals 1 a stack a tick until the fight ends; Burn does not stack,
+ * Venom (once Poison) and Burn as Rules-system statuses (brief 220, C4): library effects carrying a `status`
+ * block. Venom stacks to 3 and deals 1 a stack a tick until the fight ends; Burn does not stack,
  * deals 1 a tick for 3 ticks, and halves what food heals; a tick is 3 s; every status ends with its
  * fight and lands only on a fighter.
  */
@@ -108,7 +108,7 @@ afterEach(() => {
 
 describe('a status is a library effect with a status block', () => {
     it('reads the block: stacks 1–5, ticks 0 (the whole fight) or more', () => {
-        expect(statusBlockOf(getEffect(POISON))).toEqual({ stacks: 3, ticks: 0 });
+        expect(statusBlockOf(getEffect(VENOM))).toEqual({ stacks: 3, ticks: 0 });
         expect(statusBlockOf(getEffect(BURN))).toEqual({ stacks: 1, ticks: 3 });
         expect(statusBlockOf({ status: { stacks: 9, ticks: -2 } })).toEqual({ stacks: 5, ticks: 0 });
         expect(statusBlockOf({ status: {} })).toEqual({ stacks: 1, ticks: 0 });
@@ -120,31 +120,31 @@ describe('a status is a library effect with a status block', () => {
     });
 });
 
-describe('Poison: stacks to 3, 1 a stack a tick, until the fight ends', () => {
+describe('Venom: stacks to 3, 1 a stack a tick, until the fight ends', () => {
     it('each landing adds a stack, never past 3', () => {
         const { hero } = startFight();
-        for (let i = 0; i < 5; i++) expect(land(hero.id, POISON)).toBe(true);
-        expect(LiveEffects.statusesOf(hero)).toEqual([{ effectId: POISON, stacks: 3, ticksLeft: null }]);
+        for (let i = 0; i < 5; i++) expect(land(hero.id, VENOM)).toBe(true);
+        expect(LiveEffects.statusesOf(hero)).toEqual([{ effectId: VENOM, stacks: 3, ticksLeft: null }]);
     });
 
     it('deals 1 per stack per tick, ignoring armour, and nothing between ticks', () => {
         const { hero } = startFight();
         hero.aggregator.addModifier({ type: EFFECT_TYPES.ARMOR, value: 5, bucket: 'flat', source: 'test' });
-        land(hero.id, POISON);
-        land(hero.id, POISON);
+        land(hero.id, VENOM);
+        land(hero.id, VENOM);
         const before = hero.hp.current;
         LiveEffects.tick(STATUS_TICK_INTERVAL_MS - 1, TriggerSystem.fireLiveStatement);
         expect(hero.hp.current).toBe(before);
         LiveEffects.tick(1, TriggerSystem.fireLiveStatement);
         expect(hero.hp.current).toBe(before - 2);
-        land(hero.id, POISON);
+        land(hero.id, VENOM);
         tick();
         expect(hero.hp.current).toBe(before - 2 - 3);
     });
 
     it('ends with the fight: the hero leaving takes it off, and no tick hurts them after', () => {
         const { hero } = startFight();
-        land(hero.id, POISON);
+        land(hero.id, VENOM);
         expect(BoardCombat.endFightOfHero(hero.id)).toBe(true);
         expect(LiveEffects.statusesOf(hero)).toEqual([]);
         const hp = hero.hp.current;
@@ -154,7 +154,7 @@ describe('Poison: stacks to 3, 1 a stack a tick, until the fight ends', () => {
 
     it('ends with the fight at the kill too', () => {
         const { hero, fight } = startFight();
-        land(hero.id, POISON);
+        land(hero.id, VENOM);
         fight.combat.enemyHp.current = 1;
         for (let t = 0; t < 4000 && LiveEffects.statusesOf(hero).length; t += 100) BoardRunner.tick(100);
         expect(LiveEffects.statusesOf(hero)).toEqual([]);
@@ -163,15 +163,15 @@ describe('Poison: stacks to 3, 1 a stack a tick, until the fight ends', () => {
     it('lands only on a fighter: a hero out of a fight is never poisoned', () => {
         const hero = makeHero('st_idle');
         hero.aggregator = hero.aggregator || null;
-        expect(land(hero.id, POISON)).toBe(false);
+        expect(land(hero.id, VENOM)).toBe(false);
         expect(LiveEffects.statusesOf(hero)).toEqual([]);
     });
 
     it('works on the enemy the same way: its own stacks, its own ticks', () => {
         const { fight, enemy } = startFight();
         const bearer = BoardCombat.enemyBearerOfToken(enemy.id);
-        for (let i = 0; i < 4; i++) LiveEffects.applyTo(bearer, { effectId: POISON });
-        expect(LiveEffects.statusesOf(fight)).toEqual([{ effectId: POISON, stacks: 3, ticksLeft: null }]);
+        for (let i = 0; i < 4; i++) LiveEffects.applyTo(bearer, { effectId: VENOM });
+        expect(LiveEffects.statusesOf(fight)).toEqual([{ effectId: VENOM, stacks: 3, ticksLeft: null }]);
         const hp = fight.combat.enemyHp.current;
         tick();
         expect(fight.combat.enemyHp.current).toBe(hp - 3);
@@ -219,10 +219,10 @@ describe('Burn: no stacks, 1 a tick for 3 ticks, food heals half', () => {
 });
 
 describe('what a hero carries moves a status (a Hide Vest, an immunity)', () => {
-    it('Status Stack Limit -1 on Poison: it stacks at most 2', () => {
+    it('Status Stack Limit -1 on Venom: it stacks at most 2', () => {
         const { hero } = startFight();
-        hero.aggregator.addModifier({ type: EFFECT_TYPES.STATUS_MAX_STACKS, value: -1, bucket: 'flat', source: 'vest', target: { category: POISON } });
-        for (let i = 0; i < 4; i++) land(hero.id, POISON);
+        hero.aggregator.addModifier({ type: EFFECT_TYPES.STATUS_MAX_STACKS, value: -1, bucket: 'flat', source: 'vest', target: { category: VENOM } });
+        for (let i = 0; i < 4; i++) land(hero.id, VENOM);
         expect(LiveEffects.statusesOf(hero)[0].stacks).toBe(2);
     });
 
@@ -231,19 +231,19 @@ describe('what a hero carries moves a status (a Hide Vest, an immunity)', () => 
         const blocked = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.STATUS_BLOCKED, (p) => blocked.push(p.statusId));
         hero.aggregator.addModifier({ type: EFFECT_TYPES.STATUS_MAX_STACKS, value: -1, bucket: 'flat', source: 'vest', target: { category: BURN } });
-        hero.aggregator.addModifier({ type: EFFECT_TYPES.STATUS_IMMUNITY, value: 1, bucket: 'flat', source: 'charm', target: { category: POISON } });
+        hero.aggregator.addModifier({ type: EFFECT_TYPES.STATUS_IMMUNITY, value: 1, bucket: 'flat', source: 'charm', target: { category: VENOM } });
         expect(land(hero.id, BURN)).toBe(false);
-        expect(land(hero.id, POISON)).toBe(false);
+        expect(land(hero.id, VENOM)).toBe(false);
         off();
-        expect(blocked).toEqual([BURN, POISON]);
+        expect(blocked).toEqual([BURN, VENOM]);
         expect(LiveEffects.statusesOf(hero)).toEqual([]);
     });
 
     it('never strips stacks already carried when the cap drops mid-fight', () => {
         const { hero } = startFight();
-        for (let i = 0; i < 3; i++) land(hero.id, POISON);
-        hero.aggregator.addModifier({ type: EFFECT_TYPES.STATUS_MAX_STACKS, value: -2, bucket: 'flat', source: 'vest', target: { category: POISON } });
-        land(hero.id, POISON);
+        for (let i = 0; i < 3; i++) land(hero.id, VENOM);
+        hero.aggregator.addModifier({ type: EFFECT_TYPES.STATUS_MAX_STACKS, value: -2, bucket: 'flat', source: 'vest', target: { category: VENOM } });
+        land(hero.id, VENOM);
         expect(LiveEffects.statusesOf(hero)[0].stacks).toBe(3);
     });
 });
@@ -253,7 +253,7 @@ describe('a status that finishes a fighter goes through the one way of finishing
         const { hero, enemy } = startFight();
         const defeats = [];
         const off = EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, (p) => defeats.push(p.heroId));
-        for (let i = 0; i < 3; i++) land(hero.id, POISON);
+        for (let i = 0; i < 3; i++) land(hero.id, VENOM);
         hero.hp.current = 2;
         tick();
         // The clock ticking again, and the board running on, roll nothing twice.
@@ -278,7 +278,7 @@ describe('a status that finishes a fighter goes through the one way of finishing
             EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => kills.push(1)),
             EventBus.subscribe(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, () => swings.push(1))
         ];
-        LiveEffects.applyTo(BoardCombat.enemyBearerOfToken(enemy.id), { effectId: POISON });
+        LiveEffects.applyTo(BoardCombat.enemyBearerOfToken(enemy.id), { effectId: VENOM });
         fight.combat.enemyHp.current = 1;
         fight.combat.enemyTickProgress = 2950;   // its swing is due on the next board tick
         tick();

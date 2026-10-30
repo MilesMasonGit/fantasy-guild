@@ -21,8 +21,12 @@
  * (slow, same hit) for its Physical resistance.
  */
 
-/** The library effect a Venomous enemy lands on a hit. */
-export const VENOM_EFFECT_ID = 'effect_poison';
+/**
+ * The library effect a Venomous enemy lands on a hit: the Venom status (once named Poison, before
+ * Poison was a damage type; content still saying `effect_poison` is read as this id,
+ * `effectIdMigration.js`).
+ */
+export const VENOM_EFFECT_ID = 'effect_venom';
 
 /** @type {ReadonlyArray<{id: string, label: string, blurb: string, resistances?: Object<string, number>, dodge?: number, speed?: string, hitScale?: number, hitAtLeastMore?: number, onHit?: {effectId: string}}>} */
 export const ENEMY_KINDS = Object.freeze([
@@ -48,16 +52,16 @@ export const ENEMY_KINDS = Object.freeze([
     }),
     Object.freeze({
         /**
-         * Lands the Poison status (`VENOM_EFFECT_ID`, a library effect) on the hero with every hit
-         * that leaves them standing: an "On Hit: applies Poison to the hero" rule the kind carries
+         * Lands the Venom status (`VENOM_EFFECT_ID`, a library effect) on the hero with every hit
+         * that leaves them standing: an "On Hit: applies Venom to the hero" rule the kind carries
          * (`board/FightMoments.js`).
          *
-         * ⚠️ Names the library effect by id: the content's Poison must be `effect_poison`, the id
-         * the CMS gives an effect named Poison. Without it the kind poisons nobody, and
+         * ⚠️ Names the library effect by id: the content's Venom must be `effect_venom`, the id
+         * the CMS gives an effect named Venom. Without it the kind lands nothing, and
          * `ContentAudit` says so.
          */
         id: 'venomous', label: 'Venomous',
-        blurb: 'Poisons the hero with every hit it lands (one Poison stack a hit).',
+        blurb: 'Lands Venom on the hero with every hit it lands (one Venom stack a hit).',
         onHit: Object.freeze({ effectId: VENOM_EFFECT_ID })
     })
 ]);

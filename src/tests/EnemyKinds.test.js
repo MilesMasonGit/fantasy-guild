@@ -20,7 +20,7 @@ import { registerTokenTypes, tokenStartingUses } from '../config/registries/toke
 import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
 import * as FightMoments from '../systems/board/FightMoments.js';
 import * as LiveEffects from '../systems/effects/LiveEffects.js';
-import { registerStatusFixtures, POISON } from './fixtures/statusEffects.js';
+import { registerStatusFixtures, VENOM } from './fixtures/statusEffects.js';
 
 /**
  * The five enemy kinds (brief 220, C2): presets an author ticks on an enemy, none to two, that twist
@@ -80,8 +80,8 @@ describe('how a kind combines with the level table', () => {
         expect(stats(1, ['brute']).attackSpeed).toBe(4000);
     });
 
-    it('Venomous: every landed hit lands the Poison status effect (effect_poison)', () => {
-        expect(stats(1, ['venomous']).onHit).toEqual([{ effectId: 'effect_poison' }]);
+    it('Venomous: every landed hit lands the Venom status effect (effect_venom)', () => {
+        expect(stats(1, ['venomous']).onHit).toEqual([{ effectId: 'effect_venom' }]);
         expect(pick(stats(1, ['venomous']))).toEqual(pick(stats(1, [])));
     });
 
@@ -189,8 +189,8 @@ describe('a fight against each kind', () => {
 
     it('Venomous poisons the hero on the hits it lands, up to 3 stacks; the others never do', () => {
         const venom = duel('kind_venomous');
-        expect(venom.statuses.filter(s => s === POISON).length).toBeGreaterThan(3);
-        expect(LiveEffects.statusesOf(venom.hero)).toEqual([{ effectId: POISON, stacks: 3, ticksLeft: null }]);
+        expect(venom.statuses.filter(s => s === VENOM).length).toBeGreaterThan(3);
+        expect(LiveEffects.statusesOf(venom.hero)).toEqual([{ effectId: VENOM, stacks: 3, ticksLeft: null }]);
         expect(duel('kind_none').statuses).toEqual([]);
     });
 });

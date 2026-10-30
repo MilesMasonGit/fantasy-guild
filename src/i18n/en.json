@@ -44,6 +44,10 @@
         "restores": "Restores {amount} HP",
         "weaponHits": "Hits {damage} {type}, as {style}",
         "arrow": "Arrow: +{damage} {type} a shot, from a bow",
+        "offHand": "Off hand: beside a weapon, never swung",
+        "resists": "Resists {type} {n}%",
+        "weakTo": "Weak to {type} {n}%",
+        "styleCut": "{style} damage −{n}%",
         "clickToSelect": "Click to select",
         "clickToDeselect": "Click to deselect",
         "type": {
@@ -143,6 +147,7 @@
             "fist": "Fist: 1",
             "levelStep": "Combat level: +{n}",
             "moreDamage": "Elixirs and gear: {n}",
+            "styleCut": "{style} damage cut by gear: {n}",
             "arrow": "{item}: +{n} {type}",
             "arrowsLeft": {
                 "one": "{count} arrow in the Bank",
@@ -200,7 +205,7 @@
             },
             "venomous": {
                 "name": "Venomous",
-                "tip": "Each hit adds a stack of Poison"
+                "tip": "Each hit adds a stack of Venom"
             }
         }
     },

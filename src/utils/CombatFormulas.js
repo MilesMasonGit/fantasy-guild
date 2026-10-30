@@ -15,7 +15,7 @@ import {
 } from '../config/FormulaRegistry.js';
 import { COMBAT_SKILL_IDS, BAREHANDED_STYLE_ID } from '../config/registries/skillRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
-import { getEquippedEntries, isWeaponCategory } from '../config/registries/equipmentConstants.js';
+import { getEquippedEntries, getGrid, isWeaponCategory } from '../config/registries/equipmentConstants.js';
 import { isWeapon, weaponStyleOf, meetsGearRequirements } from '../config/registries/weaponStyles.js';
 import {
     weaponDamageTypeOf, BAREHANDED_DAMAGE_TYPE, PLAIN_ENEMY_HIT_TYPE, resistanceFor
@@ -38,10 +38,19 @@ function skillLevelOf(hero, skillId) {
  * is not swung: the equip paths refuse it.
  */
 export function getHeroWeapon(hero) {
-    for (const { itemId, category } of getEquippedEntries(hero)) {
+    const slot = getHeroWeaponSlot(hero);
+    return slot === null ? null : getItem(getGrid(hero)[slot]);
+}
+
+/**
+ * The grid slot of the weapon a hero swings ({@link getHeroWeapon}), or null barehanded. The only
+ * weapon in the hands that lends anything: another one there lends nothing (`HeroEffects`).
+ */
+export function getHeroWeaponSlot(hero) {
+    for (const { index, itemId, category } of getEquippedEntries(hero)) {
         if (!isWeaponCategory(category)) continue;
         const item = getItem(itemId);
-        if (item && isWeapon(item) && meetsGearRequirements(item, hero)) return item;
+        if (item && isWeapon(item) && meetsGearRequirements(item, hero)) return index;
     }
     return null;
 }
@@ -218,17 +227,49 @@ export function typeDamageBoost(entity, type) {
     return axis(entity, EFFECT_TYPES.TYPE_DAMAGE, type);
 }
 
-/** How much a hero resists hits of `type` (a type, or a group for a hit typed only by its group), in percent. */
+/** The points of Sunder a fighter carries (the Sunder status, once per stack): off every resistance they have. */
+export function sunderOf(entity) {
+    return Math.max(0, axis(entity, EFFECT_TYPES.SUNDER));
+}
+
+/**
+ * A resistance after Sunder: lowered by `sunderPct`, never below 0. A weakness (or no resistance)
+ * is untouched: Sunder strips what protects a fighter, it does not make them weak.
+ */
+export function afterSunder(resistPct, sunderPct) {
+    if (!(resistPct > 0) || !(sunderPct > 0)) return resistPct;
+    return Math.max(0, resistPct - sunderPct);
+}
+
+/**
+ * How much a hero resists hits of `type` (a type, or a group for a hit typed only by its group), in
+ * percent: what they carry (worn gear's resistances, Type Resistance rows), after any Sunder on them.
+ */
 export function heroTypeResistance(hero, type) {
-    return axis(hero, EFFECT_TYPES.TYPE_RESIST, type);
+    return afterSunder(axis(hero, EFFECT_TYPES.TYPE_RESIST, type), sunderOf(hero));
 }
 
 /**
  * How much an enemy resists hits of `type`, in signed percent (a weakness negative): its own
- * resistances, where a line on the type replaces its group's, plus what effects on it lend.
+ * resistances, where a line on the type replaces its group's, plus what effects on it lend, after
+ * any Sunder on it.
  */
 export function enemyTypeResistance(enemy, type) {
-    return resistanceFor(enemy?.resistances, type) + axis(enemy, EFFECT_TYPES.TYPE_RESIST, type);
+    return afterSunder(resistanceFor(enemy?.resistances, type) + axis(enemy, EFFECT_TYPES.TYPE_RESIST, type), sunderOf(enemy));
+}
+
+/**
+ * The percent a hero's worn gear cuts from their hits in `style` (the style they fight in when not
+ * given): every piece's `damageCut` on it, added (`gearDefence.js`), at most 100.
+ */
+export function styleDamageCut(hero, style = getHeroCombatStyle(hero)) {
+    return Math.min(100, Math.max(0, axis(hero, EFFECT_TYPES.STYLE_DAMAGE_CUT, style)));
+}
+
+/** What is left of a hero's hits in `style` after their gear's cut: 1 with none, 0 at a cut of 100. */
+export function styleCutFactor(hero, style = getHeroCombatStyle(hero)) {
+    const cut = styleDamageCut(hero, style);
+    return cut > 0 ? 1 - cut / 100 : 1;
 }
 
 /** 1 + the attacker's boost − the target's resistance, never below 0. Both in percent. */
@@ -282,11 +323,13 @@ function landedBlow(parts, multiplier, crit, boostOf, resistOf) {
 }
 
 /**
- * A hero's landed blow on an enemy, before the fraction sub-roll.
+ * A hero's landed blow on an enemy, before the fraction sub-roll. The multiplier holds the buffs, the
+ * matchup and the cut their worn gear makes to the style they fight in ({@link styleCutFactor}).
  * @param {{ crit?: boolean, arrow?: {damage: number, damageType: string}|null }} [options]
  */
 export function heroBlow(hero, enemy, { crit = false, arrow = null } = {}) {
-    const multiplier = damageMultiplierOf(hero) * matchupMultiplier(getHeroCombatStyle(hero), enemy?.combatType);
+    const style = getHeroCombatStyle(hero);
+    const multiplier = damageMultiplierOf(hero) * matchupMultiplier(style, enemy?.combatType) * styleCutFactor(hero, style);
     return landedBlow(heroHitParts(hero, arrow), multiplier, crit,
         (type) => typeDamageBoost(hero, type),
         (type) => enemyTypeResistance(enemy, type));

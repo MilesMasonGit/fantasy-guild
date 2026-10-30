@@ -406,9 +406,10 @@ function clearAll() {
     for (const heroId of heroes) changed(heroId);
 }
 
-/** The glyph a status's lines and ticks wear: a flame for a burn, a drop for the rest. */
+/** The glyph a status's lines and ticks wear: a cracked shield for a Sunder, a flame for a burn, a drop for the rest. */
 export function statusIcon(statusId) {
     const name = `${statusId || ''} ${EFFECTS[statusId]?.name || ''}`;
+    if (/sunder|crack|shatter/i.test(name)) return 'sunder';
     return /burn|fire|flame|scorch/i.test(name) ? 'flame' : 'drop';
 }
 

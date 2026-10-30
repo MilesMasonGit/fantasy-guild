@@ -7,7 +7,7 @@ import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { FIGHT_MOMENT } from '../../config/registries/triggerRegistry.js';
 import { SIDE, fightMoment, talliesOf } from './FightHooks.js';
-import { spendArrow } from './Arrows.js';
+import { spendArrow, nextArrowOf } from './Arrows.js';
 
 /**
  * HP and food are combat's attrition currency.
@@ -80,12 +80,15 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
 
     const tallies = talliesOf(fight);
     tallies.swings.hero += 1;
+    // The arrow this swing shoots: its own rules join the hero's for this swing only.
+    tallies.arrowId = nextArrowOf(hero);
     fightMoment(fight, SIDE.HERO, FIGHT_MOMENT.SWING, tallies.swings.hero);
 
     // A rule on the swing may have ended the fight before the blow: either side may have fallen.
     if (!isDown(hero) && fight.combat.enemyHp.current > 0) {
         const shot = spendArrow(hero);
         const arrowId = shot?.itemId ?? null;
+        tallies.arrowId = arrowId;
         const swing = CombatFormulas.rollSwing(
             CombatFormulas.heroMissChance(hero, enemy),
             CombatFormulas.heroCritChance(hero)
@@ -117,6 +120,7 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
         }
     }
 
+    tallies.arrowId = null;
     endSwing(fight, hero);
     if (!isDown(hero)) checkHealth(fight, hero);
 

@@ -17,6 +17,7 @@ import { composeTokenDescription } from '../engine/descriptionDictionary';
 import {
     deriveTokenType, statementsOf, makeStatement, KEYWORD,
     migrateBearers, migrateAppliesTargetsIn, migrateSkillIdsIn, migrateRecipePools,
+    migrateEffectLibrary, migrateEffectIdsIn, migratePerkEffectIds,
     expandBearer, expandAll, effectRefsOf, provisionalName,
     normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_DEFAULTS, CAMP_REACH_DEFAULT,
 } from '../utils/constants';
@@ -665,6 +666,25 @@ function seedSkillIds(state) {
     return next;
 }
 
+/**
+ * A renamed library effect (the Poison status became Venom) moves to its new id, keeping its place, and every Token, item, effect and perk naming it follows.
+ * ⚠️ Runs on the same three load paths and calls the same pure functions the game's loaders call: Sync to Game writes this workspace wholesale, so a workspace still naming the old id would write it back into `data/`. Idempotent.
+ */
+function seedEffectIds(state) {
+    if (!state || typeof state !== 'object') return state;
+    let next = state;
+    const replace = (key, value) => {
+        if (value === state[key]) return;
+        if (next === state) next = { ...state };
+        next[key] = value;
+    };
+    replace('effects', migrateEffectLibrary(state.effects));
+    replace('tokens', migrateEffectIdsIn(state.tokens));
+    replace('items', migrateEffectIdsIn(state.items));
+    replace('skillPerks', migratePerkEffectIds(state.skillPerks));
+    return next;
+}
+
 /** A workspace saved before maps were items carries the retired `maps` collection; it is dropped on load, never read. */
 function dropRetiredCollections(state) {
     if (!state || typeof state !== 'object' || !('maps' in state)) return state;
@@ -997,19 +1017,20 @@ export const useEntityStore = create(
              * ⚠️ This path bypasses the persist `migrate` hook entirely: an imported workspace never touches localStorage on the way in, so `seedSimIntent` runs here as well as on the persist config's `merge`; the two together are the whole coverage.
              */
             hydrate: (data = {}) => {
-                const seeded = seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent({
+                const seeded = seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent({
                     items: data.items || {},
                     tokens: data.tokens || {},
                     effects: data.effects || {},
                     recipePools: data.recipePools || {},
-                }))));
+                    skillPerks: data.skillPerks,
+                })))));
                 set({
                     items: seeded.items,
                     tokens: seeded.tokens,
                     effects: seeded.effects,
                     recipePools: seeded.recipePools,
                     starterCamp: normaliseStarterCamp(data.starterCamp),
-                    skillPerks: normaliseWorkspacePerks(data.skillPerks),
+                    skillPerks: normaliseWorkspacePerks(seeded.skillPerks),
                     planSettings: data.planSettings && typeof data.planSettings === 'object' ? data.planSettings : null,
                     activeEntityId: null,
                     activeEntityType: null,
@@ -1172,10 +1193,10 @@ export const useEntityStore = create(
             /** The default merge plus the seeding. The spread order is zustand's own default (persisted wins over the fresh store, so actions survive and data is replaced); only `seedSimIntent` is added. */
             merge: (persistedState, currentState) => ({
                 ...currentState,
-                ...seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState))))),
+                ...seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState)))))),
             }),
             /** Reached only by a numbered version that is not 1. Seeds anyway: the normaliser is idempotent, and a future migration should never be the reason intent went missing. */
-            migrate: (persistedState) => seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState))))),
+            migrate: (persistedState) => seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState)))))),
             /**
              * What survives a reload.
              * ⚠️ `activeEntityId` is in here deliberately: without it, anything that re-created this module (registering a sprite writes `sprite-manifest.js`, which the editors import, so Vite reloaded them) dropped the selection and closed the editor.

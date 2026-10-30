@@ -180,7 +180,7 @@ describe('the stack is the charge pool (UE-21)', () => {
 describe('an item’s rules read truthfully (UE-24)', () => {
     it('says when a carried status lands on the enemy — through the role (V10b)', () => {
         const toEnemy = statementFor(
-            KEYWORD.APPLIES, { effectId: 'effect_poison', chance: 100 },
+            KEYWORD.APPLIES, { effectId: 'effect_venom', chance: 100 },
             { when: { event: 'COMBAT_ENGAGED', scope: 'self' }, target: { role: 'opponent' } }
         );
         expect(renderStatement(toEnemy, { effect: () => 'Poison' })).toContain('applies Poison to the enemy');

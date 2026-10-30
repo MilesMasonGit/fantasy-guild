@@ -365,7 +365,7 @@ export const MODIFIER_PALETTE = [
         retired: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Retired with damage types: does nothing (armour is gone; Sunder comes later).'
+        hint: 'Retired with damage types: does nothing. Use the Sunder status (a status effect that provides Sunder).'
     },
     {
         type: EFFECT_TYPES.CRIT_CHANCE,
@@ -406,6 +406,22 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'Percent off hits of one damage type or group taken: 20 means 20% less, a negative number a weakness. Pick which type. An enemy\'s plain swing is Physical.'
+    },
+    {
+        /**
+         * Points off every resistance the bearer has, in the flat bucket like Type Resistance %:
+         * what the Sunder status provides, once per stack. A resistance is lowered to 0 at most; a
+         * weakness is untouched (`CombatFormulas.afterSunder`).
+         */
+        type: EFFECT_TYPES.SUNDER,
+        label: 'Sunder',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOnly: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Points off every resistance the bearer has, never below 0 (a weakness stays as it is). Put it on a status: Sunder 10 stacking to 3 takes up to 30 off. Spears and some arrows land it.'
     },
     {
         /**

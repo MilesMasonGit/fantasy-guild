@@ -63,8 +63,8 @@ describe('floats: what each says and its colour', () => {
         expect(heal.textContent).toBe('+5');
     });
 
-    it('⭐ poison and burn ticks are red with a drop or a flame (no colour of their own)', () => {
-        const poison = float({ kind: MOMENT.TICK, on: 'hero', amount: 2, statusId: 'effect_poison' });
+    it('⭐ venom and burn ticks are red with a drop or a flame (no colour of their own)', () => {
+        const poison = float({ kind: MOMENT.TICK, on: 'hero', amount: 2, statusId: 'effect_venom' });
         expect(poison.className).toContain('gi-ff-red');
         expect(q(poison, '[data-glyph="drop"]')).not.toBeNull();
         expect(poison.textContent).toBe('2');
@@ -72,7 +72,9 @@ describe('floats: what each says and its colour', () => {
         expect(burn.className).toContain('gi-ff-red');
         expect(q(burn, '[data-glyph="flame"]')).not.toBeNull();
         expect(statusIcon('qa_fx_burn')).toBe('flame');
-        expect(statusIcon('effect_poison')).toBe('drop');
+        expect(statusIcon('effect_venom')).toBe('drop');
+        // Sunder wears a cracked shield.
+        expect(statusIcon('effect_sunder')).toBe('sunder');
     });
 
     it('a hit carries its type\'s glyph; a shot two; the target\'s weakness says Weak! in gold, a resistance Resisted', () => {
@@ -118,7 +120,7 @@ describe('the fight panel', () => {
         // The hero's elixirs with the fights each has left, and statuses with stacks; the enemy's kinds.
         expect(text(q(panel, '[data-fight-elixir="item_elixir_of_valor"]'))).toBe('7');
         expect(text(q(panel, '[data-fight-elixir="item_elixir_of_ironskin"]'))).toBe('3');
-        expect(words(q(panel, '[data-fight-status="effect_poison"]'))).toBe('Poison ×2');
+        expect(words(q(panel, '[data-fight-status="effect_venom"]'))).toBe('Venom ×2');
         expect([...panel.querySelectorAll('[data-fight-kind]')].map(text)).toEqual(['Brute', 'Venomous']);
     });
 
@@ -146,7 +148,7 @@ describe('the fight panel', () => {
         // The whole fight, newest first.
         const lines = [...panel.querySelectorAll('[data-fight-log-line]')];
         expect(lines).toHaveLength(KIT_CURRENT.log.length);
-        expect(words(lines[0])).toBe('Poison hurts Aela −2');
+        expect(words(lines[0])).toBe('Venom hurts Aela −2');
         expect(words(lines.at(-1))).toBe('Aela drinks Elixir of Valor');
 
         act(() => { fireEvent.click(q(panel, '[data-fight-log-tab="last"]')); });

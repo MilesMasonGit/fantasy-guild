@@ -27,10 +27,10 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import * as fixtures from '../../bench/fixtures.mjs';
-import { registerStatusFixtures, providesPct, providesFlat, POISON, BURN } from './fixtures/statusEffects.js';
+import { registerStatusFixtures, providesPct, providesFlat, VENOM, BURN } from './fixtures/statusEffects.js';
 
 /**
- * Statuses and boss moves during a catch-up (brief 220, C4): a Venomous enemy's Poison, a burning
+ * Statuses and boss moves during a catch-up (brief 220, C4): a Venomous enemy's Venom, a burning
  * attacker's Burn (with its half-healing food), and a boss using all four moves, against fed
  * heroes. Every random number comes from `Math.random` in a fixed order (a chance on a rule is the
  * only draw these add), and the 3 s Rules tick runs on the loop's own clock, so time away ends
@@ -205,7 +205,7 @@ describe('poison, burn and boss moves during a catch-up', () => {
         // It all really ran: poison and burn landed and ticked, every boss move fired, and a
         // burning hero's meal healed less than a whole Shrimp.
         expect(plain.seen.kills).toBeGreaterThanOrEqual(3);
-        expect(plain.seen.applied[POISON]).toBeGreaterThan(0);
+        expect(plain.seen.applied[VENOM]).toBeGreaterThan(0);
         expect(plain.seen.applied[BURN]).toBeGreaterThan(0);
         expect(plain.seen.ticks).toBeGreaterThan(0);
         for (const move of ['Boss Heavy', 'Boss Burn', 'Boss Mend', 'Boss Enrage', 'Burning Touch']) {

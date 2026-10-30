@@ -4,8 +4,10 @@ import { matCap } from '../../../systems/board/MatCap.js';
 import { isMapItem, whatItWrites, MAP_TEXT } from '../../../systems/atlas/mapItems.js';
 import { categoryOfItem, getCategoryInfo } from '../../../config/registries/equipmentConstants.js';
 import { toolOf, toolKindLabel, handsOf, HANDS } from '../../../config/registries/toolKinds.js';
-import { weaponStyleOf } from '../../../config/registries/weaponStyles.js';
-import { weaponDamageTypeOf, arrowOf } from '../../../config/registries/damageTypes.js';
+import { weaponStyleOf, isOffHand } from '../../../config/registries/weaponStyles.js';
+import { weaponDamageTypeOf, arrowOf, DAMAGE_GROUPS, DAMAGE_TYPES } from '../../../config/registries/damageTypes.js';
+import { gearResistancesOf, gearDamageCutOf } from '../../../config/registries/gearDefence.js';
+import { COMBAT_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { UNARMED_DAMAGE } from '../../../config/FormulaRegistry.js';
 
@@ -15,6 +17,23 @@ export function itemTypeLabel(item) {
     const key = `itemTip.type.${item?.type}`;
     const label = item?.type ? t(key) : null;
     return label && label !== key ? label : (item?.type || t('itemTip.type.item'));
+}
+
+/** A worn piece's resistance lines, groups before types: "Resists Physical 20%", "Weak to Fire 10%". */
+function resistLines(item) {
+    const lines = gearResistancesOf(item);
+    return [...DAMAGE_GROUPS, ...DAMAGE_TYPES]
+        .filter(({ id }) => lines[id])
+        .map(({ id }) => t(lines[id] > 0 ? 'itemTip.resists' : 'itemTip.weakTo', {
+            type: t(`fight.types.${id}`), n: Math.abs(lines[id])
+        }));
+}
+
+/** A worn piece's damage cuts, in style order: "Magic damage −30%". */
+function cutLines(item) {
+    const cuts = gearDamageCutOf(item);
+    return COMBAT_SKILL_IDS.filter(id => cuts[id])
+        .map(id => t('itemTip.styleCut', { style: getSkill(id)?.name || id, n: cuts[id] }));
 }
 
 /**
@@ -39,6 +58,10 @@ export function itemTipFacts(item, { cap = undefined } = {}) {
             style: getSkill(style)?.name || style
         }) : null,
         arrow: arrow ? t('itemTip.arrow', { damage: arrow.damage, type: t(`fight.types.${arrow.damageType}`) }) : null,
+        offHand: isOffHand(item) ? t('itemTip.offHand') : null,
+        // What a worn piece resists, and what it costs: the styles it cuts, shown red.
+        resists: resistLines(item),
+        cuts: cutLines(item),
         // A drink never heals, so its leftover restore amount is not offered as a promise.
         restores: item?.restoreAmount > 0 && category !== 'drink' ? item.restoreAmount : null,
         tags: Array.isArray(item?.tags) ? item.tags.filter(Boolean) : [],
@@ -70,6 +93,9 @@ export const ItemTipContent = ({ item, count = null, hint = null, cap }) => {
             {facts.tool && <div className="text-white">{facts.tool}</div>}
             {facts.hits && <div data-item-tip-hits className="text-white">{facts.hits}</div>}
             {facts.arrow && <div data-item-tip-arrow className="text-white">{facts.arrow}</div>}
+            {facts.offHand && <div data-item-tip-offhand className="text-white/70">{facts.offHand}</div>}
+            {facts.resists.map(line => <div key={line} data-item-tip-resist className="text-white">{line}</div>)}
+            {facts.cuts.map(line => <div key={line} data-item-tip-cut className="text-gi-danger">{line}</div>)}
             {facts.twoHanded && <div className="text-white/70">{t('itemTip.twoHanded')}</div>}
             {facts.restores != null && (
                 <div className="text-white">{t('itemTip.restores', { amount: facts.restores })}</div>

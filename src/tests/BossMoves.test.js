@@ -26,7 +26,7 @@ import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { renderStatement, rulesLinesOf } from '../systems/effects/statementText.js';
 import { slotsOf, costSlots } from '../systems/effects/statementSlots.js';
-import { registerStatusFixtures, providesPct, providesFlat, BURN, POISON } from './fixtures/statusEffects.js';
+import { registerStatusFixtures, providesPct, providesFlat, BURN, VENOM } from './fixtures/statusEffects.js';
 
 /**
  * Boss moves as Rules effects (brief 220, C4): two new moments a fighter's own rules wait on, "On
@@ -234,7 +234,7 @@ describe('a boss move that knocks the hero out', () => {
             BoardRunner.tick(100);
             fight = BoardCombat.getFight(enemy.id);
         }
-        LiveEffects.applyTo(BoardCombat.enemyBearerOfToken(enemy.id), { effectId: POISON });
+        LiveEffects.applyTo(BoardCombat.enemyBearerOfToken(enemy.id), { effectId: VENOM });
         fight.combat.enemyHp.current = 1;
         fight.combat.enemyTickProgress = 2950;          // its second swing is due on the next board tick
         fight.combat.heroTickProcesses[hero.id] = 0;    // and the hero's is not
@@ -250,7 +250,7 @@ describe('a boss move that knocks the hero out', () => {
 });
 
 describe('the moves read as sentences, and edit as slots', () => {
-    const names = { effect: (id) => ({ bm_heavy: 'Heavy Strike', bm_stone_skin: 'Stone Skin', bm_enrage: 'Enrage', [BURN]: 'Burn', [POISON]: 'Poison' })[id] || id };
+    const names = { effect: (id) => ({ bm_heavy: 'Heavy Strike', bm_stone_skin: 'Stone Skin', bm_enrage: 'Enrage', [BURN]: 'Burn', [VENOM]: 'Venom' })[id] || id };
 
     it('says each move plainly', () => {
         expect(renderStatement(HEAVY, names)).toBe('On Every 4th Swing: applies Heavy Strike to the enemy for the swing.');

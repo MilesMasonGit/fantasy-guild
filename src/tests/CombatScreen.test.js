@@ -31,7 +31,7 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import * as fixtures from '../../bench/fixtures.mjs';
-import { registerStatusFixtures, providesFlat, POISON } from './fixtures/statusEffects.js';
+import { registerStatusFixtures, providesFlat, VENOM } from './fixtures/statusEffects.js';
 import {
     startFightWatch, resetFightWatch, fightsOf, subscribeMoments, adopt, MOMENT, OUTCOME
 } from '../ui/components/combat/fightWatch.js';
@@ -208,7 +208,7 @@ describe('the fight watch: this fight and the last one', () => {
         const stop = startFightWatch();
         runUntil(() => !!fightsOf(heroId).current, 10);
         EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Crushing Blow' });
-        EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Poison' });
+        EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Venom' });
         const moves = fightsOf(heroId).current.log.filter(l => l.key === 'move');
         expect(moves.map(l => l.vars.move)).toEqual(['Crushing Blow']);
         stop();
@@ -222,11 +222,11 @@ describe('the fight watch: this fight and the last one', () => {
         runUntil(() => ticks.some(t => t.targetType === 'hero' && t.hpChange < 0), 120);
         off();
         const tick = ticks.find(t => t.targetType === 'hero' && t.hpChange < 0);
-        // Poison: 1 a stack a tick, ignoring armour.
-        expect(tick.statusId).toBe(POISON);
+        // Venom: 1 a stack a tick.
+        expect(tick.statusId).toBe(VENOM);
         expect(tick.hpChange).toBe(-tick.stacks);
         const log = [...(fightsOf(heroId).current?.log || []), ...(fightsOf(heroId).last?.log || [])];
-        expect(log.some(l => l.key === 'statusLands' && l.vars.status === 'Poison')).toBe(true);
+        expect(log.some(l => l.key === 'statusLands' && l.vars.status === 'Venom')).toBe(true);
         expect(log.some(l => l.key === 'statusHurts' && l.amount === `−${tick.stacks}`)).toBe(true);
         stop();
     });
@@ -252,7 +252,7 @@ describe('the fight watch: this fight and the last one', () => {
         expect(heroSwings.every(m => [MOMENT.HIT, MOMENT.CRIT, MOMENT.MISS].includes(m.kind))).toBe(true);
         expect(seen.filter(m => m.by === 'enemy').every(m => m.on === 'hero')).toBe(true);
         const tick = seen.find(m => m.kind === MOMENT.TICK);
-        expect(tick).toMatchObject({ on: 'hero', statusId: POISON, heroId, instanceId: enemyId });
+        expect(tick).toMatchObject({ on: 'hero', statusId: VENOM, heroId, instanceId: enemyId });
         expect(tick.amount).toBeGreaterThan(0);
         stop();
     });
@@ -462,7 +462,7 @@ describe('nothing covers a fighter\'s health number (owner, 2026-10-25: everythi
         runUntil(() => !!BoardCombat.getFight(enemyId), 10);
         const { CalloutLayer } = await import('../ui/components/board/CalloutLayer.jsx');
         const { container } = render(React.createElement(CalloutLayer));
-        act(() => { EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Poison' }); });
+        act(() => { EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Venom' }); });
         const group = container.querySelector('[data-callout]').parentElement;
         const enemy = BoardState.getTokenById(enemyId);
         // The art's top at a 1:1 mat: the Token's 128 box over its centre.

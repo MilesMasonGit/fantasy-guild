@@ -322,22 +322,22 @@ describe('⭐ the kinds: none, one or two presets', () => {
         }
     });
 
-    it('the preview shows what the fight uses, kinds included: Venomous lands the Poison status effect', () => {
-        // A library without Poison, whatever ships.
+    it('the preview shows what the fight uses, kinds included: Venomous lands the Venom status effect', () => {
+        // A library without Venom, whatever ships.
         act(() => useEntityStore.setState((s) => {
-            const { effect_poison: _gone, ...effects } = s.effects;
+            const { effect_venom: _gone, ...effects } = s.effects;
             return { effects };
         }));
         const { container } = tokenEditor(cow);
         fireEvent.click(field(container, 'enemy-kind-venomous'));
         const box = () => within(container).getByText('What the fight uses').parentElement.parentElement;
-        // No Poison in the library yet: the preview says so.
-        expect(box().textContent).toContain('On hiteffect_poison (missing)');
+        // No Venom in the library yet: the preview says so.
+        expect(box().textContent).toContain('On hiteffect_venom (missing)');
         // Once the library has it, its name.
         act(() => useEntityStore.setState((s) => ({
-            effects: { ...s.effects, effect_poison: { id: 'effect_poison', name: 'Poison', status: { stacks: 3, ticks: 0 }, statements: [] } }
+            effects: { ...s.effects, effect_venom: { id: 'effect_venom', name: 'Venom', status: { stacks: 3, ticks: 0 }, statements: [] } }
         })));
-        expect(box().textContent).toContain('On hitPoison');
+        expect(box().textContent).toContain('On hitVenom');
     });
 });
 

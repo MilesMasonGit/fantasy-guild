@@ -5,12 +5,14 @@ import {
   EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStyleOf, authoredWeaponStyles, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS,
   expandBearer, statementsOf, doseKindsOf, DOSE_WHY, noDoseWhy, isSpentCategory,
   DAMAGE_TYPES, DAMAGE_GROUPS, DEFAULT_DAMAGE_TYPE_BY_STYLE, DEFAULT_ARROW_DAMAGE_TYPE, damageTypeLabel, isConsumableCategory,
+  isWornGear,
 } from '../../utils/constants';
 import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import ChainInspector from '../shared/ChainInspector';
 import GearLevelField from './GearLevelField';
+import GearDefenceFields from './GearDefenceFields';
 import PlanFields from '../shared/PlanFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
@@ -267,8 +269,10 @@ export default function ItemEditor() {
       equipSlot: slot,
       type: slotToType(slot),
       restoreAmount: RESTORING_CATEGORIES.has(slot) ? (item.restoreAmount || 5) : 0,
-      // Tools and weapons are held in the hands; out of them, none of these means anything.
-      ...(slot === HAND_CATEGORY ? {} : { tool: undefined, hands: undefined, ...WEAPON_CLEARED }),
+      // Tools, weapons and off-hand items are held in the hands; out of them, none of these means anything.
+      ...(slot === HAND_CATEGORY ? {} : { tool: undefined, hands: undefined, offHand: undefined, ...WEAPON_CLEARED }),
+      // Only worn gear lends resistances or cuts a style's damage.
+      ...(isWornGear({ equipSlot: slot }) ? {} : { resistances: undefined, damageCut: undefined }),
       // Only a Consumable is shot from a bow.
       ...(isConsumableCategory(slot) ? {} : { arrow: undefined }),
       // A level requirement's style is the weapon's or the armour's own: a new category starts without one.
@@ -281,10 +285,15 @@ export default function ItemEditor() {
     if (patch === null) return updateItem(activeId, { tool: undefined });
     const next = { kind: item.tool?.kind, tier: tierValue(item.tool?.tier), ...(item.tool?.starter ? { starter: true } : {}), ...patch };
     if (!next.starter) delete next.starter;
-    updateItem(activeId, { tool: next, hands: undefined, ...WEAPON_CLEARED });
+    updateItem(activeId, { tool: next, hands: undefined, offHand: undefined, ...WEAPON_CLEARED });
   };
   const isHand = item.equipSlot === HAND_CATEGORY;
   const isTool = isHand && !!item.tool?.kind;
+  const isOffHandItem = isHand && !isTool && item.offHand === true;
+  // An off-hand item is never swung: it drops the weapon's numbers and takes one hand.
+  const setHeldAs = (kind) => updateItem(activeId, kind === 'offhand'
+    ? { offHand: true, type: 'armor', hands: undefined, ...WEAPON_CLEARED }
+    : { offHand: undefined, type: 'weapon' });
 
   const isRestoring = RESTORING_CATEGORIES.has(item.equipSlot);
   const spritePath = item.sprite ? resolveSpritePath(item.sprite) : null;
@@ -407,6 +416,24 @@ export default function ItemEditor() {
           )}
 
           {isHand && !isTool && (
+            <Field label="Held as" className="col-span-1">
+              <select
+                aria-label="Held as"
+                data-field="held-as"
+                value={isOffHandItem ? 'offhand' : 'weapon'}
+                onChange={(e) => setHeldAs(e.target.value)}
+                className="w-full"
+              >
+                <option value="weapon">A weapon (swung)</option>
+                <option value="offhand">An off-hand item (a shield, a quiver)</option>
+              </select>
+              <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+                A hero swings one weapon; beside it, one off-hand item lends its resistances and rules like armour. A second weapon lends nothing.
+              </p>
+            </Field>
+          )}
+
+          {isHand && !isTool && !isOffHandItem && (
             <Field label="Hands" className="col-span-1">
               <select
                 aria-label="Hands"
@@ -424,8 +451,12 @@ export default function ItemEditor() {
             </Field>
           )}
 
-          {isHand && !isTool && (
+          {isHand && !isTool && !isOffHandItem && (
             <WeaponFields item={item} onChange={(patch) => updateItem(activeId, patch)} />
+          )}
+
+          {isWornGear(item) && (
+            <GearDefenceFields item={item} onChange={(patch) => updateItem(activeId, patch)} />
           )}
 
           <GearLevelField item={item} onChange={(patch) => updateItem(activeId, patch)} />

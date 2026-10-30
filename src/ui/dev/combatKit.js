@@ -19,12 +19,12 @@ export const KIT_CURRENT = Object.freeze({
         line(1, 'potion', TONE.NOTE, 'drinks', { hero: 'Aela', item: 'Elixir of Valor' }),
         { ...line(2, 'star', TONE.HIT, 'heroCrits', AV, '8'), types: ['slash'], verdict: 'weak' },
         { ...line(3, 'star', TONE.HURT, 'enemyCrits', AV, '−4'), types: ['physical'], verdict: 'resisted' },
-        line(4, 'drop', TONE.NOTE, 'statusLands', { status: 'Poison', who: 'Aela' }, '×2'),
+        line(4, 'drop', TONE.NOTE, 'statusLands', { status: 'Venom', who: 'Aela' }, '×2'),
         line(5, 'miss', TONE.MISS, 'heroMisses', AV),
-        line(6, 'drop', TONE.HURT, 'statusHurts', { status: 'Poison', who: 'Aela' }, '−2'),
+        line(6, 'drop', TONE.HURT, 'statusHurts', { status: 'Venom', who: 'Aela' }, '−2'),
         { ...line(7, 'hit', TONE.HIT, 'heroHits', AV, '4'), types: ['slash'], verdict: 'weak' },
         line(8, 'miss', TONE.MISS, 'enemyMisses', AV),
-        line(9, 'drop', TONE.HURT, 'statusHurts', { status: 'Poison', who: 'Aela' }, '−2')
+        line(9, 'drop', TONE.HURT, 'statusHurts', { status: 'Venom', who: 'Aela' }, '−2')
     ]
 });
 
@@ -55,7 +55,7 @@ export function kitPanelView() {
             { itemId: 'item_elixir_of_valor', name: 'Elixir of Valor', left: 6, count: 7 },
             { itemId: 'item_elixir_of_ironskin', name: 'Elixir of Ironskin', left: 2, count: 3 }
         ],
-        statuses: [{ id: 'effect_poison', name: 'Poison', stacks: 2, maxStacks: 3, ticksLeft: null, icon: 'drop' }],
+        statuses: [{ id: 'effect_venom', name: 'Venom', stacks: 2, maxStacks: 3, ticksLeft: null, icon: 'drop' }],
         art: { sheet: 'assets/heroes/hn_fighter_sheet.png', still: 'assets/heroes/hm_fighter_por.png' }
     };
     const enemy = {
@@ -91,7 +91,7 @@ export const KIT_FLOATS = Object.freeze([
     { kind: MOMENT.CRIT, on: 'hero', amount: 4, types: ['physical'], caption: 'Enemy crits' },
     { kind: MOMENT.MISS, on: 'hero', amount: null, caption: 'Enemy misses' },
     { kind: MOMENT.HEAL, on: 'hero', amount: 5, caption: 'Food heals' },
-    { kind: MOMENT.TICK, on: 'hero', amount: 2, statusId: 'effect_poison', caption: 'Poison tick' },
+    { kind: MOMENT.TICK, on: 'hero', amount: 2, statusId: 'effect_venom', caption: 'Venom tick' },
     { kind: MOMENT.TICK, on: 'hero', amount: 1, statusId: 'effect_burn', caption: 'Burn tick' }
 ]);
 

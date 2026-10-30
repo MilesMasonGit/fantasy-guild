@@ -32,7 +32,7 @@ export function StatusesDevSection() {
                             : r.error);
                     }}
                 >
-                    Poison, burn and a boss (test content, gone on reload)
+                    Venom, burn and a boss (test content, gone on reload)
                 </button>
             </div>
             {status && <div className="ui-text-body text-gi-muted">{status}</div>}

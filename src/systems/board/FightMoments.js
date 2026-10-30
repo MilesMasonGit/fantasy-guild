@@ -62,7 +62,18 @@ function rulesOf(fight, side) {
     }
     const hero = HeroManager.getHero(fight.assignedHeroId);
     if (!hero) return [];
-    return [...HeroEffects.loadoutStatements(hero), ...LiveEffects.liveStatements(hero)];
+    return [...HeroEffects.loadoutStatements(hero), ...arrowStatements(fight), ...LiveEffects.liveStatements(hero)];
+}
+
+/**
+ * The rules of the arrow the hero's swing shoots (`talliesOf(fight).arrowId`, set for the swing by
+ * the combat engine): an arrow carried lends nothing, and its moment rules count on its own shot
+ * ("On Hit: applies Sunder to the enemy" on a bodkin), even when that shot spent the last one.
+ */
+function arrowStatements(fight) {
+    const arrowId = talliesOf(fight).arrowId;
+    if (!arrowId) return [];
+    return HeroEffects.itemStatements(arrowId).filter(s => s?.when?.event);
 }
 
 /** Who a side's rules name. */

@@ -92,6 +92,8 @@ export {
   provisionalName,
 } from '../../../src/systems/effects/effectMigration.js';
 export { migrateSkillIdsIn, migrateRecipePools } from '../../../src/systems/effects/skillIdMigration.js';
+// A renamed library effect (the Poison status is Venom): the same pure functions the game's loaders call.
+export { migrateEffectLibrary, migrateEffectIdsIn, migratePerkEffectIds } from '../../../src/systems/effects/effectIdMigration.js';
 
 // When a rule spends its Token's charges. Same extensibility rule as TRIGGER_EVENTS: adding a moment in the game puts it in the editor's picker with no CMS change.
 export {
@@ -142,7 +144,9 @@ export {
 export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, VENOM_EFFECT_ID } from '../../../src/config/registries/enemyKinds.js';
 
 // Weapons: the one style a weapon fights in, and the level gear asks of its wearer, for the item editor's Weapon and Requirement blocks.
-export { isWeapon, weaponStyleOf, authoredWeaponStyles, gearLevelRequirement } from '../../../src/config/registries/weaponStyles.js';
+export { isWeapon, isOffHand, weaponStyleOf, authoredWeaponStyles, gearLevelRequirement } from '../../../src/config/registries/weaponStyles.js';
+// Gear's defence: a worn piece's resistances (free percents by type or group) and its damage cut to named styles, for the item editor's Defence block.
+export { gearResistancesOf, gearDamageCutOf, isWornGear, isGearResistLine, isDamageCut, GEAR_RESIST_LINE_MAX } from '../../../src/config/registries/gearDefence.js';
 // The three swing speeds and the proposed weapon tiers' damage, so the Weapon block offers what the fight reads.
 export { ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS } from '../../../src/config/FormulaRegistry.js';
 
@@ -157,6 +161,8 @@ export { auditLifecycleBlocks } from '../../../src/systems/core/lifecycleAudit.j
 
 // Content naming a skill the game does not have (a renamed or dropped one), a retired Promotes rule or a weapon with two styles. The game's own rule and wording.
 export { findUnknownRefs } from '../../../src/systems/core/unknownRefRule.js';
+// Gear's defence: field problems on a piece, and the best stack the content allows reaching 100 % in a type. The game's own rule and wording.
+export { gearDefenceFindings } from '../../../src/systems/core/gearDefenceRule.js';
 
 // Gathering tools: the kinds an item's Tool and a Token's Needs tool may name, and the content checks for them. The game's own vocabulary, rule and wording.
 export {

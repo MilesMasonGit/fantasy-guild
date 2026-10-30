@@ -55,6 +55,23 @@ export function enemyResistLines(resistances) {
 }
 
 /**
+ * An enemy's resistances in a fight, as they stand: its own, what effects on it lend and after any
+ * Sunder (`CombatFormulas.enemyTypeResistance`). Each group's line, then a type's only where it
+ * differs from its group's, as an enemy's lines read (a type's replaces its group's).
+ */
+export function liveEnemyResistLines(enemy) {
+    const groupValue = {};
+    for (const g of DAMAGE_GROUPS) groupValue[g.id] = CombatFormulas.enemyTypeResistance(enemy, g.id);
+    const out = [];
+    for (const g of DAMAGE_GROUPS) if (groupValue[g.id]) out.push({ id: g.id, value: groupValue[g.id] });
+    for (const type of DAMAGE_TYPES) {
+        const value = CombatFormulas.enemyTypeResistance(enemy, type.id);
+        if (value !== groupValue[type.group]) out.push({ id: type.id, value });
+    }
+    return out;
+}
+
+/**
  * A hero's resistances from what they carry: each group's rows, then each type's own rows beyond
  * its group's (the aggregator counts a group's row on its types, so a type's own is the difference).
  */
@@ -160,14 +177,16 @@ export function heroSide(hero) {
     if (!hero) return null;
     const { id: style, level } = CombatFormulas.getHeroCombatSkillEntry(hero);
     const weapon = CombatFormulas.getHeroWeapon(hero);
-    const buffs = CombatFormulas.damageMultiplierOf(hero);
+    // The cut worn gear makes to this style (a mage in an iron chestplate) is in the hit shown.
+    const cut = CombatFormulas.styleDamageCut(hero, style);
+    const buffs = CombatFormulas.damageMultiplierOf(hero) * CombatFormulas.styleCutFactor(hero, style);
     const arrows = arrowsView(hero);
     const hitParts = CombatFormulas.heroHitParts(hero, arrows?.arrow || null)
         .map(p => ({ type: p.type, hit: Math.max(0, p.base * buffs), arrow: !!p.arrow }));
     const hit = hitParts.reduce((sum, p) => sum + p.hit, 0);
     const weaponDamage = weapon && Number(weapon.damage) > 0 ? Number(weapon.damage) : UNARMED_DAMAGE;
     const levelStep = levelDamageBonus(CombatFormulas.getHeroCombatLevel(hero));
-    const more = Math.round((hitParts[0].hit - weaponDamage - levelStep) * 100) / 100;
+    const more = Math.round((CombatFormulas.heroBaseDamage(hero) * CombatFormulas.damageMultiplierOf(hero) - weaponDamage - levelStep) * 100) / 100;
     const boosts = [...new Set(hitParts.map(p => p.type))]
         .map(type => ({ type, n: CombatFormulas.typeDamageBoost(hero, type) }))
         .filter(b => b.n);
@@ -187,6 +206,7 @@ export function heroSide(hero) {
             weapon ? t('fight.tip.weapon', { item: weapon.name, n: `${weaponDamage} ${damageTypeName(hitParts[0].type)}` }) : t('fight.tip.fist'),
             levelStep ? t('fight.tip.levelStep', { n: levelStep }) : null,
             more ? t('fight.tip.moreDamage', { n: `${more > 0 ? '+' : '−'}${damageText(Math.abs(more))}` }) : null,
+            cut ? t('fight.tip.styleCut', { style: styleName(style), n: `−${damageText(cut)}%` }) : null,
             arrows?.arrow ? t('fight.tip.arrow', { item: arrows.name, n: damageText(arrows.arrow.damage), type: damageTypeName(arrows.arrow.damageType) }) : null,
             arrows ? (arrows.count > 0 ? t('fight.tip.arrowsLeft', { count: arrows.count }) : t('fight.tip.noArrows')) : null,
             ...boosts.map(b => t('fight.tip.typeBoost', { type: damageTypeName(b.type), n: `${b.n > 0 ? '+' : ''}${b.n}%` })),
@@ -217,7 +237,7 @@ export function enemySide(typeId, fight = null) {
             : { cur: profile.hp, max: profile.hp },
         hit,
         hitType: PLAIN_ENEMY_HIT_TYPE,
-        resists: enemyResistLines(profile.resistances),
+        resists: live ? liveEnemyResistLines(profile) : enemyResistLines(profile.resistances),
         swingMs: live ? CombatFormulas.enemyAttackSpeedMs(profile) : (profile.attackSpeed || 3000),
         kinds: known ? (profile.kinds || []).map(kindView).filter(Boolean) : null,
         statuses: live ? statusesView(fight) : [],

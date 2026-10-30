@@ -11,6 +11,11 @@ export const EFFECT_TYPES = {
     TYPE_DAMAGE: 'TYPE_DAMAGE',
     // Percent off hits of one damage type or group the bearer takes (the category) — CombatFormulas.
     TYPE_RESIST: 'TYPE_RESIST',
+    // Points off every resistance the bearer has, never below 0 (the Sunder status) — CombatFormulas.
+    SUNDER: 'SUNDER',
+    // Percent off the bearer's hits in one combat style (the category); worn gear's `damageCut`
+    // registers it, no Rules row offers it — CombatFormulas.styleDamageCut.
+    STYLE_DAMAGE_CUT: 'STYLE_DAMAGE_CUT',
     // ⚠️ Retired with damage types: nothing reads them, the palette no longer offers them, and the
     // content audits name an effect that still provides one.
     ARMOR: 'ARMOR',

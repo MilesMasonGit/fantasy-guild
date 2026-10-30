@@ -590,6 +590,16 @@ function bodySegments(statement, names) {
                 return segs(d('Provides', K), ' ', phrase, ' in combat', COMBAT_REACH);
             }
 
+            // "Provides Sunder 10: every resistance 10 points lower, never below 0". Below 1 it does
+            // nothing (`CombatFormulas.sunderOf`).
+            if (payload.type === EFFECT_TYPES.SUNDER) {
+                const n = Number(payload.value) || 0;
+                const what = n > 0
+                    ? segs(': every resistance ', d(`${n} points lower`, 'value'), ', never below 0,')
+                    : segs(': ', d('no change', 'value'));
+                return segs(d('Provides', K), ' ', d('Sunder', 'type'), ' ', d(String(n), 'value'), what, ' in combat', COMBAT_REACH);
+            }
+
             if (entry?.heroOnly) {
                 return segs(d('Provides', K), ' ', effectSegments(statement, names), ' in combat', COMBAT_REACH);
             }
