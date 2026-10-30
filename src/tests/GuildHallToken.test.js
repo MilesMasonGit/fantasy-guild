@@ -66,15 +66,14 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         expect(tokenAt(15)).not.toBeNull();
     });
 
-    it('allows heroes to staff the Guild Hall token', () => {
+    it('a hero dropped on the Guild Hall goes home: no order, nothing to work', () => {
         const gh = BoardState.createTokenInstance('token_guild_hall');
         put(20, gh);
 
         const heroRes = plant('hero_test_1', 20);
-        expect(heroRes.success).toBe(true);
-        // Under flags (1.4b) the hero's flag stands on the Hall. With no Wishing
-        // Well rank the Hall has no work cycle, so there is nothing to claim.
-        expect(BoardState.displayPointOf('hero_test_1')).toEqual({ x: gh.x, y: gh.y });
+        expect(heroRes).toMatchObject({ success: true, order: 'home' });
+        expect(BoardState.flagOf('hero_test_1')).toBeNull();
+        expect(BoardState.workTokenOf('hero_test_1')).toBeNull();
     });
 
     /**
@@ -154,7 +153,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
             expect(GuildUpgradeManager.getDisplayList().find(u => u.id === 'wishing_well').statLabel).toBe('20 Water / 5 min');
         });
 
-        it("a hero's flag on the Hall changes nothing: no work cycle, the same timer", () => {
+        it("a hero dropped on the Hall changes nothing: no work cycle, the same timer", () => {
             SpriteLayer.init();
             GuildUpgradeManager.purchase('wishing_well');
             const gh = BoardState.createTokenInstance('token_guild_hall');

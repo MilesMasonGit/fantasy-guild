@@ -155,12 +155,12 @@ describe('a gatherer whose only vein rests waits silently', () => {
         expect(BoardRunner.isHeroIdle('miner')).toBe(false);
     });
 
-    it('a hero with truly nothing in reach is still idle and says so', () => {
+    it('a hero sent to bare ground waits for nothing and is idle there', () => {
         Orders.orderAt('miner', { x: 800, y: 500 });
         run(1000);
         expect(Flags.waitingOf('miner')).toBeNull();
         expect(BoardRunner.isHeroIdle('miner')).toBe(true);
-        expect(flagStatusLine('miner')).toBe('Idle');
+        expect(flagStatusLine('miner')).toBe('Idle here');
         expect(idleMomentOf(null)).toEqual({ kind: 'idle', key: 'idle', text: momentText.idle() });
     });
 
@@ -193,7 +193,7 @@ describe('a station out of an input', () => {
         expect(calloutText.needsInput('Coal')).toBe('Needs Coal');
     });
 
-    it('with a coal vein in reach: the hero mines, then comes back and smelts', () => {
+    it('one hero per link: the smith stays at the furnace while a miner on the vein feeds it', () => {
         const furnace = put('sw_furnace', 800, 500);
         InventoryManager.addItem('item_coal', 1);
         Orders.orderAt('smith', { x: 800, y: 500 });
@@ -201,8 +201,11 @@ describe('a station out of an input', () => {
         expect(furnace.alert).toBe(ALERT.INPUTS);
         const vein = put('sw_coal_vein', 950, 500);
         run(1000);
-        expect(Flags.statusOf('smith').instanceId).toBe(vein.id);
-        // Two coal mined, the vein rests, and the hero is back at the furnace using them.
+        // The smith never leaves their order for the vein.
+        expect(BoardState.workerOf(furnace.id)).toBe('smith');
+        expect(BoardState.workerOf(vein.id)).toBeNull();
+        // Two coal mined by the miner, the vein rests, and the smith smelts them.
+        Orders.orderAt('miner', { x: 950, y: 500 });
         const smelted = cyclesOf(furnace, () => run(15000));
         expect(vein.usesRemaining).toBe(0);
         expect(smelted).toBe(2);

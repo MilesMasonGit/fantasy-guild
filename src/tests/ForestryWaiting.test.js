@@ -43,7 +43,8 @@ registerTokenTypes({
     fw_stump: plain('fw_stump', 'Test Oak Stump', { grows: { into: 'fw_sapling', afterMs: 20000, needsNearby: ['fw_forest'], cost: [{ itemId: SEEDLING, quantity: 1 }] } }),
     fw_sapling: plain('fw_sapling', 'Test Oak Sapling', { artSize: 'small', grows: { into: 'fw_tree', afterMs: 10000 } }),
     fw_axe_tree: plain('fw_axe_tree', 'Test Axe Oak', { uses: 2, requiresHero: true, config: felling, needsTool: { kind: 'woodaxe', minTier: 1 }, respawn: { mode: 'regrow', into: 'fw_axe_stump' } }),
-    fw_axe_stump: plain('fw_axe_stump', 'Test Axe Stump', { grows: { into: 'fw_axe_tree', afterMs: 20000 } })
+    fw_axe_stump: plain('fw_axe_stump', 'Test Axe Stump', { grows: { into: 'fw_axe_tree', afterMs: 20000 } }),
+    fw_logging: plain('fw_logging', 'Test Logging Camp', { tokenType: 'camp', requiresHero: false, config: null, camp: { skill: 'forestry', reach: 300 } })
 });
 
 function hero(id, skills) {
@@ -83,7 +84,7 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
 });
 
-/** A Forest and an Oak beside it, a forester flagged on the Oak, run until it is a Stump. */
+/** A Forest and an Oak beside it, a forester sent to the Oak, run until it is a Stump. */
 function felledInAForest({ seedlings = 1, forest = true } = {}) {
     if (seedlings) InventoryManager.addItem(SEEDLING, seedlings);
     if (forest) put('fw_forest', TREE.x + 150, TREE.y);
@@ -119,9 +120,10 @@ describe('⭐ a forester waits silently for the felled Oak to grow back', () => 
         expect(InventoryManager.getItemCount(SEEDLING)).toBe(0);
     });
 
-    it('waits for a Forest\'s fresh Sapling too, though nothing was felled', () => {
+    it('sent to a Logging Camp, waits for a Forest\'s fresh Sapling in its reach, though nothing was felled', () => {
         const sapling = put('fw_sapling', TREE.x, TREE.y);
-        Orders.orderAt('forester', { x: TREE.x, y: TREE.y });
+        const camp = put('fw_logging', TREE.x, TREE.y + 160);
+        expect(Orders.orderAt('forester', { x: camp.x, y: camp.y }).success).toBe(true);
         run(200);
         expect(Flags.waitingOf('forester')).toEqual({ instanceId: sapling.id, kind: 'node' });
         expect(BoardRunner.isHeroIdle('forester')).toBe(false);
@@ -156,16 +158,18 @@ describe('nothing on its way back is nothing to wait for', () => {
         expect(BoardRunner.isHeroIdle('miner')).toBe(true);
     });
 
-    it("nor one out of the flag's reach", () => {
+    it("nor one out of a camp's reach", () => {
         felledInAForest();
-        Orders.orderAt('forester', { x: TREE.x + 700, y: TREE.y });
+        const camp = put('fw_logging', TREE.x + 700, TREE.y);
+        expect(Orders.orderAt('forester', { x: camp.x, y: camp.y }).success).toBe(true);
         run(200);
         expect(Flags.waitingOf('forester')).toBeNull();
     });
 
     it('a hero who could not fell what it grows into (no woodaxe in hand) does not wait on it', () => {
         put('fw_axe_stump', TREE.x, TREE.y);
-        Orders.orderAt('forester', { x: TREE.x, y: TREE.y });
+        const camp = put('fw_logging', TREE.x, TREE.y + 160);
+        expect(Orders.orderAt('forester', { x: camp.x, y: camp.y }).success).toBe(true);
         run(1000);
         expect(Flags.waitingOf('forester')).toBeNull();
         expect(BoardRunner.isHeroIdle('forester')).toBe(true);

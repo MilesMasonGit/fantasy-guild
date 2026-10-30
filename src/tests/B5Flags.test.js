@@ -25,7 +25,6 @@ import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { artRadiusOf } from '../config/matGeometry.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
-import { flagTooltip } from '../ui/components/board/flagText.js';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
@@ -354,7 +353,6 @@ describe('a pinned flag on the screen', () => {
         expect(t.x - mid.x).toBeLessThan(r);
         expect(container.querySelector('[data-flag-ring="h1"]')).toBeNull();
         expect(el.getAttribute('data-flag-order')).toBe('token');
-        expect(flagTooltip('h1').pin).toBeNull();
     });
 
     it('a spot order has no data-flag-pinned, and no ring is ever drawn', () => {

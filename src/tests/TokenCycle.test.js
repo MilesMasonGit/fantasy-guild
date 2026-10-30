@@ -206,9 +206,10 @@ describe('Access — the ONE hero property implemented this pass (D-67)', () => 
 
         run(25000);
         expect(SpriteLayer.countOnBoard('item_coal')).toBe(0);
-        // "Says so" under flags: the flag skips the Token and records ACCESS
-        // for hover — no red mark on the Token itself.
-        expect(Flags.skipsOf(token.id).map(s => s.reason)).toEqual([BoardRunner.ALERT.ACCESS]);
+        // "Says so": the order is refused with ACCESS (said over the Token), and the Token itself
+        // carries no red mark.
+        expect(Flags.orderRefusal('hero_1', token)).toEqual({ reason: BoardRunner.ALERT.ACCESS });
+        expect(Flags.pinnedIdOf('hero_1')).toBeNull();
         expect(token.alert).toBeFalsy();
     });
 
@@ -309,11 +310,11 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
 
     it('counts blocked ticks per Token type so the balance pass has data', () => {
         InventoryManager.addItem('fixture_oak_wood', 3);
-        // A flag never claims a Token it cannot run, so the starving Token is
+        // An order never claims a Token it cannot run, so the starving Token is
         // staffed by a claim made directly — the runner's tally of a STAFFED
         // Token going hungry is what this pins (Free Playmat 1.4b).
         const deep = place(20, 'fixture_deep_consumer');
-        Orders.orderAt('hero_2', C(20), { skill: 'smithing' });
+        Orders.orderAt('hero_2', C(20));
         BoardState.setClaim('hero_2', { instanceId: deep.id, typeId: deep.typeId });
         run(5000);
 

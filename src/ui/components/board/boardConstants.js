@@ -97,13 +97,12 @@ export const SKIP_HINT = {
 
 /**
  * One skip as a sentence tail. `holder` names the hero who has a `claimed` Token; without one
- * it reads 'another hero'. `hero` names the hero whose rules switched it off (`rule_off`);
- * without one, 'the hero'. `tool` names the tool a `no_tool` skip wants, with its article
+ * it reads 'another hero'. `tool` names the tool a `no_tool` skip wants, with its article
  * ('a Pickaxe'); without one, 'a tool'.
  */
-export function skipHint(reason, { holder = null, hero = null, tool = null } = {}) {
+export function skipHint(reason, { holder = null, tool = null } = {}) {
     const text = SKIP_HINT[reason] || 'can’t work it';
-    return text.replace('{holder}', holder || 'another hero').replace('{hero}', hero || 'the hero').replace('{tool}', tool || 'a tool');
+    return text.replace('{holder}', holder || 'another hero').replace('{tool}', tool || 'a tool');
 }
 
 /** Alerts drawn in warning yellow; every other alert is drawn in red. */

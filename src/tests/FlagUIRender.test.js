@@ -36,9 +36,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  */
 
 /**
- * The scene, in mat units. `BESIDE` and `SECOND` sit 160 u either side of
- * `TOKEN` — inside the live Near radius (164 u) — so a flag planted at `BESIDE`
- * can claim the Token at `TOKEN`. `BARE` is open ground with nothing in range.
+ * The scene, in mat units. `TOKEN` is a Token a hero can be sent to; `BESIDE` is bare ground
+ * 160 u from it (a spot order); `BARE` is open ground far from anything.
  */
 const TOKEN = { x: 400, y: 300 };
 const BESIDE = { x: 240, y: 300 };
@@ -136,7 +135,7 @@ describe('the idle mark (FP-29)', () => {
 
     it('a working flag shows no chip and leaves its hero to the Token', () => {
         put(TOKEN,'fixture_producer');
-        Orders.orderAt('h1', BESIDE);
+        Orders.orderAt('h1', TOKEN);
         expect(Flags.statusOf('h1').state).toBe('working');
 
         const { container } = mount(h(FlagLayer));
@@ -170,8 +169,8 @@ describe('no reach ring (hero orders, brief 260 O1)', () => {
 
 describe('the flag is just something to drag (brief 30 H4)', () => {
     /**
-     * The work rules open from the hero bar; the flag carries no gear and no idle chip (the
-     * hero's own 'No work in range.' line says it, `Callouts.test.js`).
+     * The flag carries no gear and no idle chip (the hero's own idle line says it,
+     * `Callouts.test.js`).
      */
     const extras = () => document.body.querySelector('[data-flag-gear], [data-flag-idle-chip]');
 

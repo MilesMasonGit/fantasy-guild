@@ -7,6 +7,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
+import * as Flags from '../systems/board/Flags.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
@@ -397,8 +398,8 @@ describe('⭐ turns — a Coast turns, then turns back on the same cycle', () =>
 });
 
 
-describe('⭐ a hero fishing when the Coast turns back loses the cycle and moves on (SP-51, SP-52)', () => {
-    it('no output for the cycle in progress; the hero takes the next fishing spot in range', () => {
+describe('⭐ a hero fishing when the Coast turns back loses the cycle (SP-51, SP-52)', () => {
+    it('no output for the cycle in progress; the plain Coast is no fishing spot, so the hero needs a job', () => {
         // A Coast that has already turned: a Shrimp Coast with 0 ms behind it.
         const shrimp = BoardState.createTokenInstance('fixture_tl_shrimp_coast');
         shrimp.turnedFrom = 'fixture_tl_coast';
@@ -412,7 +413,7 @@ describe('⭐ a hero fishing when the Coast turns back loses the cycle and moves
         const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => completions.push(p));
         try {
             run(1000);
-            expect(BoardState.workTokenOf('hero_1')).toBe(shrimp.id);   // the nearest
+            expect(BoardState.workTokenOf('hero_1')).toBe(shrimp.id);
 
             // Two 45 s cycles complete; the third is ~30 s in at the 120 s mark.
             run(118900);
@@ -425,14 +426,16 @@ describe('⭐ a hero fishing when the Coast turns back loses the cycle and moves
             expect(coast.cycleElapsedMs).toBe(0);
             expect(BoardState.getTokenById(shrimp.id)).toBeNull();
 
-            // the hero has already let go and taken the next spot in range.
-            expect(BoardState.claimOfHero('hero_1')?.instanceId).toBe(other.id);
+            // the hero has already let go; their order lapses (a Fishing Hut would keep them fishing).
+            run(100);
+            expect(BoardState.claimOfHero('hero_1')).toBeNull();
+            expect(Flags.needsJob('hero_1')).toBe(true);
 
             // the cycle in progress was lost — still exactly one completion from
             // the Shrimp Coast, however long we wait.
             run(60000);
             expect(completions.filter(c => c.typeId === 'fixture_tl_shrimp_coast')).toHaveLength(2);
-            expect(completions.some(c => c.instanceId === other.id)).toBe(true);
+            expect(completions.some(c => c.instanceId === other.id)).toBe(false);
         } finally {
             off?.();
         }

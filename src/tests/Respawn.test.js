@@ -259,16 +259,16 @@ describe('a refill Token rests where it stands and refills', () => {
         expect(events.resting).toEqual([expect.objectContaining({ instanceId: vein.id, typeId: 'respawn_vein', mode: 'refill', heroId: 'hero_1' })]);
     });
 
-    it('its hero lets go at once and picks the next thing; the resting skip is not one the player fixes', () => {
+    it('its hero lets go at once and takes nothing else; the resting skip is not one the player fixes', () => {
         const vein = place(10, 'respawn_vein', 'hero_1');
         expect(runUntil(() => BoardState.workerOf(vein.id) === 'hero_1', 20000)).toBe(true);
-        // Placed once the hero is at the vein, so the vein is the work they hold when it rests.
         const other = place(11, 'fixture_producer_alt');
         expect(runUntil(() => vein.usesRemaining === 0, 30000)).toBe(true);
         expect(claimOf('hero_1')).toBe(vein.id);
 
         BoardRunner.tick(100);
-        expect(claimOf('hero_1')).toBe(other.id);
+        expect(claimOf('hero_1')).toBeNull();
+        expect(BoardState.workerOf(other.id)).toBeNull();
         expect(Flags.skipsOf(vein.id)).toContainEqual({ heroId: 'hero_1', reason: ALERT.RESTING });
         expect(Flags.hasFixableSkip(vein)).toBe(false);
         expect(WorkCheck.FIXABLE.has(ALERT.RESTING)).toBe(false);

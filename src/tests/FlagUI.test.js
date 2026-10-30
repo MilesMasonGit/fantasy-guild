@@ -89,7 +89,7 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
 });
 
-describe('hero_deployed is published by planting a flag (slice 1.5)', () => {
+describe('hero_deployed is published by every new order (slice 1.5)', () => {
     function counting(fn) {
         let n = 0;
         const unsub = EventBus.subscribe('hero_deployed', () => { n++; });
@@ -102,25 +102,19 @@ describe('hero_deployed is published by planting a flag (slice 1.5)', () => {
         expect(counting(() => Orders.orderAt('h1', C(15)))).toBe(1);
     });
 
-    it('fires for a plant on bare ground and a pennant move, but not for an unchanged plant', () => {
+    it('fires for an order to bare ground and a pennant move, but not for an unchanged order', () => {
         expect(counting(() => Orders.orderAt('h1', C(20)))).toBe(1);
         expect(counting(() => Orders.orderAt('h1', C(20)))).toBe(0);
         expect(counting(() => Orders.orderAt('h1', C(8)))).toBe(1);
     });
 });
 
-/**
- * ⚠️ `Placement.moveFlag` went with the index adapters in slice 1.6d-2. Dragging
- * a pennant lands through `plantFlagAt`, which is the one route a flag moves by
- * — so these say the same things through it. The third case, that `moveFlag`
- * refused a hero with no flag planted, pinned that adapter's own guard and went
- * with it: planting is always allowed.
- */
-describe('dragging the pennant (FLAG) just moves the point (FP-71)', () => {
-    it('moves the flag to the spot, with no skill written on it', () => {
+/** Dragging a pennant lands through `Orders.orderAt`, the one route an order changes by. */
+describe('dragging the pennant (FLAG) gives a new order (FP-71)', () => {
+    it('onto bare ground: a spot, with no skill written on it', () => {
         Orders.orderAt('h1', C(14));
         expect(Orders.orderAt('h1', C(20)).success).toBe(true);
-        expect(BoardState.flagOf('h1')).toEqual({ ...C(20), plantedAt: expect.any(Number) });
+        expect(BoardState.flagOf('h1')).toEqual({ ...C(20), spot: true, plantedAt: expect.any(Number) });
     });
 
     it('on a Token, the hero works it if they hold its skill, and not otherwise', () => {
@@ -138,13 +132,14 @@ describe('dragging the pennant (FLAG) just moves the point (FP-71)', () => {
 });
 
 describe('Flags.skipsOfHero — the pennant hover lines', () => {
-    it('lists what the flag passed over, nearest first, with the Token', () => {
-        const blank = put(15, 'ft_ui_blank');
-        put(16, 'fixture_producer');
-        Orders.orderAt('h1', C(14));
-        expect(workTileOf('h1')).toBe(16);
+    it('lists what the order passed over, with the Token: here, one another hero works', () => {
+        const busy = put(16, 'fixture_producer');
+        Orders.orderAt('h2', C(16));
+        expect(workTileOf('h2')).toBe(16);
+        Orders.orderAt('h1', C(16));
+        expect(workTileOf('h1')).toBeNull();
         expect(Flags.skipsOfHero('h1')).toEqual([
-            { instanceId: blank.id, reason: Flags.SKIP.NO_SKILL, typeId: 'ft_ui_blank' }
+            { instanceId: busy.id, reason: Flags.SKIP.CLAIMED, typeId: 'fixture_producer' }
         ]);
     });
 });
@@ -198,10 +193,5 @@ describe('every skip reason the engine can record has hover text', () => {
     it('names the hero holding a claimed Token', () => {
         expect(skipHint(Flags.SKIP.CLAIMED, { holder: 'Aria' })).toBe('being worked by Aria');
         expect(skipHint(Flags.SKIP.NO_SKILL)).toBe('names no skill');
-    });
-
-    it('names the hero whose rules switched a skill off (FPP-18)', () => {
-        expect(skipHint(Flags.SKIP.RULE_OFF, { hero: 'Aria' })).toBe('off in Aria’s Work Permissions');
-        expect(skipHint(Flags.SKIP.RULE_OFF)).toBe('off in the hero’s Work Permissions');
     });
 });

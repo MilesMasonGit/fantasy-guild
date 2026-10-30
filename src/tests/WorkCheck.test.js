@@ -55,8 +55,7 @@ function put(tile, typeId, uses = undefined) {
 
 /** A hero already working the Token on TILE, set up directly. */
 function staff(instance) {
-    const skill = getTokenType(instance.typeId).config.skill;
-    Orders.orderAt('h1', C(TILE), { skill });
+    Orders.orderAt('h1', C(TILE));
     BoardState.setClaim('h1', { instanceId: instance.id, typeId: instance.typeId });
 }
 

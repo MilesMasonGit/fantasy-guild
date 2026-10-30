@@ -73,32 +73,21 @@ export function flagStatusLine(heroId) {
     return dockStatusLine({ ...s, waitingFor: s.state === 'idle' ? waitingTypeOf(heroId) : null });
 }
 
-/** One skipped Token as "Iron Forge — needs materials" — by `heroId`'s flag, for "off in X's rules". */
-export function skipLine(skip, heroId = null) {
+/** One skipped Token as "Iron Forge — needs materials". */
+export function skipLine(skip) {
     const holder = skip.reason === Flags.SKIP.CLAIMED ? heroName(BoardState.heroOfInstance(skip.instanceId)) : null;
-    return `${tokenName(skip.typeId) || 'A Token'} — ${skipHint(hintKey(skip.reason, skip.typeId), { holder, hero: heroName(heroId), tool: toolOfType(skip.typeId) })}`;
+    return `${tokenName(skip.typeId) || 'A Token'} — ${skipHint(hintKey(skip.reason, skip.typeId), { holder, tool: toolOfType(skip.typeId) })}`;
 }
 
 /**
- * 'Working only Oak Tree' for a flag pinned to a Token, else null. Read live, like everything
- * here: a pin lapses when its Token is used up.
- */
-export function flagPinLine(heroId) {
-    const token = Flags.pinnedTokenOf(heroId);
-    return token ? `Working only ${tokenName(token.typeId) || 'this Token'}` : null;
-}
-
-/**
- * Everything the flag's tooltip shows, as `{ title, pin, state, status, skips: string[],
- * more }`. The title is the hero's name: a flag has no skill. `pin` is {@link flagPinLine}
- * (null on an area flag).
+ * Everything the flag's tooltip shows, as `{ title, state, status, skips: string[], more }`. The
+ * title is the hero's name.
  */
 export function flagTooltip(heroId) {
     const state = Flags.statusOf(heroId).state;
-    const all = Flags.skipsOfHero(heroId).map(s => skipLine(s, heroId));
+    const all = Flags.skipsOfHero(heroId).map(s => skipLine(s));
     return {
         title: heroName(heroId),
-        pin: null,
         state,
         status: flagStatusLine(heroId),
         skips: all.slice(0, MAX_SKIP_LINES),
@@ -106,14 +95,14 @@ export function flagTooltip(heroId) {
     };
 }
 
-/** A Token's own hover lines: which flags passed it over, and why. */
+/** A Token's own hover lines: which heroes' orders passed it over, and why. */
 export function tokenSkipLines(instanceId) {
     if (!instanceId) return [];
     return Flags.skipsOf(instanceId).map(s => {
         const holder = s.reason === Flags.SKIP.CLAIMED ? heroName(BoardState.heroOfInstance(instanceId)) : null;
         const typeId = BoardState.getTokenById(instanceId)?.typeId;
         const tool = toolOfType(typeId);
-        return `${heroName(s.heroId)}’s flag skipped this: ${skipHint(hintKey(s.reason, typeId), { holder, hero: heroName(s.heroId), tool })}`;
+        return `${heroName(s.heroId)} skipped this: ${skipHint(hintKey(s.reason, typeId), { holder, tool })}`;
     });
 }
 

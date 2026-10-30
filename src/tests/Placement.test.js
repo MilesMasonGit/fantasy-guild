@@ -165,12 +165,11 @@ describe('Forfeited cycles (D-54, D-131)', () => {
 
     it('moving a hero forfeits the cycle they abandon', () => {
         const forest = place('fixture_producer', A);
-        // Far enough from A that the new flag cannot choose it again.
-        place('fixture_buff_yield', FAR);
         Orders.orderAt('hero_1', A);
         BoardState.getTokenById(forest.id).cycleElapsedMs = 7000;
 
-        Orders.orderAt('hero_1', FAR);
+        // Sent to bare ground far away.
+        expect(Orders.orderAt('hero_1', FAR)).toMatchObject({ success: true, order: 'spot' });
 
         expect(BoardState.getTokenById(forest.id).cycleElapsedMs).toBe(0);
         expect(BoardState.workerOf(forest.id)).toBeNull();
@@ -277,24 +276,22 @@ describe('Planting a hero’s flag (D-111, D-147)', () => {
         expect(BoardState.displayPointOf('hero_1')).toEqual(A);
     });
 
-    it('a Token placed under a planted flag is worked without re-placing them', () => {
-        // The same courtesy a Manager extends, arrived at from the player's
-        // side: drop a Forest under a flag and its hero starts on it.
+    it('a Token placed under a hero idling on a spot is not their job until they are sent to it', () => {
         GameState.state.heroes = [makeHero('hero_1', ['forestry'])];
         Orders.orderAt('hero_1', A);
         const forest = place('fixture_producer', A);
         Flags.assign(1000);
+        expect(BoardState.workTokenOf('hero_1')).toBeNull();
 
+        Orders.orderAt('hero_1', A);
         expect(BoardState.workTokenOf('hero_1')).toBe(forest.id);
         expect(BoardState.workerOf(forest.id)).toBe('hero_1');
     });
 
-    it('plants a hero on the Guild Hall token', () => {
-        const hall = place('token_guild_hall', A);
-        expect(Orders.orderAt('hero_1', A).success).toBe(true);
-        // A Hall with no Wishing Well rank has no work cycle: the flag stands
-        // there with nothing to claim.
-        expect(BoardState.displayPointOf('hero_1')).toEqual({ x: hall.x, y: hall.y });
+    it('a hero dropped on the Guild Hall token goes home', () => {
+        place('token_guild_hall', A);
+        expect(Orders.orderAt('hero_1', A)).toMatchObject({ success: true, order: 'home' });
+        expect(BoardState.flagOf('hero_1')).toBeNull();
     });
 
     it('planting a hero where they already are is a no-op, not a forfeit', () => {
@@ -416,13 +413,13 @@ describe('Board queries', () => {
 // the Vault (Token Lifecycle 9.3); removal is `RemoveToken.test.js`.
 
 describe('Passive vs Active Token Hero Constraints', () => {
-    it('a hero may be dropped on a passive token, but never works it (1.4b)', () => {
+    it('a hero dropped on a passive token is refused: nothing to work there', () => {
         const pick = place('fixture_pickaxe_t1', A);
 
         const result = Orders.orderAt('hero_1', A);
-        expect(result.success).toBe(true);
+        expect(result).toMatchObject({ success: false, reason: 'Nothing to work here', instanceId: pick.id });
         expect(BoardState.workerOf(pick.id)).toBeNull();
-        expect(BoardState.displayPointOf('hero_1')).toEqual(A);
+        expect(BoardState.flagOf('hero_1')).toBeNull();
     });
 
     it('a passive token placed on a planted flag leaves the flag where it is', () => {

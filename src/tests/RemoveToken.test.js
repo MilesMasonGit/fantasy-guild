@@ -109,22 +109,17 @@ describe('removePlacedToken (slice 5.2)', () => {
         expect(JSON.stringify(GameState.state.inventory)).toBe(bank);
     });
 
-    it('a hero working it moves on to other work (SP-52)', () => {
-        const { forest, east, west } = forestScene();
-        // Hold the spawned Tokens back so the hero starts on the Forest, then
-        // let them be worked again.
-        Flags.setDisallowed(east.id, true);
-        Flags.setDisallowed(west.id, true);
+    it('a hero working it lets go, takes nothing else, and needs a job', () => {
+        const { forest } = forestScene();
         Orders.orderAt('h1', centreOf(forest));
         expect(BoardState.workTokenOf('h1')).toBe(forest.id);
-        Flags.setDisallowed(east.id, false);
-        Flags.setDisallowed(west.id, false);
 
         const res = Placement.removePlacedToken(forest.id);
         expect(res.idledHeroId).toBe('h1');
         Flags.assign(0);
-        // One of the spawned Tokens it left behind, whichever the flag picks.
-        expect([east.id, west.id]).toContain(BoardState.workTokenOf('h1'));
+        // The spawned Tokens it left behind are not this hero's order.
+        expect(BoardState.workTokenOf('h1')).toBeNull();
+        expect(Flags.needsJob('h1')).toBe(true);
     });
 
     it('publishes TILE_CHANGED and ADJACENCY_DIRTY, and no depletion', () => {

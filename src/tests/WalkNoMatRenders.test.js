@@ -145,7 +145,9 @@ describe('⭐ on the mat (CR3-008)', () => {
         placeAt('fixture_producer', 1500, 500);
 
         const { container } = mount();
+        // Standing on bare ground first, then sent to the Token 300 u away: they walk there.
         await act(async () => { Orders.orderAt('h1', { x: 1200, y: 500 }); });
+        await act(async () => { Orders.orderAt('h1', { x: 1500, y: 500 }); });
         const fig = () => container.querySelector('[data-board-hero="h1"]');
         expect(fig()).not.toBeNull();
 

@@ -232,7 +232,8 @@ describe('Quest System (quest Tokens since B6.1)', () => {
         put(10, BoardState.createTokenInstance('token_oak_forest'));
         const quest = probe('hero_deployed');
         GameState.state.heroes = [{ id: 'hero_1', name: 'Tester', status: 'idle' }];
-        const res = plant('hero_1', 10);
+        // Sent to bare ground beside the Forest (a Forest itself is nobody's work).
+        const res = plant('hero_1', 11);
         expect(res.success).toBe(true);
         expect(quest.currentCount).toBe(1);
     });

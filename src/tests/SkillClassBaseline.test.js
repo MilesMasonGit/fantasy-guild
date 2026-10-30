@@ -96,14 +96,14 @@ describe('Hero Level is the average of the skills a hero HOLDS', () => {
 
 describe('The gate is possession first, then level', () => {
     /**
-     * ⚠️ Under flags (Free Playmat 1.4b) a hero who cannot run a Token does not
-     * stand on it with a red mark: their flag skips it and records why, for
-     * hover. Where the hero lacks the skill, the flag is planted with the
-     * Token's skill directly — a drop would keep the hero's own skill and the
-     * Token would not even be a candidate.
+     * ⚠️ A hero who cannot run a Token does not stand on it with a red mark: the order onto it
+     * is refused with the reason (said over the Token), and the hero stays where they were.
      */
-    const plantFor = (heroId, tile, skill) => Orders.orderAt(heroId, C(tile), { skill });
-    const skipReasons = (token) => Flags.skipsOf(token.id).map(s => s.reason);
+    const plantFor = (heroId, tile) => Orders.orderAt(heroId, C(tile));
+    const skipReasons = (token) => {
+        expect(Flags.pinnedIdOf('hero_1')).toBeNull();
+        return [Flags.orderRefusal('hero_1', token)?.reason];
+    };
 
     it('refuses a hero whose level is too low, and calls it ACCESS', () => {
         // `fixture_gated` wants a Starting skill at 25.
@@ -121,7 +121,7 @@ describe('The gate is possession first, then level', () => {
         // them and can never fix the other, so they must not look alike.
         GameState.state.heroes = [makeHero('hero_1', MASTER_SKILL_IDS.slice(0, 2), 99)];
         const token = place(10, 'fixture_gated');
-        plantFor('hero_1', 10, 'mining');
+        plantFor('hero_1', 10);
 
         run(25000);
         expect(skipReasons(token)).toEqual([BoardRunner.ALERT.UNSKILLED]);
@@ -145,7 +145,7 @@ describe('The gate is possession first, then level', () => {
         // skill worked the Token anyway.
         GameState.state.heroes = [makeHero('hero_1', MASTER_SKILL_IDS.slice(0, 1), 99)];
         const token = place(10, 'fixture_ungated');
-        plantFor('hero_1', 10, 'crafting');
+        plantFor('hero_1', 10);
 
         run(11000);
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);

@@ -144,14 +144,13 @@ describe('A Market demands Commerce (D-259)', () => {
         // The whole point: a Market is not a thing any hero can run.
         GameState.state.heroes = [makeHero('hero_1', STARTING_SKILL_IDS, 99)];
         const token = place(10, 'fixture_market');
-        // A Commerce flag, so the Market is a candidate; the flag skips it as
-        // UNSKILLED for hover rather than raising a red mark (Free Playmat
-        // 1.4b).
-        Orders.orderAt('hero_1', C(10), { skill: 'commerce' });
+        // The drop is refused as UNSKILLED (said over the Token) rather than raising a red mark.
+        expect(Orders.orderAt('hero_1', C(10)).success).toBe(false);
         InventoryManager.addItem('fixture_market_goods', 100);
         run(20000);
 
-        expect(Flags.skipsOf(token.id).map(s => s.reason)).toEqual([BoardRunner.ALERT.UNSKILLED]);
+        expect(Flags.orderRefusal('hero_1', token)).toEqual({ reason: BoardRunner.ALERT.UNSKILLED });
+        expect(Flags.pinnedIdOf('hero_1')).toBeNull();
         expect(token.alert).toBeFalsy();
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });

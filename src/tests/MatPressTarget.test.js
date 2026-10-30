@@ -367,12 +367,13 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
     const OFF_CLOTH = { x: 593, y: 640 };
     let realElementFromPoint;
 
+    // A hero sent to bare ground, and a Token then placed under their flag (a Token lands exactly
+    // where it is dropped, flags or not). The hero's panel is open, so the spot's flag stays shown.
     function scene(flagPoint) {
-        const tok = placeAt('fixture_producer', 600, 600);
         // A hero who cannot work it, so the Token stays at rest (a worked Token is drawn in front of every flag).
         GameState.state.heroes = [{ id: 'h1', name: 'h1', spriteId: 'hm_fighter_por', status: 'idle', level: 50, skills: { mining: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
-        Orders.orderAt('h1', flagPoint);
-        return tok;
+        expect(Orders.orderAt('h1', flagPoint)).toMatchObject({ success: true, order: 'spot' });
+        return placeAt('fixture_producer', 600, 600);
     }
     function boxFlag(container, flagPoint) {
         const flag = container.querySelector('button[data-flag="h1"]');
@@ -384,7 +385,7 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
         const Spy = () => { useDndMonitor({ onDragStart: (e) => started.push(startedName(e.active)) }); return null; };
         const view = render(
             h(DeckDndProvider, null,
-                    h(MatFitProvider, { value: OWNER_FIT }, h(MatBoard), h(Spy)))
+                    h(MatFitProvider, { value: OWNER_FIT }, h(MatBoard, { inspectedHeroId: 'h1' }), h(Spy)))
         );
         const mat = view.container.querySelector('[data-mat-board]');
         mat.getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: matW(), height: matH(), right: matW(), bottom: matH() });
@@ -434,7 +435,7 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
         expect(started).toEqual(['flag-h1']);
     });
 
-    it('a flag planted on the Token\'s centre: its pole foot there leaves the Token its press', () => {
+    it('a flag standing on the Token\'s centre: its pole foot there leaves the Token its press', () => {
         const flagPoint = { x: 600, y: 600 };
         const tok = scene(flagPoint);
         const { container, started } = mountWithDrag();
@@ -464,7 +465,7 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
         const flagPoint = { x: 600, y: 600 };
         const tok = scene(flagPoint);
         const onInspectToken = vi.fn();
-        const { container } = mountAt(OWNER_FIT, { onInspectToken });
+        const { container } = mountAt(OWNER_FIT, { onInspectToken, inspectedHeroId: 'h1' });
         const flag = boxFlag(container, flagPoint);
         fireEvent.click(flag, { clientX: 600, clientY: 600 });
         expect(onInspectToken).toHaveBeenCalledTimes(1);

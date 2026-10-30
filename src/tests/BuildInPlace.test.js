@@ -183,13 +183,13 @@ describe('the level gate is the recipe’s (SP-49)', () => {
         InventoryManager.addItem('item_coal', 10);
         const f = put('fixture_bip_stone_foundation');
         StationRecipe.setSelectedRecipe(f, 'fixture_bip_build_furnace');
-        Orders.orderAt('h1', AT);
+        expect(Orders.orderAt('h1', AT).success).toBe(false);
         run(10000);
 
         expect(BoardState.workTokenOf('h1')).toBeFalsy();
         expect(BoardState.getTokenById(f.id)).toBeTruthy();
         expect(InventoryManager.getItemCount('item_coal')).toBe(10);
-        expect(Flags.skipsOf(f.id).map(s => s.reason)).toContain(ALERT.ACCESS);
+        expect(Flags.orderRefusal('h1', f)).toEqual({ reason: ALERT.ACCESS });
     });
 
     it('the list shows the recipe as a locked silhouette, with its level', () => {

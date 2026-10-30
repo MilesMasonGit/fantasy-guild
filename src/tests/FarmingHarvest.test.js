@@ -78,6 +78,10 @@ const fieldType = (id, name, extra = {}) => ({
 registerTokenTypes({
     fh_field: fieldType('fh_field', 'Test Field'),
     fh_sickle_field: fieldType('fh_sickle_field', 'Test Sickle Field', { needsTool: { kind: 'sickle', minTier: 1 } }),
+    fh_farmstead: {
+        id: 'fh_farmstead', name: 'Test Farmstead', tokenType: 'camp', rarity: 'common', theme: 'fixture', uses: null,
+        sprite: 's_nature', requiresHero: false, config: null, camp: { skill: 'farming', reach: 320 }
+    },
     fh_beehive: {
         id: 'fh_beehive', name: 'Test Beehive', tokenType: 'buff', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         statements: [{ id: 'stm_fh_bees', keyword: 'provides', to: { mode: 'id', value: 'fh_field' }, reach: 'nearby',
@@ -192,11 +196,12 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         expect(Growth.growthAlertOf(field.id)).toBeNull();
     });
 
-    it('an area flag works the ripe Field while the other grows', () => {
+    it('a farmer sent to a Farmstead works the ripe Field while the other grows', () => {
         const a = ripeField({ seeds: 2, farmer: false });
         const b = put('fh_field', FIELD.x + 160, FIELD.y);
         expect(StationRecipe.setSelectedRecipe(b, WHEAT)).toBe(true);
-        Orders.orderAt('farmer', { x: FIELD.x + 80, y: FIELD.y });
+        const farmstead = put('fh_farmstead', FIELD.x + 80, FIELD.y + 160);
+        expect(Orders.orderAt('farmer', { x: farmstead.x, y: farmstead.y }).success).toBe(true);
         // A is ripe, B just sown: A is harvested; then B grows ripe while A grows, and B is worked.
         run(3500);
         expect(Fields.stageOf(a)).toBe(Fields.STAGE.GROWING);
