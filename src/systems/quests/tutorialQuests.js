@@ -1,7 +1,7 @@
 // Fantasy Guild - the cartographer's tutorial chain
 //
-// One step at a time, in the Starter Camp: heroes, flags and gathering; building and crafting; the
-// camp's end (a first copper tool made and a goblin beaten, which pays the first maps); then the
+// One step at a time, in the Starter Camp: heroes, orders and gathering; building, crafting and a
+// first camp; the Starter Camp's end (a first copper tool made and a goblin beaten, which pays the first maps); then the
 // Atlas (writing the first world and moving the guild into it). Every step is completable in a new
 // game with no dev tools once the owner's Starter Camp and maps exist, and every `targetType` is
 // reported by `QuestManager` from an event the engine really publishes. ⚠️ No step may ask for a
@@ -71,9 +71,12 @@ const STEPS = [
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
+    // The id is older than its words (a hero sent to work, then to a tree): kept, so a save past it
+    // is not asked again.
     {
         id: 'cart_flag',
         targetType: 'hero_deployed',
+        match: { skill: 'forestry' },
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
@@ -108,6 +111,14 @@ const STEPS = [
         id: 'cart_craft',
         targetType: 'cycle_completed',
         match: { crafted: true },
+        requiredCount: 1,
+        rewardItems: TUTORIAL_REWARD_ITEMS
+    },
+    // Any camp counts; the words name the Logging Camp, the one a Wood Foundation builds from wood.
+    {
+        id: 'cart_camp',
+        targetType: 'token_built',
+        match: { camp: true },
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },

@@ -83,12 +83,13 @@ const withoutMaps = () => {
 const withMaps = () => { withoutMaps(); registerItems(MAPS); };
 const restoreShippedMaps = () => { withoutMaps(); registerItems(SHIPPED_MAPS); };
 
-/** Spots on the mat, far enough apart that one flag reaches one Token. */
+/** Spots on the mat, well apart. */
 const SPOT = {
     tree: { x: 300, y: 300 },
     build: { x: 1400, y: 300 },
     fight: { x: 1400, y: 900 },
-    forge: { x: 880, y: 1000 }
+    forge: { x: 880, y: 1000 },
+    camp: { x: 400, y: 800 }
 };
 
 const onMat = (typeId) => BoardState.tokens().filter(t => t.typeId === typeId);
@@ -167,7 +168,10 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(EquipmentManager.equipItem(heroId, AXE).success).toBe(true);
         claim('cart_tool');
 
-        // 3. Send the Hero to work: the player's drop onto an Oak Tree (hero orders, brief 260 O1).
+        // 3. Send the Recruit to a tree: the player's drop onto an Oak Tree. Bare ground does not
+        // count.
+        expect(Orders.orderAt(heroId, { x: 600, y: 300 })).toMatchObject({ success: true, order: 'spot' });
+        expect(complete('cart_flag')).toBe(false);
         Placement.placeTokenAt(
             BoardState.createTokenInstance('token_oak_tree', tokenStartingUses('token_oak_tree')), SPOT.tree);
         expect(Orders.orderAt(heroId, SPOT.tree)).toMatchObject({ success: true, order: 'token' });
@@ -214,13 +218,36 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         give('item_oak_wood', 10);
         const workbench = onMat('token_workbench')[0];
         expect(workbench.selectedRecipeId).toBeUndefined();
+        // A finished build ends the builder's order: the player sends them to the new station.
+        expect(Orders.orderAt(heroId, { x: workbench.x, y: workbench.y })).toMatchObject({ success: true, order: 'token' });
         expect(runUntil(() => complete('cart_craft'), 30_000)).toBe(false);
         expect(StationRecipe.setSelectedRecipe(workbench, 'recipe_muily2pf')).toBe(true);
         expect(runUntil(() => complete('cart_craft'), 2 * 60_000)).toBe(true);
         claim('cart_craft');
         Flags.furl(heroId);
 
-        // 9. Make a first copper tool (a Copper Pickaxe at a Copper Smithy). The Charcoal made
+        // 9. Build a first camp: a Logging Camp on a second Wood Foundation, then the Hero sent to it
+        // chops a tree in its reach.
+        give('item_oak_wood', 15);
+        const second = buyAt('token_wood_foundation', SPOT.camp);
+        expect(StationRecipe.setSelectedRecipe(second, 'recipe_build_logging_camp')).toBe(true);
+        give('item_oak_wood', 20);
+        expect(Orders.orderAt(heroId, SPOT.camp)).toMatchObject({ success: true, order: 'token' });
+        expect(runUntil(() => complete('cart_camp'), 3 * 60_000)).toBe(true);
+        const camp = onMat('token_logging_camp')[0];
+        expect(camp).toBeTruthy();
+        // A finished Foundation ends the builder's order.
+        BoardRunner.tick(100);
+        expect(Flags.pinnedIdOf(heroId)).toBeNull();
+        expect(Flags.needsJob(heroId)).toBe(true);
+        const grove = BoardState.createTokenInstance('token_oak_tree', 10);
+        expect(Placement.placeTokenAt(grove, { x: camp.x + 160, y: camp.y }).success).toBe(true);
+        expect(Orders.orderAt(heroId, { x: camp.x, y: camp.y })).toMatchObject({ success: true, order: 'token' });
+        expect(runUntil(() => BoardState.workTokenOf(heroId) === grove.id, 30_000)).toBe(true);
+        claim('cart_camp');
+        Flags.furl(heroId);
+
+        // 10. Make a first copper tool (a Copper Pickaxe at a Copper Smithy). The Charcoal made
         // above did not count: it is not a tool. No maps yet.
         expect(complete('cart_copper_tool')).toBe(false);
         GameState.heroes[0].skills.smithing = { xp: 0, level: 5 };
@@ -233,7 +260,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(claim('cart_copper_tool').rewardItems.some(r => isMapItem(getAllItems()[r.itemId]))).toBe(false);
         Flags.furl(heroId);
 
-        // 10. Beat a goblin. A Cow (it never attacks first) does not count; a Goblin does, and
+        // 11. Beat a goblin. A Cow (it never attacks first) does not count; a Goblin does, and
         // pays the maps given by the tutorial.
         // ⚠️ Fixture: a Recruit fights as a level 1 fighter and is often knocked out before the
         // first kill, so the hero is lent a combat skill at level 40.
@@ -263,12 +290,12 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(bank('map_tut_meadow')).toBe(0);
         Flags.furl(heroId);
 
-        // 11. Write the first world: settle a Region from a map.
+        // 12. Write the first world: settle a Region from a map.
         const settled = Atlas.settle({ ingredients: ['map_tut_woods'], seed: 7 });
         expect(settled.success, settled.reason).toBe(true);
         claim('cart_settle');
 
-        // 12. Move the guild there. The step travels beside the Hall and counts on arrival.
+        // 13. Move the guild there. The step travels beside the Hall and counts on arrival.
         const moved = Atlas.travel(settled.region.id);
         expect(moved.success, moved.reason).toBe(true);
         expect(Atlas.activeRegionId()).toBe(settled.region.id);
@@ -352,16 +379,23 @@ describe('the chain\'s words come from one text module', () => {
         expect(Object.keys(TUTORIAL_TEXT.steps)).toEqual(TUTORIAL_QUESTS.map(t => t.id));
     });
 
-    it('no step says "log" (the skill is Forestry)', () => {
+    it('no step says "log" (the skill is Forestry), but for the Logging Camp, a Token\'s own name', () => {
         for (const t of TUTORIAL_QUESTS) {
-            expect(`${t.title} ${t.says} ${t.instruction}`, t.id).not.toMatch(/\blog(s|ging|ged)?\b/i);
+            const words = `${t.title} ${t.says} ${t.instruction}`.replace(/Logging Camp/g, 'camp');
+            expect(words, t.id).not.toMatch(/\blog(s|ging|ged)?\b/i);
+        }
+    });
+
+    it('no step speaks of planting a flag: heroes are sent, by dragging', () => {
+        for (const t of TUTORIAL_QUESTS) {
+            expect(`${t.title} ${t.says} ${t.instruction}`, t.id).not.toMatch(/\bflags?\b|\bplant/i);
         }
     });
 
     it('the chain is the cartographer\'s, in order, with new ids', () => {
         expect(TUTORIAL_QUESTS.map(t => t.id)).toEqual([
             'cart_recruit', 'cart_tool', 'cart_flag', 'cart_gather', 'cart_loot', 'cart_foundation', 'cart_station',
-            'cart_craft', 'cart_copper_tool', 'cart_goblin', 'cart_settle', 'cart_travel'
+            'cart_craft', 'cart_camp', 'cart_copper_tool', 'cart_goblin', 'cart_settle', 'cart_travel'
         ]);
     });
 });
@@ -376,7 +410,7 @@ describe('every step can be done on the shipped content', () => {
     });
 });
 
-describe('a save from when the chain had the old-site step moves on to the copper tool', () => {
+describe('a save from when the chain had the old-site step moves on to the next step (the first camp)', () => {
     const BEFORE = ['cart_recruit', 'cart_tool', 'cart_flag', 'cart_gather', 'cart_loot', 'cart_foundation', 'cart_station', 'cart_craft'];
     const tutorialOnMat = () => QuestManager.getActiveQuests().filter(q => q.tutorial).map(q => q.id);
     const oldInspectQuest = () => ({
@@ -384,13 +418,13 @@ describe('a save from when the chain had the old-site step moves on to the coppe
         match: { landmark: true }, requiredCount: 1, currentCount: 0, rewardItems: [{ itemId: 'item_oak_wood', quantity: 10 }], done: false
     });
 
-    it('the old step standing on the mat is taken off and the copper tool step arrives', () => {
+    it('the old step standing on the mat is taken off and the next step arrives', () => {
         for (const t of QuestTokens.tutorialTokens()) BoardState.removeToken(t.id);
         GameState.state.quests.completedTutorials.push(...BEFORE);
         expect(QuestTokens.spawnQuest(oldInspectQuest())).toBeTruthy();
         expect(tutorialOnMat()).toEqual(['cart_inspect']);
         EventBus.publish(ENGINE_EVENTS.GAME_LOADED, {});
-        expect(tutorialOnMat()).toEqual(['cart_copper_tool']);
+        expect(tutorialOnMat()).toEqual(['cart_camp']);
         expect(GameState.state.quests.tutorialStep).toBe(BEFORE.length);
     });
 
@@ -400,7 +434,7 @@ describe('a save from when the chain had the old-site step moves on to the coppe
         q.completedTutorials.push(...BEFORE, 'cart_inspect');
         q.active.push({ ...oldInspectQuest(), isTutorial: true, status: 'active' });
         EventBus.publish(ENGINE_EVENTS.GAME_LOADED, {});
-        expect(tutorialOnMat()).toEqual(['cart_copper_tool']);
+        expect(tutorialOnMat()).toEqual(['cart_camp']);
         expect(q.active).toEqual([]);
         expect(q.tutorialStep).toBe(BEFORE.length);
         expect(QuestTokens.tutorialChainDone()).toBe(false);
