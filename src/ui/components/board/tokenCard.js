@@ -461,7 +461,7 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
             }
             : null;
         if (needs.length || tools.length || makes.length || change) {
-            blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, needs, tools, makes, change });
+            blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, change });
         }
     }
 

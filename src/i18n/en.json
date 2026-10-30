@@ -44,6 +44,7 @@
         "restores": "Restores {amount} HP",
         "clickToSelect": "Click to select",
         "clickToDeselect": "Click to deselect",
+        "clickToLookUp": "Click to look it up in the Encyclopedia",
         "type": {
             "item": "Item",
             "material": "Material",

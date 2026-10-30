@@ -42,6 +42,7 @@ import { centreOf } from './nearby.js';
 import * as Hand from './Hand.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { noteRecipeMade } from '../progression/collectionLog.js';
 
 /**
  * Re-exported so `BoardRunner.ALERT` keeps working for the engine suites that read it that way. The
@@ -369,6 +370,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // Cheap tally, used by the Token-type statistics surface.
     const counts = GameState.state?.collection?.cardUseCounts;
     if (counts) counts[instance.typeId] = (counts[instance.typeId] || 0) + 1;
+    if (!failed && io.recipe?.id) noteRecipeMade(io.recipe.id);
 
     // Last, so every reader above saw the Foundation that did the work. Its hero lets go on the
     // next pass and moves on. A failed build has spent its inputs and stays a Foundation, like any

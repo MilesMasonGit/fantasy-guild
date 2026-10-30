@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useState } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { t } from '../../../i18n/index.js';
@@ -18,6 +18,7 @@ import { TokenCard } from '../board/TokenCard.jsx';
 import { IngredientTree } from './IngredientTree.jsx';
 import { encyclopedia, KIND, KINDS } from './encyclopediaModel.js';
 import { takeLookUp, onLookUp } from './encyclopediaLink.js';
+import { collectedOf } from '../../../systems/progression/collectionLog.js';
 
 /** How far an arrow press scrolls a column. */
 const SCROLL_STEP_PX = 160;
@@ -71,8 +72,18 @@ function focusReducer(state, action) {
     }
 }
 
+/** Whether this run has collected `entry`: obtained, made, beaten. */
+export const isCollected = (got, entry) => !!entry && got[entry.kind]?.has(entry.id) === true;
+
+/** The collected tick: green, the "ready, enough" colour. */
+const Tick = ({ label }) => (
+    <span data-codex-tick title={label} aria-label={label} className="shrink-0" style={{ color: 'var(--color-ui-green)' }}>
+        <PixelGlyph name="tick" />
+    </span>
+);
+
 /** One row of the left list. */
-const ListRow = ({ entry, selected, onPick }) => (
+const ListRow = ({ entry, selected, onPick, got }) => (
     <button
         type="button"
         data-codex-row={entry.key}
@@ -85,6 +96,7 @@ const ListRow = ({ entry, selected, onPick }) => (
     >
         <span className="w-8 h-8 shrink-0 flex items-center justify-center overflow-hidden"><EntrySprite entry={entry} /></span>
         <span className="flex-1 min-w-0 break-words">{entry.name}</span>
+        {isCollected(got, entry) && <Tick label={t('encyclopedia.collected')} />}
     </button>
 );
 
@@ -237,7 +249,7 @@ const WhatItIs = ({ entry }) => {
     );
 };
 
-const Entry = ({ book, entry, trail, onGo, onBack }) => {
+const Entry = ({ book, entry, trail, onGo, onBack, collected }) => {
     const previous = trail.length ? book.entryOf(trail[trail.length - 1]) : null;
     return (
         <div data-codex-entry={entry.key} className="flex flex-col gap-3 p-3">
@@ -257,7 +269,10 @@ const Entry = ({ book, entry, trail, onGo, onBack }) => {
                 )}
                 <span className="min-w-16 min-h-16 shrink-0 flex items-center justify-center bg-black/40"><EntrySprite entry={entry} size={64} /></span>
                 <div className="flex flex-col min-w-0">
-                    <h3 data-codex-name className="ui-text-title font-bold text-white break-words">{entry.name}</h3>
+                    <h3 data-codex-name className="ui-text-title font-bold text-white break-words flex items-center gap-2">
+                        {entry.name}
+                        {collected && <Tick label={t('encyclopedia.collected')} />}
+                    </h3>
                     <span className="ui-text-small text-gi-muted">{t(`encyclopedia.kindOne.${entry.kind}`)}</span>
                 </div>
             </div>
@@ -274,10 +289,12 @@ const Entry = ({ book, entry, trail, onGo, onBack }) => {
     );
 };
 
-const KindTabs = ({ kind, onKind, dimmed }) => (
+const KindTabs = ({ kind, onKind, dimmed, book, got }) => (
     <div role="tablist" className="flex items-end gap-4">
         {KINDS.map(k => {
             const on = k === kind && !dimmed;
+            const total = book.byKind[k].length;
+            const have = book.byKind[k].filter(e => isCollected(got, e)).length;
             return (
                 <button
                     key={k}
@@ -286,13 +303,15 @@ const KindTabs = ({ kind, onKind, dimmed }) => (
                     aria-selected={on}
                     data-codex-tab={k}
                     onClick={() => onKind(k)}
-                    className="flex items-center gap-1 pb-1 cursor-pointer font-bold ui-text-body"
+                    title={t('encyclopedia.progressTip', { have, total })}
+                    className="flex items-center gap-1.5 pb-1 cursor-pointer font-bold ui-text-body"
                     style={{
                         color: on ? 'var(--color-ui-white)' : 'var(--color-ui-muted)',
                         borderBottom: `2px solid ${on ? 'var(--color-ui-gold)' : 'transparent'}`
                     }}
                 >
                     {t(`encyclopedia.kind.${k}`)}
+                    <span data-codex-progress={k} className="tabular-nums">{t('encyclopedia.progress', { have, total })}</span>
                 </button>
             );
         })}
@@ -360,21 +379,31 @@ export const EncyclopediaScreen = ({ onClose }) => {
         setKind(book.kindOfKey(key));
     }), [book]);
 
+    // The entry shown keeps its row in sight, however it was reached (a link, the back step).
+    const rootRef = useRef(null);
+    useEffect(() => {
+        const row = rootRef.current?.querySelector(`[data-codex-row="${nav.focus}"]`);
+        row?.scrollIntoView?.({ block: 'nearest' });
+    }, [nav.focus, kind]);
+
     const searching = term.trim().length > 0;
     const results = useMemo(() => (searching ? book.search(term) : null), [book, term, searching]);
     const entry = book.entryOf(nav.focus);
+    // Read when the page changes: the run moves on behind an open screen, and nothing here listens.
+    const got = useMemo(() => collectedOf(), [nav.focus, kind, term]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div
+            ref={rootRef}
             data-encyclopedia
-            className="absolute inset-0 z-[100] pointer-events-auto p-4 bg-black/55"
+            className="absolute inset-0 z-(--z-encyclopedia) pointer-events-auto p-4 bg-black/55"
             onPointerDown={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
         >
             <PixelFrame kind={FRAME_KIND.STUDS} className="h-full" frameClassName="flex flex-col min-h-0 p-3 gap-2 bg-gi-surface/95">
                 <PanelHeader title={t('encyclopedia.title')} onClose={onClose} className="gap-4">
                     <Search value={term} onChange={setTerm} />
                 </PanelHeader>
-                <KindTabs kind={kind} onKind={(k) => { setKind(k); setTerm(''); }} dimmed={searching} />
+                <KindTabs kind={kind} onKind={(k) => { setKind(k); setTerm(''); }} dimmed={searching} book={book} got={got} />
                 <div className="flex-1 min-h-0 flex gap-3">
                     <div className="w-72 shrink-0 flex flex-col min-h-0 bg-black/30">
                         <ArrowScrollList step={SCROLL_STEP_PX} compact className="flex-1 min-h-0" listProps={{ 'data-codex-list': searching ? 'search' : kind }}>
@@ -387,19 +416,19 @@ export const EncyclopediaScreen = ({ onClose }) => {
                                         return (
                                             <div key={k} data-codex-group={k}>
                                                 <div className="px-2 pt-2 ui-text-small font-bold gi-caps tracking-wider text-gi-muted">{t(`encyclopedia.kind.${k}`)}</div>
-                                                {hits.map(e => <ListRow key={e.key} entry={e} selected={e.key === nav.focus} onPick={go} />)}
+                                                {hits.map(e => <ListRow key={e.key} entry={e} selected={e.key === nav.focus} onPick={go} got={got} />)}
                                             </div>
                                         );
                                     })
                             ) : (
-                                book.byKind[kind].map(e => <ListRow key={e.key} entry={e} selected={e.key === nav.focus} onPick={go} />)
+                                book.byKind[kind].map(e => <ListRow key={e.key} entry={e} selected={e.key === nav.focus} onPick={go} got={got} />)
                             )}
                         </ArrowScrollList>
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col min-h-0 bg-black/20">
                         <ArrowScrollList step={SCROLL_STEP_PX} compact className="flex-1 min-h-0">
                             {entry
-                                ? <Entry book={book} entry={entry} trail={nav.trail} onGo={go} onBack={back} />
+                                ? <Entry book={book} entry={entry} trail={nav.trail} onGo={go} onBack={back} collected={isCollected(got, entry)} />
                                 : <div className="p-3"><Muted>{t('encyclopedia.pick')}</Muted></div>}
                         </ArrowScrollList>
                     </div>

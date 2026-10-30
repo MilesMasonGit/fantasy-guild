@@ -3,6 +3,7 @@ import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { noteEnemyBeaten } from '../progression/collectionLog.js';
 
 export function handleHeroWounded(fight, heroId) {
     HeroManager.setHeroStatus(heroId, 'wounded');
@@ -30,6 +31,8 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
     fight.combat.state.intermissionTimer = 2000;
     fight.status = 'victory';
     assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, 'idle'));
+    // The kill counts the Encyclopedia ticks an enemy by.
+    noteEnemyBeaten(enemy.id);
 
     // `instanceId` (the enemy Token) is forwarded so loot lands as a sprite where
     // the kill happened instead of teleporting into the Bank.
