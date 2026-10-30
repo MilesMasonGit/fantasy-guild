@@ -5,7 +5,7 @@ import * as Charges from '../../../systems/board/Charges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
 import { getMissingRequirements, effectiveIO } from '../../../systems/board/RecipeResolver.js';
 import { workConfigOf } from '../../../systems/board/StationRecipe.js';
-import { MASTERY_LEVEL } from '../../../systems/hero/PromotionSystem.js';
+import { MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { fieldOf } from '../../../config/registries/tokenConstants.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
@@ -147,7 +147,7 @@ export function problemText(problem, instanceId) {
         }
         case ALERT.ACCESS: {
             const skill = instance ? skillNeeded(instance) : { name: null };
-            return skill.name ? `Needs ${skill.name} ${skill.level}/${MASTERY_LEVEL}` : 'Hero’s level is too low';
+            return skill.name ? `Needs ${skill.name} ${skill.level}/${MAX_SKILL_LEVEL}` : 'Hero’s level is too low';
         }
         case ALERT.UNSKILLED: {
             const skill = instance ? skillNeeded(instance) : { name: null };

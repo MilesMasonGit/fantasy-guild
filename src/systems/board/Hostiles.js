@@ -33,7 +33,7 @@ import { matTuning } from '../../config/matTuning.js';
  * enemy and one enemy per hero, so enemies never gang up.
  *
  * Not attacked: heroes with no order (at the Guild Hall), heroes on a spot order, wounded heroes, heroes who cannot fight and heroes already
- * on an enemy. Recruits are attacked like anyone: everyone fights, a Recruit barehanded. An enemy does not
+ * on an enemy. Everyone fights, a hero with nothing in their hands barehanded. An enemy does not
  * attack while a hero holds it, while it is in the player's hand, or while the player has marked it
  * as not for heroes to work: a forced fight there would be let go on the next pass.
  *

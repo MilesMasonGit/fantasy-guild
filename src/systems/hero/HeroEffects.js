@@ -8,8 +8,8 @@ import {
 } from '../effects/effectLibrary.js';
 import { KEYWORD } from '../effects/statements.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
-import { weaponUsableBy } from '../../config/registries/weaponStyles.js';
-import { getHeroCombatSkillEntry } from '../../utils/CombatFormulas.js';
+import { isWeapon, weaponStyleOf, meetsGearRequirements } from '../../config/registries/weaponStyles.js';
+import { getHeroCombatStyle } from '../../utils/CombatFormulas.js';
 import { isSpentCategory, isAlwaysOn } from '../core/consumableRule.js';
 
 /**
@@ -42,15 +42,16 @@ export function loadoutRefs(hero) {
     if (!hero) return merged;
 
     const grid = getGrid(hero);
-    const style = getHeroCombatSkillEntry(hero).id;
+    const style = getHeroCombatStyle(hero);
     for (let slot = 0; slot < grid.length; slot++) {
         const itemId = grid[slot];
         if (!itemId || !slotBacked(hero, slot)) continue;
         const def = getItem(itemId);
         if (!def) continue;
-        // A weapon of another style (held from before a re-training) is not swung, and its family's
-        // ability does not reach the hero either.
-        if (!weaponUsableBy(def, style)) continue;
+        // Gear whose level the hero does not meet lends nothing. A second weapon of another style
+        // than the one swung is not swung, and its family's ability does not reach the hero either.
+        if (!meetsGearRequirements(def, hero)) continue;
+        if (isWeapon(def) && weaponStyleOf(def) !== style) continue;
         const worn = !isSpentCategory(def.equipSlot);
 
         for (const { effectId, scale } of effectRefsOf(def)) {

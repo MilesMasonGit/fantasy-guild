@@ -17,7 +17,7 @@ import { ALERT } from '../systems/board/boardEvents.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { getSkill } from '../config/registries/skillRegistry.js';
-import { MASTERY_LEVEL } from '../systems/hero/PromotionSystem.js';
+import { MAX_SKILL_LEVEL } from '../utils/XPCurve.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import {
     problemOf, problemText, PROBLEM_SEVERITY, PROBLEM_SPRITE, PROBLEM_COLOUR, SEVERITY
@@ -161,7 +161,7 @@ describe('⭐ the hover says exactly what, from the engine', () => {
     it('⭐ the hero’s level too low: the skill and the level it needs, as levels read', () => {
         const gated = put('fixture_gated');
         const mining = getSkill('mining')?.name || 'mining';
-        expect(text(ALERT.ACCESS, gated.id)).toBe(`Needs ${mining} 25/${MASTERY_LEVEL}`);
+        expect(text(ALERT.ACCESS, gated.id)).toBe(`Needs ${mining} 25/${MAX_SKILL_LEVEL}`);
         expect(text(ALERT.UNSKILLED, gated.id)).toBe(`Needs the ${mining} skill`);
     });
 

@@ -1,10 +1,10 @@
-// Content that names a skill or a job the game does not have.
+// Content that names a skill or a job the game does not have, or a rule or style it no longer reads.
 
-import { isSkillId, COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
+import { isSkillId, COMBAT_SKILL_IDS, getSkill } from '../../config/registries/skillRegistry.js';
 import { getEnemyKind, kindsClash, MAX_ENEMY_KINDS } from '../../config/registries/enemyKinds.js';
-import { getJob } from '../../config/registries/jobRegistry.js';
+import { isWeapon, authoredWeaponStyles, weaponStyleOf } from '../../config/registries/weaponStyles.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
-import { statementsOf, stationSkillOf } from '../effects/statements.js';
+import { statementsOf, stationSkillOf, KEYWORD } from '../effects/statements.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
 
 /**
@@ -45,10 +45,9 @@ function isScopeCategory(category) {
 function statementFindings(def, push) {
     for (const statement of statementsOf(def)) {
         const payload = statement?.payload || {};
-        // ⚠️ By the field, not the keyword: only `BoardPromotion` may read the Promotes rule among
-        // the engine systems (`BoardPromotion.test.js` scans for it), and a job id is a job id.
-        if (hasValue(payload.jobId) && !getJob(payload.jobId)) {
-            push('statements', `one of its rules promotes to the job "${payload.jobId}", which does not exist — it promotes nobody. Pick the job again in the CMS.`);
+        if (statement?.keyword === KEYWORD.PROMOTES) {
+            const job = hasValue(payload.jobId) ? ` to "${payload.jobId}"` : '';
+            push('statements', `one of its rules promotes the hero${job}: jobs are retired (every hero holds every skill), so it does nothing. Delete the rule in the CMS, or the Token if it has no other use.`);
         }
         if (hasValue(payload.category) && getPaletteEntry(payload.type)?.categories === 'skill'
             && !isScopeCategory(payload.category)) {
@@ -120,8 +119,12 @@ export function findUnknownRefs({ tokens, items, recipes } = {}) {
         }
         for (const style of Array.isArray(def.styles) ? def.styles : []) {
             if (!COMBAT_SKILL_IDS.includes(style)) {
-                push('styles', `names the weapon style "${style}", which is not a combat style — it is ignored. Tick its styles again in the CMS.`);
+                push('styles', `names the weapon style "${style}", which is not a combat style — it is ignored. Pick its style again in the CMS.`);
             }
+        }
+        if (isWeapon(def) && authoredWeaponStyles(def).length > 1) {
+            const first = getSkill(weaponStyleOf(def))?.name || weaponStyleOf(def);
+            push('styles', `names ${authoredWeaponStyles(def).length} styles; a weapon has one, so it fights as ${first} (the first). Pick its one style in the CMS.`);
         }
         statementFindings(def, push);
     }

@@ -12,11 +12,10 @@ import * as CombatFormulas from '../../utils/CombatFormulas.js';
  * a missing entry means allowed at priority 3. A `ruleId` is a work skill id, or {@link FIGHT} for
  * combat.
  *
- * An entry for a skill the hero no longer holds (banked by a promotion) is kept and ignored, so a
- * banked-and-restored skill comes back with its rule. Priority 1 is highest.
+ * An entry for a skill the game no longer has is kept and ignored. Priority 1 is highest.
  *
- * Combat is one rule, `'combat'`: a hero fights with whatever combat skill they hold, so combat
- * skills are never listed one by one. Allowed by default.
+ * Combat is one rule, `'combat'`: a hero fights in the style of the weapon in their hands, so
+ * combat skills are never listed one by one. Allowed by default.
  */
 
 /** The single combat rule. */

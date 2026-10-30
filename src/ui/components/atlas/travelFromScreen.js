@@ -27,21 +27,18 @@ const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 /**
  * Travel to Region `id` from the Atlas screen. ⚠️ A Token still in the hand when the board is
  * swapped would run its put-down work (`Hand.whenPutDown`) on the other Region's board, so a drag
- * is ended and let settle first. The promotion ceremony is closed too: `useUIModals` keeps the
- * offer it is showing through `GAME_RESET`, and it belongs to a Token left behind. The offer
- * itself stays on that Token and is asked again on return. While a catch-up runs travel refuses,
- * so neither happens then.
+ * is ended and let settle first. While a catch-up runs travel refuses, so that never happens
+ * then.
  *
  * @returns {Promise<object>} what `Atlas.travel` returned
  */
 export async function travelFromScreen(id, {
-    isDragging = false, closePromotion = null, travel = Atlas.travel, end = endDrag, settle = () => wait(DROP_SETTLE_MS)
+    isDragging = false, travel = Atlas.travel, end = endDrag, settle = () => wait(DROP_SETTLE_MS)
 } = {}) {
     if (CatchUp.isRunning()) return travel(id);
     if (isDragging) {
         end();
         await settle();
     }
-    closePromotion?.();
     return travel(id);
 }

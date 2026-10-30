@@ -5,6 +5,9 @@
  * Uses an exponential curve similar to RuneScape's.
  */
 
+/** The top level of every skill: the sheet writes levels out of it ("25/99"). */
+export const MAX_SKILL_LEVEL = 99;
+
 /**
  * Calculate the total XP required to reach a given level
  * @param {number} level - Target level (1-99)

@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { STARTING_JOB_ID, getJobSheet } from '../../config/registries/jobRegistry.js';
+import { HERO_SKILL_IDS } from '../../config/registries/skillRegistry.js';
 // ⚠️ `nameRegistry` is imported only here. It looks like an orphan; it names every hero.
 import { getRandomName } from '../../config/registries/nameRegistry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
@@ -10,9 +10,8 @@ import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
 /**
  * HeroGenerator - creates new heroes.
  *
- * Every hero starts as a Recruit: the Foundation skills at level 1 and nothing
- * else, so an unpromoted hero holds no combat skill (they still fight, barehanded,
- * but earn no combat XP). The way to gain one is promotion.
+ * Every hero starts holding every skill at level 1 (`skillRegistry.HERO_SKILL_IDS`): what they
+ * become is what they are sent to do.
  *
  * `classId` and `traitId` are still written as `null` only to keep the saved
  * hero shape unchanged.
@@ -44,11 +43,8 @@ export const HERO_SPRITES = [
 export function generateHero(options = {}) {
     const name = options.name || getRandomName();
 
-    // The job's sheet decides what a Recruit holds, so changing that is a
-    // `jobRegistry.js` edit and nothing else.
-    const jobId = options.jobId || STARTING_JOB_ID;
     const skills = {};
-    for (const skillId of getJobSheet(jobId)) {
+    for (const skillId of HERO_SKILL_IDS) {
         skills[skillId] = {
             xp: xpForLevel(1),
             level: 1
@@ -58,13 +54,12 @@ export function generateHero(options = {}) {
     const icon = options.icon || 'hn_recruit_icon_por';
     const spriteId = options.spriteId || 'hn_recruit_por';
 
-    // Max HP is 10 + the combat level; a Recruit holds no combat skill, so 10.
+    // Max HP is 10 + the best combat skill: 11 at level 1.
     const maxHp = heroMaxHpFromSkills(skills);
 
     const hero = {
         id: `hero_${nanoid(8)}`,
         name,
-        jobId,
         // Retired concepts, kept as null so the saved hero shape is unchanged.
         classId: null,
         traitId: null,
@@ -100,9 +95,9 @@ export function generateHero(options = {}) {
  * Hero Level: the average of the skills the hero actually holds. A summary for
  * sorting and comparing the roster; there is no hero XP independent of skill XP.
  *
- * ⚠️ This is NOT the combat number. The engine reads the hero's single combat
- * skill for HP, block and hit rolls; reading this would let a hero gain max HP
- * by mining.
+ * ⚠️ This is NOT the combat number. The engine reads the style in the hero's hands
+ * for hits and the best combat skill for HP; reading this would let a hero gain
+ * max HP by mining.
  */
 export function calculateHeroLevel(skills) {
     if (!skills) return 0;

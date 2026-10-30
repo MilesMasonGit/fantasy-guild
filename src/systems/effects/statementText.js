@@ -4,7 +4,6 @@ import { MODIFIER_SHAPES } from '../../config/registries/modifierPalette.js';
 import { getTriggerEvent, isFightMoment, isCarriedMoment, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
 import { getRestrictionKind, limitOf } from '../../config/registries/restrictionPalette.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
-import { getJob } from '../../config/registries/jobRegistry.js';
 import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
 import { filtersPhrase } from '../../config/registries/filterRegistry.js';
@@ -593,11 +592,10 @@ function bodySegments(statement, names) {
             return segs(d('Works as', K), ' a ', d(payload.skill ? (skill?.name || payload.skill) : '…', 'skill'), ' station', kind);
         }
 
-        // "Promotes the hero to Knight." A job the registry no longer has keeps its id on screen
-        // rather than vanishing.
+        // "Promotes the hero to fighter (retired)." Jobs are gone; older content keeps its words on
+        // screen so the author can find and delete it.
         case KEYWORD.PROMOTES:
-            return segs(d('Promotes', K), ' the hero to ',
-                d(payload.jobId ? (getJob(payload.jobId)?.name || payload.jobId) : '…', 'jobId'));
+            return segs(d('Promotes', K), ' the hero to ', d(payload.jobId || '…', 'jobId'), ' (retired)');
 
         /**
          * ⚠️ Two wordings. The CMS editor passes no `tool` name and shows the tier as a number to

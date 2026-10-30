@@ -117,7 +117,7 @@ const PanelBar = ({ cur, max, text = '' }) => {
     );
 };
 
-/** A side's style and level: the style's icon and `20/99`; a Recruit has no style. */
+/** A side's style and level: the style's icon and `20/99`; a side with no style says so. */
 const StyleLevel = ({ side, mirror = false }) => {
     const style = styleName(side.style);
     return (

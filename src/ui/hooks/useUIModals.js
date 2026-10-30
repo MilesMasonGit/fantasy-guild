@@ -1,24 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
-import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
-import * as BoardState from '../../systems/board/BoardState.js';
-import * as BoardPromotion from '../../systems/board/BoardPromotion.js';
-import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
-
-/**
- * The first promotion offer standing on the board, or null. Read from the Token instances (the
- * saved truth) through `BoardPromotion.getOffer`, which excludes declined offers.
- */
-export function standingPromotionOffer() {
-    try {
-        for (const instance of BoardState.tokens()) {
-            const offer = BoardPromotion.getOffer(instance.id);
-            if (offer) return offer;
-        }
-    } catch {
-    }
-    return null;
-}
+import { useState, useCallback, useMemo } from 'react';
+import { EventBus } from '../../systems/core/EventBus.js';
+import { UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * useUIModals
@@ -76,15 +58,6 @@ export const useUIModals = () => {
     const [isShopOpen, setIsShopOpen] = useState(false);
 
     const [editHeroId, setEditHeroId] = useState(null);
-
-    // Separate from the Edit modal because changing job is a decision with consequences, not a
-    // profile tweak.
-    const [jobHeroId, setJobHeroId] = useState(null);
-
-    // ⚠️ Holds only WHICH offer to draw. The offer itself is state on the Token instance
-    // (`promotionPaused`), saved board state, so it is re-found on load
-    // (`standingPromotionOffer`) rather than lost with the tab.
-    const [promotionOffer, setPromotionOffer] = useState(null);
 
     const [inspectByPane, setInspectByPane] = useState({
         bank: null,
@@ -236,14 +209,7 @@ export const useUIModals = () => {
         dock: {
             editHeroId,
             openEdit: useCallback((heroId) => setEditHeroId(heroId), []),
-            closeEdit: useCallback(() => setEditHeroId(null), []),
-            jobHeroId,
-            openJob: useCallback((heroId) => setJobHeroId(heroId), []),
-            closeJob: useCallback(() => setJobHeroId(null), []),
-            // Closing only stops drawing: the ceremony's own buttons accept or decline, and an
-            // offer closed any other way is still standing on the tile.
-            promotionOffer,
-            closePromotion: useCallback(() => setPromotionOffer(null), [])
+            closeEdit: useCallback(() => setEditHeroId(null), [])
         },
         inspect,
         nav: {
@@ -251,39 +217,6 @@ export const useUIModals = () => {
             toggle: navToggle
         }
     };
-
-    useEffect(() => {
-        // ⚠️ Every subscription below must have a publisher somewhere.
-        const subs = [
-            // Nothing has happened to the hero yet: the tile holds the offer open and this
-            // only decides to draw it.
-            EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, (data) => {
-                if (data?.instanceId == null) return;
-                setPromotionOffer(data);
-            }, UI_LISTENER),
-            // ⚠️ A loaded save can carry an offer nobody answered. Without this the hero would
-            // stand on the Token forever with nothing asking. A declined offer is not
-            // standing, so this never re-asks.
-            EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
-                setPromotionOffer(standingPromotionOffer());
-            }, UI_LISTENER),
-            // Likewise an offer made while a catch-up played with this listener quiet.
-            EventBus.subscribe(ENGINE_EVENTS.GAME_RESET, () => {
-                setPromotionOffer((current) => current || standingPromotionOffer());
-            }, UI_LISTENER)
-        ];
-
-        // Same, for a board already loaded when the UI mounted. Deferred a tick so it reads
-        // after the engine has finished starting.
-        const initial = setTimeout(() => {
-            setPromotionOffer((current) => current || standingPromotionOffer());
-        }, 0);
-
-        return () => {
-            clearTimeout(initial);
-            subs.forEach(unsub => unsub());
-        };
-    }, []);
 
     const isAnyModalOpen = isSettingsOpen ||
                            fullscreenView !== null;

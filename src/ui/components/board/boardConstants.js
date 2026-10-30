@@ -65,7 +65,7 @@ export const TOKEN_BAR_GAP_U = 8;
  * Why a flag passed a Token over, as the tail of one hover line, e.g. 'Iron Forge — needs
  * materials'.
  * Keyed by every reason `Flags` can record: its own `SKIP` values plus the `ALERT` values
- * `WorkCheck` and promotion return. `FlagUI.test.js` derives that list from the engine, so a
+ * `WorkCheck` returns. `FlagUI.test.js` derives that list from the engine, so a
  * new reason without a sentence fails. Kept short, because up to five of these stack in one
  * tooltip.
  */
@@ -92,7 +92,6 @@ export const SKIP_HINT = {
     claimed: 'being worked by {holder}',
     // `claimed` said of an enemy: every fight is one-on-one, so the flag waits for it.
     claimed_fight: '{holder} is fighting it',
-    same_job: 'already holds this job',
     rule_off: 'off in {hero}’s Work Permissions'
 };
 

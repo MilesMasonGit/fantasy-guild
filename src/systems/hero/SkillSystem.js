@@ -176,7 +176,7 @@ export function addXP(heroId, skillId, amount) {
  * Why a hero cannot satisfy a skill requirement, or `null` if they can.
  *
  * `POSSESSION`: this hero can never do this work (fix: a different hero, or a
- * promotion into a job that grants the skill).
+ * a skill the game no longer has).
  * `LEVEL`: not good enough yet (fix: time).
  *
  * @param {string} heroId

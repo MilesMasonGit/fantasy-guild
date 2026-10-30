@@ -1,7 +1,7 @@
 // Fantasy Guild - Formula Registry
 //
 // The combat numbers (`docs/active/concept_combat.md`, "Detail pass rulings"). Small
-// numbers everywhere: a hero has 10 HP plus their combat level, a copper sword hits for 2, and
+// numbers everywhere: a hero has 10 HP plus their best combat level, a copper sword hits for 2, and
 // one or two extra damage is a noticeable boost. Every number here is a first proposal for the
 // owner to tune in play.
 
@@ -18,7 +18,7 @@ export function roundHalfUp(x) {
 
 // --- Heroes ---------------------------------------------------------------------------------
 
-/** Max HP = 10 + combat level: about 10 for a Recruit, 109 at level 99. */
+/** Max HP = 10 + the hero's highest combat skill: 11 for a new hero, 109 at level 99. */
 export const HERO_BASE_HP = 10;
 export function heroMaxHp(combatLevel) {
     return HERO_BASE_HP + Math.max(0, Math.floor(combatLevel || 0));
@@ -30,7 +30,7 @@ export function levelDamageBonus(combatLevel) {
     return Math.floor(Math.max(0, combatLevel || 0) / LEVELS_PER_DAMAGE_STEP);
 }
 
-/** A bare fist: what a Recruit always hits with, and a promoted hero holding no weapon. */
+/** A bare fist: what a hero with no weapon in their hands hits with, as Melee. */
 export const UNARMED_DAMAGE = 1;
 
 // --- Swing speed ----------------------------------------------------------------------------
@@ -91,8 +91,7 @@ export const RPS_RULES = {
 };
 
 /**
- * RPS outcome for attacker vs defender styles. A side with no style (a Recruit) is even with
- * everyone.
+ * RPS outcome for attacker vs defender styles. A side with no style is even with everyone.
  * @returns {number} +1 favorable, −1 unfavorable, 0 neutral
  */
 export function rpsOutcome(attackerType, defenderType) {

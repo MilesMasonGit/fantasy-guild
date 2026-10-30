@@ -184,7 +184,7 @@ export function StatementList({
       {canAdd && <div className="pt-1">
         {menuOpen ? (
           <div className="rounded-lg border border-white/10 bg-black/30 p-2 space-y-1">
-            {KEYWORDS.filter((k) => k.id !== KEYWORD.REQUIRES).map((k) => {
+            {KEYWORDS.filter((k) => k.id !== KEYWORD.REQUIRES && !k.retired).map((k) => {
               const Icon = KEYWORD_ICON[k.id] || Zap;
               return (
                 <button
@@ -496,8 +496,8 @@ export default function Statements({ token, item }) {
 
         {menuOpen ? (
           <div className="rounded-lg border border-white/10 bg-black/30 p-2 space-y-1">
-            {/* An item is offered neither Requires nor a keyword declared `tokensOnly`. */}
-            {KEYWORDS.filter((k) => token || (k.id !== KEYWORD.REQUIRES && !k.tokensOnly)).map((k) => {
+            {/* An item is offered neither Requires nor a keyword declared `tokensOnly`; nothing is offered a `retired` one. */}
+            {KEYWORDS.filter((k) => !k.retired && (token || (k.id !== KEYWORD.REQUIRES && !k.tokensOnly))).map((k) => {
               const Icon = KEYWORD_ICON[k.id] || Zap;
               return (
                 <button

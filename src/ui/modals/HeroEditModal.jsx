@@ -6,7 +6,7 @@ import { GIModal } from '../components/base/GIModal.jsx';
 import { KitButton, KIT_BUTTON_TONE } from '../components/base/KitButton.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { HERO_PORTRAITS, HERO_NAME_MAX } from '../../config/registries/heroPortraits.js';
-import { Check, Repeat } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { FLAG_COLOURS, FLAG_COLOUR_LABELS, isFlagColour } from '../../systems/board/FlagColours.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
@@ -19,13 +19,13 @@ export const SWATCH_FLAG_PX = 40;
 
 /**
  * HeroEditModal: everything about a hero that isn't drag-and-drop: rename, repick their
- * portrait, flag colour, change job. Opened by the Edit button on the hero panel, which shows
- * their skills (held, banked and locked); this modal does not repeat them.
+ * portrait, flag colour. Opened by the Edit button on the hero panel, which shows their skills;
+ * this modal does not repeat them.
  * The name and portrait wait for Save. A flag colour is put on the hero the moment it is picked,
  * so their flag on the mat, the roster and the panel changes at once; Save keeps it, Cancel (or
  * closing) puts back the colour they had when the modal opened.
  */
-export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
+export const HeroEditModal = ({ heroId, isOpen, onClose }) => {
 
     // Flat projection per the useGameState selector contract.
     const hero = useGameState(
@@ -86,17 +86,6 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     return (
         <GIModal isOpen={isOpen} onClose={handleCancel} title={`Edit ${hero.name}`} maxWidth="max-w-lg">
             <div className="flex flex-col gap-4 p-4">
-                <KitButton
-                    tone={KIT_BUTTON_TONE.PLAIN}
-                    onClick={onChangeJob}
-                    className="w-full"
-                    buttonClassName="py-1.5 ui-text-body gi-caps tracking-wide"
-                >
-                    <Repeat size={11} /> Change job
-                </KitButton>
-
-                <div className="border-t border-gi-border/40" />
-
                 <label className="flex flex-col gap-1.5">
                     <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Name</span>
                     <input

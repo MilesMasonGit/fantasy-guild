@@ -11,12 +11,10 @@ import { getAllItems } from '../../config/registries/itemRegistry.js';
 import { neededToolOf, toolNeedPhrase } from '../../config/registries/toolKinds.js';
 import { ALERT } from './boardEvents.js';
 import * as BoardState from './BoardState.js';
-import * as BoardPromotion from './BoardPromotion.js';
 import * as Flags from './Flags.js';
 import * as Camps from './Camps.js';
 import { isGuildHall } from './MatCap.js';
 import { workConfigOf } from './StationRecipe.js';
-import * as PromotionSystem from '../hero/PromotionSystem.js';
 
 /**
  * A hero dropped on the mat (`dropOnMat`, from the figure, the flag or the roster tab) gets an
@@ -55,11 +53,6 @@ export function refusalText(heroId, instance, reason) {
     const def = getTokenType(instance?.typeId);
     const skillId = def ? (Camps.campOf(def)?.skill || workConfigOf(def, instance)?.skill) : null;
     const skill = skillId ? (getSkill(skillId)?.name || skillId) : null;
-    if (BoardPromotion.isPromotionToken(instance)) {
-        const job = BoardPromotion.jobFor(instance);
-        const verdict = job ? PromotionSystem.canPromote(heroId, job.id) : null;
-        if (verdict?.detail) return verdict.detail;
-    }
     switch (reason) {
         case Flags.SKIP.DISALLOWED: return t('orders.disallowed');
         case ALERT.NO_TOOL: {

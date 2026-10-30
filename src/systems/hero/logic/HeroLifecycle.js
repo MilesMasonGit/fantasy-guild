@@ -49,7 +49,7 @@ export function createHero(options = {}, silent = false) {
         });
     }
 
-    logger.info('HeroLifecycle', `Created hero "${hero.name}" (${hero.jobId})`);
+    logger.info('HeroLifecycle', `Created hero "${hero.name}"`);
     return hero;
 }
 

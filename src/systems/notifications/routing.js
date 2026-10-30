@@ -106,15 +106,6 @@ export const ROUTES = [
         })
     },
     {
-        event: ENGINE_EVENTS.HERO_PROMOTED, to: 'banner:promotion',
-        handle: ({ heroId, heroName, toJobName } = {}) => Banners.push({
-            kind: 'promotion',
-            parts: { heroes: [heroName || heroOf(heroId)?.name || 'A hero'], job: toJobName || null },
-            sprite: heroSprite(heroId),
-            subjects: heroId ? [{ type: 'hero', id: heroId }] : []
-        })
-    },
-    {
         event: ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, to: 'banner:upgrade',
         handle: ({ upgradeId, rank } = {}) => {
             // A Roster Size rank recruits a hero, and the new hero's banner says it.

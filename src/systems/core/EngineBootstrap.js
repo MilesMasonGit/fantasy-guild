@@ -17,7 +17,6 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as RegenSystem from '../hero/RegenSystem.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
-import * as PromotionSystem from '../hero/PromotionSystem.js';
 import { WoundedSystem } from '../combat/WoundedSystem.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import * as BoardState from '../board/BoardState.js';
@@ -31,7 +30,6 @@ import * as TriggerSystem from '../board/TriggerSystem.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
 import * as BoardCombat from '../board/BoardCombat.js';
 import * as LoadoutMoments from '../board/LoadoutMoments.js';
-import * as BoardPromotion from '../board/BoardPromotion.js';
 import * as MatResize from '../board/MatResize.js';
 import * as Flags from '../board/Flags.js';
 import * as FlagRules from '../board/FlagRules.js';
@@ -79,7 +77,6 @@ export const EngineBootstrap = {
             InventoryManager,
             HeroManager,
             SkillSystem,
-            PromotionSystem,
             WoundedSystem,
             LootSystem,
             EquipmentManager,
@@ -91,7 +88,6 @@ export const EngineBootstrap = {
             TileModifiers,
             RecipeResolver,
             BoardCombat,
-            BoardPromotion,
             Flags,
             FlagRules,
             Orders,
@@ -134,7 +130,6 @@ export const EngineBootstrap = {
         // Subscribes to COMBAT_ENGAGED. ⚠️ Must come after BoardRunner.init() (which calls
         // TriggerSystem.init() internally) so this subscription registers LAST for that event.
         LoadoutMoments.init();
-        BoardPromotion.init();
         Flags.init();
         QuestManager.init();
         SpawnerSystem.init();

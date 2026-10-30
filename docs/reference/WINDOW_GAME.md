@@ -33,7 +33,6 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
 | `InventoryManager` | the Bank | `addItem(itemId, amount)`, `removeItem(itemId, amount)`, `getItemCount(itemId)` |
 | `HeroManager` | the roster | `getAllHeroes()`, `getHero(id)`, `getIdleHeroes()`, `modifyHeroHp(...)` |
 | `SkillSystem` | hero skills and XP | `getSkillLevel(heroId, skillId)`, `addXP(heroId, skillId, amount)` |
-| `PromotionSystem` | promoting a mastered hero | `canPromote`, `promote`, `previewPromotion` |
 | `WoundedSystem` | wounded heroes and recovery | `getWoundedHeroes()`, `recoverHero(...)`, `isWounded(...)` |
 | `LootSystem` | kill loot rolls | `previewDrops(...)` |
 | `EquipmentManager` | hero gear | `equipItem`, `unequipItem`, `getAllEquipment` |
@@ -45,7 +44,6 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
 | `TileModifiers` | the cached effects Tokens put on their neighbours | `rebuildAll()`, `getTokenAggregator(...)` |
 | `RecipeResolver` | which recipe a Token runs, and why not | `resolveRecipe`, `getMissingRequirements` |
 | `BoardCombat` | fights on the mat | `getFight(...)`, `fightOfHero(heroId)`, `endFight(...)` |
-| `BoardPromotion` | promotion Tokens | `getOffer`, `accept`, `decline` |
 | `Orders` | the player's orders: a hero dropped on the mat | `orderAt(heroId, point)`, `sendHome`, `canOrderOnto`, `jobTokenOf` |
 | `Camps` | camps: what a camp hands the heroes sent to it | `campOf(def)`, `campWork(camp)`, `isEnemyCamp(instance)`, `reachRingOf(instance)`, `campOfHero(heroId)` |
 | `Flags` | heroes' orders, saved as flag records, and the dormant area flags | `orderToken`, `orderSpot`, `sendHome`, `statusOf`, `waitingOf`, `plant` (area flags, tests only) |

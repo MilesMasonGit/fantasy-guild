@@ -4,33 +4,43 @@ import { heroMaxHpFromSkills } from '../../../utils/CombatFormulas.js';
 import { GameState } from '../../../state/GameState.js';
 import { createEmptyEquipment } from '../../../config/registries/equipmentConstants.js';
 import { normaliseHeldCopies } from '../../equipment/heldCopies.js';
-import { STARTING_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
+import { HERO_SKILL_IDS, isSkillId } from '../../../config/registries/skillRegistry.js';
+import { xpForLevel } from '../../../utils/XPCurve.js';
 
 /**
  * Hero Rehydration: Restores Logic (Aggregator) and Display data.
  */
 
 /**
- * Move every banked STARTING skill back onto the hero's sheet, at its stored
- * level and XP. Only older saves can hold one, since promotion no longer banks
- * them. Villagers are left alone. A held copy wins over a banked one.
+ * Bring a hero's sheet to today's shape, as every load and every new hero does: every skill in the
+ * registry held, at level 1 where the hero has none. An older save's levels are kept: skills set
+ * aside at a job change (`bankedSkills`) come back (a held copy wins), levels in a skill the game
+ * no longer has are dropped, and the job is dropped. Villagers are left alone.
  *
- * @returns {string[]} the skill ids restored
+ * @returns {{ restored: string[], dropped: string[], added: string[] }} skill ids
  */
-export function restoreBankedStarting(hero) {
-    if (!hero || hero.isVillager || !hero.bankedSkills) return [];
-    if (!hero.skills) hero.skills = {};
-    const restored = [];
-    for (const skillId of STARTING_SKILL_IDS) {
-        const banked = hero.bankedSkills[skillId];
-        if (!banked) continue;
-        if (!hero.skills[skillId]) {
-            hero.skills[skillId] = { ...banked };
-            restored.push(skillId);
-        }
-        delete hero.bankedSkills[skillId];
+export function settleSkillSheet(hero) {
+    const result = { restored: [], dropped: [], added: [] };
+    if (!hero || hero.isVillager) return result;
+    if (!hero.skills || typeof hero.skills !== 'object') hero.skills = {};
+    for (const [skillId, banked] of Object.entries(hero.bankedSkills || {})) {
+        if (!banked || !isSkillId(skillId) || hero.skills[skillId]) continue;
+        hero.skills[skillId] = { ...banked };
+        result.restored.push(skillId);
     }
-    return restored;
+    delete hero.bankedSkills;
+    for (const skillId of Object.keys(hero.skills)) {
+        if (isSkillId(skillId)) continue;
+        delete hero.skills[skillId];
+        result.dropped.push(skillId);
+    }
+    for (const skillId of HERO_SKILL_IDS) {
+        if (hero.skills[skillId]) continue;
+        hero.skills[skillId] = { xp: xpForLevel(1), level: 1 };
+        result.added.push(skillId);
+    }
+    delete hero.jobId;
+    return result;
 }
 
 export function rehydrateHero(hero) {
@@ -38,14 +48,15 @@ export function rehydrateHero(hero) {
 
     hero.aggregator = new ModifierAggregator(hero.id);
 
-    hero.className = hero.isVillager ? 'Villager' : 'Recruit';
+    if (hero.isVillager) hero.className = 'Villager';
+    else delete hero.className;
     hero.traitName = '';
     if (!hero.spriteId) hero.spriteId = 'hn_recruit_por';
     if (!hero.icon) hero.icon = 'hn_recruit_icon_por';
 
-    // Older saves may hold Starting skills in the bank; put them back on the
-    // sheet. Runs before the derived stats.
-    restoreBankedStarting(hero);
+    // Every skill on the sheet, an older save's job and banked skills folded in. Runs before the
+    // derived stats.
+    settleSkillSheet(hero);
 
     updateHeroFromSkills(hero);
 
@@ -87,7 +98,7 @@ export function rehydrateHero(hero) {
 }
 
 /**
- * Recompute max HP from the hero's combat skill. Villagers keep their flat HP.
+ * Recompute max HP from the hero's best combat skill. Villagers keep their flat HP.
  * Raising max keeps current HP as-is (level-ups grant headroom, not a heal);
  * lowering max clamps current down to it.
  */

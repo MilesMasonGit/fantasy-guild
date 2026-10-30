@@ -75,8 +75,6 @@ export const ENGINE_EVENTS = Object.freeze({
     HERO_RECRUITED: 'hero_recruited',
     /** A skill gained a level. Payload: `{ heroId, heroName, skillId, newLevel, oldLevel, … }`. */
     HERO_LEVELED: 'hero_leveled',
-    /** Payload: `{ heroId, heroName, fromJobId, fromJobName, toJobId, toJobName, gained, banked, restored }`. */
-    HERO_PROMOTED: 'hero_promoted',
     /** A hero arrived at a Token to work it. Payload: `{ heroId, instanceId, typeId }` (`instanceId` null when none). */
     HERO_DEPLOYED: 'hero_deployed',
     /** A hero's HP reached zero. Payload: `{ heroId, cause }` ('effect' | 'status' | …). */

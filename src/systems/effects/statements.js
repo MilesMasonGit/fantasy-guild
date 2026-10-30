@@ -283,20 +283,18 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
-         * Trains the hero standing on this Token into one job. Tokens only (`tokensOnly`): an item
-         * has no cycle to train in.
-         *
-         * No `When` (the training cycle is implied), no filter or reach (it is about the hero on
-         * THIS tile), no upkeep. "the hero" is fixed wording rather than a role slot, since it is
-         * always whoever stands here.
+         * ⚠️ Retired with jobs: every hero holds every skill, so nothing promotes. Kept so older
+         * content still reads (and the audits can name it); it does nothing, and the editor never
+         * offers it (`retired`).
          */
         id: KEYWORD.PROMOTES,
         label: 'Promotes',
-        blurb: 'Trains the hero standing on this Token into one job.',
+        blurb: 'Retired: jobs are gone, so this does nothing. Delete the rule.',
         filter: false,
         when: WHEN.NEVER,
         upkeep: false,
-        tokensOnly: true
+        tokensOnly: true,
+        retired: true
     }
 ]);
 
@@ -516,17 +514,6 @@ export function caresAboutNeighbours(def) {
         if (statement.keyword === KEYWORD.APPLIES && statement.target?.role) return false;
         return near(reachOf(statement));
     });
-}
-
-/**
- * The job a Token's `Promotes` rule names, or null. The first one with a job wins; a Token
- * carrying two is an authoring mistake the engine should not guess about.
- */
-export function promotedJobOf(def) {
-    for (const statement of statementsWith(def, KEYWORD.PROMOTES)) {
-        if (statement?.payload?.jobId) return statement.payload.jobId;
-    }
-    return null;
 }
 
 /**

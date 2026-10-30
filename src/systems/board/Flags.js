@@ -16,11 +16,9 @@ import * as Growth from './Growth.js';
 import * as Demolition from './Demolition.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
-import * as BoardPromotion from './BoardPromotion.js';
 import * as FlagRules from './FlagRules.js';
 import * as Camps from './Camps.js';
 import { ensureFlagColour } from './FlagColours.js';
-import * as PromotionSystem from '../hero/PromotionSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -55,8 +53,8 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * own: the hero works every skill they hold, plus combat, shaped by their rules (allowed, priority
  * 1-5). One hero per Token. The hero appears at the Token they work.
  *
- * Choosing (phase 2 of `assign`): first any Promotion Token or Guild Hall under the flag's point
- * (the radius and the rules do not apply to them). Then every worked Token and enemy whose centre
+ * Choosing (phase 2 of `assign`): first the Guild Hall when it is under the flag's point (the
+ * radius and the rules do not apply to it). Then every worked Token and enemy whose centre
  * is within the radius, ordered by priority (1 first), then distance, then the earlier-placed
  * Token. Each candidate's rule is its Token's skill, or `FlagRules.FIGHT` for an enemy. For each,
  * in order (cheap checks before `WorkCheck`):
@@ -65,12 +63,10 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * 3. the hero lacks that skill / cannot fight: `unskilled`;
  * 4. the hero's rule for it is off: `rule_off`;
  * 5. another flag already holds it: `claimed`;
- * 6. a Promotion Token that would not train this hero: `same_job` or its gate reason, so a hero who
- * has just accepted goes back to work;
- * 7. the shared `WorkCheck` says it cannot run: skipped with that reason (level too low, no tool
+ * 6. the shared `WorkCheck` says it cannot run: skipped with that reason (level too low, no tool
  * in hand for it, missing inputs, no recipe, charges, resting until it respawns); a no-tool skip
  * also says "Needs Pickaxe" over the Token (`TOOL_NEEDED`);
- * 8. otherwise claimed.
+ * 7. otherwise claimed.
  *
  * Nothing claimable: retry in a second of game time (or sooner, when the board changes: see dirty).
  *
@@ -101,8 +97,8 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * flag's point are all ignored (`evaluate`).
  * - Only a Token the hero can work is pinned (`pinRefusal`): a worked Token or an enemy, not
  * disallowed, naming a skill, held at the level it asks, with the tool it needs in hand, with the
- * hero's rule on. A spawner (or anything else no hero works; promotion Tokens and the Guild Hall
- * keep their own under-the-flag rule) is silently a normal area flag. A skill, level or tool refusal plants a normal area flag at the
+ * hero's rule on. A spawner (or anything else no hero works; the Guild Hall keeps its own
+ * under-the-flag rule) is silently a normal area flag. A skill, level or tool refusal plants a normal area flag at the
  * drop point and publishes `PIN_REFUSED`, which the hero's speech bubble says. A fixable problem
  * (inputs, charges, no recipe) does not refuse: the hero can work it once it is fixed.
  * - While pinned the flag's point is the Token's centre: `BoardState` moves it with the Token, so a
@@ -131,8 +127,6 @@ export const SKIP = Object.freeze({
     CLAIMED: 'claimed',
     /** The player marked it "heroes may not work this". */
     DISALLOWED: 'disallowed',
-    /** A Promotion Token offering the job the hero already holds. */
-    SAME_JOB: 'same_job',
     /** The hero's own rule for this skill (or Fight) is switched off. */
     RULE_OFF: 'rule_off'
 });
@@ -220,8 +214,8 @@ function announceMoved(heroId) {
 
 /**
  * Whether a Token names a work skill. Same test as `workSkillRule.js`, applied
- * here only after enemies and Promotion Tokens (its two exemptions) are sorted
- * out — which is why it can be this cheap on the chooser's hot path.
+ * here only after enemies (its exemption) are sorted out — which is why it can
+ * be this cheap on the chooser's hot path.
  */
 function hasWorkSkill(def, instance) {
     // `workConfigOf`: a Foundation is worked with its `foundation.skill` though it authors no
@@ -231,26 +225,25 @@ function hasWorkSkill(def, instance) {
 }
 
 /**
- * 'enemy' | 'promotion' | 'hall' | 'work' | null (nothing a hero works).
+ * 'enemy' | 'hall' | 'work' | null (nothing a hero works).
  *
  * 'hall': the Guild Hall has no work of its own today (its income is Passive Production, no hero
- * needed). Should it be given a work cycle, it is treated like a Promotion Token: worked only when
- * a flag is planted on it, whatever the flag's skill.
+ * needed). Should it be given a work cycle, it is worked only when a flag is planted on it,
+ * whatever the flag's skill.
  *
- * A Token marked for demolition is 'work' whatever it was (a spawner, a Promotion Token, a Passive
- * Generator): the same order the runner checks in.
+ * A Token marked for demolition is 'work' whatever it was (a spawner, a Passive Generator): the
+ * same order the runner checks in.
  */
 function kindOf(instance, def) {
     if (BoardCombat.isEnemyToken(instance)) return 'enemy';
     if (Demolition.isMarked(instance)) return 'work';
-    if (BoardPromotion.isPromotionToken(instance)) return 'promotion';
     if (!workConfigOf(def, instance) || def.requiresHero === false) return null;
     if (instance.typeId === 'token_guild_hall' || def.isGuildHall) return 'hall';
     return 'work';
 }
 
 /** Kinds worked only when the flag's point is on them, ignoring skill and radius. */
-const UNDER_POINT = new Set(['promotion', 'hall']);
+const UNDER_POINT = new Set(['hall']);
 
 /** Whether a mat point sits on a Token: inside its art circle (`matGeometry.artRadiusOf`). */
 export function pointOnToken(instance, point) {
@@ -277,7 +270,7 @@ export function tokenAtPoint(point) {
 
 /**
  * The rule a candidate answers to: the worked Token's skill, or Fight for an
- * enemy. Null for kinds the rules never touch (promotion, hall) and for a work
+ * enemy. Null for the kind the rules never touch (the hall) and for a work
  * Token naming no skill.
  */
 function ruleIdOf(kind, def, instance) {
@@ -302,20 +295,6 @@ function rankOf(heroId, kind, def, instance) {
  */
 function ruleAllows(heroId, ruleId) {
     return FlagRules.holdsRule(heroId, ruleId) && FlagRules.ruleOf(heroId, ruleId).allowed;
-}
-
-/**
- * Why this Promotion Token would not train `heroId`: a skip reason, or null if it would. Already
- * holding the job reads `same_job`; failing the skill gate reads as the board's own `unskilled` /
- * `access`.
- */
-function promotionRefusal(heroId, instance) {
-    const job = BoardPromotion.jobFor(instance);
-    if (!job) return null;
-    const blocked = BoardPromotion.blockedReason(heroId, job.id);
-    if (!blocked) return null;
-    if (blocked.reason === PromotionSystem.REFUSAL.SAME_JOB) return SKIP.SAME_JOB;
-    return blocked.alert || ALERT.UNSKILLED;
 }
 
 /** Zero a Token's cycle: the forfeit when a hero leaves it. */
@@ -349,11 +328,6 @@ function claimToken(heroId, instance) {
     // off it one tick into its first cycle.
     rt()?.cycleEnded.delete(heroId);
     BoardState.setClaim(heroId, { instanceId: instance.id, typeId: instance.typeId, x: instance.x, y: instance.y });
-    // A different hero taking a Promotion Token is the gesture that asks again. The same hero
-    // coming back after a gap is not.
-    if (instance.promotionHeroId && instance.promotionHeroId !== heroId) {
-        BoardPromotion.clearPause(instance);
-    }
     // ⚠️ A Token a flag skipped carries that skip's red badge. It passed the check to be claimed,
     // so the badge is stale, and phase 1 reads the badge to decide whether a claimed Token is
     // stuck, so a stale one would make the hero leave the Token they just chose.
@@ -525,10 +499,6 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
         }
         const holder = BoardState.heroOfInstance(instanceId);
         if (holder && holder !== heroId) { skips.push({ instanceId, reason: SKIP.CLAIMED }); continue; }
-        if (c.kind === 'promotion') {
-            const reason = promotionRefusal(heroId, c.instance);
-            if (reason) { skips.push({ instanceId, reason }); continue; }
-        }
         if (c.kind === 'work') {
             const reason = WorkCheck.whyCannotRun(c.instance.id, c.instance, heroId, workConfigOf(c.def, c.instance));
             if (reason) { skips.push({ instanceId, reason }); continue; }
@@ -630,7 +600,6 @@ function keepOrRelease(r, heroId, dirty) {
         const eligible = !isSpot(flag) && !isDisallowed(instance)
             && (!pinnedId || pinnedId === instance.id || campHolds(heroId, instance)) && (
             (kind === 'hall')
-            || (kind === 'promotion' && !promotionRefusal(heroId, instance))
             || (kind === 'enemy' && ruleAllows(heroId, FlagRules.FIGHT))
             || (kind === 'work' && hasWorkSkill(def, instance) && ruleAllows(heroId, workConfigOf(def, instance).skill)
                 // A Token that ran out and rests until it respawns (or a Field with nothing ripe) is
@@ -786,8 +755,8 @@ export function assignHero(heroId) {
  */
 /**
  * Why `heroId`'s flag may not be pinned to `instance`, or null if it may. `{ reason, silent }`: a
- * `silent` refusal is a Token no flag is ever pinned to (a spawner, a Token no hero works, a
- * Promotion Token or the Guild Hall, which keep their own under-the-flag rule), so the flag just
+ * `silent` refusal is a Token no flag is ever pinned to (a spawner, a Token no hero works, the
+ * Guild Hall, which keeps its own under-the-flag rule), so the flag just
  * plants there with nothing said. Otherwise `reason` is a skip reason (`ALERT.UNSKILLED`,
  * `ALERT.ACCESS`, `SKIP.DISALLOWED`, `SKIP.RULE_OFF`), which the hero's bubble says where it has
  * words for it.
@@ -825,11 +794,6 @@ export function plant(heroId, point, { pin = false } = {}) {
 
     // A hero's first flag gets their lasting colour; later plants keep it.
     ensureFlagColour(heroId);
-
-    // Planting on a Promotion Token is the deliberate gesture that asks again, even onto the very
-    // spot the flag already stands on. Not when another hero holds the Token: that hero's standing
-    // offer is theirs to answer.
-    clearOfferUnder(heroId, point);
 
     // A drop inside a Token's art circle (the same test the mat uses for which Token is under the
     // pointer) pins the flag to it when the hero can work it. A pinned flag stands on the Token's
@@ -889,8 +853,7 @@ export function plant(heroId, point, { pin = false } = {}) {
 
 /**
  * Why `heroId` cannot be ordered onto `instance`, or null when they can: `{ reason }`, a skip reason
- * (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `ALERT.NO_TOOL`, `SKIP.DISALLOWED`, `SKIP.SAME_JOB`, or the
- * promotion gate's alert) or {@link ORDER_NOTHING} for a Token no hero works (a spawner of no
+ * (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `ALERT.NO_TOOL`, `SKIP.DISALLOWED`) or {@link ORDER_NOTHING} for a Token no hero works (a spawner of no
  * enemy, a support, a quest, unfinished content naming no skill). The Guild Hall is home, not a
  * job: the caller sends the hero there instead. A camp answers for what it hands out
  * ({@link campRefusal}, with `on`); an enemy camp takes anyone who can fight.
@@ -914,10 +877,6 @@ export function orderRefusal(heroId, instance) {
     if (kind === 'work' && !hasWorkSkill(def, instance)) return { reason: ORDER_NOTHING };
     if (isDisallowed(instance)) return { reason: SKIP.DISALLOWED };
     if (kind === 'enemy') return FlagRules.canFight(heroId) ? null : { reason: ALERT.UNSKILLED };
-    if (kind === 'promotion') {
-        const reason = promotionRefusal(heroId, instance);
-        return reason ? { reason } : null;
-    }
     const reason = WorkCheck.heroReason(heroId, workConfigOf(def, instance), instance);
     return reason ? { reason } : null;
 }
@@ -960,8 +919,6 @@ function setOrder(heroId, shape, target = null) {
     const r = rt();
     if (!r) return { success: false, reason: 'No board' };
     ensureFlagColour(heroId);
-    // Ordering a hero onto a Promotion Token is the gesture that asks again.
-    if (target) clearOfferUnder(heroId, { x: target.x, y: target.y });
 
     if (sameOrder(BoardState.flagOf(heroId), shape)) {
         return { success: true, unchanged: true, pinnedTo: target?.id ?? null };
@@ -1053,8 +1010,7 @@ export function followTransform({ fromId, instanceId, cause } = {}) {
 
 /**
  * Whether a hero could ever work this board Token: the Tokens the Heroes-may-work-this toggle is
- * offered on: a work cycle that needs a hero and names a skill, an enemy, a Promotion Token, or the
- * Guild Hall.
+ * offered on: a work cycle that needs a hero and names a skill, an enemy, or the Guild Hall.
  */
 export function isHeroWorkable(instance) {
     if (!instance?.typeId) return false;
@@ -1062,15 +1018,6 @@ export function isHeroWorkable(instance) {
     const kind = kindOf(instance, def);
     if (kind === 'work') return hasWorkSkill(def, instance);
     return kind !== null;
-}
-
-/** Clear a standing promotion offer on the Token under `point`, unless another hero holds it. */
-function clearOfferUnder(heroId, point) {
-    const instance = tokenAtPoint(point);
-    if (!instance || !BoardPromotion.isPromotionToken(instance)) return;
-    const holder = BoardState.heroOfInstance(instance.id);
-    if (holder && holder !== heroId) return;
-    BoardPromotion.clearPause(instance);
 }
 
 /**
@@ -1285,7 +1232,7 @@ export function disallowRefusalOf(instance) {
  *
  * Names the Token by instance id. Turning it on lets go of any hero working it (their progress
  * there is reset; a fight ends) and their flag chooses again on the next tick; from then on every
- * flag records `disallowed` against it and never claims it: work, combat, promotion and the Guild
+ * flag records `disallowed` against it and never claims it: work, combat and the Guild
  * Hall alike. Nothing else about the Token changes: its rules and triggers carry on (see
  * `isDisallowed`).
  *

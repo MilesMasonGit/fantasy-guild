@@ -20,7 +20,7 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
 import * as WorkCheck from '../systems/board/WorkCheck.js';
 import { problemText } from '../ui/components/board/problemMark.js';
-import { MASTERY_LEVEL } from '../systems/hero/PromotionSystem.js';
+import { MAX_SKILL_LEVEL } from '../utils/XPCurve.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
@@ -347,7 +347,7 @@ describe('a marked Token is Construction work', () => {
         const tree = place(10, 'demo_tree');
         Demolition.mark(tree.id);
         expect(problemText({ kind: ALERT.ACCESS }, tree.id))
-            .toBe(`Needs Construction ${Demolition.DEMOLITION_CONFIG.skillRequired}/${MASTERY_LEVEL}`);
+            .toBe(`Needs Construction ${Demolition.DEMOLITION_CONFIG.skillRequired}/${MAX_SKILL_LEVEL}`);
         expect(problemText({ kind: ALERT.UNSKILLED }, tree.id)).toBe('Needs the Construction skill');
     });
 

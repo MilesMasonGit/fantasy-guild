@@ -14,88 +14,85 @@ import {
     rpsOutcome,
     SWING_TIME_FACTOR_RANGE,
 } from '../config/FormulaRegistry.js';
-import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { COMBAT_SKILL_IDS, BAREHANDED_STYLE_ID } from '../config/registries/skillRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { getEquippedEntries, isWeaponCategory } from '../config/registries/equipmentConstants.js';
-import { isWeapon, weaponUsableBy } from '../config/registries/weaponStyles.js';
+import { isWeapon, weaponStyleOf, meetsGearRequirements } from '../config/registries/weaponStyles.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 export { rpsOutcome };
 
-/**
- * The ONE combat skill a hero holds, and its level, exactly as saved.
- *
- * **A hero holds exactly one of Melee, Ranged, Magic or Stealth, or none at all** (a Recruit,
- * who reads `{ id: null, level: 0 }` and fights with no style and no combat XP).
- *
- * @param {Object} hero
- * @returns {{ id: string|null, level: number }}
- */
-export function getHeroCombatSkillEntry(hero) {
-    for (const id of COMBAT_SKILL_IDS) {
-        const s = hero?.skills?.[id];
-        if (s) return { id, level: typeof s === 'number' ? s : (s.level || 0) };
-    }
-    return { id: null, level: 0 };
-}
-
-/** The combat level of a hero holding no combat skill: 0, so a Recruit has 10 HP. */
-export const UNSKILLED_COMBAT_LEVEL = 0;
-
-/**
- * The combat level every combat formula uses (HP, the damage step, the miss gap): the held combat
- * skill's level, or {@link UNSKILLED_COMBAT_LEVEL}. Nothing is written to the hero.
- */
-export function getHeroCombatLevel(hero) {
-    const { id, level } = getHeroCombatSkillEntry(hero);
-    return id ? level : UNSKILLED_COMBAT_LEVEL;
+/** A hero's level in one skill, as saved; 0 when they hold none of it (a villager). */
+function skillLevelOf(hero, skillId) {
+    const s = hero?.skills?.[skillId];
+    if (!s) return 0;
+    return typeof s === 'number' ? s : (s.level || 0);
 }
 
 /**
- * Whether this hero fights as a Recruit: holding no combat skill, they fight with no style and earn
- * no combat XP, barehanded or with a copper weapon's damage and speed.
- */
-export function fightsAsRecruit(hero) {
-    return !getHeroCombatSkillEntry(hero).id;
-}
-
-/** Whether this hero can fight at all. Everyone fights; a Recruit barehanded. */
-export function canHeroFight(hero) {
-    return !!hero;
-}
-
-/**
- * Max HP from skills: 10 + the combat skill's level, 10 for a hero holding none.
- * @param {Object} skills - hero.skills map
- */
-export function heroMaxHpFromSkills(skills) {
-    return heroMaxHp(getHeroCombatLevel({ skills }));
-}
-
-/**
- * The weapon a hero swings, or null: the first weapon in the hands, in grid order, that the hero
- * may hold (`weaponStyles.weaponRefusal`): one of their own style, or for a Recruit a copper one.
- * ⚠️ A weapon the hero may no longer hold (another style's, kept from before a promotion or
- * re-training, or from an older save) stays in hand and is not swung: the equip paths refuse it.
+ * The weapon a hero swings, or null: the first weapon in the hands, in grid order, whose level
+ * requirement the hero meets (`weaponStyles.meetsGearRequirements`).
+ * ⚠️ A weapon the hero does not meet (worn before its requirement was authored) stays in hand and
+ * is not swung: the equip paths refuse it.
  */
 export function getHeroWeapon(hero) {
-    const style = getHeroCombatSkillEntry(hero).id;
     for (const { itemId, category } of getEquippedEntries(hero)) {
         if (!isWeaponCategory(category)) continue;
         const item = getItem(itemId);
-        if (item && isWeapon(item) && weaponUsableBy(item, style)) return item;
+        if (item && isWeapon(item) && meetsGearRequirements(item, hero)) return item;
     }
     return null;
 }
 
 /**
- * The side of the matchup cycle a hero fights on: always their own combat skill, since a hero
- * swings only weapons of that style (a Dagger is Melee and Stealth: a Fighter fights melee with
- * it, a Rogue stealth). A Recruit has none and is even with everyone.
- * @returns {string|null} a combat skill id, or null
+ * The style a hero fights in, the side of the matchup cycle they stand on and the skill their
+ * kills train: **the weapon decides** ({@link getHeroWeapon}'s style), and barehanded is a punch
+ * in {@link BAREHANDED_STYLE_ID} (Melee).
+ * @returns {string} a combat skill id
  */
 export function getHeroCombatStyle(hero) {
-    return getHeroCombatSkillEntry(hero).id;
+    const weapon = getHeroWeapon(hero);
+    return weapon ? weaponStyleOf(weapon) : BAREHANDED_STYLE_ID;
+}
+
+/**
+ * The style a hero fights in and their level in it, read live from what is in their hands: the
+ * level every combat formula uses (the damage step and the miss gap, both ways). Nothing is
+ * written to the hero.
+ * @returns {{ id: string, level: number }}
+ */
+export function getHeroCombatSkillEntry(hero) {
+    const id = getHeroCombatStyle(hero);
+    return { id, level: skillLevelOf(hero, id) };
+}
+
+/** The level of the style the hero fights in now (see {@link getHeroCombatSkillEntry}). */
+export function getHeroCombatLevel(hero) {
+    return getHeroCombatSkillEntry(hero).level;
+}
+
+/** Whether this hero can fight at all. Everyone fights; barehanded is a punch. */
+export function canHeroFight(hero) {
+    return !!hero;
+}
+
+/**
+ * The hero's best combat skill's level: what max HP grows with, so a hero who swaps sword for bow
+ * keeps their health.
+ * @param {Object} skills - hero.skills map
+ */
+export function highestCombatLevel(skills) {
+    let best = 0;
+    for (const id of COMBAT_SKILL_IDS) best = Math.max(best, skillLevelOf({ skills }, id));
+    return best;
+}
+
+/**
+ * Max HP from skills: 10 + the highest of the four combat skills.
+ * @param {Object} skills - hero.skills map
+ */
+export function heroMaxHpFromSkills(skills) {
+    return heroMaxHp(highestCombatLevel(skills));
 }
 
 /**
@@ -110,7 +107,7 @@ export function swingTimeFactor(entity) {
     return Math.min(SWING_TIME_FACTOR_RANGE.max, Math.max(SWING_TIME_FACTOR_RANGE.min, factor));
 }
 
-/** How long a hero's swing takes: the weapon's speed, normal (3 s) unarmed or as a Recruit. */
+/** How long a hero's swing takes: the weapon's speed, normal (3 s) barehanded. */
 export function heroAttackSpeedMs(hero) {
     return Math.round(attackSpeedMs(getHeroWeapon(hero)?.speed) * swingTimeFactor(hero));
 }
