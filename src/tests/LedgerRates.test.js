@@ -220,8 +220,17 @@ describe('what the calculator cannot read is listed, never dropped', () => {
     it('names a triggered rule on the worked Token, and refuses work it does not model', () => {
         const b = book();
         expect(b.rateOf({ token: 'rt_ambush_vein' }).unmodelled).toContainEqual(expect.objectContaining({ source: 'rt_ambush_vein', what: 'spawns' }));
-        expect(b.rateOf({ token: 'rt_goblin' })).toMatchObject({ ok: false });
+        expect(b.rateOf({ token: 'rt_forest' })).toMatchObject({ ok: false, reason: 'no work cycle (a spawner)' });
         expect(b.rateOf({ token: 'rt_furnace' })).toMatchObject({ ok: false, reason: 'a station: name a recipe' });
+    });
+
+    it('rates a fight coarsely and says so: one kill a fight cycle, nothing for combat XP', () => {
+        const r = book().rateOf({ token: 'rt_goblin' });
+        expect(r).toMatchObject({ ok: true, kind: 'fight', cycleMs: 5000 });
+        // One goblin, there once: a kill, then nothing more an hour.
+        expect(r.lifecycle).toMatchObject({ kind: LIFECYCLE.ONE_OFF, cycles: 1 });
+        expect(r.assumptions).toContainEqual(expect.objectContaining({ what: 'fight' }));
+        expect(r.unmodelled).toContainEqual(expect.objectContaining({ what: 'combat XP' }));
     });
 });
 

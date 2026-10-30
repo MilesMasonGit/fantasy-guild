@@ -7,10 +7,12 @@ import { expandBearer, effectRefsOf, statementsFromEntry, normaliseScale, MAX_SC
 import { reachOf, reachCovers, RELATION } from '../../../config/registries/reachRegistry.js';
 import { FILTER_NEEDS, matchesFilters, filtersOf, getFilterKind, targetModeMatches } from '../../../config/registries/filterRegistry.js';
 import {
-    outputRange, respawnOf, growsTermsOf, RESPAWN_MIN_MS, stationKindOffers, fieldOf
+    outputRange, respawnOf, growsTermsOf, RESPAWN_MIN_MS, stationKindOffers, fieldOf, cropTermsOf,
+    PASSIVE_PRODUCTION_MS, foundationTierMeets, campOf
 } from '../../../config/registries/tokenConstants.js';
 import { neededToolOf, toolOf, toolMeets, toolItemFor } from '../../../config/registries/toolKinds.js';
-import { hasCatchPools } from '../../../config/registries/catchPools.js';
+import { hasCatchPools, catchPoolsOf } from '../../../config/registries/catchPools.js';
+import { wishingWellWater, WISHING_WELL_ITEM } from '../../../config/guildUpgrades.js';
 import { flooredWorkTime, floorSpeedUp } from '../../board/workTime.js';
 import { ownCycleCost } from '../../board/cycleCharges.js';
 import { applyXpBonus } from '../../hero/xpBonus.js';
@@ -53,11 +55,11 @@ const AMBIENT = new Set([KEYWORD.PROVIDES, KEYWORD.GRANTS, KEYWORD.APPLIES]);
 const READ_AXES = new Set([
     EFFECT_TYPES.WORK_TIME, EFFECT_TYPES.YIELD, EFFECT_TYPES.XP_BONUS, EFFECT_TYPES.LOOT_MULT,
     EFFECT_TYPES.DOUBLE_DROP, EFFECT_TYPES.INPUT_COST, EFFECT_TYPES.FAIL_CHANCE, EFFECT_TYPES.GROW_TIME,
-    EFFECT_TYPES.BONUS_DROP
+    EFFECT_TYPES.BONUS_DROP, EFFECT_TYPES.CROP_LOAD, EFFECT_TYPES.CATCH_WEIGHT
 ]);
 
 /** Axes the board reads on some work this calculator does not model yet: reaching one is reported. */
-const UNREAD_WORK_AXES = new Set([EFFECT_TYPES.CROP_LOAD, EFFECT_TYPES.CATCH_WEIGHT]);
+const UNREAD_WORK_AXES = new Set();
 
 /** The kinds of factor, as the switches name them. */
 export const FACTOR = Object.freeze({
@@ -79,8 +81,19 @@ export const LIFECYCLE = Object.freeze({
     ONE_OFF: 'one-off'
 });
 
-/** What limits a worked rate: the hero's own pace, or what the Token can offer between rests. */
-export const LIMIT = Object.freeze({ HERO: 'hero', SUPPLY: 'supply' });
+/** What limits a worked rate: the hero's own pace, what the Token can offer between rests, or a clock no hero works. */
+export const LIMIT = Object.freeze({ HERO: 'hero', SUPPLY: 'supply', CLOCK: 'clock' });
+
+/** The kinds of work the calculator rates. */
+export const WORK = Object.freeze({
+    GATHER: 'gather',
+    STATION: 'station',
+    BUILD: 'build',
+    WATER: 'water',
+    FIELD: 'field',
+    FIGHT: 'fight',
+    PASSIVE: 'passive'
+});
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const list = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
@@ -147,6 +160,12 @@ export function buildRateBook(content = {}) {
         token: tokenDef,
         rateOf: (target, setup) => rateOf(book, target, setup),
         stationsFor: (recipeId) => stationsFor(book, recipeId),
+        buildsOn: (recipeId) => buildsOn(book, recipeId),
+        workTargets: () => workTargets(book),
+        workKindOf: (target) => {
+            const def = rawTokens[target?.token] ? tokenDef(target.token) : null;
+            return def ? workKindOf(def, text(target.recipe) ? recipes[target.recipe] ?? null : null) : { why: 'no such Token' };
+        },
         everyRate: (setup) => everyRate(book, setup)
     };
     return book;
@@ -279,10 +298,7 @@ function targetMatch(spec, targetDef, hero) {
 
 /** A rule reaching the worked Token on an axis this calculator does not read for its kind of work. */
 function noteAxis(notes, sourceId, type, targetDef, statement) {
-    if (READ_AXES.has(type)) return;
-    if (!UNREAD_WORK_AXES.has(type)) return;
-    if (type === EFFECT_TYPES.CROP_LOAD && !fieldOf(targetDef)) return;
-    if (type === EFFECT_TYPES.CATCH_WEIGHT && !hasCatchPools(targetDef)) return;
+    if (READ_AXES.has(type) || !UNREAD_WORK_AXES.has(type)) return;
     notes.unmodelled.push({ source: sourceId, what: type, why: 'an axis the calculator does not read yet', statementId: statement.id ?? null });
 }
 
@@ -510,12 +526,13 @@ function makeResolver(tile, guild, hero) {
 // ── gates ───────────────────────────────────────────────────────────────────────────────────────
 
 /** The hero's gates on this work (`WorkCheck.heroReason`): the level, then the tool. */
-function gatesOf(book, def, config, recipe, setup) {
+function gatesOf(book, def, config, recipe, setup, pool = null) {
     const skill = text(config?.skill);
     const needed = Math.max(Number(config?.skillRequired) || 0, Number(recipe?.levelRequirement) || 0, 1);
     const asked = isObject(setup.levels) ? Number(setup.levels[skill]) : Number(setup.level);
     const level = Number.isFinite(asked) && asked > 0 ? Math.floor(asked) : needed;
-    const need = skill ? neededToolOf(def) : null;
+    // At water the pool fished names the tool kind; a tool's tier never gates there (`Fishing.js`).
+    const need = !skill ? null : pool ? { kind: pool.tool, minTier: 1 } : neededToolOf(def);
     let toolItem = null;
     if (need) {
         if (setup.tool === null) toolItem = null;
@@ -563,24 +580,50 @@ function hasNearby(setup, typeIds) {
 }
 
 /**
- * How the worked Token comes back after it runs out, and so how many cycles an hour it can offer one
- * hero standing by it: unlimited; refilled after a rest (a vein); regrown through a chain of growths
- * back to itself (a felled tree, its stump, its sapling); or worn out for good (a chest).
+ * The camp the setup names (`camp: id` or `{ id, members }`), when it is a camp of the work's skill
+ * and switched on: `{ id, members }`, or null.
  */
+function campOfSetup(book, setup, skill) {
+    const raw = setup.camp;
+    const id = typeof raw === 'string' ? raw : isObject(raw) ? text(raw.id) : null;
+    if (!id) return null;
+    const block = campOf(book.token(id));
+    if (!block || block.skill !== skill || isOff(setup, `${FACTOR.SUPPORT}:${id}`, FACTOR.SUPPORT)) return null;
+    const members = Math.floor(Number(isObject(raw) ? raw.members : NaN));
+    return { id, members: members >= 1 ? members : null };
+}
+
 /**
- * How many of a spawner's family take turns being worked: `family.members` when the setup says,
- * else the spawner's `allowance` (every one of them standing where the hero can reach), else one.
+ * How many copies of the worked Token one hero works in turn. A camp of its skill hands a hero
+ * every one in its reach: `camp.members` when the setup says, else the spawner family's `allowance`,
+ * else one. Without a camp a named family still takes turns (`family.members`, else its allowance);
+ * a setup that names a camp the work cannot use (switched off, another skill) works one.
  */
-function familyMembers(book, setup) {
+function familyMembers(book, setup, skill) {
     const family = isObject(setup.family) ? setup.family : null;
+    const allowance = Math.floor(Number(book.token(family?.spawner)?.spawner?.allowance));
+    if (setup.camp !== undefined && setup.camp !== null) {
+        const camp = campOfSetup(book, setup, skill);
+        if (!camp) return 1;
+        if (camp.members) return camp.members;
+        return allowance >= 1 ? allowance : 1;
+    }
     if (!family) return 1;
     const asked = Math.floor(Number(family.members));
     if (asked >= 1) return asked;
-    const allowance = Math.floor(Number(book.token(family.spawner)?.spawner?.allowance));
     return allowance >= 1 ? allowance : 1;
 }
 
-function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes) {
+/**
+ * How the worked Token comes back after it runs out, and so how many cycles an hour it can offer one
+ * hero standing by it: unlimited; refilled after a rest (a vein, a ripe Field's next crop); regrown
+ * through a chain of growths back to itself (a felled tree, its stump, its sapling); or worn out for
+ * good (a chest).
+ */
+function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skill) {
+    if (kind === WORK.FIELD) return fieldLifecycle(book, def, recipe, cycleMs, setup, guild, notes, skill);
+    if (kind === WORK.FIGHT) return fightLifecycle(book, def, setup);
+    if (kind === WORK.BUILD || kind === WORK.WATER) return { kind: LIFECYCLE.UNLIMITED, supplyPerHour: Infinity, used: new Set() };
     const uses = neverWearsOut(def) ? null : (def.uses ?? null);
     const cost = ownCycleCost(def, recipe);
     if (uses == null || !(cost > 0)) return { kind: LIFECYCLE.UNLIMITED, supplyPerHour: Infinity, used: new Set() };
@@ -592,7 +635,9 @@ function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes) {
         }
         const { ms, used } = growTime(book, def.id, respawn.afterMs, setup, guild, notes);
         const restMs = Math.max(RESPAWN_MIN_MS, ms);
-        return { kind: LIFECYCLE.REFILL, cycles, restMs, supplyPerHour: HOUR_MS * cycles / (cycles * cycleMs + restMs), used };
+        // Only a camp moves a hero on to the next copy while this one rests.
+        const members = setup.camp !== undefined && setup.camp !== null ? familyMembers(book, setup, skill) : 1;
+        return { kind: LIFECYCLE.REFILL, cycles, restMs, members, supplyPerHour: members * HOUR_MS * cycles / (cycles * cycleMs + restMs), used };
     }
     if (respawn?.mode === 'regrow') {
         const steps = [];
@@ -616,13 +661,56 @@ function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes) {
         }
         if (!ok) return { kind: LIFECYCLE.ONE_OFF, cycles, supplyPerHour: 0, used, why: 'its regrowth never comes back to it' };
         const growMs = steps.reduce((sum, s) => sum + s.ms, 0);
-        const members = familyMembers(book, setup);
+        const members = familyMembers(book, setup, skill);
         return {
             kind: LIFECYCLE.REGROW, cycles, steps, growMs, members, costs,
             supplyPerHour: members * HOUR_MS * cycles / (cycles * cycleMs + growMs), used
         };
     }
     return { kind: LIFECYCLE.ONE_OFF, cycles, supplyPerHour: 0, used: new Set() };
+}
+
+/**
+ * A Field (`Fields.js`): it ripens with its crop's load (Crop Load in reach added, rounded, never
+ * under one), is harvested that many cycles, then sows again and grows for its grow time (Grow Time
+ * in reach, floored), paying the crop's seed once a sowing.
+ */
+function fieldLifecycle(book, def, recipe, cycleMs, setup, guild, notes, skill) {
+    const terms = cropTermsOf(recipe);
+    const tile = tileScope(tileRules(book, def, setup, { carries: new Set() }, notes).modifiers);
+    const resolve = makeResolver(tile, guild, { statements: [], live: [] });
+    const load = resolve(EFFECT_TYPES.CROP_LOAD, terms.load, skill || TARGET_CATEGORIES.ALL, { withHero: false });
+    const cycles = Math.max(1, Math.round(load.value) || 1);
+    const grown = resolve(EFFECT_TYPES.GROW_TIME, terms.growMs, growSkillOf(book, def.id), { withHero: false });
+    const restMs = floorSpeedUp(terms.growMs, grown.value);
+    const used = new Set([...load.used, ...grown.used]);
+    const members = setup.camp !== undefined && setup.camp !== null ? familyMembers(book, setup, skill) : 1;
+    return {
+        kind: LIFECYCLE.REFILL, cycles, restMs, members, used,
+        costs: terms.seeds.map(s => ({ itemId: s.itemId, perLife: s.quantity })),
+        supplyPerHour: members * HOUR_MS * cycles / (cycles * cycleMs + restMs)
+    };
+}
+
+/**
+ * A coarse fight: one kill a fight cycle; the enemy comes back as fast as its camp spawns it (the
+ * setup's `family.spawner`), else it is there once, for its charges.
+ */
+function fightLifecycle(book, def, setup) {
+    const spawnerId = isObject(setup.family) ? setup.family.spawner : null;
+    const spawner = book.token(spawnerId)?.spawner;
+    if (isObject(spawner)) {
+        const spawns = list(spawner.spawns).filter(s => text(s.typeId));
+        const total = spawns.reduce((sum, s) => sum + Math.max(0, Number(s.weight ?? 1) || 0), 0);
+        const mine = spawns.filter(s => s.typeId === def.id).reduce((sum, s) => sum + Math.max(0, Number(s.weight ?? 1) || 0), 0);
+        const every = Number(spawner.intervalMs);
+        const share = total > 0 ? mine / total : 0;
+        if (share > 0 && every > 0) {
+            return { kind: LIFECYCLE.REFILL, cycles: 1, restMs: every / share, members: 1, supplyPerHour: HOUR_MS * share / every, used: new Set() };
+        }
+    }
+    const uses = Number(def.uses);
+    return { kind: LIFECYCLE.ONE_OFF, cycles: Number.isFinite(uses) && uses > 0 ? uses : 1, supplyPerHour: 0, used: new Set() };
 }
 
 // ── the rate ────────────────────────────────────────────────────────────────────────────────────
@@ -657,30 +745,138 @@ function prepare(book, target, setup) {
     const recipe = text(target.recipe) ? book.recipes[target.recipe] ?? null : null;
     if (text(target.recipe) && !recipe) return refuse('no such recipe');
 
-    const kindWhy = unmodelledKind(def, recipe);
-    if (kindWhy) return refuse(kindWhy, [{ source: def.id, what: 'work', why: kindWhy }]);
+    const kind = workKindOf(def, recipe);
+    if (kind.why) return refuse(kind.why, kind.unmodelled ? [{ source: def.id, what: 'work', why: kind.why }] : []);
 
-    const config = def.config;
-    if (recipe && !(stationSkillOf(def) === recipe.skill && stationKindOffers(stationKindOf(def), recipe))) {
-        return refuse('the station does not offer the recipe');
-    }
+    let config = def.config;
+    let pool = null;
     // The cycle's terms as `RecipeResolver.effectiveIO` reads them: the recipe's own, else the Token's.
+    // A crop's seed is paid once a sowing, never a harvest (`Fields.js`).
     const io = {
-        inputs: list(recipe?.inputs ?? config.inputs),
-        outputs: list(recipe?.outputs ?? config.outputs),
-        cycleTimeMs: recipe?.durationMs ?? config.cycleTimeMs,
-        xp: recipe?.xp ?? config.xp
+        inputs: kind.kind === WORK.FIELD ? [] : list(recipe?.inputs ?? config?.inputs),
+        outputs: list(recipe?.outputs ?? config?.outputs),
+        cycleTimeMs: recipe?.durationMs ?? config?.cycleTimeMs,
+        xp: recipe?.xp ?? config?.xp
     };
-    const baseCycleMs = Number(io.cycleTimeMs) || Number(config.cycleTimeMs);
+    if (kind.kind === WORK.BUILD) {
+        // A build spends its recipe's inputs and the Foundation it stands on, bought at the Shop.
+        const skill = text(def.foundation.skill) || recipe.skill;
+        config = { skill, skillRequired: Number(def.config?.skillRequired) || 1 };
+        io.inputs = [...list(recipe.inputs), ...list(def.shop?.price).filter(p => text(p.itemId))];
+        notes.assumptions.push({ source: def.id, what: 'build', why: 'built again and again: each build takes a new Foundation from the Shop; taking the last one down is not counted' });
+    } else if (kind.kind === WORK.WATER) {
+        pool = poolOf(book, def, target, setup);
+        if (!pool) return refuse('no catch pool for that tool and bait');
+        io.outputs = [];
+        io.inputs = [];
+    } else if (kind.kind === WORK.FIGHT) {
+        config = { ...config, skill: '' };
+        const firsts = io.outputs.filter(o => o?.firstKill === true && text(o.itemId));
+        io.outputs = io.outputs.filter(o => o?.firstKill !== true);
+        io.xp = 0;
+        notes.assumptions.push({ source: def.id, what: 'fight', why: 'coarse: one kill a fight cycle of its authored time, won every time; levels and gear left out until brief 280' });
+        if (firsts.length) notes.assumptions.push({ source: def.id, what: 'first kill', why: `${firsts.map(o => o.itemId).join(', ')} drop once, on the first kill: not a rate` });
+        notes.unmodelled.push({ source: def.id, what: 'combat XP', why: 'what a fight teaches its hero is not rated' });
+    }
+    const baseCycleMs = Number(io.cycleTimeMs) || Number(config?.cycleTimeMs);
     if (!(baseCycleMs > 0)) return refuse('no cycle time', [{ source: def.id, what: 'cycleTimeMs', why: 'no cycle time authored' }]);
 
-    const gates = gatesOf(book, def, config, recipe, setup);
+    const gates = gatesOf(book, def, config, recipe, setup, pool);
     const hero = heroRules(book, gates.skill, setup, gates, notes);
     const reaching = tileRules(book, def, setup, hero, notes);
     const tile = tileScope(reaching.modifiers);
     const guild = guildScope(setup, notes);
     const resolve = makeResolver(tile, guild, hero);
-    return { def, recipe, io, baseCycleMs, gates, hero, tileGrants: reaching.grants, guild, resolve, notes };
+    return { def, recipe, kind: kind.kind, pool, io, baseCycleMs, gates, hero, tileGrants: reaching.grants, guild, resolve, notes };
+}
+
+/**
+ * The catch pool a hero fishes at a water: `target.pool` (`'tool|bait'`) when named, else the
+ * pool for the tool in hand (the setup's, else the water's first kind) with the setup's `bait`,
+ * else that tool's basic pool, as `Fishing.fishingOf` picks it.
+ */
+function poolOf(book, def, target, setup) {
+    const pools = catchPoolsOf(def);
+    if (text(target.pool)) {
+        const [tool, bait] = target.pool.split('|');
+        return pools.find(p => p.tool === tool && (p.bait || '') === (bait || '')) || null;
+    }
+    const held = text(setup.tool) ? toolOf(book.items[setup.tool])?.kind : null;
+    const kind = held || pools[0]?.tool;
+    const bait = text(setup.bait);
+    return pools.find(p => p.tool === kind && p.bait === bait) || pools.find(p => p.tool === kind && !p.bait) || null;
+}
+
+/** A pool as `target.pool` names it. */
+export function poolKey(pool) {
+    return `${pool.tool}|${pool.bait || ''}`;
+}
+
+/**
+ * What kind of work a Token (with a recipe, at a station or on a Foundation) is, or why the
+ * calculator does not rate it: `{ kind }` or `{ why, unmodelled }`, `unmodelled` when it is work the
+ * calculator cannot read rather than no work at all.
+ */
+function workKindOf(def, recipe) {
+    if (isObject(def.enemy)) return isObject(def.config) && Number(def.config.cycleTimeMs) > 0
+        ? { kind: WORK.FIGHT } : { why: 'a fight with no fight time', unmodelled: true };
+    if (isObject(def.foundation)) {
+        if (!recipe) return { why: 'a Foundation: name a build recipe' };
+        const kinds = list(recipe.foundationKinds);
+        const skill = text(def.foundation.skill) || recipe.skill;
+        if (!kinds.includes(def.foundation.kind) || recipe.skill !== skill || !foundationTierMeets(def, recipe)) {
+            return { why: 'the Foundation does not take the recipe' };
+        }
+        return { kind: WORK.BUILD };
+    }
+    if (hasCatchPools(def)) return { kind: WORK.WATER };
+    if (isPassive(def) && !isObject(def.config)) return { kind: WORK.PASSIVE };
+    if (!isObject(def.config)) {
+        return { why: isObject(def.spawner) ? 'no work cycle (a spawner)' : 'no work cycle' };
+    }
+    if (stationSkillOf(def)) {
+        if (!recipe) return { why: 'a station: name a recipe' };
+        if (!(stationSkillOf(def) === recipe.skill && stationKindOffers(stationKindOf(def), recipe))) return { why: 'the station does not offer the recipe' };
+        if (fieldOf(def)) return isObject(recipe.crop) ? { kind: WORK.FIELD } : { why: 'a Field grows crops only' };
+        return { kind: WORK.STATION };
+    }
+    return { kind: WORK.GATHER };
+}
+
+/** Whether a Token pays Passive Production: its own `trickle` lines, or the Guild Hall (the Wishing Well's Water). */
+function isPassive(def) {
+    return list(def?.trickle).some(l => text(l.itemId)) || def?.id === 'token_guild_hall' || def?.isGuildHall === true;
+}
+
+/**
+ * Passive Production (`PassiveProduction.linesOf`): every line once a lap, no hero; the Guild Hall
+ * adds the Wishing Well's Water at the setup's rank (`hallRanks.wishing_well`).
+ */
+function passiveRate(book, def, setup) {
+    const perLap = {};
+    for (const line of list(def.trickle)) {
+        const q = Math.floor(Number(line?.quantity));
+        if (text(line?.itemId) && q > 0) perLap[line.itemId] = (perLap[line.itemId] || 0) + q;
+    }
+    const factors = [{ id: `${FACTOR.SELF}:${def.id}`, kind: FACTOR.SELF, name: def.name || def.id, on: true, axes: [] }];
+    if (def.id === 'token_guild_hall' || def.isGuildHall === true) {
+        const rank = Math.floor(Number(setup.hallRanks?.wishing_well) || 0);
+        const id = `${FACTOR.GUILD}:wishing_well`;
+        const water = isOff(setup, id, FACTOR.GUILD) ? 0 : wishingWellWater(rank);
+        if (water > 0) perLap[WISHING_WELL_ITEM] = (perLap[WISHING_WELL_ITEM] || 0) + water;
+        if (rank > 0) factors.push({ id, kind: FACTOR.GUILD, name: `Wishing Well rank ${rank}`, on: water > 0, axes: water > 0 ? ['passive'] : [] });
+    }
+    const laps = HOUR_MS / PASSIVE_PRODUCTION_MS;
+    return {
+        ok: true, reason: null, kind: WORK.PASSIVE,
+        target: { token: def.id, recipe: null }, skill: null,
+        gates: { level: 0, needed: 0, tool: null, need: null },
+        baseCycleMs: PASSIVE_PRODUCTION_MS, cycleMs: PASSIVE_PRODUCTION_MS, failChance: 0,
+        lifecycle: { kind: LIFECYCLE.UNLIMITED, cycles: null, restMs: null, growMs: null, steps: null, members: null, why: null },
+        heroCyclesPerHour: 0, supplyCyclesPerHour: laps, cyclesPerHour: laps, limitedBy: LIMIT.CLOCK,
+        perCycle: perLap, items: Object.fromEntries(Object.entries(perLap).map(([k, v]) => [k, v * laps])),
+        tokens: {}, inputs: {}, xpPerCycle: 0, xp: {}, factors, unmodelled: [], assumptions: []
+    };
 }
 
 /**
@@ -697,7 +893,9 @@ export function axisResolverOf(book, target, setup = {}) {
 /**
  * The rate of one piece of work.
  *
- * @param {object} target  `{ token }` (a vein, a tree, a bush) or `{ token, recipe }` (a recipe at a station)
+ * @param {object} target  `{ token }` (a vein, a tree, a bush, an enemy, Passive Production),
+ *   `{ token, pool }` (water, `pool` as `poolKey` names it), `{ token, recipe }` (a recipe at a
+ *   station, a crop at its Field, a build on its Foundation)
  * @param {object} [setup]  the factor switches:
  *   - `level` (or `levels: { skill: level }`): the hero's level; the work's own gate when absent
  *   - `tool`: the tool item in hand; the lowest tier that answers the need when absent, none when null
@@ -706,15 +904,21 @@ export function axisResolverOf(book, target, setup = {}) {
  *   - `region`: a Region's rules (statements); `guild`: guild-wide modifiers
  *   - `perks`: false to leave milestone perks out (default in)
  *   - `family`: `{ spawner, members }`, a spawner's family worked in turn; `members` defaults to the
- *     spawner's allowance (all of them in the hero's reach)
+ *     spawner's allowance (all of them in the hero's reach). For a fight, the camp that spawns it.
+ *   - `camp`: a camp of the work's skill the hero works from (an id or `{ id, members }`): it works
+ *     `members` copies in turn (else the family's allowance); named but unusable, one copy
+ *   - `bait`: the bait carried at water; `hallRanks`: Guild Hall upgrade ranks (the Wishing Well)
  *   - `heroes`: how many heroes work it (default 1; only a family can take more than one)
  *   - `off`: factor ids or kinds switched off (`support:token_copper_mine`, `consumable`, …)
  * @returns {object} the rate, its factors and what it could not read
  */
 function rateOf(book, target = {}, setup = {}) {
+    const passiveDef = book.token(target.token);
+    if (passiveDef && !text(target.recipe) && workKindOf(passiveDef, null).kind === WORK.PASSIVE) return passiveRate(book, passiveDef, setup);
     const prepared = prepare(book, target, setup);
     if (prepared.refused) return prepared.refused;
-    const { def, recipe, io, baseCycleMs, gates, hero, tileGrants, guild, resolve, notes } = prepared;
+    const { def, recipe, kind, pool, baseCycleMs, gates, hero, tileGrants, guild, resolve, notes } = prepared;
+    const io = { ...prepared.io };
     const skill = gates.skill;
     const category = skill || TARGET_CATEGORIES.ALL;
     const usedBy = new Map();
@@ -725,10 +929,22 @@ function rateOf(book, target = {}, setup = {}) {
         }
     };
 
-    // Work time, floored twice (`TileModifiers.workTimeOf`).
-    const wt = resolve(EFFECT_TYPES.WORK_TIME, baseCycleMs, category);
+    // Work time, floored twice (`TileModifiers.workTimeOf`). A fight takes its own time.
+    const wt = kind === WORK.FIGHT ? { value: baseCycleMs, used: new Set() } : resolve(EFFECT_TYPES.WORK_TIME, baseCycleMs, category);
     note(EFFECT_TYPES.WORK_TIME, wt.used);
-    const cycleMs = flooredWorkTime(baseCycleMs, wt.value);
+    const cycleMs = kind === WORK.FIGHT ? baseCycleMs : flooredWorkTime(baseCycleMs, wt.value);
+
+    // Water lands one catch a cycle, picked by weight, each weight widened by Catch Weight with the
+    // fish as the narrowing (`Fishing.catchOf`); then it lands like any output.
+    if (kind === WORK.WATER) {
+        const weights = pool.catches.map(c => {
+            const r = resolve(EFFECT_TYPES.CATCH_WEIGHT, c.weight, c.itemId);
+            note(EFFECT_TYPES.CATCH_WEIGHT, r.used);
+            return Math.max(0, r.value);
+        });
+        const total = weights.reduce((a, b) => a + b, 0);
+        io.outputs = total > 0 ? pool.catches.map((c, i) => ({ itemId: c.itemId, chance: 100 * weights[i] / total, minQty: 1, maxQty: 1 })) : [];
+    }
 
     // A failed cycle pays its inputs and makes nothing (`BoardRunner.completeCycle`).
     const fail = resolve(EFFECT_TYPES.FAIL_CHANCE, 0, category);
@@ -780,9 +996,14 @@ function rateOf(book, target = {}, setup = {}) {
         inputsPerCycle[input.itemId] = (inputsPerCycle[input.itemId] || 0) + Math.max(1, Math.round(ic.value));
     }
     for (const c of hero.costs) inputsPerCycle[c.itemId] = (inputsPerCycle[c.itemId] || 0) + c.perCycle;
+    // A catch with bait spends one; a failed cycle keeps it (`BoardRunner.completeCycle`).
+    if (pool?.bait) inputsPerCycle[pool.bait] = (inputsPerCycle[pool.bait] || 0) + (1 - pFail);
 
-    const life = lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes);
+    const life = lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skill);
     note(EFFECT_TYPES.GROW_TIME, life.used);
+    note(EFFECT_TYPES.CROP_LOAD, life.kind === LIFECYCLE.REFILL && kind === WORK.FIELD ? life.used : []);
+    const camp = campOfSetup(book, setup, skill);
+    if (camp && life.members > 1) note('family', [`${FACTOR.SUPPORT}:${camp.id}`]);
     const heroes = Math.max(1, Math.floor(Number(setup.heroes) || 1));
     const heroPerHour = gates.ok ? heroes * HOUR_MS / cycleMs : 0;
     const supplyPerHour = gates.ok ? life.supplyPerHour : 0;
@@ -790,16 +1011,15 @@ function rateOf(book, target = {}, setup = {}) {
     const limitedBy = heroPerHour <= supplyPerHour ? LIMIT.HERO : LIMIT.SUPPLY;
 
     const perHour = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v * cyclesPerHour]));
-    // A regrowth's cost (a stump's seedling) is paid once a life, and a life is `cycles` cycles.
+    // A regrowth's cost (a stump's seedling) or a crop's seed is paid once a life, and a life is `cycles` cycles.
     const inputs = perHour(inputsPerCycle);
-    if (life.kind === LIFECYCLE.REGROW) {
-        for (const c of life.costs) inputs[c.itemId] = (inputs[c.itemId] || 0) + c.perLife * cyclesPerHour / life.cycles;
-    }
+    for (const c of life.costs || []) inputs[c.itemId] = (inputs[c.itemId] || 0) + c.perLife * cyclesPerHour / life.cycles;
 
     return {
         ok: gates.ok,
         reason: gates.reason,
-        target: { token: def.id, recipe: recipe?.id ?? null },
+        kind,
+        target: { token: def.id, recipe: recipe?.id ?? null, ...(pool ? { pool: poolKey(pool) } : {}) },
         skill,
         gates: { level: gates.level, needed: gates.needed, tool: gates.toolItem, need: gates.need },
         baseCycleMs,
@@ -822,18 +1042,6 @@ function rateOf(book, target = {}, setup = {}) {
     };
 }
 
-/** Work the calculator does not model yet, by kind, or null. */
-function unmodelledKind(def, recipe) {
-    if (isObject(def.enemy)) return 'a fight (combat is coarse until brief 280)';
-    if (isObject(def.foundation)) return 'a build on a Foundation (paid once, not a rate)';
-    if (hasCatchPools(def)) return 'water: a catch from pools by tool and bait';
-    if (fieldOf(def) || isObject(recipe?.crop)) return 'a Field: crops grow and are harvested by the load';
-    if (def.id === 'token_guild_hall' || isObject(def.spawner) && !isObject(def.config)) return 'no work cycle (a spawner or the Guild Hall)';
-    if (!isObject(def.config)) return 'no work cycle';
-    if (stationSkillOf(def) && !recipe) return 'a station: name a recipe';
-    return null;
-}
-
 /** Every factor that was on the table, whether it moved anything, and which axes it moved. */
 function factorList(book, def, setup, hero, usedBy) {
     const out = [];
@@ -848,6 +1056,8 @@ function factorList(book, def, setup, hero, usedBy) {
         const [kind, itemOrSkill] = id.split(':');
         push(id, kind, book.items[itemOrSkill]?.name || id);
     }
+    const campId = typeof setup.camp === 'string' ? setup.camp : isObject(setup.camp) ? text(setup.camp.id) : null;
+    if (campId && !out.some(f => f.id === `${FACTOR.SUPPORT}:${campId}`)) push(`${FACTOR.SUPPORT}:${campId}`, FACTOR.SUPPORT, book.token(campId)?.name || campId);
     if (list(setup.region).length) push(FACTOR.REGION, FACTOR.REGION, 'Region rules');
     if (list(setup.guild).length) push(FACTOR.GUILD, FACTOR.GUILD, 'guild-wide rules');
     return out;
@@ -864,22 +1074,49 @@ function dedupe(rows) {
 }
 
 /**
+ * Every piece of work the calculator rates, as targets: each Token's own work (a vein, a tree, a
+ * bush, a fight, Passive Production), each pool of each water, each recipe at each station that
+ * offers it (crops at their Fields) and each build on each Foundation that takes it.
+ */
+function workTargets(book) {
+    const out = [];
+    for (const id of book.tokenIds()) {
+        const def = book.token(id);
+        if (isObject(def.foundation)) continue;
+        if (stationSkillOf(def) && isObject(def.config)) continue;
+        if (hasCatchPools(def)) {
+            for (const pool of catchPoolsOf(def)) out.push({ token: id, pool: poolKey(pool) });
+            continue;
+        }
+        out.push({ token: id });
+    }
+    for (const recipeId of Object.keys(book.recipes)) {
+        const recipe = book.recipes[recipeId];
+        if (list(recipe.foundationKinds).length) {
+            for (const foundation of buildsOn(book, recipeId)) out.push({ token: foundation, recipe: recipeId });
+            continue;
+        }
+        for (const station of stationsFor(book, recipeId)) out.push({ token: station, recipe: recipeId });
+    }
+    return out;
+}
+
+/** The Foundations a build recipe can stand on, by id. */
+function buildsOn(book, recipeId) {
+    const recipe = book.recipes[recipeId];
+    if (!recipe || !list(recipe.foundationKinds).length) return [];
+    return book.tokenIds().filter(id => {
+        const def = book.token(id);
+        return isObject(def.foundation) && workKindOf(def, recipe).kind === WORK.BUILD;
+    });
+}
+
+/**
  * Every Token's rate and every recipe's at each station that offers it, under one setup: what the
  * ledger's pace views read. Work the calculator cannot read comes back with `ok: false` and why.
  */
 function everyRate(book, setup = {}) {
-    const out = [];
-    for (const id of book.tokenIds()) {
-        const def = book.token(id);
-        if (stationSkillOf(def) && isObject(def.config) && !isObject(def.foundation)) continue;
-        out.push(rateOf(book, { token: id }, setup));
-    }
-    for (const recipeId of Object.keys(book.recipes)) {
-        const recipe = book.recipes[recipeId];
-        if (Array.isArray(recipe.foundationKinds) && recipe.foundationKinds.length) continue;
-        for (const station of stationsFor(book, recipeId)) out.push(rateOf(book, { token: station, recipe: recipeId }, setup));
-    }
-    return out;
+    return workTargets(book).map(target => rateOf(book, target, setup));
 }
 
 /**

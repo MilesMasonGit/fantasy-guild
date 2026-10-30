@@ -11,11 +11,15 @@ import { PLAN_TIERS, tierBudgetMs, tierOrNull } from './plan.js';
  *       player: { checkInMinMinutes, checkInMaxMinutes, overnightHours },
  *       paceCurve: [{ level, minutesPerLevel }],     // the target time one level takes, at a few levels
  *       wallFactor: 2,                               // a wall is a wait over this many times the curve
- *       rulesVersion: 'classless-one-job'            // which roster rules the pretend player follows
+ *       profileBounds: 3,                            // Bare and Maxed stay within this many times the curve
+ *       boostTargets: { support: [{ tier, pct }], … }, // how strong each kind of boost should be, by tier
+ *       campMembers: 3,                              // copies of a vein or Field a camp hands one hero
+ *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
+ *       rulesVersion: 'classless-one-job'            // which roster rules the pace follows
  *     }
  *
  * Times are in minutes so the file reads plainly; later phases convert with the helpers below.
- * The pretend player (a later phase) reads these; nothing in the game does.
+ * The ledger's pace (`pace.js`) reads these; nothing in the game does.
  *
  * ⚠️ The CMS, its server and its Node tools import this file, so it stays free of game state.
  */
@@ -45,12 +49,35 @@ const DEFAULT_PACE_CURVE = [
     { level: 99, minutesPerLevel: 3 * 24 * 60 },
 ];
 
+/** The kinds of boost a target can be set for, with their words. */
+export const BOOST_TARGET_KINDS = Object.freeze([
+    Object.freeze({ id: 'support', label: 'Buildings and camps' }),
+    Object.freeze({ id: 'consumable', label: 'Consumables' }),
+    Object.freeze({ id: 'tool', label: 'Tools' }),
+    Object.freeze({ id: 'gear', label: 'Gear' }),
+    Object.freeze({ id: 'hall', label: 'Guild Hall' }),
+]);
+
+/**
+ * The owner's examples (2026-10-29): buildings up to +30 %, consumables +20 %, the Hall up to +100 %
+ * late. The Hall's climb by plane is a placeholder; tools and gear have no target until set.
+ */
+const DEFAULT_BOOST_TARGETS = {
+    support: [{ tier: 0, pct: 30 }],
+    consumable: [{ tier: 0, pct: 20 }],
+    hall: [{ tier: 1, pct: 10 }, { tier: 2, pct: 25 }, { tier: 3, pct: 50 }, { tier: 4, pct: 100 }],
+};
+
 export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     stages: DEFAULT_STAGES,
     tolerancePct: 25,
     player: { checkInMinMinutes: 30, checkInMaxMinutes: 60, overnightHours: 8 },
     paceCurve: DEFAULT_PACE_CURVE,
     wallFactor: 2,
+    profileBounds: 3,
+    boostTargets: DEFAULT_BOOST_TARGETS,
+    campMembers: 3,
+    paybackHours: 2,
     rulesVersion: RULES_VERSIONS[0].id,
 });
 
@@ -107,8 +134,28 @@ export function settingsOf(raw) {
         },
         paceCurve,
         wallFactor: positive(src.wallFactor, d.wallFactor),
+        profileBounds: Math.max(1, positive(src.profileBounds, d.profileBounds)),
+        boostTargets: boostTargetsOf(src.boostTargets),
+        campMembers: Math.max(1, Math.floor(positive(src.campMembers, d.campMembers))),
+        paybackHours: positive(src.paybackHours, d.paybackHours),
         rulesVersion: RULES_VERSIONS.some((r) => r.id === src.rulesVersion) ? src.rulesVersion : d.rulesVersion,
     };
+}
+
+/** Boost targets: per kind, points one per tier in tier order, each a whole tier and a percent from 0. */
+function boostTargetsOf(raw) {
+    if (!isObject(raw)) return clone(DEFAULT_BOOST_TARGETS);
+    const out = {};
+    for (const { id } of BOOST_TARGET_KINDS) {
+        const byTier = new Map();
+        for (const p of Array.isArray(raw[id]) ? raw[id] : []) {
+            const tier = tierOrNull(p?.tier);
+            const pct = Number(p?.pct);
+            if (tier !== null && Number.isFinite(pct) && pct >= 0) byTier.set(tier, { tier, pct });
+        }
+        if (byTier.size) out[id] = [...byTier.values()].sort((a, b) => a.tier - b.tier);
+    }
+    return out;
 }
 
 /** A stage's budget in milliseconds from the settings, or null when it has none. */
@@ -141,6 +188,18 @@ export function minutesToReach(settings, level) {
     let total = 0;
     for (let l = 1; l < level; l++) total += minutesPerLevelAt(settings, l) ?? 0;
     return total;
+}
+
+/** The level the curve has a player at after `minutes` of play: the highest it reaches by then. */
+export function levelAtMinutes(settings, minutes) {
+    let level = 1;
+    let total = 0;
+    for (; level < 99; level++) {
+        const next = total + (minutesPerLevelAt(settings, level) ?? Infinity);
+        if (next > minutes) break;
+        total = next;
+    }
+    return level;
 }
 
 /** A length of minutes in words: "45 min", "1 h 30 min", "2 d 4 h". */
