@@ -12,6 +12,7 @@ const VIEWS = [
   { key: 'progression', label: 'Progression' },
   { key: 'ledger', label: 'Ledger' },
   { key: 'starterCamp', label: 'Starter Camp' },
+  { key: 'perks', label: 'Skill Perks' },
   { key: 'audit', label: 'Economy Audit' },
   { key: 'sprites', label: 'Sprite Audit' },
 ];
@@ -32,7 +33,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
   };
 
   const handleSync = async () => {
-    if (!window.confirm('Sync workspace to game data files? This will overwrite data/items.json (maps included), data/tokens.json, data/tokenRecipes.json and data/effects.json, and data/starterCamp.json when the Starter Camp page holds one, with the CMS dataset.')) {
+    if (!window.confirm('Sync workspace to game data files? This will overwrite data/items.json (maps included), data/tokens.json, data/tokenRecipes.json and data/effects.json, data/starterCamp.json when the Starter Camp page holds one and data/skillPerks.json when the workspace holds perk tables, with the CMS dataset.')) {
       return;
     }
     setSyncStatus('syncing');

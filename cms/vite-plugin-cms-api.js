@@ -843,6 +843,9 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
             const starterCamp = fs.existsSync(path.join(dataDir, 'starterCamp.json'))
               ? JSON.parse(fs.readFileSync(path.join(dataDir, 'starterCamp.json'), 'utf8'))
               : null;
+            const skillPerks = fs.existsSync(path.join(dataDir, 'skillPerks.json'))
+              ? JSON.parse(fs.readFileSync(path.join(dataDir, 'skillPerks.json'), 'utf8'))
+              : null;
 
             const plan = readPlan();
 
@@ -861,6 +864,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
               effects,
               recipePools,
               starterCamp,
+              skillPerks,
             }, plan)));
           } catch (err) {
             res.statusCode = 500;
@@ -961,6 +965,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
                 maps: Object.values(files['items.json'] || {}).filter(isMap).length,
                 recipes: size(files['tokenRecipes.json']),
                 'Starter Camp Tokens': size(files['starterCamp.json']?.tokens),
+                perks: Object.values(files['skillPerks.json'] || {}).reduce((n, record) => n + size(record?.perks), 0),
                 'Planned entries': plannedKeysOf(plan).size
               };
 

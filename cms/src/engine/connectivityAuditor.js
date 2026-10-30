@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds, perkFindings } from '../utils/constants';
 import { isMapItem, mapItemFindings } from '../../../src/systems/atlas/mapItems.js';
 
 /** Connectivity & Graph Auditor: audits the Token, Recipe and Item graph in three pillars: Data Integrity (missing references, invalid IDs, solver refusals), Economic Blockers (orphaned inputs, unreachable items, dead ends) and Pacing Gaps (level gaps in skills). */
@@ -11,7 +11,7 @@ const tokenSkill = (token) => token?.config?.skill ?? token?.skill ?? token?.ski
 const tokenLevel = (token) => token?.config?.skillRequired ?? token?.skillRequirement ?? 1;
 
 export function auditConnectivity(entities, solverRefusals = []) {
-  const { items = {}, tokens = {}, recipes = {}, enemies = {}, effects = {} } = entities;
+  const { items = {}, tokens = {}, recipes = {}, enemies = {}, effects = {}, skillPerks = null } = entities;
   const issues = [];
 
   const allItems = Object.values(items || {});
@@ -142,6 +142,18 @@ export function auditConnectivity(entities, solverRefusals = []) {
       issueType: 'Data Integrity',
       severity: 'Critical',
       details: f.message,
+    });
+  }
+
+  // Milestone perks: a table on a skill the game does not have, a perk at a level no hero reaches or naming a missing effect, a rule that does nothing on a hero. The game's own rule (`perkRule.js`), so this tab and the boot audit say the same thing.
+  for (const f of perkFindings({ skillPerks, effects })) {
+    issues.push({
+      entityId: f.entityId,
+      entityName: f.entityName,
+      entityType: f.entityType,
+      issueType: 'Data Integrity',
+      severity: 'Warning',
+      details: f.message.charAt(0).toUpperCase() + f.message.slice(1),
     });
   }
 

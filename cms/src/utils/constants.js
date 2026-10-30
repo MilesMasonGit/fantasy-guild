@@ -156,6 +156,9 @@ export {
   tierValue,
 } from '../../../src/config/registries/toolKinds.js';
 export { toolFindings } from '../../../src/systems/core/toolRule.js';
+// Milestone perks: the shape of a skill's perk table and the content checks for one. The game's own rules and wording.
+export { DEFAULT_PERK_LEVELS, MIN_PERK_LEVEL, isPerkLevel, perkRowsOf, normaliseSkillPerks } from '../../../src/systems/hero/perkTable.js';
+export { perkFindings } from '../../../src/systems/core/perkRule.js';
 // A water Token's catch pools (tool kind × bait → a weighted catch): the game's own reader, so the Catch pools block and the game read the same pools.
 export { catchPoolsOf, hasCatchPools, catchItemIds, baitItemIds } from '../../../src/config/registries/catchPools.js';
 // Bait is carried in a Consumable cell: the Catch pools block offers only items of a consumable category.

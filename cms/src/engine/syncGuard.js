@@ -5,6 +5,7 @@
  */
 
 import { plannedKeysOf, PLAN_SYNC_KEY } from './planFile.js';
+import { keyedPerks, PERK_FILE } from './skillPerks.js';
 
 /** The collections compared, in the order the panel lists them. */
 export const SYNC_COLLECTIONS = [
@@ -14,6 +15,7 @@ export const SYNC_COLLECTIONS = [
   { key: 'recipes', label: 'recipe', plural: 'recipes' },
   { key: 'effects', label: 'effect', plural: 'effects' },
   { key: 'starterCamp', label: 'Starter Camp Token', plural: 'Starter Camp Tokens' },
+  { key: 'perks', label: 'perk', plural: 'perks' },
   { key: 'planned', label: 'Planned entry', plural: 'Planned entries' },
 ];
 
@@ -67,6 +69,7 @@ function collections(files) {
     recipes: keyedRecipes(files['tokenRecipes.json']),
     effects: keyed(files['effects.json']),
     starterCamp: keyedPlacements(files['starterCamp.json']),
+    perks: keyedPerks(files[PERK_FILE]),
     planned: plannedKeysOf(files[PLAN_SYNC_KEY]),
   };
 }
@@ -90,7 +93,8 @@ export function compareSync(current = {}, incoming = {}) {
   };
   for (const { key } of SYNC_COLLECTIONS) {
     // A Starter Camp (or a plan) the Sync does not write stays on disk untouched.
-    if ((key === 'starterCamp' && !incoming?.['starterCamp.json']) || (key === 'planned' && !incoming?.[PLAN_SYNC_KEY])) {
+    if ((key === 'starterCamp' && !incoming?.['starterCamp.json']) || (key === 'perks' && !incoming?.[PERK_FILE])
+      || (key === 'planned' && !incoming?.[PLAN_SYNC_KEY])) {
       removed[key] = [];
       added[key] = [];
       continue;

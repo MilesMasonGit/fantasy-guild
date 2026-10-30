@@ -11,6 +11,7 @@ import ProgressionPanel from './components/progression/ProgressionPanel';
 import LedgerPanel from './components/ledger/LedgerPanel';
 import StarterCampPage from './components/starterCamp/StarterCampPage';
 import ChangesPage from './components/changes/ChangesPage';
+import SkillPerksPage from './components/perks/SkillPerksPage';
 import { useEntityStore } from './stores/useEntityStore';
 import { isMapItem } from '../../src/systems/atlas/mapItems.js';
 import { Package, Boxes, Map as MapIcon } from 'lucide-react';
@@ -31,6 +32,7 @@ function App() {
         if (currentView === 'ledger') return <LedgerPanel setCurrentView={setCurrentView} />;
         if (currentView === 'starterCamp') return <div className="h-full overflow-y-auto"><StarterCampPage /></div>;
         if (currentView === 'changes') return <ChangesPage setCurrentView={setCurrentView} />;
+        if (currentView === 'perks') return <SkillPerksPage setCurrentView={setCurrentView} />;
         if (currentView === 'sprites') return <SpriteAuditDashboard />;
         if (currentView === 'audit') return <div className="p-4 h-full"><AuditPanel openGenerate={openGenerate} /></div>;
         return (

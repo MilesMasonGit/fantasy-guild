@@ -23,6 +23,7 @@ import {
 import { seedSimIntent } from './simIntentNormaliser';
 import { isMapItem, blankCartography } from '../../../src/systems/atlas/mapItems.js';
 import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
+import { normaliseWorkspacePerks, withPerkRow, withoutPerkRow } from '../engine/skillPerks';
 import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRenames';
 import { splitPlanned, rejoinPlanned } from '../engine/planFile';
 
@@ -397,6 +398,13 @@ function performRename(state, oldId, newId, kind) {
 
         patch.tokens = repoint(state.tokens);
         patch.items = repoint(state.items);
+        // A perk table names its effects too.
+        if (state.skillPerks) {
+            patch.skillPerks = Object.fromEntries(Object.entries(state.skillPerks).map(([skillId, record]) => [skillId, {
+                ...record,
+                perks: (record?.perks || []).map((row) => (row?.effectId === oldId ? { ...row, effectId: newId } : row)),
+            }]));
+        }
     }
 
     return patch;
@@ -761,6 +769,15 @@ export const useEntityStore = create(
             /** The Starter Camp (`engine/starterCamp.js`). ⚠️ Null means this workspace never held one, and Sync then leaves `data/starterCamp.json` alone; Clear sets an empty camp instead. */
             starterCamp: null,
 
+            /** Each skill's milestone perks (`engine/skillPerks.js`). ⚠️ Null means this workspace never held any, and Sync then leaves `data/skillPerks.json` alone. */
+            skillPerks: null,
+            /** Set (or with index -1 add) one row of a skill's perk table. */
+            setSkillPerkRow: (skillId, index, row) => set((s) => ({ skillPerks: withPerkRow(s.skillPerks, skillId, index, row) })),
+            removeSkillPerkRow: (skillId, index) => set((s) => ({ skillPerks: withoutPerkRow(s.skillPerks, skillId, index) })),
+            /** A skill the Skill Perks page should open on next (the change-pack review's Open in editor). Not persisted. */
+            perkFocus: null,
+            focusPerks: (skillId) => set({ perkFocus: skillId }),
+
             /** The Ledger settings (`ledger/settings.js`), kept in `cms/plan/plan.json`. ⚠️ Null means this workspace never set any: Sync then sends none and the server keeps the file's own. */
             planSettings: null,
             setPlanSettings: (settings) => set({ planSettings: settings && typeof settings === 'object' ? settings : null }),
@@ -1006,6 +1023,7 @@ export const useEntityStore = create(
                     effects: seeded.effects,
                     recipePools: seeded.recipePools,
                     starterCamp: normaliseStarterCamp(data.starterCamp),
+                    skillPerks: normaliseWorkspacePerks(data.skillPerks),
                     planSettings: data.planSettings && typeof data.planSettings === 'object' ? data.planSettings : null,
                     activeEntityId: null,
                     activeEntityType: null,
@@ -1087,6 +1105,7 @@ export const useEntityStore = create(
                     recipes,
                     // For the skill check, which must expand a Token to recognise a Promotion Token. Read-only; nothing is written.
                     effects: library,
+                    skillPerks: state.skillPerks,
                 }, sim.rows.map(describeRow));
 
                 useSimulationStore.getState().setAuditResults(
@@ -1121,7 +1140,7 @@ export const useEntityStore = create(
 
                 set({ ...rejoinPlanned(workspace, { items, tokens: finalTokens, recipePools }), effects: library });
 
-                return { items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp, planned, planSettings: state.planSettings ?? null };
+                return { items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp, skillPerks: state.skillPerks ?? null, planned, planSettings: state.planSettings ?? null };
             },
 
             /**
@@ -1150,6 +1169,7 @@ export const useEntityStore = create(
                     tokens: {},
                     recipePools: {},
                     starterCamp: null,
+                    skillPerks: null,
                     planSettings: null,
                     activeEntityId: null,
                     activeEntityType: null,
@@ -1180,6 +1200,7 @@ export const useEntityStore = create(
                 effects: state.effects,
                 recipePools: state.recipePools,
                 starterCamp: state.starterCamp,
+                skillPerks: state.skillPerks,
                 planSettings: state.planSettings,
                 activeEntityId: state.activeEntityId,
                 activeEntityType: state.activeEntityType,

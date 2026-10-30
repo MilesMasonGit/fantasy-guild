@@ -45,6 +45,7 @@ export default function FileManagerModal({ isOpen, onClose }) {
         effects: state.effects,
         recipePools: state.recipePools,
         starterCamp: state.starterCamp,
+        skillPerks: state.skillPerks,
       };
 
       const res = await fetch('/api/backups', {

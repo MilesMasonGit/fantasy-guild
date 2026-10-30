@@ -1,4 +1,5 @@
 import { splitPlanned, buildPlanFile, stripPlanBlocks, stripPlanFromList, PLAN_SYNC_KEY } from './planFile';
+import { PERK_FILE, perksFile } from './skillPerks';
 
 /**
  * How the CMS's authored content becomes the files in `data/`. Recipes go through `recalculateEconomy` like everything else.
@@ -37,6 +38,8 @@ export function syncFiles(balanced = {}) {
         'effects.json': balanced.effects || {},
         // ⚠️ Only when the workspace holds a Starter Camp: a workspace that never loaded one must not overwrite the one in `data/`.
         ...(balanced.starterCamp ? { 'starterCamp.json': balanced.starterCamp } : {}),
+        // ⚠️ Only when the workspace holds perk tables, for the same reason; blank rows stay in the workspace.
+        ...(balanced.skillPerks ? { [PERK_FILE]: perksFile(balanced.skillPerks) } : {}),
         // ⚠️ Only when the workspace holds a plan, for the same reason.
         ...(plan ? { [PLAN_SYNC_KEY]: plan } : {}),
     };
