@@ -4,13 +4,14 @@ import { Plus, Trash2, RotateCcw } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import {
-  settingsOf, minutesToReach, formatMinutes, DEFAULT_LEDGER_SETTINGS, RULES_VERSIONS,
+  settingsOf, minutesToReach, formatMinutes, DEFAULT_LEDGER_SETTINGS, RULES_VERSIONS, BOOST_TARGET_KINDS,
 } from '../../../../src/systems/progression/ledger/settings.js';
 
 /**
  * The Ledger settings (`ledger/settings.js`): stage budgets, the tolerance, the target player, the
- * pace curve and the rules the pretend player follows. Kept in the workspace and written with the
- * plan into `cms/plan/plan.json` by Sync; Restore from Game reads them back.
+ * pace curve, the profiles (their bounds, the payback a sensible investor asks, a camp's copies),
+ * the boost targets and the roster rules. Kept in the workspace and written with the plan into
+ * `cms/plan/plan.json` by Sync; Restore from Game reads them back.
  */
 export default function LedgerSettings() {
   const stored = useEntityStore((s) => s.planSettings);
@@ -139,7 +140,71 @@ export default function LedgerSettings() {
         </div>
       </Card>
 
-      <Card title="Rules" help="The roster rules the pretend player follows when it plays the game.">
+      <Card title="Profiles" help="The three players the pace is read for. Typical (a sensible investor) is what the curve aims at; Bare (no boosts) and Maxed (every boost) must stay within the bounds.">
+        <div className="space-y-2 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+          <div className="flex items-center gap-2">
+            Bare and Maxed stay within
+            <NumberInput value={settings.profileBounds} min={1} onCommit={(v) => save({ profileBounds: v })} label="Profile bounds" width={60} />
+            times the curve, slower or faster.
+          </div>
+          <div className="flex items-center gap-2">
+            Typical takes a building, a camp, a tool or gear that pays for itself within
+            <NumberInput value={settings.paybackHours} min={0.1} onCommit={(v) => save({ paybackHours: v })} label="Payback hours" width={60} />
+            hours of work (Guild Hall ranks are checked against the same).
+          </div>
+          <div className="flex items-center gap-2">
+            A camp hands one hero
+            <NumberInput value={settings.campMembers} min={1} whole onCommit={(v) => save({ campMembers: v })} label="Camp copies" width={60} />
+            veins or Fields in turn (a forest's camp: every tree of its family).
+          </div>
+        </div>
+      </Card>
+
+      <Card title="Boost targets" help="How much each kind of boost should add to a piece of work at most, from a stage on (Maxed, against Bare). A boost beyond its target by more than the tolerance is a problem.">
+        <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ ...head, textAlign: 'left', width: 180 }}>Kind</th>
+              <th style={{ ...head, textAlign: 'left' }}>From stage: up to</th>
+            </tr>
+          </thead>
+          <tbody>
+            {BOOST_TARGET_KINDS.map(({ id, label }) => {
+              const points = settings.boostTargets[id] || [];
+              const setPoints = (next) => save({ boostTargets: { ...settings.boostTargets, [id]: next } });
+              return (
+                <tr key={id} data-boost-target={id}>
+                  <td style={cell}>{label}</td>
+                  <td style={cell}>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {points.length === 0 && <span className="text-gray-500">no target</span>}
+                      {points.map((p, i) => (
+                        <span key={p.tier} className="flex items-center gap-1">
+                          {tierLabel(p.tier)}:
+                          <NumberInput value={p.pct} min={0} onCommit={(v) => setPoints(points.map((q, j) => (j === i ? { ...q, pct: v } : q)))} label={`${label} target from ${tierLabel(p.tier)}`} width={56} />
+                          %
+                          <IconButton onClick={() => setPoints(points.filter((_, j) => j !== i))} label={`Remove the ${label} target from ${tierLabel(p.tier)}`}><Trash2 size={11} /></IconButton>
+                        </span>
+                      ))}
+                      <IconButton
+                        onClick={() => {
+                          const last = points[points.length - 1];
+                          setPoints([...points, { tier: last ? last.tier + 1 : 0, pct: last ? last.pct : 20 }]);
+                        }}
+                        label={`Add a ${label} target`}
+                      >
+                        <Plus size={12} />
+                      </IconButton>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </Card>
+
+      <Card title="Rules" help="The roster rules the pace follows.">
         <select
           value={settings.rulesVersion}
           onChange={(e) => save({ rulesVersion: e.target.value })}

@@ -95,6 +95,48 @@ export const SETUPS = [
             const forester = hero('Forester', { forestry: 10 }, ['item_copper_woodaxe', 'item_lemonade', 'item_birdwatcher']);
             order(forester, camp);
         }
+    },
+    {
+        id: 'mining-camp',
+        name: 'A Mining Camp with three Copper Ore Veins in its reach, one miner working them in turn',
+        warmupMs: 10 * 60_000,
+        compare: { items: ['item_copper_ore'], skills: ['mining'] },
+        works: [{ target: { token: 'token_copper_ore_vein' }, setup: { level: 10, camp: { id: 'token_mining_camp', members: 3 } } }],
+        build({ place, hero, order }) {
+            const camp = place('token_mining_camp', 800, 560);
+            // Within the camp's 280 u reach and not within Near of each other's rules (veins have none).
+            place('token_copper_ore_vein', 800 + STEP, 560);
+            place('token_copper_ore_vein', 800 - STEP, 560);
+            place('token_copper_ore_vein', 800, 560 + STEP);
+            const miner = hero('Miner', { mining: 10 }, ['item_copper_pickaxe']);
+            order(miner, camp);
+        }
+    },
+    {
+        id: 'coast',
+        name: 'Water: one fisher on the Coast with a Fishing Rod and no bait',
+        warmupMs: 10 * 60_000,
+        compare: { items: ['item_tropical_fish', 'item_salmon', 'item_swordfish'], skills: ['fishing'] },
+        works: [{ target: { token: 'token_coast', pool: 'fishing_rod|' }, setup: { level: 10 } }],
+        build({ place, hero, order }) {
+            const coast = place('token_coast', 800, 560);
+            const fisher = hero('Fisher', { fishing: 10 }, ['item_fishing_rod']);
+            order(fisher, coast);
+        }
+    },
+    {
+        id: 'field',
+        name: 'A Field: one farmer on a Wild Wheat Patch, harvesting its load and waiting out each regrowth',
+        // An hour and a half in, the patch is part-way through a regrowth, as it is at any time after.
+        warmupMs: 90 * 60_000,
+        compare: { items: ['item_wheat', 'item_wheat_seed', 'item_worm'], skills: ['farming'] },
+        works: [{ target: { token: 'token_wild_wheat_patch', recipe: 'recipe_wheat' }, setup: { level: 10 } }],
+        bank: { item_wheat_seed: 100 },
+        build({ place, hero, order }) {
+            const patch = place('token_wild_wheat_patch', 800, 560);
+            const farmer = hero('Farmer', { farming: 10 }, ['item_copper_sickle']);
+            order(farmer, patch);
+        }
     }
 ];
 

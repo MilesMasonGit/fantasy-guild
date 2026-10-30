@@ -2,6 +2,8 @@ import { buildLedger, parseKey, itemKey, tokenKey, recipeKey, HOW } from '../../
 import { runChecks, SEVERITY } from '../../../src/systems/progression/ledger/checks.js';
 import { isPlanned } from '../../../src/systems/progression/ledger/plan.js';
 import { mapItemFindings, isMapItem } from '../../../src/systems/atlas/mapItems.js';
+import { buildPace } from '../../../src/systems/progression/ledger/pace.js';
+import { calibrationFindings } from './calibrationStatus.js';
 import { SKILLS, expandBearer, auditLifecycleBlocks, findUnknownRefs, toolFindings } from '../utils/constants';
 
 /**
@@ -23,6 +25,7 @@ const contentOf = (state) => ({
     recipePools: state.recipePools,
     effects: state.effects,
     starterCamp: state.starterCamp,
+    skillPerks: state.skillPerks,
 });
 
 export function workspaceLedger(state = {}, { sim = null } = {}) {
@@ -91,12 +94,19 @@ export function pricingFindings(simRows = [], state = {}) {
 }
 
 /**
- * The ledger and every check over the workspace: `{ ledger, findings }`.
- * @param {{ simRows?: object[] }} options  the last Recalculate's rows, for the pricing findings
+ * The ledger, its pace (the rate calculator at each profile, `pace.js`) and every check over the
+ * workspace, the pacing group and the calibration's state included: `{ ledger, pace, findings }`.
+ * @param {{ simRows?: object[], pace?: boolean }} options  the last Recalculate's rows, for the pricing
+ *   findings; `pace: false` leaves the pace out (it is most of the time)
  */
-export function workspaceReport(state = {}, { simRows = [] } = {}) {
+export function workspaceReport(state = {}, { simRows = [], pace: withPace = true } = {}) {
+    const content = contentOf(state);
     const ledger = workspaceLedger(state);
-    const extra = [...gameRuleFindings(state), ...pricingFindings(simRows, state)];
-    const findings = runChecks(ledger, contentOf(state), { extra });
-    return { ledger, findings };
+    const pace = withPace ? buildPace(content, ledger, state.planSettings) : null;
+    const extra = [
+        ...gameRuleFindings(state), ...pricingFindings(simRows, state),
+        ...(pace ? pace.findings() : []), ...calibrationFindings(),
+    ];
+    const findings = runChecks(ledger, content, { extra });
+    return { ledger, pace, findings };
 }

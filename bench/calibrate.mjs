@@ -1,13 +1,15 @@
 // Fantasy Guild — calibration: the progression ledger's rate calculator against the real engine.
 //
-//   node bench/calibrate.mjs                      every setup, seeds 1-3, 8 game-hours each
-//   node bench/calibrate.mjs --only=vein --hours=4 --seeds=1,2
+//   npm run bench:calibrate                       every setup, seeds 1-3, 8 game-hours each
+//   npm run bench:calibrate -- --only=vein --hours=4 --seeds=1,2
 //
 // Each setup (`bench/calibration/setups.mjs`) is a small board of shipped content played in the real
 // engine through the game's own catch-up, in its own process, and priced by the calculator
 // (`src/systems/progression/ledger/rates.js`). The table shows items and XP per hour, engine against
 // calculator, and the difference. Exits 1 when any compared number differs by more than the
 // tolerance (default 15 %), 3 when a run fails. Results go to `bench/results/calibration-*.json`.
+// A run of every setup also writes `bench/calibration/stamp.json` (commit it): the result and a hash
+// of the code it checked, which the ledger reads to say when the calibration has gone stale.
 //
 // ⚠️ Not the bench: it times nothing, and it reads shipped content on purpose. It is heavy enough
 // (a few game-days of catch-up) to move bench numbers if run beside one.
@@ -29,6 +31,7 @@ const seeds = String(args.seeds || '1,2,3').split(',').map(Number).filter(Number
 const tolerance = (Number(args.tolerance) || 15) / 100;
 
 const { SETUPS } = await import('./calibration/setups.mjs');
+const { CALIBRATED_FILES, STAMP_FILE, fileHashes } = await import('../src/systems/progression/ledger/calibration.js');
 const only = args.only ? String(args.only).split(',') : null;
 const setups = SETUPS.filter(s => !only || only.includes(s.id));
 
@@ -89,6 +92,28 @@ try { commit = execSync('git rev-parse --short HEAD', { cwd: root }).toString().
 const file = path.join(resultsDir, `calibration-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
 fs.writeFileSync(file, JSON.stringify({ commit, hours, seeds, tolerance, report }, null, 2));
 console.log(`\nwritten ${path.relative(root, file)}`);
+
+// The stamp: only a run of every setup that finished says the calculator and the engine agree.
+if (!only && !failed) {
+    const texts = {};
+    for (const f of CALIBRATED_FILES) {
+        try { texts[f] = fs.readFileSync(path.join(root, f), 'utf8'); } catch { /* hashed as missing */ }
+    }
+    const stamp = {
+        commit, date: new Date().toISOString(), hours, seeds, tolerance, passed: !outside,
+        setups: report.map(r => ({
+            id: r.id, name: r.name,
+            rows: r.rows.map(x => ({ kind: x.kind, key: x.key, engine: round(x.engine), calc: round(x.calc), diff: round(x.diff * 100), outside: x.outside, known: x.known }))
+        })),
+        files: fileHashes(texts)
+    };
+    fs.writeFileSync(path.join(root, STAMP_FILE), `${JSON.stringify(stamp, null, 2)}\n`);
+    console.log(`written ${STAMP_FILE}${outside ? ' (outside tolerance)' : ''}`);
+}
+
+function round(n) {
+    return Number.isFinite(n) ? Math.round(n * 10) / 10 : null;
+}
 
 if (failed) process.exit(3);
 process.exit(outside ? 1 : 0);

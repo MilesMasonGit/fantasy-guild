@@ -12,11 +12,13 @@ import { sourcesOf, usesOf, effectiveTier, effortText, firstReachText } from '..
 import { SeverityChip } from './LedgerProblems';
 import LedgerTree, { tierColor } from './LedgerTree';
 import { openInEditor, writePlan } from './ledgerActions';
+import LedgerRates, { LedgerPathTime } from './LedgerRates';
 
 /**
  * An entry's page in the Ledger: its status and set tier against the tier it is first reached at, the
- * path there, its problems, every source and every use, and for an item its whole ingredient tree as
- * a layered diagram with its effort. Any name on it opens that entry's page.
+ * path there, its path time at each profile, its rates (a Token's or recipe's work with every
+ * factor switchable; an item's supply), its problems, every source and every use, and for an item its
+ * whole ingredient tree as a layered diagram with its effort. Any name on it opens that entry's page.
  * ⚠️ Reach, trees and problems are the report's (worked out when the tab opened or on Refresh); the
  * status and tier selects write the record at once and show the new value, the rest after Refresh.
  */
@@ -131,6 +133,8 @@ export default function LedgerItemPage({ entryKey, report, onOpen, onBack, onRef
           <LedgerTree tree={tree.tree} tierOf={tierOf} luckOf={luckOf} rootTier={tierOf(entryKey)} onOpen={(k) => k !== entryKey && onOpen(k)} />
         </div>
       )}
+      {report.pace && at && !at.planned && <LedgerPathTime pace={report.pace} ledger={ledger} entryKey={entryKey} onOpen={onOpen} />}
+      {report.pace && <LedgerRates pace={report.pace} ledger={ledger} entryKey={entryKey} onOpen={onOpen} />}
       <div className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Problems">
         <h4 className={sectionHead}>Problems ({findings.length})</h4>
         {findings.length === 0 && <p className="text-[11px] text-gray-500">The checks find nothing here.</p>}

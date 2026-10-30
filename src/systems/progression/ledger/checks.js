@@ -1,4 +1,4 @@
-// the progression ledger's checks A to C: integrity, plan against data, luck and access
+// the progression ledger's checks: integrity, plan against data, luck and access, and the pacing group's words
 
 import { planOf, PLAN_STATUS, tierLabel } from './plan.js';
 import { HOW, LEDGER_ENGINE_TEXT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey, isOneOff, oneOffFindOf } from './engine.js';
@@ -24,8 +24,10 @@ export { isOneOff };
  * worth knowing. A Parked entry is silenced: it is kept on purpose. A Planned stub is not in the
  * game, so only the stub checks (no tier, nothing points to it) look at it.
  *
- * Not here: the pacing checks (a stage over budget, walls, a missed target time) need the rate
- * calculator; the CMS adds the game's own content rules and the simulator's pricing refusals
+ * - **D. Pacing**: worked out by the rate calculator (`pace.js`) and handed in as `extra`, with the
+ *   calibration's own finding (`calibration.js`); their words are here so every list reads one table.
+ *
+ * The CMS adds the game's own content rules and the simulator's pricing refusals
  * (`cms/src/engine/ledgerReport.js`), which need the game's registries.
  *
  * Pure: reads only what it is handed.
@@ -60,9 +62,17 @@ export const CHECKS = Object.freeze({
     fragile: { group: 'C', severity: SEVERITY.WARN, label: 'A single fragile source' },
     'first-kill-only': { group: 'C', severity: SEVERITY.WARN, label: 'First kill only' },
     'shop-only': { group: 'C', severity: SEVERITY.INFO, label: 'Shop only' },
+    wall: { group: 'D', severity: SEVERITY.WARN, label: 'A wall: levels far slower than the curve' },
+    'unlock-wall': { group: 'D', severity: SEVERITY.WARN, label: 'A long wait for one unlock' },
+    'stage-budget': { group: 'D', severity: SEVERITY.WARN, label: 'A stage off its time budget' },
+    'profile-bounds': { group: 'D', severity: SEVERITY.WARN, label: 'Bare or Maxed out of bounds' },
+    'hall-payback': { group: 'D', severity: SEVERITY.WARN, label: 'A Guild Hall rank slow to pay back' },
+    'boost-target': { group: 'D', severity: SEVERITY.WARN, label: 'A boost over its target strength' },
+    unmodelled: { group: 'D', severity: SEVERITY.INFO, label: 'A factor the calculator cannot read' },
+    'calibration-stale': { group: 'D', severity: SEVERITY.WARN, label: 'The calculator needs calibrating' },
 });
 
-export const CHECK_GROUP_TEXT = Object.freeze({ A: 'Integrity', B: 'Plan against data', C: 'Luck and access' });
+export const CHECK_GROUP_TEXT = Object.freeze({ A: 'Integrity', B: 'Plan against data', C: 'Luck and access', D: 'Pacing' });
 export const SEVERITY_TEXT = Object.freeze({ block: 'Block', warn: 'Warn', info: 'Info' });
 
 /** Item types a player uses up or wears: one nothing else spends is still used. */
@@ -180,11 +190,11 @@ export function runChecks(ledger, content = {}, { extra = [], luckBelow = LUCK_B
     const effTier = (key) => planOf(records.get(key)).tier ?? reach.get(key)?.tier ?? null;
     const findings = [];
     const seen = new Set();
-    const add = (check, key, message, { severity = CHECKS[check].severity, related = [] } = {}) => {
+    const add = (check, key, message, { severity = CHECKS[check].severity, related = [], name = null } = {}) => {
         const id = `${check}:${key}:${message}`;
         if (seen.has(id)) return;
         seen.add(id);
-        findings.push({ id, check, group: CHECKS[check].group, severity, key, name: nameOf(key), message, related });
+        findings.push({ id, check, group: CHECKS[check].group, severity, key, name: name || nameOf(key), message, related });
     };
     const isKnown = (key) => world.names.has(key);
     const isEntry = (key) => /^(item|token|recipe):/.test(key);
@@ -327,7 +337,7 @@ export function runChecks(ledger, content = {}, { extra = [], luckBelow = LUCK_B
         }
     }
 
-    for (const f of extra) add(f.check, f.key, f.message, { severity: f.severity, related: f.related || [] });
+    for (const f of extra) add(f.check, f.key, f.message, { severity: f.severity, related: f.related || [], name: f.name });
 
     const silenced = (key) => planOf(records.get(key)).status === PLAN_STATUS.PARKED;
     return findings
