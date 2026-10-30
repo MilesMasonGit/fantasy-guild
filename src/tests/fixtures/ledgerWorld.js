@@ -10,16 +10,16 @@ const out = (itemId, chance = 100, minQty = 1, maxQty = minQty, extra = {}) => (
 const work = (skill, skillRequired, cycleTimeMs, outputs, inputs = []) => ({ skill, skillRequired, cycleTimeMs, xp: 1, inputs, outputs });
 const station = (skill, stationKind) => ({ keyword: 'station', payload: stationKind ? { skill, stationKind } : { skill } });
 
-export const LEDGER_ITEMS = {
-    item_copper_ore: { id: 'item_copper_ore', name: 'Copper Ore', type: 'material', ledger: { tier: 0 } },
+export const PLAN_ITEMS = {
+    item_copper_ore: { id: 'item_copper_ore', name: 'Copper Ore', type: 'material', plan: { tier: 0 } },
     item_coal: { id: 'item_coal', name: 'Coal', type: 'material' },
     item_oak_wood: { id: 'item_oak_wood', name: 'Oak Wood', type: 'material' },
     item_copper_ingot: { id: 'item_copper_ingot', name: 'Copper Ingot', type: 'material' },
-    item_iron_ore: { id: 'item_iron_ore', name: 'Iron Ore', type: 'material', ledger: { status: 'live', tier: 2 } },
-    item_iron_ingot: { id: 'item_iron_ingot', name: 'Iron Ingot', type: 'material', ledger: { tier: 2 }, valueSource: 'recipe_iron_ingot' },
+    item_iron_ore: { id: 'item_iron_ore', name: 'Iron Ore', type: 'material', plan: { status: 'live', tier: 2 } },
+    item_iron_ingot: { id: 'item_iron_ingot', name: 'Iron Ingot', type: 'material', plan: { tier: 2 }, valueSource: 'recipe_iron_ingot' },
     item_bones: { id: 'item_bones', name: 'Bones', type: 'material' },
     item_honey: { id: 'item_honey', name: 'Honey', type: 'food' },
-    item_gem: { id: 'item_gem', name: 'Gem', type: 'treasure', ledger: { status: 'parked' } },
+    item_gem: { id: 'item_gem', name: 'Gem', type: 'treasure', plan: { status: 'parked' } },
     item_shrimp: { id: 'item_shrimp', name: 'Shrimp', type: 'food' },
     item_trout: { id: 'item_trout', name: 'Trout', type: 'food' },
     item_worm: { id: 'item_worm', name: 'Worm', type: 'material' },
@@ -31,24 +31,24 @@ export const LEDGER_ITEMS = {
     item_fishing_rod: { id: 'item_fishing_rod', name: 'Fishing Rod', type: 'tool', equipSlot: 'hand', tool: { kind: 'fishing_rod', tier: 1, starter: true } },
     item_iron_pickaxe: { id: 'item_iron_pickaxe', name: 'Iron Pickaxe', type: 'tool', equipSlot: 'hand', tool: { kind: 'pickaxe', tier: 2 } },
     map_mountain: {
-        id: 'map_mountain', name: 'Mountain Map', type: 'map', ledger: { tier: 1 },
+        id: 'map_mountain', name: 'Mountain Map', type: 'map', plan: { tier: 1 },
         cartography: { biome: 'mountain', points: 40, tutorial: true, nodes: [{ typeId: 'token_copper_vein', weight: 3 }], camps: [{ typeId: 'token_chief_tent', count: 1 }] },
     },
     map_volcano: {
-        id: 'map_volcano', name: 'Volcano Map', type: 'map', ledger: { tier: 2 },
+        id: 'map_volcano', name: 'Volcano Map', type: 'map', plan: { tier: 2 },
         cartography: { biome: 'volcano', points: 40, bountyWeight: 0, nodes: [{ typeId: 'token_iron_vein', weight: 3 }, { typeId: 'token_coal_vein', weight: 1 }, { typeId: 'token_wild_hive', weight: 1 }] },
     },
     mod_deep_veins: {
-        id: 'mod_deep_veins', name: 'Deep Veins', type: 'modifier', ledger: { tier: 1 },
+        id: 'mod_deep_veins', name: 'Deep Veins', type: 'modifier', plan: { tier: 1 },
         cartography: { bountyWeight: 0, effects: [{ kind: 'density', typeId: 'token_copper_vein', points: 10 }] },
     },
     item_water: { id: 'item_water', name: 'Water', type: 'drink' },
     item_wheat: { id: 'item_wheat', name: 'Wheat', type: 'material' },
     item_wheat_seed: { id: 'item_wheat_seed', name: 'Wheat Seed', type: 'material' },
-    item_mythril_ore: { id: 'item_mythril_ore', name: 'Mythril Ore', type: 'material', ledger: { status: 'planned', tier: 3, note: 'plane 3' } },
+    item_mythril_ore: { id: 'item_mythril_ore', name: 'Mythril Ore', type: 'material', plan: { status: 'planned', tier: 3, note: 'plane 3' } },
 };
 
-export const LEDGER_TOKENS = {
+export const PLAN_TOKENS = {
     token_guild_hall: { id: 'token_guild_hall', name: 'Guild Hall', trickle: [{ itemId: 'item_seed', quantity: 2 }] },
     token_copper_vein: { id: 'token_copper_vein', name: 'Copper Vein', needsTool: { kind: 'pickaxe', minTier: 1 }, config: work('mining', 1, 6000, [out('item_copper_ore', 100, 1, 2)]) },
     token_coal_vein: { id: 'token_coal_vein', name: 'Coal Vein', needsTool: { kind: 'pickaxe', minTier: 1 }, config: work('mining', 1, 4000, [out('item_coal')]) },
@@ -95,20 +95,20 @@ export const LEDGER_TOKENS = {
         statements: [{ keyword: 'grants', payload: { type: 'BONUS_DROP', itemId: 'item_bird_nest', quantity: 1, chance: 25 }, to: { mode: 'id', value: 'token_oak_tree' } }],
         shop: { price: [{ itemId: 'item_copper_ingot', quantity: 2 }], section: 'general' },
     },
-    token_mythril_vein: { id: 'token_mythril_vein', name: 'Mythril Vein', ledger: { status: 'planned', tier: 3 } },
+    token_mythril_vein: { id: 'token_mythril_vein', name: 'Mythril Vein', plan: { status: 'planned', tier: 3 } },
 };
 
-export const LEDGER_RECIPES = [
+export const PLAN_RECIPES = [
     { id: 'recipe_copper_ingot', name: 'Copper Ingot', skill: 'smithing', levelRequirement: 1, durationMs: 9000, stationKinds: ['furnace'], inputs: [{ itemId: 'item_copper_ore', quantity: 2 }, { itemId: 'item_coal', quantity: 1 }], outputs: [out('item_copper_ingot')] },
     { id: 'recipe_iron_ingot', name: 'Iron Ingot', skill: 'smithing', levelRequirement: 15, durationMs: 18000, stationKinds: ['furnace'], inputs: [{ itemId: 'item_iron_ore', quantity: 2 }, { itemId: 'item_coal', quantity: 2 }], outputs: [out('item_iron_ingot')] },
     { id: 'recipe_iron_pickaxe', name: 'Iron Pickaxe', skill: 'smithing', levelRequirement: 16, durationMs: 30000, stationKinds: ['smithy'], inputs: [{ itemId: 'item_iron_ingot', quantity: 3 }, { itemId: 'item_oak_wood', quantity: 1 }], outputs: [out('item_iron_pickaxe')] },
     { id: 'recipe_build_smithy', name: 'Build Smithy', skill: 'construction', levelRequirement: 3, durationMs: 20000, foundationKinds: ['wood'], inputs: [{ itemId: 'item_copper_ingot', quantity: 5 }], outputs: [{ tokenId: 'token_smithy', chance: 100, minQty: 1, maxQty: 1 }] },
     { id: 'recipe_wheat', name: 'Wheat', skill: 'farming', levelRequirement: 1, durationMs: 10000, stationKinds: ['field'], crop: { growMs: 60000, load: 10 }, inputs: [{ itemId: 'item_wheat_seed', quantity: 1 }], outputs: [out('item_wheat', 100, 1, 2), out('item_wheat_seed', 40)] },
     // A Planned recipe makes nothing, whatever it says.
-    { id: 'recipe_mythril_bar', name: 'Mythril Bar', skill: 'smithing', inputs: [], outputs: [out('item_gem')], ledger: { status: 'planned', tier: 3 } },
+    { id: 'recipe_mythril_bar', name: 'Mythril Bar', skill: 'smithing', inputs: [], outputs: [out('item_gem')], plan: { status: 'planned', tier: 3 } },
 ];
 
-export const LEDGER_STARTER_CAMP = {
+export const PLAN_STARTER_CAMP = {
     tokens: [
         { typeId: 'token_copper_vein', x: 100, y: 100 },
         { typeId: 'token_coal_vein', x: 200, y: 100 },
@@ -125,12 +125,12 @@ export const LEDGER_STARTER_CAMP = {
 /** The whole fixture, in the shape the CMS store holds it (recipes in skill pools). */
 export function ledgerWorkspace() {
     const recipePools = {};
-    for (const recipe of LEDGER_RECIPES) (recipePools[recipe.skill] ||= []).push(structuredClone(recipe));
+    for (const recipe of PLAN_RECIPES) (recipePools[recipe.skill] ||= []).push(structuredClone(recipe));
     return {
-        items: structuredClone(LEDGER_ITEMS),
-        tokens: structuredClone(LEDGER_TOKENS),
+        items: structuredClone(PLAN_ITEMS),
+        tokens: structuredClone(PLAN_TOKENS),
         recipePools,
         effects: {},
-        starterCamp: structuredClone(LEDGER_STARTER_CAMP),
+        starterCamp: structuredClone(PLAN_STARTER_CAMP),
     };
 }

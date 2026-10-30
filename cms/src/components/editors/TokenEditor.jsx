@@ -10,7 +10,7 @@ import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import LifecycleBlocks from './LifecycleBlocks';
 import CatchPoolsBlock from './CatchPoolsBlock';
-import LedgerFields from '../shared/LedgerFields';
+import PlanFields from '../shared/PlanFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /** The Token editor. */
@@ -787,7 +787,7 @@ export default function TokenEditor() {
 
       <LifecycleBlocks token={token} onChange={update} />
 
-      <LedgerFields record={token} onChange={(ledger) => update('ledger', ledger)} />
+      <PlanFields record={token} onChange={(plan) => update('plan', plan)} />
 
       <SpritePickerModal
         isOpen={pickerFor != null}

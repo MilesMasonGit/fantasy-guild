@@ -1,7 +1,7 @@
-import { buildLedger, parseKey, HOW } from '../../../src/systems/atlas/ledgerEngine.js';
+import { buildLedger, parseKey, HOW } from '../../../src/systems/progression/ledger/engine.js';
 
 /**
- * The ledger's engines over the CMS workspace (`src/systems/atlas/ledgerEngine.js`): every entry's
+ * The ledger's engines over the CMS workspace (`src/systems/progression/ledger/engine.js`): every entry's
  * reach and any item's tree. Planned stubs are in the workspace, so they come back marked Planned.
  *
  * Effort runs at the records' own cycle times, which every Recalculate writes from the simulator;

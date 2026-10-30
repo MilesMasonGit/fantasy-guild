@@ -4,7 +4,7 @@
  * fields changed is neither removed nor added.
  */
 
-import { plannedKeysOf, LEDGER_FILE } from './ledgerFile.js';
+import { plannedKeysOf, PLAN_SYNC_KEY } from './planFile.js';
 
 /** The collections compared, in the order the panel lists them. */
 export const SYNC_COLLECTIONS = [
@@ -17,7 +17,7 @@ export const SYNC_COLLECTIONS = [
   { key: 'planned', label: 'Planned entry', plural: 'Planned entries' },
 ];
 
-/** The ledger's key for a game collection's entity, so a stub that became content (or content sent back to the plan) is not counted as lost. */
+/** The plan file's key for a game collection's entity, so a stub that became content (or content sent back to the plan) is not counted as lost. */
 const PLANNED_KEY = { tokens: 'tokens', items: 'items', maps: 'items', recipes: 'recipes' };
 
 const isObject = (v) => v && typeof v === 'object' && !Array.isArray(v);
@@ -67,7 +67,7 @@ function collections(files) {
     recipes: keyedRecipes(files['tokenRecipes.json']),
     effects: keyed(files['effects.json']),
     starterCamp: keyedPlacements(files['starterCamp.json']),
-    planned: plannedKeysOf(files[LEDGER_FILE]),
+    planned: plannedKeysOf(files[PLAN_SYNC_KEY]),
   };
 }
 
@@ -89,8 +89,8 @@ export function compareSync(current = {}, incoming = {}) {
     return Object.entries(PLANNED_KEY).some(([key, k]) => k === kind && nowIn(key, id));
   };
   for (const { key } of SYNC_COLLECTIONS) {
-    // A Starter Camp (or a ledger) the Sync does not write stays on disk untouched.
-    if ((key === 'starterCamp' && !incoming?.['starterCamp.json']) || (key === 'planned' && !incoming?.[LEDGER_FILE])) {
+    // A Starter Camp (or a plan) the Sync does not write stays on disk untouched.
+    if ((key === 'starterCamp' && !incoming?.['starterCamp.json']) || (key === 'planned' && !incoming?.[PLAN_SYNC_KEY])) {
       removed[key] = [];
       added[key] = [];
       continue;

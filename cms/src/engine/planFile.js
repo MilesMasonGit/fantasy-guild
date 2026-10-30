@@ -1,22 +1,32 @@
 /**
- * The progression ledger on its way to and from `data/` (`src/systems/atlas/ledger.js` holds the vocabulary).
+ * The progression ledger's plan on its way to and from disk (`src/systems/progression/ledger/plan.js`
+ * holds the vocabulary).
  *
- * The plan lives in the CMS workspace: a record's `ledger` block, and Planned stubs that sit in the
- * collections beside authored content. Sync to Game keeps both out of the game's files and writes
- * them into `data/ledger.json`, a file the game never loads; Restore from Game and the change-pack
- * tool read it back, so the plan survives a restore and is committed with every Sync.
+ * The plan lives in the CMS workspace: a record's `plan` block, and Planned stubs that sit in the
+ * collections beside authored content. Sync to Game keeps both out of `data/` (owner ruling: Planned
+ * stubs never reach `data/`) and writes them into `cms/plan/plan.json`, committed with `data/` by the
+ * same Sync; Restore from Game and the change-pack tool read it back, so the plan survives a restore.
  *
- * ⚠️ Planned entries must never reach the game: `splitPlanned` is the one place they are taken out,
- * and the economy line (Recalculate) and Sync both run on what it leaves.
+ * ⚠️ Planned stubs must never reach `data/`: `splitPlanned` is the one place they are taken out, and
+ * the economy line (Recalculate) and Sync both run on what it leaves.
  *
- * Pure: no store, no fetch, no fs (the CMS's server plugin imports it too).
+ * Pure: no store, no fetch, no fs (the CMS's server plugin and its Node tools import it too).
  */
 
-import { isPlanned, cleanLedger } from '../../../src/systems/atlas/ledger.js';
+import { isPlanned, cleanPlan } from '../../../src/systems/progression/ledger/plan.js';
 
-export const LEDGER_FILE = 'ledger.json';
-export const LEDGER_FORMAT = 'fantasy-guild-ledger';
-export const LEDGER_FILE_VERSION = 1;
+/** The plan file's name, in `cms/plan/`. */
+export const PLAN_FILE = 'plan.json';
+/** Where the plan file sits, from the project root. */
+export const PLAN_DIR = 'cms/plan';
+/**
+ * The key the plan rides under among the files a Sync builds (`syncFiles`). It is not a `data/`
+ * path: `sendSync` takes it out of the files and sends it on its own, and the server writes it to
+ * `cms/plan/`.
+ */
+export const PLAN_SYNC_KEY = `${PLAN_DIR}/${PLAN_FILE}`;
+export const PLAN_FORMAT = 'fantasy-guild-plan';
+export const PLAN_FILE_VERSION = 1;
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const entries = (collection) => (isObject(collection) ? Object.entries(collection) : []);
@@ -28,8 +38,7 @@ const entries = (collection) => (isObject(collection) ? Object.entries(collectio
 export function splitPlanned({ items = {}, tokens = {}, recipePools = {} } = {}) {
     const live = { items: {}, tokens: {}, recipePools: {} };
     const planned = { items: {}, tokens: {}, recipes: [] };
-    for (const key of ['items', 'tokens']) {
-        const source = key === 'items' ? items : tokens;
+    for (const [key, source] of [['items', items], ['tokens', tokens]]) {
         for (const [id, def] of entries(source)) {
             if (isPlanned(def)) planned[key][id] = def;
             else live[key][id] = def;
@@ -83,56 +92,56 @@ export function rejoinPlanned(original = {}, live = {}) {
     return { items: keyed('items'), tokens: keyed('tokens'), recipePools };
 }
 
-/** A copy of a record without its ledger block, or the record itself when it has none. */
-function withoutLedger(def) {
-    if (!isObject(def) || !('ledger' in def)) return def;
+/** A copy of a record without its plan block, or the record itself when it has none. */
+function withoutPlan(def) {
+    if (!isObject(def) || !('plan' in def)) return def;
     const rest = { ...def };
-    delete rest.ledger;
+    delete rest.plan;
     return rest;
 }
 
-/** A keyed collection with every ledger block taken off, for the game's files. */
-export function stripLedgerBlocks(collection = {}) {
+/** A keyed collection with every plan block taken off, for the game's files. */
+export function stripPlanBlocks(collection = {}) {
     let changed = false;
     const out = {};
     for (const [id, def] of entries(collection)) {
-        out[id] = withoutLedger(def);
+        out[id] = withoutPlan(def);
         if (out[id] !== def) changed = true;
     }
     return changed ? out : collection;
 }
 
-/** A recipe list with every ledger block taken off. */
-export function stripLedgerFromList(list = []) {
-    return (Array.isArray(list) ? list : []).map(withoutLedger);
+/** A recipe list with every plan block taken off. */
+export function stripPlanFromList(list = []) {
+    return (Array.isArray(list) ? list : []).map(withoutPlan);
 }
 
 /**
- * `data/ledger.json` for a workspace: the ledger block of every record the game gets, and every
- * Planned stub whole. Null when the workspace holds no ledger at all, so a workspace that never
+ * `cms/plan/plan.json` for a workspace: the plan block of every record the game gets, and every
+ * Planned stub whole. Null when the workspace holds no plan at all, so a workspace that never
  * loaded the plan cannot write an empty one over it (Sync then leaves the file alone).
  * @param {{ items, tokens, recipePools }} live  the records the game gets (after `splitPlanned`)
  * @param {{ items, tokens, recipes }} planned    the stubs
  */
-export function buildLedgerFile(live = {}, planned = {}) {
+export function buildPlanFile(live = {}, planned = {}) {
     const blocks = { items: {}, tokens: {}, recipes: {} };
     for (const key of ['items', 'tokens']) {
         for (const [id, def] of entries(live[key])) {
-            const block = cleanLedger(def?.ledger);
+            const block = cleanPlan(def?.plan);
             if (block) blocks[key][def?.id ?? id] = block;
         }
     }
     for (const pool of Object.values(live.recipePools || {})) {
         for (const recipe of Array.isArray(pool) ? pool : []) {
-            const block = cleanLedger(recipe?.ledger);
+            const block = cleanPlan(recipe?.plan);
             if (block && recipe?.id) blocks.recipes[recipe.id] = block;
         }
     }
     const anyBlock = Object.values(blocks).some((b) => Object.keys(b).length > 0);
     if (!anyBlock && !hasPlanned(planned)) return null;
     return {
-        format: LEDGER_FORMAT,
-        version: LEDGER_FILE_VERSION,
+        format: PLAN_FORMAT,
+        version: PLAN_FILE_VERSION,
         entries: blocks,
         planned: {
             items: { ...(planned.items || {}) },
@@ -143,12 +152,12 @@ export function buildLedgerFile(live = {}, planned = {}) {
 }
 
 /**
- * A workspace built from the game's files, with `data/ledger.json` laid back over it: each ledger
- * block onto its record, each Planned stub back into its collection. A stub whose id the game's
- * files already hold is skipped (the game's record wins), and so is a block whose record is gone.
- * Returns the workspace unchanged when there is no ledger file.
+ * A workspace built from the game's files, with the plan file laid back over it: each plan block
+ * onto its record, each Planned stub back into its collection. A stub whose id the game's files
+ * already hold is skipped (the game's record wins), and so is a block whose record is gone.
+ * Returns the workspace unchanged when there is no plan file.
  */
-export function mergeLedgerFile(workspace = {}, file = null) {
+export function mergePlanFile(workspace = {}, file = null) {
     if (!isObject(file)) return workspace;
     const blocks = isObject(file.entries) ? file.entries : {};
     const planned = isObject(file.planned) ? file.planned : {};
@@ -157,8 +166,8 @@ export function mergeLedgerFile(workspace = {}, file = null) {
     for (const key of ['items', 'tokens']) {
         const collection = { ...(workspace[key] || {}) };
         for (const [id, block] of entries(blocks[key])) {
-            const clean = cleanLedger(block);
-            if (clean && isObject(collection[id])) collection[id] = { ...collection[id], ledger: clean };
+            const clean = cleanPlan(block);
+            if (clean && isObject(collection[id])) collection[id] = { ...collection[id], plan: clean };
         }
         for (const [id, def] of entries(planned[key])) {
             if (!(id in collection) && isObject(def)) collection[id] = { ...def, id: def.id ?? id };
@@ -172,8 +181,8 @@ export function mergeLedgerFile(workspace = {}, file = null) {
     for (const [skill, pool] of entries(workspace.recipePools)) {
         pools[skill] = (Array.isArray(pool) ? pool : []).map((recipe) => {
             if (recipe?.id) seen.add(recipe.id);
-            const clean = recipe?.id ? cleanLedger(recipeBlocks[recipe.id]) : undefined;
-            return clean ? { ...recipe, ledger: clean } : recipe;
+            const clean = recipe?.id ? cleanPlan(recipeBlocks[recipe.id]) : undefined;
+            return clean ? { ...recipe, plan: clean } : recipe;
         });
     }
     for (const recipe of Array.isArray(planned.recipes) ? planned.recipes : []) {
@@ -185,7 +194,7 @@ export function mergeLedgerFile(workspace = {}, file = null) {
     return next;
 }
 
-/** The Planned stubs a ledger file holds, keyed `items:<id>`, `tokens:<id>`, `recipes:<id>`, each with its name: what the Sync guard compares. */
+/** The Planned stubs a plan file holds, keyed `items:<id>`, `tokens:<id>`, `recipes:<id>`, each with its name: what the Sync guard compares. */
 export function plannedKeysOf(file) {
     const out = new Map();
     if (!isObject(file) || !isObject(file.planned)) return out;

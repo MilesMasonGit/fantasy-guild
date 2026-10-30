@@ -1,31 +1,31 @@
 import { ClipboardList } from 'lucide-react';
 import { Section, Field } from './EditorLayout';
 import {
-  LEDGER_STATUSES, LEDGER_TIERS, LEDGER_TEXT, ledgerOf, cleanLedger, tierLabel, tierOrNull,
-} from '../../../../src/systems/atlas/ledger.js';
+  PLAN_STATUSES, PLAN_TIERS, PLAN_TEXT, planOf, cleanPlan, tierLabel, tierOrNull,
+} from '../../../../src/systems/progression/ledger/plan.js';
 
 /**
- * The plan for one record (`src/systems/atlas/ledger.js`): its status, the tier the owner says it
- * belongs to, and a note. `onChange` gets the whole new block, or undefined once it is empty, for
- * the editor to write as `{ ledger }`.
+ * The plan for one record (`src/systems/progression/ledger/plan.js`): its status, the tier the
+ * owner says it belongs to, and a note. `onChange` gets the whole new block (any other field in it
+ * kept), or undefined once it is empty, for the editor to write as `{ plan }`.
  */
-export default function LedgerFields({ record, onChange }) {
-  const { status, tier, note } = ledgerOf(record);
-  const set = (patch) => onChange(cleanLedger({ ...(record?.ledger || {}), ...patch }));
-  const tiers = tier !== null && !LEDGER_TIERS.includes(tier) ? [...LEDGER_TIERS, tier] : LEDGER_TIERS;
+export default function PlanFields({ record, onChange }) {
+  const { status, tier, note } = planOf(record);
+  const set = (patch) => onChange(cleanPlan({ ...(record?.plan || {}), ...patch }));
+  const tiers = tier !== null && !PLAN_TIERS.includes(tier) ? [...PLAN_TIERS, tier] : PLAN_TIERS;
 
   return (
     <Section title="Plan" icon={<ClipboardList size={14} />}>
       <div className="grid grid-cols-2 gap-4">
         <Field label="Status">
           <select value={status} onChange={(e) => set({ status: e.target.value })} className="w-full" aria-label="Status">
-            {LEDGER_STATUSES.map((s) => <option key={s} value={s}>{LEDGER_TEXT.status[s]}</option>)}
+            {PLAN_STATUSES.map((s) => <option key={s} value={s}>{PLAN_TEXT.status[s]}</option>)}
           </select>
-          <p className="text-[10px] text-gray-500 mt-1">{LEDGER_TEXT.statusHelp[status]}</p>
+          <p className="text-[10px] text-gray-500 mt-1">{PLAN_TEXT.statusHelp[status]}</p>
         </Field>
         <Field label="Tier">
           <select value={tier ?? ''} onChange={(e) => set({ tier: tierOrNull(e.target.value) })} className="w-full" aria-label="Tier">
-            <option value="">{LEDGER_TEXT.noTier}</option>
+            <option value="">{PLAN_TEXT.noTier}</option>
             {tiers.map((t) => <option key={t} value={t}>{tierLabel(t)}</option>)}
           </select>
         </Field>

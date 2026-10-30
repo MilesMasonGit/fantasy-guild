@@ -1,16 +1,16 @@
 // the progression ledger's engines: when each entry is first reachable (reach) and what a made item costs to its origins (tree)
 
-import { isPlanned, setTierOf } from './ledger.js';
-import { isMapItem, isBaseMap, isModifier, recipeOf, givenByTutorial, upcycleOf, bountyWeightOf } from './mapItems.js';
-import { normaliseStarterCamp } from '../../config/starterCampShape.js';
-import { getUpgradeDef, WISHING_WELL_ITEM, wishingWellWater } from '../../config/guildUpgrades.js';
-import { expandBearer } from '../effects/effectLibrary.js';
-import { stationSkillOf, stationKindOf, KEYWORD } from '../effects/statements.js';
+import { isPlanned, planTierOf } from './plan.js';
+import { isMapItem, isBaseMap, isModifier, recipeOf, givenByTutorial, upcycleOf, bountyWeightOf } from '../../atlas/mapItems.js';
+import { normaliseStarterCamp } from '../../../config/starterCampShape.js';
+import { getUpgradeDef, WISHING_WELL_ITEM, wishingWellWater } from '../../../config/guildUpgrades.js';
+import { expandBearer } from '../../effects/effectLibrary.js';
+import { stationSkillOf, stationKindOf, KEYWORD } from '../../effects/statements.js';
 import {
     stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, cropTermsOf, fieldOf, PASSIVE_PRODUCTION_MS
-} from '../../config/registries/tokenConstants.js';
-import { catchPoolsOf, hasCatchPools } from '../../config/registries/catchPools.js';
-import { toolOf, neededToolOf, toolMeets, starterToolIds } from '../../config/registries/toolKinds.js';
+} from '../../../config/registries/tokenConstants.js';
+import { catchPoolsOf, hasCatchPools } from '../../../config/registries/catchPools.js';
+import { toolOf, neededToolOf, toolMeets, starterToolIds } from '../../../config/registries/toolKinds.js';
 
 /**
  * Two engines over one picture of the content (`buildWorld`), shared by the CMS's ledger views and,
@@ -23,7 +23,7 @@ import { toolOf, neededToolOf, toolMeets, starterToolIds } from '../../config/re
  *   it all takes at the content's own rates, the skills it touches, its depth and its origins.
  *
  * A tier is a stage of the owner's plan, not a game rule: 0 is the Starter Camp, and a map's Region
- * is the tier the owner set on that map (`ledger.tier`), or the tier its item is first had at when
+ * is the tier the owner set on that map (`plan.tier`), or the tier its item is first had at when
  * none is set. Everything else follows from what makes what: a thing is reachable at the lowest
  * tier at which every one of its needs is.
  *
@@ -456,7 +456,7 @@ export function buildWorld(content = {}, { bountyMapChance = BOUNTY_MAP_CHANCE }
     for (const [id, def] of Object.entries(items)) {
         if (!isMapItem(def)) continue;
         const self = itemKey(id);
-        const floor = setTierOf(def) ?? 0;
+        const floor = planTierOf(def) ?? 0;
         if (isBaseMap(def)) {
             const recipe = recipeOf(def);
             const writes = [...recipe.nodes, ...(recipe.camps || []), ...(recipe.treasures || [])].map(r => r.typeId);
@@ -832,11 +832,39 @@ export function treeSummary(tree, reach = null) {
     return { effortMs: tree.effortMs, skills: [...skills].sort(), depth, origins: [...origins.values()], complete };
 }
 
+/** The rules whose inputs make an item a hub: what a cycle, a build, a growth, an upkeep or a purchase spends. */
+const SPENDING = new Set([HOW.CRAFT, HOW.BUILD, HOW.WORK, HOW.CATCH, HOW.SPAWN, HOW.GROW, HOW.SHOP]);
+
+/**
+ * Items ranked by how many things spend them (where balance hinges): `[{ id, name, uses, consumers }]`,
+ * most used first, then by name. A consumer is a recipe, or a Token that spends it working, spawning
+ * or growing, or the Token a Shop price buys; each is counted once.
+ */
+export function hubsOf(world) {
+    const consumers = new Map();
+    for (const rule of world.rules) {
+        if (!SPENDING.has(rule.how)) continue;
+        // A recipe's station rule and its craft rule spend the same inputs: both name the recipe.
+        const consumer = rule.how === HOW.BUILD ? rule.gives[0]?.key : rule.how === HOW.SHOP ? rule.gives[0]?.key : rule.via;
+        for (const input of rule.inputs) {
+            if (!input.key.startsWith('item:') || input.key === consumer) continue;
+            if (!consumers.has(input.key)) consumers.set(input.key, new Set());
+            consumers.get(input.key).add(consumer);
+        }
+    }
+    return [...consumers].map(([key, set]) => ({
+        id: parseKey(key).id,
+        name: world.names.get(key) ?? parseKey(key).id,
+        uses: set.size,
+        consumers: [...set].sort()
+    })).sort((a, b) => b.uses - a.uses || a.name.localeCompare(b.name));
+}
+
 /**
  * The ledger over a whole workspace or `data/`: the world, every entry's reach, and a tree (with its
  * figures) for any item asked.
  *
- * @returns {{ world, reach, reachOf(key), pathOf(key), treeOf(itemId) }}
+ * @returns {{ world, reach, reachOf(key), pathOf(key), hubs(), treeOf(itemId) }}
  */
 export function buildLedger(content, { luckBelow = LUCK_BELOW, cycleTimeOf = null, bountyMapChance = BOUNTY_MAP_CHANCE } = {}) {
     const world = buildWorld(content, { bountyMapChance });
@@ -846,6 +874,7 @@ export function buildLedger(content, { luckBelow = LUCK_BELOW, cycleTimeOf = nul
         reach,
         reachOf: (key) => reach.get(key) ?? null,
         pathOf: (key) => describePath(reach, key, { luckBelow }),
+        hubs: () => hubsOf(world),
         treeOf: (itemId) => {
             const tree = ingredientTree(world, reach, itemId, { cycleTimeOf });
             return { tree, ...treeSummary(tree, reach) };

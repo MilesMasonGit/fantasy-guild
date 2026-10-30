@@ -46,7 +46,8 @@ function loadWorkspace(from) {
             effects: opt('effects.json', {}),
             tokenRecipes: opt('tokenRecipes.json', []),
             starterCamp: opt('starterCamp.json', null),
-            ledger: opt('ledger.json', null),
+            // The plan is kept out of data/, beside it.
+            plan: fs.existsSync(path.join(root, 'cms', 'plan', 'plan.json')) ? readJson(path.join(root, 'cms', 'plan', 'plan.json')) : null,
         }),
     };
 }

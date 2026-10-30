@@ -4,7 +4,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import BannerPicker from '../shared/BannerPicker';
-import LedgerFields from '../shared/LedgerFields';
+import PlanFields from '../shared/PlanFields';
 import { defaultBannerFor } from '../../../../src/config/areaBanners.js';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 import { STARTING_TOKEN_CAP } from '../../utils/constants';
@@ -241,7 +241,7 @@ export default function MapEditor() {
         </p>
       </Section>
 
-      <LedgerFields record={map} onChange={(ledger) => update('ledger', ledger)} />
+      <PlanFields record={map} onChange={(plan) => update('plan', plan)} />
 
       <SpritePickerModal
         isOpen={isPickerOpen}

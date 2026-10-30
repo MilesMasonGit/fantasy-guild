@@ -4,9 +4,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import {
-    buildWorld, computeReach, describePath, reachPath, ingredientTree, treeSummary, buildLedger,
+    buildWorld, computeReach, describePath, reachPath, ingredientTree, treeSummary, buildLedger, hubsOf,
     itemKey, tokenKey, recipeKey, BOUNTY_MAP_CHANCE, LUCK_BELOW,
-} from '../systems/atlas/ledgerEngine.js';
+} from '../systems/progression/ledger/engine.js';
 import { BOUNTY_MAP_REWARD } from '../systems/quests/questBounties.js';
 import { ledgerWorkspace } from './fixtures/ledgerWorld.js';
 
@@ -107,7 +107,7 @@ describe('reach: maps and the tiers they open', () => {
 
     it('a map with no set tier opens its Region at the tier its item is had', () => {
         const ws = ledgerWorkspace();
-        delete ws.items.map_volcano.ledger;
+        delete ws.items.map_volcano.plan;
         const l = buildLedger(ws);
         expect(l.reachOf(itemKey('item_iron_ore')).tier).toBe(1);
     });
@@ -158,6 +158,20 @@ describe('reach: luck, never and Planned', () => {
         const a = computeReach(buildWorld(ws));
         const b = computeReach(buildWorld(reversed));
         for (const [key, entry] of a) expect(b.get(key)?.tier).toBe(entry.tier);
+    });
+});
+
+describe('hubs: where balance hinges', () => {
+    it('ranks items by how many things spend them, counting each recipe once', () => {
+        const hubs = hubsOf(buildWorld(ledgerWorkspace()));
+        const byId = Object.fromEntries(hubs.map((h) => [h.id, h]));
+        // Coal: both ingot recipes. Oak Wood: the Iron Pickaxe and the Foundation's price. Iron Ingot: the pickaxe.
+        expect(byId.item_coal).toMatchObject({ uses: 2, consumers: [recipeKey('recipe_copper_ingot'), recipeKey('recipe_iron_ingot')] });
+        expect(byId.item_oak_wood).toMatchObject({ uses: 2, consumers: [recipeKey('recipe_iron_pickaxe'), tokenKey('token_wood_foundation')] });
+        expect(byId.item_iron_ingot.uses).toBe(1);
+        expect(hubs[0].uses).toBeGreaterThanOrEqual(hubs[hubs.length - 1].uses);
+        // Planned recipes spend nothing.
+        expect(hubs.some((h) => h.consumers.includes(recipeKey('recipe_mythril_bar')))).toBe(false);
     });
 });
 
