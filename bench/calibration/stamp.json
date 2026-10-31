@@ -1,6 +1,6 @@
 {
-  "commit": "87f5de9e",
-  "date": "2026-10-30T21:19:23.324Z",
+  "commit": "5ca7ba4f",
+  "date": "2026-10-31T00:28:00.151Z",
   "hours": 8,
   "seeds": [
     1,
@@ -134,11 +134,11 @@
         {
           "kind": "spent",
           "key": "item_beer",
-          "engine": 28.9,
+          "engine": 24,
           "calc": 24,
-          "diff": -16.9,
-          "outside": true,
-          "known": "the engine counts a cycle start twice after each refill"
+          "diff": 0,
+          "outside": false,
+          "known": null
         },
         {
           "kind": "xp",
@@ -338,7 +338,7 @@
     "src/config/registries/toolKinds.js": "69973919",
     "src/config/registries/catchPools.js": "825094d4",
     "src/config/guildUpgrades.js": "d61bb2ac",
-    "src/systems/board/BoardRunner.js": "8f6120e3",
+    "src/systems/board/BoardRunner.js": "9e5a53fe",
     "src/systems/board/TileModifiers.js": "a9ad5fd6",
     "src/systems/board/TimedChanges.js": "1be0bfed",
     "src/systems/board/Respawn.js": "3891c6ff",
@@ -347,13 +347,13 @@
     "src/systems/board/Fishing.js": "aca698ed",
     "src/systems/board/OutputRules.js": "70a7e634",
     "src/systems/board/PassiveProduction.js": "fdba2610",
-    "src/systems/board/SpawnerSystem.js": "06b73d66",
+    "src/systems/board/SpawnerSystem.js": "60c5299e",
     "src/systems/board/Camps.js": "1c5cb3fb",
     "src/systems/board/Flags.js": "80d85342",
     "src/systems/hero/HeroEffects.js": "911d99a4",
     "src/systems/effects/LiveEffects.js": "4fd3f0c9",
     "src/systems/core/CatchUp.js": "2f47dfd2",
-    "bench/calibration/setups.mjs": "5829313a",
+    "bench/calibration/setups.mjs": "fa4444ab",
     "bench/calibration/engine.mjs": "bc569f95"
   }
 }

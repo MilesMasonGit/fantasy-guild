@@ -15,6 +15,7 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { artRadius, artRadiusOf, matW, matH } from '../config/matGeometry.js';
 import { dockStatusLine } from '../ui/components/board/flagText.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 
@@ -445,6 +446,61 @@ describe('⭐ idle heroes potter near their flag (M4, HM-1)', () => {
         run(30000);
         off();
         expect(moved).toBe(0);
+    });
+});
+
+describe('⭐ idle heroes keep their whole art on the mat', () => {
+    // A hero is drawn at a standard 1×1 Token's size.
+    const R = artRadius(1);
+    const nearestEdge = (p) => Math.min(p.x, p.y, matW() - p.x, matH() - p.y);
+    const seeded = () => {
+        let seed = 11;
+        HeroMotion.setRandomForTests(() => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; });
+    };
+
+    it('idling and strolling by an edge and in the corners', () => {
+        setMatTuning('potterRadius', 80);
+        const [w, h] = [matW(), matH()];
+        for (const flag of [{ x: 800, y: 30 }, { x: 30, y: 30 }, { x: w - 30, y: h - 30 }, { x: 30, y: 600 }]) {
+            seeded();
+            Orders.orderAt('h1', flag);
+            run(3000);                                           // set down beside the flag; walked in
+            let nearest = Infinity;
+            for (let t = 0; t < 180000; t += 100) {               // three minutes
+                BoardRunner.tick(100);
+                nearest = Math.min(nearest, nearestEdge(HeroMotion.heroPointOf('h1')));
+            }
+            expect(nearest).toBeGreaterThanOrEqual(R);
+            expect(nearest).toBeLessThan(R + 1e-6);               // pressed right up to the edge
+            Flags.furl('h1');
+            run(100);
+        }
+    });
+
+    it('standing and strolling at home, with the Hall by the bottom edge', () => {
+        const hall = BoardState.createTokenInstance('token_guild_hall', null);
+        BoardState.addToken(hall, 900, matH() - artRadiusOf('token_guild_hall'));
+        Orders.orderAt('h1', { x: 900, y: 400 });
+        run(3000);
+        Flags.furl('h1');
+        run(15000);
+        expect(HeroMotion.isHome('h1')).toBe(true);
+        let nearest = Infinity;
+        for (let t = 0; t < 120000; t += 100) {
+            BoardRunner.tick(100);
+            nearest = Math.min(nearest, nearestEdge(HeroMotion.heroPointOf('h1')));
+        }
+        expect(nearest).toBeGreaterThanOrEqual(R);
+    });
+
+    it('⭐ still walks right up to work a Token whose centre is closer to the edge than that', () => {
+        setMatTuning('potterRadius', 80);
+        const tok = BoardState.createTokenInstance('fixture_producer', tokenStartingUses('fixture_producer'));
+        BoardState.addToken(tok, 800, 30);                       // a saved Token, nearer the edge than a drop allows
+        sendFrom('h1', { x: 500, y: 30 }, tok);
+        run(5000);
+        expect(BoardState.workerOf(tok.id)).toBe('h1');
+        expect(body('h1')).toMatchObject({ x: 800 - STAND, y: 30 });
     });
 });
 

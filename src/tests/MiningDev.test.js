@@ -10,6 +10,10 @@ import * as FixedTokens from '../systems/board/FixedTokens.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { setUpMiningScene, miningReadout, QA_MINING as T, MINING_SPOTS, EMPTY_ROCK } from '../ui/dev/miningDev.js';
 import { clearMat } from './fixtures/mat.js';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// The QA Miner is Mining 10: the shipped perks are content, not the Mining rulings shown here.
+withoutShippedPerks();
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),

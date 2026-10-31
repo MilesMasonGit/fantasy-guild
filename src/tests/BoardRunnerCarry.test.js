@@ -39,6 +39,15 @@ registerTokenTypes(Object.fromEntries(CYCLE_TIMES.flatMap(ms => [
         stationType(ms, [{ itemId: 'fixture_oak_wood', quantity: 1 }])]
 ])));
 
+/** Used up by every 1.5 s cycle, then rests 3 s and refills where it stands: a cycle every 4.5 s. */
+const RESTING = 'carry_resting_vein';
+registerTokenTypes({
+    [RESTING]: {
+        ...stationType(1500), id: RESTING, name: 'Carry Resting Vein', uses: 1, staysPut: true,
+        respawn: { mode: 'refill', afterMs: 3000 }
+    }
+});
+
 let completed;
 let started;
 const offs = [];
@@ -111,6 +120,25 @@ describe('a finished cycle keeps the rest of its tick', () => {
 
         BoardRunner.tick(1000);
         expect(station.cycleElapsedMs).toBe(1500);
+    });
+
+    it('a cycle that uses its Token up starts the rest when the cycle ended, not when the tick did', () => {
+        // Cycles end at 1.5 s, 6 s, 10.5 s … 55.5 s: 13 in 59 s, at either step.
+        const vein = () => {
+            const instance = placeAt(RESTING, 400, 400);
+            TileModifiers.rebuildAll();
+            return instance;
+        };
+        expect(cyclesOver(vein(), 100, 59_000)).toBe(13);
+
+        completed = [];
+        clearMat();
+        const stepped = vein();
+        BoardRunner.tick(1000);
+        BoardRunner.tick(1000);   // 2000 ≥ 1500: used up 500 ms ago, so it has rested 500 ms
+        expect(completed).toEqual([stepped.id]);
+        expect(stepped.clocks?.respawnMs).toBe(500);
+        expect(cyclesOver(stepped, 1000, 57_000)).toBe(13);
     });
 
     it('a station waiting for inputs after a cycle keeps no overshoot', () => {

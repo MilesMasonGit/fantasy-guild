@@ -28,6 +28,10 @@ import { bubblesOf, clearAllHeroBubbles, addPerks } from '../ui/components/dock/
 import { addFloat, clearAllFloats } from '../ui/components/board/levelUpFloats.js';
 import { skillPerkView, perksReachedBy, perkTitle, perkLines } from '../ui/components/dock/heroPerks.js';
 import { xpForLevel } from '../utils/XPCurve.js';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// Every perk table here is a fixture: the shipped ones are content.
+withoutShippedPerks();
 
 /**
  * The milestone perk on screen: the level-up float names it under the number, the hero bar gives it

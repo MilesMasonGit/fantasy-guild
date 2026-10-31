@@ -55,26 +55,26 @@ describe('The Farming chain in shipped data (7.4)', () => {
             expect(farmland.shop).toEqual({ price: [{ itemId: 'item_oak_wood', quantity: 10 }], section: 'farming' });
         });
 
-        it('offers exactly the five building recipes', () => {
+        it('offers exactly the six building recipes', () => {
             const pool = recipesForToken(getTokenType('token_farmland'));
             expect(pool.map((r) => r.name).sort()).toEqual([
-                'Build Apple Orchard', 'Build Field', 'Build Fir Forest', 'Build Herb Garden', 'Build Oak Forest',
+                'Build Apple Orchard', 'Build Field', 'Build Fir Forest', 'Build Grapevine', 'Build Herb Garden', 'Build Oak Forest',
             ]);
         });
     });
 
-    for (const [name, inputs, builds] of [
-        ['Build Field', [{ itemId: 'item_oak_wood', quantity: 3 }], 'token_wheat_field'],
-        ['Build Apple Orchard', [{ itemId: 'item_apple_seed', quantity: 3 }], 'token_apple_orchard'],
-        ['Build Herb Garden', [{ itemId: 'item_oak_wood', quantity: 5 }, { itemId: 'item_stone', quantity: 2 }], 'token_herb_garden'],
-        ['Build Oak Forest', [{ itemId: 'item_oak_seedling', quantity: 3 }], 'token_oak_forest'],
+    for (const [name, level, inputs, builds] of [
+        ['Build Field', 1, [{ itemId: 'item_oak_wood', quantity: 3 }], 'token_wheat_field'],
+        ['Build Apple Orchard', 1, [{ itemId: 'item_apple_seed', quantity: 3 }], 'token_apple_orchard'],
+        ['Build Herb Garden', 5, [{ itemId: 'item_fir_wood', quantity: 5 }, { itemId: 'item_stone', quantity: 2 }], 'token_herb_garden'],
+        ['Build Oak Forest', 1, [{ itemId: 'item_oak_seedling', quantity: 3 }], 'token_oak_forest'],
     ]) {
-        it(`${name} is a level-1 Construction recipe on Farmland: 30 s, builds one Token`, () => {
+        it(`${name} is a level-${level} Construction recipe on Farmland: 30 s, builds one Token`, () => {
             const r = building(name);
             expect(r).toBeTruthy();
             expect(r.skill).toBe('construction');
             expect(r.foundationKinds).toEqual(['farmland']);
-            expect(r.levelRequirement).toBe(1);
+            expect(r.levelRequirement).toBe(level);
             expect(r.durationMs).toBe(30000);
             expect(r.inputs).toEqual(inputs);
             expect(r.outputs.map((o) => o.tokenId)).toEqual([builds]);

@@ -25,6 +25,11 @@ import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// ⚠️ No chance roll may matter here: Tokens finishing inside one 1000 ms step draw in board order,
+// ten 100 ms ticks in time order. The shipped perks would add rolls (Clean Felling, Green Thumb).
+withoutShippedPerks();
 
 /**
  * Time away with heroes working from camps (brief 260 O2).

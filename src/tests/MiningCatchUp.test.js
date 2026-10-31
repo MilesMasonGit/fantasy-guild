@@ -20,11 +20,17 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// The miner is Mining 10: a shipped perk would change the cycle this test sets.
+withoutShippedPerks();
 
 /**
  * Time away beside a vein (brief 230 S3): a miner works a five-ore vein sped by one Minecart
- * (2.5 s → 2 s a cycle) with two Mines in reach (each 25 % to double the ore). It runs out, rests
- * 10 s, refills all at once, and is worked again, several times over. The Mines' rolls draw from
+ * (2.5 s → 1.875 s a cycle) with two Mines in reach (each 25 % to double the ore). It runs out,
+ * rests 10 s, refills all at once, and is worked again, several times over. ⚠️ The cycle is not a
+ * whole second on purpose: the vein runs out part-way through a 1000 ms step, and its rest must
+ * start when that cycle ended, not when the step did. The Mines' rolls draw from
  * a seeded `Math.random` in fixed places of each finished cycle, so the same time played in
  * 100 ms steps, in 1000 ms steps and through the game's own catch-up ends in the same place: the
  * same cycles, the same doubles, the same ore, the vein at the same charge and clock.
@@ -60,7 +66,7 @@ registerTokenTypes({
     },
     mcu_cart: {
         id: 'mcu_cart', name: 'MCU Minecart', tokenType: 'buff', rarity: 'common', theme: 'fixture', uses: null, sprite: 't_minecart_copper',
-        statements: [provides('mcu_cart', EFFECT_TYPES.WORK_TIME, 'percentage', -0.2, 'mcu_vein')]
+        statements: [provides('mcu_cart', EFFECT_TYPES.WORK_TIME, 'percentage', -0.25, 'mcu_vein')]
     }
 });
 
@@ -184,9 +190,9 @@ describe('⭐ a catch-up beside a vein with a Minecart and two Mines in reach', 
         expect(snapshot(id, seen)).toEqual(small.snap);
         expect(seen.ore).toEqual(small.seen.ore);
 
-        // And what happened: the Minecart's 2 s cycle, several rests each followed by a refill,
+        // And what happened: the Minecart's 1.875 s cycle, several rests each followed by a refill,
         // and the Mines doubling some ore but not all (two Mines: about half).
-        expect([...small.seen.cycleMs]).toEqual([2000]);
+        expect([...small.seen.cycleMs]).toEqual([1875]);
         expect(small.snap.rested).toBeGreaterThanOrEqual(5);
         expect(small.snap.refilled).toBeGreaterThanOrEqual(small.snap.rested - 1);
         // One ore a cycle, some of it doubled: more than one a cycle, fewer than two.

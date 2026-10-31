@@ -11,6 +11,7 @@ import * as InputAllocator from './InputAllocator.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as RecipeResolver from './RecipeResolver.js';
 import * as Charges from './Charges.js';
+import * as Respawn from './Respawn.js';
 import * as BlockUpkeep from './BlockUpkeep.js';
 import * as TriggerSystem from './TriggerSystem.js';
 import { RECIPE } from './RecipeResolver.js';
@@ -100,6 +101,24 @@ let carryOut = new Map();
  */
 let heroCarryIn = new Map();
 let heroCarryOut = new Map();
+
+/**
+ * The board the leftovers above were made on. ⚠️ A new game, a load and a journey to another Region
+ * each put a new board object in place, and the leftovers go with the old one: a hero keeps their
+ * id across all three and a load brings back the same Token ids, so a leftover kept would start the
+ * first cycle on the new board part-done.
+ */
+let carryBoard = null;
+
+function forgetCarryOffItsBoard() {
+    const board = GameState.state?.board ?? null;
+    if (board === carryBoard) return;
+    carryBoard = board;
+    carryIn.clear();
+    carryOut.clear();
+    heroCarryIn.clear();
+    heroCarryOut.clear();
+}
 
 // Why the hero on a Token cannot work it (possession, level, then tool) lives in `WorkCheck.heroReason`,
 // shared with the flags that choose which Token to work.
@@ -348,6 +367,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // a context Token never wears out, and a gathering node that helps its neighbours spends its
     // charges only on its own gathering (`Charges.planContextCharges`, `wearRule.js`).
     Charges.commitPlan(chargePlan, { heroId });
+    // Used up just now: its rest began when this cycle ended, `overMs` before the tick's end.
+    Respawn.restBeganEarlier(instance, overMs);
 
     // A Field spends one harvest of its load; the last sows its crop again, growing from the moment
     // this cycle ended (`overMs` into the tick), or stops it without a seed (`Fields.js`).
@@ -440,10 +461,15 @@ function carryAtStart(id, heroId) {
  * @param {number} delta game milliseconds since the last tick
  */
 export function tick(delta) {
+    forgetCarryOffItsBoard();
     [carryIn, carryOut] = [carryOut, carryIn];
     carryOut.clear();
     [heroCarryIn, heroCarryOut] = [heroCarryOut, heroCarryIn];
     heroCarryOut.clear();
+
+    // An older save's untethered enemies join their nearest camp before any camp counts what it
+    // spawned below; a no-op once per board.
+    EnemyMotion.attachUntethered();
 
     // Timed changes: Saplings grow, Coasts turn and turn back, on clocks advanced by this tick's
     // `delta`, so a catch-up fast-forwards them with everything else. Before Flags, so a hero
@@ -655,6 +681,12 @@ export function tick(delta) {
         }
 
         setAlert(instance,null);
+
+        // Refilled at the very end of this tick, it rested all of it: its cycle begins next tick and
+        // is announced once, there. Begun here, its clock would stand at exactly zero and the next
+        // tick would announce it a second time.
+        const owed = carryIn.get(id);
+        if (!(instance.cycleElapsedMs > 0) && owed !== undefined && owed + delta <= 0) continue;
 
         // A new cycle begins here.
         // ⚠️ This position is the whole meaning of the event. Everything above it is a guard (a

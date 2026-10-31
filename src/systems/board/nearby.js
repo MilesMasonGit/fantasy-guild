@@ -31,9 +31,10 @@ export function distance(a, b) {
 }
 
 /**
- * Squared distance between two mat points. Centres are whole numbers today,
- * so this is exact — two equal distances compare equal, which a nearest-first
- * tie-break depends on.
+ * Squared distance between two mat points.
+ * ⚠️ Centres are not whole numbers (a spawn, a nudged drop, a push), so two distances equal on
+ * paper may differ in the last bit. A nearest-first tie-break stays deterministic (the same sums
+ * in the same order every run, live or caught up), but nothing may count on an exact tie.
  */
 export function distanceSq(a, b) {
     const dx = a.x - b.x;

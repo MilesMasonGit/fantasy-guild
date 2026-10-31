@@ -1,0 +1,92 @@
+{
+  "mining": {
+    "id": "mining",
+    "perks": [
+      {
+        "level": 10,
+        "effectId": "effect_steady_pick",
+        "scale": 1
+      }
+    ]
+  },
+  "forestry": {
+    "id": "forestry",
+    "perks": [
+      {
+        "level": 10,
+        "effectId": "effect_clean_felling",
+        "scale": 1
+      }
+    ]
+  },
+  "fishing": {
+    "id": "fishing",
+    "perks": [
+      {
+        "level": 10,
+        "effectId": "effect_patient_line",
+        "scale": 1
+      }
+    ]
+  },
+  "smithing": {
+    "id": "smithing",
+    "perks": [
+      {
+        "level": 10,
+        "effectId": "effect_even_heat",
+        "scale": 1
+      }
+    ]
+  },
+  "crafting": {
+    "id": "crafting",
+    "perks": [
+      {
+        "level": 10,
+        "effectId": "effect_nimble_fingers",
+        "scale": 1
+      }
+    ]
+  },
+  "cooking": {
+    "id": "cooking",
+    "perks": [
+      {
+        "level": 10,
+        "effectId": "effect_second_helping",
+        "scale": 1
+      }
+    ]
+  },
+  "farming": {
+    "id": "farming",
+    "perks": [
+      {
+        "level": 10,
+        "effectId": "effect_green_thumb",
+        "scale": 1
+      }
+    ]
+  },
+  "alchemy": {
+    "id": "alchemy",
+    "perks": [
+      {
+        "level": 10,
+        "effectId": "effect_steady_hand",
+        "scale": 1
+      }
+    ]
+  },
+  "construction": {
+    "id": "construction",
+    "perks": [
+      {
+        "level": 10,
+        "effectId": "effect_quick_builder",
+        "scale": 1
+      }
+    ]
+  }
+}

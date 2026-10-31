@@ -1,0 +1,1832 @@
+{
+  "format": "fantasy-guild-plan",
+  "version": 1,
+  "entries": {
+    "items": {
+      "item_water": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): the Guild Hall gives it from the first minute (the Wishing Well, rank 1 free)."
+      },
+      "item_copper_ore": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_copper_ingot": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_oak_wood": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_charcoal": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): made at level 1 from camp materials only (oak, copper, coal, wheat, water, raw shrimp)."
+      },
+      "item_raw_shrimp": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_shrimp": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_wheat": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_flour": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): made at level 1 from camp materials only (oak, copper, coal, wheat, water, raw shrimp)."
+      },
+      "item_blueberry": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_blueberry_pie": {
+        "status": "live",
+        "tier": 1,
+        "note": "Tier inferred (ledger first fill, to confirm): made from a plane-1 ingredient (honey, blueberry)."
+      },
+      "item_dough": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): made at level 1 from camp materials only (oak, copper, coal, wheat, water, raw shrimp)."
+      },
+      "item_redberry": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_shrimp_trawler_potion": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): an Alchemy potion: Alchemy starts in plane 2 (the Alchemy Table)."
+      },
+      "item_clay": {
+        "status": "live",
+        "tier": 3,
+        "note": "Tier inferred (ledger first fill, to confirm): no map writes a clay or quartz deposit: waits for a later plane."
+      },
+      "item_quartz": {
+        "status": "live",
+        "tier": 3,
+        "note": "Tier inferred (ledger first fill, to confirm): no map writes a clay or quartz deposit: waits for a later plane."
+      },
+      "item_coal": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_coins": {
+        "status": "live",
+        "tier": 3,
+        "note": "Tier inferred (ledger first fill, to confirm): nothing makes or spends it (markets are cut): a later plane, or Parked."
+      },
+      "item_blackberry": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_apple": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
+      },
+      "item_banana": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_cherry": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_coconut": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_grapes": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_lemon": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_lime": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_watermelon": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_orange": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_peach": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_pineapple": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_raspberry": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_strawberry": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_fir_wood": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_maple_wood": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mahogany_wood": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_ebony_wood": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_cedar_wood": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_birch_wood": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_iron_ore": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_silver_ore": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_ore": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mythril_ore": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_adamantine_ore": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_darkmetal_ore": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_iron_ingot": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_mythril_ingot": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_ingot": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_ingot": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_adamantine_ingot": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_darkmetal_ingot": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_apple_juice": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
+      },
+      "item_lemonade": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_limeade": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_beer": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_raw_beef": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_steak": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_bones": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): goblins (the camp's enemy) drop it."
+      },
+      "item_oak_seedling": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_stone": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_wheat_seed": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_apple_seed": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): the Guild Hall gives it from the start (data); the docs put apple trees on the Meadow."
+      },
+      "item_torch": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): made at level 1 from camp materials only (oak, copper, coal, wheat, water, raw shrimp)."
+      },
+      "item_copper_nails": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): made at level 1 from camp materials only (oak, copper, coal, wheat, water, raw shrimp)."
+      },
+      "item_beeswax_comb": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
+      },
+      "item_birch_seedling": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_fir_seedling": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): the seed of fir, a plane-2 tree."
+      },
+      "item_maple_seedling": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_ebony_seedling": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_cedar_seedling": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mahogany_seedling": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_copper_pickaxe": {
+        "status": "live",
+        "tier": 0
+      },
+      "map_forest": {
+        "status": "live",
+        "tier": 1
+      },
+      "map_mountain": {
+        "status": "live",
+        "tier": 1
+      },
+      "map_coast": {
+        "status": "live",
+        "tier": 1
+      },
+      "map_meadow": {
+        "status": "live",
+        "tier": 1
+      },
+      "map_flower_meadow": {
+        "status": "live",
+        "tier": 1
+      },
+      "map_cherry_grove": {
+        "status": "live",
+        "tier": 1
+      },
+      "map_yellowstone": {
+        "status": "live",
+        "tier": 2
+      },
+      "map_volcano": {
+        "status": "live",
+        "tier": 2
+      },
+      "mod_overgrown": {
+        "status": "live",
+        "tier": 1
+      },
+      "mod_goblin_camp": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_iron_pickaxe": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_mythril_pickaxe": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_adamantium_pickaxe": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_darkmetal_pickaxe": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_copper_woodaxe": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_fishing_rod": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): a starter tool every new game holds, so the Starter Camp's."
+      },
+      "item_copper_sickle": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): a starter tool every new game holds, so the Starter Camp's."
+      },
+      "item_copper_sword": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_copper_dagger": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_copper_cleaver": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_copper_greatsword": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_copper_bow": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_copper_wand": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_leather_hat": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_leather_chest": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_elixir_of_valor": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): an Alchemy potion: Alchemy starts in plane 2 (the Alchemy Table)."
+      },
+      "item_elixir_of_ironskin": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): made from a plane-2 ingredient (trout, grapes, lavender)."
+      },
+      "item_birdwatcher": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): an Alchemy potion: Alchemy starts in plane 2 (the Alchemy Table)."
+      },
+      "item_bird_nest": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_honey": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
+      },
+      "item_lavender": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_lavender_seed": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_trout": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_salmon": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_tropical_fish": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): the camp Coast catches it (rod, or trap with Worm Bait); the docs name only shrimp for the fishing spot."
+      },
+      "item_lobster": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): the camp Coast catches it (rod, or trap with Worm Bait); the docs name only shrimp for the fishing spot."
+      },
+      "item_swordfish": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): the camp Coast catches it (rod, or trap with Worm Bait); the docs name only shrimp for the fishing spot."
+      },
+      "item_worm": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): made at level 1 from camp materials only (oak, copper, coal, wheat, water, raw shrimp)."
+      },
+      "item_worm_bait": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): made at level 1 from camp materials only (oak, copper, coal, wheat, water, raw shrimp)."
+      },
+      "item_shrimp_bait": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): made at level 1 from camp materials only (oak, copper, coal, wheat, water, raw shrimp)."
+      },
+      "item_trap": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): a starter tool every new game holds, so the Starter Camp's."
+      },
+      "item_fine_fishing_rod": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_game_meat": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_roast_meat": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_crab_meat": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_cooked_crab": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_honey_bread": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
+      },
+      "item_copper_helmet": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_copper_chestplate": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "map_bog": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_grape_seed": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): the grapevine's seed (Yellowstone, plane 2)."
+      },
+      "item_lizard_scale": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_leather": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_cooked_trout": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): made from a plane-2 ingredient (trout, grapes, lavender)."
+      },
+      "item_grape_juice": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): made from a plane-2 ingredient (trout, grapes, lavender)."
+      },
+      "item_iron_woodaxe": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_iron_sickle": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_iron_sword": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_iron_dagger": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_iron_cleaver": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_iron_greatsword": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_iron_bow": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_iron_wand": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_iron_helmet": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_iron_chestplate": {
+        "status": "live",
+        "tier": 2
+      },
+      "mod_rich_veins": {
+        "status": "live",
+        "tier": 1
+      },
+      "mod_teeming_waters": {
+        "status": "live",
+        "tier": 1
+      },
+      "mod_bountiful": {
+        "status": "live",
+        "tier": 1
+      },
+      "mod_wolf_den": {
+        "status": "live",
+        "tier": 1
+      },
+      "mod_crab_rocks": {
+        "status": "live",
+        "tier": 1
+      },
+      "mod_wild_hive": {
+        "status": "live",
+        "tier": 1
+      },
+      "mod_cow_pasture": {
+        "status": "live",
+        "tier": 1
+      },
+      "mod_thorn_thicket": {
+        "status": "live",
+        "tier": 1
+      },
+      "mod_ember_vents": {
+        "status": "live",
+        "tier": 2
+      },
+      "mod_sulphur_rocks": {
+        "status": "live",
+        "tier": 2
+      },
+      "mod_frog_pond": {
+        "status": "live",
+        "tier": 2
+      },
+      "mod_buried_copper": {
+        "status": "live",
+        "tier": 1
+      },
+      "mod_buried_iron": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_cooked_tropical_fish": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (ledger fix pack): cooked from tropical fish."
+      },
+      "item_cooked_swordfish": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (ledger fix pack): cooked from swordfish."
+      },
+      "item_cooked_lobster": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (ledger fix pack): cooked from lobster."
+      },
+      "item_lavender_salmon": {
+        "status": "live",
+        "tier": 2,
+        "note": "Plane 2 (ledger fix pack): cooked from salmon."
+      }
+    },
+    "tokens": {
+      "token_copper_ore_vein": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_forge_altar": {
+        "status": "live",
+        "tier": 3,
+        "note": "Tier inferred (ledger first fill, to confirm): an old placeholder with no source and no working rule today: a later plane, or Parked."
+      },
+      "token_copper_ore_minecart": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_wizard_academy": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): a promotion building like the Fighter's Academy; no source today (heroes are classless now)."
+      },
+      "token_oak_forest": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_ceramics_kiln": {
+        "status": "live",
+        "tier": 3,
+        "note": "Tier inferred (ledger first fill, to confirm): no map writes it: waits for a later plane (clay, quartz, ceramics)."
+      },
+      "token_forge_2": {
+        "status": "live",
+        "tier": 3,
+        "note": "Tier inferred (ledger first fill, to confirm): an old placeholder with no source and no working rule today: a later plane, or Parked."
+      },
+      "token_oak_tree": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_coast": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_shrimp_coast": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): part of a camp node's cycle (oak sapling and stump; the Coast's shrimp state; the old wheat stages)."
+      },
+      "token_shrimp_market": {
+        "status": "live",
+        "tier": 3,
+        "note": "Tier inferred (ledger first fill, to confirm): markets are cut (concept_progression): a later plane, or Parked."
+      },
+      "token_campfire": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): a cheap Cooking station (skill loops: good on moving day); no source today."
+      },
+      "token_wheat_field": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_windmill": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_grandma_s_kitchen": {
+        "status": "live",
+        "tier": 1,
+        "note": "Tier inferred (ledger first fill, to confirm): skill loops: a better kitchen (Grandma's Kitchen); no source today."
+      },
+      "token_guild_hall": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_redberry_bush": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_pickaxe_mould": {
+        "status": "live",
+        "tier": 3,
+        "note": "Tier inferred (ledger first fill, to confirm): an old placeholder with no source and no working rule today: a later plane, or Parked."
+      },
+      "token_quartz_deposit": {
+        "status": "live",
+        "tier": 3,
+        "note": "Tier inferred (ledger first fill, to confirm): no map writes it: waits for a later plane (clay, quartz, ceramics)."
+      },
+      "token_clay_deposit": {
+        "status": "live",
+        "tier": 3,
+        "note": "Tier inferred (ledger first fill, to confirm): no map writes it: waits for a later plane (clay, quartz, ceramics)."
+      },
+      "token_workbench": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_furnace": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_coal_vein": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_cooking_pot": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_blackberry_bush": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_raspberry_bush": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_blueberry_bush": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_pineapple_bush": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_strawberry_bush": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_grapevine": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_apple_tree": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
+      },
+      "token_cherry_tree": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_lemon_tree": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_lime_tree": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_orange_tree": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_peach_tree": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_watermelon_patch": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_banana_tree": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_coconut_tree": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_fir_tree": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_fir_forest": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_birch_tree": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_birch_forest": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_maple_tree": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_maple_forest": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_cedar_tree": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_mahogany_tree": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_mahogany_forest": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_ebony_tree": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_iron_ore_vein": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_gold_ore_vein": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_silver_ore_vein": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_mythril_ore_vein": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_adamantium_ore": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_adamantine_ore_vein": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_darkmetal_ore_vein": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_wishing_well": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): a Guild Hall upgrade (GDD 8: Wishing Well rank 1 free); no Token source today."
+      },
+      "token_thorn_elemental": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_fighter_s_academy": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_volcanic_island": {
+        "status": "live",
+        "tier": 3,
+        "note": "Tier inferred (ledger first fill, to confirm): an old placeholder with no source and no working rule today: a later plane, or Parked."
+      },
+      "token_cow": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_oak_sapling": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): part of a camp node's cycle (oak sapling and stump; the Coast's shrimp state; the old wheat stages)."
+      },
+      "token_stone_outcrop": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_copper_mine": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_coal_mine": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_quarry": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_ripe_wheat": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): part of a camp node's cycle (oak sapling and stump; the Coast's shrimp state; the old wheat stages)."
+      },
+      "token_wheat_sprout": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): part of a camp node's cycle (oak sapling and stump; the Coast's shrimp state; the old wheat stages)."
+      },
+      "token_apple_sapling": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): grows from the Apple Orchard, which camp Apple Seeds build."
+      },
+      "token_apple_orchard": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_farmland": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_wood_foundation": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_stone_foundation": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_copper_anvil": {
+        "status": "live",
+        "tier": 1,
+        "note": "Tier inferred (ledger first fill, to confirm): skill loops: a Copper Anvil is the next better Smithing station; no source today."
+      },
+      "token_goblin": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_goblin_chief": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_goblin_camp": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_oak_stump": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): part of a camp node's cycle (oak sapling and stump; the Coast's shrimp state; the old wheat stages)."
+      },
+      "token_herb_garden": {
+        "status": "live",
+        "tier": 2,
+        "note": "Plane 2 (owner 2026-10-30, ledger fix pack): built from fir; grows Lavender."
+      },
+      "token_wild_wheat_patch": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_well": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_composter": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_beehive": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_river": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): catches trout and salmon (plane-2 fish); no map writes it today."
+      },
+      "token_lake": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): catches trout and salmon (plane-2 fish); no map writes it today."
+      },
+      "token_dock": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_copper_smithy": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_brewery": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_alchemy_table": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_wolf": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_crab": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_bee": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_wolf_alpha": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_water_elemental": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_greater_slime": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_wind_elemental": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_queen_bee": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_wolf_den": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_crab_rocks": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_wild_hive": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_cow_pasture": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_thorn_thicket": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_alpha_den": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_chief_tent": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_tide_pool": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_slime_pit": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_wind_stones": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_queens_hive": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_copper_chest": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_fir_stump": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): part of the fir tree's cycle."
+      },
+      "token_fir_sapling": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): part of the fir tree's cycle."
+      },
+      "token_wild_lavender": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_bog_pool": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_fire_elemental": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_sulphur_lizard": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_frog": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_fire_elemental_chief": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_big_lizard": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_toxic_frog": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_ember_vents": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_sulphur_rocks": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_frog_pond": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_smoking_crater": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_basking_stone": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_toxic_pool": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_iron_chest": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_iron_smithy": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_iron_furnace": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_fir_workbench": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_tannery": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_logging_camp": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_mining_camp": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_fishing_hut": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_farmstead": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      }
+    },
+    "recipes": {
+      "recipe_copper_ingot": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_copper_pickaxe": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_mtozw3la": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_mtp8qjj0": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_mtp8qjj1": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mtp8qjj2": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mtp8qjj3": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mtp8qjj4": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mtp8qjj5": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_muily2ph": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_copper_nails, Starter Camp)."
+      },
+      "recipe_copper_dagger": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "recipe_copper_sword": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "recipe_copper_cleaver": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "recipe_copper_bow": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "recipe_copper_wand": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "recipe_copper_greatsword": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "recipe_copper_helmet": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "recipe_copper_chestplate": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "recipe_iron_pickaxe": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_iron_woodaxe": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_iron_sickle": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_iron_dagger": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_iron_sword": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_iron_cleaver": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_iron_bow": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_iron_wand": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_iron_helmet": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_iron_greatsword": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_iron_chestplate": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_copper_sickle": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (ledger fix pack): a second sickle, so more than one hero can farm."
+      },
+      "recipe_dough": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_dough, Starter Camp)."
+      },
+      "recipe_shrimp": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_mtp8qjj6": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
+      },
+      "recipe_mtp8qjj7": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mtp8qjj8": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mtp8qjj9": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "recipe_mtym8vxh": {
+        "status": "live",
+        "tier": 1
+      },
+      "recipe_roast_meat": {
+        "status": "live",
+        "tier": 1
+      },
+      "recipe_cooked_crab": {
+        "status": "live",
+        "tier": 1
+      },
+      "recipe_honey_bread": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
+      },
+      "recipe_cooked_trout": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_cooked_trout, Plane 2)."
+      },
+      "recipe_grape_juice": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_grape_juice, Plane 2)."
+      },
+      "recipe_cooked_tropical_fish": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (ledger fix pack): follows what it makes."
+      },
+      "recipe_cooked_swordfish": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (ledger fix pack): follows what it makes."
+      },
+      "recipe_cooked_lobster": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (ledger fix pack): follows what it makes."
+      },
+      "recipe_lavender_salmon": {
+        "status": "live",
+        "tier": 2,
+        "note": "Plane 2 (ledger fix pack): follows what it makes."
+      },
+      "recipe_muily2pf": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_charcoal, Starter Camp)."
+      },
+      "recipe_muily2pg": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_torch, Starter Camp)."
+      },
+      "recipe_search_bird_nest": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "recipe_shrimp_bait": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_shrimp_bait, Starter Camp)."
+      },
+      "recipe_worm_bait": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_worm_bait, Starter Camp)."
+      },
+      "recipe_fine_fishing_rod": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "recipe_leather": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_leather_hat": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_leather_chest": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_fishing_rod": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (ledger fix pack): a second rod, so more than one hero can fish."
+      },
+      "recipe_trap": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (ledger fix pack): a second trap, so more than one hero can trap."
+      },
+      "recipe_wheat": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_lavender": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_flour": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_flour, Starter Camp)."
+      },
+      "recipe_muily2pb": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_workbench, Starter Camp)."
+      },
+      "recipe_muily2pc": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_cooking_pot, Starter Camp)."
+      },
+      "recipe_muily2pd": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_muily2pe": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_fighter_s_academy, Starter Camp)."
+      },
+      "recipe_muil1w5z": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_wheat_field, Starter Camp)."
+      },
+      "recipe_muil1w60": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_apple_orchard, Starter Camp)."
+      },
+      "recipe_build_herb_garden": {
+        "status": "live",
+        "tier": 2,
+        "note": "Plane 2 (owner 2026-10-30, ledger fix pack): the Herb Garden is built from fir, so Lavender grows in plane 2."
+      },
+      "recipe_build_oak_forest": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_build_copper_smithy": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_build_brewery": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_brewery, Starter Camp)."
+      },
+      "recipe_build_alchemy_table": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_build_windmill": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_windmill, Starter Camp)."
+      },
+      "recipe_build_well": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_well, Starter Camp)."
+      },
+      "recipe_build_composter": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_composter, Starter Camp)."
+      },
+      "recipe_build_beehive": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_beehive, Starter Camp)."
+      },
+      "recipe_build_dock": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_dock, Starter Camp)."
+      },
+      "recipe_build_minecart": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_copper_ore_minecart, Starter Camp)."
+      },
+      "recipe_build_copper_mine": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_build_coal_mine": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_coal_mine, Starter Camp)."
+      },
+      "recipe_build_quarry": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_quarry, Starter Camp)."
+      },
+      "recipe_build_iron_smithy": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_build_iron_furnace": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_build_fir_workbench": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_build_tannery": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_build_fir_forest": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_build_logging_camp": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_build_mining_camp": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_mining_camp, Starter Camp)."
+      },
+      "recipe_build_fishing_hut": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_fishing_hut, Starter Camp)."
+      },
+      "recipe_build_farmstead": {
+        "status": "live",
+        "tier": 0,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_farmstead, Starter Camp)."
+      },
+      "recipe_build_grapevine": {
+        "status": "live",
+        "tier": 2,
+        "note": "Plane 2 (ledger fix pack): plant the Yellowstone grapevine at home from its seeds."
+      },
+      "recipe_birdwatcher": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_birdwatcher, Plane 2)."
+      },
+      "recipe_elixir_of_ironskin": {
+        "status": "live",
+        "tier": 2,
+        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_elixir_of_ironskin, Plane 2)."
+      }
+    }
+  },
+  "planned": {
+    "items": {
+      "item_leather_boots": {
+        "name": "Leather Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "concept_basic_content rounds 5 and 9: leather boots from Lizard Scale at the Tannery."
+        },
+        "autoSyncId": true,
+        "id": "item_leather_boots"
+      },
+      "item_leather_gloves": {
+        "name": "Leather Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "concept_basic_content rounds 5 and 9: leather gloves from Lizard Scale at the Tannery."
+        },
+        "autoSyncId": true,
+        "id": "item_leather_gloves"
+      },
+      "item_healing_potion": {
+        "name": "Healing Potion",
+        "type": "potion",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "concept_basic_content round 5: a healing potion from Lavender at the Alchemy Table; what it does in a fight is combat planning's. The Elixir of Ironskin (lavender and water) may be meant as this."
+        },
+        "autoSyncId": true,
+        "id": "item_healing_potion"
+      },
+      "map_plane_3_base_map": {
+        "name": "Plane 3 Base Map",
+        "type": "map",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "concept_basic_content round 9: plane-2 bosses drop plane-3 maps once that plane exists; owner 2026-10-27: a later plane places the Lemon and Lime Trees; round 1: silver, gold and mythril come in a later pass. A placeholder until the plane is designed."
+        },
+        "autoSyncId": true,
+        "id": "map_plane_3_base_map"
+      }
+    },
+    "tokens": {
+      "token_hot_spring": {
+        "name": "Hot Spring",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "concept_basic_content rounds 4 and 9: Yellowstone has hot springs among its nodes; what they give is not designed yet."
+        },
+        "autoSyncId": true,
+        "id": "token_hot_spring"
+      },
+      "token_the_ritual": {
+        "name": "The Ritual",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "concept_progression (Endgame): a great multi-stage construction at the Hall in the Starter Camp, fed by the final challenges and boss drops; it offers new game plus."
+        },
+        "autoSyncId": true,
+        "id": "token_the_ritual"
+      },
+      "token_mining_endgame_site": {
+        "name": "Mining Endgame Site",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "concept_progression (The Starter Camp): one ruined site per skill stands in the Starter Camp from the first minute and is that skill's final challenge, needing Mining 99 and late-game items. Tier is when it is worked, not when it is seen."
+        },
+        "autoSyncId": true,
+        "id": "token_mining_endgame_site"
+      },
+      "token_forestry_endgame_site": {
+        "name": "Forestry Endgame Site",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "concept_progression (The Starter Camp): one ruined site per skill stands in the Starter Camp from the first minute and is that skill's final challenge, needing Forestry 99 and late-game items (example: fell a World Tree). Tier is when it is worked, not when it is seen."
+        },
+        "autoSyncId": true,
+        "id": "token_forestry_endgame_site"
+      },
+      "token_fishing_endgame_site": {
+        "name": "Fishing Endgame Site",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "concept_progression (The Starter Camp): one ruined site per skill stands in the Starter Camp from the first minute and is that skill's final challenge, needing Fishing 99 and late-game items. Tier is when it is worked, not when it is seen."
+        },
+        "autoSyncId": true,
+        "id": "token_fishing_endgame_site"
+      },
+      "token_smithing_endgame_site": {
+        "name": "Smithing Endgame Site",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "concept_progression (The Starter Camp): one ruined site per skill stands in the Starter Camp from the first minute and is that skill's final challenge, needing Smithing 99 and late-game items (example: forge a masterwork). Tier is when it is worked, not when it is seen."
+        },
+        "autoSyncId": true,
+        "id": "token_smithing_endgame_site"
+      },
+      "token_crafting_endgame_site": {
+        "name": "Crafting Endgame Site",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "concept_progression (The Starter Camp): one ruined site per skill stands in the Starter Camp from the first minute and is that skill's final challenge, needing Crafting 99 and late-game items. Tier is when it is worked, not when it is seen."
+        },
+        "autoSyncId": true,
+        "id": "token_crafting_endgame_site"
+      },
+      "token_cooking_endgame_site": {
+        "name": "Cooking Endgame Site",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "concept_progression (The Starter Camp): one ruined site per skill stands in the Starter Camp from the first minute and is that skill's final challenge, needing Cooking 99 and late-game items (example: a feast). Tier is when it is worked, not when it is seen."
+        },
+        "autoSyncId": true,
+        "id": "token_cooking_endgame_site"
+      },
+      "token_farming_endgame_site": {
+        "name": "Farming Endgame Site",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "concept_progression (The Starter Camp): one ruined site per skill stands in the Starter Camp from the first minute and is that skill's final challenge, needing Farming 99 and late-game items. Tier is when it is worked, not when it is seen."
+        },
+        "autoSyncId": true,
+        "id": "token_farming_endgame_site"
+      },
+      "token_alchemy_endgame_site": {
+        "name": "Alchemy Endgame Site",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "concept_progression (The Starter Camp): one ruined site per skill stands in the Starter Camp from the first minute and is that skill's final challenge, needing Alchemy 99 and late-game items. Tier is when it is worked, not when it is seen."
+        },
+        "autoSyncId": true,
+        "id": "token_alchemy_endgame_site"
+      },
+      "token_construction_endgame_site": {
+        "name": "Construction Endgame Site",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "concept_progression (The Starter Camp): one ruined site per skill stands in the Starter Camp from the first minute and is that skill's final challenge, needing Construction 99 and late-game items. Tier is when it is worked, not when it is seen."
+        },
+        "autoSyncId": true,
+        "id": "token_construction_endgame_site"
+      }
+    },
+    "recipes": []
+  }
+}
