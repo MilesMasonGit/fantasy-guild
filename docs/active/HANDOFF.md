@@ -1,86 +1,72 @@
 # HANDOFF — what a fresh director resumes from
 
-*Replaced whole each time a director session ends. Written 2026-10-29 late
-evening by the director session of 29–30 October (briefs 270, 290, 310), early,
-while overnight benches and two agents run; the owner is asleep and approved
-picking up new briefs, with a big review in the morning. Read `CLAUDE.md`, this
-file and `STATUS.md`, then verify with `git worktree list` and `git log
---oneline -5`.*
+*Replaced whole each time a director session ends. Written 2026-10-30 evening by
+the director session of 29–30 October (kept current as insurance; the owner
+says when the session hands off). Read `CLAUDE.md`, this file and `STATUS.md`,
+then verify with `git worktree list` and `git log --oneline -5`.*
 
-## On `main` (pushed; suite green 6749 at 05034597)
+## On `main` (pushed; `main` work check same 13:00 Fri)
 
-- **Brief 290 ledger L1 complete**: the plan block (status, `plan.tier`, note),
-  Planned stubs kept out of `data/` in `cms/plan/plan.json`, the Plan section in
-  four editors, the reach/tree/hubs engines (`src/systems/progression/ledger/`),
-  the Ledger tab and settings. Owner answered the five ledger questions: as built.
-- **The owner's item tags Sync** (pack `2026-10-29-item-search-tags`, brief 310):
-  it landed on `feat/classless-k1` by mistake (the folder was on the eye-check
-  branch) and was copied to `main` as 05034597; only `tags` on 125 items.
-- Brief 290 was revised twice by planning tonight (S0 spike first; a rate
-  calculator replaces the pretend player in L5). L1–L3 as built are unaffected.
+- Briefs **260** (hero orders), **270** (classless heroes, all phases; perks),
+  **310** (Bank at scale + T-268/T-269), **290 L1–L7** (ledger: plan, engines,
+  Ledger tab, checks and item page, reach fixes T-271/T-272, rate calculator
+  S0+L5 with calibration, timeline and hubs, ghost dots and the pack gate).
+- Bench baseline accepted under `brief270-K1` (7920232e).
 
-## Overnight (done, Fri 01:05–01:30)
+## Waiting for the owner's looks (branches not on `main`)
 
-- **O3 and K1 merged** to `main` 7920232e (pushed): O3 same work; K1 heroHash
-  only, accepted under `brief270-K1`; gate on the merged result 6581 tests.
-  Worktrees `tb1` and `k1` removed. Classless record archived with the owner's
-  CMS to-do: `docs/archive/eyecheck/2026-10-30_classless-ledger.md`.
-- **Bank** (`b1`): same work, drag `equip` 50/50. **Perks** (`k4`): hero hashes
-  identical to K1's, so same work against the new baseline. Both wait for the
-  owner's look; when merging, merge `main` in first and re-run the gate.
+- **Encyclopedia** (brief 300 E1+E2): `feat/encyclopedia` in `k4`; work same;
+  [file](eyecheck/2026-10-30_encyclopedia.md).
+- **Combat v2 parts 1–3** (brief 280 V1–V3): `feat/combat-v3` in `c1` holds
+  V1 (`feat/combat-v1`) and V2 (`feat/combat-v2`, `c2`); each benched same work;
+  [file](eyecheck/2026-10-30_combat-v1-v3.md) (12 checks, 13 questions).
+  `feat/combat-v5` (`c2`) adds V5's docs (GDD §4/§6/§7, glossary) on top: merge
+  it with V1–V3. **V4 dropped by the owner.**
+- Handover: detach the agent worktree, switch the owner's folder, start `dev`,
+  wait for `window.Game`, then tell the owner; switch back to `main` right after
+  (lesson: the owner Synced onto an eye-check branch once).
 
-## Building
+## Packs (owner's CMS inbox, `main`'s `cms/incoming/`; copies in the scratchpad)
 
-- **270 K4 milestone perks**: `feat/classless-k4` in `k4` (on K1), verified
-  (6604 tests, cycles, builds), bench-queued 4th tonight (expect same work),
-  eye-check with the Bank: [file](eyecheck/2026-10-30_perks-bank.md). Its example
-  pack is git-ignored in `k4/cms/incoming/2026-10-29-example-skill-perks.json`:
-  copy it to `main`'s `cms/incoming/` after the merge, before removing `k4`.
-- **290 L3 checks A–C and the item page**: merged to `main` on the gate (CMS
-  only); the owner looks in the morning; three questions parked in STATUS.
-  `l1` can be removed.
+Accept in order: **ledger first-fill** (red gate banner expected, T-274; finish
+anyway), **ledger fix pack** (30 entries shared with first-fill), **example
+perks**. After the owner's Sync: id-diff every data file; the fix pack and
+first-fill should change only plan blocks plus the fix pack's 42 entries.
+**Combat content pack** (V5): only after combat merges; re-stamp with the
+scratchpad's `v5/mkpack.mjs --from <owner workspace>` (36 records shared with
+first-fill), then copy to `cms/incoming/`. ⚠️ The scratchpad is this session's;
+a new session must regenerate from the brief if it is gone.
 
-## Waiting on the owner (morning review)
-
-- Look: perks + the Bank at scale ([file](eyecheck/2026-10-30_perks-bank.md),
-  two branches; switch the folder only when the owner says ready, and back to
-  `main` right after), and the ledger L3 CMS look.
-- Bank questions from its builder (STATUS row): tools sort by their tier,
-  search from the start of a word (both recommended, not built).
-- After K1 merges: the CMS to-do in the classless eye-check file (dagger styles,
-  gear level requirements, Goblin retune, the Academies and Shrimp Market).
-- K4/S9 older eye-checks still open, not blocking.
+After the combat merge the owner Syncs once: Poison → Venom changes exactly
+three entries (V2's migration).
 
 ## Next
 
-Session stopped starting new work at ~60 % context after K4 (rule).
+1. Owner looks; fixes on the branches; merge combat (with V5 docs) and the
+   encyclopedia, each after `main` merged in and the gate.
+2. Small-tickets pass (owner rule: after the briefs): T-265, T-266, T-267,
+   T-270, T-273 (engine; accept a work change), T-274, and the rest.
+3. 290 L9 automatic balancing (preview first).
 
-1. 270 K5 classless clean-up (tutorial "Send Your Recruit", the retired
-   `promotes` keyword, ON_PROMOTE, promotion fixtures, GDD §2/§8/§16, glossary,
-   `Demolition.test.js` subscribing to a removed event), builder, after K4.
-2. 290 S0 spike, then L4 first-fill pack; 300 encyclopedia (needs L2: done).
-3. 280 combat v2 (needs K1).
-Small tickets keep accumulating until the briefs are done (owner rule). Ticket
-candidate: `npm run cms:restore` reads `workspace.maps` (gone) and ignores the
-plan file.
+## Bench
+
+- **Sat 01:00 timer** (this session): quiet `bench:draw --compare` on `main`.
+  30 Oct afternoon `main` drew ~2× slower than the 29 Oct baseline under load;
+  if still 2× when quiet, A/B against a4a124be.
+- The S1 p99 timing flag (0.10 → 0.13 ms) shows on every run: stale baseline.
 
 ## Worktrees
 
-- `tb1` O3 (bench tonight, then remove). `k1` K1 (bench, merge, then remove).
-- `k4` perks, `b1` Bank, `l1` ledger L3: agents' or waiting.
-- `p23b`: director's scratch, detached. `pp`, `pcm`, `pco`, `psk`: planning.
-- Remove a worktree: kill its servers, `cmd /c rmdir` both junctions (full
-  Windows path, PowerShell), confirm real `node_modules`, `git worktree remove`.
+`k4` encyclopedia; `c1` combat V3; `c2` combat V5; `l1` (spike, merged; free),
+`l5` (L7, merged; free), `b1` (free), `p23b` scratch; planning: `pp`, `pcm`,
+`pco`, `psk`. Remove free ones with the junction routine (PowerShell
+`cmd /c rmdir` both junctions, check the real `node_modules`, `git worktree remove`).
 
 ## Lessons
 
-- **Switching the owner's folder to an eye-check branch at night is risky**: the
-  owner accepted a CMS pack and synced onto the branch. Switch back to `main`
-  as soon as the look is done, or switch only when the owner says they're ready.
-- **Planning rewrites briefs while they build**: re-read the brief from `main`
-  when a report comes back, and tell agents to read the current text.
-- A big merge between two briefs (O3 into K1: 15 conflicts) is best sent back to
-  the engineer who wrote one side; it resolved cleanly with notes per file.
-- The app can crash mid-session: background timers and agents die with it.
-  Resume agents with SendMessage; restart timers.
-- Mklink from Git Bash fails on the path; use PowerShell `cmd /c mklink /J`.
+- Planning rewrites briefs mid-build: re-read from `main` when a report lands.
+- Two timers fired at once after an app crash (the old one survived): check
+  running bench processes before starting a timer.
+- Daytime draw numbers can be ~2× off; a back-to-back `main` control decides.
+- Packs that share records must be accepted in a fixed order; stamp the later
+  one against the earlier one applied.
