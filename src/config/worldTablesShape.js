@@ -230,6 +230,11 @@ export function normaliseWorldTables(raw) {
         if (total(ring) <= total(ring - 1)) issues.push(`Ring ${ring}'s price is not dearer than ring ${ring - 1}'s`);
     }
 
+    const specialties = idList(raw.specialties);
+    if (specialties.length > LINE_COUNT) {
+        issues.push(`${specialties.length} specialties do not all fit in ring 1's ${LINE_COUNT} cells: some ring 1 goes without`);
+    }
+
     const tolerance = finite(raw.valueTolerance) && raw.valueTolerance >= 0 && raw.valueTolerance < 1
         ? raw.valueTolerance : DEFAULTS.valueTolerance;
 
@@ -242,7 +247,7 @@ export function normaliseWorldTables(raw) {
         blendsPerNeighbour: wholeAtLeast(raw.blendsPerNeighbour, 0, DEFAULTS.blendsPerNeighbour),
         keys: perRing(raw.keys, idList),
         kits,
-        specialties: idList(raw.specialties),
+        specialties,
         pityWindow: wholeAtLeast(raw.pityWindow, 1, DEFAULTS.pityWindow),
         extras,
         ringValue,

@@ -20,9 +20,10 @@ import { STRICT_RINGS, PRICE_FROM, SKILL_OF, lineById } from '../../config/world
  *    ring n − 1 (the Hall's cell for ring 1) touches one: whichever way the guild went, the next
  *    ring's keys are a step away.
  * 5. **Specialties.** Each strict ring draws from its own bag (every specialty ⌊cells / kinds⌋
- *    times, the rest one each), walking the ring; once `pityWindow` cells are drawn, a specialty
- *    the bag still holds that none of the last `pityWindow` cells had comes next, the longest
- *    missing first. Wild cells draw freely.
+ *    times, the rest one each), walking the rings outward; once `pityWindow` cells are drawn, a
+ *    specialty the ring's bag still holds that none of the last `pityWindow` cells had comes next,
+ *    the longest missing first. With more specialties than the window that is always so, and the
+ *    specialties go round in turn. Wild cells draw freely.
  * 6. **Kits** by the line's lean.
  * 7. **Extras** (the hidden modifiers and treasures): a strict cell's are worth its ring's value
  *    within `valueTolerance`; a wild cell's aim at the last strict ring's value grown per ring.
@@ -324,6 +325,11 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
     if (!skills.length) {
         problems.push({ kind: PROBLEM.NO_SPECIALTIES, message: WORLD_GEN_TEXT.noSpecialties });
     } else {
+        // ⚠️ The pity rule's history runs on from one strict ring into the next ("the last 4
+        // options"): kept per ring, a ring's first draws are free and could bunch one specialty.
+        const lastSeen = new Map();
+        let drawn = 0;
+        const window = tables.pityWindow;
         for (let n = 1; n <= rings; n++) {
             const random = streamOf(runSeed, 'specialty', n);
             const ring = ringOf(n);
@@ -333,11 +339,9 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
             }
             const bag = new Map(skills.map(s => [s, Math.floor(ring.length / skills.length)]));
             for (const s of shuffled(random, skills).slice(0, ring.length % skills.length)) bag.set(s, bag.get(s) + 1);
-            const lastSeen = new Map();
-            for (let i = 0; i < ring.length; i++) {
+            for (const cell of ring) {
                 const left = skills.filter(s => bag.get(s) > 0);
-                const window = tables.pityWindow;
-                const due = i >= window ? left.filter(s => !((lastSeen.get(s) ?? -Infinity) >= i - window)) : [];
+                const due = drawn >= window ? left.filter(s => !((lastSeen.get(s) ?? -Infinity) >= drawn - window)) : [];
                 let pick;
                 if (due.length) {
                     const oldest = Math.min(...due.map(s => lastSeen.get(s) ?? -1));
@@ -346,9 +350,10 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
                 } else {
                     pick = pickWeighted(random, left, s => bag.get(s));
                 }
-                ring[i].specialty = pick;
+                cell.specialty = pick;
                 bag.set(pick, bag.get(pick) - 1);
-                lastSeen.set(pick, i);
+                lastSeen.set(pick, drawn);
+                drawn++;
             }
         }
     }

@@ -140,9 +140,12 @@ export function worldFindings(world, tables, { materialsOf = () => [], hallOrigi
         }
     }
 
-    // The specialty bag and the pity rule, walking each strict ring.
+    // The specialty bag per strict ring, and the pity rule walking the strict rings outward: from
+    // the window's length on, a specialty the ring's bag still holds that the last cells lacked
+    // comes next.
     const skills = tables.specialties;
     if (skills.length) {
+        const walk = [];
         for (let n = 1; n <= Math.min(STRICT_RINGS, world.rings); n++) {
             const order = ringCells(n).map(c => byId.get(cellId(c.q, c.r))).filter(Boolean);
             const drawn = order.map(c => c.specialty);
@@ -150,16 +153,16 @@ export function worldFindings(world, tables, { materialsOf = () => [], hallOrigi
             const floor = Math.floor(order.length / skills.length);
             if (drawn.some(d => !skills.includes(d)) || counts.some(c => c < floor || c > floor + 1)) {
                 find(WORLD_CHECK.BAG, WORLD_CHECK_TEXT.bag(n), { ring: n });
-                continue;
             }
-            const window = tables.pityWindow;
-            for (let i = window; i < drawn.length; i++) {
-                const left = new Set(drawn.slice(i));
-                const recent = new Set(drawn.slice(i - window, i));
-                const due = [...left].filter(s => !recent.has(s));
-                if (due.length && !due.includes(drawn[i])) {
-                    find(WORLD_CHECK.PITY, WORLD_CHECK_TEXT.pity(order[i].id, n), { cellId: order[i].id, ring: n });
-                }
+            order.forEach((cell, i) => walk.push({ cell, left: new Set(drawn.slice(i)) }));
+        }
+        const window = tables.pityWindow;
+        for (let g = window; g < walk.length; g++) {
+            const recent = new Set(walk.slice(g - window, g).map(w => w.cell.specialty));
+            const due = [...walk[g].left].filter(s => !recent.has(s));
+            const { cell } = walk[g];
+            if (due.length && !due.includes(cell.specialty)) {
+                find(WORLD_CHECK.PITY, WORLD_CHECK_TEXT.pity(cell.id, cell.ring), { cellId: cell.id, ring: cell.ring });
             }
         }
     }
