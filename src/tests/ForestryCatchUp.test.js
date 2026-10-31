@@ -17,6 +17,10 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// Its forester is Forestry 30: Clean Felling's roll would land on another number in each run.
+withoutShippedPerks();
 
 /**
  * Time away with a felled Oak in a Forest's reach (brief 230 S2a): a forester fells it, it becomes

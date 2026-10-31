@@ -22,6 +22,10 @@ import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import { DRINK_CYCLES } from '../config/loopConstants.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// Its heroes stand at perk levels: the shipped perks are content, not what this tests.
+withoutShippedPerks();
 
 /**
  * Brief 230 S6b: a forester with a Birdwatcher (a work potion: a 25 % chance of a Bird Nest as each

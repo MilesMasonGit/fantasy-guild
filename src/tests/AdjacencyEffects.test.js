@@ -20,6 +20,10 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { pickRecipe } from './fixtures/stations.js';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// Its heroes stand at perk levels: the shipped perks are content, not what this tests.
+withoutShippedPerks();
 
 /**
  * Adjacency — the spatial half of the game.
