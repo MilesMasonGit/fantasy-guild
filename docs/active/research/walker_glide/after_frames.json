@@ -1,0 +1,322 @@
+{
+  "summary": {
+    "label": "after",
+    "base": "http://localhost:5392",
+    "goblin": {
+      "id": "tok_1793446841885_5hwhn",
+      "type": "bench_goblin"
+    },
+    "fit": 0.83,
+    "frames": 27,
+    "msPerFrame": 38,
+    "crisp": {
+      "min": 0.712,
+      "median": 0.998
+    },
+    "positionsSeen": 25,
+    "biggestMovePx": 4.15,
+    "transitions": [
+      "transform 100ms steps(4, start)",
+      "transform 100ms steps(5, start)"
+    ]
+  },
+  "rows": [
+    {
+      "t": 16761.3,
+      "screenX": 851.28,
+      "screenY": 623.24,
+      "move": {
+        "dx": 0,
+        "dy": 0
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 0.998
+    },
+    {
+      "t": 16809.5,
+      "screenX": 850.87,
+      "screenY": 624.9,
+      "move": {
+        "dx": -0.41,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 0.991
+    },
+    {
+      "t": 16851.7,
+      "screenX": 850.24,
+      "screenY": 626.56,
+      "move": {
+        "dx": -0.62,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 1
+    },
+    {
+      "t": 16888.4,
+      "screenX": 849.83,
+      "screenY": 627.39,
+      "move": {
+        "dx": -0.42,
+        "dy": 0.83
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 1
+    },
+    {
+      "t": 16930.4,
+      "screenX": 849,
+      "screenY": 629.05,
+      "move": {
+        "dx": -0.83,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 0.994
+    },
+    {
+      "t": 16972.8,
+      "screenX": 848.17,
+      "screenY": 633.2,
+      "move": {
+        "dx": -0.83,
+        "dy": 4.15
+      },
+      "transition": "transform 100ms steps(5, start)",
+      "crisp": 0.995
+    },
+    {
+      "t": 17007.1,
+      "screenX": 848.17,
+      "screenY": 633.2,
+      "move": {
+        "dx": 0,
+        "dy": 0
+      },
+      "transition": "transform 100ms steps(5, start)",
+      "crisp": 0.995
+    },
+    {
+      "t": 17033.2,
+      "screenX": 847.96,
+      "screenY": 634.03,
+      "move": {
+        "dx": -0.21,
+        "dy": 0.83
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 0.995
+    },
+    {
+      "t": 17063.8,
+      "screenX": 847.96,
+      "screenY": 634.03,
+      "move": {
+        "dx": 0,
+        "dy": 0
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 1
+    },
+    {
+      "t": 17106.2,
+      "screenX": 847.55,
+      "screenY": 635.69,
+      "move": {
+        "dx": -0.41,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 0.998
+    },
+    {
+      "t": 17142.3,
+      "screenX": 846.92,
+      "screenY": 637.35,
+      "move": {
+        "dx": -0.62,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 0.998
+    },
+    {
+      "t": 17173.3,
+      "screenX": 846.51,
+      "screenY": 638.18,
+      "move": {
+        "dx": -0.41,
+        "dy": 0.83
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 0.991
+    },
+    {
+      "t": 17227.6,
+      "screenX": 845.68,
+      "screenY": 639.84,
+      "move": {
+        "dx": -0.83,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 1
+    },
+    {
+      "t": 17276.3,
+      "screenX": 845.35,
+      "screenY": 641.5,
+      "move": {
+        "dx": -0.33,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(5, start)",
+      "crisp": 0.995
+    },
+    {
+      "t": 17317.8,
+      "screenX": 845.01,
+      "screenY": 643.16,
+      "move": {
+        "dx": -0.33,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(5, start)",
+      "crisp": 1
+    },
+    {
+      "t": 17342.6,
+      "screenX": 844.64,
+      "screenY": 644.82,
+      "move": {
+        "dx": -0.37,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 1
+    },
+    {
+      "t": 17373,
+      "screenX": 844.43,
+      "screenY": 645.65,
+      "move": {
+        "dx": -0.21,
+        "dy": 0.83
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 0.994
+    },
+    {
+      "t": 17407.2,
+      "screenX": 844.23,
+      "screenY": 646.48,
+      "move": {
+        "dx": -0.21,
+        "dy": 0.83
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 1
+    },
+    {
+      "t": 17443.4,
+      "screenX": 843.6,
+      "screenY": 648.14,
+      "move": {
+        "dx": -0.62,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 1
+    },
+    {
+      "t": 17482,
+      "screenX": 843.19,
+      "screenY": 648.97,
+      "move": {
+        "dx": -0.42,
+        "dy": 0.83
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 0.985
+    },
+    {
+      "t": 17530.2,
+      "screenX": 842.36,
+      "screenY": 650.63,
+      "move": {
+        "dx": -0.83,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 1
+    },
+    {
+      "t": 17561.4,
+      "screenX": 842.15,
+      "screenY": 651.46,
+      "move": {
+        "dx": -0.21,
+        "dy": 0.83
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 1
+    },
+    {
+      "t": 17591.3,
+      "screenX": 841.74,
+      "screenY": 653.12,
+      "move": {
+        "dx": -0.41,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 1
+    },
+    {
+      "t": 17635,
+      "screenX": 841.2,
+      "screenY": 654.78,
+      "move": {
+        "dx": -0.54,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(5, start)",
+      "crisp": 1
+    },
+    {
+      "t": 17675.7,
+      "screenX": 840.86,
+      "screenY": 655.61,
+      "move": {
+        "dx": -0.33,
+        "dy": 0.83
+      },
+      "transition": "transform 100ms steps(5, start)",
+      "crisp": 1
+    },
+    {
+      "t": 17712.1,
+      "screenX": 840.2,
+      "screenY": 657.27,
+      "move": {
+        "dx": -0.66,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(5, start)",
+      "crisp": 0.994
+    },
+    {
+      "t": 17749.1,
+      "screenX": 839.66,
+      "screenY": 658.93,
+      "move": {
+        "dx": -0.54,
+        "dy": 1.66
+      },
+      "transition": "transform 100ms steps(4, start)",
+      "crisp": 0.712
+    }
+  ]
+}

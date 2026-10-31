@@ -74,7 +74,6 @@ function useWalkerFollow({ on, id, boxHalf, pxPerUnit, still, px, py, artRef, ov
             sentTo.current = { x: t.x, y: t.y };
             glide.current = transition;
             const transform = `translate(${t.x - half}px, ${t.y - half}px)`;
-            // The glide first: a transition takes its timing from the style it starts in.
             for (const el of [artRef.current, overlayRef.current]) {
                 if (!el) continue;
                 el.style.transition = transition;
