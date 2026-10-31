@@ -150,7 +150,12 @@ export default function LedgerSettings() {
           <div className="flex items-center gap-2">
             Typical takes a building, a camp, a tool or gear that pays for itself within
             <NumberInput value={settings.paybackHours} min={0.1} onCommit={(v) => save({ paybackHours: v })} label="Payback hours" width={60} />
-            hours of work (Guild Hall ranks are checked against the same).
+            hours of work,
+          </div>
+          <div className="flex items-center gap-2">
+            and a Guild Hall rank that pays for itself within
+            <NumberInput value={settings.hallPaybackHours} min={0.1} onCommit={(v) => save({ hallPaybackHours: v })} label="Guild Hall payback hours" width={60} />
+            hours (a rank slower than that is red, and the proposed prices are sized to it).
           </div>
           <div className="flex items-center gap-2">
             A camp hands one hero
@@ -160,7 +165,7 @@ export default function LedgerSettings() {
         </div>
       </Card>
 
-      <Card title="Boost targets" help="How much each kind of boost should add to a piece of work at most, from a stage on (Maxed, against Bare). A boost beyond its target by more than the tolerance is a problem. Camps have none (they change how many Tokens one hero works); the Guild Hall's applies once a Hall upgrade moves a rate, which none does today.">
+      <Card title="Boost targets" help="How much each kind of boost should add to a piece of work at most, from a stage on (Maxed, against Bare). A boost beyond its target by more than the tolerance is a problem. Camps have none (they change how many Tokens one hero works); the Guild Hall's applies to the stars Maxed holds that move a work's rate.">
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr>

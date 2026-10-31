@@ -25,7 +25,7 @@ function workOutPricing() {
   const state = useEntityStore.getState();
   if (state.hallStars == null && state.hallConstellations == null) return null;
   const pace = workspacePace(state);
-  return { rows: hallRows(pace), paybackHours: pace.settings.paybackHours, at: new Date() };
+  return { rows: hallRows(pace), paybackHours: pace.settings.hallPaybackHours, at: new Date() };
 }
 
 /** A raw rank with its tier set, or cleared with `''`. */
@@ -96,7 +96,7 @@ export default function HallStarsPage() {
     <div className="h-full overflow-y-auto p-4 space-y-4" data-testid="hall-stars-page">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-          Set each rank's tier; the ledger says what it pays back in at Typical (red beyond {pricing ? hoursText(pricing.paybackHours) : 'the payback time'}) and proposes a price: the most of its tier's material it can cost and still pay back in time. Proposed prices are a preview and are never applied.
+          Set each rank's tier; the ledger says what it pays back in at Typical (red beyond {pricing ? hoursText(pricing.paybackHours) : 'the payback time'}) and proposes a price: the most of its tier's material it can cost and still pay back in time, never below the rank before. Proposed prices are a preview and are never applied.
         </p>
         <button
           type="button"
@@ -204,8 +204,8 @@ function RankPricing({ row }) {
       >
         · {row.priceTimeText} to gather, saves {row.savesText}: pays back in {row.paybackText}
       </span>
-      <span data-hall-rank-proposed style={{ color: 'var(--color-accent-hover)' }}>
-        · proposed (preview): {row.proposed?.why ? row.proposed.why : `${row.proposed.priceText}, pays back in ${hoursText(row.proposed.payback)}`}
+      <span data-hall-rank-proposed style={{ color: row.proposed && !row.proposed.why && !row.proposed.pays ? 'var(--color-error)' : 'var(--color-accent-hover)' }}>
+        · proposed (preview): {row.proposed?.why ? row.proposed.why : `${row.proposed.priceText}, pays back in ${hoursText(row.proposed.payback)}${row.proposed.raised ? ', raised to the rank before' : ''}`}
       </span>
     </>
   );

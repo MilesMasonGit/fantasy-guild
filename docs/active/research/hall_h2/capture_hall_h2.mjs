@@ -3,7 +3,8 @@
 // A throwaway headless Chrome profile; the workspace is the shipped data/ with the H1 QA sky
 // (src/ui/dev/qaHallSky.js), seeded in the page with the store's persistence switched off, so
 // nothing is saved and nothing is synced. Shots: the Guild Hall page's rank pricing, the Pace
-// page's paybacks (the default 2 h payback, then 6 min so some ranks are red), and, after the
+// page's paybacks (the Guild Hall's default 24 h payback, then 6 min so some ranks are red), the
+// Ledger settings with both payback times, and, after the
 // first ranks of three Mining stars are set to the Starter Camp on the Guild Hall page, Mining's
 // breakdown with the Hall's share and the Copper Ore Vein's rates.
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -76,11 +77,13 @@ try {
     await clickText('Pace');
     await sleep(800);
     await scrollTo('[aria-label="Guild Hall paybacks"]');
-    console.log('paybacks red at 2 h:', await page.evaluate(`[...document.querySelectorAll('[data-hall-pays="no"]')].map(r => r.getAttribute('data-hall')).join(', ') || 'none'`));
+    console.log('paybacks red at 24 h:', await page.evaluate(`[...document.querySelectorAll('[data-hall-pays="no"]')].map(r => r.getAttribute('data-hall')).join(', ') || 'none'`));
     await shot('h2_02_pace_hall_paybacks.png');
 
     await clickText('Settings');
-    console.log('payback hours now', await setInput('Payback hours', '0.1'));
+    await scrollTo('[aria-label="Guild Hall payback hours"]', 'center');
+    await shot('h2_06_ledger_settings_paybacks.png');
+    console.log('Guild Hall payback hours now', await setInput('Guild Hall payback hours', '0.1'));
     await sleep(400);
     await clickText('Pace');
     await page.evaluate(`[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Refresh')?.click()`);
@@ -89,7 +92,7 @@ try {
     console.log('paybacks red at 6 min:', await page.evaluate(`[...document.querySelectorAll('[data-hall-pays="no"]')].map(r => r.getAttribute('data-hall')).join(', ') || 'none'`));
     await shot('h2_03_pace_hall_paybacks_6min.png');
     await clickText('Settings');
-    await setInput('Payback hours', '2');
+    await setInput('Guild Hall payback hours', '24');
     await sleep(300);
 
     // The owner sets three Mining stars' first ranks to the Starter Camp, where Mining's levels are worked.

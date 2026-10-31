@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
 import { buildRateBook, FACTOR } from '../systems/progression/ledger/rates.js';
-import { buildPace, roundDown } from '../systems/progression/ledger/pace.js';
+import { buildPace, roundDown, roundUp } from '../systems/progression/ledger/pace.js';
+import { settingsOf } from '../systems/progression/ledger/settings.js';
 import { PROFILE, BEFORE_HALL } from '../systems/progression/ledger/profiles.js';
 import { hallGraph, openingPath, hallTracksOf } from '../systems/progression/ledger/hall.js';
 import { CHECKS } from '../systems/progression/ledger/checks.js';
@@ -100,7 +101,7 @@ describe('the profiles and the Hall', () => {
         // Deep Veins sits behind Quick Picks, behind Lore: both lit at rank 1 to open it, their price in its own.
         expect(hall[0].path).toEqual(['ph_lore', 'ph_quick']);
         expect(typical.setup.hallRanks).toMatchObject({ ph_lore: 2, ph_quick: 1, ph_deep: 1, ph_gold: 0, ph_rich: 0 });
-        for (const c of hall) expect(c.payback).toBeLessThanOrEqual(2);
+        for (const c of hall) expect(c.payback).toBeLessThanOrEqual(24);
         // The Gold Leaf's 1 % for 100,000 Oak Wood never pays back; Rich Seams is a plane-1 rank.
         expect(hall.map(c => c.upgrade)).not.toContain('ph_gold');
         expect(hall.map(c => c.upgrade)).not.toContain('ph_rich');
@@ -137,9 +138,27 @@ describe('the profiles and the Hall', () => {
         expect(lore.price).toBeCloseTo((10 + 20) / 1350);
     });
 
-    it('a longer payback time lets Typical buy the Gold Leaf too', () => {
-        const pace = world({ paybackHours: 1e6 });
-        expect(pace.rateAt(VEIN, PROFILE.TYPICAL, 0).setup.hallRanks.ph_gold).toBe(1);
+    it('the Hall has its own payback time, a day unless set: the boosts\' two hours never decide a rank', () => {
+        expect(settingsOf(null)).toMatchObject({ paybackHours: 2, hallPaybackHours: 24 });
+        expect(settingsOf({ hallPaybackHours: 6 }).hallPaybackHours).toBe(6);
+        expect(world({ hallPaybackHours: 1e6 }).rateAt(VEIN, PROFILE.TYPICAL, 0).setup.hallRanks.ph_gold).toBe(1);
+        expect(world({ paybackHours: 1e6 }).rateAt(VEIN, PROFILE.TYPICAL, 0).setup.hallRanks.ph_gold).toBe(0);
+    });
+
+    it('a rank that pays back in hours, not minutes, is bought within the Hall\'s day and not within two hours', () => {
+        const c = content();
+        // Rich Seams (no other star opens through it) at 1,200 Copper Ore: about 50 minutes of gathering for half as much ore again.
+        c.hallSky.stars.ph_rich.ranks[0].price = [{ itemId: 'item_copper_ore', quantity: 1200 }];
+        const day = buildPace(c, buildLedger(c), null);
+        const row = day.hallPaybacks().find(r => r.id === 'ph_rich' && r.rank === 1);
+        expect(row.payback).toBeGreaterThan(2);
+        expect(row.payback).toBeLessThan(24);
+        expect(row.pays).toBe(true);
+        expect(day.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(1);
+        const hours = buildPace(c, buildLedger(c), { hallPaybackHours: 2 });
+        expect(hours.hallPaybacks().find(r => r.id === 'ph_rich' && r.rank === 1).pays).toBe(false);
+        expect(hours.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(0);
+        expect(hours.findings().some(f => f.key === 'hall:ph_rich' && /over the 2 h a Guild Hall rank has to pay for itself/.test(f.message))).toBe(true);
     });
 });
 
@@ -176,9 +195,10 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
         const lore = rowOf(pace, 'ph_lore', 1);
         // Mining's own material at the Starter Camp, at Typical-before-the-Hall's 1350 an hour.
         expect(lore.proposed.itemId).toBe('item_copper_ore');
-        expect(lore.proposed.quantity).toBe(roundDown(2 * lore.gain * 1350));
-        expect(lore.proposed.payback).toBeLessThanOrEqual(2);
-        expect(lore.proposed.payback).toBeGreaterThan(1.5);
+        expect(lore.proposed.quantity).toBe(roundDown(24 * lore.gain * 1350));
+        expect(lore.proposed).toMatchObject({ pays: true });
+        expect(lore.proposed.payback).toBeLessThanOrEqual(24);
+        expect(lore.proposed.payback).toBeGreaterThan(20);
         // The Well's Spring pays Copper Ore, so it is priced in something else; its second rank has no tier.
         expect(rowOf(pace, 'ph_spring', 1).proposed.itemId).toBe('item_oak_wood');
         expect(rowOf(pace, 'ph_spring', 2).proposed).toEqual({ why: 'no tier set' });
@@ -197,8 +217,28 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
         expect(pace.rateAt(VEIN, PROFILE.MAXED, 2).setup.hallRanks.ph_gold).toBe(0);
     });
 
-    it('rounds a proposal down to two figures', () => {
+    it('never proposes a rank cheaper than the one before: raised, marked, and red when it then pays back too slowly', () => {
+        const pace = world();
+        const one = rowOf(pace, 'ph_lore', 1).proposed;
+        const two = rowOf(pace, 'ph_lore', 2);
+        // Rank 2 saves less than rank 1 (+50 % on +50 %), so on its own it would cost less.
+        expect(roundDown(24 * two.gain * 1350)).toBeLessThan(one.quantity);
+        expect(two.proposed).toMatchObject({ itemId: 'item_copper_ore', quantity: one.quantity, raised: true, pays: false });
+        expect(two.proposed.payback).toBeCloseTo((one.quantity / 1350) / two.gain);
+        expect(two.proposed.payback).toBeGreaterThan(24);
+        // Every authored star's proposals, rank by rank, never fall.
+        for (const id of ['ph_lore', 'ph_quick', 'ph_deep', 'ph_gold', 'ph_rich', 'ph_spring']) {
+            const proposed = pace.hallPaybacks().filter(r => r.id === id && r.proposed?.itemId).map(r => r.proposed);
+            for (let i = 1; i < proposed.length; i++) {
+                expect(proposed[i].priceHours).toBeGreaterThanOrEqual(proposed[i - 1].priceHours - 1e-9);
+                if (proposed[i].itemId === proposed[i - 1].itemId) expect(proposed[i].quantity).toBeGreaterThanOrEqual(proposed[i - 1].quantity);
+            }
+        }
+    });
+
+    it('rounds a proposal down to two figures, and a raised one up', () => {
         expect([roundDown(0.5), roundDown(7.9), roundDown(57.9), roundDown(137), roundDown(1234), roundDown(98765)]).toEqual([0, 7, 57, 130, 1200, 98000]);
+        expect([roundUp(0.2), roundUp(7.1), roundUp(57), roundUp(131), roundUp(1201), roundUp(98001), roundUp(1300)]).toEqual([1, 8, 57, 140, 1300, 99000, 1300]);
     });
 });
 

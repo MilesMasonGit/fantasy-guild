@@ -292,22 +292,29 @@ a camp's copies from the setup. Wound Time and Loadout Slots are no rate (fights
 **The profiles.** A rank is on offer to a piece of work when its rules can reach it, from the tier
 the owner gave the rank, once its price can be had. **Bare** holds none. **Typical** takes a rank
 when the hours its price takes to gather, at Typical's rates **before the Hall** (so a star never
-prices itself and the pricing cannot loop), are under the payback time times the hours it saves an
-hour of the work (its share of the work's worth: items at their Bare hours, XP at the work's own
+prices itself and the pricing cannot loop), are under the **Hall's payback time** (`hallPaybackHours`,
+24 h by default: the owner, 2026-10-30, "about a day"; buildings, camps, tools, gear and drinks keep
+`paybackHours`, 2 h) times the hours it saves an hour of the work (its share of the work's worth: items at their Bare hours, XP at the work's own
 rate; at the Hall, the hours its lines would take to gather). A closed star is opened through the
 cheapest stars before it (their rank 1 added to the price); a rank that gives a work nothing (the XP
 floor can make two ranks equal) is bought on the way to the one above. **Maxed** takes every rank.
 
 **The payback check and the price.** Every rank, at its tier (never past the last stage the pace
 knows), at Typical, on the work it saves most on: payback = price hours / hours saved an hour; over
-`paybackHours` it is red and a Problem. The proposed price is the most of its tier's gathered
+`hallPaybackHours` it is red and a Problem. The proposed price is the most of its tier's gathered
 material (the star's skill's own where there is one, never what the star pays) it can cost and still
-pay back within `paybackHours`, rounded down to two figures: a preview (brief 290's rule).
+pay back within `hallPaybackHours`, rounded down to two figures, then **never below the rank before**
+(the director, 2026-10-30): in hours to gather and, in the same material, in quantity, rounded up.
+A raised proposal is marked, and red when the raise makes it pay back slower than the Hall's time.
+A preview (brief 290's rule).
 
 **On H1's QA sky** (shipped data, default settings): every rank that adds a rate pays back, in 1 to
 50 minutes (its placeholder prices are 10 to 40 items); Long Rails, the Infirmary and the Larder add
-no rate. The proposals run 4 to 110 times the placeholders (Miner's Lore 1: 1,100 Copper Ore
-against 10). With the payback time set to 6 minutes, 20 ranks turn red.
+no rate. At a day's payback the proposals run from 1,600 to 14,000 (Copper Ore, Oak Wood, Stone),
+about 70 to 1,300 times the placeholders (Miner's Lore 1: 13,000 Copper Ore against 10). Four are
+raised to the rank before and then pay back in over a day: Miner's Lore 2 and 3 (13,000 Copper Ore,
+about 3 days and 1.5 days), Rich Seams 2 (6,400 Copper Ore, about 1.5 days) and Woodsman's Lore 2
+(2,600 Oak Wood, about 1.8 days). With the Hall's payback set to 6 minutes, 16 ranks turn red.
 
 **Calibration** (`vein-hall`, 3 seeds × 8 game-hours): the copper vein with Mining XP +50 %, Mining
 speed -20 % and its rest -50 % as fixture stars: ore 643.6 an hour in the engine against 642.9

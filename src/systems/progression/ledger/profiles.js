@@ -31,7 +31,8 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, RATE_AXES
  * **The Guild Hall** (brief 320): a star's ranks are on offer to every work its rules reach (its
  * skill, its Token, a Passive Production line at the Hall), a rank only from the tier the owner gave
  * it and only once its price can be had. Bare holds none (only the built-in ranks that are free).
- * Typical takes a rank when it pays for itself within the payback time **at Typical**: the hours to
+ * Typical takes a rank when it pays for itself within the Hall's own payback time (a day by default,
+ * where a building or a tool has two hours) **at Typical**: the hours to
  * gather its price at Typical rates against the hours it saves an hour of the work (its share of the
  * work's worth an hour; at the Hall, the hours its lines would take to gather). The price is gathered
  * at Typical's rates **before the Hall** ({@link BEFORE_HALL}): what a star boosts never prices the
@@ -148,6 +149,7 @@ function familySpawnerOf(book, def, spawners) {
  * @param {(itemId: string, cap: number) => number} options.unitHours  Bare hours one of an item takes to make (Infinity: none made)
  * @param {(key: string, cap: number) => number} options.costHours  Bare hours to get one more of a Token (a support, a camp)
  * @param {(cap: number) => number} options.horizonHours  how soon a one-off boost must pay for itself
+ * @param {(cap: number) => number} [options.hallHorizonHours]  how soon a Guild Hall rank must; the boosts' when absent
  * @param {(rate: object, cap: number, profile: string) => number} [options.inputScale]  the share of a rate
  *   the guild can feed at that profile (one hero on each input): a boost that starves its work is
  *   worth that much less
@@ -155,7 +157,7 @@ function familySpawnerOf(book, def, spawners) {
  * @param {(itemId: string, cap: number) => number} [options.hallUnitHours]  hours one of an item takes
  *   to gather at Typical before the Hall (a Hall rank's price); Bare's when absent
  */
-export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours, inputScale = () => 1, campMembers = DEFAULT_CAMP_MEMBERS, hallUnitHours = unitHours }) {
+export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours, hallHorizonHours = horizonHours, inputScale = () => 1, campMembers = DEFAULT_CAMP_MEMBERS, hallUnitHours = unitHours }) {
     const tokenIds = book.tokenIds();
     const supports = tokenIds.filter(id => {
         const def = book.token(id);
@@ -441,6 +443,7 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
                 }
             } else {
                 const horizon = horizonHours(cap);
+                const hallHorizon = hallHorizonHours(cap);
                 const value = (r) => valueOf(r, cap, baseXp, { profile });
                 let left = [...pool];
                 for (;;) {
@@ -473,7 +476,7 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
                         }
                         if (!(gain > 1e-9)) continue;
                         const payback = price / gain;
-                        if (!(payback <= horizon)) continue;
+                        if (!(payback <= (o.kind === BOOST_KIND.HALL ? hallHorizon : horizon))) continue;
                         if (!best || payback < best.payback || (payback === best.payback && gain > best.gain)) best = { o, next, r, gain, payback, price, step };
                     }
                     if (!best) break;

@@ -101,13 +101,29 @@ describe('the Ledger tab', { timeout: 20000 }, () => {
         const row = (id) => view.container.querySelector(`[data-hall="${id}"]`);
         expect(row('ph_lore|1').getAttribute('data-hall-pays')).toBe('yes');
         expect(row('ph_lore|1').textContent).toMatch(/Lore 1.*Starter Camp.*10 Copper Ore.*Copper Vein/);
-        expect(row('ph_lore|1').querySelector('[data-hall-proposed]').textContent).toMatch(/^\d+ Copper Ore \(pays back in 1 h \d+ min\)$/);
+        expect(row('ph_lore|1').querySelector('[data-hall-proposed]').textContent).toMatch(/^\d+ Copper Ore \(pays back in 2\d h( \d+ min)?\)$/);
+        // Rank 2 raised to rank 1's price: marked, and red, for it then pays back in over a day.
+        const raised = row('ph_lore|2').querySelector('[data-hall-proposed]');
+        expect(raised.textContent).toMatch(/raised to the rank before\)$/);
+        expect(raised.style.color).toBe('var(--color-error)');
         const gold = row('ph_gold|1');
         expect(gold.getAttribute('data-hall-pays')).toBe('no');
         expect(gold.querySelector('[data-hall-payback]').style.color).toBe('var(--color-error)');
         expect(row('ph_spring|2').querySelector('[data-hall-proposed]').textContent).toBe('no tier set');
         // A star that adds no rate has no payback row; it is listed under Problems.
         expect(row('ph_infirmary|1')).toBeNull();
+    });
+
+    it('the settings: the Guild Hall payback beside the boosts\' payback, a day unless set', () => {
+        const view = mount();
+        fireEvent.click(view.getByRole('tab', { name: 'Settings' }));
+        const hall = view.getByLabelText('Guild Hall payback hours');
+        expect(hall.value).toBe('24');
+        expect(view.getByLabelText('Payback hours').value).toBe('2');
+        fireEvent.change(hall, { target: { value: '12' } });
+        fireEvent.blur(hall);
+        expect(store().planSettings.hallPaybackHours).toBe(12);
+        expect(store().planSettings.paybackHours ?? 2).toBe(2);
     });
 
     it('the Pace page: Mining\'s breakdown shows the Hall\'s share at Typical and at Maxed', () => {
@@ -152,7 +168,7 @@ describe('the Guild Hall page', () => {
         const first = () => lore.querySelector('[data-hall-rank="1"]');
         expect(first().querySelector('[data-hall-rank-tier]').value).toBe('0');
         expect(first().querySelector('[data-hall-rank-payback]').textContent).toMatch(/to gather, saves .* an hour: pays back in \d+ min/);
-        expect(first().querySelector('[data-hall-rank-proposed]').textContent).toMatch(/proposed \(preview\): \d+ Copper Ore, pays back in 1 h \d+ min/);
+        expect(first().querySelector('[data-hall-rank-proposed]').textContent).toMatch(/proposed \(preview\): \d+ Copper Ore, pays back in 2\d h/);
 
         fireEvent.change(first().querySelector('[data-hall-rank-tier]'), { target: { value: '' } });
         expect('tier' in store().hallStars.ph_lore.ranks[0]).toBe(false);

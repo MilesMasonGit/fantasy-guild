@@ -203,7 +203,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return Infinity;
     };
     profiles = buildProfiles(rates, {
-        tierOf: tierOfKey, unitHours, costHours, hallUnitHours, horizonHours: () => settings.paybackHours, campMembers: settings.campMembers,
+        tierOf: tierOfKey, unitHours, costHours, hallUnitHours, horizonHours: () => settings.paybackHours, hallHorizonHours: () => settings.hallPaybackHours,
+        campMembers: settings.campMembers,
         inputScale: (rate, cap, profile) => {
             let scale = 1;
             for (const [item, need] of Object.entries(rate.inputs || {})) {
@@ -630,7 +631,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 continue;
             }
             if (row.enabler || row.pays) continue;
-            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.paybackHours)} a boost has to pay for itself.`, { name: row.name });
+            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.hallPaybackHours)} a Guild Hall rank has to pay for itself.`, { name: row.name });
         }
 
         // Boosts over their target strength, by kind, at Maxed: one finding per set of boosts, with every work it lifts.
@@ -743,13 +744,43 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 const { gain, work } = hallRankGain(track, rank, cap);
                 const enabler = gain === Infinity;
                 const payback = base.priceHours === 0 ? 0 : enabler ? 0 : gain > 0 ? base.priceHours / gain : Infinity;
-                const row = { ...base, rate: true, enabler, gain, work, payback, pays: enabler || payback <= settings.paybackHours };
+                const row = { ...base, rate: true, enabler, gain, work, payback, pays: enabler || payback <= settings.hallPaybackHours };
                 if (!track.builtIn) row.proposed = proposePrice(track, rank, row);
                 rows.push(row);
             }
+            if (!track.builtIn) neverCheaper(rows.filter(r => r.id === track.id));
         }
         hallMemo = rows;
         return rows;
+    }
+
+    /**
+     * A star's proposed prices never fall from one rank to the next (the director, 2026-10-30): a
+     * rank's proposal is raised to the one before it, in hours to gather and, in the same material,
+     * in quantity, rounded up. A raised proposal says so (`raised`) and may then pay back slower
+     * than the Hall's payback time (`pays: false`).
+     */
+    function neverCheaper(rows) {
+        let before = null;
+        for (const row of rows) {
+            const p = row.proposed;
+            if (!p?.itemId) continue;
+            if (before) {
+                const perHour = p.quantity / p.priceHours;
+                let quantity = p.quantity;
+                if (p.priceHours < before.priceHours) quantity = Math.max(quantity, roundUp(before.priceHours * perHour));
+                if (p.itemId === before.itemId) quantity = Math.max(quantity, before.quantity);
+                if (quantity > p.quantity) {
+                    const priceHours = quantity / perHour;
+                    row.proposed = {
+                        ...p, quantity, priceHours, payback: priceHours / row.gain, raised: true,
+                        pays: priceHours / row.gain <= settings.hallPaybackHours,
+                        priceText: priceWords([{ itemId: p.itemId, quantity }])
+                    };
+                }
+            }
+            before = row.proposed;
+        }
     }
 
     /**
@@ -805,8 +836,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     /**
      * The price the ledger proposes for an authored rank: the most of its tier's material it can
-     * cost and still pay back within the payback time at Typical, rounded down to two figures.
-     * `{ itemId, quantity, priceHours, payback, work }`, or `{ why }` when it cannot propose one.
+     * cost and still pay back within the Hall's payback time at Typical, rounded down to two
+     * figures, then never below the rank before ({@link neverCheaper}).
+     * `{ itemId, quantity, priceHours, payback, pays, work }`, or `{ why }` when it cannot propose one.
      */
     function proposePrice(track, rank, row) {
         if (track.tier(rank) === null) return { why: 'no tier set' };
@@ -814,9 +846,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         if (!(row.gain > 0)) return { why: 'it saves no time at its tier' };
         const material = materialFor(track.star, row.tier, row.cap);
         if (!material) return { why: 'no gathered material at its tier' };
-        const quantity = Math.max(1, roundDown(settings.paybackHours * row.gain * material.perHour));
+        const quantity = Math.max(1, roundDown(settings.hallPaybackHours * row.gain * material.perHour));
         const priceHours = quantity / material.perHour;
-        return { itemId: material.itemId, quantity, priceText: priceWords([{ itemId: material.itemId, quantity }]), priceHours, payback: priceHours / row.gain, work: material.work };
+        const payback = priceHours / row.gain;
+        return { itemId: material.itemId, quantity, priceText: priceWords([{ itemId: material.itemId, quantity }]), priceHours, payback, pays: payback <= settings.hallPaybackHours, work: material.work };
     }
 
     // ── boosts by kind ─────────────────────────────────────────────────────────────────────────
@@ -957,12 +990,25 @@ function recordsOf(content) {
     return out;
 }
 
+/** The step two significant figures leave: 1 below 100, 10 below 1000, and so on. */
+function figureStep(n) {
+    const digits = Math.floor(Math.log10(n));
+    return digits >= 2 ? 10 ** (digits - 1) : 1;
+}
+
 /** Down to two significant figures, so a proposed price reads plainly and never pays back slower than asked. */
 export function roundDown(n) {
     if (!(n >= 1)) return 0;
-    const digits = Math.floor(Math.log10(n));
-    const step = digits >= 2 ? 10 ** (digits - 1) : 1;
+    const step = figureStep(n);
     return Math.floor(n / step) * step;
+}
+
+/** Up to two significant figures, so a price raised to the rank before never lands under it. */
+export function roundUp(n) {
+    if (!(n > 0)) return 0;
+    if (n < 1) return 1;
+    const step = figureStep(n);
+    return Math.ceil(n / step - 1e-9) * step;
 }
 
 /**

@@ -129,7 +129,7 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Guild Hall paybacks">
         <h3 className={sectionHead}>Guild Hall paybacks</h3>
         <p className="text-[10px] text-gray-500">
-          Each rank that adds a rate, at the tier it belongs to and at Typical: the hours its price takes to gather (at Typical's rates before the Hall) against the hours it saves an hour on the work it saves most on. A sensible investor buys what pays for itself within {hoursText(pace.settings.paybackHours)}; a rank that does not is red. The proposed price is the most of its tier's material it can cost and still pay back in time: a preview, never applied. Ranks that add no rate (Bank tabs, a wound's length, a loadout slot, a camp's reach) are listed under Problems.
+          Each rank that adds a rate, at the tier it belongs to and at Typical: the hours its price takes to gather (at Typical's rates before the Hall) against the hours it saves an hour on the work it saves most on. A sensible investor buys a rank that pays for itself within {hoursText(pace.settings.hallPaybackHours)} (the Guild Hall payback in the settings); a rank that does not is red. The proposed price is the most of its tier's material it can cost and still pay back in time, never below the rank before (raised ones are marked, and red when the raise makes them pay back too slowly): a preview, never applied. Ranks that add no rate (Bank tabs, a wound's length, a loadout slot, a camp's reach) are listed under Problems.
         </p>
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
@@ -154,8 +154,8 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
                 <td style={{ ...cell, fontWeight: h.pays ? 400 : 700, color: h.enabler ? 'var(--color-text-muted)' : h.pays ? 'var(--color-success)' : 'var(--color-error)' }} data-hall-payback>
                   {h.paybackText}
                 </td>
-                <td style={{ ...cell, color: 'var(--color-text-muted)' }} data-hall-proposed>
-                  {h.proposed ? (h.proposed.why ? h.proposed.why : `${h.proposed.priceText} (pays back in ${hoursText(h.proposed.payback)})`) : '—'}
+                <td style={{ ...cell, color: h.proposed && !h.proposed.why && !h.proposed.pays ? 'var(--color-error)' : 'var(--color-text-muted)' }} data-hall-proposed>
+                  {h.proposed ? (h.proposed.why ? h.proposed.why : `${h.proposed.priceText} (pays back in ${hoursText(h.proposed.payback)}${h.proposed.raised ? ', raised to the rank before' : ''})`) : '—'}
                 </td>
               </tr>
             ))}
