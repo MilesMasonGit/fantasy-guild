@@ -467,6 +467,10 @@ export function tick(delta) {
     [heroCarryIn, heroCarryOut] = [heroCarryOut, heroCarryIn];
     heroCarryOut.clear();
 
+    // An older save's untethered enemies join their nearest camp before any camp counts what it
+    // spawned below; a no-op once per board.
+    EnemyMotion.attachUntethered();
+
     // Timed changes: Saplings grow, Coasts turn and turn back, on clocks advanced by this tick's
     // `delta`, so a catch-up fast-forwards them with everything else. Before Flags, so a hero
     // whose Token just changed under them lets go and chooses again this same tick, and before any
@@ -677,6 +681,12 @@ export function tick(delta) {
         }
 
         setAlert(instance,null);
+
+        // Refilled at the very end of this tick, it rested all of it: its cycle begins next tick and
+        // is announced once, there. Begun here, its clock would stand at exactly zero and the next
+        // tick would announce it a second time.
+        const owed = carryIn.get(id);
+        if (!(instance.cycleElapsedMs > 0) && owed !== undefined && owed + delta <= 0) continue;
 
         // A new cycle begins here.
         // ⚠️ This position is the whole meaning of the event. Everything above it is a guard (a

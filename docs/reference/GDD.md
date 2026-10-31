@@ -173,8 +173,15 @@ mines) keeps counting while full and replaces a loss on the next tick.
   family standing **in its reach** (Saplings, Trees and Stumps, a map's
   included) against its own allowance, not the mat-wide cap; two such Forests
   far apart each fill their own. Its allowance adds nothing to a mat-wide
-  family's cap. Every other spawner, enemy camps included, keeps the mat-wide
-  count. No shipped spawner uses it yet.
+  family's cap. No shipped spawner uses it yet.
+- **An enemy camp counts its own** (owner, 2026-10-29; T-266): a spawner whose
+  family holds an enemy counts only what it spawned (the Tokens tethered to
+  it) against its own allowance, so goblins standing at one camp never keep
+  another from spawning, and its allowance adds nothing to any other
+  spawner's cap. An older save's untethered enemies join their nearest camp on
+  the first tick, before any camp counts; an enemy placed by hand, or one
+  whose camp is gone, counts toward none. Every other spawner keeps the
+  mat-wide count.
 
 *(`SpawnerSystem.js`, `TimedChanges.js`)*
 
