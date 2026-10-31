@@ -80,7 +80,8 @@ export function describeWorld(world) {
         itemName: (id) => getItem(id)?.name || id,
         lineName: (id) => lineById(tables, id)?.name || id,
         kitName: (id) => tables.kits.find(k => k.id === id)?.name || id,
-        skillName: (id) => SKILLS[id]?.name || id,
+        // A specialty need not be a skill ("combat": a camp); it reads capitalised all the same.
+        skillName: (id) => SKILLS[id]?.name || (id ? id.charAt(0).toUpperCase() + id.slice(1) : id),
         placeholder: isPlaceholderTables(),
         findings: findingsOf(world)
     });

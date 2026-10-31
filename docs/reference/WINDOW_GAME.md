@@ -53,6 +53,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
 | `EnemyMotion` | enemies walking | `isWalking`, `bodyOf` |
 | `Hostiles` | enemies noticing heroes | `scan` |
 | `Atlas` | Regions and travel | `list()`, `activeRegion()`, `travel(id)`, `devCreateEmptyRegion()`, `devGrantMaps(count)`, `devSettle()` |
+| `World` | the run's hex world, generated at a new game | `currentWorld()`, `previewWorld(seed)`, `describeWorld(world)`, `findingsOf(world)` |
 | `TimeManager` | the delta between ticks (no pause; the game's clock is `time.gameTimeMs` in the save) | `update()`, `consumeOverflow()` |
 | `GuildUpgradeManager` | the Guild Hall upgrade tree | `getRanks()`, `canAfford(...)`, `purchase(...)` |
 | `GameLoop` | the tick loop | `runHandlers(ms)`, `stop()`, `start()`, `getTickCount()` |

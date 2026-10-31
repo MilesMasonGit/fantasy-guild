@@ -1104,6 +1104,14 @@ drawers**. The menu can be flipped to the right.
   they left there, with no work claimed and no fight on; a new Region starts
   with everyone in the Dock. No Atlas screen yet: `Game.Atlas.devCreateEmptyRegion()`
   and `Game.Atlas.travel(id)` in the dev console. *(`src/systems/atlas/`)*
+- **The world** — **Generated, not on screen yet** (brief 330 W1): a new game
+  generates its hex world from the run seed (the game's creation time) and the
+  world tables, and keeps it whole in the save (`state.world`): the Hall's cell
+  (the Starter Camp), three strict rings, wild rings beyond, six wedges by
+  origin line; each cell's origins, tier, kit, specialty, hidden extras and
+  price. The tables are placeholder until the CMS syncs `data/world.json`
+  (W6). A save made before worlds has none. The QA panel's Atlas section shows
+  a world in words. *(`src/systems/world/`, `worldTablesShape.js`)*
 - **Desktop**: packaged with Tauri (Windows installers); the game runs in the
   webview and saves stay in its storage.
 
