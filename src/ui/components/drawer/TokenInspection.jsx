@@ -396,19 +396,20 @@ const RouteBlock = ({ route }) => {
     );
 };
 
-/** For a context Token: which stations it unlocks, and whether it is a tool. */
+/** For a context Token: which stations it unlocks, and whether it is a tool; nothing for one nothing uses. */
 const DrivesBlock = ({ def }) => {
     const tags = new Set(Object.keys(getProvidedTagsWithTiers(def)));
     const all = getAllTokenTypes();
     const driven = Object.keys(all).filter(id =>
         productionRoutes(id).some(r => r.requiresContext.some(t => tags.has(t)))
     );
+    if (!driven.length) return null;
 
     return (
         <div className="py-1">
             <Label>{def.isTool ? 'Tool — unlocks' : 'Drives'}</Label>
             <p className="mt-1 ui-text-body text-gi-text">
-                {driven.length ? driven.map(id => tokenName(id)).join(', ') : 'Nothing yet'}
+                {driven.map(id => tokenName(id)).join(', ')}
             </p>
             <p className="mt-1 ui-text-body text-gi-muted">
                 {/* Sharing is a rate trade, not free value. */}

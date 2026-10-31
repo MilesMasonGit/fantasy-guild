@@ -4,6 +4,7 @@ import { onStep } from '../board/frameClock.js';
 import { readCycle } from '../board/cycleShare.js';
 import { subscribeToken } from '../board/tokenEvents.js';
 import { useTokenDetail } from '../board/useTokenDetail.js';
+import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { chargesFraction, cycleSecondsText, ringCount } from '../board/ringRow.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -118,6 +119,8 @@ export const InspectBubbles = ({ def, instanceId = null }) => {
     const detail = useTokenDetail(instanceId, def);
     const instance = instanceId ? BoardState.getTokenById(instanceId) : null;
     const working = !!detail?.heroId;
+    // An enemy's use count is hidden, as on the mat and the card.
+    const enemy = isEnemyDef(def);
     const progress = useCycleProgress(instanceId, working);
 
     // ⚠️ The recipe a station is running changes its time and XP, so ask the engine, not the def.
@@ -138,7 +141,7 @@ export const InspectBubbles = ({ def, instanceId = null }) => {
 
     return (
         <div data-inspect-bubbles className="flex items-start justify-center gap-4 py-2">
-            <InspectBubble name="charges" label="Charges" bubble={bubbles.charges} />
+            {!enemy && <InspectBubble name="charges" label="Charges" bubble={bubbles.charges} />}
             {bubbles.time && <InspectBubble name="time" label="Time" bubble={bubbles.time} rootRef={live ? timeRef : null} />}
             {bubbles.xp && <InspectBubble name="xp" label="XP" bubble={bubbles.xp} rootRef={live ? xpRef : null} />}
         </div>
