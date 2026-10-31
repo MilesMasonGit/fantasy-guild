@@ -59,6 +59,8 @@ export function itemLines(list) {
 
 /** A rank's tier: a whole number from 0, or null when the owner has not set one. */
 export function tierOf(value) {
+    // `Number(null)` is 0: a tier written as null is unset, not the Starter Camp.
+    if (value === null || value === undefined || value === '') return null;
     const n = Number(value);
     return Number.isInteger(n) && n >= 0 ? n : null;
 }

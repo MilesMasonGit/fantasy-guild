@@ -47,6 +47,8 @@ const BOOSTED = [BOOST_KIND.SUPPORT, BOOST_KIND.CAMP, BOOST_KIND.CONSUMABLE, BOO
 /** Author-facing words, kept together for translation. */
 export const PACE_TEXT = Object.freeze({
     hours: (h) => (Number.isFinite(h) ? formatMinutes(h * 60) : 'never'),
+    /** Hours saved an hour, in words: "12 min an hour", "40 s an hour". */
+    saves: (h) => (!(h > 0) ? 'nothing' : h * 60 >= 1 ? `${formatMinutes(h * 60)} an hour` : `${Math.max(1, Math.round(h * 3600))} s an hour`),
     times: (r) => `${r >= 10 ? Math.round(r) : Math.round(r * 10) / 10}×`,
     skill: (s) => (s === COMBAT ? 'Combat' : s ? s.charAt(0).toUpperCase() + s.slice(1) : '—'),
     waits: Object.freeze({ need: 'waits for', level: 'levels', own: 'its own time' })
@@ -676,7 +678,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const savesWords = (row) => {
         if (!(row.gain > 0)) return 'and saves no time at its tier (no work it reaches is open by then)';
         const on = row.work ? ` on ${workName(row.work)}` : '';
-        return `and saves ${formatMinutes(row.gain * 60)} an hour${on}`;
+        return `and saves ${PACE_TEXT.saves(row.gain)}${on}`;
     };
 
     /** The Hall's works: each piece of work a track's ranks may move (its context lists the track). */

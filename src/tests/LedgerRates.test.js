@@ -23,6 +23,9 @@ import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { registerSkillPerks } from '../config/registries/perkRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
+import { registerHallSky } from '../config/registries/hallStarRegistry.js';
+import * as HallRules from '../systems/progression/HallRules.js';
+import * as Respawn from '../systems/board/Respawn.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 
 /**
@@ -109,6 +112,20 @@ const PERKS = { mining: { id: 'mining', perks: [{ level: 10, effectId: 'rt_fx_ri
 
 const content = () => ({ tokens: TOKENS, items: ITEMS, recipes: RECIPES, effects: EFFECTS, skillPerks: PERKS });
 const book = () => buildRateBook(content());
+
+/** Guild Hall stars as the game holds them: Mining XP, yield and speed, a rest aimed at the vein, and a guild-wide Double Loot. */
+const hallStar = (id, rules) => ({ id, constellation: 'rt_mining', name: id, node: { x: 0.5, y: 0 }, links: ['hall'], ranks: [{ tier: 0, price: [], rules, lines: [] }] });
+const HALL_SKY = {
+    constellations: { rt_mining: { id: 'rt_mining', name: 'RT Mining', label: { x: 1, y: 0 }, skill: 'mining' } },
+    stars: Object.fromEntries([
+        hallStar('rt_hall_lore', [provides('rt_hall_lore', EFFECT_TYPES.XP_BONUS, 'percentage', 0.5, { mode: 'all', value: '' }, { category: 'mining' }, 'board')]),
+        hallStar('rt_hall_rich', [provides('rt_hall_rich', EFFECT_TYPES.YIELD, 'percentage', 0.5, { mode: 'all', value: '' }, { category: 'mining' }, 'board')]),
+        hallStar('rt_hall_quick', [provides('rt_hall_quick', EFFECT_TYPES.WORK_TIME, 'percentage', -0.2, { mode: 'all', value: '' }, { category: 'mining' }, 'board')]),
+        hallStar('rt_hall_deep', [provides('rt_hall_deep', EFFECT_TYPES.GROW_TIME, 'percentage', -0.5, { mode: 'id', value: 'rt_vein' }, {}, 'board')]),
+        hallStar('rt_hall_lucky', [provides('rt_hall_lucky', EFFECT_TYPES.LOOT_MULT, 'flat', 10, { mode: 'all', value: '' }, {}, 'board')])
+    ].map(st => [st.id, st]))
+};
+const HALL_RANKS = { rt_hall_lore: 1, rt_hall_rich: 1, rt_hall_quick: 1, rt_hall_deep: 1, rt_hall_lucky: 1 };
 
 describe('one hero on a vein: cycle, rest, items and XP an hour', () => {
     it('works five cycles, rests a minute, and so offers 240 cycles an hour, 1.5 ore each', () => {
@@ -356,6 +373,33 @@ describe('⭐ against the board: every axis the calculator resolves is the one T
         // And the floored work time the board runs at.
         expect(book().rateOf({ token: 'rt_vein' }, { level: 10, gear: ['rt_charm'], supports: ['rt_cart'] }).cycleMs)
             .toBe(TileModifiers.workTimeOf(target.id, 3000, 'mining'));
+    });
+
+    it('the Guild Hall\'s stars: XP, yield, speed and Double Loot guild-wide, and a rest aimed at the vein, as the board holds them', () => {
+        freshBoard();
+        const target = place('rt_vein', AT.x, AT.y);
+        place('rt_cart', AT.x + STEP, AT.y);
+        registerHallSky(HALL_SKY);
+        try {
+            HallRules.apply(HALL_RANKS);
+            TileModifiers.rebuildAll();
+            const hallBook = buildRateBook({ ...content(), hallSky: HALL_SKY });
+            // No hero stands on the vein, so no perk or tool of theirs: the calculator's hero brings none either.
+            const setup = { level: 10, perks: false, supports: ['rt_cart'], hallRanks: HALL_RANKS };
+            const resolve = axisResolverOf(hallBook, { token: 'rt_vein' }, setup);
+            for (const [type, base, category] of AXES) {
+                expect([type, base, category, resolve(type, base, category)]).toEqual([type, base, category, TileModifiers.resolveAxis(target.id, type, base, category)]);
+            }
+            const r = hallBook.rateOf({ token: 'rt_vein' }, setup);
+            expect(r.cycleMs).toBe(TileModifiers.workTimeOf(target.id, 3000, 'mining'));
+            expect(r.lifecycle.restMs).toBe(Respawn.restMsOf(target));
+            // The stars moved what they name, so the parity is not the empty case.
+            expect(r.lifecycle.restMs).toBe(30000);
+            expect(r.factors.filter(f => f.kind === 'hall' && f.axes.length).map(f => f.id).sort()).toEqual(Object.keys(HALL_RANKS).map(id => `hall:${id}`).sort());
+        } finally {
+            HallRules.apply({});
+            registerHallSky(null);
+        }
     });
 
     it('a stump\'s and a sapling\'s grow time beside a forest', () => {

@@ -170,7 +170,7 @@ describe('the Guild Hall page', () => {
         expect(star.closest('[data-hall-constellation]').getAttribute('data-hall-constellation')).toBe('mining');
         fireEvent.click([...star.querySelectorAll('button')].find(b => b.textContent.includes('1 rank')));
         const ranks = star.querySelector('[data-hall-star-ranks]').textContent;
-        expect(ranks).toContain('tier 1');
+        expect(star.querySelector('[data-hall-rank-tier]').value).toBe('1');
         expect(ranks).toContain('10 Copper Ore');
         expect(ranks).toContain('10% more XP');
         fireEvent.change(star.querySelector('[data-hall-star-name]'), { target: { value: 'Deep Lore' } });
