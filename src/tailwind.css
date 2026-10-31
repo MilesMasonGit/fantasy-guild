@@ -469,6 +469,12 @@
   opacity: 0.85;
 }
 
+/* A held mat (a settled place before its arrival is beaten): its Tokens dimmed with its ground,
+ * its enemies left bright. Only while a place is held, and nothing on it is worked meanwhile. */
+.gi-token-held {
+  filter: brightness(0.5) saturate(0.6);
+}
+
 /* Demolish mode: a Token the engine will not let go is dimmed, so what can go reads at a glance. */
 .gi-token-protected {
   filter: grayscale(0.6) brightness(0.45);

@@ -121,8 +121,8 @@ function addRecord(atlas, {
     return region;
 }
 
-function announce(reason, regionId) {
-    EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason, regionId });
+function announce(reason, regionId, extra = {}) {
+    EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason, regionId, ...extra });
 }
 
 /** Save now, when a slot is being played. */
@@ -245,7 +245,7 @@ export function createRegion({
         seed, biome, ground, terrain, rules, cellId,
         board: isPlainObject(board) ? board : createEmptyBoard()
     });
-    announce('created', region.id);
+    announce('created', region.id, { cellId: region.cellId });
     return { success: true, region };
 }
 

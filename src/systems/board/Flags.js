@@ -18,6 +18,7 @@ import * as Demolition from './Demolition.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as Camps from './Camps.js';
+import * as Occupation from './Occupation.js';
 import { ensureFlagColour } from './FlagColours.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
@@ -83,7 +84,9 @@ export const SKIP = Object.freeze({
     /** Another hero's flag already holds it. */
     CLAIMED: 'claimed',
     /** The player marked it "heroes may not work this". */
-    DISALLOWED: 'disallowed'
+    DISALLOWED: 'disallowed',
+    /** The mat is held by the enemies it arrived with (`Occupation`): only they may be fought. */
+    OCCUPIED: 'occupied'
 });
 
 /**
@@ -397,6 +400,7 @@ function evaluate(heroId, flag, excludeInstanceId = null) {
     for (const c of candidates) {
         const instanceId = c.instance.id;
         if (isDisallowed(c.instance)) { skips.push({ instanceId, reason: SKIP.DISALLOWED }); continue; }
+        if (Occupation.holds(c.instance)) { skips.push({ instanceId, reason: SKIP.OCCUPIED }); continue; }
         if (c.kind === 'work' && !hasWorkSkill(c.def, c.instance)) { skips.push({ instanceId, reason: SKIP.NO_SKILL }); continue; }
         if (!canTake(heroId, c.kind, c.def, c.instance)) { skips.push({ instanceId, reason: ALERT.UNSKILLED }); continue; }
         const holder = BoardState.heroOfInstance(instanceId);
@@ -486,7 +490,7 @@ function keepOrRelease(r, heroId, dirty) {
         // A hero holds nothing but their ordered Token, or, sent to a camp, what the camp hands
         // out (in its reach: a Token the camp moved away from is let go). A spot order holds
         // nothing (an ambush it fought back is over by now).
-        const eligible = !isSpot(flag) && !isDisallowed(instance)
+        const eligible = !isSpot(flag) && !isDisallowed(instance) && !Occupation.holds(instance)
             && (flag.pinnedTo === instance.id || campHolds(heroId, instance)) && (
             (kind === 'enemy' && canFight(heroId))
             || (kind === 'work' && hasWorkSkill(def, instance) && canTake(heroId, kind, def, instance)
@@ -567,6 +571,16 @@ function lapsePins(r, order) {
         const flag = BoardState.flagOf(heroId);
         if (!flag || !('pinnedTo' in flag)) continue;
         if (typeof flag.pinnedTo === 'string' && BoardState.getTokenById(flag.pinnedTo)) continue;
+        // An arrival enemy beaten while others stand: the hero takes on the nearest of them, so a
+        // hero sent at the encounter keeps fighting while the player is away.
+        const next = Occupation.nextEnemyAfter(flag.pinnedTo, flag);
+        if (next && canFight(heroId)) {
+            BoardState.setFlag(heroId, { ...flag, x: next.x, y: next.y, pinnedTo: next.id });
+            r.nextTryAt.delete(heroId);
+            r.dirty = true;
+            announceMoved(heroId);
+            continue;
+        }
         // Gone for good: the hero waits at its last spot for a new order.
         const { pinnedTo: _gone, ...rest } = flag;
         BoardState.setFlag(heroId, { ...rest, spot: true, needsJob: true });
@@ -639,6 +653,7 @@ export const ORDER_NOTHING = 'nothing';
 
 export function orderRefusal(heroId, instance) {
     if (!heroId || !instance?.typeId) return { reason: ORDER_NOTHING };
+    if (Occupation.holds(instance)) return { reason: SKIP.OCCUPIED };
     // A camp is an order on what it hands out; an enemy camp, on the enemies it spawns.
     const camp = Camps.campOfInstance(instance);
     if (camp) return campRefusal(heroId, instance, camp);

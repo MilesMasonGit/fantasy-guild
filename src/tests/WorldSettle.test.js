@@ -16,7 +16,6 @@ import * as Atlas from '../systems/atlas/Atlas.js';
 import * as World from '../systems/world/World.js';
 import { SETTLE_TEXT } from '../systems/world/Settling.js';
 import { HALL_CELL, CELL_STATE, settledIds, cellStates, priceRows, cellOutputs } from '../systems/world/frontier.js';
-import { recipesOfCell, KIT_BIOME, DEFAULT_BIOME, CELL_POINTS, ROLE_WEIGHT, cellRecipeId } from '../systems/world/cellRegion.js';
 import { cellsWithin, cellId } from '../systems/world/hex.js';
 import { resetMatTuning } from '../config/matTuning.js';
 
@@ -120,27 +119,6 @@ describe('which cells can be settled (pure)', () => {
     });
 });
 
-describe('the stand-in Region of a cell (pure)', () => {
-    it('one base recipe of the cell\'s origins, its kit\'s ground, its treasures; then a recipe per hidden modifier', () => {
-        const cell = {
-            id: '1,0', kit: 'highland',
-            origins: [{ id: 'vein', role: 'main' }, { id: 'tree', role: 'blend' }, { id: 'iron', role: 'key' }, { id: 'vein', role: 'blend' }],
-            extras: [{ id: 'chest', kind: 'treasure' }, { id: 'chest', kind: 'treasure' }, { id: 'mod_a', kind: 'modifier' }, { id: 'mod_missing', kind: 'modifier' }]
-        };
-        const modA = { id: 'mod_a', kind: 'modifier', effects: [] };
-        const recipes = recipesOfCell(cell, { modifierRecipe: (id) => (id === 'mod_a' ? modA : null), name: 'Highland Ores' });
-        expect(recipes).toEqual([
-            {
-                id: cellRecipeId(cell), kind: 'base', name: 'Highland Ores', biome: KIT_BIOME.highland, points: CELL_POINTS,
-                nodes: [{ typeId: 'vein', weight: ROLE_WEIGHT.main }, { typeId: 'tree', weight: ROLE_WEIGHT.blend }, { typeId: 'iron', weight: ROLE_WEIGHT.key }],
-                treasures: [{ typeId: 'chest', count: 2 }]
-            },
-            modA
-        ]);
-        expect(recipesOfCell({ id: 'x', kit: 'unknown', origins: [] })[0].biome).toBe(DEFAULT_BIOME);
-    });
-});
-
 describe('⭐ settling a cell', () => {
     it('⭐ pays the whole price at once, writes the Region on the cell and takes the guild there', () => {
         const cell = ringOne()[0];
@@ -170,7 +148,7 @@ describe('⭐ settling a cell', () => {
         expect(world().cells.filter(c => c.ring === 2 && states.get(c.id) === CELL_STATE.FRONTIER).length).toBeGreaterThan(0);
     });
 
-    it('announces the Region written and the arrival, as any settling and travel do', () => {
+    it('announces the Region written, the arrival there, and the enemies holding it', () => {
         const cell = ringOne()[1];
         heroFor(cell);
         stock(cell);
@@ -181,7 +159,7 @@ describe('⭐ settling a cell', () => {
         } finally {
             off();
         }
-        expect(reasons).toEqual(['created', 'travelled']);
+        expect(reasons).toEqual(['created', 'travelled', 'occupied']);
     });
 
     it('draws no random number', () => {

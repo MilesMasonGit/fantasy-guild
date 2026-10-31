@@ -17,8 +17,8 @@ import { currentWorld } from './worldState.js';
 
 export { currentWorld };
 export {
-    SETTLE_TEXT, settleCell, settledCellIds, cellStatesNow, priceOf, outputsOf, regionIdOfCell, activeCellId, cellName,
-    guildSkillLevel
+    SETTLE_TEXT, settleCell, writePlace, arriveAt, settledCellIds, cellStatesNow, priceOf, outputsOf, regionIdOfCell,
+    activeCellId, cellName, guildSkillLevel
 } from './Settling.js';
 
 /**

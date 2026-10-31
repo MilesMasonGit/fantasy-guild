@@ -16,6 +16,7 @@ import { materialsFromTokens } from './materials.js';
 import { currentWorld } from './worldState.js';
 import { HALL_CELL, CELL_STATE, settledIds, cellStates, priceRows, cellOutputs } from './frontier.js';
 import { recipesOfCell } from './cellRegion.js';
+import * as Arrival from './Arrival.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -23,9 +24,10 @@ import { logger } from '../../utils/Logger.js';
  * settled (the Hall's, and each one a Region was settled on), which can be settled next, and what
  * each asks against the Bank and the heroes' levels.
  *
- * {@link settleCell} pays a cell's whole price at once, writes its Region (a stand-in until the mat
- * is written from the cell: `cellRegion.js`) and moves the guild there. Travel between settled
- * places is the Atlas's, free and instant, as before.
+ * {@link settleCell} pays a cell's whole price at once, writes its Region from the cell (its mat:
+ * `cellMat.js`, through `cellRegion.js`), moves the guild there and puts the place's arrival on it
+ * (`Arrival.js`): the mat is held until those enemies are beaten. Travel between settled places is
+ * the Atlas's, free and instant, as before.
  */
 
 /** Player-facing refusals, kept together for translation. */
@@ -39,7 +41,7 @@ export const SETTLE_TEXT = Object.freeze({
     NOT_WRITTEN: 'The place could not be written'
 });
 
-/** How many seeds the stand-in tries for a layout in which every Token fits. */
+/** How many seeds the writing tries for a layout in which every Token fits. */
 const LAYOUT_TRIES = 8;
 
 const refuse = (reason, extra = {}) => ({ success: false, reason, ...extra });
@@ -115,7 +117,7 @@ function modifierRecipe(itemId) {
     return isModifier(def) ? modifierRecipeOf(def) : null;
 }
 
-/** The layout the stand-in writes: the first of a few seeds in which every Token fits, else the first. */
+/** The layout a place is written with: the first of a few seeds in which every Token fits, else the first. */
 function seedFor(cell, recipes) {
     let seed = cell.seed >>> 0;
     for (let i = 0; i < LAYOUT_TRIES; i++) {
@@ -125,12 +127,47 @@ function seedFor(cell, recipes) {
     return cell.seed >>> 0;
 }
 
+/** A Token type's work skill, or null. */
+const skillOf = (typeId) => getTokenType(typeId)?.config?.skill || null;
+
 /**
- * Settle cell `id`: pay its whole price from the Bank, write its Region and take the guild there.
- * Refuses, taking nothing, with no world, a cell that is not on the frontier, a price the guild
- * cannot meet, or while the time away is still playing.
+ * Write the Region of `cell` (a world cell, or the QA panel's fixture): its mat (`cellMat.js`) laid
+ * out by the Atlas. The guild stays where it is.
  *
- * @returns {{success: boolean, reason?: string, price?: object, region?: object, travel?: object}}
+ * @param {object} cell
+ * @param {{cellId?: string|null}} [options] the world cell the Region is settled on (null: none)
+ * @returns {{success: boolean, reason?: string, region?: object, mat?: object, written?: object}}
+ */
+export function writePlace(cell, { cellId = null } = {}) {
+    const tables = worldTables();
+    const hall = currentWorld()?.cells.find(c => c.ring === 0);
+    const { mat, recipes } = recipesOfCell(cell, {
+        tables, skillOf, hallOrigins: (hall?.origins || []).map(o => o.id), modifierRecipe, name: cellName(cell, tables)
+    });
+    const describe = (recipeId) => (recipeId === recipes[0].id ? { word: recipes[0].name } : { word: '' });
+    const written = Atlas.settle({ ingredients: recipes, seed: seedFor(cell, recipes), describe, cellId, allowUnplaced: true });
+    if (!written.success) return refuse(SETTLE_TEXT.NOT_WRITTEN, { written });
+    return { success: true, region: written.region, mat };
+}
+
+/**
+ * Take the guild to a place just written and put its arrival on the mat.
+ *
+ * @returns {{travel: object, arrival: {ids: string[], unplaced: string[]}}}
+ */
+export function arriveAt(region, mat) {
+    const travel = Atlas.travel(region.id);
+    const arrival = travel.success ? Arrival.occupy(mat?.arrival, { seed: region.seed }) : { ids: [], unplaced: [] };
+    return { travel, arrival };
+}
+
+/**
+ * Settle cell `id`: pay its whole price from the Bank, write its Region, take the guild there and
+ * put the place's arrival on its mat. Refuses, taking nothing, with no world, a cell that is not on
+ * the frontier, a price the guild cannot meet, or while the time away is still playing.
+ *
+ * @returns {{success: boolean, reason?: string, price?: object, region?: object, mat?: object,
+ *   travel?: object, arrival?: object}}
  */
 export function settleCell(id) {
     const world = currentWorld();
@@ -144,13 +181,11 @@ export function settleCell(id) {
     const price = priceOf(cell);
     if (!price.met) return refuse(SETTLE_TEXT.SHORT, { price });
 
-    const recipes = recipesOfCell(cell, { modifierRecipe, name: cellName(cell) });
-    const describe = (recipeId) => (recipeId === recipes[0].id ? { word: recipes[0].name } : { word: '' });
-    const written = Atlas.settle({ ingredients: recipes, seed: seedFor(cell, recipes), describe, cellId: id, allowUnplaced: true });
-    if (!written.success) return refuse(SETTLE_TEXT.NOT_WRITTEN, { written });
+    const written = writePlace(cell, { cellId: id });
+    if (!written.success) return written;
 
     for (const row of price.items) InventoryManager.removeItem(row.itemId, row.need);
-    const travel = Atlas.travel(written.region.id);
-    logger.info('World', `Settled ${id} as ${written.region.id}${travel.success ? ', and the guild moved there' : ''}`);
-    return { success: true, price, region: written.region, travel };
+    const { travel, arrival } = arriveAt(written.region, written.mat);
+    logger.info('World', `Settled ${id} as ${written.region.id}${travel.success ? `, and the guild moved there to ${arrival.ids.length} enemies` : ''}`);
+    return { success: true, price, region: written.region, mat: written.mat, travel, arrival };
 }

@@ -69,6 +69,12 @@ export const TUTORIAL_TEXT = Object.freeze({
             title: 'Beat a Goblin',
             says: 'The goblins by the camp took something of mine. Maps, I think. Three of them. Fetch them back.',
             instruction: 'Give a Hero food first (drag it from the Item Bank onto them): goblins hit hard. Then drag the Hero onto a goblin by the Goblin Camp and beat it.'
+        }),
+        // ⚠️ A draft: the owner rewrites it at the eye-check.
+        cart_first_place: Object.freeze({
+            title: 'Settle Your First Place',
+            says: 'No maps, then. Never mind: I have drawn the country round the camp from memory. Pick a place, pay its way, and we go.',
+            instruction: 'The Atlas is open on the world map. Pick a place beside the camp, gather what it asks for, then press Settle. Its enemies hold it when you arrive: beat them all.'
         })
     })
 });

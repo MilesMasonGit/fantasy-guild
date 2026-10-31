@@ -1,76 +1,64 @@
-// a world cell as the recipes its Region is written from: a stand-in until the mat is written from the cell (pure)
+// a world cell's mat as the recipes its Region is written from (pure)
 
-import { ORIGIN_ROLE } from './generate.js';
+import { cellMat } from './cellMat.js';
 
 /**
- * ⚠️ A stand-in. Settling a cell writes its Region the way a map wrote one: one Base Map recipe
- * made of the cell's origins (`Budget.js`'s shape), plus each hidden extra (a modifier through its
- * own recipe, a treasure as a treasure). Kits, the specialty's better things, the arrival
- * encounter and the wild extremes are not read yet: writing the mat from the cell replaces this.
+ * Settling a cell writes its Region through the Atlas's generation (`Budget.js` → `Layout.js`):
+ * one base recipe holding exactly the mat's natural work (`cellMat.js`), on its kit's ground, with
+ * its camps, treasures, Stone and any odd water, plus one recipe per hidden modifier. The arrival's
+ * enemies are not in the recipes: they come onto the mat once the guild is there (`Arrival.js`).
  *
- * Pure: the caller hands it the modifier recipes and the names.
+ * Pure: the caller hands it the tables, the modifier recipes, the Token skills and the name.
  */
 
-/** How many nodes a cell writes, as one of today's maps does. */
-export const CELL_POINTS = 40;
-
-/** How heavily each kind of origin is written: the cell's own line first. */
-export const ROLE_WEIGHT = Object.freeze({
-    [ORIGIN_ROLE.MAIN]: 3,
-    [ORIGIN_ROLE.KEY]: 3,
-    [ORIGIN_ROLE.BLEND]: 1,
-    [ORIGIN_ROLE.HALL]: 1
-});
-
-/** The ground each kit stands on, among today's biomes (`Budget.BIOME_GROUND`). */
-export const KIT_BIOME = Object.freeze({
-    highland: 'mountain',
-    woodland: 'forest',
-    plains: 'meadow',
-    wetland: 'bog',
-    riverside: 'coast'
-});
-
-export const DEFAULT_BIOME = 'meadow';
-
-/** The base recipe's id: one per cell, so two Regions of one cell would read as the same map. */
+/** The base recipe's id: one per cell, so two Regions of one cell would read as the same place. */
 export function cellRecipeId(cell) {
     return `world_cell_${cell.id}`;
 }
 
 /**
- * The recipes a cell's Region is written from: its base recipe first, then one per hidden modifier.
+ * The recipes a mat is written from: its base recipe first, then one per hidden modifier the
+ * `modifierRecipe` lookup knows.
  *
- * @param {object} cell a world cell
- * @param {object} [lookups]
- * @param {(itemId: string) => object|null} [lookups.modifierRecipe] a modifier's recipe, or null
- * @param {string} [lookups.name] what the Region's practical name calls the base recipe
+ * With one base recipe Budget writes each node exactly as many times as its weight, the points
+ * being their sum.
+ *
+ * @param {object} mat a {@link cellMat} result
+ * @param {{id: string, name?: string, modifierRecipe?: (itemId: string) => object|null}} options
  * @returns {object[]}
  */
-export function recipesOfCell(cell, { modifierRecipe = () => null, name = '' } = {}) {
-    const nodes = [];
-    for (const o of cell?.origins || []) {
-        if (!nodes.some(n => n.typeId === o.id)) nodes.push({ typeId: o.id, weight: ROLE_WEIGHT[o.role] ?? 1 });
-    }
-    const treasures = [];
-    const modifiers = [];
-    for (const extra of cell?.extras || []) {
-        if (extra.kind === 'treasure') {
-            const row = treasures.find(t => t.typeId === extra.id);
-            if (row) row.count++; else treasures.push({ typeId: extra.id, count: 1 });
-        } else if (extra.kind === 'modifier') {
-            const recipe = modifierRecipe(extra.id);
-            if (recipe) modifiers.push(recipe);
-        }
-    }
+export function recipesOfMat(mat, { id, name = '', modifierRecipe = () => null }) {
+    const nodes = mat.nodes.map(n => ({ typeId: n.typeId, weight: n.count }));
     const base = {
-        id: cellRecipeId(cell),
+        id,
         kind: 'base',
         name,
-        biome: KIT_BIOME[cell?.kit] || DEFAULT_BIOME,
-        points: CELL_POINTS,
+        biome: mat.biome,
+        points: nodes.reduce((sum, n) => sum + n.weight, 0),
         nodes
     };
-    if (treasures.length) base.treasures = treasures;
+    if (mat.camps.length) base.camps = mat.camps.map(c => ({ ...c }));
+    if (mat.treasures.length) base.treasures = mat.treasures.map(t => ({ ...t }));
+    if (mat.water !== null) base.water = mat.water;
+    if (mat.inland) base.inland = mat.inland;
+    if (mat.stone.outcrops > 0 || mat.stone.ridge) base.stone = { ...mat.stone };
+    const modifiers = mat.modifiers.map(modifierRecipe).filter(Boolean);
     return [base, ...modifiers];
+}
+
+/**
+ * A cell's mat and the recipes it is written from.
+ *
+ * @param {object} cell a world cell
+ * @param {object} lookups
+ * @param {object} lookups.tables normalised world tables
+ * @param {(typeId: string) => string|null} lookups.skillOf a Token's work skill
+ * @param {string[]} [lookups.hallOrigins] the Hall's cell's origins
+ * @param {(itemId: string) => object|null} [lookups.modifierRecipe] a modifier's recipe, or null
+ * @param {string} [lookups.name] what the Region's practical name calls the base recipe
+ * @returns {{mat: object, recipes: object[]}}
+ */
+export function recipesOfCell(cell, { tables, skillOf, hallOrigins = [], modifierRecipe, name = '' }) {
+    const mat = cellMat(cell, tables, { skillOf, hallOrigins });
+    return { mat, recipes: recipesOfMat(mat, { id: cellRecipeId(cell), name, modifierRecipe }) };
 }

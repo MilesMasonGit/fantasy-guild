@@ -8,9 +8,8 @@
 // and stalls the chain (the `token_inspected` report is kept for when it does).
 // `QuestTutorialChain.test.js` drives each step through the real systems.
 //
-// The chain's end, the cartographer opening the world map and the first place settled, goes after
-// the goblin: settling a place reports `region_settled` and arriving `region_travelled`
-// (`QuestManager`), which a step can count.
+// The chain ends with the cartographer opening the world map (a step with `opensWorld`: the
+// Atlas opens on the World page as it arrives) and the first place settled on it.
 //
 // Every word a step shows lives in `tutorialText.js`.
 //
@@ -115,6 +114,14 @@ const STEPS = [
         match: { enemyId: TUTORIAL_GOBLIN },
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
+    },
+    // The end: the cartographer opens the world map, and the guild settles its first place on it.
+    {
+        id: 'cart_first_place',
+        targetType: 'place_settled',
+        requiredCount: 1,
+        rewardItems: TUTORIAL_REWARD_ITEMS,
+        opensWorld: true
     }
 ];
 

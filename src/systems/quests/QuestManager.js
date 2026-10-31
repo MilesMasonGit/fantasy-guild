@@ -209,10 +209,13 @@ export const QuestManager = {
                 const typeId = data?.typeId ?? null;
                 this.reportProgress('token_inspected', 1, { typeId, landmark: isLandmarkType(typeId) });
             }),
-            // The Atlas: a Region written (settled) and the guild moving into another one.
+            // The Atlas: a Region written (settled), a place of the world map among them, and the
+            // guild moving into another one.
             EventBus.subscribe(ENGINE_EVENTS.ATLAS_CHANGED, (data) => {
-                if (data?.reason === 'created') this.reportProgress('region_settled');
-                else if (data?.reason === 'travelled') this.reportProgress('region_travelled');
+                if (data?.reason === 'created') {
+                    this.reportProgress('region_settled');
+                    if (data.cellId) this.reportProgress('place_settled', 1, { cellId: data.cellId });
+                } else if (data?.reason === 'travelled') this.reportProgress('region_travelled');
             }),
             // ⚠️ Retired events that must not come back (`QuestTutorialChain.test.js`
             // fails if one does): `map_burst` / `map_opened` / `map_purchased`,
