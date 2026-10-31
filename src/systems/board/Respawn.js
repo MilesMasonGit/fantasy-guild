@@ -122,6 +122,18 @@ export function restInstead(instance, { heroId = null, exhaustedBy = heroId } = 
     return true;
 }
 
+/**
+ * A rest that began `overMs` before the end of the tick it began in (the cycle that used the Token
+ * up ended part-way through the tick) has already run that long. The clocks advance a whole tick at
+ * the start of the next one, so without this every rest would start at a tick's end: up to a second
+ * late in a catch-up's steps, and a resting vein would give less in a catch-up than played live.
+ */
+export function restBeganEarlier(instance, overMs) {
+    if (!(overMs > 0) || !isResting(instance)) return;
+    const clocks = instance.clocks && typeof instance.clocks === 'object' ? instance.clocks : (instance.clocks = {});
+    clocks[CLOCK] = overMs;
+}
+
 /** A refill falls due: back to its starting charges. `TimedChanges`' handler; returns the Token. */
 export function refill(instance) {
     const full = tokenStartingUses(instance.typeId);

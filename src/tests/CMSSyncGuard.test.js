@@ -130,7 +130,8 @@ describe('the sync route', () => {
         for (const [name, content] of Object.entries(files())) {
             fs.writeFileSync(path.join(dataDir, name), JSON.stringify(content));
         }
-        cmsFileApi({ dataDir }).configureServer({ middlewares: { use: (fn) => { handler = fn; } } });
+        // Its own plan folder too: without one the route reads the real `cms/plan/`, whose stubs are content.
+        cmsFileApi({ dataDir, planDir: path.join(dataDir, 'plan') }).configureServer({ middlewares: { use: (fn) => { handler = fn; } } });
     });
     afterEach(() => fs.rmSync(dataDir, { recursive: true, force: true }));
 

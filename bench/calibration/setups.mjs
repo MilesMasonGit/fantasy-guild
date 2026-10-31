@@ -70,9 +70,6 @@ export const SETUPS = [
         name: 'The vein again, the miner drinking Beer (+10 % XP, on the XP floor)',
         warmupMs: 10 * 60_000,
         compare: { items: ['item_copper_ore'], skills: ['mining'], spent: ['item_beer'] },
-        // The engine announces a cycle start twice when a vein refills at the end of a step, so a drink's
-        // dose counts one extra cycle per refill (about 20 % more Beer here). An engine fault, not the calculator's.
-        known: { 'spent item_beer': 'the engine counts a cycle start twice after each refill' },
         works: [{ target: { token: 'token_copper_ore_vein' }, setup: { level: 10, consumables: ['item_beer'] } }],
         bank: { item_beer: 1000 },
         build({ place, hero, order }) {

@@ -299,6 +299,13 @@ export const INITIAL_STATE = {
         seed: null
     },
 
+    // === The world (brief 330) ===
+    // The run's hex world around the Hall, generated whole at a new game and kept as it was made
+    // (`world/World.js`; the shape is `world/generate.js`'s). Null in a save made before the world
+    // existed: old saves are abandoned, so none is generated for them. ⚠️ Not in REQUIRED_KEYS:
+    // a required section may not be null.
+    world: null,
+
     // === Cartographer (Maps) ===
     // Deleted with the Map bursts and the Map purchase (Token Lifecycle 9.1).
     // An older save's `cartographer` section is dropped by `migrateState`.

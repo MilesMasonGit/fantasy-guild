@@ -14,6 +14,10 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { MAX_SPEED_UP_CUT } from '../config/loopConstants.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { clearMat, placeAt } from './fixtures/mat.js';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// Its heroes stand at perk levels: the shipped perks are content, not what this tests.
+withoutShippedPerks();
 
 /**
  * The standard floor for speed-ups (brief 230 S1a; owner, 2026-10-24): stacked supports cut at
