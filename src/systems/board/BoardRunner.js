@@ -660,6 +660,12 @@ export function tick(delta) {
 
         setAlert(instance,null);
 
+        // Refilled at the very end of this tick, it rested all of it: its cycle begins next tick and
+        // is announced once, there. Begun here, its clock would stand at exactly zero and the next
+        // tick would announce it a second time.
+        const owed = carryIn.get(id);
+        if (!(instance.cycleElapsedMs > 0) && owed !== undefined && owed + delta <= 0) continue;
+
         // A new cycle begins here.
         // ⚠️ This position is the whole meaning of the event. Everything above it is a guard (a
         // hero is present, the recipe resolved, the inputs are in the Bank, the charges are
