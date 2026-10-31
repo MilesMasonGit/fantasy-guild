@@ -277,6 +277,46 @@ worker, filters on a Token's live charges, effects that last a time, combat XP a
 won, bounties and trading maps up (their steps are untimed, so a path through them is a floor),
 taking a building down, walking, several heroes queueing on one family.
 
+## The ledger knows the Guild Hall (brief 320 H2, 2026-10-30)
+
+*Engineer's notes. Measured: the calibration row, the QA-sky numbers and the timings. Reasoned: the
+rules below, each a choice the owner can overrule.*
+
+**The calculator.** A star a setup holds (`hallRanks`) is one factor, `hall:<star>`, read exactly as
+`HallRules` holds it in the game (shared code, `hallModifiers.hallRulesOf`): guild-wide rules in the
+guild scope, rules aimed at a Token on that Token wherever it stands, the Well's lines at the Hall.
+`LedgerRates.test.js` buys five stars on a real mat and checks every axis and the vein's rest
+against `TileModifiers`. A wider camp (Camp Reach) is listed as taken, not read: the calculator takes
+a camp's copies from the setup. Wound Time and Loadout Slots are no rate (fights are coarse).
+
+**The profiles.** A rank is on offer to a piece of work when its rules can reach it, from the tier
+the owner gave the rank, once its price can be had. **Bare** holds none. **Typical** takes a rank
+when the hours its price takes to gather, at Typical's rates **before the Hall** (so a star never
+prices itself and the pricing cannot loop), are under the payback time times the hours it saves an
+hour of the work (its share of the work's worth: items at their Bare hours, XP at the work's own
+rate; at the Hall, the hours its lines would take to gather). A closed star is opened through the
+cheapest stars before it (their rank 1 added to the price); a rank that gives a work nothing (the XP
+floor can make two ranks equal) is bought on the way to the one above. **Maxed** takes every rank.
+
+**The payback check and the price.** Every rank, at its tier (never past the last stage the pace
+knows), at Typical, on the work it saves most on: payback = price hours / hours saved an hour; over
+`paybackHours` it is red and a Problem. The proposed price is the most of its tier's gathered
+material (the star's skill's own where there is one, never what the star pays) it can cost and still
+pay back within `paybackHours`, rounded down to two figures: a preview (brief 290's rule).
+
+**On H1's QA sky** (shipped data, default settings): every rank that adds a rate pays back, in 1 to
+50 minutes (its placeholder prices are 10 to 40 items); Long Rails, the Infirmary and the Larder add
+no rate. The proposals run 10 to 110 times the placeholders (Miner's Lore 1: 1,100 Copper Ore
+against 10). With the payback time set to 6 minutes, 20 ranks turn red.
+
+**Calibration** (`vein-hall`, 3 seeds × 8 game-hours): the copper vein with Mining XP +50 %, Mining
+speed -20 % and its rest -50 % as fixture stars: ore 643.6 an hour in the engine against 642.9
+(-0.1 %), Mining XP 856.8 against 857.1 (0.0 %); the stars took the engine from 240 to 428 cycles an hour.
+
+**Cost.** On today's content the pace takes about 0.3 s with no sky; an H3-sized sky (36 stars, 252
+ranks) adds about 20,000 rates, around 1 to 2 s, at the default three stages, and about 7 s if seven
+stages are set (each stage is a Typical profile of every piece of work).
+
 ## The system design (owner, 2026-10-29)
 
 *From the analyst's [system plan](research/ledger_system_plan_2026-10-29.md);
