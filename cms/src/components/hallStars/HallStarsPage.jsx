@@ -10,7 +10,7 @@ import { BUILT_IN_CONSTELLATIONS } from '../../../../src/config/guildUpgrades.js
  * The Guild Hall page: the authored sky (constellations and their stars), as Sync writes it to
  * `data/hallStars.json`. A star's name, description, constellation, place and tag sit here; its
  * ranks (tier, price, rules, Passive Production lines) show as the game reads them and come in by
- * change pack (the ledger sets tiers and prices, brief 320 H2). The built-in Bunk Beds, Bank Tabs
+ * change pack (the ledger is to set tiers and prices). The built-in Bunk Beds, Bank Tabs
  * and Wishing Well are the game's own and are not listed.
  */
 

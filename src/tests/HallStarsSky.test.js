@@ -4,7 +4,7 @@
 // the details panel, and the Hall's Effects listing what the stars give.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, fireEvent, act, cleanup } from '@testing-library/react';
+import { render, act, cleanup } from '@testing-library/react';
 import {
     GuildHallBoard, webSize, panLimit, clampPan, MIN_SKY_SCALE, WEB_W, WEB_H, WEB_UNIT_PX
 } from '../ui/components/board/GuildHallBoard.jsx';

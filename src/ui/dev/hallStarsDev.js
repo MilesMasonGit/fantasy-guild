@@ -1,4 +1,4 @@
-// QA scenes for the Guild Hall's star machinery (brief 320 H1): a fixture sky with a constellation
+// QA scenes for the Guild Hall's star machinery: a fixture sky with a constellation
 // per skill and every star kind, and a mat to watch it work on.
 // ⚠️ DEV BUILDS ONLY: reached from `GuildHallDevSection`, which TestDashboard renders behind
 // `import.meta.env.DEV`. Nothing here is written to `data/`; the fixture sky is gone on reload.
