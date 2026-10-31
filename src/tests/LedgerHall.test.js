@@ -185,6 +185,18 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
         expect(rowOf(pace, 'ph_gold', 1).proposed.quantity).toBeGreaterThanOrEqual(1);
     });
 
+    it('a rank set past the last stage the pace knows is measured at that stage, and says so', () => {
+        const c = content();
+        c.hallSky.stars.ph_gold.ranks[0].tier = 5;
+        const pace = buildPace(c, buildLedger(c), null);
+        const gold = rowOf(pace, 'ph_gold', 1);
+        expect(gold).toMatchObject({ tier: 5, cap: pace.maxTier });
+        expect(pace.maxTier).toBe(2);
+        expect(pace.findings().find(x => x.key === 'hall:ph_gold').message).toMatch(/^Gold Leaf rank 1 \(Plane 5, measured at Plane 2, the last stage the pace knows\)/);
+        // Never on offer before its own tier.
+        expect(pace.rateAt(VEIN, PROFILE.MAXED, 2).setup.hallRanks.ph_gold).toBe(0);
+    });
+
     it('rounds a proposal down to two figures', () => {
         expect([roundDown(0.5), roundDown(7.9), roundDown(57.9), roundDown(137), roundDown(1234), roundDown(98765)]).toEqual([0, 7, 57, 130, 1200, 98000]);
     });

@@ -630,7 +630,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 continue;
             }
             if (row.enabler || row.pays) continue;
-            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${tierLabel(row.cap)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.paybackHours)} a boost has to pay for itself.`, { name: row.name });
+            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.paybackHours)} a boost has to pay for itself.`, { name: row.name });
         }
 
         // Boosts over their target strength, by kind, at Maxed: one finding per set of boosts, with every work it lifts.
@@ -677,6 +677,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     // ── the Guild Hall ─────────────────────────────────────────────────────────────────────────
     const priceWords = (price) => (price.length ? price.map(p => `${p.quantity} ${nameOf(itemKey(p.itemId))}`).join(', ') : 'nothing');
+    const stageWords = (row) => (row.tier !== null && row.tier > row.cap
+        ? `${tierLabel(row.tier)}, measured at ${tierLabel(row.cap)}, the last stage the pace knows`
+        : tierLabel(row.tier ?? row.cap));
     const savesWords = (row) => {
         if (!(row.gain > 0)) return 'and saves no time at its tier (no work it reaches is open by then)';
         const on = row.work ? ` on ${workName(row.work)}` : '';
@@ -714,7 +717,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * gather at Typical (before the Hall), the hours it saves an hour and on which work, its payback
      * and whether that is within the payback time (`pays`), and the price the ledger proposes for an
      * authored rank (`proposed`). `rate: false` for a rank that adds no rate (Bank tabs, a wound's
-     * length, a loadout slot, a camp's reach).
+     * length, a loadout slot, a camp's reach). `cap` is the stage it is measured at: its tier, but
+     * never past the last stage the pace knows (no later content exists to work or buy there, and
+     * every stage costs a Typical profile of every piece of work).
      */
     function hallPaybacks() {
         if (hallMemo) return hallMemo;
@@ -725,7 +730,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 const tier = track.tier(rank);
                 const priceTiers = price.map(p => tierOfKey(itemKey(p.itemId)));
                 const priceTier = priceTiers.every(Number.isInteger) ? Math.max(0, ...priceTiers) : maxTier;
-                const cap = tier ?? priceTier;
+                const cap = Math.min(maxTier, tier ?? priceTier);
                 const base = {
                     id: track.id, name: track.name, rank, builtIn: track.builtIn, tier, cap, price,
                     priceText: priceWords(price), priceHours: profiles.hallPriceHours(price, cap)
@@ -773,17 +778,19 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * an hour at Typical before the Hall, of the star's own skill where one is; else the tier before.
      * Never what the star itself pays.
      */
-    function materialFor(star, tier) {
-        const skill = starSkill(star, tier);
+    function materialFor(star, tier, cap) {
+        const skill = starSkill(star, cap);
         const own = new Set(star.ranks.flatMap(r => r.lines.map(l => l.itemId)));
-        const key = `${skill}|${tier}|${[...own].join(',')}`;
+        const key = `${skill}|${tier}|${cap}|${[...own].join(',')}`;
         if (materialMemo.has(key)) return materialMemo.get(key);
+        indexMakers();
+        const gathered = (itemId) => (madeBy.get(itemId) || []).some(w => [WORK.GATHER, WORK.WATER, WORK.FIELD].includes(rates.workKindOf(w.target).kind));
         let pick = null;
         for (let t = tier; t >= 0 && !pick; t--) {
             const found = [];
             for (const itemId of Object.keys(rates.items)) {
-                if (own.has(itemId) || effTier(itemKey(itemId)) !== t) continue;
-                const s = supplyOf(itemId, BEFORE_HALL, tier);
+                if (own.has(itemId) || effTier(itemKey(itemId)) !== t || !gathered(itemId)) continue;
+                const s = supplyOf(itemId, BEFORE_HALL, cap);
                 if (!(s.perHour > 0) || !Number.isFinite(s.perHour) || !s.work) continue;
                 const kind = rates.workKindOf(s.work.target).kind;
                 if (kind !== WORK.GATHER && kind !== WORK.WATER && kind !== WORK.FIELD) continue;
@@ -805,7 +812,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         if (track.tier(rank) === null) return { why: 'no tier set' };
         if (row.enabler) return { why: 'the only source of what it pays, so any price pays back' };
         if (!(row.gain > 0)) return { why: 'it saves no time at its tier' };
-        const material = materialFor(track.star, row.cap);
+        const material = materialFor(track.star, row.tier, row.cap);
         if (!material) return { why: 'no gathered material at its tier' };
         const quantity = Math.max(1, roundDown(settings.paybackHours * row.gain * material.perHour));
         const priceHours = quantity / material.perHour;

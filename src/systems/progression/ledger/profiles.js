@@ -446,6 +446,8 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
                 for (;;) {
                     const before = value(rate);
                     let best = null;
+                    // A star is weighed at its next rank that saves anything (`left` holds its ranks in order); the ones above wait their turn.
+                    const weighed = new Set();
                     for (const o of left) {
                         if (slotFull(chosen, o)) continue;
                         let next;
@@ -454,12 +456,14 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
                         let price;
                         let step = null;
                         if (o.kind === BOOST_KIND.HALL) {
+                            if (weighed.has(o.upgrade)) continue;
                             step = hallStep(setup, o, cap);
                             if (!step) continue;
                             next = step.next;
                             r = book.rateOf(target, next);
                             gain = hallSaves(ctx, rate, r, cap, baseXp, profile);
                             price = step.price;
+                            if (gain > 1e-9) weighed.add(o.upgrade);
                         } else {
                             next = o.apply(setup);
                             r = book.rateOf(target, next);
@@ -500,18 +504,23 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
      * Typical chose. `{ saves, r0, r1, setup }`, `saves` the hours it saves an hour (as Typical
      * weighs a rank); null when the work is not rated there.
      */
+    const rankRates = new Map();
     function hallRankOn(target, cap, trackId, rank) {
         const ctx = contextOf(target);
         const typical = profileOf(target, PROFILE.TYPICAL, cap);
         if (!typical.rate.ok) return null;
         const at = (r) => ({ ...typical.setup, hallRanks: { ...(typical.setup.hallRanks || {}), [trackId]: r } });
-        const s0 = at(rank - 1);
-        const s1 = at(rank);
-        const r0 = book.rateOf(target, s0);
-        const r1 = book.rateOf(target, s1);
+        // Rank r's rate after is rank r + 1's before.
+        const rateAt = (r) => {
+            const key = `${ctx.key}|${cap}|${trackId}|${r}`;
+            if (!rankRates.has(key)) rankRates.set(key, book.rateOf(target, at(r)));
+            return rankRates.get(key);
+        };
+        const r0 = rateAt(rank - 1);
+        const r1 = rateAt(rank);
         const bare = profileOf(target, PROFILE.BARE, cap).rate;
         const baseXp = Object.values(bare.xp || {}).reduce((a, b) => a + b, 0);
-        return { saves: hallSaves(ctx, r0, r1, cap, baseXp, PROFILE.TYPICAL), r0, r1, setup: s1 };
+        return { saves: hallSaves(ctx, r0, r1, cap, baseXp, PROFILE.TYPICAL), r0, r1, setup: at(rank) };
     }
 
     return {
