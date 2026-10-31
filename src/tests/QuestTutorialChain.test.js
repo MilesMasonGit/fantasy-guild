@@ -464,7 +464,7 @@ describe('no quest listens for an event nobody publishes', () => {
     });
 
     it('the inspection notice is published by the UI (QuestManager counts it)', () => {
-        const inspection = fs.readFileSync(path.join(SRC, 'ui/components/drawer/TokenInspection.jsx'), 'utf8');
+        const inspection = fs.readFileSync(path.join(SRC, 'ui/components/board/TokenCard.jsx'), 'utf8');
         expect(inspection).toMatch(/publish\(\s*UI_EVENTS\.TOKEN_INSPECTED/);
     });
 });

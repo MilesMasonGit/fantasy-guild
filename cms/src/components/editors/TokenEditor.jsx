@@ -356,7 +356,7 @@ export default function TokenEditor() {
 
       <Section title="Lifecycle" icon={<Timer size={14} />}>
         <div className="grid grid-cols-2 gap-4">
-          {/* ⚠️ The label is Charges and the field is `uses`, deliberately: Charges is the game's own word (the TokenInspection badge, `Charges.js`). Not the retired top-level `charges` field, which is stripped on every Recalculate (`RETIRED_TOKEN_FIELDS`). */}
+          {/* ⚠️ The label is Charges and the field is `uses`, deliberately: Charges is the game's own word (the Token card badge, `Charges.js`). Not the retired top-level `charges` field, which is stripped on every Recalculate (`RETIRED_TOKEN_FIELDS`). */}
           {neverWears ? (
             <Field label="Charges">
               <div data-field="never-wears" className="text-[11px] text-gray-400 leading-relaxed">
