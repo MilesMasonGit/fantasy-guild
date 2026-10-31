@@ -1,6 +1,6 @@
 {
-  "commit": "5ca7ba4f",
-  "date": "2026-10-31T00:28:00.151Z",
+  "commit": "bc359673",
+  "date": "2026-10-31T12:29:06.119Z",
   "hours": 8,
   "seeds": [
     1,
@@ -17,17 +17,17 @@
         {
           "kind": "item",
           "key": "item_copper_ore",
-          "engine": 359,
-          "calc": 360,
-          "diff": 0.3,
+          "engine": 363.6,
+          "calc": 363.6,
+          "diff": 0,
           "outside": false,
           "known": null
         },
         {
           "kind": "xp",
           "key": "mining",
-          "engine": 240,
-          "calc": 240,
+          "engine": 242.5,
+          "calc": 242.4,
           "diff": 0,
           "outside": false,
           "known": null
@@ -41,36 +41,36 @@
         {
           "kind": "item",
           "key": "item_copper_ore",
-          "engine": 466.5,
-          "calc": 468.8,
-          "diff": 0.5,
+          "engine": 473.8,
+          "calc": 473.7,
+          "diff": 0,
           "outside": false,
           "known": null
         },
         {
           "kind": "item",
           "key": "item_copper_ingot",
-          "engine": 116.6,
-          "calc": 117.2,
-          "diff": 0.5,
-          "outside": false,
-          "known": null
-        },
-        {
-          "kind": "xp",
-          "key": "mining",
-          "engine": 250,
-          "calc": 250,
+          "engine": 118.5,
+          "calc": 118.4,
           "diff": 0,
           "outside": false,
           "known": null
         },
         {
           "kind": "xp",
+          "key": "mining",
+          "engine": 252.5,
+          "calc": 252.6,
+          "diff": 0.1,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "xp",
           "key": "smithing",
-          "engine": 116.6,
-          "calc": 117.2,
-          "diff": 0.5,
+          "engine": 236.9,
+          "calc": 236.8,
+          "diff": 0,
           "outside": false,
           "known": null
         }
@@ -83,34 +83,34 @@
         {
           "kind": "item",
           "key": "item_oak_wood",
-          "engine": 565.8,
-          "calc": 562.5,
-          "diff": -0.6,
+          "engine": 595.1,
+          "calc": 590.6,
+          "diff": -0.8,
           "outside": false,
           "known": null
         },
         {
           "kind": "item",
           "key": "item_oak_seedling",
-          "engine": 76.2,
-          "calc": 75,
-          "diff": -1.6,
+          "engine": 79.9,
+          "calc": 78.8,
+          "diff": -1.4,
           "outside": false,
           "known": null
         },
         {
           "kind": "item",
           "key": "item_bird_nest",
-          "engine": 12.1,
-          "calc": 11.3,
-          "diff": -6.9,
+          "engine": 11.8,
+          "calc": 11.8,
+          "diff": 0.5,
           "outside": false,
           "known": null
         },
         {
           "kind": "xp",
           "key": "forestry",
-          "engine": 377.6,
+          "engine": 377.7,
           "calc": 375,
           "diff": -0.7,
           "outside": false,
@@ -125,26 +125,26 @@
         {
           "kind": "item",
           "key": "item_copper_ore",
-          "engine": 359,
-          "calc": 360,
-          "diff": 0.3,
+          "engine": 363.6,
+          "calc": 363.6,
+          "diff": 0,
           "outside": false,
           "known": null
         },
         {
           "kind": "spent",
           "key": "item_beer",
-          "engine": 24,
-          "calc": 24,
-          "diff": 0,
+          "engine": 24.1,
+          "calc": 24.2,
+          "diff": 0.5,
           "outside": false,
           "known": null
         },
         {
           "kind": "xp",
           "key": "mining",
-          "engine": 480,
-          "calc": 480,
+          "engine": 485,
+          "calc": 484.8,
           "diff": 0,
           "outside": false,
           "known": null
@@ -158,27 +158,27 @@
         {
           "kind": "item",
           "key": "item_oak_wood",
-          "engine": 624,
-          "calc": 618.8,
-          "diff": -0.8,
+          "engine": 657.5,
+          "calc": 649.7,
+          "diff": -1.2,
           "outside": false,
           "known": null
         },
         {
           "kind": "item",
           "key": "item_oak_seedling",
-          "engine": 84.9,
-          "calc": 82.5,
-          "diff": -2.8,
+          "engine": 89.8,
+          "calc": 86.6,
+          "diff": -3.6,
           "outside": false,
           "known": null
         },
         {
           "kind": "item",
           "key": "item_bird_nest",
-          "engine": 106,
-          "calc": 106.1,
-          "diff": 0.1,
+          "engine": 105.2,
+          "calc": 106.7,
+          "diff": 1.5,
           "outside": false,
           "known": null
         },
@@ -218,18 +218,18 @@
         {
           "kind": "item",
           "key": "item_copper_ore",
-          "engine": 1081,
-          "calc": 1080,
-          "diff": -0.1,
+          "engine": 1082.9,
+          "calc": 1090.9,
+          "diff": 0.7,
           "outside": false,
           "known": null
         },
         {
           "kind": "xp",
           "key": "mining",
-          "engine": 720,
-          "calc": 720,
-          "diff": 0,
+          "engine": 721.6,
+          "calc": 727.3,
+          "diff": 0.8,
           "outside": false,
           "known": null
         }
@@ -269,8 +269,8 @@
         {
           "kind": "xp",
           "key": "fishing",
-          "engine": 450,
-          "calc": 450,
+          "engine": 900,
+          "calc": 900,
           "diff": 0,
           "outside": false,
           "known": null
@@ -284,27 +284,27 @@
         {
           "kind": "item",
           "key": "item_wheat",
-          "engine": 14.9,
-          "calc": 14.9,
-          "diff": -0.3,
+          "engine": 16.2,
+          "calc": 16.4,
+          "diff": 1,
           "outside": false,
           "known": null
         },
         {
           "kind": "item",
           "key": "item_wheat_seed",
-          "engine": 3.9,
-          "calc": 4,
-          "diff": 2.4,
+          "engine": 4.4,
+          "calc": 4.4,
+          "diff": -0.3,
           "outside": false,
           "known": null
         },
         {
           "kind": "item",
           "key": "item_worm",
-          "engine": 1,
-          "calc": 1,
-          "diff": -0.8,
+          "engine": 1.2,
+          "calc": 1.1,
+          "diff": -9.7,
           "outside": false,
           "known": null
         },
@@ -338,10 +338,10 @@
     "src/config/registries/toolKinds.js": "69973919",
     "src/config/registries/catchPools.js": "825094d4",
     "src/config/guildUpgrades.js": "d61bb2ac",
-    "src/systems/board/BoardRunner.js": "9e5a53fe",
+    "src/systems/board/BoardRunner.js": "6fba9f27",
     "src/systems/board/TileModifiers.js": "a9ad5fd6",
     "src/systems/board/TimedChanges.js": "1be0bfed",
-    "src/systems/board/Respawn.js": "3891c6ff",
+    "src/systems/board/Respawn.js": "956e4787",
     "src/systems/board/Growth.js": "a58bc50f",
     "src/systems/board/Fields.js": "adb26942",
     "src/systems/board/Fishing.js": "aca698ed",
@@ -354,6 +354,6 @@
     "src/systems/effects/LiveEffects.js": "4fd3f0c9",
     "src/systems/core/CatchUp.js": "2f47dfd2",
     "bench/calibration/setups.mjs": "fa4444ab",
-    "bench/calibration/engine.mjs": "bc569f95"
+    "bench/calibration/engine.mjs": "dfca85b4"
   }
 }
