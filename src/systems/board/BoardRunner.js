@@ -11,6 +11,7 @@ import * as InputAllocator from './InputAllocator.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as RecipeResolver from './RecipeResolver.js';
 import * as Charges from './Charges.js';
+import * as Respawn from './Respawn.js';
 import * as BlockUpkeep from './BlockUpkeep.js';
 import * as TriggerSystem from './TriggerSystem.js';
 import { RECIPE } from './RecipeResolver.js';
@@ -348,6 +349,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // a context Token never wears out, and a gathering node that helps its neighbours spends its
     // charges only on its own gathering (`Charges.planContextCharges`, `wearRule.js`).
     Charges.commitPlan(chargePlan, { heroId });
+    // Used up just now: its rest began when this cycle ended, `overMs` before the tick's end.
+    Respawn.restBeganEarlier(instance, overMs);
 
     // A Field spends one harvest of its load; the last sows its crop again, growing from the moment
     // this cycle ended (`overMs` into the tick), or stops it without a seed (`Fields.js`).
