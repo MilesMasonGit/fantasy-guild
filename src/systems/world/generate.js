@@ -54,6 +54,7 @@ export const PROBLEM = Object.freeze({
     KEY_UNPLACED: 'key-unplaced',
     NO_SPECIALTIES: 'no-specialties',
     VALUE: 'value',
+    NO_PRICE_SOURCE: 'no-price-source',
     NO_PRICE_MATERIAL: 'no-price-material'
 });
 
@@ -63,6 +64,7 @@ export const WORLD_GEN_TEXT = Object.freeze({
     keyUnplaced: (key, ring) => `The key origin ${key} could not be put within reach of every ring ${ring - 1} cell`,
     noSpecialties: 'The tables list no specialties: no cell has one',
     value: (cell, value, target) => `Cell ${cell}'s extras are worth ${value}, not within the tolerance of its ring's ${target}`,
+    noPriceSource: (cell) => `No cell one ring in from ${cell} yields a material to ask for: its price falls back on the Hall's cell`,
     noPriceMaterial: (cell) => `Cell ${cell}'s price found no material to ask for in the places it is gathered from`
 });
 
@@ -419,6 +421,9 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
             const inward = around(cell, byId).filter(c => c.ring === n - 1);
             const stocked = inward.filter(c => materialsAt([c], materialsOf).length);
             const choices = stocked.length ? stocked : inward;
+            if (!stocked.length && template.items.some(s => !s.item)) {
+                problems.push({ kind: PROBLEM.NO_PRICE_SOURCE, cellId: cell.id, message: WORLD_GEN_TEXT.noPriceSource(cell.id) });
+            }
             const source = choices[pickIndex(random, choices.length)];
             const placeMaterials = { [PRICE_FROM.SOURCE]: materialsAt([source], materialsOf), [PRICE_FROM.HALL]: hallMaterials };
             const placeId = { [PRICE_FROM.SOURCE]: source.id, [PRICE_FROM.HALL]: HALL_ID };
