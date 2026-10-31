@@ -6,7 +6,10 @@ import {
     GUILD_UPGRADES, getUpgradeDef, getUpgradePrice, totalPrice, isUpgradeAccessible, getLockReason,
     rosterLimitForRank, BANK_TAB_SLOTS, BANK_TAB_CAP
 } from '../../config/guildUpgrades.js';
+// Loads the authored stars into the sky (`data/hallStars.json`) before anything reads it.
+import '../../config/registries/hallStarRegistry.js';
 import { createHero } from '../hero/logic/HeroLifecycle.js';
+import * as HallRules from './HallRules.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -14,11 +17,13 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * GuildUpgradeManager — the Guild Hall upgrade web.
  *
  * Ranks persist in `state.progress.guildUpgrades` ({ upgradeId: rank }); every
- * derived stat is RECOMPUTED from ranks in `recompute()`.
+ * derived stat is RECOMPUTED from ranks in `recompute()`, the authored stars' rules included
+ * (`HallRules`).
  */
 export const GuildUpgradeManager = {
     init() {
         EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => this.recompute());
+        HallRules.init();
         logger.info('GuildUpgradeManager', 'Guild upgrade tree ready');
     },
 
@@ -146,6 +151,7 @@ export const GuildUpgradeManager = {
             // the same function when a save has no rosterLimit written yet.
             state.progress.rosterLimit = rosterLimitForRank(ranks.roster_size);
         }
+        HallRules.apply(ranks);
 
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
         EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
@@ -183,7 +189,7 @@ export const GuildUpgradeManager = {
                 accessible,
                 cost: getUpgradePrice(def, rank),
                 canAfford: this.canAfford(def.id),
-                statLabel: def.statLabel(rank),
+                statLabel: typeof def.statLabel === 'function' ? def.statLabel(rank) : null,
                 sprite: def.sprite
             };
         });

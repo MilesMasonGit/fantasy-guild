@@ -5,7 +5,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import {
     isUpgradeAccessible, getUpgradeLinks, getUpgradeWebLinks, getLockDetail, LOCK_KIND, HALL_NODE,
     getUpgradePrice, getUpgradeDef,
-    ROSTER_BASE, GUILD_UPGRADES, PLACEHOLDER_PRICE_ITEM, placeholderPrices, TOKEN_CAP_PLANE_PRICES, CARTOGRAPHY_PLANE_PRICES
+    ROSTER_BASE, GUILD_UPGRADES, PLACEHOLDER_PRICE_ITEM, placeholderPrices
 } from '../config/guildUpgrades.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { useOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
@@ -67,11 +67,13 @@ describe('Guild Hall upgrade web', () => {
         expect(keys.length).toBe(GUILD_UPGRADES.reduce((n, d) => n + d.links.length, 0));
     });
 
-    // Every shipped star joins the Hall, so a new game opens them all: Bank Tabs, once beyond
-    // Bank Slots, moved in when Bank Slots retired (brief 310). Only the test star is shut.
-    it('opens every shipped upgrade on a new game', () => {
-        const open = GUILD_UPGRADES.filter(d => isUpgradeAccessible(d.id, {})).map(d => d.id).sort();
-        expect(open).toEqual(['bank_tabs', 'cartography_slots', 'notice_board', 'roster_size', 'token_cap', 'wishing_well']);
+    // Every built-in star joins the Hall, so a new game opens them all: Bank Tabs, once beyond
+    // Bank Slots, moved in when Bank Slots retired (brief 310). Only the test star is shut. The
+    // Compass's three (Token Cap, Cartography Table, Notice Board) retired with brief 320.
+    it('opens every built-in upgrade on a new game', () => {
+        const open = GUILD_UPGRADES.filter(d => !d.authored && isUpgradeAccessible(d.id, {})).map(d => d.id).sort();
+        expect(open).toEqual(['bank_tabs', 'roster_size', 'wishing_well']);
+        for (const id of ['token_cap', 'cartography_slots', 'notice_board']) expect(getUpgradeDef(id), id).toBeNull();
     });
 
     it('opens a node once ANY linked node has rank >= 1', () => {
@@ -79,7 +81,7 @@ describe('Guild Hall upgrade web', () => {
         expect(isUpgradeAccessible(OUTER, { bank_tabs: 1 })).toBe(true);
 
         // A bought node that is NOT linked does not.
-        expect(isUpgradeAccessible(OUTER, { notice_board: 3, wishing_well: 1, roster_size: 2 })).toBe(false);
+        expect(isUpgradeAccessible(OUTER, { wishing_well: 1, roster_size: 2 })).toBe(false);
     });
 
     it('keeps only the star beyond Bank Tabs shut after every single first purchase', () => {
@@ -96,21 +98,21 @@ describe('Guild Hall upgrade web', () => {
     });
 
     it('lets an upgrade gate itself however its links stand (the skill-lock hook)', () => {
-        const def = getUpgradeDef('notice_board');
+        const def = getUpgradeDef('bank_tabs');
         const saved = def.gate;
         def.gate = () => ({ kind: LOCK_KIND.SKILL, text: 'Requires Blacksmithing 5' });
         try {
-            expect(isUpgradeAccessible('notice_board', {})).toBe(false);
-            expect(getLockDetail('notice_board', {})).toEqual({ kind: LOCK_KIND.SKILL, text: 'Requires Blacksmithing 5' });
+            expect(isUpgradeAccessible('bank_tabs', {})).toBe(false);
+            expect(getLockDetail('bank_tabs', {})).toEqual({ kind: LOCK_KIND.SKILL, text: 'Requires Blacksmithing 5' });
             InventoryManager.addItem('item_oak_wood', 1000);
-            const res = GuildUpgradeManager.purchase('notice_board');
+            const res = GuildUpgradeManager.purchase('bank_tabs');
             expect(res.success).toBe(false);
             expect(res.error).toBe('Requires Blacksmithing 5');
-            expect(GuildUpgradeManager.getRank('notice_board')).toBe(0);
+            expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(0);
         } finally {
             if (saved === undefined) delete def.gate; else def.gate = saved;
         }
-        expect(isUpgradeAccessible('notice_board', {})).toBe(true);
+        expect(isUpgradeAccessible('bank_tabs', {})).toBe(true);
     });
 
     it('reports a link lock with its kind, and nothing for an open node', () => {
@@ -202,15 +204,11 @@ describe('Guild Hall upgrades are paid in items', () => {
             expect(def.prices).toHaveLength(def.maxRank);
             expect(def.costBase).toBeUndefined();
             const freeFirst = def.id === 'roster_size' || def.id === 'wishing_well';
-            // The two tracks that open the world price their first ranks by the planes.
-            const byPlane = { token_cap: TOKEN_CAP_PLANE_PRICES, cartography_slots: CARTOGRAPHY_PLANE_PRICES }[def.id] || [];
             for (let owned = 0; owned < def.maxRank; owned++) {
                 const target = owned + 1;
                 const price = getUpgradePrice(def, owned);
                 if (freeFirst && target === 1) {
                     expect(price).toEqual([]);
-                } else if (byPlane[owned]) {
-                    expect(price).toEqual(byPlane[owned].map(([itemId, quantity]) => ({ itemId, quantity })));
                 } else {
                     expect(price).toEqual([{ itemId: PLACEHOLDER_PRICE_ITEM, quantity: 10 * target }]);
                 }

@@ -43,6 +43,14 @@ export const EFFECT_TYPES = {
     // How many harvest cycles a Field holds when its crop ripens (a Composter adds to the load);
     // read once, as it ripens — Fields.loadAtRipening.
     CROP_LOAD: 'CROP_LOAD',
+    // How far a camp hands out work, as a percentage on its authored reach — Camps.reachOf.
+    CAMP_REACH: 'CAMP_REACH',
+    // How long a wounded hero takes to recover, as a percentage: negative is faster. Guild-wide
+    // only (a Guild Hall star) — WoundedSystem.
+    WOUND_TIME: 'WOUND_TIME',
+    // More of one loadout category (the category) every hero may carry, as a flat count. Guild-wide
+    // only (a Guild Hall star) — loadoutCaps.js.
+    LOADOUT_SLOTS: 'LOADOUT_SLOTS',
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.

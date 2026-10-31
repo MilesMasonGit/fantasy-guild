@@ -13,7 +13,6 @@ import { tunedOr } from '../../config/matTuning.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { GuildUpgradeManager } from '../progression/GuildUpgradeManager.js';
 import { TUTORIAL_QUESTS, tutorialTemplate, firstMapsReward } from './tutorialQuests.js';
 // The bounty and reward helpers come from the leaf `questBounties.js`, not
 // QuestManager, so this module does not import QuestManager.
@@ -106,21 +105,21 @@ export function tutorialTokens() {
     return questTokens().filter(t => t.quest.tutorial);
 }
 
-/** ⭐ Game values: the bounties the Hall keeps before any Notice Board rank, and the most it can. */
+/** ⭐ Game values: the bounties the Hall keeps, and the most a dev build's Mat Tuner may ask for. */
 export const QUEST_CAP_BASE = 2;
 export const QUEST_CAP_MAX = 5;
 /** ⭐ Game value: game seconds between bounties while the mat holds fewer than the cap. */
 export const QUEST_EVERY_SEC = 180;
 
 /**
- * How many bounties the Hall keeps on the mat: {@link QUEST_CAP_BASE} plus one per Notice Board
- * rank, never above {@link QUEST_CAP_MAX} (a dev build's Mat Tuner may stand in for either).
+ * How many bounties the Hall keeps on the mat: {@link QUEST_CAP_BASE}, never above
+ * {@link QUEST_CAP_MAX} (a dev build's Mat Tuner may stand in for either). Fixed: the Notice Board
+ * star that raised it is retired.
  */
 export function questCap() {
     const base = Math.round(tunedOr('questCap', QUEST_CAP_BASE));
     const max = Math.round(tunedOr('questCapMax', QUEST_CAP_MAX));
-    const rank = GuildUpgradeManager.getRank('notice_board');
-    return Math.max(0, Math.min(max, base + rank));
+    return Math.max(0, Math.min(max, base));
 }
 
 /** The bounty interval in game ms: {@link QUEST_EVERY_SEC}, or a dev build's Mat Tuner. */

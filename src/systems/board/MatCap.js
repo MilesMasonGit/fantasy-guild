@@ -3,8 +3,6 @@
 import { getTokenType, registryVersion, isLandmarkType } from '../../config/registries/tokenRegistry.js';
 import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
 import { matTuning } from '../../config/matTuning.js';
-import { TOKEN_CAP_BASE, tokenCapForRank } from '../../config/guildUpgrades.js';
-import { GameState } from '../../state/GameState.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -18,8 +16,8 @@ import * as BoardState from './BoardState.js';
  * until the count drops below.
  */
 
-/** The cap every guild starts with. The Guild Hall's Token Cap upgrade raises it. */
-export const BASE_TOKEN_CAP = TOKEN_CAP_BASE;
+/** The cap: fixed (the Guild Hall's Token Cap star is retired). */
+export const BASE_TOKEN_CAP = 128;
 
 /** Whether an instance is the Guild Hall. */
 export function isGuildHall(instance) {
@@ -56,14 +54,11 @@ export function tokenCount() {
     return count;
 }
 
-/**
- * The cap: {@link BASE_TOKEN_CAP} raised by the Token Cap upgrade's rank, unless the Mat Tuner's
- * dev override (`tokenCap`, 0 = off) is set on this device.
- */
+/** The cap: {@link BASE_TOKEN_CAP}, unless the Mat Tuner's dev override (`tokenCap`, 0 = off) is set on this device. */
 export function matCap() {
     const override = Math.round(matTuning('tokenCap'));
     if (override > 0) return override;
-    return tokenCapForRank(GameState.state?.progress?.guildUpgrades?.token_cap);
+    return BASE_TOKEN_CAP;
 }
 
 /** Whether `count` more Tokens would still fit under the cap. */

@@ -1,12 +1,13 @@
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
+import { loadoutCapOf } from './loadoutCaps.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { t } from '../../i18n/index.js';
 import {
     createEmptyEquipment, getGrid,
-    findFreeSlot, slotsInCategory, getCategoryCap, isEquipCategory,
+    findFreeSlot, slotsInCategory, isEquipCategory,
     handEntries, handsOfItem, HANDS
 } from '../../config/registries/equipmentConstants.js';
 import * as EquipmentValidator from './EquipmentValidator.js';
@@ -31,7 +32,7 @@ const itemName = (itemId) => getItem(itemId)?.name || itemId;
  *          null when the item can't be placed at all (grid full, no cap).
  */
 export function resolveTargetSlot(hero, category) {
-    const cap = getCategoryCap(category);
+    const cap = loadoutCapOf(category);
     if (!cap) return null;
 
     const held = slotsInCategory(hero, category);
@@ -137,7 +138,7 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     let slot = null;
     if (preferredSlot !== null && preferredSlot >= 0 && preferredSlot < 9) {
         const held = slotsInCategory(hero, category).filter(s => s !== preferredSlot);
-        const cap = getCategoryCap(category);
+        const cap = loadoutCapOf(category);
         if (held.length >= cap) {
             slot = held[0];
         } else {
@@ -146,7 +147,7 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     } else {
         const target = resolveTargetSlot(hero, category);
         if (!target) {
-            const cap = getCategoryCap(category);
+            const cap = loadoutCapOf(category);
             return {
                 success: false,
                 error: cap ? 'No free slot in the loadout' : 'Item cannot be equipped'

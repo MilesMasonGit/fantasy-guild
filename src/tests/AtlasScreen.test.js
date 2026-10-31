@@ -10,22 +10,20 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS, NO_LISTENER } from '../systems/core/engineEvents.js';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import * as MatCap from '../systems/board/MatCap.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import {
-    getUpgradeDef, cartographySlotsForRank, tokenCapForRank, CARTOGRAPHY_SLOTS_BASE, CARTOGRAPHY_SLOTS_MAX,
-    TOKEN_CAP_BASE, TOKEN_CAP_MAX_RANK
+    getUpgradeDef
 } from '../config/guildUpgrades.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import * as Cartography from '../systems/atlas/Cartography.js';
 import { TEXT } from '../systems/atlas/regionNames.js';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { AtlasScreen, ATLAS_TAB } from '../ui/components/atlas/AtlasScreen.jsx';
-import { CartographyTable, REROLL_COOLDOWN_MS, fitSlots } from '../ui/components/atlas/CartographyTable.jsx';
+import { CartographyTable, REROLL_COOLDOWN_MS, fitSlots, CARTOGRAPHY_SLOTS } from '../ui/components/atlas/CartographyTable.jsx';
 import { RegionList } from '../ui/components/atlas/RegionList.jsx';
 import { contentsOf } from '../ui/components/atlas/PlanContents.jsx';
 import { BubbleMenu } from '../ui/components/nav/BubbleMenu.jsx';
@@ -110,56 +108,26 @@ afterAll(() => {
     resetMatTuning();
 });
 
-describe('the upgrades: Token Cap and Cartography Table (D-9)', () => {
-    it('the Token Cap rank raises matCap() by 16 a rank, from 128 to 256', () => {
-        expect(MatCap.matCap()).toBe(TOKEN_CAP_BASE);
-        expect(TOKEN_CAP_BASE).toBe(128);
-        for (const id of ['item_oak_wood', 'item_stone', 'item_copper_ingot', 'item_fir_wood', 'item_iron_ingot']) InventoryManager.addItem(id, 2000);
-        expect(GuildUpgradeManager.purchase('token_cap').success).toBe(true);
-        expect(MatCap.matCap()).toBe(144);
-        expect(MatCap.canPlaceMore(144)).toBe(true);
-        expect(MatCap.canPlaceMore(145)).toBe(false);
-        for (let i = 1; i < TOKEN_CAP_MAX_RANK; i++) expect(GuildUpgradeManager.purchase('token_cap').success).toBe(true);
-        expect(MatCap.matCap()).toBe(256);
-        expect(GuildUpgradeManager.purchase('token_cap').success).toBe(false);
-        // A save holding more ranks than there are still caps at the top.
-        GameState.state.progress.guildUpgrades.token_cap = 12;
-        expect(MatCap.matCap()).toBe(256);
-        expect(tokenCapForRank(-3)).toBe(128);
-    });
-
-    it('the Mat Tuner dev override still wins over the rank', () => {
-        GameState.state.progress.guildUpgrades.token_cap = 2;
+describe('the Token cap and the Cartography table are fixed (brief 320 retired their stars)', () => {
+    it('keeps the cap at 128 whatever an old save ranked, and the Mat Tuner still wins', () => {
+        expect(MatCap.matCap()).toBe(128);
+        expect(getUpgradeDef('token_cap')).toBeNull();
+        GameState.state.progress.guildUpgrades.token_cap = 4;
+        expect(MatCap.matCap()).toBe(128);
         setMatTuning('tokenCap', 40);
         expect(MatCap.matCap()).toBe(40);
         resetMatTuning();
-        expect(MatCap.matCap()).toBe(160);
+        expect(MatCap.matCap()).toBe(128);
     });
 
-    it('prices both tracks by the planes: ranks 1-2 in oak, stone and copper, 3-4 in fir and iron, later ranks the placeholder', () => {
-        const itemsOf = (price) => price.map(p => p.itemId).sort();
-        for (const id of ['token_cap', 'cartography_slots']) {
-            const def = getUpgradeDef(id);
-            expect(def.prices).toHaveLength(def.maxRank);
-            for (const rank of [1, 2]) expect(itemsOf(def.prices[rank - 1]), `${id} ${rank}`).toEqual(['item_copper_ingot', 'item_oak_wood', 'item_stone']);
-            for (const rank of [3, 4]) expect(itemsOf(def.prices[rank - 1]), `${id} ${rank}`).toEqual(['item_fir_wood', 'item_iron_ingot']);
-            for (let rank = 5; rank <= def.maxRank; rank++) expect(def.prices[rank - 1], `${id} ${rank}`).toEqual([{ itemId: 'item_oak_wood', quantity: 10 * rank }]);
-            // Each rank of a plane costs more than the one before it.
-            for (const [a, b] of [[0, 1], [2, 3]]) {
-                for (const p of def.prices[b]) expect(p.quantity).toBeGreaterThan(def.prices[a].find(q => q.itemId === p.itemId).quantity);
-            }
-        }
-        expect(getUpgradeDef('token_cap').maxRank).toBe(8);
-        expect(getUpgradeDef('cartography_slots').maxRank).toBe(CARTOGRAPHY_SLOTS_MAX - CARTOGRAPHY_SLOTS_BASE);
-    });
-
-    it('the table has 4 slots to start and one more per rank, up to 8', () => {
-        expect([0, 1, 4, 9].map(cartographySlotsForRank)).toEqual([4, 5, 8, 8]);
+    it('gives the table 4 slots whatever an old save ranked', () => {
+        expect(getUpgradeDef('cartography_slots')).toBeNull();
         const { container, rerender } = render(React.createElement(CartographyTable, { version: 0 }));
-        expect(container.querySelectorAll('[data-cartography-slot]').length).toBe(4);
+        expect(container.querySelectorAll('[data-cartography-slot]').length).toBe(CARTOGRAPHY_SLOTS);
+        expect(CARTOGRAPHY_SLOTS).toBe(4);
         GameState.state.progress.guildUpgrades.cartography_slots = 2;
         rerender(React.createElement(CartographyTable, { version: 1 }));
-        expect(container.querySelectorAll('[data-cartography-slot]').length).toBe(6);
+        expect(container.querySelectorAll('[data-cartography-slot]').length).toBe(4);
     });
 });
 

@@ -5,7 +5,6 @@ import { QuestManager } from '../systems/quests/QuestManager.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -14,8 +13,8 @@ import {
     getTokenType, getAllTokenTypes, listTokenTypeIds, tokenSpritePath, TOKENS
 } from '../config/registries/tokenRegistry.js';
 import { QUEST_TOKEN_TYPE, ENGINE_TOKEN_TYPES } from '../config/registries/engineTokens.js';
-import { getUpgradeDef, isUpgradeAccessible, HALL_NODE, NOTICE_BOARD_MAX_RANK } from '../config/guildUpgrades.js';
-import { MAT_TUNABLES, matTuning, setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { getUpgradeDef } from '../config/guildUpgrades.js';
+import { MAT_TUNABLES, setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -147,33 +146,14 @@ describe('the Guild Hall spawns bounties up to the cap on a game-time clock (TL-
     });
 });
 
-describe('the Notice Board raises the cap by one a rank, to 5', () => {
-    it('is linked to the Hall on the upgrade web and costs items', () => {
-        const def = getUpgradeDef('notice_board');
-        expect(def.links).toContain(HALL_NODE);   // the B9 web; tile 25 before
-        expect(isUpgradeAccessible('notice_board', {})).toBe(true);
-        expect(def.maxRank).toBe(NOTICE_BOARD_MAX_RANK);
-        expect(matTuning('questCap') + NOTICE_BOARD_MAX_RANK).toBe(matTuning('questCapMax'));
-        for (const price of def.prices) expect(price.length).toBeGreaterThan(0);
-    });
-
-    it('each rank bought is one more bounty on the mat', () => {
+describe('the bounty cap is fixed at 2 (brief 320 retired the Notice Board)', () => {
+    it('has no Notice Board star, and ranks from an old save raise nothing', () => {
+        expect(getUpgradeDef('notice_board')).toBeNull();
         finishTutorial();
-        InventoryManager.addItem('item_oak_wood', 100);
-        const caps = [QuestTokens.questCap()];
-        for (let r = 0; r < NOTICE_BOARD_MAX_RANK; r++) {
-            expect(GuildUpgradeManager.purchase('notice_board').success).toBe(true);
-            caps.push(QuestTokens.questCap());
-        }
-        expect(caps).toEqual([2, 3, 4, 5]);
-        expect(GuildUpgradeManager.purchase('notice_board').success).toBe(false);
+        GameState.state.progress.guildUpgrades = { notice_board: 3 };
+        expect(QuestTokens.questCap()).toBe(2);
         QuestManager.tick(60 * MIN);
-        expect(bounties()).toHaveLength(5);
-    });
-
-    it('the cap never passes the tuned ceiling', () => {
-        GameState.state.progress.guildUpgrades = { notice_board: 9 };
-        expect(QuestTokens.questCap()).toBe(5);
+        expect(bounties()).toHaveLength(2);
     });
 });
 

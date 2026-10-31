@@ -10,14 +10,12 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as MatResize from '../systems/board/MatResize.js';
 import * as Landmarks from '../systems/board/Landmarks.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { matW } from '../config/matGeometry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
-import { MatCapBadge } from '../ui/components/board/MatCapBadge.jsx';
 import { ShopDrawer } from '../ui/components/drawer/ShopDrawer.jsx';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { LeaveMatControl } from '../ui/components/drawer/TokenInspection.jsx';
@@ -78,17 +76,6 @@ describe('the routes that used to need the catch-all', () => {
         await act(async () => { MatResize.fitToMat(); await Promise.resolve(); });
         expect(BoardState.getTokenById(t.id).x).toBeLessThan(matW());
         expect(box()).not.toBe(offMat);
-    });
-
-    it('the Token cap badge follows a Token Cap upgrade', async () => {
-        const { container } = render(withEngine(h(MatCapBadge)));
-        const text = () => container.querySelector('[data-mat-cap-count]').textContent;
-        const before = text();
-        for (const { itemId, quantity } of GuildUpgradeManager.getNextCost('token_cap')) {
-            InventoryManager.addItem(itemId, quantity);
-        }
-        await act(async () => { expect(GuildUpgradeManager.purchase('token_cap').success).toBe(true); await Promise.resolve(); });
-        expect(text()).not.toBe(before);
     });
 
     it('a Shop row follows floor loot spent by a Token', async () => {

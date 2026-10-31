@@ -20,6 +20,10 @@ export const DatabaseManager = {
 
     // Each skill's milestone perks. Absent until the CMS first syncs a perk table: no skill has any.
     skillPerkFilesSingle: import.meta.glob('/data/skillPerks.json', { eager: true }),
+
+    // The Guild Hall's authored stars and constellations. Absent until the CMS first syncs a sky:
+    // the Hall then holds only its built-in tracks (`hallStarRegistry.js`).
+    hallStarFilesSingle: import.meta.glob('/data/hallStars.json', { eager: true }),
 };
 
 export default DatabaseManager;

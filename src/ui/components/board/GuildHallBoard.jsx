@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import {
-    GUILD_UPGRADES, HALL_NODE, CONSTELLATIONS, getUpgradeDef, getUpgradeWebLinks, isUpgradeAccessible
+    GUILD_UPGRADES, HALL_NODE, CONSTELLATIONS, getUpgradeDef, getUpgradeWebLinks, isUpgradeAccessible, skyVersion
 } from '../../../config/guildUpgrades.js';
 import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeManager.js';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
@@ -20,6 +20,59 @@ import { GuildHallEffectsPopover } from './GuildHallEffectsPopover.jsx';
 export const WEB_W = 1000;
 export const WEB_H = 760;
 export const WEB_UNIT_PX = 400;
+
+/** Room past the outermost star or name, for its tag (a tag runs sideways, a name sits above). */
+const WEB_PAD_X = 170;
+const WEB_PAD_Y = 90;
+
+/**
+ * The fit below which the sky stops shrinking: positions closer than this crowd stars and tags,
+ * which keep their size. A sky that would need less is drawn at this and dragged to see the rest.
+ */
+export const MIN_SKY_SCALE = 0.75;
+
+/** A drag shorter than this is a click, not a pan. */
+const PAN_SLOP_PX = 4;
+
+/**
+ * The web's natural size for the sky as it stands: at least `WEB_W x WEB_H`, and wide and tall
+ * enough to hold every star and constellation name with room for its tag.
+ */
+export function webSize() {
+    let x = 0;
+    let y = 0;
+    for (const def of GUILD_UPGRADES) {
+        x = Math.max(x, Math.abs(def.node?.x || 0));
+        y = Math.max(y, Math.abs(def.node?.y || 0));
+    }
+    for (const c of CONSTELLATIONS) {
+        x = Math.max(x, Math.abs(c.label?.x || 0));
+        y = Math.max(y, Math.abs(c.label?.y || 0));
+    }
+    return {
+        w: Math.max(WEB_W, Math.ceil(2 * (x * WEB_UNIT_PX + WEB_PAD_X))),
+        h: Math.max(WEB_H, Math.ceil(2 * (y * WEB_UNIT_PX + WEB_PAD_Y)))
+    };
+}
+
+/**
+ * How far the sky may be dragged each way: half of what sticks out past the space it is shown in,
+ * so either edge can be brought into view and no further.
+ */
+export function panLimit(board, view) {
+    return {
+        x: Math.max(0, Math.round((board.w - view.w) / 2)),
+        y: Math.max(0, Math.round((board.h - view.h) / 2))
+    };
+}
+
+/** A pan held inside its limit. */
+export function clampPan(pan, limit) {
+    return {
+        x: Math.max(-limit.x, Math.min(limit.x, Math.round(pan.x))),
+        y: Math.max(-limit.y, Math.min(limit.y, Math.round(pan.y)))
+    };
+}
 
 /** The owner's star sprites, 32 art pixels square, one per look ({@link starLook}). */
 export const STAR_ART_PX = 32;
@@ -48,11 +101,11 @@ const LINE_PX = 2;
 
 const OUTLINE = '0 1px 0 #000, 1px 0 0 #000, 0 -1px 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000';
 
-/** A node's centre in the web's natural pixels. The Hall is the middle. */
-export function webPoint(nodeId) {
-    if (nodeId === HALL_NODE) return { x: WEB_W / 2, y: WEB_H / 2 };
+/** A node's centre in the web's natural pixels (a `size` from {@link webSize}). The Hall is the middle. */
+export function webPoint(nodeId, size = { w: WEB_W, h: WEB_H }) {
+    if (nodeId === HALL_NODE) return { x: size.w / 2, y: size.h / 2 };
     const node = getUpgradeDef(nodeId)?.node || { x: 0, y: 0 };
-    return { x: WEB_W / 2 + node.x * WEB_UNIT_PX, y: WEB_H / 2 + node.y * WEB_UNIT_PX };
+    return { x: size.w / 2 + node.x * WEB_UNIT_PX, y: size.h / 2 + node.y * WEB_UNIT_PX };
 }
 
 /**
@@ -122,6 +175,8 @@ function tagPlacement(side, box, starPx) {
  * The Hall star shows the Hall's Effects ({@link GuildHallEffectsPopover}): while hovered, or
  * pinned open by a click. A second click on the star, Escape, or a click anywhere else closes a
  * pinned one.
+ * A sky too big for the space at {@link MIN_SKY_SCALE} is dragged to see the rest: press on the
+ * dark between the stars and move. It moves by transform, so nothing here scrolls.
  */
 export const GuildHallBoard = ({
     selectedUpgradeId,
@@ -132,6 +187,8 @@ export const GuildHallBoard = ({
         state => state.progress?.guildUpgrades || {},
         [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     );
+    // The authored sky can change under the screen (a QA scene); its version is read so it redraws.
+    useGameState(() => skyVersion(), [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]);
     // Which upgrades the Bank can pay for right now (Hall upgrades cost items). A flat id list
     // as a string, per the useGameState selector contract.
     const affordableSignature = useGameState(
@@ -155,10 +212,46 @@ export const GuildHallBoard = ({
         if (fresh.length) setGlowing(g => [...g.filter(id => !fresh.includes(id)), ...fresh]);
     }, [finishedKey]);
 
-    const fit = useBoardScale(WEB_W, WEB_H);
+    const size = webSize();
+    const fit = useBoardScale(size.w, size.h);
+    const scale = Math.max(fit.scale, MIN_SKY_SCALE);
+    const boardW = Math.round(size.w * scale);
+    const boardH = Math.round(size.h * scale);
     const at = (nodeId) => {
-        const p = webPoint(nodeId);
-        return { x: Math.round(p.x * fit.scale), y: Math.round(p.y * fit.scale) };
+        const p = webPoint(nodeId, size);
+        return { x: Math.round(p.x * scale), y: Math.round(p.y * scale) };
+    };
+
+    // Dragging the sky: only when it is bigger than its space.
+    const viewRef = useRef(null);
+    const fitRef = fit.ref;
+    const setViewRef = useCallback((el) => { viewRef.current = el; fitRef(el); }, [fitRef]);
+    const [pan, setPan] = useState({ x: 0, y: 0 });
+    const drag = useRef(null);
+    const limitNow = () => panLimit({ w: boardW, h: boardH }, {
+        w: viewRef.current?.clientWidth || boardW, h: viewRef.current?.clientHeight || boardH
+    });
+    const limit = limitNow();
+    const shown = clampPan(pan, limit);
+    const pannable = limit.x > 0 || limit.y > 0;
+    const onPanDown = (e) => {
+        if (e.button !== 0 || e.target?.closest?.('button')) return;
+        drag.current = { x: e.clientX, y: e.clientY, from: shown, moved: false, id: e.pointerId };
+    };
+    const onPanMove = (e) => {
+        const d = drag.current;
+        if (!d || d.id !== e.pointerId) return;
+        const dx = e.clientX - d.x;
+        const dy = e.clientY - d.y;
+        if (!d.moved && Math.hypot(dx, dy) < PAN_SLOP_PX) return;
+        if (!d.moved) {
+            d.moved = true;
+            e.currentTarget.setPointerCapture?.(e.pointerId);
+        }
+        setPan(clampPan({ x: d.from.x + dx, y: d.from.y + dy }, limitNow()));
+    };
+    const onPanUp = (e) => {
+        if (drag.current?.id === e.pointerId) drag.current = null;
     };
     const links = getUpgradeWebLinks();
     const hall = at(HALL_NODE);
@@ -191,20 +284,30 @@ export const GuildHallBoard = ({
         // ⚠️ `overflow-clip`, not `overflow-hidden`: a hidden box is still a scroll container,
         // and focus moving to a star near the edge could scroll the whole web out of place.
         <div className="w-full h-full min-w-0 min-h-0 flex py-8 px-8 overflow-clip select-none">
-            <div ref={fit.ref} className="flex-1 min-w-0 min-h-0 flex items-center justify-center">
+            <div
+                ref={setViewRef}
+                data-hall-sky-view
+                data-sky-pannable={pannable ? 'true' : 'false'}
+                onPointerDown={onPanDown}
+                onPointerMove={onPanMove}
+                onPointerUp={onPanUp}
+                onPointerCancel={onPanUp}
+                className={cn('flex-1 min-w-0 min-h-0 flex items-center justify-center overflow-clip', pannable && 'cursor-grab')}
+            >
                 <div
                     data-board-origin
                     data-guild-hall-board="true"
-                    data-natural-width={WEB_W}
-                    data-natural-height={WEB_H}
+                    data-natural-width={size.w}
+                    data-natural-height={size.h}
+                    data-sky-scale={scale}
                     className="relative shrink-0"
-                    style={{ width: fit.size, height: fit.height }}
+                    style={{ width: boardW, height: boardH, transform: shown.x || shown.y ? `translate(${shown.x}px, ${shown.y}px)` : undefined }}
                 >
                     {/* Lines first, so the stars sit on top of them. */}
                     <svg
                         className="absolute inset-0 pointer-events-none overflow-visible"
-                        width={fit.size}
-                        height={fit.height}
+                        width={boardW}
+                        height={boardH}
                         shapeRendering="crispEdges"
                     >
                         {links.map(({ from, to }) => {
@@ -241,8 +344,8 @@ export const GuildHallBoard = ({
 
                     {/* Constellation names: faint, bright once the constellation is finished. */}
                     {CONSTELLATIONS.map(c => {
-                        const x = Math.round((WEB_W / 2 + c.label.x * WEB_UNIT_PX) * fit.scale);
-                        const y = Math.round((WEB_H / 2 + c.label.y * WEB_UNIT_PX) * fit.scale);
+                        const x = Math.round((size.w / 2 + c.label.x * WEB_UNIT_PX) * scale);
+                        const y = Math.round((size.h / 2 + c.label.y * WEB_UNIT_PX) * scale);
                         const done = finished.has(c.id);
                         return (
                             <div

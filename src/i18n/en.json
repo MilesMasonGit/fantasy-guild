@@ -64,6 +64,7 @@
         "boosts": "Boosts & Modifiers",
         "noOutputs": "No active outputs",
         "noBoosts": "No active boosts",
+        "everyLap": "every {time}",
         "returnToPlaymat": "Return to Playmat",
         "inspect": "Inspect"
     },

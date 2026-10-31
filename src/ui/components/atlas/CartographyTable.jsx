@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Atlas from '../../../systems/atlas/Atlas.js';
 import { matCap } from '../../../systems/board/MatCap.js';
-import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeManager.js';
-import { cartographySlotsForRank } from '../../../config/guildUpgrades.js';
 import { matW, matH } from '../../../config/matGeometry.js';
 import { TEXT } from '../../../systems/atlas/regionNames.js';
 import { cn } from '../../utils/cn.js';
@@ -25,9 +23,12 @@ import { SCREEN_TEXT } from './atlasScreenText.js';
 /** The pause after a reroll before the next (D-9): snappy, but no macro-spamming. */
 export const REROLL_COOLDOWN_MS = 500;
 
-/** How many slots the table has now: the Cartography Table upgrade's rank. */
+/** The table's slots: fixed (the Guild Hall's Cartography Table star is retired). */
+export const CARTOGRAPHY_SLOTS = 4;
+
+/** How many slots the table has. */
 export function slotCount() {
-    return cartographySlotsForRank(GuildUpgradeManager.getRank('cartography_slots'));
+    return CARTOGRAPHY_SLOTS;
 }
 
 /**

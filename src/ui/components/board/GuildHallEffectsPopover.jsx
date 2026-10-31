@@ -2,10 +2,12 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { getTokenType, tokenName, getAllTokenTypes } from '../../../config/registries/tokenRegistry.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
-import { renderStatement } from '../../../systems/effects/statementText.js';
-import { toolNamer } from '../../../systems/effects/toolNames.js';
+import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { authoredStars } from '../../../config/guildUpgrades.js';
+import { linesOf, PASSIVE_PRODUCTION_MS } from '../../../systems/board/PassiveProduction.js';
+import { hallRulesOf } from '../../../systems/progression/hallModifiers.js';
+import { hallRuleSentence } from '../../../systems/progression/hallStarText.js';
+import { formatClock } from '../drawer/lifecycleLines.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
@@ -33,13 +35,24 @@ export function effectsPopoverPlace(anchor, width, height, viewW, viewH) {
     return { left: Math.round(left), top: Math.round(top) };
 }
 
-/** The Hall's live outputs and boosts. An upgrade or a load rewrites the Hall's definition. */
+const HALL_TYPE = 'token_guild_hall';
+
+/**
+ * What the Hall gives now: its Passive Production lines each lap (its own, the Wishing Well's
+ * Water, the Well's stars'), and every rule its stars' ranks hold, in words.
+ */
+export function hallEffectsNow(state) {
+    const ranks = state?.progress?.guildUpgrades || {};
+    const outputs = linesOf({ typeId: HALL_TYPE }, getTokenType(HALL_TYPE), ranks)
+        .map(({ itemId, quantity }) => ({ itemId, quantity }));
+    const boosts = hallRulesOf(authoredStars(), ranks).held.map(({ statement }) => hallRuleSentence(statement));
+    return { outputs, boosts };
+}
+
+/** The Hall's live outputs and boosts: an upgrade, a load or a new sky changes them. */
 function useHallEffects() {
     return useGameState(
-        () => {
-            const def = getTokenType('token_guild_hall');
-            return { outputs: def?.config?.outputs || [], statements: def?.statements || [] };
-        },
+        (state) => hallEffectsNow(state.state),
         [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET, BOARD_EVENTS.TOKEN_PLACED]
     );
 }
@@ -54,12 +67,8 @@ const Empty = ({ children }) => <span className="ui-text-body text-gi-muted">{ch
 export const GuildHallEffectsList = () => {
     const data = useHallEffects();
     const outputs = data?.outputs || [];
-    const statements = data?.statements || [];
-    const names = {
-        token: id => tokenName(id) || id,
-        item: id => getItem(id)?.name || id,
-        tool: toolNamer(getAllTokenTypes())
-    };
+    const boosts = data?.boosts || [];
+    const every = t('guildHall.everyLap', { time: formatClock(PASSIVE_PRODUCTION_MS) });
     return (
         <div className="flex flex-col gap-3 text-gi-text">
             <div className="flex flex-col gap-1.5">
@@ -69,17 +78,18 @@ export const GuildHallEffectsList = () => {
                         key={`${output.itemId}-${idx}`}
                         kind="item"
                         id={output.itemId}
-                        quantity={output.minQty ?? output.quantity ?? 1}
-                        chance="100%"
+                        quantity={output.quantity}
+                        interval={every}
                         size="md"
+                        data-hall-effect-output={output.itemId}
                     />
                 )) : <Empty>{t('guildHall.noOutputs')}</Empty>}
             </div>
             <div className="flex flex-col gap-1.5">
                 <SectionLabel>{t('guildHall.boosts')}</SectionLabel>
-                {statements.length > 0 ? statements.map((statement, idx) => (
-                    <div key={statement.id || `stm-${idx}`} data-hall-effect-statement className="ui-text-body leading-snug">
-                        {renderStatement(statement, names)}
+                {boosts.length > 0 ? boosts.map((sentence, idx) => (
+                    <div key={`boost-${idx}`} data-hall-effect-statement className="ui-text-body leading-snug">
+                        {sentence}
                     </div>
                 )) : <Empty>{t('guildHall.noBoosts')}</Empty>}
             </div>

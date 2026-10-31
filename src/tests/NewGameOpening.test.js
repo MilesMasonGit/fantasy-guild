@@ -22,7 +22,7 @@ import { BOUNTY_REWARD_ITEMS, RANDOM_ITEMS, RANDOM_HUNTS, bountyMapPool } from '
 import { getEffect } from '../config/registries/effectRegistry.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
 import {
-    getUpgradeDef, getUpgradePrice, WISHING_WELL_ITEM, TOKEN_CAP_PLANE_PRICES, CARTOGRAPHY_PLANE_PRICES
+    getUpgradeDef, getUpgradePrice, WISHING_WELL_ITEM
 } from '../config/guildUpgrades.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
@@ -353,11 +353,6 @@ function reachable({ maxPlane = 2 } = {}) {
  */
 const planeOfMap = (def) => (bountyWeightOf(def) > 0 ? 1 : 2);
 
-/** The Hall's prices by plane: ranks 1-2 are plane 1's, ranks 3-4 plane 2's. */
-const hallPlanePrices = (plane) => [TOKEN_CAP_PLANE_PRICES, CARTOGRAPHY_PLANE_PRICES]
-    .flatMap(byRank => byRank.slice(plane === 1 ? 0 : 2, plane === 1 ? 2 : 4))
-    .flatMap(rank => rank.map(([itemId]) => itemId));
-
 /**
  * What planes 1 to `maxPlane` put in the game, on paper: the Starter Camp, the Shop, and every Token
  * a map or modifier of those planes names, followed through everything those Tokens spawn, grow
@@ -434,7 +429,6 @@ function planeWorld(maxPlane = 2) {
         }
         grew = tokens.size + produced.size > before;
     }
-    for (let plane = 1; plane <= maxPlane; plane++) ask(hallPlanePrices(plane).map(itemId => ({ itemId })), `Guild Hall (plane ${plane})`);
     return { tokens, produced, asked, needs, built };
 }
 

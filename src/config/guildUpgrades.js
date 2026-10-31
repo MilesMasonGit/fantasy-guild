@@ -1,4 +1,9 @@
 // Fantasy Guild — Guild Hall upgrade definitions & the upgrade web.
+//
+// ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (the progression ledger). Keep it pure:
+// the authored stars are handed in by `hallStarRegistry.js` ({@link setHallSky}), never loaded here.
+
+import { normaliseHallSky, rankOf } from './hallStars.js';
 
 /**
  * Heroes a guild starts with, before any Roster Size rank is bought.
@@ -42,9 +47,8 @@ export const UPGRADE_SPRITES = {
     bank_tabs: '/assets/tokens/chest/t_chest_addy.png',
     guild_hall: '/assets/tokens/upgrade/t_guildhall.png',
     wishing_well: '/assets/tokens/upgrade/t_well_wishing.png',
-    notice_board: '/assets/ui/u_quest_board.png',
-    cartography_slots: '/assets/tokens/map/t_map_base.png',
-    token_cap: '/assets/tokens/map/t_map_guild.png'
+    // An authored star with no sprite of its own: the owner's gold star stands in.
+    star: '/assets/playmat/screens/ui_star_gold.png'
 };
 
 /**
@@ -66,8 +70,8 @@ export const HALL_NODE = 'hall';
  *
  * Each upgrade carries `prices`: one entry per rank, where `prices[n - 1]` is
  * what rank n costs, as a list of `{ itemId, quantity }`. An empty list is
- * free. Most tracks use the same placeholder (rank n costs 10·n Oak Wood); the Token cap and the
- * Cartography table price their first ranks by the planes ({@link planePrices}).
+ * free. The built-in tracks use the same placeholder (rank n costs 10·n Oak Wood); an authored
+ * star carries a price per rank (`hallStars.js`).
  */
 export const PLACEHOLDER_PRICE_ITEM = 'item_oak_wood';
 export const PLACEHOLDER_PRICE_PER_RANK = 10;
@@ -90,32 +94,6 @@ export function placeholderPrices(maxRank, {
     });
 }
 
-/**
- * Prices by the planes, for the upgrades that open the world (the Token cap, the Cartography table):
- * one list per rank from rank 1, each `[itemId, quantity]` pairs; ranks past the list keep the
- * placeholder until a later plane prices them. Ranks 1-2 cost plane 1's materials (oak, stone,
- * copper), ranks 3-4 plane 2's (fir, iron). ⚠️ First-pass numbers, for the owner to tune by playing.
- */
-export const TOKEN_CAP_PLANE_PRICES = Object.freeze([
-    [['item_oak_wood', 40], ['item_stone', 20], ['item_copper_ingot', 10]],
-    [['item_oak_wood', 80], ['item_stone', 40], ['item_copper_ingot', 20]],
-    [['item_fir_wood', 60], ['item_iron_ingot', 15]],
-    [['item_fir_wood', 120], ['item_iron_ingot', 30]]
-]);
-export const CARTOGRAPHY_PLANE_PRICES = Object.freeze([
-    [['item_oak_wood', 30], ['item_stone', 15], ['item_copper_ingot', 5]],
-    [['item_oak_wood', 60], ['item_stone', 30], ['item_copper_ingot', 10]],
-    [['item_fir_wood', 50], ['item_iron_ingot', 10]],
-    [['item_fir_wood', 100], ['item_iron_ingot', 20]]
-]);
-
-/** A track's prices: `byRank` for its first ranks, the placeholder (`placeholderPrices`) after. */
-export function planePrices(maxRank, byRank) {
-    return placeholderPrices(maxRank).map((placeholder, i) => (
-        byRank[i] ? byRank[i].map(([itemId, quantity]) => ({ itemId, quantity })) : placeholder
-    ));
-}
-
 /** What the Wishing Well adds to the Guild Hall's Passive Production: 10 Water per rank, per lap. */
 export const WISHING_WELL_ITEM = 'item_water';
 export const WISHING_WELL_WATER_PER_RANK = 10;
@@ -132,46 +110,26 @@ export function wishingWellRank(ranks) {
 }
 
 /**
- * Notice Board ranks: +1 quest per rank from the base of 2 to 5, so three ranks.
- */
-export const NOTICE_BOARD_MAX_RANK = 3;
-
-/** Cartography table slots: 4 to start, one more per rank, up to 8. */
-export const CARTOGRAPHY_SLOTS_BASE = 4;
-export const CARTOGRAPHY_SLOTS_MAX = 8;
-
-/** How many slots the Cartography table has at a `cartography_slots` rank. */
-export function cartographySlotsForRank(rank) {
-    const r = Math.max(0, Math.floor(Number(rank) || 0));
-    return Math.min(CARTOGRAPHY_SLOTS_MAX, CARTOGRAPHY_SLOTS_BASE + r);
-}
-
-/**
- * The Token cap: 128 to start, +16 per rank over 8 ranks, up to 256. Here rather than in `MatCap`
- * so the upgrade's labels and the cap read one definition.
- */
-export const TOKEN_CAP_BASE = 128;
-export const TOKEN_CAP_PER_RANK = 16;
-export const TOKEN_CAP_MAX_RANK = 8;
-
-/** The Token cap at a `token_cap` rank. A save with ranks above the top caps at the top. */
-export function tokenCapForRank(rank) {
-    const r = Math.min(TOKEN_CAP_MAX_RANK, Math.max(0, Math.floor(Number(rank) || 0)));
-    return TOKEN_CAP_BASE + r * TOKEN_CAP_PER_RANK;
-}
-
-/**
  * The sky's constellations: each upgrade names one in `constellation`. `label` is where the
  * name sits, in the same unit space as a node's `node`. A constellation is finished when every
  * star in it is lit (rank 1 or more).
+ *
+ * The three built in come first; the authored ones (a constellation per skill) follow, put in by
+ * {@link setHallSky}. ⚠️ A live list: readers keep the array, so it is changed in place.
  */
-export const CONSTELLATIONS = [
-    { id: 'hearth', name: 'The Hearth', label: { x: 0, y: -0.8 } },
-    { id: 'vault', name: 'The Vault', label: { x: -0.72, y: 0.3 } },
-    { id: 'compass', name: 'The Compass', label: { x: 0.9, y: 0.3 } },
-    { id: 'well', name: 'The Well', label: { x: 0, y: 0.8 } }
-];
+export const BUILT_IN_CONSTELLATIONS = Object.freeze([
+    Object.freeze({ id: 'hearth', name: 'The Hearth', label: Object.freeze({ x: 0, y: -0.8 }) }),
+    Object.freeze({ id: 'vault', name: 'The Vault', label: Object.freeze({ x: -0.72, y: 0.3 }) }),
+    Object.freeze({ id: 'well', name: 'The Well', label: Object.freeze({ x: 0, y: 0.8 }) })
+]);
+export const CONSTELLATIONS = [...BUILT_IN_CONSTELLATIONS];
 
+/**
+ * Every upgrade track: the three built in, whose effects are the game's own (a hero recruited, a
+ * Bank tab, the Wishing Well's Water), then the authored stars ({@link setHallSky}), whose ranks
+ * carry rules and Passive Production lines (`hallStars.js`).
+ * ⚠️ A live list, changed in place, like {@link CONSTELLATIONS}.
+ */
 export const GUILD_UPGRADES = [
     {
         id: 'bank_tabs',
@@ -212,51 +170,100 @@ export const GUILD_UPGRADES = [
         statLabel: rank => rank === 0 ? 'No water generated' : `${wishingWellWater(rank)} Water / 5 min`,
         nextStatLabel: rank => `${wishingWellWater(rank + 1)} Water / 5 min`,
         sprite: UPGRADE_SPRITES.wishing_well
-    },
-    {
-        // Each rank lets the Guild Hall keep one more bounty quest on the mat.
-        // The base and the ceiling are game values (`QuestTokens.QUEST_CAP_BASE`, `QUEST_CAP_MAX`), read by `QuestTokens.questCap`.
-        id: 'notice_board',
-        constellation: 'compass',
-        name: 'Notice Board',
-        description: 'The Guild Hall keeps one more quest on the mat at a time.',
-        node: { x: 0.5, y: 0 },
-        links: [HALL_NODE],
-        maxRank: NOTICE_BOARD_MAX_RANK,
-        prices: placeholderPrices(NOTICE_BOARD_MAX_RANK),
-        statLabel: rank => `+${rank} quest${rank === 1 ? '' : 's'}`,
-        nextStatLabel: rank => `+${rank + 1} quests`,
-        sprite: UPGRADE_SPRITES.notice_board
-    },
-    {
-        id: 'cartography_slots',
-        tag: 'above',
-        constellation: 'compass',
-        name: 'Cartography Table',
-        description: 'One more slot on the Cartography table, to write a Region from more maps.',
-        node: { x: 0.55, y: 0.55 },
-        links: [HALL_NODE],
-        maxRank: CARTOGRAPHY_SLOTS_MAX - CARTOGRAPHY_SLOTS_BASE,
-        prices: planePrices(CARTOGRAPHY_SLOTS_MAX - CARTOGRAPHY_SLOTS_BASE, CARTOGRAPHY_PLANE_PRICES),
-        statLabel: rank => `${cartographySlotsForRank(rank)} slots`,
-        nextStatLabel: rank => `${cartographySlotsForRank(rank + 1)} slots`,
-        sprite: UPGRADE_SPRITES.cartography_slots
-    },
-    {
-        id: 'token_cap',
-        tag: 'above',
-        constellation: 'compass',
-        name: 'Token Cap',
-        description: `Room for ${TOKEN_CAP_PER_RANK} more Tokens on the mat.`,
-        node: { x: 0.55, y: -0.55 },
-        links: [HALL_NODE],
-        maxRank: TOKEN_CAP_MAX_RANK,
-        prices: planePrices(TOKEN_CAP_MAX_RANK, TOKEN_CAP_PLANE_PRICES),
-        statLabel: rank => `${tokenCapForRank(rank)} Tokens`,
-        nextStatLabel: rank => `${tokenCapForRank(rank + 1)} Tokens`,
-        sprite: UPGRADE_SPRITES.token_cap
     }
 ];
+
+/** The built-in track ids: an authored star may not take one. */
+export const BUILT_IN_UPGRADE_IDS = Object.freeze(GUILD_UPGRADES.map(u => u.id));
+
+/**
+ * An authored star as an upgrade track: what the sky, the details panel and the purchase read.
+ * `authored: true` and `star` (its normalised record) set it apart from a built-in track; its
+ * labels come from `describeRank(star, rank)`, which the game hands in (this module cannot name
+ * items), or say the rank alone.
+ */
+export function upgradeDefOfStar(star, describeRank = null) {
+    const label = (rank) => {
+        const r = Math.floor(Number(rank) || 0);
+        if (r <= 0) return 'Not yet bought';
+        return (describeRank && describeRank(star, r)) || `Rank ${r}`;
+    };
+    return {
+        id: star.id,
+        constellation: star.constellation,
+        name: star.name,
+        description: star.description,
+        node: star.node,
+        tag: star.tag,
+        links: star.links,
+        maxRank: star.ranks.length,
+        prices: star.ranks.map(r => r.price),
+        statLabel: label,
+        nextStatLabel: rank => label(rank + 1),
+        sprite: star.sprite || UPGRADE_SPRITES.star,
+        authored: true,
+        star
+    };
+}
+
+/** The authored stars and constellations last put in by {@link setHallSky}, so a later call replaces exactly them. */
+let authoredStarDefs = [];
+let authoredConstellations = [];
+/** Their normalised records, kept as one list: Passive Production reads it every tick. */
+let authoredStarList = Object.freeze([]);
+/** Moves on every {@link setHallSky}, so a screen drawing the sky knows to draw it again. */
+let skyChanges = 0;
+
+/** How many times the authored sky has been put in. */
+export function skyVersion() {
+    return skyChanges;
+}
+
+/**
+ * Put the authored sky in: `sky` is `data/hallStars.json` (or a fixture) in the file's shape, or
+ * already normalised. Replaces whatever the last call put in; anything else in the live lists (a
+ * test's own track) stays. A star or constellation taking a built-in id is left out.
+ *
+ * @param {object|null} sky
+ * @param {{ describeRank?: (star: object, rank: number) => string }} [options]
+ * @returns {{ constellations: object[], stars: object[] }} what went in
+ */
+export function setHallSky(sky, { describeRank = null } = {}) {
+    for (const def of authoredStarDefs) {
+        const i = GUILD_UPGRADES.indexOf(def);
+        if (i !== -1) GUILD_UPGRADES.splice(i, 1);
+    }
+    for (const c of authoredConstellations) {
+        const i = CONSTELLATIONS.indexOf(c);
+        if (i !== -1) CONSTELLATIONS.splice(i, 1);
+    }
+    const { constellations, stars } = normaliseHallSky(sky || {});
+    const builtInC = new Set(BUILT_IN_CONSTELLATIONS.map(c => c.id));
+    const builtInS = new Set(BUILT_IN_UPGRADE_IDS);
+    authoredConstellations = constellations.filter(c => !builtInC.has(c.id) && !CONSTELLATIONS.some(o => o.id === c.id));
+    authoredStarDefs = stars
+        .filter(s => !builtInS.has(s.id) && !GUILD_UPGRADES.some(o => o.id === s.id))
+        .map(s => upgradeDefOfStar(s, describeRank));
+    CONSTELLATIONS.push(...authoredConstellations);
+    GUILD_UPGRADES.push(...authoredStarDefs);
+    authoredStarList = Object.freeze(authoredStarDefs.map(d => d.star));
+    skyChanges += 1;
+    return { constellations: [...authoredConstellations], stars: [...authoredStarList] };
+}
+
+/** The authored stars in the sky now, as their normalised records (one frozen list until the sky changes). */
+export function authoredStars() {
+    return authoredStarList;
+}
+
+/**
+ * What an authored star gives at a rank: its rank record's `rules` and `lines` (`hallStars.js`),
+ * or null for a built-in track or a rank of 0.
+ */
+export function rankEffectOf(def, rank) {
+    if (!def?.authored) return null;
+    return rankOf(def.star, rank);
+}
 
 /** Look up an upgrade definition by id. */
 export function getUpgradeDef(id) {
@@ -302,7 +309,7 @@ function rankIn(ranks, id) {
 export function getUpgradeLinks(upgradeId) {
     const def = getUpgradeDef(upgradeId);
     if (!def) return [];
-    const out = new Set(def.links || []);
+    const out = new Set((def.links || []).filter(to => to === HALL_NODE || getUpgradeDef(to)));
     for (const other of GUILD_UPGRADES) {
         if (other.id !== def.id && (other.links || []).includes(def.id)) out.add(other.id);
     }
@@ -319,6 +326,8 @@ export function getUpgradeWebLinks() {
     const out = [];
     for (const def of GUILD_UPGRADES) {
         for (const to of def.links || []) {
+            // A link naming no star (an authored star's typo) draws nothing.
+            if (to !== HALL_NODE && !getUpgradeDef(to)) continue;
             const key = [def.id, to].sort().join('|');
             if (seen.has(key)) continue;
             seen.add(key);

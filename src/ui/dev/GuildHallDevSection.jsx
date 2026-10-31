@@ -13,10 +13,10 @@ const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-mut
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
 
 /**
- * Every star state at once: Bunk Beds bought (The Hearth finished), the Notice Board and the
- * Wishing Well maxed (The Well finished), Bank Tabs locked, the rest buyable.
+ * Every star state at once: Bunk Beds bought, the Wishing Well maxed, Bank Tabs buyable, a star
+ * beyond a bought one opened and one beyond an unbought one still locked.
  */
-export const SKY_SAMPLE_RANKS = { roster_size: 1, notice_board: 3, wishing_well: 10 };
+export const SKY_SAMPLE_RANKS = { roster_size: 1, wishing_well: 10 };
 
 /**
  * Write Guild Hall ranks straight into the save, as the roster helper in `TestDashboard` does:
@@ -31,7 +31,7 @@ export function devSetGuildRanks(ranks) {
 }
 
 /** The stars the sample makes blue, by putting their next price in the Bank. */
-export const SKY_SAMPLE_PAID = ['bank_tabs', 'token_cap'];
+export const SKY_SAMPLE_PAID = ['bank_tabs'];
 
 /** Put each upgrade's next price in the Bank, so the Bank can pay for it now. */
 export function devGiveNextPrice(ids) {
@@ -59,7 +59,7 @@ export function GuildHallDevSection() {
                     type="button"
                     data-qa-sky-looks
                     className={buttonClass}
-                    title="The sample ranks, and the next price of Bank Tabs and Token Cap in the Bank"
+                    title="The sample ranks, and the next price of Bank Tabs in the Bank"
                     onClick={() => {
                         devSetGuildRanks(SKY_SAMPLE_RANKS);
                         devGiveNextPrice(SKY_SAMPLE_PAID);
