@@ -73,6 +73,14 @@ The screenshots' crispness ratio (`crisp` in `*_frames.json`: pixels with a twin
 and down) moves with what stands behind the goblin and is not a fair before/after number; the
 crisp bench above is the measure.
 
+## In the dev game
+
+Dev build of this branch at 1920×1080 (fit 0.9), new game, QA dashboard → Hero orders → "Ambush
+and needs-a-job scene": its goblin strolled by its camp. Over 300 driven ticks it stepped 177
+times: 129 steps at `steps(4, start)`, 41 at 3, 4 at 5, both boxes alike, and 3 arrivals on the
+usual 220 ms settle. Style strings only (the Browser pane draws no frames while hidden); the
+motion itself is the frame sample above.
+
 ## Measured and reasoned
 
 - **Measured**: both A/B runs; the cost table; the crisp runs (fix twice, main twice, neutered
