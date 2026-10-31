@@ -8,6 +8,9 @@ import { useSimulationStore } from '../../cms/src/stores/useSimulationStore.js';
 import { workspaceReport, workspacePace } from '../../cms/src/engine/ledgerReport';
 import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import HallStarsPage from '../../cms/src/components/hallStars/HallStarsPage.jsx';
+import { workspaceContent } from '../../cms/src/stores/useLedgerWatchStore.js';
+import { runGate } from '../../cms/src/engine/packGate.js';
+import { workspaceSnapshot } from '../../cms/src/engine/ledgerJobs.js';
 import { paceWorkspace } from './fixtures/paceWorld.js';
 import { paceHallSky } from './fixtures/paceHallSky.js';
 
@@ -53,6 +56,26 @@ describe('the report reads the workspace\'s sky', () => {
         expect(workspacePace(hallWorkspace()).hallPaybacks().length).toBe(pace.hallPaybacks().length);
         // A workspace with no sky prices only the built-in tracks.
         expect(workspaceReport(paceWorkspace()).pace.hallPaybacks().every(r => r.builtIn)).toBe(true);
+    });
+});
+
+describe('the change-pack gate reads the sky', () => {
+    it('hands the ledger the workspace\'s stars, so a pack adding a star slow to pay back shows that problem as added', () => {
+        useEntityStore.setState(empty);
+        store().hydrate(hallWorkspace());
+        const workspace = workspaceContent(store());
+        expect(Object.keys(workspace.hallStars)).toContain('ph_lore');
+        const slow = { ...paceHallSky().stars.ph_gold, id: 'ph_gold_two', name: 'Gold Leaf Two' };
+        const pack = {
+            format: 'fantasy-guild-change-pack', version: 1, id: 'hall-gate', createdAt: '2026-10-30T20:00:00Z', title: 'A slow star', asked: 'A star that never pays back, to see the gate catch it.', summary: 'One star that never pays back.',
+            entries: [{ op: 'create', kind: 'hallStar', id: slow.id, value: slow, note: 'Never pays back.' }]
+        };
+        const gate = runGate(workspace, pack, workspaceSnapshot);
+        expect(gate.errors || []).toEqual([]);
+        expect(gate.diff.added.map(f => `${f.check}|${f.key}`)).toEqual(['hall-payback|hall:ph_gold_two']);
+        // The stars already there are in both sides: the Gold Leaf already in the workspace adds nothing.
+        expect(gate.before.findings.some(f => f.key === 'hall:ph_gold')).toBe(true);
+        useEntityStore.setState(empty);
     });
 });
 
