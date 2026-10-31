@@ -5,13 +5,13 @@ import { TERRAIN, DEFAULT_TERRAIN } from './TerrainMap.js';
 import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
 
 /**
- * The node budget: what the Cartography table's Node Summary shows, and what a layout then places.
+ * The node budget: what a Region written from recipes holds, and what a layout then places.
  * A pure function of the ingredients and the Token cap. It takes no seed, so a reroll (a new seed
  * for `Layout.js`) can never change it, and slot order does not matter.
  *
  * ## The recipe shape (internal; A5's adapter turns authored maps into it)
  *
- * An ingredient is one slotted map item, either a Base Map:
+ * An ingredient is one recipe (a world cell's, the dev tools', or a retired map item's), either a Base Map:
  *
  *     { id: 'map_forest', kind: 'base', biome: 'forest', points: 40,
  *       nodes:     [{ typeId: 'token_oak_tree', weight: 6 }, { typeId: 'token_redberry_bush', weight: 1 }],
@@ -363,8 +363,8 @@ export const SUMMARY_TEXT = Object.freeze({
 });
 
 /**
- * The Node Summary in words, for the Cartography preview (A6) and a map item's "What it writes"
- * (A5): one line per Token in budget order (nodes, then camps, then treasures).
+ * The Node Summary in words, for the dev console's preview and the CMS Map editor's "What it writes":
+ * one line per Token in budget order (nodes, then camps, then treasures).
  *
  * @param {object|object[]} nodeSummary  a {@link budget} result, or just its `entries`
  * @param {{nameOf?: (typeId: string) => string}} [options]  Token names; the registry's by default
