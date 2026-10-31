@@ -109,6 +109,9 @@ export const AFFINITY = Object.freeze({ ROCK: 'rock', WATER: 'water', GRASS: 'gr
 /** The grove sizes a species' nodes are split into, one drawn per grove, so groves come uneven. */
 export const GROVE_SIZES = Object.freeze([3, 4, 6, 8, 10, 12]);
 
+/** Ore and stone on a Region with Stone grow in small groves, an outcrop's worth, so they spread over the outcrops. */
+export const STONE_GROVE_SIZES = Object.freeze([3, 4]);
+
 /** About one node in eight of a species of more than {@link STRAY_MIN} stands alone between the groves. */
 export const STRAY_SHARE = 0.12;
 const STRAY_MIN = 4;
@@ -814,8 +817,9 @@ export function layout(summary, {
         const n = s.queue.length;
         const strays = n > STRAY_MIN ? Math.round(n * STRAY_SHARE) : 0;
         let next = 0;
+        const sizes = s.leans === TERRAIN.STONE ? STONE_GROVE_SIZES : GROVE_SIZES;
         while (next < n - strays) {
-            const size = Math.min(n - strays - next, GROVE_SIZES[Math.floor(random() * GROVE_SIZES.length)]);
+            const size = Math.min(n - strays - next, sizes[Math.floor(random() * sizes.length)]);
             const centre = groveSpot(s, GROVE_APART) || roomiestFor(s);
             grow(s, s.queue.slice(next, next + size), centre);
             next += size;

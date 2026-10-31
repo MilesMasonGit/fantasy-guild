@@ -27,6 +27,10 @@ import {
     shownRings, cellRadius, cellCentre, mapSize, iconsPerCell, RINGS_AHEAD, MIN_RADIUS, MAX_RADIUS
 } from '../ui/components/atlas/worldMapLayout.js';
 import { meetFrontierPrices } from '../ui/dev/worldDev.js';
+import * as BoardState from '../systems/board/BoardState.js';
+import * as QuestTokens from '../systems/quests/QuestTokens.js';
+import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
+import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -217,5 +221,26 @@ describe('the QA panel\'s frontier prices', () => {
         const result = meetFrontierPrices();
         expect(result).toMatchObject({ success: true, cells: 6 });
         for (const cell of World.currentWorld().cells.filter(c => c.ring === 1)) expect(World.priceOf(cell).met, cell.id).toBe(true);
+    });
+});
+
+describe('the cartographer on the World page (brief 330 W3)', () => {
+    it('while the tutorial\'s last step asks for a first place, its words head the right page; then they go', () => {
+        const { container: before } = screen();
+        expect(q(before, '[data-world-note]')).toBeNull();
+        cleanup();
+
+        const quests = GameState.state.quests;
+        for (const step of TUTORIAL_QUESTS.slice(0, -1)) quests.completedTutorials.push(step.id);
+        for (const token of QuestTokens.tutorialTokens()) BoardState.removeToken(token.id);
+        expect(QuestTokens.ensureTutorial()).toBe(true);
+        const { container } = screen();
+        const note = q(container, '[data-world-note]');
+        expect(note.textContent).toContain(TUTORIAL_TEXT.steps.cart_first_place.title);
+        expect(note.textContent).toContain(TUTORIAL_TEXT.speaker);
+        cleanup();
+
+        QuestTokens.tutorialTokens()[0].quest.done = true;
+        expect(q(screen().container, '[data-world-note]')).toBeNull();
     });
 });
