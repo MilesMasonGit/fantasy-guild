@@ -21,6 +21,7 @@ vi.mock('../config/registries/itemRegistry.js', () => {
     return {
         getItem: vi.fn((id) => ITEMS[id] || null),
         getAllItems: vi.fn(() => ITEMS),
+        isRetiredItem: vi.fn(() => false),
         DEFAULT_MAX_STACK: 1e12
     };
 });

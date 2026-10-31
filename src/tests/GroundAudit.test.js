@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { auditContent } from '../systems/core/ContentAudit.js';
+import { auditContent, RETIRED_MAP_TEXT } from '../systems/core/ContentAudit.js';
 
 /**
- * The boot content audit reads "Stands on" (`standsOn`): a word the game does not know, and a map
- * node whose list its map's ground can never give (the layout would leave it unplaced, and the
- * Region could never be settled).
+ * The boot content audit reads "Stands on" (`standsOn`): a word the game does not know. A Base Map
+ * is retired, so its nodes' ground is no longer read: the map is named for deletion instead.
  */
 
 const token = (id, name, extra = {}) => ({ id, name, tokenType: 'resource', rarity: 'common', size: 1, uses: null, ...extra });
@@ -57,27 +56,10 @@ describe('the audit reads "Stands on"', () => {
         }
     });
 
-    it('names a map node its map\'s ground can never give', () => {
-        const said = standsOnLines('Item "fixture_ga_plains"');
-        expect(said).toHaveLength(2);
-        // Rock on a forest's grass: never, beside any map.
-        expect(said.find(s => /GA Mineshaft/.test(s))).toMatch(/never/);
-        // Water on a map that brings none: only beside a map that does.
-        expect(said.find(s => /GA Sailboat/.test(s))).toMatch(/brings no water/);
-    });
-
-    it('says nothing when the map\'s own ground or water serves the node', () => {
-        expect(standsOnLines('Item "fixture_ga_coast"')).toEqual([]);
-        expect(standsOnLines('Item "fixture_ga_mountain"')).toEqual([]);
-        // A forest brings its own pond: a boat and a dock have water.
-        expect(standsOnLines('Item "fixture_ga_forest"')).toEqual([]);
-        // A map that names its own terrain is read by it, not by its biome.
-        expect(standsOnLines('Item "fixture_ga_quarry"')).toEqual([]);
-    });
-
-    it('a shore node on a map whose water was set to none is named', () => {
-        const said = standsOnLines('Item "fixture_ga_dry_coast"');
-        expect(said).toHaveLength(1);
-        expect(said[0]).toMatch(/GA Dock/);
+    it('reads no Base Map nodes against its ground any more: each map is named as retired, once', () => {
+        for (const id of ['fixture_ga_plains', 'fixture_ga_forest', 'fixture_ga_coast', 'fixture_ga_mountain', 'fixture_ga_quarry', 'fixture_ga_dry_coast']) {
+            expect(standsOnLines(`Item "${id}"`), id).toEqual([]);
+            expect(about(`Item "${id}"`), id).toEqual([RETIRED_MAP_TEXT.baseMap]);
+        }
     });
 });

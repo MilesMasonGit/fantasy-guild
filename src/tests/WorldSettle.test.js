@@ -65,7 +65,6 @@ function stock(cell, extra = 0) {
 }
 
 const world = () => World.currentWorld();
-const cellAt = (id) => world().cells.find(c => c.id === id);
 const ringOne = () => world().cells.filter(c => c.ring === 1);
 const bankOf = (ids) => Object.fromEntries(ids.map(id => [id, InventoryManager.getItemCount(id)]));
 

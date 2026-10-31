@@ -65,8 +65,6 @@ registerItems({
     }
 });
 
-const bank = (id) => InventoryManager.getItemCount(id);
-const regionCount = () => Object.keys(GameState.state.atlas.regions).length;
 const q = (container, sel) => container.querySelector(sel);
 /** Show Region `id` on the right page (outside `act`, so the page is drawn before its Travel is pressed). */
 const pick = (container, id) => fireEvent.click(container.querySelector(`[data-region-select="${id}"]`));
