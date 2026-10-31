@@ -396,24 +396,22 @@ inspection instead: it leaves with no reward and frees its place; tutorial
 steps stay until claimed. The discard bin (and its refunds) is gone.
 *(`Demolition.js`, `QuestTokens.dismissBounty`, `TokenInspection.jsx`)*
 
-### Maps — Items (Atlas A5); no map content yet
-A map is an item: a **Base Map** (type `map`) or a **Modifier** (type
-`modifier`), authored in the CMS's Map editor and written into `data/items.json`
-by Sync, so it banks, drops and pays out like any item. Its Cartography block
-says what it writes: a Base Map has a biome, points, weighted nodes, its own
-enemy camps and treasures, and its ground (each biome its own look and water:
-meadow, forest, mountain, coast, flower meadow, cherry grove, Yellowstone,
-volcano, and the **Bog**, dark grass and mud with a marsh of many small ponds;
-`Budget.js`, `terrainRegistry.js`); a Modifier has effects (more of a
-node, a better node instead, an enemy camp, a treasure). The generation engine
-reads it (`systems/atlas/mapItems.js` → `Budget.js`); inspecting one in the Bank
-lists what it writes. Settling a Region takes the slotted maps from the Bank
-(`Cartography.js`). A claimed bounty pays a map 25 % of the time, drawn at the
-claim, weighted by each map's bounty weight. A Base Map ticked **Given by the
-tutorial** is one of the first maps the tutorial pays. The simulator prices no map. Map
-bursts, the Map shop, the Explore skill and the old Map catalogue
-(`data/maps.json`) are retired; the last Map Token, **Volcanic Island**, does
-nothing and is the owner's to delete in the CMS.
+### Maps — Retired (brief 330 W2); the world map settles places instead
+Map items (a **Base Map**, type `map`, and a **Modifier**, type `modifier`) are
+retired: nothing drops, pays or makes one, a drop line naming one never rolls
+and one handed to the mat never lands, and there is no Cartography table,
+upcycling or bounty map. The boot audit names each Base Map and each Token
+that still drops a map, for the owner to delete in the CMS (the Map editor
+still opens them). A Modifier's Cartography block (more of a node, a better
+node instead, an enemy camp, a treasure) lives on as a world cell's hidden
+extra (§10, `world/cellRegion.js`). The generation engine still writes a
+Region from recipes (`Budget.js` → `Layout.js`, `Cartography.js`), each biome
+its own ground and water: meadow, forest, mountain, coast, flower meadow,
+cherry grove, Yellowstone, volcano, and the **Bog**, dark grass and mud with
+a marsh of many small ponds (`terrainRegistry.js`); the QA panel's Terrain
+views use it. Map bursts, the Map shop, the Explore skill and the old Map
+catalogue (`data/maps.json`) are retired too; the last Map Token, **Volcanic
+Island**, does nothing and is the owner's to delete in the CMS.
 
 ---
 
@@ -1092,7 +1090,7 @@ drawers**. The menu can be flipped to the right.
   not migrated** (`GAME_VERSION = '0.8.1'`, moved by the Atlas's Regions), and
   that stays the policy **until 1.0** (owner 2026-10-06). A new game is saved
   immediately.
-- **Regions** — **Built, dev console only** (Atlas slice A1): the save holds
+- **Regions** — **Built** (Atlas slice A1; on screen in the Atlas): the save holds
   every Region the guild has settled (`state.atlas`); the mat is the board of
   the Region the guild is in. **Only that Region runs**, offline catch-up
   included; every other Region is frozen exactly as it was left. A new game's
@@ -1102,16 +1100,30 @@ drawers**. The menu can be flipped to the right.
   Region it has never stood in, and back in its old spot in one it has), and
   leaves each Region's flags behind: going back, every hero starts at the flag
   they left there, with no work claimed and no fight on; a new Region starts
-  with everyone in the Dock. No Atlas screen yet: `Game.Atlas.devCreateEmptyRegion()`
-  and `Game.Atlas.travel(id)` in the dev console. *(`src/systems/atlas/`)*
-- **The world** — **Generated, not on screen yet** (brief 330 W1): a new game
-  generates its hex world from the run seed (the game's creation time) and the
-  world tables, and keeps it whole in the save (`state.world`): the Hall's cell
-  (the Starter Camp), three strict rings, wild rings beyond, six wedges by
-  origin line; each cell's origins, tier, kit, specialty, hidden extras and
-  price. The tables are placeholder until the CMS syncs `data/world.json`
-  (W6). A save made before worlds has none. The QA panel's Atlas section shows
-  a world in words. *(`src/systems/world/`, `worldTablesShape.js`)*
+  with everyone in the Dock. The Atlas's Regions page lists them (travel,
+  rename, archive, abandon). *(`src/systems/atlas/`)*
+- **The world** — **Built: generated (brief 330 W1) and on screen (W2)**: a new
+  game generates its hex world from the run seed (the game's creation time)
+  and the world tables, and keeps it whole in the save (`state.world`): the
+  Hall's cell (the Starter Camp), three strict rings, wild rings beyond, six
+  wedges by origin line; each cell's origins, tier, kit, specialty, hidden
+  extras and price. The Atlas opens on its **World** page: flat-topped hexes in
+  their kit's colour with the first outputs they yield; the strict rings show
+  from the start and the wild rings two past the guild's furthest place.
+  Settled cells are lit (the guild's carries its flag), the cells beside them
+  are the **frontier**, the rest lie beyond. The hover over a cell lists what it
+  yields and its price as have/need (an item against the Bank, a skill against
+  the best level any hero has reached). **Settle** (frontier only) pays the
+  whole price at once, writes the cell's Region and takes the guild there; a
+  settled place offers **Travel**, as the Regions page does. A Region knows its
+  cell (`region.cellId`); abandoning it returns the cell to the frontier. ⚠️
+  Until the mat is written from the cell (W3), a cell's Region is today's
+  layout of one map made of its origins on its kit's ground, plus its hidden
+  modifiers and treasures (`world/cellRegion.js`). The tables are placeholder
+  until the CMS syncs `data/world.json` (W6). A save made before worlds has
+  none: the World page says so, and its Regions still travel. The QA panel's
+  Atlas section meets the frontier's prices at a click and shows a world in
+  words. *(`src/systems/world/`, `worldTablesShape.js`, `ui/components/atlas/WorldPage.jsx`)*
 - **Desktop**: packaged with Tauri (Windows installers); the game runs in the
   webview and saves stay in its storage.
 
@@ -1168,7 +1180,8 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
   Construction job with no refund, everything counts toward the cap, and a
   hand-made Starter Camp opens the game. Roadmap and owner answers:
   [`atlas_roadmap.md`](../active/atlas_roadmap.md). Built so far: Regions and
-  travel (§10), from the dev console; the Starter Camp and landmarks (A7).
+  travel (§10); the Starter Camp and landmarks (A7). Map items are retired: the
+  world map (brief 330, §10) settles places instead.
 - **Classless heroes — Built (brief 270)**:
   [`docs/active/concept_classless_heroes.md`](../active/concept_classless_heroes.md).
   The class tree of the skill and class rework v2 (brief 20) is retired (§4);

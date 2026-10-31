@@ -117,8 +117,13 @@ player for these is T-138 (built when the first strips exist).
   table's edge with a candle and a compass around it; ribbon bookmarks for
   the two sections. Placeholders until drawn.
 - **Area banners**: the 19 in `backgrounds/area/` are in use (Region rows,
-  the top bar, travel, the Cartography preview); each Base Map names one in
-  the CMS, so a new Base Map may want a new banner.
+  the top bar, travel); a place settled on the world map shows its main
+  biome's.
+- **World map cells** (NEW when ready, brief 330 W2): a hex cell frame (flat
+  top, settled, frontier and beyond looks, or one frame the code tints) and a
+  ground fill per kit (Highland, Woodland, Plains, Wetland, Riverside). Code
+  draws flat hexes in a colour per kit until then; the cells show the item
+  sprites of what they yield, so no new output icons are needed.
 - **Loadout slot kind marks** (NEW, 8 × 8, drawn at 2× in the bottom-right
   corner of a hero's filled loadout slot; code-drawn placeholders in
   `PixelGlyph` until drawn, shown on the style sheet page under "Loadout slot
