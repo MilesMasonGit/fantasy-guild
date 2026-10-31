@@ -167,7 +167,7 @@ describe('pottering (HM-1, for enemies)', () => {
         expect(farthest).toBeLessThanOrEqual(INNER + R + 1);       // rounding
     });
 
-    it('keeps whole-number centres on the Token (nearby.js relies on exact ties)', () => {
+    it('keeps a walking enemy’s centre whole: the Token’s point is its body’s rounded copy', () => {
         const { enemy } = campWithEnemy();
         tick(15000);
         expect(Number.isInteger(enemy.x)).toBe(true);

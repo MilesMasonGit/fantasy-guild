@@ -71,9 +71,11 @@ export function setRandomForTests(fn = Math.random) {
 
 /**
  * `instanceId → { x, y, potter: {dx, dy}, pauseLeft, moving, facing, from }`.
- * `x`, `y` are exact; the Token's own point is the rounded copy (centres stay
- * whole numbers, which `nearby.js`' exact tie-breaks rely on). Never saved: a
- * load starts every enemy standing where it was saved.
+ * `x`, `y` are exact; the Token's own point is the rounded copy, so `step`
+ * compares rounded points to tell its own walking from a move by something else.
+ * ⚠️ Only a walking enemy's point is whole: a spawn, a nudged drop and a push
+ * land at fractional points, and a spawn must keep its gap, which rounding it
+ * could break. Never saved: a load starts every enemy standing where it was saved.
  */
 const bodiesByBoard = new WeakMap();
 
