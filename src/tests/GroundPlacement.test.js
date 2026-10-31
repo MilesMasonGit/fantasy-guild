@@ -148,10 +148,10 @@ afterEach(() => resetMatTuning());
 // ---------------------------------------------------------------------------
 
 describe('the "Stands on" words (TD-1 A)', () => {
-    it('are Water, Shore, Grass, Rock and Sand, in the CMS\'s order', () => {
-        expect(STANDS_ON_CHOICES.map(c => c.id)).toEqual(['water', 'shore', 'grass', 'rock', 'sand']);
-        expect(STANDS_ON_CHOICES.map(c => c.label)).toEqual(['Water', 'Shore', 'Grass', 'Rock', 'Sand']);
-        expect(Object.values(STANDS_ON).sort()).toEqual(['grass', 'rock', 'sand', 'shore', 'water']);
+    it('are Water, Shore, Grass, Rock, Sand and Stone, in the CMS\'s order', () => {
+        expect(STANDS_ON_CHOICES.map(c => c.id)).toEqual(['water', 'shore', 'grass', 'rock', 'sand', 'stone']);
+        expect(STANDS_ON_CHOICES.map(c => c.label)).toEqual(['Water', 'Shore', 'Grass', 'Rock', 'Sand', 'Stone']);
+        expect(Object.values(STANDS_ON).sort()).toEqual(['grass', 'rock', 'sand', 'shore', 'stone', 'water']);
         expect(isStandsOnWord('shore')).toBe(true);
         expect(isStandsOnWord('lava')).toBe(false);
     });

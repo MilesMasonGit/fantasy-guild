@@ -6,7 +6,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
-import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
+import { TUTORIAL_QUESTS, tutorialTemplate } from '../systems/quests/tutorialQuests.js';
 import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -149,7 +149,7 @@ beforeEach(() => {
 afterEach(() => QuestManager.cleanup());
 
 describe('⭐ the cartographer\'s chain, step by step, through the real systems', () => {
-    it('every step completes from the event it listens to, from the first Hero to the goblin beaten', () => {
+    it('every step completes from the event it listens to, from the first Hero to the first place settled', () => {
         withMaps();
 
         // 1. Recruit a Hero: the Guild Hall board's first Bunk Beds rank is free.
@@ -287,6 +287,16 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(bank('map_tut_hills')).toBe(0);
         Flags.furl(heroId);
 
+        // 12. The cartographer opens the world map: the last step arrives marked so, and is done
+        // by settling a place on it. A Region written off the world map does not count.
+        expect(quest('cart_first_place')).toBeTruthy();
+        expect(tutorialTemplate('cart_first_place').opensWorld).toBe(true);
+        const meadow = { id: 'fixture_tut_place', kind: 'base', biome: 'meadow', points: 4, nodes: [{ typeId: 'token_oak_tree', weight: 1 }] };
+        expect(Atlas.settle({ ingredients: [meadow], seed: 7 }).success).toBe(true);
+        expect(complete('cart_first_place')).toBe(false);
+        expect(Atlas.settle({ ingredients: [meadow], seed: 8, cellId: '1,0' }).success).toBe(true);
+        claim('cart_first_place');
+
         // Every step was walked, in order, and no step is left on the mat.
         expect(GameState.state.quests.completedTutorials).toEqual(TUTORIAL_QUESTS.map(t => t.id));
         expect(QuestManager.getActiveQuests().filter(q => q.tutorial)).toEqual([]);
@@ -307,8 +317,8 @@ describe('the first maps are retired', () => {
     });
 });
 
-describe('the hook the end of the chain will count', () => {
-    it('settling a place reports region_settled, and arriving there region_travelled', () => {
+describe('the reports the end of the chain counts', () => {
+    it('settling a place reports region_settled and place_settled, and arriving there region_travelled', () => {
         const reported = [];
         const spy = vi.spyOn(QuestManager, 'reportProgress').mockImplementation((type) => { reported.push(type); });
         try {
@@ -318,7 +328,19 @@ describe('the hook the end of the chain will count', () => {
         } finally {
             spy.mockRestore();
         }
-        expect(reported).toEqual(expect.arrayContaining(['region_settled', 'region_travelled']));
+        expect(reported).toEqual(expect.arrayContaining(['region_settled', 'place_settled', 'region_travelled']));
+    });
+
+    it('a Region written off the world map is no place settled', () => {
+        const reported = [];
+        const spy = vi.spyOn(QuestManager, 'reportProgress').mockImplementation((type) => { reported.push(type); });
+        try {
+            expect(Atlas.settle({ ingredients: [{ id: 'fixture_tut_free', kind: 'base', biome: 'meadow', points: 4, nodes: [{ typeId: 'token_oak_tree', weight: 1 }] }], seed: 9 }).success).toBe(true);
+        } finally {
+            spy.mockRestore();
+        }
+        expect(reported).toContain('region_settled');
+        expect(reported).not.toContain('place_settled');
     });
 });
 
@@ -367,8 +389,13 @@ describe('the chain\'s words come from one text module', () => {
     it('the chain is the cartographer\'s, in order, with new ids', () => {
         expect(TUTORIAL_QUESTS.map(t => t.id)).toEqual([
             'cart_recruit', 'cart_tool', 'cart_flag', 'cart_gather', 'cart_loot', 'cart_foundation', 'cart_station',
-            'cart_craft', 'cart_camp', 'cart_copper_tool', 'cart_goblin'
+            'cart_craft', 'cart_camp', 'cart_copper_tool', 'cart_goblin', 'cart_first_place'
         ]);
+    });
+
+    it('only the last step opens the world map', () => {
+        expect(TUTORIAL_QUESTS.filter(t => t.opensWorld).map(t => t.id)).toEqual(['cart_first_place']);
+        expect(TUTORIAL_QUESTS[TUTORIAL_QUESTS.length - 1].opensWorld).toBe(true);
     });
 });
 

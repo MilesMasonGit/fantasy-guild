@@ -345,15 +345,14 @@ export const LOOKS = deepFreeze({
     },
     stone: {
         id: 'stone', name: 'Stone', terrain: TERRAIN.STONE, sheets: ['stone'],
-        wear: { sheet: 'gravel', coverage: 0.2 },
         // ⚠️ A code-drawn stand-in until the owner's Stone pieces: the mountain's bare rock and
         // scree without its alpine grass, paler and warmer, so an outcrop reads on a mountain too.
         generated: {
-            grass: [0.08, 0.56, 0.07], earth: [0.08, 0.44, 0.05], earthShare: 0.12, encroach: 0.6, tint: 0.09,
+            grass: [0.08, 0.50, 0.08], earth: [0.08, 0.38, 0.06], earthShare: 0.14, encroach: 0.6, tint: 0.12,
             zones: { cell: 36 },
             kinds: [
-                { id: 'slab', blades: 0.014, cluster: 2, heights: [1, 2], tips: 0, shadow: 0, mounds: 10, moundLight: 0.75, strokes: [0.08, 0.40, 0.06], tone: 1 },
-                { id: 'scree', blades: 0.06, cluster: 7, heights: [1], tips: 0, shadow: 0.8, mounds: 14, strokes: [0.08, 0.66, 0.05], tone: 3, patch: { cell: 12, cut: 0.5, floor: 0.08 } }
+                { id: 'slab', blades: 0.03, cluster: 3, heights: [1, 2], tips: 0, shadow: 0.4, mounds: 10, moundLight: 0.75, strokes: [0.08, 0.30, 0.08], tone: 1 },
+                { id: 'scree', blades: 0.07, cluster: 7, heights: [1], tips: 0, shadow: 0.8, mounds: 14, strokes: [0.08, 0.62, 0.06], tone: 3, patch: { cell: 12, cut: 0.5, floor: 0.08 } }
             ]
         },
         props: [{ sheet: 'p_rock', weight: 1 }],

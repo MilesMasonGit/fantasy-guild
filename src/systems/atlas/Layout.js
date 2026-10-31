@@ -35,7 +35,8 @@ import { planStone, readStone, sampleStone } from './StoneShapes.js';
  *   biggest bodies go first; a species of a biome that brings the sea starts its groves on the
  *   shore. **Kinds where they belong** (`affinity`): berry bushes start their groves near inland
  *   water and stay by it; ore and stone whose own biome's ground is not rock lean to rock ground
- *   (and trees on rock to grass), when the Region has some. **Rarer further out**: a species
+ *   (and trees on rock to grass), when the Region has some; on a Region with Stone, ore and stone
+ *   start their groves on it first of all, and their members keep to it while it has room. **Rarer further out**: a species
  *   the budget gives at most {@link RARE_COUNT} of, beside others it gives more of, grows at the
  *   mat's edge. Every preference gives way, last first, when no spot has it.
  * - **Treasures** last, on their island, else in the most hidden spot away from the Hall
@@ -741,9 +742,11 @@ export function layout(summary, {
     const groveSpot = (s, apart, check = null) => {
         const { art } = s.body;
         const tests = [];
+        // Ore and stone on the Region's Stone before all else: the outcrops are where mines go.
+        if (s.leans === TERRAIN.STONE) tests.push({ stone: true, ok: p => stone[cellAt(p.x, p.y)] === 1 });
         if (s.rare) tests.push({ rare: true, ok: p => campBand(p, art, mat) >= RARE_BAND });
         if (s.byWater) tests.push({ water: true, ok: p => { const d = nearWater[cellAt(p.x, p.y)]; return d >= 1 && d <= NEAR_WATER; } });
-        if (s.leans) tests.push({ ok: p => groundAt(p.x, p.y).terrain === s.leans });
+        if (s.leans && s.leans !== TERRAIN.STONE) tests.push({ ok: p => groundAt(p.x, p.y).terrain === s.leans });
         for (let keep = tests.length; keep >= 0; keep--) {
             const kept = tests.slice(0, keep);
             for (const step of APART_STEPS) {
@@ -754,7 +757,7 @@ export function layout(summary, {
                     if (s.onShore && seaShore[cellAt(p.x, p.y)] > SHORE_CELLS) continue;
                     if (!kept.every(t => t.ok(p)) || !clearOf(p, d)) continue;
                     if (check && !check(p)) continue;
-                    return { x: p.x, y: p.y, rare: kept.some(t => t.rare), water: kept.some(t => t.water) };
+                    return { x: p.x, y: p.y, rare: kept.some(t => t.rare), water: kept.some(t => t.water), stone: kept.some(t => t.stone) };
                 }
             }
         }
@@ -768,6 +771,7 @@ export function layout(summary, {
     /** What a grove's members keep to, by what its middle kept to. */
     const keepTest = (s, centre) => {
         const tests = [];
+        if (centre.stone) tests.push((x, y) => stone[cellAt(x, y)] === 1);
         if (centre.rare) tests.push((x, y) => campBand({ x, y }, s.body.art, mat) >= RARE_KEEP);
         if (centre.water) tests.push((x, y) => nearWater[cellAt(x, y)] <= NEAR_WATER);
         if (s.onShore) tests.push((x, y) => seaShore[cellAt(x, y)] <= SHORE_CELLS + 1);

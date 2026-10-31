@@ -41,7 +41,7 @@ describe('the audit reads "Stands on"', () => {
         const said = standsOnLines('Token "fixture_ga_typo"');
         expect(said).toHaveLength(1);
         expect(said[0]).toMatch(/"lava"/);
-        expect(said[0]).toMatch(/Water, Shore, Grass, Rock or Sand/);
+        expect(said[0]).toMatch(/Water, Shore, Grass, Rock, Sand or Stone/);
     });
 
     it('names a list that is not a list', () => {

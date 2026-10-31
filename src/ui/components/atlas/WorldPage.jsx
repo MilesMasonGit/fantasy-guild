@@ -4,6 +4,9 @@ import * as World from '../../../systems/world/World.js';
 import * as Atlas from '../../../systems/atlas/Atlas.js';
 import { CELL_STATE, HALL_CELL } from '../../../systems/world/frontier.js';
 import { worldTables } from '../../../config/registries/worldTablesRegistry.js';
+import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
+import { tutorialTemplate } from '../../../systems/quests/tutorialQuests.js';
+import { TUTORIAL_TEXT } from '../../../systems/quests/tutorialText.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { SKILLS } from '../../../config/registries/skillRegistry.js';
 import { cn } from '../../utils/cn.js';
@@ -50,6 +53,15 @@ function ringWords(cell) {
 }
 
 /**
+ * The cartographer's words while the tutorial's last step stands on the mat unfinished (the one
+ * that opened this map), or null.
+ */
+function cartographerNote() {
+    const step = QuestTokens.tutorialTokens().map(t => t.quest).find(q => tutorialTemplate(q.id)?.opensWorld && !q.done);
+    return step ? { speaker: TUTORIAL_TEXT.speaker, title: step.title, says: step.says, instruction: step.instruction } : null;
+}
+
+/**
  * Everything the World page shows about the world, read once per refresh: each cell with its
  * state, outputs and price against the Bank and the heroes now. Null with no world.
  */
@@ -76,7 +88,7 @@ export function worldView() {
         price: World.priceOf(cell),
         regionId: settled.has(cell.id) ? World.regionIdOfCell(cell.id) : null
     }));
-    return { rings: shownRings(world, settled), cells, here };
+    return { rings: shownRings(world, settled), cells, here, note: cartographerNote() };
 }
 
 /** What a cell's price lacks, as words for the disabled Settle: "Short of 3 Copper Ore, Mining 5". */
@@ -244,6 +256,18 @@ const HexMap = ({ view, selectedId, onSelect }) => {
     );
 };
 
+/** The cartographer's words over the right page, while the tutorial's last step asks for a place. */
+const CartographerNote = ({ note }) => (
+    <div data-world-note className="shrink-0 mb-2">
+        <PixelFrame kind="studs" className="flex flex-col" frameClassName="px-2 py-1.5 bg-gi-surface/95 flex flex-col gap-0.5">
+            <div className={headingCls}>{note.speaker}</div>
+            <div className="font-pixel ui-text-title font-bold text-white">{note.title}</div>
+            <div className="font-pixel ui-text-body text-white/85 italic">{note.says}</div>
+            <div className="font-pixel ui-text-small text-white/70">{note.instruction}</div>
+        </PixelFrame>
+    </div>
+);
+
 /** The right page: the chosen cell, what it yields, its price, and Settle or Travel. */
 const CellPage = ({ cell, onSettle, onTravel, message }) => {
     if (!cell) return <p className="font-pixel ui-text-body text-white/60 bg-black/60 px-2 self-start">{t('worldMap.pickCell')}</p>;
@@ -306,8 +330,9 @@ const CellPage = ({ cell, onSettle, onTravel, message }) => {
 /**
  * The Atlas's World page: the run's hex world on the left page (`HexMap`), the chosen cell on the
  * right (`CellPage`). A cell's hover shows what it yields and its price against what the guild
- * has; Settle pays it all at once and takes the guild there; a settled place offers Travel. A save
- * from before the world shows one line instead.
+ * has; Settle pays it all at once and takes the guild there; a settled place offers Travel. While
+ * the tutorial's last step asks for a first place, the cartographer's words head the right page. A
+ * save from before the world shows one line instead.
  *
  * @param {object} props
  * @param {number} props.version  moves on whenever the world, the Bank or the heroes may have changed
@@ -339,7 +364,12 @@ export const WorldPage = ({ version, onSettle, onTravel }) => {
         <div data-world-page className="absolute inset-0">
             <TomeSpread
                 left={<HexMap view={view} selectedId={selectedId} onSelect={select} />}
-                right={<CellPage cell={cell} onSettle={settle} onTravel={onTravel} message={message} />}
+                right={(
+                    <>
+                        {view.note && <CartographerNote note={view.note} />}
+                        <CellPage cell={cell} onSettle={settle} onTravel={onTravel} message={message} />
+                    </>
+                )}
             />
         </div>
     );
