@@ -31,6 +31,8 @@ import { SKILLS } from '../../config/registries/skillRegistry.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
 import { authoredSkillPerks } from '../../config/registries/perkRegistry.js';
 import { perkFindings } from './perkRule.js';
+import { authoredHallSky } from '../../config/registries/hallStarRegistry.js';
+import { hallStarFindings } from './hallStarRule.js';
 
 /**
  * ContentAudit — one pass over every cross-reference in the content set,
@@ -114,6 +116,8 @@ function auditItemEffects(out) {
                 `and raise the scale instead.`));
         }
 
+        for (const { effectId } of effectRefsOf(def)) auditGuildOnlyAxes(out, where, getEffect(effectId));
+
         if (isSpentCategory(def?.equipSlot)) {
             const idle = effectRefsOf(def)
                 .filter(({ effectId }) => statementsOf(getEffect(effectId)).some(isAlwaysOn))
@@ -163,6 +167,7 @@ function auditTokens(out) {
         auditRetiredEffectShape(out, where, def);
         auditEffectRefs(out, where, def);
         auditCombatAxes(out, where, def);
+        auditGuildOnlyAxes(out, where, def);
         auditVenom(out, where, def);
         auditStatements(out, where, def);
         auditDerivedType(out, where, def);
@@ -296,6 +301,18 @@ function auditCombatAxes(out, where, def) {
             `has a ${entry.label} rule, but that only reaches a hero from an item they ` +
             `carry or an enemy they fight — this Token is neither, so the rule does nothing. ` +
             `Put it on an item, or on an enemy Token.`));
+    }
+}
+
+/** A guild-only rule (Wound Time, Loadout Slots) on a Token or an item: only a Guild Hall star's reaches anyone. */
+function auditGuildOnlyAxes(out, where, def) {
+    for (const statement of statementsOf(def)) {
+        if (statement?.keyword !== KEYWORD.PROVIDES) continue;
+        const entry = getPaletteEntry(statement.payload?.type);
+        if (!entry?.guildOnly) continue;
+        out.push(finding(where,
+            `has a ${entry.label} rule, but only a Guild Hall star's reaches anyone — here it does nothing. ` +
+            `Put it on a star in the Hall.`));
     }
 }
 
@@ -757,13 +774,23 @@ function auditPerks(out) {
 }
 
 /**
+ * The Guild Hall's authored stars: one that cannot open, names a missing item, Token or
+ * constellation, or carries a rule the guild cannot hold. The rule lives in `hallStarRule.js`.
+ */
+function auditHallStars(out) {
+    for (const f of hallStarFindings({ sky: authoredHallSky(), items: ITEMS || {}, tokens: TOKENS || {} })) {
+        out.push(finding(`Hall star "${f.entityId}"`, f.message));
+    }
+}
+
+/**
  * Walk everything and return the findings.
  * Exported separately from the reporting so a test can assert on the list.
  */
 export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
-        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems, auditTools, auditPerks,
+        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems, auditTools, auditPerks, auditHallStars,
         auditHardcodedLists, (o) => auditStarterCamp(o, starterCamp)
     ];
     for (const step of steps) {

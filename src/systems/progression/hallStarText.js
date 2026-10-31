@@ -7,6 +7,8 @@ import { getAllTokenTypes, tokenName } from '../../config/registries/tokenRegist
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { PASSIVE_PRODUCTION_MS } from '../../config/registries/tokenConstants.js';
 import { rankOf } from '../../config/hallStars.js';
+import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
+import { getSkill } from '../../config/registries/skillRegistry.js';
 
 const ALL_TOKENS = Object.freeze({ mode: 'all', value: '' });
 
@@ -31,9 +33,17 @@ export function asGuildRule(statement) {
     };
 }
 
-/** One rule of a star, in words. */
+/**
+ * One rule of a star, in words. A skill boost always says its skill: the renderer leaves the scope
+ * out of an axis that words its own sentence ("award 10% more XP"), and on a star it is the point.
+ */
 export function hallRuleSentence(statement, names = hallNames()) {
-    return renderStatement(asGuildRule(statement), names);
+    const text = renderStatement(asGuildRule(statement), names);
+    const category = statement?.payload?.category;
+    if (!category || getPaletteEntry(statement.payload.type)?.categories !== 'skill') return text;
+    const skill = getSkill(category)?.name || category;
+    if (text.includes(`${skill} work`)) return text;
+    return text.endsWith('.') ? `${text.slice(0, -1)}, but only for ${skill} work.` : `${text}, but only for ${skill} work`;
 }
 
 const LAP_MINUTES = Math.round(PASSIVE_PRODUCTION_MS / 60000);
