@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-278**
+**Next free number: T-279**
 
 ---
 
@@ -64,6 +64,7 @@ here.
 | T-275 | P3 | open | **Retire the drawer Token inspection** (`TokenInspection.jsx`, `InspectBubbles.jsx`; keep `LeaveMatControl`, which the card uses): nothing a player reaches renders it since the Token card replaced it (beb48136); grep three ways before deleting (TESTING) | ui tickets pass 2026-10-30 |
 | T-276 | P2 | done dccc26e8 | **A river layout can crash a Region preview for some seeds** (`WaterShapes.riverAcross`: "object null is not iterable", via `Cartography.reroll`); `AtlasSettle.test.js` "a later preview never shows a seed already shown" failed once under load and passed alone; the guild seed comes from `meta.createdAt`, so a real save may hit it. Find the seed, fix the layout | ui tickets pass 2026-10-30 |
 | T-277 | P3 | open | **Idle heroes may hang over the mat edge** (`HeroMotion.js` ~255 and ~279 clamp the idle potter by centre only, as enemies did before T-248); reasoned from the code, not seen in the game. Clamp by the art radius (`clampToMat` now takes an inset); changes bench work | engine tickets 2026-10-30 |
+| T-278 | P3 | open | **Pin `createdAt` in `AtlasSettle.test.js`'s `newGame()`**: several tests take their seed from `Date.now()`, so the seeded-random setup does not make them repeatable (found fixing T-276) | T-276 |
 | T-260 | P1 | built 79c6b01c; owner sets tiers | **Recruits may hold copper weapons** (owner 2026-10-27, reverses the C2 call that Recruits refuse weapons): no hero leaves Recruit in plane 1 (the Fighter needs Mining and Smithing 10), so crafted copper swords were useless | K4 |
 | T-176 | P2 | open | **The quest board** ([concept_quests_tutorial.md](../active/concept_quests_tutorial.md), "The quest board", owner 2026-10-20): one fixture board at the bottom-left of every Region's mat; click opens its card on the quest list; up to 3 collect/hunt bounties from reachable content, Bank have/need, Claim takes items and bursts materials as floating loot; tutorial step pinned first; gold outline and ready count at rest. Replaces the loose quest Tokens. Brief 170. | owner interview |
 | T-175 | P2 | owner | (Concept still a draft, owner 2026-10-14: not for the director yet.) **Collectors: the Guild Hall and warehouses** ([concept_collectors.md](../active/concept_collectors.md)): the Hall collects all loot in a small radius from the start, widened by a ranked Hall star; warehouses built on Foundations collect items with one tag (CMS Collects block: tag, radius, interval ~60 s), bigger radius on higher tiers, no upkeep; shared sweep clock, nearest collector wins, items fly in; Bank-full leaves loot and shows the yellow mark; reach ring on hover, drag, placing. Remove the auto-collect setting. Engineer. WORK CHANGED expected. Cost-log line. Eye-check. | concept_collectors.md |
