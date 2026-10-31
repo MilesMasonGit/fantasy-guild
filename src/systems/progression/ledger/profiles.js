@@ -6,7 +6,7 @@ import { expandBearer } from '../../effects/effectLibrary.js';
 import { reachOf, reachCovers, RELATION } from '../../../config/registries/reachRegistry.js';
 import { targetModeMatches, matchesFilters, FILTER_NEEDS } from '../../../config/registries/filterRegistry.js';
 import { respawnOf, growsTermsOf, campOf, fieldOf } from '../../../config/registries/tokenConstants.js';
-import { neededToolOf, toolOf, toolMeets, toolItemFor } from '../../../config/registries/toolKinds.js';
+import { toolOf, toolMeets, toolItemFor } from '../../../config/registries/toolKinds.js';
 import { getCategoryDef } from '../../../config/registries/equipmentCategories.js';
 import { isSpentCategory, isWorkMoment, workSkillMatches } from '../../core/consumableRule.js';
 import { FACTOR, WORK } from './rates.js';
@@ -83,7 +83,6 @@ const WORK_AXES = new Set([
 ]);
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const list = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
-const text = (v) => (typeof v === 'string' && v ? v : null);
 
 /** A boost's factor id, as `rates.js` names it (`support:token_copper_mine`). */
 export function factorId(kind, id) {
@@ -370,17 +369,19 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
      */
     function hallSaves(ctx, r0, r1, cap, baseXp, profile) {
         if (!r0?.ok || !r1?.ok) return 0;
+        let saves = 0;
         if (ctx.kind === WORK.PASSIVE) {
-            let hours = 0;
             for (const item of new Set([...Object.keys(r0.items || {}), ...Object.keys(r1.items || {})])) {
                 const d = (r1.items?.[item] || 0) - (r0.items?.[item] || 0);
-                if (d > 0) hours += d * hallUnitHours(item, cap);
+                if (d > 0) saves += d * hallUnitHours(item, cap);
             }
-            return hours;
+        } else {
+            const v0 = valueOf(r0, cap, baseXp, { gross: true, profile });
+            const v1 = valueOf(r1, cap, baseXp, { gross: true, profile });
+            saves = v0 > 0 ? v1 / v0 - 1 : 0;
         }
-        const v0 = valueOf(r0, cap, baseXp, { gross: true, profile });
-        const v1 = valueOf(r1, cap, baseXp, { gross: true, profile });
-        return v0 > 0 ? v1 / v0 - 1 : 0;
+        // Float noise from a rate the rank did not move is no saving (it would price a payback of millennia).
+        return saves > 1e-9 ? saves : 0;
     }
 
     /** Slots that hold one: a second offer for a full slot replaces nothing and is skipped. */

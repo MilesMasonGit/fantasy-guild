@@ -30,7 +30,8 @@ function workOutPricing() {
 
 /** A raw rank with its tier set, or cleared with `''`. */
 function withTier(rank, value) {
-  const { tier: _old, ...rest } = rank || {};
+  const rest = { ...(rank || {}) };
+  delete rest.tier;
   return value === '' ? rest : { ...rest, tier: Number(value) };
 }
 
@@ -70,7 +71,8 @@ export default function HallStarsPage() {
       ...(orphans.length ? [{ id: '', name: 'In no constellation', stars: orphans }] : []),
     ].filter((g) => g.stars.length || !g.builtIn);
   }, [sky]);
-  const [open, setOpen] = useState(null);
+  const [open, setOpen] = useState(() => new Set());
+  const toggle = (id) => setOpen((was) => { const next = new Set(was); if (next.has(id)) next.delete(id); else next.add(id); return next; });
 
   if (hallStars == null && hallConstellations == null) {
     return (
@@ -112,7 +114,7 @@ export default function HallStarsPage() {
           <div className="space-y-2" data-hall-constellation={group.id}>
             {group.stars.map((star) => {
               const raw = hallStars?.[star.id] || star;
-              const shown = open === star.id;
+              const shown = open.has(star.id);
               const priced = pricing ? hallRowsOf(pricing.rows, star.id) : {};
               const late = Object.values(priced).filter((r) => r.rate && !r.pays).length;
               return (
@@ -130,7 +132,7 @@ export default function HallStarsPage() {
                         {late} rank{late === 1 ? '' : 's'} slow to pay back
                       </span>
                     )}
-                    <button type="button" className="btn-ghost text-[10px]" style={{ padding: '2px 6px' }} onClick={() => setOpen(shown ? null : star.id)}>
+                    <button type="button" className="btn-ghost text-[10px]" style={{ padding: '2px 6px' }} onClick={() => toggle(star.id)}>
                       {shown ? 'Hide ranks' : `${star.ranks.length} rank${star.ranks.length === 1 ? '' : 's'}`}
                     </button>
                     <button type="button" onClick={() => removeHallStar(star.id)} className="btn-ghost" style={{ padding: '2px 6px' }} title="Remove this star from the sky">
@@ -200,7 +202,7 @@ function RankPricing({ row }) {
         style={{ color: row.enabler ? 'var(--color-text-muted)' : row.pays ? 'var(--color-success)' : 'var(--color-error)', fontWeight: row.pays ? 400 : 700 }}
         title={row.workText ? `Saves ${row.savesText} on ${row.workText}, at ${tierLabel(row.cap)}` : undefined}
       >
-        · {hoursText(row.priceHours)} to gather, saves {row.savesText}: pays back in {row.paybackText}
+        · {row.priceTimeText} to gather, saves {row.savesText}: pays back in {row.paybackText}
       </span>
       <span data-hall-rank-proposed style={{ color: 'var(--color-accent-hover)' }}>
         · proposed (preview): {row.proposed?.why ? row.proposed.why : `${row.proposed.priceText}, pays back in ${hoursText(row.proposed.payback)}`}

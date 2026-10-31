@@ -47,6 +47,8 @@ const BOOSTED = [BOOST_KIND.SUPPORT, BOOST_KIND.CAMP, BOOST_KIND.CONSUMABLE, BOO
 /** Author-facing words, kept together for translation. */
 export const PACE_TEXT = Object.freeze({
     hours: (h) => (Number.isFinite(h) ? formatMinutes(h * 60) : 'never'),
+    /** As `hours`, with a time under a minute in seconds: a Hall price can take seconds to gather. */
+    short: (h) => (Number.isFinite(h) && h > 0 && h * 60 < 0.5 ? `${Math.max(1, Math.round(h * 3600))} s` : PACE_TEXT.hours(h)),
     /** Hours saved an hour, in words: "12 min an hour", "40 s an hour". */
     saves: (h) => (!(h > 0) ? 'nothing' : h * 60 >= 1 ? `${formatMinutes(h * 60)} an hour` : `${Math.max(1, Math.round(h * 3600))} s an hour`),
     times: (r) => `${r >= 10 ? Math.round(r) : Math.round(r * 10) / 10}×`,
@@ -628,7 +630,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 continue;
             }
             if (row.enabler || row.pays) continue;
-            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${tierLabel(row.cap)}) costs ${row.priceText} (${PACE_TEXT.hours(row.priceHours)} to gather at Typical) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.paybackHours)} a boost has to pay for itself.`, { name: row.name });
+            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${tierLabel(row.cap)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.paybackHours)} a boost has to pay for itself.`, { name: row.name });
         }
 
         // Boosts over their target strength, by kind, at Maxed: one finding per set of boosts, with every work it lifts.

@@ -147,7 +147,7 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
               <tr key={`${h.id}|${h.rank}`} data-hall={`${h.id}|${h.rank}`} data-hall-pays={h.pays ? 'yes' : 'no'}>
                 <td style={cell}>{h.name} {h.rank}</td>
                 <td style={{ ...cell, color: 'var(--color-text-muted)' }}>{h.builtIn ? 'built in' : h.tier === null ? <span style={{ color: 'var(--color-warning)' }}>no tier set</span> : tierLabel(h.tier)}</td>
-                <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>{h.priceText} ({hoursText(h.priceHours)})</td>
+                <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>{h.priceText} ({h.priceTimeText})</td>
                 <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>
                   {h.savesText}{h.workText && !h.enabler ? <span className="text-gray-500"> on {h.workText}</span> : null}
                 </td>

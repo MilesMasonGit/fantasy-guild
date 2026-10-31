@@ -128,7 +128,8 @@ export function hallRows(pace) {
     ...r,
     workText: r.work ? pace.workName(r.work) : null,
     savesText: r.rate ? (r.enabler ? 'the only source of what it pays' : r.gain > 0 ? PACE_TEXT.saves(r.gain) : 'nothing at its tier') : null,
-    paybackText: r.rate ? (r.enabler ? 'an enabler' : hoursText(r.payback)) : null,
+    paybackText: r.rate ? (r.enabler ? 'an enabler' : PACE_TEXT.short(r.payback)) : null,
+    priceTimeText: PACE_TEXT.short(r.priceHours),
   }));
 }
 

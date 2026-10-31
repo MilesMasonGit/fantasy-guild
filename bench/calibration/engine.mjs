@@ -11,6 +11,10 @@
 // Counted: what lands as loot, item by item (`made`); the Bank and the floor before against after
 // (`net`, loot waits on the mat with auto-collect off, the shipped default); XP off each hero's
 // skills; finished cycles per Token type.
+//
+// A setup's `hall` (a fixture sky and its ranks) is held as a guild holds its Guild Hall stars: the
+// sky put in through the dev hook, the ranks in the save and in force (`HallRules.apply`, which a
+// catch-up's reset applies again from the save); the calculator is handed the same sky.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -40,6 +44,8 @@ import * as HeroManager from '../../src/systems/hero/HeroManager.js';
 import { generateHero } from '../../src/systems/hero/HeroGenerator.js';
 import { xpForLevel } from '../../src/utils/XPCurve.js';
 import { buildRateBook, chainRates } from '../../src/systems/progression/ledger/rates.js';
+import { registerHallSky } from '../../src/config/registries/hallStarRegistry.js';
+import * as HallRules from '../../src/systems/progression/HallRules.js';
 import { SETUPS, HALL } from './setups.mjs';
 
 const HOUR_MS = 3_600_000;
@@ -214,6 +220,11 @@ export async function runSetup({ id, seed = 1, hours = 8, root, trace = false })
         }
     };
     setup.build(ctx);
+    if (setup.hall) {
+        registerHallSky(setup.hall.sky);
+        GameState.state.progress.guildUpgrades = { ...(GameState.state.progress.guildUpgrades || {}), ...setup.hall.ranks };
+        HallRules.apply(GameState.state.progress.guildUpgrades);
+    }
     TileModifiers.rebuildAll();
     EventBus.publish('heroes_updated');
     EventBus.publish('inventory_updated');
@@ -247,7 +258,7 @@ export async function runSetup({ id, seed = 1, hours = 8, root, trace = false })
         return out;
     };
 
-    const book = buildRateBook(loadContent(root));
+    const book = buildRateBook({ ...loadContent(root), hallSky: setup.hall?.sky ?? null });
     const calc = chainRates(book, setup.works);
 
     return {
