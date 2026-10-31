@@ -63,11 +63,16 @@ export function matH() {
     return Math.round(matW() * matAspect());
 }
 
-/** A point clamped onto the mat as it is now. */
-export function clampToMat(point) {
+/**
+ * A point clamped onto the mat as it is now, at least `inset` in from every edge: a Token's art
+ * radius keeps all its art on the mat. A mat too small for that gives its middle.
+ */
+export function clampToMat(point, inset = 0) {
+    const w = matW();
+    const h = matH();
     return {
-        x: Math.max(0, Math.min(matW(), point.x)),
-        y: Math.max(0, Math.min(matH(), point.y))
+        x: w >= 2 * inset ? Math.max(inset, Math.min(w - inset, point.x)) : w / 2,
+        y: h >= 2 * inset ? Math.max(inset, Math.min(h - inset, point.y)) : h / 2
     };
 }
 

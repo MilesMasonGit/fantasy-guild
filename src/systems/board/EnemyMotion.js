@@ -235,7 +235,10 @@ function step(instance, spawner, body, delta) {
             ? strollOffset(area)
             : { dx: body.x - area.centre.x, dy: body.y - area.centre.y };
     }
-    const dest = clampToMat({ x: area.centre.x + body.potter.dx, y: area.centre.y + body.potter.dy });
+    const dest = clampToMat(
+        { x: area.centre.x + body.potter.dx, y: area.centre.y + body.potter.dy },
+        artRadiusOf(instance.typeId)
+    );
 
     const walkMs = Math.min(Math.max(0, delta), MAX_STEP_MS);
     const speed = enemyWalkSpeed() * (outside ? 1 : STROLL_FACTOR);
