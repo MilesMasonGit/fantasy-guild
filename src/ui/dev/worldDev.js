@@ -12,6 +12,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import * as CatchUp from '../../systems/core/CatchUp.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
+import * as BoardCombat from '../../systems/board/BoardCombat.js';
 import * as Occupation from '../../systems/board/Occupation.js';
 import * as Atlas from '../../systems/atlas/Atlas.js';
 import { seedFromText } from '../../systems/atlas/seededRandom.js';
@@ -117,6 +118,7 @@ export function beatArrival() {
     for (const enemy of standing) {
         const { id, typeId, x, y } = enemy;
         BoardState.removeToken(id);
+        BoardCombat.endFight(id);
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, typeId });
         EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: id, x, y, typeId, exhaustedBy: 'qa' });
     }
