@@ -1138,10 +1138,12 @@ class Maker {
             return meets(side, other) ? 1 - t : t;
         };
         // A few draws, the first whose straight line passes well clear of the Hall kept, so the
-        // river need not bend round the clearing; else the clearest.
+        // river need not bend round the clearing; else the clearest. While every line so far runs
+        // through the clearing, more: bent round the Hall, such a line hooks along the mat's edge.
+        // ⚠️ Moving the −1 or the twelve changes other seeds' rivers.
         let best = null;
-        let bestClear = -1;
-        for (let k = 0; k < 12; k++) {
+        let bestClear = -Infinity;
+        for (let k = 0; k < 12 || (bestClear <= -1 && k < 48); k++) {
             const from = Math.floor(this.random() * 4);
             let pair;
             if (this.random() < 0.65) {
