@@ -42,7 +42,7 @@ import { Stub } from '../components/notifications/ItemStubColumn.jsx';
 import { Banner } from '../components/notifications/BannerStack.jsx';
 import { bannerText } from '../../systems/notifications/bannerKinds.js';
 import { BookTab } from '../components/atlas/AtlasTome.jsx';
-import { MapSprite, MapOutline, MAP_PX, SLOT_PX } from '../components/atlas/MapPieces.jsx';
+import { HexCellDemo } from '../components/atlas/WorldPage.jsx';
 import { WorkPlateDemo } from './WorkPlateDemo.jsx';
 import { CombatKit } from './CombatKit.jsx';
 import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
@@ -186,7 +186,7 @@ const KitTabs = () => {
 };
 
 const KIT_BOOK_TABS = [
-    { id: 'cartography', label: 'Cartography', colour: '#7a1f1f' },
+    { id: 'world', label: 'World', colour: '#7a1f1f' },
     { id: 'regions', label: 'Regions', colour: '#1f3f6e' }
 ];
 
@@ -202,21 +202,6 @@ const BookTabDemo = () => {
         </div>
     );
 };
-
-/** The Cartography table's maps: a tile, one with every copy slotted, an empty slot and a filled one. */
-const KIT_MAP = { id: 'dev_map_forest', biome: 'forest' };
-const MapPiecesDemo = () => (
-    <div data-kit-map-pieces className="inline-flex items-end gap-3 p-2 bg-gi-surface/95">
-        {[2, 0].map(n => (
-            <div key={n} className={cn('flex flex-col items-center bg-black/30', n === 0 && 'opacity-35 grayscale')} style={{ width: MAP_PX }}>
-                <MapSprite recipe={KIT_MAP} />
-                <span className="ui-text-small tabular-nums text-white/85 leading-none pb-0.5">×{n}</span>
-            </div>
-        ))}
-        <div className="flex items-center justify-center bg-black/20" style={{ width: SLOT_PX, height: SLOT_PX }}><MapOutline /></div>
-        <div className="flex items-center justify-center bg-black/40" style={{ width: SLOT_PX, height: SLOT_PX }}><MapSprite recipe={KIT_MAP} /></div>
-    </div>
-);
 
 const KitXpBar = ({ cur, max }) => (
     <div
@@ -903,9 +888,9 @@ export const KIT_SECTIONS = [
         Demo: BookTabDemo
     },
     {
-        id: 'atlas-maps', title: 'Cartography maps and slots', status: 'unapproved', source: 'CartographyTable, MapPieces (the Atlas only)',
-        rule: 'Each map is its 64 px sprite at 1× with its count under it, like the Bank’s tiles, greyed once every copy is slotted; hover names it and says what it adds. A slot is a 68 px box: empty, a faint dashed outline of a map; filled, the map’s sprite. The Region’s preview beside them is a tiny real map: the mat’s own ground and each Token’s sprite shrunk by a whole number, drawn at the UI’s 2×.',
-        Demo: MapPiecesDemo
+        id: 'world-cells', title: 'World map cells', status: 'new, unapproved', source: 'WorldPage (the Atlas’s World page)',
+        rule: 'Flat-topped hexes in their kit’s ground colour (code stand-ins until the owner’s hex art), each with the first outputs it yields as 32 px item sprites at 1× and "+N" for the rest. Settled: lit, a gold edge; the guild’s place carries the pale job flag. Frontier: a little darker; a green edge once the guild can pay. Beyond: dark, sprites half faded. The chosen cell has a white edge, the hovered one a white inner line; the hover lists its outputs and its price as have/need, red when short.',
+        Demo: HexCellDemo
     },
     {
         id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',

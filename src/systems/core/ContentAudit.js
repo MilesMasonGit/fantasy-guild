@@ -1,6 +1,6 @@
 // Boot-time content-integrity audit: warns about content references that do not resolve.
 
-import { TOKENS, getTokenType, getProvidedTagsWithTiers, standsOnOf, tokenName } from '../../config/registries/tokenRegistry.js';
+import { TOKENS, getTokenType, getProvidedTagsWithTiers, tokenName } from '../../config/registries/tokenRegistry.js';
 import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
 import { getTriggerEvent, momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
@@ -13,10 +13,9 @@ import { isEnemyDef, isBossEnemy } from '../../config/registries/enemyProfile.js
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy, statusBlockOf } from '../effects/effectLibrary.js';
 import { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
-import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
-import { isMapItem, isBaseMap, mapItemFindings, recipeOf } from '../atlas/mapItems.js';
-import { groundOf } from '../atlas/Budget.js';
-import { STANDS_ON, STANDS_ON_CHOICES, isStandsOnWord, allowsTerrain } from '../atlas/TerrainMap.js';
+import { ITEMS, getItem, isRetiredItem } from '../../config/registries/itemRegistry.js';
+import { isBaseMap, isModifier, mapItemFindings } from '../atlas/mapItems.js';
+import { STANDS_ON_CHOICES, isStandsOnWord } from '../atlas/TerrainMap.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
 import { currentSpriteName } from '../../utils/AssetManager.js';
@@ -204,32 +203,6 @@ function auditStandsOn(out, where, def) {
             `its "Stands on" names "${word}", which is not a ground the game knows ` +
             `(${groundLabels(STANDS_ON_CHOICES.map(choice => choice.id))}), so that word is ignored` +
             `${anyKnown ? '' : ' and the Token may stand anywhere dry'}. Tick its grounds again in the CMS.`));
-    }
-}
-
-/**
- * A Base Map node whose "Stands on" its map's ground can never give. A node brings its map's
- * terrain to its own cell (`Layout.js`), so on dry land it stands on that terrain and nothing else;
- * the shore and the water exist only where some map brings water, a sea or its biome's own
- * (`Budget.BIOME_WATER`: a forest's pond, a meadow's lake). The layout leaves such a node
- * unplaced, and Settle refuses every layout of a Region with it ("Not everything fits").
- */
-function auditMapNodeGround(out, itemId, def) {
-    if (!isBaseMap(def)) return;
-    const recipe = recipeOf(def);
-    const ground = groundOf(recipe);
-    for (const { typeId } of recipe.nodes) {
-        const standsOn = standsOnOf(typeId);
-        if (!standsOn.length || allowsTerrain(standsOn, ground.terrain, false)) continue;
-        const byWater = standsOn.includes(STANDS_ON.WATER) || standsOn.includes(STANDS_ON.SHORE);
-        if (byWater && (ground.water > 0 || ground.inland.length > 0)) continue;
-        const node = `One of its nodes, ${tokenName(typeId)}, has "Stands on" ${groundLabels(standsOn)}`;
-        out.push(finding(`Item "${itemId}"`, byWater
-            ? `${node} and this map brings no water, so a Region written from this map alone has ` +
-              `nowhere for it and Settle refuses it. It fits only beside a map that brings water.`
-            : `${node} and this map's ground is ${groundLabel(ground.terrain)}, so it can never be ` +
-              `placed, and Settle refuses every Region with this map in it. Tick ` +
-              `${groundLabel(ground.terrain)} in its "Stands on", or put it on a map whose ground it stands on.`));
     }
 }
 
@@ -640,19 +613,39 @@ function auditItems(out) {
 // Enemy drops are not audited here: enemies are Tokens, so the Token walk
 // already checks their outputs, and a second pass would report each finding twice.
 
+/** The audit's words for retired map content, kept together for translation. */
+export const RETIRED_MAP_TEXT = Object.freeze({
+    baseMap: 'is a Base Map, and map items are retired: the world map settles places now. Delete it in the CMS.',
+    drops: (names) => `drops ${names.join(', ')}, but map items are retired and those lines never roll. `
+        + 'Remove them from its outputs in the CMS.'
+});
+
 /**
- * Map and Modifier items: the Tokens their Cartography block names, and a map that writes nothing.
- * The rule lives in `mapItems.js`, shared with the CMS Economy Audit. Then a node whose "Stands
- * on" its map's ground can never give (game side only).
+ * Map items are retired (the world map settles places): each Base Map is named for deletion, and
+ * each Token whose outputs still name a map or a modifier, since those lines never roll. A Modifier
+ * stays as a world cell's hidden extra, so its block is still checked: the Tokens it names, and an
+ * effect that does nothing (the rule lives in `mapItems.js`, shared with the CMS Economy Audit).
  */
 function auditMapItems(out) {
     const tokenExists = id => !!getTokenType(id);
     for (const [itemId, def] of Object.entries(ITEMS || {})) {
-        if (!isMapItem(def)) continue;
+        if (isBaseMap(def)) {
+            out.push(finding(`Item "${itemId}"`, RETIRED_MAP_TEXT.baseMap));
+            continue;
+        }
+        if (!isModifier(def)) continue;
         for (const what of mapItemFindings(def, { tokenExists, itemOf: getItem })) {
             out.push(finding(`Item "${itemId}"`, what));
         }
-        auditMapNodeGround(out, itemId, def);
+    }
+    for (const [tokenId, def] of Object.entries(TOKENS || {})) {
+        const retired = [];
+        for (const output of def?.config?.outputs || []) {
+            if (isRetiredItem(output?.itemId) && !retired.includes(output.itemId)) retired.push(output.itemId);
+        }
+        if (retired.length) {
+            out.push(finding(`Token "${tokenId}"`, RETIRED_MAP_TEXT.drops(retired.map(id => getItem(id)?.name || id))));
+        }
     }
 }
 

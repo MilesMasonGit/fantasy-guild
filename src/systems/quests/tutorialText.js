@@ -11,8 +11,6 @@ export const TUTORIAL_TEXT = Object.freeze({
     speaker: 'The Cartographer',
     /** The tag on a tutorial quest's tooltip. */
     tag: 'Tutorial',
-    /** The reward line for the step that pays the first maps. */
-    firstMaps: 'The first maps',
 
     steps: Object.freeze({
         cart_recruit: Object.freeze({
@@ -71,16 +69,6 @@ export const TUTORIAL_TEXT = Object.freeze({
             title: 'Beat a Goblin',
             says: 'The goblins by the camp took something of mine. Maps, I think. Three of them. Fetch them back.',
             instruction: 'Give a Hero food first (drag it from the Item Bank onto them): goblins hit hard. Then drag the Hero onto a goblin by the Goblin Camp and beat it.'
-        }),
-        cart_settle: Object.freeze({
-            title: 'Write a World',
-            says: 'My maps! Had I lost them? Lay them on the table and a world writes itself.',
-            instruction: 'Open the Atlas (blue orb), put a map on the Cartography table, and Settle.'
-        }),
-        cart_travel: Object.freeze({
-            title: 'Move the Guild',
-            says: 'The Hall goes where the maps say. It always has. Hold on to something.',
-            instruction: 'In the Atlas, Travel to your new Region. The Starter Camp stays as you left it.'
         })
     })
 });

@@ -1,9 +1,9 @@
-// The QA panel's Atlas section: test maps for the Cartography table, and the run's world in words.
+// The QA panel's Atlas section: the world map's prices met at a click, and the run's world in words.
 // ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
 
 import { useState } from 'react';
-import * as Atlas from '../../systems/atlas/Atlas.js';
 import * as World from '../../systems/world/World.js';
+import { meetFrontierPrices } from './worldDev.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
@@ -12,24 +12,23 @@ const dumpClass = 'max-h-96 overflow-auto whitespace-pre ui-text-small leading-t
 const TEXT = Object.freeze({
     noWorld: 'This save has no world: it was made before worlds existed. Start a new game, or preview one.',
     thisWorld: (world) => `This game's world: seed ${world.seed}, ${world.cells.length} cells, ${world.problems.length} problems`,
-    seedLabel: 'Seed'
+    seedLabel: 'Seed',
+    met: (r) => `${r.cells} frontier cells: ${r.items} items topped up, ${r.skills} skills raised on the first hero`
 });
 
 /**
- * Grant test maps: two of each placeholder map into the dev stock, which the Cartography table
- * lists beside the Bank's maps. The stock is not saved, and an Atlas already open reads it when
- * it next opens.
+ * Meet the frontier's prices: every item the frontier cells ask for topped up in the Bank, and
+ * their skills raised on the first hero, so Settle can be tried at once (`worldDev.js`).
  *
- * The world (brief 330 W1, not on the game screen yet): this game's world, or a preview of any
- * seed (never kept), as text.
+ * The world in words: this game's world, or a preview of any seed (never kept).
  */
 export function AtlasDevSection() {
     const [status, setStatus] = useState('');
     const [dump, setDump] = useState('');
     const [seed, setSeed] = useState('1');
-    const grant = () => {
-        const lines = Atlas.devGrantMaps(2);
-        setStatus(`${lines.length} kinds of map`);
+    const meet = () => {
+        const result = meetFrontierPrices();
+        setStatus(result.success ? TEXT.met(result) : result.reason);
     };
     const world = World.currentWorld();
     const showCurrent = () => setDump(world ? World.describeWorld(world) : TEXT.noWorld);
@@ -41,7 +40,7 @@ export function AtlasDevSection() {
     return (
         <div className="mb-3 pb-3 border-b border-gi-border space-y-2" data-testid="qa-atlas">
             <div className={labelClass}>Atlas (dev only)</div>
-            <button type="button" data-qa-grant-maps className={buttonClass} onClick={grant}>Grant test maps</button>
+            <button type="button" data-qa-world-meet className={buttonClass} onClick={meet}>Meet the frontier&apos;s prices</button>
             {status && <div className="ui-text-body text-gi-muted">{status}</div>}
 
             <div className={labelClass}>World (dev only)</div>

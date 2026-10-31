@@ -4,7 +4,6 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { FloatingTip } from '../base/Tooltip.jsx';
 import { TUTORIAL_TEXT } from '../../../systems/quests/tutorialText.js';
-import { firstMapsReward } from '../../../systems/quests/tutorialQuests.js';
 
 /** The Token's art on the mat, which the tooltip hangs under. */
 function artOf(instanceId) {
@@ -27,14 +26,9 @@ export function questNeedLine(quest) {
     return count;
 }
 
-/**
- * What a quest pays, as shown: its items, and for the tutorial step that pays them the first maps
- * as they stand in the registry now (the claim reads them again).
- */
+/** What a quest pays, as shown: its items. */
 export function questRewardsShown(quest) {
-    const rewards = Array.isArray(quest?.rewardItems) ? [...quest.rewardItems] : [];
-    if (quest?.tutorial && quest.firstMaps) rewards.push(...firstMapsReward());
-    return rewards;
+    return Array.isArray(quest?.rewardItems) ? [...quest.rewardItems] : [];
 }
 
 /**
