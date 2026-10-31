@@ -102,6 +102,24 @@ let carryOut = new Map();
 let heroCarryIn = new Map();
 let heroCarryOut = new Map();
 
+/**
+ * The board the leftovers above were made on. ⚠️ A new game, a load and a journey to another Region
+ * each put a new board object in place, and the leftovers go with the old one: a hero keeps their
+ * id across all three and a load brings back the same Token ids, so a leftover kept would start the
+ * first cycle on the new board part-done.
+ */
+let carryBoard = null;
+
+function forgetCarryOffItsBoard() {
+    const board = GameState.state?.board ?? null;
+    if (board === carryBoard) return;
+    carryBoard = board;
+    carryIn.clear();
+    carryOut.clear();
+    heroCarryIn.clear();
+    heroCarryOut.clear();
+}
+
 // Why the hero on a Token cannot work it (possession, level, then tool) lives in `WorkCheck.heroReason`,
 // shared with the flags that choose which Token to work.
 
@@ -443,6 +461,7 @@ function carryAtStart(id, heroId) {
  * @param {number} delta game milliseconds since the last tick
  */
 export function tick(delta) {
+    forgetCarryOffItsBoard();
     [carryIn, carryOut] = [carryOut, carryIn];
     carryOut.clear();
     [heroCarryIn, heroCarryOut] = [heroCarryOut, heroCarryIn];
