@@ -87,7 +87,7 @@ function idList(raw) {
 /** `{ 1: x, 2: y, 3: z }` read for the strict rings only, through `read`. */
 function perRing(raw, read) {
     const out = {};
-    for (let ring = 1; ring <= STRICT_RINGS; ring++) out[ring] = read(isObject(raw) ? raw[ring] ?? raw[String(ring)] : undefined);
+    for (let ring = 1; ring <= STRICT_RINGS; ring++) out[ring] = read(isObject(raw) ? raw[ring] : undefined);
     return out;
 }
 
@@ -210,7 +210,7 @@ export function normaliseWorldTables(raw) {
         const a = text(row?.a);
         const b = text(row?.b);
         if (!ids.has(a) || !ids.has(b) || a === b) {
-            issues.push(`A neighbour pair names a line that does not exist (${a} and ${b})`);
+            issues.push(`A neighbour pair needs two different lines that exist (${a} and ${b})`);
             continue;
         }
         neighbours.push({ a, b, weight: Math.max(1, Math.round(positive(row.weight, 1))) });

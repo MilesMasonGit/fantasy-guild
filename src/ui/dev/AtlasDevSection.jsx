@@ -7,7 +7,7 @@ import * as World from '../../systems/world/World.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
-const dumpClass = 'max-h-96 overflow-auto whitespace-pre font-mono text-[10px] leading-tight p-2 rounded bg-black/30 border border-gi-border select-text';
+const dumpClass = 'max-h-96 overflow-auto whitespace-pre ui-text-small leading-tight p-2 rounded bg-black/30 border border-gi-border select-text';
 
 const TEXT = Object.freeze({
     noWorld: 'This save has no world: it was made before worlds existed. Start a new game, or preview one.',
