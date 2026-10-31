@@ -224,7 +224,7 @@ describe('the QA panel\'s frontier prices', () => {
     });
 });
 
-describe('the cartographer on the World page (brief 330 W3)', () => {
+describe('the cartographer on the World page', () => {
     it('while the tutorial\'s last step asks for a first place, its words head the right page; then they go', () => {
         const { container: before } = screen();
         expect(q(before, '[data-world-note]')).toBeNull();

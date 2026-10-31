@@ -78,7 +78,7 @@ describe('the QA panel\'s World block', () => {
     });
 });
 
-describe("the QA panel's fixture places (brief 330 W3)", () => {
+describe("the QA panel's fixture places", () => {
     const said = (view) => view.container.querySelector('[data-qa-world-said]')?.textContent || '';
     const stoneCells = () => {
         const t = Atlas.activeRegion().terrain;

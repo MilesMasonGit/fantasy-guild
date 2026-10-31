@@ -10,7 +10,7 @@ import { mulberry32 } from '../systems/atlas/seededRandom.js';
 import { getLook, DEFAULT_LOOK } from '../config/registries/terrainRegistry.js';
 
 /**
- * ⭐ Stone terrain (brief 330 W3): a feature of a Region's ground, as water is. Outcrops of bare
+ * ⭐ Stone terrain: a feature of a Region's ground, as water is. Outcrops of bare
  * rock are made with the layout from its seed, stored with the terrain map, and the cells they
  * cover are `stone`: never on the water, never in the Hall's clearing. Ore and stone grow on it;
  * nothing else of the map's does. A budget with no Stone lays out exactly as before.

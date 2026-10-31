@@ -61,14 +61,14 @@ afterEach(() => {
 const chip = (container, id) => container.querySelector(`[data-field="stands-on"] [data-stands-on="${id}"]`);
 
 describe('⭐ "Stands on" chips in the Token editor', () => {
-    it('offers the game\'s five words, imported from the game, in its order', () => {
+    it('offers the game\'s six words, imported from the game, in its order', () => {
         expect(STANDS_ON_CHOICES).toBe(GAME_STANDS_ON_CHOICES);
         const id = useEntityStore.getState().addToken({ name: 'Chip Fixture' });
         useEntityStore.getState().setActiveEntity(id, 'token');
         const { container } = render(React.createElement(TokenEditor));
         const chips = [...container.querySelectorAll('[data-field="stands-on"] [data-stands-on]')];
-        expect(chips.map((c) => c.getAttribute('data-stands-on'))).toEqual(['water', 'shore', 'grass', 'rock', 'sand']);
-        expect(chips.map((c) => c.textContent.trim())).toEqual(['Water', 'Shore', 'Grass', 'Rock', 'Sand']);
+        expect(chips.map((c) => c.getAttribute('data-stands-on'))).toEqual(['water', 'shore', 'grass', 'rock', 'sand', 'stone']);
+        expect(chips.map((c) => c.textContent.trim())).toEqual(['Water', 'Shore', 'Grass', 'Rock', 'Sand', 'Stone']);
         for (const c of chips) expect(c.getAttribute('aria-pressed')).toBe('false');
     });
 

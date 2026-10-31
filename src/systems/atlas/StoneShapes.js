@@ -3,8 +3,8 @@
 import { noiseAt } from './WaterShapes.js';
 
 /**
- * Stone terrain is a feature of a Region's ground, as water is (owner, 2026-10-29: mines and
- * quarries stand on it). A Region's Stone is a handful of shapes in mat units, made with its layout
+ * Stone terrain is a feature of a Region's ground, as water is (owner: mines and quarries stand
+ * on it). A Region's Stone is a handful of shapes in mat units, made with its layout
  * from its seed ({@link planStone}) and stored with its terrain map (`TerrainMap.encodeTerrain`),
  * and the cells it covers are `stone` ({@link sampleStone}): a cell is Stone when at least half of
  * its 16 sample points lie inside a shape.

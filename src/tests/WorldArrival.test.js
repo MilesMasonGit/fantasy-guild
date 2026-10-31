@@ -38,7 +38,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ A settled place arrives occupied (brief 330 W3): its enemies stand in a lair on the mat, one
+ * ⭐ A settled place arrives occupied: its enemies stand in a lair on the mat, one
  * use each and no camp; until every one is beaten the mat is held (heroes may fight and nothing
  * else) and drawn dark; a hero whose enemy falls takes on the next; the last one beaten clears it.
  */

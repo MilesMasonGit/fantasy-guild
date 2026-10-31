@@ -10,7 +10,7 @@ import { materialsFromTokens, hallOriginsOf } from '../systems/world/materials.j
 import * as StarterCamp from '../systems/atlas/StarterCamp.js';
 
 /**
- * ⭐ What a settled place's mat holds (brief 330 W3): its kit's work for four to six heroes, its
+ * ⭐ What a settled place's mat holds: its kit's work for four to six heroes, its
  * specialty's better things, every origin the map shows, its hidden extras, and a wild cell's
  * oddness; written as one base recipe that Budget writes exactly.
  */

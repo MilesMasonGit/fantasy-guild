@@ -8,7 +8,7 @@ import * as BoardState from './BoardState.js';
 import { isGuildHall } from './MatCap.js';
 
 /**
- * A newly settled place arrives occupied (owner, 2026-10-29): a small fixed encounter stands on
+ * A newly settled place arrives occupied (owner): a small fixed encounter stands on
  * its mat (`world/Arrival.js` writes it), and until every one of those enemies is beaten the mat
  * is held. The board says so itself, `board.arrival = { ids, cleared }`, so the state travels with
  * the Region and comes back with a save.

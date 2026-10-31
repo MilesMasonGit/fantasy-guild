@@ -350,10 +350,10 @@ function worldTokens(maxRing) {
     for (let ring = 1; ring <= maxRing; ring++) {
         for (const line of tables.lines) for (const o of line.origins[ring] || []) out.add(o.id);
         for (const id of tables.keys[ring] || []) out.add(id);
-        // A place's arrival: its enemies and bosses (brief 330 W3).
+        // A place's arrival: its enemies and bosses.
         for (const e of [...(tables.arrival[ring]?.enemies || []), ...(tables.arrival[ring]?.bosses || [])]) out.add(e.id);
     }
-    // Every kit's camps, and the boss camp a combat specialty makes one of them (W3).
+    // Every kit's camps, and the boss camp a combat specialty makes one of them.
     for (const kit of tables.kits) for (const id of [...kit.camps, ...kit.bossCamps]) out.add(id);
     for (const extra of tables.extras) {
         if (extra.rings && !extra.rings.some(r => r <= maxRing)) continue;

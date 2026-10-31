@@ -14,7 +14,7 @@ import * as Atlas from '../atlas/Atlas.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
- * A newly settled place arrives occupied (owner, 2026-10-29): its mat darkened, with a small fixed
+ * A newly settled place arrives occupied (owner): its mat darkened, with a small fixed
  * encounter on it, 3 to 6 enemies sized to the ring, sometimes a boss (the cell's `arrival`,
  * `generate.js` step 10). They stand together in a lair in the mat's outer band, belong to no camp
  * and never come back: each has one use. Until every one is beaten the mat is held

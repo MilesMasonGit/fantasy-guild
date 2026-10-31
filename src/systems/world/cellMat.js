@@ -5,8 +5,8 @@ import { mulberry32, seedFromText } from '../atlas/seededRandom.js';
 import { ORIGIN_ROLE, EXTREME } from './generate.js';
 
 /**
- * A settled place's mat, worked out from its world cell and the world tables (owner, 2026-10-29,
- * "What goes on a mat"): natural work for about four to six heroes, and room left for building.
+ * A settled place's mat, worked out from its world cell and the world tables (owner, the world map
+ * concept's "What goes on a mat"): natural work for about four to six heroes, and room left for building.
  *
  * 1. **The kit** (`kit.work`, heroes per skill) covers most skills in its own balance. A skill's
  *    heroes become Tokens by `heroTokens` (about five veins, four trees, two waters, one camp keep
@@ -48,7 +48,7 @@ export const DEFAULT_HEROES = 5;
 /** The most heroes a mat's natural work keeps busy (owner: four to six); the rest is built. */
 export const MAX_HEROES = 6;
 
-/** The ground each placeholder kit stands on when its row names none (W2's stand-in, kept as the fallback). */
+/** The ground each placeholder kit stands on when its row names none. */
 export const KIT_BIOME = Object.freeze({
     highland: 'mountain',
     woodland: 'forest',
