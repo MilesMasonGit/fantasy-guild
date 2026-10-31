@@ -360,3 +360,39 @@ status passes); a weight not above 0.
   group's lines resist it.
 - **The moves show on the enemy card from the start**, like resistances (kinds still wait for a fight).
 - **A move's hit is the enemy's Hit**: no per-move damage; a heavier move is an effect on itself for the swing.
+
+## The content pack (V5, 2026-10-30; in the owner's CMS review)
+
+*A change pack, `2026-10-30-combat-v5-content`: 47 entries. Nothing here is in `data/` until the owner
+accepts it and Syncs. Every number is a proposal; the notes on each entry say why.*
+
+- **Weapons**: swords and cleavers Slash, greatswords Crush, daggers Stab, bows Electric (the bow's
+  part; same at every metal), the Copper Wand Fire, the Iron Wand Ice. Daggers take one style,
+  **Stealth** (they fought as Melee, the first of two). Damage numbers unchanged.
+- **Armour** as Defence lines in place of Armor 1: Leather Hat Physical 5, Elemental 10, Magic −5;
+  Leather Chest Physical 10, Elemental 10, Magic −10; Copper Helmet Physical 10, Magic −15, Stealth −5;
+  Copper Chestplate Physical 15, Magic −20, Stealth −10; Iron Helmet Physical 15, Magic −20, Stealth −10;
+  Iron Chestplate Physical 20, Magic −30, Stealth −15 (the owner's example). The Elixir of Ironskin's
+  effect becomes Physical resistance 20 for the fight. The three armour effects are deleted. Best
+  stack: Physical 45 (hat, chest, shield).
+- **New**: Copper Arrow (1 Stab), Iron Bodkin Arrow (1 Stab, On Hit: applies Sunder to the enemy),
+  both Draft with no recipe (Fletching has no station yet); Copper Shield (off-hand, Physical 10,
+  Magic and Stealth −10) with a Smithing 6 recipe at the smithy; Sunder (status, 3 stacks, the fight,
+  Sunder 10); Sundering (the arrow's rule); Flutter (Type Resistance Physical 50).
+- **Enemies** (resistances; moves): Thorn Elemental Fire −50; Lash, Prick. Cow none; Headbutt, Kick.
+  Goblin none; Shiv, Club. Goblin Chief **level 12, hit 3** (was 20, hit 4); Cleave, Bash. Wolf none;
+  Bite, Claw. Crab (Armoured) Crush −50, Electric −25; Pinch, Snip. Bee Fire −25; Sting ×2, Flutter.
+  Wolf Alpha none; Bite, Maul. Water Elemental (Armoured) Fire 50, Electric −50; Crashing Wave, Frost
+  Spray (Ice). Greater Slime (Armoured) Poison 50, Fire −25; Engulf, Acid Spit (Poison). Wind
+  Elemental **Physical 25** (the starter table said 50); Gust, Cutting Wind. Queen Bee Fire −25; Sting
+  ×2, Flutter. Fire Elemental Fire 100, Ice −50; Scorch (Fire) ×2, Slam. Sulphur Lizard (Armoured) Fire
+  50, Ice −25; Bite, Sulphur Spit (Fire). Frog Poison 50, Electric −25; Tongue Lash, Spit (Poison).
+  Fire Elemental Chief Fire 100, Ice −50; Inferno (Fire) ×2, Slam. Big Lizard (Armoured) Fire 50, Ice
+  −25; Bite ×2, Tail Smash (Crush, Heavy Strike for the swing). Toxic Frog Poison 100, Electric −25;
+  Tongue Lash, Toxic Spit (Poison). Existing boss rules stay.
+- **Duel checks** (the real engine, 200–300 duels each, 10 Shrimp unless said): a new hero beats a
+  Goblin fed with every copper weapon (sword, dagger, wand 100 %, greatsword 98 %, bow with arrows
+  97 %, cleaver 93 %, bow without arrows 91 %); unfed the sword wins about 1 in 10, as before. A
+  Melee 8–10 hero in the copper set with 20 Shrimp beats the Goblin Chief about 3 in 4. A Copper
+  Greatsword kills a Crab in 6 swings (sword 25). A Copper Wand cannot beat a Fire Elemental (immune);
+  the Iron Wand wins in 14 swings.

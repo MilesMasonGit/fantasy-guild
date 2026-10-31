@@ -799,7 +799,7 @@ Sulphur Lizard, Frog and their bosses):
 
 Their resistances, weaknesses and moves come with the combat content pack
 (brief 280 V5, in the owner's CMS review; the analyst's starter table in
-`concept_combat_v2.md`), which also brings the Goblin Chief to level 12.
+`concept_combat_v2.md`), which also brings the Goblin Chief to level 12 with a hit of 3.
 
 - Goblins come from the Goblin Camp; enemies potter within 128 u of their
   spawner at half of 90 u/s and walk back if moved.
