@@ -45,17 +45,22 @@ import { FX_FRAME_MS, playPoses } from './fx/pixelSteps.js';
 import { takeSettle, playSettle } from './fx/regionSettle.js';
 import { useSupportLit } from './supportLit.js';
 import { useOrderLit } from './orderLit.js';
+import { walkerGlide } from './walkerGlide.js';
 
 /**
  * A walking enemy's boxes follow the engine without React. While `on`, each `ENEMIES_WALKED`
  * writes the Token's current point straight into both boxes' `transform` (the same `translate`
- * the render would write; the one-tick linear glide is already on them). MatBoard re-renders
- * only when the walker's place in the stack changes, and any render writes the same live
- * point, so React and this never disagree.
+ * the render would write), with the glide for that step (`walkerGlide`: whole screen pixels at
+ * `pxPerUnit`, or none while `still`). MatBoard re-renders only when the walker's place in the
+ * stack changes, and any render writes the same live point and the same glide (returned here),
+ * so React and this never disagree.
  */
-function useWalkerFollow(on, id, boxHalf, artRef, overlayRef) {
-    const half = React.useRef(boxHalf);
-    half.current = boxHalf;
+function useWalkerFollow({ on, id, boxHalf, pxPerUnit, still, px, py, artRef, overlayRef }) {
+    const live = React.useRef(null);
+    live.current = { boxHalf, pxPerUnit, still };
+    // Where the boxes were last sent, and the glide they carry for that step.
+    const sentTo = React.useRef(null);
+    const glide = React.useRef(null);
     // A layout effect, so it listens from the commit on, and catches up at once on any step
     // taken between the render and now.
     React.useLayoutEffect(() => {
@@ -63,13 +68,34 @@ function useWalkerFollow(on, id, boxHalf, artRef, overlayRef) {
         const follow = () => {
             const t = BoardState.getTokenById(id);
             if (!t) return;
-            const transform = `translate(${t.x - half.current}px, ${t.y - half.current}px)`;
-            if (artRef.current) artRef.current.style.transform = transform;
-            if (overlayRef.current) overlayRef.current.style.transform = transform;
+            const from = sentTo.current;
+            const { boxHalf: half, pxPerUnit: unit } = live.current;
+            const transition = live.current.still || !from ? 'none' : walkerGlide(t.x - from.x, t.y - from.y, unit);
+            sentTo.current = { x: t.x, y: t.y };
+            glide.current = transition;
+            const transform = `translate(${t.x - half}px, ${t.y - half}px)`;
+            // The glide first: a transition takes its timing from the style it starts in.
+            for (const el of [artRef.current, overlayRef.current]) {
+                if (!el) continue;
+                el.style.transition = transition;
+                el.style.transform = transform;
+            }
         };
         follow();
-        return EventBus.subscribe(BOARD_EVENTS.ENEMIES_WALKED, follow, UI_LISTENER);
+        const unsubscribe = EventBus.subscribe(BOARD_EVENTS.ENEMIES_WALKED, follow, UI_LISTENER);
+        return () => {
+            unsubscribe();
+            glide.current = null;
+        };
     }, [on, id, artRef, overlayRef]);
+    // After the effect above, so a walk's first step glides from where the boxes stood.
+    React.useLayoutEffect(() => {
+        sentTo.current = { x: px, y: py };
+    });
+    if (!on) return null;
+    if (glide.current != null) return glide.current;
+    const from = sentTo.current;
+    return still || !from ? 'none' : walkerGlide(px - from.x, py - from.y, pxPerUnit);
 }
 
 /**
@@ -310,7 +336,22 @@ export const MatToken = React.memo(function MatToken({
     // ⚠️ Never add `will-change: transform` to these boxes (3x slower). A walker's boxes carry
     // `will-change: contents`, so its glide and its knockback run on the main thread: on the
     // compositor either redrew every Token in front of it soft (tailwind.css, at `.gi-token-land`).
+    // So its walk glides in whole screen pixels (`walkerGlide`), or the main thread repaints on
+    // every frame of every step.
     const [walker] = React.useState(() => !!def?.enemy);
+    const artRef = React.useRef(null);
+    const overlayRef = React.useRef(null);
+    const walkGlide = useWalkerFollow({
+        on: walker && walking && x == null,
+        id,
+        boxHalf,
+        pxPerUnit: fit * (globalThis.devicePixelRatio || 1),
+        still: skipSlide || !walkDrawn,
+        px,
+        py,
+        artRef,
+        overlayRef
+    });
     const boxStyle = walker ? {
         left: 0,
         top: 0,
@@ -321,7 +362,7 @@ export const MatToken = React.memo(function MatToken({
         transition: skipSlide || (walking && !walkDrawn)
             ? 'none'
             : walking
-                ? `transform ${TICK_INTERVAL_MS}ms linear`
+                ? (walkGlide ?? 'none')
                 : `transform ${SLIDE_MS}ms ${SLIDE_EASE}`
     } : {
         left,
@@ -347,8 +388,6 @@ export const MatToken = React.memo(function MatToken({
         [fightBarHost, x, y, boxHalf]
     );
 
-    const artRef = React.useRef(null);
-    const overlayRef = React.useRef(null);
     const setArtRef = React.useCallback((el) => {
         artRef.current = el;
         stack?.attach(id, 'art', el);
@@ -363,7 +402,6 @@ export const MatToken = React.memo(function MatToken({
         overlayRef.current = el;
         stack?.attach(id, 'badges', el);
     }, [stack, id]);
-    useWalkerFollow(walker && walking && x == null, id, boxHalf, artRef, overlayRef);
 
     // Arriving in a Region: out of sight until its turn, then it drops in (`fx/regionSettle.js`). A
     // Token drawn before the arrival (the Hall, a quest) is told; one drawn after asks as it mounts.
