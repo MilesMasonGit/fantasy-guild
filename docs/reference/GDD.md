@@ -112,6 +112,13 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
 - **Terrain** (the ground under the Tokens) is **Built** (brief 80): each Region's stored cell map
   drawn as pixel ground, one look per terrain per Region, meadow where a Region stores none (the
   Starter Camp). Static: nothing on the mat changes it. *(`TerrainCanvas.jsx`)*
+- **Stone terrain** — **Built (brief 330 W3)**: a feature of the ground as water is. A Region
+  written with Stone gets outcrops of bare rock (a wild chasm a ridge across the mat), made with
+  its layout and stored with its cell map; the cells they cover are `stone`, never on the water or
+  in the Hall's clearing. Only ore and stone of the place's own grow there, starting their groves
+  on it; anything with no "Stands on" may still be built there, and a Token may name **Stone** in
+  its "Stands on" (the mines and quarries of W4 will). Drawn as pale rock and scree, a code-drawn
+  stand-in until the owner's Stone pieces. *(`StoneShapes.js`, `Layout.js`, `terrainRegistry.js`)*
 
 ### What a Token is — Built
 Everything on the mat is a Token: resource nodes, tools, stations, spawners,
@@ -1027,14 +1034,15 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*
-  - **Tutorial** (the cartographer's, `tutorialQuests.js`): 13 steps, one at
+  - **Tutorial** (the cartographer's, `tutorialQuests.js`): 12 steps, one at
     a time: recruit a hero, equip a Woodaxe, **send your hero to a tree**, gather,
     collect loot, buy a Foundation, build a station, craft, **build a first
     camp** (a Logging Camp on a Wood Foundation; any camp counts); then the
     Starter Camp's end, **make a first tool** (copper, the camp's metal) and
-    **beat a Goblin**, which pays the **first maps** (one of each Base Map
-    ticked "given by the tutorial"; while none is ticked, each Base Map nothing
-    trades up into); then settle a Region and travel to it.
+    **beat a Goblin**; then the last step, **settle your first place**: it
+    arrives with the cartographer opening the Atlas on the world map, his words
+    heading its right page, and is done when a place of the world map is
+    settled (brief 330 W3).
   - **Bounties**: random "collect N items" or "defeat N Goblins", each paying
     10 Oak Wood (*placeholder*). Cap 2 (+1 per Notice Board rank, max 5); a
     new one every 3 min of game time.
@@ -1116,10 +1124,37 @@ drawers**. The menu can be flipped to the right.
   the best level any hero has reached). **Settle** (frontier only) pays the
   whole price at once, writes the cell's Region and takes the guild there; a
   settled place offers **Travel**, as the Regions page does. A Region knows its
-  cell (`region.cellId`); abandoning it returns the cell to the frontier. ⚠️
-  Until the mat is written from the cell (W3), a cell's Region is today's
-  layout of one map made of its origins on its kit's ground, plus its hidden
-  modifiers and treasures (`world/cellRegion.js`). The tables are placeholder
+  cell (`region.cellId`); abandoning it returns the cell to the frontier.
+- **A place's mat** — **Built (brief 330 W3)**: settling writes the Region from
+  its cell (`world/cellMat.js`). **The kit** (Highland, Woodland, Plains,
+  Wetland, Riverside) gives each skill its share of natural work in heroes (a
+  hero is about five veins, four trees, three crops or herbs, two waters or one
+  camp), on its own ground (mountain, forest, meadow, bog, coast) with its own
+  Stone outcrops; a skill's Tokens are the cell's own origins of it, else the
+  everyday ones the guild already has (earlier rings', the Starter Camp's).
+  **The specialty** means better things, not more: its skill gets at least one
+  hero's work, all of it the cell's own origins (a cell holding nothing of its
+  specialty's line is generated with one of that line's origins for its ring,
+  so it shows on the map), one Token of it the rarest of its line's table for
+  the ring; a combat specialty makes one of the kit's camps its boss camp.
+  Every origin the map shows stands on the mat; work nothing fills goes to the
+  cell's own line; a mat keeps at most six heroes of natural work (the rest is
+  built). The hidden modifiers and treasures ride along as before; a wild cell
+  has one origin almost everywhere (three quarters of its nodes) or an odd
+  layout (islands, mostly water, a chasm of Stone, cramped). **The arrival**: a
+  settled place arrives occupied by the enemies its cell lists (3 to 6, more
+  further out, sometimes a boss), together in a lair in the mat's outer band,
+  one use each and tied to no camp. Until every one is beaten the mat is
+  **held**: drawn dark (its ground shaded, its Tokens dimmed, the enemies
+  bright), and a hero may be sent at an enemy and at nothing else ("Beat the
+  enemies here first"); a hero whose enemy falls takes on the nearest one still
+  standing, so heroes sent at the lair keep fighting while the player is away;
+  the last one beaten brightens the mat ("The enemies are beaten: … is the
+  guild's to work"). The board keeps it (`board.arrival`), so it travels and
+  saves with the Region. The QA panel's Atlas section settles a fixture place
+  of each kit for free, beats its arrival at once, and jumps the tutorial to
+  its last step. *(`world/cellMat.js`, `world/cellRegion.js`, `world/Arrival.js`,
+  `board/Occupation.js`)* The tables are placeholder
   until the CMS syncs `data/world.json` (W6). A save made before worlds has
   none: the World page says so, and its Regions still travel. The QA panel's
   Atlas section meets the frontier's prices at a click and shows a world in

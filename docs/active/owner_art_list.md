@@ -119,6 +119,8 @@ player for these is T-138 (built when the first strips exist).
 - **Area banners**: the 19 in `backgrounds/area/` are in use (Region rows,
   the top bar, travel); a place settled on the world map shows its main
   biome's.
+- **Stone terrain pieces** (NEW when ready, brief 330 W3): the ground of a Stone outcrop (bare rock where mines and quarries stand), on any biome's ground and on the mountain's too, so it must read apart from the mountain's own rock. Code draws pale grey slabs and scree from rules until then (the `stone` look in `terrainRegistry.js`).
+- **The darkened mat** (NEW when ready, brief 330 W3): how a place held by its arrival looks. Code shades the ground with a dark wash and dims every Token but the enemies and the Hall until then; a mood (dusk, smoke, fog) or a frame would replace it.
 - **World map cells** (NEW when ready, brief 330 W2): a hex cell frame (flat
   top, settled, frontier and beyond looks, or one frame the code tints) and a
   ground fill per kit (Highland, Woodland, Plains, Wetland, Riverside). Code

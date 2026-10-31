@@ -350,7 +350,11 @@ function worldTokens(maxRing) {
     for (let ring = 1; ring <= maxRing; ring++) {
         for (const line of tables.lines) for (const o of line.origins[ring] || []) out.add(o.id);
         for (const id of tables.keys[ring] || []) out.add(id);
+        // A place's arrival: its enemies and bosses (brief 330 W3).
+        for (const e of [...(tables.arrival[ring]?.enemies || []), ...(tables.arrival[ring]?.bosses || [])]) out.add(e.id);
     }
+    // Every kit's camps, and the boss camp a combat specialty makes one of them (W3).
+    for (const kit of tables.kits) for (const id of [...kit.camps, ...kit.bossCamps]) out.add(id);
     for (const extra of tables.extras) {
         if (extra.rings && !extra.rings.some(r => r <= maxRing)) continue;
         if (extra.kind === 'treasure') out.add(extra.id);
@@ -453,7 +457,7 @@ describe('the §6 circularity check: every chain is reachable from the Starter C
         Crafting: ['token_workbench'],
         Smithing: ['token_furnace', 'token_copper_smithy'],
         Cooking: ['token_cooking_pot', 'token_brewery'],
-        Combat: ['token_goblin_camp', 'token_goblin']
+        Combat: ['token_goblin_camp', 'token_goblin', 'token_chief_tent', 'token_goblin_chief']
     };
 
     for (const [chain, ids] of Object.entries(SIX)) {
@@ -461,14 +465,6 @@ describe('the §6 circularity check: every chain is reachable from the Starter C
             for (const id of ids) expect(tokens.has(id), id).toBe(true);
         });
     }
-
-    // ⚠️ Expected to fail: only the retired Mountain Map placed the Goblin Chief's tent, and no world
-    // cell writes a boss camp yet (the arrival encounter, sometimes a boss, and the world's content
-    // pack will). When one does, this starts passing and fails as an it.fails: move the ids back
-    // into Combat above.
-    it.fails('Combat: the Goblin Chief and his tent are reachable', () => {
-        for (const id of ['token_chief_tent', 'token_goblin_chief']) expect(tokens.has(id), id).toBe(true);
-    });
 
     it('every chain item is reachable', () => {
         for (const id of [
