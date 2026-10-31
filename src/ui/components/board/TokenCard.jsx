@@ -7,7 +7,7 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { LandmarkBlock } from '../drawer/LandmarkBlock.jsx';
-import { LeaveMatControl } from '../drawer/TokenInspection.jsx';
+import { LeaveMatControl } from '../drawer/LeaveMatControl.jsx';
 import { useTokenDetail } from './useTokenDetail.js';
 import { subscribeToken } from './tokenEvents.js';
 import { CARD_BLOCK, tokenCardModel, cycleText, drivenBy } from './tokenCard.js';

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw, X } from 'lucide-react';
 
 import {
   CHECKS, CHECK_GROUP_TEXT, SEVERITIES, SEVERITY_TEXT, filterFindings,
@@ -21,17 +21,22 @@ export function SeverityChip({ severity }) {
 
 /**
  * The problems list: every finding of the ledger's checks (integrity, plan against data, luck and
- * access), filtered by severity, group, check and text; a name opens the entry's page. Parked entries
- * are silenced and never listed.
+ * access, pacing), filtered by severity, group, check and text; a name opens the entry's page, a
+ * skill its row on the Pace page. Parked entries are silenced and never listed. A `scope` (a hub
+ * picked beside the list) narrows it to the findings on, or naming, any of its keys.
  */
-export default function LedgerProblems({ report, onRefresh, onOpen }) {
+export default function LedgerProblems({ report, onRefresh, onOpen, onOpenSkill = () => {}, scope = null, onClearScope = () => {} }) {
   const [severity, setSeverity] = useState('');
   const [group, setGroup] = useState('');
   const [check, setCheck] = useState('');
   const [search, setSearch] = useState('');
 
   const { findings } = report;
-  const shown = useMemo(() => filterFindings(findings, { severity, group, check, search }), [findings, severity, group, check, search]);
+  const shown = useMemo(() => {
+    const listed = filterFindings(findings, { severity, group, check, search });
+    if (!scope) return listed;
+    return listed.filter((f) => scope.keys.has(f.key) || (f.related || []).some((k) => scope.keys.has(k)));
+  }, [findings, severity, group, check, search, scope]);
   const count = (pred) => findings.filter(pred).length;
   const checks = Object.entries(CHECKS).filter(([id, c]) => (!group || c.group === group) && findings.some((f) => f.check === id));
 
@@ -73,6 +78,22 @@ export default function LedgerProblems({ report, onRefresh, onOpen }) {
         </button>
       </div>
 
+      {scope && (
+        <div className="flex items-center gap-2 text-[11px]" data-problem-scope={scope.key}>
+          <span style={{ color: 'var(--color-text-secondary)' }}>
+            Problems of {scope.name} and the {scope.keys.size - 1} thing{scope.keys.size === 2 ? '' : 's'} that spend it
+          </span>
+          <button
+            onClick={onClearScope}
+            aria-label="List every problem"
+            className="flex items-center gap-1 px-2 py-0.5 rounded"
+            style={{ background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-subtle)', cursor: 'pointer' }}
+          >
+            <X size={10} /> all problems
+          </button>
+        </div>
+      )}
+
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 overflow-hidden">
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
@@ -88,9 +109,9 @@ export default function LedgerProblems({ report, onRefresh, onOpen }) {
               <tr key={f.id} className="hover:bg-white/[0.03]" data-finding={f.check}>
                 <td style={cell}><SeverityChip severity={f.severity} /></td>
                 <td style={{ ...cell, color: 'var(--color-text-primary)' }}>
-                  {f.key.includes(':') && !f.key.startsWith('camp:') ? (
+                  {/^(item|token|recipe|skill):/.test(f.key) ? (
                     <button
-                      onClick={() => onOpen(f.key)}
+                      onClick={() => (f.key.startsWith('skill:') ? onOpenSkill(f.key.slice(6)) : onOpen(f.key))}
                       className="underline text-left"
                       title={f.key}
                       style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', font: 'inherit' }}

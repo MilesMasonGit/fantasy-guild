@@ -357,7 +357,7 @@ export function placeProduct(stationId, typeId) {
  * placed Tokens; the Guild Hall never leaves the mat.
  *
  * ⚠️ The player's route is demolition (`Demolition.mark`, a hero's work). Only the dev layout
- * tool's Remove button calls this (`TokenInspection`), so the owner can lift a misplaced landmark.
+ * tool's Remove button calls this (`LeaveMatControl`), so the owner can lift a misplaced landmark.
  *
  * @returns {{success: boolean, reason?: string, idledHeroId?: string|null}}
  */

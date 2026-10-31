@@ -3,14 +3,14 @@
 import { ModifierAggregator, applyThreeBucket, combineMultipliers, combinePercentages } from '../effects/ModifierAggregator.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES, EFFECT_TYPES } from '../effects/constants.js';
-import { MAX_SPEED_UP_CUT } from '../../config/loopConstants.js';
+import { floorSpeedUp, MIN_WORK_CYCLE_MS, flooredWorkTime } from './workTime.js';
 import { nearby, reachFrom, tokensAround, nearRadius, centreOf, distanceSq, neighbourIds } from './nearby.js';
 import { onMatTuningChanged } from '../../config/matTuning.js';
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
 import { isStatementPaid } from './BlockUpkeep.js';
 import { REACH, RELATION, reachOf, reachCovers } from '../../config/registries/reachRegistry.js';
-import { FILTER_NEEDS, matchesFilters, filtersOf, getFilterKind } from '../../config/registries/filterRegistry.js';
+import { FILTER_NEEDS, matchesFilters, filtersOf, getFilterKind, targetModeMatches } from '../../config/registries/filterRegistry.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import * as BoardState from './BoardState.js';
@@ -192,7 +192,7 @@ const sourceIdFor = (instanceId, typeId) => `token:${instanceId}:${typeId}`;
  * silently universal, which would turn a narrow, large effect into a board-wide one.
  */
 export function matchesTokenTarget(spec, def, ctx = null) {
-    if (!modeMatches(spec, def)) return false;
+    if (!targetModeMatches(spec, def)) return false;
 
     // ⚠️ The stacked filters, which need more than a definition. `ctx` is what the caller could
     // supply (an instance, the id of a Token standing on the mat (`tokenId`), both or neither) and
@@ -214,24 +214,6 @@ export function matchesTokenTarget(spec, def, ctx = null) {
         // same reason `renderStatement` takes a `names` resolver rather than importing one.
         heroCarries: (effectId) => LiveEffects.heroCarries(HeroManager.getHero(heroOnTile), effectId)
     }, available);
-}
-
-/** The single primary mode: tag, id, or everything. */
-function modeMatches(spec, def) {
-    if (!spec || !spec.mode) return true;   // untargeted
-    if (spec.mode === 'all') return !!def; // every nearby Token
-    if (!def) return false;
-
-    switch (spec.mode) {
-        case 'id':
-            return def.id === spec.value;
-        case 'tokenType':
-            return def.tokenType === spec.value;
-        case 'tag':
-            return (def.tags || []).includes(spec.value);
-        default:
-            return false;
-    }
 }
 
 /**
@@ -835,26 +817,8 @@ export function resolveAxis(instanceId, effectType, base, category = TARGET_CATE
     return applyThreeBucket(base, { flat, multipliers, percentages });
 }
 
-/**
- * The standard floor for speed-ups: a time sped up by any stack of rules never falls below
- * `1 - MAX_SPEED_UP_CUT` of its authored length. A slow-down passes untouched. Every speed-up
- * reader floors through this one function (work time in `BoardRunner.tick`, grow time in
- * {@link growTimeOf}), so the number is one number.
- *
- * Written `base - base × cut` rather than `base × (1 - cut)`: `1 - 0.8` is 0.19999999999999996 in
- * floating point, which would floor a 10 s vein at 1999.9999999999995 ms.
- *
- * @param {number} baseMs the authored time
- * @param {number} resolvedMs the time after every rule
- */
-export function floorSpeedUp(baseMs, resolvedMs) {
-    if (!Number.isFinite(baseMs)) return resolvedMs;
-    const floor = baseMs - baseMs * MAX_SPEED_UP_CUT;
-    return resolvedMs < floor ? floor : resolvedMs;
-}
-
-/** No work cycle is shorter than this, which the catch-up's 1 s steps rely on (`loopConstants.MAX_TICK_DELTA_MS`). */
-export const MIN_WORK_CYCLE_MS = 1000;
+// The floors live in a pure module the progression ledger's rate calculator shares; kept exported here for every older reader.
+export { floorSpeedUp, MIN_WORK_CYCLE_MS };
 
 /**
  * How long one round of work at Token `instanceId` takes, given its authored time: the Work Time
@@ -867,7 +831,7 @@ export const MIN_WORK_CYCLE_MS = 1000;
  * @param {string} [skill] the work skill rules narrow to
  */
 export function workTimeOf(instanceId, baseMs, skill) {
-    return Math.max(MIN_WORK_CYCLE_MS, floorSpeedUp(baseMs, resolveAxis(instanceId, EFFECT_TYPES.WORK_TIME, baseMs, skill)));
+    return flooredWorkTime(baseMs, resolveAxis(instanceId, EFFECT_TYPES.WORK_TIME, baseMs, skill));
 }
 
 /**

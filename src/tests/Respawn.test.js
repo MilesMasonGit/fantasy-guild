@@ -342,6 +342,20 @@ describe('a refill Token rests where it stands and refills', () => {
         expect(vein.alert ?? null).toBeNull();
     });
 
+    it.each([100, 1000])('a vein that refills at the very end of a %i ms step announces each cycle once, and works as many', (step) => {
+        const vein = place(10, 'respawn_vein', 'hero_1');
+        expect(runUntil(() => BoardState.workerOf(vein.id) === 'hero_1', 20000)).toBe(true);
+        const starts = [];
+        const completes = [];
+        offs.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_START, p => { if (p.instanceId === vein.id) starts.push(p); }));
+        offs.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, p => { if (p.instanceId === vein.id) completes.push(p); }));
+
+        // Three charges of 2 s, then 12 s of rest: 18 s a round, its refill falling due on a step's end.
+        run(5 * 18_000, step);
+        expect(completes.length).toBe(15);
+        expect(starts.length - completes.length).toBeLessThanOrEqual(1);
+    });
+
     it('a half-rested vein is saved with its clock and refills on time after a load', () => {
         const vein = place(10, 'respawn_vein', null, 0);
         vein.clocks = { respawnMs: 5000 };

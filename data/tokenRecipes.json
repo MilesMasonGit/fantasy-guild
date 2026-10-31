@@ -1097,6 +1097,43 @@
     }
   },
   {
+    "id": "recipe_copper_sickle",
+    "name": "Copper Sickle",
+    "skill": "smithing",
+    "levelRequirement": 2,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_sickle",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false,
+        "anchor": true
+      }
+    ],
+    "durationMs": 8000,
+    "stationChargeCost": 1,
+    "xp": 1,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "fast",
+      "purpose": "iph"
+    }
+  },
+  {
     "name": "Dough",
     "requiresContext": [],
     "inputs": [
@@ -1547,6 +1584,154 @@
     }
   },
   {
+    "id": "recipe_cooked_tropical_fish",
+    "name": "Cooked Tropical Fish",
+    "skill": "cooking",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "inputs": [
+      {
+        "itemId": "item_tropical_fish",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_cooked_tropical_fish",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 16000,
+    "xp": 2,
+    "stationKinds": [
+      "kitchen"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_cooked_swordfish",
+    "name": "Cooked Swordfish",
+    "skill": "cooking",
+    "levelRequirement": 4,
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "inputs": [
+      {
+        "itemId": "item_swordfish",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_cooked_swordfish",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 17000,
+    "xp": 2,
+    "stationKinds": [
+      "kitchen"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_cooked_lobster",
+    "name": "Cooked Lobster",
+    "skill": "cooking",
+    "levelRequirement": 5,
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "inputs": [
+      {
+        "itemId": "item_lobster",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_cooked_lobster",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 17000,
+    "xp": 2,
+    "stationKinds": [
+      "kitchen"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_lavender_salmon",
+    "name": "Lavender Salmon",
+    "skill": "cooking",
+    "levelRequirement": 15,
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "inputs": [
+      {
+        "itemId": "item_salmon",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_lavender",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_lavender_salmon",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 19000,
+    "xp": 5,
+    "stationKinds": [
+      "kitchen"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
     "id": "recipe_muily2pf",
     "name": "Charcoal",
     "skill": "crafting",
@@ -1895,6 +2080,86 @@
     ]
   },
   {
+    "id": "recipe_fishing_rod",
+    "name": "Fishing Rod",
+    "skill": "crafting",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 3
+      },
+      {
+        "itemId": "item_copper_nails",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_beeswax_comb",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_fishing_rod",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false,
+        "anchor": true
+      }
+    ],
+    "durationMs": 16000,
+    "stationChargeCost": 1,
+    "xp": 2,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_trap",
+    "name": "Trap",
+    "skill": "crafting",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 4
+      },
+      {
+        "itemId": "item_copper_nails",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_trap",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false,
+        "anchor": true
+      }
+    ],
+    "durationMs": 16000,
+    "stationChargeCost": 1,
+    "xp": 2,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
     "id": "recipe_wheat",
     "name": "Wheat",
     "skill": "farming",
@@ -2084,7 +2349,7 @@
     ],
     "durationMs": 60000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "wood"
     ],
@@ -2119,7 +2384,7 @@
     ],
     "durationMs": 60000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "wood"
     ],
@@ -2154,7 +2419,7 @@
     ],
     "durationMs": 90000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "stone"
     ],
@@ -2193,7 +2458,7 @@
     ],
     "durationMs": 240000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "stone"
     ],
@@ -2228,7 +2493,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "farmland"
     ],
@@ -2263,7 +2528,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "farmland"
     ],
@@ -2275,11 +2540,11 @@
     "id": "recipe_build_herb_garden",
     "name": "Build Herb Garden",
     "skill": "construction",
-    "levelRequirement": 1,
+    "levelRequirement": 5,
     "requiresContext": [],
     "inputs": [
       {
-        "itemId": "item_oak_wood",
+        "itemId": "item_fir_wood",
         "quantity": 5
       },
       {
@@ -2302,7 +2567,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 40,
     "foundationKinds": [
       "farmland"
     ],
@@ -2337,7 +2602,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "farmland"
     ],
@@ -2376,7 +2641,7 @@
     ],
     "durationMs": 90000,
     "stationChargeCost": 1,
-    "xp": 10,
+    "xp": 30,
     "foundationKinds": [
       "stone"
     ],
@@ -2415,7 +2680,7 @@
     ],
     "durationMs": 60000,
     "stationChargeCost": 1,
-    "xp": 10,
+    "xp": 30,
     "foundationKinds": [
       "wood"
     ],
@@ -2427,16 +2692,16 @@
     "id": "recipe_build_alchemy_table",
     "name": "Build Alchemy Table",
     "skill": "construction",
-    "levelRequirement": 1,
+    "levelRequirement": 5,
     "requiresContext": [],
     "inputs": [
       {
-        "itemId": "item_oak_wood",
+        "itemId": "item_fir_wood",
         "quantity": 8
       },
       {
-        "itemId": "item_copper_ingot",
-        "quantity": 2
+        "itemId": "item_stone",
+        "quantity": 4
       }
     ],
     "outputs": [
@@ -2454,7 +2719,7 @@
     ],
     "durationMs": 60000,
     "stationChargeCost": 1,
-    "xp": 10,
+    "xp": 40,
     "foundationKinds": [
       "wood"
     ],
@@ -2493,7 +2758,7 @@
     ],
     "durationMs": 90000,
     "stationChargeCost": 1,
-    "xp": 10,
+    "xp": 30,
     "foundationKinds": [
       "wood"
     ],
@@ -2528,7 +2793,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "stone"
     ],
@@ -2546,6 +2811,10 @@
       {
         "itemId": "item_oak_wood",
         "quantity": 6
+      },
+      {
+        "itemId": "item_bones",
+        "quantity": 4
       }
     ],
     "outputs": [
@@ -2563,7 +2832,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "wood"
     ],
@@ -2598,7 +2867,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "wood"
     ],
@@ -2633,7 +2902,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "wood"
     ],
@@ -2672,7 +2941,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "wood"
     ],
@@ -2711,7 +2980,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "wood"
     ],
@@ -2750,7 +3019,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "wood"
     ],
@@ -2785,7 +3054,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 15,
     "foundationKinds": [
       "wood"
     ],
@@ -2799,7 +3068,7 @@
     "stationChargeCost": 1,
     "name": "Build Iron Smithy",
     "skill": "construction",
-    "levelRequirement": 15,
+    "levelRequirement": 8,
     "inputs": [
       {
         "itemId": "item_iron_ingot",
@@ -2824,7 +3093,7 @@
       }
     ],
     "durationMs": 120000,
-    "xp": 20,
+    "xp": 40,
     "foundationKinds": [
       "stone"
     ],
@@ -2838,7 +3107,7 @@
     "stationChargeCost": 1,
     "name": "Build Iron Furnace",
     "skill": "construction",
-    "levelRequirement": 15,
+    "levelRequirement": 7,
     "inputs": [
       {
         "itemId": "item_iron_ingot",
@@ -2867,7 +3136,7 @@
       }
     ],
     "durationMs": 120000,
-    "xp": 20,
+    "xp": 40,
     "foundationKinds": [
       "stone"
     ],
@@ -2881,7 +3150,7 @@
     "stationChargeCost": 1,
     "name": "Build Fir Workbench",
     "skill": "construction",
-    "levelRequirement": 15,
+    "levelRequirement": 6,
     "inputs": [
       {
         "itemId": "item_fir_wood",
@@ -2906,7 +3175,7 @@
       }
     ],
     "durationMs": 90000,
-    "xp": 20,
+    "xp": 40,
     "foundationKinds": [
       "wood"
     ],
@@ -2920,7 +3189,7 @@
     "stationChargeCost": 1,
     "name": "Build Tannery",
     "skill": "construction",
-    "levelRequirement": 15,
+    "levelRequirement": 6,
     "inputs": [
       {
         "itemId": "item_fir_wood",
@@ -2945,7 +3214,7 @@
       }
     ],
     "durationMs": 90000,
-    "xp": 20,
+    "xp": 40,
     "foundationKinds": [
       "wood"
     ],
@@ -2959,7 +3228,7 @@
     "stationChargeCost": 1,
     "name": "Build Fir Forest",
     "skill": "construction",
-    "levelRequirement": 15,
+    "levelRequirement": 5,
     "inputs": [
       {
         "itemId": "item_fir_seedling",
@@ -2980,7 +3249,7 @@
       }
     ],
     "durationMs": 30000,
-    "xp": 20,
+    "xp": 40,
     "foundationKinds": [
       "farmland"
     ],
@@ -3015,7 +3284,7 @@
     ],
     "durationMs": 60000,
     "stationChargeCost": 1,
-    "xp": 10,
+    "xp": 30,
     "foundationKinds": [
       "wood"
     ],
@@ -3054,7 +3323,7 @@
     ],
     "durationMs": 90000,
     "stationChargeCost": 1,
-    "xp": 10,
+    "xp": 30,
     "foundationKinds": [
       "stone"
     ],
@@ -3093,7 +3362,7 @@
     ],
     "durationMs": 60000,
     "stationChargeCost": 1,
-    "xp": 10,
+    "xp": 30,
     "foundationKinds": [
       "wood"
     ],
@@ -3132,9 +3401,44 @@
     ],
     "durationMs": 60000,
     "stationChargeCost": 1,
-    "xp": 10,
+    "xp": 30,
     "foundationKinds": [
       "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_grapevine",
+    "name": "Build Grapevine",
+    "skill": "construction",
+    "levelRequirement": 5,
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "inputs": [
+      {
+        "itemId": "item_grape_seed",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_grapevine",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "xp": 40,
+    "foundationKinds": [
+      "farmland"
     ],
     "sim": {
       "tempo": "heavy"

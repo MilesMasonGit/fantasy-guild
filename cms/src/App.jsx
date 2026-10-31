@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import AppShell from './components/layout/AppShell';
 import SupplyChainLayout from './components/layout/SupplyChainLayout';
 import ItemEditor from './components/editors/ItemEditor';
@@ -13,6 +14,7 @@ import StarterCampPage from './components/starterCamp/StarterCampPage';
 import ChangesPage from './components/changes/ChangesPage';
 import SkillPerksPage from './components/perks/SkillPerksPage';
 import { useEntityStore } from './stores/useEntityStore';
+import { startLedgerWatchIfWorker } from './stores/useLedgerWatchStore';
 import { isMapItem } from '../../src/systems/atlas/mapItems.js';
 import { Package, Boxes, Map as MapIcon } from 'lucide-react';
 
@@ -24,6 +26,8 @@ const EDITOR_MAP = {
 };
 
 function App() {
+  // The ledger's before-and-after follows every edit, wherever it is made.
+  useEffect(() => startLedgerWatchIfWorker(), []);
   return (
     <AppShell>
       {({ currentView, openGenerate, setCurrentView }) => {

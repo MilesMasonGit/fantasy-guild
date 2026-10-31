@@ -204,15 +204,17 @@ describe('checks on the shipped content (the audit of 2026-10-28)', () => {
         effects: read('effects.json'), starterCamp: read('starterCamp.json'),
     });
 
-    it('finds Iron Ore only on the Volcano map, the lone starter tools, and the made-but-unused loose ends', () => {
+    it('finds Iron Ore only on the Volcano map, and none of the loose ends the ledger fix pack closed', () => {
         const c = content();
         const findings = runChecks(buildLedger(c), c);
         expect(on(findings, itemKey('item_iron_ore'), 'fragile')[0].message).toMatch(/^Only from the Volcano Map \(Iron Ore Vein/);
-        expect(on(findings, itemKey('item_trap'), 'tool-single')[0]).toMatchObject({ severity: 'warn' });
-        expect(on(findings, itemKey('item_copper_sickle'), 'tool-single')).toHaveLength(1);
-        expect(on(findings, itemKey('item_fishing_rod'), 'tool-single')).toHaveLength(1);
+        // The audit's lone starter tools are made at the Workbench and the Smithy now.
+        for (const id of ['item_trap', 'item_copper_sickle', 'item_fishing_rod']) {
+            expect(on(findings, itemKey(id), 'tool-single'), id).toEqual([]);
+        }
+        // And its made-but-unused items are spent: Build Composter, a Fishing Rod, Build Grapevine, Lavender Salmon.
         for (const id of ['item_bones', 'item_beeswax_comb', 'item_grape_seed', 'item_salmon']) {
-            expect(on(findings, itemKey(id), 'unused'), id).toHaveLength(1);
+            expect(on(findings, itemKey(id), 'unused'), id).toEqual([]);
         }
         // Many entries are never reachable; nothing yet tells parked from broken.
         expect(findings.filter((f) => f.check === 'never-reachable' && f.key.startsWith('item:')).length).toBeGreaterThan(20);

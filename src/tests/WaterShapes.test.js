@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { budget, BIOME_WATER } from '../systems/atlas/Budget.js';
-import { layout, HALL_CLEARING, DRY_GAP } from '../systems/atlas/Layout.js';
+import { layout, hallSpot, HALL_CLEARING, DRY_GAP } from '../systems/atlas/Layout.js';
 import {
     TERRAIN, TERRAIN_CELL, MAX_WATER_SHARE, terrainGrid, terrainAt, encodeTerrain, decodeTerrain
 } from '../systems/atlas/TerrainMap.js';
@@ -466,6 +466,33 @@ describe('⭐ Rivers: wide, and bending gently', () => {
         }
         expect(points).toBeGreaterThan(1000);
         expect(dry / points).toBeLessThan(0.002);
+    });
+
+    it('⭐ still crosses the mat when the first lines it tries all run through the Hall\'s clearing, drawing on till one misses it', () => {
+        // The shipped mat: with seed 291 all twelve edge-to-edge lines a river tries first pass
+        // inside the clearing.
+        const mat = { w: 1920, h: 1040 };
+        const clear = { ...hallSpot(mat), r: HALL_CLEARING + 2 * TERRAIN_CELL };
+        /** How far the straight line between a river's two ends passes from the Hall. */
+        const chordFromHall = ([[ax, ay], ...rest]) => {
+            const [bx, by] = rest[rest.length - 1];
+            const t = Math.max(0, Math.min(1, ((clear.x - ax) * (bx - ax) + (clear.y - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2)));
+            return Math.sqrt((clear.x - ax - (bx - ax) * t) ** 2 + (clear.y - ay - (by - ay) * t) ** 2);
+        };
+        for (const kind of [WATER_KIND.RIVER, WATER_KIND.MOUNTAIN_RIVER, WATER_KIND.SPLIT]) {
+            const { record } = planWater({ sea: 0, kinds: [kind] }, mulberry32(291), mat, clear);
+            const water = readWater(record);
+            const runs = water.shapes.filter(s => s.k === SHAPE.RIVER);
+            expect(runs.length, kind).toBeGreaterThan(0);
+            // A river across runs between the ends of the line it kept (a split's main arm may stop at its delta).
+            if (kind !== WATER_KIND.SPLIT) expect(chordFromHall(runs[0].points), kind).toBeGreaterThan(clear.r - 2);
+            for (let y = clear.y - clear.r; y <= clear.y + clear.r; y += 16) {
+                for (let x = clear.x - clear.r; x <= clear.x + clear.r; x += 16) {
+                    if ((x - clear.x) ** 2 + (y - clear.y) ** 2 >= clear.r ** 2) continue;
+                    expect(waterFieldAt(water, x, y).f, `${kind} at ${x},${y}`).toBeLessThanOrEqual(0);
+                }
+            }
+        }
     });
 });
 

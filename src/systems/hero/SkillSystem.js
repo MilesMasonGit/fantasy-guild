@@ -2,6 +2,7 @@ import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import { levelFromXp } from '../../utils/XPCurve.js';
+import { applyXpBonus } from './xpBonus.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { logger } from '../../utils/Logger.js';
@@ -66,20 +67,7 @@ export function getXpMultiplier(heroId, skillId) {
          * hero.aggregator.getPercentageBucket(EFFECT_TYPES.XP_BONUS, targetSkillId);
 }
 
-// Below this a bonus is float noise from summed percentages (+10% and -10%), not a real bonus.
-const XP_BONUS_EPSILON = 1e-9;
-
-/**
- * The XP floor: a positive XP bonus always adds at least 1 XP, so +10% on a 1 XP award is 2, not
- * a rounded-away 1. A negative or absent bonus is plain rounding.
- * @param {number} base XP before any bonus
- * @param {number} bonused XP after the bonus, unrounded
- * @returns {number} whole XP
- */
-export function applyXpBonus(base, bonused) {
-    if (bonused - base > XP_BONUS_EPSILON) return base + Math.max(1, Math.round(bonused - base));
-    return Math.round(bonused);
-}
+export { applyXpBonus };
 
 /**
  * Get a hero's effective skill level (base + modifiers)

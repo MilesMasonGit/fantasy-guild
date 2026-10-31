@@ -89,7 +89,8 @@ describe('the Studio entry', () => {
         }
     });
 
-    it('mounts Recolor and Animation as two tabs', async () => {
+    // Loading and mounting the Studio app took 5 s under full-suite load beside a build.
+    it('mounts Recolor and Animation as two tabs', { timeout: 30_000 }, async () => {
         vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({}) })));
         const studioApp = '../../cms/src/studio/StudioApp.jsx';
         const { default: StudioApp } = await import(/* @vite-ignore */ studioApp);

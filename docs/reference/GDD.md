@@ -95,8 +95,8 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
   Token editor: trees, fruit trees and veins), wherever it came from, an old save
   included. Demolition still takes any of them but a map's node (unless its type
   can be cleared: Demolition below), the camp's and a landmark. *(`FixedTokens.js`)*
-- **Token cap: 128 Tokens** to start (owner, Atlas D-9: a Guild Hall upgrade
-  will add 16 a rank, up to 256; not built yet). The cap is the guild's but
+- **Token cap: 128 Tokens** to start (owner, Atlas D-9); the Guild Hall's
+  **Token Cap** upgrade adds 16 a rank over 8 ranks, up to 256 (§8). The cap is the guild's but
   counts only the Region the guild is in (§10): every Token there, placed or
   spawned, and the **landmarks** (Token
   types marked `landmark`: the endgame sites, Atlas D-1; none are authored
@@ -173,8 +173,15 @@ mines) keeps counting while full and replaces a loss on the next tick.
   family standing **in its reach** (Saplings, Trees and Stumps, a map's
   included) against its own allowance, not the mat-wide cap; two such Forests
   far apart each fill their own. Its allowance adds nothing to a mat-wide
-  family's cap. Every other spawner, enemy camps included, keeps the mat-wide
-  count. No shipped spawner uses it yet.
+  family's cap. No shipped spawner uses it yet.
+- **An enemy camp counts its own** (owner, 2026-10-29; T-266): a spawner whose
+  family holds an enemy counts only what it spawned (the Tokens tethered to
+  it) against its own allowance, so goblins standing at one camp never keep
+  another from spawning, and its allowance adds nothing to any other
+  spawner's cap. An older save's untethered enemies join their nearest camp on
+  the first tick, before any camp counts; an enemy placed by hand, or one
+  whose camp is gone, counts toward none. Every other spawner keeps the
+  mat-wide count.
 
 *(`SpawnerSystem.js`, `TimedChanges.js`)*
 
@@ -1025,6 +1032,7 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 | Bank Tabs | 15 | +1 Bank tab (64 slots) per rank |
 | Wishing Well | 10 | 10 × *rank* Water every 5 min as Passive Production, no hero needed (rank 1 free) |
 | Notice Board | 3 | +1 bounty quest cap per rank |
+| Token Cap | 8 | +16 Tokens on the mat per rank, from 128 up to 256 *(`MatCap.js`)* |
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*
@@ -1103,6 +1111,14 @@ drawers**. The menu can be flipped to the right.
   they left there, with no work claimed and no fight on; a new Region starts
   with everyone in the Dock. No Atlas screen yet: `Game.Atlas.devCreateEmptyRegion()`
   and `Game.Atlas.travel(id)` in the dev console. *(`src/systems/atlas/`)*
+- **The world** — **Generated, not on screen yet** (brief 330 W1): a new game
+  generates its hex world from the run seed (the game's creation time) and the
+  world tables, and keeps it whole in the save (`state.world`): the Hall's cell
+  (the Starter Camp), three strict rings, wild rings beyond, six wedges by
+  origin line; each cell's origins, tier, kit, specialty, hidden extras and
+  price. The tables are placeholder until the CMS syncs `data/world.json`
+  (W6). A save made before worlds has none. The QA panel's Atlas section shows
+  a world in words. *(`src/systems/world/`, `worldTablesShape.js`)*
 - **Desktop**: packaged with Tauri (Windows installers); the game runs in the
   webview and saves stay in its storage.
 

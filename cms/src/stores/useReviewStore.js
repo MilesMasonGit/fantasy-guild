@@ -16,6 +16,9 @@ export const useReviewStore = create(
             listingError: null,
             /** Review sessions by pack file name (`engine/packReview.js`). */
             sessions: {},
+            /** The gate as the review page last ran it, by pack file name: `{ verdict, summary, workspaceFingerprint }`. Not kept across a reload. */
+            gates: {},
+            setGate: (file, gate) => set((s) => ({ gates: { ...s.gates, [file]: gate } })),
 
             refresh: async () => {
                 try {

@@ -1,9 +1,8 @@
 import { ALERT } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as MatCap from '../../../systems/board/MatCap.js';
-import * as Charges from '../../../systems/board/Charges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
-import { getMissingRequirements, effectiveIO } from '../../../systems/board/RecipeResolver.js';
+import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';
 import { workConfigOf } from '../../../systems/board/StationRecipe.js';
 import { MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
@@ -95,16 +94,6 @@ const withArticle = (name) => `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
 /** "an Oak Forest", "an Oak Forest or a Wild Oak Forest": any one of them will do. */
 const joinOr = (names) => (names.length < 2 ? names[0] || '' : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`);
 
-/** A context tag as a name: `fishing_rod` reads `Fishing Rod`. */
-const tagName = (tag) => String(tag || '').split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-
-/** Where the charges ran short: on the Token itself, or on a Token beside it (by tag). */
-function chargesText(instance) {
-    const plan = Charges.planCycle(instance.id, instance, effectiveIO(instance.id, instance));
-    const beside = (plan?.missing || []).find(m => m.reason === 'charges' && m.tag);
-    return beside ? `Too few charges on the ${tagName(beside.tag)} nearby` : 'Too few charges left';
-}
-
 /** The skill the Token's work needs, by name, and the level it asks for. */
 function skillNeeded(instance) {
     const config = workConfigOf(getTokenType(instance.typeId), instance);
@@ -136,7 +125,7 @@ export function problemText(problem, instanceId) {
             return tokens.length ? `Needs ${joinNames(tokens.map(withArticle))} nearby` : 'Nothing to make';
         }
         case ALERT.CHARGES:
-            return instance ? chargesText(instance) : 'Too few charges left';
+            return 'Too few charges left';
         case ALERT.CHOOSE_RECIPE:
             return 'Choose a recipe';
         case ALERT.CHOOSE_BUILD:

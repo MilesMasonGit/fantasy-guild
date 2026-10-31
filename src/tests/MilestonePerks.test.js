@@ -24,6 +24,10 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { xpForLevel } from '../utils/XPCurve.js';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// Every perk table here is a fixture: the shipped ones are content.
+withoutShippedPerks();
 
 /**
  * Milestone perks: each skill's table of fixed perks at set levels, each a library effect a hero

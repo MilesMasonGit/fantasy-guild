@@ -8,8 +8,13 @@
  *       Fills in the "fingerprint" of every edit and delete from the workspace the pack is made
  *       against: by default the newest CMS autosave (cms/backups/autosave_*.json), else data/.
  *       Overwrites the fingerprints already there, so stamp right after reading the values.
+ *   node cms/changePackTool.mjs gate <pack.json> [--from <workspace.json>] [--write]
+ *       The agent gate (src/engine/packGate.js): applies the pack to the same workspace in memory,
+ *       works the ledger out before and after, and says what moves. Exits 1 when the pack is
+ *       blocked: it adds a Block finding, moves a stage beyond the tolerance undeclared ("intent"
+ *       in the README), or adds a waiver. --write records the verdict in the pack as "gate".
  *
- * Reads only; writes nothing but the pack file it was given.
+ * Reads only; writes nothing but the pack file it was given (stamp, and gate with --write).
  */
 import fs from 'fs';
 import path from 'path';
@@ -53,11 +58,29 @@ function loadWorkspace(from) {
     };
 }
 
+/**
+ * The ledger's engines through Vite, as the CMS runs them: they use Vite's own imports (the
+ * calibration's bundled sources), which plain Node cannot load.
+ */
+async function gateEngine() {
+    const { createServer } = await import('vite');
+    const server = await createServer({
+        configFile: false, root: cmsDir, logLevel: 'error', appType: 'custom',
+        server: { middlewareMode: true, hmr: false, ws: false }, optimizeDeps: { noDiscovery: true, include: [] },
+    });
+    const jobs = await server.ssrLoadModule('/src/engine/ledgerJobs.js');
+    const gate = await server.ssrLoadModule('/src/engine/packGate.js');
+    const compare = await server.ssrLoadModule('/src/engine/ledgerCompare.js');
+    return { server, jobs, gate, compare };
+}
+
 const [cmd, file, ...rest] = process.argv.slice(2);
-if (!['check', 'stamp'].includes(cmd) || !file) {
-    console.log('Usage: node cms/changePackTool.mjs check|stamp <pack.json> [--from <workspace.json>]');
+if (!['check', 'stamp', 'gate'].includes(cmd) || !file) {
+    console.log('Usage: node cms/changePackTool.mjs check|stamp|gate <pack.json> [--from <workspace.json>] [--write]');
     process.exit(2);
 }
+const fromIdx = rest.indexOf('--from');
+const fromFile = fromIdx !== -1 ? rest[fromIdx + 1] : null;
 
 let pack;
 try {
@@ -68,8 +91,7 @@ try {
 }
 
 if (cmd === 'stamp') {
-    const fromIdx = rest.indexOf('--from');
-    const { source, workspace } = loadWorkspace(fromIdx !== -1 ? rest[fromIdx + 1] : null);
+    const { source, workspace } = loadWorkspace(fromFile);
     let stamped = 0;
     for (const entry of pack.entries || []) {
         if (entry?.op !== 'edit' && entry?.op !== 'delete') continue;
@@ -86,6 +108,37 @@ if (cmd === 'stamp') {
 }
 
 const check = validatePack(pack, { fileName: path.basename(file) });
+if (cmd === 'gate') {
+    if (!check.ok) {
+        console.error('Blocked: the CMS will refuse this pack:\n- ' + check.errors.join('\n- '));
+        process.exit(1);
+    }
+    const { source, workspace } = loadWorkspace(fromFile);
+    const engine = await gateEngine();
+    let result;
+    try {
+        result = engine.gate.runGate(workspace, pack, engine.jobs.workspaceSnapshot);
+    } finally {
+        await engine.server.close();
+    }
+    const { moveText, stageMoveText } = engine.compare;
+    const list = (title, lines) => { if (lines.length) console.log(`${title}\n${lines.map((l) => '- ' + l).join('\n')}`); };
+    console.log(`${result.verdict === 'pass' ? 'PASS' : 'BLOCKED'}: ${result.summary}`);
+    console.log(`Against ${source} (${result.workspaceFingerprint}).`);
+    list('Why it is blocked:', result.blocks.map((b) => b.message));
+    list('Stage times:', result.diff.stages.filter((s) => s.pct || s.lost).map(stageMoveText));
+    list(`Moved entries (${result.diff.moved.length}, furthest first):`, result.diff.moved.slice(0, 15).map((m) => `${m.name}: ${moveText(m)}`)
+        .concat(result.diff.moved.length > 15 ? [`and ${result.diff.moved.length - 15} more`] : []));
+    list('Checks added:', result.diff.added.map((f) => `${f.severity}: ${f.name ? f.name + ': ' : ''}${f.message}`));
+    list('Checks cleared:', result.diff.cleared.map((f) => `${f.severity}: ${f.name ? f.name + ': ' : ''}${f.message}`));
+    list('Notes:', result.notes);
+    if (rest.includes('--write')) {
+        pack.gate = engine.gate.gateRecord(result);
+        fs.writeFileSync(file, JSON.stringify(pack, null, 2) + '\n');
+        console.log('Written into the pack as "gate".');
+    }
+    process.exit(result.verdict === 'pass' ? 0 : 1);
+}
 if (check.ok) {
     console.log(`OK: ${pack.entries.length} entr${pack.entries.length === 1 ? 'y' : 'ies'}, ready for review in the CMS.`);
 } else {

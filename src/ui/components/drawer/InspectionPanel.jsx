@@ -1,4 +1,3 @@
-import TokenInspection from './TokenInspection.jsx';
 import GuildUpgradeInspection from './GuildUpgradeInspection.jsx';
 import { getUpgradeDef } from '../../../config/guildUpgrades.js';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
@@ -10,7 +9,7 @@ import { t } from '../../../i18n/index.js';
 const INSPECT_SCROLL_STEP_PX = 180;
 
 /**
- * InspectionPanel: the Guild Hall's inspection column (an upgrade or a Token), the kit's header
+ * InspectionPanel: the Guild Hall's inspection column (an upgrade), the kit's header
  * on top with the close X while an upgrade is shown. Its frame is the caller's. Items have no
  * inspect column: their details are the Bank tile's tooltip.
  */
@@ -28,8 +27,6 @@ export const InspectionPanel = ({
         const upgradeDef = selection.upgradeDef || selection.source?.upgradeDef || getUpgradeDef(selection.id);
         scrollsItself = true;
         body = <GuildUpgradeInspection upgradeDef={upgradeDef} />;
-    } else if (selection?.type === 'token') {
-        body = <TokenInspection typeId={selection.id} />;
     }
 
     return (
@@ -48,7 +45,7 @@ export const InspectionPanel = ({
                         <div className="h-full flex flex-col items-center justify-center gap-3 text-gi-muted p-6 text-center">
                             <span className="ui-text-body gi-caps tracking-widest font-bold">Nothing selected</span>
                             <span className="ui-text-body normal-case tracking-normal">
-                                Click an upgrade or Token to see its details here.
+                                Click an upgrade to see its details here.
                             </span>
                         </div>
                     )}
