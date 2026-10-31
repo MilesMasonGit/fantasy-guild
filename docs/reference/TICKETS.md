@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-275**
+**Next free number: T-277**
 
 ---
 
@@ -61,6 +61,8 @@ here.
 | T-272 | P2 | done c9f08bc2 | **Ledger leak check reads a map at its Region's tier and lets the map item arrive one stage early** (tutorial maps, bounty maps, boss first-kill maps are given a stage early by design; 20 findings with the first fill; owner 2026-10-30) | brief 290 L4 |
 | T-273 | P2 | open | **A vein that refills at the end of a step announces its next cycle twice** (negative carry leaves the cycle clock at exactly 0): nothing is made twice, but a drink counts an extra cycle and a work potion is drunk twice per refill (Beer on copper 20 % faster than it should be). Traced in catch-up by the S0 spike; live play by reasoning. Changes bench work where veins refill | brief 290 S0 |
 | T-274 | P3 | done 9092d268 | **The pack gate blocks a declared "faster" stage when one entry also loses its time** (`cms/src/engine/ledgerCompare.js`, `packGate.js`): the first-fill pack, camp 7 h 14 → 4 h 35 min with one more untimed entry, reads as an undeclared move. Let a declared direction pass when the timed part moves that way, and say how many entries went untimed | brief 290 L7 |
+| T-275 | P3 | open | **Retire the drawer Token inspection** (`TokenInspection.jsx`, `InspectBubbles.jsx`; keep `LeaveMatControl`, which the card uses): nothing a player reaches renders it since the Token card replaced it (beb48136); grep three ways before deleting (TESTING) | ui tickets pass 2026-10-30 |
+| T-276 | P2 | open | **A river layout can crash a Region preview for some seeds** (`WaterShapes.riverAcross`: "object null is not iterable", via `Cartography.reroll`); `AtlasSettle.test.js` "a later preview never shows a seed already shown" failed once under load and passed alone; the guild seed comes from `meta.createdAt`, so a real save may hit it. Find the seed, fix the layout | ui tickets pass 2026-10-30 |
 | T-260 | P1 | built 79c6b01c; owner sets tiers | **Recruits may hold copper weapons** (owner 2026-10-27, reverses the C2 call that Recruits refuse weapons): no hero leaves Recruit in plane 1 (the Fighter needs Mining and Smithing 10), so crafted copper swords were useless | K4 |
 | T-176 | P2 | open | **The quest board** ([concept_quests_tutorial.md](../active/concept_quests_tutorial.md), "The quest board", owner 2026-10-20): one fixture board at the bottom-left of every Region's mat; click opens its card on the quest list; up to 3 collect/hunt bounties from reachable content, Bank have/need, Claim takes items and bursts materials as floating loot; tutorial step pinned first; gold outline and ready count at rest. Replaces the loose quest Tokens. Brief 170. | owner interview |
 | T-175 | P2 | owner | (Concept still a draft, owner 2026-10-14: not for the director yet.) **Collectors: the Guild Hall and warehouses** ([concept_collectors.md](../active/concept_collectors.md)): the Hall collects all loot in a small radius from the start, widened by a ranked Hall star; warehouses built on Foundations collect items with one tag (CMS Collects block: tag, radius, interval ~60 s), bigger radius on higher tiers, no upkeep; shared sweep clock, nearest collector wins, items fly in; Bank-full leaves loot and shows the yellow mark; reach ring on hover, drag, placing. Remove the auto-collect setting. Engineer. WORK CHANGED expected. Cost-log line. Eye-check. | concept_collectors.md |
