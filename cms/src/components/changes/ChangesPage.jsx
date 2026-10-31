@@ -23,7 +23,7 @@ const OP_LOOK = {
   edit: { word: 'Changed', color: 'var(--color-info)' },
   delete: { word: 'Deleted', color: 'var(--color-error)' },
 };
-const KIND_WORD = { item: 'Item', token: 'Token', recipe: 'Recipe', effect: 'Effect', map: 'Map', starterCamp: 'Layout', skillPerks: 'Perks' };
+const KIND_WORD = { item: 'Item', token: 'Token', recipe: 'Recipe', effect: 'Effect', map: 'Map', starterCamp: 'Layout', skillPerks: 'Perks', hallStar: 'Hall star', hallConstellation: 'Constellation' };
 
 const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
 
@@ -47,8 +47,11 @@ function useWorkspace() {
   const recipePools = useEntityStore((s) => s.recipePools);
   const starterCamp = useEntityStore((s) => s.starterCamp);
   const skillPerks = useEntityStore((s) => s.skillPerks);
+  const hallConstellations = useEntityStore((s) => s.hallConstellations);
+  const hallStars = useEntityStore((s) => s.hallStars);
   const planSettings = useEntityStore((s) => s.planSettings);
-  return useMemo(() => ({ items, tokens, effects, recipePools, starterCamp, skillPerks, planSettings }), [items, tokens, effects, recipePools, starterCamp, skillPerks, planSettings]);
+  return useMemo(() => ({ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, planSettings }),
+    [items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, planSettings]);
 }
 
 /** Write review results into the workspace; an open editor on an entity that just went away is closed. */
@@ -57,6 +60,8 @@ function writeWorkspace(ws) {
   const patch = { items: ws.items, tokens: ws.tokens, effects: ws.effects, recipePools: ws.recipePools };
   if ('starterCamp' in ws) patch.starterCamp = ws.starterCamp;
   if ('skillPerks' in ws) patch.skillPerks = ws.skillPerks;
+  if ('hallConstellations' in ws) patch.hallConstellations = ws.hallConstellations;
+  if ('hallStars' in ws) patch.hallStars = ws.hallStars;
   const type = s.activeEntityType;
   const key = type === 'token' ? 'tokens' : type === 'effect' ? 'effects' : 'items';
   if (s.activeEntityId && type && !patch[key]?.[s.activeEntityId]) Object.assign(patch, { activeEntityId: null, activeEntityType: null });
@@ -215,6 +220,8 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
     } else if (entry.kind === 'skillPerks') {
       useEntityStore.getState().focusPerks(entry.id);
       setCurrentView('perks');
+    } else if (entry.kind === 'hallStar' || entry.kind === 'hallConstellation') {
+      setCurrentView('hallStars');
     } else {
       useEntityStore.getState().setActiveEntity(entry.id, entry.kind);
       setCurrentView('editor');

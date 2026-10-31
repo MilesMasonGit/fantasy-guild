@@ -21,9 +21,12 @@ export const WEB_W = 1000;
 export const WEB_H = 760;
 export const WEB_UNIT_PX = 400;
 
-/** Room past the outermost star or name, for its tag (a tag runs sideways, a name sits above). */
-const WEB_PAD_X = 170;
-const WEB_PAD_Y = 90;
+/**
+ * Room past the outermost star for its tag (a tag runs sideways or hangs below), and past the
+ * outermost constellation name for its text, which is centred on its point.
+ */
+const STAR_PAD = { x: 170, y: 70 };
+const NAME_PAD = { x: 120, y: 40 };
 
 /**
  * The fit below which the sky stops shrinking: positions closer than this crowd stars and tags,
@@ -39,20 +42,15 @@ const PAN_SLOP_PX = 4;
  * enough to hold every star and constellation name with room for its tag.
  */
 export function webSize() {
-    let x = 0;
-    let y = 0;
-    for (const def of GUILD_UPGRADES) {
-        x = Math.max(x, Math.abs(def.node?.x || 0));
-        y = Math.max(y, Math.abs(def.node?.y || 0));
-    }
-    for (const c of CONSTELLATIONS) {
-        x = Math.max(x, Math.abs(c.label?.x || 0));
-        y = Math.max(y, Math.abs(c.label?.y || 0));
-    }
-    return {
-        w: Math.max(WEB_W, Math.ceil(2 * (x * WEB_UNIT_PX + WEB_PAD_X))),
-        h: Math.max(WEB_H, Math.ceil(2 * (y * WEB_UNIT_PX + WEB_PAD_Y)))
+    let halfW = 0;
+    let halfH = 0;
+    const reach = (p, pad) => {
+        halfW = Math.max(halfW, Math.abs(p?.x || 0) * WEB_UNIT_PX + pad.x);
+        halfH = Math.max(halfH, Math.abs(p?.y || 0) * WEB_UNIT_PX + pad.y);
     };
+    for (const def of GUILD_UPGRADES) reach(def.node, STAR_PAD);
+    for (const c of CONSTELLATIONS) reach(c.label, NAME_PAD);
+    return { w: Math.max(WEB_W, Math.ceil(2 * halfW)), h: Math.max(WEB_H, Math.ceil(2 * halfH)) };
 }
 
 /**

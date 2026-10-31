@@ -24,6 +24,7 @@ import { seedSimIntent } from './simIntentNormaliser';
 import { isMapItem, blankCartography } from '../../../src/systems/atlas/mapItems.js';
 import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
 import { normaliseWorkspacePerks, withPerkRow, withoutPerkRow } from '../engine/skillPerks';
+import { workspaceSkyFrom } from '../engine/hallSky';
 import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRenames';
 import { splitPlanned, rejoinPlanned } from '../engine/planFile';
 
@@ -760,6 +761,22 @@ export const useEntityStore = create(
             /** Set (or with index -1 add) one row of a skill's perk table. */
             setSkillPerkRow: (skillId, index, row) => set((s) => ({ skillPerks: withPerkRow(s.skillPerks, skillId, index, row) })),
             removeSkillPerkRow: (skillId, index) => set((s) => ({ skillPerks: withoutPerkRow(s.skillPerks, skillId, index) })),
+            /**
+             * The Guild Hall's authored sky (`engine/hallSky.js`): constellations and stars, keyed by id. ⚠️ Null means this
+             * workspace never held one, and Sync then leaves `data/hallStars.json` alone.
+             */
+            hallConstellations: null,
+            hallStars: null,
+            /** Change one star's top-level fields (name, description, constellation, place). */
+            setHallStar: (id, patch) => set((s) => (s.hallStars?.[id]
+                ? { hallStars: { ...s.hallStars, [id]: { ...s.hallStars[id], ...patch, id } } }
+                : {})),
+            removeHallStar: (id) => set((s) => {
+                if (!s.hallStars?.[id]) return {};
+                const rest = { ...s.hallStars };
+                delete rest[id];
+                return { hallStars: rest };
+            }),
             /** A skill the Skill Perks page should open on next (the change-pack review's Open in editor). Not persisted. */
             perkFocus: null,
             focusPerks: (skillId) => set({ perkFocus: skillId }),
@@ -1010,6 +1027,7 @@ export const useEntityStore = create(
                     recipePools: seeded.recipePools,
                     starterCamp: normaliseStarterCamp(data.starterCamp),
                     skillPerks: normaliseWorkspacePerks(data.skillPerks),
+                    ...workspaceSkyFrom(data),
                     planSettings: data.planSettings && typeof data.planSettings === 'object' ? data.planSettings : null,
                     activeEntityId: null,
                     activeEntityType: null,
@@ -1126,7 +1144,10 @@ export const useEntityStore = create(
 
                 set({ ...rejoinPlanned(workspace, { items, tokens: finalTokens, recipePools }), effects: library });
 
-                return { items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp, skillPerks: state.skillPerks ?? null, planned, planSettings: state.planSettings ?? null };
+                return {
+                    items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp, skillPerks: state.skillPerks ?? null,
+                    hallConstellations: state.hallConstellations ?? null, hallStars: state.hallStars ?? null, planned, planSettings: state.planSettings ?? null
+                };
             },
 
             /**
@@ -1156,6 +1177,8 @@ export const useEntityStore = create(
                     recipePools: {},
                     starterCamp: null,
                     skillPerks: null,
+                    hallConstellations: null,
+                    hallStars: null,
                     planSettings: null,
                     activeEntityId: null,
                     activeEntityType: null,
@@ -1187,6 +1210,8 @@ export const useEntityStore = create(
                 recipePools: state.recipePools,
                 starterCamp: state.starterCamp,
                 skillPerks: state.skillPerks,
+                hallConstellations: state.hallConstellations,
+                hallStars: state.hallStars,
                 planSettings: state.planSettings,
                 activeEntityId: state.activeEntityId,
                 activeEntityType: state.activeEntityType,

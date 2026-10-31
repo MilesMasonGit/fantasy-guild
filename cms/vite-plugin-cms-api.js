@@ -846,6 +846,10 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
             const skillPerks = fs.existsSync(path.join(dataDir, 'skillPerks.json'))
               ? JSON.parse(fs.readFileSync(path.join(dataDir, 'skillPerks.json'), 'utf8'))
               : null;
+            // The Guild Hall's sky, as the workspace's two collections (`engine/hallSky.js`).
+            const hallSky = fs.existsSync(path.join(dataDir, 'hallStars.json'))
+              ? JSON.parse(fs.readFileSync(path.join(dataDir, 'hallStars.json'), 'utf8'))
+              : null;
 
             const plan = readPlan();
 
@@ -865,6 +869,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
               recipePools,
               starterCamp,
               skillPerks,
+              ...(hallSky ? { hallConstellations: hallSky.constellations || {}, hallStars: hallSky.stars || {} } : {}),
             }, plan)));
           } catch (err) {
             res.statusCode = 500;
@@ -966,6 +971,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
                 recipes: size(files['tokenRecipes.json']),
                 'Starter Camp Tokens': size(files['starterCamp.json']?.tokens),
                 perks: Object.values(files['skillPerks.json'] || {}).reduce((n, record) => n + size(record?.perks), 0),
+                'Guild Hall stars': size(files['hallStars.json']?.stars),
                 'Planned entries': plannedKeysOf(plan).size
               };
 
