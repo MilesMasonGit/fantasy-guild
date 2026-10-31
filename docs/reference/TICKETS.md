@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-281**
+**Next free number: T-282**
 
 ---
 
@@ -67,6 +67,7 @@ here.
 | T-278 | P3 | done 2c58dd1d | **Pin `createdAt` in `AtlasSettle.test.js`'s `newGame()`**: several tests take their seed from `Date.now()`, so the seeded-random setup does not make them repeatable (found fixing T-276) | T-276 |
 | T-279 | P3 | open | **Ledger: price a Hall rank in its skill's main input when the skill gathers nothing** (today Smithing, Cooking, Crafting, Construction and the Hearth are priced in Redberry, Cherry or Trout, the fastest gathered item of the tier) | brief 320 H3 |
 | T-280 | P3 | open | **Ledger: the Hall payback check counts the cost of opening a star** (its neighbours), so proposals and Typical's purchases agree (today yield stars price at ~24 h and Typical rarely buys them) | brief 320 H3 |
+| T-281 | P2 | open | **Ledger: milestone perks count only for work gated at or above the perk's level** (`pace.js` prices each work at its own required level; the level track is memoised per skill, profile and stage), so Typical and Maxed overstate later levels on low-level work (Smithing and Fishing XP about 2× slow after level 10). Price per level band at each perk level; `profiles.js` comment says otherwise | calibration fix 2026-10-31 |
 | T-260 | P1 | built 79c6b01c; owner sets tiers | **Recruits may hold copper weapons** (owner 2026-10-27, reverses the C2 call that Recruits refuse weapons): no hero leaves Recruit in plane 1 (the Fighter needs Mining and Smithing 10), so crafted copper swords were useless | K4 |
 | T-176 | P2 | open | **The quest board** ([concept_quests_tutorial.md](../active/concept_quests_tutorial.md), "The quest board", owner 2026-10-20): one fixture board at the bottom-left of every Region's mat; click opens its card on the quest list; up to 3 collect/hunt bounties from reachable content, Bank have/need, Claim takes items and bursts materials as floating loot; tutorial step pinned first; gold outline and ready count at rest. Replaces the loose quest Tokens. Brief 170. | owner interview |
 | T-175 | P2 | owner | (Concept still a draft, owner 2026-10-14: not for the director yet.) **Collectors: the Guild Hall and warehouses** ([concept_collectors.md](../active/concept_collectors.md)): the Hall collects all loot in a small radius from the start, widened by a ranked Hall star; warehouses built on Foundations collect items with one tag (CMS Collects block: tag, radius, interval ~60 s), bigger radius on higher tiers, no upkeep; shared sweep clock, nearest collector wins, items fly in; Bank-full leaves loot and shows the yellow mark; reach ring on hover, drag, placing. Remove the auto-collect setting. Engineer. WORK CHANGED expected. Cost-log line. Eye-check. | concept_collectors.md |
