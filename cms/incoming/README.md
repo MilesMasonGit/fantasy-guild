@@ -125,7 +125,9 @@ that tier, at the Typical player, as the Ledger's timeline shows it) says so in 
 ```
 
 - **`tier`**: the stage, a whole number from 0 (0 the Starter Camp), one declaration per tier.
-- **`move`**: `faster` or `slower`.
+- **`move`**: `faster` or `slower`. When entries lose their time, a stage time that drops would
+  read as slower; a declared `faster` still matches when the timed part got faster, and the gate
+  notes how many entries went untimed.
 - **`note`**: why, in a sentence; the review shows it.
 - **`toHours`** (optional): where the stage should land, in hours from a new game; the move then
   matches only if it lands within the Ledger's tolerance (±25 % by default) of it.
