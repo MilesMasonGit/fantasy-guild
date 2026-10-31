@@ -95,8 +95,8 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
   Token editor: trees, fruit trees and veins), wherever it came from, an old save
   included. Demolition still takes any of them but a map's node (unless its type
   can be cleared: Demolition below), the camp's and a landmark. *(`FixedTokens.js`)*
-- **Token cap: 128 Tokens** to start (owner, Atlas D-9: a Guild Hall upgrade
-  will add 16 a rank, up to 256; not built yet). The cap is the guild's but
+- **Token cap: 128 Tokens** to start (owner, Atlas D-9); the Guild Hall's
+  **Token Cap** upgrade adds 16 a rank over 8 ranks, up to 256 (§8). The cap is the guild's but
   counts only the Region the guild is in (§10): every Token there, placed or
   spawned, and the **landmarks** (Token
   types marked `landmark`: the endgame sites, Atlas D-1; none are authored
@@ -1032,6 +1032,7 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 | Bank Tabs | 15 | +1 Bank tab (64 slots) per rank |
 | Wishing Well | 10 | 10 × *rank* Water every 5 min as Passive Production, no hero needed (rank 1 free) |
 | Notice Board | 3 | +1 bounty quest cap per rank |
+| Token Cap | 8 | +16 Tokens on the mat per rank, from 128 up to 256 *(`MatCap.js`)* |
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*

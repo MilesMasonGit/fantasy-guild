@@ -553,8 +553,8 @@ function CropRow({ recipe, fields, onChange }) {
 function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext, onChange, onDelete }) {
   const building = buildsOnFoundation(recipe);
   const [tagDraft, setTagDraft] = useState('');
-  // A context requirement is `{ tag, minTier, chargeCost }`, not a bare tag:
-  // the minimum tool tier it needs, and what a cycle costs that adjacent Token.
+  // A context requirement is `{ tag, minTier, chargeCost }`, not a bare tag. Help is free, so the
+  // engine never reads `chargeCost`: it stays in the data but has no box.
   const context = recipe.requiresContext || [];
   const contextTags = context.map((c) => c.tag);
 
@@ -608,7 +608,7 @@ function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext
         />
       )}
 
-      {/* N context requirements, ALL of which must be present. A higher tier satisfies a lower requirement. The charge cost comes off the adjacent Token per cycle; it is separate from the station's own charge cost, and both apply. */}
+      {/* N context requirements, ALL of which must be present. A higher tier satisfies a lower requirement. */}
       <div>
         <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
           Requires context (all of)
@@ -639,12 +639,6 @@ function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext
                   value={c.minTier ?? 1}
                   min={1}
                   onChange={(v) => patchContext(i, { minTier: Math.max(1, v) })}
-                />
-                <NumberCell
-                  label="Charge cost"
-                  value={c.chargeCost ?? 0}
-                  min={0}
-                  onChange={(v) => patchContext(i, { chargeCost: Math.max(0, v) })}
                 />
               </div>
             </div>

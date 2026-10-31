@@ -5,7 +5,7 @@ import os from 'os';
 import path from 'path';
 import { EventEmitter } from 'events';
 import React from 'react';
-import { render, cleanup, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, cleanup, fireEvent, waitFor, within, configure, getConfig } from '@testing-library/react';
 
 import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useReviewStore } from '../../cms/src/stores/useReviewStore';
@@ -102,17 +102,23 @@ describe('the review rules', () => {
 const noStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 const WORKSPACE_KEY = 'fantasy-guild-cms-v2';
 
-describe('the review page in the CMS', () => {
+// Each case mounts the whole CMS and round-trips the file server: slow on a busy machine, so the
+// waits get 10 s (not testing-library's 1 s) and each case 30 s.
+describe('the review page in the CMS', { timeout: 30_000 }, () => {
     let dir;
     let handler;
     let storedBefore;
+    let asyncUtilTimeout;
 
     beforeAll(() => {
+        asyncUtilTimeout = getConfig().asyncUtilTimeout;
+        configure({ asyncUtilTimeout: 10_000 });
         storedBefore = localStorage.getItem(WORKSPACE_KEY);
         useEntityStore.persist.setOptions({ storage: noStorage });
         useReviewStore.persist.setOptions({ storage: noStorage });
     });
     afterAll(() => {
+        configure({ asyncUtilTimeout });
         expect(localStorage.getItem(WORKSPACE_KEY)).toBe(storedBefore);
     });
 

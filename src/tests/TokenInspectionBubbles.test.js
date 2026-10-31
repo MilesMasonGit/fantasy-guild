@@ -15,7 +15,7 @@ import * as Flags from '../systems/board/Flags.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
-import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { tokenStartingUses, registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
@@ -143,6 +143,28 @@ describe('inspection bubbles', () => {
         const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer' }));
         expect(text(container, 'charges')).toBe('5k');
         expect(text(container, 'time')).toBe('12s');
+    });
+
+    it('an enemy shows no charges, as the mat and the card hide them', () => {
+        const foe = put(TOKEN, 'fixture_enemy');
+        const { container } = mount(h(TokenInspection, { typeId: 'fixture_enemy', instanceId: foe.id }));
+        expect(container.querySelector('[data-inspect-bubble="charges"]')).toBeNull();
+        cleanup();
+        const shop = mount(h(TokenInspection, { typeId: 'fixture_enemy' }));
+        expect(shop.container.querySelector('[data-inspect-bubble="charges"]')).toBeNull();
+    });
+
+    it('a context Token nothing uses has no Drives stub', () => {
+        registerTokenTypes({
+            fixture_idle_context: {
+                id: 'fixture_idle_context', name: 'Fixture Idle Context', tokenType: 'context',
+                rarity: 'common', theme: 'fixture', uses: 40, sprite: 's_flask',
+                provides: [{ tag: 'ctx_fixture_nobody_needs', minTier: 1 }]
+            }
+        });
+        const { container } = mount(h(TokenInspection, { typeId: 'fixture_idle_context' }));
+        expect(container.textContent).not.toContain('Nothing yet');
+        expect(container.textContent).not.toContain('Drives');
     });
 
     it('wording: unlimited charges read infinity, and no XP or cycle leaves that bubble out', () => {

@@ -74,8 +74,9 @@ function findingsBeyond(a, b) {
 
 /**
  * A stage's move: `beyond` when it moved by more than the tolerance either way. ⚠️ A stage time is
- * its slowest timed entry, so when entries lose their time (`lost`) and the time drops, the drop is
- * those entries falling out, not the stage getting faster: it reads as slower.
+ * its slowest timed entry, so when entries lose their time (`lost`) and the time drops, the drop may
+ * be those entries falling out, not the stage getting faster: `direction` reads it as slower.
+ * `timedDirection` is the way the timed part moved, whatever fell out.
  */
 function stageMove(before, after, tolerancePct) {
     const b = before.hours;
@@ -87,14 +88,15 @@ function stageMove(before, after, tolerancePct) {
     else if (b !== null && a === null) pct = Infinity;
     if (Number.isFinite(pct) && Math.abs(pct) < 0.005) pct = 0;
     const beyond = pct !== null && Math.abs(pct) * 100 > tolerancePct;
-    const direction = pct > 0 || (lost && pct < 0) ? 'slower' : pct < 0 ? 'faster' : null;
-    return { pct, beyond, direction, lost };
+    const timedDirection = pct > 0 ? 'slower' : pct < 0 ? 'faster' : null;
+    const direction = lost && pct < 0 ? 'slower' : timedDirection;
+    return { pct, beyond, direction, timedDirection, lost };
 }
 
 /**
  * What changed from `before` to `after`.
  * @returns {{ tolerancePct, stages, moved, added, cleared }}
- *   `stages` `[{ tier, label, before, after, budgetHours, pct, beyond, direction, lost, untimedBefore, untimedAfter }]`
+ *   `stages` `[{ tier, label, before, after, budgetHours, pct, beyond, direction, timedDirection, lost, untimedBefore, untimedAfter }]`
  *   for each stage with entries on either side; `moved` `[{ key, name, kind, change, from, to, distance }]`
  *   (`change` 'earlier' | 'later' | 'lane' | 'new' | 'gone'; `from`/`to` `{ lane, hours, level }` or
  *   null), furthest first, new and gone first of all; `added` and `cleared` the findings turned on
