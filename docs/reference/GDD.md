@@ -538,36 +538,70 @@ fires, spends nothing.
   numbers). Healed, they wait at the Hall for a new job; a healing hero takes
   no job ("Ana is healing: 0:42").
 
-### Equipment — Partial
-A 3×3 loadout grid with category caps (hand 2 — two hands: a tool takes one,
-a two-handed weapon both — hat 1, chest 1, trinket 2,
-food 1, drink 1, consumable unlimited). Gear, weapons and tools are one copy
-per hero: equipping takes the copy out of the Bank. **Bait** for fishing is
-carried in a consumable cell and spent from the Bank, one per catch (§3,
-Fishing).
-- **A weapon** is anything held in the hands that is not a gathering tool. It
-  names **one style** (`styles: ['melee']`; an older list of two, the Dagger's,
-  fights in its first and the audits say so), its **damage** and its **speed**
-  (fast 2 s, normal 3 s, slow 4 s). **The weapon decides the style**: any hero
-  may hold any weapon, and fights in its style. A weapon naming no style is
-  Melee. Older content's single `skillRequired` style is read as its style.
+### Equipment — Built
+A 3×3 loadout grid with category caps (hand 2 — two hands: a weapon, a tool
+or an off-hand item takes one, a two-handed weapon both — hat 1, chest 1,
+trinket 2, food 1, drink 1, consumable unlimited). Gear, weapons and tools are
+one copy per hero: equipping takes the copy out of the Bank. **Bait** for
+fishing and **arrows** for a bow are carried in consumable cells and spent from
+the Bank, one per catch or per shot (§3 Fishing, §6 The fight).
+- **A weapon** is anything held in the hands that is not a gathering tool or an
+  off-hand item. It names **one style** (`styles: ['melee']`; an older list of
+  two fights in its first and the audits say so), its **damage**, its **speed**
+  (fast 2 s, normal 3 s, slow 4 s) and its **damage type** (`damageType`, one
+  of the nine, §6; a weapon without one hits in its style's default: Melee
+  Slash, Ranged and Stealth Stab, Magic Fire). **The weapon decides the
+  style**: any hero may hold any weapon, and fights in its style. A weapon
+  naming no style is Melee. Older content's single `skillRequired` style is
+  read as its style. The type comes from the family and its name, never the
+  tier: swords are Slash at every metal, and a magical type is named on the
+  item ("Ember Wand").
+- **The hands** (owner: off-hand items only in the second hand): **only the
+  weapon swung lends anything**, the first in the hands whose level the hero
+  meets; a weapon in the second hand lends nothing, whatever its style. Taking
+  up a weapon puts the one held down in its place, and taking up an off-hand
+  item puts the one held down; a tool stays beside either. A two-hander clears
+  both hands. An older save holding two weapons keeps them until the next
+  weapon is taken up. *(`weaponStyles.js`, `EquipmentManager.js`)*
+- **An off-hand item** (`offHand: true`, CMS "Held as: an off-hand item") is a
+  hand item that is never swung: a **shield** acts like a piece of body armour
+  (its resistances, cuts and rules, no block chance); a quiver or a focus orb
+  lends its rules. It carries no weapon numbers.
+- **Defence is percentages, by damage type** (flat Armour, flat Resistance and
+  Pierce are retired). Every worn piece (a hand item, hat, chest or trinket) may
+  carry **resistances** (`resistances: { physical: 20, fire: 10 }`: percent off
+  hits of that type or group the wearer takes; negative is a weakness) and a
+  **damage cut** to named styles (`damageCut: { magic: 30 }`: percent off the
+  wearer's own hits while they fight in that style, shown red in the tooltip).
+  **Every piece is a trade-off** (owner): metal resists Physical and cuts Magic
+  and Stealth, so a mage is worse off in an iron chestplate than in nothing.
+  **Gear lines add** across pieces and within one (Physical 20 and Slash 10
+  resist Slash 30), unlike an enemy's. There is **no cap**: gear numbers are kept
+  small instead, and the content audit names any type a hero's best possible
+  stack (best hat, chest, two trinkets, hands, every perk) takes to 100 % or
+  more. *(`gearDefence.js`, `gearDefenceRule.js`)*
 - **Level requirement** (K1): a weapon may ask a level in its own style
-  (`levelRequired`: "Iron Sword: Melee 15"); armour and trinkets name the style
-  (`skillRequired`) beside the level. Equipping below it is refused, "Needs
-  Melee 15". Gear held below its level (an older save, or a level added later)
-  stays in its slot, lends nothing, and a weapon is not swung. A second weapon
-  in hand of another style than the one swung lends nothing either.
-  *(`weaponStyles.js`, `EquipmentValidator.js`)*
+  (`levelRequired`: "Iron Sword: Melee 15"); armour, off-hand items and
+  trinkets name the style (`skillRequired`) beside the level. Equipping below
+  it is refused, "Needs Melee 15". Gear held below its level (an older save, or
+  a level added later) stays in its slot, lends nothing, and a weapon is not
+  swung. *(`weaponStyles.js`, `EquipmentValidator.js`)*
 - **A family's ability is a Rules effect on the item.** Every tier of a family
-  points at the same library effect (a "Spear" effect: Provides 1 more Pierce),
-  each with its own **scale** (copper 1, iron 2…), so the tier raises the
-  number. Armour carries its stats and abilities the same way (Provides Armor;
-  a Hide Vest: Poison stacks at most 1 lower). An ability may touch anything
-  the grammar reaches, work included (a Cleaver's chance to double Raw Beef
-  works on a kill and on a work cycle alike).
-- **No weapon or armour ships yet** (`items.json` has tools, food, drink,
-  materials, maps and one potion); the first come as a CMS change pack (brief
-  220 C0).
+  points at the same library effect (the Dagger: Provides 5 Crit Chance), each
+  with its own **scale** (copper 1, iron 2…), so the tier raises the number.
+  Armour may carry abilities the same way (a Hide Vest: Venom stacks at most 1
+  lower; Type Resistance % rows count beside its own lines). An ability may
+  touch anything the grammar reaches, work included (a Cleaver's chance to
+  double Raw Beef works on a kill and on a work cycle alike).
+- **What ships** (copper and iron): Sword, Dagger, Cleaver, Greatsword (two
+  hands), Bow and Wand at each metal; Leather Hat and Chest, Copper and Iron
+  Helmet and Chestplate; the Elixirs of Valor and Ironskin. The combat content
+  pack (brief 280 V5, in the owner's CMS review) gives the weapons their types
+  (swords and cleavers Slash, greatswords Crush, daggers Stab and Stealth only,
+  bows Electric, the Copper Wand Fire, the Iron Wand Ice), re-authors the
+  armour as resistances and cuts, and adds the first arrows and a Copper Shield.
+  Until it is accepted the shipped armour still names the retired Armor row and
+  does nothing.
 
 ### Orders: how heroes get work — Built (the heart of the game)
 Heroes do not choose their own work: **the player sends each hero to a job by
@@ -695,37 +729,77 @@ less micromanagement than area flags).
 ## 6. Combat and enemies
 
 ### Enemies — Built
-Enemies are Tokens with `enemy: { level, style, kinds?, hostile? }`. **The
-level fills every number from the level table**: HP 20 + level, a hit of 1 + 1
-per 20 levels, 1 armour per 30 levels, a swing every 3 s, XP 10 × 1.065^(level
-− 1), no Dodge, Accuracy or Pierce, a 5 % crit (the table and its worked
-duels: `concept_combat.md`, "The level table and weapon tiers").
+Enemies are Tokens with `enemy: { level, style, kinds?, hostile?, boss?,
+resistances?, moves? }`. **The level fills every number from the level
+table**: HP 20 + level, plus 4 HP per 30 levels (the old armour step), a hit of
+1 + 1 per 20 levels, a swing every 3 s, XP 10 × 1.065^(level − 1), no Dodge or
+Accuracy, a 5 % crit (the table and its worked duels: `concept_combat.md`,
+"The level table and weapon tiers").
+- **Resistances and weaknesses** come in **fixed steps** (owner): resist 25,
+  50 or 100 %, weak 25 or 50 % (`resistances: { physical: 50, crush: -50 }`),
+  by damage type or group, several per enemy. A **type's line replaces its
+  group's** for that type ("Skeleton: Physical resist 50 %, Crush weak 50 %"
+  reads as written). Readable from the creature: a shell resists Slash, a fire
+  elemental ignores Fire. Most enemies have 0–1 lines, bosses up to 3, and no
+  enemy shuts out every type a style can reach at its tier. Shown on the enemy
+  card from the start. *(`damageTypes.js`)*
+- **Moves** (owner: "each enemy has a few attacks, picked at random"): an enemy
+  may list moves, one made each swing, picked by weight (`moves: [{ name,
+  damageType, hits, effectId, target, lasts, weight }]`). A move hits with the
+  enemy's own hit in its own type or group, or lands an effect on itself or the
+  hero, or both: the owner's chicken Pecks (Stab), Scratches (Slash) and
+  Flutters (no hit: +50 % Physical resistance on itself for one attack); a
+  Smash may ride a Heavy Strike for that swing. An effect lasts **one attack**
+  (until the next attack on its bearer is over, hit or miss), **the swing** (on
+  itself only) or **the fight**; a status keeps its own lifetime. An enemy with
+  no moves swings a plain **Physical** hit, as before. The moves show on the
+  enemy card from the start; the float, the log and the fight panel name the
+  move made. *(`enemyMoves.js`)*
 - **Kinds** (none, one or two, CMS presets the player discovers by fighting):
-  **Armoured** +2 armour and slow (4 s, same hit); **Nimble** +15 Dodge;
-  **Swift** a swing every 2 s at 2/3 of the level's hit; **Brute** a swing
-  every 4 s at 4/3 of the level's hit and at least 1 more; **Venomous**
-  lands a stack of the **Poison** status on the hero with every hit that
-  leaves them standing (the library's `effect_poison`; without it the kind
-  poisons nobody and the content check says so). Swift clashes with Armoured
-  and Brute (both set the swing); the CMS refuses the pair.
-  Kinds never change HP or XP. *(`enemyKinds.js`)*
+  **Armoured** Physical resistance 50 % and slow (4 s, same hit; an author's
+  own Physical line replaces it); **Nimble** +15 Dodge; **Swift** a swing every
+  2 s at 2/3 of the level's hit; **Brute** a swing every 4 s at 4/3 of the
+  level's hit and at least 1 more; **Venomous** lands a stack of the **Venom**
+  status on the hero with every hit that leaves them standing (the library's
+  `effect_venom`). Swift clashes with Armoured and Brute (both set the swing);
+  the CMS refuses the pair. Kinds never change HP or XP. *(`enemyKinds.js`)*
 - **Order**: the level table (older content's `budgetScale` multiplies its HP,
   hit and XP, rounded halves up, at least 1), then each kind in the order
   ticked (hits rounded halves up, at least 1), then **any number written beside
-  the level** (`hp`, `hit`, `armor`, `speed` fast/normal/slow, `xp`, `dodge`,
-  `accuracy`, `pierce`, `critChance`) **replaces the result outright**. The
-  CMS shows every number filled from the level and kinds, greyed "from level",
-  until the author types one ("yours", with a button back).
-  *(`enemyProfile.js`)*
+  the level** (`hp`, `hit`, `speed` fast/normal/slow, `xp`, `dodge`,
+  `accuracy`, `critChance`) **replaces the result outright**, and an authored
+  resistance line replaces a kind's on the same key. The retired `armor` and
+  `pierce` fields are ignored and named by the audits. The CMS shows every
+  number filled from the level and kinds, greyed "from level", until the
+  author types one ("yours", with a button back). *(`enemyProfile.js`)*
 
-4 ship, **all melee**, none with a kind:
+18 ship, across all four styles, on plane 1 and plane 2 (Fire Elemental,
+Sulphur Lizard, Frog and their bosses):
 
-| Enemy | Level | HP · hit · armour | Hostile | Uses | Drops |
-|---|---|---|---|---|---|
-| Goblin | 1 (×0.3) | 6 · 1 · 0 | yes | 1 | Bones, 30 % Copper Ore |
-| Goblin Chief | 3 (×0.6) | 14 · 1 · 0 | yes | 2 | 1–2 Copper Ingot, Bones, 25 % Beeswax Comb |
-| Cow | 1 | 21 · 1 · 0 | no | 100 | Bones, 50 % Raw Beef |
-| Thorn Elemental | 1 | 21 · 1 · 0 | no | 100 | 1–2 Blackberry |
+| Enemy | Level | Style | Kinds | Boss |
+|---|---|---|---|---|
+| Thorn Elemental | 1 | melee | — | |
+| Cow | 1 | melee | — | |
+| Crab | 3 | melee | Armoured | |
+| Wolf | 4 | melee | Swift | |
+| Goblin | 5 (hostile) | melee | — | |
+| Bee | 6 | stealth | Nimble | |
+| Greater Slime | 8 | melee | Armoured | yes |
+| Wolf Alpha | 10 | melee | Brute | yes |
+| Water Elemental | 12 | magic | Armoured | yes |
+| Wind Elemental | 12 | ranged | Swift | yes |
+| Queen Bee | 14 | stealth | Venomous | yes |
+| Frog | 15 | stealth | Nimble | |
+| Sulphur Lizard | 16 | melee | Armoured | |
+| Fire Elemental | 17 | magic | Brute | |
+| Goblin Chief | 20 (hit 4) | melee | Brute | yes |
+| Toxic Frog | 22 | stealth | Venomous | yes |
+| Big Lizard | 24 | melee | Armoured | yes |
+| Fire Elemental Chief | 25 | magic | Brute | yes |
+
+Their resistances, weaknesses and moves come with the combat content pack
+(brief 280 V5, in the owner's CMS review; the analyst's starter table in
+`concept_combat_v2.md`), which also brings the Goblin Chief to level 12.
 
 - Goblins come from the Goblin Camp; enemies potter within 128 u of their
   spawner at half of 90 u/s and walk back if moved.
@@ -790,34 +864,65 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   slow 4 s (barehanded: 3 s). The weapon swung is the first in the hands the
   hero may hold (its level met); its style is the hero's for the fight. An enemy swings at
   its own speed (3 s unless a kind or the author says otherwise).
-- **Damage is fixed**: the weapon's damage (a fist is 1) + 1 per 20 combat
-  levels + flat Damage from gear, times any damage buffs and the matchup,
-  rounded halves up. No spread.
+- **Damage types** (owner, brief 280): nine types in three groups.
+
+  | Group | Types | Mostly reached by |
+  |---|---|---|
+  | **Physical** | Slash, Crush, Stab | Melee (all three), Stealth (Stab), Ranged (the arrow) |
+  | **Elemental** | Fire, Ice, Electric | Magic, Ranged (the bow) |
+  | **Special** | Poison, Light, Dark | Stealth (Poison, Dark), Ranged (the bow), later content |
+
+  **Only weapons and ammo give a hit its type**: a weapon has one, a ranged shot
+  two (the bow's and the arrow's). Armour, off-hand items and elixirs only
+  boost or resist types. A fist is Crush. *(`damageTypes.js`)*
+- **The hit, in order**: (the weapon's damage, a fist 1 + 1 per 20 combat
+  levels + flat Damage from gear) × the matchup × Damage % buffs × (1 − the
+  hero's damage cut for the style, from gear) → × 2 on a crit → each part × its
+  **type factor** (1 + the attacker's Type Damage % for that type − the
+  target's resistance to it after Sunder; never below 0) → the parts summed →
+  **the fraction rolls**: 1.1 does 1 nine times in ten and 2 one time in ten.
+  No flat armour and **no "at least 1"**: a resisted hit can do 0, and immunity
+  means 0. A landed hit that does 0 is still a hit (On Hit rules fire). An
+  enemy's hit is its Hit (+ flat Damage) the same way, in its move's type, or
+  as Physical with no move: only the hero's Physical lines resist a plain
+  swing, a Slash line alone does not.
+- **Arrows**: a hero fighting with a Ranged weapon shoots the first arrow
+  carried in a consumable cell that the Bank still holds, **one per shot, hit
+  or miss**. A shot is the bow's damage (with the level step and flat Damage)
+  in the bow's type plus the arrow's damage in the arrow's type (`arrow: {
+  damage, damageType }` on a Consumable; usually Stab), so a ghost immune to
+  Physical still takes the bow's part. With none left **the bow shoots its own
+  part alone** (owner). An arrow's own On Swing and On Hit rules count only on
+  the shot that spends it (a Sundering arrow sunders only when shot).
+  *(`combat/Arrows.js`)*
 - **Misses**: 10 % at an even level, 1 point less per level the attacker is
   above the defender (more when below), that part kept between 5 % and 25 %;
   then + the defender's Dodge − the attacker's Accuracy, kept between 5 % and
   40 %. Both sides roll the same way.
-- **Crits**: 5 % (gear adds Crit Chance), doubling the hit **before** armour.
-  Enemies crit at 5 % unless authored.
-- **Armour is flat**: each point takes 1 off every hit, which always does at
-  least 1. **Pierce** ignores that many armour points. Flat Resistance comes
-  off after armour.
-- Every percentage rounds to the nearest whole, halves up.
+- **Crits**: 5 % (gear adds Crit Chance), doubling the hit before the type
+  factor. Enemies crit at 5 % unless authored.
+- **The floats and the log name the type**: "Weak!" when the target's
+  weaknesses outweigh its resistances across the hit's parts, "Resisted" the
+  other way; a shot shows both its types.
 - **Barehanded is a Melee punch**: 1 + the Melee level step, every 3 s, on the
-  melee side of the cycle, earning Melee XP. A hero's level for the damage step
-  and the miss gap, both ways, is their level in the style they fight in.
+  melee side of the cycle, in Crush, earning Melee XP. A hero's level for the
+  damage step and the miss gap, both ways, is their level in the style they
+  fight in.
 - **A four-way cycle: melee > ranged > magic > stealth > melee**: +25 %
-  damage for the favoured side, −25 % for the other (a 2 becomes 3, or stays 2).
-  Opposite pairs (melee and magic, ranged and stealth) are even, so each style
-  has one good matchup, one bad one, and two even. A hero fights on their
-  weapon's side (Melee barehanded). An enemy's Style is one of the four combat skills (the CMS dropdown
-  follows the skill registry). Every shipped enemy is melee.
+  damage for the favoured side, −25 % for the other (owner: early fights are
+  barely shaped by it; at 20–30 damage it shows). Opposite pairs (melee and
+  magic, ranged and stealth) are even, so each style has one good matchup, one
+  bad one, and two even. A hero fights on their weapon's side (Melee
+  barehanded). An enemy's Style is one of the four combat skills.
 - **No regen in a fight**: below 25 % HP the hero eats food instead of
   swinging; drinks never heal. Elixirs are drunk as a fight starts
   (section 4).
-- Each swing draws one random number for the miss and, on a hit, one for the
-  crit, from the game's random stream in a fixed order, so a catch-up replays
-  the same fights as live play.
+- **Fleeing**: dragging a hero to another job ends their fight, as it ends any
+  job (owner).
+- **Random draws, in a fixed order** so a catch-up replays the same fights as
+  live play: an enemy with two moves or more draws its move first in its
+  swing; then each swing draws one number for the miss, on a hit one for the
+  crit, and one for the fraction only when the hit has one.
 - Kills give XP to the style fought in (the weapon's) and count as a work cycle for
   neighbour rules. Loot drops on the mat, through the same yield, double-loot,
   double-item (a Cleaver's) and bonus-drop rules as a station's output (T-017).
@@ -825,15 +930,16 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   and none when nothing offers it.
   *(`FormulaRegistry.js`, `CombatFormulas.js`, `src/systems/combat/`)*
 
-### Status effects — Built, no content yet
+### Status effects — Built
 - **A status is a library effect with a status block** (`status: { stacks,
   ticks }`, the Status section of the CMS Effect editor): each landing adds a
   stack up to `stacks` (1 = it does not stack, landing again renews it), its
   rules count once per stack, and it lasts `ticks` ticks, or the whole fight
   at 0. What it does each tick is an ordinary On Tick rule ("deals 1 damage to
-  itself, ignoring armour"); what it changes while carried an ordinary
-  Provides (Burn's −50 % Food Healing). *(`LiveEffects.js`,
-  `effectLibrary.statusBlockOf`)*
+  itself"; a Deals rule's damage is untyped and lands whole); what it changes
+  while carried an ordinary Provides (Burn's −50 % Food Healing). Statuses are
+  separate from damage types (owner): a Fire weapon does not Burn unless a rule
+  says so. *(`LiveEffects.js`, `effectLibrary.statusBlockOf`)*
 - **Statuses are fight things**: one lands only on a fighter (a hero in a
   fight, or the enemy), and **every status ends with its fight**: the kill, a
   knockout, the hero leaving, a load. No hero falls to poison on the way home.
@@ -841,32 +947,46 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   (heroes in roster order, then each fight's enemy). A tick that knocks a hero
   out is a defeat like any other (one banner, one gear roll); one that
   finishes the enemy is a kill before it swings again.
-- **The first two** (the owner's numbers): **Poison** stacks to 3, 1 damage
-  per stack per tick until the fight ends; **Burn** does not stack, 1 a tick
-  for 3 ticks, and food heals half while it burns. Bleed, Stun and Shield wait
-  for a later pass; Well Fed and Cookout go with the drinks.
+- **The statuses** (the owner's numbers): **Venom** (once named Poison, now
+  that Poison is a damage type) stacks to 3, 1 damage per stack per tick until
+  the fight ends; **Burn** does not stack, 1 a tick for 3 ticks, and food heals
+  half while it burns; **Sunder** stacks to 3 and lasts the fight, each stack
+  taking 10 points off **every resistance** its bearer has, never below 0 (a
+  weakness, or no resistance, is untouched; it replaces the retired Pierce).
+  Bleed, Stun and Shield wait for a later pass; Well Fed and Cookout go with
+  the drinks.
+- **The Venom rename** is a content migration (`effectIdMigration.js`):
+  `effect_poison` is read as `effect_venom` wherever content names it, as the
+  game loads `data/` and on every CMS load path, so the owner's next Sync
+  writes the new id. No save needs it (every status ends with its fight).
 - What a fighter carries moves them: **Status Stack Limit** (a Hide Vest:
-  Poison stacks at most 1 lower; at 0 it cannot land) and **Status Immunity**
+  Venom stacks at most 1 lower; at 0 it cannot land) and **Status Immunity**
   name a status effect. A cap lowered mid-fight never strips stacks carried.
-- What lands them: the Venomous kind, and any rule's Applies on either side
-  (a weapon's "On Hit: applies Burn to the enemy", a boss's status attack).
-- **None ship**: the combat content pack authors Poison (as `effect_poison`,
-  the id Venomous names) and Burn. An older save's statuses (the old status
-  engine's, which outlasted their fights) are dropped on load.
+- What lands them: the Venomous kind, an enemy's move, and any rule's Applies
+  on either side (a spear's or an arrow's "On Hit: applies Sunder to the
+  enemy", a boss's status attack).
+- **Shipped**: Poison (read as Venom) and Burn. The combat content pack adds
+  Sunder (landed by the Iron Bodkin Arrow) and Flutter (a Bee's move). An
+  older save's statuses (the old status engine's, which outlasted their
+  fights) are dropped on load.
 
-### Boss moves — Built, no content yet
-Any enemy can carry rules on the three **fight moments** (§7): **On Swing**
-(every Nth swing, before it is rolled), **On Hit** (every Nth landed hit,
-after its damage) and **On Health Below X %** (once a fight). The first moves
-are ordinary rules on them:
-- a **heavy strike**: "On Every 4th Swing: applies Heavy Strike to the enemy
-  for the swing" (Heavy Strike: +100 % Damage, so that swing hits double);
-- a **status attack**: "On Every 3rd Hit: applies Burn to the hero";
-- a **heal or +2 armour**: "On Health Below 50%: heals 10 health on itself",
-  "…: applies Stone Skin to the enemy for the fight" (+2 Armor; no Shield
-  status);
+### Boss moves — Built
+Beside its moves (§6 Enemies, made one a swing at random), any enemy can carry
+rules on the three **fight moments** (§7): **On Swing** (every Nth swing,
+before it is rolled), **On Hit** (every Nth landed hit, after its damage) and
+**On Health Below X %** (once a fight). These still run on every swing,
+whatever the move; a move that does not hit counts as a swing, not a hit. The
+shipped bosses use them:
+- a **heavy strike**: "On Every 6th Swing: applies Heavy Strike to the enemy
+  for the swing" (Heavy Strike: +100 % Damage, so that swing hits double; the
+  Goblin Chief, the Wind Elemental every 3rd);
+- a **status attack**: "On Every 3rd Hit: applies Burn to the hero" (the Fire
+  Elemental Chief; the Greater Slime lands Venom);
+- a **heal or a resistance**: "On Health Below 50%: heals 10 health on itself"
+  (the Water Elemental), or "…: applies Stone Skin to the enemy for the fight"
+  with Stone Skin a Type Resistance % row;
 - an **enrage**: "On Health Below 30%: applies Enrage to the enemy for the
-  fight" (−50 % Swing Time, or more Damage).
+  fight" (−50 % Swing Time; the Queen Bee, the Wolf Alpha below 50 %).
 
 On a monster's own rule "the enemy" is that monster and "the hero" the hero it
 fights; "itself" is the monster. Enemies read flat and percentage Damage and
@@ -893,25 +1013,29 @@ Statuses are not drawn on the board.
 - **Floating numbers** rise at each fighter's outer side, beside the middle of
   their art, and are gone in half a second: white on the enemy (on the strike
   frame of the hero's swing), red on the hero, "Miss", a big number under a
-  gold "Crit!", green heals (a meal, or a rule's heal on either side), and
-  poison and burn ticks in red with a drop or a flame. Two at once on one side
-  stack upward.
+  gold "Crit!", "Weak!" or "Resisted" and the hit's types, the enemy's move
+  by name, green heals (a meal, or a rule's heal on either side), and Venom
+  and Burn ticks in red with a drop or a flame. Two at once on one side stack
+  upward.
 - **The fight panel** opens over the mat beside the chip, one at a time (the
   X, Escape or a click off it closes it): the battlefield strip with both
   fighters at 1×, the hero on the left facing right, moving as on the mat
   (idle, one swing per real swing; an enemy without an animation sheet stands
   still: today every enemy but the Cow); the **versus card**, one shared icon
   column so each pair reads across: style and level, health, hit (before the
-  other side's armour and the matchup: the player does the sums), armour,
-  swing; the hero's elixirs and statuses (with stacks) beside the enemy's
-  kinds (once fought), statuses and lingering moves; and the **log**, closed
+  other side's resistances and the matchup: the player does the sums),
+  resistances and weaknesses (the enemy's as they stand in the fight, after
+  effects on it and Sunder), swing; the hero's elixirs and statuses (with
+  stacks) beside the enemy's kinds (once fought), its move list (the last one
+  made bright), statuses and lingering effects; and the **log**, closed
   until asked for, holding the whole of this fight and the last one ("This
   fight" / "Last fight", newest first, at most 400 lines a fight). A fight is
   one enemy engaged: each kill starts the next. The log is kept in memory per
   hero and never saved.
 - **The enemy card** shows by the pointer resting on an enemy: level, style,
-  health, hit, armour, swing, and its kinds once the guild has fought one
-  ("? fight one to learn" before).
+  health, hit, swing, its resistances and weaknesses and its moves (from the
+  start), and its kinds once the guild has fought one ("? fight one to learn"
+  before).
 - **"While you were away"** says the fights in one block: won and lost, the
   enemies beaten, the heroes knocked out, the food and elixirs used and what
   the kills dropped.
@@ -928,7 +1052,7 @@ Statuses are not drawn on the board.
 ## 7. Rules and effects (the statement grammar)
 
 Tokens carry **named effects** from a shared library (`data/effects.json`,
-22 effects). An effect is one or more **statements**, readable as a sentence:
+83 effects). An effect is one or more **statements**, readable as a sentence:
 `[When <moment>,] <verb> <payload> [to <filter>] [reach] [role] [, costing
 <upkeep>]`. *(`src/systems/effects/statements.js`)*
 
@@ -950,13 +1074,21 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   double loot, **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the
   Cleaver's Raw Beef), **catch weight** (a percentage on one fish's weight in a
-  water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens); armour, resist, accuracy,
-  damage, **dodge, pierce, crit chance**, status immunity and **status stack
-  limit** (one status effect stacks at most N lower or higher: the Hide
-  Vest's Poison −1; at 0 it cannot land), **swing time** and **food healing**
-  (percentages, on a lingering effect: an enrage, Burn) (heroes, and enemies
-  through effects on them). Most combat rows are flat amounts, and a new rule
-  on one starts flat. Block is gone (a miss is the only failed hit).
+  water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens); accuracy,
+  damage, **dodge, crit chance**, **Type Damage %** (the bearer's hits of a
+  type or group, or every type: "Poisoner's Cloak: Poison 15"), **Type
+  Resistance %** (hits of that type the bearer takes; negative is a weakness;
+  a group's row counts on each of its types), **Sunder** (points off every
+  resistance the bearer has, never below 0: put on a status), status immunity
+  and **status stack limit** (one status effect stacks at most N lower or
+  higher: the Hide Vest's Venom −1; at 0 it cannot land), **swing time** and
+  **food healing** (percentages, on a lingering effect: an enrage, Burn)
+  (heroes, and enemies through effects on them). Most combat rows are flat
+  amounts, and a new rule on one starts flat. **Retired**: Block (a miss is
+  the only failed hit), and Armor, flat Resistance and Pierce (brief 280:
+  defence is percentages by type, Pierce became the Sunder status); they are
+  no longer offered, do nothing, and the audits name any rule that still
+  provides them.
 - **The standard floor for speed-ups** (owner 2026-10-24, brief 230 S1a): every
   speed-up of a time (work time, grow time) stacks, but together they cut at most
   **80 %** of the authored time, one code constant (`loopConstants.MAX_SPEED_UP_CUT`;
@@ -964,10 +1096,15 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   not nothing. A work cycle is still never under 1 s. A slow-down is never capped.
   *(`TileModifiers.floorSpeedUp`)*
 - **Statuses** are library effects with a status block (§6): stacks, ticks,
-  and an end with their fight.
+  and an end with their fight. An enemy's move may land one (§6 Enemies).
 - **Gear families**: a weapon or armour family's ability is one library
   effect every tier references with its own scale (1–5), so the tier raises
-  the number.
+  the number. Gear's own resistances and damage cuts are fields of the item
+  (§4 Equipment), not rules, so each piece reads as the owner's example does
+  ("Iron Chestplate: Physical resist 20 %; Magic damage −30 %"); a Type
+  Resistance % rule on gear still counts beside them.
+- **An arrow's rules** count only on the shot that spends it: carried, it lends
+  nothing; its On Swing and On Hit rules join the hero's for that swing.
 - **Spawns and enemies**: an enemy a `Spawns` rule puts beside its bearer is an
   ambusher (§6, Encounters): it attacks the hero the moment names, is beaten in
   one kill, and holds the bearer's enemy spawns until it falls. A `Spawns` rule
@@ -1249,6 +1386,14 @@ stub rows), not the Token count.
 | **Loot** | Items lying on the mat, collected by hovering. |
 | **Perk** | A skill's milestone reward at a set level (10, 25, 50…), held by every hero at or above it, read off their levels. |
 | **Hostile / ambush** | An enemy that attacks heroes sent to work near its spawner (the camp's watch). |
+| **Damage type / group** | What a hit is made of: nine types (Slash, Crush, Stab; Fire, Ice, Electric; Poison, Light, Dark) in three groups (Physical, Elemental, Special). A weapon has one; a bow shot has two (bow and arrow). |
+| **Resistance / weakness** | Percent off (or onto, when negative) hits of a type or group. An enemy's come in fixed steps (25/50/100, weak 25/50), a type's line replacing its group's; gear's are free small numbers that add. |
+| **Damage cut** | Percent off a hero's own hits in a named style while wearing a piece (metal cuts Magic and Stealth): every gear piece's trade-off, shown red. |
+| **Arrow** | A consumable a Ranged hero carries; one is spent per shot and adds its own damage in its own type. Without arrows the bow shoots its own part alone. |
+| **Off-hand item** | A hand item that is never swung (a shield, a quiver): it lends its resistances, cuts and rules like armour. A second weapon lends nothing. |
+| **Move** | One of an enemy's attacks, picked at random each swing: a hit in its own type, an effect on itself or the hero, or both. No moves = a plain Physical hit. |
+| **Venom** | The stacking damage-over-time status once named Poison (Poison is now a damage type). |
+| **Sunder** | A stacking status that takes points off every resistance its bearer has for the fight, never below 0. Replaces Pierce. |
 | **Wounded** | 5 minutes out after defeat. |
 | **Catch-up** | Playing time away (a closed game or a sleeping PC, up to 24 h) on return, with a loading bar and a "While you were away" summary. |
 | **Tempo / purpose / anchor** | CMS economy terms: a cycle-time band; what a producer is for; the source that sets an item's value. |
@@ -1257,7 +1402,8 @@ stub rows), not the Token count.
 Retired words still found in code and old docs: tile, grid, Tray, Vault,
 deck, card, area, area flag, flag radius, Work Permissions, Scouting Flags,
 gold, Manager, Map burst, Recruit (as a title), class, job tree, promotion,
-Promotion Token, banked skill, Mastery, Change Job. Don't use them for current mechanics. In code a
+Promotion Token, banked skill, Mastery, Change Job, Armor/armour (as a flat stat), Pierce, Poison
+(as a status: it is Venom). Don't use them for current mechanics. In code a
 hero's order is still saved as their "flag" record (`board.flags`).
 
 ---

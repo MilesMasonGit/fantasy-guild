@@ -1,4 +1,4 @@
-Status: briefed 2026-10-28 (approved 2026-10-28; brief 280)
+Status: briefed 2026-10-28 (approved 2026-10-28; brief 280; V1–V3 built 2026-10-30, V4 dropped by the owner 2026-10-30, V5 content pack in review)
 
 # Combat v2: styles with character, damage types, mix and match
 
@@ -169,6 +169,13 @@ Throwing Daggers, Motes or off-hand items.
   Resistance.
 - GDD §4 Equipment and §6 are partly stale already (12 weapons and armour
   ship; 18 enemies across all four styles): fix with the clean-up.
+
+## V4 dropped (owner, 2026-10-30)
+
+The owner dropped phase V4 (style characters): no melee re-engage after a kill, no stealth sneak
+strike, no **Motes** and no **Throwing Daggers**. The style table above stays as the owner's
+description of each style's character; what is built of it is damage types, arrows (Ranged) and
+gear trade-offs. Magic's "lower base damage" is a content number, not a rule.
 
 ## Next steps
 

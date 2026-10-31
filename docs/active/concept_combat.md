@@ -1,6 +1,13 @@
-Status: briefed 2026-10-24 (detail pass approved 2026-10-24; brief [220](briefs/220_combat.md))
+Status: built 2026-10-25 (brief [220](briefs/220_combat.md)); amended by [concept_combat_v2.md](concept_combat_v2.md) (brief 280, V1–V3 built 2026-10-30)
 
-> ⚠️ **Amended 2026-10-28 by [concept_combat_v2.md](concept_combat_v2.md)** (owner, brief 280): damage types, no flat armour, enemy moves, style characters.
+> ⚠️ **Amended by [concept_combat_v2.md](concept_combat_v2.md)** (owner 2026-10-28, brief 280). What no longer holds below:
+> - **Flat Armour, the "a hit does at least 1" floor, flat Resistance and Pierce are retired**: defence is percentage resistances by damage type (nine types in three groups), gear's on each piece with a damage cut to named styles; Pierce became the **Sunder** status. The Armoured kind is Physical resistance 50 %; the level table's armour became 4 HP per 30 levels.
+> - **"Damage is fixed" and "every percentage rounds halves up"** for hits: a hit's fraction rolls (1.1 does 2 one time in ten).
+> - **"The first weapon in the hands is swung"** stands, but a weapon in the second hand lends nothing; the second hand takes off-hand items (a shield acts like body armour).
+> - **"Styles have no traits of their own"**: each style has a character (concept_combat_v2), expressed through damage types, arrows and gear trade-offs; the style-character mechanics of V4 (melee re-engage, the sneak strike, Motes, Throwing Daggers) were **dropped by the owner 2026-10-30**.
+> - **Enemies attack with moves** (a few, picked at random each swing, each with its own type or effect); the boss moves below still run beside them.
+> - **The Poison status is named Venom** (Poison is a damage type).
+> - Weapons belong to one style each (the Dagger is Stealth only in the V5 content pack); every style is open to every hero (classless heroes).
 
 # Combat and gear
 
