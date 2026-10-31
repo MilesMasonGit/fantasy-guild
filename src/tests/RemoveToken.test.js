@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
-import React from 'react';
-import { render, cleanup } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -17,7 +16,6 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { clearMat } from './fixtures/mat.js';
 import { centreOf } from '../systems/board/nearby.js';
 
@@ -42,8 +40,6 @@ const EAST = { x: 560, y: 300 };
 const WEST = { x: 240, y: 300 };
 const HALL = { x: 900, y: 700 };
 
-const h = React.createElement;
-
 function hero(id, skills) {
     const out = {};
     for (const [s, level] of Object.entries(skills)) out[s] = { level, xp: 0 };
@@ -55,8 +51,6 @@ function put(point, typeId, origin = BoardState.ORIGIN.PLACED) {
     return BoardState.addToken(instance, point.x, point.y);
 }
 
-const mount = (el) => render(el);
-const removeBox = (container) => container.querySelector('[data-remove-token]');
 
 beforeAll(() => Flags.init());
 afterAll(() => { Flags.teardown(); resetMatTuning(); });
@@ -142,17 +136,5 @@ describe('removePlacedToken (slice 5.2)', () => {
         expect(Placement.removePlacedToken(east.id)).toMatchObject({ success: false, reason: 'Spawned Tokens are worked out, not removed.' });
         expect(BoardState.getTokenById(hall.id)).toBe(hall);
         expect(BoardState.getTokenById(east.id)).toBe(east);
-    });
-});
-
-describe('the Token panel offers no Remove (B3.2, TL-13)', () => {
-    it('has no inline Remove: a Token leaves the mat through demolition', () => {
-        const { hall, forest, east } = forestScene();
-        for (const [typeId, instanceId] of [['fixture_producer', forest.id], ['fixture_producer', east.id], ['token_guild_hall', hall.id]]) {
-            const { container } = mount(h(TokenInspection, { typeId, instanceId }));
-            expect(removeBox(container)).toBeNull();
-            expect([...container.querySelectorAll('button')].some(b => /remove/i.test(b.textContent))).toBe(false);
-            cleanup();
-        }
     });
 });

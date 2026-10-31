@@ -97,7 +97,7 @@ describe('dead event wiring stays dead', () => {
      * `ui:open_loot_table` was the only door into `LootTableModal`, and
      * nothing ever published it. The modal, its `LootModule` and the
      * `useDiscovery` hook underneath went together on the drop tables they
-     * would have shown are already on screen in `TokenInspection` and
+     * would have shown are already on screen in the Token card and
      * `MapInspection`, percentages included.
      *
      * ⚠️ Not "never wanted" — superseded. If loot tables come back on a modal,

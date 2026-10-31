@@ -1,6 +1,6 @@
 /**
- * Rings: a number inside a ring that fills or empties, as the Token inspection draws its charges,
- * cycle and XP (`InspectBubbles`). The mat's Tokens say theirs on the plate (`workPlate.js`,
+ * Rings: a number inside a ring that fills or empties, as the mat's Token plates draw their charges,
+ * cycle and XP. The mat's Tokens say theirs on the plate (`workPlate.js`,
  * `idlePlate.js`).
  */
 

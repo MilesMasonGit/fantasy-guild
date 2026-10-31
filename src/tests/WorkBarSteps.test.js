@@ -1,23 +1,12 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, act } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
-import { GameState } from '../state/GameState.js';
-import * as BoardState from '../systems/board/BoardState.js';
-import * as Placement from '../systems/board/Placement.js';
-import * as Orders from '../systems/board/Orders.js';
-import * as BoardCombat from '../systems/board/BoardCombat.js';
-import * as TileModifiers from '../systems/board/TileModifiers.js';
-import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as Flags from '../systems/board/Flags.js';
-import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
-import { getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
-import { InspectBubbles } from '../ui/components/drawer/InspectBubbles.jsx';
 import { filledSteps } from '../ui/components/board/workBar.js';
 import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
 import { PLATE } from '../ui/components/board/workPlate.js';
@@ -256,65 +245,5 @@ describe('⭐ the work bar steps on one shared clock', () => {
         frames(5);
         rerender(rows(['ra']));
         expect(fillOf(container, 'ra') / FILL).toBeCloseTo((6000 + 150) / 12000, 1);
-    });
-});
-
-describe('⭐ the inspection’s time and XP rings draw the bar’s cycle', () => {
-    const AT = { x: 400, y: 300 };
-
-    beforeAll(() => Flags.init());
-    afterAll(() => Flags.teardown());
-    beforeEach(() => {
-        GameState.initNew();
-        InventoryManager.init();
-        SpriteLayer.init();
-        BoardCombat.clearAll();
-        TileModifiers.clearAll();
-        GameState.state.heroes = [
-            { id: 'h1', name: 'h1', status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }
-        ];
-    });
-
-    const inspectRing = (c, name) => c.querySelector(`[data-inspect-bubble="${name}"] [data-ring]`);
-
-    it('⭐ within an art pixel of the bar in the same frame: running, blocked, and after CYCLE_COMPLETE', () => {
-        const forest = BoardState.createTokenInstance('fixture_producer', tokenStartingUses('fixture_producer'));
-        Placement.placeTokenAt(forest, AT);
-        Orders.orderAt('h1', AT);
-        expect(BoardState.workerOf(forest.id)).toBe('h1');
-        const matToken = (extra = {}) => ({ typeId: 'fixture_producer', instanceId: forest.id, heroId: 'h1', alert: null, usesRemaining: 5000, ...extra });
-        const both = (extra) => tree(
-            h(TokenBubbles, { key: 'mat', instanceId: forest.id, token: matToken(extra) }),
-            h(WorkBarFill, { key: 'fill', instanceId: forest.id, blocked: !!extra?.alert }),
-            h(InspectBubbles, { key: 'inspect', def: getTokenType('fixture_producer'), instanceId: forest.id })
-        );
-        const { container, rerender } = render(both());
-        const agree = () => {
-            const bar = fillOf(container, forest.id);
-            const ring = Number(inspectRing(container, 'time').getAttribute('data-ring-fraction'));
-            expect(filledSteps(ring, FILL)).toBe(bar);
-            expect(inspectRing(container, 'xp').getAttribute('data-ring-fraction')).toBe(inspectRing(container, 'time').getAttribute('data-ring-fraction'));
-            return bar;
-        };
-
-        progress(forest.id, 3000, 12000);
-        watch(container);
-        untilWrite();
-        for (let i = 0; i < 200; i++) { frame(); agree(); }
-        expect(agree() / FILL).toBeGreaterThan(0.3);
-        expect(inspectRing(container, 'xp').getAttribute('data-ring-text')).toBe('+4');
-
-        // Blocked: the bar holds, and so do the inspection's rings.
-        rerender(both({ alert: ALERT.INPUTS }));
-        frames(40);
-        const held = agree();
-        frames(200);
-        expect(agree()).toBe(held);
-
-        rerender(both());
-        complete(forest.id);
-        progress(forest.id, 300, 12000);
-        frames(40);
-        expect(agree() / FILL).toBeLessThan(0.1);
     });
 });

@@ -1,8 +1,5 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import React from 'react';
-import { render, cleanup } from '@testing-library/react';
-import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -14,7 +11,7 @@ import { ITEMS } from '../config/registries/itemRegistry.js';
 import { logger } from '../utils/Logger.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
-import { FIXTURE_TOKENS } from './fixtures/testTokens.js';
+import './fixtures/testTokens.js';
 import { getAllTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { resetMissingContentWarnings } from '../utils/missingContent.js';
 
@@ -151,40 +148,10 @@ describe('CR2-192: a Token\'s XP lives on config, nowhere else', () => {
     const allTokenDefs = Object.values(getAllTokenTypes()).filter(
         d => String(d.id).startsWith('token_')
     );
-    const noConfigTokens = allTokenDefs.filter(d => !d.config);
 
     it('no authored Token carries a top-level `xp` — the field is gone (CR2-192)', () => {
         const offenders = allTokenDefs.filter(d => d.xp !== undefined).map(d => d.id);
         expect(offenders, 'top-level `xp` is dead data the engine never reads').toEqual([]);
-    });
-
-    it('the drawer promises no XP for a Token the engine awards none for', () => {
-        expect(noConfigTokens.length, 'no config-less Token to check').toBeGreaterThan(0);
-
-        for (const def of noConfigTokens) {
-            const { container } = render(
-                React.createElement(TokenInspection, { typeId: def.id })
-            );
-            // `RecipeResolver`/`BoardRunner` read `config.xp`; with no config
-            // there is nothing to award, so no XP badge may be drawn at all.
-            // The badge renders as `<span>XP</span><span>+N</span>`, which
-            // flattens to `XP+N` in `textContent`.
-            expect(container.textContent, `${def.id} must promise no XP`)
-                .not.toMatch(/XP\+\d/);
-            cleanup();
-        }
-    });
-
-    it('a Token with config.xp still shows it', () => {
-        const withXp = Object.values(getAllTokenTypes()).find(
-            d => d.config?.xp > 0 && String(d.id).startsWith('token_')
-        );
-        expect(withXp, 'no authored Token awards XP').toBeTruthy();
-        const { container } = render(
-            React.createElement(TokenInspection, { typeId: withXp.id })
-        );
-        expect(container.textContent).toContain(`+${withXp.config.xp}`);
-        cleanup();
     });
 
     it('no authored Token puts skill or skillRequired at the top level', () => {

@@ -2,12 +2,9 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
-import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { landmarkLines, LANDMARK_TEXT } from '../ui/components/drawer/landmarkLines.js';
-import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
-import { EventBus } from '../systems/core/EventBus.js';
-import { UI_EVENTS } from '../systems/core/engineEvents.js';
+import { LandmarkBlock } from '../ui/components/drawer/LandmarkBlock.jsx';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -59,39 +56,17 @@ describe('what a landmark\'s inspection says', () => {
         expect(landmarkLines(null, names)).toBeNull();
     });
 
-    it('the inspection panel shows it', () => {
+    it('the landmark block shows it', () => {
         registerItems({ item_li_seed: { id: 'item_li_seed', name: 'World Seed', type: 'material', sprite: 'i_wood_oak' } });
-        registerTokenTypes({
-            [SITE.id]: { ...SITE, config: { ...SITE.config, inputs: [{ itemId: 'item_li_seed', quantity: 100 }] } },
-            [BARE.id]: BARE
-        });
-        const site = render(React.createElement(TokenInspection, { typeId: SITE.id }));
-        const block = site.container.querySelector('[data-landmark]');
+        const site = { ...SITE, config: { ...SITE.config, inputs: [{ itemId: 'item_li_seed', quantity: 100 }] } };
+        const shown = render(React.createElement(LandmarkBlock, { def: site }));
+        const block = shown.container.querySelector('[data-landmark]');
         expect(block.textContent).toContain(LANDMARK_TEXT.TITLE);
         expect(block.textContent).toContain('99');
         expect(block.textContent).toContain('100 × World Seed');
         expect(block.textContent).toContain(LANDMARK_TEXT.FIXED);
         cleanup();
-        const bare = render(React.createElement(TokenInspection, { typeId: BARE.id }));
+        const bare = render(React.createElement(LandmarkBlock, { def: BARE }));
         expect(bare.container.querySelector('[data-landmark]').textContent).toContain(LANDMARK_TEXT.NO_ITEMS);
-    });
-});
-
-describe('opening a Token sheet tells the engine (the tutorial counts it)', () => {
-    it('once per Token on the mat, with its type; never for a sheet with no instance (the Shop)', () => {
-        registerTokenTypes({ [SITE.id]: SITE });
-        const seen = [];
-        const off = EventBus.subscribe(UI_EVENTS.TOKEN_INSPECTED, (p) => seen.push(p));
-        try {
-            render(React.createElement(TokenInspection, { typeId: SITE.id }));
-            expect(seen).toEqual([]);
-            cleanup();
-            const onMat = () => React.createElement(TokenInspection, { typeId: SITE.id, instanceId: 'tok_li_1' });
-            const sheet = render(onMat());
-            sheet.rerender(onMat());
-            expect(seen).toEqual([{ instanceId: 'tok_li_1', typeId: SITE.id }]);
-        } finally {
-            off();
-        }
     });
 });

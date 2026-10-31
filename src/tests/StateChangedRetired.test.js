@@ -20,7 +20,7 @@ import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatCapBadge } from '../ui/components/board/MatCapBadge.jsx';
 import { ShopDrawer } from '../ui/components/drawer/ShopDrawer.jsx';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { LeaveMatControl } from '../ui/components/drawer/TokenInspection.jsx';
+import { LeaveMatControl } from '../ui/components/drawer/LeaveMatControl.jsx';
 import { sourceCode, setScanTimeout } from './fixtures/sourceScan.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 

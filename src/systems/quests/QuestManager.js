@@ -202,7 +202,7 @@ export const QuestManager = {
                 if (data?.modalId === 'bank') this.reportProgress('open_bank');
                 else if (data?.modalId === 'shop') this.reportProgress('open_shop');
             }),
-            // ⚠️ Also from the React layer: `TokenInspection` publishes it when its sheet opens on a
+            // ⚠️ Also from the React layer: `TokenCard` publishes it when its sheet opens on a
             // Token on the mat. A new route that shows a board Token's sheet must publish it too, or
             // the tutorial's "inspect an endgame site" step stalls.
             EventBus.subscribe(UI_EVENTS.TOKEN_INSPECTED, (data) => {

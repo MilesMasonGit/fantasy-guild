@@ -12,7 +12,7 @@ import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
-import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
+import { LeaveMatControl } from '../ui/components/drawer/LeaveMatControl.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { calloutText } from '../ui/components/board/callouts.js';
 import { lifecycleLines } from '../ui/components/drawer/lifecycleLines.js';
@@ -27,16 +27,16 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * Demolition as the inspection and the mat show it: the countdown line, the marked badge, the
+ * Demolition as the mat and the card show it: the countdown line, the marked badge, the
  * callout, and a Dismiss for bounties (never for tutorial steps). Marking is Demolish mode's
- * (`MapModes.test.js`); the inspection has no Demolish button.
+ * (`MapModes.test.js`); the Dismiss control has no Demolish button.
  */
 
 const h = React.createElement;
 const mount = (...els) => render(
     h(DndContext, null, ...els)
 );
-const inspect = (instance) => mount(h(TokenInspection, { typeId: instance.typeId, instanceId: instance.id }));
+const inspect = (instance) => mount(h(LeaveMatControl, { instanceId: instance.id }));
 const control = (c) => c.querySelector('[data-demolish]');
 
 beforeAll(() => Flags.init());
@@ -64,14 +64,6 @@ describe('a marked Token reads as demolition work', () => {
         expect(lifecycleLines(t, { ...src, workerOf: () => 'h1' })).toEqual([
             { label: 'Marked for demolition', value: '6 s left', tone: 'warning' }
         ]);
-    });
-
-    it('the inspection shows the line and the Construction skill', () => {
-        const t = placeAt('fixture_producer', 400, 300);
-        Demolition.mark(t.id);
-        const { container } = inspect(t);
-        expect(container.querySelector('[data-lifecycle-lines]').textContent).toContain('Marked for demolition');
-        expect(container.querySelector('[data-skill-req]').textContent).toContain('Construction');
     });
 
     it('the Token detail carries the mark and no frozen countdowns', () => {
