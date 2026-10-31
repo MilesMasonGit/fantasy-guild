@@ -10,6 +10,12 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { registerItems, getItem, isRetiredItem } from '../config/registries/itemRegistry.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
+import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
+import * as BoardRunner from '../systems/board/BoardRunner.js';
+import * as TileModifiers from '../systems/board/TileModifiers.js';
+import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -104,6 +110,41 @@ describe('nothing pays a map any more', () => {
         spy.mockRestore();
         expect(drops.map(d => [d.itemId, d.quantity])).toEqual([['item_oak_wood', 2]]);
         expect(random.calls()).toBe(1);
+    });
+});
+
+describe('a worked Token', () => {
+    registerTokenTypes({
+        fixture_map_bush: {
+            id: 'fixture_map_bush', name: 'Fixture Map Bush', tokenType: 'resource', rarity: 'common', theme: 'fixture',
+            uses: 500, sprite: 's_nature',
+            config: {
+                skill: 'farming', skillRequired: 1, cycleTimeMs: 6000, xp: 1, inputs: [],
+                outputs: [
+                    { itemId: 'fixture_bounty_map_a', chance: 100, minQty: 1, maxQty: 1 },
+                    { itemId: 'item_oak_wood', chance: 100, minQty: 1, maxQty: 1 }
+                ]
+            }
+        }
+    });
+
+    it('never rolls its map line: the cycle drops its other outputs and hands no map to the mat', () => {
+        registerItems(structuredClone(FIXTURE_MAPS));
+        GameState.initNew();
+        InventoryManager.init();
+        SpriteLayer.init();
+        TileModifiers.clearAll();
+        const skills = Object.fromEntries(getAllSkillIds().map(s => [s, { level: 50, xp: 0 }]));
+        GameState.state.heroes = [{ id: 'hero_1', name: 'hero_1', status: 'idle', level: 50, skills, hp: { current: 100, max: 100 }, statuses: [], effects: [] }];
+        const bush = BoardState.createTokenInstance('fixture_map_bush', tokenStartingUses('fixture_map_bush'));
+        Placement.placeTokenAt(bush, { x: 600, y: 400 });
+        Orders.orderAt('hero_1', { x: 600, y: 400 });
+        const handed = vi.spyOn(SpriteLayer, 'addSprite');
+        for (let t = 0; t < 20000; t += 100) BoardRunner.tick(100);
+        const ids = handed.mock.calls.map(c => c[1]);
+        handed.mockRestore();
+        expect(ids).toContain('item_oak_wood');
+        expect(ids).not.toContain('fixture_bounty_map_a');
     });
 });
 
