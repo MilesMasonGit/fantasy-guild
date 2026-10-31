@@ -10,7 +10,6 @@ import * as MatCap from '../systems/board/MatCap.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
-import * as Cartography from '../systems/atlas/Cartography.js';
 import { decodeTerrain, islandsOf, cellIndex } from '../systems/atlas/TerrainMap.js';
 import { looksForGround } from '../systems/atlas/regionGround.js';
 import { BIOME_GROUND } from '../systems/atlas/Budget.js';
@@ -51,13 +50,11 @@ beforeEach(() => {
     InventoryManager.init();
     placeAt('token_guild_hall', Math.round(matW() / 2), Math.round(matH() / 2));
     Atlas.createStarterRegion();
-    Cartography.clearStock();
 });
 
 afterEach(() => {
     SaveManager.currentSlot = null;
     GameLoop.stop();
-    Cartography.clearStock();
 });
 
 afterAll(() => {
@@ -89,8 +86,7 @@ describe('⭐ each view is one click', () => {
                 expect(terrains.has(terrain), view.label).toBe(true);
                 expect(looksForGround(here.ground, [terrain])[terrain], view.label).toBe(biome);
             }
-            // Free: nothing is left in the dev stock, and the Hall came along.
-            expect(Cartography.held(), view.label).toEqual([]);
+            // The Hall came along.
             expect(BoardState.tokens().some(t => MatCap.isGuildHall(t)), view.label).toBe(true);
         }
         // Only the last one is left beside the Starter Camp; the guild seed never moved.

@@ -18,7 +18,6 @@ import { idlePlateCells } from '../ui/components/board/idlePlate.js';
 import { questNeedLine, questRewardsShown } from '../ui/components/board/QuestTooltip.jsx';
 import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
-import { isMapItem } from '../systems/atlas/mapItems.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -198,21 +197,13 @@ describe('hover to read (B6.2)', () => {
         expect(tooltip().querySelector('[data-quest-says]')).toBeNull();
     });
 
-    it('the first-maps step shows the maps the registry holds now, and only its items with none', () => {
+    it('a tutorial step shows only its items: the first maps are retired, whatever map items exist', () => {
         const step = { tutorial: true, firstMaps: true, rewardItems: [{ itemId: 'item_oak_wood', quantity: 10 }] };
-        // ⚠️ The shipped maps are hidden for the case, so it does not move when the owner authors a map.
-        const items = getAllItems();
-        const shippedMaps = Object.fromEntries(Object.entries(items).filter(([, def]) => isMapItem(def)));
-        for (const id of Object.keys(shippedMaps)) delete items[id];
+        registerItems({ map_ui_test: { id: 'map_ui_test', name: 'Test Map', type: 'map', cartography: { biome: 'forest', points: 4, nodes: [] } } });
         try {
-            const none = questRewardsShown(step);
-            expect(none).toEqual([{ itemId: 'item_oak_wood', quantity: 10 }]);
-            registerItems({ map_ui_test: { id: 'map_ui_test', name: 'Test Map', type: 'map', cartography: { biome: 'forest', points: 4, nodes: [] } } });
-            expect(questRewardsShown(step).map(r => r.itemId)).toEqual(['item_oak_wood', 'map_ui_test']);
-            expect(questRewardsShown({ ...step, tutorial: false }).map(r => r.itemId)).toEqual(['item_oak_wood']);
+            expect(questRewardsShown(step)).toEqual([{ itemId: 'item_oak_wood', quantity: 10 }]);
         } finally {
-            delete items.map_ui_test;
-            registerItems(shippedMaps);
+            delete getAllItems().map_ui_test;
         }
     });
 

@@ -34,10 +34,10 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * ⭐ Settling a Region: the Cartography table's preview (a Node Summary and a seeded layout) becomes
- * a Region whose board holds every node where the layout put it, as a fixture; the ingredients
- * leave the stock only then. A reroll moves coordinates and nothing else, and no step draws from
- * `Math.random`.
+ * ⭐ Settling a Region: a preview (a Node Summary and a seeded layout) becomes a Region whose board
+ * holds every node where the layout put it, as a fixture. Nothing is taken: what a place costs is
+ * the world map's to ask. A reroll moves coordinates and nothing else, and no step draws from
+ * `Math.random`. Map items are retired: an item is no recipe.
  */
 
 const OAK = 'fixture_producer';
@@ -80,7 +80,7 @@ const GIANT = Object.freeze({
     nodes: [{ typeId: COLOSSUS, weight: 1 }]
 });
 
-/** WOOD and THICKET as the Map editor authors them: items, banked like any item. */
+/** WOOD and THICKET as the Map editor authored them: retired items, which nothing settles from now. */
 const WOOD_ITEM = 'map_test_wood';
 const THICKET_ITEM = 'mod_test_thicket';
 const NOT_A_MAP = 'fixture_atlas_plank';
@@ -120,7 +120,6 @@ function newGame() {
     const c = centre();
     hall = placeAt('token_guild_hall', c.x, c.y);
     Atlas.createStarterRegion();
-    Cartography.clearStock();
 }
 
 beforeAll(() => {
@@ -137,7 +136,6 @@ beforeEach(() => {
 afterEach(() => {
     SaveManager.currentSlot = null;
     GameLoop.stop();
-    Cartography.clearStock();
 });
 
 afterAll(() => {
@@ -145,81 +143,28 @@ afterAll(() => {
     resetMatTuning();
 });
 
-describe('recipeOf: a recipe as it is, a map item as the recipe its Cartography block describes', () => {
+describe('recipeOf: a recipe as it is, and nothing else', () => {
     it('a recipe comes back as it is', () => {
         expect(Atlas.recipeOf(WOOD)).toBe(WOOD);
         expect(Atlas.recipeOf(THICKET)).toBe(THICKET);
     });
 
-    it('a map item, by id or as the item, becomes its recipe', () => {
-        const { name: _name, ...wood } = WOOD;
-        expect(Atlas.recipeOf(WOOD_ITEM)).toEqual({ ...wood, id: WOOD_ITEM });
-        expect(Atlas.recipeOf({ id: 'item_blank_map', type: 'map' }))
-            .toEqual({ id: 'item_blank_map', kind: 'base', biome: null, points: 0, nodes: [] });
-        expect(Atlas.recipeOf(THICKET_ITEM)).toEqual({ id: THICKET_ITEM, kind: 'modifier', effects: THICKET.effects });
-    });
-
-    it('anything else is refused loudly, naming what it was', () => {
-        expect(() => Atlas.recipeOf('item_forest_map')).toThrow(/"item_forest_map" is not a map recipe or a map item/);
+    it('a map item, by id or as the item, is refused like anything else: map items are retired', () => {
+        expect(() => Atlas.recipeOf(WOOD_ITEM)).toThrow(/"map_test_wood" is not a map recipe/);
+        expect(() => Atlas.recipeOf({ id: 'item_blank_map', type: 'map' })).toThrow(TypeError);
+        expect(() => Atlas.recipeOf(THICKET_ITEM)).toThrow(TypeError);
         expect(() => Atlas.recipeOf(NOT_A_MAP)).toThrow(TypeError);
-        expect(() => Atlas.recipeOf({ id: NOT_A_MAP, type: 'material' })).toThrow(TypeError);
         expect(() => Atlas.recipeOf({ id: 'x', kind: 'plains' })).toThrow(/kind "plains"/);
         expect(() => Atlas.recipeOf(null)).toThrow(TypeError);
     });
-});
 
-describe('maps in the Bank: what the table may slot, and what Settle takes', () => {
-    it('the Bank\'s map items are held, by id; other items are not', () => {
+    it('settling takes nothing from the Bank, map items included', () => {
         InventoryManager.addItem(WOOD_ITEM, 2);
         InventoryManager.addItem(NOT_A_MAP, 5);
-        Cartography.grant([HILLS], 1);
-        expect(Atlas.heldCount(WOOD_ITEM)).toBe(2);
-        expect(Atlas.heldCount(THICKET_ITEM)).toBe(0);
-        expect(Atlas.held().map(h => [h.recipe.id, h.count])).toEqual([[WOOD_ITEM, 2], [HILLS.id, 1]]);
-        // A map item granted from the console goes where map items live.
-        Cartography.grant([WOOD_ITEM], 1);
-        expect(bank(WOOD_ITEM)).toBe(3);
-    });
-
-    it('settling from Bank-held map items takes exactly those items, and nothing else', () => {
-        InventoryManager.addItem(WOOD_ITEM, 2);
-        InventoryManager.addItem(THICKET_ITEM, 1);
-        InventoryManager.addItem(NOT_A_MAP, 5);
-        Cartography.grant([WOOD], 1);
-        const result = Atlas.settle({ ingredients: [WOOD_ITEM, THICKET_ITEM], seed: 9 });
+        const result = Atlas.settle({ ingredients: [WOOD, THICKET], seed: 9 });
         expect(result.success).toBe(true);
-        expect([bank(WOOD_ITEM), bank(THICKET_ITEM), bank(NOT_A_MAP)]).toEqual([1, 0, 5]);
-        expect(Atlas.heldCount(WOOD)).toBe(1);
-        expect(result.region).toMatchObject({ ingredients: [WOOD_ITEM, THICKET_ITEM], practicalName: 'Thicket Wood' });
-    });
-
-    it('a Region settled from an authored Forest Map item gets the same layout as from the fixture recipe', () => {
-        InventoryManager.addItem(WOOD_ITEM, 1);
-        const fromRecipe = Atlas.preview([WOOD], { seed: 13 });
-        const { region, preview } = Atlas.settle({ ingredients: [WOOD_ITEM], seed: 13 });
-        expect(preview.layout).toEqual(fromRecipe.layout);
-        expect(preview.summary.entries).toEqual(fromRecipe.summary.entries);
-        expect(tokensOf(region.board).map(t => [t.typeId, t.x, t.y]))
-            .toEqual(fromRecipe.layout.nodes.map(n => [n.typeId, n.x, n.y]));
-    });
-
-    it('a map the Bank lacks a copy of is refused, taking nothing and writing nothing', () => {
-        InventoryManager.addItem(WOOD_ITEM, 1);
-        const before = regionCount();
-        const twice = Atlas.settle({ ingredients: [WOOD_ITEM, WOOD_ITEM], seed: 1 });
-        expect(twice).toMatchObject({ success: false, reason: TEXT.REFUSE_NOT_HELD });
-        expect(twice.missing).toEqual([{ id: WOOD_ITEM, needed: 2, held: 1 }]);
-        const none = Atlas.settle({ ingredients: [WOOD_ITEM, THICKET_ITEM], seed: 1 });
-        expect(none.missing).toEqual([{ id: THICKET_ITEM, needed: 1, held: 0 }]);
-        expect(bank(WOOD_ITEM)).toBe(1);
-        expect(regionCount()).toBe(before);
-    });
-
-    it('a Bank map and a dev-console recipe settle together, each taken from where it is held', () => {
-        InventoryManager.addItem(WOOD_ITEM, 1);
-        Cartography.grant([THICKET], 1);
-        expect(Atlas.settle({ ingredients: [WOOD_ITEM, THICKET], seed: 2 }).success).toBe(true);
-        expect([bank(WOOD_ITEM), Atlas.heldCount(THICKET)]).toEqual([0, 0]);
+        expect([bank(WOOD_ITEM), bank(NOT_A_MAP)]).toEqual([2, 5]);
+        expect(result.region).toMatchObject({ ingredients: [WOOD.id, THICKET.id], practicalName: 'Thicket Wood', cellId: null });
     });
 });
 
@@ -240,14 +185,12 @@ describe('the preview', () => {
         expect(plan.summary.clamped).toBe(true);
     });
 
-    it('changes nothing: no Region, no stock, no board', () => {
-        Cartography.grant([WOOD], 1);
+    it('changes nothing: no Region, no board', () => {
         const board = canon(GameState.state.board);
         const regions = canon(GameState.state.atlas.regions);
         Atlas.preview([WOOD], { seed: 3 });
         expect(canon(GameState.state.board)).toBe(board);
         expect(canon(GameState.state.atlas.regions)).toBe(regions);
-        expect(Atlas.heldCount(WOOD)).toBe(1);
     });
 });
 
@@ -277,7 +220,6 @@ describe('the seed: the guild\'s own, never Math.random', () => {
     });
 
     it('previewing, rerolling and settling draw no random number', () => {
-        Cartography.grant([WOOD, THICKET], 1);
         let draws = 0;
         const real = Math.random;
         const spy = vi.spyOn(Math, 'random').mockImplementation(() => { draws++; return real(); });
@@ -294,7 +236,6 @@ describe('the seed: the guild\'s own, never Math.random', () => {
 
 describe('reroll: a new seed, and nothing else', () => {
     it('ten rerolls: the next seed each time, the very same Node Summary, every Token placed, the Tokens moved', () => {
-        Cartography.grant([WOOD, HILLS, THICKET], 1);
         const first = Atlas.preview([WOOD, HILLS, THICKET]);
         const guildSeed = GameState.state.atlas.seed;
         const fresh = budget([WOOD, HILLS, THICKET], { cap: MatCap.matCap() });
@@ -311,14 +252,12 @@ describe('reroll: a new seed, and nothing else', () => {
             expect(moved.length).toBeGreaterThan(next.layout.nodes.length / 2);
             plan = next;
         }
-        // Rerolling takes nothing; the guild seed has followed it to the last seed shown.
+        // The guild seed has followed it to the last seed shown.
         expect(guildSeed).toBe(first.seed);
         expect(GameState.state.atlas.seed).toBe(plan.seed);
-        expect(Atlas.held().map(h => h.count)).toEqual([1, 1, 1]);
     });
 
     it('a later preview never shows a seed already shown, so two Regions never share a seed', () => {
-        Cartography.grant([WOOD, HILLS], 1);
         const shown = [];
         let plan = Atlas.preview([WOOD]);
         shown.push(plan.seed);
@@ -356,7 +295,6 @@ describe('reroll: a new seed, and nothing else', () => {
 
 describe('settle writes the previewed layout as a Region', () => {
     it('the Region records its ingredients, seed, biomes, ground, terrain and rules; the guild stays put', () => {
-        Cartography.grant([WOOD, THICKET], 1);
         const plan = Atlas.reroll(Atlas.preview([WOOD, THICKET], { seed: 11 }));
         const home = Atlas.activeRegionId();
         const live = canon(GameState.state.board);
@@ -383,7 +321,6 @@ describe('settle writes the previewed layout as a Region', () => {
     });
 
     it('its board holds every node where the layout put it: placed, marked a fixture, with its biome', () => {
-        Cartography.grant([WOOD, HILLS, THICKET], 1);
         const plan = Atlas.preview([WOOD, HILLS, THICKET], { seed: 5 });
         const { region } = Atlas.settle({ ingredients: [WOOD, HILLS, THICKET], seed: 5 });
         const tokens = tokensOf(region.board);
@@ -404,7 +341,6 @@ describe('settle writes the previewed layout as a Region', () => {
     });
 
     it('every field it writes is declared, and the save still validates', () => {
-        Cartography.grant([WOOD], 1);
         Atlas.settle({ ingredients: [WOOD], seed: 1 });
         const declared = Object.keys(createRegionRecord('x'));
         for (const region of Object.values(GameState.serialize().state.atlas.regions)) {
@@ -414,7 +350,6 @@ describe('settle writes the previewed layout as a Region', () => {
     });
 
     it('saves at once when a slot is being played', () => {
-        Cartography.grant([WOOD], 1);
         const save = vi.spyOn(SaveManager, 'save').mockImplementation(() => true);
         SaveManager.currentSlot = 0;
         try {
@@ -426,55 +361,43 @@ describe('settle writes the previewed layout as a Region', () => {
     });
 });
 
-describe('settle consumes the ingredients; nothing else does', () => {
-    it('settling takes one of each slotted map; previewing, rerolling and closing the table take nothing', () => {
-        Cartography.grant([WOOD, THICKET], 2);
-        let plan = Atlas.preview([WOOD, THICKET]);
-        for (let i = 0; i < 3; i++) plan = Atlas.reroll(plan);
-        // The table closed: nothing settled, nothing taken.
-        expect([Atlas.heldCount(WOOD), Atlas.heldCount(THICKET)]).toEqual([2, 2]);
-
-        expect(Atlas.settle({ ingredients: [WOOD, THICKET], seed: plan.seed }).success).toBe(true);
-        expect([Atlas.heldCount(WOOD), Atlas.heldCount(THICKET)]).toEqual([1, 1]);
+describe('what settle refuses, and what it carries', () => {
+    it('two slots of one recipe write it twice over, as two copies of a map did', () => {
+        expect(Atlas.settle({ ingredients: [WOOD, WOOD], seed: 1 }).success).toBe(true);
     });
 
-    it('two slots of one map need two of it; a refusal takes nothing and writes nothing', () => {
-        Cartography.grant([WOOD], 1);
-        const before = regionCount();
-        const result = Atlas.settle({ ingredients: [WOOD, WOOD], seed: 1 });
-        expect(result).toMatchObject({ success: false, reason: TEXT.REFUSE_NOT_HELD });
-        expect(result.missing).toEqual([{ id: WOOD.id, needed: 2, held: 1 }]);
-        expect(Atlas.heldCount(WOOD)).toBe(1);
-        expect(regionCount()).toBe(before);
-    });
-
-    it('a map the guild does not hold is refused', () => {
-        expect(Atlas.settle({ ingredients: [HILLS], seed: 1 })).toMatchObject({ success: false, reason: TEXT.REFUSE_NOT_HELD });
-    });
-
-    it('a layout with a Token that found no room is refused, taking nothing: the player rerolls', () => {
+    it('a layout with a Token that found no room is refused and writes nothing, unless asked to write it without them', () => {
         setMatTuning('tokenCap', 256);
-        Cartography.grant([GIANT], 1);
         const before = regionCount();
         const result = Atlas.settle({ ingredients: [GIANT], seed: 1 });
         expect(result).toMatchObject({ success: false, reason: TEXT.REFUSE_NO_ROOM });
         expect(result.unplaced.length).toBeGreaterThan(0);
         expect(result.unplaced.every(u => u.typeId === COLOSSUS)).toBe(true);
-        expect(Atlas.heldCount(GIANT)).toBe(1);
+        expect(regionCount()).toBe(before);
+
+        const anyway = Atlas.settle({ ingredients: [GIANT], seed: 1, allowUnplaced: true });
+        expect(anyway.success).toBe(true);
+        expect(Object.keys(anyway.region.board.tokens)).toHaveLength(anyway.preview.layout.nodes.length);
+        expect(regionCount()).toBe(before + 1);
+    });
+
+    it('no ingredients is refused; an ingredient that is not a recipe throws before anything is written', () => {
+        expect(Atlas.settle({ ingredients: [] })).toMatchObject({ success: false, reason: TEXT.REFUSE_NO_MAPS });
+        const before = regionCount();
+        expect(() => Atlas.settle({ ingredients: [WOOD, 'item_forest_map'] })).toThrow(/not a map recipe/);
         expect(regionCount()).toBe(before);
     });
 
-    it('no ingredients is refused; an ingredient that is not a map throws before anything is taken', () => {
-        expect(Atlas.settle({ ingredients: [] })).toMatchObject({ success: false, reason: TEXT.REFUSE_NO_MAPS });
-        Cartography.grant([WOOD], 1);
-        expect(() => Atlas.settle({ ingredients: [WOOD, 'item_forest_map'] })).toThrow(/not a map recipe/);
-        expect(Atlas.heldCount(WOOD)).toBe(1);
+    it('carries the world cell it is settled on, and reads its practical name as the caller says', () => {
+        const describe = (id) => (id === WOOD.id ? { word: 'Highland Ores' } : { word: '' });
+        const { region } = Atlas.settle({ ingredients: [WOOD, THICKET], seed: 4, cellId: '0,-1', describe });
+        expect(region).toMatchObject({ cellId: '0,-1', practicalName: 'Highland Ores' });
+        expect(Atlas.getRegion(region.id).cellId).toBe('0,-1');
     });
 });
 
 describe('travelling to a settled Region', () => {
     it('the Hall lands in its clearing at the layout\'s centre; every node stands where the layout put it', () => {
-        Cartography.grant([WOOD, HILLS, THICKET], 1);
         const plan = Atlas.preview([WOOD, HILLS, THICKET], { seed: 21 });
         const { region } = Atlas.settle({ ingredients: [WOOD, HILLS, THICKET], seed: 21 });
         expect(Atlas.travel(region.id).success).toBe(true);
@@ -489,7 +412,6 @@ describe('travelling to a settled Region', () => {
     });
 
     it('map nodes are placed Tokens, which no spawn may push', () => {
-        Cartography.grant([WOOD], 1);
         const { region } = Atlas.settle({ ingredients: [WOOD], seed: 3 });
         Atlas.travel(region.id);
         const fixtures = BoardState.tokens().filter(t => BoardState.isFixture(t)).map(t => t.id);
@@ -503,7 +425,6 @@ describe('travelling to a settled Region', () => {
     });
 
     it('a settled Region survives a reload whole: fixtures, biomes, ground and terrain', async () => {
-        Cartography.grant([WOOD, HILLS], 1);
         const { region } = Atlas.settle({ ingredients: [WOOD, HILLS], seed: 8 });
         const record = copy(region);
         const data = JSON.parse(GameState.serializeJson());
@@ -555,13 +476,7 @@ describe('a board built off the mat', () => {
 });
 
 describe('the dev console', () => {
-    it('grants the placeholder maps, previews a layout in words and text, and settles from the stock', () => {
-        expect(Atlas.devSettle(['forest', 'overgrown'], 4)).toMatchObject({ success: false, reason: TEXT.REFUSE_NOT_HELD });
-
-        const lines = Atlas.devGrantMaps(2);
-        expect(lines).toHaveLength(Object.keys(DEV_MAPS).length);
-        expect(Atlas.held().every(h => h.count === 2)).toBe(true);
-
+    it('previews a layout in words and text, and settles it for free', () => {
         const view = Atlas.devPreview(['mountain', 'goblinCamp'], 4);
         expect(view.seed).toBe(4);
         expect(view.summary.split('\n')[0]).toMatch(/^\d+ Tokens/);
@@ -573,7 +488,6 @@ describe('the dev console', () => {
         expect(result.success).toBe(true);
         expect(result.region.practicalName).toBe('Goblin Camp Mountain');
         expect(result.preview.layout).toEqual(view.preview.layout);
-        expect(Atlas.heldCount(DEV_MAPS.mountain)).toBe(1);
     });
 
     it('names the dev maps there are when given one that is not', () => {

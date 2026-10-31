@@ -1,4 +1,4 @@
-// which area banner a Region shows: its Base Map's pick, the Starter Camp's, else its main biome's
+// which area banner a Region shows: its Base Map's pick (a Region from before maps retired), the Starter Camp's, else its main biome's
 
 import * as Atlas from '../../../systems/atlas/Atlas.js';
 import { isBaseMap } from '../../../systems/atlas/mapItems.js';
@@ -15,13 +15,6 @@ export function pickedBanner(ingredients, mainBiome = null) {
     const maps = (ingredients || []).map(id => getItem(id)).filter(def => isBaseMap(def) && isAreaBanner(def.banner));
     const main = mainBiome ? maps.find(def => def.cartography?.biome === mainBiome) : null;
     return (main || maps[0])?.banner || null;
-}
-
-/** The banner for a layout about to be settled: what its maps would write (`plan.ingredients`, `plan.summary.ground.main`). */
-export function bannerForPlan(plan) {
-    if (!plan) return null;
-    const main = plan.summary?.ground?.main || null;
-    return pickedBanner(plan.ingredients, main) || defaultBannerFor(main);
 }
 
 /** The banner Region `region` (a record or a `list()` summary) shows. */

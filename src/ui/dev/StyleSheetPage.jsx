@@ -888,7 +888,7 @@ export const KIT_SECTIONS = [
         Demo: BookTabDemo
     },
     {
-        id: 'world-cells', title: 'World map cells', status: 'new, unapproved', source: 'WorldPage (the Atlas’s World page)',
+        id: 'world-cells', title: 'World map cells (new)', status: 'unapproved', source: 'WorldPage (the Atlas’s World page)',
         rule: 'Flat-topped hexes in their kit’s ground colour (code stand-ins until the owner’s hex art), each with the first outputs it yields as 32 px item sprites at 1× and "+N" for the rest. Settled: lit, a gold edge; the guild’s place carries the pale job flag. Frontier: a little darker; a green edge once the guild can pay. Beyond: dark, sprites half faded. The chosen cell has a white edge, the hovered one a white inner line; the hover lists its outputs and its price as have/need, red when short.',
         Demo: HexCellDemo
     },
