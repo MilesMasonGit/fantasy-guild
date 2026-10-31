@@ -306,7 +306,7 @@ pay back within `paybackHours`, rounded down to two figures: a preview (brief 29
 
 **On H1's QA sky** (shipped data, default settings): every rank that adds a rate pays back, in 1 to
 50 minutes (its placeholder prices are 10 to 40 items); Long Rails, the Infirmary and the Larder add
-no rate. The proposals run 10 to 110 times the placeholders (Miner's Lore 1: 1,100 Copper Ore
+no rate. The proposals run 4 to 110 times the placeholders (Miner's Lore 1: 1,100 Copper Ore
 against 10). With the payback time set to 6 minutes, 20 ranks turn red.
 
 **Calibration** (`vein-hall`, 3 seeds × 8 game-hours): the copper vein with Mining XP +50 %, Mining
