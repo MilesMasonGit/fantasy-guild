@@ -111,23 +111,22 @@ describe('Recipe authoring — P6b', () => {
         expect(within(column).queryByText('Iron Anvil')).toBeNull();
     });
 
-    it('authors a context requirement’s min tier and charge cost, not just its tag', () => {
+    it('authors a context requirement’s min tier, not just its tag; help is free, so no charge cost box', () => {
         useEntityStore.getState().addRecipe('smithing', {
-            requiresContext: [{ tag: 'anvil', minTier: 1, chargeCost: 0 }]
+            requiresContext: [{ tag: 'anvil', minTier: 1, chargeCost: 3 }]
         });
 
         const { container } = render(React.createElement(RecipeEditor));
         fireEvent.click([...container.querySelectorAll('button')]
             .find(b => b.textContent.startsWith('Smithing')));
 
-        const tier = [...container.querySelectorAll('label')]
-            .find(l => l.textContent.startsWith('Min tier')).querySelector('input');
-        const cost = [...container.querySelectorAll('label')]
-            .find(l => l.textContent.startsWith('Charge cost')).querySelector('input');
+        const labels = [...container.querySelectorAll('label')];
+        const tier = labels.find(l => l.textContent.startsWith('Min tier')).querySelector('input');
+        expect(labels.find(l => l.textContent.startsWith('Charge cost'))).toBeUndefined();
 
         fireEvent.change(tier, { target: { value: '2' } });
-        fireEvent.change(cost, { target: { value: '3' } });
 
+        // The engine never reads it, but an authored value is left as it was.
         expect(poolOf('smithing')[0].requiresContext).toEqual([
             { tag: 'anvil', minTier: 2, chargeCost: 3 }
         ]);
