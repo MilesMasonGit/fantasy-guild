@@ -414,6 +414,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
+**Draw regression diagnosed (31 Oct 04:10, [notes](research/draw_regression_2026-10-31.md)):** no slow code; S2 now has goblins walking (22af5033 spot orders are never ambushed, so camp goblins live and stroll; T-264 unfroze spawned ones) and each walker's glide is a main-thread transform transition (crisp-pixel rule), redoing layers every frame: ~0.9 ms a frame at 1×, ~6 ms at 4×. Next: (1) step the goblin glide on whole screen pixels (`steps(n)`, stays crisp; the stand-in saved 0.7 of 0.9 ms), engineer + owner eye-check + `bench:crisp`; (2) S2 gets its fights back (heroes 1 and 2 ordered onto a Token inside each camp's watch; director's call, bench-only, re-take both baselines). Until then every draw `--compare` on `main` reads REGRESSED from this.
+
 **Sat 31 Oct, 01:00–02:15 (director):** engine tickets WORK CHANGED exactly as predicted (S1/S4/S7 same; identity and fidelity hold), acceptance run queued, then merge after `main` is green. Hall H1 same work, calibration ok. World W1 same, W2 same. **Draw regression is real**: alternating runs, `a4a124be` S2 4× workP50 6.2–7.3 ms, `main` 11.5–12.4 ms (bank 6.3–6.7 vs 11.8–13.7): an engineer bisects in `p23b` until 06:45 (`diag/draw-regression`).
 
 **Sat 01:00 (director):** `bench:draw -- --compare` on `main`, machine quiet. 30 Oct afternoon, `main` and the encyclopedia both drew ~2× slower than the 29 Oct 01:30 baseline (1× workP50 1.0 → 2.0 ms; 4× S2 136 → 94 fps) with agents running. If it is still 2× on a quiet machine, A/B `main` against a4a124be to find the commit.
