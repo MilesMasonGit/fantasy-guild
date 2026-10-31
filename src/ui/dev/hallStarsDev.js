@@ -25,6 +25,7 @@ import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRe
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { authoredHallSky, registerHallSky } from '../../config/registries/hallStarRegistry.js';
 import { EFFECT_TYPES } from '../../systems/effects/constants.js';
+import { applyXpBonus } from '../../systems/hero/xpBonus.js';
 import { isGuildHall } from '../../systems/board/MatCap.js';
 import { qaOrder } from './qaOrders.js';
 
@@ -80,11 +81,11 @@ export function qaHallSky() {
             [1, ore(20), [provides(EFFECT_TYPES.CAMP_REACH, 0.25, { to: { mode: 'id', value: MINING_CAMP } })]],
             [2, ore(40), [provides(EFFECT_TYPES.CAMP_REACH, 0.5, { to: { mode: 'id', value: MINING_CAMP } })]]
         ]), 'right'),
-        star('qa_forestry_xp', 'qa_forestry', 'Woodsman’s Lore', 'Forestry teaches more.', { x: -0.62, y: -0.24 }, ['hall'], ranks([
+        star('qa_forestry_xp', 'qa_forestry', 'Woodsman’s Lore', 'Forestry teaches more.', { x: -0.72, y: -0.3 }, ['hall'], ranks([
             [1, oak(10), [provides(EFFECT_TYPES.XP_BONUS, 0.5, { category: 'forestry' })]],
             [2, oak(30), [provides(EFFECT_TYPES.XP_BONUS, 1, { category: 'forestry' })]]
         ])),
-        star('qa_oak_regrow', 'qa_forestry', 'Green Thumb', 'Oak regrows faster.', { x: -0.98, y: -0.4 }, ['qa_forestry_xp'], ranks([
+        star('qa_oak_regrow', 'qa_forestry', 'Green Thumb', 'Oak regrows faster.', { x: -1.1, y: -0.42 }, ['qa_forestry_xp'], ranks([
             [1, oak(20), [provides(EFFECT_TYPES.GROW_TIME, -0.5, { to: { mode: 'tag', value: 'Oak' } })]]
         ]), 'left'),
         star('qa_infirmary', 'hearth', 'Infirmary', 'A wounded hero recovers sooner.', { x: 0.36, y: -0.74 }, ['roster_size'], ranks([
@@ -107,7 +108,7 @@ export function qaHallSky() {
     return {
         constellations: {
             qa_mining: { id: 'qa_mining', name: 'Mining', label: { x: 1.0, y: -0.62 }, skill: 'mining' },
-            qa_forestry: { id: 'qa_forestry', name: 'Forestry', label: { x: -0.85, y: -0.64 }, skill: 'forestry' }
+            qa_forestry: { id: 'qa_forestry', name: 'Forestry', label: { x: -1.02, y: -0.62 }, skill: 'forestry' }
         },
         stars: Object.fromEntries(stars.map(s => [s.id, s]))
     };
@@ -219,8 +220,8 @@ export function hallReadout() {
     if (vein) {
         const def = getTokenType(vein.typeId);
         const xp = def?.config?.xp ?? 0;
-        const xpNow = TileModifiers.resolveAxis(vein.id, EFFECT_TYPES.XP_BONUS, xp, 'mining');
-        out.push(`Copper Ore Vein: ${xp} XP a cycle before the Hall, ${Math.round(xpNow * 100) / 100} now (Miner’s Lore ${ranks.qa_mining_xp || 0})`);
+        const xpNow = applyXpBonus(xp, TileModifiers.resolveAxis(vein.id, EFFECT_TYPES.XP_BONUS, xp, 'mining'));
+        out.push(`Copper Ore Vein: ${xp} Mining XP a cycle before the Hall, ${xpNow} now (Miner’s Lore ${ranks.qa_mining_xp || 0})`);
         const cycle = def?.config?.cycleTimeMs ?? 0;
         out.push(`Its cycle: ${secs(cycle)} authored, ${secs(TileModifiers.workTimeOf(vein.id, cycle, 'mining'))} now (Quick Picks ${ranks.qa_mining_speed || 0})`);
         out.push(`Its rest: ${secs(Respawn.respawnOf(def)?.afterMs ?? 0)} authored, ${secs(Respawn.restMsOf(vein))} now (Deep Veins ${ranks.qa_vein_rest || 0})`);
