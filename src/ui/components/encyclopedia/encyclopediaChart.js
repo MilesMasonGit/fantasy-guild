@@ -1,6 +1,6 @@
 // the encyclopedia's flowchart: what flows into an entry and out of it, grown a step at a time, and where each box sits
 
-import { HOW, itemKey, tokenKey, recipeKey } from '../../../systems/progression/ledger/engine.js';
+import { HOW, COMBAT, itemKey, tokenKey, recipeKey } from '../../../systems/progression/ledger/engine.js';
 import { KIND } from './encyclopediaModel.js';
 
 /**
@@ -28,9 +28,12 @@ const BARE = new Set([HOW.STARTER_BANK, HOW.STARTER_TOOL, HOW.STARTER_CAMP, HOW.
 
 const finite = (n, fallback) => (Number.isFinite(n) ? n : fallback);
 
-/** The highest level gate of a rule, or null. */
+/**
+ * The highest level gate of a rule, or null. A fight's level is left out: it measures how hard
+ * the enemy is, and no hero's level is checked to fight it.
+ */
 function topGate(gates) {
-    const top = [...(Array.isArray(gates) ? gates : [])].sort((a, b) => b.level - a.level)[0];
+    const top = (Array.isArray(gates) ? gates : []).filter(g => g?.skill !== COMBAT).sort((a, b) => b.level - a.level)[0];
     return top?.skill ? { skill: top.skill, level: top.level } : null;
 }
 

@@ -25,8 +25,8 @@ describe('the encyclopedia over the shipped content', () => {
     });
 
     it('traces Iron Ingot to Iron Ore and Coal, and Iron Ore to its vein', () => {
-        const tree = book.treeOf('item_iron_ingot');
-        expect(tree.children.map(c => c.id).sort()).toEqual(['item_coal', 'item_iron_ore']);
+        const smelt = book.sourcesOf(itemKey('item_iron_ingot')).find(s => s.how === HOW.CRAFT);
+        expect(smelt.inputs.map(i => i.key).sort()).toEqual([itemKey('item_coal'), itemKey('item_iron_ore')]);
         const ore = book.sourcesOf(itemKey('item_iron_ore'));
         expect(ore).toContainEqual(expect.objectContaining({ how: HOW.WORK, via: tokenKey('token_iron_ore_vein') }));
         // Iron Ore is spent by the ingot's recipe.

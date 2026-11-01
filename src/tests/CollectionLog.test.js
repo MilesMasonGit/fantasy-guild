@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import React from 'react';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 import { GameState } from '../state/GameState.js';
 import { INITIAL_STATE, GAME_VERSION } from '../state/StateSchema.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import { handleVictory } from '../systems/combat/CombatResolutionProcessor.js';
 import { RegistryManager } from '../systems/progression/RegistryManager.js';
-import { collectedOf, noteRecipeMade } from '../systems/progression/collectionLog.js';
+import { collectedOf, noteRecipeMade, recentlyCollectedItems } from '../systems/progression/collectionLog.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { EncyclopediaScreen } from '../ui/components/encyclopedia/EncyclopediaScreen.jsx';
@@ -96,15 +96,26 @@ describe('the save', () => {
 });
 
 describe('the screen', () => {
-    it('ticks what is collected and counts each kind', () => {
+    it('ticks what is collected on the chart and in the search, with no per-kind counts', () => {
         RegistryManager.recordItemGain('item_iron_ore', 1);
-        lookUp('item:item_iron_ore');
+        lookUp('item:item_iron_ingot');
         const { container } = render(React.createElement(EncyclopediaScreen, { onClose: () => {} }));
-        const total = encyclopedia().byKind[KIND.ITEM].length;
-        const have = Object.keys(GameState.state.collection.discoveredItems).filter(id => encyclopedia().entryOf(`item:${id}`)).length;
-        expect(container.querySelector('[data-codex-progress="items"]').textContent).toBe(`${have}/${total}`);
+        const node = (key) => [...container.querySelectorAll(`[data-codex-key="${key}"]`)].find(n => n.getAttribute('data-codex-side') === 'in');
+        expect(node('item:item_iron_ore').querySelector('[data-codex-tick]')).not.toBeNull();
+        expect(node('item:item_coal').querySelector('[data-codex-tick]')).toBeNull();
+        expect(container.querySelector('[data-codex-progress]')).toBeNull();
+        fireEvent.change(container.querySelector('[data-codex-search]'), { target: { value: 'iron ore' } });
         expect(container.querySelector('[data-codex-row="item:item_iron_ore"] [data-codex-tick]')).not.toBeNull();
-        expect(container.querySelector('[data-codex-row="item:item_iron_ingot"] [data-codex-tick]')).toBeNull();
-        expect(container.querySelector('[data-codex-entry] h3 [data-codex-tick]')).not.toBeNull();
+        expect(encyclopedia().byKind[KIND.ITEM].length).toBeGreaterThan(0);
+    });
+
+    it('the recently collected items come newest first, through a save and a load', () => {
+        for (const id of ['item_copper_ore', 'item_coal', 'item_iron_ore']) RegistryManager.recordItemGain(id, 1);
+        RegistryManager.recordItemGain('item_coal', 5);
+        expect(recentlyCollectedItems().slice(0, 3)).toEqual(['item_iron_ore', 'item_coal', 'item_copper_ore']);
+        const loaded = JSON.parse(JSON.stringify(GameState.state));
+        expect(recentlyCollectedItems(loaded).slice(0, 3)).toEqual(['item_iron_ore', 'item_coal', 'item_copper_ore']);
+        expect(recentlyCollectedItems(loaded, 2)).toHaveLength(2);
+        expect(recentlyCollectedItems({})).toEqual([]);
     });
 });

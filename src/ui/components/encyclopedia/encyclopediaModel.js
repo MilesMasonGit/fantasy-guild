@@ -1,6 +1,6 @@
 // the encyclopedia's facts: every item, Token, enemy and recipe, where each comes from and what uses it
 
-import { buildLedger, HOW, itemKey, tokenKey, recipeKey, parseKey, ingredientTree } from '../../../systems/progression/ledger/engine.js';
+import { buildLedger, HOW, itemKey, tokenKey, recipeKey, parseKey } from '../../../systems/progression/ledger/engine.js';
 import { getAllItems } from '../../../config/registries/itemRegistry.js';
 import { getAllTokenTypes } from '../../../config/registries/tokenRegistry.js';
 import { listRecipes } from '../../../config/registries/recipePoolRegistry.js';
@@ -13,8 +13,8 @@ import { wordStartsMatch } from '../drawer/bankSort.js';
  * registries: one picture of what makes what, shared with the CMS. Built the first time the screen
  * opens and kept, so a closed screen costs nothing.
  *
- * ⚠️ Only the world's rules and the ingredient tree are shown, never a reach tier: tiers come from
- * the owner's plan, which is not the player's business (and is stripped from the game's data).
+ * ⚠️ Only the world's rules are shown, never a reach tier: tiers come from the owner's plan, which
+ * is not the player's business (and is stripped from the game's data). `reachOf` is for ordering.
  */
 
 export const KIND = Object.freeze({ ITEM: 'items', TOKEN: 'tokens', ENEMY: 'enemies', RECIPE: 'recipes' });
@@ -63,7 +63,6 @@ function sortByName(list) {
  *   sourcesOf(key): {how, via, chance, firstKill, perCycle, inputs, gates, oneOff}[],
  *   usesOf(key): {how, by, quantity?, nearby?}[],
  *   givesOf(key): {how, key, chance, firstKill, perCycle, gates}[],
- *   treeOf(itemId): object|null,
  *   search(term): object[]
  * }}
  */
@@ -141,12 +140,6 @@ export function buildEncyclopedia(content = gameContent()) {
         }
     }
 
-    const treeOf = (itemId) => {
-        if (!world.items[itemId]) return null;
-        const tree = ingredientTree(world, ledger.reach, itemId);
-        return tree.children.length ? tree : null;
-    };
-
     return {
         entries,
         byKind,
@@ -158,15 +151,6 @@ export function buildEncyclopedia(content = gameContent()) {
         sourcesOf: (key) => sources.get(key) || [],
         usesOf: (key) => uses.get(key) || [],
         givesOf: (key) => gives.get(key) || [],
-        treeOf,
-        /** A recipe's inputs, each as its tree for one unit (`tree`) and how many one craft takes (`quantity`). */
-        recipeTreesOf: (recipeId) => {
-            const recipe = world.recipes[recipeId];
-            if (!recipe) return [];
-            return (Array.isArray(recipe.inputs) ? recipe.inputs : [])
-                .filter(i => typeof i?.itemId === 'string' && world.items[i.itemId])
-                .map(i => ({ tree: ingredientTree(world, ledger.reach, i.itemId), quantity: Math.max(0, Number(i.quantity) || 1) }));
-        },
         /** Entries whose name has words starting with the typed words, in kind order then by name. */
         search: (term) => KINDS.flatMap(k => byKind[k].filter(e => wordStartsMatch(e.name, term)))
     };
