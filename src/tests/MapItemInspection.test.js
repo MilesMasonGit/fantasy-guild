@@ -7,8 +7,8 @@ import { ItemTipContent } from '../ui/components/drawer/ItemTip.jsx';
 import { MAP_TEXT } from '../systems/atlas/mapItems.js';
 
 /**
- * A map item's Bank tooltip says what it writes: a Base Map its node summary under the Token cap,
- * a Modifier its effects. Any other item says nothing of the kind.
+ * Map items are retired, so a map item's Bank tooltip (an old save may still hold one) says only
+ * what kind of item it is, never what it writes: nothing settles from it now.
  */
 
 registerTokenTypes({
@@ -35,30 +35,17 @@ const OVERGROWN = {
 afterEach(cleanup);
 
 describe('the tooltip of a map item', () => {
-    it('a Base Map says what it writes, and what kind of map it is', () => {
+    it('a Base Map says what kind of map it is, and nothing of what it writes', () => {
         const { container } = render(tip(FOREST));
-        const writes = container.querySelector('[data-map-writes]');
-        expect(writes).toBeTruthy();
-        expect(writes.textContent).toContain('What it writes');
-        expect(writes.textContent).toContain('13 Tokens');
-        for (const line of ['9 × Inspect Tree', '3 × Inspect Bush', '1 × Inspect Camp']) {
-            expect(writes.textContent).toContain(line);
-        }
+        expect(container.querySelector('[data-map-writes]')).toBeNull();
+        expect(container.textContent).not.toContain('What it writes');
         expect(container.textContent).toContain(MAP_TEXT.typeLabel.map);
     });
 
-    it('a Modifier says its effects', () => {
+    it('a Modifier says what kind it is, and nothing of its effects', () => {
         const { container } = render(tip(OVERGROWN));
-        const writes = container.querySelector('[data-map-writes]');
-        expect(writes.textContent).toContain(MAP_TEXT.modifierHeadline);
-        expect(writes.textContent).toContain('+16 × Inspect Tree');
-        expect(container.textContent).toContain(MAP_TEXT.typeLabel.modifier);
-    });
-
-    it('an ordinary item says nothing of the kind', () => {
-        const wood = { id: 'fixture_inspect_wood', name: 'Wood', type: 'material', stackable: true };
-        const { container } = render(tip(wood));
         expect(container.querySelector('[data-map-writes]')).toBeNull();
-        expect(container.textContent).not.toContain('What it writes');
+        expect(container.textContent).not.toContain('Inspect Tree');
+        expect(container.textContent).toContain(MAP_TEXT.typeLabel.modifier);
     });
 });

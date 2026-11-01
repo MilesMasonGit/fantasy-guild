@@ -15,7 +15,6 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
-import * as Cartography from '../systems/atlas/Cartography.js';
 import * as RegionRules from '../systems/atlas/RegionRules.js';
 import { placeAt } from './fixtures/mat.js';
 import './fixtures/testTokens.js';
@@ -69,14 +68,12 @@ function newGame() {
     const c = centre();
     placeAt('token_guild_hall', c.x, c.y);
     Atlas.createStarterRegion();
-    Cartography.clearStock();
     // A new game: everything may have changed, as the engine announces it.
     EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'new_game' });
 }
 
-/** Settle `ingredients` (granting them first) and return the Region. */
+/** Settle `ingredients` and return the Region. */
 function settleRegion(ingredients, seed = 1) {
-    Cartography.grant(ingredients, 1);
     const result = Atlas.settle({ ingredients, seed });
     expect(result.success).toBe(true);
     return result.region;
@@ -103,7 +100,6 @@ beforeEach(() => {
 afterEach(() => {
     SaveManager.currentSlot = null;
     GameLoop.stop();
-    Cartography.clearStock();
     getGlobalAggregator().clearAll();
 });
 
@@ -190,7 +186,6 @@ describe('a Region\'s rules are in force only while the guild is there', () => {
 
 describe('how they register', () => {
     it('two copies of a ruled map stack, each under a source of its own', () => {
-        Cartography.grant([THICKET], 1);
         const forest = settleRegion([WOOD, THICKET, THICKET]);
         expect(forest.rules).toHaveLength(2);
         Atlas.travel(forest.id);

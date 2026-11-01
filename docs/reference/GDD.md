@@ -112,6 +112,13 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
 - **Terrain** (the ground under the Tokens) is **Built** (brief 80): each Region's stored cell map
   drawn as pixel ground, one look per terrain per Region, meadow where a Region stores none (the
   Starter Camp). Static: nothing on the mat changes it. *(`TerrainCanvas.jsx`)*
+- **Stone terrain** — **Built (brief 330 W3)**: a feature of the ground as water is. A Region
+  written with Stone gets outcrops of bare rock (a wild chasm a ridge across the mat), made with
+  its layout and stored with its cell map; the cells they cover are `stone`, never on the water or
+  in the Hall's clearing. Only ore and stone of the place's own grow there, starting their groves
+  on it; anything with no "Stands on" may still be built there, and a Token may name **Stone** in
+  its "Stands on" (the mines and quarries of W4 will). Drawn as pale rock and scree, a code-drawn
+  stand-in until the owner's Stone pieces. *(`StoneShapes.js`, `Layout.js`, `terrainRegistry.js`)*
 
 ### What a Token is — Built
 Everything on the mat is a Token: resource nodes, tools, stations, spawners,
@@ -403,24 +410,22 @@ inspection instead: it leaves with no reward and frees its place; tutorial
 steps stay until claimed. The discard bin (and its refunds) is gone.
 *(`Demolition.js`, `QuestTokens.dismissBounty`, `TokenInspection.jsx`)*
 
-### Maps — Items (Atlas A5); no map content yet
-A map is an item: a **Base Map** (type `map`) or a **Modifier** (type
-`modifier`), authored in the CMS's Map editor and written into `data/items.json`
-by Sync, so it banks, drops and pays out like any item. Its Cartography block
-says what it writes: a Base Map has a biome, points, weighted nodes, its own
-enemy camps and treasures, and its ground (each biome its own look and water:
-meadow, forest, mountain, coast, flower meadow, cherry grove, Yellowstone,
-volcano, and the **Bog**, dark grass and mud with a marsh of many small ponds;
-`Budget.js`, `terrainRegistry.js`); a Modifier has effects (more of a
-node, a better node instead, an enemy camp, a treasure). The generation engine
-reads it (`systems/atlas/mapItems.js` → `Budget.js`); inspecting one in the Bank
-lists what it writes. Settling a Region takes the slotted maps from the Bank
-(`Cartography.js`). A claimed bounty pays a map 25 % of the time, drawn at the
-claim, weighted by each map's bounty weight. A Base Map ticked **Given by the
-tutorial** is one of the first maps the tutorial pays. The simulator prices no map. Map
-bursts, the Map shop, the Explore skill and the old Map catalogue
-(`data/maps.json`) are retired; the last Map Token, **Volcanic Island**, does
-nothing and is the owner's to delete in the CMS.
+### Maps — Retired (brief 330 W2); the world map settles places instead
+Map items (a **Base Map**, type `map`, and a **Modifier**, type `modifier`) are
+retired: nothing drops, pays or makes one, a drop line naming one never rolls
+and one handed to the mat never lands, and there is no Cartography table,
+upcycling or bounty map. The boot audit names each Base Map and each Token
+that still drops a map, for the owner to delete in the CMS (the Map editor
+still opens them). A Modifier's Cartography block (more of a node, a better
+node instead, an enemy camp, a treasure) lives on as a world cell's hidden
+extra (§10, `world/cellRegion.js`). The generation engine still writes a
+Region from recipes (`Budget.js` → `Layout.js`, `Cartography.js`), each biome
+its own ground and water: meadow, forest, mountain, coast, flower meadow,
+cherry grove, Yellowstone, volcano, and the **Bog**, dark grass and mud with
+a marsh of many small ponds (`terrainRegistry.js`); the QA panel's Terrain
+views use it. Map bursts, the Map shop, the Explore skill and the old Map
+catalogue (`data/maps.json`) are retired too; the last Map Token, **Volcanic
+Island**, does nothing and is the owner's to delete in the CMS.
 
 ---
 
@@ -1181,14 +1186,15 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*
-  - **Tutorial** (the cartographer's, `tutorialQuests.js`): 13 steps, one at
+  - **Tutorial** (the cartographer's, `tutorialQuests.js`): 12 steps, one at
     a time: recruit a hero, equip a Woodaxe, **send your hero to a tree**, gather,
     collect loot, buy a Foundation, build a station, craft, **build a first
     camp** (a Logging Camp on a Wood Foundation; any camp counts); then the
     Starter Camp's end, **make a first tool** (copper, the camp's metal) and
-    **beat a Goblin**, which pays the **first maps** (one of each Base Map
-    ticked "given by the tutorial"; while none is ticked, each Base Map nothing
-    trades up into); then settle a Region and travel to it.
+    **beat a Goblin**; then the last step, **settle your first place**: it
+    arrives with the cartographer opening the Atlas on the world map, his words
+    heading its right page, and is done when a place of the world map is
+    settled (brief 330 W3).
   - **Bounties**: random "collect N items" or "defeat N Goblins", each paying
     10 Oak Wood (*placeholder*). Cap 2 (the Notice Board star retired with brief 320); a
     new one every 3 min of game time.
@@ -1244,7 +1250,7 @@ drawers**. The menu can be flipped to the right.
   not migrated** (`GAME_VERSION = '0.8.1'`, moved by the Atlas's Regions), and
   that stays the policy **until 1.0** (owner 2026-10-06). A new game is saved
   immediately.
-- **Regions** — **Built, dev console only** (Atlas slice A1): the save holds
+- **Regions** — **Built** (Atlas slice A1; on screen in the Atlas): the save holds
   every Region the guild has settled (`state.atlas`); the mat is the board of
   the Region the guild is in. **Only that Region runs**, offline catch-up
   included; every other Region is frozen exactly as it was left. A new game's
@@ -1254,16 +1260,57 @@ drawers**. The menu can be flipped to the right.
   Region it has never stood in, and back in its old spot in one it has), and
   leaves each Region's flags behind: going back, every hero starts at the flag
   they left there, with no work claimed and no fight on; a new Region starts
-  with everyone in the Dock. No Atlas screen yet: `Game.Atlas.devCreateEmptyRegion()`
-  and `Game.Atlas.travel(id)` in the dev console. *(`src/systems/atlas/`)*
-- **The world** — **Generated, not on screen yet** (brief 330 W1): a new game
-  generates its hex world from the run seed (the game's creation time) and the
-  world tables, and keeps it whole in the save (`state.world`): the Hall's cell
-  (the Starter Camp), three strict rings, wild rings beyond, six wedges by
-  origin line; each cell's origins, tier, kit, specialty, hidden extras and
-  price. The tables are placeholder until the CMS syncs `data/world.json`
-  (W6). A save made before worlds has none. The QA panel's Atlas section shows
-  a world in words. *(`src/systems/world/`, `worldTablesShape.js`)*
+  with everyone in the Dock. The Atlas's Regions page lists them (travel,
+  rename, archive, abandon). *(`src/systems/atlas/`)*
+- **The world** — **Built: generated (brief 330 W1) and on screen (W2)**: a new
+  game generates its hex world from the run seed (the game's creation time)
+  and the world tables, and keeps it whole in the save (`state.world`): the
+  Hall's cell (the Starter Camp), three strict rings, wild rings beyond, six
+  wedges by origin line; each cell's origins, tier, kit, specialty, hidden
+  extras and price. The Atlas opens on its **World** page: flat-topped hexes in
+  their kit's colour with the first outputs they yield; the strict rings show
+  from the start and the wild rings two past the guild's furthest place.
+  Settled cells are lit (the guild's carries its flag), the cells beside them
+  are the **frontier**, the rest lie beyond. The hover over a cell lists what it
+  yields and its price as have/need (an item against the Bank, a skill against
+  the best level any hero has reached). **Settle** (frontier only) pays the
+  whole price at once, writes the cell's Region and takes the guild there; a
+  settled place offers **Travel**, as the Regions page does. A Region knows its
+  cell (`region.cellId`); abandoning it returns the cell to the frontier.
+- **A place's mat** — **Built (brief 330 W3)**: settling writes the Region from
+  its cell (`world/cellMat.js`). **The kit** (Highland, Woodland, Plains,
+  Wetland, Riverside) gives each skill its share of natural work in heroes (a
+  hero is about five veins, four trees, three crops or herbs, two waters or one
+  camp), on its own ground (mountain, forest, meadow, bog, coast) with its own
+  Stone outcrops; a skill's Tokens are the cell's own origins of it, else the
+  everyday ones the guild already has (earlier rings', the Starter Camp's).
+  **The specialty** means better things, not more: its skill gets at least one
+  hero's work, all of it the cell's own origins (a cell holding nothing of its
+  specialty's line is generated with one of that line's origins for its ring,
+  so it shows on the map), one Token of it the rarest of its line's table for
+  the ring; a combat specialty makes one of the kit's camps its boss camp.
+  Every origin the map shows stands on the mat; work nothing fills goes to the
+  cell's own line; a mat keeps at most six heroes of natural work (the rest is
+  built). The hidden modifiers and treasures ride along as before; a wild cell
+  has one origin almost everywhere (three quarters of its nodes) or an odd
+  layout (islands, mostly water, a chasm of Stone, cramped). **The arrival**: a
+  settled place arrives occupied by the enemies its cell lists (3 to 6, more
+  further out, sometimes a boss), together in a lair in the mat's outer band,
+  one use each and tied to no camp. Until every one is beaten the mat is
+  **held**: drawn dark (its ground shaded, its Tokens dimmed, the enemies
+  bright), and a hero may be sent at an enemy and at nothing else ("Beat the
+  enemies here first"); a hero whose enemy falls takes on the nearest one still
+  standing, so heroes sent at the lair keep fighting while the player is away;
+  the last one beaten brightens the mat ("The enemies are beaten: … is the
+  guild's to work"). The board keeps it (`board.arrival`), so it travels and
+  saves with the Region. The QA panel's Atlas section settles a fixture place
+  of each kit for free, beats its arrival at once, and jumps the tutorial to
+  its last step. *(`world/cellMat.js`, `world/cellRegion.js`, `world/Arrival.js`,
+  `board/Occupation.js`)* The tables are placeholder
+  until the CMS syncs `data/world.json` (W6). A save made before worlds has
+  none: the World page says so, and its Regions still travel. The QA panel's
+  Atlas section meets the frontier's prices at a click and shows a world in
+  words. *(`src/systems/world/`, `worldTablesShape.js`, `ui/components/atlas/WorldPage.jsx`)*
 - **Desktop**: packaged with Tauri (Windows installers); the game runs in the
   webview and saves stay in its storage.
 
@@ -1320,7 +1367,8 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
   Construction job with no refund, everything counts toward the cap, and a
   hand-made Starter Camp opens the game. Roadmap and owner answers:
   [`atlas_roadmap.md`](../active/atlas_roadmap.md). Built so far: Regions and
-  travel (§10), from the dev console; the Starter Camp and landmarks (A7).
+  travel (§10); the Starter Camp and landmarks (A7). Map items are retired: the
+  world map (brief 330, §10) settles places instead.
 - **Classless heroes — Built (brief 270)**:
   [`docs/active/concept_classless_heroes.md`](../active/concept_classless_heroes.md).
   The class tree of the skill and class rework v2 (brief 20) is retired (§4);

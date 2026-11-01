@@ -2,7 +2,7 @@
 
 import { mulberry32, seedFromText } from '../atlas/seededRandom.js';
 import { cellId, cellsWithin, neighbours, sideOf } from './hex.js';
-import { STRICT_RINGS, PRICE_FROM, SKILL_OF, lineById } from '../../config/worldTablesShape.js';
+import { STRICT_RINGS, PRICE_FROM, SKILL_OF, MAX_ARRIVAL, lineById } from '../../config/worldTablesShape.js';
 
 /**
  * One run's world, from its seed and the world tables (`worldTablesShape.js`), all at once at a new
@@ -23,7 +23,9 @@ import { STRICT_RINGS, PRICE_FROM, SKILL_OF, lineById } from '../../config/world
  *    times, the rest one each), walking the rings outward; once `pityWindow` cells are drawn, a
  *    specialty the ring's bag still holds that none of the last `pityWindow` cells had comes next,
  *    the longest missing first. With more specialties than the window that is always so, and the
- *    specialties go round in turn. Wild cells draw freely.
+ *    specialties go round in turn. Wild cells draw freely. A cell holding nothing of its
+ *    specialty's line takes one of that line's origins for its ring, so the specialty's new tier
+ *    shows on the map with the rest.
  * 6. **Kits** by the line's lean.
  * 7. **Extras** (the hidden modifiers and treasures): a strict cell's are worth its ring's value
  *    within `valueTolerance`; a wild cell's aim at the last strict ring's value grown per ring.
@@ -32,6 +34,9 @@ import { STRICT_RINGS, PRICE_FROM, SKILL_OF, lineById } from '../../config/world
  *    Its skill levels follow the template. Wild rings grow the last strict ring's template.
  * 9. **Wild extremes.** Each wild cell is either one origin almost everywhere (`composition`) or
  *    an odd layout.
+ * 10. **Arrivals.** The enemies a place arrives with (`arrival`): its ring's count and enemies,
+ *    sometimes one of them a boss; wild rings ring 3's, one enemy more per ring out, at most
+ *    `MAX_ARRIVAL`.
  *
  * Every step draws from its own stream, seeded from the run seed, the step and the ring, never from
  * `Math.random`, so a world is the same on every machine and a ring added outward later would not
@@ -40,10 +45,10 @@ import { STRICT_RINGS, PRICE_FROM, SKILL_OF, lineById } from '../../config/world
  * Pure: reads only what it is handed. The game passes the registry's Tokens; the ledger its own.
  */
 
-export const WORLD_VERSION = 1;
+export const WORLD_VERSION = 2;
 
 /** How an origin came to be in a cell. */
-export const ORIGIN_ROLE = Object.freeze({ HALL: 'hall', MAIN: 'main', BLEND: 'blend', KEY: 'key' });
+export const ORIGIN_ROLE = Object.freeze({ HALL: 'hall', MAIN: 'main', BLEND: 'blend', KEY: 'key', SPECIALTY: 'specialty' });
 
 /** A wild cell's oddness. */
 export const EXTREME = Object.freeze({ COMPOSITION: 'composition', LAYOUT: 'layout' });
@@ -235,7 +240,8 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
             value: 0,
             requires: null,
             payFrom: [],
-            extreme: null
+            extreme: null,
+            arrival: []
         };
     });
     const byId = new Map(cells.map(c => [c.id, c]));
@@ -360,6 +366,17 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
         }
     }
 
+    // 5b. The specialty's line in the cell, so its new tier shows on the map.
+    for (let n = 1; n <= rings; n++) {
+        const random = streamOf(runSeed, 'specialty-origin', n);
+        for (const cell of ringOf(n)) {
+            const line = tables.lines.find(l => l.skill && l.skill === cell.specialty);
+            if (!line || cell.origins.some(o => o.line === line.id)) continue;
+            const pick = pickWeighted(random, originPool(line, n).filter(o => !hasOrigin(cell, o.id)), o => o.weight);
+            if (pick) cell.origins.push({ id: pick.id, line: line.id, role: ORIGIN_ROLE.SPECIALTY });
+        }
+    }
+
     // 6. Kits by the line's lean.
     const kitIds = tables.kits.map(k => k.id);
     for (let n = 1; n <= rings; n++) {
@@ -478,5 +495,31 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
         }
     }
 
+    // 10. Arrivals.
+    for (let n = 1; n <= rings; n++) {
+        const random = streamOf(runSeed, 'arrival', n);
+        const table = tables.arrival?.[Math.min(n, STRICT_RINGS)];
+        if (!table) continue;
+        for (const cell of ringOf(n)) cell.arrival = arrivalOf(table, Math.max(0, n - STRICT_RINGS), random);
+    }
+
     return { version: WORLD_VERSION, seed: runSeed, strictRings: STRICT_RINGS, rings, wedges, cells, problems };
+}
+
+/** A place's arrival: `[{ typeId, count, boss? }]`, the boss first. */
+function arrivalOf(table, more, random) {
+    const [low, high] = table.count;
+    let count = Math.min(MAX_ARRIVAL, low + pickIndex(random, high - low + 1) + more);
+    const out = [];
+    const add = (typeId, boss = false) => {
+        const row = out.find(r => r.typeId === typeId);
+        if (row) row.count++;
+        else out.push(boss ? { typeId, count: 1, boss: true } : { typeId, count: 1 });
+    };
+    if (count > 0 && table.bosses.length && random() < table.bossChance) {
+        add(pickWeighted(random, table.bosses, b => b.weight).id, true);
+        count--;
+    }
+    for (let i = 0; i < count && table.enemies.length; i++) add(pickWeighted(random, table.enemies, e => e.weight).id);
+    return out;
 }

@@ -94,13 +94,13 @@ export function createEmptyBoard() {
 export function createRegionRecord(id = null) {
     return {
         id,
-        // 'starter' (the board a new game opens on; never abandoned) or 'settled' (written from maps).
+        // 'starter' (the board a new game opens on; never abandoned) or 'settled' (written since).
         kind: 'settled',
         // Made from the ingredients when the Region is written; never changes.
         practicalName: '',
         // Generated, then the player's to rename.
         flavourName: '',
-        // The item ids written into it, in slot order.
+        // The recipe ids it was written from, in slot order.
         ingredients: [],
         // The seed its layout was settled with.
         seed: 0,
@@ -115,6 +115,9 @@ export function createRegionRecord(id = null) {
         terrain: null,
         // Region-wide rules, in force only while the guild is here (`RegionRules.js`).
         rules: [],
+        // The world map's cell it was settled on (`"q,r"`). Null for the Starter Camp (the Hall's
+        // cell, by its kind) and for a Region written off the map (the dev tools').
+        cellId: null,
         // Game time (ms) it was written at.
         settledAt: 0,
         // Hidden from the Region list.
@@ -296,9 +299,9 @@ export const INITIAL_STATE = {
         // Region ids are `region_<n>`, never reused, so an abandoned Region's id stays dead.
         nextRegionNumber: 1,
         regions: {},
-        // The guild's layout seed: each new Cartography preview steps it and lays out with the
+        // The guild's layout seed: a preview asked without a seed steps it and lays out with the
         // result, so layouts vary without the game ever drawing from `Math.random`. Null until the
-        // first preview, which starts it from `meta.createdAt`.
+        // first such preview, which starts it from `meta.createdAt`.
         seed: null
     },
 

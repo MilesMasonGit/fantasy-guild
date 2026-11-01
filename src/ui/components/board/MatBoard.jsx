@@ -38,6 +38,7 @@ import { useMatFit } from './MatFitContext.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
+import * as Occupation from '../../../systems/board/Occupation.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as EnemyMotion from '../../../systems/board/EnemyMotion.js';
 import * as Orders from '../../../systems/board/Orders.js';
@@ -297,6 +298,8 @@ export const MatBoard = React.memo(function MatBoard({
     );
     /** The ground's pictures, for the ambient life drawn on it and over the Tokens. */
     const [groundPictures] = useState(createGroundPictures);
+    /** Whether the mat is held by its arrival (`Occupation`): its ground shaded, its Tokens dimmed. */
+    const held = useGameState(() => Occupation.isOccupied(), [ENGINE_EVENTS.ATLAS_CHANGED, ENGINE_EVENTS.GAME_RESET]);
 
 
     const handlePointerMove = useCallback((e) => {
@@ -526,6 +529,21 @@ export const MatBoard = React.memo(function MatBoard({
              */}
             <AmbientLife pictures={ground ? groundPictures : null} tokens={tokens} workedBy={workedBy} carriedId={carriedId} />
 
+            {/* `MAT_Z.HELD_SHADE`: a held mat's ground in shadow, lifting slowly once it is cleared. */}
+            <div
+                data-mat-held={held ? 'on' : 'off'}
+                aria-hidden="true"
+                className="absolute left-0 top-0 pointer-events-none"
+                style={{
+                    width: mat.w,
+                    height: mat.h,
+                    zIndex: MAT_Z.HELD_SHADE,
+                    borderRadius: MAT_EDGE.radius,
+                    backgroundColor: held ? HELD_SHADE : NO_SHADE,
+                    transition: 'background-color 1.6s ease-out'
+                }}
+            />
+
             {/**
              * The stack (`MAT_Z.TOKEN_BASE` up): Tokens, the heroes on them, and what is written
              * on them; flags and idle heroes sort in among them (FlagLayer, below).
@@ -552,6 +570,7 @@ export const MatBoard = React.memo(function MatBoard({
                     dragging={carriedId === t.id}
                     fightBarHost={fighters.tokens.has(t.id) ? fightBarHost : null}
                     plateHost={rest.tokenId === t.id && !workedBy.has(t.id) ? idlePlateHost : null}
+                    held={held && Occupation.isHeldType(t.typeId)}
                     onPress={handleTokenPress}
                 />
             ))}
@@ -695,6 +714,10 @@ const MODE_EDGE_COLOUR = Object.freeze({
  * its maps' ground. A flat projection, so a load that brings the same Region back compares equal
  * and draws nothing again.
  */
+/** A held mat's shade over its ground, and the same colour cleared, so it fades rather than snaps. */
+const HELD_SHADE = 'rgba(8, 10, 22, 0.5)';
+const NO_SHADE = 'rgba(8, 10, 22, 0)';
+
 function activeGroundSource() {
     const region = activeRegion();
     return { seed: region?.seed ?? 0, terrain: region?.terrain ?? null, ground: region?.ground ?? null };

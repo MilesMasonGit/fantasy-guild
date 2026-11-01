@@ -16,9 +16,10 @@ import { getItem, getAllItems, registerItems } from '../config/registries/itemRe
 import { starterToolIds, neededToolOf, toolOf, toolMeets } from '../config/registries/toolKinds.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { catchPoolsOf } from '../config/registries/catchPools.js';
-import { isMapItem, isBaseMap, tokenRefsOf, bountyWeightOf } from '../systems/atlas/mapItems.js';
-import { firstMapsReward, TUTORIAL_QUESTS, TUTORIAL_GOBLIN } from '../systems/quests/tutorialQuests.js';
-import { BOUNTY_REWARD_ITEMS, RANDOM_ITEMS, RANDOM_HUNTS, bountyMapPool } from '../systems/quests/questBounties.js';
+import { isModifier, tokenRefsOf } from '../systems/atlas/mapItems.js';
+import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
+import { BOUNTY_REWARD_ITEMS, RANDOM_ITEMS, RANDOM_HUNTS } from '../systems/quests/questBounties.js';
+import { worldTables } from '../config/registries/worldTablesRegistry.js';
 import { getEffect } from '../config/registries/effectRegistry.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
 import {
@@ -38,7 +39,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * ⭐ A new game opens in the Starter Camp: the Region the owner laid out in the game and synced from
  * the CMS (`data/starterCamp.json`), or the built-in camp while there is none. Then the roadmap §6
  * circularity check: from the Starter Camp, its Bank and the Shop, every chain is reachable; and
- * every material, tool, building and map of planes 1 and 2 is, on the SHIPPED data.
+ * every material, tool and building of planes 1 and 2 is, on the SHIPPED data. A plane is a ring of
+ * the world map now: map items are retired, and a world cell of ring n writes its origins and its
+ * hidden extras.
  *
  * ⚠️ The fixtures are registered here, not through `fixtures/testTokens.js`: that file registers
  * fixture recipe pools over the shipped ones, which would falsify the circularity check.
@@ -258,28 +261,25 @@ const BOUNTY_ITEMS = BOUNTY_REWARD_ITEMS.map(r => r.itemId);
  * Token whose inputs are already reachable, caught from water's catch pools, a bonus drop of an
  * effect on a reachable Token or item, quest rewards, the Wishing Well's Water). A Token is bought
  * once its whole price is reachable; a recipe runs once its inputs are; a Token whose work needs a
- * tool is worked once a tool that will do is. A map (or modifier) in hand writes the Tokens it
- * names onto the region it settles; with `maxPlane`, only the maps of planes up to it do.
+ * tool is worked once a tool that will do is. The world map's cells of rings up to `maxPlane` write
+ * their Tokens ({@link worldTokens}): a cell is settled with materials of earlier rings, which this
+ * close-over does not gate, as no skill level gates a recipe.
  *
  * The fight rule: an enemy Token that is reachable is beaten and drops its whole loot table
  * (its Outputs), first-kill lines included. Heroes fight bare-handed when nothing better is in
  * hand, and levels are earned by playing, so neither gear nor level gates a fight here, as no
  * skill level gates a recipe.
  *
- * The cartographer pays the first maps once a tool has been made (a recipe's output, not a starter
- * tool in hand) and a goblin is reachable; a bounty pays its items and, now and then, a map of
- * bounty weight above 0, once anything it asks for can be had.
+ * A bounty pays its items once anything it asks for can be had.
  */
 function reachable({ maxPlane = 2 } = {}) {
     const camp = StarterCamp.starterCamp();
-    const tokens = new Set(StarterCamp.placementsOf(camp).map(t => t.typeId));
+    const tokens = new Set([...StarterCamp.placementsOf(camp).map(t => t.typeId), ...worldTokens(maxPlane)]);
     const items = new Set([
         ...StarterCamp.openingBank(camp).map(i => i.itemId),
         ...starterToolIds(getAllItems()),
     ]);
-    const made = new Set();
     const all = Object.values(getAllTokenTypes());
-    const allItems = getAllItems();
     const have = (list) => (list || []).every(x => items.has(x.itemId));
     const toolFor = (def) => {
         const need = neededToolOf(def);
@@ -287,7 +287,7 @@ function reachable({ maxPlane = 2 } = {}) {
     };
     const gain = (outputs) => {
         for (const o of outputs || []) {
-            if (o.itemId) { items.add(o.itemId); made.add(o.itemId); }
+            if (o.itemId) items.add(o.itemId);
             if (o.tokenId) tokens.add(o.tokenId);
         }
     };
@@ -324,20 +324,13 @@ function reachable({ maxPlane = 2 } = {}) {
             if (def.shop && have(def.shop.price)) tokens.add(def.id);
         }
         for (const id of [...items]) {
-            const def = getItem(id);
-            if (isMapItem(def) && planeOfMap(def) <= maxPlane) for (const ref of tokenRefsOf(def)) tokens.add(ref.typeId);
             // A consumable's effect works on whoever uses it, so its bonus drops come with it.
-            for (const bonus of effectYields(def).items) items.add(bonus);
-        }
-        const toolMade = [...made].some(id => toolOf(getItem(id)));
-        if (toolMade && tokens.has(TUTORIAL_GOBLIN)) {
-            for (const m of firstMapsReward(allItems)) items.add(m.itemId);
+            for (const bonus of effectYields(getItem(id)).items) items.add(bonus);
         }
         for (const id of TUTORIAL_STEP_ITEMS) items.add(id);
         const bountyAsks = RANDOM_ITEMS.some(r => items.has(r.id)) || RANDOM_HUNTS.some(h => tokens.has(h.id));
         if (bountyAsks) {
             for (const id of BOUNTY_ITEMS) items.add(id);
-            for (const m of bountyMapPool(allItems)) items.add(m.itemId);
         }
         const well = getUpgradeDef('wishing_well');
         if (well && have(getUpgradePrice(well, 0))) items.add(WISHING_WELL_ITEM);
@@ -347,15 +340,33 @@ function reachable({ maxPlane = 2 } = {}) {
 }
 
 /**
- * A map's plane. ⚠️ No field records it: the brief that authored planes 1 and 2 gave every plane-1
- * map and modifier a bounty weight above 0 and every plane-2 one a weight of 0 (bounties pay only
- * plane-1 maps), so the weight is the plane until a third plane needs a field of its own.
+ * The Tokens the world map's cells of rings 1 to `maxRing` write, from the world tables in force:
+ * each line's origins and key origins of those rings, and their hidden extras (a treasure, or the
+ * Tokens a modifier names). Any cell may draw any extra its ring allows.
  */
-const planeOfMap = (def) => (bountyWeightOf(def) > 0 ? 1 : 2);
+function worldTokens(maxRing) {
+    const tables = worldTables();
+    const out = new Set();
+    for (let ring = 1; ring <= maxRing; ring++) {
+        for (const line of tables.lines) for (const o of line.origins[ring] || []) out.add(o.id);
+        for (const id of tables.keys[ring] || []) out.add(id);
+        // A place's arrival: its enemies and bosses.
+        for (const e of [...(tables.arrival[ring]?.enemies || []), ...(tables.arrival[ring]?.bosses || [])]) out.add(e.id);
+    }
+    // Every kit's camps, and the boss camp a combat specialty makes one of them.
+    for (const kit of tables.kits) for (const id of [...kit.camps, ...kit.bossCamps]) out.add(id);
+    for (const extra of tables.extras) {
+        if (extra.rings && !extra.rings.some(r => r <= maxRing)) continue;
+        if (extra.kind === 'treasure') out.add(extra.id);
+        const def = getItem(extra.id);
+        if (extra.kind === 'modifier' && isModifier(def)) for (const ref of tokenRefsOf(def)) out.add(ref.typeId);
+    }
+    return out;
+}
 
 /**
  * What planes 1 to `maxPlane` put in the game, on paper: the Starter Camp, the Shop, and every Token
- * a map or modifier of those planes names, followed through everything those Tokens spawn, grow
+ * the world map's rings up to it write, followed through everything those Tokens spawn, grow
  * into or build, whether or not their inputs can be had. `produced` is every item that world makes,
  * drops or pays; `asked` every item it asks for (inputs, prices, costs, bait), each with who asks;
  * `needs` the tools its work needs; `built` the Tokens it builds or sells. This is the list the
@@ -365,16 +376,14 @@ function planeWorld(maxPlane = 2) {
     const camp = StarterCamp.starterCamp();
     const allItems = getAllItems();
     const all = Object.values(getAllTokenTypes());
-    const tokens = new Set(StarterCamp.placementsOf(camp).map(t => t.typeId));
+    const tokens = new Set([...StarterCamp.placementsOf(camp).map(t => t.typeId), ...worldTokens(maxPlane)]);
     const built = new Set();
     for (const def of all) if (def.shop) { tokens.add(def.id); built.add(def.id); }
     const produced = new Set([
         ...StarterCamp.openingBank(camp).map(i => i.itemId),
         ...starterToolIds(allItems),
         ...TUTORIAL_STEP_ITEMS,
-        ...firstMapsReward(allItems).map(m => m.itemId),
         ...BOUNTY_ITEMS,
-        ...bountyMapPool(allItems).map(m => m.itemId),
         WISHING_WELL_ITEM
     ]);
     const asked = new Map();
@@ -423,9 +432,7 @@ function planeWorld(maxPlane = 2) {
             }
         }
         for (const id of [...produced]) {
-            const def = getItem(id);
-            if (isMapItem(def) && planeOfMap(def) <= maxPlane) for (const ref of tokenRefsOf(def)) tokens.add(ref.typeId);
-            for (const bonus of effectYields(def).items) produced.add(bonus);
+            for (const bonus of effectYields(getItem(id)).items) produced.add(bonus);
         }
         grew = tokens.size + produced.size > before;
     }
@@ -520,7 +527,6 @@ describe('K4: from the Starter Camp, every plane-1 and plane-2 thing is reachabl
     const materials = [...named].filter(id => getItem(id)?.type === 'material');
     const tools = [...named].filter(id => toolOf(getItem(id)));
     const buildings = [...world.tokens].filter(id => world.built.has(id) || stationSkillOf(getTokenType(id)));
-    const maps = Object.values(getAllItems()).filter(def => isMapItem(def) && planeOfMap(def) <= 2).map(def => def.id);
 
     it('every item the two planes name exists', () => {
         expect([...named].filter(id => !getItem(id)).sort()).toEqual([]);
@@ -549,23 +555,6 @@ describe('K4: from the Starter Camp, every plane-1 and plane-2 thing is reachabl
             return `${id}: built by ${[...new Set(by)].join(', ') || 'no recipe'}${shop}`;
         };
         expect(buildings.filter(id => !tokens.has(id)).sort().map(builtBy)).toEqual([]);
-    });
-
-    it('every Base Map and modifier of the two planes', () => {
-        expect(maps.length).toBeGreaterThan(0);
-        expect(unreached(maps, items)).toEqual([]);
-    });
-
-    it('the first plane-2 map: a boss reachable within plane 1 drops one for certain on its first kill', () => {
-        const planeOne = reachable({ maxPlane: 1 });
-        const guaranteed = [...planeOne.tokens].flatMap(typeId => {
-            const def = getTokenType(typeId);
-            if (!def?.enemy) return [];
-            return (def.config?.outputs || [])
-                .filter(o => o.firstKill === true && isBaseMap(getItem(o.itemId)) && planeOfMap(getItem(o.itemId)) === 2)
-                .map(o => `${typeId} -> ${o.itemId}`);
-        });
-        expect(guaranteed.length, 'no plane-1 boss guarantees a plane-2 map').toBeGreaterThan(0);
     });
 
     it('every exclusion is still named by the two planes and still unreached', () => {

@@ -5,15 +5,13 @@ import * as Atlas from '../../systems/atlas/Atlas.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
 import { getTokenType, registerTokenTypes } from '../../config/registries/tokenRegistry.js';
-import { grant } from '../../systems/atlas/Cartography.js';
 import { DEV_MAPS } from '../../systems/atlas/devMaps.js';
 import { nextSeed, seedFromText } from '../../systems/atlas/seededRandom.js';
 import { TERRAIN, cellIndex, decodeTerrain, islandsOf } from '../../systems/atlas/TerrainMap.js';
 
 /**
  * Every view of the ground the eye-check needs is a click: each button settles a Region from the
- * dev console's placeholder maps, for free (the maps are granted to the dev stock and taken at
- * once), and takes the guild there. The same button gives the same Region every time (its seed
+ * dev console's placeholder maps, for free, and takes the guild there. The same button gives the same Region every time (its seed
  * follows from its name); **Reroll it** gives the Region the guild is in a new seed; **Back to the
  * Starter Camp** goes home. The dev Region the guild leaves is removed, so the Atlas does not fill
  * up with them.
@@ -127,10 +125,7 @@ function settleFree(maps, seed) {
     for (let i = 0; i < tries; i++) {
         // Asked with a seed, a preview changes nothing (not even the guild seed).
         const plan = Atlas.preview(recipes, { seed: tried });
-        if (plan.fits && (!wantsIsland || hasIsland(plan.layout))) {
-            grant(recipes, 1);
-            return Atlas.settle({ ingredients: recipes, seed: tried });
-        }
+        if (plan.fits && (!wantsIsland || hasIsland(plan.layout))) return Atlas.settle({ ingredients: recipes, seed: tried });
         tried = nextSeed(tried);
     }
     return { success: false, reason: `No layout of ${maps.join(' + ')} fitted in ${tries} seeds` };

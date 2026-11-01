@@ -17,14 +17,11 @@ import { matW, matH, artRadiusOf } from '../../config/matGeometry.js';
 import { logger } from '../../utils/Logger.js';
 import { TEXT, FLAVOUR_NAME_MAX, practicalName, flavourName } from './regionNames.js';
 import { describe as describeSummary } from './Budget.js';
-import {
-    recipeOf, preview, grant, held, shortfall, take, regionBoard, rulesOf
-} from './Cartography.js';
+import { recipeOf, preview, regionBoard, rulesOf } from './Cartography.js';
 import { DEV_MAPS, asciiLayout } from './devMaps.js';
 import { layOnLiveBoard, starterCampTerrain } from './StarterCamp.js';
 
-export { recipeOf, preview, reroll, held, heldCount } from './Cartography.js';
-export { upcycleOffer, upcycle } from './Upcycle.js';
+export { recipeOf, preview, reroll } from './Cartography.js';
 
 /**
  * The Atlas: every Region the guild has settled, and moving the guild between them.
@@ -41,9 +38,10 @@ export { upcycleOffer, upcycle } from './Upcycle.js';
  * stay with their Region: going back, each hero starts at the flag they left there, with no claim
  * and no fight; a Region the guild has never been to starts with every hero in the Dock.
  *
- * Settling ({@link settle}) writes a Region from maps: the Node Summary and layout the Cartography
- * table previewed (`Cartography.js`) become its board, each node a fixture standing where the
- * layout put it, around a clearing at the centre where the Hall lands on arrival.
+ * Settling ({@link settle}) writes a Region from recipes: the Node Summary and layout a preview gave
+ * (`Cartography.js`) become its board, each node a fixture standing where the layout put it, around
+ * a clearing at the centre where the Hall lands on arrival. The world map settles its places
+ * through it (`world/Settling.js`), and a Region written for a world cell carries the cell's id.
  *
  * Nothing here draws from `Math.random`: settling, travelling or naming a Region never changes what
  * the game rolls next.
@@ -101,7 +99,8 @@ function nextRegionId(atlas) {
 
 /** A new record in `atlas.regions`, with the next id. */
 function addRecord(atlas, {
-    kind, practical, ingredients = [], seed, biome = null, ground = null, terrain = null, rules = [], board = null
+    kind, practical, ingredients = [], seed, biome = null, ground = null, terrain = null, rules = [], board = null,
+    cellId = null
 }) {
     const id = nextRegionId(atlas);
     const number = atlas.nextRegionNumber++;
@@ -115,14 +114,15 @@ function addRecord(atlas, {
     region.ground = ground;
     region.terrain = terrain;
     region.rules = Array.isArray(rules) ? [...rules] : [];
+    region.cellId = typeof cellId === 'string' && cellId ? cellId : null;
     region.settledAt = GameState.state?.time?.gameTimeMs || 0;
     region.board = board;
     atlas.regions[region.id] = region;
     return region;
 }
 
-function announce(reason, regionId) {
-    EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason, regionId });
+function announce(reason, regionId, extra = {}) {
+    EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason, regionId, ...extra });
 }
 
 /** Save now, when a slot is being played. */
@@ -228,11 +228,12 @@ export function describeIngredient(itemId) {
  * @param {object|null} [options.terrain] the terrain grid, as `TerrainMap.encodeTerrain` stores it
  * @param {object[]} [options.rules] Region-wide rules
  * @param {object} [options.board] its board, built off the mat; empty by default
+ * @param {string|null} [options.cellId] the world cell it is settled on
  * @returns {{success: boolean, reason?: string, region?: object}}
  */
 export function createRegion({
     ingredients = [], describe = describeIngredient, seed, biome = null, ground = null, terrain = null,
-    rules = [], board = null
+    rules = [], board = null, cellId = null
 } = {}) {
     const atlas = ensureState();
     if (!atlas) return refuse(TEXT.REFUSE_NO_GAME);
@@ -241,10 +242,10 @@ export function createRegion({
         kind: REGION_KIND.SETTLED,
         practical: practicalName(items.map(describe)),
         ingredients: items,
-        seed, biome, ground, terrain, rules,
+        seed, biome, ground, terrain, rules, cellId,
         board: isPlainObject(board) ? board : createEmptyBoard()
     });
-    announce('created', region.id);
+    announce('created', region.id, { cellId: region.cellId });
     return { success: true, region };
 }
 
@@ -268,52 +269,52 @@ function describeRecipes(recipes) {
 const copy = (v) => JSON.parse(JSON.stringify(v));
 
 /**
- * Settle a Region: the layout the Cartography table previewed with this seed becomes a Region in
- * the Atlas, and the ingredients are taken: a map item from the Bank, a dev recipe from its stock.
- * The guild stays where it is; travelling there is the player's next step. Only this takes
- * anything: a refusal takes nothing, and neither does closing the table.
+ * Settle a Region: the layout these recipes give with this seed becomes a Region in the Atlas. The
+ * guild stays where it is; travelling there is the caller's next step. Nothing is taken: what a
+ * place costs is the world map's to ask (`world/Settling.js`).
  *
- * Refuses with no game, no ingredients, an ingredient the guild does not hold (two slots of one
- * map need two), or a layout in which some Token found no legal spot (the player rerolls). An
- * ingredient that is neither a map item nor a map recipe throws (`recipeOf`).
+ * Refuses with no game, no recipes, or a layout in which some Token found no legal spot (unless
+ * `allowUnplaced`: the Region is then written without them). An ingredient that is not a recipe
+ * throws (`recipeOf`).
  *
  * @param {object} options
- * @param {Array<string|object>} options.ingredients the slots' ingredients, in slot order: map item
- *        ids (or items), or recipes
- * @param {number} [options.seed] the seed of the preview the player saw; else a fresh preview seed
- * @returns {{success: boolean, reason?: string, missing?: object[], unplaced?: object[],
- *          region?: object, preview?: object}} `preview` is the plan the Region was written from
+ * @param {object[]} options.ingredients the recipes, in slot order
+ * @param {number} [options.seed] the seed of the preview to write; else a fresh preview seed
+ * @param {(id: string) => {word: string, modifier?: boolean}} [options.describe] how each recipe
+ *        reads in the practical name; by default its own `name`, else its item's
+ * @param {string|null} [options.cellId] the world cell the Region is settled on
+ * @param {boolean} [options.allowUnplaced] write a layout even when some Token found no room
+ * @returns {{success: boolean, reason?: string, unplaced?: object[], region?: object, preview?: object}}
+ *          `preview` is the plan the Region was written from
  */
-export function settle({ ingredients = [], seed } = {}) {
+export function settle({ ingredients = [], seed, describe = null, cellId = null, allowUnplaced = false } = {}) {
     const atlas = ensureState();
     if (!atlas) return refuse(TEXT.REFUSE_NO_GAME);
     const slots = Array.isArray(ingredients) ? ingredients : [];
     if (!slots.length) return refuse(TEXT.REFUSE_NO_MAPS);
     const recipes = slots.map(recipeOf);
-    const missing = shortfall(recipes);
-    if (missing.length) return { ...refuse(TEXT.REFUSE_NOT_HELD), missing };
     const plan = preview(recipes, { seed });
-    if (!plan.fits) return { ...refuse(TEXT.REFUSE_NO_ROOM), unplaced: plan.layout.unplaced };
+    if (!plan.fits && !allowUnplaced) return { ...refuse(TEXT.REFUSE_NO_ROOM), unplaced: plan.layout.unplaced };
 
     // Its Tokens are named after the Region they are written into, the id `createRegion` gives next.
     const board = regionBoard(plan.layout, nextRegionId(atlas));
     const { region } = createRegion({
         ingredients: plan.ingredients,
-        describe: describeRecipes(recipes),
+        describe: describe || describeRecipes(recipes),
         seed: plan.seed,
         biome: { ...plan.summary.biomes },
         ground: copy(plan.summary.ground),
         terrain: copy(plan.layout.terrain),
         rules: rulesOf(recipes),
-        board
+        board,
+        cellId
     });
-    take(recipes);
     saveNow();
     return { success: true, region, preview: plan };
 }
 
 // ---------------------------------------------------------------------------
-// Dev console: placeholder map recipes, for a game with no authored maps
+// Dev console: placeholder map recipes, written for free
 // ---------------------------------------------------------------------------
 
 /** The dev recipes `names` pick out ('forest', 'overgrown', ...). */
@@ -326,22 +327,7 @@ function devRecipes(names) {
 }
 
 /**
- * Dev console: put `count` of each placeholder map in the dev stock (`Game.Atlas.devGrantMaps()`).
- * Authored maps are items: grant them to the Bank (`Game.InventoryManager.addItem(id, n)`) and
- * settle them by id (`Game.Atlas.settle({ ingredients: ['map_forest'], seed })`).
- *
- * @returns {string[]} what the stock now holds
- */
-export function devGrantMaps(count = 2) {
-    grant(Object.values(DEV_MAPS), count);
-    const names = Object.fromEntries(Object.entries(DEV_MAPS).map(([name, r]) => [r.id, name]));
-    const lines = held().map(({ recipe, count: n }) => `${n} × ${names[recipe.id] || recipe.id}`);
-    logger.info('Atlas', `The stock holds ${lines.join(', ')}. Try Game.Atlas.devPreview(['forest', 'overgrown'])`);
-    return lines;
-}
-
-/**
- * Dev console: what `names` would write, as the Cartography table shows it
+ * Dev console: what `names` would write
  * (`Game.Atlas.devPreview(['mountain', 'goblinCamp'])`): the Node Summary in words and the layout
  * drawn in text. `preview` is the plan for `Game.Atlas.reroll(...)`; `devSettle(names, seed)`
  * settles exactly this layout.
@@ -354,14 +340,14 @@ export function devPreview(names = ['forest', 'overgrown'], seed) {
     return { seed: plan.seed, fits: plan.fits, summary, picture, preview: plan };
 }
 
-/** Dev console: settle `names` from the stock (`Game.Atlas.devSettle(['forest', 'overgrown'], seed)`). */
+/** Dev console: settle `names` for free (`Game.Atlas.devSettle(['forest', 'overgrown'], seed)`). */
 export function devSettle(names = ['forest', 'overgrown'], seed) {
     const result = settle({ ingredients: devRecipes(names), seed });
     if (result.success) {
         const { id, practicalName: practical, flavourName: flavour } = result.region;
         logger.info('Atlas', `${id}, ${practical} (${flavour}), is settled: Game.Atlas.travel('${id}')`);
     } else {
-        logger.warn('Atlas', `Not settled: ${result.reason}${result.missing ? '. Grant maps first: Game.Atlas.devGrantMaps()' : ''}`);
+        logger.warn('Atlas', `Not settled: ${result.reason}`);
     }
     return result;
 }

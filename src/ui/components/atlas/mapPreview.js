@@ -1,4 +1,4 @@
-// the Cartography preview: the Region a plan would settle, drawn small with the mat's own ground
+// a Region's preview: its plan drawn small with the mat's own ground
 
 import { regionGround } from '../../../systems/atlas/regionGround.js';
 import { HALL_TYPE_ID, hallSpot } from '../../../systems/atlas/Layout.js';

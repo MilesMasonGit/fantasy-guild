@@ -14,6 +14,7 @@ import { matW, matH } from '../config/matGeometry.js';
 
 vi.mock('../config/registries/itemRegistry.js', () => ({
     getItem: vi.fn((id) => ({ id, name: id, maxStack: 99 })),
+    isRetiredItem: vi.fn(() => false),
     DEFAULT_MAX_STACK: 1e12
 }));
 

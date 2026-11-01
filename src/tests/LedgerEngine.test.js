@@ -7,7 +7,6 @@ import {
     buildWorld, computeReach, describePath, reachPath, ingredientTree, treeSummary, buildLedger, hubsOf,
     itemKey, tokenKey, recipeKey, BOUNTY_MAP_CHANCE, LUCK_BELOW,
 } from '../systems/progression/ledger/engine.js';
-import { BOUNTY_MAP_REWARD } from '../systems/quests/questBounties.js';
 import { ledgerWorkspace, withIronChest } from './fixtures/ledgerWorld.js';
 
 /**
@@ -112,8 +111,10 @@ describe('reach: maps and the tiers they open', () => {
         expect(l.reachOf(itemKey('item_iron_ore')).tier).toBe(1);
     });
 
-    it('pays maps from bounties at the game’s odds', () => {
-        expect(BOUNTY_MAP_CHANCE).toBe(BOUNTY_MAP_REWARD.chance);
+    // ⚠️ The game no longer pays maps from bounties (map items are retired); the ledger still
+    // models it until it reads the world map instead.
+    it('pays maps from bounties at the odds the game paid them', () => {
+        expect(BOUNTY_MAP_CHANCE).toBe(0.25);
         const bounty = buildWorld(ledgerWorkspace()).rules.find((r) => r.how === 'bounty');
         expect(bounty.gives).toEqual([{ key: itemKey('map_mountain'), chance: BOUNTY_MAP_CHANCE }]);
     });

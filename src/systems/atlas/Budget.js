@@ -5,13 +5,13 @@ import { TERRAIN, DEFAULT_TERRAIN } from './TerrainMap.js';
 import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
 
 /**
- * The node budget: what the Cartography table's Node Summary shows, and what a layout then places.
+ * The node budget: what a Region written from recipes holds, and what a layout then places.
  * A pure function of the ingredients and the Token cap. It takes no seed, so a reroll (a new seed
  * for `Layout.js`) can never change it, and slot order does not matter.
  *
  * ## The recipe shape (internal; A5's adapter turns authored maps into it)
  *
- * An ingredient is one slotted map item, either a Base Map:
+ * An ingredient is one recipe (a world cell's, the dev tools', or a retired map item's), either a Base Map:
  *
  *     { id: 'map_forest', kind: 'base', biome: 'forest', points: 40,
  *       nodes:     [{ typeId: 'token_oak_tree', weight: 6 }, { typeId: 'token_redberry_bush', weight: 1 }],
@@ -27,6 +27,10 @@ import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
  *                             share: 1 },                                         // a better node instead
  *         { kind: 'threat',   typeId: 'token_goblin_camp', count: 1 },            // an enemy camp
  *         { kind: 'treasure', typeId: 'token_ruins', count: 1 } ] }               // a treasure
+ *
+ * A Base Map may also name `stone: { outcrops, ridge }`, the Stone terrain its mat holds (outcrops
+ * of rock, and a ridge across the mat): blended like the sea, and written by the layout
+ * (`StoneShapes.js`). A budget with none has no `ground.stone`.
  *
  * `share` (0–1, default 1) and `count` (default 1) are optional. Ids must be unique per distinct
  * ingredient: two slots holding the same map carry the same id.
@@ -203,7 +207,7 @@ function canonical(ingredients) {
  *   total: number, wanted: number, limit: number, clamped: boolean,
  *   biomes: Record<string, number>,
  *   ground: {main: string|null, terrains: Record<string, string>, water: number, shore: string[],
- *     inland: string[], small: Record<string, string>},
+ *     inland: string[], small: Record<string, string>, stone?: {outcrops: number, ridge: boolean}},
  *   ingredients: string[], ignored: {ingredientId: string, kind: string}[]
  * }}
  */
@@ -229,6 +233,7 @@ export function budget(ingredients, { cap } = {}) {
     const shore = new Set();
     const inlandOf = {};
     let water = 0;
+    let stone = null;
 
     for (const map of bases) {
         if (map.biome) biomes[map.biome] = (biomes[map.biome] || 0) + 1;
@@ -237,6 +242,12 @@ export function budget(ingredients, { cap } = {}) {
         if (map.biome && !(map.biome in inlandOf)) inlandOf[map.biome] = ground.inland;
         if (map.biome && ground.water > 0) shore.add(map.biome);
         water += ground.water / bases.length;
+        const rock = stoneOf(map);
+        if (rock) {
+            stone = stone || { outcrops: 0, ridge: false };
+            stone.outcrops += rock.outcrops / bases.length;
+            stone.ridge = stone.ridge || rock.ridge;
+        }
         const share = positive(map.points, 0) / bases.length;
         const entries = (map.nodes || []).filter(n => n?.typeId && positive(n.weight, 0) > 0);
         const weightSum = entries.reduce((n, e) => n + e.weight, 0);
@@ -340,10 +351,22 @@ export function budget(ingredients, { cap } = {}) {
         limit,
         clamped: total < wanted,
         biomes,
-        ground: { main: mainBiome, terrains, water, shore: [...shore].sort(byText), inland: [...(inlandOf[mainBiome] || [])], small: smallWaterOf(terrains, mainBiome) },
+        ground: {
+            main: mainBiome, terrains, water, shore: [...shore].sort(byText), inland: [...(inlandOf[mainBiome] || [])], small: smallWaterOf(terrains, mainBiome),
+            ...(stone ? { stone: { outcrops: Math.round(stone.outcrops), ridge: stone.ridge } } : {})
+        },
         ingredients: slots.map(i => i.id),
         ignored
     };
+}
+
+/** A Base Map's Stone, `{ outcrops, ridge }`, or null for none. */
+function stoneOf(map) {
+    const s = map?.stone;
+    if (!s || typeof s !== 'object') return null;
+    const outcrops = Number.isInteger(s.outcrops) && s.outcrops > 0 ? s.outcrops : 0;
+    const ridge = s.ridge === true;
+    return outcrops || ridge ? { outcrops, ridge } : null;
 }
 
 /** Each biome but the main one that brings a small water, and which, in biome order. */
@@ -363,8 +386,8 @@ export const SUMMARY_TEXT = Object.freeze({
 });
 
 /**
- * The Node Summary in words, for the Cartography preview (A6) and a map item's "What it writes"
- * (A5): one line per Token in budget order (nodes, then camps, then treasures).
+ * The Node Summary in words, for the dev console's preview and the CMS Map editor's "What it writes":
+ * one line per Token in budget order (nodes, then camps, then treasures).
  *
  * @param {object|object[]} nodeSummary  a {@link budget} result, or just its `entries`
  * @param {{nameOf?: (typeId: string) => string}} [options]  Token names; the registry's by default

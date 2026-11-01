@@ -18,7 +18,16 @@
  *   mainPerCell: 1,                 // at least this many of its line's origins per cell
  *   blendsPerNeighbour: 1,          // origins a cell takes from each other wedge it touches
  *   keys: { 2: ['token_iron_ore_vein', 'token_fir_tree'] },  // within reach of every cell one ring in
- *   kits: [{ id: 'highland', name: 'Highland' }],
+ *   kits: [{ id: 'highland', name: 'Highland',
+ *            biome: 'mountain',                              // the ground its mat stands on (an Atlas biome)
+ *            work: { mining: 2, forestry: 1, combat: 0.5 },  // natural work on its mat, in heroes kept busy
+ *            stone: 4,                                       // Stone terrain outcrops on its mat
+ *            camps: ['token_goblin_camp'],                   // the creatures' camps its combat work is
+ *            bossCamps: ['token_chief_tent'] }],             // a combat specialty's better camp
+ *   heroTokens: { mining: 5, fishing: 2, combat: 1 },       // Tokens one hero keeps busy, per skill (else 5)
+ *   specialtyHeroes: 1,             // a specialty's skill gets at least this much work, in heroes
+ *   arrival: { 1: { count: [3, 4], enemies: [{ id: 'token_goblin', weight: 3 }],
+ *                   bossChance: 0, bosses: [] }, 2: ..., 3: ... },   // the enemies a settled place arrives with
  *   specialties: ['mining', 'forestry', ...],                // the specialty bag of every strict ring
  *   pityWindow: 4,                  // a specialty absent from this many cells in a row comes next
  *   extras: [{ id: 'mod_rich_veins', kind: 'modifier', value: 10, lines: ['ores'], rings: [1, 2],
@@ -28,6 +37,7 @@
  *   prices: { 1: { items: [{ qty: 20 }, { qty: 10, from: 'hall' }, { qty: 2, item: 'item_rope' }],
  *                  skills: [{ skill: 'line', level: 5 }] }, 2: ..., 3: ... },
  *   wild: { rings: 3, priceGrowth: 1.5, levelStep: 10, valueGrowth: 1.5, extremeShare: 0.5,
+ *           compositionShare: 0.75,  // how much of a one-resource wild mat its one resource takes
  *           layouts: [{ id: 'islands', weight: 1 }] }
  * }
  * ```
@@ -36,6 +46,10 @@
  * ring in, the default, or the Hall's cell) and the generator picks one of that place's materials;
  * a slot with `item` asks for that item. A skill slot's `skill` is a skill id, `line` (the cell's
  * line's skill) or `specialty` (the cell's specialty).
+ *
+ * A kit's `work` is read by skill id, `combat` meaning camps. An arrival's `count` is how many enemies
+ * a place of that ring arrives with (at most {@link MAX_ARRIVAL}); with `bossChance` one of them is a
+ * boss drawn from `bosses`. Wild rings take ring 3's encounter, one enemy more per ring out.
  *
  * Pure and import-free: the CMS reads it too.
  */
@@ -56,13 +70,20 @@ export const PRICE_FROM = Object.freeze({ SOURCE: 'source', HALL: 'hall' });
 /** The skill slots that follow the cell rather than naming a skill. */
 export const SKILL_OF = Object.freeze({ LINE: 'line', SPECIALTY: 'specialty' });
 
+/** The most enemies a place arrives with (owner: 3 to 6). */
+export const MAX_ARRIVAL = 6;
+
+/** How many Tokens one hero keeps busy when the tables say nothing for a skill. */
+export const HERO_TOKENS_DEFAULT = 5;
+
 const DEFAULTS = Object.freeze({
     neighbourStrength: 8,
+    specialtyHeroes: 1,
     mainPerCell: 1,
     blendsPerNeighbour: 1,
     pityWindow: 4,
     valueTolerance: 0.1,
-    wild: Object.freeze({ rings: 3, priceGrowth: 1.5, levelStep: 10, valueGrowth: 1.5, extremeShare: 0.5 })
+    wild: Object.freeze({ rings: 3, priceGrowth: 1.5, levelStep: 10, valueGrowth: 1.5, extremeShare: 0.5, compositionShare: 0.75 })
 });
 
 const MAX_LEVEL = 99;
@@ -172,8 +193,57 @@ function wildOf(raw) {
         levelStep: finite(block.levelStep) && block.levelStep >= 0 ? Math.round(block.levelStep) : d.levelStep,
         valueGrowth: finite(block.valueGrowth) && block.valueGrowth >= 1 ? block.valueGrowth : d.valueGrowth,
         extremeShare: share,
+        compositionShare: finite(block.compositionShare) && block.compositionShare > 0 && block.compositionShare <= 1
+            ? block.compositionShare : d.compositionShare,
         layouts: weightedIds(block.layouts)
     };
+}
+
+/** A kit's work: heroes per skill id, above 0. */
+function workOf(raw) {
+    const out = {};
+    if (!isObject(raw)) return out;
+    for (const [skill, heroes] of Object.entries(raw)) {
+        if (text(skill) && finite(heroes) && heroes > 0) out[skill.trim()] = heroes;
+    }
+    return out;
+}
+
+function kitOf(raw) {
+    const id = text(isObject(raw) ? raw.id : raw);
+    if (!id) return null;
+    const row = isObject(raw) ? raw : {};
+    return {
+        id,
+        name: text(row.name) || id,
+        biome: text(row.biome),
+        work: workOf(row.work),
+        stone: wholeAtLeast(row.stone, 0, 0),
+        camps: idList(row.camps),
+        bossCamps: idList(row.bossCamps)
+    };
+}
+
+/** A ring's arrival: `{ count: [min, max], enemies, bossChance, bosses }`, none when it lists no enemy. */
+function arrivalOf(raw) {
+    const block = isObject(raw) ? raw : {};
+    const enemies = weightedIds(block.enemies);
+    const bosses = weightedIds(block.bosses);
+    const pair = listOf(block.count).filter(n => Number.isInteger(n) && n >= 0);
+    const low = Math.min(MAX_ARRIVAL, pair[0] ?? 0);
+    const high = Math.min(MAX_ARRIVAL, Math.max(low, pair[1] ?? low));
+    const chance = finite(block.bossChance) ? Math.min(1, Math.max(0, block.bossChance)) : 0;
+    return { count: enemies.length || bosses.length ? [low, high] : [0, 0], enemies, bossChance: bosses.length ? chance : 0, bosses };
+}
+
+/** Tokens one hero keeps busy, per skill: whole numbers from 1. */
+function heroTokensTable(raw) {
+    const out = {};
+    if (!isObject(raw)) return out;
+    for (const [skill, n] of Object.entries(raw)) {
+        if (text(skill) && Number.isInteger(n) && n >= 1) out[skill.trim()] = n;
+    }
+    return out;
 }
 
 /**
@@ -192,8 +262,8 @@ export function normaliseWorldTables(raw) {
 
     const kits = [];
     for (const row of listOf(raw.kits)) {
-        const id = text(isObject(row) ? row.id : row);
-        if (id && !kits.some(k => k.id === id)) kits.push({ id, name: text(row?.name) || id });
+        const kit = kitOf(row);
+        if (kit && !kits.some(k => k.id === kit.id)) kits.push(kit);
     }
     const kitIds = new Set(kits.map(k => k.id));
     for (const line of lines) {
@@ -253,9 +323,22 @@ export function normaliseWorldTables(raw) {
         ringValue,
         valueTolerance: tolerance,
         prices,
+        heroTokens: heroTokensTable(raw.heroTokens),
+        specialtyHeroes: finite(raw.specialtyHeroes) && raw.specialtyHeroes >= 0 ? raw.specialtyHeroes : DEFAULTS.specialtyHeroes,
+        arrival: perRing(raw.arrival, arrivalOf),
         wild: wildOf(raw.wild),
         issues
     };
+}
+
+/** Tokens one hero keeps busy at `skill`. */
+export function heroTokensOf(tables, skill) {
+    return tables?.heroTokens?.[skill] || HERO_TOKENS_DEFAULT;
+}
+
+/** The kit in `tables` with this id, or null. */
+export function kitById(tables, id) {
+    return tables?.kits?.find(k => k.id === id) || null;
 }
 
 /** The line in `tables` with this id, or null. */

@@ -6,7 +6,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
-import { TUTORIAL_QUESTS, firstMapsReward } from '../systems/quests/tutorialQuests.js';
+import { TUTORIAL_QUESTS, tutorialTemplate } from '../systems/quests/tutorialQuests.js';
 import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -38,8 +38,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ The cartographer's tutorial, walked through the REAL systems on the shipped content, from the
- * first Hero to the first move. Content the owner has not authored yet (the maps) is a test
- * fixture here.
+ * first Hero to the goblin beaten. The maps it once paid are retired: map items authored anyway (a
+ * test fixture here) are paid by no step.
  */
 
 /** The first tool, until the owner's starter tools are content. A woodaxe, for the Oak Tree. */
@@ -48,10 +48,7 @@ registerItems({
     [AXE]: { id: AXE, name: 'Fixture Woodaxe', type: 'tool', equipSlot: 'hand', stackable: true, sprite: 'i_woodaxe_copper', tool: { kind: 'woodaxe', tier: 1 } }
 });
 
-/**
- * Two maps given by the tutorial, a Base Map nothing trades up into that is not (not a first map
- * once any map is ticked), one map they trade up into, and a modifier.
- */
+/** Map items as the CMS once authored them, two ticked "given by the tutorial": nothing pays them now. */
 const MAPS = {
     map_tut_woods: {
         id: 'map_tut_woods', name: 'Woods Map', type: 'map', stackable: true,
@@ -152,7 +149,7 @@ beforeEach(() => {
 afterEach(() => QuestManager.cleanup());
 
 describe('⭐ the cartographer\'s chain, step by step, through the real systems', () => {
-    it('every step completes from the event it listens to, from the first Hero to the first move', () => {
+    it('every step completes from the event it listens to, from the first Hero to the first place settled', () => {
         withMaps();
 
         // 1. Recruit a Hero: the Guild Hall board's first Bunk Beds rank is free.
@@ -260,8 +257,8 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(claim('cart_copper_tool').rewardItems.some(r => isMapItem(getAllItems()[r.itemId]))).toBe(false);
         Flags.furl(heroId);
 
-        // 11. Beat a goblin. A Cow (it never attacks first) does not count; a Goblin does, and
-        // pays the maps given by the tutorial.
+        // 11. Beat a goblin. A Cow (it never attacks first) does not count; a Goblin does. It pays
+        // its items and no map, even with maps ticked "given by the tutorial".
         // ⚠️ Fixture: a new hero fights at level 1 and is often knocked out before the
         // first kill, so the hero is lent a combat skill at level 40.
         GameState.heroes[0].skills[COMBAT_SKILL_IDS[0]] = { xp: 0, level: 40 };
@@ -283,23 +280,22 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(runUntil(() => complete('cart_goblin'), 5 * 60_000)).toBe(true);
         off();
         const paid = claim('cart_goblin').rewardItems.map(r => r.itemId);
-        expect(paid.filter(id => isMapItem(getAllItems()[id])).sort()).toEqual(['map_tut_hills', 'map_tut_woods']);
+        expect(paid.length).toBeGreaterThan(0);
+        expect(paid.filter(id => isMapItem(getAllItems()[id]))).toEqual([]);
         collectAll();
-        expect(bank('map_tut_woods')).toBe(1);
-        expect(bank('map_tut_hills')).toBe(1);
-        expect(bank('map_tut_meadow')).toBe(0);
+        expect(bank('map_tut_woods')).toBe(0);
+        expect(bank('map_tut_hills')).toBe(0);
         Flags.furl(heroId);
 
-        // 12. Write the first world: settle a Region from a map.
-        const settled = Atlas.settle({ ingredients: ['map_tut_woods'], seed: 7 });
-        expect(settled.success, settled.reason).toBe(true);
-        claim('cart_settle');
-
-        // 13. Move the guild there. The step travels beside the Hall and counts on arrival.
-        const moved = Atlas.travel(settled.region.id);
-        expect(moved.success, moved.reason).toBe(true);
-        expect(Atlas.activeRegionId()).toBe(settled.region.id);
-        claim('cart_travel');
+        // 12. The cartographer opens the world map: the last step arrives marked so, and is done
+        // by settling a place on it. A Region written off the world map does not count.
+        expect(quest('cart_first_place')).toBeTruthy();
+        expect(tutorialTemplate('cart_first_place').opensWorld).toBe(true);
+        const meadow = { id: 'fixture_tut_place', kind: 'base', biome: 'meadow', points: 4, nodes: [{ typeId: 'token_oak_tree', weight: 1 }] };
+        expect(Atlas.settle({ ingredients: [meadow], seed: 7 }).success).toBe(true);
+        expect(complete('cart_first_place')).toBe(false);
+        expect(Atlas.settle({ ingredients: [meadow], seed: 8, cellId: '1,0' }).success).toBe(true);
+        claim('cart_first_place');
 
         // Every step was walked, in order, and no step is left on the mat.
         expect(GameState.state.quests.completedTutorials).toEqual(TUTORIAL_QUESTS.map(t => t.id));
@@ -307,52 +303,50 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
     }, 180_000);
 });
 
-describe('the first maps are read from the registry when the step is claimed', () => {
+describe('the first maps are retired', () => {
     afterEach(() => withoutMaps());
 
-    it('with no map items authored, the step pays nothing but its items', () => {
+    it('no step pays maps, even with maps ticked "given by the tutorial" authored after it was offered', () => {
+        expect(TUTORIAL_QUESTS.some(t => 'firstMaps' in t)).toBe(false);
         withoutMaps();
-        expect(firstMapsReward()).toEqual([]);
-        expect(TUTORIAL_QUESTS.filter(t => t.firstMaps).map(t => t.id)).toEqual(['cart_goblin']);
         walkTo('cart_goblin');
+        withMaps();
         const paid = claim('cart_goblin').rewardItems;
-        expect(paid.every(r => !String(r.itemId).startsWith('map_'))).toBe(true);
         expect(paid.length).toBeGreaterThan(0);
+        expect(paid.every(r => !isMapItem(getAllItems()[r.itemId]))).toBe(true);
+    });
+});
+
+describe('the reports the end of the chain counts', () => {
+    it('settling a place reports region_settled and place_settled, and arriving there region_travelled', () => {
+        const reported = [];
+        const spy = vi.spyOn(QuestManager, 'reportProgress').mockImplementation((type) => { reported.push(type); });
+        try {
+            const settled = Atlas.settle({ ingredients: [{ id: 'fixture_tut_cell', kind: 'base', biome: 'meadow', points: 4, nodes: [{ typeId: 'token_oak_tree', weight: 1 }] }], seed: 7, cellId: '1,0' });
+            expect(settled.success).toBe(true);
+            expect(Atlas.travel(settled.region.id).success).toBe(true);
+        } finally {
+            spy.mockRestore();
+        }
+        expect(reported).toEqual(expect.arrayContaining(['region_settled', 'place_settled', 'region_travelled']));
     });
 
-    it('maps authored after the step was offered are still paid (read at claim, not at spawn)', () => {
-        withoutMaps();
-        walkTo('cart_goblin');
-        withMaps();
-        const paid = claim('cart_goblin').rewardItems.map(r => r.itemId);
-        expect(paid).toEqual(expect.arrayContaining(['map_tut_woods', 'map_tut_hills']));
-    });
-
-    it('one of each Base Map given by the tutorial, in id order', () => {
-        withMaps();
-        expect(firstMapsReward().map(r => [r.itemId, r.quantity])).toEqual([
-            ['map_tut_hills', 1], ['map_tut_woods', 1]
-        ]);
-    });
-
-    it('a ticked Base Map is paid even when an upcycle makes it; a modifier never', () => {
-        const items = {
-            ...MAPS,
-            map_tut_deep_woods: { ...MAPS.map_tut_deep_woods, cartography: { ...MAPS.map_tut_deep_woods.cartography, tutorial: true } },
-            mod_tut_thicket: { ...MAPS.mod_tut_thicket, cartography: { ...MAPS.mod_tut_thicket.cartography, tutorial: true } }
-        };
-        expect(firstMapsReward(items).map(r => r.itemId)).toEqual(['map_tut_deep_woods', 'map_tut_hills', 'map_tut_woods']);
-    });
-
-    it('while no map is ticked yet, the old rule: each Base Map that no map trades up into', () => {
-        const unticked = Object.fromEntries(Object.entries(MAPS).map(([id, def]) => [id, { ...def, cartography: { ...def.cartography, tutorial: undefined } }]));
-        expect(firstMapsReward(unticked).map(r => r.itemId)).toEqual(['map_tut_hills', 'map_tut_meadow', 'map_tut_woods']);
+    it('a Region written off the world map is no place settled', () => {
+        const reported = [];
+        const spy = vi.spyOn(QuestManager, 'reportProgress').mockImplementation((type) => { reported.push(type); });
+        try {
+            expect(Atlas.settle({ ingredients: [{ id: 'fixture_tut_free', kind: 'base', biome: 'meadow', points: 4, nodes: [{ typeId: 'token_oak_tree', weight: 1 }] }], seed: 9 }).success).toBe(true);
+        } finally {
+            spy.mockRestore();
+        }
+        expect(reported).toContain('region_settled');
+        expect(reported).not.toContain('place_settled');
     });
 });
 
 /**
  * Bring the chain to step `id` (the steps before it recorded as claimed; they are walked above),
- * then complete it with a goblin's kill (the step that pays the maps).
+ * then complete it with a goblin's kill.
  */
 function walkTo(id) {
     const q = GameState.state.quests;
@@ -395,8 +389,13 @@ describe('the chain\'s words come from one text module', () => {
     it('the chain is the cartographer\'s, in order, with new ids', () => {
         expect(TUTORIAL_QUESTS.map(t => t.id)).toEqual([
             'cart_recruit', 'cart_tool', 'cart_flag', 'cart_gather', 'cart_loot', 'cart_foundation', 'cart_station',
-            'cart_craft', 'cart_camp', 'cart_copper_tool', 'cart_goblin', 'cart_settle', 'cart_travel'
+            'cart_craft', 'cart_camp', 'cart_copper_tool', 'cart_goblin', 'cart_first_place'
         ]);
+    });
+
+    it('only the last step opens the world map', () => {
+        expect(TUTORIAL_QUESTS.filter(t => t.opensWorld).map(t => t.id)).toEqual(['cart_first_place']);
+        expect(TUTORIAL_QUESTS[TUTORIAL_QUESTS.length - 1].opensWorld).toBe(true);
     });
 });
 

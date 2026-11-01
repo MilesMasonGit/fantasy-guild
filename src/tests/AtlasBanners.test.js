@@ -20,12 +20,10 @@ import {
 } from '../config/areaBanners.js';
 import { BIOME_GROUND } from '../systems/atlas/Budget.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
-import * as Cartography from '../systems/atlas/Cartography.js';
-import { bannerForRegion, bannerForPlan, pickedBanner } from '../ui/components/atlas/regionBanner.js';
+import { bannerForRegion, pickedBanner } from '../ui/components/atlas/regionBanner.js';
 import { coverScale, BannerArt } from '../ui/components/base/BannerArt.jsx';
 import { RegionList, regionOrder } from '../ui/components/atlas/RegionList.jsx';
 import { ArrivalCard } from '../ui/components/atlas/ArrivalCard.jsx';
-import { CartographyTable } from '../ui/components/atlas/CartographyTable.jsx';
 import { MatRegionName } from '../ui/components/board/MatRegionName.jsx';
 import { placeAt } from './fixtures/mat.js';
 import './fixtures/testTokens.js';
@@ -36,9 +34,9 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * ⭐ Area banners: each Region shows one, its Base Map's pick (the Starter Camp's own), else the one
- * for its main biome; the Region rows, the top bar's name, the arrival card and the Cartography
- * preview show it.
+ * ⭐ Area banners: each Region shows one, its Base Map's pick (a Region written from maps before
+ * they retired; the Starter Camp's own), else the one for its main biome; the Region rows, the top
+ * bar's name and the arrival card show it.
  */
 
 const OAK = 'fixture_producer';
@@ -72,7 +70,6 @@ beforeEach(() => {
     InventoryManager.init();
     placeAt('token_guild_hall', Math.round(matW() / 2), Math.round(matH() / 2));
     Atlas.createStarterRegion();
-    Cartography.clearStock();
 });
 
 afterEach(() => {
@@ -155,12 +152,9 @@ describe('which banner a Region shows', () => {
         expect(bannerForRegion(starter)).toBe('b_golden_plains');
     });
 
-    it('a layout about to be settled shows what its maps would', () => {
-        InventoryManager.addItem(PLAIN, 1);
-        expect(bannerForPlan(Atlas.preview([PLAIN], { seed: 2 }))).toBe('b_lush_forest');
-        InventoryManager.addItem(FOREST, 1);
-        expect(bannerForPlan(Atlas.preview([FOREST], { seed: 2 }))).toBe('b_swamp');
-        expect(bannerForPlan(null)).toBeNull();
+    it('a place settled on the world map: the default for its main biome, whatever modifiers it was written with', () => {
+        const { region } = Atlas.createRegion({ ingredients: ['world_cell_0,-1', MOD], ground: { main: 'mountain' }, cellId: '0,-1' });
+        expect(bannerForRegion(region)).toBe(defaultBannerFor('mountain'));
     });
 
     it('the Starter Camp file keeps its banner, and drops an empty one', () => {
@@ -237,17 +231,5 @@ describe('where the banner shows', () => {
         expect(q(slice, '[data-banner-art="b_village"]')).toBeTruthy();
         expect(slice.hasAttribute('data-mat-region-name')).toBe(true);
         expect(slice.textContent).toContain('Elderfield');
-    });
-
-    it('it lies behind the Cartography preview, round the map, which is drawn as the mat draws it', () => {
-        InventoryManager.addItem(FOREST, 1);
-        const { container } = render(React.createElement(CartographyTable, { version: 0 }));
-        expect(q(container, '[data-cartography-preview] [data-banner-art]')).toBeNull();
-        fireEvent.click(q(container, `[data-map-item="${FOREST}"]`));
-        const preview = q(container, '[data-cartography-preview]');
-        expect(q(preview, '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_swamp');
-        // Behind the map, not over it.
-        const map = q(preview, 'canvas[data-map-preview]');
-        expect(q(preview, '[data-banner-art]').compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 });

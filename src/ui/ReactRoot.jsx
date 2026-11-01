@@ -14,6 +14,7 @@ import { useUIModals } from './hooks/useUIModals.js';
 import { useEscapeLayer } from './utils/escapeLayers.js';
 import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
 import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
+import { useWorldMapRequests } from './hooks/useWorldMapRequests.js';
 
 import Board from './components/board/Board.jsx';
 import BankDrawer from './components/drawer/BankDrawer.jsx';
@@ -187,6 +188,9 @@ export const ReactRoot = () => {
     const closeInspectHero = React.useCallback(() => setInspectHeroId(null), []);
 
     useHeroSheetRequests(setInspectHeroId);
+    const openAtlas = ui.fullscreen.open;
+    const openWorldMap = React.useCallback(() => openAtlas('atlas'), [openAtlas]);
+    useWorldMapRequests(openWorldMap);
 
     const guildPaneSelection = ui.inspect.getByPane ? ui.inspect.getByPane('guild') : null;
     const guildInspectSelection = selectGuildInspectSelection({

@@ -45,6 +45,7 @@ export const CLEAN_LOOKS = Object.freeze({
     sea: Object.freeze([0.85, 0, 1.03]),
     lake: Object.freeze([0.75, 0, 1.04]),
     sulphur: Object.freeze([0.80, 0, 1.00]),
+    stone: Object.freeze([0.75, 0, 1.04]),
     lawn: Object.freeze([0.72, -0.022, 1.04])
 });
 

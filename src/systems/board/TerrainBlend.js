@@ -65,8 +65,8 @@ const CH = Object.freeze({
 /** Looks with no lawn between them and the rock or sand: a meadow's own grass is a lawn already; lava grows none. */
 const NO_LAWN = new Set(['meadow', 'flower_meadow', 'lawn', 'volcano']);
 
-/** Which way a pair faces: the softer ground first (grass, then sand, then rock). */
-const SOFTNESS = Object.freeze({ [TERRAIN.GRASS]: 0, [TERRAIN.SAND]: 1, [TERRAIN.ROCK]: 2 });
+/** Which way a pair faces: the softer ground first (grass, then sand, then rock and Stone). */
+const SOFTNESS = Object.freeze({ [TERRAIN.GRASS]: 0, [TERRAIN.SAND]: 1, [TERRAIN.ROCK]: 2, [TERRAIN.STONE]: 2 });
 
 const softness = (lookId) => SOFTNESS[getLook(lookId)?.terrain] ?? 3;
 
@@ -77,11 +77,11 @@ export function pairOf(a, b) {
     return sa < sb || (sa === sb && a < b) ? [a, b] : [b, a];
 }
 
-/** Whether a lawn suits a pair: a wood's grass on one side, rock or sand on the other. */
+/** Whether a lawn suits a pair: a wood's grass on one side, rock, Stone or sand on the other. */
 function lawnSuits(soft, hard) {
     const s = getLook(soft)?.terrain;
     const h = getLook(hard)?.terrain;
-    return s === TERRAIN.GRASS && (h === TERRAIN.ROCK || h === TERRAIN.SAND) && !NO_LAWN.has(soft) && !NO_LAWN.has(hard);
+    return s === TERRAIN.GRASS && (h === TERRAIN.ROCK || h === TERRAIN.SAND || h === TERRAIN.STONE) && !NO_LAWN.has(soft) && !NO_LAWN.has(hard);
 }
 
 /** The styles a pair of looks may take: every pair the band, islands, fingers and the fade; a lawn where it suits. */

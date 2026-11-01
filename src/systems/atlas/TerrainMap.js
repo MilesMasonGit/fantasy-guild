@@ -11,8 +11,18 @@ import { readWater } from './WaterShapes.js';
  * Pure and seeded like the layout: arithmetic IEEE fixes exactly, no trigonometry, no `**`.
  */
 
-/** The terrains the first three Base Maps write. Content may name others; nothing here forbids it. */
-export const TERRAIN = Object.freeze({ GRASS: 'grass', ROCK: 'rock', SAND: 'sand', WATER: 'water' });
+/**
+ * The terrains the generation writes. Content may name others; nothing here forbids it. `stone` is
+ * a feature of the ground as water is (`StoneShapes.js`): outcrops of bare rock on any biome's
+ * ground, where mines and quarries will stand.
+ */
+export const TERRAIN = Object.freeze({ GRASS: 'grass', ROCK: 'rock', SAND: 'sand', WATER: 'water', STONE: 'stone' });
+
+/**
+ * The legend every stored map starts with. ⚠️ Stone is not in it: it joins a map's legend only
+ * when the map has some, so a map without Stone is stored exactly as before.
+ */
+const BASE_LEGEND = Object.freeze([TERRAIN.GRASS, TERRAIN.ROCK, TERRAIN.SAND, TERRAIN.WATER]);
 
 /** The ground where nothing says otherwise. */
 export const DEFAULT_TERRAIN = TERRAIN.GRASS;
@@ -22,7 +32,7 @@ export const DEFAULT_TERRAIN = TERRAIN.GRASS;
  * its centre is any one its list names; `shore` is a dry cell touching water, a diagonal counting,
  * so a Dock stands at the water's edge. A Token whose list names nothing may stand anywhere dry.
  */
-export const STANDS_ON = Object.freeze({ WATER: 'water', SHORE: 'shore', GRASS: 'grass', ROCK: 'rock', SAND: 'sand' });
+export const STANDS_ON = Object.freeze({ WATER: 'water', SHORE: 'shore', GRASS: 'grass', ROCK: 'rock', SAND: 'sand', STONE: 'stone' });
 
 /** The words as the CMS's "Stands on" chips show them, in their order. */
 export const STANDS_ON_CHOICES = Object.freeze([
@@ -30,13 +40,14 @@ export const STANDS_ON_CHOICES = Object.freeze([
     Object.freeze({ id: STANDS_ON.SHORE, label: 'Shore' }),
     Object.freeze({ id: STANDS_ON.GRASS, label: 'Grass' }),
     Object.freeze({ id: STANDS_ON.ROCK, label: 'Rock' }),
-    Object.freeze({ id: STANDS_ON.SAND, label: 'Sand' })
+    Object.freeze({ id: STANDS_ON.SAND, label: 'Sand' }),
+    Object.freeze({ id: STANDS_ON.STONE, label: 'Stone' })
 ]);
 
 const STANDS_ON_ORDER = STANDS_ON_CHOICES.map(choice => choice.id);
 
 /** How each word reads in a refusal: "Needs the shore." */
-const NEEDS_WORD = Object.freeze({ water: 'water', shore: 'the shore', grass: 'grass', rock: 'rock', sand: 'sand' });
+const NEEDS_WORD = Object.freeze({ water: 'water', shore: 'the shore', grass: 'grass', rock: 'rock', sand: 'sand', stone: 'stone' });
 
 /** Whether `word` is one of the {@link STANDS_ON} words. */
 export function isStandsOnWord(word) {
@@ -189,20 +200,24 @@ export function followNodes(centre, nodes, fallback) {
 
 /**
  * The stored form: one character per cell, row by row, each a base-36 index into `legend`. About
- * 2 KB for the shipped mat; a Region with water adds its shapes (`WaterShapes.planWater`).
+ * 2 KB for the shipped mat; a Region with water adds its shapes (`WaterShapes.planWater`), one
+ * with Stone its outcrops (`StoneShapes.planStone`).
  *
  * @param {string[]} terrains  one terrain id per cell
  * @param {object|null} [water]  the water's stored shapes
- * @returns {{cell: number, cols: number, rows: number, legend: string[], cells: string, water?: object}}
+ * @param {object|null} [stone]  the Stone's stored shapes
+ * @returns {{cell: number, cols: number, rows: number, legend: string[], cells: string, water?: object, stone?: object}}
  */
-export function encodeTerrain(grid, terrains, water = null) {
-    const known = Object.values(TERRAIN);
+export function encodeTerrain(grid, terrains, water = null, stone = null) {
+    const known = BASE_LEGEND;
     const extra = [...new Set(terrains)].filter(t => !known.includes(t)).sort();
     const legend = [...known, ...extra];
     const index = new Map(legend.map((t, i) => [t, i.toString(36)]));
     const map = { cell: TERRAIN_CELL, cols: grid.cols, rows: grid.rows, legend, cells: terrains.map(t => index.get(t)).join('') };
     // The water's shapes (`WaterShapes`), so the drawing follows them rather than the cells.
     if (water) map.water = water;
+    // The Stone's shapes, kept for the drawing and the Stone art to come; the cells say where it is.
+    if (stone) map.stone = stone;
     return map;
 }
 

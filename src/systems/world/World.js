@@ -13,6 +13,13 @@ import { worldFindings } from './checks.js';
 import { worldText } from './describe.js';
 import { materialsFromTokens, hallOriginsOf } from './materials.js';
 import { logger } from '../../utils/Logger.js';
+import { currentWorld } from './worldState.js';
+
+export { currentWorld };
+export {
+    SETTLE_TEXT, settleCell, writePlace, arriveAt, settledCellIds, cellStatesNow, priceOf, outputsOf, regionIdOfCell,
+    activeCellId, cellName, guildSkillLevel
+} from './Settling.js';
 
 /**
  * Each run has one world (brief 330): a hex grid of cells around the Guild Hall, generated from the
@@ -23,8 +30,7 @@ import { logger } from '../../utils/Logger.js';
  * A save made before the world existed has `state.world` null: old saves are abandoned (owner,
  * 2026-10-30), so nothing is generated for them.
  *
- * Not on the game screen yet: the world map screen is brief 330 W2. The QA panel's Atlas section
- * shows it in words.
+ * The Atlas's World page draws it; settling a place is `Settling.js`'s.
  */
 
 /** The run seed of a game: from when it was created, so two new games differ. */
@@ -60,11 +66,6 @@ export function createWorld({ seed } = {}) {
     return world;
 }
 
-/** This game's world (the live record: do not hand it to the screen), or null. */
-export function currentWorld() {
-    const world = GameState.state?.world;
-    return world && Array.isArray(world.cells) ? world : null;
-}
 
 /** The checks' findings on a world, against the tables in force. */
 export function findingsOf(world) {
