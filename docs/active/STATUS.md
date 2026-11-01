@@ -9,7 +9,7 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Work check of `main` 6c72e7a7 (the closing session's 01:00 timer never ran) | director | `p23b` (detached) | **running** | Sun | |
+| Work check of `main` 6c72e7a7 (the closing session's 01:00 timer never ran) | director | `p23b` (detached) | **same work** on every scenario, identity and fidelity hold (00:40; timing verdicts ignored: agents building, old baseline) | Sun | Sun |
 | 300 E3: encyclopedia search-first flowchart in the book | engineer | `feat/encyclopedia-e3` (`e3`) | **building** | Sun | |
 | 330 W4: building nodes by terrain (mines and quarries on Stone, pits near water, Arcane near Arcane, Farmland anywhere) | builder | `feat/world-w4` (`n4`) | **building** | Sun | |
 | Bench S2 gets its fights back, then both baselines retaken on a quiet machine | builder-lite | — | queued after E3 or W4 | | |
