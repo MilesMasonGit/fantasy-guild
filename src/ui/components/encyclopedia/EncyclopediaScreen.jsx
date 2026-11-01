@@ -5,6 +5,7 @@ import { GameState } from '../../../state/GameState.js';
 import { itemKey } from '../../../systems/progression/ledger/engine.js';
 import { collectedOf, recentlyCollectedItems } from '../../../systems/progression/collectionLog.js';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
+import { CloseX } from '../base/CloseX.jsx';
 import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { TOME_ART, TOME_SCALE, COVER_ART, spreadSize, pageRects } from '../atlas/tomeArt.js';
@@ -15,15 +16,13 @@ import { takeLookUp, onLookUp } from './encyclopediaLink.js';
 import { noteViewed, recentlyViewed, RECENT_COUNT } from './encyclopediaRecent.js';
 import { ChartView } from './EncyclopediaChartView.jsx';
 import { InspectPanel } from './EncyclopediaPanel.jsx';
-import { SearchBox, EntryRow } from './encyclopediaParts.jsx';
+import { SearchBox, EntryRow, unscroll } from './encyclopediaParts.jsx';
 
 /**
  * The book's pictures: the Atlas's own for now. A recoloured Encyclopedia book replaces them here
  * (its parchment measured in `tomeArt.js`'s way).
  */
 const BOOK_ART = TOME_ART;
-
-const CLOSE_SPRITE = '/assets/ui/u_cancel_red.png';
 
 /** A small overshoot at the top as the book rises, as the Atlas's. */
 const SETTLE_EASE = [0.34, 1.32, 0.64, 1];
@@ -85,7 +84,11 @@ function placeSpread(roomW, roomH) {
     return { left, top, w, h, visible: { left: x0, top: y0, width: Math.max(0, Math.min(w, roomW - left) - x0), height: Math.max(0, Math.min(h, roomH - top) - y0) } };
 }
 
-/** Where the opening page's two panels, and the chart page's bar, chart window and panel, lie on the spread. */
+/**
+ * Where the opening page's two panels, and the chart page's bar, chart window and panel, lie on the
+ * spread. The chart runs across both pages; the panel floats over its right end, and the view
+ * keeps the focus clear of it (`chart.reserveRight`).
+ */
 export function bookLayout(visible, k = 1) {
     const { left, right } = pageRects(TOME_SCALE, visible, 8);
     const top = Math.max(left.top, right.top);
@@ -98,7 +101,13 @@ export function bookLayout(visible, k = 1) {
         left,
         right,
         toolbar: { left: leftEdge, top, width: Math.max(0, panelLeft - GAP - leftEdge), height: toolbarH },
-        chart: { left: leftEdge, top: top + toolbarH + GAP, width: Math.max(0, panelLeft - GAP - leftEdge), height: Math.max(0, bottom - top - toolbarH - GAP) },
+        chart: {
+            left: leftEdge,
+            top: top + toolbarH + GAP,
+            width: Math.max(0, right.left + right.width - leftEdge),
+            height: Math.max(0, bottom - top - toolbarH - GAP),
+            reserveRight: panelW + GAP
+        },
         panel: { left: panelLeft, top, width: panelW, maxHeight: Math.max(0, bottom - top) }
     };
 }
@@ -234,6 +243,9 @@ export const EncyclopediaScreen = ({ onClose }) => {
     const coverTop = COVER_ART.y0 * TOME_SCALE;
     const closeLeft = visible ? Math.min(coverRight - 20, visible.left + visible.width - 44) : coverRight - 20;
     const closeTop = visible ? Math.max(coverTop - 12, visible.top + 8) : coverTop - 12;
+    // The panel keeps clear of the close button when the screen crops the book to its corner.
+    const panelTop = closeLeft < at.panel.left + at.panel.width && closeLeft + 32 > at.panel.left
+        ? Math.max(at.panel.top, closeTop + 40) : at.panel.top;
     const still = prefersReducedMotion();
     const below = typeof window !== 'undefined' ? window.innerHeight : 1000;
 
@@ -250,6 +262,7 @@ export const EncyclopediaScreen = ({ onClose }) => {
             data-codex-page={page}
             className="absolute inset-0 z-(--z-encyclopedia) pointer-events-auto overflow-hidden"
             onPointerDown={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
+            onScroll={unscroll}
         >
             <motion.section
                 role="dialog"
@@ -267,7 +280,7 @@ export const EncyclopediaScreen = ({ onClose }) => {
                     <>
                         <PixelFrame kind={FRAME_KIND.STUDS} data-codex-opening="search" className="absolute" style={at.left} frameClassName="h-full flex flex-col min-h-0 p-2 gap-2 bg-gi-surface/95">
                             <h2 className="ui-text-title font-bold text-white">{t('encyclopedia.title')}</h2>
-                            <SearchBox value={term} onChange={onSearch} onEnter={pickFirst} autoFocus />
+                            <SearchBox value={term} onChange={onSearch} onEnter={pickFirst} focusOnMount />
                             <ArrowScrollList step={160} compact className="flex-1 min-h-0" listProps={{ 'data-codex-list': searching ? 'search' : 'none' }}>
                                 {searching
                                     ? <Results results={results} got={got} onPick={startChart} />
@@ -299,11 +312,11 @@ export const EncyclopediaScreen = ({ onClose }) => {
                             onMore={onMore}
                         />
                         <div data-codex-toolbar className="absolute flex items-center gap-2" style={at.toolbar}>
-                            <SearchBox value={term} onChange={onSearch} onEnter={pickFirst} className="w-64" />
-                            <KitButton tone={KIT_BUTTON_TONE.PLAIN} data-codex-contents onClick={() => setPage(PAGE.OPENING)} title={t('encyclopedia.contentsTip')}>
+                            <SearchBox value={term} onChange={onSearch} onEnter={pickFirst} className="flex-1 min-w-32 max-w-64" />
+                            <KitButton tone={KIT_BUTTON_TONE.PLAIN} className="shrink-0" buttonClassName="whitespace-nowrap" data-codex-contents onClick={() => setPage(PAGE.OPENING)} title={t('encyclopedia.contentsTip')}>
                                 {t('encyclopedia.contents')}
                             </KitButton>
-                            <KitButton tone={KIT_BUTTON_TONE.PLAIN} data-codex-home onClick={() => dispatch({ type: 'home' })} title={t('encyclopedia.backToStartTip', { name: startName })}>
+                            <KitButton tone={KIT_BUTTON_TONE.PLAIN} className="shrink-0" buttonClassName="whitespace-nowrap" data-codex-home onClick={() => dispatch({ type: 'home' })} title={t('encyclopedia.backToStartTip', { name: startName })}>
                                 {t('encyclopedia.backToStart')}
                             </KitButton>
                         </div>
@@ -314,27 +327,11 @@ export const EncyclopediaScreen = ({ onClose }) => {
                             got={got}
                             heroes={heroes}
                             onChartFrom={startChart}
-                            style={{ left: at.panel.left, top: at.panel.top, width: at.panel.width, maxHeight: at.panel.maxHeight }}
+                            style={{ left: at.panel.left, top: panelTop, width: at.panel.width, maxHeight: at.panel.maxHeight - (panelTop - at.panel.top) }}
                         />
                     </>
                 )}
-                <button
-                    type="button"
-                    data-codex-close
-                    aria-label={t('common.close')}
-                    title={t('common.close')}
-                    onClick={() => onClose?.()}
-                    className="group absolute z-30 p-0 bg-transparent border-0 cursor-pointer"
-                    style={{ left: closeLeft, top: closeTop }}
-                >
-                    <img
-                        src={CLOSE_SPRITE}
-                        alt=""
-                        draggable={false}
-                        className="w-8 h-8 select-none pointer-events-none group-hover:[filter:drop-shadow(2px_0_0_#fff)_drop-shadow(-2px_0_0_#fff)_drop-shadow(0_2px_0_#fff)_drop-shadow(0_-2px_0_#fff)]"
-                        style={{ imageRendering: 'pixelated' }}
-                    />
-                </button>
+                <CloseX onClick={() => onClose?.()} label={t('common.close')} data-codex-close className="absolute z-30" style={{ left: closeLeft, top: closeTop }} />
             </motion.section>
         </div>
     );

@@ -6,10 +6,17 @@ import { PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { KIND } from './encyclopediaModel.js';
 import { layoutChart, grownBox, keepInSight, centreOn, clampPan, needText, ROOT } from './encyclopediaChart.js';
-import { EntrySprite, GateLine, Tick, isCollected, SPRITE_PX } from './encyclopediaParts.jsx';
+import { EntrySprite, GateLine, Tick, isCollected, unscroll, SPRITE_PX } from './encyclopediaParts.jsx';
 
 /** The ink the chart's lines and words are drawn in on the parchment. */
 const INK = '#3b2614';
+
+/**
+ * Whole-pixel line heights, so a box's height is whole and even and its words, centred, land on
+ * whole pixels: a pixel font half a pixel off goes soft.
+ */
+const BODY_LINE = { lineHeight: 'calc(var(--font-size-xs) + 2px)' };
+const SMALL_LINE = { lineHeight: 'calc(var(--font-size-xxs) + 2px)' };
 
 /** How far the pointer moves before a press becomes a drag (and the click is dropped). */
 const DRAG_START_PX = 5;
@@ -69,9 +76,9 @@ const ChartNode = memo(function ChartNode({ box, entry, focused, collected, have
                 <span className="shrink-0 flex items-center justify-center" style={{ width: SPRITE_PX, height: SPRITE_PX }}>
                     <EntrySprite entry={entry} />
                 </span>
-                <span className="flex-1 min-w-0 flex flex-col leading-tight">
-                    <span className="ui-text-body font-bold text-white break-words">{entry.name}</span>
-                    <span className="ui-text-small tabular-nums text-white/70 flex flex-wrap gap-x-1.5">
+                <span className="flex-1 min-w-0 flex flex-col">
+                    <span className="ui-text-body font-bold text-white break-words" style={BODY_LINE}>{entry.name}</span>
+                    <span className="ui-text-small tabular-nums text-white/70 flex flex-wrap gap-x-1.5" style={SMALL_LINE}>
                         {node.amount != null && <span data-codex-amount>{amountText(node.amount)}</span>}
                         {have != null && (
                             <span data-codex-have data-short={short ? 'true' : undefined} style={short ? { color: 'var(--color-ui-red)' } : undefined}>
@@ -111,28 +118,36 @@ const ChartChip = memo(function ChartChip({ chip, book, focused, parentHave, her
     const short = way.takes != null && parentHave != null && parentHave < way.takes;
     const makes = Number.isFinite(way.makes) && way.makes > 0 && way.makes !== 1 ? t('encyclopedia.makes', { count: amountText(way.makes) }) : null;
     const Tag = way.recipe ? 'button' : 'div';
+    // ⚠️ Centred on its line by a flex box of whole pixels, not a half-height transform, so its
+    // pixel words land on whole pixels and stay sharp.
     return (
+        <div className="absolute flex items-center pointer-events-none" style={{ left: chip.x, top: chip.y - Math.round(chip.h / 2), width: chip.w, height: chip.h }}>
         <Tag
             {...(way.recipe ? { type: 'button', onClick: () => onPick(chip), title: t('encyclopedia.chipRecipe', { name: book.nameOf(way.recipe) }) } : {})}
             data-codex-chip={chip.id}
             data-codex-how={way.how}
             data-focus={focused ? 'true' : undefined}
             className={cn(
-                'absolute flex flex-col items-center gap-0.5 px-1 py-1 text-center ui-text-small leading-tight text-white bg-black/85 border-2',
+                'w-full pointer-events-auto flex flex-col items-center gap-0.5 px-1 py-1 text-center ui-text-small text-white bg-black/85 border-2',
                 focused ? 'border-[var(--color-ui-white)]' : 'border-transparent',
                 way.recipe && 'cursor-pointer hover:border-[var(--color-ui-white)]'
             )}
-            style={{ left: chip.x, top: chip.y, width: chip.w, transform: 'translateY(-50%)' }}
+            style={SMALL_LINE}
         >
             <span data-codex-chip-head className="font-bold break-words">{head}{odds ? ` ${odds}` : ''}</span>
-            {way.gate && <GateLine gate={way.gate} heroes={heroes} />}
-            {way.takes != null && (
-                <span data-codex-takes data-short={short ? 'true' : undefined} className="tabular-nums" style={short ? { color: 'var(--color-ui-red)' } : undefined}>
-                    {amountText(way.takes)}
+            {(way.gate || way.takes != null || makes) && (
+                <span className="flex flex-wrap items-center justify-center gap-x-2">
+                    {way.gate && <GateLine gate={way.gate} heroes={heroes} />}
+                    {way.takes != null && (
+                        <span data-codex-takes data-short={short ? 'true' : undefined} className="tabular-nums" style={short ? { color: 'var(--color-ui-red)' } : undefined}>
+                            {amountText(way.takes)}
+                        </span>
+                    )}
+                    {makes && <span className="tabular-nums text-white/70">{makes}</span>}
                 </span>
             )}
-            {makes && <span className="tabular-nums text-white/70">{makes}</span>}
         </Tag>
+        </div>
     );
 });
 
@@ -163,13 +178,16 @@ const Links = memo(function Links({ layout }) {
  * @param {object} props.chart       `chartOf(...)`
  * @param {{ kind: 'centre'|'keep', at: string, seq: number }} props.glide  a request to move the view
  * @param {string|null} props.focusAt  the node or chip in focus
- * @param {{ left, top, width, height }} props.rect  the window, in the book's pixels
+ * @param {{ left, top, width, height, reserveRight? }} props.rect  the window, in the book's pixels;
+ *   `reserveRight` its strip under the panel, where the focus is never kept
  */
 export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, heroes, startName, onNode, onChip, onMore }) => {
     const layout = useMemo(() => layoutChart(chart, metrics), [chart, metrics]);
     const viewport = { w: Math.max(0, rect.width), h: Math.max(0, rect.height) };
+    // The part not under the panel: where the focus is kept.
+    const sight = { w: Math.max(0, viewport.w - (rect.reserveRight || 0)), h: viewport.h };
     const startBox = boxOf(layout, ROOT);
-    const [view, setView] = useState(() => centreOn(viewport, startBox));
+    const [view, setView] = useState(() => centreOn(sight, startBox));
     const [gliding, setGliding] = useState(false);
     const viewRef = useRef(view);
     viewRef.current = view;
@@ -177,17 +195,19 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
     layoutRef.current = layout;
     const viewportRef = useRef(viewport);
     viewportRef.current = viewport;
+    const sightRef = useRef(sight);
+    sightRef.current = sight;
 
     useLayoutEffect(() => {
         if (!glide) return;
         const lay = layoutRef.current;
-        const vp = viewportRef.current;
+        const vp = sightRef.current;
         const focus = boxOf(lay, glide.at) || boxOf(lay, ROOT);
         const next = glide.kind === 'centre'
             ? centreOn(vp, focus)
             : keepInSight(viewRef.current, vp, grownBox(lay, glide.at) || focus, focus);
-        setGliding(glide.kind !== 'instant' && !reducedMotion());
-        setView(clampPan(next, vp, lay.box));
+        setGliding(!reducedMotion());
+        setView(clampPan(next, viewportRef.current, lay.box));
     }, [glide]);
 
     // The window changes size with the screen: keep some of the chart in it.
@@ -251,6 +271,7 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
             onPointerDown={onPointerDown}
             onClickCapture={onClickCapture}
             onWheel={onWheel}
+            onScroll={unscroll}
             onTransitionEnd={() => setGliding(false)}
         >
             <div
@@ -263,8 +284,8 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
                     <span
                         key={o.id}
                         data-codex-or
-                        className="absolute ui-text-small font-bold pointer-events-none"
-                        style={{ left: o.x, top: o.y, transform: 'translate(-50%, -50%)', color: INK }}
+                        className="absolute flex items-center justify-center ui-text-small font-bold pointer-events-none"
+                        style={{ left: o.x - 24, top: o.y - 10, width: 48, height: 20, color: INK }}
                     >
                         {t('encyclopedia.or')}
                     </span>

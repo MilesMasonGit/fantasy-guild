@@ -52,11 +52,44 @@ import { MARKER_ART_PX, markerCornerOffset } from '../components/board/flagGeome
 import { useCornerShare } from '../components/board/markerCorner.js';
 import { tokenSpritePath } from '../../config/registries/tokenRegistry.js';
 import { dashedLinePath, MARCH_PX_PER_S } from '../components/board/orderLine.js';
+import { ChartView } from '../components/encyclopedia/EncyclopediaChartView.jsx';
+import { encyclopedia } from '../components/encyclopedia/encyclopediaModel.js';
+import { chartOf, CHART_METRICS, ROOT } from '../components/encyclopedia/encyclopediaChart.js';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
 
 const SAMPLE_ITEMS = ['item_oak_wood', 'item_copper_ore', 'item_copper_ingot'];
+
+/** The Encyclopedia's chart, live, on a strip of parchment: Copper Ingot with its first ingredient grown. */
+const EncyclopediaChartDemo = () => {
+    const [state] = useState(() => {
+        const book = encyclopedia();
+        const start = 'item:item_copper_ingot';
+        const first = chartOf(book, start).ins?.[0]?.inputs?.[0]?.id;
+        const grown = new Set(first ? [first] : []);
+        return { book, chart: chartOf(book, start, { grown }), focus: first || ROOT };
+    });
+    if (!state.book.entryOf('item:item_copper_ingot')) return <span className="text-xs text-gi-muted">No Copper Ingot in the content.</span>;
+    return (
+        <div className="relative overflow-hidden" style={{ width: 800, height: 300, background: '#dcc79a' }}>
+            <ChartView
+                book={state.book}
+                chart={state.chart}
+                metrics={CHART_METRICS}
+                rect={{ left: 0, top: 0, width: 800, height: 300 }}
+                focusAt={state.focus}
+                glide={null}
+                got={null}
+                heroes={[]}
+                startName="Copper Ingot"
+                onNode={() => {}}
+                onChip={() => {}}
+                onMore={() => {}}
+            />
+        </div>
+    );
+};
 const SAMPLE_TOKEN = 'token_oak_forest';
 const itemName = (id) => getItem(id)?.name || id;
 
@@ -860,6 +893,12 @@ export const KIT_SECTIONS = [
         source: 'BankSortButton (the Bank, beside Select)',
         rule: 'New, unapproved (brief 310). A small boxed button like Select, its words muted, white on hover; a press opens a menu under it with two lines, This tab and Entire Bank, muted words white on hover. A choice sorts and closes the menu; Escape or a press elsewhere closes it.',
         Demo: () => <div className="h-24"><BankSortButton onSortTab={() => {}} onSortAll={() => {}} /></div>
+    },
+    {
+        id: 'codex-chart', title: 'Encyclopedia chart: nodes, link chips, “or”', status: 'unapproved',
+        source: 'ChartView (the Encyclopedia’s chart page)',
+        rule: 'New, unapproved (brief 300 E3). Drawn on the book’s parchment, read left to right. A node: a dark box with the frames’ bronze 2 px line (white on hover and when it is the focus), the sprite, the name, then ×amount and have / need (red when short); a small ink triangle on the side it can still grow. A link chip sits on the line where things meet: where it happens (the station, “Gathered”, “Dropped 40%”), then the skill and level (red when no hero has it yet) and, going out, how many it takes. Lines are 1 art pixel of dark ink with square corners and an arrowhead into each node; stacked ways in carry an ink “or” between them. Drawn here with nobody in the guild, so every level shows red.',
+        Demo: EncyclopediaChartDemo
     },
     {
         id: 'kit-controls', title: 'Buttons, switch, slider, boxes, slots', status: 'unapproved',

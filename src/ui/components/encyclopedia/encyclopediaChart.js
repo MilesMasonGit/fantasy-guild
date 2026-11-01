@@ -326,12 +326,13 @@ export const needText = (need) => (Number.isFinite(need) ? Math.max(1, Math.ceil
  * the Text size setting so the words keep their room.
  */
 export const CHART_METRICS = Object.freeze({
-    nodeW: 200,
+    nodeW: 192,
     nodeH: 64,
-    chipW: 132,
+    /** A station's name and "+1" on one line, its level and the count on the next. */
+    chipW: 168,
     /** A branch is never shorter than its chip's words. */
     chipH: 64,
-    gapX: 24,
+    gapX: 20,
     rowGap: 8,
     /** Between two "or" branches: room for the word. */
     orGap: 24,

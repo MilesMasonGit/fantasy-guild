@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { t } from '../../../i18n/index.js';
@@ -8,6 +9,15 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { TokenSprite } from '../base/TokenSprite.jsx';
 import { KIND } from './encyclopediaModel.js';
+
+/** A clipped room never scrolls: focus moving to something out of sight would shift the whole book. */
+export const unscroll = (e) => {
+    const el = e.currentTarget;
+    if (el.scrollTop || el.scrollLeft) {
+        el.scrollTop = 0;
+        el.scrollLeft = 0;
+    }
+};
 
 /** The sprite box of a row or a chart node. */
 export const SPRITE_PX = 32;
@@ -63,13 +73,22 @@ export const GateLine = ({ gate, heroes }) => {
 // ⚠️ Inline, because the unlayered input reset in `styles/main.css` outranks Tailwind classes.
 const SEARCH_INPUT_STYLE = { padding: 0, border: 'none', background: 'transparent', fontSize: 'var(--font-size-xs)' };
 
-/** The search box: the same one on the opening page and over the chart. */
-export const SearchBox = ({ value, onChange, onEnter, autoFocus = false, className }) => (
+/**
+ * The search box: the same one on the opening page and over the chart. `focusOnMount` takes the
+ * keys at once. ⚠️ Not `autoFocus`: that scrolls the book's clipped room to the box while the book
+ * is still rising from below, and the room stays scrolled.
+ */
+export const SearchBox = ({ value, onChange, onEnter, focusOnMount = false, className }) => {
+    const input = useRef(null);
+    useEffect(() => {
+        if (focusOnMount) input.current?.focus({ preventScroll: true });
+    }, [focusOnMount]);
+    return (
     <div className={cn('ui-pixel-edge flex items-center gap-1 px-2 py-1 bg-gi-surface/95', className)}>
         <input
+            ref={input}
             data-codex-search
             value={value}
-            autoFocus={autoFocus}
             onChange={e => onChange(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') onEnter?.(); }}
             placeholder={t('encyclopedia.searchPlaceholder')}
@@ -89,7 +108,8 @@ export const SearchBox = ({ value, onChange, onEnter, autoFocus = false, classNa
             </button>
         ) : null}
     </div>
-);
+    );
+};
 
 /** One entry in a list (search results, the recent ones): its sprite, name and tick. */
 export const EntryRow = ({ entry, got, onPick, dataAttr = 'data-codex-row' }) => (
