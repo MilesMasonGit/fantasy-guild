@@ -6,7 +6,7 @@
 //     3 fed mills, 3 unfeedable smelters, 3 passives, 2 nearby buffs,
 //     3 Forests + 3 Quarries (10 spawned each, 60 in all) and 2 goblin camps
 //     (3 hostile goblins each, walking about their camp);
-//   * 8 heroes with flags, walking between their Tokens; two work a producer inside a camp's
+//   * 8 heroes with flags, walking between their Tokens; two work a Token inside a camp's
 //     watch, so the goblins attack them (S2 measures fights);
 //   * one hero PINNED to a smelter that runs dry after two cycles: the
 //     "stalled station with a hero standing on it" case (CR3-005);
