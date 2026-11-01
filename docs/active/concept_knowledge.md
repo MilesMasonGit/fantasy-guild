@@ -42,6 +42,38 @@ its source. Brief 300.*
   inspected (item, Token, enemy, recipe cards; Bank items).
 - **The ticks reset at the ritual** (owner, unchanged): each run starts fresh.
 
+### The search-first rework (owner interview with the director, 2026-10-31)
+
+E1 and E2 work and are merged; the owner judged the screen's lists too long to
+be useful. The encyclopedia becomes **search-first with a flowchart**. The
+player's main use: find an item they want (or a new rare drop), then follow
+its chart to where its parts come from (the Necromancer's Sickle needs a Bone
+Gem; click it: crafted at a Dark Ritual Circle from 1000 Bones).
+
+- **Frame:** a book, inside the book sprite the Atlas uses today (the owner may
+  later make the Atlas a map-styled "World Map" and recolour a separate
+  encyclopedia book).
+- **Opening page:** a search box (everything searchable: items, Tokens,
+  enemies, recipes), the **recently viewed** entries, and the **recently
+  collected new items** (newly ticked, newest first, about 8), so a new rare
+  drop's uses are one click away.
+- **The chart runs left to right**, the searched entry in the middle:
+  **ingredients and sources flow in from the left, uses flow out to the
+  right**. An entry with more than one way to get it shows **stacked "or"
+  branches**, the most usual first.
+- **A node shows:** icon, name, amount; **where it is made or found** (station,
+  vein, drop) on its link; **have / need** (red when short); **skill and
+  level** (marked when no hero has it yet).
+- **One step at a time:** clicking a node grows the chart from it and makes it
+  the **focus**; the view **glides to keep the focus in sight** (the searched
+  entry may scroll off the page); the player can **drag** to look around, with
+  a way **back to the start**.
+- **A small inspection panel** for the focused entry replaces the long lists
+  and the per-kind counts (a new look, designed in the rework).
+- **Everything visible from the start**; ticks stay on nodes and results.
+- **Links:** the Token card's book button stays; the Bank tile's plain click is
+  removed, to return with the owner's future item inspection panel.
+
 ## The CMS dependency map
 
 *Superseded 2026-10-29 by the progression ledger
