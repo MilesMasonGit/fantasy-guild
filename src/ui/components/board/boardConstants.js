@@ -78,6 +78,7 @@ export const SKIP_HINT = {
     [ALERT.CHARGES]: 'not enough charges for a cycle',
     [ALERT.CHOOSE_BUILD]: 'nothing chosen to build',
     [ALERT.CHOOSE_RECIPE]: 'no recipe chosen',
+    [ALERT.BUILD_SITE]: 'can’t build that where it stands',
     [ALERT.NO_ROOM]: 'no room for what it makes',
     [ALERT.SPAWN_NEEDS_ITEM]: 'can’t pay its upkeep',
     [ALERT.SPAWN_NO_ROOM]: 'no room to spawn',

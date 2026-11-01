@@ -165,6 +165,29 @@ export function standsOnOf(typeId) {
     return STANDS_ON_CHOICES.filter(choice => list.includes(choice.id)).map(choice => choice.id);
 }
 
+const NOTHING_NEAR = Object.freeze([]);
+
+/**
+ * The Token types one of which must stand within Near of this type's centre, its "Stands near"
+ * (`standsNear`): an Arcane node only in reach of a leyline or an altar. Empty: no such rule.
+ */
+export function standsNearOf(typeId) {
+    const list = getTokenType(typeId)?.standsNear;
+    if (!Array.isArray(list) || list.length === 0) return NOTHING_NEAR;
+    const ids = list.filter(id => typeof id === 'string' && id && id !== typeId);
+    return ids.length ? ids : NOTHING_NEAR;
+}
+
+/**
+ * How much longer a built copy of this type takes over its clocks than a wild one, as a factor (1:
+ * the same): `builtSlowerPct` 50 makes a built Forest spawn every 1.5 intervals. A wild node and a
+ * built creature camp author none.
+ */
+export function builtSlowdownOf(def) {
+    const pct = Number(def?.builtSlowerPct);
+    return Number.isFinite(pct) && pct > 0 ? 1 + pct / 100 : 1;
+}
+
 /** A Token's display name, falling back to its id so the UI never renders blank. */
 export function tokenName(typeId) {
     return getTokenType(typeId)?.name || typeId || 'Unknown Token';

@@ -37,6 +37,8 @@ export function blockedText(alert, { token, missing = null, skill = null, tool =
             return `Choose what to build on ${token}.`;
         case ALERT.CHOOSE_RECIPE:
             return `Choose a recipe for ${token}.`;
+        case ALERT.BUILD_SITE:
+            return `What ${token} is set to build can’t stand there.`;
         case ALERT.NO_ROOM:
             return `There is no room for what ${token} makes.`;
         // A Token that names no skill drops the skill from the sentence rather than filling it

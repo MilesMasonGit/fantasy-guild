@@ -8,6 +8,7 @@ import * as Charges from './Charges.js';
 import * as Respawn from './Respawn.js';
 import * as Fields from './Fields.js';
 import * as Demolition from './Demolition.js';
+import * as SiteRules from './SiteRules.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import * as HeroTools from '../equipment/HeroTools.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
@@ -24,7 +25,7 @@ import { neededToolOf } from '../../config/registries/toolKinds.js';
  */
 
 /** Reasons a player can fix from the board: these keep a red badge. */
-export const FIXABLE = new Set([ALERT.INPUTS, ALERT.CHARGES, ALERT.NO_RECIPE, ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE]);
+export const FIXABLE = new Set([ALERT.INPUTS, ALERT.CHARGES, ALERT.NO_RECIPE, ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE, ALERT.BUILD_SITE]);
 
 /** The hero's own gates: a hero stopped by one lets go of the Token at once. Never a badge. */
 export const HERO_GATES = new Set([ALERT.ACCESS, ALERT.UNSKILLED, ALERT.NO_TOOL]);
@@ -107,6 +108,13 @@ export function fixableReason(instanceId, instance) {
         // A station with nothing picked likewise.
         if (io.reason === 'choose_recipe') return { reason: ALERT.CHOOSE_RECIPE, io };
         return { reason: ALERT.NO_RECIPE, io };
+    }
+
+    // A Foundation set to build what may not stand where it is: asked before the inputs, so it never
+    // pays for a build that would have to land somewhere else.
+    if (io.recipe && getTokenType(instance?.typeId)?.foundation
+        && SiteRules.buildRefusal(instance, SiteRules.builtTypeOf(io.recipe))) {
+        return { reason: ALERT.BUILD_SITE, io };
     }
 
     if (io.inputs?.length) {

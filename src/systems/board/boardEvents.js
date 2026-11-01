@@ -324,6 +324,12 @@ export const ALERT = {
      */
     CHOOSE_RECIPE: 'choose_recipe',
     /**
+     * A Foundation is set to build a Token that may not stand where the Foundation is: a mine off
+     * its Stone, a crystal with no leyline in reach (`SiteRules`). Nobody works it and nothing is
+     * spent; moving the Foundation to fitting ground fixes it.
+     */
+    BUILD_SITE: 'build_site',
+    /**
      * A finished cycle's Token has nowhere to go: a Foundation's build has nowhere legal to stand,
      * or a station's recipe makes a Token and the mat is full or crowded around it. It keeps its
      * full progress and nothing is spent; it tries again every tick.
