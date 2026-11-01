@@ -216,9 +216,13 @@ describe('a metal mine: its prospecting map, on Stone only', () => {
     it('a Foundation set to build a mine, dragged onto grass, flies back saying it needs stone', () => {
         const f = put('bn_wood_foundation', STONE);
         StationRecipe.setSelectedRecipe(f, 'bn_build_mine');
+        const flashed = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, (p) => flashed.push(p));
         const res = Placement.placeTokenAt(f, GRASS, { excludeId: f.id });
+        off();
         expect(res.success).toBe(false);
         expect(res.reason).toBe('Needs stone.');
+        expect(flashed.map(p => [p.title, p.rulesText])).toEqual([['Drop Rejected: BN Wood Foundation', 'Needs stone.']]);
         expect({ x: f.x, y: f.y }).toEqual(STONE);
 
         const back = Placement.placeTokenAt(f, { x: STONE.x, y: STONE.y + 96 }, { excludeId: f.id });

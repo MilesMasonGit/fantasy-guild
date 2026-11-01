@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import * as World from '../../systems/world/World.js';
 import { meetFrontierPrices, settleFixture, beatArrival, jumpTutorialToWorld } from './worldDev.js';
+import { setUpBuildingScene } from './buildingDev.js';
 
 /** The kits a fixture place can be settled as, with their buttons' words. */
 const FIXTURE_KITS = Object.freeze([
@@ -21,7 +22,8 @@ const TEXT = Object.freeze({
     met: (r) => `${r.cells} frontier cells: ${r.items} items topped up, ${r.skills} skills raised on the first hero`,
     settled: (r) => `Settled ${r.region.practicalName} (${r.region.flavourName}): ${r.enemies} enemies hold it`,
     beaten: (r) => `${r.beaten} enemies beaten: the mat is the guild's`,
-    jumped: 'The tutorial is at its last step: the world map opens with it'
+    jumped: 'The tutorial is at its last step: the world map opens with it',
+    building: (r) => `Put down ${r.placed.join(', ')}${r.missing.length ? `; this mat has no room or ground for ${r.missing.join(', ')}` : ''}. Pick a test build on each Foundation's card.`
 });
 
 /**
@@ -52,6 +54,10 @@ export function AtlasDevSection() {
         const result = jumpTutorialToWorld();
         setStatus(result.success ? TEXT.jumped : result.reason);
     };
+    const lay = () => {
+        const result = setUpBuildingScene();
+        setStatus(result.success ? TEXT.building(result) : result.reason);
+    };
     const world = World.currentWorld();
     const showCurrent = () => setDump(world ? World.describeWorld(world) : TEXT.noWorld);
     const preview = (value) => {
@@ -73,6 +79,8 @@ export function AtlasDevSection() {
                 <button type="button" data-qa-world-beat className={buttonClass} onClick={beat}>Beat this mat&apos;s arrival</button>
                 <button type="button" data-qa-world-tutorial className={buttonClass} onClick={jump}>Tutorial: jump to the world map step</button>
             </div>
+            <div className="ui-text-body text-gi-muted">Building nodes: Wood Foundations on this mat's Stone, shore and grass, with test builds that need each:</div>
+            <button type="button" data-qa-world-building className={buttonClass} onClick={lay}>Lay the building test</button>
             {status && <div className="ui-text-body text-gi-muted" data-qa-world-said>{status}</div>}
 
             <div className={labelClass}>World (dev only)</div>

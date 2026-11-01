@@ -172,6 +172,9 @@ function auditTokens(out) {
         auditStatements(out, where, def);
         auditDerivedType(out, where, def);
         auditStandsOn(out, where, def);
+        for (const id of Array.isArray(def.standsNear) ? def.standsNear : []) {
+            checkRef(out, where, 'Token', id, 'Its "Stands near"');
+        }
     }
 
     auditCapabilityTags(out);

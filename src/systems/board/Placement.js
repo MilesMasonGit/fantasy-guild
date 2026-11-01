@@ -110,7 +110,9 @@ export function centreOfBoard() {
 
 /** Flash the refused-drop mark at a point, and refuse. */
 function refuseWithAlert(point, typeId, decision) {
-    const vName = tokenName(decision.violatingTypeId) || tokenName(typeId) || 'Token';
+    // ⚠️ `tokenName` never returns empty, so a refusal naming no rule-breaker (the ground's) must
+    // not ask it first, or every such title reads "Unknown Token".
+    const vName = tokenName(decision.violatingTypeId || typeId);
     EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
         ...point,
         severity: 'disallow',

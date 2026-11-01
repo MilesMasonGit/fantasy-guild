@@ -170,11 +170,14 @@ const NOTHING_NEAR = Object.freeze([]);
 /**
  * The Token types one of which must stand within Near of this type's centre, its "Stands near"
  * (`standsNear`): an Arcane node only in reach of a leyline or an altar. Empty: no such rule.
+ *
+ * ⚠️ An id with no Token behind it is dropped, as an unknown "Stands on" word is: a renamed Token
+ * must not leave this one with nowhere to stand. The boot audit names it.
  */
 export function standsNearOf(typeId) {
     const list = getTokenType(typeId)?.standsNear;
     if (!Array.isArray(list) || list.length === 0) return NOTHING_NEAR;
-    const ids = list.filter(id => typeof id === 'string' && id && id !== typeId);
+    const ids = list.filter(id => typeof id === 'string' && id && id !== typeId && getTokenType(id));
     return ids.length ? ids : NOTHING_NEAR;
 }
 

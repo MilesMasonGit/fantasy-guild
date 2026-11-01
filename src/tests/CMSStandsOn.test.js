@@ -116,3 +116,34 @@ describe('⭐ standsOn survives load → Recalculate → Sync, and an empty list
         for (const f of FILES) expect(JSON.stringify(files[f], null, 2)).toBe(raw[f].trimEnd());
     });
 });
+
+describe('⭐ "Stands near" and "Built copies slower by %" (brief 330 W4)', () => {
+    it('the editor writes a Stands near list and a percent, and Sync keeps both', () => {
+        const leyline = useEntityStore.getState().addToken({ name: 'Leyline Fixture' });
+        const id = useEntityStore.getState().addToken({ name: 'Crystal Fixture' });
+        useEntityStore.getState().setActiveEntity(id, 'token');
+        const { container } = render(React.createElement(TokenEditor));
+
+        fireEvent.click(container.querySelector('[data-stands-near-add]'));
+        expect(useEntityStore.getState().tokens[id].standsNear).toEqual(['']);
+        fireEvent.change(container.querySelector('[data-stands-near="0"]'), { target: { value: leyline } });
+        expect(useEntityStore.getState().tokens[id].standsNear).toEqual([leyline]);
+
+        fireEvent.change(container.querySelector('[data-field="built-slower-pct"]'), { target: { value: '40' } });
+        expect(useEntityStore.getState().tokens[id].builtSlowerPct).toBe(40);
+
+        const written = asFile(syncPayload())['tokens.json'][id];
+        expect(written.standsNear).toEqual([leyline]);
+        expect(written.builtSlowerPct).toBe(40);
+
+        fireEvent.change(container.querySelector('[data-field="built-slower-pct"]'), { target: { value: '' } });
+        expect(useEntityStore.getState().tokens[id].builtSlowerPct).toBeUndefined();
+        expect(asFile(syncPayload())['tokens.json'][id]).not.toHaveProperty('builtSlowerPct');
+    });
+
+    it('a blank Stands near row is dropped on Sync, and none left drops the key', () => {
+        const id = useEntityStore.getState().addToken({ name: 'Blank Near Fixture' });
+        useEntityStore.getState().updateToken(id, { standsNear: [''] });
+        expect(asFile(syncPayload())['tokens.json'][id]).not.toHaveProperty('standsNear');
+    });
+});
