@@ -1,6 +1,6 @@
 {
-  "commit": "d355888b",
-  "date": "2026-11-01T05:54:42.197Z",
+  "commit": "0f6f1a77",
+  "date": "2026-11-01T06:05:15.325Z",
   "hours": 8,
   "seeds": [
     1,
@@ -366,7 +366,7 @@
     "src/systems/progression/hallModifiers.js": "4f79f08e",
     "src/systems/effects/GuildModifiers.js": "43c39e3e",
     "src/systems/progression/HallRules.js": "c9d287e8",
-    "src/systems/board/BoardRunner.js": "e2957b0a",
+    "src/systems/board/BoardRunner.js": "3efbd129",
     "src/systems/board/TileModifiers.js": "b3c7d46c",
     "src/systems/board/TimedChanges.js": "1be0bfed",
     "src/systems/board/Respawn.js": "956e4787",
@@ -377,7 +377,7 @@
     "src/systems/board/PassiveProduction.js": "ec8fa50f",
     "src/systems/board/SpawnerSystem.js": "60c5299e",
     "src/systems/board/Camps.js": "0f09da04",
-    "src/systems/board/Flags.js": "80d85342",
+    "src/systems/board/Flags.js": "9876452b",
     "src/systems/hero/HeroEffects.js": "d821e3e6",
     "src/systems/effects/LiveEffects.js": "41765436",
     "src/systems/core/CatchUp.js": "2f47dfd2",
