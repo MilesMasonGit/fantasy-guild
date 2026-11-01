@@ -2,17 +2,20 @@ import { describe, it, expect } from 'vitest';
 import { buildEncyclopedia, encyclopedia, KIND } from '../ui/components/encyclopedia/encyclopediaModel.js';
 import {
     waysIn, waysOut, madeBy, chartOf, nodesOf, findNode, needText, layoutChart, grownBox, keepInSight, centreOn, clampPan,
-    requirementOf, entryOfKey, within, CHART_METRICS, chartMetrics, SHOWN_AT_FIRST, ROOT, STATIONS
+    requirementOf, wayInRequirement, wayOutRequirement, entryOfKey, isGrowingStage, oneOffWays, within, CHART_METRICS,
+    chartMetrics, SHOWN_AT_FIRST, ROOT, STATIONS
 } from '../ui/components/encyclopedia/encyclopediaChart.js';
 import { HOW, COMBAT, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
 import { ledgerWorkspace, withIronChest } from './fixtures/ledgerWorld.js';
 import en from '../i18n/en.json';
 
 /**
- * ⭐ The Encyclopedia's flowchart (brief 300 E3, as the owner reshaped it on 1 November): every box
- * is an entry; a crafted thing's way in is its ingredients and the station type that makes it (one
- * way per recipe, however many stations); what a box asks of a hero sits above it; a drop's odds
- * sit on the dropping box; each side of a box counts the lines not on screen; boxes never overlap.
+ * ⭐ The Encyclopedia's flowchart (brief 300 E3, as the owner chose its display on 1 November):
+ * every box is something the player acts on; a sapling, a sprout or a stump folds into a grow mark
+ * on the line; a crafted thing's way in is its ingredients and the station that makes it (that
+ * station itself, or a type of just the stations that make it); what a step asks of a hero sits on
+ * its line; a box's far side opens in place, the line it already had running through; boxes never
+ * overlap.
  */
 
 const I = itemKey;
@@ -26,14 +29,32 @@ function threeWaysToIronOre() {
     return ws;
 }
 
+/** ...with a second furnace and a second Foundation: recipes made at more than one station. */
+function twoOfEach() {
+    const ws = threeWaysToIronOre();
+    ws.tokens.token_big_furnace = { ...structuredClone(ws.tokens.token_furnace), id: 'token_big_furnace', name: 'Big Furnace' };
+    ws.tokens.token_stone_foundation = { ...structuredClone(ws.tokens.token_wood_foundation), id: 'token_stone_foundation', name: 'Stone Foundation' };
+    return ws;
+}
+
+/** ...with an Oak Forest that plants Oak Saplings, a Seed each. */
+function withForest() {
+    const ws = threeWaysToIronOre();
+    ws.tokens.token_oak_forest = {
+        id: 'token_oak_forest', name: 'Oak Forest',
+        spawner: { spawns: [{ typeId: 'token_oak_sapling', weight: 1 }], allowance: 3, intervalMs: 30000, upkeep: [{ itemId: 'item_seed', quantity: 1 }] }
+    };
+    return ws;
+}
+
 describe('ways in: one per recipe, stacked "or" branches, the most usual first', () => {
     const book = buildEncyclopedia(threeWaysToIronOre());
 
-    it('a smelted ingot: its station type and its ingredients, one way for the recipe', () => {
+    it('a smelted ingot: the station that makes it and its ingredients, one way for the recipe', () => {
         const ways = waysIn(book, I('item_iron_ingot'));
         expect(ways).toHaveLength(1);
         const [craft] = ways;
-        expect(craft).toMatchObject({ how: HOW.CRAFT, recipe: R('recipe_iron_ingot'), from: 'station:smithing' });
+        expect(craft).toMatchObject({ how: HOW.CRAFT, recipe: R('recipe_iron_ingot'), from: T('token_furnace') });
         expect(craft.inputs).toEqual([{ key: I('item_iron_ore'), quantity: 2 }, { key: I('item_coal'), quantity: 2 }]);
     });
 
@@ -53,37 +74,89 @@ describe('ways in: one per recipe, stacked "or" branches, the most usual first',
         expect(ways.map(w => w.from)).toEqual([T('token_goblin'), T('token_fire_elemental'), T('token_goblin_chief')]);
     });
 
-    it('a way with no entry on its left keeps only its words: the opening Bank; the Shop names itself over its price', () => {
-        const bank = waysIn(book, I('item_worm')).find(w => w.how === HOW.STARTER_BANK);
-        expect(bank).toMatchObject({ caption: 'starterBank', from: null, inputs: [] });
+    it('one-off starts leave the chart (the opening Bank, the Starter Camp); the Shop names itself over its price', () => {
+        expect(waysIn(book, I('item_worm')).some(w => w.how === HOW.STARTER_BANK)).toBe(false);
+        expect(waysIn(book, T('token_oak_tree')).some(w => w.how === HOW.STARTER_CAMP)).toBe(false);
+        expect(oneOffWays(book, I('item_worm'))).toEqual(['starterBank']);
+        expect(oneOffWays(book, T('token_oak_tree'))).toEqual(['starterCamp']);
         const [shop] = waysIn(book, T('token_wood_foundation'));
         expect(shop).toMatchObject({ how: HOW.SHOP, caption: 'shop', from: null, inputs: [{ key: I('item_oak_wood'), quantity: 15 }] });
     });
 
-    it('a recipe entry: its station type and inputs; a building: the Foundations that build it', () => {
-        expect(waysIn(book, R('recipe_iron_ingot'))).toEqual([expect.objectContaining({ from: 'station:smithing', inputs: [{ key: I('item_iron_ore'), quantity: 2 }, { key: I('item_coal'), quantity: 2 }] })]);
-        expect(waysIn(book, R('recipe_build_smithy'))[0].from).toBe('station:construction');
+    it('a recipe entry: its station and inputs; a building: the Foundation that builds it', () => {
+        expect(waysIn(book, R('recipe_iron_ingot'))).toEqual([expect.objectContaining({ from: T('token_furnace'), recipe: R('recipe_iron_ingot'), inputs: [{ key: I('item_iron_ore'), quantity: 2 }, { key: I('item_coal'), quantity: 2 }] })]);
+        expect(waysIn(book, R('recipe_build_smithy'))[0].from).toBe(T('token_wood_foundation'));
     });
 });
 
-describe('station types: every station whose recipes use a skill', () => {
-    const book = buildEncyclopedia(threeWaysToIronOre());
+describe('stations: only the ones that make it', () => {
+    it('one station makes it: that station is the way in (the Smithy, never the Idle Anvil that offers nothing)', () => {
+        const book = buildEncyclopedia(threeWaysToIronOre());
+        expect(waysIn(book, I('item_iron_ingot'))[0].from).toBe(T('token_furnace'));
+        expect(waysIn(book, I('item_iron_pickaxe'))[0].from).toBe(T('token_smithy'));
+        expect(waysIn(book, R('recipe_build_smithy'))[0].from).toBe(T('token_wood_foundation'));
+    });
 
-    it('is an entry named for its skill, whose ways in are its stations', () => {
-        const type = entryOfKey(book, 'station:smithing');
+    it('several: a station type of just those, named for its skill, whose ways in are those stations', () => {
+        const book = buildEncyclopedia(twoOfEach());
+        const key = waysIn(book, I('item_iron_ingot'))[0].from;
+        const type = entryOfKey(book, key);
         expect(type).toMatchObject({ kind: STATIONS, name: 'Smithing Station' });
-        // The Idle Anvil works nothing (no work of its own), so it offers no recipe.
-        expect([...type.members].sort()).toEqual([T('token_furnace'), T('token_smithy')].sort());
-        expect(waysIn(book, 'station:smithing').map(w => w.from).sort()).toEqual([...type.members].sort());
-        expect(entryOfKey(book, 'station:construction').members).toEqual([T('token_wood_foundation')]);
+        expect([...type.members].sort()).toEqual([T('token_big_furnace'), T('token_furnace')]);
+        expect(waysIn(book, key).map(w => w.from).sort()).toEqual([T('token_big_furnace'), T('token_furnace')]);
+        // The Smithy smiths too, but makes no ingot: the pickaxe's station is the Smithy alone.
+        expect(waysIn(book, I('item_iron_pickaxe'))[0].from).toBe(T('token_smithy'));
     });
 
-    it('goes into what its stations make', () => {
-        expect(waysOut(book, 'station:smithing').map(w => w.to)).toEqual(expect.arrayContaining([I('item_iron_ingot'), I('item_iron_pickaxe'), I('item_copper_ingot')]));
+    it('a building made on several Foundations reads "Foundation"', () => {
+        const book = buildEncyclopedia(twoOfEach());
+        const type = entryOfKey(book, waysIn(book, R('recipe_build_smithy'))[0].from);
+        expect(type).toMatchObject({ kind: STATIONS, name: 'Foundation' });
+        expect([...type.members].sort()).toEqual([T('token_stone_foundation'), T('token_wood_foundation')]);
+    });
+
+    it('a station type goes into what its stations make', () => {
+        const book = buildEncyclopedia(twoOfEach());
+        const key = waysIn(book, I('item_iron_ingot'))[0].from;
+        expect(waysOut(book, key).map(w => w.to)).toEqual(expect.arrayContaining([I('item_iron_ingot'), I('item_copper_ingot')]));
+        expect(waysOut(book, key).map(w => w.to)).not.toContain(I('item_iron_pickaxe'));
     });
 });
 
-describe('what a box asks of a hero, above it', () => {
+describe('growing stages fold into the line', () => {
+    const book = buildEncyclopedia(withForest());
+
+    it('only a Token nobody works that grows into another is a stage', () => {
+        expect([T('token_oak_sapling'), T('token_oak_stump')].map(k => isGrowingStage(book, k))).toEqual([true, true]);
+        expect([T('token_oak_tree'), T('token_oak_forest'), I('item_seed')].map(k => isGrowingStage(book, k))).toEqual([false, false, false]);
+    });
+
+    it('a tree comes from the forest that plants its saplings: through the sapling, with the forest\'s Seed', () => {
+        const ways = waysIn(book, T('token_oak_tree'));
+        expect(ways.some(w => w.from === T('token_oak_sapling') || w.from === T('token_oak_stump'))).toBe(false);
+        const forest = ways.find(w => w.from === T('token_oak_forest'));
+        expect(forest).toMatchObject({ through: [T('token_oak_sapling')], inputs: [{ key: I('item_seed'), quantity: 1 }] });
+    });
+
+    it('a chopped tree\'s stump, fed a Seed, grows back: the Seed alone, marked as regrowing', () => {
+        const regrow = waysIn(book, T('token_oak_tree')).find(w => w.regrow);
+        expect(regrow).toMatchObject({ from: null, through: [T('token_oak_stump'), T('token_oak_sapling')], inputs: [{ key: I('item_seed'), quantity: 1 }] });
+    });
+
+    it('uses skip the stages too: the forest and the Seed go into Oak Trees', () => {
+        expect(waysOut(book, T('token_oak_forest')).map(w => [w.to, w.through])).toEqual([[T('token_oak_tree'), [T('token_oak_sapling')]]]);
+        const seed = waysOut(book, I('item_seed'));
+        expect(seed.map(w => w.to)).not.toContain(T('token_oak_stump'));
+        expect(seed.find(w => w.to === T('token_oak_tree'))).toMatchObject({ through: [T('token_oak_stump'), T('token_oak_sapling')] });
+        expect(waysOut(book, T('token_oak_tree')).map(w => w.to)).not.toContain(T('token_oak_stump'));
+    });
+
+    it('a worked Token keeps its box: Oak Wood comes from the Oak Tree', () => {
+        expect(waysIn(book, I('item_oak_wood'))[0].from).toBe(T('token_oak_tree'));
+    });
+});
+
+describe('what a step asks of a hero, on its line', () => {
     const book = buildEncyclopedia(threeWaysToIronOre());
 
     it('a crafted thing: its recipe\'s skill and level, with the stations that make it', () => {
@@ -92,12 +165,31 @@ describe('what a box asks of a hero, above it', () => {
         expect(requirementOf(book, I('item_iron_ore'))).toBeNull();
     });
 
-    it('a vein or a chest: the skill to work it; an enemy: Combat at its level; a station or a station type: nothing', () => {
+    it('a vein or a chest: the skill to work it; an enemy: Combat at its level; a station: nothing', () => {
         expect(requirementOf(book, T('token_iron_vein'))).toEqual({ skill: 'mining', level: 15 });
         expect(requirementOf(book, T('token_iron_chest'))).toEqual({ skill: 'crafting', level: 1 });
         expect(requirementOf(book, T('token_goblin'))).toEqual({ skill: COMBAT, level: 5 });
         expect(requirementOf(book, T('token_furnace'))).toBeNull();
-        expect(requirementOf(book, 'station:smithing')).toBeNull();
+    });
+
+    it('each way in carries its own: the smelt Smithing 15, the vein Mining 15, the fight Combat 17', () => {
+        const [smelt] = waysIn(book, I('item_iron_ingot'));
+        expect(wayInRequirement(book, smelt)).toMatchObject({ skill: 'smithing', level: 15 });
+        const [vein, drop, chest] = waysIn(book, I('item_iron_ore'));
+        expect(wayInRequirement(book, vein)).toEqual({ skill: 'mining', level: 15 });
+        expect(wayInRequirement(book, drop)).toEqual({ skill: COMBAT, level: 17 });
+        expect(wayInRequirement(book, chest)).toEqual({ skill: 'crafting', level: 1 });
+        // A map writes, a spawner spawns, the Shop sells: no hero asked.
+        expect(waysIn(book, T('token_goblin')).map(w => wayInRequirement(book, w))).toEqual([null]);
+    });
+
+    it('each use too: the pickaxe\'s recipe; an enemy\'s drops its level; a tool the vein it works', () => {
+        const [pick] = waysOut(book, I('item_iron_ingot'));
+        expect(wayOutRequirement(book, I('item_iron_ingot'), pick)).toMatchObject({ skill: 'smithing', level: 16 });
+        const volcano = waysOut(book, T('token_goblin_chief')).find(w => w.to === I('map_volcano'));
+        expect(wayOutRequirement(book, T('token_goblin_chief'), volcano)).toEqual({ skill: COMBAT, level: 20 });
+        const vein = waysOut(book, I('item_copper_pickaxe')).find(w => w.to === T('token_copper_vein'));
+        expect(wayOutRequirement(book, I('item_copper_pickaxe'), vein)).toEqual({ skill: 'mining', level: 1 });
     });
 
     it('a Token worked with a fighting style asks Combat, not the style', () => {
@@ -135,20 +227,26 @@ describe('ways out: uses and what it gives', () => {
 describe('the chart grows a step at a time, and counts what is not on it', () => {
     const book = buildEncyclopedia(threeWaysToIronOre());
 
-    it('starts with one step each side: the station type and ingredients in, the uses out', () => {
+    it('starts with one step each side: the station and ingredients in, the uses out', () => {
         const chart = chartOf(book, I('item_iron_ingot'));
         expect(chart.id).toBe(ROOT);
         expect(chart.ins).toHaveLength(1);
-        expect(chart.ins[0].from.key).toBe('station:smithing');
+        expect(chart.ins[0].from.key).toBe(T('token_furnace'));
         expect(chart.ins[0].inputs.map(n => n.key)).toEqual([I('item_iron_ore'), I('item_coal')]);
         expect(chart.outs.map(u => u.node.key)).toEqual([I('item_iron_pickaxe')]);
         expect(nodesOf(chart).filter(n => n.ins || n.outs).map(n => n.id)).toEqual([ROOT]);
     });
 
+    it('each line carries what its step asks: the smelt on the branch, the pickaxe\'s recipe on its use', () => {
+        const chart = chartOf(book, I('item_iron_ingot'));
+        expect(chart.ins[0].req).toMatchObject({ skill: 'smithing', level: 15 });
+        expect(chart.outs[0].req).toMatchObject({ skill: 'smithing', level: 16 });
+    });
+
     it('each side of a box counts its lines not on screen', () => {
         const chart = chartOf(book, I('item_iron_ingot'));
         expect([chart.hiddenIn, chart.hiddenOut]).toEqual([0, 0]);
-        // The pickaxe, a use: Iron Ingot is drawn into it; its station type and Oak Wood are not;
+        // The pickaxe, a use: Iron Ingot is drawn into it; its Smithy and Oak Wood are not;
         // it is a tool for three veins, none drawn.
         const pick = chart.outs[0].node;
         expect([pick.hiddenIn, pick.hiddenOut]).toEqual([2, 3]);
@@ -179,10 +277,11 @@ describe('the chart grows a step at a time, and counts what is not on it', () =>
     });
 
     it('a station type grows to its stations', () => {
-        const chart = chartOf(book, I('item_iron_ingot'));
+        const two = buildEncyclopedia(twoOfEach());
+        const chart = chartOf(two, I('item_iron_ingot'));
         const type = chart.ins[0].from;
-        const grown = findNode(chartOf(book, I('item_iron_ingot'), { grown: new Set([type.id]) }), type.id);
-        expect(grown.ins.map(b => b.from.key).sort()).toEqual([T('token_furnace'), T('token_smithy')].sort());
+        const grown = findNode(chartOf(two, I('item_iron_ingot'), { grown: new Set([type.id]) }), type.id);
+        expect(grown.ins.map(b => b.from.key).sort()).toEqual([T('token_big_furnace'), T('token_furnace')]);
     });
 
     it('a use grows what it goes into next, further right', () => {
@@ -222,36 +321,58 @@ describe('the chart grows a step at a time, and counts what is not on it', () =>
     });
 });
 
-describe('the shipped content', () => {
-    const book = encyclopedia();
+describe('a box\'s far side opens in place', () => {
+    const book = buildEncyclopedia(threeWaysToIronOre());
+    const pickOf = (chart) => chart.outs.find(u => u.node.key === I('item_iron_pickaxe')).node;
 
-    it('Iron Ingot: smelted from Iron Ore and Coal at a Smithing Station, Smithing 15, then the drop and the chest', () => {
-        const ways = waysIn(book, I('item_iron_ingot'));
-        expect(ways[0]).toMatchObject({ how: HOW.CRAFT, from: 'station:smithing' });
-        expect(ways[0].inputs.map(i => i.key).sort()).toEqual([I('item_coal'), I('item_iron_ore')]);
-        expect(ways.filter(w => w.how === HOW.CRAFT)).toHaveLength(1);
-        expect(ways.map(w => w.from)).toEqual(expect.arrayContaining([T('token_fire_elemental_chief'), T('token_iron_chest')]));
-        expect(requirementOf(book, I('item_iron_ingot'))).toMatchObject({ skill: 'smithing', level: 15 });
+    it('a use opens its other ways in to its left: the start runs through, its other things are boxes', () => {
+        const pick = pickOf(chartOf(book, I('item_iron_ingot')));
+        expect(pick.canFar).toBe(true);
+        const open = findNode(chartOf(book, I('item_iron_ingot'), { far: new Set([pick.id]) }), pick.id);
+        expect(open.farOpen).toBe(true);
+        expect(open.outs).toBeNull();
+        expect(open.ins).toHaveLength(1);
+        const [b] = open.ins;
+        expect(b.from.key).toBe(T('token_smithy'));
+        expect(b.inputs.map(n => [n.key, n.pass === true])).toEqual([[I('item_iron_ingot'), true], [I('item_oak_wood'), false]]);
+        expect(b.req).toMatchObject({ skill: 'smithing', level: 16 });
+        // Its things count for one of it: one Oak Wood for one pickaxe.
+        expect(b.inputs[1].need).toBe(1);
+        expect(open.hiddenIn).toBe(0);
+        // A pass is a line, not an entry.
+        expect(nodesOf(open).some(n => n.pass)).toBe(false);
     });
 
-    it('Shrimp: one cooking way at the Cooking Station, Cooking 1', () => {
-        const crafts = waysIn(book, I('item_shrimp')).filter(w => w.how === HOW.CRAFT);
-        expect(crafts).toHaveLength(1);
-        expect(crafts[0].from).toBe('station:cooking');
-        expect(entryOfKey(book, 'station:cooking').name).toBe('Cooking Station');
-        expect(entryOfKey(book, 'station:cooking').members.length).toBeGreaterThan(1);
-        expect(requirementOf(book, I('item_shrimp'))).toMatchObject({ skill: 'cooking', level: 1 });
+    it('an ingredient opens its other uses to its right, the start among them as the line', () => {
+        const ore = chartOf(book, I('item_iron_pickaxe'));
+        const ingot = ore.ins[0].inputs.find(n => n.key === I('item_iron_ingot'));
+        expect(ingot.canFar).toBe(false);
+        const coal = chartOf(book, I('item_iron_ingot')).ins[0].inputs.find(n => n.key === I('item_coal'));
+        expect(coal.canFar).toBe(true);
+        const open = findNode(chartOf(book, I('item_iron_ingot'), { far: new Set([coal.id]) }), coal.id);
+        expect(open.outs.map(u => [u.node.key, u.node.pass === true]))
+            .toEqual(expect.arrayContaining([[I('item_iron_ingot'), true], [I('item_copper_ingot'), false]]));
+        expect(open.ins).toBeNull();
     });
 
-    it('Iron Ore: its vein first', () => {
-        expect(waysIn(book, I('item_iron_ore'))[0].from).toBe(T('token_iron_ore_vein'));
+    it('a link that is no way in still reaches its box: a tool\'s vein opens its sources, the tool\'s line above them', () => {
+        const start = chartOf(book, I('item_copper_pickaxe'));
+        const vein = start.outs.find(u => u.node.key === T('token_copper_vein')).node;
+        expect(vein.canFar).toBe(true);
+        const open = findNode(chartOf(book, I('item_copper_pickaxe'), { far: new Set([vein.id]) }), vein.id);
+        expect(open.ins.length).toBeGreaterThan(0);
+        expect(open.ins.flatMap(b => [b.from, ...b.inputs]).some(n => n?.pass)).toBe(false);
+        expect(open.passBand).toMatchObject({ side: 'in', key: I('item_copper_pickaxe') });
     });
 
-    it('every word a box-less way shows is in the strings file', () => {
-        const words = new Set();
-        for (const key of book.entries.keys()) for (const w of waysIn(book, key)) if (w.caption) words.add(w.caption);
-        expect([...words].filter(w => typeof en.encyclopedia.via[w] !== 'string')).toEqual([]);
-        expect(en.encyclopedia.kindOne[STATIONS]).toBe('Station');
+    it('opens nothing on a box whose far side holds only its neighbour', () => {
+        const start = chartOf(book, I('item_iron_ingot'));
+        const furnace = start.ins[0].from;
+        // The Furnace also makes Copper Ingot: something to open. Iron Ore goes only into the ingot.
+        expect(furnace.canFar).toBe(true);
+        const ore = start.ins[0].inputs[0];
+        expect(ore.canFar).toBe(false);
+        expect(findNode(chartOf(book, I('item_iron_ingot'), { far: new Set([ore.id]) }), ore.id).outs).toBeNull();
     });
 });
 
@@ -259,6 +380,7 @@ describe('where the boxes sit', () => {
     const book = buildEncyclopedia(threeWaysToIronOre());
     const m = CHART_METRICS;
     const pitch = m.nodeW + m.gapX;
+    const half = m.nodeW / 2;
     const overlap = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
     /** Iron Ingot with its ore (three ways), its coal, the ore's vein and a use grown. */
@@ -269,34 +391,48 @@ describe('where the boxes sit', () => {
         chart = chartOf(book, I('item_iron_ingot'), { grown: new Set([ore, coal]) });
         const vein = findNode(chart, ore).ins[0].from.id;
         const pick = chart.outs[0].node.id;
-        return { chart: chartOf(book, I('item_iron_ingot'), { grown: new Set([ore, coal, vein, pick]) }), ore, coal, vein };
+        return { chart: chartOf(book, I('item_iron_ingot'), { grown: new Set([ore, coal, vein, pick]) }), ore, coal, vein, pick };
     }
 
-    it('the start sits at the middle; ways in to its left, uses to its right, a column per step', () => {
-        const { chart, ore, vein } = bigChart();
-        const lay = layoutChart(chart);
-        const at = (id) => lay.nodes.find(n => n.id === id);
-        expect(at(ROOT).x).toBe(-m.nodeW / 2);
-        expect(at(ROOT).y).toBe(-(m.reqH + m.nodeH) / 2 + m.reqH);
-        expect(at(ore).x).toBe(-pitch - m.nodeW / 2);
-        expect(at(vein).x).toBe(-2 * pitch - m.nodeW / 2);
-        for (const u of chart.outs) expect(at(u.node.id).x).toBe(pitch - m.nodeW / 2);
-    });
+    /** Every far side open as well: the pickaxe's ways in, the coal's other uses, the Furnace's. */
+    function everythingOpen() {
+        const { ore, coal, vein, pick } = bigChart();
+        const furnace = chartOf(book, I('item_iron_ingot')).ins[0].from.id;
+        const grown = new Set([ore, coal, vein, pick]);
+        const far = new Set([pick, coal, furnace]);
+        let chart = chartOf(book, I('item_iron_ingot'), { grown, far });
+        // ...and, in the pickaxe's ways in, its Oak Wood grown too: three columns between ingot and pickaxe.
+        const wood = findNode(chart, pick).ins[0].inputs.find(n => n.key === I('item_oak_wood'));
+        grown.add(wood.id);
+        chart = chartOf(book, I('item_iron_ingot'), { grown, far });
+        return { chart, pick, coal, wood: wood.id, furnace };
+    }
 
-    it('no two boxes overlap: entries with the line above them, stem counts, words', () => {
-        const { chart } = bigChart();
-        const lay = layoutChart(chart);
-        const boxes = [
-            ...lay.nodes.map(n => ({ ...n, y: n.y - m.reqH, h: n.h + m.reqH })),
-            ...lay.stems,
-            ...lay.captions.filter(c => !c.label)
-        ];
-        expect(lay.stems.length).toBeGreaterThan(0);
+    const noOverlaps = (lay) => {
+        const boxes = [...lay.nodes, ...lay.stems, ...lay.labels, ...lay.captions.filter(c => !c.label)];
         for (let i = 0; i < boxes.length; i++) {
             for (let j = i + 1; j < boxes.length; j++) {
                 expect(overlap(boxes[i], boxes[j]), `${boxes[i].id} / ${boxes[j].id}`).toBe(false);
             }
         }
+    };
+
+    it('the start sits at the middle; ways in to its left, uses to its right, a column per step', () => {
+        const { chart, ore, vein } = bigChart();
+        const lay = layoutChart(chart);
+        const at = (id) => lay.nodes.find(n => n.id === id);
+        expect(at(ROOT).x).toBe(-half);
+        expect(at(ROOT).y).toBe(-m.nodeH / 2);
+        expect(at(ore).x).toBe(-pitch - half);
+        expect(at(vein).x).toBe(-2 * pitch - half);
+        for (const u of chart.outs) expect(at(u.node.id).x).toBe(pitch - half);
+    });
+
+    it('no two boxes overlap: entries, stem counts, the marks on the lines, words', () => {
+        const lay = layoutChart(bigChart().chart);
+        expect(lay.stems.length).toBeGreaterThan(0);
+        expect(lay.labels.length).toBeGreaterThan(0);
+        noOverlaps(lay);
     });
 
     it('"or" branches stack top to bottom in their order, an "or" between each', () => {
@@ -325,6 +461,18 @@ describe('where the boxes sit', () => {
         expect(lay.links.some(l => !lay.nodes.some(n => n.id === l.into))).toBe(true);
     });
 
+    it('a mark sits on its own line: a branch\'s between its join and the box, a use\'s past the trunk', () => {
+        const { chart } = bigChart();
+        const lay = layoutChart(chart);
+        const branch = lay.labels.find(l => l.id === `${chart.ins[0].id}@`);
+        expect(branch.req).toMatchObject({ skill: 'smithing', level: 15 });
+        expect(branch.x).toBeGreaterThan(-pitch + half);
+        expect(branch.x + branch.w).toBeLessThan(-half);
+        const use = lay.labels.find(l => l.id === `${chart.outs[0].id}@`);
+        expect(use.x).toBeGreaterThan(half);
+        expect(use.x + use.w).toBeLessThan(pitch - half);
+    });
+
     it('a stem count sits on its side of its box; the grown box holds what it grew', () => {
         const { chart, ore } = bigChart();
         const lay = layoutChart(chart);
@@ -338,16 +486,79 @@ describe('where the boxes sit', () => {
         expect(grown.left).toBeLessThanOrEqual(vein.x);
         expect(grown.right).toBe(lay.nodes.find(n => n.id === ore).x + m.nodeW);
         for (const n of lay.nodes) {
-            expect(n.y - m.reqH).toBeGreaterThanOrEqual(lay.box.top);
+            expect(n.y).toBeGreaterThanOrEqual(lay.box.top);
             expect(n.y + n.h).toBeLessThanOrEqual(lay.box.bottom);
         }
     });
 
-    it('a box-less way stands as words where its box would be', () => {
-        const chart = chartOf(book, I('item_worm'));
+    it('a far side opened: the use moves out a column per column its ways in take, the start\'s line runs through', () => {
+        const { chart, pick, wood } = everythingOpen();
         const lay = layoutChart(chart);
-        const words = lay.captions.find(c => c.words === 'starterBank');
-        expect(words).toMatchObject({ label: false, x: -pitch - m.nodeW / 2 });
+        const at = (id) => lay.nodes.find(n => n.id === id);
+        const open = findNode(chart, pick);
+        // Smithy and Oak Wood one column right of the start, Oak Wood's tree one more: the pickaxe at column 3.
+        expect(at(open.ins[0].from.id).x).toBe(2 * pitch - half);
+        expect(at(wood).x).toBe(2 * pitch - half);
+        expect(at(findNode(chart, wood).ins[0].from.id).x).toBe(pitch - half);
+        expect(at(pick).x).toBe(3 * pitch - half);
+        // The start's use line ends where the pass line starts, at the left of the pickaxe's block, with no arrow there.
+        const use = chart.outs.find(u => u.node.id === pick);
+        const into = lay.links.find(l => l.id === `${use.id}>`);
+        const pass = open.ins[0].inputs.find(n => n.pass);
+        const through = lay.links.find(l => l.id === `${pass.id}>`);
+        expect(into.points.at(-1)).toEqual(through.points[0]);
+        expect(into.points.at(-1)[0]).toBe(pitch - half);
+        expect(into.into).toBe(pass.id);
+        // The use's own mark is on the pickaxe's branch, not twice.
+        expect(lay.labels.find(l => l.id === `${use.id}@`)).toBeUndefined();
+        expect(lay.labels.find(l => l.id === `${open.ins[0].id}@`).req).toMatchObject({ skill: 'smithing', level: 16 });
+    });
+
+    it('an ingredient\'s far side opened: it moves left, its other uses between it and the start, its line runs through', () => {
+        const { chart, coal } = everythingOpen();
+        const lay = layoutChart(chart);
+        const at = (id) => lay.nodes.find(n => n.id === id);
+        const open = findNode(chart, coal);
+        expect(at(coal).x).toBe(-2 * pitch - half);
+        const copper = open.outs.find(u => u.node.key === I('item_copper_ingot'));
+        expect(at(copper.node.id).x).toBe(-pitch - half);
+        const pass = open.outs.find(u => u.node.pass);
+        const through = lay.links.find(l => l.id === `${pass.id}>`);
+        const join = lay.links.find(l => l.id === `${coal}>`);
+        expect(through.points.at(-1)).toEqual(join.points[0]);
+        expect(join.points[0][0]).toBe(-pitch + half);
+    });
+
+    it('everything open: still no two boxes overlap, and every box stays in its own row band', () => {
+        const { chart } = everythingOpen();
+        const lay = layoutChart(chart);
+        noOverlaps(lay);
+        // No line runs through a box: every horizontal segment clears every box it is not attached to.
+        for (const link of lay.links) {
+            for (let k = 1; k < link.points.length; k++) {
+                const [[x0, y0], [x1, y1]] = [link.points[k - 1], link.points[k]];
+                if (y0 !== y1) continue;
+                for (const n of lay.nodes) {
+                    const inside = y0 > n.y && y0 < n.y + n.h && Math.max(x0, x1) > n.x + 1 && Math.min(x0, x1) < n.x + n.w - 1;
+                    expect(inside, `${link.id} through ${n.id}`).toBe(false);
+                }
+            }
+        }
+    });
+
+    it('a tool\'s vein opened: the tool\'s line runs above its sources and enters the vein high on its side', () => {
+        const start = chartOf(book, I('item_copper_pickaxe'));
+        const use = start.outs.find(u => u.node.key === T('token_copper_vein'));
+        const chart = chartOf(book, I('item_copper_pickaxe'), { far: new Set([use.node.id]) });
+        const lay = layoutChart(chart);
+        const vein = lay.nodes.find(n => n.id === use.node.id);
+        const open = findNode(chart, use.node.id);
+        const band = lay.links.find(l => l.id === `${open.passBand.id}>`);
+        const [x, y] = band.points.at(-1);
+        expect([x, band.into]).toEqual([vein.x, vein.node.id]);
+        expect(y).toBeLessThan(vein.y + vein.h / 2);
+        expect(lay.links.find(l => l.id === `${use.id}>`).points.at(-1)).toEqual(band.points[0]);
+        noOverlaps(lay);
     });
 
     it('the measures grow with the text size', () => {
@@ -382,6 +593,47 @@ describe('the view keeps the focus in sight', () => {
         expect(centreOn(viewport, { left: -100, top: -32, right: 100, bottom: 32 })).toEqual({ x: 400, y: 300 });
         const box = { left: -500, top: -200, right: 500, bottom: 200 };
         expect(clampPan({ x: 5000, y: -5000 }, viewport, box, 96)).toEqual({ x: 800 - 96 + 500, y: 96 - 200 });
+    });
+});
+
+describe('the shipped content', () => {
+    const book = encyclopedia();
+
+    it('Iron Ingot: smelted at the Furnace or the Iron Furnace, a Smithing Station of just those two', () => {
+        const ways = waysIn(book, I('item_iron_ingot'));
+        const type = entryOfKey(book, ways[0].from);
+        expect(type).toMatchObject({ kind: STATIONS, name: 'Smithing Station' });
+        expect([...type.members].sort()).toEqual([T('token_furnace'), T('token_iron_furnace')]);
+        expect(ways[0].inputs.map(i => i.key).sort()).toEqual([I('item_coal'), I('item_iron_ore')]);
+        expect(ways.filter(w => w.how === HOW.CRAFT)).toHaveLength(1);
+        expect(wayInRequirement(book, ways[0])).toMatchObject({ skill: 'smithing', level: 15 });
+        expect(ways.map(w => w.from)).toEqual(expect.arrayContaining([T('token_fire_elemental_chief'), T('token_iron_chest')]));
+    });
+
+    it('the Iron Furnace is built on a Stone Foundation; an Oak Forest on Farmland', () => {
+        expect(waysIn(book, T('token_iron_furnace')).find(w => w.recipe)?.from).toBe(T('token_stone_foundation'));
+        expect(waysIn(book, T('token_oak_forest')).find(w => w.recipe)?.from).toBe(T('token_farmland'));
+    });
+
+    it('an Oak Tree: from the Oak Forest through its sapling, or grown back from its stump; no sapling box', () => {
+        const ways = waysIn(book, T('token_oak_tree'));
+        expect(ways.some(w => isGrowingStage(book, w.from ?? ''))).toBe(false);
+        expect(ways.find(w => w.from === T('token_oak_forest'))?.through).toEqual([T('token_oak_sapling')]);
+        expect(ways.find(w => w.regrow)?.inputs.map(i => i.key)).toEqual([I('item_oak_seedling')]);
+    });
+
+    it('Iron Ore: its vein first', () => {
+        expect(waysIn(book, I('item_iron_ore'))[0].from).toBe(T('token_iron_ore_vein'));
+    });
+
+    it('every word a box-less way or a one-off start shows is in the strings file', () => {
+        const words = new Set();
+        for (const key of book.entries.keys()) {
+            for (const w of waysIn(book, key)) if (w.caption) words.add(w.caption);
+            for (const w of oneOffWays(book, key)) words.add(w);
+        }
+        expect([...words].filter(w => typeof en.encyclopedia.via[w] !== 'string')).toEqual([]);
+        expect(en.encyclopedia.kindOne[STATIONS]).toBe('Station');
     });
 });
 

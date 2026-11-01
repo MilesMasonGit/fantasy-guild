@@ -10,7 +10,7 @@ import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { TOME_ART, TOME_SCALE, COVER_ART, spreadSize, pageRects } from '../atlas/tomeArt.js';
 import { POP_UP_S, prefersReducedMotion } from '../atlas/AtlasTome.jsx';
 import { encyclopedia, KINDS } from './encyclopediaModel.js';
-import { chartOf, chartMetrics, within, ROOT } from './encyclopediaChart.js';
+import { chartOf, chartMetrics, within, farSideOf, ROOT } from './encyclopediaChart.js';
 import { takeLookUp, onLookUp } from './encyclopediaLink.js';
 import { noteViewed, recentlyViewed } from './encyclopediaRecent.js';
 import { ChartView } from './EncyclopediaChartView.jsx';
@@ -50,9 +50,9 @@ function cssPx(name, fallback) {
     return Number.isFinite(v) && v > 0 ? v : fallback;
 }
 
-/** A chart's own state: where it started, what was grown and opened, the focus, and the last glide asked. */
+/** A chart's own state: where it started, what was grown, opened on its far side and listed in full, the focus, and the last glide asked. */
 function startState(key, seq = 0) {
-    return { start: key, grown: new Set(), opened: new Set(), focus: { key, at: ROOT }, glide: { kind: 'centre', at: ROOT, seq: seq + 1 } };
+    return { start: key, grown: new Set(), far: new Set(), opened: new Set(), focus: { key, at: ROOT }, glide: { kind: 'centre', at: ROOT, seq: seq + 1 } };
 }
 
 /** Grown ids without `id` and everything it grew; opened lists (`${id}<`, `${id}>`) likewise. */
@@ -65,27 +65,32 @@ function chartReducer(state, action) {
         case 'start':
             return startState(action.key, state?.glide?.seq ?? 0);
         case 'node': {
-            // A closed box opens a step and becomes the focus; an open one folds away and stays it.
+            // A closed box opens a step and becomes the focus; an open one (either side) folds away and stays it.
             if (!state) return state;
             const { node } = action;
-            let { grown, opened } = state;
-            if (node.grown && node.id !== ROOT) {
+            let { grown, far, opened } = state;
+            if ((node.grown || node.farOpen) && node.id !== ROOT) {
                 grown = withoutGrown(grown, node.id);
+                far = withoutGrown(far, node.id);
                 opened = withoutOpened(opened, node.id);
             } else if (node.canGrow) {
                 grown = new Set(grown).add(node.id);
             }
-            return { ...state, grown, opened, focus: { key: node.key, at: node.id }, glide: { kind: 'keep', at: node.id, seq } };
+            return { ...state, grown, far, opened, focus: { key: node.key, at: node.id }, glide: { kind: 'keep', at: node.id, seq } };
         }
         case 'stem': {
-            // A count on the side a box grows: open it, or show the rest of its long list.
+            // A count beside a box: on the side it grows, open it; on its far side, open that in place
+            // (the box moves out, the line to its neighbour runs through); once open, show the rest.
             if (!state) return state;
             const { node, side } = action;
-            if (!node.grown) {
-                if (!node.canGrow) return state;
-                return { ...state, grown: new Set(state.grown).add(node.id), focus: { key: node.key, at: node.id }, glide: { kind: 'keep', at: node.id, seq } };
+            const focus = { focus: { key: node.key, at: node.id }, glide: { kind: 'keep', at: node.id, seq } };
+            const rest = { ...state, opened: new Set(state.opened).add(`${node.id}${side === 'in' ? '<' : '>'}`), glide: { kind: 'keep', at: node.id, seq } };
+            if (side === farSideOf(node)) {
+                if (node.farOpen) return rest;
+                return node.canFar ? { ...state, far: new Set(state.far).add(node.id), ...focus } : state;
             }
-            return { ...state, opened: new Set(state.opened).add(`${node.id}${side === 'in' ? '<' : '>'}`), glide: { kind: 'keep', at: node.id, seq } };
+            if (!node.grown) return node.canGrow ? { ...state, grown: new Set(state.grown).add(node.id), ...focus } : state;
+            return rest;
         }
         case 'home':
             if (!state) return state;
@@ -230,8 +235,8 @@ export const EncyclopediaScreen = ({ onClose }) => {
     const heroes = GameState.heroes;
 
     const tree = useMemo(
-        () => (chart ? chartOf(book, chart.start, { grown: chart.grown, opened: chart.opened }) : null),
-        [book, chart?.start, chart?.grown, chart?.opened] // eslint-disable-line react-hooks/exhaustive-deps
+        () => (chart ? chartOf(book, chart.start, { grown: chart.grown, far: chart.far, opened: chart.opened }) : null),
+        [book, chart?.start, chart?.grown, chart?.far, chart?.opened] // eslint-disable-line react-hooks/exhaustive-deps
     );
 
     const onNode = useCallback((node) => dispatch({ type: 'node', node }), []);

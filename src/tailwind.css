@@ -103,6 +103,10 @@
   /* The pixel frames' one line colour (the drawn pixels of u_frame_chamfer.png and u_frame_studs.png),
      for the kit's small pieces drawn in CSS: tile edges, toggles, boxes for typing. */
   --color-ui-frame: #977316;
+  /* Words on the book's parchment (the Encyclopedia's chart): dark ink, and the red meaning in a
+     deeper red that reads on paper. Not new meanings: the same red, the page's text colour. */
+  --color-ui-ink: #3b2614;
+  --color-ui-ink-red: #c8102e;
 
   /* Legacy Colors (Mapped to new GI Typography truth) */
   --color-bg-primary: var(--color-gi-base);
@@ -1043,6 +1047,13 @@
    edged, where the global retro outline is 1 px. */
 .ui-text-outline-2 {
   text-shadow: var(--shadow-outline-2) !important;
+}
+
+/* Words on the book's parchment: dark ink with no outline (the global retro outline fills ink letters
+   in). Size and weight come from the kit's text classes; the chart uses it at the body size, bold. */
+.ui-text-ink {
+  color: var(--color-ui-ink);
+  text-shadow: none !important;
 }
 
 /* The kit's pixel frames (UI_STYLE "Pixel frames"; PixelFrame.jsx wears them). A 7×7 nine-slice

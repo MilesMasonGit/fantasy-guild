@@ -16,8 +16,9 @@ import * as ItemStubs from '../systems/notifications/itemStubs.js';
 /**
  * ⭐ The Encyclopedia, search-first (brief 300 E3): a book whose opening page searches everything
  * and lists the recent entries; an entry opens as a left-to-right chart that grows a step per
- * click, glides to its focus, drags, and goes back to the start; a small panel says what the focus
- * is. No kind tabs, no per-kind counts, no long lists.
+ * click, glides to its focus, drags, and goes back to the start. As the owner chose its display
+ * (1 November): what a step asks sits on its line, a box says how many are needed and its card
+ * shows on rest, and the "+N" on a box's far side opens that side in place.
  */
 
 beforeEach(() => {
@@ -38,7 +39,9 @@ const qa = (c, sel) => [...c.querySelectorAll(sel)];
 const page = (c) => q(c, '[data-encyclopedia]').getAttribute('data-codex-page');
 const nodeOf = (c, key, side) => qa(c, `[data-codex-key="${key}"]`).find(n => !side || n.getAttribute('data-codex-side') === side);
 const focused = (c) => q(c, '[data-codex-node][data-focus="true"]')?.getAttribute('data-codex-key');
-const reqOf = (c, id) => q(c, `[data-codex-req-of="${id}"] [data-codex-req]`);
+/** The mark on a line: a branch's `${branchId}@`, a use's `${useId}@`. */
+const markOf = (c, id) => q(c, `[data-codex-line-label="${id}"]`);
+const stationOf = (c, side) => qa(c, '[data-codex-key^="station:smithing"]').find(n => !side || n.getAttribute('data-codex-side') === side);
 const search = (c, term) => fireEvent.change(q(c, '[data-codex-search]'), { target: { value: term } });
 const rowKeys = (c, sel) => qa(c, `${sel} [data-codex-row]`).map(r => r.getAttribute('data-codex-row'));
 
@@ -83,21 +86,27 @@ describe('the chart', () => {
         expect(nodeOf(container, itemKey('item_iron_ore'), 'in')).toBeTruthy();
         expect(nodeOf(container, itemKey('item_coal'), 'in')).toBeTruthy();
         expect(qa(container, '[data-codex-side="out"]').length).toBeGreaterThan(0);
-        // Its smelt: the Smithing Station beside the ingredients, Smithing 15 above the ingot, no chips, no panel.
-        expect(nodeOf(container, 'station:smithing', 'in').textContent).toMatch(/Smithing Station/);
-        expect(reqOf(container, 's').textContent).toBe('Smithing 15');
-        expect(reqOf(container, 's').getAttribute('data-codex-made-at')).toMatch(/^Made at .*Furnace/);
+        // Its smelt: the Smithing Station beside the ingredients, the Smithing mark and 15 on the line, no chips, no panel.
+        expect(stationOf(container, 'in').textContent).toMatch(/Smithing Station/);
+        const smelt = markOf(container, 's<0@');
+        expect([smelt.getAttribute('data-codex-req'), smelt.textContent]).toEqual(['smithing', '15']);
+        expect(smelt.getAttribute('data-codex-made-at')).toMatch(/^Made at .*Furnace/);
+        expect(q(container, '[data-codex-req-of]')).toBeNull();
         expect(q(container, '[data-codex-chip]')).toBeNull();
         expect(q(container, '[data-codex-panel]')).toBeNull();
         expect(q(container, '[data-codex-chart-from]')).toBeNull();
         expect(qa(container, '[data-codex-link]').length).toBeGreaterThan(3);
-        // Dropped by the Fire Elemental Chief: its odds on its box, Combat and its level above it.
+        // Dropped by the Fire Elemental Chief: its odds on its box, a fight and its level on its line.
         const chief = nodeOf(container, tokenKey('token_fire_elemental_chief'), 'in');
         expect(q(chief, '[data-codex-chance]').textContent).toMatch(/^\d+(\.\d)?%$/);
-        expect(reqOf(container, chief.getAttribute('data-codex-node')).textContent).toMatch(/^Combat · Lv \d+$/);
-        // A use shows a count of its lines not on screen: the pickaxe's station and other ingredient.
+        const branch = chief.getAttribute('data-codex-node').slice(0, -1);
+        expect([markOf(container, `${branch}@`).getAttribute('data-codex-req'), markOf(container, `${branch}@`).textContent]).toEqual(['combat', '25']);
+        // A use shows a count of its lines not on screen: the pickaxe's station.
         const pick = nodeOf(container, itemKey('item_iron_pickaxe'), 'out');
         expect(q(container, `[data-codex-stem="in"][data-codex-stem-of="${pick.getAttribute('data-codex-node')}"]`).textContent).toMatch(/^\+\d+$/);
+        // No magnifier, no kind word, no lone count on a use.
+        expect(q(container, '[data-codex-inspect]')).toBeNull();
+        expect(pick.textContent).toBe('Iron Pickaxe');
     });
 
     it('clicking Iron Ore grows its vein and focuses it; back to start returns', () => {
@@ -152,38 +161,41 @@ describe('the chart', () => {
         expect(q(container, '[data-codex-node="s"]').getAttribute('data-codex-key')).toBe(tokenKey('token_iron_smithy'));
     });
 
-    it('the station entry grows to every station of its skill', () => {
+    it('the station entry grows to the stations that make it, and only those', () => {
         lookUp(itemKey('item_iron_ingot'));
         const { container } = open();
-        fireEvent.click(nodeOf(container, 'station:smithing', 'in'));
+        fireEvent.click(stationOf(container, 'in'));
         const stations = qa(container, '[data-codex-node^="s<0f<"]').map(n => n.getAttribute('data-codex-key'));
-        expect(stations).toEqual(expect.arrayContaining([tokenKey('token_furnace'), tokenKey('token_iron_smithy')]));
-        // A station asks nothing above it: its recipes do.
-        expect(q(container, '[data-codex-req-of^="s<0f<"]')).toBeNull();
+        expect(stations.sort()).toEqual([tokenKey('token_furnace'), tokenKey('token_iron_furnace')]);
+        // A station's line asks nothing: its recipes do.
+        expect(q(container, '[data-codex-line-label^="s<0f<"]')).toBeNull();
     });
 
-    it('the inspect mark tells what you have and this run totals', () => {
+    it('resting on a box shows its card: what it is, what you have, this run totals', () => {
         InventoryManager.addItem('item_iron_ore', 4);
         lookUp(itemKey('item_iron_ingot'));
         const { container } = open();
         const ore = nodeOf(container, itemKey('item_iron_ore'), 'in');
-        act(() => { fireEvent.pointerEnter(q(ore, '[data-codex-inspect]'), { clientX: 10, clientY: 10, pointerType: 'mouse', buttons: 0 }); });
+        act(() => { fireEvent.pointerEnter(ore, { clientX: 10, clientY: 10, pointerType: 'mouse', buttons: 0 }); });
         const tip = document.querySelector('[data-tooltip]')?.textContent || '';
-        expect(tip).toMatch(/Have 4/);
+        expect(tip).toMatch(/Have 4; one Iron Ingot needs 6/);
         expect(tip).toMatch(/Collected this run: 4/);
     });
 
-    it('have / need reads red when short, and a level no hero has is marked', () => {
+    it('a box shows just the need, red when short; a level no hero has is marked on its line', () => {
         GameState.state.heroes = [];
-        InventoryManager.addItem('item_coal', 1);
+        InventoryManager.addItem('item_coal', 5);
         lookUp(itemKey('item_iron_ingot'));
         const { container } = open();
-        const ore = nodeOf(container, itemKey('item_iron_ore'), 'in');
-        expect(q(ore, '[data-codex-have]').getAttribute('data-short')).toBe('true');
-        expect(reqOf(container, 's').getAttribute('data-codex-req-short')).toBe('true');
+        const ore = q(nodeOf(container, itemKey('item_iron_ore'), 'in'), '[data-codex-need]');
+        expect([ore.textContent, ore.getAttribute('data-short')]).toEqual(['×6', 'true']);
+        const coal = q(nodeOf(container, itemKey('item_coal'), 'in'), '[data-codex-need]');
+        expect([coal.textContent, coal.getAttribute('data-short')]).toEqual(['×2', null]);
+        expect(q(container, '[data-codex-have]')).toBeNull();
+        expect(markOf(container, 's<0@').getAttribute('data-codex-req-short')).toBe('true');
         // A fight is never marked: no hero level is checked to fight.
-        const chief = nodeOf(container, tokenKey('token_fire_elemental_chief'), 'in');
-        expect(reqOf(container, chief.getAttribute('data-codex-node')).getAttribute('data-codex-req-short')).toBeNull();
+        const chief = nodeOf(container, tokenKey('token_fire_elemental_chief'), 'in').getAttribute('data-codex-node').slice(0, -1);
+        expect(markOf(container, `${chief}@`).getAttribute('data-codex-req-short')).toBeNull();
     });
 
     it('the opening page and back keep the chart as it was left', () => {
@@ -216,7 +228,7 @@ describe('after the owner\'s look of 1 November', () => {
         expect(focused(container)).toBe(itemKey('item_iron_ore'));
     });
 
-    it('the +N count on the side a box grows shows the rest; the far side only counts', () => {
+    it('the +N count on the side a box grows shows the rest', () => {
         lookUp(itemKey('item_iron_ingot'));
         const { container } = open();
         const stem = q(container, '[data-codex-stem-of="s"][data-codex-stem="out"]');
@@ -225,8 +237,59 @@ describe('after the owner\'s look of 1 November', () => {
         fireEvent.click(stem);
         expect(qa(container, '[data-codex-side="out"]').length).toBe(shown + hidden);
         expect(q(container, '[data-codex-stem-of="s"][data-codex-stem="out"]')).toBeNull();
-        const pick = nodeOf(container, itemKey('item_iron_pickaxe'), 'out').getAttribute('data-codex-node');
-        expect(q(container, `[data-codex-stem-of="${pick}"][data-codex-stem="in"]`).tagName).toBe('SPAN');
+    });
+
+    it('the +N on a box\'s far side opens that side in place; clicking the box folds it', () => {
+        lookUp(itemKey('item_iron_ingot'));
+        const { container } = open();
+        const x = (el) => parseFloat(el.style.left);
+        const pickId = nodeOf(container, itemKey('item_iron_pickaxe'), 'out').getAttribute('data-codex-node');
+        const before = x(nodeOf(container, itemKey('item_iron_pickaxe'), 'out'));
+        const stem = q(container, `[data-codex-stem-of="${pickId}"][data-codex-stem="in"]`);
+        expect([stem.tagName, stem.getAttribute('data-codex-stem-far')]).toEqual(['BUTTON', 'true']);
+        fireEvent.click(stem);
+        // The pickaxe moves out a column; its station stands between it and the ingot, whose line runs through.
+        const pick = q(container, `[data-codex-node="${pickId}"]`);
+        expect(pick.getAttribute('data-far-open')).toBe('true');
+        expect(focused(container)).toBe(itemKey('item_iron_pickaxe'));
+        expect(x(pick)).toBeGreaterThan(before);
+        const between = qa(container, `[data-codex-node^="${pickId}<"]`);
+        expect(between.length).toBeGreaterThan(0);
+        expect(between.every(n => x(n) > x(q(container, '[data-codex-node="s"]')) && x(n) < x(pick))).toBe(true);
+        expect(qa(container, '[data-codex-node]').filter(n => n.getAttribute('data-codex-key') === itemKey('item_iron_ingot'))).toHaveLength(1);
+        expect(q(container, `[data-codex-stem-of="${pickId}"][data-codex-stem="in"]`)).toBeNull();
+        // Clicking the open box folds what it opened.
+        fireEvent.click(pick);
+        expect(qa(container, `[data-codex-node^="${pickId}<"]`)).toHaveLength(0);
+        expect(x(q(container, `[data-codex-node="${pickId}"]`))).toBe(before);
+        expect(focused(container)).toBe(itemKey('item_iron_pickaxe'));
+    });
+
+    it('an ingredient\'s far side opens its other uses between it and the start', () => {
+        lookUp(itemKey('item_iron_ingot'));
+        const { container } = open();
+        const x = (el) => parseFloat(el.style.left);
+        const coal = nodeOf(container, itemKey('item_coal'), 'in');
+        const coalId = coal.getAttribute('data-codex-node');
+        const before = x(coal);
+        fireEvent.click(q(container, `[data-codex-stem-of="${coalId}"][data-codex-stem="out"]`));
+        const moved = q(container, `[data-codex-node="${coalId}"]`);
+        expect(x(moved)).toBeLessThan(before);
+        const uses = qa(container, `[data-codex-node^="${coalId}>"]`);
+        expect(uses.map(n => n.getAttribute('data-codex-key'))).toEqual(expect.arrayContaining([itemKey('item_copper_ingot')]));
+        expect(uses.every(n => n.getAttribute('data-codex-side') === 'out' && x(n) > x(moved) && x(n) < x(q(container, '[data-codex-node="s"]')))).toBe(true);
+    });
+
+    it('a growing stage is no box: an Oak Tree comes from the Oak Forest, its sapling a grow mark on the line', () => {
+        lookUp(tokenKey('token_oak_tree'));
+        const { container } = open();
+        expect(nodeOf(container, tokenKey('token_oak_sapling'))).toBeFalsy();
+        expect(nodeOf(container, tokenKey('token_oak_stump'))).toBeFalsy();
+        expect(nodeOf(container, tokenKey('token_oak_forest'), 'in')).toBeTruthy();
+        expect(q(container, '[data-codex-line-label] [data-glyph="grow"]')).not.toBeNull();
+        expect(q(container, '[data-codex-line-label] [data-glyph="regrow"]')).not.toBeNull();
+        // The Starter Camp is no way on the chart; the card names it.
+        expect(q(container, '[data-codex-caption="starterCamp"]')).toBeNull();
     });
 
     it('an item toast clicked while the book is open jumps to its chart; with it shut, the click still pins', () => {
