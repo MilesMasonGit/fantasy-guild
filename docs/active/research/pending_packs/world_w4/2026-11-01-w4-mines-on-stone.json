@@ -1,0 +1,316 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-01-w4-mines-on-stone",
+  "createdAt": "2026-11-01T08:16:42.783Z",
+  "asked": "Building nodes anywhere (brief 330 W4): metal mines need a prospecting map and stand only on Stone terrain; quarries stand on Stone; today's Copper Mine, Coal Mine and Quarry change to these rules (owner, 2026-10-29).",
+  "entries": [
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_copper_prospecting_map",
+      "value": {
+        "id": "item_copper_prospecting_map",
+        "name": "Copper Prospecting Map",
+        "description": "Shows where copper lies under a Stone outcrop: a Build Copper Mine recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_mountain_copper",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 1,
+        "autoSyncId": true,
+        "tags": []
+      },
+      "note": "The prospecting map a copper mine is built from (owner's table: metal mines need a prospecting map). No source yet: W6 makes it a drop from a powerful enemy.",
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_coal_prospecting_map",
+      "value": {
+        "id": "item_coal_prospecting_map",
+        "name": "Coal Prospecting Map",
+        "description": "Shows where coal lies under a Stone outcrop: a Build Coal Mine recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_mountain",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 1,
+        "autoSyncId": true,
+        "tags": []
+      },
+      "note": "The prospecting map a coal mine is built from (owner's table: metal mines need a prospecting map). No source yet: W6 makes it a drop from a powerful enemy.",
+      "placeholderArt": true
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_copper_mine",
+      "value": {
+        "id": "recipe_build_copper_mine",
+        "name": "Build Copper Mine",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 10
+          },
+          {
+            "itemId": "item_stone",
+            "quantity": 5
+          },
+          {
+            "itemId": "item_copper_prospecting_map",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_copper_mine",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "wood"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        }
+      },
+      "note": "Build Copper Mine also spends a Copper Prospecting Map.",
+      "fingerprint": "fp:30783a468cd465e4"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_coal_mine",
+      "value": {
+        "id": "recipe_build_coal_mine",
+        "name": "Build Coal Mine",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 10
+          },
+          {
+            "itemId": "item_stone",
+            "quantity": 5
+          },
+          {
+            "itemId": "item_coal_prospecting_map",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_coal_mine",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "wood"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        }
+      },
+      "note": "Build Coal Mine also spends a Coal Prospecting Map.",
+      "fingerprint": "fp:ac2a1b4355602031"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_copper_mine",
+      "value": {
+        "name": "Copper Mine",
+        "description": "Provides a 25% chance of double Copper Ore to any nearby token_copper_ore_vein. Operates passively without requiring a hero.",
+        "sprite": "t_mineshaft_copper",
+        "tokenType": "buff",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "id": "token_copper_mine",
+        "effects": [
+          {
+            "effectId": "effect_copper_mine_doubling",
+            "scale": 1
+          }
+        ],
+        "standsOn": [
+          "stone"
+        ]
+      },
+      "note": "Copper Mine stands only on Stone (Stands on: Stone). A Foundation set to build one off Stone waits, saying Needs stone.",
+      "fingerprint": "fp:5cdc3e3eb5b024a8"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_coal_mine",
+      "value": {
+        "name": "Coal Mine",
+        "description": "Provides a 25% chance of double Coal to any nearby token_coal_vein. Operates passively without requiring a hero.",
+        "sprite": "t_minecart_coal",
+        "tokenType": "buff",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "id": "token_coal_mine",
+        "effects": [
+          {
+            "effectId": "effect_coal_mine_doubling",
+            "scale": 1
+          }
+        ],
+        "standsOn": [
+          "stone"
+        ]
+      },
+      "note": "Coal Mine stands only on Stone (Stands on: Stone).",
+      "fingerprint": "fp:64f565cc7762dbae"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_quarry",
+      "value": {
+        "name": "Quarry",
+        "description": "Provides a 25% chance of double Stone to any nearby token_stone_outcrop. Operates passively without requiring a hero.",
+        "sprite": "t_minecart_base",
+        "tokenType": "spawner",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "spawner": {
+          "spawns": [
+            {
+              "typeId": "token_stone_outcrop",
+              "weight": 1
+            }
+          ],
+          "allowance": 3,
+          "intervalMs": 30000,
+          "upkeep": []
+        },
+        "id": "token_quarry",
+        "effects": [
+          {
+            "effectId": "effect_quarry_doubling",
+            "scale": 1
+          }
+        ],
+        "standsOn": [
+          "stone"
+        ]
+      },
+      "note": "Quarry stands only on Stone (Stands on: Stone). Its recipe stays as it is: no unlock item (owner's table: basic).",
+      "fingerprint": "fp:3b34c0560943a05c"
+    }
+  ],
+  "gate": {
+    "workspaceFingerprint": "fp:373ea3c1b7265747",
+    "toolVersion": 2,
+    "at": "2026-11-01T08:16:58.001Z",
+    "verdict": "pass",
+    "summary": "Passes: nothing already reached moves, 1 no longer reached, 5 problems added, 0 cleared.",
+    "blocks": [],
+    "notes": [],
+    "deltas": {
+      "stages": [],
+      "moved": [
+        {
+          "key": "token:token_coal_mine",
+          "name": "Coal Mine",
+          "change": "gone",
+          "from": 0.05066137566137566,
+          "to": null
+        }
+      ],
+      "movedCount": 1,
+      "added": [
+        {
+          "check": "never-reachable",
+          "key": "recipe:recipe_build_coal_mine",
+          "severity": "warn"
+        },
+        {
+          "check": "never-reachable",
+          "key": "recipe:recipe_build_copper_mine",
+          "severity": "warn"
+        },
+        {
+          "check": "never-reachable",
+          "key": "token:token_coal_mine",
+          "severity": "warn"
+        },
+        {
+          "check": "never-produced",
+          "key": "item:item_coal_prospecting_map",
+          "severity": "warn"
+        },
+        {
+          "check": "never-produced",
+          "key": "item:item_copper_prospecting_map",
+          "severity": "warn"
+        },
+        {
+          "check": "no-tier",
+          "key": "item:item_coal_prospecting_map",
+          "severity": "info"
+        },
+        {
+          "check": "no-tier",
+          "key": "item:item_copper_prospecting_map",
+          "severity": "info"
+        }
+      ],
+      "cleared": 0
+    }
+  }
+}

@@ -36,6 +36,14 @@ export default function TokenEditor() {
     const ordered = STANDS_ON_CHOICES.map((c) => c.id).filter((id) => next.includes(id));
     update('standsOn', ordered.length ? ordered : undefined);
   };
+  // "Stands near": kept while it has a row (a blank row is one being filled); none drops the key.
+  const standsNear = Array.isArray(token?.standsNear) ? token.standsNear : [];
+  const setStandsNear = (next) => update('standsNear', next.length ? next : undefined);
+  const allTokens = useEntityStore((s) => s.tokens);
+  const nearOptions = useMemo(
+    () => Object.values(allTokens || {}).filter((t) => t?.id && t.id !== activeId).sort((a, b) => String(a.name || a.id).localeCompare(String(b.name || b.id))),
+    [allTokens, activeId]
+  );
   const updateConfig = (patch) =>
     updateToken(activeId, { config: { ...(token.config || makeTokenConfig()), ...patch } });
   // Merged rather than replaced so the per-output intent in the IO list and the Tempo/Purpose here cannot clobber one another.
@@ -488,6 +496,47 @@ export default function TokenEditor() {
                 {(token.standsOn || []).length ? 'Only on the ticked ground. Shore is dry land touching water.' : 'None ticked: anywhere dry.'}
               </p>
             </div>
+            <div data-field="stands-near" title="A Token of one of these types must stand within Near of this one, wherever it is put or built: an Arcane node beside a leyline or an altar. None: no such rule.">
+              <span className="text-xs text-gray-300">Stands near (one of these in reach)</span>
+              <div className="space-y-1 mt-1">
+                {standsNear.map((typeId, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <select
+                      aria-label="Stands near"
+                      data-stands-near={i}
+                      value={typeId}
+                      onChange={(e) => setStandsNear(standsNear.map((id, idx) => (idx === i ? e.target.value : id)))}
+                      className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-md text-[11px] text-gray-200 px-1.5 py-0.5"
+                    >
+                      <option value="">Choose a Token</option>
+                      {nearOptions.map((t) => <option key={t.id} value={t.id}>{t.name || t.id}</option>)}
+                    </select>
+                    <button type="button" aria-label="Remove" className="btn-ghost text-[10px]" style={{ padding: '2px 6px' }} onClick={() => setStandsNear(standsNear.filter((_, idx) => idx !== i))}>
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button type="button" data-stands-near-add className="btn-ghost text-[10px] flex items-center gap-1 mt-1" style={{ padding: '2px 8px' }} onClick={() => setStandsNear([...standsNear, ''])}>
+                <Plus size={10} /> Add Token
+              </button>
+            </div>
+            <label className="flex items-center gap-2" title="A copy built on a Foundation works and spawns this much slower than a wild one (its work cycle and its spawn interval are longer). Empty or 0: the same as wild, as a creature camp built from its banner is.">
+              <span className="text-xs text-gray-300">Built copies slower by %</span>
+              <input
+                type="number"
+                min={0}
+                step={5}
+                aria-label="Built copies slower by percent"
+                data-field="built-slower-pct"
+                value={token.builtSlowerPct ?? ''}
+                onChange={(e) => {
+                  const n = Math.floor(Number(e.target.value));
+                  update('builtSlowerPct', e.target.value === '' || !(n > 0) ? undefined : n);
+                }}
+                className="w-20 bg-white/5 border border-white/10 rounded-md text-[11px] text-gray-200 px-1.5 py-0.5"
+              />
+            </label>
           </div>
         </div>
         {token.requiresHero === false && (

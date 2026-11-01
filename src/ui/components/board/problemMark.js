@@ -3,6 +3,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import * as MatCap from '../../../systems/board/MatCap.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
 import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';
+import { siteTypeOf, buildRefusal } from '../../../systems/board/SiteRules.js';
 import { workConfigOf } from '../../../systems/board/StationRecipe.js';
 import { MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
@@ -32,6 +33,7 @@ export const PROBLEM_SEVERITY = Object.freeze({
     [ALERT.GROW_NEEDS_NEARBY]: SEVERITY.WAITING,
     [ALERT.GROW_NEEDS_ITEM]: SEVERITY.WAITING,
     [ALERT.NO_ROOM]: SEVERITY.CANT,
+    [ALERT.BUILD_SITE]: SEVERITY.CANT,
     [ALERT.ACCESS]: SEVERITY.CANT,
     [ALERT.UNSKILLED]: SEVERITY.CANT,
     [ALERT.NO_TOOL]: SEVERITY.CANT,
@@ -130,6 +132,11 @@ export function problemText(problem, instanceId) {
             return 'Choose a recipe';
         case ALERT.CHOOSE_BUILD:
             return 'Choose what to build';
+        case ALERT.BUILD_SITE: {
+            // The build's own sentence: Needs stone., Needs a Leyline nearby.
+            const built = instance ? siteTypeOf(instance) : null;
+            return (built && buildRefusal(instance, built)) || 'Can’t be built here';
+        }
         case ALERT.NO_ROOM: {
             if (getTokenType(instance?.typeId)?.foundation) return 'No room to build here';
             return MatCap.canPlaceMore(1) ? 'No room for what it makes' : 'Token cap full';

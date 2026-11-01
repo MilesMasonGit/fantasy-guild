@@ -8,6 +8,7 @@ import { distanceSq, nearRadius } from './nearby.js';
 import * as BoardState from './BoardState.js';
 import * as Restrictions from './Restrictions.js';
 import * as GroundRules from './GroundRules.js';
+import * as SiteRules from './SiteRules.js';
 
 /**
  * A Token lands exactly where the player lets go: there are no tiles and nothing snaps. This file
@@ -161,7 +162,7 @@ function bucketNeighbours(neighbours, cell) {
  * is never built at all. The ground is read once too: `ground` is null when the Token may stand on
  * every cell here, so a meadow asks nothing per candidate.
  */
-function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudgeReach() } = {}) {
+function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudgeReach(), siteOf = null } = {}) {
     const hit = hitRadiusOf(typeId);
     const largestHit = Math.round(LARGEST_ART_RADIUS * matTuning('hitboxPct') / 100);
     const largestGap = (hit + largestHit) * (1 - matTuning('overlapPct') / 100);
@@ -194,8 +195,12 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
     }
 
     const buckets = bucketNeighbours(neighbours, largestGap);
-    const ground = GroundRules.rulesFor(typeId);
-    return { typeId, neighbours, buckets, cell: largestGap, cannotMatters, ground, plan, excludeId, reach, bounds };
+    // `siteOf`: a Foundation set to build stands under its build's site rules, not its own.
+    const siteType = siteOf || typeId;
+    const ground = GroundRules.rulesFor(siteType);
+    const nearRules = SiteRules.nearRulesFor(siteType);
+    const near = nearRules ? { ...nearRules, anchors: SiteRules.anchorsFor(nearRules, excludeId), radius: nearRadius() } : null;
+    return { typeId, neighbours, buckets, cell: largestGap, cannotMatters, ground, near, plan, excludeId, reach, bounds };
 }
 
 /** {@link insideMat}, against bounds already read once for this search. */
@@ -254,6 +259,7 @@ function legalIn(typeId, point, ctx) {
     if (!insideBounds(point, ctx.bounds)) return false;
     if (!clearOf(point, ctx)) return false;
     if (ctx.ground && !GroundRules.allowsAt(ctx.ground, point.x, point.y)) return false;
+    if (ctx.near && !SiteRules.nearMetAt(ctx.near.anchors, point.x, point.y, ctx.near.radius)) return false;
     if (!ctx.cannotMatters) return true;
 
     // ⚠️ Only reached when something in range actually carries a `Cannot`.
@@ -319,13 +325,14 @@ export function findSpot(typeId, point, options = {}) {
     // a Token that cannot be put down at all, a harder failure to recognise and not this file's
     // call to make.
     const memo = options.plan ? null : failureMemo();
-    const key = memo ? `${typeId}|${point.x}|${point.y}|${options.excludeId ?? ''}|${options.reach ?? ''}` : null;
+    const key = memo ? `${typeId}|${point.x}|${point.y}|${options.excludeId ?? ''}|${options.reach ?? ''}|${options.siteOf ?? ''}` : null;
     if (memo?.has(key)) return null;
 
     const ctx = contextFor(typeId, point, options);
 
-    // No cell here this Token may stand on (a boat in a Region with no water): no candidate can pass.
-    if (ctx.ground && ctx.ground.allowed === 0) {
+    // No cell here this Token may stand on (a boat in a Region with no water), or nothing on the mat
+    // it must stand near: no candidate can pass.
+    if ((ctx.ground && ctx.ground.allowed === 0) || ctx.near?.anchors.length === 0) {
         if (memo && !ctx.cannotMatters) memo.add(key);
         return null;
     }
@@ -336,9 +343,11 @@ export function findSpot(typeId, point, options = {}) {
     // made only for a candidate that gets as far as `Cannot`. `whyRefused` still walks the generator.
     const { r, w, h } = ctx.bounds;
     const ground = ctx.ground;
+    const near = ctx.near;
     const at = (x, y) => x >= r && y >= r && x <= w - r && y <= h - r
         && clearAt(x, y, ctx)
         && (ground === null || GroundRules.allowsAt(ground, x, y))
+        && (near === null || SiteRules.nearMetAt(near.anchors, x, y, near.radius))
         && (!ctx.cannotMatters || legalIn(typeId, { x, y }, ctx));
 
     if (at(point.x, point.y)) return { x: point.x, y: point.y, nudge: 0 };
@@ -379,7 +388,7 @@ export function findSpotAnywhere(typeId, point, options = {}) {
 
     // ⚠️ A station whose recipe makes a boat in a Region with no water asks this every tick: with no
     // cell at all to stand on, the whole-mat scan below (some 30,000 candidates) cannot succeed.
-    if (GroundRules.rulesFor(typeId)?.allowed === 0) return null;
+    if (GroundRules.rulesFor(options.siteOf || typeId)?.allowed === 0) return null;
 
     const r = artRadiusOf(typeId);
     const w = matW();
@@ -477,8 +486,8 @@ export function forceSpot(typeId, point, options = {}) {
  */
 function relax(typeId, at, excludeId, fixedIds) {
     // The newcomer stands exactly where it aims, so no push can help one aimed at ground it may not
-    // stand on.
-    if (!GroundRules.mayStandAt(typeId, at)) return null;
+    // stand on, or out of reach of what it must stand near.
+    if (SiteRules.siteRefusal(typeId, at, { excludeId })) return null;
 
     // Hit radius per body, once, and the overlap factor read once for this push (`minGap`'s own
     // expression, hoisted; still read live, so a Mat Tuner change takes effect on the very next
@@ -691,7 +700,7 @@ function whyRefused(typeId, point, options = {}) {
 
     // No ground rule and no restriction anywhere in range, so crowding is the only thing it can
     // have been — and this never costs an ordinary drop anything.
-    if (!ctx.cannotMatters && !ctx.ground) return { reason: NO_ROOM };
+    if (!ctx.cannotMatters && !ctx.ground && !ctx.near) return { reason: NO_ROOM };
 
     const plan = { ...(options.plan || {}) };
     if (options.excludeId && plan.id == null) plan.id = options.excludeId;
@@ -703,6 +712,7 @@ function whyRefused(typeId, point, options = {}) {
     for (const candidate of candidatesAround(point, ctx.reach)) {
         if (!insideBounds(candidate, ctx.bounds) || !clearOf(candidate, ctx)) continue;
         if (ctx.ground && !GroundRules.allowsAt(ctx.ground, candidate.x, candidate.y)) return { reason: ctx.ground.reason };
+        if (ctx.near && !SiteRules.nearMetAt(ctx.near.anchors, candidate.x, candidate.y, ctx.near.radius)) return { reason: ctx.near.reason };
         if (!ctx.cannotMatters) continue;
         const verdict = Restrictions.checkPlacement(candidate, typeId, plan);
         if (!verdict.ok) {

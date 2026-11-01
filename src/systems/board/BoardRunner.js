@@ -3,7 +3,7 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
-import { getTokenType, rollOutputQuantity, outputRange, tokenName } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, rollOutputQuantity, outputRange, tokenName, builtSlowdownOf } from '../../config/registries/tokenRegistry.js';
 import { getItem, isRetiredItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
@@ -629,9 +629,10 @@ export function tick(delta) {
             continue;
         }
 
-        if (check.reason === ALERT.CHOOSE_BUILD || check.reason === ALERT.CHOOSE_RECIPE) {
+        if (check.reason === ALERT.CHOOSE_BUILD || check.reason === ALERT.CHOOSE_RECIPE || check.reason === ALERT.BUILD_SITE) {
             // A Foundation or a station with nothing picked. Flags do not claim one, so this is
             // only reached by a hero already on it when the pick was cleared. It waits, saying so.
+            // Likewise a Foundation whose build may not stand where it is (moved off its Stone).
             setAlert(instance, check.reason);
             continue;
         }
@@ -717,7 +718,8 @@ export function tick(delta) {
         // `io.cycleTimeMs` is the active recipe's own timing when it has one, falling back to the
         // station's flat config.
         const isGuildHall = instance.typeId === 'token_guild_hall';
-        const baseCycle = io.cycleTimeMs || config.cycleTimeMs || 10000;
+        // A built node works slower than a wild one by its type's `builtSlowerPct`.
+        const baseCycle = (io.cycleTimeMs || config.cycleTimeMs || 10000) * (instance.builtFrom ? builtSlowdownOf(def) : 1);
         const cycleTime = isGuildHall
             ? (config.cycleTimeMs || 10000)
             : TileModifiers.workTimeOf(id, baseCycle, config.skill);

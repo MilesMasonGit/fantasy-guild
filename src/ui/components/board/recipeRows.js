@@ -5,6 +5,8 @@ import { foundationMinTierOf } from '../../../config/registries/tokenConstants.j
 import { toolNamer, foundationPhrase } from '../../../systems/effects/toolNames.js';
 import { unmetContext } from '../../../systems/board/RecipeResolver.js';
 import { availableOf } from '../../../systems/board/InputAllocator.js';
+import * as BoardState from '../../../systems/board/BoardState.js';
+import { builtTypeOf, buildRefusal, siteNeeds } from '../../../systems/board/SiteRules.js';
 import { toolTokenFor } from './tokenCard.js';
 
 /**
@@ -18,7 +20,9 @@ export function liveRowSources() {
         itemName: (id) => getItem(id)?.name || id,
         tokenName: (id) => tokenName(id) || id,
         available: availableOf,
-        unmetContext
+        unmetContext,
+        siteNeeds,
+        buildRefusal: (instanceId, typeId) => buildRefusal(BoardState.getTokenById(instanceId), typeId)
     };
 }
 
@@ -70,6 +74,17 @@ export function recipeRowOf(recipe, level, instanceId = null, src = liveRowSourc
     if (recipe?.foundationKinds?.length) {
         const phrase = foundationPhrase(types, recipe, foundationMinTierOf(recipe));
         if (phrase) requirements.push({ key: 'foundation', name: phrase.replace(/^an? /, ''), typeId: null, met: null });
+        // Where the built Token may stand (a mine on Stone): red while this Foundation stands elsewhere.
+        const built = builtTypeOf(recipe);
+        const need = built ? src.siteNeeds(built) : null;
+        if (need) {
+            const refusal = instanceId != null ? src.buildRefusal(instanceId, built) : null;
+            requirements.push({
+                key: 'site', name: need.label, typeId: null,
+                met: instanceId != null ? !refusal : null,
+                tip: refusal || need.text
+            });
+        }
     }
 
     const outputs = (recipe?.outputs || []).filter(o => (o?.itemId || o?.tokenId) && !o.currency);

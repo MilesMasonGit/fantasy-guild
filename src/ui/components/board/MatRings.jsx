@@ -3,6 +3,8 @@ import { clampToMat } from '../../../config/matGeometry.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { nearRadius } from '../../../systems/board/nearby.js';
 import * as MatPlacement from '../../../systems/board/MatPlacement.js';
+import * as BoardState from '../../../systems/board/BoardState.js';
+import { siteTypeOf } from '../../../systems/board/SiteRules.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { useActiveDrag, useDragPointer } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
@@ -74,8 +76,10 @@ export function useTokenDragLanding(matRef) {
     if (point) {
         // Where this very Token would land, itself excluded so a Token being
         // moved does not block its own preview.
+        const movingId = activePayload.from?.instanceId || null;
         const spot = MatPlacement.findSpot(activePayload.typeId, clampToMat(point), {
-            excludeId: activePayload.from?.instanceId || null
+            excludeId: movingId,
+            siteOf: movingId ? siteTypeOf(BoardState.getTokenById(movingId)) : null
         });
         result = spot ? { x: spot.x, y: spot.y, typeId: activePayload.typeId } : null;
     }

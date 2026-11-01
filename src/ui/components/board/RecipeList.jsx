@@ -51,11 +51,11 @@ const InputPill = ({ input }) => (
     </Tooltip>
 );
 
-/** A tool, beside-it Token or Foundation rung: the card's hollow bar, red when unmet. */
+/** A tool, beside-it Token, Foundation rung or the ground a build needs: the card's hollow bar, red when unmet. */
 const RequirementBar = ({ req }) => {
     const unmet = req.met === false;
     return (
-        <Tooltip title={req.name} lines={[unmet ? 'Not beside this station' : 'Needed beside the station']}>
+        <Tooltip title={req.name} lines={[req.tip || (unmet ? 'Not beside this station' : 'Needed beside the station')]}>
             <span
                 data-recipe-requirement={req.key}
                 data-unmet={unmet ? 'true' : undefined}
