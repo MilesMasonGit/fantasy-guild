@@ -1,4 +1,4 @@
-// Poison and Burn as a test registers them: the shape the combat content pack authors in the CMS.
+// Venom, Burn and Sunder as a test registers them: the shape the combat content pack authors in the CMS.
 
 import { registerEffects } from '../../config/registries/effectRegistry.js';
 import { makeStatement, KEYWORD } from '../../systems/effects/statements.js';
@@ -28,18 +28,24 @@ export const providesFlat = (id, type, value) => ({
     payload: { type, bucket: 'flat', value }
 });
 
-export const POISON = 'effect_poison';
+export const VENOM = 'effect_venom';
 export const BURN = 'effect_burn';
+export const SUNDER = 'effect_sunder';
 
 /**
- * Poison: stacks up to 3, lasts the fight, 1 a stack a tick. Burn: does not stack, 3 ticks, 1 a
- * tick, and food heals half while it burns.
+ * Venom (the status once named Poison): stacks up to 3, lasts the fight, 1 a stack a tick. Burn:
+ * does not stack, 3 ticks, 1 a tick, and food heals half while it burns. Sunder: stacks up to 3,
+ * lasts the fight, every resistance 10 points lower a stack.
  */
 export function registerStatusFixtures() {
     registerEffects({
-        [POISON]: {
-            id: POISON, name: 'Poison', status: { stacks: 3, ticks: 0 },
-            statements: [tickDamage('stm_poison_tick')]
+        [VENOM]: {
+            id: VENOM, name: 'Venom', status: { stacks: 3, ticks: 0 },
+            statements: [tickDamage('stm_venom_tick')]
+        },
+        [SUNDER]: {
+            id: SUNDER, name: 'Sunder', status: { stacks: 3, ticks: 0 },
+            statements: [providesFlat('stm_sunder', EFFECT_TYPES.SUNDER, 10)]
         },
         [BURN]: {
             id: BURN, name: 'Burn', status: { stacks: 1, ticks: 3 },

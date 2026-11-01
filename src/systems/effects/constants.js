@@ -1,15 +1,26 @@
 export const EFFECT_TYPES = {
     DAMAGE: 'DAMAGE',         // Melee, Ranged, Magic damage
-    DEFENSE: 'DEFENSE',       // Damage reduction
+    DEFENSE: 'DEFENSE',       // ⚠️ Retired: an older name for flat armour, read by nothing
 
     // Combat axes read as flat sums by `ModifierAggregator.query` (percentage and
     // multiplier buckets are skipped), so the palette offers only the flat bucket.
-    ARMOR: 'ARMOR',           // flat damage subtracted from every hit taken — CombatFormulas
     ACCURACY: 'ACCURACY',     // points off the bearer's miss chance — CombatFormulas
-    RESIST_FLAT: 'RESIST_FLAT', // flat damage subtracted after armour — CombatFormulas.enemyHitDamage
     DODGE: 'DODGE',           // points on the miss chance of whoever attacks the bearer
-    PIERCE: 'PIERCE',         // armour points the bearer's hits ignore
     CRIT_CHANCE: 'CRIT_CHANCE', // points on the bearer's crit chance
+    // Percent on the bearer's hits of one damage type or group (the category) — CombatFormulas.typeDamageBoost.
+    TYPE_DAMAGE: 'TYPE_DAMAGE',
+    // Percent off hits of one damage type or group the bearer takes (the category) — CombatFormulas.
+    TYPE_RESIST: 'TYPE_RESIST',
+    // Points off every resistance the bearer has, never below 0 (the Sunder status) — CombatFormulas.
+    SUNDER: 'SUNDER',
+    // Percent off the bearer's hits in one combat style (the category); worn gear's `damageCut`
+    // registers it, no Rules row offers it — CombatFormulas.styleDamageCut.
+    STYLE_DAMAGE_CUT: 'STYLE_DAMAGE_CUT',
+    // ⚠️ Retired with damage types: nothing reads them, the palette no longer offers them, and the
+    // content audits name an effect that still provides one.
+    ARMOR: 'ARMOR',
+    RESIST_FLAT: 'RESIST_FLAT',
+    PIERCE: 'PIERCE',
     XP_BONUS: 'XP_BONUS',     // Bonus XP gain
     LOOT_MULT: 'LOOT_MULT',   // Chance for double loot
     // A chance to double ONE item a cycle or kill drops; the item is the rule's category (`OutputRules`).
@@ -43,6 +54,14 @@ export const EFFECT_TYPES = {
     // How many harvest cycles a Field holds when its crop ripens (a Composter adds to the load);
     // read once, as it ripens — Fields.loadAtRipening.
     CROP_LOAD: 'CROP_LOAD',
+    // How far a camp hands out work, as a percentage on its authored reach — Camps.reachOf.
+    CAMP_REACH: 'CAMP_REACH',
+    // How long a wounded hero takes to recover, as a percentage: negative is faster. Guild-wide
+    // only (a Guild Hall star) — WoundedSystem.
+    WOUND_TIME: 'WOUND_TIME',
+    // More of one loadout category (the category) every hero may carry, as a flat count. Guild-wide
+    // only (a Guild Hall star) — loadoutCaps.js.
+    LOADOUT_SLOTS: 'LOADOUT_SLOTS',
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.

@@ -225,7 +225,7 @@ describe('checks D', () => {
     it('Guild Hall ranks that add no rate are named, not priced; Bunk Beds pay back in hours of wood', () => {
         const { pace } = world();
         const f = pace.findings();
-        expect(f).toContainEqual(expect.objectContaining({ check: 'unmodelled', key: 'hall:token_cap' }));
+        expect(f).toContainEqual(expect.objectContaining({ check: 'unmodelled', key: 'hall:bank_tabs' }));
         const beds = pace.hallPaybacks().filter(r => r.id === 'roster_size');
         expect(beds[0]).toMatchObject({ rank: 1, payback: 0 });
         // Rank 2 is 20 Oak Wood: 20 / 900 of an hour for a whole hero.

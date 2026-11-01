@@ -13,11 +13,10 @@ import { tunedOr } from '../../config/matTuning.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { GuildUpgradeManager } from '../progression/GuildUpgradeManager.js';
-import { TUTORIAL_QUESTS, tutorialTemplate, firstMapsReward } from './tutorialQuests.js';
+import { TUTORIAL_QUESTS, tutorialTemplate } from './tutorialQuests.js';
 // The bounty and reward helpers come from the leaf `questBounties.js`, not
 // QuestManager, so this module does not import QuestManager.
-import { createRandomQuest, questReward, copyReward, drawBountyMap } from './questBounties.js';
+import { createRandomQuest, questReward, copyReward } from './questBounties.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 export { QUEST_TOKEN_TYPE };
@@ -34,7 +33,6 @@ export { QUEST_TOKEN_TYPE };
  * instance.quest = {
  *   id, title, instruction?,          // what it says
  *   says?,                            // a tutorial step: the cartographer's line
- *   firstMaps?,                       // a tutorial step that also pays the first maps
  *   type?: 'hunt' | 'collection',     // bounties only
  *   targetType, match?, enemyId?, itemId?,   // what it counts (QuestManager's matching)
  *   requiredCount, currentCount,
@@ -106,21 +104,21 @@ export function tutorialTokens() {
     return questTokens().filter(t => t.quest.tutorial);
 }
 
-/** ⭐ Game values: the bounties the Hall keeps before any Notice Board rank, and the most it can. */
+/** ⭐ Game values: the bounties the Hall keeps, and the most a dev build's Mat Tuner may ask for. */
 export const QUEST_CAP_BASE = 2;
 export const QUEST_CAP_MAX = 5;
 /** ⭐ Game value: game seconds between bounties while the mat holds fewer than the cap. */
 export const QUEST_EVERY_SEC = 180;
 
 /**
- * How many bounties the Hall keeps on the mat: {@link QUEST_CAP_BASE} plus one per Notice Board
- * rank, never above {@link QUEST_CAP_MAX} (a dev build's Mat Tuner may stand in for either).
+ * How many bounties the Hall keeps on the mat: {@link QUEST_CAP_BASE}, never above
+ * {@link QUEST_CAP_MAX} (a dev build's Mat Tuner may stand in for either). Fixed: the Notice Board
+ * star that raised it is retired.
  */
 export function questCap() {
     const base = Math.round(tunedOr('questCap', QUEST_CAP_BASE));
     const max = Math.round(tunedOr('questCapMax', QUEST_CAP_MAX));
-    const rank = GuildUpgradeManager.getRank('notice_board');
-    return Math.max(0, Math.min(max, base + rank));
+    return Math.max(0, Math.min(max, base));
 }
 
 /** The bounty interval in game ms: {@link QUEST_EVERY_SEC}, or a dev build's Mat Tuner. */
@@ -190,7 +188,6 @@ function tutorialQuest(template, from = null) {
         done: false
     };
     if (template.match) quest.match = { ...template.match };
-    if (template.firstMaps) quest.firstMaps = true;
     quest.done = quest.currentCount >= quest.requiredCount;
     return quest;
 }
@@ -483,12 +480,12 @@ function removeQuestToken(instance) {
 /**
  * **Claim quest Token `instanceId`.** Only when done. A collection bounty hands
  * its items over from the Bank first. The reward drops as loot beside the
- * Token, then the Token vanishes. A bounty may also pay a map, drawn here.
- * Claiming a tutorial step records it and brings the next.
+ * Token, then the Token vanishes. Claiming a tutorial step records it and
+ * brings the next.
  *
  * @returns {{success: boolean, reason?: string, rewardItems?: object[]}}
  */
-export function claimQuest(instanceId, random = Math.random) {
+export function claimQuest(instanceId) {
     const instance = BoardState.getTokenById(instanceId);
     if (!isQuestToken(instance)) return refuse('No quest there');
     const quest = instance.quest;
@@ -507,12 +504,6 @@ export function claimQuest(instanceId, random = Math.random) {
     // on hover, banked through InventoryManager. Dropped before the Token
     // leaves, since the drop is placed at its point.
     const rewardItems = questReward(quest);
-    const map = drawBountyMap(quest, random);
-    if (map) rewardItems.push(map);
-    // The first maps are read now, not when the step appeared: maps authored since still pay.
-    if (quest.tutorial && quest.firstMaps) {
-        for (const r of firstMapsReward()) rewardItems.push({ ...r, name: getItem(r.itemId)?.name || r.itemId });
-    }
     for (const r of rewardItems) SpriteLayer.addSprite('item', r.itemId, r.quantity, instance.id);
 
     removeQuestToken(instance);

@@ -13,7 +13,6 @@ import { matW, matH } from '../config/matGeometry.js';
 import { tokenSpritePath } from '../config/registries/tokenRegistry.js';
 import { sheetPath, propSheetPath } from '../config/registries/terrainRegistry.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
-import * as Cartography from '../systems/atlas/Cartography.js';
 import { DEV_MAPS } from '../systems/atlas/devMaps.js';
 import { HALL_TYPE_ID } from '../systems/atlas/Layout.js';
 import { shippedMat } from '../systems/atlas/layoutInputs.js';
@@ -27,7 +26,6 @@ import {
 } from '../ui/components/atlas/mapPreview.js';
 import { PREVIEW_SETTLE_MS } from '../ui/components/atlas/MapPreview.jsx';
 import { regionPlan } from '../ui/components/atlas/regionPreview.js';
-import { mapSpritePath, mapHoverLines, DEV_MAP_SPRITES, FALLBACK_MAP_SPRITE } from '../ui/components/atlas/mapArt.js';
 import { AtlasScreen, ATLAS_TAB } from '../ui/components/atlas/AtlasScreen.jsx';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { placeAt } from './fixtures/mat.js';
@@ -39,10 +37,10 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * ⭐ The Cartography preview is a tiny real map: the ground the mat will draw for the Region once it
- * is settled (the same pipeline, the same record), each Token its own sprite shrunk by a whole
- * number, the Hall in the middle; and it is drawn once per plan, never on a re-render, a tab
- * switch or the Bank changing, and never after the book is closed.
+ * ⭐ A Region's preview is a tiny real map: the ground the mat draws for the Region (the same
+ * pipeline, the same record), each Token its own sprite shrunk by a whole number, the Hall in the
+ * middle; and the Regions page draws it once per Region chosen, never on a re-render, a rename or
+ * the Bank changing.
  */
 
 const q = (container, sel) => container.querySelector(sel);
@@ -84,7 +82,6 @@ function newGame() {
     InventoryManager.init();
     placeAt(HALL_TYPE_ID, Math.round(matW() / 2), Math.round(matH() / 2));
     Atlas.createStarterRegion();
-    Cartography.clearStock();
 }
 
 let contexts;
@@ -130,7 +127,6 @@ afterEach(() => {
     resetMatTuning();
     SaveManager.currentSlot = null;
     GameLoop.stop();
-    Cartography.clearStock();
 });
 
 afterAll(() => {
@@ -201,7 +197,6 @@ describe('⭐ the picture is the mat\'s own', () => {
     const recipes = [DEV_MAPS.forest, DEV_MAPS.coast];
 
     function settled(seed) {
-        Cartography.grant(recipes, 1);
         const plan = Atlas.preview(recipes, { seed });
         const result = Atlas.settle({ ingredients: plan.recipes, seed: plan.seed });
         expect(result.success).toBe(true);
@@ -279,12 +274,11 @@ describe('⭐ the picture is the mat\'s own', () => {
     });
 });
 
-describe('⭐ the preview is drawn once per plan', () => {
+describe('⭐ the preview is drawn once per Region', () => {
     let plans;
     beforeEach(() => {
         plans = vi.spyOn(TerrainSurface, 'buildGroundPlan');
         vi.useFakeTimers();
-        Cartography.grant([DEV_MAPS.forest, DEV_MAPS.coast], 2);
     });
     afterEach(() => plans.mockRestore());
 
@@ -295,56 +289,6 @@ describe('⭐ the preview is drawn once per plan', () => {
             await vi.runAllTimersAsync();
         });
     };
-
-    it('after a slot or a reroll, and at no other time; nothing once the book is closed', async () => {
-        const view = render(React.createElement(
-            DeckDndContext.Provider, { value: { activePayload: null, isDragging: false } },
-            React.createElement(AtlasScreen, { onClose: vi.fn(), initialTab: ATLAS_TAB.CARTOGRAPHY })
-        ));
-        const { container } = view;
-        const canvas = () => q(container, '[data-cartography] canvas[data-map-preview]');
-        const puts = () => contexts.get(canvas())?.puts.length || 0;
-
-        // Opened on Cartography: the Regions page draws nothing until it is first seen.
-        expect(q(container, '[data-region-preview] canvas')).toBeNull();
-        fireEvent.click(q(container, '[data-map-item="dev_map_forest"]'));
-        expect(plans).toHaveBeenCalledTimes(0);
-        await settle();
-        expect(plans).toHaveBeenCalledTimes(1);
-        expect(puts()).toBe(1);
-        expect(canvas().getAttribute('data-preview-drawn')).toBe(canvas().getAttribute('data-preview-seed'));
-
-        // A quick run of clicks: one picture.
-        fireEvent.click(q(container, '[data-map-item="dev_map_coast"]'));
-        await act(async () => { vi.advanceTimersByTime(PREVIEW_SETTLE_MS / 2); });
-        fireEvent.click(q(container, '[data-map-item="dev_map_forest"]'));
-        await settle();
-        expect(plans).toHaveBeenCalledTimes(2);
-
-        // The Bank changing, a tab switch and back: no picture of the plan. The Regions page
-        // draws its own picture once, the first time it is seen, and not again.
-        act(() => { InventoryManager.addItem('item_oak_wood', 3); });
-        fireEvent.click(q(container, `[data-atlas-tab="${ATLAS_TAB.REGIONS}"]`));
-        fireEvent.click(q(container, `[data-atlas-tab="${ATLAS_TAB.CARTOGRAPHY}"]`));
-        await settle(1000);
-        expect(plans).toHaveBeenCalledTimes(3);
-        expect(puts()).toBe(2);
-        fireEvent.click(q(container, `[data-atlas-tab="${ATLAS_TAB.REGIONS}"]`));
-        fireEvent.click(q(container, `[data-atlas-tab="${ATLAS_TAB.CARTOGRAPHY}"]`));
-        await settle(1000);
-        expect(plans).toHaveBeenCalledTimes(3);
-
-        fireEvent.click(q(container, '[data-cartography-reroll]'));
-        await settle();
-        expect(plans).toHaveBeenCalledTimes(4);
-        expect(puts()).toBe(3);
-
-        // Closed before the settle: nothing more is built.
-        fireEvent.click(q(container, '[data-cartography-slot="0"]'));
-        view.unmount();
-        await settle(1000);
-        expect(plans).toHaveBeenCalledTimes(4);
-    });
 
     it('the Regions page draws its Region once per Region chosen: not on a rename, the Bank or the live board changing', async () => {
         const one = Atlas.devSettle(['forest'], 5).region;
@@ -375,22 +319,5 @@ describe('⭐ the preview is drawn once per plan', () => {
         expect(plans).toHaveBeenCalledTimes(3);
         expect(canvas().getAttribute('data-preview-drawn')).toBe('6');
         view.unmount();
-    });
-});
-
-describe('the maps\' pictures', () => {
-    it('a map item shows its CMS sprite; a dev map its placeholder; anything else the plain scroll', () => {
-        expect(mapSpritePath(DEV_MAPS.forest)).toBe('/assets/tokens/map/t_map_forest.png');
-        expect(mapSpritePath(DEV_MAPS.goblinCamp)).toBe(`/assets/tokens/map/${DEV_MAP_SPRITES.byId.dev_mod_goblin_camp}.png`);
-        expect(mapSpritePath({ id: 'nothing_known' })).toBe(`/assets/tokens/map/${FALLBACK_MAP_SPRITE}.png`);
-        for (const recipe of Object.values(DEV_MAPS)) expect(mapSpritePath(recipe)).toMatch(/^\/assets\/tokens\/map\/t_map_\w+\.png$/);
-    });
-
-    it('a map\'s hover says its kind and what it adds', () => {
-        const lines = mapHoverLines(DEV_MAPS.forest, 128);
-        expect(lines[0]).toBe('Base Map');
-        expect(lines[1]).toMatch(/^\d+ Tokens/);
-        expect(lines.some(l => l.includes('Oak Tree'))).toBe(true);
-        expect(mapHoverLines(DEV_MAPS.goblinCamp, 128)).toEqual(['Map Modifier', 'Changes what the Base Maps beside it write', '+1 × Goblin Camp (enemy camp)']);
     });
 });

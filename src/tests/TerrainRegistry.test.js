@@ -49,9 +49,9 @@ describe('The art the looks draw with', () => {
 });
 
 describe('The looks', () => {
-    it('are the meadow, the forest, the mountain, the coast and the sea, the five newer biomes, the lakes and springs, and the lawn a blend lays', () => {
+    it('are the meadow, the forest, the mountain, the coast and the sea, the five newer biomes, the lakes and springs, the lawn a blend lays and the Stone outcrops', () => {
         expect(Object.keys(LOOKS).sort()).toEqual([
-            'bog', 'cherry_grove', 'coast', 'flower_meadow', 'forest', 'lake', 'lawn', 'meadow', 'mountain', 'sea', 'sulphur', 'volcano', 'yellowstone'
+            'bog', 'cherry_grove', 'coast', 'flower_meadow', 'forest', 'lake', 'lawn', 'meadow', 'mountain', 'sea', 'stone', 'sulphur', 'volcano', 'yellowstone'
         ]);
         for (const [id, look] of Object.entries(LOOKS)) {
             expect(look.id, id).toBe(id);

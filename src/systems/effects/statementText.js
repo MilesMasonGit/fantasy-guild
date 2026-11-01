@@ -10,8 +10,10 @@ import { filtersPhrase } from '../../config/registries/filterRegistry.js';
 import { magnitudeParts, MAGNITUDE_KIND } from '../../config/registries/magnitudeRegistry.js';
 import { getPlacement, placementOf } from '../../config/registries/placementRegistry.js';
 import { EFFECT_TYPES } from './constants.js';
+import { damageTypeLabel } from '../../config/registries/damageTypes.js';
 import { articleOf } from './toolNames.js';
 import { stationKindLabel } from '../../config/registries/tokenConstants.js';
+import { getCategoryInfo } from '../../config/registries/equipmentCategories.js';
 
 /**
  * The rules text: generated, read-only, and the only text a Token has. The sentence IS the
@@ -548,6 +550,17 @@ function bodySegments(statement, names) {
              * is chosen to dodge number agreement: after "makes", English takes the bare infinitive, so a
              * singular or plural subject (depending on reach) never has to agree.
              */
+            // A guild-only axis reaches every hero, from the Guild Hall: no Tokens, no reach.
+            if (entry?.guildOnly) {
+                if (payload.type === EFFECT_TYPES.LOADOUT_SLOTS) {
+                    const n = Number(payload.value) || 0;
+                    const kind = getCategoryInfo(payload.category).label;
+                    return segs(d('Provides', K), ' every hero ', d(`${Math.abs(n)} ${n < 0 ? 'fewer' : 'more'}`, 'value'), ' ',
+                        d(payload.category ? kind : '…', categorySlot(statement)), ' ', d(Math.abs(n) === 1 ? 'slot' : 'slots', 'type'));
+                }
+                if (entry.reads) return segs(d('Makes', K), ' every hero ', effectSegments(statement, names));
+                return segs(d('Provides', K), ' ', effectSegments(statement, names), ' to every hero');
+            }
             if (entry?.reads) {
                 return segs(d('Makes', K), ' ', targetSegments(statement, names, ''), ' ', effectSegments(statement, names));
             }
@@ -567,6 +580,36 @@ function bodySegments(statement, names) {
                 const change = shift < 0 ? `at most ${-shift} lower` : shift > 0 ? `up to ${shift} higher` : 'no different';
                 return segs(d('Provides', K), ' ', d(statusName(payload.category, names), categorySlot(statement)), ' ',
                     d('stacks', 'type'), ' ', d(change, 'value'), COMBAT_REACH);
+            }
+
+            // "Provides 15% more Poison damage", "Provides 20% Physical resistance": a type row names its type.
+            if (payload.type === EFFECT_TYPES.TYPE_DAMAGE || payload.type === EFFECT_TYPES.TYPE_RESIST) {
+                const n = Number(payload.value) || 0;
+                const size = `${Math.abs(n)}%`;
+                const type = d(payload.category ? damageTypeLabel(payload.category) : 'every type', categorySlot(statement));
+                let phrase;
+                if (payload.type === EFFECT_TYPES.TYPE_DAMAGE) {
+                    const more = n < 0 ? 'less' : 'more';
+                    phrase = payload.category
+                        ? segs(d(`${size} ${more}`, 'value'), ' ', type, ' ', d('damage', 'type'))
+                        : segs(d(`${size} ${more}`, 'value'), ' ', d('damage', 'type'), ' of ', type);
+                } else {
+                    const noun = n < 0 ? 'weakness' : 'resistance';
+                    phrase = payload.category
+                        ? segs(n < 0 ? 'a ' : '', d(size, 'value'), ' ', type, ' ', d(noun, 'type'))
+                        : segs(n < 0 ? 'a ' : '', d(size, 'value'), ' ', d(noun, 'type'), ' to ', type);
+                }
+                return segs(d('Provides', K), ' ', phrase, ' in combat', COMBAT_REACH);
+            }
+
+            // "Provides Sunder 10: every resistance 10 points lower, never below 0". Below 1 it does
+            // nothing (`CombatFormulas.sunderOf`).
+            if (payload.type === EFFECT_TYPES.SUNDER) {
+                const n = Number(payload.value) || 0;
+                const what = n > 0
+                    ? segs(': every resistance ', d(`${n} points lower`, 'value'), ', never below 0,')
+                    : segs(': ', d('no change', 'value'));
+                return segs(d('Provides', K), ' ', d('Sunder', 'type'), ' ', d(String(n), 'value'), what, ' in combat', COMBAT_REACH);
             }
 
             if (entry?.heroOnly) {
@@ -647,11 +690,6 @@ function bodySegments(statement, names) {
 
         case KEYWORD.DEALS: {
             /**
-             * ⚠️ The armour clause appears only when it is TRUE: damage respects armour by default, so
-             * saying so on every rule would be noise.
-             */
-            const pierce = payload.ignoresArmor ? segs(', ', d('ignoring armour', 'ignoresArmor')) : [];
-            /**
              * A computed magnitude says where its number came from:
              *
              *   flat   "deals 1 damage to the hero"
@@ -672,7 +710,7 @@ function bodySegments(statement, names) {
             } else {
                 amount = segs(d(String(flat), 'amount'), ' damage');
             }
-            return segs(d('Deals', K), ' ', amount, ' to ', roleSegments(statement), pierce);
+            return segs(d('Deals', K), ' ', amount, ' to ', roleSegments(statement));
         }
 
         case KEYWORD.HEALS: {

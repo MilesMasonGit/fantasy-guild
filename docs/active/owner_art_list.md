@@ -85,6 +85,10 @@ player for these is T-138 (built when the first strips exist).
     2×, in the text colour. The placeholders are drawn in code
     (`PixelGlyph`; the style sheet page shows them under "Card icons").
     **Turn** (a Token that may turn into another) joins the list.
+  - **Encyclopedia** (NEW 2026-10-30, brief 300): a book (the "look it up"
+    link on cards and in the Bank's tooltip line), a tick (collected this
+    run) and a back arrow, 8 × 8 at 2×, placeholders in `PixelGlyph` until
+    drawn. Its menu bubble uses a Lucide book like the other bubbles.
   - **The problem mark is on the mat now** (brief 120 C1), 16 × 16, drawn at
     the Token's own pixel size at a Token's centre with a hard black shadow.
     The placeholder is today's `ui/u_alert_yellow.png` and `ui/u_alert_red.png`;
@@ -117,8 +121,15 @@ player for these is T-138 (built when the first strips exist).
   table's edge with a candle and a compass around it; ribbon bookmarks for
   the two sections. Placeholders until drawn.
 - **Area banners**: the 19 in `backgrounds/area/` are in use (Region rows,
-  the top bar, travel, the Cartography preview); each Base Map names one in
-  the CMS, so a new Base Map may want a new banner.
+  the top bar, travel); a place settled on the world map shows its main
+  biome's.
+- **Stone terrain pieces** (NEW when ready, brief 330 W3): the ground of a Stone outcrop (bare rock where mines and quarries stand), on any biome's ground and on the mountain's too, so it must read apart from the mountain's own rock. Code draws pale grey slabs and scree from rules until then (the `stone` look in `terrainRegistry.js`).
+- **The darkened mat** (NEW when ready, brief 330 W3): how a place held by its arrival looks. Code shades the ground with a dark wash and dims every Token but the enemies and the Hall until then; a mood (dusk, smoke, fog) or a frame would replace it.
+- **World map cells** (NEW when ready, brief 330 W2): a hex cell frame (flat
+  top, settled, frontier and beyond looks, or one frame the code tints) and a
+  ground fill per kit (Highland, Woodland, Plains, Wetland, Riverside). Code
+  draws flat hexes in a colour per kit until then; the cells show the item
+  sprites of what they yield, so no new output icons are needed.
 - **Loadout slot kind marks** (NEW, 8 × 8, drawn at 2× in the bottom-right
   corner of a hero's filled loadout slot; code-drawn placeholders in
   `PixelGlyph` until drawn, shown on the style sheet page under "Loadout slot
@@ -172,9 +183,10 @@ swapping a picture in for one is a small code change.
 |---|---|---|
 | Fight icon (crossed swords) | **NEW** | On the chip beside each fight's enemy (opens the fight panel), the panel's header and the log's "beats" line. Placeholder: gold crossed lines |
 | Hit (a burst) | **NEW** | The versus card's hit row and the log's hits |
-| Armour (a shield) | **NEW** | The versus card's armour row |
+| Armour (a shield) | **NEW** | The versus card's resistances row (flat armour is gone) |
 | Heart | **NEW** | The versus card's health row; the log's meals and heals |
-| Poison drop | **NEW** | A poison tick's float (red, outlined), a poisoned fighter's status, the log's poison lines |
+| Venom drop | **NEW** | A Venom tick's float (red, outlined), a fighter's Venom status, the log's Venom lines (the status once named Poison) |
+| Sunder (a cracked shield) | **NEW** | A fighter's Sunder status (each stack lowers their resistances) on the panel, its landing in the log (brief 280 V2) |
 | Burn flame | **NEW** | A burn tick's float, a burning fighter's status, the log's burn lines |
 | Crit star | **NEW** | The log's crits and boss moves |
 | Miss dash | **NEW** | The log's misses |
@@ -182,6 +194,7 @@ swapping a picture in for one is a small code change.
 | Loot bag | **NEW** | The log's "Drops" line |
 | Knocked out (a down arrow) | **NEW** | The log's knockout and the "While you were away" Knocked out line |
 | Enemy animation sheets | **NEW** (as wanted) | Only the Cow has one today (`e_cow_sheet`); every other enemy stands still in the fight panel's strip and loops nothing on the mat. A sheet is 4 × 4 frames of 64 px (rows 0–1 idle, 2–3 attack); registering one is a one-line code change |
+| Damage type icons (12) | **NEW** | One per type and group: Slash, Crush, Stab, Fire, Ice, Electric, Poison, Light, Dark, Physical, Elemental, Special. Beside every hit's number in the floats (two for a bow's shot), on the versus card's hit and resistances rows, on the enemy card's hit, Resists and Weak to rows. 8 × 8 at 2× like the others; placeholders drawn in code (`combatGlyphs.js`, `dt_<type>`), shown on the style sheet page |
 
 ## 6. Hero orders (brief 260 O1)
 
@@ -195,3 +208,10 @@ swapping a picture in for one is a small code change.
 |---|---|---|
 | Logging Camp, Mining Camp, Fishing Hut, Farmstead | **NEW** | One Token sprite each (64 px, a size-1 Token). Placeholders in the camps change pack: the unused Sawmill (`t_sawmill`), the unused iron mineshaft (`t_mineshaft_iron`), the Shrimp Market's fish stall (`t_market_fish`, 128 px) and the Windmill (`t_windmill`) |
 | Reach icon | **NEW** | The card's line for a camp ("Forestry · 360 u"), 8 × 8 at 2× like the other card icons; placeholder drawn in code (a ring round a dot, `PixelGlyph` `reach`) |
+
+## 8. Guild Hall stars (brief 320 H1)
+
+| Piece | Status | Notes |
+|---|---|---|
+| A picture per star kind (XP, yield, work speed, a vein's rest, regrowth, camp reach, a Well line, the Infirmary, a loadout slot) | **NEW** (when ready) | The details panel's 128 px picture of an authored star (32 art px at 4×). Placeholder: the gold star (`ui_star_gold.png`); a star may name its own `sprite` |
+| Each skill constellation's picture | **NEW** (when ready) | The finished-constellation glow draws its lines today; a drawn picture is for later |

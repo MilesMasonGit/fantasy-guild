@@ -5,13 +5,26 @@ import * as HeroManager from '../hero/HeroManager.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import * as GameClock from '../core/GameClock.js';
+import { getGlobalAggregator } from '../effects/GuildModifiers.js';
+import { EFFECT_TYPES } from '../effects/constants.js';
+import { floorSpeedUp } from '../board/workTime.js';
 
 /**
  * WoundedSystem - drains wounded heroes' recovery timers; a recovered hero
  * returns to idle at 50% HP.
  */
 
-const BASE_RECOVERY_TIME_MS = 5 * 60 * 1000;
+export const BASE_RECOVERY_TIME_MS = 5 * 60 * 1000;
+
+/**
+ * How long a wound takes now: the base, moved by the guild's Wound Time (a Guild Hall star, the
+ * Infirmary) and floored like every speed-up. Read as a wound starts, so a star bought mid-wound
+ * shortens the next one.
+ */
+export function woundTimeMs() {
+    const resolved = getGlobalAggregator().resolveAxis(EFFECT_TYPES.WOUND_TIME, BASE_RECOVERY_TIME_MS);
+    return Math.round(floorSpeedUp(BASE_RECOVERY_TIME_MS, resolved));
+}
 
 const WoundedSystem = {
     initialized: false,
@@ -46,8 +59,9 @@ const WoundedSystem = {
         if (typeof hero.woundedRemainingMs !== 'number') {
             // Legacy saves stored a wall-clock deadline in woundedUntil: convert
             // whatever is left on it; fresh wounds get the full timer.
-            const legacyRemaining = hero.woundedUntil ? hero.woundedUntil - GameClock.now() : BASE_RECOVERY_TIME_MS;
-            hero.woundedRemainingMs = Math.max(0, Math.min(BASE_RECOVERY_TIME_MS, legacyRemaining));
+            const full = woundTimeMs();
+            const legacyRemaining = hero.woundedUntil ? hero.woundedUntil - GameClock.now() : full;
+            hero.woundedRemainingMs = Math.max(0, Math.min(full, legacyRemaining));
             hero.woundedUntil = null;
             logger.debug('WoundedSystem', `Set recovery timer for ${hero.name}: ${hero.woundedRemainingMs}ms`);
         }

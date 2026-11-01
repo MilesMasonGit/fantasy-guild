@@ -21,7 +21,7 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import * as LiveEffects from '../systems/effects/LiveEffects.js';
-import { registerStatusFixtures, POISON, providesFlat } from './fixtures/statusEffects.js';
+import { registerStatusFixtures, VENOM, providesFlat } from './fixtures/statusEffects.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 /**
@@ -147,7 +147,7 @@ describe('⭐ a carried rule can put a status on the enemy — the path that had
                     chargeDelta: -1,
                     // V10b: the enemy is named by its role, not the retired flag.
                     target: { role: 'opponent' },
-                    payload: { effectId: POISON, chance: 100 },
+                    payload: { effectId: VENOM, chance: 100 },
                 }],
             },
         });
@@ -171,7 +171,7 @@ describe('⭐ a carried rule can put a status on the enemy — the path that had
         const fight = BoardCombat.getFight(idAt(TILE));
         expect(fight).toBeTruthy();
 
-        const enemyPoison = LiveEffects.statusesOf(fight).find((s) => s.effectId === POISON);
+        const enemyPoison = LiveEffects.statusesOf(fight).find((s) => s.effectId === VENOM);
         expect(enemyPoison, 'the enemy should be poisoned').toBeTruthy();
         expect(enemyPoison.stacks).toBe(1);
 

@@ -160,7 +160,7 @@ const Fact = ({ id, label, children }) => (
  */
 const RegionPage = ({ region, version, open, onTravel, message, onMessage }) => {
     const [draft, setDraft] = useState(null);
-    // The picture waits until the page is first seen: an Atlas opened on Cartography draws none.
+    // The picture waits until the page is first seen: an Atlas opened on the World page draws none.
     const [seen, setSeen] = useState(open);
     useEffect(() => { if (open) setSeen(true); }, [open]);
     const [confirming, setConfirming] = useState(false);

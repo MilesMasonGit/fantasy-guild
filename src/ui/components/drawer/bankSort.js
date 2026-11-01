@@ -21,22 +21,26 @@ export function bankSearchWords(item) {
 const wordsOf = (text) => text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
 
 /**
- * Whether an item matches a search: the words typed are, in order, the starts of words in one of
- * its {@link bankSearchWords} ("Ore" finds "Iron Ore", not "Forest Map"), whatever the case.
+ * Whether `text` matches a search: the words typed are, in order, the starts of words in it ("Ore"
+ * finds "Iron Ore", not "Forest Map"), whatever the case. An empty search matches everything.
  */
-export function bankSearchMatches(item, term) {
+export function wordStartsMatch(text, term) {
     const typed = wordsOf(term || '');
     if (!typed.length) return true;
-    return bankSearchWords(item).some(text => {
-        const words = wordsOf(text);
-        let at = 0;
-        for (const t of typed) {
-            while (at < words.length && !words[at].startsWith(t)) at++;
-            if (at === words.length) return false;
-            at++;
-        }
-        return true;
-    });
+    const words = wordsOf(text || '');
+    let at = 0;
+    for (const t of typed) {
+        while (at < words.length && !words[at].startsWith(t)) at++;
+        if (at === words.length) return false;
+        at++;
+    }
+    return true;
+}
+
+/** Whether an item matches a search: {@link wordStartsMatch} over one of its {@link bankSearchWords}. */
+export function bankSearchMatches(item, term) {
+    if (!wordsOf(term || '').length) return true;
+    return bankSearchWords(item).some(text => wordStartsMatch(text, term));
 }
 
 /** An item's own `tier`, else its tool tier when it is a tool; Infinity when it has neither. */

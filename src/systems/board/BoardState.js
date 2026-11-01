@@ -2,6 +2,7 @@
 
 import { GameState } from '../../state/GameState.js';
 import { createEmptyBoard } from '../../state/StateSchema.js';
+import { noteTokenHad } from '../progression/collectionLog.js';
 
 /**
  * BoardState: read/write primitives over `state.board`.
@@ -297,6 +298,7 @@ export function addToken(instance, x, y) {
     // (`placeTokenAt`) is harmless.
     bumpMembership(b);
     afterPointChange(b, instance);
+    noteTokenHad(instance.typeId);
     return instance;
 }
 

@@ -4,7 +4,10 @@ import * as LiveEffects from '../../../systems/effects/LiveEffects.js';
 import { isFightElixir } from '../../../systems/hero/ConsumptionSystem.js';
 import { MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
-import { roundHalfUp, levelDamageBonus, UNARMED_DAMAGE } from '../../../config/FormulaRegistry.js';
+import { levelDamageBonus, UNARMED_DAMAGE } from '../../../config/FormulaRegistry.js';
+import { DAMAGE_GROUPS, DAMAGE_TYPES, PLAIN_ENEMY_HIT_TYPE, arrowOf } from '../../../config/registries/damageTypes.js';
+import { nextArrowOf, shootsArrows, carriedArrowIds } from '../../../systems/combat/Arrows.js';
+import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { getEquippedEntries, isConsumableCategory } from '../../../config/registries/equipmentConstants.js';
 import { getEnemyProfile } from '../../../config/registries/enemyProfile.js';
 import { getEnemyKind } from '../../../config/registries/enemyKinds.js';
@@ -12,6 +15,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { tokenName, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
+import { statusBlockOf } from '../../../systems/effects/effectLibrary.js';
 import { GameState } from '../../../state/GameState.js';
 import { resolveAnimationPath, resolveSpritePath, resolveEnemyAnimationPath } from '../../../utils/AssetManager.js';
 import { healthText } from '../board/healthBar.js';
@@ -23,9 +27,79 @@ import { t } from '../../../i18n/index.js';
  * the fight panel's versus card, the enemy card, the hero's elixirs for the bubble row. No React:
  * the views here are handed to components (`FightPanel.jsx`, `EnemyCard.jsx`, `FightLayer.jsx`),
  * which a test or the style sheet page can also feed a fixture.
- * The numbers are the ones the fight uses (`CombatFormulas`), before the other side's armour and
- * the matchup: the player does the sums (no forecast).
+ * The numbers are the ones the fight uses (`CombatFormulas`), before the other side's resistances
+ * and the matchup: the player does the sums (no forecast).
  */
+
+/** A hit's size as the screen shows it: `2`, `2.5`, `1.88` (a fraction rolls when it lands). */
+export function damageText(n) {
+    const v = Math.max(0, Number(n) || 0);
+    return String(Math.round(v * 100) / 100);
+}
+
+/** A damage type's or group's name in the player's words. */
+export const damageTypeName = (id) => t(`fight.types.${id}`);
+
+/** Resistance lines in reading order, groups before types: `[{ id, value }]`, a weakness negative. */
+function orderedLines(valueOf) {
+    const out = [];
+    for (const { id } of [...DAMAGE_GROUPS, ...DAMAGE_TYPES]) {
+        const value = valueOf(id);
+        if (value) out.push({ id, value });
+    }
+    return out;
+}
+
+/** An enemy's resistances as written (a type's line beside its group's, as the author put it). */
+export function enemyResistLines(resistances) {
+    return orderedLines(id => Number(resistances?.[id]) || 0);
+}
+
+/**
+ * An enemy's resistances in a fight, as they stand: its own, what effects on it lend and after any
+ * Sunder (`CombatFormulas.enemyTypeResistance`). Each group's line, then a type's only where it
+ * differs from its group's, as an enemy's lines read (a type's replaces its group's).
+ */
+export function liveEnemyResistLines(enemy) {
+    const groupValue = {};
+    for (const g of DAMAGE_GROUPS) groupValue[g.id] = CombatFormulas.enemyTypeResistance(enemy, g.id);
+    const out = [];
+    for (const g of DAMAGE_GROUPS) if (groupValue[g.id]) out.push({ id: g.id, value: groupValue[g.id] });
+    for (const type of DAMAGE_TYPES) {
+        const value = CombatFormulas.enemyTypeResistance(enemy, type.id);
+        if (value !== groupValue[type.group]) out.push({ id: type.id, value });
+    }
+    return out;
+}
+
+/**
+ * A hero's resistances from what they carry: each group's rows, then each type's own rows beyond
+ * its group's (the aggregator counts a group's row on its types, so a type's own is the difference).
+ */
+export function heroResistLines(hero) {
+    const groupValue = {};
+    for (const g of DAMAGE_GROUPS) groupValue[g.id] = CombatFormulas.heroTypeResistance(hero, g.id);
+    return orderedLines(id => {
+        if (groupValue[id] != null) return groupValue[id];
+        const type = DAMAGE_TYPES.find(x => x.id === id);
+        return Math.round((CombatFormulas.heroTypeResistance(hero, id) - (groupValue[type.group] || 0)) * 100) / 100;
+    });
+}
+
+/**
+ * A Ranged hero's arrows: the one their next shot spends and how many the Bank holds, or none left.
+ * Null for any other style.
+ * @returns {{itemId: string|null, name: string|null, count: number, arrow: object|null}|null}
+ */
+export function arrowsView(hero) {
+    if (!hero || !shootsArrows(hero)) return null;
+    const itemId = nextArrowOf(hero);
+    if (!itemId) {
+        const carried = carriedArrowIds(hero);
+        return { itemId: carried[0] || null, name: carried[0] ? getItem(carried[0])?.name || carried[0] : null, count: 0, arrow: null };
+    }
+    return { itemId, name: getItem(itemId)?.name || itemId, count: InventoryManager.getItemCount(itemId), arrow: arrowOf(getItem(itemId)) };
+}
 
 /** `3 s`, `1.5 s`: a swing time. */
 export function secondsText(ms) {
@@ -92,6 +166,45 @@ export function statusesView(target) {
     }));
 }
 
+const LASTS_KEY = Object.freeze({ attack: 'Attack', swing: 'Swing', fight: 'Fight' });
+
+/**
+ * What a move's effect does, in the player's words: "Flutter on itself, for one attack", "Venom on
+ * the hero" (a status keeps its own lifetime). Null for a move with no effect.
+ */
+export function moveEffectText(move) {
+    if (!move?.effectId) return null;
+    const entry = EFFECTS[move.effectId];
+    const effect = entry?.name || move.effectId;
+    const on = move.target === 'self' ? 'self' : 'hero';
+    const lasts = statusBlockOf(entry) ? 'Status' : (LASTS_KEY[move.lasts] || LASTS_KEY.fight);
+    return t(`fight.moves.${on}${lasts}`, { effect });
+}
+
+/**
+ * An enemy's moves as the screen lists them (`enemyMoves.js`), or null for an enemy without: each
+ * one's name, the type it hits with (null when it does not hit), what its effect does and its share
+ * of the swings in whole percent.
+ * @returns {Array<{name: string, hits: boolean, type: string|null, effect: string|null, share: number}>|null}
+ */
+export function movesView(moves) {
+    if (!Array.isArray(moves) || moves.length === 0) return null;
+    const total = moves.reduce((sum, m) => sum + (m.weight || 0), 0) || moves.length;
+    return moves.map(m => ({
+        name: m.name || t('fight.moves.unnamed'),
+        hits: !!m.hits,
+        type: m.hits ? m.type : null,
+        effect: moveEffectText(m),
+        share: Math.round(((m.weight || 0) / total) * 100)
+    }));
+}
+
+/** The types an enemy's swings hit with: its moves' that hit, each once, or the plain Physical swing's. */
+export function enemyHitTypes(moves) {
+    if (!Array.isArray(moves) || moves.length === 0) return [PLAIN_ENEMY_HIT_TYPE];
+    return [...new Set(moves.filter(m => m.hits).map(m => m.type))];
+}
+
 /** What lingers on an enemy for the fight besides statuses (a boss's Stone Skin, its Enrage). */
 function enemyBuffs(fight) {
     return (fight?.effects || [])
@@ -100,16 +213,23 @@ function enemyBuffs(fight) {
 }
 
 /** The hero's side of the versus card, read live. */
-export function heroSide(hero, enemy = null) {
+export function heroSide(hero) {
     if (!hero) return null;
     const { id: style, level } = CombatFormulas.getHeroCombatSkillEntry(hero);
     const weapon = CombatFormulas.getHeroWeapon(hero);
-    const base = CombatFormulas.heroBaseDamage(hero);
-    const hit = Math.max(1, roundHalfUp(base * CombatFormulas.damageMultiplierOf(hero)));
+    // The cut worn gear makes to this style (a mage in an iron chestplate) is in the hit shown.
+    const cut = CombatFormulas.styleDamageCut(hero, style);
+    const buffs = CombatFormulas.damageMultiplierOf(hero) * CombatFormulas.styleCutFactor(hero, style);
+    const arrows = arrowsView(hero);
+    const hitParts = CombatFormulas.heroHitParts(hero, arrows?.arrow || null)
+        .map(p => ({ type: p.type, hit: Math.max(0, p.base * buffs), arrow: !!p.arrow }));
+    const hit = hitParts.reduce((sum, p) => sum + p.hit, 0);
     const weaponDamage = weapon && Number(weapon.damage) > 0 ? Number(weapon.damage) : UNARMED_DAMAGE;
     const levelStep = levelDamageBonus(CombatFormulas.getHeroCombatLevel(hero));
-    const more = hit - weaponDamage - levelStep;
-    const armour = CombatFormulas.heroFlatArmor(hero);
+    const more = Math.round((CombatFormulas.heroBaseDamage(hero) * CombatFormulas.damageMultiplierOf(hero) - weaponDamage - levelStep) * 100) / 100;
+    const boosts = [...new Set(hitParts.map(p => p.type))]
+        .map(type => ({ type, n: CombatFormulas.typeDamageBoost(hero, type) }))
+        .filter(b => b.n);
     const swingMs = CombatFormulas.heroAttackSpeedMs(hero);
     return {
         id: hero.id,
@@ -119,17 +239,23 @@ export function heroSide(hero, enemy = null) {
         sprite: hero.spriteId || hero.classId || null,
         hp: { cur: Math.max(0, hero.hp?.current ?? 0), max: hero.hp?.max ?? 0 },
         hit,
+        hitParts,
+        arrows,
         armed: !!weapon,
         hitLines: [
-            weapon ? t('fight.tip.weapon', { item: weapon.name, n: weaponDamage }) : t('fight.tip.fist'),
+            weapon ? t('fight.tip.weapon', { item: weapon.name, n: `${weaponDamage} ${damageTypeName(hitParts[0].type)}` }) : t('fight.tip.fist'),
             levelStep ? t('fight.tip.levelStep', { n: levelStep }) : null,
-            more ? t('fight.tip.moreDamage', { n: `${more > 0 ? '+' : ''}${more}` }) : null
+            more ? t('fight.tip.moreDamage', { n: `${more > 0 ? '+' : '−'}${damageText(Math.abs(more))}` }) : null,
+            cut ? t('fight.tip.styleCut', { style: styleName(style), n: `−${damageText(cut)}%` }) : null,
+            arrows?.arrow ? t('fight.tip.arrow', { item: arrows.name, n: damageText(arrows.arrow.damage), type: damageTypeName(arrows.arrow.damageType) }) : null,
+            arrows ? (arrows.count > 0 ? t('fight.tip.arrowsLeft', { count: arrows.count }) : t('fight.tip.noArrows')) : null,
+            ...boosts.map(b => t('fight.tip.typeBoost', { type: damageTypeName(b.type), n: `${b.n > 0 ? '+' : ''}${b.n}%` })),
+            hitParts.some(p => Math.abs(p.hit - Math.round(p.hit)) > 1e-9) ? t('fight.tip.fraction') : null
         ].filter(Boolean),
-        armour,
+        resists: heroResistLines(hero),
         swingMs,
         elixirs: activeElixirsOf(hero),
-        statuses: statusesView(hero),
-        enemyArmour: enemy ? CombatFormulas.enemyFlatArmor(enemy) : null
+        statuses: statusesView(hero)
     };
 }
 
@@ -139,8 +265,9 @@ export function enemySide(typeId, fight = null) {
     if (!profile) return null;
     const live = !!fight;
     const flat = live ? CombatFormulas.damageMultiplierOf(profile) : 1;
-    const hit = Math.max(1, roundHalfUp((profile.hit ?? 1) * flat));
+    const hit = Math.max(0, (profile.hit ?? 1) * flat);
     const known = hasFought(typeId);
+    const hitTypes = enemyHitTypes(profile.moves);
     return {
         typeId,
         name: profile.name || tokenName(typeId),
@@ -150,7 +277,10 @@ export function enemySide(typeId, fight = null) {
             ? { cur: Math.max(0, fight.combat?.enemyHp?.current ?? 0), max: fight.combat?.enemyHp?.max ?? profile.hp }
             : { cur: profile.hp, max: profile.hp },
         hit,
-        armour: live ? CombatFormulas.enemyFlatArmor(profile) : (profile.armor || 0),
+        hitType: hitTypes[0] ?? PLAIN_ENEMY_HIT_TYPE,
+        hitTypes,
+        moves: movesView(profile.moves),
+        resists: live ? liveEnemyResistLines(profile) : enemyResistLines(profile.resistances),
         swingMs: live ? CombatFormulas.enemyAttackSpeedMs(profile) : (profile.attackSpeed || 3000),
         kinds: known ? (profile.kinds || []).map(kindView).filter(Boolean) : null,
         statuses: live ? statusesView(fight) : [],
@@ -175,7 +305,10 @@ export function enemyCardView(typeId) {
         style: side.style,
         hp: side.hp.max,
         hit: side.hit,
-        armour: side.armour,
+        hitType: side.hitType,
+        hitTypes: side.hitTypes,
+        moves: side.moves,
+        resists: side.resists,
         swingMs: side.swingMs,
         kinds: side.kinds
     };
@@ -205,13 +338,13 @@ export function fightPanelView(heroId, fights, now = Date.now()) {
     const hero = HeroManager.getHero(heroId);
     const fight = live ? BoardCombat.getFight(record.instanceId) : null;
     const liveFight = fight && fight.assignedHeroId === heroId ? fight : null;
-    const heroView = heroSide(hero, liveFight?.enemy || null) || {
+    const heroView = heroSide(hero) || {
         id: heroId, name: record.heroName, style: null, level: null, sprite: null, hp: record.hp.hero,
-        hit: 0, hitLines: [], armour: 0, swingMs: 0, elixirs: [], statuses: [], enemyArmour: null
+        hit: 0, hitParts: [], arrows: null, hitLines: [], resists: [], swingMs: 0, elixirs: [], statuses: []
     };
     const enemyView = enemySide(record.typeId, liveFight) || {
         typeId: record.typeId, name: record.enemyName, style: 'melee', level: null, hp: record.hp.enemy,
-        hit: 0, armour: 0, swingMs: 0, kinds: null, statuses: [], buffs: []
+        hit: 0, hitType: PLAIN_ENEMY_HIT_TYPE, hitTypes: [PLAIN_ENEMY_HIT_TYPE], moves: null, resists: [], swingMs: 0, kinds: null, statuses: [], buffs: []
     };
     if (!live) {
         heroView.hp = { ...record.hp.hero };
@@ -227,7 +360,7 @@ export function fightPanelView(heroId, fights, now = Date.now()) {
         clock: clockText((record.endedAt ?? now) - record.startedAt),
         ended: live ? null : { outcome: record.outcome },
         hero: { ...heroView, hpText: healthText(heroView.hp.cur, heroView.hp.max), art: heroArt(heroView.sprite) },
-        enemy: { ...enemyView, hpText: healthText(enemyView.hp.cur, enemyView.hp.max), sheet: enemySheet(record.typeId) },
+        enemy: { ...enemyView, hpText: healthText(enemyView.hp.cur, enemyView.hp.max), sheet: enemySheet(record.typeId), lastMove: record.lastMove ?? null },
         instanceId: record.instanceId
     };
 }

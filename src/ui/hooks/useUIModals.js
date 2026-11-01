@@ -46,8 +46,8 @@ const DRAWER_TARGETS = new Set(['bank']);
  */
 const SHOP_TARGET = 'shop';
 
-/** Nav targets that open as a full-screen view (`ui.fullscreen.view`). The Atlas is an overlay over the mat. */
-const FULLSCREEN_TARGETS = new Set(['guild', 'atlas']);
+/** Nav targets that open as a full-screen view (`ui.fullscreen.view`). The Atlas and the Encyclopedia are overlays over the mat. */
+const FULLSCREEN_TARGETS = new Set(['guild', 'atlas', 'encyclopedia']);
 
 export const useUIModals = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -100,7 +100,8 @@ export const useUIModals = () => {
     const isNavActive = useCallback((target) => {
         switch (target) {
             case 'guild':
-            case 'atlas': return fullscreenView === target;
+            case 'atlas':
+            case 'encyclopedia': return fullscreenView === target;
             case 'bank': return drawerState.panes.includes('bank');
             case SHOP_TARGET: return isShopOpen;
             case 'settings': return isSettingsOpen;

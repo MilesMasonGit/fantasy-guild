@@ -24,10 +24,10 @@ import { xpForLevel } from '../../utils/XPCurve.js';
 /**
  * The combat screen's scene, everything made in memory for this check only (never written to
  * `data/`, gone on reload). The content's own items where it has them (Copper Sword, Leather Chest,
- * the Valor and Ironskin elixirs, Shrimp, Poison), test stand-ins where it does not:
+ * the Valor and Ironskin elixirs, Shrimp, Venom), test stand-ins where it does not:
  * - **Aela**, a Melee 20 Fighter with the sword, the chest, both elixirs and Shrimp, pinned on a
  *   **Goblin Warlord** (level 20, Brute and Venomous: big hits every 4 s, each landing a stack of
- *   Poison), 40 health: a long duel with hits both ways, misses, crits, poison ticks and meals;
+ *   Venom), 40 health: a long duel with hits both ways, misses, crits, poison ticks and meals;
  * - **Bram**, a Melee 40 Fighter with both elixirs, pinned on a **Cow** (the one enemy with an
  *   animation sheet, so it moves in the panel's strip);
  * - a **Goblin Scout** (Swift) nobody has fought, standing alone: its card says "? fight one to learn".
@@ -42,7 +42,7 @@ const tick = (id) => ({
 /** The stand-ins the content lacks, and the two fixture enemies. */
 function registerQaContent() {
     if (!EFFECTS[VENOM_EFFECT_ID]) {
-        registerEffects({ [VENOM_EFFECT_ID]: { id: VENOM_EFFECT_ID, name: 'Poison', status: { stacks: 3, ticks: 0 }, statements: [tick('stm_qa_c6_poison')] } });
+        registerEffects({ [VENOM_EFFECT_ID]: { id: VENOM_EFFECT_ID, name: 'Venom', status: { stacks: 3, ticks: 0 }, statements: [tick('stm_qa_c6_poison')] } });
     }
     const provides = (type) => ({ ...makeStatement(KEYWORD.PROVIDES), payload: { type, bucket: 'flat', value: 1 }, to: null });
     const forTheFight = (effectId) => ({
@@ -54,7 +54,7 @@ function registerQaContent() {
     if (!getItem('item_elixir_of_valor') || !getItem('item_elixir_of_ironskin')) {
         registerEffects({
             qa_c6_fx_valor: { id: 'qa_c6_fx_valor', name: 'Valor', statements: [provides('DAMAGE')] },
-            qa_c6_fx_ironskin: { id: 'qa_c6_fx_ironskin', name: 'Ironskin', statements: [provides('ARMOR')] },
+            qa_c6_fx_ironskin: { id: 'qa_c6_fx_ironskin', name: 'Ironskin', statements: [{ ...provides('TYPE_RESIST'), payload: { type: 'TYPE_RESIST', bucket: 'flat', value: 25, category: 'physical' } }] },
             qa_c6_fx_elixir_valor: { id: 'qa_c6_fx_elixir_valor', name: 'Elixir of Valor', statements: [forTheFight('qa_c6_fx_valor')] },
             qa_c6_fx_elixir_ironskin: { id: 'qa_c6_fx_elixir_ironskin', name: 'Elixir of Ironskin', statements: [forTheFight('qa_c6_fx_ironskin')] }
         });
@@ -83,7 +83,7 @@ function registerQaContent() {
 }
 
 /** A hero in the Fighter's art at `level` in every skill, full health, named. */
-function fighterAt(level, name) {
+export function fighterAt(level, name) {
     const hero = generateHero({ spriteId: 'fighter' });
     for (const id of Object.keys(hero.skills || {})) hero.skills[id] = { ...hero.skills[id], level, xp: xpForLevel(level) };
     const maxHp = heroMaxHpFromSkills(hero.skills);
@@ -93,7 +93,7 @@ function fighterAt(level, name) {
 }
 
 /** Place a Token of `typeId` at a point beside the Guild Hall. */
-function placeBesideHall(typeId, dx, dy) {
+export function placeBesideHall(typeId, dx, dy) {
     const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall' || getTokenType(t.typeId)?.isGuildHall);
     const c = hall ? { x: hall.x, y: hall.y } : { x: 880, y: 560 };
     const inst = BoardState.createTokenInstance(typeId, getTokenType(typeId)?.uses ?? null);

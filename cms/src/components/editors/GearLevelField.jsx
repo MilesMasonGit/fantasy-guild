@@ -1,13 +1,13 @@
-import { SKILLS, ENEMY_STYLES, HAND_CATEGORY, isWeapon, weaponStyleOf } from '../../utils/constants';
+import { SKILLS, ENEMY_STYLES, HAND_CATEGORY, isWeapon, isOffHand, weaponStyleOf } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 
 /** The worn categories besides the hands that may ask a level of their wearer. */
 const ARMOUR_CATEGORIES = new Set(['hat', 'chest', 'trinket']);
 
-/** Whether an item may carry a level requirement: a weapon, or armour and trinkets. */
+/** Whether an item may carry a level requirement: a weapon, an off-hand item, or armour and trinkets. */
 function takesLevelRequirement(item) {
   if (!item) return false;
-  if (item.equipSlot === HAND_CATEGORY) return isWeapon(item);
+  if (item.equipSlot === HAND_CATEGORY) return isWeapon(item) || isOffHand(item);
   return ARMOUR_CATEGORIES.has(item.equipSlot);
 }
 

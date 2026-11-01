@@ -114,12 +114,13 @@ function kindsOfNeed(need) {
 }
 
 /**
- * How many hands an item takes: 0 for anything not held in the hands; a tool always 1, whatever
- * else it says; otherwise 2 for `hands: 2` (a two-handed weapon), else 1.
+ * How many hands an item takes: 0 for anything not held in the hands; a tool or an off-hand item
+ * (`offHand: true`) always 1, whatever else it says; otherwise 2 for `hands: 2` (a two-handed
+ * weapon), else 1.
  */
 export function handsOf(item) {
     if (item?.equipSlot !== HAND_CATEGORY) return 0;
-    if (toolOf(item)) return 1;
+    if (toolOf(item) || item.offHand === true) return 1;
     return item.hands === 2 ? 2 : 1;
 }
 

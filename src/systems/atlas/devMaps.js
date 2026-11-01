@@ -5,9 +5,9 @@ import { terrainAt } from './TerrainMap.js';
 import { WATER_KIND } from './WaterShapes.js';
 
 /**
- * Map recipes for trying the Atlas from the dev console in a game with no authored map items:
- * `Game.Atlas.devGrantMaps()`, `devPreview(['forest', 'overgrown'])`, `devSettle(...)`. They name
- * today's Tokens; every number is a placeholder, not content.
+ * Map recipes for writing a Region from the dev console and the QA panel's Terrain views, for free:
+ * `Game.Atlas.devPreview(['forest', 'overgrown'])`, `devSettle(...)`. They name today's Tokens;
+ * every number is a placeholder, not content.
  *
  * The Overgrown here also carries a Region rule, +10 % Forestry yield, so a Region rule can be
  * seen applying and dropping as the guild travels. The `water_*` maps are a biome's map that names

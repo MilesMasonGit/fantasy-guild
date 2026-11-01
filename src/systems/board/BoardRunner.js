@@ -4,7 +4,7 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType, rollOutputQuantity, outputRange, tokenName } from '../../config/registries/tokenRegistry.js';
-import { getItem } from '../../config/registries/itemRegistry.js';
+import { getItem, isRetiredItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
@@ -43,6 +43,7 @@ import { centreOf } from './nearby.js';
 import * as Hand from './Hand.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { noteRecipeMade } from '../progression/collectionLog.js';
 
 /**
  * Re-exported so `BoardRunner.ALERT` keeps working for the engine suites that read it that way. The
@@ -299,6 +300,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
 
     // A build makes its Token by becoming it (below), never as a sprite.
     for (const output of outputs) {
+        // A map is retired: its line is not rolled at all (the boot audit names it).
+        if (isRetiredItem(output.itemId)) continue;
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
 
@@ -390,6 +393,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // Cheap tally, used by the Token-type statistics surface.
     const counts = GameState.state?.collection?.cardUseCounts;
     if (counts) counts[instance.typeId] = (counts[instance.typeId] || 0) + 1;
+    if (!failed && io.recipe?.id) noteRecipeMade(io.recipe.id);
 
     // Last, so every reader above saw the Foundation that did the work. Its hero lets go on the
     // next pass and moves on. A failed build has spent its inputs and stays a Foundation, like any

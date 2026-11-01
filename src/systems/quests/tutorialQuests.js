@@ -1,13 +1,15 @@
 // Fantasy Guild - the cartographer's tutorial chain
 //
 // One step at a time, in the Starter Camp: heroes, orders and gathering; building, crafting and a
-// first camp; the Starter Camp's end (a first copper tool made and a goblin beaten, which pays the first maps); then the
-// Atlas (writing the first world and moving the guild into it). Every step is completable in a new
-// game with no dev tools once the owner's Starter Camp and maps exist, and every `targetType` is
-// reported by `QuestManager` from an event the engine really publishes. ⚠️ No step may ask for a
-// `landmark` Token until the shipped content has one: such a step can never be done and stalls the
-// chain (the `token_inspected` report is kept for when it does).
+// first camp; the Starter Camp's end (a first copper tool made and a goblin beaten). Every step is
+// completable in a new game with no dev tools once the owner's Starter Camp exists, and every
+// `targetType` is reported by `QuestManager` from an event the engine really publishes. ⚠️ No step
+// may ask for a `landmark` Token until the shipped content has one: such a step can never be done
+// and stalls the chain (the `token_inspected` report is kept for when it does).
 // `QuestTutorialChain.test.js` drives each step through the real systems.
+//
+// The chain ends with the cartographer opening the world map (a step with `opensWorld`: the
+// Atlas opens on the World page as it arrives) and the first place settled on it.
 //
 // Every word a step shows lives in `tutorialText.js`.
 //
@@ -18,11 +20,8 @@
 // `match` narrows a target: a quest with a `match` only counts a report whose metadata carries
 // every listed value.
 //
-// Rewards are small placeholder items, live `item_*` ids only. `firstMaps` adds the first maps,
-// read from the item registry when the step is claimed ({@link firstMapsReward}).
+// Rewards are small placeholder items, live `item_*` ids only.
 
-import { getAllItems } from '../../config/registries/itemRegistry.js';
-import { isBaseMap, upcycleOf, givenByTutorial } from '../atlas/mapItems.js';
 import { TUTORIAL_TEXT } from './tutorialText.js';
 
 /** The default tutorial reward, and what a step with no rewards of its own pays. */
@@ -31,28 +30,6 @@ export const TUTORIAL_REWARD_ITEMS = Object.freeze([
 ]);
 
 const reward = (itemId, quantity) => Object.freeze([Object.freeze({ itemId, quantity })]);
-
-/** How many of each first map the tutorial pays. */
-export const FIRST_MAPS_QUANTITY = 1;
-
-/**
- * The first maps, as `[{ itemId, quantity }]` in id order: one of each Base Map ticked "given by
- * the tutorial" in the CMS. ⚠️ While no map is ticked (content from before the box), one of each
- * Base Map that no map trades up into instead, so a new game is never left without a map to settle.
- * Empty while no map is authored, so the step then pays only its items.
- */
-export function firstMapsReward(items = getAllItems()) {
-    const defs = Object.entries(items || {}).map(([id, def]) => ({ id: def?.id || id, def }));
-    let first = defs.filter(({ def }) => givenByTutorial(def));
-    if (!first.length) {
-        const tradedUpInto = new Set(defs.map(({ def }) => upcycleOf(def)?.itemId).filter(Boolean));
-        first = defs.filter(({ id, def }) => isBaseMap(def) && !tradedUpInto.has(id));
-    }
-    return first
-        .map(({ id }) => id)
-        .sort()
-        .map(itemId => ({ itemId, quantity: FIRST_MAPS_QUANTITY }));
-}
 
 /** The Goblin the Starter Camp's end asks the player to beat. */
 export const TUTORIAL_GOBLIN = 'token_goblin';
@@ -123,7 +100,7 @@ const STEPS = [
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     // The Starter Camp's end: a first tool made (copper is the camp's only metal), then a goblin
-    // beaten, which pays the first maps.
+    // beaten.
     {
         id: 'cart_copper_tool',
         targetType: 'item_produced',
@@ -136,20 +113,15 @@ const STEPS = [
         targetType: 'enemy_hunted',
         match: { enemyId: TUTORIAL_GOBLIN },
         requiredCount: 1,
+        rewardItems: TUTORIAL_REWARD_ITEMS
+    },
+    // The end: the cartographer opens the world map, and the guild settles its first place on it.
+    {
+        id: 'cart_first_place',
+        targetType: 'place_settled',
+        requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS,
-        firstMaps: true
-    },
-    {
-        id: 'cart_settle',
-        targetType: 'region_settled',
-        requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
-    },
-    {
-        id: 'cart_travel',
-        targetType: 'region_travelled',
-        requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
+        opensWorld: true
     }
 ];
 

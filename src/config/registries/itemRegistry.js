@@ -14,11 +14,14 @@
  * - potion: Buff consumables
  * - currency: Special tracking items
  * - drop: Monster parts/loot
- * - map: a Base Map, and modifier: a Map Modifier (their Cartography block: `systems/atlas/mapItems.js`)
+ * - map: a Base Map, and modifier: a Map Modifier (their Cartography block: `systems/atlas/mapItems.js`).
+ *   Retired from play ({@link isRetiredItem}): the world map settles places instead. A modifier's
+ *   block is still read, as a world cell's hidden extra.
  */
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { migrateSkillIds } from '../../systems/effects/skillIdMigration.js';
+import { migrateEffectIds } from '../../systems/effects/effectIdMigration.js';
 
 // === Item Type Constants ===
 export const DEFAULT_MAX_STACK = 1e12;
@@ -51,7 +54,7 @@ function loadJsonItems() {
             const itemsData = module.default || module;
             for (const [itemId, itemDef] of Object.entries(itemsData)) {
                 if (!itemDef.id) itemDef.id = itemId;
-                dynamicItems[itemId] = migrateSkillIds(itemDef);
+                dynamicItems[itemId] = migrateEffectIds(migrateSkillIds(itemDef));
             }
         } catch (error) {
             console.warn(`Error loading item JSON from ${path}:`, error);
@@ -64,7 +67,7 @@ function loadJsonItems() {
             const itemsData = module.default || module;
             for (const [itemId, itemDef] of Object.entries(itemsData)) {
                 if (!itemDef.id) itemDef.id = itemId;
-                dynamicItems[itemId] = migrateSkillIds(itemDef);
+                dynamicItems[itemId] = migrateEffectIds(migrateSkillIds(itemDef));
             }
         } catch (error) {
             console.warn(`Error loading item JSON from ${path}:`, error);
@@ -108,6 +111,18 @@ export function registerItems(definitions) {
  */
 export function getItem(itemId) {
     return ITEMS[itemId] || null;
+}
+
+/** Item types the player can no longer get: map items, now that the world map settles places. */
+export const RETIRED_ITEM_TYPES = Object.freeze([ITEM_TYPES.MAP, ITEM_TYPES.MODIFIER]);
+
+/**
+ * Whether an item (by id or definition) is of a retired type: a drop or a reward naming one never
+ * lands, and the boot audit names the content still pointing at it.
+ */
+export function isRetiredItem(item) {
+    const def = typeof item === 'string' ? ITEMS[item] : item;
+    return !!def && RETIRED_ITEM_TYPES.includes(def.type);
 }
 
 /**

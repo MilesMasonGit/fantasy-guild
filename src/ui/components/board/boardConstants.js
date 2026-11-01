@@ -89,6 +89,7 @@ export const SKIP_HINT = {
     [ALERT.GROW_NEEDS_ITEM]: 'stopped: can’t pay to grow',
     no_skill: 'names no skill',
     disallowed: 'heroes not allowed',
+    occupied: 'enemies hold this place: beat them first',
     claimed: 'being worked by {holder}',
     // `claimed` said of an enemy: every fight is one-on-one, so the hero waits for it.
     claimed_fight: '{holder} is fighting it'

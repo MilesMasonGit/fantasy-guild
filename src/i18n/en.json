@@ -42,8 +42,15 @@
         "tool": "{kind}, tier {tier}",
         "twoHanded": "Takes both hands",
         "restores": "Restores {amount} HP",
+        "weaponHits": "Hits {damage} {type}, as {style}",
+        "arrow": "Arrow: +{damage} {type} a shot, from a bow",
+        "offHand": "Off hand: beside a weapon, never swung",
+        "resists": "Resists {type} {n}%",
+        "weakTo": "Weak to {type} {n}%",
+        "styleCut": "{style} damage −{n}%",
         "clickToSelect": "Click to select",
         "clickToDeselect": "Click to deselect",
+        "clickToLookUp": "Click to look it up in the Encyclopedia",
         "type": {
             "item": "Item",
             "material": "Material",
@@ -58,12 +65,117 @@
             "drop": "Loot"
         }
     },
+    "encyclopedia": {
+        "title": "Encyclopedia",
+        "open": "Encyclopedia",
+        "searchPlaceholder": "Search everything…",
+        "clearSearch": "Clear search",
+        "back": "Back",
+        "backTo": "Back to {name}",
+        "lookUp": "Look it up in the Encyclopedia",
+        "results": { "one": "{count} found", "other": "{count} found" },
+        "noResults": "Nothing by that name",
+        "progress": "{have}/{total}",
+        "progressTip": "Collected this run: {have} of {total}",
+        "collected": "Collected this run",
+        "pick": "Pick an entry",
+        "kind": {
+            "items": "Items",
+            "tokens": "Tokens",
+            "enemies": "Enemies",
+            "recipes": "Recipes"
+        },
+        "kindOne": {
+            "items": "Item",
+            "tokens": "Token",
+            "enemies": "Enemy",
+            "recipes": "Recipe"
+        },
+        "section": {
+            "sources": "Comes from",
+            "tree": "Made from",
+            "uses": "Used in",
+            "gives": "Gives",
+            "takes": "Takes",
+            "noSources": "Nothing makes this yet",
+            "noUses": "Nothing uses this yet"
+        },
+        "recipe": {
+            "skill": "{skill} {level}",
+            "time": "Takes {time}"
+        },
+        "tree": {
+            "open": "Show what it is made from",
+            "close": "Hide what it is made from",
+            "from": "from {name}",
+            "at": "at {name}",
+            "again": "already above"
+        },
+        "chance": "{chance}%",
+        "firstKill": "first kill",
+        "source": {
+            "work": "Gathered from",
+            "catch": "Caught at",
+            "drop": "Dropped by",
+            "craft": "Made by the recipe",
+            "trickle": "Passive Production at",
+            "upgrade": "A Guild Hall upgrade at",
+            "starterBank": "In the opening Bank",
+            "starterTool": "A starter tool",
+            "starterCamp": "Stands in the Starter Camp",
+            "guildHall": "Stands from the start",
+            "shop": "Bought at the Shop for",
+            "map": "Written by the map",
+            "modifier": "Written by the modifier",
+            "tutorial": "Given by the tutorial",
+            "bounty": "Paid by a bounty at",
+            "upcycle": "Traded up from",
+            "spawn": "Spawned by",
+            "grow": "Grows from",
+            "turn": "Turns from",
+            "regrow": "Regrows from",
+            "station": "Made at",
+            "build": "Built on",
+            "bonus": "A bonus drop from"
+        },
+        "use": {
+            "craft": "An ingredient of",
+            "work": "Spent working",
+            "catch": "Bait at",
+            "spawn": "Upkeep of",
+            "grow": "Feeds the growth of",
+            "growNearby": "Needed nearby to grow",
+            "shop": "Pays for",
+            "upcycle": "Trades up into",
+            "hold": "A tool for"
+        },
+        "give": {
+            "work": "Gathered here",
+            "catch": "Caught here",
+            "drop": "Drops",
+            "craft": "Makes",
+            "trickle": "Passive Production",
+            "upgrade": "Makes",
+            "spawn": "Spawns",
+            "grow": "Grows into",
+            "turn": "Turns into",
+            "regrow": "Regrows into",
+            "station": "Offers the recipe",
+            "build": "Builds",
+            "bonus": "A bonus drop",
+            "map": "Writes",
+            "modifier": "Writes",
+            "bounty": "Pays out",
+            "upcycle": "Trades up into"
+        }
+    },
     "guildHall": {
         "effectsTitle": "Guild Hall Effects",
         "outputs": "Outputs",
         "boosts": "Boosts & Modifiers",
         "noOutputs": "No active outputs",
         "noBoosts": "No active boosts",
+        "everyLap": "every {time}",
         "returnToPlaymat": "Return to Playmat",
         "inspect": "Inspect"
     },
@@ -76,6 +188,10 @@
             "enemyHits": "{enemy} hits {hero}",
             "enemyCrits": "{enemy} crits {hero}",
             "enemyMisses": "{enemy} misses {hero}",
+            "enemyMoveHits": "{enemy}'s {move} hits {hero}",
+            "enemyMoveCrits": "{enemy}'s {move} crits {hero}",
+            "enemyMoveMisses": "{enemy}'s {move} misses {hero}",
+            "enemyUsesMove": "{enemy} uses {move}",
             "eats": "{hero} eats {item}",
             "drinks": "{hero} drinks {item}",
             "statusLands": "{status} on {who}",
@@ -91,7 +207,37 @@
         },
         "float": {
             "crit": "Crit!",
-            "miss": "Miss"
+            "miss": "Miss",
+            "weak": "Weak!",
+            "resisted": "Resisted"
+        },
+        "moves": {
+            "unnamed": "Attack",
+            "selfAttack": "{effect} on itself, for one attack",
+            "selfSwing": "{effect} on itself, for the swing",
+            "selfFight": "{effect} on itself, for the fight",
+            "selfStatus": "{effect} on itself",
+            "heroAttack": "{effect} on the hero, for one attack",
+            "heroSwing": "{effect} on the hero, for the swing",
+            "heroFight": "{effect} on the hero, for the fight",
+            "heroStatus": "{effect} on the hero",
+            "noHit": "No hit",
+            "share": "{n}% of its swings",
+            "lastMove": "Its last move"
+        },
+        "types": {
+            "slash": "Slash",
+            "crush": "Crush",
+            "stab": "Stab",
+            "fire": "Fire",
+            "ice": "Ice",
+            "electric": "Electric",
+            "poison": "Poison",
+            "light": "Light",
+            "dark": "Dark",
+            "physical": "Physical",
+            "elemental": "Elemental",
+            "special": "Special"
         },
         "panel": {
             "title": "{hero} vs {enemy}",
@@ -119,14 +265,24 @@
             "noStyleArmed": "{name} fights with no style",
             "enemyStyle": "{name} fights {style}",
             "hp": "{name}: {cur} of {max} health",
-            "heroHit": "Hits for {hit} before the enemy's armour",
-            "enemyHit": "Hits for {hit} before your armour",
+            "heroHit": "Hits for {hit} before the matchup and the enemy's resistances",
+            "enemyHit": "Hits for {hit} before the matchup and your resistances",
+            "enemyMoves": "Each swing makes one of its moves, picked at random",
             "weapon": "{item}: {n}",
             "fist": "Fist: 1",
             "levelStep": "Combat level: +{n}",
             "moreDamage": "Elixirs and gear: {n}",
-            "heroArmour": "Armour {armour}: takes {armour} off each enemy hit",
-            "enemyArmour": "Armour {armour}: takes {armour} off each of your hits",
+            "styleCut": "{style} damage cut by gear: {n}",
+            "arrow": "{item}: +{n} {type}",
+            "arrowsLeft": {
+                "one": "{count} arrow in the Bank",
+                "other": "{count} arrows in the Bank"
+            },
+            "noArrows": "No arrows: the bow shoots its own part alone",
+            "typeBoost": "{type} damage: {n}",
+            "heroResists": "What {name} resists, from gear and elixirs",
+            "enemyResists": "What {name} resists and is weak to",
+            "fraction": "A fraction rolls: 1.5 hits 1 or 2, half the time each",
             "swing": "Swings every {time}",
             "elixir": {
                 "one": "{item}: {count} fight left",
@@ -147,15 +303,19 @@
             "style": "Style",
             "health": "Health",
             "hit": "Hit",
-            "armour": "Armour",
+            "resists": "Resists",
+            "weakTo": "Weak to",
+            "noResists": "Nothing",
             "swing": "Swing",
             "kinds": "Kinds",
-            "every": "every {time}"
+            "moves": "Moves",
+            "every": "every {time}",
+            "step": "{type} {n}%"
         },
         "kinds": {
             "armoured": {
                 "name": "Armoured",
-                "tip": "+2 armour, slow swings"
+                "tip": "Resists Physical 50%, slow swings"
             },
             "nimble": {
                 "name": "Nimble",
@@ -171,7 +331,7 @@
             },
             "venomous": {
                 "name": "Venomous",
-                "tip": "Each hit adds a stack of Poison"
+                "tip": "Each hit adds a stack of Venom"
             }
         }
     },
@@ -203,6 +363,7 @@
         "levelLow": "{skill} level too low (needs {level})",
         "nothing": "Nothing to work here",
         "disallowed": "Heroes may not work this",
+        "occupied": "Beat the enemies here first",
         "healing": "{hero} is healing: {time}",
         "noHero": "No hero",
         "nowhere": "Nowhere to go",
@@ -228,5 +389,26 @@
         "perks": "Perks",
         "nextPerk": "Next perk: {perk}",
         "perkAt": "{level} {perk}"
+    },
+    "worldMap": {
+        "tab": "World",
+        "label": "The world map",
+        "noWorld": "This guild began before the world was drawn. Start a new game to explore one.",
+        "hall": "The Guild Hall",
+        "ring": "Ring {ring}",
+        "wildRing": "Ring {ring}, wild",
+        "kitSpecialty": "{kit} · specialty {specialty}",
+        "settled": "Settled: {name}",
+        "here": "The guild is here",
+        "frontier": "Can be settled",
+        "beyond": "Out of reach: settle a place beside it first",
+        "yields": "Yields",
+        "price": "Price",
+        "nothingAsked": "Nothing",
+        "more": "+{count}",
+        "settle": "Settle",
+        "travel": "Travel",
+        "short": "Short of {what}",
+        "pickCell": "Pick a place on the map."
     }
 }

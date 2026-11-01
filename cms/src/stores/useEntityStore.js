@@ -17,6 +17,7 @@ import { composeTokenDescription } from '../engine/descriptionDictionary';
 import {
     deriveTokenType, statementsOf, makeStatement, KEYWORD,
     migrateBearers, migrateAppliesTargetsIn, migrateSkillIdsIn, migrateRecipePools,
+    migrateEffectLibrary, migrateEffectIdsIn, migratePerkEffectIds,
     expandBearer, expandAll, effectRefsOf, provisionalName,
     normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_DEFAULTS, CAMP_REACH_DEFAULT,
 } from '../utils/constants';
@@ -24,6 +25,7 @@ import { seedSimIntent } from './simIntentNormaliser';
 import { isMapItem, blankCartography } from '../../../src/systems/atlas/mapItems.js';
 import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
 import { normaliseWorkspacePerks, withPerkRow, withoutPerkRow } from '../engine/skillPerks';
+import { workspaceSkyFrom } from '../engine/hallSky';
 import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRenames';
 import { splitPlanned, rejoinPlanned } from '../engine/planFile';
 
@@ -396,7 +398,13 @@ function performRename(state, oldId, newId, kind) {
             })
         );
 
-        patch.tokens = repoint(state.tokens);
+        // An enemy's moves name the effect each lands.
+        const repointMoves = (token) => {
+            const moves = token?.enemy?.moves;
+            if (!Array.isArray(moves) || !moves.some((m) => m?.effectId === oldId)) return token;
+            return { ...token, enemy: { ...token.enemy, moves: moves.map((m) => (m?.effectId === oldId ? { ...m, effectId: newId } : m)) } };
+        };
+        patch.tokens = Object.fromEntries(Object.entries(repoint(state.tokens)).map(([id, token]) => [id, repointMoves(token)]));
         patch.items = repoint(state.items);
         // A perk table names its effects too.
         if (state.skillPerks) {
@@ -665,6 +673,25 @@ function seedSkillIds(state) {
     return next;
 }
 
+/**
+ * A renamed library effect (the Poison status became Venom) moves to its new id, keeping its place, and every Token, item, effect and perk naming it follows.
+ * ⚠️ Runs on the same three load paths and calls the same pure functions the game's loaders call: Sync to Game writes this workspace wholesale, so a workspace still naming the old id would write it back into `data/`. Idempotent.
+ */
+function seedEffectIds(state) {
+    if (!state || typeof state !== 'object') return state;
+    let next = state;
+    const replace = (key, value) => {
+        if (value === state[key]) return;
+        if (next === state) next = { ...state };
+        next[key] = value;
+    };
+    replace('effects', migrateEffectLibrary(state.effects));
+    replace('tokens', migrateEffectIdsIn(state.tokens));
+    replace('items', migrateEffectIdsIn(state.items));
+    replace('skillPerks', migratePerkEffectIds(state.skillPerks));
+    return next;
+}
+
 /** A workspace saved before maps were items carries the retired `maps` collection; it is dropped on load, never read. */
 function dropRetiredCollections(state) {
     if (!state || typeof state !== 'object' || !('maps' in state)) return state;
@@ -760,6 +787,22 @@ export const useEntityStore = create(
             /** Set (or with index -1 add) one row of a skill's perk table. */
             setSkillPerkRow: (skillId, index, row) => set((s) => ({ skillPerks: withPerkRow(s.skillPerks, skillId, index, row) })),
             removeSkillPerkRow: (skillId, index) => set((s) => ({ skillPerks: withoutPerkRow(s.skillPerks, skillId, index) })),
+            /**
+             * The Guild Hall's authored sky (`engine/hallSky.js`): constellations and stars, keyed by id. ⚠️ Null means this
+             * workspace never held one, and Sync then leaves `data/hallStars.json` alone.
+             */
+            hallConstellations: null,
+            hallStars: null,
+            /** Change one star's top-level fields (name, description, constellation, place). */
+            setHallStar: (id, patch) => set((s) => (s.hallStars?.[id]
+                ? { hallStars: { ...s.hallStars, [id]: { ...s.hallStars[id], ...patch, id } } }
+                : {})),
+            removeHallStar: (id) => set((s) => {
+                if (!s.hallStars?.[id]) return {};
+                const rest = { ...s.hallStars };
+                delete rest[id];
+                return { hallStars: rest };
+            }),
             /** A skill the Skill Perks page should open on next (the change-pack review's Open in editor). Not persisted. */
             perkFocus: null,
             focusPerks: (skillId) => set({ perkFocus: skillId }),
@@ -997,19 +1040,21 @@ export const useEntityStore = create(
              * ⚠️ This path bypasses the persist `migrate` hook entirely: an imported workspace never touches localStorage on the way in, so `seedSimIntent` runs here as well as on the persist config's `merge`; the two together are the whole coverage.
              */
             hydrate: (data = {}) => {
-                const seeded = seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent({
+                const seeded = seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent({
                     items: data.items || {},
                     tokens: data.tokens || {},
                     effects: data.effects || {},
                     recipePools: data.recipePools || {},
-                }))));
+                    skillPerks: data.skillPerks,
+                })))));
                 set({
                     items: seeded.items,
                     tokens: seeded.tokens,
                     effects: seeded.effects,
                     recipePools: seeded.recipePools,
                     starterCamp: normaliseStarterCamp(data.starterCamp),
-                    skillPerks: normaliseWorkspacePerks(data.skillPerks),
+                    skillPerks: normaliseWorkspacePerks(seeded.skillPerks),
+                    ...workspaceSkyFrom(data),
                     planSettings: data.planSettings && typeof data.planSettings === 'object' ? data.planSettings : null,
                     activeEntityId: null,
                     activeEntityType: null,
@@ -1126,7 +1171,10 @@ export const useEntityStore = create(
 
                 set({ ...rejoinPlanned(workspace, { items, tokens: finalTokens, recipePools }), effects: library });
 
-                return { items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp, skillPerks: state.skillPerks ?? null, planned, planSettings: state.planSettings ?? null };
+                return {
+                    items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp, skillPerks: state.skillPerks ?? null,
+                    hallConstellations: state.hallConstellations ?? null, hallStars: state.hallStars ?? null, planned, planSettings: state.planSettings ?? null
+                };
             },
 
             /**
@@ -1156,6 +1204,8 @@ export const useEntityStore = create(
                     recipePools: {},
                     starterCamp: null,
                     skillPerks: null,
+                    hallConstellations: null,
+                    hallStars: null,
                     planSettings: null,
                     activeEntityId: null,
                     activeEntityType: null,
@@ -1172,10 +1222,10 @@ export const useEntityStore = create(
             /** The default merge plus the seeding. The spread order is zustand's own default (persisted wins over the fresh store, so actions survive and data is replaced); only `seedSimIntent` is added. */
             merge: (persistedState, currentState) => ({
                 ...currentState,
-                ...seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState))))),
+                ...seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState)))))),
             }),
             /** Reached only by a numbered version that is not 1. Seeds anyway: the normaliser is idempotent, and a future migration should never be the reason intent went missing. */
-            migrate: (persistedState) => seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState))))),
+            migrate: (persistedState) => seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState)))))),
             /**
              * What survives a reload.
              * ⚠️ `activeEntityId` is in here deliberately: without it, anything that re-created this module (registering a sprite writes `sprite-manifest.js`, which the editors import, so Vite reloaded them) dropped the selection and closed the editor.
@@ -1187,6 +1237,8 @@ export const useEntityStore = create(
                 recipePools: state.recipePools,
                 starterCamp: state.starterCamp,
                 skillPerks: state.skillPerks,
+                hallConstellations: state.hallConstellations,
+                hallStars: state.hallStars,
                 planSettings: state.planSettings,
                 activeEntityId: state.activeEntityId,
                 activeEntityType: state.activeEntityType,

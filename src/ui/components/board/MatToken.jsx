@@ -154,6 +154,7 @@ export const MatToken = React.memo(function MatToken({
     dragging = false,
     fightBarHost = null,
     plateHost = null,
+    held = false,
     onPress
 }) {
     // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
@@ -606,7 +607,8 @@ export const MatToken = React.memo(function MatToken({
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
                         resting && !stateSprite && 'gi-token-resting',
-                        demolishProtected && 'gi-token-protected'
+                        demolishProtected && 'gi-token-protected',
+                        held && !resting && 'gi-token-held'
                     )}
                     style={staffed ? undefined : AT_REST_STYLE}
                 >

@@ -8,7 +8,7 @@ import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as LiveEffects from '../systems/effects/LiveEffects.js';
-import { registerStatusFixtures, POISON, BURN } from './fixtures/statusEffects.js';
+import { registerStatusFixtures, VENOM, BURN } from './fixtures/statusEffects.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import * as HeroEffects from '../systems/hero/HeroEffects.js';
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
@@ -169,11 +169,11 @@ describe('⭐ status immunity can finally be written', () => {
         const hero = makeHero('hero_immune');
         hero.aggregator.addModifier({
             type: EFFECT_TYPES.STATUS_IMMUNITY, value: 1, bucket: 'flat',
-            source: 'test', target: { category: POISON }
+            source: 'test', target: { category: VENOM }
         });
         GameState.state.heroes = [hero];
 
-        expect(land('hero_immune', POISON)).toBe(false);
+        expect(land('hero_immune', VENOM)).toBe(false);
         expect(LiveEffects.statusesOf(HeroManager.getHero('hero_immune'))).toEqual([]);
     });
 
@@ -181,7 +181,7 @@ describe('⭐ status immunity can finally be written', () => {
         const hero = makeHero('hero_partly');
         hero.aggregator.addModifier({
             type: EFFECT_TYPES.STATUS_IMMUNITY, value: 1, bucket: 'flat',
-            source: 'test', target: { category: POISON }
+            source: 'test', target: { category: VENOM }
         });
         GameState.state.heroes = [hero];
 
@@ -193,10 +193,10 @@ describe('⭐ status immunity can finally be written', () => {
 
     it('lets the status through when nothing grants immunity', () => {
         GameState.state.heroes = [makeHero('hero_plain')];
-        land('hero_plain', POISON);
-        land('hero_plain', POISON);
+        land('hero_plain', VENOM);
+        land('hero_plain', VENOM);
         expect(LiveEffects.statusesOf(HeroManager.getHero('hero_plain')))
-            .toEqual([{ effectId: POISON, stacks: 2, ticksLeft: null }]);
+            .toEqual([{ effectId: VENOM, stacks: 2, ticksLeft: null }]);
     });
 
     it('reaches the aggregator from a carried item, category and all', () => {
@@ -209,7 +209,7 @@ describe('⭐ status immunity can finally be written', () => {
                     ...makeStatement(KEYWORD.PROVIDES),
                     payload: {
                         type: EFFECT_TYPES.STATUS_IMMUNITY, bucket: 'flat',
-                        value: 1, category: POISON
+                        value: 1, category: VENOM
                     }
                 }]
             }
@@ -226,7 +226,7 @@ describe('⭐ status immunity can finally be written', () => {
         const contributions = HeroEffects.loadoutCombatContributions(hero);
 
         expect(contributions).toEqual([
-            { type: EFFECT_TYPES.STATUS_IMMUNITY, value: 1, category: POISON }
+            { type: EFFECT_TYPES.STATUS_IMMUNITY, value: 1, category: VENOM }
         ]);
     });
 });
@@ -246,10 +246,11 @@ describe('the palette declares both, rather than inferring them', () => {
     it('offers a skill scope on exactly the axes whose reader passes one', () => {
         const skillScoped = MODIFIER_PALETTE.filter(e => e.categories === 'skill').map(e => e.type);
         // Grow Time's reader (`TileModifiers.growTimeOf`) passes the growing Token's skill (brief 230 S1a);
-        // Crop Load's (`Fields.loadAtRipening`) the Field's own work skill (S4).
+        // Crop Load's (`Fields.loadAtRipening`) the Field's own work skill (S4); Camp Reach's
+        // (`TileModifiers.campReachOf`) the camp's skill (brief 320 H1).
         expect(new Set(skillScoped)).toEqual(new Set([
             EFFECT_TYPES.YIELD, EFFECT_TYPES.WORK_TIME, EFFECT_TYPES.INPUT_COST, EFFECT_TYPES.GROW_TIME, EFFECT_TYPES.CROP_LOAD,
-            EFFECT_TYPES.XP_BONUS, EFFECT_TYPES.LOOT_MULT, EFFECT_TYPES.FAIL_CHANCE
+            EFFECT_TYPES.XP_BONUS, EFFECT_TYPES.LOOT_MULT, EFFECT_TYPES.FAIL_CHANCE, EFFECT_TYPES.CAMP_REACH
         ]));
     });
 
@@ -277,11 +278,11 @@ describe('the sentence says what was narrowed', () => {
             ...makeStatement(KEYWORD.PROVIDES),
             payload: {
                 type: EFFECT_TYPES.STATUS_IMMUNITY, bucket: 'flat',
-                value: 1, category: POISON
+                value: 1, category: VENOM
             }
         };
-        const line = renderStatement(statement, { effect: (id) => (id === POISON ? 'Poison' : id) });
-        expect(line).toContain('immunity to Poison');
+        const line = renderStatement(statement, { effect: (id) => (id === VENOM ? 'Venom' : id) });
+        expect(line).toContain('immunity to Venom');
         // ⚠️ Never a number: the reader asks `> 0`, so "1 more status immunity"
         // would imply a magnitude that does not exist.
         expect(line).not.toMatch(/\d/);

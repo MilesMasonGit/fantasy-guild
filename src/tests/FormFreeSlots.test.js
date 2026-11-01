@@ -30,7 +30,8 @@ describe('⭐ nothing the forms edited is left without a slot', () => {
         [KEYWORD.CANNOT]: ['kind', 'max'],
         // V10b: `target` retired with the enemy flag — the "aims at" role slot replaces it.
         [KEYWORD.APPLIES]: ['chance'],
-        [KEYWORD.DEALS]: ['amount', 'ignoresArmor']
+        // `ignoresArmor` retired with flat armour (damage types): a rule's damage lands whole.
+        [KEYWORD.DEALS]: ['amount']
     };
     for (const [keyword, fields] of Object.entries(inventory)) {
         it(`${keyword}: ${fields.join(', ')}`, () => {

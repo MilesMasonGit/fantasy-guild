@@ -10,25 +10,21 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS, NO_LISTENER } from '../systems/core/engineEvents.js';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import * as MatCap from '../systems/board/MatCap.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import {
-    getUpgradeDef, cartographySlotsForRank, tokenCapForRank, CARTOGRAPHY_SLOTS_BASE, CARTOGRAPHY_SLOTS_MAX,
-    TOKEN_CAP_BASE, TOKEN_CAP_MAX_RANK
+    getUpgradeDef
 } from '../config/guildUpgrades.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
-import * as Cartography from '../systems/atlas/Cartography.js';
 import { TEXT } from '../systems/atlas/regionNames.js';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { AtlasScreen, ATLAS_TAB } from '../ui/components/atlas/AtlasScreen.jsx';
-import { CartographyTable, REROLL_COOLDOWN_MS, fitSlots } from '../ui/components/atlas/CartographyTable.jsx';
 import { RegionList } from '../ui/components/atlas/RegionList.jsx';
-import { contentsOf } from '../ui/components/atlas/PlanContents.jsx';
 import { BubbleMenu } from '../ui/components/nav/BubbleMenu.jsx';
+import * as World from '../systems/world/World.js';
 import { placeAt } from './fixtures/mat.js';
 import './fixtures/testTokens.js';
 
@@ -44,10 +40,9 @@ vi.mock('../systems/core/CatchUp.js', async (importOriginal) => ({
 }));
 
 /**
- * ⭐ The Atlas screen: the Region list and the Cartography table over the Atlas engine. Nothing
- * leaves the Bank until Settle; the table never slots more copies than the Bank holds; Abandon asks
- * first and refuses the Region the guild is in; the Token Cap and Cartography Table upgrades raise
- * the cap and the slot count.
+ * ⭐ The Atlas screen: the World page and the Region list over the Atlas engine. Abandon asks first
+ * and refuses the Region the guild is in; the Token Cap upgrade raises the cap. The World page's
+ * own behaviour is `WorldPage.test.js`'s.
  */
 
 const OAK = 'fixture_producer';
@@ -68,13 +63,10 @@ registerItems({
     }
 });
 
-const bank = (id) => InventoryManager.getItemCount(id);
-const regionCount = () => Object.keys(GameState.state.atlas.regions).length;
 const q = (container, sel) => container.querySelector(sel);
 /** Show Region `id` on the right page (outside `act`, so the page is drawn before its Travel is pressed). */
 const pick = (container, id) => fireEvent.click(container.querySelector(`[data-region-select="${id}"]`));
 const pressTravel = (container, id) => fireEvent.click(container.querySelector(`[data-region-travel="${id}"]`));
-const slotItems = (container) => [...container.querySelectorAll('[data-cartography-slot]')].map(b => b.getAttribute('data-slot-item'));
 
 function newGame() {
     resetMatTuning();
@@ -82,7 +74,6 @@ function newGame() {
     InventoryManager.init();
     placeAt('token_guild_hall', Math.round(matW() / 2), Math.round(matH() / 2));
     Atlas.createStarterRegion();
-    Cartography.clearStock();
 }
 
 beforeAll(() => {
@@ -102,7 +93,6 @@ afterEach(() => {
     vi.useRealTimers();
     SaveManager.currentSlot = null;
     GameLoop.stop();
-    Cartography.clearStock();
 });
 
 afterAll(() => {
@@ -110,189 +100,16 @@ afterAll(() => {
     resetMatTuning();
 });
 
-describe('the upgrades: Token Cap and Cartography Table (D-9)', () => {
-    it('the Token Cap rank raises matCap() by 16 a rank, from 128 to 256', () => {
-        expect(MatCap.matCap()).toBe(TOKEN_CAP_BASE);
-        expect(TOKEN_CAP_BASE).toBe(128);
-        for (const id of ['item_oak_wood', 'item_stone', 'item_copper_ingot', 'item_fir_wood', 'item_iron_ingot']) InventoryManager.addItem(id, 2000);
-        expect(GuildUpgradeManager.purchase('token_cap').success).toBe(true);
-        expect(MatCap.matCap()).toBe(144);
-        expect(MatCap.canPlaceMore(144)).toBe(true);
-        expect(MatCap.canPlaceMore(145)).toBe(false);
-        for (let i = 1; i < TOKEN_CAP_MAX_RANK; i++) expect(GuildUpgradeManager.purchase('token_cap').success).toBe(true);
-        expect(MatCap.matCap()).toBe(256);
-        expect(GuildUpgradeManager.purchase('token_cap').success).toBe(false);
-        // A save holding more ranks than there are still caps at the top.
-        GameState.state.progress.guildUpgrades.token_cap = 12;
-        expect(MatCap.matCap()).toBe(256);
-        expect(tokenCapForRank(-3)).toBe(128);
-    });
-
-    it('the Mat Tuner dev override still wins over the rank', () => {
-        GameState.state.progress.guildUpgrades.token_cap = 2;
+describe('the Token cap is fixed (brief 320 retired its star)', () => {
+    it('keeps the cap at 128 whatever an old save ranked, and the Mat Tuner still wins', () => {
+        expect(MatCap.matCap()).toBe(128);
+        expect(getUpgradeDef('token_cap')).toBeNull();
+        GameState.state.progress.guildUpgrades.token_cap = 4;
+        expect(MatCap.matCap()).toBe(128);
         setMatTuning('tokenCap', 40);
         expect(MatCap.matCap()).toBe(40);
         resetMatTuning();
-        expect(MatCap.matCap()).toBe(160);
-    });
-
-    it('prices both tracks by the planes: ranks 1-2 in oak, stone and copper, 3-4 in fir and iron, later ranks the placeholder', () => {
-        const itemsOf = (price) => price.map(p => p.itemId).sort();
-        for (const id of ['token_cap', 'cartography_slots']) {
-            const def = getUpgradeDef(id);
-            expect(def.prices).toHaveLength(def.maxRank);
-            for (const rank of [1, 2]) expect(itemsOf(def.prices[rank - 1]), `${id} ${rank}`).toEqual(['item_copper_ingot', 'item_oak_wood', 'item_stone']);
-            for (const rank of [3, 4]) expect(itemsOf(def.prices[rank - 1]), `${id} ${rank}`).toEqual(['item_fir_wood', 'item_iron_ingot']);
-            for (let rank = 5; rank <= def.maxRank; rank++) expect(def.prices[rank - 1], `${id} ${rank}`).toEqual([{ itemId: 'item_oak_wood', quantity: 10 * rank }]);
-            // Each rank of a plane costs more than the one before it.
-            for (const [a, b] of [[0, 1], [2, 3]]) {
-                for (const p of def.prices[b]) expect(p.quantity).toBeGreaterThan(def.prices[a].find(q => q.itemId === p.itemId).quantity);
-            }
-        }
-        expect(getUpgradeDef('token_cap').maxRank).toBe(8);
-        expect(getUpgradeDef('cartography_slots').maxRank).toBe(CARTOGRAPHY_SLOTS_MAX - CARTOGRAPHY_SLOTS_BASE);
-    });
-
-    it('the table has 4 slots to start and one more per rank, up to 8', () => {
-        expect([0, 1, 4, 9].map(cartographySlotsForRank)).toEqual([4, 5, 8, 8]);
-        const { container, rerender } = render(React.createElement(CartographyTable, { version: 0 }));
-        expect(container.querySelectorAll('[data-cartography-slot]').length).toBe(4);
-        GameState.state.progress.guildUpgrades.cartography_slots = 2;
-        rerender(React.createElement(CartographyTable, { version: 1 }));
-        expect(container.querySelectorAll('[data-cartography-slot]').length).toBe(6);
-    });
-});
-
-describe('the Cartography table', () => {
-    it('slots one item per click, never more copies than the Bank holds, and greys out what is all slotted', () => {
-        InventoryManager.addItem(WOOD_ITEM, 1);
-        InventoryManager.addItem(THICKET_ITEM, 2);
-        const { container } = render(React.createElement(CartographyTable, { version: 0 }));
-        const wood = q(container, `[data-map-item="${WOOD_ITEM}"]`);
-        const thicket = q(container, `[data-map-item="${THICKET_ITEM}"]`);
-
-        fireEvent.click(wood);
-        expect(slotItems(container)).toEqual([WOOD_ITEM, '', '', '']);
-        expect(wood.disabled).toBe(true);
-        expect(wood.getAttribute('data-slotted-out')).toBe('true');
-        fireEvent.click(wood);
-        expect(slotItems(container)).toEqual([WOOD_ITEM, '', '', '']);
-
-        fireEvent.click(thicket);
-        expect(thicket.getAttribute('data-slotted-out')).toBe('false');
-        expect(thicket.textContent).toContain('×1');
-        fireEvent.click(thicket);
-        fireEvent.click(thicket);
-        expect(slotItems(container)).toEqual([WOOD_ITEM, THICKET_ITEM, THICKET_ITEM, '']);
-
-        // Clicking a slot takes its map back out.
-        fireEvent.click(q(container, '[data-cartography-slot="0"]'));
-        expect(slotItems(container)).toEqual(['', THICKET_ITEM, THICKET_ITEM, '']);
-        expect(wood.disabled).toBe(false);
-        // Nothing has left the Bank.
-        expect([bank(WOOD_ITEM), bank(THICKET_ITEM)]).toEqual([1, 2]);
-    });
-
-    it('stops slotting when every slot is full', () => {
-        InventoryManager.addItem(THICKET_ITEM, 9);
-        const { container } = render(React.createElement(CartographyTable, { version: 0 }));
-        const thicket = q(container, `[data-map-item="${THICKET_ITEM}"]`);
-        for (let i = 0; i < 6; i++) fireEvent.click(thicket);
-        expect(slotItems(container)).toEqual(Array(4).fill(THICKET_ITEM));
-        expect(thicket.disabled).toBe(true);
-    });
-
-    it('empties a slot whose map the Bank no longer holds', () => {
-        const held = new Map([[WOOD_ITEM, { count: 1 }], [THICKET_ITEM, { count: 2 }]]);
-        expect(fitSlots([WOOD_ITEM, WOOD_ITEM, THICKET_ITEM, THICKET_ITEM, THICKET_ITEM], 4, held))
-            .toEqual([WOOD_ITEM, null, THICKET_ITEM, THICKET_ITEM]);
-    });
-
-    it('shows what the slotted maps write as Token sprites with counts, biggest first, over the preview of their Region', () => {
-        InventoryManager.addItem(WOOD_ITEM, 1);
-        InventoryManager.addItem(THICKET_ITEM, 1);
-        const { container } = render(React.createElement(CartographyTable, { version: 0 }));
-        expect(q(container, '[data-map-preview="empty"]')).toBeTruthy();
-        expect(q(container, '[data-plan-contents]')).toBeNull();
-        fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
-        fireEvent.click(q(container, `[data-map-item="${THICKET_ITEM}"]`));
-        const plan = Atlas.preview([WOOD_ITEM, THICKET_ITEM], { seed: 1 });
-        expect(q(container, '[data-plan-headline]').textContent).toBe(`${plan.summary.total} Tokens`);
-        const shown = [...container.querySelectorAll('[data-plan-token]')].map(li => [li.getAttribute('data-plan-token'), Number(li.getAttribute('data-count'))]);
-        expect(shown).toEqual(contentsOf(plan.summary).map(e => [e.typeId, e.count]));
-        expect(q(container, `[data-plan-token="${OAK}"]`).textContent).toBe(`×${plan.summary.entries[0].count}`);
-        expect(q(container, 'canvas[data-map-preview]')).toBeTruthy();
-        expect(q(container, '[data-map-preview="empty"]')).toBeNull();
-    });
-
-    it('lists the contents biggest first, whatever their role', () => {
-        const summary = { entries: [
-            { typeId: 'a', role: 'node', count: 3 }, { typeId: 'b', role: 'node', count: 9 },
-            { typeId: 'c', role: 'camp', count: 12 }, { typeId: 'd', role: 'treasure', count: 3 }
-        ] };
-        expect(contentsOf(summary).map(e => e.typeId)).toEqual(['c', 'b', 'a', 'd']);
-        expect(contentsOf(null)).toEqual([]);
-    });
-
-    it('rerolls the layout but not the contents, then waits out the cooldown', () => {
-        vi.useFakeTimers();
-        InventoryManager.addItem(WOOD_ITEM, 1);
-        const { container } = render(React.createElement(CartographyTable, { version: 0 }));
-        fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
-        const seed = () => q(container, 'canvas[data-map-preview]').getAttribute('data-preview-seed');
-        const contents = q(container, '[data-plan-contents]').textContent;
-        const before = seed();
-        const reroll = q(container, '[data-cartography-reroll]');
-        fireEvent.click(reroll);
-        expect(seed()).not.toBe(before);
-        expect(q(container, '[data-plan-contents]').textContent).toBe(contents);
-        expect(reroll.disabled).toBe(true);
-        act(() => { vi.advanceTimersByTime(REROLL_COOLDOWN_MS - 10); });
-        expect(reroll.disabled).toBe(true);
-        act(() => { vi.advanceTimersByTime(20); });
-        expect(reroll.disabled).toBe(false);
-    });
-
-    it('emptying the slots, or closing, takes nothing; there is no Cancel', () => {
-        InventoryManager.addItem(WOOD_ITEM, 1);
-        InventoryManager.addItem(THICKET_ITEM, 1);
-        const regions = regionCount();
-        const { container, unmount } = render(React.createElement(CartographyTable, { version: 0 }));
-        expect(q(container, '[data-cartography-cancel]')).toBeNull();
-        fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
-        fireEvent.click(q(container, `[data-map-item="${THICKET_ITEM}"]`));
-        fireEvent.click(q(container, '[data-cartography-slot="0"]'));
-        fireEvent.click(q(container, '[data-cartography-slot="1"]'));
-        expect(slotItems(container)).toEqual(['', '', '', '']);
-        expect(q(container, '[data-map-preview="empty"]')).toBeTruthy();
-        // An empty slot takes nothing out.
-        fireEvent.click(q(container, '[data-cartography-slot="2"]'));
-        expect(slotItems(container)).toEqual(['', '', '', '']);
-        fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
-        unmount();
-        expect([bank(WOOD_ITEM), bank(THICKET_ITEM), regionCount()]).toEqual([1, 1, regions]);
-    });
-
-    it('Settle takes the slotted maps and adds a Region, then offers to travel there', async () => {
-        InventoryManager.addItem(WOOD_ITEM, 2);
-        InventoryManager.addItem(THICKET_ITEM, 1);
-        const regions = regionCount();
-        const onTravel = vi.fn();
-        const { container } = render(React.createElement(CartographyTable, { version: 0, onTravel }));
-        fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
-        fireEvent.click(q(container, `[data-map-item="${THICKET_ITEM}"]`));
-        fireEvent.click(q(container, '[data-cartography-settle]'));
-
-        expect([bank(WOOD_ITEM), bank(THICKET_ITEM)]).toEqual([1, 0]);
-        expect(regionCount()).toBe(regions + 1);
-        const region = Atlas.list().at(-1);
-        expect(region.practicalName).toBe('Thicket Wood');
-        expect(region.active).toBe(false);
-        expect(slotItems(container)).toEqual(['', '', '', '']);
-        expect(q(container, '[data-cartography-settled]').textContent).toContain(region.flavourName);
-
-        fireEvent.click(q(container, '[data-settled-travel]'));
-        expect(onTravel).toHaveBeenCalledWith(region.id);
+        expect(MatCap.matCap()).toBe(128);
     });
 });
 
@@ -526,14 +343,12 @@ describe('the Atlas screen', () => {
         }
     });
 
-    it('Escape closes it; the Cartography tab keeps its slots across tabs', () => {
-        InventoryManager.addItem(WOOD_ITEM, 1);
+    it('opens on the World page; Escape closes it', () => {
         const onClose = vi.fn();
-        const { container } = screen({ onClose, initialTab: ATLAS_TAB.CARTOGRAPHY });
-        fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
-        fireEvent.click(q(container, `[data-atlas-tab="${ATLAS_TAB.REGIONS}"]`));
-        fireEvent.click(q(container, `[data-atlas-tab="${ATLAS_TAB.CARTOGRAPHY}"]`));
-        expect(slotItems(container)[0]).toBe(WOOD_ITEM);
+        const { container } = screen({ onClose });
+        expect(q(container, `[data-atlas-tab="${ATLAS_TAB.WORLD}"]`).getAttribute('aria-selected')).toBe('true');
+        expect(q(container, '[data-world-page]').closest('.hidden')).toBeNull();
+        expect(q(container, '[data-region-list]').closest('.hidden')).toBeTruthy();
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);
     });
@@ -550,20 +365,16 @@ describe('the Atlas screen', () => {
         expect(onClose).toHaveBeenCalledTimes(2);
     });
 
-    it('lays Cartography over both pages: the maps on the left; the slots, preview, contents and buttons down the right', () => {
-        InventoryManager.addItem(WOOD_ITEM, 1);
-        const { container } = screen({ initialTab: ATLAS_TAB.CARTOGRAPHY });
-        const left = q(container, '[data-cartography] [data-tome-left]');
-        const right = q(container, '[data-cartography] [data-tome-right]');
-        expect(q(left, `[data-map-item="${WOOD_ITEM}"] img`)).toBeTruthy();
-        expect(q(left, '[data-cartography-slot]')).toBeNull();
-        fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
-        const order = ['[data-cartography-slots]', 'canvas[data-map-preview]', '[data-plan-contents]', '[data-cartography-reroll]', '[data-cartography-settle]']
-            .map(sel => q(right, sel));
-        expect(order.every(Boolean)).toBe(true);
-        for (let i = 1; i < order.length; i++) {
-            expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        }
+    it('lays the World over both pages: the map on the left, the chosen place and its button on the right', () => {
+        World.createWorld({ seed: 3 });
+        const { container } = screen();
+        const left = q(container, '[data-world-page] [data-tome-left]');
+        const right = q(container, '[data-world-page] [data-tome-right]');
+        expect(q(left, '[data-world-cell="0,0"]')).toBeTruthy();
+        expect(q(right, '[data-world-detail="0,0"]')).toBeTruthy();
+        fireEvent.click(q(left, '[data-world-cell="1,0"]'));
+        expect(q(right, '[data-world-detail="1,0"]')).toBeTruthy();
+        expect(q(right, '[data-world-settle="1,0"]')).toBeTruthy();
     });
 
     it('redraws the list when the Atlas changes (ATLAS_CHANGED has a listener now)', () => {
@@ -574,16 +385,6 @@ describe('the Atlas screen', () => {
         expect(q(container, `[data-region-row="${region.id}"]`)).toBeTruthy();
         act(() => { Atlas.rename(region.id, 'Fresh Name'); });
         expect(q(container, `[data-region-row="${region.id}"]`).textContent).toContain('Fresh Name');
-    });
-
-    it('the Bank changing under an open table keeps the layout shown', () => {
-        InventoryManager.addItem(WOOD_ITEM, 1);
-        const { container } = screen({ initialTab: ATLAS_TAB.CARTOGRAPHY });
-        fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
-        const seed = () => q(container, 'canvas[data-map-preview]').getAttribute('data-preview-seed');
-        const before = seed();
-        act(() => { InventoryManager.addItem('item_oak_wood', 3); });
-        expect(seed()).toBe(before);
     });
 });
 
@@ -596,6 +397,6 @@ describe('the bubble', () => {
         expect(bubble.getAttribute('aria-label')).toBe('Atlas');
         fireEvent.click(bubble, { clientX: 0, clientY: 0 });
         expect(toggle).toHaveBeenCalledWith('atlas');
-        expect(container.querySelectorAll('nav button').length).toBe(5);
+        expect(container.querySelectorAll('nav button').length).toBe(6);
     });
 });

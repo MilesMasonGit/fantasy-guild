@@ -26,6 +26,7 @@ const contentOf = (state) => ({
     effects: state.effects,
     starterCamp: state.starterCamp,
     skillPerks: state.skillPerks,
+    hallSky: { constellations: state.hallConstellations || {}, stars: state.hallStars || {} },
 });
 
 export function workspaceLedger(state = {}, { sim = null } = {}) {
@@ -91,6 +92,14 @@ export function pricingFindings(simRows = [], state = {}) {
         out.push({ check: 'pricing', key, severity: row.severity === 'critical' ? SEVERITY.WARN : SEVERITY.INFO, message: `${row.message}${row.code ? ` [${row.code}]` : ''}` });
     }
     return out;
+}
+
+/**
+ * The pace alone over the workspace, its Guild Hall stars included: what the Guild Hall page reads
+ * for each rank's payback and proposed price.
+ */
+export function workspacePace(state = {}) {
+    return buildPace(contentOf(state), workspaceLedger(state), state.planSettings);
 }
 
 /**

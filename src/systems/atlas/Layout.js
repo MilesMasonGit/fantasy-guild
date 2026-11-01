@@ -6,6 +6,7 @@ import {
     shoreDistance, islandsOf, followNodes, encodeTerrain
 } from './TerrainMap.js';
 import { planWater, readWater, sampleWater, fieldAt, withoutInland, smallWater, emptyWater } from './WaterShapes.js';
+import { planStone, readStone, sampleStone } from './StoneShapes.js';
 
 /**
  * The layout half of generation: places every Token a budget (`Budget.js`) writes, on a mat of a
@@ -20,6 +21,9 @@ import { planWater, readWater, sampleWater, fieldAt, withoutInland, smallWater, 
  *   get one along an edge, and the main biome its inland water (`summary.ground.inland`, one
  *   variety picked by the seed). A cell is water when the water covers half of it; the shapes are
  *   stored with the cells, so the drawing follows them.
+ * - **Stone** next (`StoneShapes`), when the budget asks for some (`summary.ground.stone`): outcrops
+ *   of bare rock, never on the water or in the Hall's clearing. A Stone cell keeps its terrain
+ *   whatever stands on it, and only rock kinds (ore, stone) grow there; they lean to it.
  * - **A treasure's island** is kept free: a treasure takes the driest spot of an island of dry
  *   cells the water surrounds, when one is dry enough, one island per treasure.
  * - **Camps** pick their nook in the outer band ({@link NOOK_BAND}), and a grove of the budget's
@@ -31,7 +35,8 @@ import { planWater, readWater, sampleWater, fieldAt, withoutInland, smallWater, 
  *   biggest bodies go first; a species of a biome that brings the sea starts its groves on the
  *   shore. **Kinds where they belong** (`affinity`): berry bushes start their groves near inland
  *   water and stay by it; ore and stone whose own biome's ground is not rock lean to rock ground
- *   (and trees on rock to grass), when the Region has some. **Rarer further out**: a species
+ *   (and trees on rock to grass), when the Region has some; on a Region with Stone, ore and stone
+ *   start their groves on it first of all, and their members keep to it while it has room. **Rarer further out**: a species
  *   the budget gives at most {@link RARE_COUNT} of, beside others it gives more of, grows at the
  *   mat's edge. Every preference gives way, last first, when no spot has it.
  * - **Treasures** last, on their island, else in the most hidden spot away from the Hall
@@ -45,7 +50,8 @@ import { planWater, readWater, sampleWater, fieldAt, withoutInland, smallWater, 
  * cell the terrain of the nearest node in reach, else the Region's main biome's. Camps and
  * treasures take the ground where they land. Every placed Token records its biome, so the cell
  * under its centre always has that biome's terrain, except a node that stands in the water (a
- * boat): its cell stays water, while the dry cells round it follow it like any node's.
+ * boat) or on Stone: its cell stays water or Stone, while the dry cells round it follow it like any
+ * node's.
  *
  * The result lists the Tokens in budget order (nodes, then camps, then treasures), whatever
  * order they were placed in, so a reroll moves only coordinates; a tie for the nearest node
@@ -102,6 +108,9 @@ export const AFFINITY = Object.freeze({ ROCK: 'rock', WATER: 'water', GRASS: 'gr
 
 /** The grove sizes a species' nodes are split into, one drawn per grove, so groves come uneven. */
 export const GROVE_SIZES = Object.freeze([3, 4, 6, 8, 10, 12]);
+
+/** Ore and stone on a Region with Stone grow in small groves, an outcrop's worth, so they spread over the outcrops. */
+export const STONE_GROVE_SIZES = Object.freeze([3, 4]);
 
 /** About one node in eight of a species of more than {@link STRAY_MIN} stands alone between the groves. */
 export const STRAY_SHARE = 0.12;
@@ -262,7 +271,7 @@ export function anywhereDry(typeId, terrain) {
  * @returns {{seed: number, mat: {w: number, h: number}, hall: {typeId: string, x: number, y: number},
  *   nodes: {typeId: string, role: string, biome: string|null, x: number, y: number}[],
  *   unplaced: {typeId: string, role: string}[],
- *   terrain: {cell: number, cols: number, rows: number, legend: string[], cells: string, water?: object}}}
+ *   terrain: {cell: number, cols: number, rows: number, legend: string[], cells: string, water?: object, stone?: object}}}
  */
 export function layout(summary, {
     seed, mat, crowding, artRadius, terrainAllows = anywhereDry, allows = null, affinity = null, hallTypeId = HALL_TYPE_ID
@@ -323,6 +332,14 @@ export function layout(summary, {
     const inland = sampled ? water.map((v, i) => (v && !sampled.sea[i] ? 1 : 0)) : null;
     const nearWater = inland?.some(Boolean) ? shoreDistance(cells, inland) : null;
     const shoreBiomes = new Set(ground.shore);
+    // Stone after the water, never on it nor in the Hall's clearing. Nothing is drawn from the
+    // generator for a budget with none, so its layout is as it always was.
+    const stoneRecord = ground.stone ? planStone(ground.stone, random, mat, { x: hall.x, y: hall.y, r: dryReach }) : null;
+    const stone = stoneRecord
+        ? sampleStone(readStone(stoneRecord), cells, TERRAIN_CELL, (i) => water[i] === 1 || keepDry(i))
+        : new Uint8Array(cells.cols * cells.rows);
+    const stoneCells = stone.reduce((n, v) => n + v, 0);
+    const isRockKind = (typeId) => Boolean(affinity) && affinity(typeId) === AFFINITY.ROCK;
     const cellAt = (x, y) => cellIndex(cells, x, y);
     // Dry land touching water, a diagonal counting: the "shore" a Token's "Stands on" may name.
     const isShore = (i) => shore !== null && shore[i] === 1;
@@ -333,6 +350,7 @@ export function layout(summary, {
     const groundAt = (x, y) => {
         const i = cellAt(x, y);
         if (water[i]) return { terrain: TERRAIN.WATER, biome: null };
+        if (stone[i]) return { terrain: TERRAIN.STONE, biome: null };
         return owned.get(i) || followNodes(cellCentre(cells, i), marks, mainGround);
     };
 
@@ -343,7 +361,7 @@ export function layout(summary, {
     }, 0);
     const ringReach = HALL_CLEARING + STANDARD_ART;
     const freeArea = Math.max(1, (w - 2 * STANDARD_ART) * (h - 2 * STANDARD_ART)
-        - Math.PI * ringReach * ringReach - waterCells * TERRAIN_CELL * TERRAIN_CELL);
+        - Math.PI * ringReach * ringReach - (waterCells + stoneCells) * TERRAIN_CELL * TERRAIN_CELL);
     const spacing = units > 0 ? Math.min(COMFORT_GAP, Math.sqrt(NODE_AREA_SHARE * freeArea / (HEX * units))) : COMFORT_GAP;
 
     const minGap = (a, b) => (a.hit + b.hit) * factor;
@@ -438,6 +456,9 @@ export function layout(summary, {
         let here = null;
         if (water[i] === 1) {
             here = TERRAIN.WATER;
+        } else if (stone[i] === 1) {
+            if (item.role === ROLE_NODE && !isRockKind(item.typeId)) return false;
+            here = TERRAIN.STONE;
         } else if (item.role === ROLE_NODE) {
             here = terrainOf(item.biome);
             const holder = owned.get(i);
@@ -457,6 +478,9 @@ export function layout(summary, {
     const groundFits = (item, p) => {
         const i = cellAt(p.x, p.y);
         if (water[i] === 1) return terrainAllows(item.typeId, TERRAIN.WATER, false);
+        if (stone[i] === 1) {
+            return (item.role !== ROLE_NODE || isRockKind(item.typeId)) && terrainAllows(item.typeId, TERRAIN.STONE, isShore(i));
+        }
         const terrain = item.role === ROLE_NODE ? terrainOf(item.biome) : groundAt(p.x, p.y).terrain;
         return terrainAllows(item.typeId, terrain, isShore(i));
     };
@@ -609,7 +633,7 @@ export function layout(summary, {
             // A node in the water (a boat) keeps this too: its own cell stays water (every reader
             // asks `water` first), and the dry cells round it follow it like any node's.
             under = { terrain: terrainOf(item.biome), biome: item.biome };
-            owned.set(cellAt(spot.x, spot.y), under);
+            if (!stone[cellAt(spot.x, spot.y)]) owned.set(cellAt(spot.x, spot.y), under);
             let k = marks.length;
             while (k > 0 && marks[k - 1].order > item.order) k--;
             marks.splice(k, 0, { x: spot.x, y: spot.y, ...under, order: item.order });
@@ -639,7 +663,8 @@ export function layout(summary, {
         const kind = kindOf(s.typeId);
         // Ore and stone whose own ground is not rock lean to rock ground; trees on rock to grass.
         let leans = null;
-        if (kind === AFFINITY.ROCK && terrain !== TERRAIN.ROCK && regionHas(TERRAIN.ROCK)) leans = TERRAIN.ROCK;
+        if (kind === AFFINITY.ROCK && stoneCells > 0) leans = TERRAIN.STONE;
+        else if (kind === AFFINITY.ROCK && terrain !== TERRAIN.ROCK && regionHas(TERRAIN.ROCK)) leans = TERRAIN.ROCK;
         if (kind === AFFINITY.GRASS && terrain === TERRAIN.ROCK && regionHas(TERRAIN.GRASS)) leans = TERRAIN.GRASS;
         return {
             ...s, body, terrain, kind, leans,
@@ -720,9 +745,11 @@ export function layout(summary, {
     const groveSpot = (s, apart, check = null) => {
         const { art } = s.body;
         const tests = [];
+        // Ore and stone on the Region's Stone before all else: the outcrops are where mines go.
+        if (s.leans === TERRAIN.STONE) tests.push({ stone: true, ok: p => stone[cellAt(p.x, p.y)] === 1 });
         if (s.rare) tests.push({ rare: true, ok: p => campBand(p, art, mat) >= RARE_BAND });
         if (s.byWater) tests.push({ water: true, ok: p => { const d = nearWater[cellAt(p.x, p.y)]; return d >= 1 && d <= NEAR_WATER; } });
-        if (s.leans) tests.push({ ok: p => groundAt(p.x, p.y).terrain === s.leans });
+        if (s.leans && s.leans !== TERRAIN.STONE) tests.push({ ok: p => groundAt(p.x, p.y).terrain === s.leans });
         for (let keep = tests.length; keep >= 0; keep--) {
             const kept = tests.slice(0, keep);
             for (const step of APART_STEPS) {
@@ -733,7 +760,7 @@ export function layout(summary, {
                     if (s.onShore && seaShore[cellAt(p.x, p.y)] > SHORE_CELLS) continue;
                     if (!kept.every(t => t.ok(p)) || !clearOf(p, d)) continue;
                     if (check && !check(p)) continue;
-                    return { x: p.x, y: p.y, rare: kept.some(t => t.rare), water: kept.some(t => t.water) };
+                    return { x: p.x, y: p.y, rare: kept.some(t => t.rare), water: kept.some(t => t.water), stone: kept.some(t => t.stone) };
                 }
             }
         }
@@ -747,6 +774,7 @@ export function layout(summary, {
     /** What a grove's members keep to, by what its middle kept to. */
     const keepTest = (s, centre) => {
         const tests = [];
+        if (centre.stone) tests.push((x, y) => stone[cellAt(x, y)] === 1);
         if (centre.rare) tests.push((x, y) => campBand({ x, y }, s.body.art, mat) >= RARE_KEEP);
         if (centre.water) tests.push((x, y) => nearWater[cellAt(x, y)] <= NEAR_WATER);
         if (s.onShore) tests.push((x, y) => seaShore[cellAt(x, y)] <= SHORE_CELLS + 1);
@@ -789,8 +817,9 @@ export function layout(summary, {
         const n = s.queue.length;
         const strays = n > STRAY_MIN ? Math.round(n * STRAY_SHARE) : 0;
         let next = 0;
+        const sizes = s.leans === TERRAIN.STONE ? STONE_GROVE_SIZES : GROVE_SIZES;
         while (next < n - strays) {
-            const size = Math.min(n - strays - next, GROVE_SIZES[Math.floor(random() * GROVE_SIZES.length)]);
+            const size = Math.min(n - strays - next, sizes[Math.floor(random() * sizes.length)]);
             const centre = groveSpot(s, GROVE_APART) || roomiestFor(s);
             grow(s, s.queue.slice(next, next + size), centre);
             next += size;
@@ -864,7 +893,7 @@ export function layout(summary, {
     if (smalls.length) {
         const n = cells.cols * cells.rows;
         const biomeAt = new Array(n);
-        for (let i = 0; i < n; i++) biomeAt[i] = water[i] ? null : (owned.get(i) || followNodes(cellCentre(cells, i), marks, mainGround)).biome;
+        for (let i = 0; i < n; i++) biomeAt[i] = water[i] || stone[i] ? null : (owned.get(i) || followNodes(cellCentre(cells, i), marks, mainGround)).biome;
         const standing = [{ x: hall.x, y: hall.y }, ...placed];
         const standingCells = new Set(standing.map(p => cellAt(p.x, p.y)));
         for (const [biome, kind] of smalls) {
@@ -896,7 +925,8 @@ export function layout(summary, {
     const terrains = new Array(cells.cols * cells.rows);
     for (let i = 0; i < terrains.length; i++) {
         terrains[i] = water[i] ? TERRAIN.WATER
-            : (owned.get(i) || followNodes(cellCentre(cells, i), marks, mainGround)).terrain;
+            : stone[i] ? TERRAIN.STONE
+                : (owned.get(i) || followNodes(cellCentre(cells, i), marks, mainGround)).terrain;
     }
 
     const byOrder = (a, b) => a.order - b.order;
@@ -906,7 +936,7 @@ export function layout(summary, {
         hall: { typeId: hallTypeId, x: hall.x, y: hall.y },
         nodes: nodes.sort(byOrder).map(({ typeId, role, biome, x, y }) => ({ typeId, role, biome, x, y })),
         unplaced: unplaced.sort(byOrder).map(({ typeId, role }) => ({ typeId, role })),
-        terrain: encodeTerrain(cells, terrains, record)
+        terrain: encodeTerrain(cells, terrains, record, stoneRecord)
     };
 }
 
@@ -980,7 +1010,8 @@ function groundOf(summary) {
         water: Number(g?.water) || 0,
         shore: g?.shore || [],
         inland: Array.isArray(g?.inland) ? g.inland : [],
-        small: g?.small && typeof g.small === 'object' ? g.small : {}
+        small: g?.small && typeof g.small === 'object' ? g.small : {},
+        stone: g?.stone && typeof g.stone === 'object' ? g.stone : null
     };
 }
 

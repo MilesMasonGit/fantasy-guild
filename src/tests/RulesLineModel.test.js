@@ -79,9 +79,9 @@ describe('⚠️ every decision is reachable — by its word, or explicitly', ()
     it('names exactly the slots the sentence has no word for', () => {
         const st = { ...makeStatement(KEYWORD.DEALS), payload: { amount: 2 } };
         const missing = slotsWithoutWords(slotsOf(st), renderSegments(st)).map(s => s.id);
-        // A flat hit never says "measured as", and armour is silent until ignored.
+        // A flat hit never says "measured as". Its "ignores armour" retired with flat armour.
         expect(missing).toContain('magnitude');
-        expect(missing).toContain('ignoresArmor');
+        expect(missing).not.toContain('ignoresArmor');
         expect(missing).not.toContain('amount');
         expect(missing).not.toContain('role');
     });

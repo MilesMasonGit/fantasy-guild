@@ -3,7 +3,6 @@
 export const SCREEN_TEXT = Object.freeze({
     TITLE: 'Atlas',
     TAB_REGIONS: 'Regions',
-    TAB_CARTOGRAPHY: 'Cartography',
     CLOSE: 'Close',
 
     HERE: 'The guild is here',
@@ -21,20 +20,5 @@ export const SCREEN_TEXT = Object.freeze({
     FACT_TOKENS: 'Tokens',
     FACT_HEROES: 'Heroes here',
     FACT_LANDMARKS: 'Landmarks',
-
-    MAPS_HEADING: 'Maps',
-    NO_MAPS: 'No maps yet. Rare enemies and quests drop them.',
-    EMPTY_SLOT: 'Empty slot',
-    SLOTS_HINT: 'Click a map or drag it onto a slot.',
-    TAKE_OUT: 'Click to take it out',
-    PREVIEW_EMPTY: 'Slot a map to see the Region it writes.',
-    PREVIEW_LABEL: 'Preview of the Region',
-    ROLE_CAMP: 'Enemy camp',
-    ROLE_TREASURE: 'Treasure',
-    REROLL: 'Reroll',
-    SETTLE: 'Settle',
-    upcycle: (ratio, name) => `Trade ${ratio.toLocaleString('en-US')} for 1 ${name}`,
-    settled: (flavour, practical) => `${flavour} (${practical}) is settled.`,
-    TRAVEL_THERE: 'Travel there',
-    STAY: 'Stay here'
+    PREVIEW_LABEL: 'Preview of the Region'
 });

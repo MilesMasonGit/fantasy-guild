@@ -1,6 +1,6 @@
 // Boot-time content-integrity audit: warns about content references that do not resolve.
 
-import { TOKENS, getTokenType, getProvidedTagsWithTiers, standsOnOf, tokenName } from '../../config/registries/tokenRegistry.js';
+import { TOKENS, getTokenType, getProvidedTagsWithTiers, tokenName } from '../../config/registries/tokenRegistry.js';
 import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
 import { getTriggerEvent, momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
@@ -13,10 +13,9 @@ import { isEnemyDef, isBossEnemy } from '../../config/registries/enemyProfile.js
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy, statusBlockOf } from '../effects/effectLibrary.js';
 import { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
-import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
-import { isMapItem, isBaseMap, mapItemFindings, recipeOf } from '../atlas/mapItems.js';
-import { groundOf } from '../atlas/Budget.js';
-import { STANDS_ON, STANDS_ON_CHOICES, isStandsOnWord, allowsTerrain } from '../atlas/TerrainMap.js';
+import { ITEMS, getItem, isRetiredItem } from '../../config/registries/itemRegistry.js';
+import { isBaseMap, isModifier, mapItemFindings } from '../atlas/mapItems.js';
+import { STANDS_ON_CHOICES, isStandsOnWord } from '../atlas/TerrainMap.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
 import { currentSpriteName } from '../../utils/AssetManager.js';
@@ -31,6 +30,9 @@ import { SKILLS } from '../../config/registries/skillRegistry.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
 import { authoredSkillPerks } from '../../config/registries/perkRegistry.js';
 import { perkFindings } from './perkRule.js';
+import { authoredHallSky } from '../../config/registries/hallStarRegistry.js';
+import { hallStarFindings } from './hallStarRule.js';
+import { gearDefenceFindings } from './gearDefenceRule.js';
 
 /**
  * ContentAudit — one pass over every cross-reference in the content set,
@@ -114,6 +116,8 @@ function auditItemEffects(out) {
                 `and raise the scale instead.`));
         }
 
+        for (const { effectId } of effectRefsOf(def)) auditGuildOnlyAxes(out, where, getEffect(effectId));
+
         if (isSpentCategory(def?.equipSlot)) {
             const idle = effectRefsOf(def)
                 .filter(({ effectId }) => statementsOf(getEffect(effectId)).some(isAlwaysOn))
@@ -163,6 +167,7 @@ function auditTokens(out) {
         auditRetiredEffectShape(out, where, def);
         auditEffectRefs(out, where, def);
         auditCombatAxes(out, where, def);
+        auditGuildOnlyAxes(out, where, def);
         auditVenom(out, where, def);
         auditStatements(out, where, def);
         auditDerivedType(out, where, def);
@@ -208,32 +213,6 @@ function auditStandsOn(out, where, def) {
 }
 
 /**
- * A Base Map node whose "Stands on" its map's ground can never give. A node brings its map's
- * terrain to its own cell (`Layout.js`), so on dry land it stands on that terrain and nothing else;
- * the shore and the water exist only where some map brings water, a sea or its biome's own
- * (`Budget.BIOME_WATER`: a forest's pond, a meadow's lake). The layout leaves such a node
- * unplaced, and Settle refuses every layout of a Region with it ("Not everything fits").
- */
-function auditMapNodeGround(out, itemId, def) {
-    if (!isBaseMap(def)) return;
-    const recipe = recipeOf(def);
-    const ground = groundOf(recipe);
-    for (const { typeId } of recipe.nodes) {
-        const standsOn = standsOnOf(typeId);
-        if (!standsOn.length || allowsTerrain(standsOn, ground.terrain, false)) continue;
-        const byWater = standsOn.includes(STANDS_ON.WATER) || standsOn.includes(STANDS_ON.SHORE);
-        if (byWater && (ground.water > 0 || ground.inland.length > 0)) continue;
-        const node = `One of its nodes, ${tokenName(typeId)}, has "Stands on" ${groundLabels(standsOn)}`;
-        out.push(finding(`Item "${itemId}"`, byWater
-            ? `${node} and this map brings no water, so a Region written from this map alone has ` +
-              `nowhere for it and Settle refuses it. It fits only beside a map that brings water.`
-            : `${node} and this map's ground is ${groundLabel(ground.terrain)}, so it can never be ` +
-              `placed, and Settle refuses every Region with this map in it. Tick ` +
-              `${groundLabel(ground.terrain)} in its "Stands on", or put it on a map whose ground it stands on.`));
-    }
-}
-
-/**
  * A bearer's references into the named effect library. A ref naming a renamed
  * or deleted entry resolves to nothing: the Token still loads and plays, with
  * one rule fewer.
@@ -275,13 +254,13 @@ function auditEffectRefs(out, where, def) {
  * read by nothing — the "authored but inert" failure this project keeps paying
  * for, so it is named out loud instead.
  */
-/** A Venomous enemy lands the library's Poison by id; without that status it poisons nobody. */
+/** A Venomous enemy lands the library's Venom by id; without that status it lands nothing. */
 function auditVenom(out, where, def) {
     if (!isEnemyDef(def) || !(def.enemy.kinds || []).includes('venomous')) return;
     if (statusBlockOf(getEffect(VENOM_EFFECT_ID))) return;
     out.push(finding(where,
         `is Venomous, which lands the status effect "${VENOM_EFFECT_ID}" on every hit, and the effect ` +
-        `library has no such status, so it poisons nobody. Make a status effect named Poison.`));
+        `library has no such status, so it lands nothing. Make a status effect named Venom.`));
 }
 
 function auditCombatAxes(out, where, def) {
@@ -296,6 +275,18 @@ function auditCombatAxes(out, where, def) {
             `has a ${entry.label} rule, but that only reaches a hero from an item they ` +
             `carry or an enemy they fight — this Token is neither, so the rule does nothing. ` +
             `Put it on an item, or on an enemy Token.`));
+    }
+}
+
+/** A guild-only rule (Wound Time, Loadout Slots) on a Token or an item: only a Guild Hall star's reaches anyone. */
+function auditGuildOnlyAxes(out, where, def) {
+    for (const statement of statementsOf(def)) {
+        if (statement?.keyword !== KEYWORD.PROVIDES) continue;
+        const entry = getPaletteEntry(statement.payload?.type);
+        if (!entry?.guildOnly) continue;
+        out.push(finding(where,
+            `has a ${entry.label} rule, but only a Guild Hall star's reaches anyone — here it does nothing. ` +
+            `Put it on a star in the Hall.`));
     }
 }
 
@@ -640,19 +631,39 @@ function auditItems(out) {
 // Enemy drops are not audited here: enemies are Tokens, so the Token walk
 // already checks their outputs, and a second pass would report each finding twice.
 
+/** The audit's words for retired map content, kept together for translation. */
+export const RETIRED_MAP_TEXT = Object.freeze({
+    baseMap: 'is a Base Map, and map items are retired: the world map settles places now. Delete it in the CMS.',
+    drops: (names) => `drops ${names.join(', ')}, but map items are retired and those lines never roll. `
+        + 'Remove them from its outputs in the CMS.'
+});
+
 /**
- * Map and Modifier items: the Tokens their Cartography block names, and a map that writes nothing.
- * The rule lives in `mapItems.js`, shared with the CMS Economy Audit. Then a node whose "Stands
- * on" its map's ground can never give (game side only).
+ * Map items are retired (the world map settles places): each Base Map is named for deletion, and
+ * each Token whose outputs still name a map or a modifier, since those lines never roll. A Modifier
+ * stays as a world cell's hidden extra, so its block is still checked: the Tokens it names, and an
+ * effect that does nothing (the rule lives in `mapItems.js`, shared with the CMS Economy Audit).
  */
 function auditMapItems(out) {
     const tokenExists = id => !!getTokenType(id);
     for (const [itemId, def] of Object.entries(ITEMS || {})) {
-        if (!isMapItem(def)) continue;
+        if (isBaseMap(def)) {
+            out.push(finding(`Item "${itemId}"`, RETIRED_MAP_TEXT.baseMap));
+            continue;
+        }
+        if (!isModifier(def)) continue;
         for (const what of mapItemFindings(def, { tokenExists, itemOf: getItem })) {
             out.push(finding(`Item "${itemId}"`, what));
         }
-        auditMapNodeGround(out, itemId, def);
+    }
+    for (const [tokenId, def] of Object.entries(TOKENS || {})) {
+        const retired = [];
+        for (const output of def?.config?.outputs || []) {
+            if (isRetiredItem(output?.itemId) && !retired.includes(output.itemId)) retired.push(output.itemId);
+        }
+        if (retired.length) {
+            out.push(finding(`Token "${tokenId}"`, RETIRED_MAP_TEXT.drops(retired.map(id => getItem(id)?.name || id))));
+        }
     }
 }
 
@@ -730,7 +741,7 @@ function auditLifecycle(out) {
  * in `unknownRefRule.js`, shared with the CMS Economy Audit.
  */
 function auditUnknownRefs(out) {
-    for (const f of findUnknownRefs({ tokens: TOKENS, items: ITEMS, recipes: listRecipes() })) {
+    for (const f of findUnknownRefs({ tokens: TOKENS, items: ITEMS, recipes: listRecipes(), effects: EFFECTS })) {
         out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
     }
 }
@@ -757,13 +768,35 @@ function auditPerks(out) {
 }
 
 /**
+ * The Guild Hall's authored stars: one that cannot open, names a missing item, Token or
+ * constellation, or carries a rule the guild cannot hold. The rule lives in `hallStarRule.js`.
+ */
+function auditHallStars(out) {
+    for (const f of hallStarFindings({ sky: authoredHallSky(), items: ITEMS || {}, tokens: TOKENS || {} })) {
+        out.push(finding(`Hall star "${f.entityId}"`, f.message));
+    }
+}
+
+/**
+ * Gear's defence: a piece's resistances or damage cut the game cannot read, an off-hand item
+ * carrying weapon numbers, and a type the best stack of gear and perks resists 100 % or more. The
+ * rule lives in `gearDefenceRule.js`, shared with the CMS Economy Audit.
+ */
+function auditGearDefence(out) {
+    for (const f of gearDefenceFindings({ items: ITEMS, effects: EFFECTS, skillPerks: authoredSkillPerks() })) {
+        out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
+    }
+}
+
+/**
  * Walk everything and return the findings.
  * Exported separately from the reporting so a test can assert on the list.
  */
 export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
-        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems, auditTools, auditPerks,
+        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems, auditTools, auditPerks, auditHallStars,
+        auditGearDefence,
         auditHardcodedLists, (o) => auditStarterCamp(o, starterCamp)
     ];
     for (const step of steps) {

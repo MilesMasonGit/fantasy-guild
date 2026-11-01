@@ -28,7 +28,7 @@ import { renderStatement } from '../systems/effects/statementText.js';
 import { migrateAppliesTarget, migrateAppliesTargets } from '../systems/effects/effectMigration.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
 import { useEntityStore } from '../../cms/src/stores/useEntityStore.js';
-import { registerStatusFixtures, POISON } from './fixtures/statusEffects.js';
+import { registerStatusFixtures, VENOM } from './fixtures/statusEffects.js';
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
@@ -239,10 +239,10 @@ describe('4. the runtime ignores a stray flag', () => {
         const fight = BoardCombat.getFight(idAt(MONSTER));
         expect(fight, 'no fight started').toBeTruthy();
 
-        const landed = StatusApplication.applyAt(idAt(MONSTER), { effectId: POISON, chance: 100, target: 'enemy' });
+        const landed = StatusApplication.applyAt(idAt(MONSTER), { effectId: VENOM, chance: 100, target: 'enemy' });
         expect(landed).toBe(true);
-        expect(hasStatus(hero1(), POISON)).toBe(true);
-        expect(hasStatus(fight, POISON)).toBe(false);
+        expect(hasStatus(hero1(), VENOM)).toBe(true);
+        expect(hasStatus(fight, VENOM)).toBe(false);
     });
 
     it('so does a library effect', () => {
@@ -284,7 +284,7 @@ describe('5. ⭐ the misleading item sentence is fixed', () => {
 describe('6. end to end: an old-flag item poisons the creature in a real fight', () => {
     it('loads migrated and lands on the enemy, not the hero', () => {
         registerEffects({ fixture_v10b_poison_flask: { id: 'fixture_v10b_poison_flask', name: 'Old Venom',
-            statements: [flagged('enemy', { effectId: POISON, chance: 100 })] } });
+            statements: [flagged('enemy', { effectId: VENOM, chance: 100 })] } });
         registerItems({ fixture_v10b_flask: { id: 'fixture_v10b_flask', name: 'Old Venom', effects: [{ effectId: 'fixture_v10b_poison_flask', scale: 1 }] } });
         InventoryManager.addItem('fixture_v10b_flask', 5);
         hero1().equipment[0] = 'fixture_v10b_flask';
@@ -297,7 +297,7 @@ describe('6. end to end: an old-flag item poisons the creature in a real fight',
         run(600);
         const fight = BoardCombat.getFight(idAt(MONSTER));
         expect(fight, 'no fight started').toBeTruthy();
-        expect(hasStatus(fight, POISON), 'the enemy should be poisoned').toBe(true);
-        expect(hasStatus(hero1(), POISON), 'the hero must not be').toBe(false);
+        expect(hasStatus(fight, VENOM), 'the enemy should be poisoned').toBe(true);
+        expect(hasStatus(hero1(), VENOM), 'the hero must not be').toBe(false);
     });
 });

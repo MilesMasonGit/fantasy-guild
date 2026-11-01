@@ -10,6 +10,7 @@ import * as EnemyMotion from './EnemyMotion.js';
 import * as Demolition from './Demolition.js';
 import { isGuildHall } from './MatCap.js';
 import { centreOf, distanceSq } from './nearby.js';
+import { campReachOf } from './TileModifiers.js';
 
 /**
  * A **camp** is a Token type with a `camp` block, `{ skill, reach }` (the CMS Token editor's Camp
@@ -36,10 +37,16 @@ import { centreOf, distanceSq } from './nearby.js';
 /** A Token type's camp terms, `{ skill, reach }`, or null (`tokenConstants.campOf`). */
 export { campOf, CAMP_REACH_DEFAULT };
 
-/** The camp a Token on the mat is (`{ skill, reach }`), or null: not a camp, or marked for demolition. */
+/**
+ * The camp a Token on the mat is (`{ skill, reach }`), or null: not a camp, or marked for
+ * demolition. Its reach is the authored one widened by Camp Reach (`TileModifiers.campReachOf`).
+ */
 export function campOfInstance(instance) {
     if (!instance?.typeId || Demolition.isMarked(instance)) return null;
-    return campOf(getTokenType(instance.typeId));
+    const block = campOf(getTokenType(instance.typeId));
+    if (!block) return null;
+    const reach = campReachOf(instance, block.reach, block.skill);
+    return reach === block.reach ? block : { ...block, reach };
 }
 
 /** Each spawner type's enemies, memoised per type id on the registry's version (`SpawnerSystem.familyOf`). */

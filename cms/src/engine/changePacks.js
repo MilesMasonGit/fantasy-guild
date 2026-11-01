@@ -12,11 +12,12 @@ import { intentErrors } from './packIntent.js';
 import { isSkillId } from '../../../src/config/registries/skillRegistry.js';
 import { isPerkLevel } from '../../../src/systems/hero/perkTable.js';
 import { MAX_SCALE } from '../../../src/systems/effects/effectLibrary.js';
+import { workspaceSkyFrom } from './hallSky.js';
 
 export const PACK_FORMAT = 'fantasy-guild-change-pack';
 export const PACK_VERSION = 1;
 export const OPS = Object.freeze(['create', 'edit', 'delete']);
-export const KINDS = Object.freeze(['item', 'token', 'recipe', 'effect', 'map', 'starterCamp', 'skillPerks']);
+export const KINDS = Object.freeze(['item', 'token', 'recipe', 'effect', 'map', 'starterCamp', 'skillPerks', 'hallStar', 'hallConstellation']);
 
 /**
  * The Starter Camp is one record, not a collection: its entry's id is always this, its value the
@@ -67,7 +68,35 @@ export function collectionOf(kind) {
     if (kind === 'recipe') return 'recipePools';
     if (kind === 'starterCamp') return 'starterCamp';
     if (kind === 'skillPerks') return 'skillPerks';
+    if (kind === 'hallStar') return 'hallStars';
+    if (kind === 'hallConstellation') return 'hallConstellations';
     return null;
+}
+
+/**
+ * What is wrong with a Guild Hall star's record (`src/config/hallStars.js`), as sentences: a
+ * constellation and links named, and every rank a list with a price list, rules and lines.
+ */
+function hallStarErrors(value, label) {
+    const out = [];
+    if (typeof value.constellation !== 'string' || !value.constellation.trim()) out.push(`${label}: a star's "value.constellation" must name its constellation.`);
+    if (!Array.isArray(value.links) || !value.links.length) out.push(`${label}: a star's "value.links" must name the Hall ("hall") or another star.`);
+    if (!Array.isArray(value.ranks) || !value.ranks.length) {
+        out.push(`${label}: a star's "value.ranks" must be a list of at least one rank: { "tier", "price", "rules", "lines" }.`);
+        return out;
+    }
+    value.ranks.forEach((rank, i) => {
+        const at = `${label}: rank ${i + 1}`;
+        if (!isPlainObject(rank)) {
+            out.push(`${at} must be an object: { "tier", "price", "rules", "lines" }.`);
+            return;
+        }
+        for (const key of ['price', 'rules', 'lines']) {
+            if (rank[key] !== undefined && !Array.isArray(rank[key])) out.push(`${at}: "${key}" must be a list.`);
+        }
+        if (rank.tier !== undefined && tierOrNull(rank.tier) !== rank.tier) out.push(`${at}: "tier" must be a whole number from 0.`);
+    });
+    return out;
 }
 
 /**
@@ -166,6 +195,9 @@ export function validatePack(pack, { fileName } = {}) {
                 if (kind === 'recipe' && (typeof value.skill !== 'string' || !value.skill)) errors.push(`${label}: a recipe's "value.skill" must name its skill pool.`);
                 if (kind === 'skillPerks') {
                     errors.push(...perkTableErrors(value, label));
+                    if (value.plan !== undefined) errors.push(`${label}: only items, maps, Tokens and recipes carry a "plan".`);
+                } else if (kind === 'hallStar' || kind === 'hallConstellation') {
+                    if (kind === 'hallStar') errors.push(...hallStarErrors(value, label));
                     if (value.plan !== undefined) errors.push(`${label}: only items, maps, Tokens and recipes carry a "plan".`);
                 } else {
                     errors.push(...planErrors(value.plan, label, kind));
@@ -271,8 +303,8 @@ export function changedFields(before, after) {
 }
 
 /** Build the workspace a pack was made against from the game's `data/` files (as `/api/load-game-data` and the store's load do), the plan laid back on (`planFile.js`). */
-export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null, skillPerks = null, plan = null }) {
+export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null, skillPerks = null, hallStars = null, plan = null }) {
     const recipePools = {};
     for (const recipe of tokenRecipes || []) (recipePools[recipe.skill || 'general'] ||= []).push(recipe);
-    return mergePlanFile({ items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp), skillPerks }, plan);
+    return mergePlanFile({ items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp), skillPerks, ...workspaceSkyFrom({ hallSky: hallStars }) }, plan);
 }

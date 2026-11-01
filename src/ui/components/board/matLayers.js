@@ -35,6 +35,11 @@ export const MAT_Z = Object.freeze({
     GROUND_FX: 2,
     /** The grid while placing (`TerrainGridOverlay`): over the ground, under every Token. */
     GROUND_GRID: 3,
+    /**
+     * The shade over a held mat's ground (a settled place before its arrival is beaten): the same
+     * z as the grid, drawn before it, so the grid still reads while placing.
+     */
+    HELD_SHADE: 3,
     /** Tokens, flags, their heroes and badges: `TOKEN_BASE + place * 3`. */
     TOKEN_BASE: 10,
     /** Heroes with no Token to stand on and no flag to stand beside. */

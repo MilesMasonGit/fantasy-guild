@@ -65,7 +65,9 @@ export const ENGINE_EVENTS = Object.freeze({
     BOARD_SWAPPED: 'board_swapped',
     /**
      * The Atlas's Regions changed. Payload: `{ reason, regionId }`, `reason` one of `'created'`,
-     * `'renamed'`, `'archived'`, `'restored'`, `'abandoned'`, `'travelled'`.
+     * `'renamed'`, `'archived'`, `'restored'`, `'abandoned'`, `'travelled'`, or a settled place's
+     * arrival: `'occupied'` (its enemies put on the mat) and `'cleared'` (the last one beaten).
+     * `'created'` also carries `cellId`, the world cell the Region is settled on (null for none).
      */
     ATLAS_CHANGED: 'atlas_changed',
 
@@ -230,6 +232,9 @@ export const UI_EVENTS = Object.freeze({
      */
     UI_TOKEN_FX: 'ui:token_fx',
 
+    /** Open the Encyclopedia at one entry: a "look it up" link. Payload: `{ key }` (a ledger key, `item:<id>`). */
+    OPEN_ENCYCLOPEDIA: 'ui:open_encyclopedia',
+
     /** Dev stress harness. Payload: `{ name, id }`. */
     DEV_STRESS_STARTED: 'dev:stress_started',
 });
@@ -264,7 +269,6 @@ export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.STATE_CHANGED]: 'retired: every surface listens to a specific event and GAME_RESET; one Atlas publish remains',
     [ENGINE_EVENTS.REGISTRY_UPDATED]: 'console affordance; the discovery events below are the specific ones',
     [ENGINE_EVENTS.ENEMY_DISCOVERED]: 'first-seen moment, for a future bestiary notice',
-    [ENGINE_EVENTS.QUEST_SPAWNED]: 'quest moment; quest Tokens announce on the board',
     [ENGINE_EVENTS.TOKEN_RESTOCKED]: 'player action moment; the board events carry the redraw',
     [ENGINE_EVENTS.HERO_RECOVERED]: 'combat moment; HEROES_UPDATED carries the redraw',
     [ENGINE_EVENTS.COMBAT_ENEMY_TRAIT_TRIGGER]: 'combat moment, for a future floating-text cue',

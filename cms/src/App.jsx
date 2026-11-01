@@ -13,6 +13,7 @@ import LedgerPanel from './components/ledger/LedgerPanel';
 import StarterCampPage from './components/starterCamp/StarterCampPage';
 import ChangesPage from './components/changes/ChangesPage';
 import SkillPerksPage from './components/perks/SkillPerksPage';
+import HallStarsPage from './components/hallStars/HallStarsPage';
 import { useEntityStore } from './stores/useEntityStore';
 import { startLedgerWatchIfWorker } from './stores/useLedgerWatchStore';
 import { isMapItem } from '../../src/systems/atlas/mapItems.js';
@@ -37,6 +38,7 @@ function App() {
         if (currentView === 'starterCamp') return <div className="h-full overflow-y-auto"><StarterCampPage /></div>;
         if (currentView === 'changes') return <ChangesPage setCurrentView={setCurrentView} />;
         if (currentView === 'perks') return <SkillPerksPage setCurrentView={setCurrentView} />;
+        if (currentView === 'hallStars') return <HallStarsPage />;
         if (currentView === 'sprites') return <SpriteAuditDashboard />;
         if (currentView === 'audit') return <div className="p-4 h-full"><AuditPanel openGenerate={openGenerate} /></div>;
         return (

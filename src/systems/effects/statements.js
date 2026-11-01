@@ -343,7 +343,9 @@ export function paletteForKeyword(keywordId, hasTrigger) {
     if (keywordId === KEYWORD.PROVIDES) {
         // Provides changes a number; the item-carrying shapes have their own keywords (Grants,
         // Converts), so offering them here would be two ways to author one thing.
-        return MODIFIER_PALETTE.filter(e => e.shape === 'deterministic' || e.shape === 'proc');
+        // A retired row (flat Armor, Pierce) still reads, but is never offered; a guild-only row (Wound
+        // Time) is a Guild Hall star's, and on a Token or an item it reaches nobody.
+        return MODIFIER_PALETTE.filter(e => !e.retired && !e.guildOnly && (e.shape === 'deterministic' || e.shape === 'proc'));
     }
     if (keywordId === KEYWORD.GRANTS) {
         return MODIFIER_PALETTE.filter(e => e.type === 'BONUS_DROP');
@@ -400,9 +402,7 @@ export function blankPayload(keywordId) {
             // Blank means "everything", which is the cure-all case.
             return { effectId: '' };
         case KEYWORD.DEALS:
-            // `ignoresArmor` is written out rather than left absent so the editor shows a real
-            // state: damage RESPECTS armour by default.
-            return { amount: 1, ignoresArmor: false };
+            return { amount: 1 };
         case KEYWORD.APPLIES:
             // `effectId` attaches a library effect for a while. A `durationMs` of 0 means fire
             // it once, now (how chaining works).

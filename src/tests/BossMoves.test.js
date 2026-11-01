@@ -26,12 +26,12 @@ import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { renderStatement, rulesLinesOf } from '../systems/effects/statementText.js';
 import { slotsOf, costSlots } from '../systems/effects/statementSlots.js';
-import { registerStatusFixtures, providesPct, providesFlat, BURN, POISON } from './fixtures/statusEffects.js';
+import { registerStatusFixtures, providesPct, providesFlat, BURN, VENOM } from './fixtures/statusEffects.js';
 
 /**
  * Boss moves as Rules effects (brief 220, C4): two new moments a fighter's own rules wait on, "On
  * Every Nth Swing" (and its sibling "On Hit") and "On Health Below X%" (once a fight), and the
- * first moves built from ordinary verbs: a heavy strike, a status attack, a heal or +2 armour, an
+ * first moves built from ordinary verbs: a heavy strike, a status attack, a heal or a Physical resistance, an
  * enrage. Any enemy can carry them; a hero's items can too.
  */
 
@@ -45,7 +45,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 registerEffects({
     bm_heavy: { id: 'bm_heavy', name: 'Heavy Strike', statements: [providesPct('stm_bm_heavy', EFFECT_TYPES.DAMAGE, 1)] },
-    bm_stone_skin: { id: 'bm_stone_skin', name: 'Stone Skin', statements: [providesFlat('stm_bm_skin', EFFECT_TYPES.ARMOR, 2)] },
+    // Flat armour is gone with damage types: Stone Skin resists Physical (a fist is Crush) 40 %.
+    bm_stone_skin: { id: 'bm_stone_skin', name: 'Stone Skin', statements: [{ ...providesFlat('stm_bm_skin', EFFECT_TYPES.TYPE_RESIST, 40), payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 40, category: 'physical' } }] },
     bm_enrage: { id: 'bm_enrage', name: 'Enrage', statements: [providesPct('stm_bm_enrage', EFFECT_TYPES.SWING_TIME, -0.5)] }
 });
 
@@ -180,11 +181,11 @@ describe('On Hit: a status attack', () => {
     });
 });
 
-describe('On Health Below X%: a heal, +2 armour and an enrage, once a fight', () => {
-    it('below half it heals itself 10 and gains 2 armour, once; below 30% it enrages, once', () => {
+describe('On Health Below X%: a heal, a Physical resistance and an enrage, once a fight', () => {
+    it('below half it heals itself 10 and resists Physical 40 %, once; below 30% it enrages, once', () => {
         startFight('bm_healer');
         const seen = play(60000);
-        // The hero hits for 5 (1 + 4 for level 99). 40 → 15 crosses half: heal to 25, armour 2.
+        // The hero hits for 5 (1 + 4 for level 99). 40 → 15 crosses half: heal to 25, and 5 × 60 % = 3.
         expect(seen.enemyHp.slice(0, 5)).toEqual([35, 30, 25, 20, 15]);
         expect(seen.heroHits.slice(5, 7)).toEqual([3, 3]);
         expect(seen.enemyHp.slice(5, 7)).toEqual([22, 19]);
@@ -233,7 +234,7 @@ describe('a boss move that knocks the hero out', () => {
             BoardRunner.tick(100);
             fight = BoardCombat.getFight(enemy.id);
         }
-        LiveEffects.applyTo(BoardCombat.enemyBearerOfToken(enemy.id), { effectId: POISON });
+        LiveEffects.applyTo(BoardCombat.enemyBearerOfToken(enemy.id), { effectId: VENOM });
         fight.combat.enemyHp.current = 1;
         fight.combat.enemyTickProgress = 2950;          // its second swing is due on the next board tick
         fight.combat.heroTickProcesses[hero.id] = 0;    // and the hero's is not
@@ -249,7 +250,7 @@ describe('a boss move that knocks the hero out', () => {
 });
 
 describe('the moves read as sentences, and edit as slots', () => {
-    const names = { effect: (id) => ({ bm_heavy: 'Heavy Strike', bm_stone_skin: 'Stone Skin', bm_enrage: 'Enrage', [BURN]: 'Burn', [POISON]: 'Poison' })[id] || id };
+    const names = { effect: (id) => ({ bm_heavy: 'Heavy Strike', bm_stone_skin: 'Stone Skin', bm_enrage: 'Enrage', [BURN]: 'Burn', [VENOM]: 'Venom' })[id] || id };
 
     it('says each move plainly', () => {
         expect(renderStatement(HEAVY, names)).toBe('On Every 4th Swing: applies Heavy Strike to the enemy for the swing.');

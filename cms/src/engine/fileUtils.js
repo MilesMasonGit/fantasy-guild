@@ -15,6 +15,8 @@ export function snapshot(state) {
     recipePools: state.recipePools,
     starterCamp: state.starterCamp,
     skillPerks: state.skillPerks,
+    hallConstellations: state.hallConstellations,
+    hallStars: state.hallStars,
     planSettings: state.planSettings,
   };
 }
@@ -79,7 +81,7 @@ export async function sendSync(files, { confirmRemovals = false } = {}) {
 }
 
 /**
- * One-way full-file sync to the project `data/` directory: runs the economy recalculation, then writes `data/items.json` (maps and modifiers included), `tokens.json`, `tokenRecipes.json` and `effects.json` from its output, `starterCamp.json` when the workspace holds a Starter Camp, and `skillPerks.json` when it holds perk tables.
+ * One-way full-file sync to the project `data/` directory: runs the economy recalculation, then writes `data/items.json` (maps and modifiers included), `tokens.json`, `tokenRecipes.json` and `effects.json` from its output, `starterCamp.json` when the workspace holds a Starter Camp, `skillPerks.json` when it holds perk tables, and `hallStars.json` when it holds a Guild Hall sky.
  * ⚠️ Sync writes from the STORE, never from `data/`: a browser that has never loaded a workspace backup syncs whatever it holds, so it can overwrite `data/` with older content. The server therefore refuses a Sync that would remove anything until it is resent with `confirmRemovals`.
  * @returns {Promise<{ success: boolean, filesWritten: Array<string> } | { needsConfirm: true, diff: object, files: object }>}
  */

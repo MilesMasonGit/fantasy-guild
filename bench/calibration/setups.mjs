@@ -5,12 +5,43 @@
 // calculator against the engine on the game's own numbers. A content change moves both sides.
 //
 // Each setup says how to build its board (`build`, run inside the engine through Vite), what the
-// calculator is asked (`works`, for `chainRates`), and which items and skills to compare.
+// calculator is asked (`works`, for `chainRates`), and which items and skills to compare. `hall`
+// holds Guild Hall stars: a fixture sky (shipped content has none yet) and the ranks bought.
 
 const STEP = 160;
 
 /** Where the inert stand-in Hall stands: heroes start there and walk out. */
 const HALL = { x: 240, y: 240 };
+
+/** A Guild Hall star as `data/hallStars.json` holds one, with a single rank holding one rule. */
+function hallStar(id, name, type, value, { category, to } = {}) {
+    return {
+        id, constellation: 'calibration_mining', name, node: { x: 0.6, y: 0 }, links: ['hall'],
+        ranks: [{
+            tier: 0, price: [], lines: [],
+            rules: [{
+                id: `stm_${id}`, keyword: 'provides', reach: 'board', target: null, when: null, upkeep: null, chargeDelta: 0,
+                to: to || { mode: 'all', value: '' },
+                payload: { type, bucket: 'percentage', value, ...(category ? { category } : {}) }
+            }]
+        }]
+    };
+}
+
+/**
+ * The fixture sky the `vein-hall` setup holds: Mining XP (+50 %, through the XP floor), Mining work
+ * speed (-20 %), and a rest aimed at the Copper Ore Vein (-50 %): the guild-wide and the aimed paths.
+ * ⚠️ A fixture, never `data/`: the engine holds it through the dev hook `registerHallSky`.
+ */
+const HALL_SKY = {
+    constellations: { calibration_mining: { id: 'calibration_mining', name: 'Mining', label: { x: 1, y: -0.5 }, skill: 'mining' } },
+    stars: Object.fromEntries([
+        hallStar('calibration_mining_xp', 'Miner’s Lore', 'XP_BONUS', 0.5, { category: 'mining' }),
+        hallStar('calibration_mining_speed', 'Quick Picks', 'WORK_TIME', -0.2, { category: 'mining' }),
+        hallStar('calibration_vein_rest', 'Deep Veins', 'GROW_TIME', -0.5, { to: { mode: 'id', value: 'token_copper_ore_vein' } })
+    ].map(s => [s.id, s]))
+};
+const HALL_RANKS = { calibration_mining_xp: 1, calibration_mining_speed: 1, calibration_vein_rest: 1 };
 
 export const SETUPS = [
     {
@@ -63,6 +94,19 @@ export const SETUPS = [
             prefillSpawners();
             const forester = hero('Forester', { forestry: 10 }, ['item_copper_woodaxe']);
             order(forester, camp);
+        }
+    },
+    {
+        id: 'vein-hall',
+        name: 'The vein again, the Guild Hall holding Mining XP +50 %, Mining work speed -20 % and a vein rest -50 % (fixture stars)',
+        warmupMs: 10 * 60_000,
+        compare: { items: ['item_copper_ore'], skills: ['mining'] },
+        hall: { sky: HALL_SKY, ranks: HALL_RANKS },
+        works: [{ target: { token: 'token_copper_ore_vein' }, setup: { level: 10, hallRanks: HALL_RANKS } }],
+        build({ place, hero, order }) {
+            const vein = place('token_copper_ore_vein', 800, 560);
+            const miner = hero('Miner', { mining: 10 }, ['item_copper_pickaxe']);
+            order(miner, vein);
         }
     },
     {
