@@ -6,7 +6,8 @@
 //     3 fed mills, 3 unfeedable smelters, 3 passives, 2 nearby buffs,
 //     3 Forests + 3 Quarries (10 spawned each, 60 in all) and 2 goblin camps
 //     (3 hostile goblins each, walking about their camp);
-//   * 8 heroes with flags, walking between their Tokens;
+//   * 8 heroes with flags, walking between their Tokens; two work a producer inside a camp's
+//     watch, so the goblins attack them (S2 measures fights);
 //   * one hero PINNED to a smelter that runs dry after two cycles: the
 //     "stalled station with a hero standing on it" case (CR3-005);
 //   * quest Tokens from the Hall (the tutorial step and bounties);
@@ -17,6 +18,8 @@
 // 2.5 s sweep on to stand in for them; without it the Bank barely changes and
 // every Bank-driven path (CR3-002, CR3-029) would be idle.
 
+import * as BoardState from '../../src/systems/board/BoardState.js';
+import { matTuning } from '../../src/config/matTuning.js';
 import { pinMat, REFERENCE_STEPS } from './referenceMat.mjs';
 
 /** S2's placed Tokens besides the Hall, in placement order. */
@@ -93,22 +96,36 @@ export function buildBoard({ fixtures, setMatTuning }, { placed = REALISTIC_PLAC
     }
 
     const heroes = makeHeroes(8);
+    const workedInWatch = [];
     const producers = tokens.filter(t => t.typeId === 'fixture_producer' || t.typeId === 'fixture_producer_alt');
     const camps = tokens.filter(t => t.typeId === 'bench_camp' || t.typeId === 'bench_warcamp');
     const smelter = tokens.find(t => t.typeId === 'bench_smelter');
 
     // Hero 0: ordered onto a smelter that will run dry.
     orderAt(heroes[0].id, { x: smelter.x, y: smelter.y });
-    // Heroes 1–2: sent to bare ground beside goblin camps (a spot order: never ambushed).
-    orderAt(heroes[1].id, { x: camps[0].x + STEP, y: camps[0].y });
-    orderAt(heroes[2].id, { x: camps[1].x - STEP, y: camps[1].y });
+    // Heroes 1–2: each ordered onto the nearest workable Token inside a camp's watch (a hero on a
+    // spot order is never attacked), so the camp's goblins notice them and fight. The camp's
+    // neighbours are mostly Forests and passives, so the spawned trees and rocks count too.
+    const watch = matTuning('watchRadius');
+    const hostile = new Set(['bench_goblin', 'bench_camp', 'bench_warcamp', 'bench_hall']);
+    for (let i = 1; i <= 2; i++) {
+        const camp = camps[i - 1];
+        const near = BoardState.tokens()
+            .filter(t => !hostile.has(t.typeId))
+            .map(t => ({ t, d: Math.hypot(t.x - camp.x, t.y - camp.y) }))
+            .filter(e => e.d <= watch)
+            .sort((a, b) => a.d - b.d || (a.t.id < b.t.id ? -1 : 1));
+        const placed = near.find(e => orderAt(heroes[i].id, { x: e.t.x, y: e.t.y }).order === 'token');
+        if (!placed) throw new Error(`board: no Token a hero can work inside camp ${i - 1}'s watch (${watch} u)`);
+        workedInWatch.push(placed.t.typeId);
+    }
     // Heroes 3–7: each ordered onto a producer, spread across the list.
     for (let i = 3; i < 8; i++) {
         const target = producers[Math.floor((i - 3 + 0.5) * producers.length / 5)];
         orderAt(heroes[i].id, { x: target.x, y: target.y });
     }
 
-    return { tokens, heroes, hall };
+    return { tokens, heroes, hall, workedInWatch };
 }
 
 /** S2's board. */
