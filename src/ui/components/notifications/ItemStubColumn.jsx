@@ -4,6 +4,7 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import * as ItemStubs from '../../../systems/notifications/itemStubs.js';
 import { pins } from '../../../systems/notifications/routing.js';
+import { isEncyclopediaOpen, lookUpItem } from '../encyclopedia/encyclopediaLink.js';
 import { ItemRateTracker } from '../../../systems/inventory/ItemRateTracker.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { PixelFrame, FRAME_KIND, FRAME_BAND_PX } from '../base/PixelFrame.jsx';
@@ -44,9 +45,16 @@ function useSetting(path) {
     return value;
 }
 
-/** Left-click pins or unpins; right-click clears or resets. The browser's menu never opens. */
+/**
+ * Left-click pins or unpins; while the Encyclopedia is open it turns to the item's chart instead.
+ * Right-click clears or resets. The browser's menu never opens.
+ */
 const pressHandlers = (itemId, onCleared) => ({
-    onClick: (e) => { if (e.button === 0) pins.toggle(itemId); },
+    onClick: (e) => {
+        if (e.button !== 0) return;
+        if (isEncyclopediaOpen()) lookUpItem(itemId);
+        else pins.toggle(itemId);
+    },
     onContextMenu: (e) => {
         e.preventDefault();
         e.stopPropagation();

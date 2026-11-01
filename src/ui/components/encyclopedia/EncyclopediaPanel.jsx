@@ -1,11 +1,10 @@
 import { t } from '../../../i18n/index.js';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
-import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
 import { ItemTipContent } from '../drawer/ItemTip.jsx';
 import { KIND } from './encyclopediaModel.js';
-import { waysIn } from './encyclopediaChart.js';
-import { EntrySprite, EntryRow, GateLine, Tick, isCollected } from './encyclopediaParts.jsx';
+import { requirementOf } from './encyclopediaChart.js';
+import { EntrySprite, EntryRow, RequirementLine, Tick, isCollected } from './encyclopediaParts.jsx';
 
 /** `m:ss` (UI_STYLE "Numbers"). */
 export function clockText(ms) {
@@ -21,16 +20,17 @@ const Clock = ({ ms }) => (
 );
 
 /** A Token or an enemy: what it says of itself, the skill and level to work it, its cycle. */
-const TokenFacts = ({ def, heroes }) => {
+const TokenFacts = ({ book, entry, heroes }) => {
+    const def = entry.def;
     const config = def?.config || {};
-    const gate = config.skill && !def?.enemy ? { skill: config.skill, level: Math.max(1, Number(config.skillRequired) || 1) } : null;
+    const gate = requirementOf(book, entry.key);
     const cycle = !def?.enemy && Number(config.cycleTimeMs) > 0 ? Number(config.cycleTimeMs) : null;
     return (
         <div data-codex-facts="token" className="flex flex-col gap-1 ui-text-body">
             {def?.description && <p className="text-white/85 leading-snug">{def.description}</p>}
             {(gate || cycle) && (
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-white">
-                    {gate && <GateLine gate={gate} heroes={heroes} />}
+                    {gate && <RequirementLine requirement={gate} heroes={heroes} book={book} />}
                     {cycle && <Clock ms={cycle} />}
                 </div>
             )}
@@ -40,12 +40,12 @@ const TokenFacts = ({ def, heroes }) => {
 
 /** A recipe: its level, how long a craft takes, and every station that offers it (each a new chart). */
 const RecipeFacts = ({ book, entry, heroes, got, onChartFrom }) => {
-    const [way] = waysIn(book, entry.key);
+    const gate = requirementOf(book, entry.key);
     const stations = book.sourcesOf(entry.key).map(r => r.via).filter((k, i, all) => k && book.entryOf(k) && all.indexOf(k) === i);
     return (
         <div data-codex-facts="recipe" className="flex flex-col gap-1 ui-text-body text-white">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                {way?.gate && <GateLine gate={way.gate} heroes={heroes} />}
+                {gate && <RequirementLine requirement={gate} heroes={heroes} book={book} />}
                 {Number(entry.def?.durationMs) > 0 && <Clock ms={entry.def.durationMs} />}
             </div>
             {stations.length > 0 && (
@@ -61,10 +61,10 @@ const RecipeFacts = ({ book, entry, heroes, got, onChartFrom }) => {
 };
 
 /**
- * The focused entry, small, in the right page's corner: what it is, and a way to start the chart
- * over from it. Everything about where it comes from and what it goes into is the chart's.
+ * The focused entry, small, in the right page's corner: what it is. Everything about where it
+ * comes from and what it goes into is the chart's. Not shown at present (`SHOW_PANEL`).
  */
-export const InspectPanel = ({ book, focusKey, startKey, got, heroes, onChartFrom, style }) => {
+export const InspectPanel = ({ book, focusKey, got, heroes, onChartFrom, style }) => {
     const entry = book.entryOf(focusKey);
     if (!entry) return null;
     return (
@@ -80,13 +80,8 @@ export const InspectPanel = ({ book, focusKey, startKey, got, heroes, onChartFro
                 </div>
             </div>
             {entry.kind === KIND.ITEM && <div className="ui-text-body"><ItemTipContent item={entry.def} /></div>}
-            {(entry.kind === KIND.TOKEN || entry.kind === KIND.ENEMY) && <TokenFacts def={entry.def} heroes={heroes} />}
+            {(entry.kind === KIND.TOKEN || entry.kind === KIND.ENEMY) && <TokenFacts book={book} entry={entry} heroes={heroes} />}
             {entry.kind === KIND.RECIPE && <RecipeFacts book={book} entry={entry} heroes={heroes} got={got} onChartFrom={onChartFrom} />}
-            {entry.key !== startKey && (
-                <KitButton tone={KIT_BUTTON_TONE.PLAIN} data-codex-chart-from={entry.key} onClick={() => onChartFrom(entry.key)} className="self-start">
-                    {t('encyclopedia.chartFromHere')}
-                </KitButton>
-            )}
         </PixelFrame>
     );
 };

@@ -88,7 +88,9 @@ player for these is T-138 (built when the first strips exist).
   - **Encyclopedia** (NEW 2026-10-30, brief 300): a book (the "look it up"
     link on cards and in the Bank's tooltip line), a tick (collected this
     run) and a back arrow, 8 × 8 at 2×, placeholders in `PixelGlyph` until
-    drawn. Its menu bubble uses a Lucide book like the other bubbles.
+    drawn. Its menu bubble uses a Lucide book like the other bubbles. Its
+    chart (E3 rework) adds an **inspect** mark (a magnifier on each entry,
+    whose hover shows what you have and this run's totals), same size.
   - **The problem mark is on the mat now** (brief 120 C1), 16 × 16, drawn at
     the Token's own pixel size at a Token's centre with a hard black shadow.
     The placeholder is today's `ui/u_alert_yellow.png` and `ui/u_alert_red.png`;

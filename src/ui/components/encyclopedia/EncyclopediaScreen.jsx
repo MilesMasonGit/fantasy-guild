@@ -2,8 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, u
 import { motion } from 'framer-motion';
 import { t } from '../../../i18n/index.js';
 import { GameState } from '../../../state/GameState.js';
-import { itemKey } from '../../../systems/progression/ledger/engine.js';
-import { collectedOf, recentlyCollectedItems } from '../../../systems/progression/collectionLog.js';
+import { collectedOf } from '../../../systems/progression/collectionLog.js';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { CloseX } from '../base/CloseX.jsx';
 import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
@@ -11,9 +10,9 @@ import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { TOME_ART, TOME_SCALE, COVER_ART, spreadSize, pageRects } from '../atlas/tomeArt.js';
 import { POP_UP_S, prefersReducedMotion } from '../atlas/AtlasTome.jsx';
 import { encyclopedia, KINDS } from './encyclopediaModel.js';
-import { chartOf, chartMetrics, ROOT } from './encyclopediaChart.js';
+import { chartOf, chartMetrics, within, ROOT } from './encyclopediaChart.js';
 import { takeLookUp, onLookUp } from './encyclopediaLink.js';
-import { noteViewed, recentlyViewed, RECENT_COUNT } from './encyclopediaRecent.js';
+import { noteViewed, recentlyViewed } from './encyclopediaRecent.js';
 import { ChartView } from './EncyclopediaChartView.jsx';
 import { InspectPanel } from './EncyclopediaPanel.jsx';
 import { SearchBox, EntryRow, unscroll } from './encyclopediaParts.jsx';
@@ -26,6 +25,12 @@ const BOOK_ART = TOME_ART;
 
 /** A small overshoot at the top as the book rises, as the Atlas's. */
 const SETTLE_EASE = [0.34, 1.32, 0.64, 1];
+
+/**
+ * The small panel describing the focus, off for now (owner, 1 November: everything goes on the
+ * entry). ⚠️ Kept so it can come back: true shows it in the right page's corner again.
+ */
+const SHOW_PANEL = false;
 
 /** The two pages the book shows. */
 export const PAGE = Object.freeze({ OPENING: 'opening', CHART: 'chart' });
@@ -47,23 +52,37 @@ function startState(key, seq = 0) {
     return { start: key, grown: new Set(), opened: new Set(), focus: { key, at: ROOT }, glide: { kind: 'centre', at: ROOT, seq: seq + 1 } };
 }
 
+/** Grown ids without `id` and everything it grew; opened lists (`${id}<`, `${id}>`) likewise. */
+const withoutGrown = (ids, id) => new Set([...ids].filter(x => !within(x, id)));
+const withoutOpened = (ids, id) => new Set([...ids].filter(x => !within(x.slice(0, -1), id)));
+
 function chartReducer(state, action) {
     const seq = (state?.glide?.seq ?? 0) + 1;
     switch (action.type) {
         case 'start':
             return startState(action.key, state?.glide?.seq ?? 0);
         case 'node': {
+            // A closed box opens a step and becomes the focus; an open one folds away and stays it.
             if (!state) return state;
-            const grown = action.grow ? new Set(state.grown).add(action.id) : state.grown;
-            return { ...state, grown, focus: { key: action.key, at: action.id }, glide: { kind: 'keep', at: action.id, seq } };
+            const { node } = action;
+            let { grown, opened } = state;
+            if (node.grown && node.id !== ROOT) {
+                grown = withoutGrown(grown, node.id);
+                opened = withoutOpened(opened, node.id);
+            } else if (node.canGrow) {
+                grown = new Set(grown).add(node.id);
+            }
+            return { ...state, grown, opened, focus: { key: node.key, at: node.id }, glide: { kind: 'keep', at: node.id, seq } };
         }
-        case 'chip':
+        case 'stem': {
+            // A count on the side a box grows: open it, or show the rest of its long list.
             if (!state) return state;
-            return { ...state, focus: { key: action.key, at: action.id }, glide: { kind: 'keep', at: action.id, seq } };
-        case 'more': {
-            if (!state) return state;
-            const owner = action.id.slice(0, -1);
-            return { ...state, opened: new Set(state.opened).add(action.id), glide: { kind: 'keep', at: owner, seq } };
+            const { node, side } = action;
+            if (!node.grown) {
+                if (!node.canGrow) return state;
+                return { ...state, grown: new Set(state.grown).add(node.id), focus: { key: node.key, at: node.id }, glide: { kind: 'keep', at: node.id, seq } };
+            }
+            return { ...state, opened: new Set(state.opened).add(`${node.id}${side === 'in' ? '<' : '>'}`), glide: { kind: 'keep', at: node.id, seq } };
         }
         case 'home':
             if (!state) return state;
@@ -106,7 +125,7 @@ export function bookLayout(visible, k = 1) {
             top: top + toolbarH + GAP,
             width: Math.max(0, right.left + right.width - leftEdge),
             height: Math.max(0, bottom - top - toolbarH - GAP),
-            reserveRight: panelW + GAP
+            reserveRight: SHOW_PANEL ? panelW + GAP : 0
         },
         panel: { left: panelLeft, top, width: panelW, maxHeight: Math.max(0, bottom - top) }
     };
@@ -158,12 +177,14 @@ const RecentList = ({ id, title, entries, got, onPick }) => (
 
 /**
  * The Encyclopedia: a book (the Atlas's), search-first. Its **opening page** searches every item,
- * Token, enemy and recipe, and lists what was looked at lately and the items newly collected.
+ * Token, enemy and recipe, and lists what was looked at lately.
  * Picking one opens its **chart**: what it comes from flowing in from the left, what it goes into
- * flowing out to the right; a click grows the chart a step from that node and makes it the focus,
- * which a small panel describes; the view glides to keep the focus in sight, drags to look
- * around, and goes back to the start. Everything is shown from the start; ticks mark what this
- * run has. It says what a thing comes from, never where on the world map.
+ * flowing out to the right; a click grows the chart a step from that box and makes it the focus,
+ * a second click folds it away again; the view glides to keep the focus in sight, drags to look
+ * around, and goes back to the start. Each box says what it asks of a hero above it, and what you
+ * have of it and this run's totals on its inspect mark. Everything is shown from the start; ticks
+ * mark what this run has. It says what a thing comes from, never where on the world map. An item
+ * toast clicked while the book is open turns to that item's chart.
  *
  * Mounted only while open: everything it reads is built the first time it opens.
  */
@@ -210,9 +231,8 @@ export const EncyclopediaScreen = ({ onClose }) => {
         [book, chart?.start, chart?.grown, chart?.opened] // eslint-disable-line react-hooks/exhaustive-deps
     );
 
-    const onNode = useCallback((node) => dispatch({ type: 'node', id: node.id, key: node.key, grow: node.canGrow && !node.grown }), []);
-    const onChip = useCallback((chip) => { if (chip.way.recipe) dispatch({ type: 'chip', id: chip.id, key: chip.way.recipe }); }, []);
-    const onMore = useCallback((id) => dispatch({ type: 'more', id }), []);
+    const onNode = useCallback((node) => dispatch({ type: 'node', node }), []);
+    const onStem = useCallback((node, side) => dispatch({ type: 'stem', node, side }), []);
 
     // The room the book lies in, measured; the pane's own resize too (ResizeObserver can be silent).
     const stage = useRef(null);
@@ -250,8 +270,6 @@ export const EncyclopediaScreen = ({ onClose }) => {
     const below = typeof window !== 'undefined' ? window.innerHeight : 1000;
 
     const viewed = recentlyViewed().map(key => book.entryOf(key)).filter(Boolean);
-    const collected = recentlyCollectedItems(GameState.state, RECENT_COUNT * 2)
-        .map(id => book.entryOf(itemKey(id))).filter(Boolean).slice(0, RECENT_COUNT);
     const pickFirst = () => { if (results[0]) startChart(results[0].key); };
     const startName = chart ? book.nameOf(chart.start) : '';
 
@@ -260,7 +278,8 @@ export const EncyclopediaScreen = ({ onClose }) => {
             ref={stage}
             data-encyclopedia
             data-codex-page={page}
-            className="absolute inset-0 z-(--z-encyclopedia) pointer-events-auto overflow-hidden"
+            // ⚠️ A sibling of the Board inside the mat's area, under the item stubs and banners (z-30).
+            className="absolute inset-0 z-20 pointer-events-auto overflow-hidden"
             onPointerDown={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
             onScroll={unscroll}
         >
@@ -290,7 +309,6 @@ export const EncyclopediaScreen = ({ onClose }) => {
                         <PixelFrame kind={FRAME_KIND.STUDS} data-codex-opening="recent" className="absolute" style={at.right} frameClassName="h-full flex flex-col min-h-0 p-2 gap-3 bg-gi-surface/95">
                             <ArrowScrollList step={160} compact className="flex-1 min-h-0">
                                 <RecentList id="viewed" title={t('encyclopedia.recentlyViewed')} entries={viewed} got={got} onPick={startChart} />
-                                <RecentList id="collected" title={t('encyclopedia.recentlyCollected')} entries={collected} got={got} onPick={startChart} />
                             </ArrowScrollList>
                         </PixelFrame>
                     </>
@@ -308,8 +326,7 @@ export const EncyclopediaScreen = ({ onClose }) => {
                             heroes={heroes}
                             startName={startName}
                             onNode={onNode}
-                            onChip={onChip}
-                            onMore={onMore}
+                            onStem={onStem}
                         />
                         <div data-codex-toolbar className="absolute flex items-center gap-2" style={at.toolbar}>
                             <SearchBox value={term} onChange={onSearch} onEnter={pickFirst} className="flex-1 min-w-32 max-w-64" />
@@ -320,15 +337,16 @@ export const EncyclopediaScreen = ({ onClose }) => {
                                 {t('encyclopedia.backToStart')}
                             </KitButton>
                         </div>
+                        {SHOW_PANEL && (
                         <InspectPanel
                             book={book}
                             focusKey={chart.focus.key}
-                            startKey={chart.start}
                             got={got}
                             heroes={heroes}
                             onChartFrom={startChart}
                             style={{ left: at.panel.left, top: panelTop, width: at.panel.width, maxHeight: at.panel.maxHeight - (panelTop - at.panel.top) }}
                         />
+                        )}
                     </>
                 )}
                 <CloseX onClick={() => onClose?.()} label={t('common.close')} data-codex-close className="absolute z-30" style={{ left: closeLeft, top: closeTop }} />

@@ -3,12 +3,15 @@ import { X } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { t } from '../../../i18n/index.js';
 import { GameState } from '../../../state/GameState.js';
-import { getSkill } from '../../../config/registries/skillRegistry.js';
+import { getSkill, COMBAT_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
+import { COMBAT } from '../../../systems/progression/ledger/engine.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { TokenSprite } from '../base/TokenSprite.jsx';
+import { Tooltip } from '../base/Tooltip.jsx';
 import { KIND } from './encyclopediaModel.js';
+import { STATIONS } from './encyclopediaChart.js';
 
 /** A clipped room never scrolls: focus moving to something out of sight would shift the whole book. */
 export const unscroll = (e) => {
@@ -22,7 +25,7 @@ export const unscroll = (e) => {
 /** The sprite box of a row or a chart node. */
 export const SPRITE_PX = 32;
 
-/** The sprite of any entry at `size`: an item's icon, a Token's art, a recipe's first output. */
+/** The sprite of any entry at `size`: an item's icon, a Token's art, a recipe's first output, a station type's first station. */
 export const EntrySprite = ({ entry, size = SPRITE_PX }) => {
     if (!entry) return null;
     if (entry.kind === KIND.ITEM) return <ItemIcon item={entry.id} size={size} title={null} />;
@@ -30,6 +33,10 @@ export const EntrySprite = ({ entry, size = SPRITE_PX }) => {
         const out = (Array.isArray(entry.def?.outputs) ? entry.def.outputs : []).find(o => o?.itemId || o?.tokenId);
         if (out?.tokenId) return <TokenSprite typeId={out.tokenId} size={size} alt="" />;
         return out?.itemId ? <ItemIcon item={out.itemId} size={size} title={null} /> : null;
+    }
+    if (entry.kind === STATIONS) {
+        const first = entry.members?.[0];
+        return first ? <TokenSprite typeId={first.slice(first.indexOf(':') + 1)} size={size} alt="" /> : null;
     }
     return <TokenSprite typeId={entry.id} size={size} alt={entry.name} />;
 };
@@ -44,29 +51,48 @@ export const Tick = ({ label = t('encyclopedia.collected') }) => (
     </span>
 );
 
-/** Whether any hero of the guild holds `gate.skill` at `gate.level` or above. */
+/** Whether any hero of the guild holds `gate.skill` at `gate.level` or above (Combat: any fighting style). */
 export function heroHas(gate, heroes = GameState.heroes) {
     if (!gate?.skill) return true;
-    return (Array.isArray(heroes) ? heroes : []).some(h => (h?.skills?.[gate.skill]?.level ?? -Infinity) >= gate.level);
+    const skills = gate.skill === COMBAT ? COMBAT_SKILL_IDS : [gate.skill];
+    return (Array.isArray(heroes) ? heroes : []).some(h => skills.some(s => (h?.skills?.[s]?.level ?? -Infinity) >= gate.level));
 }
 
-/** A skill and level, "Smithing 15", red when no hero has it yet. */
-export const GateLine = ({ gate, heroes }) => {
-    if (!gate?.skill) return null;
-    const name = getSkill(gate.skill)?.name || gate.skill;
-    const has = heroHas(gate, heroes);
-    const words = t('encyclopedia.level', { skill: name, level: gate.level });
+/**
+ * What a box asks of a hero, written above it: "Smithing 15" with its skill icon, red when no
+ * hero has it yet; hover names the stations that make a recipe. A fight reads "Combat · Lv 12",
+ * never red: no hero level is checked to fight.
+ */
+export const RequirementLine = ({ requirement, heroes, book, className, style }) => {
+    if (!requirement?.skill) return null;
+    const stationNames = (requirement.stations || []).map(k => book?.nameOf(k) ?? k);
+    const madeAt = stationNames.length ? t('encyclopedia.madeAtNames', { names: stationNames.join(', ') }) : null;
+    if (requirement.skill === COMBAT) {
+        return (
+            <Tooltip lines={[t('encyclopedia.combatTip', { level: requirement.level })]}>
+                <span data-codex-req={COMBAT} className={cn('inline-flex items-center gap-1 tabular-nums', className)} style={style}>
+                    {t('encyclopedia.combatLevel', { level: requirement.level })}
+                </span>
+            </Tooltip>
+        );
+    }
+    const name = getSkill(requirement.skill)?.name || requirement.skill;
+    const has = heroHas(requirement, heroes);
+    const words = t('encyclopedia.level', { skill: name, level: requirement.level });
+    const tip = [has ? null : t('encyclopedia.noHero', { skill: name, level: requirement.level }), madeAt].filter(Boolean);
     return (
-        <span
-            data-codex-gate={gate.skill}
-            data-codex-gate-short={has ? undefined : 'true'}
-            title={has ? words : t('encyclopedia.noHero', { skill: name, level: gate.level })}
-            className="inline-flex items-center gap-1 tabular-nums"
-            style={has ? undefined : { color: 'var(--color-ui-red)' }}
-        >
-            <SkillIcon skillId={gate.skill} size={16} title={null} />
-            {words}
-        </span>
+        <Tooltip lines={tip.length ? tip : [words]}>
+            <span
+                data-codex-req={requirement.skill}
+                data-codex-req-short={has ? undefined : 'true'}
+                data-codex-made-at={madeAt ?? undefined}
+                className={cn('inline-flex items-center gap-1 tabular-nums', className)}
+                style={has ? style : { ...style, color: 'var(--color-ui-red)' }}
+            >
+                <SkillIcon skillId={requirement.skill} size={16} title={null} />
+                {words}
+            </span>
+        </Tooltip>
     );
 };
 

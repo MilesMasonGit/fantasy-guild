@@ -2,11 +2,15 @@ import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'rea
 import { cn } from '../../utils/cn.js';
 import { t } from '../../../i18n/index.js';
 import { availableOf } from '../../../systems/board/InputAllocator.js';
-import { PixelTriangle } from '../base/ArrowScrollList.jsx';
+import { lifetimeOf } from '../../../systems/progression/collectionLog.js';
+import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
+import { ItemTipContent } from '../drawer/ItemTip.jsx';
 import { KIND } from './encyclopediaModel.js';
-import { layoutChart, grownBox, keepInSight, centreOn, clampPan, needText, ROOT } from './encyclopediaChart.js';
-import { EntrySprite, GateLine, Tick, isCollected, unscroll, SPRITE_PX } from './encyclopediaParts.jsx';
+import {
+    layoutChart, grownBox, keepInSight, centreOn, clampPan, needText, requirementOf, entryOfKey, ROOT, STATIONS
+} from './encyclopediaChart.js';
+import { EntrySprite, RequirementLine, Tick, isCollected, unscroll, SPRITE_PX } from './encyclopediaParts.jsx';
 
 /** The ink the chart's lines and words are drawn in on the parchment. */
 const INK = '#3b2614';
@@ -35,29 +39,95 @@ export function amountText(q) {
     return `×${shown.toLocaleString('en-US')}`;
 }
 
-const haveOf = (entry) => (entry?.kind === KIND.ITEM ? Math.floor(availableOf(entry.id) || 0) : null);
-
-/** The box of a node or chip in a layout, by id. */
-function boxOf(layout, id) {
-    const n = layout.nodes.find(x => x.id === id);
-    if (n) return { left: n.x, top: n.y, right: n.x + n.w, bottom: n.y + n.h };
-    const c = layout.chips.find(x => x.id === id);
-    if (c) return { left: c.x, top: c.y - c.h / 2, right: c.x + c.w, bottom: c.y + c.h / 2 };
-    return null;
+/** A line's odds on the box it reaches: "first kill", "40%", nothing when sure. */
+export function chanceText(node) {
+    if (node.firstKill) return t('encyclopedia.firstKill');
+    if (!Number.isFinite(node.chance) || node.chance >= 1) return null;
+    return t('encyclopedia.chance', { chance: Math.round(node.chance * 1000) / 10 });
 }
 
-/** One thing on the chart: its sprite, name, how many a step takes and have / need. */
-const ChartNode = memo(function ChartNode({ box, entry, focused, collected, have, startName, onPick }) {
+const haveOf = (entry) => (entry?.kind === KIND.ITEM ? Math.floor(availableOf(entry.id) || 0) : null);
+const count = (n) => Number(n || 0).toLocaleString('en-US');
+
+/** The box of a node in a layout, by id (with its requirement line). */
+function boxOf(layout, id) {
+    const n = layout.nodes.find(x => x.id === id);
+    return n ? { left: n.x, top: n.y - (layout.reqH ?? 0), right: n.x + n.w, bottom: n.y + n.h } : null;
+}
+
+/** The side a node grows toward: the start grows none, a box on the left grows left, one on the right right. */
+const growSide = (node) => (node.side === 'in' ? 'in' : node.side === 'out' ? 'out' : null);
+
+/** What the inspect mark shows on hover: what the entry is, what you have, and this run's totals. */
+const InspectTip = ({ entry, node, have, startName, got, hint }) => {
+    const lines = [];
+    if (have != null) {
+        const need = node.side === 'in' ? needText(node.need) : null;
+        lines.push(need != null
+            ? t('encyclopedia.haveNeed', { have: count(have), need: count(need), name: startName })
+            : t('encyclopedia.have', { count: count(have) }));
+    }
+    const totals = lifetimeOf(entry.key);
+    if (entry.kind === KIND.ITEM) lines.push(t('encyclopedia.collectedCount', { count: count(totals.collected) }));
+    if (entry.kind === KIND.TOKEN) lines.push(t('encyclopedia.builtCount', { count: count(totals.built) }));
+    if (entry.kind === KIND.ENEMY) lines.push(t('encyclopedia.killedCount', { count: count(totals.killed) }));
+    if (entry.kind === KIND.RECIPE) lines.push(t(isCollected(got, entry) ? 'encyclopedia.made' : 'encyclopedia.notMade'));
+    return (
+        <div data-codex-inspect-tip={entry.key} className="flex flex-col gap-1">
+            {entry.kind === KIND.ITEM && <ItemTipContent item={entry.def} />}
+            {(entry.kind === KIND.TOKEN || entry.kind === KIND.ENEMY) && entry.def?.description && (
+                <p className="text-white/85 leading-snug">{entry.def.description}</p>
+            )}
+            {entry.kind === STATIONS && (
+                <p className="text-white/85 leading-snug">{t('encyclopedia.stations', { count: entry.members.length, names: entry.members.map(k => entry.nameOf?.(k) ?? k).join(', ') })}</p>
+            )}
+            {lines.map(line => <div key={line} className="text-white">{line}</div>)}
+            {hint && <div className="ui-text-small text-white/55">{hint}</div>}
+        </div>
+    );
+};
+
+/** A count of the lines on one side of a box that are not on the chart: "+3". */
+const Stem = ({ stem, clickable, onStem }) => {
+    const words = t(stem.side === 'in' ? 'encyclopedia.hiddenIn' : 'encyclopedia.hiddenOut', { count: stem.count });
+    const Tag = clickable ? 'button' : 'span';
+    return (
+        <Tooltip lines={clickable ? [words, t('encyclopedia.showThem')] : [words]}>
+        <Tag
+            {...(clickable ? { type: 'button', onClick: () => onStem(stem.node, stem.side) } : {})}
+            data-codex-stem={stem.side}
+            data-codex-stem-of={stem.node.id}
+            aria-label={words}
+            className={cn(
+                'absolute flex items-center ui-text-small font-bold tabular-nums',
+                stem.side === 'in' ? 'justify-end pr-1' : 'justify-start pl-1',
+                clickable ? 'cursor-pointer hover:underline' : 'cursor-default'
+            )}
+            style={{ left: stem.x, top: stem.y, width: stem.w, height: stem.h, color: INK, ...SMALL_LINE }}
+        >
+            +{stem.count}
+        </Tag>
+        </Tooltip>
+    );
+};
+
+/** One entry on the chart: what it asks above it; its sprite, name, how many a step takes, have / need and odds. */
+const ChartNode = memo(function ChartNode({ book, box, entry, focused, collected, have, startName, heroes, got, reqH, onPick }) {
     const node = box.node;
     const need = node.side === 'in' ? needText(node.need) : null;
     const short = need != null && have != null && have < need;
-    const grow = node.canGrow && !node.grown ? node.side : null;
-    const lines = [];
-    if (have != null) lines.push(need != null ? t('encyclopedia.haveNeed', { have: have.toLocaleString('en-US'), need: need.toLocaleString('en-US'), name: startName }) : t('encyclopedia.have', { have: have.toLocaleString('en-US') }));
-    if (node.repeat) lines.push(t('encyclopedia.again'));
-    else if (grow) lines.push(t(grow === 'in' ? 'encyclopedia.growIn' : 'encyclopedia.growOut'));
+    const odds = chanceText(node);
+    const requirement = requirementOf(book, node.key, node.recipe);
+    const grow = growSide(node);
+    const hint = node.repeat ? t('encyclopedia.again') : node.grown && grow ? t('encyclopedia.fold') : node.canGrow ? t(grow === 'in' ? 'encyclopedia.growIn' : 'encyclopedia.growOut') : null;
+    const tip = <InspectTip entry={entry} node={node} have={have} startName={startName} got={got} hint={hint} />;
     return (
-        <Tooltip title={entry.name} lines={lines}>
+        <>
+            {requirement && (
+                <div data-codex-req-of={node.id} className="absolute flex items-end pointer-events-auto" style={{ left: box.x, top: box.y - reqH, width: box.w, height: reqH }}>
+                    <RequirementLine requirement={requirement} heroes={heroes} book={book} className="ui-text-small font-bold" style={{ color: INK, ...SMALL_LINE }} />
+                </div>
+            )}
             <button
                 type="button"
                 data-codex-node={node.id}
@@ -82,76 +152,28 @@ const ChartNode = memo(function ChartNode({ box, entry, focused, collected, have
                         {node.amount != null && <span data-codex-amount>{amountText(node.amount)}</span>}
                         {have != null && (
                             <span data-codex-have data-short={short ? 'true' : undefined} style={short ? { color: 'var(--color-ui-red)' } : undefined}>
-                                {need != null ? `${have.toLocaleString('en-US')}/${need.toLocaleString('en-US')}` : have.toLocaleString('en-US')}
+                                {need != null ? `${count(have)}/${count(need)}` : count(have)}
                             </span>
                         )}
                         {have == null && <span>{t(`encyclopedia.kindOne.${entry.kind}`)}</span>}
+                        {odds && <span data-codex-chance className="text-white">{odds}</span>}
                         {node.repeat && <span className="text-white/50">{t('encyclopedia.again')}</span>}
                     </span>
                 </span>
-                {collected && <span className="self-start pt-1"><Tick /></span>}
-                {grow && (
-                    <span
-                        aria-hidden="true"
-                        data-codex-grows={grow}
-                        className={cn('absolute top-1/2 -translate-y-1/2', grow === 'in' ? '-left-4 rotate-90' : '-right-4 -rotate-90')}
-                        style={{ color: INK }}
-                    >
-                        <PixelTriangle dir="down" />
-                    </span>
-                )}
-            </button>
-        </Tooltip>
-    );
-});
-
-/** The words on a link: where it happens (the station, "Gathered"), its odds, its level, how many it takes. */
-const ChartChip = memo(function ChartChip({ chip, book, focused, parentHave, heroes, onPick }) {
-    const way = chip.way;
-    const place = way.place ? book.nameOf(way.place) : null;
-    const head = place
-        ? (way.places ? t('encyclopedia.place', { name: place, more: way.places }) : place)
-        : t(`encyclopedia.chip.${way.words}`);
-    const odds = way.firstKill
-        ? t('encyclopedia.firstKill')
-        : (Number.isFinite(way.chance) && way.chance < 1 ? t('encyclopedia.chance', { chance: Math.round(way.chance * 1000) / 10 }) : null);
-    const short = way.takes != null && parentHave != null && parentHave < way.takes;
-    const makes = Number.isFinite(way.makes) && way.makes > 0 && way.makes !== 1 ? t('encyclopedia.makes', { count: amountText(way.makes) }) : null;
-    const Tag = way.recipe ? 'button' : 'div';
-    // ⚠️ Centred on its line by a flex box of whole pixels, not a half-height transform, so its
-    // pixel words land on whole pixels and stay sharp.
-    return (
-        <div className="absolute flex items-center pointer-events-none" style={{ left: chip.x, top: chip.y - Math.round(chip.h / 2), width: chip.w, height: chip.h }}>
-        <Tag
-            {...(way.recipe ? { type: 'button', onClick: () => onPick(chip), title: t('encyclopedia.chipRecipe', { name: book.nameOf(way.recipe) }) } : {})}
-            data-codex-chip={chip.id}
-            data-codex-how={way.how}
-            data-focus={focused ? 'true' : undefined}
-            className={cn(
-                'w-full pointer-events-auto flex flex-col items-center gap-0.5 px-1 py-1 text-center ui-text-small text-white bg-black/85 border-2',
-                focused ? 'border-[var(--color-ui-white)]' : 'border-transparent',
-                way.recipe && 'cursor-pointer hover:border-[var(--color-ui-white)]'
-            )}
-            style={SMALL_LINE}
-        >
-            <span data-codex-chip-head className="font-bold break-words">{head}{odds ? ` ${odds}` : ''}</span>
-            {(way.gate || way.takes != null || makes) && (
-                <span className="flex flex-wrap items-center justify-center gap-x-2">
-                    {way.gate && <GateLine gate={way.gate} heroes={heroes} />}
-                    {way.takes != null && (
-                        <span data-codex-takes data-short={short ? 'true' : undefined} className="tabular-nums" style={short ? { color: 'var(--color-ui-red)' } : undefined}>
-                            {amountText(way.takes)}
+                <span className="self-stretch flex flex-col items-end justify-between py-1">
+                    <Tooltip title={entry.name} content={tip} maxWidth={300}>
+                        <span data-codex-inspect aria-label={t('encyclopedia.inspect')} className="text-white/60 hover:text-white" onClick={(e) => e.stopPropagation()}>
+                            <PixelGlyph name="inspect" />
                         </span>
-                    )}
-                    {makes && <span className="tabular-nums text-white/70">{makes}</span>}
+                    </Tooltip>
+                    {collected ? <Tick /> : <span />}
                 </span>
-            )}
-        </Tag>
-        </div>
+            </button>
+        </>
     );
 });
 
-/** The lines between the boxes, in ink, an arrowhead where each reaches a node. */
+/** The lines between the boxes, in ink, an arrowhead where each reaches a box. */
 const Links = memo(function Links({ layout }) {
     const nodeIds = useMemo(() => new Set(layout.nodes.map(n => n.id)), [layout]);
     return (
@@ -177,14 +199,13 @@ const Links = memo(function Links({ layout }) {
  * @param {object} props
  * @param {object} props.chart       `chartOf(...)`
  * @param {{ kind: 'centre'|'keep', at: string, seq: number }} props.glide  a request to move the view
- * @param {string|null} props.focusAt  the node or chip in focus
+ * @param {string|null} props.focusAt  the node in focus
  * @param {{ left, top, width, height, reserveRight? }} props.rect  the window, in the book's pixels;
- *   `reserveRight` its strip under the panel, where the focus is never kept
+ *   `reserveRight` a strip on its right (under a panel) where the focus is never kept
  */
-export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, heroes, startName, onNode, onChip, onMore }) => {
+export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, heroes, startName, onNode, onStem }) => {
     const layout = useMemo(() => layoutChart(chart, metrics), [chart, metrics]);
     const viewport = { w: Math.max(0, rect.width), h: Math.max(0, rect.height) };
-    // The part not under the panel: where the focus is kept.
     const sight = { w: Math.max(0, viewport.w - (rect.reserveRight || 0)), h: viewport.h };
     const startBox = boxOf(layout, ROOT);
     const [view, setView] = useState(() => centreOn(sight, startBox));
@@ -216,13 +237,11 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
     }, [viewport.w, viewport.h]);
 
     // A drag pans; it listens on the window so it follows the pointer anywhere.
-    const press = useRef(null);
     const dropClick = useRef(false);
     const onPointerDown = (e) => {
         if (e.button !== 0) return;
         dropClick.current = false;
         const start = { id: e.pointerId, x: e.clientX, y: e.clientY, from: viewRef.current, moved: false };
-        press.current = start;
         const move = (ev) => {
             if (ev.pointerId !== start.id) return;
             const dx = ev.clientX - start.x;
@@ -238,7 +257,6 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
             window.removeEventListener('pointerup', up);
             window.removeEventListener('pointercancel', up);
             if (start.moved) dropClick.current = true;
-            press.current = null;
         };
         window.addEventListener('pointermove', move);
         window.addEventListener('pointerup', up);
@@ -257,9 +275,10 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
         setView(v => clampPan({ x: v.x - dx, y: v.y - dy }, viewportRef.current, layoutRef.current.box));
     };
 
-    const parentHave = (chip) => {
-        const parent = layout.nodes.find(n => n.id === chip.parent);
-        return parent ? haveOf(book.entryOf(parent.node.key)) : null;
+    // A station type's members are named in its inspect line.
+    const entryFor = (key) => {
+        const entry = entryOfKey(book, key);
+        return entry?.kind === STATIONS ? { ...entry, nameOf: book.nameOf } : entry;
     };
 
     return (
@@ -290,44 +309,45 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
                         {t('encyclopedia.or')}
                     </span>
                 ))}
-                {layout.chips.map(chip => (
-                    <ChartChip
-                        key={chip.id}
-                        chip={chip}
-                        book={book}
-                        focused={focusAt === chip.id}
-                        parentHave={chip.side === 'out' ? parentHave(chip) : null}
-                        heroes={heroes}
-                        onPick={onChip}
-                    />
+                {layout.captions.map(c => (
+                    <span
+                        key={c.id}
+                        data-codex-caption={c.words}
+                        className={cn('absolute flex items-center ui-text-small font-bold pointer-events-none whitespace-nowrap', c.label ? 'justify-center' : 'justify-end pr-2')}
+                        style={c.label
+                            ? { left: c.x - 40, top: c.y - 10, width: 80, height: 20, color: INK, ...SMALL_LINE }
+                            : { left: c.x, top: c.y, width: c.w, height: c.h, color: INK, ...SMALL_LINE }}
+                    >
+                        {t(`encyclopedia.via.${c.words}`)}
+                    </span>
                 ))}
                 {layout.nodes.map(box => {
-                    const entry = book.entryOf(box.node.key);
+                    const entry = entryFor(box.node.key);
                     if (!entry) return null;
                     return (
                         <ChartNode
                             key={box.id}
+                            book={book}
                             box={box}
                             entry={entry}
                             focused={focusAt === box.id}
                             collected={isCollected(got, entry)}
                             have={haveOf(entry)}
                             startName={startName}
+                            heroes={heroes}
+                            got={got}
+                            reqH={layout.reqH}
                             onPick={onNode}
                         />
                     );
                 })}
-                {layout.mores.map(more => (
-                    <button
-                        key={more.id}
-                        type="button"
-                        data-codex-more={more.id}
-                        onClick={() => onMore(more.id)}
-                        className="absolute ui-text-small font-bold text-white bg-black/85 border-2 border-transparent hover:border-[var(--color-ui-white)] cursor-pointer"
-                        style={{ left: more.x, top: more.y, width: more.w, height: more.h }}
-                    >
-                        {t('encyclopedia.more', { count: more.count })}
-                    </button>
+                {layout.stems.map(stem => (
+                    <Stem
+                        key={stem.id}
+                        stem={stem}
+                        clickable={!stem.node.repeat && (stem.node.side === 'start' || stem.side === growSide(stem.node))}
+                        onStem={onStem}
+                    />
                 ))}
             </div>
         </div>
