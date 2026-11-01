@@ -18,7 +18,7 @@ import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import cmsFileApi from '../../cms/vite-plugin-cms-api.js';
 import { fingerprint, validatePack } from '../../cms/src/engine/changePacks.js';
 import { snapshotOf, compareSnapshots, hasChanges } from '../../cms/src/engine/ledgerCompare.js';
-import { runGate, gateRecord, gateStatus, workspaceFingerprint, applyPackInMemory, GATE_VERSION } from '../../cms/src/engine/packGate.js';
+import { runGate, judge, gateRecord, gateStatus, workspaceFingerprint, applyPackInMemory, GATE_VERSION } from '../../cms/src/engine/packGate.js';
 import { workspaceSnapshot } from '../../cms/src/engine/ledgerJobs.js';
 import { workspaceReport } from '../../cms/src/engine/ledgerReport.js';
 import { paceWorkspace } from './fixtures/paceWorld.js';
@@ -112,7 +112,36 @@ describe('before and after', () => {
         const stage = b.stages.find((s) => s.tier === 1);
         stage.hours = 0.01;
         stage.untimed += 1;
-        expect(compareSnapshots(a, b).stages.find((s) => s.tier === 1)).toMatchObject({ beyond: true, direction: 'slower', lost: true });
+        expect(compareSnapshots(a, b).stages.find((s) => s.tier === 1)).toMatchObject({ beyond: true, direction: 'slower', timedDirection: 'faster', lost: true });
+    });
+});
+
+describe('a declared move when entries go untimed', () => {
+    /** Plane 1's time set to `hours`, with `lost` more entries untimed. */
+    const moved = (hours, lost) => {
+        const a = snapshotOf(workspaceReport(paceWorkspace()));
+        const b = structuredClone(a);
+        const stage = b.stages.find((s) => s.tier === 1);
+        stage.hours = hours;
+        stage.untimed += lost;
+        return compareSnapshots(a, b);
+    };
+    const declaring = (move) => ({ intent: { stages: [{ tier: 1, move, note: 'why' }] } });
+
+    it('passes a declared faster when the timed part got faster, and says how many went untimed', () => {
+        const result = judge(moved(0.01, 1), declaring('faster'));
+        expect(result.verdict).toBe('pass');
+        expect(result.notes.join(' ')).toMatch(/Plane 1: 1 entry went untimed \(\d+ → \d+\)/);
+        expect(judge(moved(0.01, 2), declaring('faster')).notes.join(' ')).toMatch(/Plane 1: 2 entries went untimed/);
+    });
+
+    it('still blocks the move undeclared, or declared faster when the timed part got slower', () => {
+        expect(judge(moved(0.01, 1), {}).blocks.map((b) => b.rule)).toEqual(['stage-undeclared']);
+        expect(judge(moved(1000, 1), declaring('faster')).blocks.map((b) => b.rule)).toEqual(['stage-mismatch']);
+    });
+
+    it('a declared slower still matches it, as before', () => {
+        expect(judge(moved(0.01, 1), declaring('slower')).verdict).toBe('pass');
     });
 });
 

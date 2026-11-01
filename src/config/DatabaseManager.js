@@ -20,6 +20,10 @@ export const DatabaseManager = {
 
     // Each skill's milestone perks. Absent until the CMS first syncs a perk table: no skill has any.
     skillPerkFilesSingle: import.meta.glob('/data/skillPerks.json', { eager: true }),
+
+    // The world map's generation tables. Absent until the CMS first syncs them: the world is then
+    // generated from the placeholder (`worldTablesRegistry.js`).
+    worldFilesSingle: import.meta.glob('/data/world.json', { eager: true }),
 };
 
 export default DatabaseManager;

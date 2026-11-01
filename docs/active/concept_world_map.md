@@ -1,4 +1,4 @@
-Status: draft (workshop in progress)
+Status: briefed 2026-10-30 (approved 2026-10-30; brief 330)
 
 # The world map: expanding into named places
 
@@ -284,8 +284,12 @@ the player to **make nodes**.*
   Hall's cell).
 - Which enemies make up each cell's arrival encounter (content, through the
   ledger).
-- The tutorial's new ending (the first ring opening) and the Starter Camp as
-  the Hall's cell.
+- ~~The tutorial's new ending and the Hall's cell~~ settled 2026-10-30
+  (owner): **the Hall's cell is the Starter Camp, permanent**; **the tutorial
+  ends with the cartographer opening the world map** (settle your first place).
+- **Old saves are abandoned** (owner, 2026-10-30): new games only.
+- **Content through the ledger** (owner, 2026-10-30): the brief builds the
+  machinery; origins per ring and prices come as a ledger-priced pack.
 - Theorycraft and alternatives were weighed 2026-10-28
   ([research](research/world_map_theorycraft_2026-10-28.md)); the owner kept the
   world map, without pass Tokens on the mat.

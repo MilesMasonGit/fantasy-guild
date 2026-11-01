@@ -17,6 +17,10 @@ import { renderStatement } from '../systems/effects/statementText.js';
 import {
     REACH, REACHES, DEFAULT_REACH, reachOf, reachCovers, RELATION, getReach
 } from '../config/registries/reachRegistry.js';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// Its heroes stand at perk levels: the shipped perks are content, not what this tests.
+withoutShippedPerks();
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;

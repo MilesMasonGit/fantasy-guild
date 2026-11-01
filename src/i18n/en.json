@@ -50,6 +50,7 @@
         "styleCut": "{style} damage −{n}%",
         "clickToSelect": "Click to select",
         "clickToDeselect": "Click to deselect",
+        "clickToLookUp": "Click to look it up in the Encyclopedia",
         "type": {
             "item": "Item",
             "material": "Material",
@@ -62,6 +63,110 @@
             "potion": "Potion",
             "currency": "Currency",
             "drop": "Loot"
+        }
+    },
+    "encyclopedia": {
+        "title": "Encyclopedia",
+        "open": "Encyclopedia",
+        "searchPlaceholder": "Search everything…",
+        "clearSearch": "Clear search",
+        "back": "Back",
+        "backTo": "Back to {name}",
+        "lookUp": "Look it up in the Encyclopedia",
+        "results": { "one": "{count} found", "other": "{count} found" },
+        "noResults": "Nothing by that name",
+        "progress": "{have}/{total}",
+        "progressTip": "Collected this run: {have} of {total}",
+        "collected": "Collected this run",
+        "pick": "Pick an entry",
+        "kind": {
+            "items": "Items",
+            "tokens": "Tokens",
+            "enemies": "Enemies",
+            "recipes": "Recipes"
+        },
+        "kindOne": {
+            "items": "Item",
+            "tokens": "Token",
+            "enemies": "Enemy",
+            "recipes": "Recipe"
+        },
+        "section": {
+            "sources": "Comes from",
+            "tree": "Made from",
+            "uses": "Used in",
+            "gives": "Gives",
+            "takes": "Takes",
+            "noSources": "Nothing makes this yet",
+            "noUses": "Nothing uses this yet"
+        },
+        "recipe": {
+            "skill": "{skill} {level}",
+            "time": "Takes {time}"
+        },
+        "tree": {
+            "open": "Show what it is made from",
+            "close": "Hide what it is made from",
+            "from": "from {name}",
+            "at": "at {name}",
+            "again": "already above"
+        },
+        "chance": "{chance}%",
+        "firstKill": "first kill",
+        "source": {
+            "work": "Gathered from",
+            "catch": "Caught at",
+            "drop": "Dropped by",
+            "craft": "Made by the recipe",
+            "trickle": "Passive Production at",
+            "upgrade": "A Guild Hall upgrade at",
+            "starterBank": "In the opening Bank",
+            "starterTool": "A starter tool",
+            "starterCamp": "Stands in the Starter Camp",
+            "guildHall": "Stands from the start",
+            "shop": "Bought at the Shop for",
+            "map": "Written by the map",
+            "modifier": "Written by the modifier",
+            "tutorial": "Given by the tutorial",
+            "bounty": "Paid by a bounty at",
+            "upcycle": "Traded up from",
+            "spawn": "Spawned by",
+            "grow": "Grows from",
+            "turn": "Turns from",
+            "regrow": "Regrows from",
+            "station": "Made at",
+            "build": "Built on",
+            "bonus": "A bonus drop from"
+        },
+        "use": {
+            "craft": "An ingredient of",
+            "work": "Spent working",
+            "catch": "Bait at",
+            "spawn": "Upkeep of",
+            "grow": "Feeds the growth of",
+            "growNearby": "Needed nearby to grow",
+            "shop": "Pays for",
+            "upcycle": "Trades up into",
+            "hold": "A tool for"
+        },
+        "give": {
+            "work": "Gathered here",
+            "catch": "Caught here",
+            "drop": "Drops",
+            "craft": "Makes",
+            "trickle": "Passive Production",
+            "upgrade": "Makes",
+            "spawn": "Spawns",
+            "grow": "Grows into",
+            "turn": "Turns into",
+            "regrow": "Regrows into",
+            "station": "Offers the recipe",
+            "build": "Builds",
+            "bonus": "A bonus drop",
+            "map": "Writes",
+            "modifier": "Writes",
+            "bounty": "Pays out",
+            "upcycle": "Trades up into"
         }
     },
     "guildHall": {

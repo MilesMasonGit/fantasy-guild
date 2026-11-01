@@ -49,6 +49,8 @@ import * as TimedChanges from '../board/TimedChanges.js';
 import * as Atlas from '../atlas/Atlas.js';
 import * as RegionRules from '../atlas/RegionRules.js';
 import * as StarterCamp from '../atlas/StarterCamp.js';
+// The run's world map, generated at a new game (`Game.World`).
+import * as World from '../world/World.js';
 import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
 import { grantStarterTools } from '../equipment/StarterTools.js';
@@ -96,6 +98,7 @@ export const EngineBootstrap = {
             EnemyMotion,
             Hostiles,
             Atlas,
+            World,
             TimeManager,
             GuildUpgradeManager,
             GameLoop,
@@ -244,6 +247,8 @@ export const EngineBootstrap = {
 
         // The Starter Camp's Tokens stand on the mat, and it becomes the guild's first Region.
         Atlas.createStarterRegion(camp);
+        // The run's world around the Hall's cell, which is the Starter Camp.
+        World.createWorld();
         // What a loaded save gets on `game_loaded`: the tile caches built for
         // the Tokens already standing on the mat.
         TileModifiers.rebuildAll();

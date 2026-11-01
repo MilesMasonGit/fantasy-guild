@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { artRadiusOf, matW, clampToMat } from '../../config/matGeometry.js';
+import { artRadius, artRadiusOf, matW, clampToMat } from '../../config/matGeometry.js';
 import { matTuning } from '../../config/matTuning.js';
 import { GameState } from '../../state/GameState.js';
 import * as BoardState from './BoardState.js';
@@ -71,6 +71,15 @@ export function idleSpot(flag) {
         return standingSpot(pinned.typeId, pinned, workerSide === 1 ? -1 : 1);
     }
     return { x: flag.x + IDLE_SPOT.dx, y: flag.y + IDLE_SPOT.dy };
+}
+
+/**
+ * Where an idle hero may stand: far enough in from every edge that their whole art is on the mat
+ * (a hero is drawn at a standard 1×1 Token's size). Only idling is held in: a hero walks right up
+ * to work a Token, whose centre may lie nearer the edge than this.
+ */
+function onMatIdle(point) {
+    return clampToMat(point, artRadius(1));
 }
 
 /** Walking speed in mat units a second (Mat Tuner Walk speed). */
@@ -252,7 +261,7 @@ function destinationOf(heroId, body) {
     if (body.home) {
         const spot = homeSpot(heroId);
         if (!spot) return null;
-        return body.potter ? clampToMat({ x: spot.x + body.potter.dx, y: spot.y + body.potter.dy }) : spot;
+        return onMatIdle(body.potter ? { x: spot.x + body.potter.dx, y: spot.y + body.potter.dy } : spot);
     }
 
     const claim = BoardState.claimOfHero(heroId);
@@ -275,8 +284,7 @@ function destinationOf(heroId, body) {
     const flag = BoardState.flagOf(heroId);
     if (!flag) return null;
     const home = idleSpot(flag);
-    if (!body.potter) return home;
-    return clampToMat({ x: home.x + body.potter.dx, y: home.y + body.potter.dy });
+    return onMatIdle(body.potter ? { x: home.x + body.potter.dx, y: home.y + body.potter.dy } : home);
 }
 
 /**

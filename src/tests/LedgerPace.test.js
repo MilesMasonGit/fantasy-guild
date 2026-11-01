@@ -260,13 +260,12 @@ const DATA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../d
 const load = (name) => JSON.parse(fs.readFileSync(path.join(DATA, name), 'utf8'));
 
 describe('the shipped content', () => {
-    it('shows plane 2\'s Construction 15 wall at Typical, and the Copper Mine on copper ore, switchable', () => {
+    it('shows no Construction wall now that builds pay their XP, and the Copper Mine on copper ore, switchable', () => {
         const content = { items: load('items.json'), tokens: load('tokens.json'), recipes: load('tokenRecipes.json'), effects: load('effects.json'), starterCamp: load('starterCamp.json') };
         const ledger = buildLedger(content);
         const pace = buildPace(content, ledger, null);
-        const wall = pace.findings().find(f => f.check === 'wall' && f.key === 'skill:construction');
-        expect(wall?.message).toMatch(/Construction 1 → 15/);
-        expect(wall.related).toContain('recipe:recipe_build_iron_smithy');
+        // The ledger fix pack raised the build recipes' XP; the wall the check found before is gone.
+        expect(pace.findings().filter(f => f.check === 'wall' && f.key === 'skill:construction')).toEqual([]);
 
         const vein = pace.rateAt({ token: 'token_copper_ore_vein' }, PROFILE.TYPICAL);
         expect(vein.chosen.map(c => c.id)).toContain('token_copper_mine');

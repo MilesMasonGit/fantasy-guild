@@ -596,6 +596,6 @@ describe('the bubble', () => {
         expect(bubble.getAttribute('aria-label')).toBe('Atlas');
         fireEvent.click(bubble, { clientX: 0, clientY: 0 });
         expect(toggle).toHaveBeenCalledWith('atlas');
-        expect(container.querySelectorAll('nav button').length).toBe(5);
+        expect(container.querySelectorAll('nav button').length).toBe(6);
     });
 });

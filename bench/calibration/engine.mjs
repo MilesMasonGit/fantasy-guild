@@ -55,10 +55,14 @@ registerTokenTypes({
     }
 });
 
-/** The content as the CMS and the ledger read it: the shipped `data/` files, untouched. */
+/**
+ * The content as the CMS and the ledger read it: the shipped `data/` files, untouched.
+ * ⚠️ The perk tables too: a level-10 hero holds their skill's milestone perks in the engine, so a
+ * calculator priced without them is not pricing the same hero.
+ */
 export function loadContent(root) {
     const load = (name) => JSON.parse(fs.readFileSync(path.join(root, 'data', name), 'utf8'));
-    return { tokens: load('tokens.json'), items: load('items.json'), recipes: load('tokenRecipes.json'), effects: load('effects.json') };
+    return { tokens: load('tokens.json'), items: load('items.json'), recipes: load('tokenRecipes.json'), effects: load('effects.json'), skillPerks: load('skillPerks.json') };
 }
 
 /** As the bench boots (`harness.boot`): a quiet console, the shipped logger, then a new game. */

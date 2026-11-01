@@ -1,4 +1,4 @@
-Status: briefed 2026-10-14 for Transitions and The look of the sky (brief 160); the rest approved 2026-10-09; **draft amendment 2026-10-29: upgrades as a main driver** (below)
+Status: briefed 2026-10-14 for Transitions and The look of the sky (brief 160); the rest approved 2026-10-09; amendment **"upgrades as a main driver" approved 2026-10-30, briefed (brief 320)**
 
 # The Guild Hall: constellation screen, upgrades, transitions
 
@@ -11,7 +11,8 @@ couple of weeks).*
 > ⚠️ **Draft amendment, 2026-10-29 (owner interview): "Upgrades as a main
 > driver" below changes the role, the list and the pricing of the sky.** Where
 > it differs from the sections after it, the amendment wins. Status of the
-> amendment: draft; the star list comes with the content work.
+> amendment: approved 2026-10-30, brief 320; the star list comes through the
+> ledger as a content pack.
 
 ## Upgrades as a main driver (owner, 2026-10-29; draft)
 
@@ -61,9 +62,8 @@ couple of weeks).*
 - The star list per skill (how many ranks of each boost, which Token
   upgrades), the Hearth's and the Well's ranks: content, priced by the ledger,
   settled with the content work.
-- The engine side (per-skill constellations, the boost effects, Token
-  upgrades, the Well's outputs, the retirements) is briefed once the list's
-  shape is clear.
+- Briefed 2026-10-30 (brief 320): **one rank per tier** for each per-skill
+  boost (owner); machinery first, the star list as a ledger-priced pack.
 
 ## The sky
 

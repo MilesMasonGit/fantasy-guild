@@ -17,6 +17,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning, MAT_TUNABLES } from '../config/matTuning.js';
+import { artRadiusOf, matW, matH } from '../config/matGeometry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -167,7 +168,7 @@ describe('pottering (HM-1, for enemies)', () => {
         expect(farthest).toBeLessThanOrEqual(INNER + R + 1);       // rounding
     });
 
-    it('keeps whole-number centres on the Token (nearby.js relies on exact ties)', () => {
+    it('keeps a walking enemy’s centre whole: the Token’s point is its body’s rounded copy', () => {
         const { enemy } = campWithEnemy();
         tick(15000);
         expect(Number.isInteger(enemy.x)).toBe(true);
@@ -183,6 +184,29 @@ describe('pottering (HM-1, for enemies)', () => {
         tick(20000);
         expect(Math.hypot(enemy.x - start.x, enemy.y - start.y)).toBeGreaterThan(1);   // it strolled
         expect(draws).toBeLessThan(40);                                // 200 ticks: not one draw each
+    });
+
+    it('⭐ strolls keep its whole art on the mat, by an edge and in a corner', () => {
+        const r = artRadiusOf('fixture_enemy');
+        const [w, h] = [matW(), matH()];
+        for (const [cx, cy, ey] of [[800, 70, 170], [70, 70, 170], [w - 70, h - 70, h - 170]]) {
+            clearMat();
+            const { enemy } = campWithEnemy(cx, cy, cx, ey);
+            let nearest = Infinity;
+            for (let i = 0; i < 1800; i++) {      // three minutes
+                EnemyMotion.tick(100);
+                nearest = Math.min(nearest, enemy.x, enemy.y, matW() - enemy.x, matH() - enemy.y);
+            }
+            expect(nearest).toBeGreaterThanOrEqual(r);
+            expect(nearest).toBeLessThan(r + 16);     // it did stroll up to the edge
+        }
+    });
+
+    it('an enemy saved with its art over the edge walks back onto the mat', () => {
+        const r = artRadiusOf('fixture_enemy');
+        const { enemy } = campWithEnemy(800, 70, 860, 20);       // inside the ring, half off the top
+        tick(1500);
+        expect(enemy.y).toBeGreaterThanOrEqual(r);
     });
 
     it('with wander 0 it never strolls', () => {

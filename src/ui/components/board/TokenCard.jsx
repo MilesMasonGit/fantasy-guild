@@ -7,7 +7,7 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { LandmarkBlock } from '../drawer/LandmarkBlock.jsx';
-import { LeaveMatControl } from '../drawer/TokenInspection.jsx';
+import { LeaveMatControl } from '../drawer/LeaveMatControl.jsx';
 import { useTokenDetail } from './useTokenDetail.js';
 import { subscribeToken } from './tokenEvents.js';
 import { CARD_BLOCK, tokenCardModel, cycleText, drivenBy } from './tokenCard.js';
@@ -22,6 +22,8 @@ import { RecipeList } from './RecipeList.jsx';
 import { takeRecipeListRequest, onRecipeListRequest } from './recipeFlip.js';
 import { CloseX } from '../base/CloseX.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
+import { lookUpRibbon, lookUpToken, lookUpRecipe } from '../encyclopedia/encyclopediaLink.js';
+import { t } from '../../../i18n/index.js';
 
 /** The card's width: the 256 px activity art at 1×, so it is never scaled off a whole pixel. */
 export const CARD_ART_PX = 256;
@@ -59,11 +61,26 @@ const Stat = ({ icon, text, tip, tone, ...rest }) => (
 
 const Dot = () => <span className="text-gi-muted">·</span>;
 
-const NameBlock = ({ name, onClose }) => (
+/** The book: this card's entry in the Encyclopedia. */
+const LookUpButton = ({ onClick }) => (
+    <button
+        type="button"
+        data-card-look-up
+        title={t('encyclopedia.lookUp')}
+        aria-label={t('encyclopedia.lookUp')}
+        onClick={(e) => { e.stopPropagation(); onClick(); }}
+        className="shrink-0 w-8 h-8 flex items-center justify-center bg-black/65 text-gi-muted hover:text-white cursor-pointer"
+    >
+        <PixelGlyph name="book" />
+    </button>
+);
+
+const NameBlock = ({ name, onClose, onLookUp }) => (
     <div data-card-block="name" className="flex items-start gap-2">
         <Box className="flex-1 min-w-0">
             <h3 className="ui-text-title font-bold text-white leading-tight select-text">{name}</h3>
         </Box>
+        {onLookUp && <LookUpButton onClick={onLookUp} />}
         {onClose && (
             <CloseX data-card-close onClick={(e) => { e.stopPropagation(); onClose(); }} />
         )}
@@ -112,7 +129,17 @@ const CycleBlock = ({ cycleMs, baseMs, uses }) => (
 
 const RecipeBlock = ({ block, instanceId, onChangeRecipe }) => (
     <Box data-card-block="recipe">
-        {block.recipeName && <span className="ui-text-body font-bold text-white">{block.recipeName}</span>}
+        {block.recipeName && (block.recipeId ? (
+            <button
+                type="button"
+                data-card-recipe-link={block.recipeId}
+                title={t('encyclopedia.lookUp')}
+                onClick={(e) => { e.stopPropagation(); lookUpRecipe(block.recipeId); }}
+                className="self-start ui-text-body font-bold text-white hover:underline cursor-pointer text-left"
+            >
+                {block.recipeName}
+            </button>
+        ) : <span className="ui-text-body font-bold text-white">{block.recipeName}</span>)}
         {block.change && !block.change.chosen && (
             <span className="ui-text-body" style={{ color: 'var(--color-ui-gold)' }}>
                 {block.change.empty}
@@ -122,7 +149,7 @@ const RecipeBlock = ({ block, instanceId, onChangeRecipe }) => (
             <div data-card-needs className="flex flex-col gap-1">
                 <Heading>Needs</Heading>
                 {block.needs.map(n => (
-                    <EntityRibbon key={n.itemId} kind="item" id={n.itemId} have={n.have} required={n.need} size="sm" wrap />
+                    <EntityRibbon key={n.itemId} kind="item" id={n.itemId} have={n.have} required={n.need} size="sm" wrap onInspect={lookUpRibbon} />
                 ))}
             </div>
         )}
@@ -141,6 +168,7 @@ const RecipeBlock = ({ block, instanceId, onChangeRecipe }) => (
                         title={t.inHand ? `A Hero needs ${withArticle(t.name)} in hand to work this` : `Needs a ${t.name} nearby`}
                         data-card-tool={t.typeId || t.itemId || t.tag}
                         className="bg-transparent border-white/40"
+                        onInspect={t.typeId || t.itemId ? lookUpRibbon : undefined}
                     />
                 ))}
             </div>
@@ -158,6 +186,7 @@ const RecipeBlock = ({ block, instanceId, onChangeRecipe }) => (
                         chance={m.chance != null ? `${m.chance}%` : undefined}
                         size="sm"
                         wrap
+                        onInspect={lookUpRibbon}
                     />
                 ))}
             </div>
@@ -234,7 +263,7 @@ const DropsBlock = ({ drops }) => (
     <Box data-card-block="drops">
         <Heading>Drops</Heading>
         {drops.map(d => (
-            <EntityRibbon key={d.itemId} kind="item" id={d.itemId} minQty={d.min} maxQty={d.max} chance={`${d.chance}%`} size="sm" wrap />
+            <EntityRibbon key={d.itemId} kind="item" id={d.itemId} minQty={d.min} maxQty={d.max} chance={`${d.chance}%`} size="sm" wrap onInspect={lookUpRibbon} />
         ))}
     </Box>
 );
@@ -424,7 +453,7 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
             )}
             {listing ? (
                 <div className="relative flex flex-col gap-1.5 p-1.5">
-                    <NameBlock name={model.name} onClose={onClose} />
+                    <NameBlock name={model.name} onClose={onClose} onLookUp={onClose ? () => lookUpToken(typeId) : null} />
                     <RecipeList
                         def={def}
                         instanceId={instanceId}
@@ -439,7 +468,7 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
                 <div className="relative flex flex-col gap-1.5 p-1.5">
                     {model.blocks.map(block => {
                         switch (block.id) {
-                            case CARD_BLOCK.NAME: return <NameBlock key="name" name={block.name} onClose={onClose} />;
+                            case CARD_BLOCK.NAME: return <NameBlock key="name" name={block.name} onClose={onClose} onLookUp={onClose ? () => lookUpToken(typeId) : null} />;
                             case CARD_BLOCK.HP: return <HpBlock key="hp" cur={block.cur} max={block.max} />;
                             case CARD_BLOCK.COMBAT: return <CombatBlock key="combat" {...block} />;
                             case CARD_BLOCK.WORK: return <WorkBlock key="work" {...block} />;

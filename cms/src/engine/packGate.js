@@ -13,7 +13,7 @@ import { PACE_TEXT } from '../../../src/systems/progression/ledger/pace.js';
  */
 
 /** Bumped when the gate's rules change, so a gate stamped by an older tool reads as stale. */
-export const GATE_VERSION = 1;
+export const GATE_VERSION = 2;
 
 const COLLECTIONS = ['items', 'tokens', 'effects', 'recipePools', 'starterCamp', 'skillPerks', 'planSettings'];
 
@@ -69,7 +69,9 @@ export function judge(diff, pack, { workspace = null, conflicts = [] } = {}) {
             blocks.push({ rule: 'stage-undeclared', key: `stage:${s.tier}`, message: `${stageMoveText(s)}: beyond the ±${tol} % tolerance, and the pack does not declare it.` });
             continue;
         }
-        if (intent.move !== s.direction) {
+        // A declared direction stands when the timed part moved that way, even if entries went untimed.
+        const asDeclared = intent.move === s.direction || (s.lost && intent.move === s.timedDirection);
+        if (!asDeclared) {
             blocks.push({ rule: 'stage-mismatch', key: `stage:${s.tier}`, message: `${stageMoveText(s)}: the pack declares it ${intent.move}.` });
             continue;
         }
@@ -81,6 +83,10 @@ export function judge(diff, pack, { workspace = null, conflicts = [] } = {}) {
             }
         }
         notes.push(`${stageMoveText(s)}, as declared: ${intent.note}`);
+        if (s.lost) {
+            const n = s.untimedAfter - s.untimedBefore;
+            notes.push(`${s.label}: ${n} entr${n === 1 ? 'y' : 'ies'} went untimed (${s.untimedBefore} → ${s.untimedAfter}), so part of the move may be ${n === 1 ? 'it' : 'them'} falling out of the stage time.`);
+        }
     }
 
     if (workspace) {
