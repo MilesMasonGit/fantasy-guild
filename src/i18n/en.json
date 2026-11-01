@@ -89,7 +89,6 @@
         "chance": "{chance}%",
         "firstKill": "first kill",
         "again": "already above",
-        "inspect": "Details",
         "have": "Have {count}",
         "haveNeed": "Have {have}; one {name} needs {need}",
         "collectedCount": "Collected this run: {count}",
