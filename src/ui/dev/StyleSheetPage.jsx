@@ -31,6 +31,7 @@ import { SEVERITY, PROBLEM_SPRITE } from '../components/board/problemMark.js';
 import { ROSTER_STATE_CLASS } from '../components/dock/dockHeroView.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
 import { PixelGlyph, GLYPHS, SLOT_GLYPHS } from '../components/base/PixelGlyph.jsx';
+import { SkillIcon } from '../components/base/SkillIcon.jsx';
 import { pixelRingPath } from '../components/board/pixelRing.js';
 import { itemTintStyle } from '../components/base/itemTint.js';
 import { ItemTipContent } from '../components/drawer/ItemTip.jsx';
@@ -89,6 +90,24 @@ const EncyclopediaChartDemo = () => {
         </div>
     );
 };
+/** Words on the book's parchment, as the chart draws them: counts, "or", the marks on a line. */
+const InkOnPageDemo = () => {
+    const ink = 'ui-text-ink ui-text-body font-bold tabular-nums';
+    const mark = (children, red = false) => (
+        <span className={cn(ink, 'inline-flex items-center gap-1 px-1')} style={{ background: '#e1d3a2', ...(red ? { color: 'var(--color-ui-ink-red)' } : {}) }}>{children}</span>
+    );
+    return (
+        <div className="flex flex-wrap items-center gap-6 px-4 py-3" style={{ background: '#e1d3a2' }}>
+            <span className={ink}>+5</span>
+            <span className={ink}>or</span>
+            {mark(<><SkillIcon skillId="smithing" size={16} title={null} />15</>)}
+            {mark(<><SkillIcon skillId="smithing" size={16} title={null} />16</>, true)}
+            {mark(<><PixelGlyph name="grow" scale={2} />2:30</>)}
+            {mark(<><PixelGlyph name="regrow" scale={2} />5:00</>)}
+        </div>
+    );
+};
+
 const SAMPLE_TOKEN = 'token_oak_forest';
 const itemName = (id) => getItem(id)?.name || id;
 
@@ -894,10 +913,16 @@ export const KIT_SECTIONS = [
         Demo: () => <div className="h-24"><BankSortButton onSortTab={() => {}} onSortAll={() => {}} /></div>
     },
     {
-        id: 'codex-chart', title: 'Encyclopedia chart: entries, requirement lines, +N counts, “or”', status: 'unapproved',
+        id: 'codex-chart', title: 'Encyclopedia chart: entries, marks on the lines, +N counts, “or”', status: 'unapproved',
         source: 'ChartView (the Encyclopedia’s chart page)',
-        rule: 'New, unapproved (brief 300 E3, after the owner’s look of 1 November). Drawn on the book’s parchment, read left to right, every box an entry: a dark box with the frames’ bronze 2 px line (white on hover and when it is the focus), the sprite, the name, then ×amount, have / need (red when short) and a drop’s odds; the inspect mark at its top right (hover: what you have and this run’s totals) and the collected tick under it. Above a box, in ink, what it asks of a hero: the skill icon and “Smithing 15” (red when no hero has it yet; hover names the stations), “Combat · Lv 12” for an enemy, never red. A crafted thing’s way in is its ingredients and a Station entry for its skill. On each side, “+N” in ink counts the lines not on the chart. Lines are 1 art pixel of dark ink with square corners and an arrowhead into each box; a way’s things join before the box, stacked ways carry an ink “or” between them; a way with no entry (the opening Bank) is its words alone. Drawn here with nobody in the guild, so every level shows red.',
+        rule: 'New, unapproved (brief 300 E3, the owner’s display choices of 1 November). Drawn on the book’s parchment, read left to right, every box something the player acts on: a dark box with the frames’ bronze 2 px line (white on hover and when it is the focus), the sprite, the name, then how many one of the searched entry needs (×6, red when you have fewer) and a drop’s odds; the collected tick at its bottom right. Resting the pointer on a box shows its card: what it is, what you have, this run’s totals, the one-off starts it came from. On the line into each step, in ink, what it asks of a hero: the skill icon and the level (deeper red when no hero has it; a fight shows a sword and the enemy’s level, never red; hover names the skill and the stations). A sapling, sprout or stump is no box: the line carries the grow mark and its time, or the regrow mark for a stump fed a seedling. A crafted thing’s way in is its ingredients and the station that makes it, or a Station entry of just the stations that make it (a building’s reads Foundation). On each side, “+N” in ink counts the lines not on the chart; on a box’s far side it opens that side in place: the box moves out and its other ways (or uses) stand between it and its neighbour, whose line runs through. Lines are 1 art pixel of dark ink with square corners and an arrowhead into each box; stacked ways carry an ink “or” between them. Drawn here with nobody in the guild, so every level shows red.',
         Demo: EncyclopediaChartDemo
+    },
+    {
+        id: 'codex-ink', title: 'Words on the book’s page (ink)', status: 'unapproved',
+        source: 'ui-text-ink, --color-ui-ink, --color-ui-ink-red (src/tailwind.css); the Encyclopedia’s chart',
+        rule: 'New, unapproved (the owner’s display choices of 1 November). Words drawn straight on the book’s parchment are dark ink, the body size, bold, with no outline (the game’s black outline fills ink letters in). The red meaning reads in a deeper red on paper. A mark that sits on a line has a patch of the page behind it, so the line breaks around it.',
+        Demo: InkOnPageDemo
     },
     {
         id: 'kit-controls', title: 'Buttons, switch, slider, boxes, slots', status: 'unapproved',

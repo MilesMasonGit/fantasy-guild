@@ -564,8 +564,11 @@ export const CHART_METRICS = Object.freeze({
     /** Room for a two-line name in capitals ("Fire Elemental Chief") beside the sprite. */
     nodeW: 220,
     nodeH: 60,
-    /** Between two columns: a stem count each side, the join and trunk, and a mark on the line between. */
-    gapX: 148,
+    /**
+     * Between two columns: a stem count each side, the join and trunk, and between them a mark as
+     * wide as the widest one ("grows 2:30", 73 px measured in the game).
+     */
+    gapX: 156,
     /** From a box's side to the line that joins or splits there: room for its stem count. */
     reach: 40,
     stemW: 34,
@@ -590,13 +593,15 @@ export function chartMetrics(bodyPx = 16) {
 
 /**
  * How wide a mark on a line is: the grow mark and its time, the skill icon and the level, the
- * padding. Measured in the ink words' size (`m.ink`): an icon is one size wide, a figure 0.75.
+ * padding. Measured in the ink words' size (`m.ink`) against the game's own font: an icon and its
+ * gap 1.25 sizes, a figure 0.8 (the pixel font's figures are wide), a colon 0.4.
  */
 export function markWidth(mark, m = CHART_METRICS) {
     const u = m.ink;
+    const words = (s) => [...String(s)].reduce((w, c) => w + (c === ':' ? 0.4 : /\d/.test(c) ? 0.8 : 0.7), 0) * u;
     let w = 0.5 * u;
-    if (mark.through) w += 1.25 * u + 0.75 * u * (mark.growText?.length ?? 4);
-    if (mark.req) w += 1.25 * u + 0.75 * u * String(mark.req.level).length;
+    if (mark.through) w += 1.25 * u + words(mark.growText ?? '0:00');
+    if (mark.req) w += 1.25 * u + words(mark.req.level);
     return Math.round(w);
 }
 

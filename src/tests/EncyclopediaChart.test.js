@@ -466,11 +466,23 @@ describe('where the boxes sit', () => {
         const lay = layoutChart(chart);
         const branch = lay.labels.find(l => l.id === `${chart.ins[0].id}@`);
         expect(branch.req).toMatchObject({ skill: 'smithing', level: 15 });
-        expect(branch.x).toBeGreaterThan(-pitch + half);
-        expect(branch.x + branch.w).toBeLessThan(-half);
+        expect(branch.x).toBeGreaterThan(-pitch + half + m.reach);
+        expect(branch.x + branch.w).toBeLessThan(-half - m.reach);
         const use = lay.labels.find(l => l.id === `${chart.outs[0].id}@`);
-        expect(use.x).toBeGreaterThan(half);
-        expect(use.x + use.w).toBeLessThan(pitch - half);
+        expect(use.x).toBeGreaterThan(half + m.reach);
+        expect(use.x + use.w).toBeLessThan(pitch - half - m.stemW);
+    });
+
+    it('the widest mark, a grow mark and its time, still fits between its join and the trunk', () => {
+        const forest = buildEncyclopedia(withForest());
+        const lay = layoutChart(chartOf(forest, T('token_oak_tree')), m, () => '2:30');
+        const grows = lay.labels.filter(l => l.through);
+        expect(grows.length).toBe(2);
+        for (const l of grows) {
+            expect(l.x).toBeGreaterThan(-pitch + half + m.reach);
+            expect(l.x + l.w).toBeLessThan(-half - m.reach);
+        }
+        expect(lay.labels.find(l => l.regrow)).toBeTruthy();
     });
 
     it('a stem count sits on its side of its box; the grown box holds what it grew', () => {
