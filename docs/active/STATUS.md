@@ -11,7 +11,7 @@ build green) · bench-queued · eye-check · merged.*
 |---|---|---|---|---|---|
 | Work check of `main` 6c72e7a7 (the closing session's 01:00 timer never ran) | director | `p23b` (detached) | **same work** on every scenario, identity and fidelity hold (00:40; timing verdicts ignored: agents building, old baseline) | Sun | Sun |
 | 300 E3: encyclopedia search-first flowchart in the book | engineer | `feat/encyclopedia-e3` (`e3`) | **building** | Sun | |
-| 330 W4: building nodes by terrain (mines and quarries on Stone, pits near water, Arcane near Arcane, Farmland anywhere) | builder | `feat/world-w4` (`n4`) | **building** | Sun | |
+| 330 W4: building nodes by terrain (mines and quarries on Stone, pits near water, Arcane near Arcane, Farmland anywhere) | builder | `feat/world-w4` (`n4`) | **eye-check** (waits for E3 to share one look). dd56b2b4, director gate: 7064 tests, cycles 0 dangerous, builds (game, CMS); engine work **same** (01:40). A Foundation set to build what cannot stand there holds with a red reason; "Stands near" and "Built copies slower by %" in the CMS; QA: Atlas → Lay the building test. Pack `scratchpad/pack/2026-11-01-w4-mines-on-stone.json` (gate PASS; Copper/Coal Mine and Quarry on Stone, two prospecting maps): **held** until W6 gives the maps a source (owner question below). Builder's calls taken: built = slower clocks only; near water = Shore; a build is choosable anywhere, then holds | Sun | |
 | Bench S2 gets its fights back, then both baselines retaken on a quiet machine | builder-lite | — | queued after E3 or W4 | | |
 
 Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked at).
@@ -69,6 +69,8 @@ None open.
 - **Ticket candidate (not urgent):** `npm run cms:restore` (`scripts/backport-game-to-cms.mjs`) reads `workspace.maps`, which no longer exists, and ignores the plan file.
 
 - **Ledger L5 answered (owner 2026-10-30):** the analyst's pace curve (1: 3 min, 10: 8 min, 20: 30 min, 40: 3 h, 60: 1 day, 99: 3 days), set as the default in L6; the other four as built (no check-in waits, 2 h payback, camps work 3, keep the Beer finding).
+
+- **W4, the Starter Camp and mines (ask with the next proposal):** once mines need Stone and a prospecting map, the Starter Camp (meadow, no Stone) can no longer build a Copper or Coal Mine, and its built-in Copper Mine can no longer be moved. Options: (A, rec.) the Starter Camp gets a small patch of Stone ground, and its first mine recipe needs no map; (B) the Starter Camp is exempt from the mine rules; (C) mines start on ring 1, the Starter Camp keeps only its built-in one. The pack is held until this and W6's map sources are settled.
 
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
