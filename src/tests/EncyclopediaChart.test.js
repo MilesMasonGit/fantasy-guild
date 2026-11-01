@@ -6,6 +6,7 @@ import {
 } from '../ui/components/encyclopedia/encyclopediaChart.js';
 import { HOW, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
 import { ledgerWorkspace, withIronChest } from './fixtures/ledgerWorld.js';
+import en from '../i18n/en.json';
 
 /**
  * ⭐ The Encyclopedia's flowchart (brief 300 E3): an entry's ways in come from the left as stacked
@@ -179,6 +180,13 @@ describe('the shipped content', () => {
 
     it('Iron Ore: its vein first', () => {
         expect(waysIn(book, I('item_iron_ore'))[0].from).toBe(T('token_iron_ore_vein'));
+    });
+
+    it('every chip, in and out of every entry, has its words in the strings file', () => {
+        const words = new Set();
+        for (const key of book.entries.keys()) for (const w of [...waysIn(book, key), ...waysOut(book, key)]) words.add(w.words);
+        const missing = [...words].filter(w => typeof en.encyclopedia.chip[w] !== 'string');
+        expect(missing).toEqual([]);
     });
 });
 
