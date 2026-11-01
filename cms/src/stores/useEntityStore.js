@@ -1126,6 +1126,11 @@ export const useEntityStore = create(
                     delete next.statements;
                     // An empty "Stands on" means anywhere dry, which is what no list says too.
                     if (Array.isArray(next.standsOn) && next.standsOn.length === 0) delete next.standsOn;
+                    // A "Stands near" row left blank names nothing; none left means no such rule.
+                    if (Array.isArray(next.standsNear)) {
+                        const near = next.standsNear.filter((id) => typeof id === 'string' && id);
+                        if (near.length) next.standsNear = near; else delete next.standsNear;
+                    }
                     finalTokens[tokenId] = next;
                 }
 

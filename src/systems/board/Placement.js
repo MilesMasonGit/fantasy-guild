@@ -7,6 +7,7 @@ import { clampToMat, matW, matH } from '../../config/matGeometry.js';
 import { getTokenType, tokenName, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as MatPlacement from './MatPlacement.js';
+import * as SiteRules from './SiteRules.js';
 import * as MatCap from './MatCap.js';
 import * as StationRecipe from './StationRecipe.js';
 import * as Landmarks from './Landmarks.js';
@@ -109,7 +110,9 @@ export function centreOfBoard() {
 
 /** Flash the refused-drop mark at a point, and refuse. */
 function refuseWithAlert(point, typeId, decision) {
-    const vName = tokenName(decision.violatingTypeId) || tokenName(typeId) || 'Token';
+    // ⚠️ `tokenName` never returns empty, so a refusal naming no rule-breaker (the ground's) must
+    // not ask it first, or every such title reads "Unknown Token".
+    const vName = tokenName(decision.violatingTypeId || typeId);
     EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
         ...point,
         severity: 'disallow',
@@ -164,7 +167,8 @@ export function placeTokenAt(instance, point, options = {}) {
     const decision = MatPlacement.dropAt(instance, at, {
         excludeId,
         plan: { id: instance.id },
-        noRestock: !!options.noRestock
+        noRestock: !!options.noRestock,
+        siteOf: SiteRules.siteTypeOf(instance)
     });
 
     if (decision.status === 'full') return refuseWithAlert(at, instance.typeId, decision);
