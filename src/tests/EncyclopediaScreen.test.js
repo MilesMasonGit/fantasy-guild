@@ -101,9 +101,9 @@ describe('the chart', () => {
         expect(q(chief, '[data-codex-chance]').textContent).toMatch(/^\d+(\.\d)?%$/);
         const branch = chief.getAttribute('data-codex-node').slice(0, -1);
         expect([markOf(container, `${branch}@`).getAttribute('data-codex-req'), markOf(container, `${branch}@`).textContent]).toEqual(['combat', '25']);
-        // A use shows a count of its lines not on screen: the pickaxe's station.
+        // A use shows a count of its lines not on screen, an arrow tab pointing that way: the pickaxe's station.
         const pick = nodeOf(container, itemKey('item_iron_pickaxe'), 'out');
-        expect(q(container, `[data-codex-stem="in"][data-codex-stem-of="${pick.getAttribute('data-codex-node')}"]`).textContent).toMatch(/^\+\d+$/);
+        expect(q(container, `[data-codex-stem="in"][data-codex-stem-of="${pick.getAttribute('data-codex-node')}"]`).textContent).toMatch(/^‹\d+$/);
         // No magnifier, no kind word, no lone count on a use.
         expect(q(container, '[data-codex-inspect]')).toBeNull();
         expect(pick.textContent).toBe('Iron Pickaxe');
@@ -214,6 +214,60 @@ describe('the chart', () => {
         const { container } = open();
         fireEvent.click(q(container, '[data-codex-node][data-codex-side="in"]'));
         expect(container.textContent).not.toMatch(/\b(tier|wedge|cell|plane)\b/i);
+    });
+});
+
+describe('after the owner\'s third look', () => {
+    it('the lines carry their own colour, and their drawing covers the whole chart', () => {
+        lookUp(itemKey('item_iron_ingot'));
+        const { container } = open();
+        const svg = q(container, '[data-codex-links]');
+        expect(Number(svg.getAttribute('width'))).toBeGreaterThan(500);
+        expect(Number(svg.getAttribute('height'))).toBeGreaterThan(200);
+        expect(svg.getAttribute('viewBox')).toMatch(/^-?\d+ -?\d+ \d+ \d+$/);
+        const drawn = qa(container, '[data-codex-links] polyline, [data-codex-links] polygon');
+        expect(drawn.length).toBeGreaterThan(5);
+        for (const el of drawn) {
+            expect(`${el.getAttribute('stroke') ?? ''} ${el.getAttribute('fill') ?? ''} ${el.getAttribute('style') ?? ''}`).not.toMatch(/var\(/);
+        }
+        expect(qa(container, '[data-codex-links] polyline').every(el => /^#[0-9a-f]{6}$/i.test(el.getAttribute('stroke')))).toBe(true);
+    });
+
+    it('no "or": each way into the ingot sits on its own faint band', () => {
+        lookUp(itemKey('item_iron_ingot'));
+        const { container } = open();
+        expect(q(container, '[data-codex-or]')).toBeNull();
+        expect(container.textContent).not.toMatch(/\bor\b/i);
+        expect(qa(container, '[data-codex-band]').length).toBe(3);
+    });
+
+    it('a count beside a box is an arrow tab pointing the way: ‹ on its left, › on its right', () => {
+        lookUp(itemKey('item_iron_ingot'));
+        const { container } = open();
+        expect(q(container, '[data-codex-stem-of="s"][data-codex-stem="out"]').textContent).toMatch(/^›\d+$/);
+        const ore = nodeOf(container, itemKey('item_iron_ore'), 'in').getAttribute('data-codex-node');
+        expect(q(container, `[data-codex-stem-of="${ore}"][data-codex-stem="in"]`).textContent).toMatch(/^‹\d+$/);
+        expect(container.textContent).not.toMatch(/\+\d/);
+    });
+
+    it('resting on a box lights its lines up to the start and dims the rest; leaving clears it', () => {
+        lookUp(itemKey('item_iron_ingot'));
+        const { container } = open();
+        fireEvent.click(nodeOf(container, itemKey('item_iron_ore'), 'in'));
+        const vein = nodeOf(container, tokenKey('token_iron_ore_vein'), 'in');
+        act(() => { fireEvent.pointerEnter(vein, { clientX: 10, clientY: 10, pointerType: 'mouse', buttons: 0 }); });
+        const dim = (el) => el.getAttribute('data-dim') === 'true';
+        expect(dim(vein)).toBe(false);
+        expect(dim(nodeOf(container, itemKey('item_iron_ore'), 'in'))).toBe(false);
+        expect(dim(q(container, '[data-codex-node="s"]'))).toBe(false);
+        const coal = nodeOf(container, itemKey('item_coal'), 'in');
+        expect(dim(coal)).toBe(true);
+        expect(dim(nodeOf(container, itemKey('item_iron_pickaxe'), 'out'))).toBe(true);
+        expect(q(container, `[data-codex-link="${vein.getAttribute('data-codex-node')}>"]`).getAttribute('data-lit')).toBe('true');
+        expect(q(container, `[data-codex-link="${coal.getAttribute('data-codex-node')}>"]`).getAttribute('data-lit')).toBeNull();
+        expect(q(container, `[data-codex-link="${coal.getAttribute('data-codex-node')}>"]`).getAttribute('data-dim')).toBe('true');
+        act(() => { fireEvent.pointerLeave(vein, { clientX: 10, clientY: 10, pointerType: 'mouse' }); });
+        expect(qa(container, '[data-dim="true"]')).toHaveLength(0);
     });
 });
 

@@ -81,7 +81,6 @@
         "backToStartTip": "Back to {name}",
         "madeAt": "Made at",
         "madeAtNames": "Made at {names}",
-        "or": "or",
         "level": "{skill} {level}",
         "combatLevel": "Combat · Lv {level}",
         "combatTip": "An enemy of level {level}",

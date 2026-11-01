@@ -3,6 +3,7 @@ import { buildEncyclopedia, encyclopedia, KIND } from '../ui/components/encyclop
 import {
     waysIn, waysOut, madeBy, chartOf, nodesOf, findNode, needText, layoutChart, grownBox, keepInSight, centreOn, clampPan,
     requirementOf, wayInRequirement, wayOutRequirement, entryOfKey, isGrowingStage, oneOffWays, within, CHART_METRICS,
+    pathIds, litLinks, litLabels, tabWidth,
     chartMetrics, SHOWN_AT_FIRST, ROOT, STATIONS
 } from '../ui/components/encyclopedia/encyclopediaChart.js';
 import { HOW, COMBAT, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
@@ -435,17 +436,42 @@ describe('where the boxes sit', () => {
         noOverlaps(lay);
     });
 
-    it('"or" branches stack top to bottom in their order, an "or" between each', () => {
+    it('stacked ways each sit on their own faint band, top to bottom in order; no "or" words', () => {
         const { chart, ore } = bigChart();
         const lay = layoutChart(chart);
         const branches = findNode(chart, ore).ins;
         expect(branches).toHaveLength(3);
         const ys = branches.map(b => lay.nodes.find(n => n.id === b.from.id).y);
         expect([...ys].sort((a, b) => a - b)).toEqual(ys);
-        const ors = lay.ors.filter(o => branches.some(b => o.id === `${b.id}or`));
-        expect(ors).toHaveLength(2);
-        expect(ors[0].y).toBeGreaterThan(ys[0]);
-        expect(ors[0].y).toBeLessThan(ys[1]);
+        expect(lay.ors).toBeUndefined();
+        const oreBox = lay.nodes.find(n => n.id === ore);
+        const bands = branches.map(b => lay.bands.find(x => x.id === `${b.id}#`));
+        bands.forEach((band, i) => {
+            const box = lay.nodes.find(n => n.id === branches[i].from.id);
+            expect([band.x, band.y, band.w, band.h].every(Number.isInteger)).toBe(true);
+            expect(band.x).toBeLessThan(box.x);
+            expect(band.y).toBeLessThan(box.y);
+            expect(band.y + band.h).toBeGreaterThan(box.y + box.h);
+            // It reaches its mark on the line, and stops short of the trunk the ways share.
+            const mark = lay.labels.find(l => l.id === `${branches[i].id}@`);
+            expect(band.x + band.w).toBeGreaterThanOrEqual(mark.x + mark.w);
+            expect(band.x + band.w).toBeLessThanOrEqual(oreBox.x - m.reach);
+        });
+        for (let i = 1; i < bands.length; i++) expect(bands[i].y).toBeGreaterThan(bands[i - 1].y + bands[i - 1].h);
+        // One way in: nothing to tell apart, no band.
+        expect(lay.bands.some(b => b.id === `${chart.ins[0].id}#`)).toBe(false);
+    });
+
+    it('resting on a box lights its lines up to the start, and no others', () => {
+        const { chart, ore, vein, coal } = bigChart();
+        const lay = layoutChart(chart);
+        expect(pathIds(vein)).toEqual([vein, ore, ROOT]);
+        expect(pathIds(ROOT)).toEqual([ROOT]);
+        const veinWay = findNode(chart, ore).ins[0];
+        expect(litLinks(lay, vein)).toEqual(new Set([`${vein}>`, `${veinWay.id}>`, `${ore}>`, `${chart.ins[0].id}>`]));
+        expect(litLinks(lay, vein).has(`${coal}>`)).toBe(false);
+        expect(litLabels(lay, vein)).toEqual(new Set([`${veinWay.id}@`, `${chart.ins[0].id}@`]));
+        expect(litLinks(lay, ROOT).size).toBe(0);
     });
 
     it('every line ends on the middle of a box\'s side, or on its branch\'s join', () => {
@@ -470,7 +496,7 @@ describe('where the boxes sit', () => {
         expect(branch.x + branch.w).toBeLessThan(-half - m.reach);
         const use = lay.labels.find(l => l.id === `${chart.outs[0].id}@`);
         expect(use.x).toBeGreaterThan(half + m.reach);
-        expect(use.x + use.w).toBeLessThan(pitch - half - m.stemW);
+        expect(use.x + use.w).toBeLessThan(pitch - half - tabWidth(99, m));
     });
 
     it('the widest mark, a grow mark and its time, still fits between its join and the trunk', () => {
@@ -524,6 +550,10 @@ describe('where the boxes sit', () => {
         // The use's own mark is on the pickaxe's branch, not twice.
         expect(lay.labels.find(l => l.id === `${use.id}@`)).toBeUndefined();
         expect(lay.labels.find(l => l.id === `${open.ins[0].id}@`).req).toMatchObject({ skill: 'smithing', level: 16 });
+        // Resting on the pickaxe's Smithy lights the way to the start, through the line that runs through.
+        const lit = litLinks(lay, open.ins[0].from.id);
+        expect([`${open.ins[0].from.id}>`, `${open.ins[0].id}>`, `${pass.id}>`, `${use.id}>`].every(id => lit.has(id))).toBe(true);
+        expect(lit.has(`${open.ins[0].inputs.find(n => !n.pass).id}>`)).toBe(false);
     });
 
     it('an ingredient\'s far side opened: it moves left, its other uses between it and the start, its line runs through', () => {

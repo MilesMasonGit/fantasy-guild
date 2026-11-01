@@ -565,20 +565,21 @@ export const CHART_METRICS = Object.freeze({
     nodeW: 220,
     nodeH: 60,
     /**
-     * Between two columns: a stem count each side, the join and trunk, and between them a mark as
+     * Between two columns: an arrow tab each side, the join and trunk, and between them a mark as
      * wide as the widest one ("grows 2:30", 73 px measured in the game).
      */
-    gapX: 156,
-    /** From a box's side to the line that joins or splits there: room for its stem count. */
-    reach: 40,
-    stemW: 34,
+    gapX: 172,
+    /** From a box's side to the line that joins or splits there: room for its arrow tab ("›30"). */
+    reach: 48,
     stemH: 20,
-    /** A mark on a line: its height, and the ink words' size it is measured in. */
+    /** A mark on a line: its height, and the ink words' size it and the tabs are measured in. */
     markH: 20,
     ink: 16,
     rowGap: 8,
-    /** Between two "or" branches: room for the word. */
+    /** Between two ways in: the plain page between their bands. */
     orGap: 20,
+    /** A way's band reaches this far round its boxes. */
+    bandPad: 4,
     /** Where a line that is no way in meets its box: this far down its side. */
     highEntry: 14
 });
@@ -591,6 +592,9 @@ export function chartMetrics(bodyPx = 16) {
     return out;
 }
 
+/** Ink words' widths in the game's font, in `u` (the words' size): a figure 0.8, a colon 0.4, else 0.7. */
+const wordsWidth = (s, u) => [...String(s)].reduce((w, c) => w + (c === ':' ? 0.4 : /\d/.test(c) ? 0.8 : 0.7), 0) * u;
+
 /**
  * How wide a mark on a line is: the grow mark and its time, the skill icon and the level, the
  * padding. Measured in the ink words' size (`m.ink`) against the game's own font: an icon and its
@@ -598,26 +602,57 @@ export function chartMetrics(bodyPx = 16) {
  */
 export function markWidth(mark, m = CHART_METRICS) {
     const u = m.ink;
-    const words = (s) => [...String(s)].reduce((w, c) => w + (c === ':' ? 0.4 : /\d/.test(c) ? 0.8 : 0.7), 0) * u;
     let w = 0.5 * u;
-    if (mark.through) w += 1.25 * u + words(mark.growText ?? '0:00');
-    if (mark.req) w += 1.25 * u + words(mark.req.level);
+    if (mark.through) w += 1.25 * u + wordsWidth(mark.growText ?? '0:00', u);
+    if (mark.req) w += 1.25 * u + wordsWidth(mark.req.level, u);
     return Math.round(w);
 }
 
+/** How wide the arrow tab with `count` inside is: its arrow, the figures, padding and its outer edge. */
+export function tabWidth(count, m = CHART_METRICS) {
+    const u = m.ink;
+    return Math.round(0.5 * u + 0.5 * u + wordsWidth(count, u) + 2);
+}
+
+/** A node id and the ids above it, to the start: `s<0.1<0f` → [`s<0.1<0f`, `s<0.1`, `s`]. */
+export function pathIds(id) {
+    const out = [id];
+    let at = id;
+    for (;;) {
+        const cut = Math.max(at.lastIndexOf('<'), at.lastIndexOf('>'));
+        if (cut <= 0) return out;
+        at = at.slice(0, cut);
+        out.push(at);
+    }
+}
+
+const parentOf = (id) => pathIds(id)[1] ?? null;
+const onPath = (items, id) => {
+    const path = new Set(pathIds(id));
+    return new Set(items.filter(x => (x.pairs || []).some(([child, parent]) => path.has(child) && path.has(parent))).map(x => x.id));
+};
+
+/** The lines that carry `id` to the start: each joins two boxes on its path. */
+export const litLinks = (layout, id) => onPath(layout.links, id);
+
+/** The marks on those lines. */
+export const litLabels = (layout, id) => onPath(layout.labels, id);
+
 /**
  * Where every box of a chart sits, in pixels around the start (its box centred on 0, 0):
- * `{ nodes: [{ id, node, x, y, w, h }], captions, links: [{ id, points: [[x, y], …], into }],
- * ors: [{ id, x, y }], stems: [{ id, node, side, count, x, y, w, h }], labels: [{ id, side, x, y, w,
- * h, req, through, regrow }], box }`.
+ * `{ nodes: [{ id, node, x, y, w, h }], captions, links: [{ id, points: [[x, y], …], into, pairs }],
+ * bands: [{ id, x, y, w, h }], stems: [{ id, node, side, count, x, y, w, h }], labels: [{ id, side,
+ * x, y, w, h, req, through, regrow, pairs }], box }`. A line's or mark's `pairs` are the boxes it
+ * joins, `[child, parent]` ids: on the path from a box to the start when both are.
  *
  * Columns are `nodeW + gapX` apart. Each node stands in the middle of the row band its sides take;
- * branches stack top to bottom in order, an "or" between each. A box's left side takes as many
- * columns as its deepest way in, its right side as its deepest use; a far side opened pushes the box
- * out by its width, so a use with its ways in open stands further right, its things between it and
- * its neighbour, and the neighbour's line runs through the pass's band to the branch it joins.
- * Lines are square-cornered; a mark sits on its own line (a branch's between its join and the trunk,
- * a use's just past the trunk); `growText(mark)` gives a grow mark's words, for its width.
+ * ways in stack top to bottom in order, each on a faint band of its own when there are several. A
+ * box's left side takes as many columns as its deepest way in, its right side as its deepest use; a
+ * far side opened pushes the box out by its width, so a use with its ways in open stands further
+ * right, its things between it and its neighbour, and the neighbour's line runs through the pass's
+ * row to the branch it joins. Lines are square-cornered; a mark sits on its own line (a branch's
+ * between its join and the trunk, a use's just past the trunk); `growText(mark)` gives a grow mark's
+ * words, for its width.
  */
 export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
     const pitch = m.nodeW + m.gapX;
@@ -627,7 +662,7 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
     const nodes = [];
     const captions = [];
     const links = [];
-    const ors = [];
+    const bands = [];
     const stems = [];
     const labels = [];
     const r = (v) => Math.round(v);
@@ -676,20 +711,26 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
     const entry = new Map();
     const exit = new Map();
 
-    const mark = (id, side, x, y, req, through, regrow, anchor) => {
+    const mark = (id, side, x, y, req, through, regrow, pairs, anchor, onBand = false) => {
         if (!req && !through) return;
         const label = { id, side, req: req ?? null, through: through ?? null, regrow: !!regrow };
         label.growText = through ? growText(label) : null;
         const w = markWidth(label, m);
-        labels.push({ ...label, x: r(anchor === 'start' ? x : x - w / 2), y: r(y - m.markH / 2), w, h: m.markH });
+        labels.push({ ...label, pairs, onBand, x: r(anchor === 'start' ? x : x - w / 2), y: r(y - m.markH / 2), w, h: m.markH });
     };
 
     const place = (node, col, cy) => {
         const box = { id: node.id, node, x: r(leftEdge(col)), y: r(cy - slot / 2), w: m.nodeW, h: m.nodeH };
         nodes.push(box);
         const sy = box.y + box.h - m.stemH;
-        if (node.hiddenIn) stems.push({ id: `${node.id}|in`, node, side: 'in', count: node.hiddenIn, x: box.x - m.stemW, y: sy, w: m.stemW, h: m.stemH });
-        if (node.hiddenOut) stems.push({ id: `${node.id}|out`, node, side: 'out', count: node.hiddenOut, x: box.x + box.w, y: sy, w: m.stemW, h: m.stemH });
+        if (node.hiddenIn) {
+            const w = tabWidth(node.hiddenIn, m);
+            stems.push({ id: `${node.id}|in`, node, side: 'in', count: node.hiddenIn, x: box.x - w, y: sy, w, h: m.stemH });
+        }
+        if (node.hiddenOut) {
+            const w = tabWidth(node.hiddenOut, m);
+            stems.push({ id: `${node.id}|out`, node, side: 'out', count: node.hiddenOut, x: box.x + box.w, y: sy, w, h: m.stemH });
+        }
         placeLeft(node, col, cy, box);
         placeRight(node, col, cy, box);
     };
@@ -702,24 +743,29 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
         const itemsRight = rightEdge(col - 1);
         const joinX = itemsRight + reach;
         const blockLeft = leftEdge(col - colsL(node));
+        // The line through a pass joins this node to its own neighbour, the one it opened toward.
+        const passPair = [node.id, parentOf(node.id)];
         let top = cy - leftH(node) / 2;
         if (bandIn(node)) {
             // The neighbour is no way in: its line runs above them and meets the box high on its side.
             const y = r(top + slot / 2);
             const high = box.y + m.highEntry;
-            links.push({ id: `${node.passBand.id}>`, into: node.id, points: [[blockLeft, y], [intoX - 8, y], [intoX - 8, high], [intoX, high]] });
+            links.push({ id: `${node.passBand.id}>`, into: node.id, pairs: [passPair], points: [[blockLeft, y], [intoX - 8, y], [intoX - 8, high], [intoX, high]] });
             entry.set(node.id, { y, into: node.passBand.id });
             top += slot + m.rowGap;
         }
-        node.ins.forEach((b, i) => {
+        const several = node.ins.length > 1;
+        node.ins.forEach((b) => {
             const h = branchH(b);
             const bc = top + h / 2;
             const items = itemsOf(b);
+            const pairOf = (it) => (isPass(it) ? passPair : [it.id, node.id]);
             let wayY;
+            let leftmost = col - 1;
             if (!items.length) {
                 wayY = r(bc);
                 captions.push({ id: b.id, words: b.way.caption, label: false, x: r(leftEdge(col - 1)), y: r(bc - slot / 2), w: m.nodeW, h: m.nodeH });
-                links.push({ id: `${b.id}~`, into: b.id, points: [[itemsRight, wayY], [joinX, wayY]] });
+                links.push({ id: `${b.id}~`, into: b.id, pairs: [], points: [[itemsRight, wayY], [joinX, wayY]] });
             } else {
                 let itemTop = bc - stackH(items, m.rowGap, itemH) / 2;
                 const ends = [];
@@ -730,25 +776,31 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
                         const y = r(ic);
                         ends.push([blockLeft, y]);
                         entry.set(node.id, { y, into: it.id });
+                        leftmost = Math.min(leftmost, col - colsL(node));
                     } else {
-                        place(it, col - 1 - colsR(it), ic);
+                        const at = col - 1 - colsR(it);
+                        place(it, at, ic);
                         ends.push([itemsRight, exit.get(it.id) ?? r(ic)]);
+                        leftmost = Math.min(leftmost, at - colsL(it));
                     }
                     itemTop += ih + m.rowGap;
                 }
                 wayY = r((ends[0][1] + ends[ends.length - 1][1]) / 2);
                 items.forEach((it, j) => {
-                    links.push({ id: `${it.id}>`, into: b.id, points: [ends[j], [joinX, ends[j][1]], [joinX, wayY]] });
+                    links.push({ id: `${it.id}>`, into: b.id, pairs: [pairOf(it)], points: [ends[j], [joinX, ends[j][1]], [joinX, wayY]] });
                 });
                 if (b.way.caption) captions.push({ id: `${b.id}~`, words: b.way.caption, label: true, x: r((joinX + trunkX) / 2), y: wayY - 10, w: 0, h: 0 });
             }
-            links.push({ id: `${b.id}>`, into: node.id, points: [[joinX, wayY], [trunkX, wayY], [trunkX, a], [intoX, a]] });
-            mark(`${b.id}@`, 'in', (joinX + trunkX) / 2, wayY, b.req, b.through, b.way.regrow);
-            top += h;
-            if (i < node.ins.length - 1) {
-                ors.push({ id: `${b.id}or`, x: joinX, y: r(top + m.orGap / 2) });
-                top += m.orGap;
+            const pairs = items.map(pairOf);
+            links.push({ id: `${b.id}>`, into: node.id, pairs, points: [[joinX, wayY], [trunkX, wayY], [trunkX, a], [intoX, a]] });
+            mark(`${b.id}@`, 'in', (joinX + trunkX) / 2, wayY, b.req, b.through, b.way.regrow, pairs, 'centre', several);
+            if (several) {
+                // Each way on its own faint band: its boxes, their tabs, its line and mark; the trunk stays bare.
+                const x0 = r(leftEdge(leftmost) - reach + m.bandPad);
+                const y0 = r(top - m.bandPad);
+                bands.push({ id: `${b.id}#`, x: x0, y: y0, w: r(trunkX - 2) - x0, h: r(top + h + m.bandPad) - y0 });
             }
+            top += h + m.orGap;
         });
     };
 
@@ -759,12 +811,13 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
         const trunkX = fromX + reach;
         const usesLeft = leftEdge(col + 1);
         const blockRight = rightEdge(col + colsR(node));
+        const passPair = [node.id, parentOf(node.id)];
         let top = cy - rightH(node) / 2;
         if (bandOut(node)) {
             // The neighbour is no use of it: its line leaves high on its side and runs above them.
             const y = r(top + slot / 2);
             const high = box.y + m.highEntry;
-            links.push({ id: `${node.passBand.id}>`, into: node.passBand.id, points: [[fromX, high], [fromX + 8, high], [fromX + 8, y], [blockRight, y]] });
+            links.push({ id: `${node.passBand.id}>`, into: node.passBand.id, pairs: [passPair], points: [[fromX, high], [fromX + 8, high], [fromX + 8, y], [blockRight, y]] });
             exit.set(node.id, y);
             top += slot + m.rowGap;
         }
@@ -773,16 +826,17 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
             const uc = top + h / 2;
             if (isPass(u.node)) {
                 const y = r(uc);
-                links.push({ id: `${u.id}>`, into: u.node.id, points: [[fromX, a], [trunkX, a], [trunkX, y], [blockRight, y]] });
+                links.push({ id: `${u.id}>`, into: u.node.id, pairs: [passPair], points: [[fromX, a], [trunkX, a], [trunkX, y], [blockRight, y]] });
                 exit.set(node.id, y);
             } else {
                 place(u.node, col + 1 + colsL(u.node), uc);
                 const into = entry.get(u.node.id);
                 const y = into?.y ?? r(uc);
-                links.push({ id: `${u.id}>`, into: into?.into ?? u.node.id, points: [[fromX, a], [trunkX, a], [trunkX, y], [usesLeft, y]] });
+                const pairs = [[u.node.id, node.id]];
+                links.push({ id: `${u.id}>`, into: into?.into ?? u.node.id, pairs, points: [[fromX, a], [trunkX, a], [trunkX, y], [usesLeft, y]] });
                 // An opened far side carries this step's mark on its own branch.
                 const onBranch = !!into && !u.node.passBand;
-                if (!onBranch) mark(`${u.id}@`, 'out', trunkX + 6, y, u.req, u.through, false, 'start');
+                if (!onBranch) mark(`${u.id}@`, 'out', trunkX + 6, y, u.req, u.through, false, pairs, 'start');
             }
             top += h + m.rowGap;
         }
@@ -799,7 +853,9 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
     for (const c of captions) if (!c.label) grow(c.x, c.y, c.x + c.w, c.y + c.h);
     for (const s of stems) grow(s.x, s.y, s.x + s.w, s.y + s.h);
     for (const l of labels) grow(l.x, l.y, l.x + l.w, l.y + l.h);
-    return { nodes, captions, links, ors, stems, labels, box };
+    for (const b of bands) grow(b.x, b.y, b.x + b.w, b.y + b.h);
+    for (const l of links) for (const [x, y] of l.points) grow(x, y, x, y);
+    return { nodes, captions, links, bands, stems, labels, box };
 }
 
 /** The box a node and everything grown from it take, from a layout. */
