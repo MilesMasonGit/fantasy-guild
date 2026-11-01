@@ -60,9 +60,9 @@ function sortByName(list) {
  *   byKind: Record<string, object[]>,
  *   entryOf(key): object|null,
  *   kindOfKey(key): string|null,
- *   sourcesOf(key): {how, via, chance, firstKill, inputs}[],
- *   usesOf(key): {how, by, inputs?}[],
- *   givesOf(key): {how, key, chance, firstKill}[],
+ *   sourcesOf(key): {how, via, chance, firstKill, perCycle, inputs, gates, oneOff}[],
+ *   usesOf(key): {how, by, quantity?, nearby?}[],
+ *   givesOf(key): {how, key, chance, firstKill, perCycle, gates}[],
  *   treeOf(itemId): object|null,
  *   search(term): object[]
  * }}
@@ -114,9 +114,14 @@ export function buildEncyclopedia(content = gameContent()) {
             if (!entries.has(give.key)) continue;
             push(sources, give.key, {
                 how: rule.how, via: rule.via, chance: give.chance, firstKill: give.firstKill === true,
-                inputs: rule.how === HOW.SHOP ? rule.inputs : []
+                perCycle: give.perCycle ?? null, inputs: rule.inputs, gates: rule.gates, oneOff: rule.oneOff === true
             }, r => `${r.how}|${r.via}`);
-            if (rule.via) push(gives, rule.via, { how: rule.how, key: give.key, chance: give.chance, firstKill: give.firstKill === true }, r => `${r.how}|${r.key}`);
+            if (rule.via) {
+                push(gives, rule.via, {
+                    how: rule.how, key: give.key, chance: give.chance, firstKill: give.firstKill === true,
+                    perCycle: give.perCycle ?? null, gates: rule.gates
+                }, r => `${r.how}|${r.key}`);
+            }
         }
         if (SPENT_BY.has(rule.how)) {
             const by = rule.how === HOW.SHOP || rule.how === HOW.UPCYCLE ? rule.gives[0]?.key : rule.via;
@@ -145,6 +150,8 @@ export function buildEncyclopedia(content = gameContent()) {
     return {
         entries,
         byKind,
+        /** When `key` is first reachable, for ordering only: a tier is never shown. */
+        reachOf: (key) => ledger.reach.get(key) ?? null,
         entryOf: (key) => entries.get(key) ?? null,
         kindOfKey: (key) => entries.get(key)?.kind ?? null,
         nameOf: (key) => entries.get(key)?.name ?? world.names.get(key) ?? (key ? parseKey(key).id : ''),

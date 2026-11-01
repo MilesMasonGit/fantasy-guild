@@ -63,3 +63,14 @@ export function collectedOf(state = GameState.state) {
         recipes: new Set(keys(c.recipesMade))
     };
 }
+
+/**
+ * The items this run collected last, newest first, at most `count`: `collection.discoveredItems`
+ * keeps the order they first came in (an object keeps its text keys in the order written, through
+ * a save and a load). Reads only.
+ */
+export function recentlyCollectedItems(state = GameState.state, count = 8) {
+    const found = state?.collection?.discoveredItems;
+    if (!found || typeof found !== 'object') return [];
+    return keys(found).reverse().slice(0, Math.max(0, count));
+}
