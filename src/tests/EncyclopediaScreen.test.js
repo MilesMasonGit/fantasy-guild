@@ -216,6 +216,19 @@ describe('after the owner\'s look of 1 November', () => {
         expect(focused(container)).toBe(itemKey('item_iron_ore'));
     });
 
+    it('the +N count on the side a box grows shows the rest; the far side only counts', () => {
+        lookUp(itemKey('item_iron_ingot'));
+        const { container } = open();
+        const stem = q(container, '[data-codex-stem-of="s"][data-codex-stem="out"]');
+        const hidden = Number(stem.textContent.slice(1));
+        const shown = qa(container, '[data-codex-side="out"]').length;
+        fireEvent.click(stem);
+        expect(qa(container, '[data-codex-side="out"]').length).toBe(shown + hidden);
+        expect(q(container, '[data-codex-stem-of="s"][data-codex-stem="out"]')).toBeNull();
+        const pick = nodeOf(container, itemKey('item_iron_pickaxe'), 'out').getAttribute('data-codex-node');
+        expect(q(container, `[data-codex-stem-of="${pick}"][data-codex-stem="in"]`).tagName).toBe('SPAN');
+    });
+
     it('an item toast clicked while the book is open jumps to its chart; with it shut, the click still pins', () => {
         act(() => {
             ItemStubs.recordFlow('item_coal', { added: 2, removed: 0 });

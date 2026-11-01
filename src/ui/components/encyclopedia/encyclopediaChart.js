@@ -435,7 +435,8 @@ export const needText = (need) => (Number.isFinite(need) ? Math.max(1, Math.ceil
  * the Text size setting so the words keep their room.
  */
 export const CHART_METRICS = Object.freeze({
-    nodeW: 192,
+    /** Room for a two-line name in capitals ("Fire Elemental Chief") beside the sprite and the inspect mark. */
+    nodeW: 220,
     nodeH: 60,
     /** The skill-and-level line above a box. */
     reqH: 20,

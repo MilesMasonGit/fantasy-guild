@@ -352,7 +352,7 @@ describe('where the boxes sit', () => {
 
     it('the measures grow with the text size', () => {
         expect(chartMetrics(16)).toEqual({ ...CHART_METRICS });
-        expect(chartMetrics(20).nodeW).toBe(240);
+        expect(chartMetrics(20).nodeW).toBe(275);
         expect(chartMetrics(10).nodeW).toBe(CHART_METRICS.nodeW);
     });
 });

@@ -61,31 +61,30 @@ const ART_PX = 2;
 
 const SAMPLE_ITEMS = ['item_oak_wood', 'item_copper_ore', 'item_copper_ingot'];
 
-/** The Encyclopedia's chart, live, on a strip of parchment: Copper Ingot with its first ingredient grown. */
+/** The Encyclopedia's chart, live, on a strip of parchment: Copper Ingot with its first ingredient open. */
 const EncyclopediaChartDemo = () => {
     const [state] = useState(() => {
         const book = encyclopedia();
         const start = 'item:item_copper_ingot';
-        const first = chartOf(book, start).ins?.[0]?.inputs?.[0]?.id;
+        const first = chartOf(book, start).ins?.find(b => b.inputs.length)?.inputs?.[0]?.id;
         const grown = new Set(first ? [first] : []);
         return { book, chart: chartOf(book, start, { grown }), focus: first || ROOT };
     });
     if (!state.book.entryOf('item:item_copper_ingot')) return <span className="text-xs text-gi-muted">No Copper Ingot in the content.</span>;
     return (
-        <div className="relative overflow-hidden" style={{ width: 800, height: 300, background: '#dcc79a' }}>
+        <div className="relative overflow-hidden" style={{ width: 800, height: 360, background: '#dcc79a' }}>
             <ChartView
                 book={state.book}
                 chart={state.chart}
                 metrics={CHART_METRICS}
-                rect={{ left: 0, top: 0, width: 800, height: 300 }}
+                rect={{ left: 0, top: 0, width: 800, height: 360 }}
                 focusAt={state.focus}
                 glide={null}
                 got={null}
                 heroes={[]}
                 startName="Copper Ingot"
                 onNode={() => {}}
-                onChip={() => {}}
-                onMore={() => {}}
+                onStem={() => {}}
             />
         </div>
     );
@@ -895,9 +894,9 @@ export const KIT_SECTIONS = [
         Demo: () => <div className="h-24"><BankSortButton onSortTab={() => {}} onSortAll={() => {}} /></div>
     },
     {
-        id: 'codex-chart', title: 'Encyclopedia chart: nodes, link chips, “or”', status: 'unapproved',
+        id: 'codex-chart', title: 'Encyclopedia chart: entries, requirement lines, +N counts, “or”', status: 'unapproved',
         source: 'ChartView (the Encyclopedia’s chart page)',
-        rule: 'New, unapproved (brief 300 E3). Drawn on the book’s parchment, read left to right. A node: a dark box with the frames’ bronze 2 px line (white on hover and when it is the focus), the sprite, the name, then ×amount and have / need (red when short); a small ink triangle on the side it can still grow. A link chip sits on the line where things meet: where it happens (the station, “Gathered”, “Dropped 40%”), then the skill and level (red when no hero has it yet) and, going out, how many it takes. Lines are 1 art pixel of dark ink with square corners and an arrowhead into each node; stacked ways in carry an ink “or” between them. Drawn here with nobody in the guild, so every level shows red.',
+        rule: 'New, unapproved (brief 300 E3, after the owner’s look of 1 November). Drawn on the book’s parchment, read left to right, every box an entry: a dark box with the frames’ bronze 2 px line (white on hover and when it is the focus), the sprite, the name, then ×amount, have / need (red when short) and a drop’s odds; the inspect mark at its top right (hover: what you have and this run’s totals) and the collected tick under it. Above a box, in ink, what it asks of a hero: the skill icon and “Smithing 15” (red when no hero has it yet; hover names the stations), “Combat · Lv 12” for an enemy, never red. A crafted thing’s way in is its ingredients and a Station entry for its skill. On each side, “+N” in ink counts the lines not on the chart. Lines are 1 art pixel of dark ink with square corners and an arrowhead into each box; a way’s things join before the box, stacked ways carry an ink “or” between them; a way with no entry (the opening Bank) is its words alone. Drawn here with nobody in the guild, so every level shows red.',
         Demo: EncyclopediaChartDemo
     },
     {

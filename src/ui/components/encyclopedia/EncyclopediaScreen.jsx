@@ -40,6 +40,9 @@ const TOOLBAR_H = 44;
 const PANEL_W = 288;
 const GAP = 12;
 
+/** The item toasts' column at the mat's right edge, which lies over the book: the close X keeps left of it. */
+const TOASTS_PX = 136;
+
 /** A text size from the stylesheet, in pixels (the Text size setting moves it). */
 function cssPx(name, fallback) {
     if (typeof document === 'undefined') return fallback;
@@ -261,7 +264,7 @@ export const EncyclopediaScreen = ({ onClose }) => {
     const { visible } = spread;
     const coverRight = COVER_ART.x1 * TOME_SCALE;
     const coverTop = COVER_ART.y0 * TOME_SCALE;
-    const closeLeft = visible ? Math.min(coverRight - 20, visible.left + visible.width - 44) : coverRight - 20;
+    const closeLeft = visible ? Math.min(coverRight - 20, visible.left + visible.width - 44 - TOASTS_PX) : coverRight - 20;
     const closeTop = visible ? Math.max(coverTop - 12, visible.top + 8) : coverTop - 12;
     // The panel keeps clear of the close button when the screen crops the book to its corner.
     const panelTop = closeLeft < at.panel.left + at.panel.width && closeLeft + 32 > at.panel.left
