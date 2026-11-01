@@ -1,13 +1,13 @@
 // the progression ledger's pace: supply, level times and path time at each profile, and checks D
 
-import { buildRateBook, LIFECYCLE } from './rates.js';
-import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf } from './profiles.js';
+import { buildRateBook, LIFECYCLE, WORK } from './rates.js';
+import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL } from './profiles.js';
+import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes } from './settings.js';
 import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, LEDGER_ENGINE_TEXT } from './engine.js';
 import { planOf, PLAN_STATUS, tierLabel } from './plan.js';
 import { xpForLevel, MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import { turnTiming } from '../../../config/registries/tokenConstants.js';
-import { GUILD_UPGRADES, getUpgradePrice, wishingWellWater, WISHING_WELL_ITEM } from '../../../config/guildUpgrades.js';
 
 /**
  * How the game is paced for the target player, worked out statically from the content at the three
@@ -27,6 +27,10 @@ import { GUILD_UPGRADES, getUpgradePrice, wishingWellWater, WISHING_WELL_ITEM } 
  * - **Checks D**: walls (a level far slower than the pace curve), a long wait for one unlock, a
  *   stage's time against its budget, Bare and Maxed out of their bounds, a Guild Hall rank slow to
  *   pay back, a boost off its target strength, and what the calculator cannot read.
+ * - **The Guild Hall**: every rank's payback at Typical (the hours to gather its price against the
+ *   hours it saves an hour on the work it pays best on, at the tier the owner gave it), and a
+ *   proposed price for it (a preview: brief 290's rule, until the calculator is seen to agree with
+ *   real play).
  *
  * Average luck only. Hours are hero-work hours: heroes keep working through the player's check-ins
  * and the night, so a level grind runs around the clock; a step that waits on the player is not
@@ -43,6 +47,10 @@ const BOOSTED = [BOOST_KIND.SUPPORT, BOOST_KIND.CAMP, BOOST_KIND.CONSUMABLE, BOO
 /** Author-facing words, kept together for translation. */
 export const PACE_TEXT = Object.freeze({
     hours: (h) => (Number.isFinite(h) ? formatMinutes(h * 60) : 'never'),
+    /** As `hours`, with a time under a minute in seconds: a Hall price can take seconds to gather. */
+    short: (h) => (Number.isFinite(h) && h > 0 && h * 60 < 0.5 ? `${Math.max(1, Math.round(h * 3600))} s` : PACE_TEXT.hours(h)),
+    /** Hours saved an hour, in words: "12 min an hour", "40 s an hour". */
+    saves: (h) => (!(h > 0) ? 'nothing' : h * 60 >= 1 ? `${formatMinutes(h * 60)} an hour` : `${Math.max(1, Math.round(h * 3600))} s an hour`),
     times: (r) => `${r >= 10 ? Math.round(r) : Math.round(r * 10) / 10}×`,
     skill: (s) => (s === COMBAT ? 'Combat' : s ? s.charAt(0).toUpperCase() + s.slice(1) : '—'),
     waits: Object.freeze({ need: 'waits for', level: 'levels', own: 'its own time' })
@@ -174,6 +182,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const s = supplyOf(itemId, PROFILE.BARE, cap).perHour;
         return s > 0 ? 1 / s : Infinity;
     };
+    const hallUnitHours = (itemId, cap) => {
+        const s = supplyOf(itemId, BEFORE_HALL, cap).perHour;
+        return s > 0 ? 1 / s : Infinity;
+    };
     /** Bare hero-hours to have one of a Token: free where the camp or a Region places it, else its price and its build. */
     const costHours = (key, cap) => {
         const at = reach.get(key);
@@ -191,7 +203,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return Infinity;
     };
     profiles = buildProfiles(rates, {
-        tierOf: tierOfKey, unitHours, costHours, horizonHours: () => settings.paybackHours, campMembers: settings.campMembers,
+        tierOf: tierOfKey, unitHours, costHours, hallUnitHours, horizonHours: () => settings.paybackHours, hallHorizonHours: () => settings.hallPaybackHours,
+        campMembers: settings.campMembers,
         inputScale: (rate, cap, profile) => {
             let scale = 1;
             for (const [item, need] of Object.entries(rate.inputs || {})) {
@@ -611,16 +624,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             });
         }
 
-        // Guild Hall ranks: each must pay for itself.
+        // Guild Hall ranks: each must pay for itself, at Typical.
         for (const row of hallPaybacks()) {
             if (row.rate === false) {
                 if (row.rank === 1) add('unmodelled', `hall:${row.id}`, `${row.name}: what it gives (${row.what}) is not a rate, so its payback is not worked out.`, { name: row.name });
                 continue;
             }
-            if (row.enabler) continue;
-            if (!(row.payback <= settings.paybackHours)) {
-                add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} costs ${row.priceText} (${PACE_TEXT.hours(row.priceHours)} of work at Bare) and pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.paybackHours)} a boost has to pay for itself.`, { name: row.name });
-            }
+            if (row.enabler || row.pays) continue;
+            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.hallPaybackHours)} a Guild Hall rank has to pay for itself.`, { name: row.name });
         }
 
         // Boosts over their target strength, by kind, at Maxed: one finding per set of boosts, with every work it lifts.
@@ -666,57 +677,221 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     };
 
     // ── the Guild Hall ─────────────────────────────────────────────────────────────────────────
+    const priceWords = (price) => (price.length ? price.map(p => `${p.quantity} ${nameOf(itemKey(p.itemId))}`).join(', ') : 'nothing');
+    const stageWords = (row) => (row.tier !== null && row.tier > row.cap
+        ? `${tierLabel(row.tier)}, measured at ${tierLabel(row.cap)}, the last stage the pace knows`
+        : tierLabel(row.tier ?? row.cap));
+    const savesWords = (row) => {
+        if (!(row.gain > 0)) return 'and saves no time at its tier (no work it reaches is open by then)';
+        const on = row.work ? ` on ${workName(row.work)}` : '';
+        return `and saves ${PACE_TEXT.saves(row.gain)}${on}`;
+    };
+
+    /** The Hall's works: each piece of work a track's ranks may move (its context lists the track). */
+    const hallWorksMemo = new Map();
+    function hallWorksOf(trackId) {
+        if (!hallWorksMemo.has(trackId)) {
+            hallWorksMemo.set(trackId, works.filter(w => w.tier !== null && profiles.contextOf(w.target).hall.some(t => t.id === trackId)));
+        }
+        return hallWorksMemo.get(trackId);
+    }
+
+    /**
+     * One rank at Typical, at the tier it belongs to (its own, else its price's): the hours it saves
+     * an hour on the work it saves most on, `{ gain, work }`; `gain` Infinity when it is the only
+     * source of what it pays (an enabler).
+     */
+    function hallRankGain(track, rank, cap) {
+        if (track.id === 'roster_size') return { gain: 1, work: null };
+        let best = { gain: 0, work: null };
+        for (const work of hallWorksOf(track.id)) {
+            if (work.tier > cap) continue;
+            const m = profiles.hallRankOn(work.target, cap, track.id, rank);
+            if (m && m.saves > best.gain) best = { gain: m.saves, work };
+        }
+        return best;
+    }
+
     let hallMemo = null;
-    /** Each Guild Hall rank's price, what it adds an hour (in Bare hours) and its payback; `rate: false` for a rank that adds no rate. */
+    /**
+     * Every Guild Hall rank, built-in and authored: its tier, price, the hours that price takes to
+     * gather at Typical (before the Hall), the hours it saves an hour and on which work, its payback
+     * and whether that is within the payback time (`pays`), and the price the ledger proposes for an
+     * authored rank (`proposed`). `rate: false` for a rank that adds no rate (Bank tabs, a wound's
+     * length, a loadout slot, a camp's reach). `cap` is the stage it is measured at: its tier, but
+     * never past the last stage the pace knows (no later content exists to work or buy there, and
+     * every stage costs a Typical profile of every piece of work).
+     */
     function hallPaybacks() {
         if (hallMemo) return hallMemo;
         const rows = [];
-        for (const def of GUILD_UPGRADES) {
-            for (let rank = 1; rank <= def.maxRank; rank++) {
-                const price = getUpgradePrice(def, rank - 1) || [];
-                const tier = Math.max(0, ...price.map(p => tierOfKey(itemKey(p.itemId))).filter(Number.isInteger));
-                const priceHours = sum(price.map(p => p.quantity * unitHours(p.itemId, tier)));
-                const priceText = price.length ? price.map(p => `${p.quantity} ${nameOf(itemKey(p.itemId))}`).join(', ') : 'nothing';
-                let gain = null;
-                let what = null;
-                if (def.id === 'roster_size') gain = 1;
-                else if (def.id === 'wishing_well') gain = (wishingWellWater(rank) - wishingWellWater(rank - 1)) * (HOUR_MS / 300000) * unitHours(WISHING_WELL_ITEM, tier);
-                else what = def.description;
-                if (gain === null) {
-                    rows.push({ id: def.id, name: def.name, rank, rate: false, what, priceText, priceHours, tier });
+        for (const track of profiles.hallTracks) {
+            for (let rank = 1; rank <= track.maxRank; rank++) {
+                const price = track.price(rank);
+                const tier = track.tier(rank);
+                const priceTiers = price.map(p => tierOfKey(itemKey(p.itemId)));
+                const priceTier = priceTiers.every(Number.isInteger) ? Math.max(0, ...priceTiers) : maxTier;
+                const cap = Math.min(maxTier, tier ?? priceTier);
+                const base = {
+                    id: track.id, name: track.name, rank, builtIn: track.builtIn, tier, cap, price,
+                    priceText: priceWords(price), priceHours: profiles.hallPriceHours(price, cap)
+                };
+                const addsRate = track.builtIn ? track.id !== 'bank_tabs' : starAddsRate(track.star);
+                if (!addsRate) {
+                    rows.push({ ...base, rate: false, what: track.description || 'not a rate' });
                     continue;
                 }
-                // The only way to have what it gives (no other Water at that stage): an enabler, not a speed-up.
-                const enabler = !Number.isFinite(gain);
-                const payback = priceHours === 0 ? 0 : gain > 0 && !enabler ? priceHours / gain : Infinity;
-                rows.push({ id: def.id, name: def.name, rank, rate: true, enabler, gain, priceText, priceHours, payback, tier });
+                const { gain, work } = hallRankGain(track, rank, cap);
+                const enabler = gain === Infinity;
+                const payback = base.priceHours === 0 ? 0 : enabler ? 0 : gain > 0 ? base.priceHours / gain : Infinity;
+                const row = { ...base, rate: true, enabler, gain, work, payback, pays: enabler || payback <= settings.hallPaybackHours };
+                if (!track.builtIn) row.proposed = proposePrice(track, rank, row);
+                rows.push(row);
             }
+            if (!track.builtIn) neverCheaper(rows.filter(r => r.id === track.id));
         }
         hallMemo = rows;
         return rows;
     }
 
+    /**
+     * A star's proposed prices never fall from one rank to the next (the director, 2026-10-30): a
+     * rank's proposal is raised to the one before it, in hours to gather and, in the same material,
+     * in quantity, rounded up. A raised proposal says so (`raised`) and may then pay back slower
+     * than the Hall's payback time (`pays: false`).
+     */
+    function neverCheaper(rows) {
+        let before = null;
+        for (const row of rows) {
+            const p = row.proposed;
+            if (!p?.itemId) continue;
+            if (before) {
+                const perHour = p.quantity / p.priceHours;
+                let quantity = p.quantity;
+                if (p.priceHours < before.priceHours) quantity = Math.max(quantity, roundUp(before.priceHours * perHour));
+                if (p.itemId === before.itemId) quantity = Math.max(quantity, before.quantity);
+                if (quantity > p.quantity) {
+                    const priceHours = quantity / perHour;
+                    row.proposed = {
+                        ...p, quantity, priceHours, payback: priceHours / row.gain, raised: true,
+                        pays: priceHours / row.gain <= settings.hallPaybackHours,
+                        priceText: priceWords([{ itemId: p.itemId, quantity }])
+                    };
+                }
+            }
+            before = row.proposed;
+        }
+    }
+
+    /**
+     * The skill a star belongs to: its constellation's, else a rule narrowed to a skill the content
+     * works, else the skill of the work that best makes what its lines pay (the Well's Copper Ore is
+     * Mining's).
+     */
+    function starSkill(star, cap) {
+        const constellation = rates.hall.constellations.find(c => c.id === star.constellation);
+        if (constellation?.skill) return constellation.skill;
+        for (const rank of star.ranks) for (const s of rank.rules) if (skillsOfWork.has(s?.payload?.category)) return s.payload.category;
+        for (const rank of star.ranks) {
+            for (const line of rank.lines) {
+                const source = supplyOf(line.itemId, BEFORE_HALL, cap).work;
+                const skill = source ? profiles.contextOf(source.target).skill : null;
+                if (skill) return skill;
+            }
+        }
+        return null;
+    }
+
+    const materialMemo = new Map();
+    /**
+     * The material a rank of a tier is priced in: an item first had at that tier (the owner's tier
+     * for it, else when it is first reached), gathered rather than made at a station, the most of it
+     * an hour at Typical before the Hall, of the star's own skill where one is; else the tier before.
+     * Never what the star itself pays.
+     */
+    function materialFor(star, tier, cap) {
+        const skill = starSkill(star, cap);
+        const own = new Set(star.ranks.flatMap(r => r.lines.map(l => l.itemId)));
+        const key = `${skill}|${tier}|${cap}|${[...own].join(',')}`;
+        if (materialMemo.has(key)) return materialMemo.get(key);
+        indexMakers();
+        const gathered = (itemId) => (madeBy.get(itemId) || []).some(w => [WORK.GATHER, WORK.WATER, WORK.FIELD].includes(rates.workKindOf(w.target).kind));
+        let pick = null;
+        for (let t = tier; t >= 0 && !pick; t--) {
+            const found = [];
+            for (const itemId of Object.keys(rates.items)) {
+                if (own.has(itemId) || effTier(itemKey(itemId)) !== t || !gathered(itemId)) continue;
+                const s = supplyOf(itemId, BEFORE_HALL, cap);
+                if (!(s.perHour > 0) || !Number.isFinite(s.perHour) || !s.work) continue;
+                const kind = rates.workKindOf(s.work.target).kind;
+                if (kind !== WORK.GATHER && kind !== WORK.WATER && kind !== WORK.FIELD) continue;
+                found.push({ itemId, perHour: s.perHour, work: s.work, mine: !!skill && profiles.contextOf(s.work.target).skill === skill });
+            }
+            const mine = found.filter(f => f.mine);
+            pick = (mine.length ? mine : found).sort((a, b) => b.perHour - a.perHour || a.itemId.localeCompare(b.itemId))[0] || null;
+        }
+        materialMemo.set(key, pick);
+        return pick;
+    }
+
+    /**
+     * The price the ledger proposes for an authored rank: the most of its tier's material it can
+     * cost and still pay back within the Hall's payback time at Typical, rounded down to two
+     * figures, then never below the rank before ({@link neverCheaper}).
+     * `{ itemId, quantity, priceHours, payback, pays, work }`, or `{ why }` when it cannot propose one.
+     */
+    function proposePrice(track, rank, row) {
+        if (track.tier(rank) === null) return { why: 'no tier set' };
+        if (row.enabler) return { why: 'the only source of what it pays, so any price pays back' };
+        if (!(row.gain > 0)) return { why: 'it saves no time at its tier' };
+        const material = materialFor(track.star, row.tier, row.cap);
+        if (!material) return { why: 'no gathered material at its tier' };
+        const quantity = Math.max(1, roundDown(settings.hallPaybackHours * row.gain * material.perHour));
+        const priceHours = quantity / material.perHour;
+        const payback = priceHours / row.gain;
+        return { itemId: material.itemId, quantity, priceText: priceWords([{ itemId: material.itemId, quantity }]), priceHours, payback, pays: payback <= settings.hallPaybackHours, work: material.work };
+    }
+
     // ── boosts by kind ─────────────────────────────────────────────────────────────────────────
     const kindGain = (work, profile, cap, kind) => {
-        const { setup, chosen, context } = profiles.profileOf(work.target, profile, cap);
-        void setup;
+        const { chosen, context } = profiles.profileOf(work.target, profile, cap);
         const bare = profiles.bareSetup(context, cap);
         const picks = chosen.filter(c => c.kind === kind);
         if (!picks.length) return null;
         const offers = profiles.offers(context, cap);
         let s = bare;
         for (const c of picks) {
-            const o = offers.find(x => x.factor === c.factor);
+            if (c.kind === BOOST_KIND.HALL) {
+                const ranks = { ...(s.hallRanks || {}) };
+                for (const [id, r] of Object.entries(c.hallRanks || {})) ranks[id] = Math.max(r, ranks[id] || 0);
+                s = { ...s, hallRanks: ranks };
+                continue;
+            }
+            const o = offers.find(x => x.id === c.id && x.kind === c.kind);
             if (o) s = o.apply(s);
         }
         const r0 = rates.rateOf(work.target, bare);
         const r1 = rates.rateOf(work.target, s);
+        const shown = kind === BOOST_KIND.HALL ? hallPicks(picks) : picks;
         return {
-            gain: gainOf(r0, r1, (item) => unitHours(item, cap)), names: picks.map(c => nameOf(factorKeyOf(c))),
-            factors: picks.map(c => c.factor), factorKeys: picks.map(factorKeyOf)
+            gain: gainOf(r0, r1, (item) => unitHours(item, cap)), names: shown.map(pickName),
+            factors: [...new Set(shown.map(c => c.factor))], factorKeys: [...new Set(shown.map(factorKeyOf))]
         };
     };
-    const factorKeyOf = (c) => (c.kind === BOOST_KIND.SUPPORT || c.kind === BOOST_KIND.CAMP ? tokenKey(c.id) : itemKey(c.id));
+    const factorKeyOf = (c) => (c.kind === BOOST_KIND.HALL ? `hall:${c.upgrade}` : c.kind === BOOST_KIND.SUPPORT || c.kind === BOOST_KIND.CAMP ? tokenKey(c.id) : itemKey(c.id));
+    /** A Hall track's name by id. */
+    const hallName = (id) => profiles.hallTrack(id)?.name ?? id;
+    const pickName = (c) => (c.kind === BOOST_KIND.HALL ? `${hallName(c.upgrade)} ${c.rank}` : nameOf(factorKeyOf(c)));
+    /** Hall picks as one per star, at the highest rank taken (the stars lit to open one, at their rank 1). */
+    const hallPicks = (picks) => {
+        const top = new Map();
+        for (const c of picks) {
+            for (const [id, rank] of Object.entries(c.hallRanks || { [c.upgrade]: c.rank })) {
+                if (!top.has(id) || rank > top.get(id).rank) top.set(id, { kind: BOOST_KIND.HALL, upgrade: id, rank, factor: `hall:${id}` });
+            }
+        }
+        return [...top.values()];
+    };
 
     let boostMemo = null;
     function boostRows() {
@@ -724,9 +899,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const rows = [];
         for (const work of works) {
             if (work.tier === null || !counted(work.entry)) continue;
-            // A camp changes how many Tokens one hero works, and the Wishing Well's ranks pay Water, not a share
-            // of a work's rate: neither has a strength target.
-            for (const kind of BOOSTED.filter(k => k !== BOOST_KIND.CAMP && k !== BOOST_KIND.HALL)) {
+            // A camp changes how many Tokens one hero works, and Passive Production is no hero's work: neither has a strength target.
+            for (const kind of BOOSTED.filter(k => k !== BOOST_KIND.CAMP && !(k === BOOST_KIND.HALL && work.target.token && profiles.contextOf(work.target).kind === WORK.PASSIVE))) {
                 const g = kindGain(work, PROFILE.MAXED, work.tier, kind);
                 if (!g) continue;
                 rows.push({ work, entry: work.entry, kind, tier: work.tier, ...g, target: boostTargetAt(settings, kind, work.tier) });
@@ -794,6 +968,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         pathOf: (key, profile) => ({ ...readyOf(key, profile), steps: criticalPath(key, profile) }),
         stageOf,
         hallPaybacks,
+        hallName,
+        effTier,
         boostRows,
         breakdown,
         findings
@@ -812,6 +988,27 @@ function recordsOf(content) {
     if (Array.isArray(content.recipes) || isObject(content.recipes)) each(content.recipes, recipeKey);
     else for (const pool of Object.values(isObject(content.recipePools) ? content.recipePools : {})) each(pool, recipeKey);
     return out;
+}
+
+/** The step two significant figures leave: 1 below 100, 10 below 1000, and so on. */
+function figureStep(n) {
+    const digits = Math.floor(Math.log10(n));
+    return digits >= 2 ? 10 ** (digits - 1) : 1;
+}
+
+/** Down to two significant figures, so a proposed price reads plainly and never pays back slower than asked. */
+export function roundDown(n) {
+    if (!(n >= 1)) return 0;
+    const step = figureStep(n);
+    return Math.floor(n / step) * step;
+}
+
+/** Up to two significant figures, so a price raised to the rank before never lands under it. */
+export function roundUp(n) {
+    if (!(n > 0)) return 0;
+    if (n < 1) return 1;
+    const step = figureStep(n);
+    return Math.ceil(n / step - 1e-9) * step;
 }
 
 /**

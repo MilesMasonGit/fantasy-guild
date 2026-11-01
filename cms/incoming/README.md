@@ -16,7 +16,7 @@ Design: `docs/active/concept_cms_agent_authoring.md`. Code: `cms/src/engine/chan
 The owner's unsynced work is in the newest **`cms/backups/autosave_*.json`** (the CMS
 writes one every few minutes while they edit, keeping the last five). Read your
 "before" values from there, not from `data/`, so you see what the owner sees. Its shape:
-`{ items, tokens, effects, recipePools, starterCamp, skillPerks }`; maps are items with
+`{ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars }`; maps are items with
 `type: "map"` or `"modifier"`; recipes sit in `recipePools[skill]`, each with an `id`.
 
 ## The file
@@ -65,7 +65,8 @@ One JSON file per pack, named after its id: `cms/incoming/<id>.json`.
   - **`kind`**: `item`, `token`, `recipe`, `effect` or `map` (a Base Map or Modifier;
     its `value.type` is `map` or `modifier`; a plain item must not be one).
     Or `starterCamp`: the Starter Camp, one record (see below). Or `skillPerks`: one skill's
-    milestone perk table (see below).
+    milestone perk table (see below). Or `hallStar` / `hallConstellation`: a Guild Hall star or
+    constellation (see below).
   - **`id`**: the entity's id. For a recipe, its `id` field (recipes live in pools).
   - **`value`** (create, edit): the entity's **whole** new record, as it sits in the
     workspace. An edit replaces the record, so copy the current one and change it.
@@ -96,6 +97,22 @@ workspace has no table for that skill yet, else `edit` (copy the current table a
 pack with `"kind": "effect"`), `scale` 1 to 5 and optional. Shape and meaning:
 `src/systems/hero/perkTable.js`. A perk reaches its hero as a carried item's rule does, so narrow a work
 rule to its skill (`payload.category`), and it spends nothing.
+
+### Guild Hall stars and constellations
+
+`"kind": "hallConstellation"`, `"id"` its id (a skill's constellation takes the skill's id, `mining`):
+`{ "name", "label": { "x", "y" }, "skill"? }`. `"kind": "hallStar"`, `"id"` the star's id:
+`{ "constellation", "name", "description", "node": { "x", "y" }, "tag"?, "links": ["hall"], "sprite"?, "ranks": [...] }`.
+Positions are in the sky's unit space centred on the Hall (+x right, +y down; the built-in stars sit 0.5
+out). `links` name the Hall (`"hall"`) or other stars (the built-in `roster_size`, `bank_tabs`,
+`wishing_well` included); a star opens once a linked star has a rank, at once when linked to the Hall.
+Each rank is `{ "tier", "price": [{ "itemId", "quantity" }], "rules": [statement], "lines": [{ "itemId", "quantity" }] }`
+and holds the rank's **whole** effect, not an increment (rank 3 of +10 % a rank lists +30 %). `rules`
+are standing `provides` statements: narrowed to a skill by `payload.category` (XP, Yield, Work Time,
+Double Loot, Grow Time, Camp Reach), or aimed at Tokens by `to` (`{ "mode": "id" | "tag" | "tokenType", "value" }`:
+a vein's rest is Grow Time to its Token, a camp's reach Camp Reach to its camp); Wound Time and Loadout
+Slots (category a loadout kind, `food`, `trinket`) reach every hero. `lines` are Passive Production
+the Guild Hall pays each lap. The built-in ids are taken. Shape: `src/config/hallStars.js`.
 
 ### The plan (the ledger)
 

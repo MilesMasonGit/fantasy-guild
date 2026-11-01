@@ -13,6 +13,7 @@ import { EFFECT_TYPES } from './constants.js';
 import { damageTypeLabel } from '../../config/registries/damageTypes.js';
 import { articleOf } from './toolNames.js';
 import { stationKindLabel } from '../../config/registries/tokenConstants.js';
+import { getCategoryInfo } from '../../config/registries/equipmentCategories.js';
 
 /**
  * The rules text: generated, read-only, and the only text a Token has. The sentence IS the
@@ -549,6 +550,17 @@ function bodySegments(statement, names) {
              * is chosen to dodge number agreement: after "makes", English takes the bare infinitive, so a
              * singular or plural subject (depending on reach) never has to agree.
              */
+            // A guild-only axis reaches every hero, from the Guild Hall: no Tokens, no reach.
+            if (entry?.guildOnly) {
+                if (payload.type === EFFECT_TYPES.LOADOUT_SLOTS) {
+                    const n = Number(payload.value) || 0;
+                    const kind = getCategoryInfo(payload.category).label;
+                    return segs(d('Provides', K), ' every hero ', d(`${Math.abs(n)} ${n < 0 ? 'fewer' : 'more'}`, 'value'), ' ',
+                        d(payload.category ? kind : '…', categorySlot(statement)), ' ', d(Math.abs(n) === 1 ? 'slot' : 'slots', 'type'));
+                }
+                if (entry.reads) return segs(d('Makes', K), ' every hero ', effectSegments(statement, names));
+                return segs(d('Provides', K), ' ', effectSegments(statement, names), ' to every hero');
+            }
             if (entry?.reads) {
                 return segs(d('Makes', K), ' ', targetSegments(statement, names, ''), ' ', effectSegments(statement, names));
             }

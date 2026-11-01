@@ -2,7 +2,8 @@
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { PASSIVE_PRODUCTION_MS } from '../../config/registries/tokenConstants.js';
-import { WISHING_WELL_ITEM, wishingWellRank, wishingWellWater } from '../../config/guildUpgrades.js';
+import { WISHING_WELL_ITEM, wishingWellRank, wishingWellWater, authoredStars } from '../../config/guildUpgrades.js';
+import { hallLinesOf } from '../progression/hallModifiers.js';
 import { GameState } from '../../state/GameState.js';
 import { isGuildHall } from './MatCap.js';
 import * as SpriteLayer from './SpriteLayer.js';
@@ -15,7 +16,8 @@ export { PASSIVE_PRODUCTION_MS };
  *
  * The lines: the type's `trickle` block (`[{ itemId, quantity }]`, authored in the CMS; a line's old
  * `everyMs` is ignored), plus, on the Guild Hall, the Wishing Well's Water (`wishingWellWater` of
- * its rank, read live, so a rank bought mid-lap pays at the new amount on the next payout).
+ * its rank) and the Well's other stars' lines (`hallModifiers.hallLinesOf`), all read live, so a
+ * rank bought mid-lap pays at the new amount on the next payout.
  *
  * The pay drops as loot beside the Token, as a gathered output does (`SpriteLayer.addSprite` with
  * the Token's id): collected on hover or by auto-collect, it flies to the Hall. Nothing reaches the
@@ -38,8 +40,9 @@ function qty(n) {
 
 /**
  * A Token's Passive Production lines, merged per item: `[{ itemId, quantity, source }]`, where
- * `source` is `'token'` for authored lines and `'wishing_well'` for the Well's Water. Empty when it
- * pays nothing.
+ * `source` is `'token'` for authored lines, `'wishing_well'` for the Well's Water and `'hall_star'`
+ * for a Guild Hall star's line (an item two sources pay keeps the first one's). Empty when it pays
+ * nothing.
  *
  * @param {object} instance
  * @param {object} [def] its type (read from the registry when absent)
@@ -59,6 +62,7 @@ export function linesOf(instance, def = getTokenType(instance?.typeId), ranks = 
     if (instance && isGuildHall(instance)) {
         const water = wishingWellWater(wishingWellRank(ranks || {}));
         if (water > 0) add(WISHING_WELL_ITEM, water, 'wishing_well');
+        for (const line of hallLinesOf(authoredStars(), ranks || {})) add(line.itemId, line.quantity, 'hall_star');
     }
     return [...byItem.values()];
 }

@@ -188,10 +188,14 @@ export const RETIRED_BOARD_FIELDS = Object.freeze([
 /**
  * Retired Guild Hall upgrade tracks, whose bought ranks an older save drops silently (no refund):
  * the two that only ever served the Token Vault, Scouting Flags (`flag_radius`), which widened
- * the area flags that orders and camps replaced, and Bank Slots (`bank_slots`), now that each Bank
- * tab holds 64 kinds (the items stay in their tabs; `InventoryManager.spillOverfullTabs`).
+ * the area flags that orders and camps replaced, Bank Slots (`bank_slots`), now that each Bank
+ * tab holds 64 kinds (the items stay in their tabs; `InventoryManager.spillOverfullTabs`), and the
+ * Compass's three: the Token Cap (the cap is fixed at 128; Tokens over it stay, and adding waits),
+ * the Cartography Table (4 slots) and the Notice Board (2 bounties).
  */
-export const RETIRED_UPGRADES = Object.freeze(['token_bank_slots', 'token_bank_tabs', 'flag_radius', 'bank_slots']);
+export const RETIRED_UPGRADES = Object.freeze([
+    'token_bank_slots', 'token_bank_tabs', 'flag_radius', 'bank_slots', 'token_cap', 'cartography_slots', 'notice_board'
+]);
 
 /** Retired `progress` fields an older save still carries: the Scouting Flags radius bonus. */
 export const RETIRED_PROGRESS_FIELDS = Object.freeze(['flagRadiusBonus']);

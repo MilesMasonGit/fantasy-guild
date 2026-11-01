@@ -12,7 +12,9 @@ import {
 } from '../../../config/registries/tokenConstants.js';
 import { neededToolOf, toolOf, toolMeets, toolItemFor } from '../../../config/registries/toolKinds.js';
 import { hasCatchPools, catchPoolsOf } from '../../../config/registries/catchPools.js';
-import { wishingWellWater, WISHING_WELL_ITEM } from '../../../config/guildUpgrades.js';
+import { wishingWellWater, WISHING_WELL_ITEM, BUILT_IN_UPGRADE_IDS } from '../../../config/guildUpgrades.js';
+import { normaliseHallSky, rankOf } from '../../../config/hallStars.js';
+import { hallRulesOf } from '../hallModifiers.js';
 import { flooredWorkTime, floorSpeedUp } from '../../board/workTime.js';
 import { ownCycleCost } from '../../board/cycleCharges.js';
 import { applyXpBonus } from '../../hero/xpBonus.js';
@@ -24,15 +26,16 @@ import { modifiersOf as regionModifiersOf } from '../../atlas/regionModifiers.js
 /**
  * What one hero earns working one Token (or one recipe at a station) at the content's own numbers,
  * worked out the way the board works it, with every factor named and switchable: the supports in
- * reach, the tool and gear in hand, drinks and work potions, milestone perks, a Region's rules and
- * guild-wide rules.
+ * reach, the tool and gear in hand, drinks and work potions, milestone perks, a Region's rules,
+ * guild-wide rules and the Guild Hall's stars.
  *
  * Average luck only: every chance is taken at its expected value (a 25 % double is ×1.25), never
  * rolled. The formulas are the board's own, shared rather than copied: the three buckets
  * (`ModifierAggregator`), the speed-up and work-time floors (`workTime.js`), the XP floor
  * (`xpBonus.js`), the output range (`tokenConstants.outputRange`), a cycle's charge cost
  * (`cycleCharges.js`), the reach and filter rules (`reachRegistry`, `filterRegistry`), the dose rules
- * (`consumableRule.js`) and a Region's rules (`regionModifiers.js`).
+ * (`consumableRule.js`), a Region's rules (`regionModifiers.js`) and what a Hall star's rank holds
+ * (`hallModifiers.js`, as `HallRules.apply` registers it).
  *
  * ⚠️ Which ambient rules reach the worked Token is decided on the board by
  * `TileModifiers.applicableStatements` and `heroContributions`, which read live board state and are
@@ -70,7 +73,8 @@ export const FACTOR = Object.freeze({
     CONSUMABLE: 'consumable',
     PERK: 'perk',
     REGION: 'region',
-    GUILD: 'guild'
+    GUILD: 'guild',
+    HALL: 'hall'
 });
 
 /** How a Token's work comes back after it runs out. */
@@ -133,8 +137,9 @@ function supportEntry(entry) {
 /**
  * The calculator over one picture of the content.
  *
- * @param {object} content  `{ items, tokens, recipes | recipePools, effects, skillPerks }`, as the CMS
- *   workspace or the game's `data/` files hold them
+ * @param {object} content  `{ items, tokens, recipes | recipePools, effects, skillPerks, hallSky }`, as
+ *   the CMS workspace or the game's `data/` files hold them; `hallSky` is `data/hallStars.json`'s
+ *   `{ constellations, stars }`
  */
 export function buildRateBook(content = {}) {
     const library = isObject(content.effects) ? content.effects : {};
@@ -154,8 +159,14 @@ export function buildRateBook(content = {}) {
         return expanded.get(id);
     };
 
+    const sky = normaliseHallSky(isObject(content.hallSky) ? content.hallSky : {});
+    const builtIn = new Set(BUILT_IN_UPGRADE_IDS);
+    const stars = sky.stars.filter(s => !builtIn.has(s.id));
+    const starsById = new Map(stars.map(s => [s.id, s]));
+    const hall = { stars, constellations: sky.constellations, star: (id) => starsById.get(id) || null, memo: new WeakMap() };
+
     const book = {
-        library, items, recipes, perkTables,
+        library, items, recipes, perkTables, hall,
         tokenIds: () => Object.keys(rawTokens),
         token: tokenDef,
         rateOf: (target, setup) => rateOf(book, target, setup),
@@ -263,7 +274,35 @@ function tileRules(book, targetDef, setup, hero, notes) {
             }
         }
     }
+    // The Hall's rules that name some Tokens reach this one wherever it stands (`TileModifiers.rebuildToken`).
+    for (const { factorId, to, modifier } of hallRules(book, setup).aimed) {
+        if (targetMatch(to, targetDef, hero).ok) modifiers.push({ factorId, umi: modifier });
+    }
     return { modifiers, grants };
+}
+
+/**
+ * The Guild Hall's stars a setup holds (`hallRanks`, a rank past a star's top read as its top), as
+ * the guild holds them (`hallModifiers.hallRulesOf`, which `HallRules.apply` registers): modifiers
+ * for the guild-wide scope and modifiers aimed at some Tokens. Each star is one factor,
+ * `hall:<id>`. Worked out once per setup.
+ */
+function hallRules(book, setup) {
+    const memo = book.hall.memo;
+    if (memo.has(setup)) return memo.get(setup);
+    const out = { guild: [], aimed: [], held: [] };
+    for (const star of book.hall.stars) {
+        const rank = Math.min(star.ranks.length, Math.floor(Number(setup.hallRanks?.[star.id]) || 0));
+        if (rank < 1) continue;
+        const factorId = `${FACTOR.HALL}:${star.id}`;
+        out.held.push({ star, rank, factorId });
+        if (isOff(setup, factorId, FACTOR.HALL)) continue;
+        const { modifiers, aimed } = hallRulesOf([star], { [star.id]: rank });
+        for (const modifier of modifiers) out.guild.push({ factorId, modifier });
+        for (const a of aimed) out.aimed.push({ factorId, ...a });
+    }
+    memo.set(setup, out);
+    return out;
 }
 
 /**
@@ -460,8 +499,8 @@ function heroGrants(hero) {
     return out.filter(g => g.payload.type === EFFECT_TYPES.BONUS_DROP && text(g.payload.itemId));
 }
 
-/** The guild-wide scope: a Region's rules (`regionModifiers.modifiersOf`) and guild-wide modifiers. */
-function guildScope(setup, notes) {
+/** The guild-wide scope: a Region's rules (`regionModifiers.modifiersOf`), guild-wide modifiers and the Hall's stars. */
+function guildScope(book, setup, notes) {
     const agg = new ModifierAggregator('calculator:guild');
     const factorsBySource = new Map();
     if (!isOff(setup, FACTOR.REGION, FACTOR.REGION)) {
@@ -476,6 +515,10 @@ function guildScope(setup, notes) {
             agg.addModifier({ ...modifier, source });
             factorsBySource.set(source, FACTOR.GUILD);
         });
+    }
+    for (const { factorId, modifier } of hallRules(book, setup).guild) {
+        agg.addModifier(modifier);
+        factorsBySource.set(modifier.source, factorId);
     }
     return { agg, factorsBySource };
 }
@@ -785,7 +828,7 @@ function prepare(book, target, setup) {
     const hero = heroRules(book, gates.skill, setup, gates, notes);
     const reaching = tileRules(book, def, setup, hero, notes);
     const tile = tileScope(reaching.modifiers);
-    const guild = guildScope(setup, notes);
+    const guild = guildScope(book, setup, notes);
     const resolve = makeResolver(tile, guild, hero);
     return { def, recipe, kind: kind.kind, pool, io, baseCycleMs, gates, hero, tileGrants: reaching.grants, guild, resolve, notes };
 }
@@ -850,7 +893,8 @@ function isPassive(def) {
 
 /**
  * Passive Production (`PassiveProduction.linesOf`): every line once a lap, no hero; the Guild Hall
- * adds the Wishing Well's Water at the setup's rank (`hallRanks.wishing_well`).
+ * adds the Wishing Well's Water at the setup's rank (`hallRanks.wishing_well`) and the lines of the
+ * stars it holds (the Well's basic outputs).
  */
 function passiveRate(book, def, setup) {
     const perLap = {};
@@ -861,10 +905,17 @@ function passiveRate(book, def, setup) {
     const factors = [{ id: `${FACTOR.SELF}:${def.id}`, kind: FACTOR.SELF, name: def.name || def.id, on: true, axes: [] }];
     if (def.id === 'token_guild_hall' || def.isGuildHall === true) {
         const rank = Math.floor(Number(setup.hallRanks?.wishing_well) || 0);
-        const id = `${FACTOR.GUILD}:wishing_well`;
-        const water = isOff(setup, id, FACTOR.GUILD) ? 0 : wishingWellWater(rank);
+        const id = `${FACTOR.HALL}:wishing_well`;
+        const water = isOff(setup, id, FACTOR.HALL) ? 0 : wishingWellWater(rank);
         if (water > 0) perLap[WISHING_WELL_ITEM] = (perLap[WISHING_WELL_ITEM] || 0) + water;
-        if (rank > 0) factors.push({ id, kind: FACTOR.GUILD, name: `Wishing Well rank ${rank}`, on: water > 0, axes: water > 0 ? ['passive'] : [] });
+        if (rank > 0) factors.push({ id, kind: FACTOR.HALL, name: `Wishing Well rank ${rank}`, on: water > 0, axes: water > 0 ? ['passive'] : [] });
+        for (const { star, rank: held, factorId } of hallRules(book, setup).held) {
+            const lines = rankOf(star, held)?.lines || [];
+            if (!lines.length) continue;
+            const on = !isOff(setup, factorId, FACTOR.HALL);
+            if (on) for (const line of lines) perLap[line.itemId] = (perLap[line.itemId] || 0) + line.quantity;
+            factors.push({ id: factorId, kind: FACTOR.HALL, name: `${star.name} rank ${held}`, on, axes: on ? ['passive'] : [] });
+        }
     }
     const laps = HOUR_MS / PASSIVE_PRODUCTION_MS;
     return {
@@ -907,7 +958,8 @@ export function axisResolverOf(book, target, setup = {}) {
  *     spawner's allowance (all of them in the hero's reach). For a fight, the camp that spawns it.
  *   - `camp`: a camp of the work's skill the hero works from (an id or `{ id, members }`): it works
  *     `members` copies in turn (else the family's allowance); named but unusable, one copy
- *   - `bait`: the bait carried at water; `hallRanks`: Guild Hall upgrade ranks (the Wishing Well)
+ *   - `bait`: the bait carried at water; `hallRanks`: Guild Hall ranks by star id (the Wishing Well's
+ *     and the authored stars': a held rank's rules reach the work, its lines pay at the Hall)
  *   - `heroes`: how many heroes work it (default 1; only a family can take more than one)
  *   - `off`: factor ids or kinds switched off (`support:token_copper_mine`, `consumable`, …)
  * @returns {object} the rate, its factors and what it could not read
@@ -1004,6 +1056,7 @@ function rateOf(book, target = {}, setup = {}) {
     note(EFFECT_TYPES.CROP_LOAD, life.kind === LIFECYCLE.REFILL && kind === WORK.FIELD ? life.used : []);
     const camp = campOfSetup(book, setup, skill);
     if (camp && life.members > 1) note('family', [`${FACTOR.SUPPORT}:${camp.id}`]);
+    if (camp) campReachNotes(book, setup, camp.id, skill, notes);
     const heroes = Math.max(1, Math.floor(Number(setup.heroes) || 1));
     const heroPerHour = gates.ok ? heroes * HOUR_MS / cycleMs : 0;
     const supplyPerHour = gates.ok ? life.supplyPerHour : 0;
@@ -1042,6 +1095,22 @@ function rateOf(book, target = {}, setup = {}) {
     };
 }
 
+/**
+ * A held star that widens the setup's camp: the calculator takes the camp's members from the setup,
+ * not from how far it reaches, so the star is named as an assumption rather than read.
+ */
+function campReachNotes(book, setup, campId, skill, notes) {
+    const campDef = book.token(campId);
+    const { guild, aimed } = hallRules(book, setup);
+    const reaching = [
+        ...guild.filter(g => g.modifier.type === EFFECT_TYPES.CAMP_REACH && (!g.modifier.target?.category || g.modifier.target.category === skill)),
+        ...aimed.filter(a => a.modifier.type === EFFECT_TYPES.CAMP_REACH && targetModeMatches(a.to, campDef))
+    ];
+    for (const { factorId } of reaching) {
+        notes.assumptions.push({ source: factorId, what: 'camp reach', why: `a wider camp is not read: ${campDef?.name || campId} hands out the setup's copies` });
+    }
+}
+
 /** Every factor that was on the table, whether it moved anything, and which axes it moved. */
 function factorList(book, def, setup, hero, usedBy) {
     const out = [];
@@ -1060,6 +1129,7 @@ function factorList(book, def, setup, hero, usedBy) {
     if (campId && !out.some(f => f.id === `${FACTOR.SUPPORT}:${campId}`)) push(`${FACTOR.SUPPORT}:${campId}`, FACTOR.SUPPORT, book.token(campId)?.name || campId);
     if (list(setup.region).length) push(FACTOR.REGION, FACTOR.REGION, 'Region rules');
     if (list(setup.guild).length) push(FACTOR.GUILD, FACTOR.GUILD, 'guild-wide rules');
+    for (const { star, rank, factorId } of hallRules(book, setup).held) push(factorId, FACTOR.HALL, `${star.name} rank ${rank}`);
     return out;
 }
 

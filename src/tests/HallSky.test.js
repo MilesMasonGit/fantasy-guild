@@ -162,7 +162,7 @@ describe('the Hall sky: constellations', () => {
     it('puts every upgrade in one of the named constellations', () => {
         const ids = new Set(CONSTELLATIONS.map(c => c.id));
         for (const def of GUILD_UPGRADES) expect(ids.has(def.constellation), def.id).toBe(true);
-        expect(CONSTELLATIONS.map(c => c.name)).toEqual(['The Hearth', 'The Vault', 'The Compass', 'The Well']);
+        expect(CONSTELLATIONS.map(c => c.name)).toEqual(['The Hearth', 'The Vault', 'The Well']);
     });
 
     it('finishes a constellation when every star in it is lit', () => {
@@ -209,9 +209,9 @@ describe('the Hall sky: the details panel follows the pointer', () => {
     it('reports the hovered star, and nothing once the pointer leaves', () => {
         const onHoverUpgrade = vi.fn();
         const { container } = renderWeb({ onHoverUpgrade });
-        const node = container.querySelector('[data-hall-node="notice_board"]');
+        const node = container.querySelector('[data-hall-node="wishing_well"]');
         fireEvent.mouseEnter(node);
-        expect(onHoverUpgrade).toHaveBeenLastCalledWith('notice_board');
+        expect(onHoverUpgrade).toHaveBeenLastCalledWith('wishing_well');
         fireEvent.mouseLeave(node);
         expect(onHoverUpgrade).toHaveBeenLastCalledWith(null);
     });
@@ -219,9 +219,9 @@ describe('the Hall sky: the details panel follows the pointer', () => {
     it('shows the hovered star over the pinned one, and the pinned one again after', () => {
         const pinned = { type: 'guild_upgrade', id: 'bank_tabs', pane: 'guild' };
         const hovered = selectGuildInspectSelection({
-            hoveredUpgradeId: 'token_cap', guildPaneSelection: pinned, getUpgradeDefFn: getUpgradeDef
+            hoveredUpgradeId: 'wishing_well', guildPaneSelection: pinned, getUpgradeDefFn: getUpgradeDef
         });
-        expect(hovered.id).toBe('token_cap');
+        expect(hovered.id).toBe('wishing_well');
         expect(selectGuildInspectSelection({
             hoveredUpgradeId: null, guildPaneSelection: pinned, getUpgradeDefFn: getUpgradeDef
         })).toBe(pinned);

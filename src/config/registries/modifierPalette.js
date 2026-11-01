@@ -115,6 +115,10 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * other combat axes — their readers call `query('ACCURACY')` with no category, so
  * anything but ALL would be registered and never matched.
  *
+ * * `'equipCategory'` — `loadoutCaps.js` passes a loadout category's id
+ *   (`equipmentCategories.js`), which is how `LOADOUT_SLOTS` names the kind of
+ *   item it makes room for.
+ *
  * ## `retired` — still read as a sentence, never offered
  *
  * A row the game no longer reads (flat Armor, Resistance and Pierce, gone with
@@ -201,6 +205,58 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         hint: 'How many harvests a Field holds when its crop ripens (a Composter adds to the load). Read as the crop ripens; never fewer than one.'
+    },
+    {
+        /**
+         * Read by `Camps.reachOf` off the camp's own aggregator (its neighbours, a Guild Hall star
+         * aimed at it) and the guild-wide one, narrowed to the camp's skill.
+         */
+        type: EFFECT_TYPES.CAMP_REACH,
+        reads: { up: (n) => `hand out work ${n} further away`, down: (n) => `hand out work ${n} less far away` },
+        label: 'Camp Reach',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Production',
+        hint: 'How far a camp hands out work: a percentage on its reach (+20% reaches a fifth further).'
+    },
+
+    // --- The guild (Guild Hall stars) -----------------------------------------
+    //
+    // ⚠️ `guildOnly`: read off the guild-wide aggregator only, which a Guild Hall star (or a
+    // Region's rule) writes. On a Token or an item such a rule reaches nobody: the editors do not
+    // offer these rows (`paletteForKeyword`) and the boot audit names one found there.
+    {
+        /** Read by `WoundedSystem` as a wound starts: the recovery time, floored like any speed-up. */
+        type: EFFECT_TYPES.WOUND_TIME,
+        reads: { up: (n) => `recover from a wound ${n} slower`, down: (n) => `recover from a wound ${n} faster` },
+        label: 'Wound Time',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage'],
+        guildOnly: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Guild',
+        inverted: true,
+        hint: 'How long a defeated hero takes to recover. A negative value is faster. Speed-ups stack, but together cut at most 80% of the time.'
+    },
+    {
+        /**
+         * Read by `loadoutCaps.js`: how many items of one loadout category (the rule's category: a
+         * Trinket, Food, Drink…) every hero may carry, on top of the category's own cap.
+         */
+        type: EFFECT_TYPES.LOADOUT_SLOTS,
+        label: 'Loadout Slots',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'equipCategory',
+        guildOnly: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Guild',
+        hint: 'How many more items of one kind (a Trinket, a Food) every hero may carry. Pick the kind.'
     },
 
     // --- Support ------------------------------------------------------------

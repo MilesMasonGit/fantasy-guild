@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { RefreshCw } from 'lucide-react';
 
 import {
-  PROFILES, PROFILE_TEXT, PACE_TEXT, BOOST_KIND_TEXT, breakdownRows, hoursText, rateText, gainText, formatMinutes,
+  PROFILES, PROFILE_TEXT, PACE_TEXT, BOOST_KIND_TEXT, breakdownRows, hoursText, rateText, gainText, formatMinutes, hallRows,
 } from '../../engine/ledgerPace';
 import { tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import { calibrationStatus } from '../../engine/calibrationStatus';
@@ -21,7 +21,7 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
   const { pace, ledger } = report;
   const stages = useMemo(() => (pace ? pace.settings.stages.map((s) => ({ ...s, ...pace.stageOf(s.tier) })) : []), [pace]);
   const rows = useMemo(() => (pace ? breakdownRows(pace) : []), [pace]);
-  const hall = useMemo(() => (pace ? pace.hallPaybacks().filter((r) => r.rate) : []), [pace]);
+  const hall = useMemo(() => (pace ? hallRows(pace).filter((r) => r.rate) : []), [pace]);
   const focus = useRef(null);
   useEffect(() => { focus.current?.scrollIntoView?.({ block: 'center' }); }, [focusSkill]);
   if (!pace) return <p className="text-sm text-gray-500">The pace is not worked out.</p>;
@@ -85,7 +85,7 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Rate sources by skill">
         <h3 className={sectionHead}>Where each skill's rate comes from</h3>
         <p className="text-[10px] text-gray-500">
-          For each skill and each stage that asks for its levels: the hours from a new game to the top level the stage asks at each profile, against the pace curve; the best XP source at Typical and at Maxed; its XP an hour against the same work at Bare; and what each kind of boost adds to it.
+          For each skill and each stage that asks for its levels: the hours from a new game to the top level the stage asks at each profile, against the pace curve; the best XP source at Typical and at Maxed; its XP an hour against the same work at Bare; the Guild Hall's share (what the stars the profile holds add to it, on its own line); and what each other kind of boost adds.
         </p>
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
@@ -129,23 +129,33 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Guild Hall paybacks">
         <h3 className={sectionHead}>Guild Hall paybacks</h3>
         <p className="text-[10px] text-gray-500">
-          Each rank that adds a rate: its price in hours of work at Bare over the hours it adds an hour. A sensible investor buys what pays for itself within {hoursText(pace.settings.paybackHours)}. Ranks that add room, not a rate (Bank tabs, the Token cap), are listed under Problems.
+          Each rank that adds a rate, at the tier it belongs to and at Typical: the hours its price takes to gather (at Typical's rates before the Hall) against the hours it saves an hour on the work it saves most on. A sensible investor buys a rank that pays for itself within {hoursText(pace.settings.hallPaybackHours)} (the Guild Hall payback in the settings); a rank that does not is red. The proposed price is the most of its tier's material it can cost and still pay back in time, never below the rank before (raised ones are marked, and red when the raise makes them pay back too slowly): a preview, never applied. Ranks that add no rate (Bank tabs, a wound's length, a loadout slot, a camp's reach) are listed under Problems.
         </p>
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ ...head, textAlign: 'left', width: 150 }}>Rank</th>
-              <th style={{ ...head, textAlign: 'left' }}>Price</th>
-              <th style={{ ...head, textAlign: 'left', width: 140 }}>Pays back in</th>
+              <th style={{ ...head, textAlign: 'left', width: 170 }}>Rank</th>
+              <th style={{ ...head, textAlign: 'left', width: 100 }}>Tier</th>
+              <th style={{ ...head, textAlign: 'left' }}>Price (to gather)</th>
+              <th style={{ ...head, textAlign: 'left' }}>Saves</th>
+              <th style={{ ...head, textAlign: 'left', width: 110 }}>Pays back in</th>
+              <th style={{ ...head, textAlign: 'left' }}>Proposed (preview)</th>
             </tr>
           </thead>
           <tbody>
             {hall.map((h) => (
-              <tr key={`${h.id}|${h.rank}`} data-hall={`${h.id}|${h.rank}`}>
+              <tr key={`${h.id}|${h.rank}`} data-hall={`${h.id}|${h.rank}`} data-hall-pays={h.pays ? 'yes' : 'no'}>
                 <td style={cell}>{h.name} {h.rank}</td>
-                <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>{h.priceText} ({hoursText(h.priceHours)})</td>
-                <td style={{ ...cell, color: h.enabler ? 'var(--color-text-muted)' : h.payback <= pace.settings.paybackHours ? 'var(--color-success)' : 'var(--color-warning)' }}>
-                  {h.enabler ? 'the only source: an enabler' : hoursText(h.payback)}
+                <td style={{ ...cell, color: 'var(--color-text-muted)' }}>{h.builtIn ? 'built in' : h.tier === null ? <span style={{ color: 'var(--color-warning)' }}>no tier set</span> : tierLabel(h.tier)}</td>
+                <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>{h.priceText} ({h.priceTimeText})</td>
+                <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>
+                  {h.savesText}{h.workText && !h.enabler ? <span className="text-gray-500"> on {h.workText}</span> : null}
+                </td>
+                <td style={{ ...cell, fontWeight: h.pays ? 400 : 700, color: h.enabler ? 'var(--color-text-muted)' : h.pays ? 'var(--color-success)' : 'var(--color-error)' }} data-hall-payback>
+                  {h.paybackText}
+                </td>
+                <td style={{ ...cell, color: h.proposed && !h.proposed.why && !h.proposed.pays ? 'var(--color-error)' : 'var(--color-text-muted)' }} data-hall-proposed>
+                  {h.proposed ? (h.proposed.why ? h.proposed.why : `${h.proposed.priceText} (pays back in ${hoursText(h.proposed.payback)}${h.proposed.raised ? ', raised to the rank before' : ''})`) : '—'}
                 </td>
               </tr>
             ))}
@@ -173,7 +183,8 @@ function ratioColor(minutes, curve, settings) {
 
 function SourceCell({ source, onOpen, skill }) {
   if (!source) return <td style={{ ...cell, color: 'var(--color-text-muted)' }}>no work gives {skill} XP</td>;
-  const kinds = Object.entries(source.kinds);
+  const kinds = Object.entries(source.kinds).filter(([kind]) => kind !== 'hall');
+  const hall = source.kinds.hall;
   return (
     <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>
       <div>
@@ -182,6 +193,9 @@ function SourceCell({ source, onOpen, skill }) {
         <span className="text-gray-500"> (Bare {rateText(source.bareXp)})</span>
       </div>
       {source.fed < 1 && <div style={{ color: 'var(--color-warning)' }}>fed {Math.round(source.fed * 100)} %: short of {source.short}</div>}
+      <div data-hall-share style={{ color: hall ? 'var(--color-accent-hover)' : 'var(--color-text-muted)' }}>
+        {hall ? `Guild Hall ${gainText(hall.gain)} (${hall.names.join(', ')})` : 'Guild Hall: none at this stage'}
+      </div>
       {kinds.length > 0 && (
         <div className="text-gray-500">
           {kinds.map(([kind, g]) => `${BOOST_KIND_TEXT[kind]} ${gainText(g.gain)} (${g.names.join(', ')})`).join(' · ')}

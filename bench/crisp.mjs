@@ -120,8 +120,8 @@ const CASES = [
     },
     {
         id: 'walk',
-        what: 'an enemy walking (its box\'s transform transition)',
-        start: `(() => { const box = [...document.querySelectorAll('[data-token-art="true"]')].find(el => /translate\\(/.test(el.style.transform || '')); if (!box) return false; box.dataset.crispCase = 'true'; box.dataset.crispWas = box.style.transform; box.style.transition = 'transform ${LONG}ms linear'; const r = box.getBoundingClientRect(); box.style.transform = box.style.transform + ' translate(24px, 0px)'; return { x: r.left - 48, y: r.top - 48, w: r.width + 96, h: r.height + 96 }; })()`,
+        what: 'an enemy walking (its box\'s transform glide, a screen pixel a jump, as walkerGlide steps it)',
+        start: `(() => { const box = [...document.querySelectorAll('[data-token-art="true"]')].find(el => /translate\\(/.test(el.style.transform || '')); if (!box) return false; box.dataset.crispCase = 'true'; box.dataset.crispWas = box.style.transform; const fit = Number(document.querySelector('[data-board-scale]').dataset.boardScale); box.style.transition = 'transform ${LONG}ms steps(' + Math.ceil(24 * fit * devicePixelRatio) + ', start)'; const r = box.getBoundingClientRect(); box.style.transform = box.style.transform + ' translate(24px, 0px)'; return { x: r.left - 48, y: r.top - 48, w: r.width + 96, h: r.height + 96 }; })()`,
         stop: `(() => { const el = document.querySelector('[data-crisp-case]'); el.style.transition = 'none'; el.style.transform = el.dataset.crispWas; delete el.dataset.crispCase; delete el.dataset.crispWas; return true; })()`
     },
     {

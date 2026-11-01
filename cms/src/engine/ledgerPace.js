@@ -88,7 +88,7 @@ export function itemsText(pace, ledger, items) {
 /** The words for a factor kind as the rate lists it (`support`, `consumable`, …). */
 export const FACTOR_KIND_TEXT = Object.freeze({
   self: 'The work itself', support: 'Building', tool: 'Tool', gear: 'Gear', consumable: 'Consumable',
-  perk: 'Perk', region: 'Region', guild: 'Guild Hall',
+  perk: 'Perk', region: 'Region', guild: 'Guild-wide', hall: 'Guild Hall',
 });
 
 /**
@@ -107,13 +107,35 @@ export function switchableFactors(rate) {
 /** A profile's choices in words, each with why: "Copper Mine (pays back in 4 min)". */
 export function choiceText(pace, ledger, chosen) {
   return chosen.map((c) => {
-    const key = c.kind === BOOST_KIND.SUPPORT || c.kind === BOOST_KIND.CAMP ? tokenKey(c.id) : c.kind === BOOST_KIND.HALL ? null : itemKey(c.id);
-    const name = key ? keyName(pace, ledger, key) : c.id.replace(':', ' rank ').replace('wishing_well', 'Wishing Well');
+    const hall = c.kind === BOOST_KIND.HALL;
+    const key = c.kind === BOOST_KIND.SUPPORT || c.kind === BOOST_KIND.CAMP ? tokenKey(c.id) : hall ? null : itemKey(c.id);
+    const opened = hall && c.path?.length ? `, opened through ${c.path.map((id) => `${pace.hallName(id)} 1`).join(' and ')}` : '';
+    const name = hall ? `${pace.hallName(c.upgrade)} rank ${c.rank}` : keyName(pace, ledger, key);
     const why = !Number.isFinite(c.payback) ? ''
       : c.kind === BOOST_KIND.CONSUMABLE ? ' (pays as it is drunk)'
-        : c.payback > 0 ? ` (pays back in ${hoursText(c.payback)})` : ' (free: already there)';
+        : c.payback > 0 ? ` (pays back in ${hoursText(c.payback)}${opened})` : ` (free: already there${opened})`;
     return { kind: c.kind, name, why, factor: c.factor };
   });
+}
+
+/**
+ * The Guild Hall's ranks for the Pace page and the Guild Hall page: every rank that adds a rate,
+ * with its tier, price, the hours that price takes to gather at Typical, what it saves an hour and
+ * where, its payback (red when over the payback time) and the proposed price. `byStar` groups them.
+ */
+export function hallRows(pace) {
+  return pace.hallPaybacks().map((r) => ({
+    ...r,
+    workText: r.work ? pace.workName(r.work) : null,
+    savesText: r.rate ? (r.enabler ? 'the only source of what it pays' : r.gain > 0 ? PACE_TEXT.saves(r.gain) : 'nothing at its tier') : null,
+    paybackText: r.rate ? (r.enabler ? 'an enabler' : PACE_TEXT.short(r.payback)) : null,
+    priceTimeText: PACE_TEXT.short(r.priceHours),
+  }));
+}
+
+/** One star's rows by rank, `{ [rank]: row }`. */
+export function hallRowsOf(rows, starId) {
+  return Object.fromEntries(rows.filter((r) => r.id === starId).map((r) => [r.rank, r]));
 }
 
 /**

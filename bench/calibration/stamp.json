@@ -1,6 +1,6 @@
 {
-  "commit": "bc359673",
-  "date": "2026-10-31T12:29:06.119Z",
+  "commit": "0f6f1a77",
+  "date": "2026-11-01T06:05:15.325Z",
   "hours": 8,
   "seeds": [
     1,
@@ -113,6 +113,30 @@
           "engine": 377.7,
           "calc": 375,
           "diff": -0.7,
+          "outside": false,
+          "known": null
+        }
+      ]
+    },
+    {
+      "id": "vein-hall",
+      "name": "The vein again, the Guild Hall holding Mining XP +50 %, Mining work speed -20 % and a vein rest -50 % (fixture stars)",
+      "rows": [
+        {
+          "kind": "item",
+          "key": "item_copper_ore",
+          "engine": 655.5,
+          "calc": 654.5,
+          "diff": -0.1,
+          "outside": false,
+          "known": null
+        },
+        {
+          "kind": "xp",
+          "key": "mining",
+          "engine": 872.5,
+          "calc": 872.7,
+          "diff": 0,
           "outside": false,
           "known": null
         }
@@ -321,39 +345,43 @@
     }
   ],
   "files": {
-    "src/systems/progression/ledger/rates.js": "05e4c822",
-    "src/systems/effects/ModifierAggregator.js": "b8d0de6f",
-    "src/systems/effects/statements.js": "67affaeb",
+    "src/systems/progression/ledger/rates.js": "2bc59950",
+    "src/systems/effects/ModifierAggregator.js": "c5735c5b",
+    "src/systems/effects/statements.js": "e08cb55b",
     "src/systems/effects/effectLibrary.js": "6d4ee7ef",
     "src/systems/board/workTime.js": "36d599d6",
     "src/systems/board/cycleCharges.js": "0dcab499",
     "src/systems/hero/xpBonus.js": "e252e41e",
-    "src/systems/hero/perkTable.js": "917450ad",
+    "src/systems/hero/perkTable.js": "de20df40",
     "src/systems/atlas/regionModifiers.js": "88698fe6",
-    "src/systems/core/consumableRule.js": "0616d59c",
+    "src/systems/core/consumableRule.js": "d68e685a",
     "src/systems/core/wearRule.js": "bd32256d",
     "src/config/registries/tokenConstants.js": "01064910",
     "src/config/registries/filterRegistry.js": "16fffa4c",
     "src/config/registries/reachRegistry.js": "f9f7508f",
-    "src/config/registries/toolKinds.js": "69973919",
+    "src/config/registries/toolKinds.js": "c265d398",
     "src/config/registries/catchPools.js": "825094d4",
-    "src/config/guildUpgrades.js": "d61bb2ac",
-    "src/systems/board/BoardRunner.js": "6fba9f27",
-    "src/systems/board/TileModifiers.js": "a9ad5fd6",
+    "src/config/guildUpgrades.js": "2fc5d69c",
+    "src/config/hallStars.js": "a92460d5",
+    "src/systems/progression/hallModifiers.js": "4f79f08e",
+    "src/systems/effects/GuildModifiers.js": "43c39e3e",
+    "src/systems/progression/HallRules.js": "c9d287e8",
+    "src/systems/board/BoardRunner.js": "3efbd129",
+    "src/systems/board/TileModifiers.js": "b3c7d46c",
     "src/systems/board/TimedChanges.js": "1be0bfed",
     "src/systems/board/Respawn.js": "956e4787",
     "src/systems/board/Growth.js": "a58bc50f",
     "src/systems/board/Fields.js": "adb26942",
     "src/systems/board/Fishing.js": "aca698ed",
     "src/systems/board/OutputRules.js": "70a7e634",
-    "src/systems/board/PassiveProduction.js": "fdba2610",
+    "src/systems/board/PassiveProduction.js": "ec8fa50f",
     "src/systems/board/SpawnerSystem.js": "60c5299e",
-    "src/systems/board/Camps.js": "1c5cb3fb",
-    "src/systems/board/Flags.js": "80d85342",
-    "src/systems/hero/HeroEffects.js": "911d99a4",
-    "src/systems/effects/LiveEffects.js": "4fd3f0c9",
+    "src/systems/board/Camps.js": "0f09da04",
+    "src/systems/board/Flags.js": "9876452b",
+    "src/systems/hero/HeroEffects.js": "d821e3e6",
+    "src/systems/effects/LiveEffects.js": "41765436",
     "src/systems/core/CatchUp.js": "2f47dfd2",
-    "bench/calibration/setups.mjs": "fa4444ab",
-    "bench/calibration/engine.mjs": "dfca85b4"
+    "bench/calibration/setups.mjs": "6f18f436",
+    "bench/calibration/engine.mjs": "1d4e8ce5"
   }
 }

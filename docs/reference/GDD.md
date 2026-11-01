@@ -95,8 +95,8 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
   Token editor: trees, fruit trees and veins), wherever it came from, an old save
   included. Demolition still takes any of them but a map's node (unless its type
   can be cleared: Demolition below), the camp's and a landmark. *(`FixedTokens.js`)*
-- **Token cap: 128 Tokens** to start (owner, Atlas D-9); the Guild Hall's
-  **Token Cap** upgrade adds 16 a rank over 8 ranks, up to 256 (§8). The cap is the guild's but
+- **Token cap: 128 Tokens**, fixed (owner, Atlas D-9; the Guild Hall's Token Cap star
+  retired with brief 320, so a save's ranks there are dropped). The cap is the guild's but
   counts only the Region the guild is in (§10): every Token there, placed or
   spawned, and the **landmarks** (Token
   types marked `landmark`: the endgame sites, Atlas D-1; none are authored
@@ -1086,7 +1086,9 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   double loot, **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the
   Cleaver's Raw Beef), **catch weight** (a percentage on one fish's weight in a
-  water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens); accuracy,
+  water's catch pool: a better rod's bonus, §3 Fishing), fail chance, **camp reach** (a camp's,
+  as a percentage) (Tokens); **wound time** and **loadout slots** (guild-only: read from
+  Guild Hall stars, §8, never offered on a Token or item); accuracy,
   damage, **dodge, crit chance**, **Type Damage %** (the bearer's hits of a
   type or group, or every type: "Poisoner's Cloak: Poison 15"), **Type
   Resistance %** (hits of that type the bearer takes; negative is a weakness;
@@ -1161,20 +1163,26 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   and is excluded from the cap.
 - **Scouting Flags is retired** (it widened the area flags that orders and camps
   replaced): a save's bought ranks are dropped without a refund.
-- **Upgrade web** (separate full-screen view): nodes unlock when linked to the
-  Hall or to a bought node. Price: rank *n* costs 10 × *n* Oak Wood
-  (*placeholder*), except the **Token Cap** and the **Cartography Table**,
-  priced by the planes: ranks 1–2 in Oak Wood, Stone and Copper Ingots, ranks
-  3–4 in Fir Wood and Iron Ingots (first-pass numbers), later ranks the
-  placeholder. *(`guildUpgrades.js`)*
+- **Upgrade web** (separate full-screen view, a night sky of constellations): nodes unlock
+  when linked to the Hall or to a bought node. Three tracks are built in (below; rank *n*
+  costs 10 × *n* Oak Wood, *placeholder*); **every other star is content**
+  (`data/hallStars.json`, authored through CMS change packs; brief 320): a constellation per
+  skill linked to the Hall (its first star buyable at once), and more Hearth and Well stars.
+  A star has ranks, each with the owner's tier, its own price, and its **whole** effect
+  (not an increment): **rules** in the statement grammar (§7) held for the whole guild while
+  the rank is held, in every Region and wherever the Hall stands (a skill's XP, Yield or
+  Double Loot and Work Time narrowed to that skill; Token upgrades aimed at a Token or tag:
+  Grow Time for a vein's rest or a tree's regrowth, Camp Reach; the guild-only Wound Time
+  for the Infirmary and Loadout Slots for one more of a loadout kind), and **lines** of
+  Passive Production the Hall pays each lap beside the Wishing Well's Water. The sky grows to
+  hold its constellations and is dragged when it does not fit.
+  *(`guildUpgrades.js`, `hallStars.js`, `progression/HallRules.js`)*
 
 | Upgrade | Ranks | Effect |
 |---|---|---|
 | Bunk Beds | 8 | +1 hero per rank (rank 1 free) |
 | Bank Tabs | 15 | +1 Bank tab (64 slots) per rank |
 | Wishing Well | 10 | 10 × *rank* Water every 5 min as Passive Production, no hero needed (rank 1 free) |
-| Notice Board | 3 | +1 bounty quest cap per rank |
-| Token Cap | 8 | +16 Tokens on the mat per rank, from 128 up to 256 *(`MatCap.js`)* |
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*
@@ -1188,7 +1196,7 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
     heading its right page, and is done when a place of the world map is
     settled (brief 330 W3).
   - **Bounties**: random "collect N items" or "defeat N Goblins", each paying
-    10 Oak Wood (*placeholder*). Cap 2 (+1 per Notice Board rank, max 5); a
+    10 Oak Wood (*placeholder*). Cap 2 (the Notice Board star retired with brief 320); a
     new one every 3 min of game time.
 - **No unlocks and no classes**: progression is skill levels (recipe, Token
   and gear level requirements), each skill's milestone perks (§4), Hall
@@ -1400,10 +1408,10 @@ What costs most is the moving things (heroes, enemies, fights, hovering loot,
 stub rows), not the Token count.
 
 1. **Tokens.** A Region's base design holds at most **128 Tokens**, and a Base
-   Map's budget must fit 128, spawned Tokens and landmarks included. Each Token
-   Cap rank (+16) costs about 2 points on the slow laptop; 192 stays near the
-   reference (85 %). **256 is kept as the top cap** (owner) but is **not smooth
-   on a slow laptop** (62 %).
+   Map's budget must fit 128, spawned Tokens and landmarks included. The cap is
+   fixed at 128 since the Token Cap star retired (brief 320); measured for the
+   record: each +16 cost about 2 points on the slow laptop, 192 read 85 % and
+   256 read 62 %.
 2. **Heroes.** At most **8 heroes** on the mat (`ROSTER_MAX`). A hero costs
    about 20 Tokens' worth; any roster above 8 needs a performance pass first.
 3. **Enemies.** A Region keeps at most about **6 enemies alive at once** across

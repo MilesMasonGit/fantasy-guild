@@ -56,7 +56,7 @@ describe('the Guild Hall upgrade web', () => {
 
     it('shows a new game: Hall-linked nodes buyable, the rest locked, nothing lit', () => {
         const { container } = renderWeb();
-        for (const id of ['roster_size', 'bank_tabs', 'notice_board', 'wishing_well']) {
+        for (const id of ['roster_size', 'bank_tabs', 'wishing_well']) {
             expect(stateOf(container, id), id).toBe('buyable');
         }
         expect(stateOf(container, OUTER)).toBe('locked');
@@ -68,15 +68,15 @@ describe('the Guild Hall upgrade web', () => {
     });
 
     it('marks bought, maxed and newly opened nodes, and lights the bought paths', () => {
-        GameState.state.progress.guildUpgrades = { bank_tabs: 2, notice_board: 3 };
+        GameState.state.progress.guildUpgrades = { bank_tabs: 2, wishing_well: 10 };
         const { container } = renderWeb();
         expect(stateOf(container, 'bank_tabs')).toBe('bought');
-        expect(stateOf(container, 'notice_board')).toBe('maxed');
+        expect(stateOf(container, 'wishing_well')).toBe('maxed');
         expect(stateOf(container, OUTER)).toBe('buyable');     // Bank Tabs opened it
         expect(stateOf(container, 'roster_size')).toBe('buyable');
 
         expect(litOf(container, `bank_tabs:${HALL_NODE}`)).toBe('true');
-        expect(litOf(container, `notice_board:${HALL_NODE}`)).toBe('true');
+        expect(litOf(container, `wishing_well:${HALL_NODE}`)).toBe('true');
         expect(litOf(container, `${OUTER}:bank_tabs`)).toBe('false');  // only one end bought
         expect(litOf(container, `roster_size:${HALL_NODE}`)).toBe('false');
 

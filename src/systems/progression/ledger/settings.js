@@ -15,6 +15,7 @@ import { PLAN_TIERS, tierBudgetMs, tierOrNull } from './plan.js';
  *       boostTargets: { support: [{ tier, pct }], … }, // how strong each kind of boost should be, by tier
  *       campMembers: 3,                              // copies of a vein or Field a camp hands one hero
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
+ *       hallPaybackHours: 24,                        // and a Guild Hall rank within this
  *       rulesVersion: 'classless-one-job'            // which roster rules the pace follows
  *     }
  *
@@ -76,6 +77,8 @@ export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     boostTargets: DEFAULT_BOOST_TARGETS,
     campMembers: 3,
     paybackHours: 2,
+    // The owner (2026-10-30): a Guild Hall rank may take about a day to pay for itself.
+    hallPaybackHours: 24,
     rulesVersion: RULES_VERSIONS[0].id,
 });
 
@@ -136,6 +139,7 @@ export function settingsOf(raw) {
         boostTargets: boostTargetsOf(src.boostTargets),
         campMembers: Math.max(1, Math.floor(positive(src.campMembers, d.campMembers))),
         paybackHours: positive(src.paybackHours, d.paybackHours),
+        hallPaybackHours: positive(src.hallPaybackHours, d.hallPaybackHours),
         rulesVersion: RULES_VERSIONS.some((r) => r.id === src.rulesVersion) ? src.rulesVersion : d.rulesVersion,
     };
 }

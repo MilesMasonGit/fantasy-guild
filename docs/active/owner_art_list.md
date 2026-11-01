@@ -208,3 +208,10 @@ swapping a picture in for one is a small code change.
 |---|---|---|
 | Logging Camp, Mining Camp, Fishing Hut, Farmstead | **NEW** | One Token sprite each (64 px, a size-1 Token). Placeholders in the camps change pack: the unused Sawmill (`t_sawmill`), the unused iron mineshaft (`t_mineshaft_iron`), the Shrimp Market's fish stall (`t_market_fish`, 128 px) and the Windmill (`t_windmill`) |
 | Reach icon | **NEW** | The card's line for a camp ("Forestry · 360 u"), 8 × 8 at 2× like the other card icons; placeholder drawn in code (a ring round a dot, `PixelGlyph` `reach`) |
+
+## 8. Guild Hall stars (brief 320 H1)
+
+| Piece | Status | Notes |
+|---|---|---|
+| A picture per star kind (XP, yield, work speed, a vein's rest, regrowth, camp reach, a Well line, the Infirmary, a loadout slot) | **NEW** (when ready) | The details panel's 128 px picture of an authored star (32 art px at 4×). Placeholder: the gold star (`ui_star_gold.png`); a star may name its own `sprite` |
+| Each skill constellation's picture | **NEW** (when ready) | The finished-constellation glow draws its lines today; a drawn picture is for later |
