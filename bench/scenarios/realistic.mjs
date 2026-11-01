@@ -115,9 +115,9 @@ export function buildBoard({ fixtures, setMatTuning }, { placed = REALISTIC_PLAC
             .map(t => ({ t, d: Math.hypot(t.x - camp.x, t.y - camp.y) }))
             .filter(e => e.d <= watch)
             .sort((a, b) => a.d - b.d || (a.t.id < b.t.id ? -1 : 1));
-        const placed = near.find(e => orderAt(heroes[i].id, { x: e.t.x, y: e.t.y }).order === 'token');
-        if (!placed) throw new Error(`board: no Token a hero can work inside camp ${i - 1}'s watch (${watch} u)`);
-        workedInWatch.push(placed.t.typeId);
+        const job = near.find(e => orderAt(heroes[i].id, { x: e.t.x, y: e.t.y }).order === 'token');
+        if (!job) throw new Error(`board: no Token a hero can work inside camp ${i - 1}'s watch (${watch} u)`);
+        workedInWatch.push(job.t.typeId);
     }
     // Heroes 3–7: each ordered onto a producer, spread across the list.
     for (let i = 3; i < 8; i++) {
