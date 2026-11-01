@@ -89,6 +89,9 @@ function spawnerLines(instance, def, src) {
         case 'mat_full':
             out.push({ label: 'Next spawn', value: 'Token cap full: waits until the mat has room', tone: TONE.WARNING });
             break;
+        case 'sleeping':
+            out.push({ label: 'Next spawn', value: 'Asleep: wakes once the enemies holding this place are beaten', tone: TONE.WARNING });
+            break;
         default:
             out.push({ label: 'Next spawn', value: `in ${formatDuration(status.nextInMs)}` });
     }

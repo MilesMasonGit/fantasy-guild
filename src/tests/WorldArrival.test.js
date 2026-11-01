@@ -23,6 +23,9 @@ import { xpForLevel } from '../utils/XPCurve.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import * as World from '../systems/world/World.js';
 import * as Arrival from '../systems/world/Arrival.js';
+import * as Camps from '../systems/board/Camps.js';
+import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
+import * as TimedChanges from '../systems/board/TimedChanges.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../config/registries/enemyProfile.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
@@ -193,6 +196,37 @@ describe('⭐ the arrival on a settled place', () => {
         EventBus.publish(ENGINE_EVENTS.GAME_LOADED, {});
         expect(Occupation.isOccupied()).toBe(false);
         expect(NotificationSystem.notify).not.toHaveBeenCalled();
+    });
+});
+
+describe('⭐ a held place\'s own camps sleep (owner: A)', () => {
+    const enemiesOf = (camp) => BoardState.tokens().filter(t => t.tether === camp.id);
+    /** Run the timed changes (spawners among them) for `ms` of game time. */
+    const run = (ms) => { for (let t = 0; t < ms; t += 1000) TimedChanges.tick(1000); };
+
+    it('⭐ a camp spawns nothing while the place is held, and starts once its arrival is beaten', () => {
+        settleFirst();
+        const camp = BoardState.tokens().find(t => Camps.isEnemyCamp(t));
+        expect(camp, 'every kit writes a camp').toBeTruthy();
+        const interval = SpawnerSystem.intervalOf(getTokenType(camp.typeId));
+        run(3 * interval);
+        expect(enemiesOf(camp)).toEqual([]);
+        expect(Number(camp.clocks?.spawnMs) || 0).toBe(0);
+        expect(SpawnerSystem.spawnerStatus(camp.id).state).toBe(SpawnerSystem.SPAWNER_STATE.SLEEPING);
+
+        for (const e of Occupation.standingEnemies()) beat(e);
+        expect(Occupation.isOccupied()).toBe(false);
+        run(interval + 1000);
+        expect(enemiesOf(camp).length).toBeGreaterThan(0);
+    });
+
+    it('a camp on a mat that is not held spawns as before', () => {
+        settleFirst();
+        for (const e of Occupation.standingEnemies()) beat(e);
+        const camp = BoardState.tokens().find(t => Camps.isEnemyCamp(t));
+        expect(SpawnerSystem.isSleepingCamp(camp)).toBe(false);
+        run(SpawnerSystem.intervalOf(getTokenType(camp.typeId)) + 1000);
+        expect(enemiesOf(camp).length).toBeGreaterThan(0);
     });
 });
 

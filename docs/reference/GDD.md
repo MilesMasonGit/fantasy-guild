@@ -1282,16 +1282,22 @@ drawers**. The menu can be flipped to the right.
   so it shows on the map), one Token of it the rarest of its line's table for
   the ring; a combat specialty makes one of the kit's camps its boss camp.
   Every origin the map shows stands on the mat; work nothing fills goes to the
-  cell's own line; a mat keeps at most six heroes of natural work (the rest is
-  built). The hidden modifiers and treasures ride along as before; a wild cell
+  cell's own line. The hidden modifiers' extra work (Rich Veins' veins, Teeming
+  Waters' waters, a modifier's camp) is part of the natural work, and a mat
+  keeps at most six heroes of it all (the rest is built): the largest share
+  that is not the specialty's gives way first, then the specialty's, then the
+  camps (never the boss camp, never an origin's last Token) (owner). The
+  modifiers' other effects and the treasures ride along as before; a wild cell
   has one origin almost everywhere (three quarters of its nodes) or an odd
   layout (islands, mostly water, a chasm of Stone, cramped). **The arrival**: a
   settled place arrives occupied by the enemies its cell lists (3 to 6, more
   further out, sometimes a boss), together in a lair in the mat's outer band,
   one use each and tied to no camp. Until every one is beaten the mat is
   **held**: drawn dark (its ground shaded, its Tokens dimmed, the enemies
-  bright), and a hero may be sent at an enemy and at nothing else ("Beat the
-  enemies here first"); a hero whose enemy falls takes on the nearest one still
+  bright), a hero may be sent at an enemy and at nothing else ("Beat the
+  enemies here first"), and the place's own camps sleep (their clock stands
+  at zero, the card says "asleep"), spawning an interval after it is cleared
+  (owner); a hero whose enemy falls takes on the nearest one still
   standing, so heroes sent at the lair keep fighting while the player is away;
   the last one beaten brightens the mat ("The enemies are beaten: … is the
   guild's to work"). The board keeps it (`board.arrival`), so it travels and

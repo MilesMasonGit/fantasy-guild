@@ -20,7 +20,10 @@ import { ORIGIN_ROLE, EXTREME } from './generate.js';
  * 3. Work for a skill nothing fills goes to the cell's own line, so the heroes kept busy hold;
  *    every origin the map shows stands on the mat at least once; and past {@link MAX_HEROES} the
  *    kit's largest everyday share gives way.
- * 4. **Hidden extras**: the cell's modifiers and treasures, as generated (`generate.js`, step 7).
+ * 4. **Hidden extras**: the cell's modifiers and treasures, as generated (`generate.js`, step 7). A
+ *    modifier's extra work, its "more of" nodes (`density`) and its camps (`threat`), is natural
+ *    work like the rest: written here, inside the cap, and taken out of the recipe Budget reads
+ *    (`cellRegion.js`; owner: they count inside the six heroes).
  * 5. **Wild extremes**: one origin almost everywhere (`wild.compositionShare` of the nodes), or an
  *    odd layout ({@link LAYOUT_GROUND}).
  * 6. **Stone**: the kit's Stone terrain outcrops; **arrival**: the enemies the place arrives with.
@@ -157,6 +160,7 @@ function tokensFor(tables, skill, heroes) {
  * @param {object} lookups
  * @param {(typeId: string) => string|null} lookups.skillOf a Token's work skill
  * @param {string[]} [lookups.hallOrigins] the Hall's cell's origins (the Starter Camp's)
+ * @param {(itemId: string) => object|null} [lookups.modifierRecipe] a modifier extra's recipe, or null
  * @returns {{
  *   biome: string, heroes: Record<string, number>,
  *   nodes: {typeId: string, count: number, skill: string|null}[],
@@ -166,7 +170,7 @@ function tokensFor(tables, skill, heroes) {
  *   rare: string|null, extreme: object|null
  * }}
  */
-export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [] } = {}) {
+export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [], modifierRecipe = () => null } = {}) {
     const tier = Math.min(Math.max(1, cell?.ring || 1), STRICT_RINGS);
     const kit = kitById(tables, cell?.kit);
     const random = mulberry32(seedFromText(`${cell?.seed >>> 0}|mat`));
@@ -184,6 +188,7 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [] }
     const camps = new Map();
     let leftover = 0;
     let rare = null;
+    let bossCamp = null;
     const fromHeroes = (skill, h) => tokensFor(tables, skill, h);
 
     for (const skill of Object.keys(heroes).sort(byText)) {
@@ -194,7 +199,8 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [] }
             const boss = specialty === COMBAT ? (kit?.bossCamps || []) : [];
             let left = count;
             if (boss.length) {
-                addTo(camps, boss[Math.floor(random() * boss.length)], 1);
+                bossCamp = boss[Math.floor(random() * boss.length)];
+                addTo(camps, bossCamp, 1);
                 left--;
             }
             for (let i = 0; i < left && everyday.length; i++) addTo(camps, everyday[Math.floor(random() * everyday.length)], 1);
@@ -244,21 +250,49 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [] }
         skillOfNode.set(o.id, skill);
     }
 
-    // At most `MAX_HEROES` of natural work: the kit's largest everyday share gives way first,
-    // never the specialty's, and never an origin's last Token.
-    const busyNow = () => busyOf(nodes, skillOfNode, camps, tables);
-    const own = new Set((cell?.origins || []).map(o => o.id));
-    for (let guard = 0; guard < 200 && busyNow() > MAX_HEROES + 1e-9; guard++) {
-        let cut = null;
-        for (const [typeId, n] of nodes) {
-            const skill = skillOfNode.get(typeId);
-            if (skill === specialty || n <= (own.has(typeId) ? 1 : 0)) continue;
-            const load = n / heroTokensOf(tables, skill);
-            if (!cut || load > cut.load || (load === cut.load && byText(typeId, cut.typeId) < 0)) cut = { typeId, load };
+    // The hidden modifiers' extra work, each modifier once: more of a node, or a camp.
+    const modifierIds = new Set((cell?.extras || []).filter(e => e.kind === 'modifier').map(e => e.id));
+    for (const id of modifierIds) {
+        for (const effect of modifierRecipe(id)?.effects || []) {
+            if (!effect?.typeId) continue;
+            if (effect.kind === 'density') {
+                const n = Math.round(Number(effect.points) || 0);
+                if (n <= 0) continue;
+                addTo(nodes, effect.typeId, n);
+                if (!skillOfNode.has(effect.typeId)) skillOfNode.set(effect.typeId, skillOf(effect.typeId));
+            } else if (effect.kind === 'threat') {
+                addTo(camps, effect.typeId, Math.max(1, Math.floor(Number(effect.count) || 1)));
+            }
         }
+    }
+
+    // At most `MAX_HEROES` of natural work: the largest share of nodes that is not the
+    // specialty's gives way first, then, if that is not enough, the specialty's own; never an
+    // origin's or the rare node's last Token.
+    const busyNow = () => busyOf(nodes, skillOfNode, camps, tables);
+    const keep = new Set([...(cell?.origins || []).map(o => o.id), ...(rare ? [rare] : [])]);
+    for (const spareSpecialty of [true, false]) {
+        for (let guard = 0; guard < 500 && busyNow() > MAX_HEROES + 1e-9; guard++) {
+            let cut = null;
+            for (const [typeId, n] of nodes) {
+                const skill = skillOfNode.get(typeId);
+                if ((spareSpecialty && skill === specialty) || n <= (keep.has(typeId) ? 1 : 0)) continue;
+                const load = n / heroTokensOf(tables, skill);
+                if (!cut || load > cut.load || (load === cut.load && byText(typeId, cut.typeId) < 0)) cut = { typeId, load };
+            }
+            if (!cut) break;
+            nodes.set(cut.typeId, nodes.get(cut.typeId) - 1);
+            if (!nodes.get(cut.typeId)) nodes.delete(cut.typeId);
+        }
+    }
+    // Last, when camps alone keep it over: the camps give way, the most of one kind first, never
+    // the specialty's boss camp.
+    for (let guard = 0; guard < 100 && busyNow() > MAX_HEROES + 1e-9; guard++) {
+        const cut = [...camps].filter(([id, n]) => n > (id === bossCamp ? 1 : 0))
+            .sort(([a, x], [b, y]) => y - x || byText(a, b))[0];
         if (!cut) break;
-        nodes.set(cut.typeId, nodes.get(cut.typeId) - 1);
-        if (!nodes.get(cut.typeId)) nodes.delete(cut.typeId);
+        camps.set(cut[0], cut[1] - 1);
+        if (!camps.get(cut[0])) camps.delete(cut[0]);
     }
 
     const extreme = cell?.extreme || null;

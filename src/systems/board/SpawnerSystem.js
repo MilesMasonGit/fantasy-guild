@@ -13,6 +13,7 @@ import * as EffectActions from './EffectActions.js';
 import { pickWeighted } from './weightedPick.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as MatCap from './MatCap.js';
+import * as Occupation from './Occupation.js';
 import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
 import { neighbourIds, nearRadius } from './nearby.js';
@@ -57,7 +58,8 @@ export const SPAWNER_STATE = Object.freeze({
     AT_CAP: 'at_cap',
     MAT_FULL: 'mat_full',
     NEEDS_ITEM: 'needs_item',
-    NO_ROOM: 'no_room'
+    NO_ROOM: 'no_room',
+    SLEEPING: 'sleeping'
 });
 
 /** Spawner instance ids whose last attempt found no room — cleared by the next success. */
@@ -374,6 +376,7 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
  * - `needs_item`: the Bank and the loot on the mat cannot pay one spawn's upkeep between them
  * (`needs`: item ids);
  * - `no_room`: its last attempt found nowhere to land, and it is waiting;
+ * - `sleeping`: an enemy camp on a mat its arrival holds ({@link isSleepingCamp});
  * - `spawning`: otherwise, with `nextInMs` to the next attempt.
  *
  * Checked in that order, which is the order an attempt checks them.
@@ -392,6 +395,7 @@ export function spawnerStatus(instanceId) {
     const clock = Number(instance.clocks?.spawnMs) || 0;
 
     if (base.count >= base.cap) return { state: SPAWNER_STATE.AT_CAP, ...base };
+    if (isSleepingCamp(instance)) return { state: SPAWNER_STATE.SLEEPING, ...base };
     if (!MatCap.canPlaceMore(1)) return { state: SPAWNER_STATE.MAT_FULL, ...base };
     const needs = missingUpkeep(def);
     if (needs.length) return { state: SPAWNER_STATE.NEEDS_ITEM, needs, ...base };
@@ -409,6 +413,14 @@ export function isFullEnemyCamp(instance, def) {
     if (!spawnerBlock(def) || !isEnemyCampType(instance.typeId)) return false;
     const { count, cap } = countsOf(instance, def);
     return count >= cap;
+}
+
+/**
+ * Whether an enemy camp sleeps: its mat is held by the enemies a settled place arrived with
+ * (`Occupation`), and until they are beaten the place's own camps spawn nothing (owner).
+ */
+export function isSleepingCamp(instance) {
+    return Occupation.isOccupied() && isEnemyCampType(instance?.typeId);
 }
 
 /**

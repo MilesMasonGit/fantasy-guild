@@ -291,7 +291,8 @@ export const HANDLERS = [
         id: 'spawner',
         clock: 'spawnMs',
         // A full enemy camp's clock stands at zero: a beaten member comes back an interval later.
-        idleWhile: (instance, def) => SpawnerSystem.isFullEnemyCamp(instance, def),
+        // So does a camp on a mat its arrival still holds: it spawns an interval after it is cleared.
+        idleWhile: (instance, def) => SpawnerSystem.isSleepingCamp(instance) || SpawnerSystem.isFullEnemyCamp(instance, def),
         applies: (instance, def) => !instance.turnedFrom && SpawnerSystem.isSpawner(def),
         dueMs: (instance, def) => SpawnerSystem.intervalOf(def),
         fire: (instance, def, random, ctx) => SpawnerSystem.attemptSpawn(instance, def, random, ctx)

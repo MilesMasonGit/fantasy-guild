@@ -383,6 +383,8 @@ function spawnLine(def, status, src) {
             return { icon: 'spawn', text: `${family} · no room`, tip: `${head} No room to spawn nearby.`, tone: 'warning' };
         case 'mat_full':
             return { icon: 'spawn', text: `${family} · mat full`, tip: `${head} The mat is full.`, tone: 'warning' };
+        case 'sleeping':
+            return { icon: 'spawn', text: `${family} · asleep`, tip: `${head} Asleep while enemies hold this place.`, tone: 'warning' };
         default:
             return { icon: 'spawn', text: `${family} · next ${formatClock(status.nextInMs)}`, tip: `${head} Next in ${spoken(status.nextInMs)}.` };
     }

@@ -5,7 +5,8 @@ import { cellMat } from './cellMat.js';
 /**
  * Settling a cell writes its Region through the Atlas's generation (`Budget.js` → `Layout.js`):
  * one base recipe holding exactly the mat's natural work (`cellMat.js`), on its kit's ground, with
- * its camps, treasures, Stone and any odd water, plus one recipe per hidden modifier. The arrival's
+ * its camps, treasures, Stone and any odd water, plus one recipe per hidden modifier, less the
+ * extra work (nodes and camps) the mat already holds. The arrival's
  * enemies are not in the recipes: they come onto the mat once the guild is there (`Arrival.js`).
  *
  * Pure: the caller hands it the tables, the modifier recipes, the Token skills and the name.
@@ -42,8 +43,21 @@ export function recipesOfMat(mat, { id, name = '', modifierRecipe = () => null }
     if (mat.water !== null) base.water = mat.water;
     if (mat.inland) base.inland = mat.inland;
     if (mat.stone.outcrops > 0 || mat.stone.ridge) base.stone = { ...mat.stone };
-    const modifiers = mat.modifiers.map(modifierRecipe).filter(Boolean);
+    const modifiers = mat.modifiers.map(modifierRecipe).filter(Boolean).map(withoutWork).filter(Boolean);
     return [base, ...modifiers];
+}
+
+/** The modifier effects that are work the mat already holds inside its cap (`cellMat.js`). */
+const WORK_EFFECTS = Object.freeze(['density', 'threat']);
+
+/**
+ * A modifier recipe without its extra work (more of a node, a camp), which the mat already holds;
+ * null when nothing is left for Budget to read.
+ */
+function withoutWork(recipe) {
+    const effects = (recipe.effects || []).filter(e => !WORK_EFFECTS.includes(e?.kind));
+    if (!effects.length && !(recipe.rules || []).length) return null;
+    return { ...recipe, effects };
 }
 
 /**
@@ -58,7 +72,7 @@ export function recipesOfMat(mat, { id, name = '', modifierRecipe = () => null }
  * @param {string} [lookups.name] what the Region's practical name calls the base recipe
  * @returns {{mat: object, recipes: object[]}}
  */
-export function recipesOfCell(cell, { tables, skillOf, hallOrigins = [], modifierRecipe, name = '' }) {
-    const mat = cellMat(cell, tables, { skillOf, hallOrigins });
+export function recipesOfCell(cell, { tables, skillOf, hallOrigins = [], modifierRecipe = () => null, name = '' }) {
+    const mat = cellMat(cell, tables, { skillOf, hallOrigins, modifierRecipe });
     return { mat, recipes: recipesOfMat(mat, { id: cellRecipeId(cell), name, modifierRecipe }) };
 }
