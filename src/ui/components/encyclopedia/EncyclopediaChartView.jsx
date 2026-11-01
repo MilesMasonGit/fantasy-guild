@@ -13,7 +13,7 @@ import { formatClock } from '../drawer/lifecycleLines.js';
 import { KIND } from './encyclopediaModel.js';
 import {
     layoutChart, grownBox, keepInSight, centreOn, clampPan, needText, entryOfKey, oneOffWays, farSideOf,
-    pathIds, litLinks, litLabels, ROOT, STATIONS
+    litLinks, ROOT, STATIONS
 } from './encyclopediaChart.js';
 import { EntrySprite, Tick, heroHas, isCollected, unscroll, SPRITE_PX } from './encyclopediaParts.jsx';
 
@@ -33,8 +33,17 @@ const BAND_PAGE = '#d4c597';
 /** An arrow tab: a slightly deeper page, edged in ink on its outer sides. */
 const TAB_WASH = '#d3c290';
 
-/** How much a box, line, mark or tab off the path under the pointer keeps. */
-const DIMMED = 0.35;
+/** The lines on the path under the pointer: twice the ink. */
+const LIT_STROKE = 4;
+
+/**
+ * A mark on a line: light words with the game's hard 2 px outline for words over a picture (the
+ * parchment is one), the title size, bold; the skill icon at 2×.
+ */
+const MARK_WORDS = 'ui-text-title ui-text-outline-2 font-bold text-white';
+
+/** The grow and regrow marks are drawn in code, so they take the outline as a filter: 2 px, hard. */
+const GLYPH_OUTLINE = 'drop-shadow(2px 0 0 #000) drop-shadow(-2px 0 0 #000) drop-shadow(0 2px 0 #000) drop-shadow(0 -2px 0 #000)';
 
 /**
  * The parchment's main tone, behind a mark that sits on a line so the line breaks around it.
@@ -122,7 +131,7 @@ const EntryCard = ({ book, entry, node, have, startName, got, hint }) => {
  * The lines on one side of a box that are not on the chart: a tab on that side pointing the way,
  * the count inside ("‹2" on the left, "›6" on the right), in ink. A click opens that side.
  */
-const ArrowTab = memo(function ArrowTab({ stem, onStem, dim }) {
+const ArrowTab = memo(function ArrowTab({ stem, onStem }) {
     const node = stem.node;
     const words = t(stem.side === 'in' ? 'encyclopedia.hiddenIn' : 'encyclopedia.hiddenOut', { count: stem.count });
     const opensHere = stem.side === farSideOf(node) && !node.farOpen;
@@ -136,7 +145,6 @@ const ArrowTab = memo(function ArrowTab({ stem, onStem, dim }) {
             data-codex-stem={stem.side}
             data-codex-stem-of={node.id}
             data-codex-stem-far={stem.side === farSideOf(node) ? 'true' : undefined}
-            data-dim={dim ? 'true' : undefined}
             aria-label={words}
             className={cn(
                 'absolute flex items-center justify-center tabular-nums whitespace-nowrap', INK_WORDS,
@@ -145,8 +153,7 @@ const ArrowTab = memo(function ArrowTab({ stem, onStem, dim }) {
             style={{
                 left: stem.x, top: stem.y, width: stem.w, height: stem.h, lineHeight: `${stem.h - 4}px`,
                 background: TAB_WASH, borderTop: edge, borderBottom: edge,
-                ...(stem.side === 'in' ? { borderLeft: edge } : { borderRight: edge }),
-                opacity: dim ? DIMMED : undefined
+                ...(stem.side === 'in' ? { borderLeft: edge } : { borderRight: edge })
             }}
         >
             {stem.side === 'in' ? '‹' : '›'}{stem.count}
@@ -160,7 +167,7 @@ const ArrowTab = memo(function ArrowTab({ stem, onStem, dim }) {
  * hero has it; never red for a fight); and, where growing stages fold, the grow or regrow mark and
  * the time. Hover names the skill, the stations and the stages.
  */
-const LineMark = memo(function LineMark({ label, book, heroes, dim }) {
+const LineMark = memo(function LineMark({ label, book, heroes }) {
     const req = label.req;
     const isCombat = req?.skill === COMBAT;
     const short = !!req && !isCombat && !heroHas(req, heroes);
@@ -184,16 +191,15 @@ const LineMark = memo(function LineMark({ label, book, heroes, dim }) {
                 data-codex-req={req?.skill}
                 data-codex-req-short={short ? 'true' : undefined}
                 data-codex-made-at={stations.length ? t('encyclopedia.madeAtNames', { names: stations.join(', ') }) : undefined}
-                data-dim={dim ? 'true' : undefined}
-                className={cn('absolute flex items-center justify-center gap-1 whitespace-nowrap tabular-nums', INK_WORDS)}
+                className={cn('absolute flex items-center justify-center gap-1 whitespace-nowrap tabular-nums', MARK_WORDS)}
                 style={{
                     left: label.x, top: label.y, width: label.w, height: label.h, lineHeight: `${label.h}px`, background: label.onBand ? BAND_PAGE : PARCHMENT,
-                    ...(short ? { color: 'var(--color-ui-ink-red, #c8102e)' } : {}), opacity: dim ? DIMMED : undefined
+                    ...(short ? { color: 'var(--color-ui-red, #ff2d55)' } : {})
                 }}
             >
-                {label.through && <PixelGlyph name={label.regrow ? 'regrow' : 'grow'} scale={2} />}
+                {label.through && <PixelGlyph name={label.regrow ? 'regrow' : 'grow'} scale={4} style={{ filter: GLYPH_OUTLINE }} />}
                 {label.through && growMs > 0 && <span>{formatClock(growMs)}</span>}
-                {req && <SkillIcon skillId={isCombat ? 'melee' : req.skill} size={16} title={null} />}
+                {req && <SkillIcon skillId={isCombat ? 'melee' : req.skill} size={32} title={null} />}
                 {req && <span>{req.level}</span>}
             </span>
         </Tooltip>
@@ -204,7 +210,7 @@ const LineMark = memo(function LineMark({ label, book, heroes, dim }) {
  * One entry on the chart: its sprite and name; under them how many one of the start needs (red
  * when you have fewer) and a drop's odds; the collected tick. Resting the pointer on it shows its card.
  */
-const ChartNode = memo(function ChartNode({ book, box, entry, focused, collected, have, startName, got, onPick, onHover, dim }) {
+const ChartNode = memo(function ChartNode({ book, box, entry, focused, collected, have, startName, got, onPick, onHover }) {
     const node = box.node;
     const need = node.side === 'in' ? needText(node.need) : null;
     const short = need != null && have != null && have < need;
@@ -221,7 +227,6 @@ const ChartNode = memo(function ChartNode({ book, box, entry, focused, collected
                 data-focus={focused ? 'true' : undefined}
                 data-grown={node.grown ? 'true' : undefined}
                 data-far-open={node.farOpen ? 'true' : undefined}
-                data-dim={dim ? 'true' : undefined}
                 aria-pressed={focused}
                 onClick={() => onPick(node)}
                 onPointerEnter={(e) => { if (!e.buttons) onHover(node.id); }}
@@ -230,7 +235,7 @@ const ChartNode = memo(function ChartNode({ book, box, entry, focused, collected
                     'absolute flex items-center gap-2 px-1.5 text-left cursor-pointer bg-gi-surface border-2',
                     focused ? 'border-[var(--color-ui-white)]' : 'border-[var(--color-ui-frame)] hover:border-[var(--color-ui-white)]'
                 )}
-                style={{ left: box.x, top: box.y, width: box.w, height: box.h, opacity: dim ? DIMMED : undefined }}
+                style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
             >
                 <span className="shrink-0 flex items-center justify-center" style={{ width: SPRITE_PX, height: SPRITE_PX }}>
                     <EntrySprite entry={entry} />
@@ -257,7 +262,8 @@ const ChartNode = memo(function ChartNode({ book, box, entry, focused, collected
 
 /**
  * The ways' faint bands, then the lines between the boxes in ink, an arrowhead where each reaches
- * a box. While a box is under the pointer, the lines on its path to the start stay and the rest dim.
+ * a box. While a box is under the pointer, the lines on its path to the start are drawn twice as
+ * thick, over the rest; nothing fades.
  * ⚠️ The drawing is sized to the whole chart (its own box, a margin round it), never a 1 px SVG
  * leaning on `overflow: visible`, and its colours are literals: either way a browser can lose
  * every line.
@@ -281,14 +287,14 @@ const Links = memo(function Links({ layout, lit }) {
             shapeRendering="crispEdges"
         >
             {layout.bands.map(b => <rect key={b.id} data-codex-band={b.id} x={b.x} y={b.y} width={b.w} height={b.h} fill={BAND_WASH} />)}
-            {layout.links.map(link => {
+            {[...layout.links].sort((a, b) => (lit?.has(a.id) ? 1 : 0) - (lit?.has(b.id) ? 1 : 0)).map(link => {
                 const [x, y] = link.points[link.points.length - 1];
                 const on = !!lit && lit.has(link.id);
-                const off = !!lit && !on;
+                const arrow = on ? 2 : 0;
                 return (
-                    <g key={link.id} data-codex-link={link.id} data-lit={on ? 'true' : undefined} data-dim={off ? 'true' : undefined} opacity={off ? DIMMED : undefined}>
-                        <polyline points={link.points.map(p => p.join(',')).join(' ')} fill="none" stroke={INK} strokeWidth={2} />
-                        {nodeIds.has(link.into) && <polygon points={`${x - 8},${y - 5} ${x},${y} ${x - 8},${y + 5}`} fill={INK} />}
+                    <g key={link.id} data-codex-link={link.id} data-lit={on ? 'true' : undefined}>
+                        <polyline points={link.points.map(p => p.join(',')).join(' ')} fill="none" stroke={INK} strokeWidth={on ? LIT_STROKE : 2} />
+                        {nodeIds.has(link.into) && <polygon points={`${x - 8 - arrow},${y - 5 - arrow} ${x},${y} ${x - 8 - arrow},${y + 5 + arrow}`} fill={INK} />}
                     </g>
                 );
             })}
@@ -315,7 +321,7 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
     const [hoverAt, setHoverAt] = useState(null);
     const path = useMemo(() => {
         if (!hoverAt || !layout.nodes.some(n => n.id === hoverAt)) return null;
-        return { nodes: new Set(pathIds(hoverAt)), links: litLinks(layout, hoverAt), labels: litLabels(layout, hoverAt) };
+        return { links: litLinks(layout, hoverAt) };
     }, [hoverAt, layout]);
     const viewport = { w: Math.max(0, rect.width), h: Math.max(0, rect.height) };
     const sight = { w: Math.max(0, viewport.w - (rect.reserveRight || 0)), h: viewport.h };
@@ -391,6 +397,7 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
         <div
             data-codex-chart
             data-codex-view={`${view.x},${view.y}`}
+            data-codex-hover={hoverAt ?? undefined}
             className="absolute overflow-hidden select-none cursor-grab active:cursor-grabbing"
             style={{ left: rect.left, top: rect.top, width: viewport.w, height: viewport.h, touchAction: 'none' }}
             onPointerDown={onPointerDown}
@@ -417,7 +424,7 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
                         {t(`encyclopedia.via.${c.words}`)}
                     </span>
                 ))}
-                {layout.labels.map(l => <LineMark key={l.id} label={l} book={book} heroes={heroes} dim={!!path && !path.labels.has(l.id)} />)}
+                {layout.labels.map(l => <LineMark key={l.id} label={l} book={book} heroes={heroes} />)}
                 {layout.nodes.map(box => {
                     const entry = entryOfKey(book, box.node.key);
                     if (!entry) return null;
@@ -434,11 +441,10 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
                             got={got}
                             onPick={onNode}
                             onHover={setHoverAt}
-                            dim={!!path && !path.nodes.has(box.id)}
                         />
                     );
                 })}
-                {layout.stems.map(stem => <ArrowTab key={stem.id} stem={stem} onStem={onStem} dim={!!path && !path.nodes.has(stem.node.id)} />)}
+                {layout.stems.map(stem => <ArrowTab key={stem.id} stem={stem} onStem={onStem} />)}
             </div>
         </div>
     );

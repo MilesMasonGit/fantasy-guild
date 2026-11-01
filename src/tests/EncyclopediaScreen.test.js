@@ -250,24 +250,40 @@ describe('after the owner\'s third look', () => {
         expect(container.textContent).not.toMatch(/\+\d/);
     });
 
-    it('resting on a box lights its lines up to the start and dims the rest; leaving clears it', () => {
+    it('resting on a box draws its lines to the start twice as thick; nothing fades; leaving clears it', () => {
         lookUp(itemKey('item_iron_ingot'));
         const { container } = open();
         fireEvent.click(nodeOf(container, itemKey('item_iron_ore'), 'in'));
         const vein = nodeOf(container, tokenKey('token_iron_ore_vein'), 'in');
+        const width = (id) => q(container, `[data-codex-link="${id}"] polyline`).getAttribute('stroke-width');
+        const veinLine = `${vein.getAttribute('data-codex-node')}>`;
+        const coalLine = `${nodeOf(container, itemKey('item_coal'), 'in').getAttribute('data-codex-node')}>`;
+        expect([width(veinLine), width(coalLine)]).toEqual(['2', '2']);
         act(() => { fireEvent.pointerEnter(vein, { clientX: 10, clientY: 10, pointerType: 'mouse', buttons: 0 }); });
-        const dim = (el) => el.getAttribute('data-dim') === 'true';
-        expect(dim(vein)).toBe(false);
-        expect(dim(nodeOf(container, itemKey('item_iron_ore'), 'in'))).toBe(false);
-        expect(dim(q(container, '[data-codex-node="s"]'))).toBe(false);
-        const coal = nodeOf(container, itemKey('item_coal'), 'in');
-        expect(dim(coal)).toBe(true);
-        expect(dim(nodeOf(container, itemKey('item_iron_pickaxe'), 'out'))).toBe(true);
-        expect(q(container, `[data-codex-link="${vein.getAttribute('data-codex-node')}>"]`).getAttribute('data-lit')).toBe('true');
-        expect(q(container, `[data-codex-link="${coal.getAttribute('data-codex-node')}>"]`).getAttribute('data-lit')).toBeNull();
-        expect(q(container, `[data-codex-link="${coal.getAttribute('data-codex-node')}>"]`).getAttribute('data-dim')).toBe('true');
+        expect(q(container, `[data-codex-link="${veinLine}"]`).getAttribute('data-lit')).toBe('true');
+        expect([width(veinLine), width(coalLine)]).toEqual(['4', '2']);
+        expect(q(container, `[data-codex-link="${coalLine}"]`).getAttribute('data-lit')).toBeNull();
+        // Nothing fades: no box, line, mark or tab is dimmed.
+        expect(q(container, '[data-dim]')).toBeNull();
+        expect(qa(container, '[data-codex-node], [data-codex-line-label], [data-codex-stem]').every(el => !el.style.opacity)).toBe(true);
+        expect(qa(container, '[data-codex-link]').every(el => !el.getAttribute('opacity'))).toBe(true);
         act(() => { fireEvent.pointerLeave(vein, { clientX: 10, clientY: 10, pointerType: 'mouse' }); });
-        expect(qa(container, '[data-dim="true"]')).toHaveLength(0);
+        expect(q(container, '[data-lit]')).toBeNull();
+        expect(width(veinLine)).toBe('2');
+    });
+
+    it('a requirement mark is light words with the hard 2 px outline, the skill icon at 2×; red when short, never on a fight', () => {
+        GameState.state.heroes = [];
+        lookUp(itemKey('item_iron_ingot'));
+        const { container } = open();
+        const smelt = markOf(container, 's<0@');
+        expect(smelt.className).toMatch(/ui-text-outline-2/);
+        expect(smelt.className).toMatch(/text-white/);
+        expect(smelt.className).not.toMatch(/ui-text-ink/);
+        expect(smelt.style.color).toMatch(/--color-ui-red/);
+        expect(q(smelt, 'img').getAttribute('width')).toBe('32');
+        const chief = nodeOf(container, tokenKey('token_fire_elemental_chief'), 'in').getAttribute('data-codex-node').slice(0, -1);
+        expect(markOf(container, `${chief}@`).style.color).toBe('');
     });
 });
 

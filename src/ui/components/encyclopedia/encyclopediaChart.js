@@ -566,14 +566,17 @@ export const CHART_METRICS = Object.freeze({
     nodeH: 60,
     /**
      * Between two columns: an arrow tab each side, the join and trunk, and between them a mark as
-     * wide as the widest one ("grows 2:30", 73 px measured in the game).
+     * wide as the widest one (a grow mark and its time, "2:30").
      */
-    gapX: 172,
+    gapX: 200,
     /** From a box's side to the line that joins or splits there: room for its arrow tab ("›30"). */
     reach: 48,
     stemH: 20,
-    /** A mark on a line: its height, and the ink words' size it and the tabs are measured in. */
-    markH: 20,
+    /** A mark on a line: its height; its icon (a 16 px skill icon at 2×) and its words' size (the title size). */
+    markH: 32,
+    markIcon: 32,
+    markText: 18,
+    /** The tabs' ink words' size. */
     ink: 16,
     rowGap: 8,
     /** Between two ways in: the plain page between their bands. */
@@ -597,14 +600,15 @@ const wordsWidth = (s, u) => [...String(s)].reduce((w, c) => w + (c === ':' ? 0.
 
 /**
  * How wide a mark on a line is: the grow mark and its time, the skill icon and the level, the
- * padding. Measured in the ink words' size (`m.ink`) against the game's own font: an icon and its
- * gap 1.25 sizes, a figure 0.8 (the pixel font's figures are wide), a colon 0.4.
+ * padding. Measured against the game's own font: an icon (`m.markIcon`) and a 4 px gap, then the
+ * words at `m.markText`, a figure 0.8 of the size (the pixel font's figures are wide), a colon 0.4.
  */
 export function markWidth(mark, m = CHART_METRICS) {
-    const u = m.ink;
-    let w = 0.5 * u;
-    if (mark.through) w += 1.25 * u + wordsWidth(mark.growText ?? '0:00', u);
-    if (mark.req) w += 1.25 * u + wordsWidth(mark.req.level, u);
+    const u = m.markText;
+    const icon = m.markIcon + 4;
+    let w = 8;
+    if (mark.through) w += icon + wordsWidth(mark.growText ?? '0:00', u);
+    if (mark.req) w += icon + wordsWidth(mark.req.level, u) + (mark.through ? 4 : 0);
     return Math.round(w);
 }
 
