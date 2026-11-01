@@ -213,8 +213,10 @@ describe('⭐ one entry, two bearers', () => {
     });
 });
 
-describe('damage respects armour (G-23)', () => {
-    it('is reduced by the hero’s armour', () => {
+// Rewritten for damage types: flat armour is retired, and a rule's damage is untyped, so a thorn
+// lands whole on any hero; an older rule's "ignoring armour" changes nothing.
+describe('a thorn lands whole: armour is gone', () => {
+    it('is not reduced by the old flat armour', () => {
         registerThorns(5);
         GameState.state.heroes = [makeHero('hero_1', 2)];
         thornedProducer('fixture_bush_armour');
@@ -222,24 +224,10 @@ describe('damage respects armour (G-23)', () => {
 
         run(13000);
 
-        expect(hp('hero_1')).toBe(97);   // 5 - 2
+        expect(hp('hero_1')).toBe(95);
     });
 
-    it('⚠️ can be stopped ENTIRELY by armour, unlike a combat hit', () => {
-        // A combat hit floors at 1 so a fight always progresses. A thorn is not
-        // a fight: a floor of 1 here would make heavy armour worth exactly as
-        // much as none against every thorn in the game.
-        registerThorns(2);
-        GameState.state.heroes = [makeHero('hero_1', 10)];
-        thornedProducer('fixture_bush_plated');
-        place(BUSH, 'fixture_bush_plated', 'hero_1');
-
-        run(13000);
-
-        expect(hp('hero_1')).toBe(100);
-    });
-
-    it('pierces when the author says so', () => {
+    it('an older rule that pierced lands the same', () => {
         registerThorns(2, { ignoresArmor: true });
         GameState.state.heroes = [makeHero('hero_1', 10)];
         thornedProducer('fixture_bush_piercing');
@@ -315,7 +303,7 @@ describe('the grammar and the sentence', () => {
         const s = makeStatement(KEYWORD.DEALS);
         expect(s.when.event).toBe('SELF_CYCLE_COMPLETE');
         expect(s.target).toEqual({ role: ROLE.ACTOR });
-        expect(s.payload).toEqual({ amount: 1, ignoresArmor: false });
+        expect(s.payload).toEqual({ amount: 1 });
     });
 
     it('reads literally, and keeps Token capitalised', () => {
@@ -323,11 +311,11 @@ describe('the grammar and the sentence', () => {
             .toBe("On Cycle: deals 1 damage to the hero.");
     });
 
-    it('mentions armour only when it is being ignored', () => {
+    it('never mentions armour: an older rule\'s "ignoring armour" is read by nothing', () => {
         const s = makeStatement(KEYWORD.DEALS);
         expect(renderStatement(s)).not.toContain('armour');
         expect(renderStatement({ ...s, payload: { amount: 2, ignoresArmor: true } }))
-            .toBe("On Cycle: deals 2 damage to the hero, ignoring armour.");
+            .toBe("On Cycle: deals 2 damage to the hero.");
     });
 
     it('⚠️ prints a moment tag exactly as authored', () => {

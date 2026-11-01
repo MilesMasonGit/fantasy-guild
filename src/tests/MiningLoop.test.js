@@ -19,6 +19,10 @@ import { registerItems } from '../config/registries/itemRegistry.js';
 import { cardLifecycle, liveCardSources } from '../ui/components/board/tokenCard.js';
 import { lifecycleLines } from '../ui/components/drawer/lifecycleLines.js';
 import { clearMat, placeAt } from './fixtures/mat.js';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// Its heroes stand at perk levels: the shipped perks are content, not what this tests.
+withoutShippedPerks();
 
 /**
  * Mining (brief 230 S3; owner, 2026-10-24). A vein rests when it runs out and refills all at once;

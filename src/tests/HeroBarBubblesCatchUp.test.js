@@ -11,6 +11,10 @@ import * as CatchUp from '../systems/core/CatchUp.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { bubblesOf, clearAllHeroBubbles, clearHeroBubble } from '../ui/components/dock/heroBarBubbles.js';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// A level-up to a shipped perk's level adds a perk alert; these are the level alerts alone.
+withoutShippedPerks();
 
 /**
  * A catch-up plays with the UI's listeners quiet, so the hero bar never hears its level-ups as

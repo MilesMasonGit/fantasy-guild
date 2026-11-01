@@ -12,6 +12,13 @@ import { syncFiles } from '../../cms/src/engine/recipeSync';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 import { isHostileEnemy, enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { DAMAGE_GROUPS, DAMAGE_TYPES, damageTypeLabel } from '../config/registries/damageTypes.js';
+
+/** The preview's resistances as the editor writes them: groups first, a weakness said so. */
+const resistText = (map) => {
+    const ids = [...DAMAGE_GROUPS, ...DAMAGE_TYPES].map(x => x.id).filter(id => map?.[id]);
+    return ids.length ? ids.map(id => (map[id] < 0 ? `${damageTypeLabel(id)} weak ${-map[id]}%` : `${damageTypeLabel(id)} ${map[id]}%`)).join(', ') : 'none';
+};
 
 /**
  * B7.2 — the CMS models **`enemy.hostile`** before any content uses it
@@ -180,13 +187,14 @@ describe('the Token editor’s Hostile checkbox', () => {
 
 describe('the Token editor’s level preview', () => {
     // Renders every shipped enemy's editor, so it needs more than the default timeout under full-suite load.
-    it('shows the fight’s own numbers for every shipped enemy: HP, hit, armour, swing time, XP', { timeout: 20000 }, () => {
+    // Rewritten for damage types: flat armour gave way to the enemy's resistances, and the hit names its type.
+    it('shows the fight’s own numbers for every shipped enemy: HP, hit, resistances, swing time, XP', { timeout: 20000 }, () => {
         for (const id of enemyIds) {
             const p = enemyProfileOf(useEntityStore.getState().tokens[id]);
             const { container, unmount } = editor(id);
             const box = within(container).getByText('What the fight uses').parentElement.parentElement;
             expect(box.textContent, id).toContain(
-                `HP${p.hp}Hit${p.hit}Armour${p.armor}Attacks every${(p.attackSpeed / 1000).toFixed(1)}sXP${p.xpAwarded}`);
+                `HP${p.hp}Hit${p.hit} PhysicalResists${resistText(p.resistances)}Attacks every${(p.attackSpeed / 1000).toFixed(1)}sXP${p.xpAwarded}`);
             unmount();
         }
     });
@@ -197,6 +205,6 @@ describe('the Token editor’s level preview', () => {
         useEntityStore.getState().updateToken(id, { enemy: { level: 1, style: 'melee', budgetScale: 0.3 } });
         const { container } = editor(id);
         const box = within(container).getByText('What the fight uses').parentElement.parentElement;
-        expect(box.textContent).toContain('HP6Hit1Armour0Attacks every3.0sXP3');
+        expect(box.textContent).toContain('HP6Hit1 PhysicalResistsnoneAttacks every3.0sXP3');
     });
 });

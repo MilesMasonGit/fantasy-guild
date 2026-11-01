@@ -8,9 +8,10 @@
 // --- Rounding -------------------------------------------------------------------------------
 
 /**
- * Round to the nearest whole number, halves up (2.5 → 3, 4.5 → 5): the one rounding every combat
- * percentage uses. The small epsilon keeps a product such as 6 × 0.75 = 4.499999… from rounding
- * down.
+ * Round to the nearest whole number, halves up (2.5 → 3, 4.5 → 5): the rounding for numbers the
+ * game fills (a kind's hit, a burning meal). A landed hit rolls its fraction instead
+ * (`CombatFormulas.rollFraction`). The small epsilon keeps a product such as 6 × 0.75 = 4.499999…
+ * from rounding down.
  */
 export function roundHalfUp(x) {
     return Math.floor(x + 0.5 + 1e-9);
@@ -68,13 +69,13 @@ export function missChance(attackerLevel, defenderLevel, dodge = 0, accuracy = 0
 
 // --- Crits ----------------------------------------------------------------------------------
 
-/** About 1 swing in 20 crits for double, the doubling applied BEFORE armour. Gear adds chance. */
+/** About 1 swing in 20 crits for double, the doubling applied before the type factor. Gear adds chance. */
 export const BASE_CRIT_CHANCE = 5;
 export const CRIT_MULTIPLIER = 2;
 
 // --- The style cycle ------------------------------------------------------------------------
 
-/** A good matchup deals 25 % more, a bad one 25 % less (rounded halves up, minimum 1 after armour). */
+/** A good matchup deals 25 % more, a bad one 25 % less. */
 export const MATCHUP_DAMAGE_SHIFT = 0.25;
 
 /**
@@ -114,32 +115,34 @@ export function matchupMultiplier(attackerType, defenderType) {
  * What an enemy of a level has before the author changes anything (the CMS will fill these and
  * let any be overridden). Tuned so an even fight, a hero with their tier's
  * normal-speed weapon against an enemy of their own level, lasts 10+ swings and 30 s or more:
- *   HP      = 20 + level        (10 more than a hero of that level)
+ *   HP      = 20 + level        (10 more than a hero of that level), + 4 per 30 levels
  *   hit     = 1 + 1 per 20 levels
- *   armour  = 1 per 30 levels
  *   speed   = normal (3 s)
  *   XP      = 10 × 1.065^(level − 1), rounded
  * The worked duels are in `concept_combat.md` ("The level table and weapon tiers").
+ * ⚠️ The 4 HP per 30 levels stands where 1 armour per 30 levels stood before damage types: without
+ * it the even fight at the start of the gold, mythril, adamantine and darkmetal tiers drops under
+ * the owner's 10 swings (`CombatRules.test.js` checks every level).
  */
 export const ENEMY_LEVEL_TABLE = Object.freeze({
     HP_BASE: 20,
+    HP_LEVELS_PER_STEP: 30,
+    HP_PER_STEP: 4,
     HIT_LEVELS_PER_STEP: 20,
-    ARMOR_LEVELS_PER_POINT: 30,
     XP_BASE: 10,
     XP_GROWTH: 1.065
 });
 
 /**
  * The stat block for an enemy of `level`.
- * @returns {{ hp: number, hit: number, armor: number, speed: string, attackSpeedMs: number, xp: number }}
+ * @returns {{ hp: number, hit: number, speed: string, attackSpeedMs: number, xp: number }}
  */
 export function enemyLevelStats(level) {
     const L = Math.max(1, Math.floor(level || 1));
     const t = ENEMY_LEVEL_TABLE;
     return {
-        hp: t.HP_BASE + L,
+        hp: t.HP_BASE + L + t.HP_PER_STEP * Math.floor(L / t.HP_LEVELS_PER_STEP),
         hit: 1 + Math.floor(L / t.HIT_LEVELS_PER_STEP),
-        armor: Math.floor(L / t.ARMOR_LEVELS_PER_POINT),
         speed: DEFAULT_ATTACK_SPEED,
         attackSpeedMs: attackSpeedMs(DEFAULT_ATTACK_SPEED),
         xp: Math.max(1, roundHalfUp(t.XP_BASE * Math.pow(t.XP_GROWTH, L - 1)))
@@ -148,8 +151,8 @@ export function enemyLevelStats(level) {
 
 /**
  * The proposed weapon tiers, by the smithing ingots' levels: a normal weapon's damage, a fast one
- * about 2/3 of it, a slow one about 4/3, so the three deal about the same per second before
- * armour. A proposal for authoring; every weapon carries its own `damage`, and the
+ * about 2/3 of it, a slow one about 4/3, so the three deal about the same per second. A proposal
+ * for authoring; every weapon carries its own `damage`, and the
  * engine never reads this table.
  */
 export const WEAPON_TIERS = Object.freeze([

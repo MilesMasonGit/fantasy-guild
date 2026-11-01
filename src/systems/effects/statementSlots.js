@@ -18,6 +18,7 @@ import { FILTER_KINDS, filtersOf } from '../../config/registries/filterRegistry.
 import { MAGNITUDE_KIND, statsForRoles } from '../../config/registries/magnitudeRegistry.js';
 import { PLACEMENTS, placementOf } from '../../config/registries/placementRegistry.js';
 import { getAllSkills } from '../../config/registries/skillRegistry.js';
+import { DAMAGE_GROUPS, DAMAGE_TYPES, typesOfGroup, damageTypeLabel } from '../../config/registries/damageTypes.js';
 import { STATION_KINDS, stationKindLabel } from '../../config/registries/tokenConstants.js';
 
 /**
@@ -109,6 +110,13 @@ function payloadForAxis(type) {
 const statusOptions = (ctx) => Object.values(ctx?.effects || {})
     .filter(e => statusBlockOf(e))
     .map(e => option(e.id, e.name || e.id, 'A status effect.'));
+
+/** The damage groups, then the types under them: what a Type Damage or Resistance row may name. */
+const damageTypeOptions = () => [
+    option('', 'Every type', 'Every hit, whatever its type.'),
+    ...DAMAGE_GROUPS.map(g => option(g.id, g.label, `The ${g.label} group: ${typesOfGroup(g.id).map(damageTypeLabel).join(', ')}.`)),
+    ...DAMAGE_TYPES.map(t => option(t.id, t.label, `${t.label}, one ${damageTypeLabel(t.group)} type.`))
+];
 
 /** A 1-100 chance. Unreadable input keeps "always". */
 const clampChance = (v) => {
@@ -262,13 +270,7 @@ function payloadSlots(statement, ctx) {
                     value: filtersOf(statement?.counted),
                     options: FILTER_KINDS.map(f => option(f.id, f.label, f.hint)),
                     patch: v => ({ counted: { ...(statement.counted || { mode: 'all', value: '' }), filters: v } })
-                }] : []),
-                {
-                    id: 'ignoresArmor', kind: SLOT_KIND.FLAG, label: 'ignores armour',
-                    value: !!payload.ignoresArmor,
-                    hint: 'Armour normally reduces this, and heavy armour can stop it entirely.',
-                    patch: v => ({ payload: { ...payload, ignoresArmor: !!v } })
-                }
+                }] : [])
             ];
         }
 
@@ -278,7 +280,10 @@ function payloadSlots(statement, ctx) {
                 {
                     id: 'type', kind: SLOT_KIND.VOCABULARY, label: 'effect',
                     value: payload.type,
-                    options: paletteForKeyword(KEYWORD.PROVIDES).map(p => option(p.type, p.label, p.hint)),
+                    options: [
+                        ...paletteForKeyword(KEYWORD.PROVIDES).map(p => option(p.type, p.label, p.hint)),
+                        ...(entry?.retired ? [option(entry.type, `${entry.label} (retired)`, entry.hint)] : [])
+                    ],
                     patch: v => ({ payload: payloadForAxis(v) })
                 },
                 {
@@ -321,6 +326,8 @@ function payloadSlots(statement, ctx) {
                     /** The only way to scope a rule to a skill. "Any skill" clears the scope. */
                     options: entry.categories === 'status'
                         ? statusOptions(ctx)
+                        : entry.categories === 'damageType'
+                            ? damageTypeOptions()
                         : entry.categories === 'item'
                             ? [option('', 'Any item', 'Every item that drops rolls on its own.'),
                                 ...Object.values(ctx?.items || {}).map(i => option(i.id, i.name || i.id))]

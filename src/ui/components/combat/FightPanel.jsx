@@ -14,9 +14,9 @@ import { isRealAttack } from '../board/hitAnimations.js';
 import { HP_BAR, HP_COLOUR, HP_TRACK, HP_EDGE, healthFillPx } from '../board/healthBar.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { CombatGlyph } from './CombatGlyph.jsx';
-import { GLYPH_COLOUR } from './combatGlyphs.js';
+import { GLYPH_COLOUR, damageTypeGlyph } from './combatGlyphs.js';
 import { fightsOf, subscribeFights, reconcile, adopt, startFightWatch, TONE, OUTCOME } from './fightWatch.js';
-import { fightPanelView, levelText, secondsText, styleName, clockText } from './fightView.js';
+import { fightPanelView, levelText, secondsText, styleName, clockText, damageText, damageTypeName } from './fightView.js';
 import { t } from '../../../i18n/index.js';
 
 /**
@@ -24,9 +24,10 @@ import { t } from '../../../i18n/index.js';
  * the fight's clock; a short strip of the battlefield with both fighters at 1× at its ends, the hero
  * always on the left facing right, each moving as on the mat (idle, and a swing per real swing);
  * under it the versus card, one shared icon column so the hero's numbers and the enemy's read across
- * (level and style, health, hit, armour, swing), then the hero's elixirs and statuses beside the
- * enemy's kinds (once fought), statuses and buffs; and the log, closed until asked for, holding the
- * whole of this fight and the last one. Opens over the playmat (`FightPanelPopup`).
+ * (level and style, health, hit with its damage types, resistances, swing), then the hero's elixirs
+ * and statuses beside the enemy's moves (the last one made bright), kinds (once fought), statuses
+ * and buffs; and the log, closed until asked for, holding the whole of this fight and the last one.
+ * Opens over the playmat (`FightPanelPopup`).
  */
 
 /** The panel's width inside its frame. */
@@ -137,11 +138,98 @@ const VsRow = ({ id, glyph, hero, enemy, tips }) => (
             <span className="flex justify-end items-center gap-2 font-bold tabular-nums text-white cursor-help" data-fight-side="hero">{hero}</span>
         </Tooltip>
         <CombatGlyph name={glyph} colour={GLYPH_COLOUR.text} />
-        <Tooltip title={tips[1]}>
+        <Tooltip title={tips[1]} lines={tips[3]}>
             <span className="flex justify-start items-center gap-2 font-bold tabular-nums text-white cursor-help" data-fight-side="enemy">{enemy}</span>
         </Tooltip>
     </div>
 );
+
+/** A hit's size with its type's glyph: `2 [fire]`, and for a shot `2 [fire] + 1 [stab]`. */
+const HitParts = ({ parts }) => (
+    <span className="inline-flex items-center gap-1" data-fight-hit-parts>
+        {parts.map((p, i) => (
+            <span key={`${p.type}-${i}`} className="inline-flex items-center gap-1" data-fight-hit-type={p.type}>
+                {i > 0 && <span className="text-gi-muted">+</span>}
+                {damageText(p.hit)}
+                <CombatGlyph name={damageTypeGlyph(p.type)} colour={GLYPH_COLOUR.text} />
+            </span>
+        ))}
+    </span>
+);
+
+/** An enemy's hit: as a hit's parts for one type; for moves in several types, the hit and each type's glyph. */
+const EnemyHit = ({ enemy }) => {
+    const types = enemy.hitTypes?.length ? enemy.hitTypes : [enemy.hitType];
+    if (types.length <= 1) return <HitParts parts={[{ type: types[0] ?? enemy.hitType, hit: enemy.hit }]} />;
+    return (
+        <span className="inline-flex items-center gap-1" data-fight-hit-parts>
+            {damageText(enemy.hit)}
+            {types.map(type => (
+                <span key={type} className="inline-flex" data-fight-hit-type={type}>
+                    <CombatGlyph name={damageTypeGlyph(type)} colour={GLYPH_COLOUR.text} />
+                </span>
+            ))}
+        </span>
+    );
+};
+
+/** What each of an enemy's moves does, one line each, for the hit row's tooltip. */
+const movesTip = (moves) => (moves?.length
+    ? [t('fight.tip.enemyMoves'), ...moves.map(m => `${m.name}: ${[m.hits ? damageTypeName(m.type) : t('fight.moves.noHit'), m.effect].filter(Boolean).join(', ')}`)]
+    : undefined);
+
+/**
+ * An enemy's moves, the one its last swing made bright, each with the type it hits with or (a move
+ * that does not hit) a plain star, set off by a faint line from the kinds and the gold-starred effects
+ * on it below: Flutter the move and Flutter carried read apart.
+ */
+const MoveList = ({ moves, last }) => (
+    <div className="flex flex-col items-end gap-0.5 self-stretch pb-1 border-b border-white/10" data-fight-moves>
+        {moves.map((m, i) => {
+            const isLast = m.name === last;
+            return (
+                <Tooltip
+                    key={`${m.name}-${i}`}
+                    title={m.name}
+                    lines={[
+                        m.hits ? damageTypeName(m.type) : t('fight.moves.noHit'),
+                        m.effect,
+                        t('fight.moves.share', { n: m.share }),
+                        isLast ? t('fight.moves.lastMove') : null
+                    ]}
+                >
+                    <span
+                        className={`inline-flex items-center gap-1 cursor-help ${isLast ? 'font-bold text-white' : 'text-gi-text'}`}
+                        data-fight-move={m.name}
+                        data-fight-move-last={isLast ? 'true' : 'false'}
+                    >
+                        {m.name}
+                        <CombatGlyph name={m.hits ? damageTypeGlyph(m.type) : 'star'} colour={GLYPH_COLOUR.text} />
+                    </span>
+                </Tooltip>
+            );
+        })}
+    </div>
+);
+
+/** A side's resistances as glyph chips: `[fire] 100%`, a weakness `[ice] −50%` in gold; `–` for none. */
+const ResistChips = ({ lines, align = 'start' }) => (lines.length === 0
+    ? <span className="text-gi-muted" data-fight-resists="none">–</span>
+    : (
+        <span className={`inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 ${align === 'end' ? 'justify-end' : ''}`} data-fight-resists="some">
+            {lines.map(l => (
+                <span key={l.id} className="inline-flex items-center gap-0.5" data-fight-resist={l.id} style={l.value < 0 ? { color: 'var(--color-ui-gold)' } : undefined}>
+                    <CombatGlyph name={damageTypeGlyph(l.id)} colour={l.value < 0 ? GLYPH_COLOUR.gold : GLYPH_COLOUR.text} />
+                    {l.value < 0 ? `−${-l.value}%` : `${l.value}%`}
+                </span>
+            ))}
+        </span>
+    ));
+
+/** What a side's resistances say, one line each, for the row's tooltip. */
+const resistTip = (lines) => lines.map(l => (l.value < 0
+    ? `${t('fight.card.weakTo')}: ${t('fight.card.step', { type: damageTypeName(l.id), n: -l.value })}`
+    : `${t('fight.card.resists')}: ${t('fight.card.step', { type: damageTypeName(l.id), n: l.value })}`));
 
 /** An elixir: its icon and how many fights it has left, the one under way counted. */
 const ElixirChip = ({ e }) => (
@@ -193,16 +281,16 @@ export const VersusCard = ({ view }) => {
             <VsRow
                 id="hit"
                 glyph="hit"
-                hero={hero.hit}
-                enemy={enemy.hit}
-                tips={[t('fight.tip.heroHit', { hit: hero.hit }), t('fight.tip.enemyHit', { hit: enemy.hit }), hero.hitLines]}
+                hero={hero.hitParts?.length ? <HitParts parts={hero.hitParts} /> : damageText(hero.hit)}
+                enemy={<EnemyHit enemy={enemy} />}
+                tips={[t('fight.tip.heroHit', { hit: damageText(hero.hit) }), t('fight.tip.enemyHit', { hit: damageText(enemy.hit) }), hero.hitLines, movesTip(enemy.moves)]}
             />
             <VsRow
-                id="armour"
+                id="resists"
                 glyph="shield"
-                hero={hero.armour}
-                enemy={enemy.armour}
-                tips={[t('fight.tip.heroArmour', { armour: hero.armour }), t('fight.tip.enemyArmour', { armour: enemy.armour })]}
+                hero={<ResistChips lines={hero.resists || []} align="end" />}
+                enemy={<ResistChips lines={enemy.resists || []} />}
+                tips={[t('fight.tip.heroResists', { name: hero.name }), t('fight.tip.enemyResists', { name: enemy.name }), resistTip(hero.resists || []), resistTip(enemy.resists || [])]}
             />
             <VsRow
                 id="swing"
@@ -220,6 +308,7 @@ export const VersusCard = ({ view }) => {
                     {hero.statuses.map(s => <StatusChip key={s.id} s={s} />)}
                 </div>
                 <div className="flex flex-col items-end gap-1 text-right" data-fight-effects="enemy">
+                    {enemy.moves?.length > 0 && <MoveList moves={enemy.moves} last={enemy.lastMove} />}
                     {enemy.kinds == null ? (
                         <span className="ui-text-small text-gi-muted" data-fight-kinds="unknown">{t('fight.panel.unknownKinds')}</span>
                     ) : enemy.kinds.map(k => (
@@ -255,7 +344,17 @@ function endText(record) {
 const LogLine = ({ line }) => (
     <div className="flex items-center gap-1.5" data-fight-log-line={line.key}>
         <CombatGlyph name={line.icon} colour={line.icon === 'star' ? GLYPH_COLOUR.gold : TONE_GLYPH[line.tone]} />
-        <span className="flex-1 min-w-0">{t(`fight.log.${line.key}`, line.vars)}</span>
+        <span className="flex-1 min-w-0">
+            {t(`fight.log.${line.key}`, line.vars)}
+            {line.types?.length > 0 && (
+                <span className="text-gi-muted" data-fight-log-types={line.types.join(' ')}> · {line.types.map(damageTypeName).join(' + ')}</span>
+            )}
+            {line.verdict && (
+                <span data-fight-log-verdict={line.verdict} style={{ color: line.verdict === 'weak' ? 'var(--color-ui-gold)' : 'var(--color-ui-muted)' }}>
+                    {' '}{t(line.verdict === 'weak' ? 'fight.float.weak' : 'fight.float.resisted')}
+                </span>
+            )}
+        </span>
         {line.amount && <span className="tabular-nums font-bold" style={{ color: TONE_COLOUR[line.tone] }}>{line.amount}</span>}
     </div>
 );

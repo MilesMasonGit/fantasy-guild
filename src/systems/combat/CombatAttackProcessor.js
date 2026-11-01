@@ -7,6 +7,8 @@ import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { FIGHT_MOMENT } from '../../config/registries/triggerRegistry.js';
 import { SIDE, fightMoment, talliesOf } from './FightHooks.js';
+import { spendArrow, nextArrowOf } from './Arrows.js';
+import { pickMove } from '../../config/registries/enemyMoves.js';
 
 /**
  * HP and food are combat's attrition currency.
@@ -16,9 +18,18 @@ import { SIDE, fightMoment, talliesOf } from './FightHooks.js';
  * crit can be shown.
  *
  * Each swing runs the fight moments in a fixed order, so a catch-up draws the same random numbers
- * as live play: the swinger's On Swing rules (before the roll, so they can shape it), the miss and
- * crit roll, the damage, then, on a hit that leaves the other side standing, the swinger's On Hit
- * rules. Whatever was carried "for the swing" comes off, and On Health Below is checked.
+ * as live play: the swinger's On Swing rules (before the roll, so they can shape it), a Ranged
+ * hero's arrow spent (hit or miss), the miss and crit roll, the damage and its fraction sub-roll,
+ * then, on a hit that leaves the other side standing, the swinger's On Hit rules. Whatever was
+ * carried "for the swing" comes off, and On Health Below is checked.
+ *
+ * A landed hit's event names its damage types (`types`) and whether they helped or hurt it
+ * (`verdict`: `weak`, `resisted` or null), for the floats and the log.
+ *
+ * An enemy with moves (`enemyMoves.js`) makes one each swing, picked before its On Swing rules (one
+ * draw, only when it has a choice): a hit in the move's type, or no hit at all (`effectOnly`, nothing
+ * rolled); the event names it (`move`). The move's effect lands through the fight moments. An enemy
+ * without moves draws and says exactly what it did before moves.
  */
 
 /** Whether a hero is out of the fight: knocked out, or at 0 HP. */
@@ -26,10 +37,14 @@ function isDown(hero) {
     return !hero || hero.status === 'wounded' || (hero.hp?.current ?? 0) <= 0;
 }
 
-/** The swing is over: whatever either fighter carried "for the swing" comes off. */
-function endSwing(fight, hero) {
+/**
+ * The swing is over: whatever either fighter carried "for the swing" comes off, and what the one
+ * swung at (`attacked`, swing number `attack` at it this fight) carried until it was next attacked.
+ */
+function endSwing(fight, hero, attacked, attack) {
     LiveEffects.endSwingEffects(fight);
     LiveEffects.endSwingEffects(hero);
+    LiveEffects.endAttackEffects(attacked, attack);
 }
 
 /**
@@ -75,17 +90,25 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
 
     const tallies = talliesOf(fight);
     tallies.swings.hero += 1;
+    // The arrow this swing shoots: its own rules join the hero's for this swing only.
+    tallies.arrowId = nextArrowOf(hero);
     fightMoment(fight, SIDE.HERO, FIGHT_MOMENT.SWING, tallies.swings.hero);
 
     // A rule on the swing may have ended the fight before the blow: either side may have fallen.
     if (!isDown(hero) && fight.combat.enemyHp.current > 0) {
+        const shot = spendArrow(hero);
+        const arrowId = shot?.itemId ?? null;
+        tallies.arrowId = arrowId;
         const swing = CombatFormulas.rollSwing(
             CombatFormulas.heroMissChance(hero, enemy),
             CombatFormulas.heroCritChance(hero)
         );
 
         if (swing.hit) {
-            const damage = CombatFormulas.heroHitDamage(hero, enemy, { crit: swing.crit });
+            const blow = CombatFormulas.heroBlow(hero, enemy, { crit: swing.crit, arrow: shot?.arrow ?? null });
+            const damage = CombatFormulas.rollFraction(blow.exact);
+            const types = blow.parts.map(p => p.type);
+            const verdict = CombatFormulas.blowVerdict(blow.parts);
             fight.combat.enemyHp.current = Math.max(0, fight.combat.enemyHp.current - damage);
 
             if (enemy.traits) {
@@ -96,18 +119,19 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
                     EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_TRAIT_TRIGGER, { cardId: fight.id, heroId: hero.id, traitId: 'thorns', damage: reflex });
                 }
             }
-            EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage, hit: true, crit: swing.crit, enemyHpRemaining: fight.combat.enemyHp.current });
+            EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage, hit: true, crit: swing.crit, types, verdict, arrowId, enemyHpRemaining: fight.combat.enemyHp.current });
 
             if (fight.combat.enemyHp.current > 0 && !isDown(hero)) {
                 tallies.hits.hero += 1;
                 fightMoment(fight, SIDE.HERO, FIGHT_MOMENT.HIT, tallies.hits.hero);
             }
         } else {
-            EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, enemyHpRemaining: fight.combat.enemyHp.current });
+            EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, arrowId, enemyHpRemaining: fight.combat.enemyHp.current });
         }
     }
 
-    endSwing(fight, hero);
+    tallies.arrowId = null;
+    endSwing(fight, hero, fight, tallies.swings.hero);
     if (!isDown(hero)) checkHealth(fight, hero);
 
     // Carry the overshoot instead of resetting; a reset would quantize every
@@ -119,33 +143,49 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
 function enemySwing(fight, enemy, hero) {
     const tallies = talliesOf(fight);
     tallies.swings.enemy += 1;
+    // ⚠️ Drawn here and nowhere else, and only for an enemy with a choice of moves.
+    const move = pickMove(enemy.moves);
+    tallies.move = move;
     fightMoment(fight, SIDE.ENEMY, FIGHT_MOMENT.SWING, tallies.swings.enemy);
+    const named = move ? { move: move.name } : null;
 
     if (!isDown(hero) && fight.combat.enemyHp.current > 0) {
-        const swing = CombatFormulas.rollSwing(
-            CombatFormulas.enemyMissChance(enemy, hero),
-            CombatFormulas.enemyCritChance(enemy)
-        );
-
-        if (swing.hit) {
-            const dmg = CombatFormulas.enemyHitDamage(enemy, hero, { crit: swing.crit });
-            HeroManager.modifyHeroHp(hero.id, -dmg);
-
-            EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: dmg, hit: true, crit: swing.crit, heroHpRemaining: hero.hp.current });
-
-            if (hero.hp.current <= 0) {
-                handleHeroWounded(fight, hero.id);
-            } else {
-                // Where a Venomous enemy's poison lands, and a boss's status attack.
-                tallies.hits.enemy += 1;
-                fightMoment(fight, SIDE.ENEMY, FIGHT_MOMENT.HIT, tallies.hits.enemy);
-            }
+        if (move && !move.hits) {
+            EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, {
+                cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false,
+                ...named, effectOnly: true, heroHpRemaining: hero.hp.current
+            });
         } else {
-            EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, heroHpRemaining: hero.hp.current });
+            const swing = CombatFormulas.rollSwing(
+                CombatFormulas.enemyMissChance(enemy, hero),
+                CombatFormulas.enemyCritChance(enemy)
+            );
+
+            if (swing.hit) {
+                const blow = CombatFormulas.enemyBlow(enemy, hero, { crit: swing.crit, type: move?.type });
+                const dmg = CombatFormulas.rollFraction(blow.exact);
+                if (dmg > 0) HeroManager.modifyHeroHp(hero.id, -dmg);
+
+                EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, {
+                    cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: dmg, hit: true, crit: swing.crit,
+                    types: blow.parts.map(p => p.type), verdict: CombatFormulas.blowVerdict(blow.parts), ...named, heroHpRemaining: hero.hp.current
+                });
+
+                if (hero.hp.current <= 0) {
+                    handleHeroWounded(fight, hero.id);
+                } else {
+                    // Where a Venomous enemy's poison lands, a boss's status attack and a move's effect on the hero.
+                    tallies.hits.enemy += 1;
+                    fightMoment(fight, SIDE.ENEMY, FIGHT_MOMENT.HIT, tallies.hits.enemy);
+                }
+            } else {
+                EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, ...named, heroHpRemaining: hero.hp.current });
+            }
         }
     }
 
-    endSwing(fight, hero);
+    tallies.move = null;
+    endSwing(fight, hero, hero, tallies.swings.enemy);
     if (!isDown(hero)) checkHealth(fight, hero);
 }
 

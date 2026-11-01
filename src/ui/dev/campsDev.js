@@ -173,8 +173,6 @@ export function sendCampHands() {
  * A QA Hunter (a Fighter at 90 with an Iron Sword, Steak to eat) sent to a Goblin Camp: the one already on the mat nearest the
  * Hall (a new game's Starter Camp has one), else one placed above the Hall with a goblin standing.
  * They fight what it spawned, one at a time, wait for its next goblin, and fight that one too.
- * ⚠️ Using the camp already there matters: Goblin Camps share one cap across the mat (3 goblins a
- * camp), so a second camp's goblins can fill it and keep this one from spawning.
  * ⚠️ Changes the game.
  * @returns {{ ok: boolean, error?: string, name?: string, placed?: boolean }}
  */

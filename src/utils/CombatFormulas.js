@@ -10,14 +10,16 @@ import {
     BASE_CRIT_CHANCE,
     CRIT_MULTIPLIER,
     matchupMultiplier,
-    roundHalfUp,
     rpsOutcome,
     SWING_TIME_FACTOR_RANGE,
 } from '../config/FormulaRegistry.js';
 import { COMBAT_SKILL_IDS, BAREHANDED_STYLE_ID } from '../config/registries/skillRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
-import { getEquippedEntries, isWeaponCategory } from '../config/registries/equipmentConstants.js';
+import { getEquippedEntries, getGrid, isWeaponCategory } from '../config/registries/equipmentConstants.js';
 import { isWeapon, weaponStyleOf, meetsGearRequirements } from '../config/registries/weaponStyles.js';
+import {
+    weaponDamageTypeOf, BAREHANDED_DAMAGE_TYPE, PLAIN_ENEMY_HIT_TYPE, resistanceFor
+} from '../config/registries/damageTypes.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 export { rpsOutcome };
@@ -36,10 +38,19 @@ function skillLevelOf(hero, skillId) {
  * is not swung: the equip paths refuse it.
  */
 export function getHeroWeapon(hero) {
-    for (const { itemId, category } of getEquippedEntries(hero)) {
+    const slot = getHeroWeaponSlot(hero);
+    return slot === null ? null : getItem(getGrid(hero)[slot]);
+}
+
+/**
+ * The grid slot of the weapon a hero swings ({@link getHeroWeapon}), or null barehanded. The only
+ * weapon in the hands that lends anything: another one there lends nothing (`HeroEffects`).
+ */
+export function getHeroWeaponSlot(hero) {
+    for (const { index, itemId, category } of getEquippedEntries(hero)) {
         if (!isWeaponCategory(category)) continue;
         const item = getItem(itemId);
-        if (item && isWeapon(item) && meetsGearRequirements(item, hero)) return item;
+        if (item && isWeapon(item) && meetsGearRequirements(item, hero)) return index;
     }
     return null;
 }
@@ -114,24 +125,7 @@ export function heroAttackSpeedMs(hero) {
 
 // --- What a hero carries (all default to 0 when nothing provides them) ------------------------
 
-const axis = (entity, type) => entity?.aggregator?.query(type) || 0;
-
-/**
- * The flat damage reduction a hero carries: Armor and legacy DEFENSE, from gear and from whatever
- * lingering effects lend them. One function so armour means one thing regardless of what hit you.
- *
- * ⚠️ `DEFENSE` is summed in alongside `ARMOR` deliberately: existing armour
- * items register their `defense` stat on that axis, and it is treated as flat
- * Armor.
- */
-export function heroFlatArmor(hero) {
-    return axis(hero, EFFECT_TYPES.ARMOR) + axis(hero, EFFECT_TYPES.DEFENSE);
-}
-
-/** The flat damage reduction applied after armour. */
-export function heroFlatResist(hero) {
-    return axis(hero, EFFECT_TYPES.RESIST_FLAT);
-}
+const axis = (entity, type, category) => entity?.aggregator?.query(type, category) || 0;
 
 /** Percentage points taken off the hero's miss chance. */
 export function heroAccuracy(hero) {
@@ -141,11 +135,6 @@ export function heroAccuracy(hero) {
 /** Percentage points added to the miss chance of whoever attacks the hero. */
 export function heroDodge(hero) {
     return axis(hero, EFFECT_TYPES.DODGE);
-}
-
-/** Armour points the hero's hits ignore. */
-export function heroPierce(hero) {
-    return axis(hero, EFFECT_TYPES.PIERCE);
 }
 
 /** Crit chance in percent: 5 plus whatever gear adds. */
@@ -166,26 +155,12 @@ export function heroStatusStackCap(hero, statusId, baseMax) {
 // --- What an enemy carries: its profile (the level table and the author's numbers), plus what
 // --- effects lend it through the fight's aggregator.
 
-/**
- * The flat damage reduction an **enemy** carries: its own armour plus what lingering effects on it
- * lend (a boss's "gains 2 armour"). One function so armour means the same thing on both sides.
- */
-export function enemyFlatArmor(enemy) {
-    return (enemy?.armor || 0)
-        + axis(enemy, EFFECT_TYPES.ARMOR)
-        + axis(enemy, EFFECT_TYPES.DEFENSE);
-}
-
 export function enemyDodge(enemy) {
     return (enemy?.dodge || 0) + axis(enemy, EFFECT_TYPES.DODGE);
 }
 
 export function enemyAccuracy(enemy) {
     return (enemy?.accuracy || 0) + axis(enemy, EFFECT_TYPES.ACCURACY);
-}
-
-export function enemyPierce(enemy) {
-    return (enemy?.pierce || 0) + axis(enemy, EFFECT_TYPES.PIERCE);
 }
 
 export function enemyCritChance(enemy) {
@@ -236,9 +211,77 @@ export function damageMultiplierOf(entity) {
     return 1 + fromEffects;
 }
 
+// --- Damage types ------------------------------------------------------------------------------
+
+/** The type a hero's own blow hits with: their weapon's (`damageTypes.weaponDamageTypeOf`), Crush barehanded. */
+export function heroDamageType(hero) {
+    const weapon = getHeroWeapon(hero);
+    return weapon ? weaponDamageTypeOf(weapon, weaponStyleOf(weapon)) : BAREHANDED_DAMAGE_TYPE;
+}
+
 /**
- * What a hero's hit deals before the matchup, buffs, crit and armour: the weapon's damage (a fist
- * is 1) plus 1 per 20 combat levels plus flat Damage from gear.
+ * What a fighter's hits of type `type` gain, in percent: their Type Damage rows on the type and on
+ * its group (the aggregator counts a group's row on each of its types).
+ */
+export function typeDamageBoost(entity, type) {
+    return axis(entity, EFFECT_TYPES.TYPE_DAMAGE, type);
+}
+
+/** The points of Sunder a fighter carries (the Sunder status, once per stack): off every resistance they have. */
+export function sunderOf(entity) {
+    return Math.max(0, axis(entity, EFFECT_TYPES.SUNDER));
+}
+
+/**
+ * A resistance after Sunder: lowered by `sunderPct`, never below 0. A weakness (or no resistance)
+ * is untouched: Sunder strips what protects a fighter, it does not make them weak.
+ */
+export function afterSunder(resistPct, sunderPct) {
+    if (!(resistPct > 0) || !(sunderPct > 0)) return resistPct;
+    return Math.max(0, resistPct - sunderPct);
+}
+
+/**
+ * How much a hero resists hits of `type` (a type, or a group for a hit typed only by its group), in
+ * percent: what they carry (worn gear's resistances, Type Resistance rows), after any Sunder on them.
+ */
+export function heroTypeResistance(hero, type) {
+    return afterSunder(axis(hero, EFFECT_TYPES.TYPE_RESIST, type), sunderOf(hero));
+}
+
+/**
+ * How much an enemy resists hits of `type`, in signed percent (a weakness negative): its own
+ * resistances, where a line on the type replaces its group's, plus what effects on it lend, after
+ * any Sunder on it.
+ */
+export function enemyTypeResistance(enemy, type) {
+    return afterSunder(resistanceFor(enemy?.resistances, type) + axis(enemy, EFFECT_TYPES.TYPE_RESIST, type), sunderOf(enemy));
+}
+
+/**
+ * The percent a hero's worn gear cuts from their hits in `style` (the style they fight in when not
+ * given): every piece's `damageCut` on it, added (`gearDefence.js`), at most 100.
+ */
+export function styleDamageCut(hero, style = getHeroCombatStyle(hero)) {
+    return Math.min(100, Math.max(0, axis(hero, EFFECT_TYPES.STYLE_DAMAGE_CUT, style)));
+}
+
+/** What is left of a hero's hits in `style` after their gear's cut: 1 with none, 0 at a cut of 100. */
+export function styleCutFactor(hero, style = getHeroCombatStyle(hero)) {
+    const cut = styleDamageCut(hero, style);
+    return cut > 0 ? 1 - cut / 100 : 1;
+}
+
+/** 1 + the attacker's boost − the target's resistance, never below 0. Both in percent. */
+export function typeFactor(boostPct, resistPct) {
+    return Math.max(0, 1 + ((boostPct || 0) - (resistPct || 0)) / 100);
+}
+
+// --- The blow ---------------------------------------------------------------------------------
+
+/**
+ * What a hero's hit deals before the matchup, buffs, crit and the type factor: the weapon's damage
+ * (a fist is 1) plus 1 per 20 combat levels plus flat Damage from gear.
  */
 export function heroBaseDamage(hero) {
     const weapon = getHeroWeapon(hero);
@@ -247,47 +290,111 @@ export function heroBaseDamage(hero) {
 }
 
 /**
- * One landed hit's damage, the order both sides use: multipliers (buffs, the matchup's ±25 %)
- * rounded halves up, then doubled on a crit, then armour (less pierce) taken off, then flat
- * resistance; never below 1.
+ * The parts of a hero's blow, each in its own type: the weapon (or fist) with the level step and
+ * gear's flat Damage, and for a shot the arrow's own damage (`arrow`, `damageTypes.arrowOf`).
+ * @param {{damage: number, damageType: string}|null} [arrow]
+ * @returns {Array<{type: string, base: number, arrow?: boolean}>}
  */
-function landedDamage(base, multiplier, crit, armour, pierce, resist = 0) {
-    const scaled = roundHalfUp(base * multiplier);
-    const struck = crit ? scaled * CRIT_MULTIPLIER : scaled;
-    return Math.max(1, struck - Math.max(0, armour - pierce) - resist);
+export function heroHitParts(hero, arrow = null) {
+    const parts = [{ type: heroDamageType(hero), base: heroBaseDamage(hero) }];
+    if (arrow) parts.push({ type: arrow.damageType, base: arrow.damage, arrow: true });
+    return parts;
 }
 
 /**
- * A hero's landed hit on an enemy.
- * @param {{ crit?: boolean }} [options]
+ * One landed blow, the order both sides use: each part × the multiplier (buffs and the matchup's
+ * ±25 %), doubled on a crit, × its type factor (never below 0). No rounding and no floor: the
+ * whole number comes from {@link rollFraction}, so a resisted hit can do 0 and immunity means 0.
+ *
+ * `resist` is the target's signed resistance to the part's type, so the screen can say "Weak!" or
+ * "Resisted"; `pre` is the part before the type factor.
+ * @returns {{ exact: number, parts: Array<{type: string, pre: number, amount: number, resist: number, arrow?: boolean}> }}
  */
-export function heroHitDamage(hero, enemy, { crit = false } = {}) {
-    const multiplier = damageMultiplierOf(hero) * matchupMultiplier(getHeroCombatStyle(hero), enemy?.combatType);
-    return landedDamage(heroBaseDamage(hero), multiplier, crit, enemyFlatArmor(enemy), heroPierce(hero));
+function landedBlow(parts, multiplier, crit, boostOf, resistOf) {
+    let exact = 0;
+    const out = parts.map(part => {
+        const pre = Math.max(0, part.base * multiplier * (crit ? CRIT_MULTIPLIER : 1));
+        const resist = resistOf(part.type);
+        const amount = pre * typeFactor(boostOf(part.type), resist);
+        exact += amount;
+        return { type: part.type, pre, amount, resist, ...(part.arrow ? { arrow: true } : {}) };
+    });
+    return { exact, parts: out };
 }
 
 /**
- * An enemy's landed hit on a hero: its hit plus any flat Damage lent to it, the matchup and any
- * Damage percentage (a heavy strike, an enrage), crit, then the hero's armour (less the enemy's
- * pierce) and resistance.
- * @param {{ crit?: boolean }} [options]
+ * A hero's landed blow on an enemy, before the fraction sub-roll. The multiplier holds the buffs, the
+ * matchup and the cut their worn gear makes to the style they fight in ({@link styleCutFactor}).
+ * @param {{ crit?: boolean, arrow?: {damage: number, damageType: string}|null }} [options]
  */
-export function enemyHitDamage(enemy, hero, { crit = false } = {}) {
+export function heroBlow(hero, enemy, { crit = false, arrow = null } = {}) {
+    const style = getHeroCombatStyle(hero);
+    const multiplier = damageMultiplierOf(hero) * matchupMultiplier(style, enemy?.combatType) * styleCutFactor(hero, style);
+    return landedBlow(heroHitParts(hero, arrow), multiplier, crit,
+        (type) => typeDamageBoost(hero, type),
+        (type) => enemyTypeResistance(enemy, type));
+}
+
+/**
+ * An enemy's landed blow on a hero, before the fraction sub-roll: its hit plus any flat Damage lent
+ * to it, in one type (its move's, `type`; a plain swing is Physical), × the matchup and any Damage
+ * percentage (a heavy strike, an enrage), crit, then the hero's resistance to that type.
+ * @param {{ crit?: boolean, type?: string|null }} [options]
+ */
+export function enemyBlow(enemy, hero, { crit = false, type = null } = {}) {
     const multiplier = damageMultiplierOf(enemy) * matchupMultiplier(enemy?.combatType, getHeroCombatStyle(hero));
     const base = (enemy?.hit ?? 1) + axis(enemy, EFFECT_TYPES.DAMAGE);
-    return landedDamage(base, multiplier, crit, heroFlatArmor(hero), enemyPierce(enemy), heroFlatResist(hero));
+    return landedBlow([{ type: type || PLAIN_ENEMY_HIT_TYPE, base }], multiplier, crit,
+        (type) => typeDamageBoost(enemy, type),
+        (type) => heroTypeResistance(hero, type));
+}
+
+/** How close to a whole number a blow must be to count as whole (float error, not a fraction). */
+const WHOLE_EPSILON = 1e-9;
+
+/**
+ * The fraction sub-roll: a blow of 1.1 does 1 nine times in ten and 2 one time in ten.
+ *
+ * ⚠️ Draws one `Math.random()` only when the blow has a fraction, right after the swing's miss
+ * and crit draws; a whole blow draws nothing. Catch-up replays the same stream, so this must stay
+ * the only draw here and stay in this place.
+ */
+export function rollFraction(exact) {
+    if (!(exact > 0)) return 0;
+    const whole = Math.floor(exact + WHOLE_EPSILON);
+    const fraction = exact - whole;
+    if (fraction < WHOLE_EPSILON) return whole;
+    return whole + (Math.random() < fraction ? 1 : 0);
 }
 
 /**
- * Damage from a non-combat source, mitigated.
- *
- * ⚠️ **Floors at zero, where a combat hit floors at one**, deliberately.
- * Combat's minimum of 1 exists so a fight always progresses; a thorn is not a
- * fight, and a floor of 1 would make heavy armour worth nothing against it.
+ * A hero's landed hit on an enemy, as a whole number. ⚠️ Draws for a fraction ({@link rollFraction}).
+ * @param {{ crit?: boolean, arrow?: {damage: number, damageType: string}|null }} [options]
  */
-export function mitigateFlatDamage(hero, rawDamage) {
-    const reduced = rawDamage - heroFlatArmor(hero) - heroFlatResist(hero);
-    return Math.max(0, Math.round(reduced));
+export function heroHitDamage(hero, enemy, options = {}) {
+    return rollFraction(heroBlow(hero, enemy, options).exact);
+}
+
+/**
+ * An enemy's landed hit on a hero, as a whole number. ⚠️ Draws for a fraction ({@link rollFraction}).
+ * @param {{ crit?: boolean, type?: string|null }} [options]
+ */
+export function enemyHitDamage(enemy, hero, options = {}) {
+    return rollFraction(enemyBlow(enemy, hero, options).exact);
+}
+
+/**
+ * Whether a blow's types helped or hurt it: `weak` when the target's weaknesses outweigh its
+ * resistances across the parts, `resisted` the other way, null when neither moved it. The
+ * attacker's own Type Damage boosts do not count: the words are about the target.
+ * @returns {'weak'|'resisted'|null}
+ */
+export function blowVerdict(parts) {
+    let shift = 0;
+    for (const p of parts || []) shift -= (p.pre || 0) * (p.resist || 0);
+    if (shift > WHOLE_EPSILON) return 'weak';
+    if (shift < -WHOLE_EPSILON) return 'resisted';
+    return null;
 }
 
 /**

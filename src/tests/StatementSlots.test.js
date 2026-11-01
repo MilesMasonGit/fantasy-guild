@@ -93,7 +93,8 @@ describe('⚠️ changing the verb rebuilds the rule', () => {
         // have written, so the editor must not be able to produce it either.
         const s = applySlot(makeStatement(KEYWORD.PROVIDES), 'keyword', KEYWORD.DEALS);
         expect(s.keyword).toBe(KEYWORD.DEALS);
-        expect(s.payload).toEqual({ amount: 1, ignoresArmor: false });
+        // `ignoresArmor` is no longer written: flat armour is retired with damage types.
+        expect(s.payload).toEqual({ amount: 1 });
         expect(s.when.event).toBe('SELF_CYCLE_COMPLETE');
         expect(s.target).toEqual({ role: ROLE.ACTOR });
     });
@@ -114,7 +115,7 @@ describe('a slot writes itself back into the statement', () => {
 
     it('changes a number without losing the rest of the payload', () => {
         const s = applySlot(makeStatement(KEYWORD.DEALS), 'amount', 4);
-        expect(s.payload).toEqual({ amount: 4, ignoresArmor: false });
+        expect(s.payload).toEqual({ amount: 4 });
     });
 
     it('never lets a negative amount through', () => {
@@ -144,11 +145,13 @@ describe('what the chip says', () => {
         expect(slotDisplay(slot(s, 'effectId'))).toBe('…');
     });
 
+    // Rewritten for damage types: Deals' "ignores armour" flag is retired; Applies' "for the fight"
+    // is the flag that shows here now.
     it('shows a flag only when it is on', () => {
-        const s = makeStatement(KEYWORD.DEALS);
-        expect(slotDisplay(slot(s, 'ignoresArmor'))).toBe('');
-        const piercing = applySlot(s, 'ignoresArmor', true);
-        expect(slotDisplay(slot(piercing, 'ignoresArmor'))).toBe('ignores armour');
+        const s = makeStatement(KEYWORD.APPLIES);
+        expect(slotDisplay(slot(s, 'forFight'))).toBe('');
+        const lasting = applySlot(s, 'forFight', true);
+        expect(slotDisplay(slot(lasting, 'forFight'))).toBe('for the fight');
     });
 });
 

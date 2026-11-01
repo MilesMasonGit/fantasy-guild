@@ -382,6 +382,26 @@ describe('⭐ an enemy camp: the hero hunts what it spawns', () => {
         expect(BoardState.claimOfHero(h.id)?.instanceId).not.toBe(theirs.id);
         expect(waited).not.toBe(null);
     });
+
+    it('⭐ a hunter at the second of two camps is never kept waiting by the first camp’s goblin', () => {
+        const [h] = newBoard();
+        const first = fixtures.placeAt('hc_den', 600, 500);
+        const second = fixtures.placeAt('hc_den', 1300, 300);
+        SpawnerSystem.attemptSpawn(first, getTokenType('hc_den'));
+        SpawnerSystem.attemptSpawn(second, getTokenType('hc_den'));
+        expect(Orders.orderAt(h.id, { x: second.x, y: second.y })).toMatchObject({ success: true, instanceId: second.id });
+
+        // A minute: the second camp's goblin falls, and the camp spawns its own next one each time.
+        const fought = new Set();
+        for (let t = 0; t < 60_000; t += 100) {
+            GameLoop.runHandlers(100);
+            const id = BoardState.claimOfHero(h.id)?.instanceId;
+            if (id) fought.add(id);
+        }
+        expect(fought.size).toBeGreaterThan(1);
+        for (const id of fought) expect(BoardState.getTokenById(id)?.tether ?? second.id).toBe(second.id);
+        expect(BoardState.tokens().filter(t => t.tether === first.id)).toHaveLength(1);
+    });
 });
 
 describe('⭐ a camp hero comes back from a save working the same Token', () => {

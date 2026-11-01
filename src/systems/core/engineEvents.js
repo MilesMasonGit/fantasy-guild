@@ -232,6 +232,9 @@ export const UI_EVENTS = Object.freeze({
      */
     UI_TOKEN_FX: 'ui:token_fx',
 
+    /** Open the Encyclopedia at one entry: a "look it up" link. Payload: `{ key }` (a ledger key, `item:<id>`). */
+    OPEN_ENCYCLOPEDIA: 'ui:open_encyclopedia',
+
     /** Dev stress harness. Payload: `{ name, id }`. */
     DEV_STRESS_STARTED: 'dev:stress_started',
 });

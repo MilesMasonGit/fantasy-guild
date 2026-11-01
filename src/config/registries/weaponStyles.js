@@ -14,9 +14,18 @@ import { toolOf, HAND_CATEGORY } from './toolKinds.js';
  * the style as `skillRequired`.
  */
 
-/** Whether an item is a weapon: held in the hands, and not a gathering tool. */
+/**
+ * Whether an item is an off-hand item (a shield, a quiver, a focus orb): held in one hand beside a
+ * weapon, never swung, lending its resistances and its rules like a piece of armour.
+ * `offHand: true` on a hand item that is not a gathering tool.
+ */
+export function isOffHand(item) {
+    return item?.equipSlot === HAND_CATEGORY && item.offHand === true && !toolOf(item);
+}
+
+/** Whether an item is a weapon: held in the hands, and neither a gathering tool nor an off-hand item. */
 export function isWeapon(item) {
-    return item?.equipSlot === HAND_CATEGORY && !toolOf(item);
+    return item?.equipSlot === HAND_CATEGORY && !toolOf(item) && item.offHand !== true;
 }
 
 /**

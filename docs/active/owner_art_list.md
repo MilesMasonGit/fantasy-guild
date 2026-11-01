@@ -85,6 +85,10 @@ player for these is T-138 (built when the first strips exist).
     2×, in the text colour. The placeholders are drawn in code
     (`PixelGlyph`; the style sheet page shows them under "Card icons").
     **Turn** (a Token that may turn into another) joins the list.
+  - **Encyclopedia** (NEW 2026-10-30, brief 300): a book (the "look it up"
+    link on cards and in the Bank's tooltip line), a tick (collected this
+    run) and a back arrow, 8 × 8 at 2×, placeholders in `PixelGlyph` until
+    drawn. Its menu bubble uses a Lucide book like the other bubbles.
   - **The problem mark is on the mat now** (brief 120 C1), 16 × 16, drawn at
     the Token's own pixel size at a Token's centre with a hard black shadow.
     The placeholder is today's `ui/u_alert_yellow.png` and `ui/u_alert_red.png`;
@@ -179,9 +183,10 @@ swapping a picture in for one is a small code change.
 |---|---|---|
 | Fight icon (crossed swords) | **NEW** | On the chip beside each fight's enemy (opens the fight panel), the panel's header and the log's "beats" line. Placeholder: gold crossed lines |
 | Hit (a burst) | **NEW** | The versus card's hit row and the log's hits |
-| Armour (a shield) | **NEW** | The versus card's armour row |
+| Armour (a shield) | **NEW** | The versus card's resistances row (flat armour is gone) |
 | Heart | **NEW** | The versus card's health row; the log's meals and heals |
-| Poison drop | **NEW** | A poison tick's float (red, outlined), a poisoned fighter's status, the log's poison lines |
+| Venom drop | **NEW** | A Venom tick's float (red, outlined), a fighter's Venom status, the log's Venom lines (the status once named Poison) |
+| Sunder (a cracked shield) | **NEW** | A fighter's Sunder status (each stack lowers their resistances) on the panel, its landing in the log (brief 280 V2) |
 | Burn flame | **NEW** | A burn tick's float, a burning fighter's status, the log's burn lines |
 | Crit star | **NEW** | The log's crits and boss moves |
 | Miss dash | **NEW** | The log's misses |
@@ -189,6 +194,7 @@ swapping a picture in for one is a small code change.
 | Loot bag | **NEW** | The log's "Drops" line |
 | Knocked out (a down arrow) | **NEW** | The log's knockout and the "While you were away" Knocked out line |
 | Enemy animation sheets | **NEW** (as wanted) | Only the Cow has one today (`e_cow_sheet`); every other enemy stands still in the fight panel's strip and loops nothing on the mat. A sheet is 4 × 4 frames of 64 px (rows 0–1 idle, 2–3 attack); registering one is a one-line code change |
+| Damage type icons (12) | **NEW** | One per type and group: Slash, Crush, Stab, Fire, Ice, Electric, Poison, Light, Dark, Physical, Elemental, Special. Beside every hit's number in the floats (two for a bow's shot), on the versus card's hit and resistances rows, on the enemy card's hit, Resists and Weak to rows. 8 × 8 at 2× like the others; placeholders drawn in code (`combatGlyphs.js`, `dt_<type>`), shown on the style sheet page |
 
 ## 6. Hero orders (brief 260 O1)
 

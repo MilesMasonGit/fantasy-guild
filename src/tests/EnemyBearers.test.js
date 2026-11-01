@@ -20,7 +20,7 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
-import { enemyFlatArmor } from '../utils/CombatFormulas.js';
+import { enemyTypeResistance } from '../utils/CombatFormulas.js';
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
 
@@ -102,8 +102,8 @@ function authored(id, statement) {
     return id;
 }
 
-const lasting = (type, value) => ({
-    ...makeStatement(KEYWORD.PROVIDES), payload: { type, bucket: 'flat', value }
+const lasting = (type, value, category) => ({
+    ...makeStatement(KEYWORD.PROVIDES), payload: { type, bucket: 'flat', value, ...(category ? { category } : {}) }
 });
 
 const overTime = (amount, ignoresArmor = true) => ({
@@ -189,22 +189,21 @@ describe('a fight is a bearer', () => {
     });
 });
 
-describe('an enemy has armour, and it means what a hero armour means', () => {
-    it('sums the stat block, the aggregator and the old status list', () => {
+// Rewritten for damage types: flat armour (and the old DEFENSE axis) is gone. What an enemy shrugs
+// off is its resistances, from its own block and from what lingers on it, by damage type.
+describe('an enemy has resistances, and they mean what a hero\'s mean', () => {
+    it('sums its own block and the aggregator; a type\'s line replaces its group\'s, rows add', () => {
         const aggregator = new ModifierAggregator('e');
-        aggregator.addModifier({ type: EFFECT_TYPES.ARMOR, value: 3, bucket: 'flat', source: 't' });
-        expect(enemyFlatArmor({ armor: 2, aggregator }, [])).toBe(5);
+        aggregator.addModifier({ type: EFFECT_TYPES.TYPE_RESIST, value: 25, bucket: 'flat', source: 't', target: { category: 'physical' } });
+        const enemy = { resistances: { physical: 50, crush: -50 }, aggregator };
+        expect(enemyTypeResistance(enemy, 'slash')).toBe(75);
+        expect(enemyTypeResistance(enemy, 'crush')).toBe(-25);
+        expect(enemyTypeResistance(enemy, 'fire')).toBe(0);
     });
 
-    it('reads DEFENSE too, because armour items register on that axis', () => {
-        const aggregator = new ModifierAggregator('e');
-        aggregator.addModifier({ type: 'DEFENSE', value: 4, bucket: 'flat', source: 't' });
-        expect(enemyFlatArmor({ aggregator })).toBe(4);
-    });
-
-    it('stops a thorn it is big enough to stop', () => {
+    it('a rule\'s damage is untyped and lands whole, whatever it resists', () => {
         const fight = engage();
-        fight.aggregator.addModifier({ type: EFFECT_TYPES.ARMOR, value: 10, bucket: 'flat', source: 'test' });
+        fight.aggregator.addModifier({ type: EFFECT_TYPES.TYPE_RESIST, value: 100, bucket: 'flat', source: 'test' });
         const before = fight.combat.enemyHp.current;
 
         const dealt = deal(
@@ -212,16 +211,12 @@ describe('an enemy has armour, and it means what a hero armour means', () => {
             { self: idAt(MONSTER), selfFightId: idAt(MONSTER) }
         );
 
-        // WARNING: floors at ZERO, not at one - the same asymmetry
-        // `mitigateFlatDamage` carries on the hero side. A floor of 1 would make
-        // heavy armour worth exactly as much as none against every thorn.
-        expect(dealt).toBe(0);
-        expect(fight.combat.enemyHp.current).toBe(before);
+        expect(dealt).toBe(4);
+        expect(fight.combat.enemyHp.current).toBe(before - 4);
     });
 
-    it('and lets a piercing one through anyway (G-23)', () => {
+    it('an older rule\'s "ignoring armour" changes nothing', () => {
         const fight = engage();
-        fight.aggregator.addModifier({ type: EFFECT_TYPES.ARMOR, value: 10, bucket: 'flat', source: 'test' });
         const before = fight.combat.enemyHp.current;
 
         deal(
@@ -235,24 +230,24 @@ describe('an enemy has armour, and it means what a hero armour means', () => {
         expect(fight.combat.enemyHp.current).toBe(before - 4);
     });
 
-    it('a carried Armor Shield is what supplies that armour', () => {
+    it('a carried shield effect is what lends a fighting enemy its resistance', () => {
         const fight = engage();
-        authored('effect_monster_shield', lasting(EFFECT_TYPES.ARMOR, 6));
+        authored('effect_monster_shield', lasting(EFFECT_TYPES.TYPE_RESIST, 50, 'physical'));
 
-        expect(enemyFlatArmor(fight.enemy, fight.combat.enemyStatuses)).toBe(0);
+        expect(enemyTypeResistance(fight.enemy, 'stab')).toBe(0);
         LiveEffects.applyTo(bearer(), { effectId: 'effect_monster_shield', durationMs: 60000 });
-        expect(enemyFlatArmor(fight.enemy, fight.combat.enemyStatuses)).toBe(6);
+        expect(enemyTypeResistance(fight.enemy, 'stab')).toBe(50);
     });
 
     it('and gives it back when the effect is removed', () => {
         const fight = engage();
-        authored('effect_temp_shield', lasting(EFFECT_TYPES.ARMOR, 6));
+        authored('effect_temp_shield', lasting(EFFECT_TYPES.TYPE_RESIST, 50, 'physical'));
         const b = bearer();
         LiveEffects.applyTo(b, { effectId: 'effect_temp_shield', durationMs: 60000 });
 
         LiveEffects.removeFrom(b, 'effect_temp_shield');
 
-        expect(enemyFlatArmor(fight.enemy, fight.combat.enemyStatuses)).toBe(0);
+        expect(enemyTypeResistance(fight.enemy, 'stab')).toBe(0);
     });
 });
 

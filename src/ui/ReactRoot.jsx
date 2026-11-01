@@ -21,6 +21,7 @@ import BankDrawer from './components/drawer/BankDrawer.jsx';
 import ShopDrawer from './components/drawer/ShopDrawer.jsx';
 import AtlasScreen from './components/atlas/AtlasScreen.jsx';
 import ArrivalCard from './components/atlas/ArrivalCard.jsx';
+import EncyclopediaScreen from './components/encyclopedia/EncyclopediaScreen.jsx';
 
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import BottomHeroDock from './components/dock/BottomHeroDock.jsx';
@@ -57,7 +58,7 @@ import HeroEditModal from './modals/HeroEditModal.jsx';
 import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 
 /** The nav's views that Escape closes; Settings is a window and closes itself. */
-const NAV_VIEWS = ['guild', 'bank', 'shop', 'atlas'];
+const NAV_VIEWS = ['guild', 'bank', 'shop', 'atlas', 'encyclopedia'];
 
 /** How far the mat's side moves aside for the Bank: the hero column's width. */
 const BANK_SHIFT_STYLE = Object.freeze({ '--hero-col': columnWidthCss(NOTIFICATION_COLUMN) });
@@ -134,6 +135,7 @@ export const ReactRoot = () => {
     const [hoveredUpgradeId, setHoveredUpgradeId] = React.useState(null);
     const isGuildView = ui.fullscreen.view === 'guild';
     const isAtlasOpen = ui.fullscreen.view === 'atlas';
+    const isEncyclopediaOpen = ui.fullscreen.view === 'encyclopedia';
     const isBankOpen = ui.drawer.panes.includes('bank');
     // Toward the nav: the Bank's hero column opens on the far side.
     const bankShift = isBankOpen && !isGuildView ? (menuRight ? 'right' : 'left') : undefined;
@@ -160,13 +162,20 @@ export const ReactRoot = () => {
         if (!isNavActive('atlas')) navToggle('atlas');
     }, [isNavActive, navToggle]);
 
+    // A "look it up" link opens the Encyclopedia from anywhere, closing what is open (a card, the Bank).
+    const { clear: clearInspect } = ui.inspect;
+    React.useEffect(() => EventBus.subscribe(UI_EVENTS.OPEN_ENCYCLOPEDIA, () => {
+        clearInspect();
+        if (!isNavActive('encyclopedia')) navToggle('encyclopedia');
+    }, UI_LISTENER), [isNavActive, navToggle, clearInspect]);
+
     const handleCloseGuildHall = useCallback(() => {
         ui.fullscreen.close();
         setHoveredUpgradeId(null);
         ui.inspect.clear('guild');
     }, [ui.fullscreen, ui.inspect]);
 
-    // Escape closes the open view (the Guild Hall, the Bank, the Shop, the Atlas) as one layer;
+    // Escape closes the open view (the Guild Hall, the Bank, the Shop, the Atlas, the Encyclopedia) as one layer;
     // a stray click never does.
     const openView = NAV_VIEWS.find(view => isNavActive(view)) || null;
     useEscapeLayer(!!openView, () => {
@@ -343,6 +352,11 @@ export const ReactRoot = () => {
                                 </ErrorBoundary>
                             )}
                         </AnimatePresence>
+                        {isEncyclopediaOpen && (
+                            <ErrorBoundary label="EncyclopediaScreen">
+                                <EncyclopediaScreen onClose={ui.fullscreen.close} />
+                            </ErrorBoundary>
+                        )}
                         <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                     </div>
                     {menuRight && <BubbleMenu ui={ui} side="right" />}

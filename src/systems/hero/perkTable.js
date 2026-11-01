@@ -4,6 +4,7 @@
 // change packs). Keep it pure: no registry that loads `data/`, no store.
 
 import { normaliseScale } from '../effects/effectLibrary.js';
+import { renamedEffectId } from '../effects/effectIdMigration.js';
 import { MAX_SKILL_LEVEL } from '../../utils/XPCurve.js';
 
 /**
@@ -42,7 +43,8 @@ export function perkRowsOf(record) {
     const rows = [];
     for (const row of raw) {
         const level = Number(row?.level);
-        const effectId = typeof row?.effectId === 'string' ? row.effectId.trim() : '';
+        // A renamed effect (Poison → Venom) is read as its new id (`effectIdMigration.js`).
+        const effectId = typeof row?.effectId === 'string' ? renamedEffectId(row.effectId.trim()) : '';
         if (!effectId || !isPerkLevel(level)) continue;
         rows.push({ level, effectId, scale: normaliseScale(row.scale ?? 1) });
     }

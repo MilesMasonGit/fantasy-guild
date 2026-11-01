@@ -70,7 +70,8 @@ describe('⚠️ every clickable word opens a slot that exists', () => {
         }
         for (const slot of [
             'moment', 'watchItem', 'threshold', 'cooldown', 'keyword', 'role',
-            'amount', 'magnitude', 'stat', 'counted', 'ignoresArmor',
+            // `ignoresArmor` is gone with flat armour (damage types).
+            'amount', 'magnitude', 'stat', 'counted', 'forFight',
             'type', 'value', 'category', 'reach', 'filterMode', 'filterValue', 'filters',
             // `statusId` and `stacks` are gone: Applies offers library effects only (P4).
             'typeId', 'placement', 'effectId', 'durationMs',

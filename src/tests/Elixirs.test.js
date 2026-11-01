@@ -55,7 +55,8 @@ const provides = (type, value) => ({
 
 registerEffects({
     fx_valor: { id: 'fx_valor', name: 'Valor', statements: [provides('DAMAGE', 1)] },
-    fx_ironskin: { id: 'fx_ironskin', name: 'Ironskin', statements: [provides('ARMOR', 1)] },
+    // A Physical resistance since damage types retired flat armour.
+    fx_ironskin: { id: 'fx_ironskin', name: 'Ironskin', statements: [{ ...provides('TYPE_RESIST', 25), payload: { type: 'TYPE_RESIST', bucket: 'flat', value: 25, category: 'physical' } }] },
     fx_elixir_valor: { id: 'fx_elixir_valor', name: 'Elixir of Valor', statements: [forTheFight('fx_valor')] },
     fx_elixir_ironskin: { id: 'fx_elixir_ironskin', name: 'Elixir of Ironskin', statements: [forTheFight('fx_ironskin')] }
 });
@@ -157,12 +158,12 @@ describe('an elixir is drunk as a fight starts and lasts ten fights', () => {
         InventoryManager.addItem('elixir_valor', 1);
         InventoryManager.addItem('elixir_ironskin', 1);
         const damage = CombatFormulas.heroBaseDamage(hero);
-        const armour = CombatFormulas.heroFlatArmor(hero);
+        const resist = CombatFormulas.heroTypeResistance(hero, 'physical');
         placeEnemy();
         untilEngagements(1);
 
         expect(CombatFormulas.heroBaseDamage(hero)).toBe(damage + 1);
-        expect(CombatFormulas.heroFlatArmor(hero)).toBe(armour + 1);
+        expect(CombatFormulas.heroTypeResistance(hero, 'physical')).toBe(resist + 25);
         expect(InventoryManager.getItemCount('elixir_valor')).toBe(0);
         expect(InventoryManager.getItemCount('elixir_ironskin')).toBe(0);
         expect(hero.elixirFights).toEqual({ elixir_valor: ELIXIR_FIGHTS - 1, elixir_ironskin: ELIXIR_FIGHTS - 1 });
