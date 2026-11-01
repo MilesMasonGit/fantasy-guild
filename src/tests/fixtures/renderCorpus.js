@@ -12,7 +12,7 @@ import { MAGNITUDE_STATS } from '../../config/registries/magnitudeRegistry.js';
 import { PLACEMENTS } from '../../config/registries/placementRegistry.js';
 import { RESTRICTION_KINDS } from '../../config/registries/restrictionPalette.js';
 import { getAllTokenTypes } from '../../config/registries/tokenRegistry.js';
-import { registerStatusFixtures, POISON, BURN } from './statusEffects.js';
+import { registerStatusFixtures, VENOM, BURN } from './statusEffects.js';
 import { registerEffects } from '../../config/registries/effectRegistry.js';
 import { expandBearer } from '../../systems/effects/effectLibrary.js';
 import { toolNamer } from '../../systems/effects/toolNames.js';
@@ -77,7 +77,7 @@ export function buildCorpus() {
         [FIX.effect]: { id: FIX.effect, name: 'Thorns', statements: [{ ...makeStatement(KEYWORD.DEALS), id: 'stm_golden_thorns', payload: { amount: 1 } }] }
     });
     registerStatusFixtures();
-    const statusNames = { effect: (id) => ({ [POISON]: 'Poison', [BURN]: 'Burn', [FIX.effect]: 'Thorns' })[id] || id };
+    const statusNames = { effect: (id) => ({ [VENOM]: 'Venom', [BURN]: 'Burn', [FIX.effect]: 'Thorns' })[id] || id };
 
     // ---- 1. Everything that ships ----------------------------------------
     for (const [id, entry] of Object.entries(shippedEffects)) {
@@ -115,7 +115,7 @@ export function buildCorpus() {
     addS('axis:unknown-type', S(KEYWORD.PROVIDES, { payload: { type: 'NOT_AN_AXIS', value: 3 } }));
     addS('axis:no-payload', S(KEYWORD.PROVIDES, { payload: undefined }));
     // A status is a library effect with a status block, named by its effect id.
-    for (const status of [POISON, BURN, 'not_a_status']) {
+    for (const status of [VENOM, BURN, 'not_a_status']) {
         addS(`axis:STATUS_IMMUNITY:${status}`, S(KEYWORD.PROVIDES, { payload: { type: 'STATUS_IMMUNITY', bucket: 'flat', value: 1, category: status } }), statusNames);
         for (const value of [-1, -3, 2]) {
             addS(`axis:STATUS_MAX_STACKS:${status}:${value}`, S(KEYWORD.PROVIDES, { payload: { type: 'STATUS_MAX_STACKS', bucket: 'flat', value, category: status } }), statusNames);
@@ -233,7 +233,7 @@ export function buildCorpus() {
     // "For the swing" outranks "for the fight", which outranks a duration.
     for (const [life, extra] of [['swing', { forSwing: true }], ['swing+fight', { forSwing: true, forFight: true }],
         ['fight+duration', { forFight: true, durationMs: 3000 }], ['status', {}]]) {
-        const effectId = life === 'status' ? POISON : FIX.effect;
+        const effectId = life === 'status' ? VENOM : FIX.effect;
         addS(`applies:lifetime:${life}`, S(KEYWORD.APPLIES, { payload: { effectId, chance: 100, ...extra },
             when: { event: 'FIGHT_SWING', scope: 'self' }, target: { role: 'opponent' } }), statusNames);
     }

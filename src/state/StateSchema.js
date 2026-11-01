@@ -238,7 +238,10 @@ export const INITIAL_STATE = {
         itemLifetimeCounts: {},  // { [itemId]: number }
         enemyKillCounts: {},     // { [enemyId]: number }
         cardUseCounts: {},       // { [typeId]: number } — completed cycles per Token type
-        provenance: {}           // { [sourceId]: { [itemId]: true } }
+        provenance: {},          // { [sourceId]: { [itemId]: true } }
+        // The Encyclopedia's ticks (`collectionLog.js`); an older save gets them empty from `migrateState`.
+        tokensHad: {},           // { [typeId]: true } — a Token of the type has stood on the mat
+        recipesMade: {}          // { [recipeId]: true } — a cycle of the recipe has finished
     },
 
     // === UI State (Transient Focus) ===
@@ -298,6 +301,13 @@ export const INITIAL_STATE = {
         // first preview, which starts it from `meta.createdAt`.
         seed: null
     },
+
+    // === The world (brief 330) ===
+    // The run's hex world around the Hall, generated whole at a new game and kept as it was made
+    // (`world/World.js`; the shape is `world/generate.js`'s). Null in a save made before the world
+    // existed: old saves are abandoned, so none is generated for them. ⚠️ Not in REQUIRED_KEYS:
+    // a required section may not be null.
+    world: null,
 
     // === Cartographer (Maps) ===
     // Deleted with the Map bursts and the Map purchase (Token Lifecycle 9.1).

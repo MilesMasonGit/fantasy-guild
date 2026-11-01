@@ -134,6 +134,8 @@ function buildBoard() {
     resetMatTuning();
     GameState.initNew();
     InventoryManager.init();
+    // A fight the last run ended in is dropped, as a load drops it.
+    BoardCombat.clearAll();
     const heroes = fixtures.makeHeroes(6, { forestry: 30, mining: 30, alchemy: 30, melee: 30 });
     for (const h of heroes) h.hp.current = h.hp.max;
     const camp = fixtures.placeAt('cu_enc_guardian_camp', 300, 300);

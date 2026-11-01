@@ -19,6 +19,7 @@ import { ItemTipContent } from './ItemTip.jsx';
 import { itemTintName, itemTintStyle } from '../base/itemTint.js';
 import { bankSearchMatches, sortForBank } from './bankSort.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
+import { lookUpItem } from '../encyclopedia/encyclopediaLink.js';
 
 /**
  * Bank pane: the guild bank as user-sortable tabs of compact reorderable item lists. Tabs
@@ -331,7 +332,7 @@ const ItemTile = ({ entry, onSelect, checked = false, selectMode = false, select
 // and change of target; the tile is memoised on what it draws.
 const ItemTileBody = memo(function ItemTileBody({ entry, onSelect, checked, selectMode, cue, held, nodeRef, handleProps, droppableProps }) {
     const { template, count } = entry;
-    const hint = selectMode ? t(checked ? 'itemTip.clickToDeselect' : 'itemTip.clickToSelect') : null;
+    const hint = t(selectMode ? (checked ? 'itemTip.clickToDeselect' : 'itemTip.clickToSelect') : 'itemTip.clickToLookUp');
     return (
         <Tooltip
             title={template.name}
@@ -341,7 +342,7 @@ const ItemTileBody = memo(function ItemTileBody({ entry, onSelect, checked, sele
         <button
             ref={nodeRef}
             data-bank-item={template.id}
-            onClick={onSelect}
+            onClick={onSelect ?? (() => lookUpItem(template.id))}
             {...handleProps}
             {...droppableProps}
             data-item-tint={itemTintName(template)}

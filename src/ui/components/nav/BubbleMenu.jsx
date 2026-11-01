@@ -1,9 +1,10 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import {
-    Castle, Compass, Landmark, Map as MapIcon,
+    BookOpen, Castle, Compass, Landmark, Map as MapIcon,
     Settings
 } from 'lucide-react';
+import { t } from '../../../i18n/index.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
@@ -11,8 +12,8 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * BubbleMenu: the vertical column of glassmorphic bubble buttons used for navigation.
  * Default-docked on the left; a Settings toggle (`ui.bubbleMenuRight`) swaps it to the right
  * edge (side is decided in ReactRoot and passed down).
- * Five bubbles: Guild Hall, the Item Bank, the Shop (its own drawer), the Atlas (an overlay over
- * the mat) and Settings. They share one 'only one view open at once' rule (`ui.nav`): clicking a
+ * Six bubbles: Guild Hall, the Item Bank, the Shop (its own drawer), the Atlas and the Encyclopedia
+ * (overlays over the mat) and Settings. They share one 'only one view open at once' rule (`ui.nav`): clicking a
  * bubble closes whatever any of the others has open, and clicking the active one closes it. This applies only to the bubbles
  * themselves; a contextual 'open the drawer' prompt still opens the Bank pane independently,
  * without closing anything else. Heroes live in the always-visible Hero Dock and have no
@@ -125,6 +126,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
              */}
             <Bubble id="shop-bubble-target" icon={MapIcon} label="Shop" color="green" active={nav.isActive('shop')} onClick={() => nav.toggle('shop')} />
             <Bubble id="atlas-bubble-target" icon={Compass} label="Atlas" color="blue" active={nav.isActive('atlas')} onClick={() => nav.toggle('atlas')} />
+            <Bubble id="encyclopedia-bubble-target" icon={BookOpen} label={t('encyclopedia.open')} color="lime" active={nav.isActive('encyclopedia')} onClick={() => nav.toggle('encyclopedia')} />
 
             <div className="mt-auto" />
             <Bubble icon={Settings} label="Settings" color="red" active={nav.isActive('settings')} onClick={() => nav.toggle('settings')} />

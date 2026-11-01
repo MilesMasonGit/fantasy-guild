@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds, perkFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds, perkFindings, gearDefenceFindings } from '../utils/constants';
 import { isMapItem, mapItemFindings } from '../../../src/systems/atlas/mapItems.js';
 
 /** Connectivity & Graph Auditor: audits the Token, Recipe and Item graph in three pillars: Data Integrity (missing references, invalid IDs, solver refusals), Economic Blockers (orphaned inputs, unreachable items, dead ends) and Pacing Gaps (level gaps in skills). */
@@ -134,7 +134,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
   }
 
   // A skill or job the game does not have (a renamed or dropped one). The game's own rule (`unknownRefRule.js`), so this tab and the boot audit name the same things.
-  for (const f of findUnknownRefs({ tokens: expandedTokens, items, recipes })) {
+  for (const f of findUnknownRefs({ tokens: expandedTokens, items, recipes, effects })) {
     issues.push({
       entityId: f.entityId,
       entityName: f.entityName,
@@ -142,6 +142,18 @@ export function auditConnectivity(entities, solverRefusals = []) {
       issueType: 'Data Integrity',
       severity: 'Critical',
       details: f.message,
+    });
+  }
+
+  // Gear's defence: a piece's lines the game cannot read, an off-hand item with weapon numbers, and a type the best stack of gear and perks resists 100 % or more (owner: no hero may). The game's own rule (`gearDefenceRule.js`), so this tab and the boot audit say the same thing.
+  for (const f of gearDefenceFindings({ items, effects, skillPerks })) {
+    issues.push({
+      entityId: f.entityId,
+      entityName: f.entityName,
+      entityType: f.entityType,
+      issueType: 'Data Integrity',
+      severity: 'Critical',
+      details: f.message.charAt(0).toUpperCase() + f.message.slice(1),
     });
   }
 

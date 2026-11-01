@@ -24,6 +24,10 @@ export const DatabaseManager = {
     // The Guild Hall's authored stars and constellations. Absent until the CMS first syncs a sky:
     // the Hall then holds only its built-in tracks (`hallStarRegistry.js`).
     hallStarFilesSingle: import.meta.glob('/data/hallStars.json', { eager: true }),
+
+    // The world map's generation tables. Absent until the CMS first syncs them: the world is then
+    // generated from the placeholder (`worldTablesRegistry.js`).
+    worldFilesSingle: import.meta.glob('/data/world.json', { eager: true }),
 };
 
 export default DatabaseManager;

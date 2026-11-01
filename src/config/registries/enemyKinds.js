@@ -8,28 +8,32 @@
  * icon. An enemy has none, one or two (`enemy.kinds: ['armoured', 'swift']`).
  *
  * How a kind combines with the level table (`enemyProfile.enemyProfileOf`), in this order:
- *   1. the level fills HP, hit, armour, speed and XP (older content's `budgetScale` scales HP, hit
- *      and XP);
- *   2. each kind, in the order ticked, adds its armour or Dodge, sets its speed and scales its
- *      hit (a hit is rounded halves up and is never below 1);
- *   3. a number the author typed on the enemy replaces the result outright.
+ *   1. the level fills HP, hit, speed and XP (older content's `budgetScale` scales HP, hit and XP);
+ *   2. each kind, in the order ticked, adds its resistances or Dodge, sets its speed and scales
+ *      its hit (a hit is rounded halves up and is never below 1);
+ *   3. a number the author typed on the enemy replaces the result outright, and a resistance the
+ *      author wrote replaces the kind's for that type or group.
  * Kinds never change HP or XP.
  *
  * Swift and Brute keep about the same damage per second as the level's normal swing, by the same
  * rule weapons follow (a fast swing hits about 2/3 as hard, a slow one about 4/3); a Brute always
  * hits at least 1 harder than the level. Armoured gives up a quarter of its damage per second
- * (slow, same hit) for its armour.
+ * (slow, same hit) for its Physical resistance.
  */
 
-/** The library effect a Venomous enemy lands on a hit. */
-export const VENOM_EFFECT_ID = 'effect_poison';
+/**
+ * The library effect a Venomous enemy lands on a hit: the Venom status (once named Poison, before
+ * Poison was a damage type; content still saying `effect_poison` is read as this id,
+ * `effectIdMigration.js`).
+ */
+export const VENOM_EFFECT_ID = 'effect_venom';
 
-/** @type {ReadonlyArray<{id: string, label: string, blurb: string, armor?: number, dodge?: number, speed?: string, hitScale?: number, hitAtLeastMore?: number, onHit?: {effectId: string}}>} */
+/** @type {ReadonlyArray<{id: string, label: string, blurb: string, resistances?: Object<string, number>, dodge?: number, speed?: string, hitScale?: number, hitAtLeastMore?: number, onHit?: {effectId: string}}>} */
 export const ENEMY_KINDS = Object.freeze([
     Object.freeze({
         id: 'armoured', label: 'Armoured',
-        blurb: '+2 armour, and swings slowly (every 4 s) with its usual hit.',
-        armor: 2, speed: 'slow'
+        blurb: 'Resists Physical 50 %, and swings slowly (every 4 s) with its usual hit.',
+        resistances: Object.freeze({ physical: 50 }), speed: 'slow'
     }),
     Object.freeze({
         id: 'nimble', label: 'Nimble',
@@ -48,16 +52,16 @@ export const ENEMY_KINDS = Object.freeze([
     }),
     Object.freeze({
         /**
-         * Lands the Poison status (`VENOM_EFFECT_ID`, a library effect) on the hero with every hit
-         * that leaves them standing: an "On Hit: applies Poison to the hero" rule the kind carries
+         * Lands the Venom status (`VENOM_EFFECT_ID`, a library effect) on the hero with every hit
+         * that leaves them standing: an "On Hit: applies Venom to the hero" rule the kind carries
          * (`board/FightMoments.js`).
          *
-         * ⚠️ Names the library effect by id: the content's Poison must be `effect_poison`, the id
-         * the CMS gives an effect named Poison. Without it the kind poisons nobody, and
+         * ⚠️ Names the library effect by id: the content's Venom must be `effect_venom`, the id
+         * the CMS gives an effect named Venom. Without it the kind lands nothing, and
          * `ContentAudit` says so.
          */
         id: 'venomous', label: 'Venomous',
-        blurb: 'Poisons the hero with every hit it lands (one Poison stack a hit).',
+        blurb: 'Lands Venom on the hero with every hit it lands (one Venom stack a hit).',
         onHit: Object.freeze({ effectId: VENOM_EFFECT_ID })
     })
 ]);

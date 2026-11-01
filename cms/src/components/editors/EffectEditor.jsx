@@ -111,7 +111,7 @@ export default function EffectEditor() {
             checked={!!status}
             onChange={(e) => updateEffect(effect.id, { status: e.target.checked ? { stacks: 1, ticks: 0 } : undefined })}
           />
-          This effect is a status, like Poison or Burn
+          This effect is a status, like Venom or Burn
         </label>
         <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
           A status lands only on a fighter in a fight and always ends with the fight. Each landing

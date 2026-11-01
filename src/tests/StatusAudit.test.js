@@ -3,11 +3,11 @@ import { auditContent } from '../systems/core/ContentAudit.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { EFFECTS } from '../config/registries/effectRegistry.js';
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
-import { registerStatusFixtures, POISON } from './fixtures/statusEffects.js';
+import { registerStatusFixtures, VENOM } from './fixtures/statusEffects.js';
 
 /**
  * What the content audit says about statuses and fight moments (brief 220, C4): a Venomous enemy
- * with no Poison in the library, a rule still naming a retired status, a status narrowing naming
+ * with no Venom in the library, a rule still naming a retired status, a status narrowing naming
  * an effect that is no status, and a fight moment carrying a verb it never runs.
  */
 
@@ -35,13 +35,13 @@ registerTokenTypes({
 const findingsFor = (id) => auditContent().filter(f => f.where === `Token "${id}"`).map(f => f.what);
 
 describe('the audit and statuses', () => {
-    it('names a Venomous enemy while the library has no Poison status, and not once it has', () => {
-        const saved = EFFECTS[POISON];
-        delete EFFECTS[POISON];
+    it('names a Venomous enemy while the library has no Venom status, and not once it has', () => {
+        const saved = EFFECTS[VENOM];
+        delete EFFECTS[VENOM];
         try {
-            expect(findingsFor('sa_venomous').some(w => w.includes('is Venomous') && w.includes('effect_poison'))).toBe(true);
+            expect(findingsFor('sa_venomous').some(w => w.includes('is Venomous') && w.includes('effect_venom'))).toBe(true);
         } finally {
-            if (saved) EFFECTS[POISON] = saved;
+            if (saved) EFFECTS[VENOM] = saved;
         }
         registerStatusFixtures();
         expect(findingsFor('sa_venomous').some(w => w.includes('is Venomous'))).toBe(false);

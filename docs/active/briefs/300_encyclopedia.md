@@ -31,6 +31,7 @@ until then the Places tab can show settled Regions, or wait (director's call).
 |---|---|---|
 | E1 | **The screen.** Its own button (with search) opens a full-screen encyclopedia, organised by kind (Items, Tokens, Enemies, Recipes; Places later). Every entry visible from the start. An entry shows what it is, **every source** (wild node, drop, recipe, Shop, side source), **the full ingredient tree folded** (open a level at a time), and **everything it is used in**. **Clicking a node in the tree makes it the focused entry**, so the player walks up and down the tree (with a back step). No wedge or cell shown. | builder (engineer if the tree view needs layout work) |
 | E2 | **Ticks and links.** A tick on each entry once obtained, made, beaten or settled (from `RegistryManager` and the first-kill record; recipes on their first craft), progress per kind ("Items 48/149"); silent (the toast's "New" pop is enough); reset at the ritual with the run. A link to the entry from every inspected card and Bank item. | builder |
+| E3 | **Search-first rework** (owner interview 2026-10-31, [concept](../concept_knowledge.md) "The search-first rework"): the book sprite; opening page with search, recently viewed and recently collected; the left-to-right flowchart around the focus (ingredients in, uses out, "or" branches), nodes with icon, name, amount, where made, have/need, skill and level; click grows and focuses, glide and drag, back to start; a small inspection panel; the lists and per-kind counts retire; Bank tile click removed. Reuses E1's model and E2's ticks. | engineer (layout) |
 
 ## Done when
 
@@ -41,7 +42,7 @@ until then the Places tab can show settled Regions, or wait (director's call).
   Iron Ore focuses it and shows its vein; the Copper Sword's card links to
   its entry; mining a first Copper Ore ticks it with no new pop beyond the
   toast's; a new run starts with no ticks.
-- One eye-check after E2.
+- One eye-check after E2. **E1+E2 merged 2026-10-31 (owner: works well; the UI needs the E3 rework).** One eye-check after E3.
 
 ## Owner to-do
 

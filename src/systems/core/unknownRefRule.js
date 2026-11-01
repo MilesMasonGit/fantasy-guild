@@ -1,11 +1,16 @@
-// Content that names a skill or a job the game does not have, or a rule or style it no longer reads.
+// Content that names a skill, a job or a damage type the game does not have, or a rule, style or number it no longer reads; an enemy's malformed moves.
 
 import { isSkillId, COMBAT_SKILL_IDS, getSkill } from '../../config/registries/skillRegistry.js';
 import { getEnemyKind, kindsClash, MAX_ENEMY_KINDS } from '../../config/registries/enemyKinds.js';
 import { isWeapon, authoredWeaponStyles, weaponStyleOf } from '../../config/registries/weaponStyles.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
+import { isDamageTypeId, isTypeOrGroupId, resistanceProblems } from '../../config/registries/damageTypes.js';
+import { RETIRED_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
+import { moveProblems } from '../../config/registries/enemyMoves.js';
+import { statusBlockOf } from '../effects/effectLibrary.js';
+import { isConsumableCategory } from '../../config/registries/equipmentCategories.js';
 import { statementsOf, stationSkillOf, KEYWORD } from '../effects/statements.js';
-import { TARGET_CATEGORIES } from '../effects/constants.js';
+import { TARGET_CATEGORIES, EFFECT_TYPES } from '../effects/constants.js';
 
 /**
  * The one rule behind "this names a skill or job that does not exist", shared
@@ -26,8 +31,8 @@ import { TARGET_CATEGORIES } from '../effects/constants.js';
  *
  * ## Output
  * `[{ entityType, entityId, entityName, field, message }]`, `entityType` being
- * `'Token'`, `'Item'` or `'Recipe'`, and `message` a sentence that does not
- * repeat the entity's name.
+ * `'Effect'`, `'Token'`, `'Item'` or `'Recipe'`, and `message` a sentence that
+ * does not repeat the entity's name.
  */
 
 /** Shop entries without a skill section fall under this one (`Shop.GENERAL_SECTION`). */
@@ -56,6 +61,77 @@ function statementFindings(def, push) {
     }
 }
 
+/**
+ * Findings for a library effect's rows: a row retired with damage types, or a Type row aimed at a
+ * type that does not exist. Read off the library, not each bearer, so an effect carried by six
+ * pieces of armour is named once.
+ */
+function effectRowFindings(entry, push) {
+    for (const statement of statementsOf(entry)) {
+        const payload = statement?.payload || {};
+        const row = statement?.keyword === KEYWORD.PROVIDES ? getPaletteEntry(payload.type) : null;
+        if (row?.retired) {
+            const instead = row.type === EFFECT_TYPES.PIERCE
+                ? 'Land a Sunder status instead (a status that provides Sunder)'
+                : 'Use Type Resistance % instead (Physical for metal armour; a piece of armour can carry its own resistances)';
+            push('statements', `provides ${row.label}, retired with damage types: it does nothing. ${instead}, or delete the rule in the CMS.`);
+        }
+        if (row?.categories === 'damageType' && hasValue(payload.category) && !isTypeOrGroupId(payload.category)) {
+            push('statements', `has a rule aimed at the damage type "${payload.category}", which does not exist — the rule matches nothing. Pick the type again in the CMS.`);
+        }
+    }
+}
+
+/** Findings for an enemy's resistances, and numbers it carries that the fight no longer reads. */
+function enemyResistanceFindings(def, push) {
+    if (!def?.enemy || typeof def.enemy !== 'object') return;
+    for (const problem of resistanceProblems(def.enemy.resistances)) {
+        push('enemy.resistances', `${problem} — that line is ignored. Pick it again in the CMS.`);
+    }
+    for (const field of RETIRED_ENEMY_FIELDS) {
+        const value = def.enemy[field];
+        if (value != null && value !== '') {
+            const what = field === 'armor' ? 'Armour' : 'Pierce';
+            push(`enemy.${field}`, `has ${what} ${value}, retired with damage types: the fight ignores it. Give it a Physical resistance instead, or remove the number in the CMS.`);
+        }
+    }
+}
+
+/**
+ * Findings for an enemy's moves (`enemyMoves.js`): one that is not a move, has no name, hits with an
+ * unknown type, does nothing, lands an effect the library does not hold, or aims or lasts in a way
+ * the fight cannot read. Effects are checked only when the library is given.
+ */
+function enemyMoveFindings(def, push, library) {
+    if (!def?.enemy || typeof def.enemy !== 'object') return;
+    for (const problem of moveProblems(def.enemy.moves, library)) push('enemy.moves', `${problem}.`);
+}
+
+/** Findings for a weapon's damage type and an arrow's block. */
+function damageTypeFindings(def, push) {
+    if (hasValue(def.damageType) && !isDamageTypeId(def.damageType)) {
+        push('damageType', `hits with the damage type "${def.damageType}", which does not exist — it hits with its style's default. Pick its type again in the CMS.`);
+    } else if (hasValue(def.damageType) && !isWeapon(def)) {
+        push('damageType', 'names a damage type but is not a weapon — only weapons and arrows give a hit its type, so it is ignored.');
+    }
+    const arrow = def.arrow;
+    if (arrow == null) return;
+    if (typeof arrow !== 'object' || Array.isArray(arrow)) {
+        push('arrow', 'has an arrow block that is not one — it is not an arrow. Tick Arrow again in the CMS.');
+        return;
+    }
+    if (!isConsumableCategory(def.equipSlot)) {
+        push('arrow', 'is an arrow but not a Consumable, so no hero can carry it to shoot. Make it a Consumable in the CMS.');
+    }
+    if (hasValue(arrow.damageType) && !isDamageTypeId(arrow.damageType)) {
+        push('arrow', `is an arrow of the damage type "${arrow.damageType}", which does not exist — it shoots as Stab. Pick its type again in the CMS.`);
+    }
+    const n = Number(arrow.damage);
+    if (!(Number.isFinite(n) && n > 0)) {
+        push('arrow', 'is an arrow with no damage of its own — it adds nothing to a shot. Give it a damage in the CMS.');
+    }
+}
+
 /** Findings for an enemy's kinds: one the game does not have, more than two, or two that clash. */
 function enemyKindFindings(def, push) {
     const kinds = Array.isArray(def?.enemy?.kinds) ? def.enemy.kinds : [];
@@ -75,11 +151,24 @@ function enemyKindFindings(def, push) {
 /**
  * Every skill and job reference in the content that does not resolve.
  *
- * @param {{ tokens?: object, items?: object, recipes?: object }} content
+ * @param {{ tokens?: object, items?: object, recipes?: object, effects?: object }} content
  * @returns {Array<{ entityType: string, entityId: string, entityName: string, field: string, message: string }>}
  */
-export function findUnknownRefs({ tokens, items, recipes } = {}) {
+export function findUnknownRefs({ tokens, items, recipes, effects } = {}) {
     const out = [];
+    const effectById = !effects ? null : Array.isArray(effects)
+        ? new Map(effects.filter(e => e?.id).map(e => [e.id, e]))
+        : new Map(Object.entries(effects));
+    const library = effectById
+        ? { hasEffect: (id) => effectById.has(id), isStatus: (id) => !!statusBlockOf(effectById.get(id)) }
+        : {};
+
+    for (const entry of asList(effects)) {
+        if (!entry || typeof entry !== 'object') continue;
+        effectRowFindings(entry, (field, message) => out.push({
+            entityType: 'Effect', entityId: entry.id, entityName: entry.name || entry.id, field, message
+        }));
+    }
 
     for (const def of asList(tokens)) {
         if (!def || typeof def !== 'object') continue;
@@ -100,6 +189,8 @@ export function findUnknownRefs({ tokens, items, recipes } = {}) {
             push('shop.section', `is sold in the Shop section "${section}", which is neither a skill nor General — the Shop heads it with that raw id. Pick its section again in the CMS.`);
         }
         enemyKindFindings(def, push);
+        enemyResistanceFindings(def, push);
+        enemyMoveFindings(def, push, library);
         statementFindings(def, push);
     }
 
@@ -126,6 +217,7 @@ export function findUnknownRefs({ tokens, items, recipes } = {}) {
             const first = getSkill(weaponStyleOf(def))?.name || weaponStyleOf(def);
             push('styles', `names ${authoredWeaponStyles(def).length} styles; a weapon has one, so it fights as ${first} (the first). Pick its one style in the CMS.`);
         }
+        damageTypeFindings(def, push);
         statementFindings(def, push);
     }
 

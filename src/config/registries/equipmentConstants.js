@@ -93,14 +93,14 @@ export function slotsInCategory(hero, categoryId) {
 
 /**
  * The slot holding the hero's primary weapon — the FIRST grid slot holding a
- * weapon-category item that is not a gathering tool, or null when unarmed.
+ * weapon-category item that is neither a gathering tool nor an off-hand item, or null when unarmed.
  *
  * Combat needs to name a single weapon to know which style an attack uses.
  * With two weapons the choice stays well-defined: the first in grid order.
  * A pickaxe shares the hands with weapons but is not one.
  */
 export function getPrimaryWeaponSlot(hero) {
-    const entry = getEquippedEntries(hero).find(e => isWeaponCategory(e.category) && !toolOf(getItem(e.itemId)));
+    const entry = getEquippedEntries(hero).find(e => isWeaponCategory(e.category) && !toolOf(getItem(e.itemId)) && getItem(e.itemId)?.offHand !== true);
     return entry ? entry.index : null;
 }
 

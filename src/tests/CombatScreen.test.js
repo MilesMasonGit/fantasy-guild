@@ -31,7 +31,7 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import * as fixtures from '../../bench/fixtures.mjs';
-import { registerStatusFixtures, providesFlat, POISON } from './fixtures/statusEffects.js';
+import { registerStatusFixtures, providesFlat, VENOM } from './fixtures/statusEffects.js';
 import {
     startFightWatch, resetFightWatch, fightsOf, subscribeMoments, adopt, MOMENT, OUTCOME
 } from '../ui/components/combat/fightWatch.js';
@@ -69,7 +69,7 @@ registerItems({
     cs_elixir: { id: 'cs_elixir', name: 'Elixir of Testing', type: 'potion', sprite: 'i_potion_sun_red', stackable: true, equipSlot: 'consumable', effects: [{ effectId: 'cs_fx_elixir' }] }
 });
 registerEffects({
-    cs_fx_buff: { id: 'cs_fx_buff', name: 'Tested', statements: [providesFlat('stm_cs_buff', EFFECT_TYPES.ARMOR, 1)] },
+    cs_fx_buff: { id: 'cs_fx_buff', name: 'Tested', statements: [{ ...providesFlat('stm_cs_buff', EFFECT_TYPES.TYPE_RESIST, 25), payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 25, category: 'physical' } }] },
     cs_fx_elixir: {
         id: 'cs_fx_elixir', name: 'Elixir of Testing', statements: [{
             ...makeStatement(KEYWORD.APPLIES), id: 'stm_cs_elixir',
@@ -208,7 +208,7 @@ describe('the fight watch: this fight and the last one', () => {
         const stop = startFightWatch();
         runUntil(() => !!fightsOf(heroId).current, 10);
         EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Crushing Blow' });
-        EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Poison' });
+        EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Venom' });
         const moves = fightsOf(heroId).current.log.filter(l => l.key === 'move');
         expect(moves.map(l => l.vars.move)).toEqual(['Crushing Blow']);
         stop();
@@ -222,11 +222,11 @@ describe('the fight watch: this fight and the last one', () => {
         runUntil(() => ticks.some(t => t.targetType === 'hero' && t.hpChange < 0), 120);
         off();
         const tick = ticks.find(t => t.targetType === 'hero' && t.hpChange < 0);
-        // Poison: 1 a stack a tick, ignoring armour.
-        expect(tick.statusId).toBe(POISON);
+        // Venom: 1 a stack a tick.
+        expect(tick.statusId).toBe(VENOM);
         expect(tick.hpChange).toBe(-tick.stacks);
         const log = [...(fightsOf(heroId).current?.log || []), ...(fightsOf(heroId).last?.log || [])];
-        expect(log.some(l => l.key === 'statusLands' && l.vars.status === 'Poison')).toBe(true);
+        expect(log.some(l => l.key === 'statusLands' && l.vars.status === 'Venom')).toBe(true);
         expect(log.some(l => l.key === 'statusHurts' && l.amount === `−${tick.stacks}`)).toBe(true);
         stop();
     });
@@ -252,7 +252,7 @@ describe('the fight watch: this fight and the last one', () => {
         expect(heroSwings.every(m => [MOMENT.HIT, MOMENT.CRIT, MOMENT.MISS].includes(m.kind))).toBe(true);
         expect(seen.filter(m => m.by === 'enemy').every(m => m.on === 'hero')).toBe(true);
         const tick = seen.find(m => m.kind === MOMENT.TICK);
-        expect(tick).toMatchObject({ on: 'hero', statusId: POISON, heroId, instanceId: enemyId });
+        expect(tick).toMatchObject({ on: 'hero', statusId: VENOM, heroId, instanceId: enemyId });
         expect(tick.amount).toBeGreaterThan(0);
         stop();
     });
@@ -302,12 +302,14 @@ describe('the panel, the plate and the floats read the real fight', () => {
         const view = fightPanelView(heroId, fightsOf(heroId));
         expect(view.live).toBe(true);
         expect(view.title).toBe(`${HeroManager.getHero(heroId).name} vs Screen Venomous`);
-        // Screen Sword 3 + level 20's step of 1; armour 1 from the elixir's buff; a normal swing.
-        expect(view.hero).toMatchObject({ style: 'melee', level: 20, hit: 4, armour: 1, swingMs: 3000 });
+        // Screen Sword 3 + level 20's step of 1, Slash; Physical 25 % from the elixir's buff (it was
+        // armour 1 before damage types); a normal swing.
+        expect(view.hero).toMatchObject({ style: 'melee', level: 20, hit: 4, resists: [{ id: 'physical', value: 25 }], swingMs: 3000 });
+        expect(view.hero.hitParts).toEqual([{ type: 'slash', hit: 4, arrow: false }]);
         // Ten fights to a dose, this one counted (owner, 2026-10-25); nine more after it.
         expect(view.hero.elixirs).toEqual([{ itemId: 'cs_elixir', name: 'Elixir of Testing', left: 9, count: 10 }]);
-        // Level 10 from the table: 30 health, a hit of 1, no armour; Venomous shows once fought.
-        expect(view.enemy).toMatchObject({ level: 10, hit: 1, armour: 0, swingMs: 3000 });
+        // Level 10 from the table: 30 health, a Physical hit of 1, no resistances; Venomous shows once fought.
+        expect(view.enemy).toMatchObject({ level: 10, hit: 1, hitType: 'physical', resists: [], swingMs: 3000 });
         expect(view.enemy.hp.max).toBe(30);
         expect(view.enemy.kinds.map(k => k.id)).toEqual(['venomous']);
         stop();
@@ -460,7 +462,7 @@ describe('nothing covers a fighter\'s health number (owner, 2026-10-25: everythi
         runUntil(() => !!BoardCombat.getFight(enemyId), 10);
         const { CalloutLayer } = await import('../ui/components/board/CalloutLayer.jsx');
         const { container } = render(React.createElement(CalloutLayer));
-        act(() => { EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Poison' }); });
+        act(() => { EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Venom' }); });
         const group = container.querySelector('[data-callout]').parentElement;
         const enemy = BoardState.getTokenById(enemyId);
         // The art's top at a 1:1 mat: the Token's 128 box over its centre.

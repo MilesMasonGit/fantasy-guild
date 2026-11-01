@@ -2052,5 +2052,239 @@
       }
     ],
     "autoSyncId": true
+  },
+  "effect_steady_pick": {
+    "name": "Steady Pick",
+    "statements": [
+      {
+        "id": "stm_k4_steady_pick",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.05,
+          "category": "mining"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_steady_pick"
+  },
+  "effect_clean_felling": {
+    "name": "Clean Felling",
+    "statements": [
+      {
+        "id": "stm_k4_clean_felling",
+        "keyword": "provides",
+        "payload": {
+          "type": "LOOT_MULT",
+          "bucket": "flat",
+          "value": 5,
+          "category": "forestry"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_clean_felling"
+  },
+  "effect_patient_line": {
+    "name": "Patient Line",
+    "statements": [
+      {
+        "id": "stm_k4_patient_line",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "fishing"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_patient_line"
+  },
+  "effect_even_heat": {
+    "name": "Even Heat",
+    "statements": [
+      {
+        "id": "stm_k4_even_heat",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "smithing"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_even_heat"
+  },
+  "effect_nimble_fingers": {
+    "name": "Nimble Fingers",
+    "statements": [
+      {
+        "id": "stm_k4_nimble_fingers",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.05,
+          "category": "crafting"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_nimble_fingers"
+  },
+  "effect_second_helping": {
+    "name": "Second Helping",
+    "statements": [
+      {
+        "id": "stm_k4_second_helping",
+        "keyword": "provides",
+        "payload": {
+          "type": "LOOT_MULT",
+          "bucket": "flat",
+          "value": 5,
+          "category": "cooking"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_second_helping"
+  },
+  "effect_green_thumb": {
+    "name": "Green Thumb",
+    "statements": [
+      {
+        "id": "stm_k4_green_thumb",
+        "keyword": "provides",
+        "payload": {
+          "type": "YIELD",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "farming"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_green_thumb"
+  },
+  "effect_steady_hand": {
+    "name": "Steady Hand",
+    "statements": [
+      {
+        "id": "stm_k4_steady_hand",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "alchemy"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_steady_hand"
+  },
+  "effect_quick_builder": {
+    "name": "Quick Builder",
+    "statements": [
+      {
+        "id": "stm_k4_quick_builder",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.05,
+          "category": "construction"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_quick_builder"
   }
 }

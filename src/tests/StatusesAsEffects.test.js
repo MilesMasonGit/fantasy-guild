@@ -17,7 +17,10 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
-import { heroHitDamage, damageMultiplierOf, heroFlatArmor } from '../utils/CombatFormulas.js';
+import { heroHitDamage, heroBlow, damageMultiplierOf, heroTypeResistance } from '../utils/CombatFormulas.js';
+
+/** A hero's resistance to Physical hits: the shield shape, now that flat armour is retired. */
+const shield = (h) => heroTypeResistance(h, 'physical');
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
 
@@ -133,19 +136,20 @@ describe('⭐ the three that tick — Poison, Burning, Bleed', () => {
 
     it('reads as one honest sentence', () => {
         expect(renderStatement(overTime(2)))
-            .toBe('On Tick: deals 2 damage to itself, ignoring armour.');
+            .toBe('On Tick: deals 2 damage to itself.');
     });
 });
 
 describe('⭐ the four that linger — and the capability V7 had to build', () => {
-    it('Armor Shield: flat Armor while carried', () => {
+    // Rewritten for damage types: the shield shape is a Type Resistance now, flat Armor being retired.
+    it('Armor Shield: a resistance while carried', () => {
         // ⚠️ Before V7 a carried effect contributed no modifiers at all, so this
         // whole shape — four of the seven statuses — was unsayable.
-        authored('effect_armor_shield', 'Armor Shield', lasting(EFFECT_TYPES.ARMOR, 3));
+        authored('effect_armor_shield', 'Armor Shield', lasting(EFFECT_TYPES.TYPE_RESIST, 30));
 
-        expect(heroFlatArmor(hero())).toBe(0);
+        expect(shield(hero())).toBe(0);
         carry('effect_armor_shield');
-        expect(heroFlatArmor(hero())).toBe(3);
+        expect(shield(hero())).toBe(30);
     });
 
     it('Well Fed: a percentage of outgoing damage', () => {
@@ -186,46 +190,46 @@ describe('⭐ the four that linger — and the capability V7 had to build', () =
 describe('⚠️ a lingering modifier really does stop when it expires', () => {
     it('takes the armour away again', () => {
         vi.useFakeTimers();
-        authored('effect_short_shield', 'Short Shield', lasting(EFFECT_TYPES.ARMOR, 5));
+        authored('effect_short_shield', 'Short Shield', lasting(EFFECT_TYPES.TYPE_RESIST, 50));
 
         carry('effect_short_shield', 1);
-        expect(heroFlatArmor(hero())).toBe(5);
+        expect(shield(hero())).toBe(50);
 
         vi.advanceTimersByTime(10);
         LiveEffects.tick(STATUS_TICK_INTERVAL_MS, TriggerSystem.fireLiveStatement);
 
         expect(hero().effects).toEqual([]);
-        expect(heroFlatArmor(hero()), 'the buff outlived the effect').toBe(0);
+        expect(shield(hero()), 'the buff outlived the effect').toBe(0);
         vi.useRealTimers();
     });
 
     it('and takes it away when it is removed by hand', () => {
-        authored('effect_removable_shield', 'Removable Shield', lasting(EFFECT_TYPES.ARMOR, 4));
+        authored('effect_removable_shield', 'Removable Shield', lasting(EFFECT_TYPES.TYPE_RESIST, 40));
         carry('effect_removable_shield');
-        expect(heroFlatArmor(hero())).toBe(4);
+        expect(shield(hero())).toBe(40);
 
         LiveEffects.removeFromHero('hero_1', 'effect_removable_shield');
-        expect(heroFlatArmor(hero())).toBe(0);
+        expect(shield(hero())).toBe(0);
     });
 
     it('⚠️ never accumulates when re-synced — one source, replaced not appended', () => {
-        authored('effect_stacking_check', 'Shield', lasting(EFFECT_TYPES.ARMOR, 2));
+        authored('effect_stacking_check', 'Shield', lasting(EFFECT_TYPES.TYPE_RESIST, 20));
         carry('effect_stacking_check');
         LiveEffects.syncAggregator(hero());
         LiveEffects.syncAggregator(hero());
 
-        expect(heroFlatArmor(hero())).toBe(2);
+        expect(shield(hero())).toBe(20);
     });
 });
 
 describe('the tier scales a lingering effect too', () => {
     it('makes Armor Shield III three times the shield', () => {
-        authored('effect_tiered_shield', 'Tiered Shield', lasting(EFFECT_TYPES.ARMOR, 2));
+        authored('effect_tiered_shield', 'Tiered Shield', lasting(EFFECT_TYPES.TYPE_RESIST, 10));
         LiveEffects.applyToHero('hero_1', {
             effectId: 'effect_tiered_shield', scale: 3, durationMs: 60000
         });
 
-        expect(heroFlatArmor(hero())).toBe(6);
+        expect(shield(hero())).toBe(30);
     });
 });
 
@@ -233,16 +237,16 @@ describe('⭐ the whole point: a carried buff changes a real fight', () => {
     it('Well Fed makes the hero hit harder', () => {
         authored('effect_wf', 'Well Fed', lasting(EFFECT_TYPES.DAMAGE, 0.50, 'percentage'));
 
-        const enemy = { hp: 100, armor: 0, combatType: 'melee', hit: 1, level: 50 };
+        const enemy = { hp: 100, combatType: 'melee', hit: 1, level: 50 };
 
-        // Hits are fixed, so the buff shows as an exact number: a level 50 fist is 1 + 2 = 3,
-        // and +50 % makes it 4.5, rounded halves up to 5.
+        // A level 50 fist is 1 + 2 = 3, and +50 % makes it 4.5. Rewritten for damage types: the
+        // fraction rolls as the hit lands (4 or 5), so the blow is read before the roll.
         const before = heroHitDamage(hero(), enemy);
         carry('effect_wf');
-        const after = heroHitDamage(hero(), enemy);
+        const after = heroBlow(hero(), enemy).exact;
 
         expect(damageMultiplierOf(hero())).toBeCloseTo(1.5, 5);
         expect(before).toBe(3);
-        expect(after).toBe(5);
+        expect(after).toBeCloseTo(4.5, 9);
     });
 });

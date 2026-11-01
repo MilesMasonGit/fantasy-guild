@@ -55,20 +55,20 @@ function effectEditor(id) {
 }
 
 describe('⭐ the Effect editor makes a status', () => {
-    it('a new effect named Poison gets the id Venomous names, and is flagged to keep it', () => {
-        // A library without Poison, whatever ships.
+    it('a new effect named Venom gets the id Venomous names, and is flagged to keep it', () => {
+        // A library without Venom, whatever ships.
         useEntityStore.setState((s) => {
-            const { effect_poison: _gone, ...effects } = s.effects;
+            const { effect_venom: _gone, ...effects } = s.effects;
             return { effects };
         });
-        const id = store().addEffect({ name: 'Poison' });
-        expect(id).toBe('effect_poison');
+        const id = store().addEffect({ name: 'Venom' });
+        expect(id).toBe('effect_venom');
         const { container } = effectEditor(id);
         expect(container.textContent).toContain('Venomous enemies land this effect by its id');
     });
 
     it('ticking Status writes the block; stacks and ticks write into it; the Rules Text says so', () => {
-        const id = store().addEffect({ name: 'Poison' });
+        const id = store().addEffect({ name: 'Venom' });
         const { container } = effectEditor(id);
         expect(store().effects[id].status).toBeUndefined();
 

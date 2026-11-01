@@ -49,7 +49,7 @@ describe('The stat block', () => {
         const table = enemyLevelStats(4);
         expect(p.hp).toBe(table.hp);
         expect(p.hit).toBe(table.hit);
-        expect(p.armor).toBe(table.armor);
+        expect(p.resistances).toEqual({});
         expect(p.attackSpeed).toBe(table.attackSpeedMs);
     });
 

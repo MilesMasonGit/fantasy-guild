@@ -1783,8 +1783,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": null,
-    "valueSource": null,
+    "value": 14,
+    "valueSource": "recipe_copper_sickle",
     "autoSyncId": true,
     "id": "item_copper_sickle",
     "tool": {
@@ -3097,5 +3097,77 @@
       ],
       "bountyWeight": 0
     }
+  },
+  "item_cooked_tropical_fish": {
+    "id": "item_cooked_tropical_fish",
+    "name": "Cooked Tropical Fish",
+    "description": "",
+    "type": "food",
+    "sprite": "i_tropical_fish_raw",
+    "stackable": true,
+    "restoreAmount": 4,
+    "equipSlot": "food",
+    "value": 3,
+    "valueSource": "recipe_cooked_tropical_fish",
+    "autoSyncId": true,
+    "tags": [
+      "Food",
+      "Fish",
+      "Cooked"
+    ]
+  },
+  "item_cooked_swordfish": {
+    "id": "item_cooked_swordfish",
+    "name": "Cooked Swordfish",
+    "description": "",
+    "type": "food",
+    "sprite": "i_swordfish",
+    "stackable": true,
+    "restoreAmount": 8,
+    "equipSlot": "food",
+    "value": 10,
+    "valueSource": "recipe_cooked_swordfish",
+    "autoSyncId": true,
+    "tags": [
+      "Food",
+      "Fish",
+      "Cooked"
+    ]
+  },
+  "item_cooked_lobster": {
+    "id": "item_cooked_lobster",
+    "name": "Cooked Lobster",
+    "description": "",
+    "type": "food",
+    "sprite": "i_lobster",
+    "stackable": true,
+    "restoreAmount": 10,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "tags": [
+      "Food",
+      "Seafood",
+      "Cooked"
+    ]
+  },
+  "item_lavender_salmon": {
+    "id": "item_lavender_salmon",
+    "name": "Lavender Salmon",
+    "description": "",
+    "type": "food",
+    "sprite": "i_salmon_raw",
+    "stackable": true,
+    "restoreAmount": 16,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "tags": [
+      "Food",
+      "Fish",
+      "Cooked"
+    ]
   }
 }

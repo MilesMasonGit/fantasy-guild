@@ -104,17 +104,26 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  *   status it blocks.
  * * `'item'`   — `OutputRules.doubleItemDrop` passes the id of each item a
  *   cycle or kill dropped, which is how `DOUBLE_DROP` names its item.
+ * * `'damageType'` — `CombatFormulas` passes a hit's damage type, which is how
+ *   Type Damage % and Type Resistance % name a type; a group's row counts on its
+ *   types (`ModifierAggregator._isParentOf`).
  *
  * Declaring the vocabulary per row is what lets the CMS show a skill
  * picker on Yield and a status picker on Immunity without knowing either list.
  *
  * A row without `categories` offers no narrowing at all, which is right for the
- * combat axes — their readers call `query('ARMOR')` with no category, so
+ * other combat axes — their readers call `query('ACCURACY')` with no category, so
  * anything but ALL would be registered and never matched.
  *
  * * `'equipCategory'` — `loadoutCaps.js` passes a loadout category's id
  *   (`equipmentCategories.js`), which is how `LOADOUT_SLOTS` names the kind of
  *   item it makes room for.
+ *
+ * ## `retired` — still read as a sentence, never offered
+ *
+ * A row the game no longer reads (flat Armor, Resistance and Pierce, gone with
+ * damage types) stays here so content carrying one still renders and the audits
+ * can name it; `paletteForKeyword` leaves it out of the editor's choices.
  *
  * ## `heroOnly` — the axis reaches a person, never a tile
  *
@@ -329,8 +338,8 @@ export const MODIFIER_PALETTE = [
 
     // --- Combat ---------------------------------------------------------
     //
-    // ⚠️ Every row here has a live reader in `CombatFormulas` or
-    // `CombatAttackProcessor`, queried off `hero.aggregator`.
+    // ⚠️ Every row here but the retired ones has a live reader in `CombatFormulas`
+    // or `CombatAttackProcessor`, queried off `hero.aggregator`.
     //
     // `buckets: ['flat']` on all of them because `ModifierAggregator.query` —
     // which is what combat calls — sums flats and SKIPS percentage and
@@ -343,9 +352,10 @@ export const MODIFIER_PALETTE = [
         scales: 'value',
         buckets: ['flat'],
         heroOnly: true,
+        retired: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Flat damage subtracted from every hit the hero takes.'
+        hint: 'Retired with damage types: does nothing. Use Type Resistance % (Physical for metal armour).'
     },
     {
         type: EFFECT_TYPES.RESIST_FLAT,
@@ -354,9 +364,10 @@ export const MODIFIER_PALETTE = [
         scales: 'value',
         buckets: ['flat'],
         heroOnly: true,
+        retired: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Further flat damage subtracted, after Armor.'
+        hint: 'Retired with damage types: does nothing. Use Type Resistance %.'
     },
     {
         type: EFFECT_TYPES.ACCURACY,
@@ -407,9 +418,10 @@ export const MODIFIER_PALETTE = [
         scales: 'value',
         buckets: ['flat'],
         heroOnly: true,
+        retired: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Armour points the hero\'s hits ignore. A hit still does at least 1.'
+        hint: 'Retired with damage types: does nothing. Use the Sunder status (a status effect that provides Sunder).'
     },
     {
         type: EFFECT_TYPES.CRIT_CHANCE,
@@ -420,7 +432,52 @@ export const MODIFIER_PALETTE = [
         heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Percentage points added to the hero\'s 5% chance to crit (a crit doubles the hit before armour).'
+        hint: 'Percentage points added to the hero\'s 5% chance to crit (a crit doubles the hit).'
+    },
+    {
+        /**
+         * Percent points, in the flat bucket like Crit Chance: the loadout registers flats only.
+         * The type or group is the rule's category; a group's row counts on each of its types
+         * (`ModifierAggregator._isParentOf`).
+         */
+        type: EFFECT_TYPES.TYPE_DAMAGE,
+        label: 'Type Damage %',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOnly: true,
+        categories: 'damageType',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Percent more damage on hits of one damage type or group: 15 means +15% (a Poisoner\'s Cloak: Poison 15). Pick which type.'
+    },
+    {
+        type: EFFECT_TYPES.TYPE_RESIST,
+        label: 'Type Resistance %',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOnly: true,
+        categories: 'damageType',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Percent off hits of one damage type or group taken: 20 means 20% less, a negative number a weakness. Pick which type. An enemy\'s plain swing is Physical.'
+    },
+    {
+        /**
+         * Points off every resistance the bearer has, in the flat bucket like Type Resistance %:
+         * what the Sunder status provides, once per stack. A resistance is lowered to 0 at most; a
+         * weakness is untouched (`CombatFormulas.afterSunder`).
+         */
+        type: EFFECT_TYPES.SUNDER,
+        label: 'Sunder',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOnly: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Points off every resistance the bearer has, never below 0 (a weakness stays as it is). Put it on a status: Sunder 10 stacking to 3 takes up to 30 off. Spears and some arrows land it.'
     },
     {
         /**

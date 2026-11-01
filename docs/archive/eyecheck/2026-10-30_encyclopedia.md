@@ -18,26 +18,26 @@ unapproved pieces; on the art list).
 1. **The screen.** A sixth nav bubble (a book) opens the Encyclopedia full
    screen: tabs Items, Tokens, Enemies, Recipes, a list on the left, the entry
    on the right. Every entry is visible from the start.
-   Verdict: ok / change: ___
+   Verdict: **works** (owner 2026-10-31: "It works well, but the UI needs a big rework"; interview recorded as brief 300 E3)
 2. **Search.** Type "iron": Iron Ore, Iron Ingot, the Iron Smithy and more.
-   Verdict: ok / change: ___
+   Verdict: **works** (owner 2026-10-31: "It works well, but the UI needs a big rework"; interview recorded as brief 300 E3)
 3. **The tree.** Open Iron Ingot: "Made from" shows Iron Ore ×6 and Coal ×2,
    folded one level at a time. Click Iron Ore: it becomes the entry and shows
    its vein under "Comes from". The back arrow returns to Iron Ingot.
-   Verdict: ok / change: ___
+   Verdict: **works** (owner 2026-10-31: "It works well, but the UI needs a big rework"; interview recorded as brief 300 E3)
 4. **Uses and sources.** On any entry, "Comes from" lists every source (node,
    drop, recipe, Shop) and "Used in" everything that spends it; every name is
    a link.
-   Verdict: ok / change: ___
+   Verdict: **works** (owner 2026-10-31: "It works well, but the UI needs a big rework"; interview recorded as brief 300 E3)
 5. **Ticks.** Tab counts read like "Items 9/149". Mine a first Copper Ore: it
    gets a green tick, and nothing pops beyond the Bank's usual "New". Craft a
    first Copper Ingot: the recipe ticks. Beat a goblin: the enemy ticks.
-   Verdict: ok / change: ___
+   Verdict: **works** (owner 2026-10-31: "It works well, but the UI needs a big rework"; interview recorded as brief 300 E3)
 6. **Links from cards and the Bank.** Click a Token on the mat: a book beside
    the card's X opens its entry; its recipe and ribbons (Needs, Tools, Makes,
    Drops) link too. In the Bank, a plain click on a tile opens that item's
    entry and closes the Bank.
-   Verdict: ok / change: ___
+   Verdict: **works** (owner 2026-10-31: "It works well, but the UI needs a big rework"; interview recorded as brief 300 E3)
 
 ## Questions (recommendation first; built = A)
 

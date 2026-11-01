@@ -181,7 +181,7 @@ describe('The audit names content pointing at a skill or job that does not exist
                     rule('stm_fx_combat_scope', 'provides', { type: 'YIELD', bucket: 'percentage', value: 0.1, category: 'combat' }),
                     rule('stm_fx_skill_scope', 'provides', { type: 'YIELD', bucket: 'percentage', value: 0.1, category: 'stealth' }),
                     // A status is a library effect with a status block: this one exists (`registerStatusFixtures`).
-                    rule('stm_fx_status_scope', 'provides', { type: 'STATUS_IMMUNITY', bucket: 'flat', value: 1, category: 'effect_poison' })
+                    rule('stm_fx_status_scope', 'provides', { type: 'STATUS_IMMUNITY', bucket: 'flat', value: 1, category: 'effect_venom' })
                 ]
             }
         });

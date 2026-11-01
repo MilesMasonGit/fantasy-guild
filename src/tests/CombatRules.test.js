@@ -26,7 +26,8 @@ import * as RegenSystem from '../systems/hero/RegenSystem.js';
 
 /**
  * The combat numbers of the detail pass (`concept_combat.md`, "Detail pass rulings"): small
- * numbers, fixed hits, rare misses and crits, flat armour.
+ * numbers, fixed hits, rare misses and crits; since damage types, a hit's fraction rolls and flat
+ * armour is gone.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -159,19 +160,21 @@ describe('a new hero swings what they hold', () => {
         expect(CF.getHeroCombatLevel(r)).toBe(1);
     });
 
+    // Rewritten for damage types: a hit keeps its fraction and rolls it as it lands, so these read
+    // the blow before the roll.
     it('a bow fights Ranged: the cycle counts both ways', () => {
         const r = recruit('rules_bow');
         expect(CF.getHeroCombatStyle(r)).toBe('ranged');
-        // 2 against magic (good) 2.5 → 3, against melee (bad) 1.5 → 2.
-        expect(CF.heroHitDamage(r, enemy(1, { style: 'magic' }))).toBe(3);
-        expect(CF.heroHitDamage(r, enemy(1, { style: 'melee' }))).toBe(2);
-        // A level 40 hit of 3: melee is strong against ranged, 3.75 → 4; magic weak, 2.25 → 2.
-        expect(CF.enemyHitDamage(enemy(40, { style: 'melee' }), r)).toBe(4);
-        expect(CF.enemyHitDamage(enemy(40, { style: 'magic' }), r)).toBe(2);
+        // 2 against magic (good) 2.5, against melee (bad) 1.5.
+        expect(CF.heroBlow(r, enemy(1, { style: 'magic' })).exact).toBe(2.5);
+        expect(CF.heroBlow(r, enemy(1, { style: 'melee' })).exact).toBe(1.5);
+        // A level 40 hit of 3: melee is strong against ranged, 3.75; magic weak, 2.25.
+        expect(CF.enemyBlow(enemy(40, { style: 'melee' }), r).exact).toBe(3.75);
+        expect(CF.enemyBlow(enemy(40, { style: 'magic' }), r).exact).toBe(2.25);
     });
 });
 
-describe('the style cycle: ±25 %, rounded halves up', () => {
+describe('the style cycle: ±25 %, its fraction rolled as the hit lands', () => {
     it('melee > ranged > magic > stealth > melee; opposites even', () => {
         expect(matchupMultiplier('melee', 'ranged')).toBe(1.25);
         expect(matchupMultiplier('ranged', 'melee')).toBe(0.75);
@@ -180,47 +183,55 @@ describe('the style cycle: ±25 %, rounded halves up', () => {
         expect(matchupMultiplier('stealth', 'melee')).toBe(1.25);
     });
 
-    it('barely shows on small numbers: a 2 becomes 3 on a good matchup and stays 2 on a bad one', () => {
+    // Rewritten for damage types: "every percentage rounds halves up" gave way to the fraction roll.
+    it('shows on small numbers as a roll: a 2 is 2.5 on a good matchup (2 or 3) and 1.5 on a bad one (1 or 2)', () => {
         const sword = hero({ skill: 'melee', level: 1, weapon: 'rules_copper_sword' });
-        expect(CF.heroHitDamage(sword, enemy(1, { style: 'ranged' }))).toBe(3);   // 2.5 → 3
-        expect(CF.heroHitDamage(sword, enemy(1, { style: 'stealth' }))).toBe(2);  // 1.5 → 2
+        expect(CF.heroBlow(sword, enemy(1, { style: 'ranged' })).exact).toBe(2.5);
+        expect(CF.heroBlow(sword, enemy(1, { style: 'stealth' })).exact).toBe(1.5);
         expect(CF.heroHitDamage(sword, enemy(1, { style: 'magic' }))).toBe(2);
+        const spy = vi.spyOn(Math, 'random').mockReturnValue(0.49);
+        expect(CF.heroHitDamage(sword, enemy(1, { style: 'ranged' }))).toBe(3);
+        spy.mockReturnValue(0.5);
+        expect(CF.heroHitDamage(sword, enemy(1, { style: 'ranged' }))).toBe(2);
+        spy.mockRestore();
     });
 
-    it('works for the enemy too: a hit of 6 against a weak style is 8, against a strong one 5', () => {
+    it('works for the enemy too: a hit of 6 against a weak style is 7.5, against a strong one 4.5', () => {
         registerItems({ rules_shiv: { id: 'rules_shiv', name: 'Shiv', type: 'weapon', equipSlot: 'hand', styles: ['stealth'], damage: 1 } });
         const ranger = hero({ skill: 'ranged', level: 1, weapon: 'rules_bow' });
         const stealthy = hero({ skill: 'stealth', level: 1, weapon: 'rules_shiv' });
         const brute = enemy(1, { style: 'melee', hit: 6 });
-        expect(CF.enemyHitDamage(brute, ranger)).toBe(8);     // 7.5 → 8
-        expect(CF.enemyHitDamage(brute, stealthy)).toBe(5);   // 4.5 → 5
+        expect(CF.enemyBlow(brute, ranger).exact).toBe(7.5);
+        expect(CF.enemyBlow(brute, stealthy).exact).toBe(4.5);
     });
 });
 
-describe('crits double before armour; armour is flat, minimum 1; pierce ignores armour points', () => {
-    it('the concept doc\'s example: an iron sword 4 against armour 2 does 2, a crit 6', () => {
+// Rewritten for damage types: flat armour, the floor of 1 and Pierce are retired. A crit doubles the
+// blow before the type factor; a resisted hit can do 0.
+describe('crits double before the type factor; no flat armour, no floor', () => {
+    it('an iron sword 4 does 4, a crit 8; on a Slash resistance of 50 %, 2 and 4', () => {
         const h = hero({ skill: 'melee', level: 1, weapon: 'rules_iron_sword' });
-        const e = enemy(1, { armor: 2 });
-        expect(CF.heroHitDamage(h, e)).toBe(2);
-        expect(CF.heroHitDamage(h, e, { crit: true })).toBe(6);
+        expect(CF.heroHitDamage(h, enemy(1))).toBe(4);
+        expect(CF.heroHitDamage(h, enemy(1), { crit: true })).toBe(8);
+        const shell = enemy(1, { resistances: { slash: 50 } });
+        expect(CF.heroHitDamage(h, shell)).toBe(2);
+        expect(CF.heroHitDamage(h, shell, { crit: true })).toBe(4);
     });
 
-    it('a hit always does at least 1', () => {
+    it('a hit can do 0: immunity means 0, and the old armour numbers are read by nothing', () => {
         const h = hero({ skill: 'melee', level: 1, weapon: 'rules_copper_sword' });
-        expect(CF.heroHitDamage(h, enemy(1, { armor: 9 }))).toBe(1);
+        expect(CF.heroHitDamage(h, enemy(1, { resistances: { physical: 100 } }))).toBe(0);
+        expect(CF.heroHitDamage(h, enemy(1, { armor: 9 }))).toBe(2);
         const plated = recruit();
         give(plated, EFFECT_TYPES.ARMOR, 5);
         expect(CF.enemyHitDamage(enemy(1), plated)).toBe(1);
     });
 
-    it('pierce takes armour points away, never adds damage', () => {
+    it('Pierce is read by nothing on either side', () => {
         const h = hero({ skill: 'melee', level: 1, weapon: 'rules_iron_sword' });
         give(h, EFFECT_TYPES.PIERCE, 1);
-        expect(CF.heroHitDamage(h, enemy(1, { armor: 2 }))).toBe(3);
-        expect(CF.heroHitDamage(h, enemy(1, { armor: 0 }))).toBe(4);
-        const plated = recruit();
-        give(plated, EFFECT_TYPES.ARMOR, 3);
-        expect(CF.enemyHitDamage(enemy(1, { hit: 5, pierce: 2 }), plated)).toBe(4);
+        expect(CF.heroHitDamage(h, enemy(1))).toBe(4);
+        expect(CF.enemyHitDamage(enemy(1, { hit: 5, pierce: 2 }), recruit())).toBe(5);
     });
 
     it('crit chance is 5 %, and gear adds to it; an enemy has 5 % unless authored', () => {
@@ -300,17 +311,21 @@ describe('swing speed comes from the weapon: fast 2 s, normal 3 s, slow 4 s', ()
 });
 
 describe('the enemy level table', () => {
-    it('fills HP, hit, armour, speed and XP from the level', () => {
-        expect(enemyLevelStats(1)).toEqual({ hp: 21, hit: 1, armor: 0, speed: 'normal', attackSpeedMs: 3000, xp: 10 });
-        expect(enemyLevelStats(20)).toMatchObject({ hp: 40, hit: 2, armor: 0 });
-        expect(enemyLevelStats(30)).toMatchObject({ hp: 50, hit: 2, armor: 1 });
-        expect(enemyLevelStats(99)).toMatchObject({ hp: 119, hit: 5, armor: 3 });
+    // Rewritten for damage types: the table's armour (1 per 30 levels) is gone; 4 HP per 30 levels
+    // stands in its place, so the even fight below keeps its 10 swings.
+    it('fills HP, hit, speed and XP from the level', () => {
+        expect(enemyLevelStats(1)).toEqual({ hp: 21, hit: 1, speed: 'normal', attackSpeedMs: 3000, xp: 10 });
+        expect(enemyLevelStats(20)).toMatchObject({ hp: 40, hit: 2 });
+        expect(enemyLevelStats(29)).toMatchObject({ hp: 49 });
+        expect(enemyLevelStats(30)).toMatchObject({ hp: 54, hit: 2 });
+        expect(enemyLevelStats(99)).toMatchObject({ hp: 131, hit: 5 });
+        expect(enemyLevelStats(99)).not.toHaveProperty('armor');
     });
 
     it('never falls as the level rises', () => {
         for (let L = 2; L <= 99; L++) {
             const a = enemyLevelStats(L - 1), b = enemyLevelStats(L);
-            for (const k of ['hp', 'hit', 'armor', 'xp']) expect(b[k], `${k} at ${L}`).toBeGreaterThanOrEqual(a[k]);
+            for (const k of ['hp', 'hit', 'xp']) expect(b[k], `${k} at ${L}`).toBeGreaterThanOrEqual(a[k]);
         }
     });
 
@@ -324,20 +339,20 @@ describe('the enemy level table', () => {
             const tier = WEAPON_TIERS.filter(t => L >= t.level).pop();
             const e = enemyLevelStats(L);
             const plain = tier.normal + levelDamageBonus(L);
-            const landed = 0.95 * Math.max(1, plain - e.armor) + 0.05 * Math.max(1, 2 * plain - e.armor);
+            const landed = 0.95 * plain + 0.05 * 2 * plain;
             const swings = e.hp / ((1 - missChance(L, L) / 100) * landed);
             expect(swings, `level ${L}`).toBeGreaterThanOrEqual(10);
         }
     });
 
     it('authored numbers replace the table\'s one by one; the rest stay safe defaults', () => {
-        const e = enemy(5, { hp: 40, armor: 2, dodge: 15, speed: 'slow' });
-        expect(e).toMatchObject({ hp: 40, hit: 1, armor: 2, dodge: 15, accuracy: 0, pierce: 0, critChance: 5, attackSpeed: 4000, xpAwarded: 13 });
+        const e = enemy(5, { hp: 40, dodge: 15, speed: 'slow' });
+        expect(e).toMatchObject({ hp: 40, hit: 1, dodge: 15, accuracy: 0, critChance: 5, resistances: {}, attackSpeed: 4000, xpAwarded: 13 });
     });
 
-    it('older content\'s budgetScale still scales HP, hit and XP (not armour or speed)', () => {
+    it('older content\'s budgetScale still scales HP, hit and XP (not speed)', () => {
         const goblin = enemy(1, { budgetScale: 0.3 });
-        expect(goblin).toMatchObject({ hp: 6, hit: 1, armor: 0, attackSpeed: 3000, xpAwarded: 3 });
+        expect(goblin).toMatchObject({ hp: 6, hit: 1, attackSpeed: 3000, xpAwarded: 3 });
         const chief = enemy(3, { budgetScale: 0.6 });
         expect(chief).toMatchObject({ hp: 14, hit: 1, xpAwarded: 7 });
     });

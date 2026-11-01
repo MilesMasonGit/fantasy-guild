@@ -33,6 +33,7 @@ import { authoredSkillPerks } from '../../config/registries/perkRegistry.js';
 import { perkFindings } from './perkRule.js';
 import { authoredHallSky } from '../../config/registries/hallStarRegistry.js';
 import { hallStarFindings } from './hallStarRule.js';
+import { gearDefenceFindings } from './gearDefenceRule.js';
 
 /**
  * ContentAudit — one pass over every cross-reference in the content set,
@@ -280,13 +281,13 @@ function auditEffectRefs(out, where, def) {
  * read by nothing — the "authored but inert" failure this project keeps paying
  * for, so it is named out loud instead.
  */
-/** A Venomous enemy lands the library's Poison by id; without that status it poisons nobody. */
+/** A Venomous enemy lands the library's Venom by id; without that status it lands nothing. */
 function auditVenom(out, where, def) {
     if (!isEnemyDef(def) || !(def.enemy.kinds || []).includes('venomous')) return;
     if (statusBlockOf(getEffect(VENOM_EFFECT_ID))) return;
     out.push(finding(where,
         `is Venomous, which lands the status effect "${VENOM_EFFECT_ID}" on every hit, and the effect ` +
-        `library has no such status, so it poisons nobody. Make a status effect named Poison.`));
+        `library has no such status, so it lands nothing. Make a status effect named Venom.`));
 }
 
 function auditCombatAxes(out, where, def) {
@@ -747,7 +748,7 @@ function auditLifecycle(out) {
  * in `unknownRefRule.js`, shared with the CMS Economy Audit.
  */
 function auditUnknownRefs(out) {
-    for (const f of findUnknownRefs({ tokens: TOKENS, items: ITEMS, recipes: listRecipes() })) {
+    for (const f of findUnknownRefs({ tokens: TOKENS, items: ITEMS, recipes: listRecipes(), effects: EFFECTS })) {
         out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
     }
 }
@@ -784,6 +785,17 @@ function auditHallStars(out) {
 }
 
 /**
+ * Gear's defence: a piece's resistances or damage cut the game cannot read, an off-hand item
+ * carrying weapon numbers, and a type the best stack of gear and perks resists 100 % or more. The
+ * rule lives in `gearDefenceRule.js`, shared with the CMS Economy Audit.
+ */
+function auditGearDefence(out) {
+    for (const f of gearDefenceFindings({ items: ITEMS, effects: EFFECTS, skillPerks: authoredSkillPerks() })) {
+        out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
+    }
+}
+
+/**
  * Walk everything and return the findings.
  * Exported separately from the reporting so a test can assert on the list.
  */
@@ -791,6 +803,7 @@ export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
         auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems, auditTools, auditPerks, auditHallStars,
+        auditGearDefence,
         auditHardcodedLists, (o) => auditStarterCamp(o, starterCamp)
     ];
     for (const step of steps) {

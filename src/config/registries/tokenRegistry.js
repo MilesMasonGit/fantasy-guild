@@ -27,6 +27,7 @@ import { EFFECTS } from './effectRegistry.js';
 import { expandBearer } from '../../systems/effects/effectLibrary.js';
 import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js';
 import { migrateSkillIds } from '../../systems/effects/skillIdMigration.js';
+import { migrateEffectIds } from '../../systems/effects/effectIdMigration.js';
 import { engineTokenType } from './engineTokens.js';
 import { STANDS_ON_CHOICES } from '../../systems/atlas/TerrainMap.js';
 import { neverWearsOut } from '../../systems/core/wearRule.js';
@@ -52,7 +53,7 @@ function loadJsonTokens() {
                     // library statements already lost it in `effectRegistry`.
                     // ⚠️ Renamed skill ids are rewritten here and NOT in `registerTokenTypes`
                     // (see `skillIdMigration.js`).
-                    tokens[typeId] = expandBearer(migrateAppliesTargets(migrateSkillIds(def)), EFFECTS);
+                    tokens[typeId] = expandBearer(migrateAppliesTargets(migrateEffectIds(migrateSkillIds(def))), EFFECTS);
                 }
             } catch (error) {
                 console.warn(`[TokenRegistry] Error loading token JSON from ${path}:`, error);

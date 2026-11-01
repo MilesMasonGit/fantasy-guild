@@ -105,7 +105,7 @@ export const DOSE_WHY = Object.freeze({
 export function noDoseWhy(categoryId) {
     if (categoryId === 'food') return 'Food: eaten from the Bank when its hero drops below a quarter of their health. Its rules work only on a moment.';
     if (categoryId === 'drink') return 'A drink with no On Work Start rule does nothing: give it one ("On Work Start: applies Coffee to the hero for the cycle").';
-    return 'A Consumable with no fight-start or On Work Start rule is never drunk: bait for fishing, or not finished yet.';
+    return 'A Consumable with no fight-start or On Work Start rule is never drunk: bait for fishing, an arrow for a bow, or not finished yet.';
 }
 
 /** What the CMS says about an always-on rule on a food, drink or potion. */

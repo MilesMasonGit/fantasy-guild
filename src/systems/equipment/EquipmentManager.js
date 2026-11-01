@@ -14,6 +14,7 @@ import * as EquipmentValidator from './EquipmentValidator.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { takesCopy, holdsCopy, markHeld, slotBacked, heldCount } from './heldCopies.js';
+import { isWeapon, isOffHand } from '../../config/registries/weaponStyles.js';
 
 /**
  * Gear, weapons and tools are one copy per hero: equipping one moves it out of the Bank into the
@@ -53,15 +54,32 @@ export function resolveTargetSlot(hero, category) {
 function handsToFree(hero, itemId, slot) {
     const need = handsOfItem(itemId);
     if (!need) return [];
+    const item = getItem(itemId);
     const others = handEntries(hero, slot);
-    let used = others.reduce((n, e) => n + e.hands, 0);
-    const out = [];
-    for (const entry of others) {
+    const out = others.filter(e => sameHandKind(getItem(e.itemId), item)).map(e => e.index);
+    const rest = others.filter(e => !out.includes(e.index));
+    let used = rest.reduce((n, e) => n + e.hands, 0);
+    for (const entry of rest) {
         if (used + need <= HANDS) break;
         out.push(entry.index);
         used -= entry.hands;
     }
     return out;
+}
+
+/**
+ * Whether two hand items compete for one place: two weapons (only one is swung, and the second hand
+ * is for an off-hand item), or two off-hand items (a shield acts like a piece of body armour: one).
+ */
+function sameHandKind(a, b) {
+    return (isWeapon(a) && isWeapon(b)) || (isOffHand(a) && isOffHand(b));
+}
+
+/** The grid slot of the hand item `itemId` would put down by its kind (`sameHandKind`), or null. */
+function rivalHandSlot(hero, itemId) {
+    const item = getItem(itemId);
+    const rival = handEntries(hero).find(e => e.itemId !== itemId && sameHandKind(getItem(e.itemId), item));
+    return rival ? rival.index : null;
 }
 
 /** Another hero's slot holding its own copy of `itemId`, when the drop came from there; else null. */
@@ -135,8 +153,13 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
         return { success: false, error: 'Out of stock' };
     }
 
-    let slot = null;
-    if (preferredSlot !== null && preferredSlot >= 0 && preferredSlot < 9) {
+    let slot;
+    // A weapon taken up goes where the weapon held was, and an off-hand item where the off-hand item
+    // was: one of each in the hands.
+    const rival = rivalHandSlot(hero, itemId);
+    if (rival !== null) {
+        slot = rival;
+    } else if (preferredSlot !== null && preferredSlot >= 0 && preferredSlot < 9) {
         const held = slotsInCategory(hero, category).filter(s => s !== preferredSlot);
         const cap = loadoutCapOf(category);
         if (held.length >= cap) {
@@ -297,7 +320,12 @@ export function recalculateEquipmentModifiers(hero) {
     // CombatFormulas queries this aggregator, and reaching from it into the item
     // registry and the Bank would invert that dependency.
     const source = 'equip:loadout';
-    for (const { type, value, category } of HeroEffects.loadoutCombatContributions(hero)) {
+    const contributions = [
+        ...HeroEffects.loadoutCombatContributions(hero),
+        // Worn gear's resistances and damage cuts, fields of the item rather than rules.
+        ...HeroEffects.loadoutDefenceContributions(hero)
+    ];
+    for (const { type, value, category } of contributions) {
         // `target.category` lets STATUS_IMMUNITY name one status instead of blocking all.
         hero.aggregator.addModifier({
             type, value, bucket: 'flat', source, persistent: true,

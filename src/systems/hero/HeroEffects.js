@@ -8,8 +8,11 @@ import {
 } from '../effects/effectLibrary.js';
 import { KEYWORD } from '../effects/statements.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
-import { isWeapon, weaponStyleOf, meetsGearRequirements } from '../../config/registries/weaponStyles.js';
-import { getHeroCombatStyle } from '../../utils/CombatFormulas.js';
+import { isWeapon, meetsGearRequirements } from '../../config/registries/weaponStyles.js';
+import { arrowOf } from '../../config/registries/damageTypes.js';
+import { gearResistancesOf, gearDamageCutOf } from '../../config/registries/gearDefence.js';
+import { EFFECT_TYPES } from '../effects/constants.js';
+import { getHeroWeaponSlot } from '../../utils/CombatFormulas.js';
 import { isSpentCategory, isAlwaysOn } from '../core/consumableRule.js';
 import { earnedPerkRefs } from './HeroPerks.js';
 
@@ -31,6 +34,32 @@ import { earnedPerkRefs } from './HeroPerks.js';
  */
 
 /**
+ * The loadout's items that lend the hero anything, in grid order, as `{ slot, itemId, def }`: held
+ * (a copy, or a shared item the Bank still has), at the level they ask.
+ *
+ * ⚠️ Of the weapons in the hands only the one swung lends (`CombatFormulas.getHeroWeaponSlot`): a
+ * weapon in the second hand is not swung, and its ability, resistances and cuts stay off whatever
+ * its style. The second hand is for an off-hand item, which lends like armour. An arrow lends
+ * nothing by being carried: its rules count on the shot that spends it (`board/FightMoments.js`).
+ */
+function lendingEntries(hero) {
+    const out = [];
+    const grid = getGrid(hero);
+    const swung = getHeroWeaponSlot(hero);
+    for (let slot = 0; slot < grid.length; slot++) {
+        const itemId = grid[slot];
+        if (!itemId || !slotBacked(hero, slot)) continue;
+        const def = getItem(itemId);
+        if (!def) continue;
+        if (!meetsGearRequirements(def, hero)) continue;
+        if (isWeapon(def) && slot !== swung) continue;
+        if (arrowOf(def)) continue;
+        out.push({ slot, itemId, def });
+    }
+    return out;
+}
+
+/**
  * Every effect reference a hero is carrying, merged by effect.
  *
  * `worn` is the same merge over the items that are not spent from the Bank (gear, weapons, tools):
@@ -42,17 +71,7 @@ export function loadoutRefs(hero) {
     const merged = new Map();
     if (!hero) return merged;
 
-    const grid = getGrid(hero);
-    const style = getHeroCombatStyle(hero);
-    for (let slot = 0; slot < grid.length; slot++) {
-        const itemId = grid[slot];
-        if (!itemId || !slotBacked(hero, slot)) continue;
-        const def = getItem(itemId);
-        if (!def) continue;
-        // Gear whose level the hero does not meet lends nothing. A second weapon of another style
-        // than the one swung is not swung, and its family's ability does not reach the hero either.
-        if (!meetsGearRequirements(def, hero)) continue;
-        if (isWeapon(def) && weaponStyleOf(def) !== style) continue;
+    for (const { itemId, def } of lendingEntries(hero)) {
         const worn = !isSpentCategory(def.equipSlot);
 
         for (const { effectId, scale } of effectRefsOf(def)) {
@@ -242,4 +261,25 @@ export function combatContributions(statements) {
 /** The combat numbers a hero's own loadout contributes. */
 export function loadoutCombatContributions(hero) {
     return combatContributions(loadoutStatements(hero));
+}
+
+/**
+ * What a hero's worn gear lends as fields of its own rather than rules (`gearDefence.js`): each
+ * piece's resistances as Type Resistance by type or group, and its damage cuts by style. Only from
+ * items that lend at all (held, at their level, the weapon swung), and only worn ones.
+ * @returns {Array<{type: string, value: number, category: string}>}
+ */
+export function loadoutDefenceContributions(hero) {
+    const out = [];
+    if (!hero) return out;
+    for (const { def } of lendingEntries(hero)) {
+        if (isSpentCategory(def.equipSlot)) continue;
+        for (const [id, value] of Object.entries(gearResistancesOf(def))) {
+            out.push({ type: EFFECT_TYPES.TYPE_RESIST, value, category: id });
+        }
+        for (const [style, value] of Object.entries(gearDamageCutOf(def))) {
+            out.push({ type: EFFECT_TYPES.STYLE_DAMAGE_CUT, value, category: style });
+        }
+    }
+    return out;
 }

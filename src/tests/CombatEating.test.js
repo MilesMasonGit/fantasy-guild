@@ -21,10 +21,15 @@ vi.mock('../utils/CombatFormulas.js', () => ({
     heroMissChance: vi.fn(() => 10),
     heroCritChance: vi.fn(() => 5),
     heroHitDamage: vi.fn(() => 25),
+    heroBlow: vi.fn(() => ({ exact: 25, parts: [{ type: 'slash', pre: 25, amount: 25, resist: 0 }] })),
+    rollFraction: vi.fn((exact) => exact),
+    blowVerdict: vi.fn(() => null),
     getHeroWeapon: vi.fn(() => null),
+    getHeroCombatStyle: vi.fn(() => 'melee'),
     enemyMissChance: vi.fn(() => 10),
     enemyCritChance: vi.fn(() => 5),
     enemyHitDamage: vi.fn(() => 5),
+    enemyBlow: vi.fn(() => ({ exact: 5, parts: [{ type: 'physical', pre: 5, amount: 5, resist: 0 }] })),
     enemyAttackSpeedMs: vi.fn(() => 2000)
 }));
 

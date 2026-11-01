@@ -124,15 +124,19 @@ const UNTIL_FIGHT_ENDS = Number.MAX_SAFE_INTEGER;
 
 /**
  * Put a library effect on a bearer, for a while, for the fight (`spec.forFight`), for the swing
- * being made (`spec.forSwing`) or for the work cycle starting (`spec.forCycle`). A status ignores
- * all of them: it has its own lifetime.
+ * being made (`spec.forSwing`), until an attack on it is over (`spec.forAttack`) or for the work
+ * cycle starting (`spec.forCycle`). A status ignores all of them: it has its own lifetime.
+ *
+ * `forAttack` is the number, in this fight, of the attack on the bearer it lasts through (an enemy
+ * move's Flutter: the hero's next swing, hit or miss); {@link endAttackEffects} takes it off as that
+ * swing ends. It ends with the fight too.
  *
  * `forCycle` names the Token whose cycle it lasts (its instance id, set by `LoadoutMoments`), or is
  * `true` for whichever cycle its bearer finishes next. A bound one counts only while its hero works
  * that Token ({@link liveStatements}' `at`), so a cycle left part-way never lends it to another.
  *
  * @param {object} bearer  a descriptor from `heroBearer` or a registered source
- * @param {{effectId: string, scale?: number, durationMs?: number, forFight?: boolean, forSwing?: boolean, forCycle?: string|boolean}} spec
+ * @param {{effectId: string, scale?: number, durationMs?: number, forFight?: boolean, forSwing?: boolean, forAttack?: number, forCycle?: string|boolean}} spec
  * @param {string|null} sourceId  what applied it, for the readout
  * @returns {boolean} whether anything is now carried
  */
@@ -145,6 +149,8 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
 
     const scale = normaliseScale(spec.scale);
     const forSwing = !!spec.forSwing;
+    const forAttack = !forSwing && Number(spec.forAttack) > 0 ? Number(spec.forAttack) : null;
+    if (forAttack != null) return applyForAttack(bearer, spec.effectId, scale, forAttack, sourceId);
     const forFight = !!spec.forFight || forSwing;
     const forCycle = spec.forCycle ? spec.forCycle : null;
 
@@ -173,6 +179,7 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
             if (forFight) existing.forFight = true;
             if (forCycle) existing.forCycle = forCycle;
             delete existing.forSwing;
+            delete existing.forAttack;
         }
     } else {
         list.push({
@@ -183,6 +190,32 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
         });
     }
 
+    syncAggregator(target);
+    bearer.notify?.('live_effect_applied');
+    return true;
+}
+
+/**
+ * Put a plain (not status) effect on a bearer until attack number `untilAttack` on it is over. One
+ * already carried for the swing now lasts that long; one carried longer (the fight, a while) keeps its
+ * lifetime; one carried for an attack lasts to the later of the two.
+ */
+function applyForAttack(bearer, effectId, scale, untilAttack, sourceId) {
+    const target = bearer.target;
+    const list = listOf(target);
+    const existing = list.find(e => e.effectId === effectId);
+    if (existing) {
+        existing.scale = Math.max(existing.scale, scale);
+        existing.sourceId = sourceId ?? existing.sourceId;
+        if (existing.forSwing) {
+            delete existing.forSwing;
+            existing.forAttack = untilAttack;
+        } else if (existing.forAttack != null) {
+            existing.forAttack = Math.max(existing.forAttack, untilAttack);
+        }
+    } else {
+        list.push({ effectId, scale, expiresAt: UNTIL_FIGHT_ENDS, sourceId, forFight: true, forAttack: untilAttack });
+    }
     syncAggregator(target);
     bearer.notify?.('live_effect_applied');
     return true;
@@ -251,6 +284,19 @@ export function endSwingEffects(target) {
     const ended = before - target.effects.length;
     if (ended) syncAggregator(target);
     return ended;
+}
+
+/**
+ * Attack number `attack` on a fighter is over (hit or miss): take off what it carried until then
+ * ({@link applyTo}'s `forAttack`).
+ * @returns {number} how many instances ended
+ */
+export function endAttackEffects(target, attack) {
+    if (!target?.effects?.length || !target.effects.some(e => e.forAttack != null && e.forAttack <= attack)) return 0;
+    const before = target.effects.length;
+    target.effects = target.effects.filter(e => !(e.forAttack != null && e.forAttack <= attack));
+    syncAggregator(target);
+    return before - target.effects.length;
 }
 
 /**

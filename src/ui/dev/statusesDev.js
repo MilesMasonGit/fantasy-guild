@@ -26,10 +26,10 @@ import { xpForLevel } from '../../utils/XPCurve.js';
 /**
  * Everything here is made in memory for this check only (never written to `data/`, gone on
  * reload), in the shapes the combat content pack will author:
- * - Poison (`effect_poison`, the id Venomous names) and Burn, unless the content already has them;
+ * - Venom (`effect_venom`, the id Venomous names) and Burn, unless the content already has them;
  * - a Venomous goblin, a fire imp whose every 2nd hit burns, and a boss carrying the four moves
  *   (every 4th swing a heavy strike; every 3rd hit a burn; below half health it heals 8 and gains
- *   2 armour; below 30 % it enrages, swinging twice as fast);
+ *   a Physical resistance of 50 %; below 30 % it enrages, swinging twice as fast);
  * - a sword for the heroes.
  */
 const QA_BURN = 'qa_fx_burn';
@@ -53,7 +53,7 @@ function burnId() {
 function registerQaContent() {
     const effects = {};
     if (!EFFECTS[VENOM_EFFECT_ID]) {
-        effects[VENOM_EFFECT_ID] = { id: VENOM_EFFECT_ID, name: 'Poison', status: { stacks: 3, ticks: 0 }, statements: [tick('stm_qa_poison')] };
+        effects[VENOM_EFFECT_ID] = { id: VENOM_EFFECT_ID, name: 'Venom', status: { stacks: 3, ticks: 0 }, statements: [tick('stm_qa_poison')] };
     }
     if (burnId() === QA_BURN) {
         effects[QA_BURN] = {
@@ -65,7 +65,7 @@ function registerQaContent() {
     const burn = burnId();
     registerEffects({
         qa_fx_heavy_strike: { id: 'qa_fx_heavy_strike', name: 'Heavy Strike', statements: [provides('stm_qa_heavy', EFFECT_TYPES.DAMAGE, 'percentage', 1)] },
-        qa_fx_stone_skin: { id: 'qa_fx_stone_skin', name: 'Stone Skin', statements: [provides('stm_qa_skin', EFFECT_TYPES.ARMOR, 'flat', 2)] },
+        qa_fx_stone_skin: { id: 'qa_fx_stone_skin', name: 'Stone Skin', statements: [{ ...provides('stm_qa_skin', EFFECT_TYPES.TYPE_RESIST, 'flat', 50), payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 50, category: 'physical' } }] },
         qa_fx_enrage: { id: 'qa_fx_enrage', name: 'Enrage', statements: [provides('stm_qa_enrage', EFFECT_TYPES.SWING_TIME, 'percentage', -0.5)] },
         qa_fx_burning_touch: { id: 'qa_fx_burning_touch', name: 'Burning Touch', statements: [
             rule('stm_qa_touch', KEYWORD.APPLIES, { event: 'FIGHT_HIT', every: 2 }, ROLE.ACTOR, { effectId: burn, chance: 100 })] },
@@ -113,7 +113,7 @@ let sceneHeroes = [];
 
 /**
  * Beside the Guild Hall, three enemies in a row, and a level 40 Fighter with a Test Sword and
- * Shrimp (40 in the Bank) planted on each: the Venomous Goblin (each hit it lands adds a Poison
+ * Shrimp (40 in the Bank) planted on each: the Venomous Goblin (each hit it lands adds a Venom
  * stack, at most 3), the Fire Imp (every 2nd hit burns) and the Goblin Warlord (all four moves).
  * ⚠️ Changes the game, like Spawn Party.
  * @returns {{ok: boolean, error?: string}}

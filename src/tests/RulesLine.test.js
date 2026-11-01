@@ -50,6 +50,12 @@ function mount(statements) {
 }
 
 const deals = (extra = {}) => ({ ...makeStatement(KEYWORD.DEALS), payload: { amount: 2 }, ...extra });
+/** An elixir's rule: on a fight starting, applies an effect to the hero, "for the fight" when asked. */
+const applies = (payload = {}) => ({
+    ...makeStatement(KEYWORD.APPLIES),
+    when: { event: 'COMBAT_ENGAGED', scope: 'self' },
+    payload: { effectId: 'fx_1', scale: 1, durationMs: 0, chance: 100, ...payload }
+});
 const faster = () => ({
     ...makeStatement(KEYWORD.PROVIDES),
     payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.05 },
@@ -300,13 +306,14 @@ describe('⭐ Tab walks the words (Q3)', () => {
         expect(box()).toBeNull();
     });
 
+    // Rewritten for damage types: Deals' "ignores armour" flag is retired, so the flag word walked to
+    // is an elixir's "for the fight".
     it('reaches a word that is not retyped in place, and gives it the focus', () => {
-        const count = deals({ payload: { amount: 1, magnitude: 'count', ignoresArmor: true }, counted: { mode: 'tag', value: 'Coast' } });
-        const { word, press, box, panel } = mount([count]);
-        fireEvent.click(word('role'));
+        const { word, press, box, panel } = mount([applies({ forFight: true })]);
+        fireEvent.click(word('filterMode'));
         press('Tab');
         expect(box()).toBeNull();
-        expect(document.activeElement.getAttribute('data-slot')).toBe('ignoresArmor');
+        expect(document.activeElement.getAttribute('data-slot')).toBe('forFight');
         expect(panel().querySelector('input[type="checkbox"]')).toBeTruthy();
     });
 });
@@ -348,7 +355,9 @@ describe('every control is named by what it says', () => {
         const { getByRole } = mount([deals()]);
         expect(getByRole('button', { name: '2' }).getAttribute('data-slot')).toBe('amount');
         expect(getByRole('button', { name: 'On Cycle' }).getAttribute('data-slot')).toBe('moment');
-        expect(getByRole('button', { name: '+ ignores armour' }).getAttribute('data-slot')).toBe('ignoresArmor');
+        // A "+" control is named by its words too (an elixir's "for the fight", not yet set).
+        cleanup();
+        expect(mount([applies()]).getByRole('button', { name: '+ for the fight' }).getAttribute('data-slot')).toBe('forFight');
     });
 });
 
@@ -487,11 +496,13 @@ describe('⭐ creating an item from a search (P4)', () => {
 });
 
 describe('⚠️ a decision with no word still has a control', () => {
-    it('offers "ignores armour" on a hit that does not yet ignore it', () => {
-        const { container, panel, latest } = mount([deals()]);
-        fireEvent.click(container.querySelector('[data-rules-more] [data-slot="ignoresArmor"]'));
+    // Rewritten for damage types: Deals' "ignores armour" is retired; "for the fight" on an applied
+    // effect is the decision with no word until it is set.
+    it('offers "for the fight" on an applied effect that does not yet last for the fight', () => {
+        const { container, panel, latest } = mount([applies()]);
+        fireEvent.click(container.querySelector('[data-rules-more] [data-slot="forFight"]'));
         fireEvent.click(panel().querySelector('input[type="checkbox"]'));
-        expect(latest().payload.ignoresArmor).toBe(true);
+        expect(latest().payload.forFight).toBe(true);
     });
 
     it('⭐ reaches every slot of every keyword, blank or filled', () => {

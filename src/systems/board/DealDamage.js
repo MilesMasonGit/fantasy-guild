@@ -2,7 +2,6 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
-import { mitigateFlatDamage, enemyFlatArmor } from '../../utils/CombatFormulas.js';
 import { resolveMagnitude, usesCountedSelector } from '../../config/registries/magnitudeRegistry.js';
 import * as TileModifiers from './TileModifiers.js';
 import { logger } from '../../utils/Logger.js';
@@ -18,10 +17,8 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * `BoardCombat` (a hero wins a fight) publish the same event with the same payload, so `actor`
  * resolves to the hero either way and this module cannot tell the difference.
  *
- * ⚠️ Damage respects armour, and can be fully stopped by it. `mitigateFlatDamage` floors at zero
- * where a combat hit floors at one (reasoning in `CombatFormulas`): a fight must always progress, a
- * thorn need not. An author who wants a thorn that pierces plate sets `ignoresArmor` on the
- * statement.
+ * A rule's damage is untyped and lands whole: flat armour is gone, and resistances are to a
+ * hit's damage type (`CombatFormulas`). An older rule's `ignoresArmor` is read by nothing.
  *
  * ⚠️ Killing a hero announces; it never resolves the death itself. Dying has exactly ONE
  * implementation, `BoardCombat.resolveDefeat`; a lethal blow here publishes `hero_downed` and
@@ -94,23 +91,14 @@ function targetOf(role, roles, statement) {
     return enemyTarget(fight);
 }
 
-/**
- * A non-combat hit on an enemy, mitigated. Mirrors `mitigateFlatDamage`: floor at zero, not at one,
- * because a thorn is not a fight.
- */
-function mitigateEnemyDamage(fight, rawDamage) {
-    const armor = enemyFlatArmor(fight?.enemy);
-    return Math.max(0, Math.round(rawDamage - armor));
-}
-
 function heroTarget(heroId) {
     return {
         kind: 'hero',
-        apply(amount, ignoresArmor) {
+        apply(amount) {
             const hero = HeroManager.getHero(heroId);
             if (!hero) return 0;
 
-            const dealt = ignoresArmor ? Math.max(0, Math.round(amount)) : mitigateFlatDamage(hero, amount);
+            const dealt = Math.max(0, Math.round(amount));
             if (dealt <= 0) return 0;
 
             HeroManager.modifyHeroHp(heroId, -dealt);
@@ -128,13 +116,8 @@ function heroTarget(heroId) {
 function enemyTarget(fight) {
     return {
         kind: 'enemy',
-        apply(amount, ignoresArmor) {
-            // Armour on this side means the same as on the other: `mitigateFlatDamage` floors at
-            // zero, so heavy armour can stop a thorn outright, and `ignoresArmor` is the author's
-            // way past it.
-            const dealt = ignoresArmor
-                ? Math.max(0, Math.round(amount))
-                : mitigateEnemyDamage(fight, amount);
+        apply(amount) {
+            const dealt = Math.max(0, Math.round(amount));
             if (dealt <= 0) return 0;
             const hp = fight.combat.enemyHp;
             hp.current = Math.max(0, hp.current - dealt);
@@ -169,5 +152,5 @@ export function deal(statement, roles) {
     const target = targetOf(statement?.target?.role || ROLE.ACTOR, roles, statement);
     if (!target) return 0;
 
-    return target.apply(amount, !!payload.ignoresArmor);
+    return target.apply(amount);
 }

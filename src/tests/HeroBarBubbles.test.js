@@ -20,6 +20,10 @@ import { DOCK_SLOT_PX } from '../ui/components/dock/dockHeroView.js';
 import { addLevelUp, barLevelUpText, clearAllHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from '../ui/components/dock/heroBarBubbles.js';
 import { MOMENT_TTL_MS } from '../ui/components/board/heroSpeech.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// A level-up to a shipped perk's level adds a perk alert; these are the level alerts alone.
+withoutShippedPerks();
 
 /**
  * The hero bar's level-up bubbles: the mat's words, but they stay until the player clears
