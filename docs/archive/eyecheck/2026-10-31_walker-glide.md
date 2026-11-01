@@ -19,9 +19,9 @@ about a quarter of what it did. Frames before and after:
    same speed and look as smooth as before; the goblin and the Tokens beside it
    stay sharp. Look for stutter, a goblin running ahead of its pace, or nearby
    Tokens going soft or jumping a pixel.
-   Verdict: ok / change: ___
+   Verdict: **not looked at** (owner 2026-10-31: "merge what you have")
 2. **Faster walkers.** Mat Tuner → "Enemy walk speed" up: still smooth.
-   Verdict: ok / change: ___
+   Verdict: **not looked at** (owner 2026-10-31: "merge what you have")
 
 (Already on `main`, not new: an occasional whole-step snap when a goblin passes
 another Token.)
