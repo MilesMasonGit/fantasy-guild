@@ -162,3 +162,23 @@ describe('a tick of pottering reads what every step shares once', () => {
         expect(EnemyMotion.bodyOf(enemies[0].id)).not.toBeNull();
     });
 });
+
+describe('a step carries its pinned flag and its claim, nothing else', () => {
+    it('moves the flag pinned to the Token and the claim on it; other flags stay', () => {
+        const a = placeAt('fixture_producer', 400, 300);
+        const b = placeAt('fixture_producer', 800, 300);
+        BoardState.setFlag('hero_1', { x: 400, y: 300, plantedAt: 0, pinnedTo: a.id });
+        BoardState.setFlag('hero_2', { x: 800, y: 300, plantedAt: 1, pinnedTo: b.id });
+        BoardState.setFlag('hero_3', { x: 600, y: 600, plantedAt: 2 });
+        BoardState.setClaim('hero_1', { instanceId: a.id, typeId: a.typeId, x: 400, y: 300 });
+        BoardState.setClaim('hero_2', { instanceId: b.id, typeId: b.typeId, x: 800, y: 300 });
+
+        expect(BoardState.setTokenPoint(a.id, 450, 320)).toBe(true);
+
+        expect(BoardState.flagOf('hero_1')).toMatchObject({ x: 450, y: 320, pinnedTo: a.id });
+        expect(BoardState.claimOfHero('hero_1')).toMatchObject({ x: 450, y: 320 });
+        expect(BoardState.flagOf('hero_2')).toMatchObject({ x: 800, y: 300 });
+        expect(BoardState.claimOfHero('hero_2')).toMatchObject({ x: 800, y: 300 });
+        expect(BoardState.flagOf('hero_3')).toMatchObject({ x: 600, y: 600 });
+    });
+});

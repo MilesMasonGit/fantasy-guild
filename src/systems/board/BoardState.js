@@ -259,14 +259,19 @@ export function eachMoveSince(since, fn) {
  */
 function afterPointChange(b, instance) {
     bumpLayout(b);
+    const id = instance.id;
     for (const claim of runtimeOf(b).claims.values()) {
-        if (claim.instanceId === instance.id) {
+        if (claim.instanceId === id) {
             claim.x = instance.x;
             claim.y = instance.y;
         }
     }
-    for (const flag of Object.values(b.flags || {})) {
-        if (flag?.pinnedTo === instance.id) {
+    // Keyed, not `Object.values`: a walking enemy steps every tick, and a list of every flag for
+    // each step was garbage for nothing.
+    const flags = b.flags;
+    for (const heroId in flags) {
+        const flag = flags[heroId];
+        if (flag?.pinnedTo === id) {
             flag.x = instance.x;
             flag.y = instance.y;
         }
