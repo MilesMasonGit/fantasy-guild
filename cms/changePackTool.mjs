@@ -13,6 +13,10 @@
  *       works the ledger out before and after, and says what moves. Exits 1 when the pack is
  *       blocked: it adds a Block finding, moves a stage beyond the tolerance undeclared ("intent"
  *       in the README), or adds a waiver. --write records the verdict in the pack as "gate".
+ *   node cms/changePackTool.mjs world [--seeds <n>] [--from <workspace.json>]
+ *       The Ledger's World plan over many worlds (src/engine/ledgerWorld.js): generates seeds 1 to
+ *       n (100 by default) and says how many pass checks F, what fails in how many worlds, the
+ *       per-skill bands and the price spreads per ring.
  *
  * Reads only; writes nothing but the pack file it was given (stamp, and gate with --write).
  */
@@ -76,8 +80,30 @@ async function gateEngine() {
 }
 
 const [cmd, file, ...rest] = process.argv.slice(2);
+
+if (cmd === 'world') {
+    const args = process.argv.slice(3);
+    const opt = (name) => { const i = args.indexOf(name); return i !== -1 ? args[i + 1] : null; };
+    const { source, workspace } = loadWorkspace(opt('--from'));
+    const { createServer } = await import('vite');
+    const server = await createServer({
+        configFile: false, root: cmsDir, logLevel: 'error', appType: 'custom',
+        server: { middlewareMode: true, hmr: false, ws: false }, optimizeDeps: { noDiscovery: true, include: [] },
+    });
+    try {
+        const world = await server.ssrLoadModule('/src/engine/ledgerWorld.js');
+        const context = world.workspaceWorldContext(workspace);
+        console.log(`Against ${source}.`);
+        console.log(world.sweepText(world.sweepWorkspace(context, Number(opt('--seeds')) || 100)));
+    } finally {
+        await server.close();
+    }
+    process.exit(0);
+}
+
 if (!['check', 'stamp', 'gate'].includes(cmd) || !file) {
     console.log('Usage: node cms/changePackTool.mjs check|stamp|gate <pack.json> [--from <workspace.json>] [--write]');
+    console.log('       node cms/changePackTool.mjs world [--seeds <n>] [--from <workspace.json>]');
     process.exit(2);
 }
 const fromIdx = rest.indexOf('--from');

@@ -4,6 +4,7 @@ import { isPlanned } from '../../../src/systems/progression/ledger/plan.js';
 import { mapItemFindings, isMapItem } from '../../../src/systems/atlas/mapItems.js';
 import { buildPace } from '../../../src/systems/progression/ledger/pace.js';
 import { calibrationFindings } from './calibrationStatus.js';
+import { workspaceOriginFindings } from './ledgerWorld.js';
 import { SKILLS, expandBearer, auditLifecycleBlocks, findUnknownRefs, toolFindings } from '../utils/constants';
 
 /**
@@ -19,7 +20,8 @@ import { SKILLS, expandBearer, auditLifecycleBlocks, findUnknownRefs, toolFindin
 /** The work whose cycle the simulator times: a Token's own work, water, a recipe. */
 const TIMED = new Set([HOW.WORK, HOW.CATCH, HOW.CRAFT]);
 
-const contentOf = (state) => ({
+/** The workspace as the ledger's engines take it. */
+export const contentOf = (state) => ({
     items: state.items,
     tokens: state.tokens,
     recipePools: state.recipePools,
@@ -104,7 +106,8 @@ export function workspacePace(state = {}) {
 
 /**
  * The ledger, its pace (the rate calculator at each profile, `pace.js`) and every check over the
- * workspace, the pacing group and the calibration's state included: `{ ledger, pace, findings }`.
+ * workspace, the pacing group, the calibration's state and the world map's seed-free check (wild
+ * origins no wedge places) included: `{ ledger, pace, findings }`.
  * @param {{ simRows?: object[], pace?: boolean }} options  the last Recalculate's rows, for the pricing
  *   findings; `pace: false` leaves the pace out (it is most of the time)
  */
@@ -115,6 +118,7 @@ export function workspaceReport(state = {}, { simRows = [], pace: withPace = tru
     const extra = [
         ...gameRuleFindings(state), ...pricingFindings(simRows, state),
         ...(pace ? pace.findings() : []), ...calibrationFindings(),
+        ...workspaceOriginFindings(state, ledger),
     ];
     const findings = runChecks(ledger, content, { extra });
     return { ledger, pace, findings };

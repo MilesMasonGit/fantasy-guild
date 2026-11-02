@@ -28,7 +28,9 @@ import { stationSkillOf } from '../../effects/statements.js';
  *   the four that are checks F under these names, the rest as "another rule of the world".
  * - **Many worlds** ({@link sweepWorlds}): how many pass, each rule's failures grouped by what fails
  *   across worlds, per-skill bands (cells offering a skill's new work, heroes it keeps busy) and
- *   price spreads per ring (items and hero time).
+ *   price spreads per ring (items and hero time). A coverage finding says whether the entry was
+ *   reachable before the world (`before`: its tier through the map items, or null), which tells
+ *   what the world lost from content that was never finished.
  *
  * ⚠️ Coverage reads what the inner rings place and make as if every inner cell were settled: whether
  * a cell's price can be paid is the price checks' to say, so one bad price is one finding, not every
@@ -61,11 +63,13 @@ const AS_F = Object.freeze({
 
 /** Author-facing words, kept together for translation. */
 export const WORLD_PLAN_TEXT = Object.freeze({
-    noWedge: (materials) => `A wild origin (its work yields ${materials}) that no wedge places: give it a wedge and a ring, or Park it.`,
+    noWedge: (materials) => `Looks like a wild origin (its work yields ${materials}), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.`,
     unknownWedge: (wedge) => `Its plan puts it in the wedge "${wedge}", which the world tables do not have.`,
     priceRing: (cell, name, ring, at) => `Cell ${cell} (ring ${ring}) asks for ${name}, first had at ring ${at}: not an earlier ring.`,
     priceNever: (cell, name) => `Cell ${cell} asks for ${name}, which the inner rings never give.`,
     notCovered: (why) => `Not reachable from the inner rings: ${why}`,
+    lost: (tier) => `reachable before the world map (tier ${tier}, through map items)`,
+    neverBefore: 'never reachable before the world map either',
     noMain: (line, ring) => `no-main: ${line} ring ${ring}`,
     ring: (ring) => `ring ${ring}`,
     cell: (id, kit, line) => [kit, line].filter(Boolean).join(' ') + ` (${id})`,
@@ -322,8 +326,10 @@ function matsOf(ctx, world) {
 }
 
 /** A finding of checks F in the World plan's shape. */
-function finding(check, message, { cellId = null, key = null, subject, name, related = [] } = {}) {
-    return { check, severity: SEVERITY.WARN, cellId, key, subject, name: name ?? subject, message, related };
+function finding(check, message, { cellId = null, key = null, subject, name, related = [], before } = {}) {
+    const out = { check, severity: SEVERITY.WARN, cellId, key, subject, name: name ?? subject, message, related };
+    if (before !== undefined) out.before = before;
+    return out;
 }
 
 /** Every finding of checks F (and the world's other rules) on one world. */
@@ -367,7 +373,10 @@ function checksOn(ctx, world, mats, { reach, index, names }) {
         if (status === PLAN_STATUS.PLANNED || status === PLAN_STATUS.PARKED) continue;
         if (key.startsWith('item:') && isMapItem(def)) continue;
         if (Number.isInteger(reach.get(key)?.tier)) continue;
-        out.push(finding(WORLD_F.COVERAGE, WORLD_PLAN_TEXT.notCovered(whyNever(key, reach, index, nameOf)), { key, subject: key, name: nameOf(key) }));
+        // Was it reachable before the world, through the map items? Then the world lost it; else it was never finished.
+        const was = ctx.base.reach.get(key)?.tier;
+        const before = Number.isInteger(was) ? was : null;
+        out.push(finding(WORLD_F.COVERAGE, WORLD_PLAN_TEXT.notCovered(whyNever(key, reach, index, nameOf)), { key, subject: key, name: nameOf(key), before }));
     }
 
     for (const f of ctx.origins) out.push(finding(f.check, f.message, { key: f.key, subject: f.key, name: nameOf(f.key), related: f.related }));
@@ -495,7 +504,10 @@ export function sweepWorlds(content, { seeds, baseTables, ledger = null, context
         const seen = new Set();
         for (const f of p.findings) {
             const group = rules[f.check].subjects;
-            if (!group.has(f.subject)) group.set(f.subject, { subject: f.subject, name: f.name, key: f.key, worlds: 0, findings: 0, example: { seed: p.seed, cellId: f.cellId, message: f.message } });
+            if (!group.has(f.subject)) {
+                group.set(f.subject, { subject: f.subject, name: f.name, key: f.key, worlds: 0, findings: 0, example: { seed: p.seed, cellId: f.cellId, message: f.message } });
+                if (f.before !== undefined) group.get(f.subject).before = f.before;
+            }
             const row = group.get(f.subject);
             row.findings++;
             const once = `${f.check}|${f.subject}`;

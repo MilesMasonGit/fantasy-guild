@@ -178,6 +178,8 @@ describe('F: the inner rings not covering every Live entry', () => {
         const hits = of(p.findings, WORLD_F.COVERAGE);
         expect(hits.map(f => f.subject).sort()).toEqual([itemKey('item_gold'), tokenKey('token_gold_vein')]);
         expect(hits.find(f => f.subject === itemKey('item_gold')).message).toMatch(/Gold Vein/);
+        // Never reachable before the world either: unfinished, not lost.
+        expect(hits.every(f => f.before === null)).toBe(true);
     });
 
     it('Parked, Planned, map and modifier entries are not asked to be covered', () => {
@@ -192,8 +194,10 @@ describe('F: the inner rings not covering every Live entry', () => {
     it('an enemy only a map\'s camp brought is not covered once no kit or arrival brings it', () => {
         const ws = worldWorkspace();
         const tables = tablesWith({ kits: [{ ...WORLD_FIXTURE_RAW.kits[0], bossCamps: [] }], arrival: { ...WORLD_FIXTURE_RAW.arrival, 3: { count: [3, 3], enemies: [{ id: 'token_goblin' }] } } });
-        const subjects = of(plan(ws, 4, tables).findings, WORLD_F.COVERAGE).map(f => f.subject);
-        expect(subjects).toEqual(expect.arrayContaining([tokenKey('token_chief_tent'), tokenKey('token_goblin_chief')]));
+        const hits = of(plan(ws, 4, tables).findings, WORLD_F.COVERAGE);
+        expect(hits.map(f => f.subject)).toEqual(expect.arrayContaining([tokenKey('token_chief_tent'), tokenKey('token_goblin_chief')]));
+        // Lost with the maps: the Mountain Map (plane 1) placed the tent.
+        expect(hits.find(f => f.subject === tokenKey('token_chief_tent')).before).toBe(1);
     });
 });
 
