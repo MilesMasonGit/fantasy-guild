@@ -43,7 +43,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * - a planted Forest, a Field, an Orchard or an herb bed goes anywhere dry (Farmland);
  * - an Arcane node only within reach of an Arcane node ("Stands near");
  * - a creature's banner builds its camp, the same as the wild one;
- * - a built node is otherwise weaker: its clocks run longer by the type's `builtSlowerPct`.
+ * - a built node otherwise runs at the same speed as a wild one.
  * A Foundation set to build a node it may not stand under holds with the reason, pays nothing and
  * never moves the node elsewhere; dragging it onto the wrong ground is refused with that reason.
  *
@@ -69,14 +69,14 @@ registerTokenTypes({
     bn_clay_pit: { ...node, id: 'bn_clay_pit', name: 'BN Clay Pit', standsOn: ['shore'] },
     bn_sapling: { ...node, id: 'bn_sapling', name: 'BN Sapling', tokenType: 'resource', uses: 1 },
     bn_forest: {
-        ...node, id: 'bn_forest', name: 'BN Oak Forest', tokenType: 'spawner', builtSlowerPct: 50,
+        ...node, id: 'bn_forest', name: 'BN Oak Forest', tokenType: 'spawner',
         spawner: { spawns: [{ typeId: 'bn_sapling', weight: 1 }], allowance: 3, intervalMs: 20000, upkeep: [], withinReach: true }
     },
     bn_leyline: { ...node, id: 'bn_leyline', name: 'BN Leyline' },
     bn_crystal: { ...node, id: 'bn_crystal', name: 'BN Crystal Growth', standsNear: ['bn_leyline'] },
     bn_vein: {
         id: 'bn_vein', name: 'BN Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture', size: 1, uses: null,
-        requiresHero: true, builtSlowerPct: 50,
+        requiresHero: true,
         config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 2000, xp: 1, inputs: [], outputs: [{ itemId: 'item_stone', chance: 100, minQty: 1, maxQty: 1 }] }
     }
 });
@@ -332,37 +332,27 @@ describe('a creature’s banner builds its camp, the same as the wild one', () =
     });
 });
 
-describe('a built node is weaker: its clocks run longer by builtSlowerPct', () => {
-    it('a built Forest spawns every 1.5 intervals; a wild one keeps its own', () => {
+describe('a built node runs at the same speed as a wild one', () => {
+    it('a built Forest keeps the authored spawn interval', () => {
         const f = foundationBuilding('bn_plant_forest', GRASS, 'bn_farmland');
         run(2500);
         const [built] = onMat('bn_forest');
         const wild = placeAt('bn_forest', GRASS.x, 200);
         const def = getTokenType('bn_forest');
         expect(BoardState.getTokenById(f.id)).toBeNull();
-        expect(SpawnerSystem.intervalOf(def, wild)).toBe(20000);
-        expect(SpawnerSystem.intervalOf(def, built)).toBe(30000);
+        expect(SpawnerSystem.intervalOf(def)).toBe(20000);
         const handler = TimedChanges.HANDLERS.find(h => h.id === 'spawner');
-        expect(handler.dueMs(built, def)).toBe(30000);
+        expect(handler.dueMs(built, def)).toBe(20000);
         expect(handler.dueMs(wild, def)).toBe(20000);
     });
 
-    it('a built vein’s work cycle is 1.5 times the wild one’s', () => {
+    it('a built vein works on its authored cycle', () => {
         const f = foundationBuilding('bn_build_vein', STONE);
         run(2500);
         const [vein] = onMat('bn_vein');
         expect(vein?.builtFrom).toBeTruthy();
         expect(BoardState.getTokenById(f.id)).toBeNull();
 
-        const cycles = workUntilStarted(vein);
-        run(2700);
-        expect(cycles()).toBe(0);
-        run(300);
-        expect(cycles()).toBe(1);
-    });
-
-    it('a wild vein keeps its authored cycle', () => {
-        const vein = placeAt('bn_vein', GRASS.x, GRASS.y);
         const cycles = workUntilStarted(vein);
         run(1800);
         expect(cycles()).toBe(0);

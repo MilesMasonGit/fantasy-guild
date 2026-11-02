@@ -521,22 +521,6 @@ export default function TokenEditor() {
                 <Plus size={10} /> Add Token
               </button>
             </div>
-            <label className="flex items-center gap-2" title="A copy built on a Foundation works and spawns this much slower than a wild one (its work cycle and its spawn interval are longer). Empty or 0: the same as wild, as a creature camp built from its banner is.">
-              <span className="text-xs text-gray-300">Built copies slower by %</span>
-              <input
-                type="number"
-                min={0}
-                step={5}
-                aria-label="Built copies slower by percent"
-                data-field="built-slower-pct"
-                value={token.builtSlowerPct ?? ''}
-                onChange={(e) => {
-                  const n = Math.floor(Number(e.target.value));
-                  update('builtSlowerPct', e.target.value === '' || !(n > 0) ? undefined : n);
-                }}
-                className="w-20 bg-white/5 border border-white/10 rounded-md text-[11px] text-gray-200 px-1.5 py-0.5"
-              />
-            </label>
           </div>
         </div>
         {token.requiresHero === false && (

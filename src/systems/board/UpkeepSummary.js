@@ -108,7 +108,7 @@ export function computeUpkeepSummary(sources = {}) {
                     familyLabel: status.familyLabel, count: status.count, cap: status.cap
                 });
             } else {
-                const interval = SpawnerSystem.intervalOf(def, instance);
+                const interval = SpawnerSystem.intervalOf(def);
                 const needs = new Set(status.needs || []);
                 for (const [itemId, q] of upkeep) {
                     const perMinute = q * MINUTE / interval;

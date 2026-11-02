@@ -54,8 +54,8 @@ function register() {
         [QA_W4.QUARRY]: node(QA_W4.QUARRY, 'Test Quarry (Stone only)', 'token_quarry', { standsOn: ['stone'] }),
         [QA_W4.CLAY_PIT]: node(QA_W4.CLAY_PIT, 'Test Clay Pit (shore only)', 'token_clay_deposit', { standsOn: ['shore'] }),
         [QA_W4.FOREST]: oak
-            ? { ...oak, id: QA_W4.FOREST, name: 'Test Planted Forest (built 50% slower)', builtSlowerPct: 50, effects: [] }
-            : node(QA_W4.FOREST, 'Test Planted Forest (built 50% slower)', 'token_oak_forest', { builtSlowerPct: 50 }),
+            ? { ...oak, id: QA_W4.FOREST, name: 'Test Planted Forest (built)', effects: [] }
+            : node(QA_W4.FOREST, 'Test Planted Forest (built)', 'token_oak_forest'),
         [QA_W4.LEYLINE]: node(QA_W4.LEYLINE, 'Test Leyline', 'token_forge_altar'),
         [QA_W4.CRYSTAL]: node(QA_W4.CRYSTAL, 'Test Crystal Growth (near the Test Leyline)', 'token_forge_altar', { standsNear: [QA_W4.LEYLINE] })
     });

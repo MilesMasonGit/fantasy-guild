@@ -3,7 +3,7 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
-import { getTokenType, rollOutputQuantity, outputRange, tokenName, builtSlowdownOf } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, rollOutputQuantity, outputRange, tokenName } from '../../config/registries/tokenRegistry.js';
 import { getItem, isRetiredItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
@@ -718,8 +718,7 @@ export function tick(delta) {
         // `io.cycleTimeMs` is the active recipe's own timing when it has one, falling back to the
         // station's flat config.
         const isGuildHall = instance.typeId === 'token_guild_hall';
-        // A built node works slower than a wild one by its type's `builtSlowerPct`.
-        const baseCycle = (io.cycleTimeMs || config.cycleTimeMs || 10000) * (instance.builtFrom ? builtSlowdownOf(def) : 1);
+        const baseCycle = io.cycleTimeMs || config.cycleTimeMs || 10000;
         const cycleTime = isGuildHall
             ? (config.cycleTimeMs || 10000)
             : TileModifiers.workTimeOf(id, baseCycle, config.skill);
