@@ -125,6 +125,8 @@ describe('The Combat chain in shipped data (7.7)', () => {
             { itemId: 'mod_rich_veins', chance: 1, minQty: 1, maxQty: 1 },
             { itemId: 'mod_goblin_camp', chance: 0.5, minQty: 1, maxQty: 1 },
             { itemId: 'mod_buried_copper', chance: 0.25, minQty: 1, maxQty: 1 },
+            { itemId: 'item_goblin_banner', chance: 0.5, minQty: 1, maxQty: 1 },
+            { itemId: 'item_coal_prospecting_map', chance: 3, minQty: 1, maxQty: 1 },
         ]);
     });
 

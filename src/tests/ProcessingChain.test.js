@@ -58,12 +58,14 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(def.config).toBeNull();
         });
 
-        it('a Wood Foundation offers the wooden buildings: the Workbench, the Cooking Pot and the rest', () => {
+        it('a Wood Foundation offers the wooden buildings: the Workbench, the Cooking Pot and the rest, and every creature camp from its banner', () => {
             expect(poolNames('token_wood_foundation')).toEqual([
-                'Build Alchemy Table', 'Build Beehive', 'Build Brewery', 'Build Coal Mine', 'Build Composter',
-                'Build Cooking Pot', 'Build Copper Mine', 'Build Dock', 'Build Farmstead', 'Build Fir Workbench',
-                'Build Fishing Hut', 'Build Logging Camp', 'Build Minecart',
-                'Build Quarry', 'Build Tannery', 'Build Windmill', 'Build Workbench',
+                'Build Alchemy Table', "Build Alpha's Den", 'Build Basking Stone', 'Build Beehive', 'Build Brewery', "Build Chief's Tent",
+                'Build Coal Mine', 'Build Composter', 'Build Cooking Pot', 'Build Copper Mine', 'Build Cow Pasture', 'Build Crab Rocks',
+                'Build Dock', 'Build Ember Vents', 'Build Farmstead', 'Build Fir Workbench', 'Build Fishing Hut', 'Build Frog Pond',
+                'Build Goblin Camp', 'Build Logging Camp', 'Build Minecart', 'Build Quarry', "Build Queen's Hive", 'Build Slime Pit',
+                'Build Smoking Crater', 'Build Sulphur Rocks', 'Build Tannery', 'Build Thorn Thicket', 'Build Tide Pool',
+                'Build Toxic Pool', 'Build Wild Hive', 'Build Wind Stones', 'Build Windmill', 'Build Wolf Den', 'Build Workbench',
             ]);
         });
 
