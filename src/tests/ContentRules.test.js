@@ -132,15 +132,10 @@ describe('⚠️ Rule 1 — every material has a tool-free source (D-213)', () =
         }
     }
 
-    // Content for the owner to fix in the CMS: Cooking recipes spend these, and their only source is
-    // a catch at a water with a tool in hand. `it.fails` passes while the assertion fails and fails
-    // the day it passes, so when the content is fixed this goes red: delete the entry.
-    const KNOWN_LOCKED_INPUTS = {
-        item_tropical_fish: 'Cooked Tropical Fish; caught on a Coast with a Fishing Rod',
-        item_salmon: 'Lavender Salmon; caught with a Fishing Rod',
-        item_swordfish: 'Cooked Swordfish; caught on a Coast with a Fishing Rod',
-        item_lobster: 'Cooked Lobster; caught on a Coast with a Trap and Worm Bait'
-    };
+    // Content for the owner to fix in the CMS, as `{ itemId: why }`: a material a recipe spends whose
+    // only source needs a tool. `it.fails` passes while the assertion fails and fails the day it
+    // passes, so when the content is fixed this goes red: delete the entry.
+    const KNOWN_LOCKED_INPUTS = {};
 
     it('gives every material a Token CONSUMES a tool-free route too', () => {
         // The deadlock that matters: an input you cannot obtain barehanded is
