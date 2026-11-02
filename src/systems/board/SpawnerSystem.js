@@ -1,6 +1,6 @@
 // spawners
 
-import { getTokenType, registryVersion, builtSlowdownOf } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { PLACEMENT } from '../../config/registries/placementRegistry.js';
 import { logger } from '../../utils/Logger.js';
@@ -77,13 +77,9 @@ export function isSpawner(def) {
     return spawnerBlock(def) != null;
 }
 
-/**
- * A spawner's attempt interval, in ms. A built copy (`instance.builtFrom`, built on a Foundation)
- * waits longer by its type's `builtSlowerPct`; a wild one, or one asked of by type alone, does not.
- */
-export function intervalOf(def, instance = null) {
-    const base = Math.max(MIN_INTERVAL_MS, Number(def?.spawner?.intervalMs) || 0);
-    return instance?.builtFrom ? base * builtSlowdownOf(def) : base;
+/** A spawner's attempt interval, in ms. */
+export function intervalOf(def) {
+    return Math.max(MIN_INTERVAL_MS, Number(def?.spawner?.intervalMs) || 0);
 }
 
 function allowanceOf(def) {
@@ -421,7 +417,7 @@ function statusOf(instanceId, tethered) {
 
     const family = familyOf(instance.typeId);
     const base = { ...countsOf(instance, def, tethered), familyLabel: familyLabel(family) };
-    const interval = intervalOf(def, instance);
+    const interval = intervalOf(def);
     const clock = Number(instance.clocks?.spawnMs) || 0;
 
     if (base.count >= base.cap) return { state: SPAWNER_STATE.AT_CAP, ...base };
