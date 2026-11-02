@@ -8,6 +8,7 @@ import {
     ROSTER_BASE, GUILD_UPGRADES, PLACEHOLDER_PRICE_ITEM, placeholderPrices
 } from '../config/guildUpgrades.js';
 import { getItem } from '../config/registries/itemRegistry.js';
+import { registerHallSky } from '../config/registries/hallStarRegistry.js';
 import { useOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -85,15 +86,21 @@ describe('Guild Hall upgrade web', () => {
     });
 
     it('keeps only the star beyond Bank Tabs shut after every single first purchase', () => {
-        const oldOpen = (id, ranks) => {
-            if (id === OUTER) return (ranks.bank_tabs || 0) >= 1;
-            return true;
-        };
-        for (const bought of GUILD_UPGRADES) {
-            const ranks = { [bought.id]: 1 };
-            for (const def of GUILD_UPGRADES) {
-                expect(isUpgradeAccessible(def.id, ranks), `${def.id} after ${bought.id}`).toBe(oldOpen(def.id, ranks));
+        // The built-in tracks and the test star alone: the shipped sky has stars beyond others.
+        registerHallSky({});
+        try {
+            const oldOpen = (id, ranks) => {
+                if (id === OUTER) return (ranks.bank_tabs || 0) >= 1;
+                return true;
+            };
+            for (const bought of GUILD_UPGRADES) {
+                const ranks = { [bought.id]: 1 };
+                for (const def of GUILD_UPGRADES) {
+                    expect(isUpgradeAccessible(def.id, ranks), `${def.id} after ${bought.id}`).toBe(oldOpen(def.id, ranks));
+                }
             }
+        } finally {
+            registerHallSky(null);
         }
     });
 
@@ -207,7 +214,15 @@ describe('Guild Hall upgrades are paid in items', () => {
             for (let owned = 0; owned < def.maxRank; owned++) {
                 const target = owned + 1;
                 const price = getUpgradePrice(def, owned);
-                if (freeFirst && target === 1) {
+                if (def.authored) {
+                    // An authored star's price per rank is the CMS's, item by item.
+                    expect(Array.isArray(price), `${def.id} rank ${target}`).toBe(true);
+                    for (const p of price) {
+                        expect(Object.keys(p).sort(), `${def.id} rank ${target}`).toEqual(['itemId', 'quantity']);
+                        expect(typeof p.itemId, `${def.id} rank ${target}`).toBe('string');
+                        expect(p.quantity, `${def.id} rank ${target}`).toBeGreaterThan(0);
+                    }
+                } else if (freeFirst && target === 1) {
                     expect(price).toEqual([]);
                 } else {
                     expect(price).toEqual([{ itemId: PLACEHOLDER_PRICE_ITEM, quantity: 10 * target }]);

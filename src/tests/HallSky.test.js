@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // The Guild Hall's night sky: stars by state, tags, lines, constellations, the drifting
 // backdrop, the hover-filled details panel, and a web that cannot be scrolled.
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -15,7 +15,10 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
-import { GUILD_UPGRADES, CONSTELLATIONS, HALL_NODE, getUpgradeDef } from '../config/guildUpgrades.js';
+import {
+    GUILD_UPGRADES, CONSTELLATIONS, BUILT_IN_CONSTELLATIONS, HALL_NODE, UPGRADE_SPRITES, getUpgradeDef
+} from '../config/guildUpgrades.js';
+import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
 import { SKY_SAMPLE_RANKS, SKY_SAMPLE_PAID, devGiveNextPrice } from '../ui/dev/GuildHallDevSection.jsx';
 import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { useOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
@@ -54,11 +57,13 @@ describe('the Hall sky: stars by state', () => {
             expect(img.getAttribute('src'), def.id).toBe(STAR_SPRITES[look]);
             expect(img.style.width, def.id).toBe(`${STAR_ART_PX * STAR_SCALE[state]}px`);
             expect(Number.isInteger(STAR_SCALE[state])).toBe(true);
-            // The upgrade's own sprite is only in the details panel now.
-            expect(container.querySelector(`img[src="${def.sprite}"]`)).toBeNull();
+            // The upgrade's own sprite is only in the details panel now. An authored star without
+            // one stands in with the gold star, which is also the web's gold look.
+            if (def.sprite !== UPGRADE_SPRITES.star) {
+                expect(container.querySelector(`img[src="${def.sprite}"]`), def.id).toBeNull();
+            }
         }
-        // The QA button's sample shows all three looks and every state the web holds; locked
-        // needs a star beyond another, which only the test star is since Bank Slots retired.
+        // The QA button's sample, on the shipped sky, shows all three looks and every state.
         expect([...states].sort()).toEqual(['bought', 'buyable', 'locked', 'maxed']);
         expect([...looks].sort()).toEqual(['blue', 'gold', 'grey']);
         for (const id of SKY_SAMPLE_PAID) {
@@ -158,12 +163,22 @@ describe('the Hall sky: stars by state', () => {
     });
 });
 
-describe('the Hall sky: constellations', () => {
+describe('the Hall sky: the shipped constellations', () => {
     it('puts every upgrade in one of the named constellations', () => {
         const ids = new Set(CONSTELLATIONS.map(c => c.id));
         for (const def of GUILD_UPGRADES) expect(ids.has(def.constellation), def.id).toBe(true);
-        expect(CONSTELLATIONS.map(c => c.name)).toEqual(['The Hearth', 'The Vault', 'The Well']);
+        expect(CONSTELLATIONS.map(c => c.name)).toEqual([
+            'The Hearth', 'The Vault', 'The Well',
+            ...Object.values(authoredHallSky().constellations).map(c => c.name)
+        ]);
+        expect(CONSTELLATIONS.slice(0, 3)).toEqual(BUILT_IN_CONSTELLATIONS);
     });
+});
+
+describe('the Hall sky: constellations', () => {
+    // The built-in tracks alone: the shipped sky's stars join the Hearth and the Well.
+    beforeEach(() => registerHallSky({}));
+    afterEach(() => registerHallSky(null));
 
     it('finishes a constellation when every star in it is lit', () => {
         expect(finishedConstellations({})).toEqual([]);
