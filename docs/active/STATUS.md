@@ -5,6 +5,15 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Director, the world ledger beside wandering-enemy performance (330 W5 and T-200; owner chose 2026-11-01 evening)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 330 W5: the ledger meets the world (World plan view, checks F, 100-seed report) | engineer | `feat/world-w5` (`e3`) | **building** | Sun | |
+| T-200: wandering enemies cheaper in the engine and on the mat (sliced; each slice A/B at night) | engineer | `perf/wandering-enemies` (`n4`) | **building** | Sun | |
+
+Owner rulings 2026-11-01: built nodes as fast as wild ones (T-283 removes `builtSlowerPct`); a Stone patch and a map-free first mine at the Starter Camp (T-284, with W6). Next: W6 the world pack (with T-284 and the held mines pack), then H3, L9.
+
 ## Director, the encyclopedia rework beside building nodes (briefs 300 E3 and 330 W4; owner chose 2026-11-01 00:30)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
@@ -87,6 +96,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 **Sat 31 Oct, 01:00–02:15 (director):** engine tickets WORK CHANGED exactly as predicted (S1/S4/S7 same; identity and fidelity hold), acceptance run queued, then merge after `main` is green. Hall H1 same work, calibration ok. World W1 same, W2 same. **Draw regression is real**: alternating runs, `a4a124be` S2 4× workP50 6.2–7.3 ms, `main` 11.5–12.4 ms (bank 6.3–6.7 vs 11.8–13.7): an engineer bisects in `p23b` until 06:45 (`diag/draw-regression`).
 
 ## Summaries
+
+**Sun 2026-11-01, evening: next batch chosen.** Where we are: `main` 4ddeb776 has E3, W4, the bench S2 fights. Now: W5 (`e3`) beside T-200 (`n4`), both engineers. Next: W6 with T-284. Owner: nothing until W5's CMS look. Bench: baseline retake Mon 01:00, then T-200 slices A/B.
 
 **Sun 2026-11-01, evening: batch looked at and merged.** Where we are: `main` has the encyclopedia rework (E3), building nodes by terrain (W4) and the bench S2 fights. Next: the next batch proposal (W5 ledger World plan, W6 world pack, H3, L9). Owner: answer the Starter Camp mines and built-node slowdown questions with the proposal. Bench: baseline retake Mon 01:00.
 
