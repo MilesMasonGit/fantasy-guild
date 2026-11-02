@@ -380,7 +380,8 @@ function checksOn(ctx, world, mats, { reach, index, names }) {
     }
 
     for (const f of ctx.origins) out.push(finding(f.check, f.message, { key: f.key, subject: f.key, name: nameOf(f.key), related: f.related }));
-    return out;
+    // Coverage: what the world lost ahead of what was never finished.
+    return out.sort((a, b) => (a.before === null ? 1 : 0) - (b.before === null ? 1 : 0));
 }
 
 /** What a seed's world offers per skill and ring, and what each cell costs. */
@@ -533,7 +534,9 @@ export function sweepWorlds(content, { seeds, baseTables, ledger = null, context
             if (!kinds.has(k)) { kinds.add(k); generation.get(k).worlds++; }
         }
     }
-    const byWorlds = (a, b) => b.worlds - a.worlds || b.findings - a.findings || String(a.name).localeCompare(String(b.name));
+    // What the world lost (reachable before it) ahead of what was never finished, then the most worlds first.
+    const unfinished = (s) => (s.before === null ? 1 : 0);
+    const byWorlds = (a, b) => unfinished(a) - unfinished(b) || b.worlds - a.worlds || b.findings - a.findings || String(a.name).localeCompare(String(b.name));
     return {
         seeds: seeds.length,
         passed,

@@ -125,6 +125,13 @@ by the owner's plan, and `note` text. `plan.tier` is not the item's or Token's o
 block, in `cms/plan/plan.json`. To set a tier on an existing entity, `edit` it with its whole record
 plus the `plan` block, as for any edit.
 
+An origin (a wild node's Token) may also carry `"wedge"` (a line of the world tables: `ores`,
+`trees`, `crops`, `herbs`, `waters`, `arcane`) and `"ring"` (1, 2 or 3) in its `plan`: where the
+World plan puts it on the world map, over where the game's tables have it. Check a world pack with
+`node cms/changePackTool.mjs world [--seeds 100] [--from <workspace.json>]`: how many worlds pass
+the ledger's checks F, what fails and in how many worlds, per-skill bands and price spreads (the
+Ledger's World page shows the same).
+
 Numbers are a proposal: the owner runs Recalculate after accepting.
 
 ### Declaring a move (optional)

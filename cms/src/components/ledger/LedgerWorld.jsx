@@ -26,6 +26,7 @@ const RULES = [...F_CHECKS, WORLD_F.RULE];
 
 const lineColor = (tables, id) => LINE_COLOR[id] || SPARE[Math.max(0, tables.lines.findIndex((l) => l.id === id)) % SPARE.length];
 const capital = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /** An origin's name cut to what fits in a cell: "Copper Ore Vein" → "Copper". */
 function shortName(name) {
@@ -232,7 +233,7 @@ function HexMap({ plan, context, wild, picked, focus, onPick }) {
     <svg
       viewBox={`${-width / 2 - pad} ${-height / 2 - pad} ${width + 2 * pad} ${height + 2 * pad}`}
       width="100%"
-      style={{ display: 'block', maxHeight: 620 }}
+      style={{ display: 'block', maxHeight: wild ? 980 : 620 }}
       role="img"
       aria-label={`World ${plan.seed}, rings 0 to ${rings}`}
     >
@@ -243,8 +244,8 @@ function HexMap({ plan, context, wild, picked, focus, onPick }) {
         const on = picked === cell.id;
         const fill = cell.ring === 0 ? HALL_COLOR : lineColor(plan.tables, cell.wedge);
         const stroke = on ? '#ffffff' : serious ? 'var(--color-error)' : found.length ? 'var(--color-warning)' : 'rgba(0,0,0,0.5)';
-        const main = cell.origins.find((o) => o.role === 'main') || cell.origins[0];
-        const label = cell.ring === 0 ? 'Starter Camp' : main ? shortName(context.nameOf(tokenKey(main.id))) : '—';
+        const main = cell.origins.find((o) => o.role === 'main');
+        const label = cell.ring === 0 ? 'Starter Camp' : main ? shortName(context.nameOf(tokenKey(main.id))) : 'no main';
         const dim = focus && !found.length;
         return (
           <g
@@ -258,7 +259,7 @@ function HexMap({ plan, context, wild, picked, focus, onPick }) {
           >
             <title>{`${context.cellName(cell)} · ring ${cell.ring}${cell.wild ? ' (wild)' : ''}${found.length ? ` · ${found.length} problem${found.length === 1 ? '' : 's'}` : ''}`}</title>
             <polygon points={points} fill={fill} fillOpacity={cell.wild ? 0.28 : cell.ring === 0 ? 0.85 : 0.55} stroke={stroke} strokeWidth={on || found.length ? 2.5 : 1} />
-            <text y={cell.ring === 0 ? 3 : -2} fontSize={cell.ring === 0 ? 8 : 9} textAnchor="middle" fill={cell.ring === 0 ? '#1a1a1e' : '#ffffff'} style={{ pointerEvents: 'none', fontWeight: 700 }}>{label}</text>
+            <text y={cell.ring === 0 ? 3 : -2} fontSize={cell.ring === 0 ? 8 : 9} textAnchor="middle" fill={cell.ring === 0 ? '#1a1a1e' : '#ffffff'} style={{ pointerEvents: 'none', fontWeight: 700, fontStyle: main || cell.ring === 0 ? 'normal' : 'italic' }}>{label}</text>
             {cell.ring > 0 && (
               <text y={10} fontSize={7.5} textAnchor="middle" fill="#e5e7eb" style={{ pointerEvents: 'none' }}>
                 {`${cell.origins.length} · ${capital(cell.specialty || '')}`}
@@ -287,7 +288,7 @@ function Legend({ plan }) {
           <span style={{ color: 'var(--color-text-muted)' }}>(side {side + 1})</span>
         </span>
       ))}
-      <span>Each cell: its main origin, then how many origins and its specialty.</span>
+      <span>Each cell: its main origin (&ldquo;no main&rdquo; when its wedge has none for its ring), then how many origins and its specialty.</span>
     </div>
   );
 }
@@ -419,7 +420,7 @@ function CellPanel({ plan, context, cell, onOpen, onPick }) {
             {' '}<span className="text-gray-500">heroes</span>
           </p>
           <p className="text-gray-500">
-            {mat.nodes.reduce((n, x) => n + x.count, 0)} nodes, {mat.camps.reduce((n, x) => n + x.count, 0)} camps{mat.stone.outcrops ? `, ${mat.stone.outcrops} Stone outcrops` : ''}{mat.rare ? `; rare: ${context.nameOf(tokenKey(mat.rare))}` : ''}.
+            {plural(mat.nodes.reduce((n, x) => n + x.count, 0), 'node')}, {plural(mat.camps.reduce((n, x) => n + x.count, 0), 'camp')}{mat.stone.outcrops ? `, ${plural(mat.stone.outcrops, 'Stone outcrop')}` : ''}{mat.rare ? `; rare: ${context.nameOf(tokenKey(mat.rare))}` : ''}.
           </p>
         </div>
       )}
@@ -531,7 +532,7 @@ function SweepResult({ sweep, onOpen, onWorld }) {
                   {shown.map((s) => (
                     <tr key={s.subject} data-subject={s.subject}>
                       <td style={{ ...td, width: 64, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{s.worlds} world{s.worlds === 1 ? '' : 's'}</td>
-                      <td style={{ ...td, width: 200 }}>
+                      <td style={{ ...td, width: 280 }}>
                         {s.key ? (
                           <button onClick={() => onOpen(s.key)} className="underline text-left" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--color-text-primary)', font: 'inherit' }}>{s.name}</button>
                         ) : <span style={{ color: 'var(--color-text-primary)' }}>{s.name}</span>}

@@ -198,6 +198,12 @@ describe('F: the inner rings not covering every Live entry', () => {
         expect(hits.map(f => f.subject)).toEqual(expect.arrayContaining([tokenKey('token_chief_tent'), tokenKey('token_goblin_chief')]));
         // Lost with the maps: the Mountain Map (plane 1) placed the tent.
         expect(hits.find(f => f.subject === tokenKey('token_chief_tent')).before).toBe(1);
+        // What the world lost is listed ahead of what was never finished, in a world and over many.
+        const both = of(plan(withGold(worldWorkspace()), 4, tables).findings, WORLD_F.COVERAGE).map(f => f.before);
+        expect(both.indexOf(null)).toBeGreaterThan(both.lastIndexOf(1));
+        const subjects = sweepWorlds(contentOf(withGold(worldWorkspace())), { seeds: [1, 2], baseTables: tables }).rules[WORLD_F.COVERAGE].subjects;
+        expect(subjects[0].before).toBe(1);
+        expect(subjects[subjects.length - 1].before).toBeNull();
     });
 });
 
