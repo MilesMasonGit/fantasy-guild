@@ -10,6 +10,7 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | 330 W5: the ledger meets the world (World plan view, checks F, 100-seed report) | engineer | `feat/world-w5` (`e3`) | **merged** on the gate (79f47164: 7186 tests, cycles 0 dangerous, game and CMS builds, engine work **same**; CMS only; the brief's look is W6's pack). On today's data 0/100 seeds pass checks F: 83 entries not covered by the inner rings (7 lost with the maps in every world, boss camps by luck, 60 never reachable), 17 wild origins no wedge places, Herbs and Arcane without main origins; list in `research/world_w5/sweep_100_seeds_2026-11-01.txt` = W6's input. T-285 filed | Sun | Sun |
+| 330 W6: the first world content pack (world tables in the CMS and data/world.json; every Live thing guaranteed in its tier's inner ring, 100/100 seeds; Starter Camp Stone patch T-284; the held mines pack) | engineer | `feat/world-w6` (`e3`) | **building** | Sun | |
 | T-200: wandering enemies cheaper in the engine and on the mat (sliced; each slice A/B at night) | engineer | `perf/wandering-enemies` (`n4`) | **building** | Sun | |
 
 Owner rulings 2026-11-01: built nodes as fast as wild ones (T-283 removes `builtSlowerPct`); a Stone patch and a map-free first mine at the Starter Camp (T-284, with W6). Next: W6 the world pack (with T-284 and the held mines pack), then H3, L9.
@@ -81,7 +82,7 @@ None open.
 
 - **W4, the Starter Camp and mines (ask with the next proposal):** once mines need Stone and a prospecting map, the Starter Camp (meadow, no Stone) can no longer build a Copper or Coal Mine, and its built-in Copper Mine can no longer be moved. Options: (A, rec.) the Starter Camp gets a small patch of Stone ground, and its first mine recipe needs no map; (B) the Starter Camp is exempt from the mine rules; (C) mines start on ring 1, the Starter Camp keeps only its built-in one. The pack is held until this and W6's map sources are settled.
 
-- **W6, boss camps in the inner rings (ask with the W6 proposal):** today a boss camp (Queen's Hive, Chief's Tent, Alpha's Den…) appears only when a cell's specialty is combat on a kit that has it, so 18–34 % of worlds hold each. (A, rec.) each ring's arrival table lists its bosses, so every world has them; (B) every kit gets every boss camp; (C) leave them to each world's luck.
+- ~~W6, boss camps~~ **Answered 2026-11-01 (owner):** every Live enemy and source is guaranteed in every world, in the inner ring of its tier (owner_feedback). Was: today a boss camp (Queen's Hive, Chief's Tent, Alpha's Den…) appears only when a cell's specialty is combat on a kit that has it, so 18–34 % of worlds hold each. (A, rec.) each ring's arrival table lists its bosses, so every world has them; (B) every kit gets every boss camp; (C) leave them to each world's luck.
 
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
@@ -98,6 +99,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 **Sat 31 Oct, 01:00–02:15 (director):** engine tickets WORK CHANGED exactly as predicted (S1/S4/S7 same; identity and fidelity hold), acceptance run queued, then merge after `main` is green. Hall H1 same work, calibration ok. World W1 same, W2 same. **Draw regression is real**: alternating runs, `a4a124be` S2 4× workP50 6.2–7.3 ms, `main` 11.5–12.4 ms (bank 6.3–6.7 vs 11.8–13.7): an engineer bisects in `p23b` until 06:45 (`diag/draw-regression`).
 
 ## Summaries
+
+**Sun 2026-11-01, late: owner asleep; director continues until stopped.** W5 merged. Now: W6 (`e3`) beside T-200 (`n4`). Owner allowed overnight: perf merges on the gate, tickets T-282/T-283/T-285, the H3 star pack re-check. Bench: baseline retake Mon 01:00 then T-200 slices. Owner: W6 pack review when awake.
 
 **Sun 2026-11-01, evening: next batch chosen.** Where we are: `main` 4ddeb776 has E3, W4, the bench S2 fights. Now: W5 (`e3`) beside T-200 (`n4`), both engineers. Next: W6 with T-284. Owner: nothing until W5's CMS look. Bench: baseline retake Mon 01:00, then T-200 slices A/B.
 
