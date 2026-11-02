@@ -493,7 +493,21 @@ const NOT_YET_PLACED = Object.freeze({
     item_darkmetal_ingot: 'a later plane: smelted from Darkmetal Ore (furnace, level 90)',
     // The brewery offers lemonade (level 15) and limeade (level 25), but no map places their trees.
     item_lemon: 'only the Lemon Tree makes it, and no map places one (the brewery asks for it at level 15)',
-    item_lime: 'only the Lime Tree makes it, and no map places one (the brewery asks for it at level 25)'
+    item_lime: 'only the Lime Tree makes it, and no map places one (the brewery asks for it at level 25)',
+    // Ring 3 of the world (brief 330 W6): Farmland plants their forests and the smithy forges the
+    // pickaxes past iron, but their trees and metals stand only in ring 3.
+    item_birch_seedling: 'ring 3: only the Birch Tree drops it (Farmland plants a Birch Forest from it)',
+    item_birch_wood: 'ring 3: only the Birch Tree and a planted Birch Forest make it',
+    item_maple_seedling: 'ring 3: only the Maple Tree drops it (Farmland plants a Maple Forest from it)',
+    item_maple_wood: 'ring 3: only the Maple Tree and a planted Maple Forest make it',
+    item_mahogany_seedling: 'ring 3: only the Mahogany Tree drops it (Farmland plants a Mahogany Forest from it)',
+    item_mahogany_wood: 'ring 3: only the Mahogany Tree and a planted Mahogany Forest make it',
+    item_mythril_pickaxe: 'ring 3: forged from Mythril Ingots (smithy, level 60)',
+    item_adamantium_pickaxe: 'ring 3: forged from Adamantine Ingots (smithy, level 75)',
+    item_darkmetal_pickaxe: 'ring 3: forged from Darkmetal Ingots (smithy, level 90)',
+    token_birch_forest: 'ring 3: planted from Birch Seedlings',
+    token_maple_forest: 'ring 3: planted from Maple Seedlings',
+    token_mahogany_forest: 'ring 3: planted from Mahogany Seedlings'
 });
 
 /** What makes an item anywhere in the content: Token ids and recipe ids. */
@@ -556,11 +570,13 @@ describe('K4: from the Starter Camp, every plane-1 and plane-2 thing is reachabl
             const shop = getTokenType(id)?.shop ? '; sold in the Shop' : '';
             return `${id}: built by ${[...new Set(by)].join(', ') || 'no recipe'}${shop}`;
         };
-        expect(buildings.filter(id => !tokens.has(id)).sort().map(builtBy)).toEqual([]);
+        expect(buildings.filter(id => !tokens.has(id) && !NOT_YET_PLACED[id]).sort().map(builtBy)).toEqual([]);
     });
 
     it('every exclusion is still named by the two planes and still unreached', () => {
-        const stale = Object.keys(NOT_YET_PLACED).filter(id => !named.has(id) || items.has(id));
+        const stale = Object.keys(NOT_YET_PLACED).filter(id => (id.startsWith('token_')
+            ? !buildings.includes(id) || tokens.has(id)
+            : !named.has(id) || items.has(id)));
         expect(stale, 'remove these from NOT_YET_PLACED').toEqual([]);
     });
 });

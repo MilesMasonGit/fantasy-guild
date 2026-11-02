@@ -1,0 +1,516 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-02-fish-tool-free",
+  "createdAt": "2026-11-02T19:26:07.070Z",
+  "asked": "Give Tropical Fish, Salmon, Swordfish and Lobster a source that needs no tool (ContentRules rule 1: every material a recipe spends has a barehanded route). Director, 2026-11-02. Review after the combat pack: it edits the Crab and the Water Elemental too.",
+  "entries": [
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_crab",
+      "value": {
+        "name": "Crab",
+        "description": "Drops 1 Crab Meat (75%), 1–2 Raw Shrimp (30%), 1 Tropical Fish (25%), 1 Lobster (10%), 1 Forest Map (1%), 1 Mountain Map (1%), 1 Coast Map (1%), 1 Meadow Map (1%), 1 Flower Meadow Map (0.5%), 1 Cherry Grove Map (0.5%), 1 Volcano Map (0.25%), 1 Yellowstone Map (0.25%), 1 Bog Map (0.25%), 1 Teeming Waters (1%), 1 Crab Rocks (0.5%), 1 Buried Copper (0.25%), and 1 Crab Banner (0.5%) when defeated in combat.",
+        "sprite": "e_crab",
+        "tokenType": "enemy",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_crab_meat",
+              "chance": 75,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_raw_shrimp",
+              "chance": 30,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_tropical_fish",
+              "chance": 25,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_lobster",
+              "chance": 10,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_forest",
+              "chance": 1,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_mountain",
+              "chance": 1,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_coast",
+              "chance": 1,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_meadow",
+              "chance": 1,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_flower_meadow",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_cherry_grove",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_volcano",
+              "chance": 0.25,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_yellowstone",
+              "chance": 0.25,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_bog",
+              "chance": 0.25,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "mod_teeming_waters",
+              "chance": 1,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "mod_crab_rocks",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "mod_buried_copper",
+              "chance": 0.25,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_crab_banner",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 3,
+          "style": "melee",
+          "kinds": [
+            "armoured"
+          ],
+          "resistances": {
+            "crush": -50,
+            "electric": -25
+          },
+          "moves": [
+            {
+              "name": "Pinch",
+              "damageType": "crush"
+            },
+            {
+              "name": "Snip",
+              "damageType": "slash"
+            }
+          ]
+        },
+        "artSize": "small",
+        "id": "token_crab",
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "The Crab, a Coast creature, also drops Tropical Fish (25 %) and Lobster (10 %): a barehanded way to both when the Fishing Rod or the Trap runs out (ContentRules rule 1), as the Toxic Frog does for Trout. Rarer than a rod or a baited trap at the Coast, so fishing stays the way to them.",
+      "fingerprint": "fp:23a4bc21fed6f44b"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_water_elemental",
+      "value": {
+        "name": "Water Elemental",
+        "description": "Drops 2–4 Raw Shrimp, 1–2 Crab Meat (50%), 1–2 Salmon (50%), 1 Swordfish (25%), 1 Forest Map (4%), 1 Mountain Map (4%), 1 Coast Map (8%), 1 Meadow Map (4%), 1 Flower Meadow Map (2%), 1 Cherry Grove Map (2%), 1 Bog Map (10%), 1 Volcano Map (3%), 1 Teeming Waters (3%), 1 Crab Rocks (2%), 1 Buried Copper (1%), and 1 Water Elemental Banner (2%) when defeated in combat. On Health Below 50%: heals 10 health on itself.",
+        "sprite": "e_elemental_water",
+        "tokenType": "enemy",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_raw_shrimp",
+              "chance": 100,
+              "minQty": 2,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 2,
+                "max": 4
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_crab_meat",
+              "chance": 50,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_salmon",
+              "chance": 50,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_swordfish",
+              "chance": 25,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_forest",
+              "chance": 4,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_mountain",
+              "chance": 4,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_coast",
+              "chance": 8,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_meadow",
+              "chance": 4,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_flower_meadow",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_cherry_grove",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "map_bog",
+              "chance": 10,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true,
+              "firstKill": true
+            },
+            {
+              "itemId": "map_volcano",
+              "chance": 3,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "mod_teeming_waters",
+              "chance": 3,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "mod_crab_rocks",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "mod_buried_copper",
+              "chance": 1,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_water_elemental_banner",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 12,
+          "style": "magic",
+          "kinds": [
+            "armoured"
+          ],
+          "boss": true,
+          "hit": 2,
+          "resistances": {
+            "fire": 50,
+            "electric": -50
+          },
+          "moves": [
+            {
+              "name": "Crashing Wave",
+              "damageType": "crush"
+            },
+            {
+              "name": "Frost Spray",
+              "damageType": "ice"
+            }
+          ]
+        },
+        "id": "token_water_elemental",
+        "effects": [
+          {
+            "effectId": "effect_water_elemental_moves",
+            "scale": 1
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "The Water Elemental also drops 1–2 Salmon (50 %) and Swordfish (25 %): a barehanded way to both (ContentRules rule 1). The bigger fish from the bigger water fight; the rod stays the steady source.",
+      "fingerprint": "fp:35d70d42c785a890"
+    }
+  ],
+  "gate": {
+    "workspaceFingerprint": "fp:8bb7bdd222f18b94",
+    "toolVersion": 2,
+    "at": "2026-11-02T19:27:31.285Z",
+    "verdict": "pass",
+    "summary": "Passes: nothing already reached moves, 1 problem added, 0 cleared.",
+    "blocks": [],
+    "notes": [],
+    "deltas": {
+      "stages": [],
+      "moved": [],
+      "movedCount": 0,
+      "added": [
+        {
+          "check": "hall-payback",
+          "key": "hall:star_cooking_yield",
+          "severity": "warn"
+        }
+      ],
+      "cleared": 0
+    }
+  }
+}

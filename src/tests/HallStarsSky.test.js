@@ -75,7 +75,7 @@ describe('the sky draws the authored constellations', () => {
 
 describe('the sky grows to hold its stars, and drags when too big', () => {
     it('keeps today\'s size for a small sky and grows past it for far stars', () => {
-        registerHallSky(null);
+        registerHallSky({});
         expect(webSize()).toEqual({ w: WEB_W, h: WEB_H });
         registerHallSky({ stars: { far: { id: 'far', constellation: 'well', links: ['hall'], node: { x: 2, y: -1.5 }, ranks: [{ price: [] }] } } });
         expect(webSize()).toEqual({ w: Math.ceil(2 * (2 * WEB_UNIT_PX + 170)), h: Math.ceil(2 * (1.5 * WEB_UNIT_PX + 70)) });

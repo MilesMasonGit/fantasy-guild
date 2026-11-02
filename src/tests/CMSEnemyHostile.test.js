@@ -20,6 +20,11 @@ const resistText = (map) => {
     return ids.length ? ids.map(id => (map[id] < 0 ? `${damageTypeLabel(id)} weak ${-map[id]}%` : `${damageTypeLabel(id)} ${map[id]}%`)).join(', ') : 'none';
 };
 
+/** The preview's hit: a plain Physical swing, or its moves by name and the type each hits with. */
+const hitText = (p) => (p.moves?.length
+    ? `${p.hit} · ${p.moves.map(m => `${m.name || 'Attack'}${m.hits ? ` ${damageTypeLabel(m.type)}` : ''}`).join(', ')}`
+    : `${p.hit} Physical`);
+
 /**
  * B7.2 — the CMS models **`enemy.hostile`** before any content uses it
  * (roadmap v1 §0.3: Sync destroys what the CMS does not carry).
@@ -194,7 +199,7 @@ describe('the Token editor’s level preview', () => {
             const { container, unmount } = editor(id);
             const box = within(container).getByText('What the fight uses').parentElement.parentElement;
             expect(box.textContent, id).toContain(
-                `HP${p.hp}Hit${p.hit} PhysicalResists${resistText(p.resistances)}Attacks every${(p.attackSpeed / 1000).toFixed(1)}sXP${p.xpAwarded}`);
+                `HP${p.hp}Hit${hitText(p)}Resists${resistText(p.resistances)}Attacks every${(p.attackSpeed / 1000).toFixed(1)}sXP${p.xpAwarded}`);
             unmount();
         }
     });

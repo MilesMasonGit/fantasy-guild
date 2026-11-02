@@ -1,9 +1,11 @@
 // Brief 280 V5: build the combat content pack from the current records (data/, or --from <workspace.json>).
-// Usage: node mkpack.mjs [--from ws.json] [--chief-hit N] > out ; writes v5/<id>.json
+// Usage: node mkpack.mjs --from ws.json [--chief-hit N] [--out file]; writes <id>.json beside this script by default.
+// Re-stamped 2026-11-02 against data/ at main 7e716add (after the ledger first fill, the world and the Venom rename synced):
+// build the workspace from data/ and cms/plan/plan.json (pending_packs/fish/mkws.mjs), never an autosave older than data/.
 import fs from 'fs';
 import path from 'path';
 
-const WT = 'C:/Users/16048/Projects/fantasy_guild_v2/.claude/worktrees/c2';
+const WT = 'C:/Users/16048/Projects/fantasy_guild_v2/.claude/worktrees/n4';
 const { workspaceFromDataFiles, currentValue } = await import('file:///' + WT + '/cms/src/engine/changePacks.js');
 const args = process.argv.slice(2);
 const argOf = (k, d) => { const i = args.indexOf(k); return i === -1 ? d : args[i + 1]; };
@@ -14,7 +16,7 @@ const ws = argOf('--from') ? rd(argOf('--from')) : workspaceFromDataFiles({
     items: rd(path.join(data, 'items.json')), tokens: rd(path.join(data, 'tokens.json')), effects: opt('effects.json', {}),
     tokenRecipes: opt('tokenRecipes.json', []), starterCamp: opt('starterCamp.json', null), skillPerks: opt('skillPerks.json', null), plan: null
 });
-const CHIEF_HIT = argOf('--chief-hit', null);
+const CHIEF_HIT = argOf('--chief-hit', '3');
 const CHIEF_LEVEL = Number(argOf('--chief-level', 12));
 
 const clone = (v) => JSON.parse(JSON.stringify(v));
@@ -108,18 +110,19 @@ create('item', 'item_copper_arrow', {
     name: 'Copper Arrow', description: '', type: 'material', sprite: 'i_arrow', stackable: true, restoreAmount: 0,
     equipSlot: 'consumable', value: null, valueSource: null, autoSyncId: true,
     arrow: { damage: 1, damageType: 'stab' }, tags: ['Arrow', 'Ammo'],
-    plan: { status: 'draft', note: 'No recipe yet: arrows wait for Fletching (concept_combat_v2).' }
+    plan: { status: 'parked', note: 'Parked until it has a maker: arrows wait for Fletching (concept_combat_v2), so nothing makes or drops it yet and the world could not place it.' }
 }, 'The first arrow: carried in a consumable cell by a bow hero, one spent a shot, adding 1 Stab to the bow\'s Electric. No recipe: the concept names Fletching as the maker, and no Fletching station or recipe exists yet.');
 create('item', 'item_iron_bodkin_arrow', {
     name: 'Iron Bodkin Arrow', description: '', type: 'material', sprite: 'i_arrow', stackable: true, restoreAmount: 0,
     equipSlot: 'consumable', value: null, valueSource: null, autoSyncId: true,
     arrow: { damage: 1, damageType: 'stab' }, effects: [{ effectId: 'effect_sundering', scale: 1 }], tags: ['Arrow', 'Ammo'],
-    plan: { status: 'draft', note: 'No recipe yet: arrows wait for Fletching (concept_combat_v2).' }
+    plan: { status: 'parked', note: 'Parked until it has a maker: arrows wait for Fletching (concept_combat_v2), so nothing makes or drops it yet and the world could not place it.' }
 }, 'A sundering arrow (the concept: some arrows carry Sunder): 1 Stab, and every hit it lands applies Sunder to the enemy. No recipe yet (Fletching).', true);
 create('item', 'item_copper_shield', {
     name: 'Copper Shield', description: '', type: 'armor', sprite: 'i_armor_plate_copper', stackable: true, restoreAmount: 0,
     equipSlot: 'hand', offHand: true, value: null, valueSource: null, autoSyncId: true,
-    resistances: { physical: 10 }, damageCut: { magic: 10, stealth: 10 }, tags: ['Armour', 'Shield']
+    resistances: { physical: 10 }, damageCut: { magic: 10, stealth: 10 }, tags: ['Armour', 'Shield'],
+    plan: { status: 'live', tier: 0, note: 'Tier as the Copper Helmet, made beside it at the copper smithy.' }
 }, 'The first shield, Held as an off-hand item: acts like a piece of body armour beside a one-handed weapon. Physical 10 %; Magic and Stealth damage −10 %.', true);
 create('recipe', 'recipe_copper_shield', {
     name: 'Copper Shield', skill: 'smithing', levelRequirement: 6, requiresContext: [], stationChargeCost: 1,
@@ -164,7 +167,7 @@ for (const [id, [res, moves, note]] of Object.entries(ENEMIES)) {
 
 const pack = {
     format: 'fantasy-guild-change-pack', version: 1,
-    id: '2026-10-30-combat-v5-content',
+    id: '2026-11-02-combat-v5-content',
     createdAt: new Date().toISOString(),
     asked: 'Combat v2 content (brief 280 V5): damage types on the weapons, resistances, weaknesses and moves on the enemies, a first arrow line, armour as resistances and trade-offs, a shield, Flutter and Sunder; the Goblin Chief to about level 12 (the ledger). Owner interview 2026-10-28.',
     entries

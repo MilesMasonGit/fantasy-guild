@@ -577,7 +577,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 52,
+    "value": 6,
     "valueSource": "token_maple_tree",
     "autoSyncId": true,
     "id": "item_maple_wood",
@@ -593,7 +593,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 422,
+    "value": 50,
     "valueSource": "token_mahogany_tree",
     "autoSyncId": true,
     "id": "item_mahogany_wood",
@@ -609,7 +609,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 619,
+    "value": 73,
     "valueSource": "token_ebony_tree",
     "autoSyncId": true,
     "id": "item_ebony_wood",
@@ -625,7 +625,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 161,
+    "value": 19,
     "valueSource": "token_cedar_tree",
     "autoSyncId": true,
     "id": "item_cedar_wood",
@@ -1120,8 +1120,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 1,
+    "valueSource": "token_birch_tree",
     "autoSyncId": true,
     "id": "item_birch_seedling",
     "tags": [
@@ -1154,8 +1154,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 345,
+    "valueSource": "token_maple_tree",
     "autoSyncId": true,
     "id": "item_maple_seedling",
     "tags": [
@@ -1171,8 +1171,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 4094,
+    "valueSource": "token_ebony_tree",
     "autoSyncId": true,
     "id": "item_ebony_seedling",
     "tags": [
@@ -1188,8 +1188,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 1067,
+    "valueSource": "token_cedar_tree",
     "autoSyncId": true,
     "id": "item_cedar_seedling",
     "tags": [
@@ -1205,8 +1205,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 2793,
+    "valueSource": "token_mahogany_tree",
     "autoSyncId": true,
     "id": "item_mahogany_seedling",
     "tags": [
@@ -1676,8 +1676,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": null,
-    "valueSource": null,
+    "value": 8538,
+    "valueSource": "recipe_mythril_pickaxe",
     "autoSyncId": true,
     "id": "item_mythril_pickaxe",
     "tool": {
@@ -1697,8 +1697,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": null,
-    "valueSource": null,
+    "value": 40213,
+    "valueSource": "recipe_adamantium_pickaxe",
     "autoSyncId": true,
     "id": "item_adamantium_pickaxe",
     "tool": {
@@ -1718,8 +1718,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": null,
-    "valueSource": null,
+    "value": 52435,
+    "valueSource": "recipe_darkmetal_pickaxe",
     "autoSyncId": true,
     "id": "item_darkmetal_pickaxe",
     "tool": {
@@ -1817,7 +1817,8 @@
     "tags": [
       "Weapon",
       "Sword"
-    ]
+    ],
+    "damageType": "slash"
   },
   "item_copper_dagger": {
     "name": "Copper Dagger",
@@ -1831,7 +1832,6 @@
     "valueSource": "recipe_copper_dagger",
     "autoSyncId": true,
     "styles": [
-      "melee",
       "stealth"
     ],
     "damage": 1,
@@ -1847,7 +1847,8 @@
     "tags": [
       "Weapon",
       "Dagger"
-    ]
+    ],
+    "damageType": "stab"
   },
   "item_copper_cleaver": {
     "name": "Copper Cleaver",
@@ -1876,7 +1877,8 @@
     "tags": [
       "Weapon",
       "Cleaver"
-    ]
+    ],
+    "damageType": "slash"
   },
   "item_copper_greatsword": {
     "name": "Copper Greatsword",
@@ -1900,7 +1902,8 @@
     "tags": [
       "Weapon",
       "Greatsword"
-    ]
+    ],
+    "damageType": "crush"
   },
   "item_copper_bow": {
     "name": "Copper Bow",
@@ -1928,7 +1931,8 @@
     "tags": [
       "Weapon",
       "Bow"
-    ]
+    ],
+    "damageType": "electric"
   },
   "item_copper_wand": {
     "name": "Copper Wand",
@@ -1951,7 +1955,8 @@
     "tags": [
       "Weapon",
       "Wand"
-    ]
+    ],
+    "damageType": "fire"
   },
   "item_leather_hat": {
     "name": "Leather Hat",
@@ -1964,17 +1969,18 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "effects": [
-      {
-        "effectId": "effect_leather_armour",
-        "scale": 1
-      }
-    ],
     "id": "item_leather_hat",
     "tags": [
       "Armour",
       "Hat"
-    ]
+    ],
+    "resistances": {
+      "physical": 5,
+      "elemental": 10
+    },
+    "damageCut": {
+      "magic": 5
+    }
   },
   "item_leather_chest": {
     "name": "Leather Chest",
@@ -1987,17 +1993,18 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "effects": [
-      {
-        "effectId": "effect_leather_armour",
-        "scale": 1
-      }
-    ],
     "id": "item_leather_chest",
     "tags": [
       "Armour",
       "Chestplate"
-    ]
+    ],
+    "resistances": {
+      "physical": 10,
+      "elemental": 10
+    },
+    "damageCut": {
+      "magic": 10
+    }
   },
   "item_elixir_of_valor": {
     "name": "Elixir of Valor",
@@ -2414,17 +2421,18 @@
     "value": 21,
     "valueSource": "recipe_copper_helmet",
     "autoSyncId": true,
-    "effects": [
-      {
-        "effectId": "effect_copper_armour",
-        "scale": 1
-      }
-    ],
     "id": "item_copper_helmet",
     "tags": [
       "Armour",
       "Helmet"
-    ]
+    ],
+    "resistances": {
+      "physical": 10
+    },
+    "damageCut": {
+      "magic": 15,
+      "stealth": 5
+    }
   },
   "item_copper_chestplate": {
     "name": "Copper Chestplate",
@@ -2437,17 +2445,18 @@
     "value": 34,
     "valueSource": "recipe_copper_chestplate",
     "autoSyncId": true,
-    "effects": [
-      {
-        "effectId": "effect_copper_armour",
-        "scale": 1
-      }
-    ],
     "id": "item_copper_chestplate",
     "tags": [
       "Armour",
       "Chestplate"
-    ]
+    ],
+    "resistances": {
+      "physical": 15
+    },
+    "damageCut": {
+      "magic": 20,
+      "stealth": 10
+    }
   },
   "map_bog": {
     "name": "Bog Map",
@@ -2641,7 +2650,8 @@
     "tags": [
       "Weapon",
       "Sword"
-    ]
+    ],
+    "damageType": "slash"
   },
   "item_iron_dagger": {
     "name": "Iron Dagger",
@@ -2655,7 +2665,6 @@
     "valueSource": "recipe_iron_dagger",
     "autoSyncId": true,
     "styles": [
-      "melee",
       "stealth"
     ],
     "damage": 2,
@@ -2671,7 +2680,8 @@
     "tags": [
       "Weapon",
       "Dagger"
-    ]
+    ],
+    "damageType": "stab"
   },
   "item_iron_cleaver": {
     "name": "Iron Cleaver",
@@ -2700,7 +2710,8 @@
     "tags": [
       "Weapon",
       "Cleaver"
-    ]
+    ],
+    "damageType": "slash"
   },
   "item_iron_greatsword": {
     "name": "Iron Greatsword",
@@ -2724,7 +2735,8 @@
     "tags": [
       "Weapon",
       "Greatsword"
-    ]
+    ],
+    "damageType": "crush"
   },
   "item_iron_bow": {
     "name": "Iron Bow",
@@ -2752,7 +2764,8 @@
     "tags": [
       "Weapon",
       "Bow"
-    ]
+    ],
+    "damageType": "electric"
   },
   "item_iron_wand": {
     "name": "Iron Wand",
@@ -2775,7 +2788,8 @@
     "tags": [
       "Weapon",
       "Wand"
-    ]
+    ],
+    "damageType": "ice"
   },
   "item_iron_helmet": {
     "name": "Iron Helmet",
@@ -2788,17 +2802,18 @@
     "value": 114,
     "valueSource": "recipe_iron_helmet",
     "autoSyncId": true,
-    "effects": [
-      {
-        "effectId": "effect_iron_armour",
-        "scale": 1
-      }
-    ],
     "id": "item_iron_helmet",
     "tags": [
       "Armour",
       "Helmet"
-    ]
+    ],
+    "resistances": {
+      "physical": 15
+    },
+    "damageCut": {
+      "magic": 20,
+      "stealth": 10
+    }
   },
   "item_iron_chestplate": {
     "name": "Iron Chestplate",
@@ -2811,17 +2826,18 @@
     "value": 190,
     "valueSource": "recipe_iron_chestplate",
     "autoSyncId": true,
-    "effects": [
-      {
-        "effectId": "effect_iron_armour",
-        "scale": 1
-      }
-    ],
     "id": "item_iron_chestplate",
     "tags": [
       "Armour",
       "Chestplate"
-    ]
+    ],
+    "resistances": {
+      "physical": 20
+    },
+    "damageCut": {
+      "magic": 30,
+      "stealth": 15
+    }
   },
   "mod_rich_veins": {
     "id": "mod_rich_veins",
@@ -3169,5 +3185,344 @@
       "Fish",
       "Cooked"
     ]
+  },
+  "item_coal_prospecting_map": {
+    "id": "item_coal_prospecting_map",
+    "name": "Coal Prospecting Map",
+    "description": "Shows where coal lies under a Stone outcrop: a Build Coal Mine recipe spends one.",
+    "type": "material",
+    "sprite": "t_map_mountain",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_bee_banner": {
+    "id": "item_bee_banner",
+    "name": "Bee Banner",
+    "description": "A Bee's banner: builds a Wild Hive like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_big_lizard_banner": {
+    "id": "item_big_lizard_banner",
+    "name": "Big Lizard Banner",
+    "description": "A Big Lizard's banner: builds a Basking Stone like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_cow_banner": {
+    "id": "item_cow_banner",
+    "name": "Cow Banner",
+    "description": "A Cow's banner: builds a Cow Pasture like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_crab_banner": {
+    "id": "item_crab_banner",
+    "name": "Crab Banner",
+    "description": "A Crab's banner: builds a Crab Rocks like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_fire_elemental_banner": {
+    "id": "item_fire_elemental_banner",
+    "name": "Fire Elemental Banner",
+    "description": "A Fire Elemental's banner: builds a Ember Vents like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_fire_elemental_chief_banner": {
+    "id": "item_fire_elemental_chief_banner",
+    "name": "Fire Elemental Chief Banner",
+    "description": "A Fire Elemental Chief's banner: builds a Smoking Crater like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_frog_banner": {
+    "id": "item_frog_banner",
+    "name": "Frog Banner",
+    "description": "A Frog's banner: builds a Frog Pond like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_goblin_banner": {
+    "id": "item_goblin_banner",
+    "name": "Goblin Banner",
+    "description": "A Goblin's banner: builds a Goblin Camp like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_goblin_chief_banner": {
+    "id": "item_goblin_chief_banner",
+    "name": "Goblin Chief Banner",
+    "description": "A Goblin Chief's banner: builds a Chief's Tent like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_greater_slime_banner": {
+    "id": "item_greater_slime_banner",
+    "name": "Greater Slime Banner",
+    "description": "A Greater Slime's banner: builds a Slime Pit like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_queen_bee_banner": {
+    "id": "item_queen_bee_banner",
+    "name": "Queen Bee Banner",
+    "description": "A Queen Bee's banner: builds a Queen's Hive like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_sulphur_lizard_banner": {
+    "id": "item_sulphur_lizard_banner",
+    "name": "Sulphur Lizard Banner",
+    "description": "A Sulphur Lizard's banner: builds a Sulphur Rocks like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_thorn_elemental_banner": {
+    "id": "item_thorn_elemental_banner",
+    "name": "Thorn Elemental Banner",
+    "description": "A Thorn Elemental's banner: builds a Thorn Thicket like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_toxic_frog_banner": {
+    "id": "item_toxic_frog_banner",
+    "name": "Toxic Frog Banner",
+    "description": "A Toxic Frog's banner: builds a Toxic Pool like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_water_elemental_banner": {
+    "id": "item_water_elemental_banner",
+    "name": "Water Elemental Banner",
+    "description": "A Water Elemental's banner: builds a Tide Pool like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_wind_elemental_banner": {
+    "id": "item_wind_elemental_banner",
+    "name": "Wind Elemental Banner",
+    "description": "A Wind Elemental's banner: builds a Wind Stones like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_wolf_banner": {
+    "id": "item_wolf_banner",
+    "name": "Wolf Banner",
+    "description": "A Wolf's banner: builds a Wolf Den like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_wolf_alpha_banner": {
+    "id": "item_wolf_alpha_banner",
+    "name": "Wolf Alpha Banner",
+    "description": "A Wolf Alpha's banner: builds a Alpha's Den like the one in the wild.",
+    "type": "material",
+    "sprite": "t_banner_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_copper_arrow": {
+    "name": "Copper Arrow",
+    "description": "",
+    "type": "material",
+    "sprite": "i_arrow",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "arrow": {
+      "damage": 1,
+      "damageType": "stab"
+    },
+    "tags": [
+      "Arrow",
+      "Ammo"
+    ],
+    "id": "item_copper_arrow"
+  },
+  "item_iron_bodkin_arrow": {
+    "name": "Iron Bodkin Arrow",
+    "description": "",
+    "type": "material",
+    "sprite": "i_arrow",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "arrow": {
+      "damage": 1,
+      "damageType": "stab"
+    },
+    "effects": [
+      {
+        "effectId": "effect_sundering",
+        "scale": 1
+      }
+    ],
+    "tags": [
+      "Arrow",
+      "Ammo"
+    ],
+    "id": "item_iron_bodkin_arrow"
+  },
+  "item_copper_shield": {
+    "name": "Copper Shield",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "offHand": true,
+    "value": 17,
+    "valueSource": "recipe_copper_shield",
+    "autoSyncId": true,
+    "resistances": {
+      "physical": 10
+    },
+    "damageCut": {
+      "magic": 10,
+      "stealth": 10
+    },
+    "tags": [
+      "Armour",
+      "Shield"
+    ],
+    "id": "item_copper_shield"
   }
 }

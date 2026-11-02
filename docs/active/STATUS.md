@@ -5,6 +5,16 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Director, the ledger catches up with the world (T-285, T-281, T-279, T-280; content packs; owner chose 2026-11-02 morning)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| Ledger: main reach reads the world tables (T-285), perks by level band (T-281), Hall pricing (T-279, T-280) | engineer | `fix/ledger-world-reach` (`e3`) | **building** | Mon | |
+| Content packs re-stamped after the owner's Sync: the combat pack (V5) and a fish pack | builder | `content/combat-fish-packs` (`n4`) | **synced** 3e0d5904 (owner confirmed after a missed confirm; id-diff: items +3 arrows and shield, recipes +1, effects +Sunder/Sundering/Flutter −three flat-armour effects (no code names them), Tokens edits only) and the branch merged 448950a8; was: combat 47 entries, fish 2 (Crab: Tropical Fish 25 %, Lobster 10 %; Water Elemental: Salmon 50 %, Swordfish 25 %), built on the combat pack. Director gate against a workspace from today's `data/`: combat PASS (nothing moves, Copper Shield newly reached, 0 problems added, 2 cleared), fish PASS (1 warning: Generous Portions rank 2 payback just over a day). Arrows Parked (no Fletching yet). The branch (ContentRules known-failures emptied) merges with the owner's Sync. T-288 filed (the tool defaulted to the 29 Oct autosave) | Mon | |
+| Owner Sync 7e716add (world pack + Hall stars + Venom): id-diff clean (items +19, recipes +24, Poison → Venom, Tokens 134 = 134, new hallStars.json and world.json, nothing removed). Tests: W6 post-sync patch and render golden committed 08ac4c72; Hall sky/upgrades and the Venom migration test (8 tests in 4 files) with a builder | builder | `fix/post-sync-hall-tests` (`w1`) | first 8 **merged** 2b94dbc9; **round two merged** (main suite: 7229 passed, 1 load flake in `CMSChangePackReview`, passes alone twice, T-289; cycles, build): was 10 tests pinned the old combat content (enemy numbers and moves, the CMS review page, the golden); `main` red in those until it merges | Mon | |
+
+Next: L9 automatic balancing (preview first).
+
 ## Director, the world ledger beside wandering-enemy performance (330 W5 and T-200; owner chose 2026-11-01 evening)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
@@ -106,6 +116,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 **Sat 31 Oct, 01:00–02:15 (director):** engine tickets WORK CHANGED exactly as predicted (S1/S4/S7 same; identity and fidelity hold), acceptance run queued, then merge after `main` is green. Hall H1 same work, calibration ok. World W1 same, W2 same. **Draw regression is real**: alternating runs, `a4a124be` S2 4× workP50 6.2–7.3 ms, `main` 11.5–12.4 ms (bank 6.3–6.7 vs 11.8–13.7): an engineer bisects in `p23b` until 06:45 (`diag/draw-regression`).
 
 ## Summaries
+
+**Mon 2026-11-02, morning: world pack code merged; ledger catch-up chosen.** The owner okayed the world pack's look; W6 code and T-282 merged (main red in 16 CMS round-trip tests until the Sync). Owner now: Restore from Game, review the world pack and the Hall star pack, Sync once. Then: id-diff, post-sync test patch, golden, Venom tests. Now: the ledger catch-up (`e3`).
 
 **Mon 2026-11-02, 04:45: the night's work done.** Merged on the gate: T-200 (wandering enemies cheaper, engine −4 % mean / −10 % p99 on S3, same work) and T-283 (built-node slowdown removed). Engine baseline retaken; the draw baseline failed three times on Chrome's throttling (retry next quiet window). Waiting for the owner: the world pack look and CMS review ([file](eyecheck/2026-11-02_world-pack.md)), the Hall star pack, then one Sync (with T-282). Next after that: T-285, then the next batch proposal.
 

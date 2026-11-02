@@ -55,10 +55,11 @@ describe('The Farming chain in shipped data (7.4)', () => {
             expect(farmland.shop).toEqual({ price: [{ itemId: 'item_oak_wood', quantity: 10 }], section: 'farming' });
         });
 
-        it('offers exactly the six building recipes', () => {
+        it('offers exactly the nine building recipes', () => {
             const pool = recipesForToken(getTokenType('token_farmland'));
             expect(pool.map((r) => r.name).sort()).toEqual([
-                'Build Apple Orchard', 'Build Field', 'Build Fir Forest', 'Build Grapevine', 'Build Herb Garden', 'Build Oak Forest',
+                'Build Apple Orchard', 'Build Birch Forest', 'Build Field', 'Build Fir Forest', 'Build Grapevine', 'Build Herb Garden',
+                'Build Mahogany Forest', 'Build Maple Forest', 'Build Oak Forest',
             ]);
         });
     });

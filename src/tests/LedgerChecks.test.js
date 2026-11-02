@@ -204,10 +204,11 @@ describe('checks on the shipped content (the audit of 2026-10-28)', () => {
         effects: read('effects.json'), starterCamp: read('starterCamp.json'),
     });
 
-    it('finds Iron Ore only on the Volcano map, and none of the loose ends the ledger fix pack closed', () => {
+    it('no longer finds Iron Ore only on the Volcano map, and none of the loose ends the ledger fix pack closed', () => {
         const c = content();
         const findings = runChecks(buildLedger(c), c);
-        expect(on(findings, itemKey('item_iron_ore'), 'fragile')[0].message).toMatch(/^Only from the Volcano Map \(Iron Ore Vein/);
+        // A Fire Elemental Banner builds Ember Vents, whose elementals drop Iron Ore: the map is not its only way.
+        expect(on(findings, itemKey('item_iron_ore'), 'fragile')).toEqual([]);
         // The audit's lone starter tools are made at the Workbench and the Smithy now.
         for (const id of ['item_trap', 'item_copper_sickle', 'item_fishing_rod']) {
             expect(on(findings, itemKey(id), 'tool-single'), id).toEqual([]);

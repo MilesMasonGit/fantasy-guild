@@ -1134,6 +1134,154 @@
     }
   },
   {
+    "id": "recipe_mythril_pickaxe",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Mythril Pickaxe",
+    "skill": "smithing",
+    "levelRequirement": 60,
+    "inputs": [
+      {
+        "itemId": "item_mythril_ingot",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_mythril_pickaxe",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 29000,
+    "xp": 203,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_adamantium_pickaxe",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Adamantium Pickaxe",
+    "skill": "smithing",
+    "levelRequirement": 75,
+    "inputs": [
+      {
+        "itemId": "item_adamantine_ingot",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_adamantium_pickaxe",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 33000,
+    "xp": 726,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_darkmetal_pickaxe",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Darkmetal Pickaxe",
+    "skill": "smithing",
+    "levelRequirement": 90,
+    "inputs": [
+      {
+        "itemId": "item_darkmetal_ingot",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_darkmetal_pickaxe",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 36000,
+    "xp": 2185,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "name": "Copper Shield",
+    "skill": "smithing",
+    "levelRequirement": 6,
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_shield",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 17000,
+    "xp": 2,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    },
+    "id": "recipe_copper_shield"
+  },
+  {
     "name": "Dough",
     "requiresContext": [],
     "inputs": [
@@ -3002,6 +3150,10 @@
       {
         "itemId": "item_stone",
         "quantity": 5
+      },
+      {
+        "itemId": "item_coal_prospecting_map",
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -3425,6 +3577,813 @@
     "outputs": [
       {
         "tokenId": "token_grapevine",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "xp": 40,
+    "foundationKinds": [
+      "farmland"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_wild_hive",
+    "name": "Build Wild Hive",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_bee_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_wild_hive",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_basking_stone",
+    "name": "Build Basking Stone",
+    "skill": "construction",
+    "levelRequirement": 5,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_big_lizard_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_basking_stone",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_cow_pasture",
+    "name": "Build Cow Pasture",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_cow_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_cow_pasture",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_crab_rocks",
+    "name": "Build Crab Rocks",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_crab_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_crab_rocks",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_ember_vents",
+    "name": "Build Ember Vents",
+    "skill": "construction",
+    "levelRequirement": 5,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_fire_elemental_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_ember_vents",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_smoking_crater",
+    "name": "Build Smoking Crater",
+    "skill": "construction",
+    "levelRequirement": 5,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_fire_elemental_chief_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_smoking_crater",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_frog_pond",
+    "name": "Build Frog Pond",
+    "skill": "construction",
+    "levelRequirement": 5,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_frog_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_frog_pond",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_goblin_camp",
+    "name": "Build Goblin Camp",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_goblin_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_goblin_camp",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_chief_tent",
+    "name": "Build Chief's Tent",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_goblin_chief_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_chief_tent",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_slime_pit",
+    "name": "Build Slime Pit",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_greater_slime_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_slime_pit",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_queens_hive",
+    "name": "Build Queen's Hive",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_queen_bee_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_queens_hive",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_sulphur_rocks",
+    "name": "Build Sulphur Rocks",
+    "skill": "construction",
+    "levelRequirement": 5,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_sulphur_lizard_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_sulphur_rocks",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_thorn_thicket",
+    "name": "Build Thorn Thicket",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_thorn_elemental_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_thorn_thicket",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_toxic_pool",
+    "name": "Build Toxic Pool",
+    "skill": "construction",
+    "levelRequirement": 5,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_toxic_frog_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_toxic_pool",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_tide_pool",
+    "name": "Build Tide Pool",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_water_elemental_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_tide_pool",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_wind_stones",
+    "name": "Build Wind Stones",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_wind_elemental_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_wind_stones",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_wolf_den",
+    "name": "Build Wolf Den",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_wolf_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_wolf_den",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_alpha_den",
+    "name": "Build Alpha's Den",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_wolf_alpha_banner",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_alpha_den",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_birch_forest",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Build Birch Forest",
+    "skill": "construction",
+    "levelRequirement": 10,
+    "inputs": [
+      {
+        "itemId": "item_birch_seedling",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_birch_forest",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "xp": 40,
+    "foundationKinds": [
+      "farmland"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_maple_forest",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Build Maple Forest",
+    "skill": "construction",
+    "levelRequirement": 10,
+    "inputs": [
+      {
+        "itemId": "item_maple_seedling",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_maple_forest",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "xp": 40,
+    "foundationKinds": [
+      "farmland"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_mahogany_forest",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Build Mahogany Forest",
+    "skill": "construction",
+    "levelRequirement": 10,
+    "inputs": [
+      {
+        "itemId": "item_mahogany_seedling",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_mahogany_forest",
         "chance": 100,
         "minQty": 1,
         "maxQty": 1,

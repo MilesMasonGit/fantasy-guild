@@ -11,7 +11,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import { SKILLS } from '../config/registries/skillRegistry.js';
-import { enemyProfileOf, enemyDropsOf } from '../config/registries/enemyProfile.js';
+import { enemyProfileOf, enemyDropsOf, enemyFilledStats } from '../config/registries/enemyProfile.js';
 import { getTokenType, registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { expandBearer } from '../systems/effects/effectLibrary.js';
 
@@ -111,9 +111,13 @@ describe('The Combat chain in shipped data (7.7)', () => {
         }
     });
 
-    // Its numbers come from the level table alone: no kinds, no older budget scale.
+    // Its numbers come from the level table alone: no kinds, no older budget scale. Its moves only
+    // name the type each swing hits with.
     it('a Goblin is a plain level 5 enemy with one charge, so a kill clears it and the camp spawns again', () => {
-        expect(goblin.enemy).toEqual({ level: 5, style: 'melee', hostile: true });
+        expect(goblin.enemy).toEqual({
+            level: 5, style: 'melee', hostile: true,
+            moves: [{ name: 'Shiv', damageType: 'stab' }, { name: 'Club', damageType: 'crush' }]
+        });
         expect(goblin.uses).toBe(1);
     });
 
@@ -125,13 +129,19 @@ describe('The Combat chain in shipped data (7.7)', () => {
             { itemId: 'mod_rich_veins', chance: 1, minQty: 1, maxQty: 1 },
             { itemId: 'mod_goblin_camp', chance: 0.5, minQty: 1, maxQty: 1 },
             { itemId: 'mod_buried_copper', chance: 0.25, minQty: 1, maxQty: 1 },
+            { itemId: 'item_goblin_banner', chance: 0.5, minQty: 1, maxQty: 1 },
+            { itemId: 'item_coal_prospecting_map', chance: 3, minQty: 1, maxQty: 1 },
         ]);
     });
 
     // A boss is beaten in one kill and fights only heroes sent at it (never
     // hostile); its typed hit sits one above what its level and kind fill.
-    it('a Chief is a tougher boss: higher level, a Brute, one kill, a typed hit of 4', () => {
-        expect(chief.enemy).toEqual({ level: 20, style: 'melee', kinds: ['brute'], boss: true, hit: 4 });
+    it('a Chief is a tougher boss: higher level, a Brute, one kill, a typed hit of 3', () => {
+        expect(chief.enemy).toEqual({
+            level: 12, style: 'melee', kinds: ['brute'], boss: true, hit: 3,
+            moves: [{ name: 'Cleave', damageType: 'slash' }, { name: 'Bash', damageType: 'crush' }]
+        });
+        expect(chief.enemy.hit).toBe(enemyFilledStats(chief.enemy).hit + 1);
         expect(chief.uses).toBe(1);
         const g = enemyProfileOf(goblin);
         const c = enemyProfileOf(chief);

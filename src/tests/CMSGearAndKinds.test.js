@@ -314,7 +314,7 @@ describe('⭐ the kinds: none, one or two presets', () => {
 
         const files = expectStableRoundTrip();
         const written = files['tokens.json'][cow];
-        expect(written.enemy).toEqual({ level: 1, style: 'melee', kinds: ['brute', 'venomous'], dodge: 5 });
+        expect(written.enemy).toEqual({ ...shipped()['tokens.json'][cow].enemy, kinds: ['brute', 'venomous'], dodge: 5 });
         expect(enemyProfileOf(written)).toMatchObject({ hit: 2, speed: 'slow', dodge: 5, kinds: ['brute', 'venomous'] });
         const before = shipped()['tokens.json'];
         for (const other of Object.keys(before).filter(t => t !== cow)) {

@@ -1,0 +1,3634 @@
+{
+  "constellations": {
+    "forestry": {
+      "id": "forestry",
+      "name": "Forestry",
+      "label": {
+        "x": 2.42,
+        "y": 0
+      },
+      "skill": "forestry"
+    },
+    "mining": {
+      "id": "mining",
+      "name": "Mining",
+      "label": {
+        "x": 2.1,
+        "y": -1.21
+      },
+      "skill": "mining"
+    },
+    "smithing": {
+      "id": "smithing",
+      "name": "Smithing",
+      "label": {
+        "x": 1.4,
+        "y": -2.42
+      },
+      "skill": "smithing"
+    },
+    "fishing": {
+      "id": "fishing",
+      "name": "Fishing",
+      "label": {
+        "x": 2.1,
+        "y": 1.21
+      },
+      "skill": "fishing"
+    },
+    "farming": {
+      "id": "farming",
+      "name": "Farming",
+      "label": {
+        "x": 1.4,
+        "y": 2.42
+      },
+      "skill": "farming"
+    },
+    "cooking": {
+      "id": "cooking",
+      "name": "Cooking",
+      "label": {
+        "x": -1.48,
+        "y": 2.37
+      },
+      "skill": "cooking"
+    },
+    "crafting": {
+      "id": "crafting",
+      "name": "Crafting",
+      "label": {
+        "x": -2.19,
+        "y": 1.02
+      },
+      "skill": "crafting"
+    },
+    "construction": {
+      "id": "construction",
+      "name": "Construction",
+      "label": {
+        "x": -2.19,
+        "y": -1.02
+      },
+      "skill": "construction"
+    },
+    "alchemy": {
+      "id": "alchemy",
+      "name": "Alchemy",
+      "label": {
+        "x": -1.48,
+        "y": -2.37
+      },
+      "skill": "alchemy"
+    }
+  },
+  "stars": {
+    "star_forestry_speed": {
+      "id": "star_forestry_speed",
+      "constellation": "forestry",
+      "name": "Keen Axes",
+      "description": "Forestry work goes faster: −6 % Forestry work time at the first rank, a little more each rank after.",
+      "node": {
+        "x": 1.12,
+        "y": 0
+      },
+      "tag": "below",
+      "links": [
+        "hall"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 61
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_forestry_speed_1_1",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.06,
+                "category": "forestry"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_fir_wood",
+              "quantity": 34
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_forestry_speed_2_2",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.126,
+                "category": "forestry"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_forestry_yield": {
+      "id": "star_forestry_yield",
+      "constellation": "forestry",
+      "name": "Heartwood",
+      "description": "Forestry work brings in more: +7 % Forestry yield at the first rank, a little more each rank after.",
+      "node": {
+        "x": 1.57,
+        "y": 0.24
+      },
+      "tag": "below",
+      "links": [
+        "star_forestry_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 600
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_forestry_yield_1_3",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.07,
+                "category": "forestry"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_fir_wood",
+              "quantity": 130
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_forestry_yield_2_4",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.152,
+                "category": "forestry"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_forestry_xp": {
+      "id": "star_forestry_xp",
+      "constellation": "forestry",
+      "name": "Woodsman’s Lore",
+      "description": "Forestry teaches more: +15 % Forestry XP a rank.",
+      "node": {
+        "x": 1.57,
+        "y": -0.24
+      },
+      "tag": "above",
+      "links": [
+        "star_forestry_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 3200
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_forestry_xp_1_5",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "forestry"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_forestry_regrowth": {
+      "id": "star_forestry_regrowth",
+      "constellation": "forestry",
+      "name": "Green Thumb",
+      "description": "Felled Oak and Fir grow back sooner. −10 % a rank.",
+      "node": {
+        "x": 2.02,
+        "y": 0.24
+      },
+      "tag": "below",
+      "links": [
+        "star_forestry_yield"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 2000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_forestry_regrowth_1_6",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "tag",
+                "value": "Oak"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_forestry_regrowth_1_7",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "tag",
+                "value": "Fir"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_forestry_camp_reach": {
+      "id": "star_forestry_camp_reach",
+      "constellation": "forestry",
+      "name": "Logging Roads",
+      "description": "A Logging Camp hands out work further away. +15 % reach a rank.",
+      "node": {
+        "x": 2.02,
+        "y": -0.24
+      },
+      "tag": "above",
+      "links": [
+        "star_forestry_xp"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 61
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_forestry_camp_reach_1_8",
+              "keyword": "provides",
+              "payload": {
+                "type": "CAMP_REACH",
+                "bucket": "percentage",
+                "value": 0.15
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_logging_camp"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_fir_wood",
+              "quantity": 34
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_forestry_camp_reach_2_9",
+              "keyword": "provides",
+              "payload": {
+                "type": "CAMP_REACH",
+                "bucket": "percentage",
+                "value": 0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_logging_camp"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_mining_speed": {
+      "id": "star_mining_speed",
+      "constellation": "mining",
+      "name": "Quick Picks",
+      "description": "Mining work goes faster: −6 % Mining work time at the first rank, a little more each rank after.",
+      "node": {
+        "x": 0.97,
+        "y": -0.56
+      },
+      "tag": "below",
+      "links": [
+        "hall"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_copper_ore",
+              "quantity": 510
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_mining_speed_1_10",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.06,
+                "category": "mining"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_iron_ore",
+              "quantity": 510
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_mining_speed_2_11",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.126,
+                "category": "mining"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_mining_yield": {
+      "id": "star_mining_yield",
+      "constellation": "mining",
+      "name": "Rich Seams",
+      "description": "Mining work brings in more: +7 % Mining yield at the first rank, a little more each rank after.",
+      "node": {
+        "x": 1.48,
+        "y": -0.58
+      },
+      "tag": "below",
+      "links": [
+        "star_mining_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_copper_ore",
+              "quantity": 1300
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_mining_yield_1_12",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.07,
+                "category": "mining"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_iron_ore",
+              "quantity": 290
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_mining_yield_2_13",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.152,
+                "category": "mining"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_mining_xp": {
+      "id": "star_mining_xp",
+      "constellation": "mining",
+      "name": "Miner’s Lore",
+      "description": "Mining teaches more: +15 % Mining XP a rank.",
+      "node": {
+        "x": 1.24,
+        "y": -0.99
+      },
+      "tag": "above",
+      "links": [
+        "star_mining_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_copper_ore",
+              "quantity": 16000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_mining_xp_1_14",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "mining"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_mining_vein_rest": {
+      "id": "star_mining_vein_rest",
+      "constellation": "mining",
+      "name": "Deep Veins",
+      "description": "An ore vein or outcrop rests for less time before it refills. −10 % a rank.",
+      "node": {
+        "x": 1.87,
+        "y": -0.8
+      },
+      "tag": "below",
+      "links": [
+        "star_mining_yield"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_copper_ore",
+              "quantity": 3100
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_mining_vein_rest_1_15",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "tag",
+                "value": "Ore"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_iron_ore",
+              "quantity": 690
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_mining_vein_rest_2_16",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.2
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "tag",
+                "value": "Ore"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_mining_camp_reach": {
+      "id": "star_mining_camp_reach",
+      "constellation": "mining",
+      "name": "Long Rails",
+      "description": "A Mining Camp hands out work further away. +15 % reach a rank.",
+      "node": {
+        "x": 1.63,
+        "y": -1.22
+      },
+      "tag": "above",
+      "links": [
+        "star_mining_xp"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_copper_ore",
+              "quantity": 510
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_mining_camp_reach_1_17",
+              "keyword": "provides",
+              "payload": {
+                "type": "CAMP_REACH",
+                "bucket": "percentage",
+                "value": 0.15
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_mining_camp"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_iron_ore",
+              "quantity": 510
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_mining_camp_reach_2_18",
+              "keyword": "provides",
+              "payload": {
+                "type": "CAMP_REACH",
+                "bucket": "percentage",
+                "value": 0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_mining_camp"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_smithing_speed": {
+      "id": "star_smithing_speed",
+      "constellation": "smithing",
+      "name": "Hot Forges",
+      "description": "Smithing work goes faster: −6 % Smithing work time at the first rank, a little more each rank after.",
+      "node": {
+        "x": 0.75,
+        "y": -1.3
+      },
+      "tag": "right",
+      "links": [
+        "hall"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 2700
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_smithing_speed_1_19",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.06,
+                "category": "smithing"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 1100
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_smithing_speed_2_20",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.126,
+                "category": "smithing"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_smithing_yield": {
+      "id": "star_smithing_yield",
+      "constellation": "smithing",
+      "name": "Fine Castings",
+      "description": "Smithing work brings in more: +7 % Smithing yield at the first rank, a little more each rank after.",
+      "node": {
+        "x": 1.18,
+        "y": -1.57
+      },
+      "tag": "right",
+      "links": [
+        "star_smithing_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 2800
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_smithing_yield_1_21",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.07,
+                "category": "smithing"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 730
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_smithing_yield_2_22",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.152,
+                "category": "smithing"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_smithing_xp": {
+      "id": "star_smithing_xp",
+      "constellation": "smithing",
+      "name": "Smith’s Lore",
+      "description": "Smithing teaches more: +15 % Smithing XP a rank.",
+      "node": {
+        "x": 0.77,
+        "y": -1.81
+      },
+      "tag": "left",
+      "links": [
+        "star_smithing_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 7100
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_smithing_xp_1_23",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "smithing"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_fishing_speed": {
+      "id": "star_fishing_speed",
+      "constellation": "fishing",
+      "name": "Quick Casts",
+      "description": "Fishing work goes faster: −6 % Fishing work time at the first rank, a little more each rank after.",
+      "node": {
+        "x": 0.97,
+        "y": 0.56
+      },
+      "tag": "below",
+      "links": [
+        "hall"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_raw_shrimp",
+              "quantity": 1000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_fishing_speed_1_24",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.06,
+                "category": "fishing"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 950
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_fishing_speed_2_25",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.126,
+                "category": "fishing"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_fishing_yield": {
+      "id": "star_fishing_yield",
+      "constellation": "fishing",
+      "name": "Full Nets",
+      "description": "Fishing work brings in more: +7 % Fishing yield at the first rank, a little more each rank after.",
+      "node": {
+        "x": 1.24,
+        "y": 0.99
+      },
+      "tag": "below",
+      "links": [
+        "star_fishing_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_raw_shrimp",
+              "quantity": 940
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_fishing_yield_1_26",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.07,
+                "category": "fishing"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 680
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_fishing_yield_2_27",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.152,
+                "category": "fishing"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_fishing_xp": {
+      "id": "star_fishing_xp",
+      "constellation": "fishing",
+      "name": "Angler’s Lore",
+      "description": "Fishing teaches more: +15 % Fishing XP a rank.",
+      "node": {
+        "x": 1.48,
+        "y": 0.58
+      },
+      "tag": "above",
+      "links": [
+        "star_fishing_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_raw_shrimp",
+              "quantity": 6700
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_fishing_xp_1_28",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "fishing"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_fishing_camp_reach": {
+      "id": "star_fishing_camp_reach",
+      "constellation": "fishing",
+      "name": "Long Piers",
+      "description": "A Fishing Hut hands out work further away. +15 % reach a rank.",
+      "node": {
+        "x": 1.87,
+        "y": 0.8
+      },
+      "tag": "above",
+      "links": [
+        "star_fishing_xp"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_raw_shrimp",
+              "quantity": 1000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_fishing_camp_reach_1_29",
+              "keyword": "provides",
+              "payload": {
+                "type": "CAMP_REACH",
+                "bucket": "percentage",
+                "value": 0.15
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_fishing_hut"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 950
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_fishing_camp_reach_2_30",
+              "keyword": "provides",
+              "payload": {
+                "type": "CAMP_REACH",
+                "bucket": "percentage",
+                "value": 0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_fishing_hut"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_farming_speed": {
+      "id": "star_farming_speed",
+      "constellation": "farming",
+      "name": "Busy Hands",
+      "description": "Farming work goes faster: −6 % Farming work time at the first rank, a little more each rank after.",
+      "node": {
+        "x": 0.75,
+        "y": 1.3
+      },
+      "tag": "right",
+      "links": [
+        "hall"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 2700
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_speed_1_31",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.06,
+                "category": "farming"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 4000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_speed_2_32",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.126,
+                "category": "farming"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_grapes",
+              "quantity": 870
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_speed_3_33",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.199,
+                "category": "farming"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_farming_yield": {
+      "id": "star_farming_yield",
+      "constellation": "farming",
+      "name": "Bumper Crops",
+      "description": "Farming work brings in more: +7 % Farming yield at the first rank, a little more each rank after.",
+      "node": {
+        "x": 0.77,
+        "y": 1.81
+      },
+      "tag": "left",
+      "links": [
+        "star_farming_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 2600
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_yield_1_34",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.07,
+                "category": "farming"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 3600
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_yield_2_35",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.152,
+                "category": "farming"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_grapes",
+              "quantity": 710
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_yield_3_36",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.25,
+                "category": "farming"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_farming_xp": {
+      "id": "star_farming_xp",
+      "constellation": "farming",
+      "name": "Farmer’s Almanac",
+      "description": "Farming teaches more: +15 % Farming XP a rank.",
+      "node": {
+        "x": 1.18,
+        "y": 1.57
+      },
+      "tag": "right",
+      "links": [
+        "star_farming_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 21000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_xp_1_37",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "farming"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_farming_refill": {
+      "id": "star_farming_refill",
+      "constellation": "farming",
+      "name": "Orchard Care",
+      "description": "Bushes, fruit trees, the grapevine and the beehive refill sooner. −10 % a rank.",
+      "node": {
+        "x": 0.99,
+        "y": 2.2
+      },
+      "tag": "left",
+      "links": [
+        "star_farming_yield"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 6100
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_refill_1_38",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_redberry_bush"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_1_39",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_blackberry_bush"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_1_40",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_blueberry_bush"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_1_41",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_strawberry_bush"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_1_42",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_apple_tree"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_1_43",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_cherry_tree"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_1_44",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_peach_tree"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_1_45",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_grapevine"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_1_46",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_beehive"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 8900
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_refill_2_47",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.2
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_redberry_bush"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_2_48",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.2
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_blackberry_bush"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_2_49",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.2
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_blueberry_bush"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_2_50",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.2
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_strawberry_bush"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_2_51",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.2
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_apple_tree"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_2_52",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.2
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_cherry_tree"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_2_53",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.2
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_peach_tree"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_2_54",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.2
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_grapevine"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_2_55",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.2
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_beehive"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_grapes",
+              "quantity": 2200
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_refill_3_56",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_redberry_bush"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_3_57",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_blackberry_bush"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_3_58",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_blueberry_bush"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_3_59",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_strawberry_bush"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_3_60",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_apple_tree"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_3_61",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_cherry_tree"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_3_62",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_peach_tree"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_3_63",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_grapevine"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            },
+            {
+              "id": "stm_star_farming_refill_3_64",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_beehive"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_farming_camp_reach": {
+      "id": "star_farming_camp_reach",
+      "constellation": "farming",
+      "name": "Wide Fields",
+      "description": "A Farmstead hands out work further away. +15 % reach a rank.",
+      "node": {
+        "x": 1.41,
+        "y": 1.96
+      },
+      "tag": "right",
+      "links": [
+        "star_farming_xp"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 2700
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_camp_reach_1_65",
+              "keyword": "provides",
+              "payload": {
+                "type": "CAMP_REACH",
+                "bucket": "percentage",
+                "value": 0.15
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_farmstead"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 4000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_camp_reach_2_66",
+              "keyword": "provides",
+              "payload": {
+                "type": "CAMP_REACH",
+                "bucket": "percentage",
+                "value": 0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_farmstead"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_grapes",
+              "quantity": 870
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_farming_camp_reach_3_67",
+              "keyword": "provides",
+              "payload": {
+                "type": "CAMP_REACH",
+                "bucket": "percentage",
+                "value": 0.45
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_farmstead"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_cooking_speed": {
+      "id": "star_cooking_speed",
+      "constellation": "cooking",
+      "name": "Hot Stoves",
+      "description": "Cooking work goes faster: −6 % Cooking work time at the first rank, a little more each rank after.",
+      "node": {
+        "x": -0.79,
+        "y": 1.27
+      },
+      "tag": "left",
+      "links": [
+        "hall"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 3200
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_cooking_speed_1_68",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.06,
+                "category": "cooking"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 4000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_cooking_speed_2_69",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.126,
+                "category": "cooking"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 1000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_cooking_speed_3_70",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.199,
+                "category": "cooking"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_cooking_yield": {
+      "id": "star_cooking_yield",
+      "constellation": "cooking",
+      "name": "Generous Portions",
+      "description": "Cooking work brings in more: +7 % Cooking yield at the first rank, a little more each rank after.",
+      "node": {
+        "x": -1.24,
+        "y": 1.53
+      },
+      "tag": "left",
+      "links": [
+        "star_cooking_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 3000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_cooking_yield_1_71",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.07,
+                "category": "cooking"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 4100
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_cooking_yield_2_72",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.152,
+                "category": "cooking"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 810
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_cooking_yield_3_73",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.25,
+                "category": "cooking"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_cooking_xp": {
+      "id": "star_cooking_xp",
+      "constellation": "cooking",
+      "name": "Family Recipes",
+      "description": "Cooking teaches more: +15 % Cooking XP a rank.",
+      "node": {
+        "x": -0.83,
+        "y": 1.78
+      },
+      "tag": "right",
+      "links": [
+        "star_cooking_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 19000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_cooking_xp_1_74",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "cooking"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_crafting_speed": {
+      "id": "star_crafting_speed",
+      "constellation": "crafting",
+      "name": "Nimble Fingers",
+      "description": "Crafting work goes faster: −6 % Crafting work time at the first rank, a little more each rank after.",
+      "node": {
+        "x": -1.02,
+        "y": 0.47
+      },
+      "tag": "above",
+      "links": [
+        "hall"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 2700
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_crafting_speed_1_75",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.06,
+                "category": "crafting"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 4000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_crafting_speed_2_76",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.126,
+                "category": "crafting"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 880
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_crafting_speed_3_77",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.199,
+                "category": "crafting"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_crafting_yield": {
+      "id": "star_crafting_yield",
+      "constellation": "crafting",
+      "name": "Thrifty Cuts",
+      "description": "Crafting work brings in more: +7 % Crafting yield at the first rank, a little more each rank after.",
+      "node": {
+        "x": -1.52,
+        "y": 0.45
+      },
+      "tag": "above",
+      "links": [
+        "star_crafting_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 3000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_crafting_yield_1_78",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.07,
+                "category": "crafting"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 4100
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_crafting_yield_2_79",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.152,
+                "category": "crafting"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 820
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_crafting_yield_3_80",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.25,
+                "category": "crafting"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_crafting_xp": {
+      "id": "star_crafting_xp",
+      "constellation": "crafting",
+      "name": "Pattern Book",
+      "description": "Crafting teaches more: +15 % Crafting XP a rank.",
+      "node": {
+        "x": -1.32,
+        "y": 0.88
+      },
+      "tag": "below",
+      "links": [
+        "star_crafting_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 21000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_crafting_xp_1_81",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "crafting"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_construction_speed": {
+      "id": "star_construction_speed",
+      "constellation": "construction",
+      "name": "Swift Builders",
+      "description": "Construction work goes faster: −6 % Construction work time at the first rank, a little more each rank after.",
+      "node": {
+        "x": -1.02,
+        "y": -0.47
+      },
+      "tag": "above",
+      "links": [
+        "hall"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 2700
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_construction_speed_1_82",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.06,
+                "category": "construction"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 730
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_construction_speed_2_83",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.126,
+                "category": "construction"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_construction_xp": {
+      "id": "star_construction_xp",
+      "constellation": "construction",
+      "name": "Builder’s Lore",
+      "description": "Construction teaches more: +15 % Construction XP a rank.",
+      "node": {
+        "x": -1.42,
+        "y": -0.66
+      },
+      "tag": "above",
+      "links": [
+        "star_construction_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 7200
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_construction_xp_1_84",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "construction"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 1700
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_construction_xp_2_85",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.3,
+                "category": "construction"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_alchemy_speed": {
+      "id": "star_alchemy_speed",
+      "constellation": "alchemy",
+      "name": "Steady Stills",
+      "description": "Alchemy work goes faster: −6 % Alchemy work time at the first rank, a little more each rank after.",
+      "node": {
+        "x": -0.79,
+        "y": -1.27
+      },
+      "tag": "left",
+      "links": [
+        "hall"
+      ],
+      "ranks": [
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_lavender",
+              "quantity": 32
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_alchemy_speed_1_86",
+              "keyword": "provides",
+              "payload": {
+                "type": "WORK_TIME",
+                "bucket": "percentage",
+                "value": -0.06,
+                "category": "alchemy"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_alchemy_yield": {
+      "id": "star_alchemy_yield",
+      "constellation": "alchemy",
+      "name": "Strong Brews",
+      "description": "Alchemy work brings in more: +7 % Alchemy yield at the first rank, a little more each rank after.",
+      "node": {
+        "x": -0.83,
+        "y": -1.78
+      },
+      "tag": "right",
+      "links": [
+        "star_alchemy_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_lavender",
+              "quantity": 320
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_alchemy_yield_1_87",
+              "keyword": "provides",
+              "payload": {
+                "type": "YIELD",
+                "bucket": "percentage",
+                "value": 0.07,
+                "category": "alchemy"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_alchemy_xp": {
+      "id": "star_alchemy_xp",
+      "constellation": "alchemy",
+      "name": "Alchemist’s Notes",
+      "description": "Alchemy teaches more: +15 % Alchemy XP a rank.",
+      "node": {
+        "x": -1.24,
+        "y": -1.53
+      },
+      "tag": "left",
+      "links": [
+        "star_alchemy_speed"
+      ],
+      "ranks": [
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_lavender",
+              "quantity": 730
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_alchemy_xp_1_88",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "alchemy"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_alchemy_herb_refill": {
+      "id": "star_alchemy_herb_refill",
+      "constellation": "alchemy",
+      "name": "Wild Herbs",
+      "description": "Wild Lavender refills sooner. −10 % a rank.",
+      "node": {
+        "x": -1.07,
+        "y": -2.16
+      },
+      "tag": "right",
+      "links": [
+        "star_alchemy_yield"
+      ],
+      "ranks": [
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_lavender",
+              "quantity": 470
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_alchemy_herb_refill_1_89",
+              "keyword": "provides",
+              "payload": {
+                "type": "GROW_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "id",
+                "value": "token_wild_lavender"
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_infirmary": {
+      "id": "star_infirmary",
+      "constellation": "hearth",
+      "name": "Infirmary",
+      "description": "A wounded hero recovers sooner. −10 % wound time a rank.",
+      "node": {
+        "x": 0.28,
+        "y": -0.98
+      },
+      "tag": "right",
+      "links": [
+        "roster_size"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_raw_shrimp",
+              "quantity": 940
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_infirmary_1_90",
+              "keyword": "provides",
+              "payload": {
+                "type": "WOUND_TIME",
+                "bucket": "percentage",
+                "value": -0.1
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 4000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_infirmary_2_91",
+              "keyword": "provides",
+              "payload": {
+                "type": "WOUND_TIME",
+                "bucket": "percentage",
+                "value": -0.2
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 820
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_infirmary_3_92",
+              "keyword": "provides",
+              "payload": {
+                "type": "WOUND_TIME",
+                "bucket": "percentage",
+                "value": -0.3
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_larder": {
+      "id": "star_larder",
+      "constellation": "hearth",
+      "name": "Larder",
+      "description": "Every hero may carry a second Food.",
+      "node": {
+        "x": -0.28,
+        "y": -0.98
+      },
+      "tag": "left",
+      "links": [
+        "roster_size"
+      ],
+      "ranks": [
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 4000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_larder_1_93",
+              "keyword": "provides",
+              "payload": {
+                "type": "LOADOUT_SLOTS",
+                "bucket": "flat",
+                "value": 1,
+                "category": "food"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_trinket_case": {
+      "id": "star_trinket_case",
+      "constellation": "hearth",
+      "name": "Trinket Case",
+      "description": "Every hero may wear one more Trinket.",
+      "node": {
+        "x": 0,
+        "y": -1.25
+      },
+      "tag": "above",
+      "links": [
+        "star_larder",
+        "star_infirmary"
+      ],
+      "ranks": [
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 820
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_trinket_case_1_94",
+              "keyword": "provides",
+              "payload": {
+                "type": "LOADOUT_SLOTS",
+                "bucket": "flat",
+                "value": 1,
+                "category": "trinket"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_well_oak_wood": {
+      "id": "star_well_oak_wood",
+      "constellation": "well",
+      "name": "Woodpile",
+      "description": "The Guild Hall draws Oak Wood every lap, from 2 at the first rank. No hero needed.",
+      "node": {
+        "x": -0.25,
+        "y": 1
+      },
+      "tag": "left",
+      "links": [
+        "wishing_well"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_seedling",
+              "quantity": 76
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 3400
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 5
+            }
+          ]
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_fir_wood",
+              "quantity": 160
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 8
+            }
+          ]
+        }
+      ]
+    },
+    "star_well_copper_ore": {
+      "id": "star_well_copper_ore",
+      "constellation": "well",
+      "name": "Copper Spring",
+      "description": "The Guild Hall draws Copper Ore every lap, from 8 at the first rank. No hero needed.",
+      "node": {
+        "x": 0.25,
+        "y": 1
+      },
+      "tag": "right",
+      "links": [
+        "wishing_well"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_stone",
+              "quantity": 2200
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_copper_ore",
+              "quantity": 8
+            }
+          ]
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 4100
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_copper_ore",
+              "quantity": 17
+            }
+          ]
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_iron_ore",
+              "quantity": 580
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_copper_ore",
+              "quantity": 27
+            }
+          ]
+        }
+      ]
+    },
+    "star_well_stone": {
+      "id": "star_well_stone",
+      "constellation": "well",
+      "name": "Rubble Heap",
+      "description": "The Guild Hall draws Stone every lap, from 9 at the first rank. No hero needed.",
+      "node": {
+        "x": -0.25,
+        "y": 1.3
+      },
+      "tag": "left",
+      "links": [
+        "star_well_oak_wood"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_copper_ore",
+              "quantity": 2700
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_stone",
+              "quantity": 9
+            }
+          ]
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 4700
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_stone",
+              "quantity": 19
+            }
+          ]
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_iron_ore",
+              "quantity": 660
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_stone",
+              "quantity": 30
+            }
+          ]
+        }
+      ]
+    },
+    "star_well_coal": {
+      "id": "star_well_coal",
+      "constellation": "well",
+      "name": "Coal Seam",
+      "description": "The Guild Hall draws Coal every lap, from 7 at the first rank. No hero needed.",
+      "node": {
+        "x": 0.25,
+        "y": 1.3
+      },
+      "tag": "right",
+      "links": [
+        "star_well_copper_ore"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_copper_ore",
+              "quantity": 2200
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_coal",
+              "quantity": 7
+            }
+          ]
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 4000
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_coal",
+              "quantity": 15
+            }
+          ]
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_iron_ore",
+              "quantity": 580
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_coal",
+              "quantity": 24
+            }
+          ]
+        }
+      ]
+    },
+    "star_well_raw_shrimp": {
+      "id": "star_well_raw_shrimp",
+      "constellation": "well",
+      "name": "Shrimp Pool",
+      "description": "The Guild Hall draws Raw Shrimp every lap, from 9 at the first rank. No hero needed.",
+      "node": {
+        "x": -0.25,
+        "y": 1.6
+      },
+      "tag": "left",
+      "links": [
+        "star_well_stone"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_tropical_fish",
+              "quantity": 2200
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_raw_shrimp",
+              "quantity": 9
+            }
+          ]
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 11000
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_raw_shrimp",
+              "quantity": 19
+            }
+          ]
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 2200
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_raw_shrimp",
+              "quantity": 30
+            }
+          ]
+        }
+      ]
+    },
+    "star_well_iron_ore": {
+      "id": "star_well_iron_ore",
+      "constellation": "well",
+      "name": "Iron Spring",
+      "description": "The Guild Hall draws Iron Ore every lap, from 3 at the first rank. No hero needed.",
+      "node": {
+        "x": 0.25,
+        "y": 1.6
+      },
+      "tag": "right",
+      "links": [
+        "star_well_coal"
+      ],
+      "ranks": [
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 1200
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_iron_ore",
+              "quantity": 3
+            }
+          ]
+        }
+      ]
+    },
+    "star_well_fir_wood": {
+      "id": "star_well_fir_wood",
+      "constellation": "well",
+      "name": "Fir Woodpile",
+      "description": "The Guild Hall draws Fir Wood every lap, from 1 at the first rank. No hero needed.",
+      "node": {
+        "x": -0.25,
+        "y": 1.9
+      },
+      "tag": "left",
+      "links": [
+        "star_well_raw_shrimp"
+      ],
+      "ranks": [
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_fir_seedling",
+              "quantity": 38
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_fir_wood",
+              "quantity": 1
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
