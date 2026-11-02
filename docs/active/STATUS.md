@@ -10,7 +10,8 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | Ledger: main reach reads the world tables (T-285), perks by level band (T-281), Hall pricing (T-279, T-280) | engineer | `fix/ledger-world-reach` (`e3`) | **building** | Mon | |
-| Content packs re-stamped after the owner's Sync: the combat pack (V5, waiting since 30 Oct), a fish pack (four fish without a tool-free source) | builder | — | queued for after the owner's Sync | Mon | |
+| Content packs re-stamped after the owner's Sync: the combat pack (V5, waiting since 30 Oct), a fish pack (four fish without a tool-free source) | builder | `content/combat-fish-packs` (`n4`) | **building** | Mon | |
+| Owner Sync 7e716add (world pack + Hall stars + Venom): id-diff clean (items +19, recipes +24, Poison → Venom, Tokens 134 = 134, new hallStars.json and world.json, nothing removed). Tests: W6 post-sync patch and render golden committed 08ac4c72; Hall sky/upgrades and the Venom migration test (8 tests in 4 files) with a builder | builder | `fix/post-sync-hall-tests` (`w1`) | **building**; `main` red in those 8 tests until it merges | Mon | |
 
 Next: L9 automatic balancing (preview first).
 
