@@ -86,6 +86,13 @@ describe('what the preview never does', () => {
         expect(r.after.stages).toEqual(r.before.stages);
     });
 
+    it('cuts a long wait for one unlock even when its stage is on its budget', () => {
+        const r = proposeBalance(balanceContent(), { stages: [{ tier: 0, budgetMinutes: 600 }] });
+        expect(r.before.unlockWalls.map(u => u.key)).toContain('token:token_statue');
+        expect(proposalOf(r, 'token:token_statue', 'shop.price.0.quantity')?.to).toBeLessThan(5000);
+        expect(r.after.unlockWalls.map(u => u.key)).not.toContain('token:token_statue');
+    });
+
     it('never proposes a negative, fractional or absurd number, even for a source thousands of times too slow', () => {
         const c = balanceContent();
         // One Herb an hour: Alchemy about 1600 times slower than the curve.

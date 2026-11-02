@@ -72,12 +72,13 @@ export function balanceContent() {
 }
 
 /**
- * A calm world: the same camp with nothing off its pace. Alchemy teaches as fast as Forestry, no
- * Elixir, no Statue, no Grove and no Star Vein.
+ * A calm world: the same camp with nothing off its pace. Alchemy teaches as fast as Forestry, both a
+ * little faster than the curve but within its tolerance; no Elixir, no Statue, no Grove and no Star Vein.
  */
 export function calmContent() {
     const c = balanceContent();
-    c.tokens.token_herbs.config.xp = 5;
+    // 1800 XP an hour, as the Oak's, in whole numbers a nudge would change: 12 XP every 24 s.
+    for (const id of ['token_oak', 'token_herbs']) Object.assign(c.tokens[id].config, { xp: 12, cycleTimeMs: 24000 });
     delete c.items.item_elixir;
     delete c.items.item_star_ore;
     delete c.tokens.token_statue;

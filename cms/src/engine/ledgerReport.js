@@ -6,6 +6,7 @@ import { buildPace } from '../../../src/systems/progression/ledger/pace.js';
 import { calibrationFindings } from './calibrationStatus.js';
 import { workspaceOriginFindings, baseWorldTables } from './ledgerWorld.js';
 import { plannedTables } from '../../../src/systems/progression/ledger/world.js';
+import { economyFindings } from '../../../src/systems/progression/ledger/economy.js';
 import { SKILLS, expandBearer, auditLifecycleBlocks, findUnknownRefs, toolFindings } from '../utils/constants';
 
 /**
@@ -111,8 +112,8 @@ export function workspacePace(state = {}) {
 
 /**
  * The ledger, its pace (the rate calculator at each profile, `pace.js`) and every check over the
- * workspace, the pacing group, the calibration's state and the world map's seed-free check (wild
- * origins no wedge places) included: `{ ledger, pace, findings }`.
+ * workspace, the pacing group, the economy group, the calibration's state and the world map's
+ * seed-free check (wild origins no wedge places) included: `{ ledger, pace, findings }`.
  * @param {{ simRows?: object[], pace?: boolean }} options  the last Recalculate's rows, for the pricing
  *   findings; `pace: false` leaves the pace out (it is most of the time)
  */
@@ -123,7 +124,7 @@ export function workspaceReport(state = {}, { simRows = [], pace: withPace = tru
     const extra = [
         ...gameRuleFindings(state), ...pricingFindings(simRows, state),
         ...(pace ? pace.findings() : []), ...calibrationFindings(),
-        ...workspaceOriginFindings(state, ledger),
+        ...workspaceOriginFindings(state, ledger), ...economyFindings(ledger, content, { book: pace?.book }),
     ];
     const findings = runChecks(ledger, content, { extra });
     return { ledger, pace, findings };

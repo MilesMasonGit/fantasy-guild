@@ -26,6 +26,8 @@ export { isOneOff };
  *
  * - **D. Pacing**: worked out by the rate calculator (`pace.js`) and handed in as `extra`, with the
  *   calibration's own finding (`calibration.js`); their words are here so every list reads one table.
+ * - **E. Economy**: one-source hubs, stocks with no sink, spawner upkeep, value per effort, worked out
+ *   in `economy.js` and handed in as `extra`.
  * - **F. World map**: worked out on generated worlds (`world.js`); the one that needs no world (a
  *   wild origin no wedge places) is handed in as `extra`, the rest are the World plan's.
  *
@@ -72,6 +74,10 @@ export const CHECKS = Object.freeze({
     'boost-target': { group: 'D', severity: SEVERITY.WARN, label: 'A boost over its target strength' },
     unmodelled: { group: 'D', severity: SEVERITY.INFO, label: 'A factor the calculator cannot read' },
     'calibration-stale': { group: 'D', severity: SEVERITY.WARN, label: 'The calculator needs calibrating' },
+    'hub-one-source': { group: 'E', severity: SEVERITY.WARN, label: 'A hub with one source' },
+    'no-sink': { group: 'E', severity: SEVERITY.INFO, label: 'A stock with no sink' },
+    'spawner-upkeep': { group: 'E', severity: SEVERITY.WARN, label: 'Spawner upkeep above what it makes' },
+    'value-effort': { group: 'E', severity: SEVERITY.INFO, label: 'Value per effort far off the norm' },
     'world-price-ring': { group: 'F', severity: SEVERITY.WARN, label: 'A world cell asks for a material of its own ring' },
     'world-key-reach': { group: 'F', severity: SEVERITY.WARN, label: 'A key material not a step from every frontier' },
     'world-coverage': { group: 'F', severity: SEVERITY.WARN, label: 'Not covered by the inner rings' },
@@ -80,7 +86,7 @@ export const CHECKS = Object.freeze({
     'world-rule': { group: 'F', severity: SEVERITY.WARN, label: 'Breaks another rule of the world' },
 });
 
-export const CHECK_GROUP_TEXT = Object.freeze({ A: 'Integrity', B: 'Plan against data', C: 'Luck and access', D: 'Pacing', F: 'World map' });
+export const CHECK_GROUP_TEXT = Object.freeze({ A: 'Integrity', B: 'Plan against data', C: 'Luck and access', D: 'Pacing', E: 'Economy', F: 'World map' });
 export const SEVERITY_TEXT = Object.freeze({ block: 'Block', warn: 'Warn', info: 'Info' });
 
 /** Item types a player uses up or wears: one nothing else spends is still used. */
