@@ -660,7 +660,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const off = minutes / stage.budgetMinutes - 1;
             if (Math.abs(off) * 100 <= settings.tolerancePct) continue;
             const slow = s.slowest.slice(0, 3).map(x => `${nameOf(x.key)} (${PACE_TEXT.hours(x.hours)})`).join(', ');
-            const floor = s.complete && !s.untimed.length ? '' : ` A floor: ${s.untimed.length} entr${s.untimed.length === 1 ? 'y has' : 'ies have'} no time and some steps are not timed.`;
+            const untimed = s.untimed.length ? ` ${s.untimed.length} entr${s.untimed.length === 1 ? 'y has' : 'ies have'} no time` : '';
+            const steps = s.complete ? '' : `${untimed ? ' and' : ''} some steps are not timed`;
+            const floor = untimed || steps ? ` A floor:${untimed}${steps || ' '}`.trimEnd() + '.' : '';
             add('stage-budget', `stage:${stage.tier}`, `${tierLabel(stage.tier)} is done ${PACE_TEXT.hours(s.hours)} into a new game at Typical, ${off > 0 ? `${Math.round(off * 100)} % over` : `${Math.round(-off * 100)} % under`} its budget of ${formatMinutes(stage.budgetMinutes)} (±${settings.tolerancePct} %).${slow ? ` Slowest: ${slow}.` : ''}${floor}`, {
                 name: tierLabel(stage.tier), related: s.slowest.map(x => x.key)
             });

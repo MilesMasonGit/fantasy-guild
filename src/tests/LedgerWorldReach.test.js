@@ -173,6 +173,18 @@ describe('the pace and the World plan read it', () => {
         expect(path.steps.some(s => s.waitsOn?.skill === 'mining' && s.waitsOn.level === 20)).toBe(true);
     });
 
+    it('a fighting style a cell asks (Magic for Arcane) is not timed: the path is a floor, not never', () => {
+        const ws = worldWorkspace();
+        const content = withTables(ws);
+        const pace = buildPace(content, buildLedger(content), null);
+        const path = pace.pathOf(tokenKey('token_arcane_1'), PROFILE.TYPICAL);
+        expect(pace.pathOf(wedgeKey('arcane', 1), PROFILE.TYPICAL).gates).toEqual([{ skill: 'magic', level: 2, hours: null }]);
+        expect(Number.isFinite(path.hours)).toBe(true);
+        expect(path.complete).toBe(false);
+        // No level of it is asked of the track: no wall says it never levels.
+        expect(pace.trackOf('magic').asks).toEqual([]);
+    });
+
     it('the World plan finds the same with the main ledger handed in, and still tells what the maps lost', () => {
         const ws = worldWorkspace();
         const tables = tablesWith({ kits: [{ ...WORLD_FIXTURE_RAW.kits[0], bossCamps: [] }], arrival: { ...WORLD_FIXTURE_RAW.arrival, 3: { count: [3, 3], enemies: [{ id: 'token_goblin' }] } } });
