@@ -93,13 +93,19 @@ describe('⭐ the Starter Camp\'s pond', () => {
         expect(plan.palette[plan.terrainAt[Math.floor(y / 2) * plan.width + Math.floor(x / 2)]]).toBe('water:lake');
     });
 
-    it('is the same for the same camp, and leaves a camp with nowhere to put it all meadow', () => {
+    it('is the same for the same camp, and leaves a camp with nowhere to put it without one', () => {
         const standing = StarterCamp.placementsOf(StarterCamp.builtInCamp());
         expect(StarterCamp.starterCampTerrain(standing, MAT, 1)).toEqual(StarterCamp.starterCampTerrain(standing, MAT, 1));
-        // Tokens all round the Hall, everywhere a pond could go.
+        // Tokens all round the Hall, everywhere a pond could go. (A mine that stands on Stone still
+        // gets its Stone patch: `StarterCampStone.test.js`.)
         const crowded = [...standing];
         for (let y = 100; y < MAT.h; y += 150) for (let x = 100; x < MAT.w; x += 150) crowded.push({ typeId: 'token_oak_tree', x, y });
-        expect(StarterCamp.starterCampTerrain(crowded, MAT, 1)).toBeNull();
+        const terrain = StarterCamp.starterCampTerrain(crowded, MAT, 1);
+        expect(terrain?.water ?? null).toBeNull();
+        if (terrain) {
+            const map = decodeTerrain(terrain);
+            expect([...map.cells].filter(i => map.legend[i] === TERRAIN.WATER)).toEqual([]);
+        }
     });
 
     it('a Starter Camp made without a camp (an older save, a test board) stays all meadow', () => {

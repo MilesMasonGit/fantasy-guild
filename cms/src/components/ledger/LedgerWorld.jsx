@@ -423,6 +423,11 @@ function CellPanel({ plan, context, cell, onOpen, onPick }) {
           <p className="text-gray-500">
             {plural(mat.nodes.reduce((n, x) => n + x.count, 0), 'node')}, {plural(mat.camps.reduce((n, x) => n + x.count, 0), 'camp')}{mat.stone.outcrops ? `, ${plural(mat.stone.outcrops, 'Stone outcrop')}` : ''}{mat.rare ? `; rare: ${context.nameOf(tokenKey(mat.rare))}` : ''}.
           </p>
+          {mat.camps.length > 0 && (
+            <p className="text-gray-400" data-cell-camps>
+              Camps: {mat.camps.map((c) => `${c.count > 1 ? `${c.count} × ` : ''}${context.nameOf(tokenKey(c.typeId))}${(cell.camps || []).includes(c.typeId) ? ' (guaranteed)' : ''}`).join(', ')}
+            </p>
+          )}
         </div>
       )}
 

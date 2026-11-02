@@ -16,7 +16,7 @@ Design: `docs/active/concept_cms_agent_authoring.md`. Code: `cms/src/engine/chan
 The owner's unsynced work is in the newest **`cms/backups/autosave_*.json`** (the CMS
 writes one every few minutes while they edit, keeping the last five). Read your
 "before" values from there, not from `data/`, so you see what the owner sees. Its shape:
-`{ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars }`; maps are items with
+`{ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, world }`; maps are items with
 `type: "map"` or `"modifier"`; recipes sit in `recipePools[skill]`, each with an `id`.
 
 ## The file
@@ -66,7 +66,7 @@ One JSON file per pack, named after its id: `cms/incoming/<id>.json`.
     its `value.type` is `map` or `modifier`; a plain item must not be one).
     Or `starterCamp`: the Starter Camp, one record (see below). Or `skillPerks`: one skill's
     milestone perk table (see below). Or `hallStar` / `hallConstellation`: a Guild Hall star or
-    constellation (see below).
+    constellation (see below). Or `world`: the world tables, one record (see below).
   - **`id`**: the entity's id. For a recipe, its `id` field (recipes live in pools).
   - **`value`** (create, edit): the entity's **whole** new record, as it sits in the
     workspace. An edit replaces the record, so copy the current one and change it.
@@ -87,6 +87,16 @@ is the whole camp in the shape of `src/config/starterCampShape.js` (the autosave
 points in mat units on the mat it was saved from, no `id`. Copy the current one and change it; the
 review lists the Tokens added, moved and removed and the Bank lines that change, and the owner can
 open the Starter Camp page to tweak it before finishing.
+
+### The world tables
+
+One entry, `"kind": "world"`, `"id": "world"`, `create` (only when the workspace has never held
+tables) or `edit`; never `delete`. Its `value` is the whole record in the shape of
+`src/config/worldTablesShape.js`, no `id` and no `plan`; the CMS refuses tables that cannot be
+generated from (six lines with distinct ids). Copy the current record and change it. The review
+lists the origins and guaranteed camps (`camps`, per strict ring) in and out per line and ring, then
+each other part that changed; the Ledger's World page draws the world they make. Sync writes them to
+`data/world.json` as they are; while the workspace holds none the game generates from its placeholder.
 
 ### A skill's perks
 
