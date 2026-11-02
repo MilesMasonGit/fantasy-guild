@@ -181,16 +181,6 @@ export function standsNearOf(typeId) {
     return ids.length ? ids : NOTHING_NEAR;
 }
 
-/**
- * How much longer a built copy of this type takes over its clocks than a wild one, as a factor (1:
- * the same): `builtSlowerPct` 50 makes a built Forest spawn every 1.5 intervals. A wild node and a
- * built creature camp author none.
- */
-export function builtSlowdownOf(def) {
-    const pct = Number(def?.builtSlowerPct);
-    return Number.isFinite(pct) && pct > 0 ? 1 + pct / 100 : 1;
-}
-
 /** A Token's display name, falling back to its id so the UI never renders blank. */
 export function tokenName(typeId) {
     return getTokenType(typeId)?.name || typeId || 'Unknown Token';

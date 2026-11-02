@@ -259,14 +259,19 @@ export function eachMoveSince(since, fn) {
  */
 function afterPointChange(b, instance) {
     bumpLayout(b);
+    const id = instance.id;
     for (const claim of runtimeOf(b).claims.values()) {
-        if (claim.instanceId === instance.id) {
+        if (claim.instanceId === id) {
             claim.x = instance.x;
             claim.y = instance.y;
         }
     }
-    for (const flag of Object.values(b.flags || {})) {
-        if (flag?.pinnedTo === instance.id) {
+    // Keyed, not `Object.values`: a walking enemy steps every tick, and a list of every flag for
+    // each step was garbage for nothing.
+    const flags = b.flags;
+    for (const heroId in flags) {
+        const flag = flags[heroId];
+        if (flag?.pinnedTo === id) {
             flag.x = instance.x;
             flag.y = instance.y;
         }
@@ -533,6 +538,18 @@ export function forgetWorkClaim(heroId) {
 /** Every saved work note, as `[heroId, { instanceId, side }]`. */
 export function savedWorkClaims() {
     return Object.entries(board()?.workClaims || {});
+}
+
+/**
+ * Every Token instance id some hero's flag has claimed, as a new Set: {@link heroOfInstance}'s
+ * question for many Tokens at once, for a caller that asks it of every enemy in a tick.
+ */
+export function claimedInstanceIds() {
+    const out = new Set();
+    const rt = flagRuntime();
+    if (!rt) return out;
+    for (const claim of rt.claims.values()) if (claim.instanceId) out.add(claim.instanceId);
+    return out;
 }
 
 /** The hero whose flag has claimed Token instance `instanceId`, or null. */

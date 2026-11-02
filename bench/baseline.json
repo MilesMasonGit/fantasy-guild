@@ -1,9 +1,9 @@
 {
   "meta": {
-    "commit": "a4a124be",
+    "commit": "377d05f8",
     "branch": "HEAD",
     "dirty": false,
-    "date": "2026-10-29T08:30:02.134Z",
+    "date": "2026-11-02T09:00:04.115Z",
     "node": "v24.11.1",
     "machine": "DESKTOP-IEM8MOS",
     "cpu": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
@@ -21,483 +21,12 @@
       "seed": 1,
       "acceptWorkChange": null
     },
-    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline",
-    "workChanges": [
-      {
-        "ticket": "brief260-O1-O2",
-        "commit": "4fd78ce5",
-        "branch": "feat/hero-orders-flag",
-        "dirty": false,
-        "date": "2026-10-29T20:30:24.538Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S1": [
-            "heroHash"
-          ],
-          "S2": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S3": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S5": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S6": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles",
-            "depleted"
-          ],
-          "S8L": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles",
-            "depleted"
-          ],
-          "S8F": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles",
-            "depleted"
-          ]
-        }
-      },
-      {
-        "ticket": "T-264",
-        "commit": "fff7a2ae",
-        "branch": "fix/frozen-goblins",
-        "dirty": false,
-        "date": "2026-10-29T20:47:03.470Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S2": [
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S3": [
-            "tokens",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S5": [
-            "bankItems",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S6": [
-            "tokensHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8": [
-            "tokensHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles"
-          ],
-          "S8L": [
-            "tokensHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles"
-          ],
-          "S8F": [
-            "tokensHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles"
-          ]
-        }
-      },
-      {
-        "ticket": "brief270-K1",
-        "commit": "3db1e1c7",
-        "branch": "feat/classless-k1",
-        "dirty": false,
-        "date": "2026-10-30T08:19:16.231Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S1": [
-            "heroHash"
-          ],
-          "S2": [
-            "heroHash"
-          ],
-          "S3": [
-            "heroHash"
-          ],
-          "S5": [
-            "heroHash"
-          ],
-          "S6": [
-            "heroHash"
-          ],
-          "S7": [
-            "heroHash"
-          ],
-          "S8": [
-            "heroHash"
-          ],
-          "S8L": [
-            "heroHash"
-          ],
-          "S8F": [
-            "heroHash"
-          ]
-        }
-      },
-      {
-        "ticket": "T-266-T-273-T-248-T-277",
-        "commit": "0e12bc23",
-        "branch": "fix/engine-tickets",
-        "dirty": false,
-        "date": "2026-10-31T09:14:42.554Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S2": [
-            "tokens",
-            "bankItems",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S3": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S5": [
-            "tokens",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S6": [
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8": [
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles",
-            "depleted"
-          ],
-          "S8L": [
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles",
-            "depleted"
-          ],
-          "S8F": [
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles",
-            "depleted"
-          ]
-        }
-      },
-      {
-        "ticket": "perks-sync-rest-carry",
-        "commit": "92115002",
-        "branch": "fix/content-tests-sync",
-        "dirty": false,
-        "date": "2026-10-31T12:11:55.177Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S1": [
-            "tokensHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S2": [
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S3": [
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S5": [
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S6": [
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S7": [
-            "tokensHash"
-          ],
-          "S8": [
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles",
-            "depleted"
-          ],
-          "S8L": [
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles",
-            "depleted"
-          ],
-          "S8F": [
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles",
-            "depleted"
-          ]
-        }
-      },
-      {
-        "ticket": "s2-fights",
-        "commit": "e93b7423",
-        "branch": "bench/s2-fights",
-        "dirty": false,
-        "date": "2026-11-01T17:11:35.373Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S2": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S3": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S5": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S6": [
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8": [
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles",
-            "depleted"
-          ],
-          "S8L": [
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles",
-            "depleted"
-          ],
-          "S8F": [
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles",
-            "depleted"
-          ]
-        }
-      }
-    ]
+    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline"
   },
   "scenarios": {
     "S1": {
-      "p50": 0.03759999999988395,
-      "p99": 0.09969999999998436,
+      "p50": 0.04640000000017608,
+      "p99": 0.18209999999999127,
       "fingerprint": {
         "tokens": 9,
         "uses": 22942,
@@ -517,8 +46,8 @@
       }
     },
     "S2": {
-      "p50": 0.2950999999998203,
-      "p99": 0.6475000000000364,
+      "p50": 0.33989999999994325,
+      "p99": 0.8366000000000895,
       "fingerprint": {
         "tokens": 103,
         "uses": 124859,
@@ -538,8 +67,8 @@
       }
     },
     "S3": {
-      "p50": 0.7514999999998508,
-      "p99": 1.9230000000002292,
+      "p50": 0.8442000000000007,
+      "p99": 2.0446999999999207,
       "fingerprint": {
         "tokens": 309,
         "uses": 706557,
@@ -559,10 +88,10 @@
       }
     },
     "S4": {
-      "arrivalsWorst": 17.16119999999978,
-      "landedP50": 0.4614000000001397,
-      "refusedWorst": 1.2397000000000844,
-      "shrinkMs": 52.85649999999987,
+      "arrivalsWorst": 13.604599999999664,
+      "landedP50": 0.4424000000003616,
+      "refusedWorst": 1.4661000000000968,
+      "shrinkMs": 51.922399999999925,
       "fingerprint": {
         "tokens": 135,
         "uses": 181760,
@@ -593,8 +122,8 @@
       }
     },
     "S5": {
-      "p50": 0.3180999999999585,
-      "p99": 0.9156999999995605,
+      "p50": 0.36389999999983047,
+      "p99": 0.9319000000000415,
       "fingerprint": {
         "tokens": 105,
         "uses": 124986,
@@ -614,8 +143,8 @@
       }
     },
     "S6": {
-      "p50": 0.2878000000000611,
-      "p99": 0.5981999999994514,
+      "p50": 0.34540000000015425,
+      "p99": 0.7372999999997774,
       "fingerprint": {
         "tokens": 109,
         "uses": 124128,
@@ -636,8 +165,8 @@
       }
     },
     "S7": {
-      "p50": 1.3483000000005632,
-      "p99": 1.9231999999997242,
+      "p50": 1.448500000000422,
+      "p99": 2.4617000000002918,
       "fingerprint": {
         "tokens": 131,
         "uses": 114433,
@@ -657,7 +186,7 @@
       }
     },
     "S8": {
-      "runMs": 1885.1327,
+      "runMs": 2160.6765,
       "fingerprint": {
         "tokens": 109,
         "uses": 123198,
