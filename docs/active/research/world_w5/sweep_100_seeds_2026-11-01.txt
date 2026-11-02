@@ -1,0 +1,277 @@
+Against data/ (no CMS autosave found; the owner may have unsynced work).
+0 of 100 worlds pass checks F; 0 keep every rule of the world.
+
+A world cell asks for a material of its own ring: fails in 0 of 100 worlds
+
+A key material not a step from every frontier: fails in 0 of 100 worlds
+
+Not covered by the inner rings: fails in 100 of 100 worlds, 83 subjects
+   100 worlds  Basking Stone (token:token_basking_stone) [lost: tier 2 through map items]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Big Lizard (token:token_big_lizard) [lost: tier 2 through map items]
+               e.g. world 1: Not reachable from the inner rings: it needs Basking Stone, never reached.
+   100 worlds  Fire Elemental Chief (token:token_fire_elemental_chief) [lost: tier 2 through map items]
+               e.g. world 1: Not reachable from the inner rings: it needs Smoking Crater, never reached.
+   100 worlds  Smoking Crater (token:token_smoking_crater) [lost: tier 2 through map items]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Toxic Frog (token:token_toxic_frog) [lost: tier 2 through map items]
+               e.g. world 1: Not reachable from the inner rings: it needs Toxic Pool, never reached.
+   100 worlds  Toxic Pool (token:token_toxic_pool) [lost: tier 2 through map items]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Wind Stones (token:token_wind_stones) [lost: tier 1 through map items]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+    34 worlds  Queen's Hive (token:token_queens_hive) [lost: tier 1 through map items]
+               e.g. world 2: Not reachable from the inner rings: nothing makes or places it.
+    34 worlds  Tide Pool (token:token_tide_pool) [lost: tier 1 through map items]
+               e.g. world 4: Not reachable from the inner rings: nothing makes or places it.
+    27 worlds  Chief's Tent (token:token_chief_tent) [lost: tier 1 through map items]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+    19 worlds  Slime Pit (token:token_slime_pit) [lost: tier 1 through map items]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+    18 worlds  Alpha's Den (token:token_alpha_den) [lost: tier 1 through map items]
+               e.g. world 6: Not reachable from the inner rings: nothing makes or places it.
+    10 worlds  Wind Elemental (token:token_wind_elemental) [lost: tier 1 through map items]
+               e.g. world 33: Not reachable from the inner rings: it needs Wind Stones, never reached.
+     4 worlds  Goblin Chief (token:token_goblin_chief) [lost: tier 1 through map items]
+               e.g. world 17: Not reachable from the inner rings: it needs Chief's Tent, never reached.
+     3 worlds  Greater Slime (token:token_greater_slime) [lost: tier 1 through map items]
+               e.g. world 1: Not reachable from the inner rings: it needs Slime Pit, never reached.
+     3 worlds  Queen Bee (token:token_queen_bee) [lost: tier 1 through map items]
+               e.g. world 12: Not reachable from the inner rings: it needs Queen's Hive, never reached.
+     2 worlds  Water Elemental (token:token_water_elemental) [lost: tier 1 through map items]
+               e.g. world 57: Not reachable from the inner rings: it needs Tide Pool, never reached.
+     2 worlds  Wolf Alpha (token:token_wolf_alpha) [lost: tier 1 through map items]
+               e.g. world 57: Not reachable from the inner rings: it needs Alpha's Den, never reached.
+     1 worlds  Cow (token:token_cow) [lost: tier 1 through map items]
+               e.g. world 84: Not reachable from the inner rings: it needs Cow Pasture, never reached.
+     1 worlds  Cow Pasture (token:token_cow_pasture) [lost: tier 1 through map items]
+               e.g. world 84: Not reachable from the inner rings: nothing makes or places it.
+     1 worlds  Raw Beef (item:item_raw_beef) [lost: tier 1 through map items]
+               e.g. world 84: Not reachable from the inner rings: it needs Cow, never reached.
+     1 worlds  Steak (item:item_steak) [lost: tier 1 through map items]
+               e.g. world 84: Not reachable from the inner rings: it needs Campfire or Raw Beef, never reached.
+     1 worlds  Steak (recipe:recipe_mtym8vxh) [lost: tier 1 through map items]
+               e.g. world 84: Not reachable from the inner rings: it needs Campfire or Raw Beef, never reached.
+   100 worlds  Adamantine Ingot (item:item_adamantine_ingot) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Adamantine Ore, never reached.
+   100 worlds  Adamantine Ingot (recipe:recipe_mtp8qjj4) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Adamantine Ore, never reached.
+   100 worlds  Adamantine Ore (item:item_adamantine_ore) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Adamantium Ore or pickaxe 3+ or Adamantine Ore Vein, never reached.
+   100 worlds  Adamantine Ore Vein (token:token_adamantine_ore_vein) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Adamantium Ore (token:token_adamantium_ore) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Adamantium Pickaxe (item:item_adamantium_pickaxe) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Banana (item:item_banana) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Banana Tree, never reached.
+   100 worlds  Banana Tree (token:token_banana_tree) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Birch Forest (token:token_birch_forest) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Birch Seedling (item:item_birch_seedling) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Blueberry Pie (item:item_blueberry_pie) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Campfire (token:token_campfire) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Cedar Seedling (item:item_cedar_seedling) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Ceramics Kiln (token:token_ceramics_kiln) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Coconut (item:item_coconut) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Coconut Tree, never reached.
+   100 worlds  Coconut Tree (token:token_coconut_tree) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Coins (item:item_coins) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Copper Anvil (token:token_copper_anvil) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Darkmetal Ingot (item:item_darkmetal_ingot) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Darkmetal Ore, never reached.
+   100 worlds  Darkmetal Ingot (recipe:recipe_mtp8qjj5) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Darkmetal Ore, never reached.
+   100 worlds  Darkmetal Ore (item:item_darkmetal_ore) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Darkmetal Ore Vein or pickaxe 4+, never reached.
+   100 worlds  Darkmetal Ore Vein (token:token_darkmetal_ore_vein) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Darkmetal Pickaxe (item:item_darkmetal_pickaxe) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Ebony Seedling (item:item_ebony_seedling) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Ebony Tree (token:token_ebony_tree) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Ebony Wood (item:item_ebony_wood) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Ebony Tree, never reached.
+   100 worlds  Elixir of Valor (item:item_elixir_of_valor) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Forge (token:token_forge_2) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Forge Altar (token:token_forge_altar) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Grandma's Kitchen (token:token_grandma_s_kitchen) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Lemon (item:item_lemon) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Lemon Tree, never reached.
+   100 worlds  Lemon Tree (token:token_lemon_tree) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Lemonade (item:item_lemonade) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Lemon, never reached.
+   100 worlds  Lemonade (recipe:recipe_mtp8qjj7) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Lemon, never reached.
+   100 worlds  Lime (item:item_lime) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Lime Tree, never reached.
+   100 worlds  Lime Tree (token:token_lime_tree) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Limeade (item:item_limeade) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Lime, never reached.
+   100 worlds  Limeade (recipe:recipe_mtp8qjj8) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Lime, never reached.
+   100 worlds  Mahogany Forest (token:token_mahogany_forest) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Mahogany Seedling (item:item_mahogany_seedling) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Maple Forest (token:token_maple_forest) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Maple Seedling (item:item_maple_seedling) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Mythril Pickaxe (item:item_mythril_pickaxe) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Orange (item:item_orange) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Orange Tree, never reached.
+   100 worlds  Orange Tree (token:token_orange_tree) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Pickaxe Mould (token:token_pickaxe_mould) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Pineapple (item:item_pineapple) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Pineapple Bush, never reached.
+   100 worlds  Pineapple Bush (token:token_pineapple_bush) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Raspberry (item:item_raspberry) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Raspberry Bush, never reached.
+   100 worlds  Raspberry Bush (token:token_raspberry_bush) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Ripe Wheat (token:token_ripe_wheat) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Wheat Sprout, never reached.
+   100 worlds  Shrimp Coast (token:token_shrimp_coast) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Shrimp Market (token:token_shrimp_market) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Shrimp Trawler Potion (item:item_shrimp_trawler_potion) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Volcanic Island (token:token_volcanic_island) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Watermelon (item:item_watermelon) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: it needs Watermelon Patch, never reached.
+   100 worlds  Watermelon Patch (token:token_watermelon_patch) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Wheat Sprout (token:token_wheat_sprout) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Wishing Well (token:token_wishing_well) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+   100 worlds  Wizard Academy (token:token_wizard_academy) [never reachable before the world map]
+               e.g. world 1: Not reachable from the inner rings: nothing makes or places it.
+
+A wild origin no wedge places: fails in 100 of 100 worlds, 17 subjects
+   100 worlds  Adamantine Ore Vein (token:token_adamantine_ore_vein)
+               e.g. world 1: Looks like a wild origin (its work yields Adamantine Ore), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Adamantium Ore (token:token_adamantium_ore)
+               e.g. world 1: Looks like a wild origin (its work yields Adamantine Ore), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Banana Tree (token:token_banana_tree)
+               e.g. world 1: Looks like a wild origin (its work yields Banana), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Birch Forest (token:token_birch_forest)
+               e.g. world 1: Looks like a wild origin (its work yields Birch Wood), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Coconut Tree (token:token_coconut_tree)
+               e.g. world 1: Looks like a wild origin (its work yields Coconut), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Darkmetal Ore Vein (token:token_darkmetal_ore_vein)
+               e.g. world 1: Looks like a wild origin (its work yields Darkmetal Ore), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Ebony Tree (token:token_ebony_tree)
+               e.g. world 1: Looks like a wild origin (its work yields Ebony Wood), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Lemon Tree (token:token_lemon_tree)
+               e.g. world 1: Looks like a wild origin (its work yields Lemon), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Lime Tree (token:token_lime_tree)
+               e.g. world 1: Looks like a wild origin (its work yields Lime), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Mahogany Forest (token:token_mahogany_forest)
+               e.g. world 1: Looks like a wild origin (its work yields Mahogany Wood), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Maple Forest (token:token_maple_forest)
+               e.g. world 1: Looks like a wild origin (its work yields Maple Wood), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Orange Tree (token:token_orange_tree)
+               e.g. world 1: Looks like a wild origin (its work yields Orange), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Pineapple Bush (token:token_pineapple_bush)
+               e.g. world 1: Looks like a wild origin (its work yields Pineapple), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Raspberry Bush (token:token_raspberry_bush)
+               e.g. world 1: Looks like a wild origin (its work yields Raspberry), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Shrimp Coast (token:token_shrimp_coast)
+               e.g. world 1: Looks like a wild origin (its work yields Raw Shrimp), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Watermelon Patch (token:token_watermelon_patch)
+               e.g. world 1: Looks like a wild origin (its work yields Watermelon), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+   100 worlds  Wishing Well (token:token_wishing_well)
+               e.g. world 1: Looks like a wild origin (its work yields Water), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+
+A cell's extras off its ring's value: fails in 0 of 100 worlds
+
+Breaks another rule of the world: fails in 100 of 100 worlds, 12 subjects
+   100 worlds  no-main: Arcane ring 6
+               e.g. world 1: Cell 6,-6 has no main origin
+   100 worlds  no-main: Arcane ring 5
+               e.g. world 1: Cell 5,-5 has no main origin
+   100 worlds  no-main: Arcane ring 4
+               e.g. world 1: Cell 4,-4 has no main origin
+   100 worlds  no-main: Arcane ring 3
+               e.g. world 1: Cell 3,-3 has no main origin
+   100 worlds  no-main: Herbs ring 3
+               e.g. world 1: Cell -3,3 has no main origin
+   100 worlds  no-main: Arcane ring 2
+               e.g. world 1: Cell 2,-2 has no main origin
+   100 worlds  no-main: Arcane ring 1
+               e.g. world 1: Cell 1,-1 has no main origin
+   100 worlds  no-main: Herbs ring 1
+               e.g. world 1: Cell -1,1 has no main origin
+    15 worlds  price-places: ring 4
+               e.g. world 4: Cell -4,4's price cannot be gathered from one or two earlier places beside it
+    10 worlds  price-places: ring 6
+               e.g. world 24: Cell 2,4's price cannot be gathered from one or two earlier places beside it
+     9 worlds  price-places: ring 5
+               e.g. world 1: Cell 5,-5's price cannot be gathered from one or two earlier places beside it
+     2 worlds  price-places: ring 2
+               e.g. world 83: Cell 0,-2's price cannot be gathered from one or two earlier places beside it
+
+What the generation could not meet:
+   100 worlds  The Arcane line has no origins for ring 1: its cells there have no main origin
+   100 worlds  The Arcane line has no origins for ring 2: its cells there have no main origin
+   100 worlds  The Arcane line has no origins for ring 3: its cells there have no main origin
+   100 worlds  The Herbs line has no origins for ring 1: its cells there have no main origin
+   100 worlds  The Herbs line has no origins for ring 3: its cells there have no main origin
+    32 worlds  No cell one ring in from 5,-5 yields a material to ask for: its price falls back on the Hall's cell
+
+Per skill and ring (cells offering its new work; heroes its natural work keeps busy): min / median / max
+  ring 1 mining     cells 3/3/4   heroes 2.6/6.2/11.6
+  ring 1 forestry   cells 3/4/4   heroes 2.3/5.3/9.8
+  ring 1 farming    cells 3/3/4   heroes 4.0/6.7/12.3
+  ring 1 alchemy    cells 0/0/0   heroes 0.0/0.0/0.0   none in 100 worlds
+  ring 1 fishing    cells 3/3/4   heroes 2.5/5.0/10.5
+  ring 1 magic      cells 0/0/0   heroes 0.0/0.0/0.0   none in 100 worlds
+  ring 1 combat     cells 1/1/1   heroes 6.0/10.0/16.0
+  ring 2 mining     cells 6/7/9   heroes 6.4/9.4/16.2
+  ring 2 forestry   cells 6/7/8   heroes 5.3/9.0/14.8
+  ring 2 farming    cells 5/5/6   heroes 6.3/10.0/14.7
+  ring 2 alchemy    cells 5/5/6   heroes 3.0/3.7/5.0
+  ring 2 fishing    cells 5/5/6   heroes 4.5/7.0/13.5
+  ring 2 magic      cells 0/0/0   heroes 0.0/0.0/0.0   none in 100 worlds
+  ring 2 combat     cells 2/2/2   heroes 22.0/29.0/36.0
+  ring 3 mining     cells 7/7/8   heroes 7.4/12.4/21.0
+  ring 3 forestry   cells 7/7/8   heroes 6.8/12.5/20.0
+  ring 3 farming    cells 7/7/8   heroes 7.0/12.0/19.7
+  ring 3 alchemy    cells 0/0/0   heroes 0.0/0.3/2.3   none in 100 worlds
+  ring 3 fishing    cells 7/7/8   heroes 5.5/10.0/17.5
+  ring 3 magic      cells 0/0/0   heroes 0.0/0.0/0.0   none in 100 worlds
+  ring 3 combat     cells 3/3/3   heroes 47.0/56.0/67.0
+
+Price per cell, by ring (items; hero time at the content's own rates): min / median / max
+  ring 1  items 30/30/30   hero time 1 min / 1 min / 4 min   level 5
+  ring 2  items 80/80/80   hero time 1 min / 5 min / 11 min   level 15
+  ring 3  items 160/160/160   hero time 5 min / 20 min / 35 min   level 30
+  ring 4  items 240/240/240   hero time 8 min / 39 min / 1 h 13 min   level 40
+  ring 5  items 360/360/360   hero time 6 min / 34 min / 1 h 43 min   level 50
+  ring 6  items 540/540/540   hero time 9 min / 52 min / 2 h 39 min   level 60

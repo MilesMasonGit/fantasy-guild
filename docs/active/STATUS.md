@@ -5,6 +5,18 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Director, the world ledger beside wandering-enemy performance (330 W5 and T-200; owner chose 2026-11-01 evening)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 330 W5: the ledger meets the world (World plan view, checks F, 100-seed report) | engineer | `feat/world-w5` (`e3`) | **merged** on the gate (79f47164: 7186 tests, cycles 0 dangerous, game and CMS builds, engine work **same**; CMS only; the brief's look is W6's pack). On today's data 0/100 seeds pass checks F: 83 entries not covered by the inner rings (7 lost with the maps in every world, boss camps by luck, 60 never reachable), 17 wild origins no wedge places, Herbs and Arcane without main origins; list in `research/world_w5/sweep_100_seeds_2026-11-01.txt` = W6's input. T-285 filed | Sun | Sun |
+| 330 W6: the first world content pack (world tables in the CMS and data/world.json; every Live thing guaranteed in its tier's inner ring; Starter Camp Stone patch T-284; the held mines pack folded in) | engineer | `feat/world-w6` (`e3`) | **eye-check** ([file](eyecheck/2026-11-02_world-pack.md)): code 507968c7 + f88f11a3, pack 6983c328 (96 entries in `cms/incoming/`, copy in `research/pending_packs/world_w6/`, gate PASS, 100/100 and 1000/1000 worlds pass checks F). Director gate: 7219 tests, cycles 0 dangerous, game and CMS builds, engine work **same**. Generator: guaranteed camps per strict ring (world version 3). After the Sync: apply `post_sync_tests.patch`, regenerate RenderGolden, and the Venom migration turns CMSGearDefence and five golden sentences red (fix then) | Sun | |
+| T-200: wandering enemies cheaper in the engine and on the mat (7 slices) | engineer | `perf/wandering-enemies` (`n4`) | **back with the engineer**: benched Mon 03:00–04:30. Work **same** everywhere; S3 A/B mean −4 %, p99 −10 %; draw at 1× unchanged. **Blocks the merge:** S4 `arrivalsWorst` REGRESSED on the merged result, three alternating pairs: worst 17.6/19.4/17.7 ms vs main 14.7/14.1/18.6 (typical arrival 7 % faster). Engineer finds the slice and fixes it or shows a one-time warm-up | Sun | |
+| 320 H3: the first Hall star list, re-checked | director | pack in `cms/incoming/` (copy in `research/pending_packs/hall_h3/`) | **in the owner's inbox**: `check` OK (53 entries); `gate` **PASS against today's `data/`** (workspace dumped from `data/`; the newest autosave is 29 Oct, older than `data/`): 41 entries earlier, Starter Camp 7 h 14 → 6 h 7 min (15 % faster), 7 payback warnings (ranks over a day, the ledger's red signals for the owner) | Sun | Sun |
+| T-282: a spawn statement names the Token, not its id | builder-lite | `fix/spawn-names` (`w1`) | **waits for the owner's Sync** 25c013f5: the CMS wrote raw ids into Token descriptions (`descriptionDictionary.js` named Tokens by id); fixed for every rule. 16 CMS round-trip tests stay red until `data/tokens.json` is re-synced (director checked: only descriptions differ, e.g. "nearby token_copper_ore_vein" → "nearby Copper Ore Vein"). Plan: when the owner is at the PC, merge, then the owner Syncs once on `main` (with the W6 pack), then the director id-diffs and runs the suite | Sun | |
+
+Owner rulings 2026-11-01: built nodes as fast as wild ones (T-283 removes `builtSlowerPct`); a Stone patch and a map-free first mine at the Starter Camp (T-284, with W6). Next: W6 the world pack (with T-284 and the held mines pack), then H3, L9.
+
 ## Director, the encyclopedia rework beside building nodes (briefs 300 E3 and 330 W4; owner chose 2026-11-01 00:30)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
@@ -72,6 +84,8 @@ None open.
 
 - **W4, the Starter Camp and mines (ask with the next proposal):** once mines need Stone and a prospecting map, the Starter Camp (meadow, no Stone) can no longer build a Copper or Coal Mine, and its built-in Copper Mine can no longer be moved. Options: (A, rec.) the Starter Camp gets a small patch of Stone ground, and its first mine recipe needs no map; (B) the Starter Camp is exempt from the mine rules; (C) mines start on ring 1, the Starter Camp keeps only its built-in one. The pack is held until this and W6's map sources are settled.
 
+- ~~W6, boss camps~~ **Answered 2026-11-01 (owner):** every Live enemy and source is guaranteed in every world, in the inner ring of its tier (owner_feedback). Was: today a boss camp (Queen's Hive, Chief's Tent, Alpha's Den…) appears only when a cell's specialty is combat on a kit that has it, so 18–34 % of worlds hold each. (A, rec.) each ring's arrival table lists its bosses, so every world has them; (B) every kit gets every boss camp; (C) leave them to each world's luck.
+
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
 
@@ -80,6 +94,10 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
+**Mon 2 Nov, 01:00–04:30 (director): done.** Engine baseline retaken and committed (ac8d9829). **Draw baseline did not save**: three full runs (01:02, 01:42, 02:23) each had one window where Chrome delivered 5–7× for 4× asked (rejected → exit 3); retake it in the next quiet window, or with `--cpu=3.2 --slowdown-target=4` if it keeps failing (the Envelope's workaround). Until then draw `--compare` reads against the 29 Oct draw baseline. T-200 benched (row above).
+
+~~**Mon 2 Nov, after the retake (director):** T-200 on `n4` 9f735f99: `npm run bench -- --compare` (work same, the gate); engine S3 base 4ddeb776 vs tip, `--only=S3 --repeats=5`, alternating; `bench:draw -- --only=enemies24,enemies80 --cpu=1 --ab=<base served>`; `bench:draw -- --compare --only=S2`. Merge on the gate if work is same and nothing regresses.~~
+
 **Mon 2 Nov, 01:00 (director timer, `p23b` on `main`):** `npm run bench -- --save-baseline`, then `npm run bench:draw -- --save-baseline`, machine quiet; commit both with the date. If the timer died, run it in the next quiet window. Every draw `--compare` until then reads against the old S2.
 
 **Draw regression diagnosed (31 Oct 04:10, [notes](research/draw_regression_2026-10-31.md)):** no slow code; S2 now has goblins walking (22af5033 spot orders are never ambushed, so camp goblins live and stroll; T-264 unfroze spawned ones) and each walker's glide is a main-thread transform transition (crisp-pixel rule), redoing layers every frame: ~0.9 ms a frame at 1×, ~6 ms at 4×. Next: (1) step the goblin glide on whole screen pixels (`steps(n)`, stays crisp; the stand-in saved 0.7 of 0.9 ms), engineer + owner eye-check + `bench:crisp`; (2) S2 gets its fights back (heroes 1 and 2 ordered onto a Token inside each camp's watch; director's call, bench-only, re-take both baselines). Until then every draw `--compare` on `main` reads REGRESSED from this.
@@ -87,6 +105,12 @@ T-186; the badges' soft shadows are settled inside T-013.)
 **Sat 31 Oct, 01:00–02:15 (director):** engine tickets WORK CHANGED exactly as predicted (S1/S4/S7 same; identity and fidelity hold), acceptance run queued, then merge after `main` is green. Hall H1 same work, calibration ok. World W1 same, W2 same. **Draw regression is real**: alternating runs, `a4a124be` S2 4× workP50 6.2–7.3 ms, `main` 11.5–12.4 ms (bank 6.3–6.7 vs 11.8–13.7): an engineer bisects in `p23b` until 06:45 (`diag/draw-regression`).
 
 ## Summaries
+
+**Sun 2026-11-01, 23:15: overnight state.** W6 ready for the owner's look and CMS review ([file](eyecheck/2026-11-02_world-pack.md)); T-282 waits for the same Sync; the Hall star pack is in the inbox; T-200 benches after the 01:00 retake. Owner's morning: Part 1 on the branch, then the two packs and one Sync on `main`.
+
+**Sun 2026-11-01, late: owner asleep; director continues until stopped.** W5 merged. Now: W6 (`e3`) beside T-200 (`n4`). Owner allowed overnight: perf merges on the gate, tickets T-282/T-283/T-285, the H3 star pack re-check. Bench: baseline retake Mon 01:00 then T-200 slices. Owner: W6 pack review when awake.
+
+**Sun 2026-11-01, evening: next batch chosen.** Where we are: `main` 4ddeb776 has E3, W4, the bench S2 fights. Now: W5 (`e3`) beside T-200 (`n4`), both engineers. Next: W6 with T-284. Owner: nothing until W5's CMS look. Bench: baseline retake Mon 01:00, then T-200 slices A/B.
 
 **Sun 2026-11-01, evening: batch looked at and merged.** Where we are: `main` has the encyclopedia rework (E3), building nodes by terrain (W4) and the bench S2 fights. Next: the next batch proposal (W5 ledger World plan, W6 world pack, H3, L9). Owner: answer the Starter Camp mines and built-node slowdown questions with the proposal. Bench: baseline retake Mon 01:00.
 

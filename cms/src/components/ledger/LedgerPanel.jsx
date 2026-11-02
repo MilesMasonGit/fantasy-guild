@@ -5,7 +5,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { SKILLS } from '../../utils/constants';
 import {
-  PLAN_STATUS, PLAN_STATUSES, PLAN_TIERS, PLAN_TEXT, tierLabel, tierOrNull,
+  PLAN_STATUS, PLAN_STATUSES, PLAN_TIERS, PLAN_RINGS, PLAN_TEXT, tierLabel, tierOrNull,
 } from '../../../../src/systems/progression/ledger/plan.js';
 import {
   ledgerRows, filterLedgerRows, stubPlan, reachText, LEDGER_KINDS, LEDGER_KIND_TEXT,
@@ -18,7 +18,10 @@ import LedgerItemPage from './LedgerItemPage';
 import LedgerPace from './LedgerPace';
 import LedgerTimeline from './LedgerTimeline';
 import LedgerHubs, { hubScope } from './LedgerHubs';
+import LedgerWorld from './LedgerWorld';
 import { openInEditor, writePlan } from './ledgerActions';
+import { originPlaces, wedgeChoices } from '../../engine/ledgerWorld';
+import { WORLD_F } from '../../../../src/systems/progression/ledger/world.js';
 
 /** The reach engine and every check over the workspace as it stands, stamped with the time. */
 function workOutReport() {
@@ -28,10 +31,11 @@ function workOutReport() {
 
 /**
  * The Ledger: every item, map, Token, enemy and recipe with the owner's plan for it (status, tier,
- * note), edited in place and written as the same `plan` block the editors' Plan section writes; the
- * problems the checks find beside the hubs; the timeline (a lane per skill against the pace curve); the pace (stage times, where each skill's rate comes from, the Hall's
- * paybacks); a page per entry; and the Ledger settings. Planned stubs are added here; Sync keeps
- * them out of `data/`.
+ * an origin's wedge and ring, note), edited in place and written as the same `plan` block the
+ * editors' Plan section writes; the problems the checks find beside the hubs; the timeline (a lane
+ * per skill against the pace curve); the pace (stage times, where each skill's rate comes from, the
+ * Hall's paybacks); the World plan (a seed's world, checks F, many worlds); a page per entry; and
+ * the Ledger settings. Planned stubs are added here; Sync keeps them out of `data/`.
  * ⚠️ First reach, the pace and the problems are worked out when the tab opens and on Refresh, not
  * on every edit: it is the whole reach engine, the rate calculator at three profiles and every check.
  */
@@ -60,7 +64,7 @@ export default function LedgerPanel({ setCurrentView }) {
             </p>
           </div>
           <div className="flex gap-1" role="tablist">
-            {[['entries', 'Entries'], ['problems', `Problems (${serious})`], ['timeline', 'Timeline'], ['pace', 'Pace'], ['settings', 'Settings']].map(([key, label]) => (
+            {[['entries', 'Entries'], ['problems', `Problems (${serious})`], ['timeline', 'Timeline'], ['pace', 'Pace'], ['world', 'World'], ['settings', 'Settings']].map(([key, label]) => (
               <button
                 key={key}
                 role="tab"
@@ -102,6 +106,8 @@ export default function LedgerPanel({ setCurrentView }) {
         )}
         {!openKey && page === 'timeline' && <LedgerTimeline report={report} onRefresh={refresh} onOpen={setOpenKey} onOpenSkill={openSkill} />}
         {!openKey && page === 'pace' && <LedgerPace report={report} onRefresh={refresh} onOpen={setOpenKey} focusSkill={focusSkill} />}
+        {/* Kept mounted under an entry's page, so its seed and its many-worlds result are there on the way back. */}
+        {page === 'world' && <div style={{ display: openKey ? 'none' : undefined }}><LedgerWorld onOpen={setOpenKey} /></div>}
         {!openKey && page === 'settings' && <LedgerSettings />}
       </div>
     </div>
@@ -120,6 +126,8 @@ function LedgerEntries({ setCurrentView, report, onRefresh, onOpenPage }) {
   const [adding, setAdding] = useState(false);
 
   const rows = useMemo(() => ledgerRows({ items, tokens, recipePools }), [items, tokens, recipePools]);
+  const places = useMemo(() => originPlaces(tokens), [tokens]);
+  const wedges = useMemo(() => wedgeChoices(), []);
   const shown = useMemo(() => filterLedgerRows(rows, { kind, status, tier, search }), [rows, kind, status, tier, search]);
 
   const tiers = useMemo(() => {
@@ -195,6 +203,7 @@ function LedgerEntries({ setCurrentView, report, onRefresh, onOpenPage }) {
                   </button>
                 </span>
               </th>
+              <th style={{ ...head, textAlign: 'left', width: 150 }} title="An origin's wedge and ring on the world map: its plan's in white, the game's tables' in grey">World</th>
               <th style={{ ...head, textAlign: 'center', width: 70 }} title="What the checks found: Block and Warn, then Info">Problems</th>
               <th style={{ ...head, textAlign: 'left' }}>Note</th>
               <th style={{ ...head, width: 28 }} />
@@ -208,6 +217,8 @@ function LedgerEntries({ setCurrentView, report, onRefresh, onOpenPage }) {
                 reach={report.ledger.reachOf(row.ledgerKey)}
                 findings={report.byKey.get(row.ledgerKey) || []}
                 tiers={tiers}
+                place={row.kind === 'token' ? places.get(row.id) || null : null}
+                wedges={wedges}
                 onOpen={() => onOpenPage(row.ledgerKey)}
                 onEdit={edit}
               />
@@ -224,7 +235,7 @@ const cell = { padding: '5px 10px', fontSize: 11, borderBottom: '1px solid rgba(
 const head = { ...cell, fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)' };
 const STATUS_COLOR = { planned: 'var(--color-warning)', draft: 'var(--color-accent-hover)', live: 'var(--color-text-primary)', parked: 'var(--color-text-muted)' };
 
-function LedgerRow({ row, reach, findings, tiers, onOpen, onEdit }) {
+function LedgerRow({ row, reach, findings, tiers, place, wedges, onOpen, onEdit }) {
   const [note, setNote] = useState(row.note);
   const [noteFor, setNoteFor] = useState(row.note);
   if (row.note !== noteFor) {
@@ -280,6 +291,11 @@ function LedgerRow({ row, reach, findings, tiers, onOpen, onEdit }) {
         </select>
       </td>
       <td style={{ ...cell, color: reachColor(row, reach) }} data-reach={row.ledgerKey}>{reachText(reach, tierLabel)}</td>
+      <td style={cell} data-world={row.ledgerKey}>
+        {place || findings.some((f) => f.check === WORLD_F.NO_WEDGE)
+          ? <WorldPlace row={row} place={place} wedges={wedges} />
+          : <span style={{ color: 'var(--color-text-muted)', opacity: 0.4 }}>·</span>}
+      </td>
       <td style={{ ...cell, textAlign: 'center' }}>
         <ProblemCount findings={findings} onOpen={onOpen} name={row.name} />
       </td>
@@ -306,6 +322,37 @@ function LedgerRow({ row, reach, findings, tiers, onOpen, onEdit }) {
         </button>
       </td>
     </tr>
+  );
+}
+
+/**
+ * An origin's place on the world map: its wedge and ring, from its plan (white) or, with none, the
+ * game's tables (grey). Choosing writes both into its plan; "—" clears the plan's place.
+ */
+function WorldPlace({ row, place, wedges }) {
+  const color = place?.planned ? 'var(--color-text-primary)' : 'var(--color-text-muted)';
+  const set = (patch) => writePlan(row, patch);
+  return (
+    <div className="flex items-center gap-1" title={place ? (place.planned ? 'Placed by its plan' : "Where the game's tables put it; choose to plan it elsewhere") : 'No wedge places it'}>
+      <select
+        value={place?.wedge ?? ''}
+        onChange={(e) => set(e.target.value ? { wedge: e.target.value, ring: place?.ring ?? PLAN_RINGS[0] } : { wedge: null, ring: null })}
+        aria-label={`Wedge of ${row.name}`}
+        style={{ width: 86, padding: '2px 4px', fontSize: 11, color }}
+      >
+        <option value="">{PLAN_TEXT.noWedge}</option>
+        {wedges.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+      </select>
+      <select
+        value={place?.ring ?? ''}
+        onChange={(e) => set(e.target.value ? { ring: Number(e.target.value), wedge: place?.wedge ?? wedges[0]?.id } : { wedge: null, ring: null })}
+        aria-label={`Ring of ${row.name}`}
+        style={{ width: 50, padding: '2px 4px', fontSize: 11, color }}
+      >
+        <option value="">—</option>
+        {PLAN_RINGS.map((r) => <option key={r} value={r}>{r}</option>)}
+      </select>
+    </div>
   );
 }
 

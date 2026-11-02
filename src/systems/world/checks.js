@@ -9,7 +9,8 @@ import { priceTemplateOf } from './generate.js';
  * from, without trusting how the generator got there. The tests sweep thousands of seeds through
  * it; the ledger's World plan (brief 330 W5) lists its findings as checks.
  *
- * Each finding: `{ check, cellId?, ring?, message }`. None means the world keeps every rule.
+ * Each finding: `{ check, cellId?, ring?, origin?, itemId?, message }` (`origin` the origin a coverage or
+ * key finding is about, `itemId` the material a price finding is). None means the world keeps every rule.
  *
  * Not checked here: a price slot naming a fixed item (`item`) is crafted, so which ring it belongs
  * to is the ledger's to say; only materials a price takes from a place are checked against rings.
@@ -83,7 +84,7 @@ function materialRings(tables, hallOrigins, materialsOf) {
  * @param {object} world a `generateWorld` result
  * @param {object} tables the normalised tables it was generated from
  * @param {{materialsOf?: (originId: string) => string[], hallOrigins?: string[]}} [lookups]
- * @returns {{check: string, cellId?: string, ring?: number, message: string}[]}
+ * @returns {{check: string, cellId?: string, ring?: number, origin?: string, itemId?: string, message: string}[]}
  */
 export function worldFindings(world, tables, { materialsOf = () => [], hallOrigins = [] } = {}) {
     const out = [];
@@ -125,7 +126,7 @@ export function worldFindings(world, tables, { materialsOf = () => [], hallOrigi
     // The inner rings hold every origin the tables list.
     const inner = new Set(world.cells.filter(c => c.ring >= 1 && c.ring <= STRICT_RINGS).flatMap(c => c.origins.map(o => o.id)));
     for (const [id, ring] of strictOrigins(tables)) {
-        if (!inner.has(id)) find(WORLD_CHECK.COVERAGE, WORLD_CHECK_TEXT.coverage(id, ring), { ring });
+        if (!inner.has(id)) find(WORLD_CHECK.COVERAGE, WORLD_CHECK_TEXT.coverage(id, ring), { ring, origin: id });
     }
 
     // Key origins within a step of every cell one ring in.
@@ -134,7 +135,7 @@ export function worldFindings(world, tables, { materialsOf = () => [], hallOrigi
             for (const cell of ringOf(n - 1)) {
                 const reach = around(cell).filter(c => c.ring === n);
                 if (!reach.some(c => c.origins.some(o => o.id === key))) {
-                    find(WORLD_CHECK.KEY_REACH, WORLD_CHECK_TEXT.keyReach(cell.id, key), { cellId: cell.id, ring: n });
+                    find(WORLD_CHECK.KEY_REACH, WORLD_CHECK_TEXT.keyReach(cell.id, key), { cellId: cell.id, ring: n, origin: key });
                 }
             }
         }
@@ -188,7 +189,7 @@ export function worldFindings(world, tables, { materialsOf = () => [], hallOrigi
         const gathered = (cell.requires?.items || []).filter(i => !fixed.has(i.itemId));
         for (const { itemId } of gathered) {
             const ring = rings.get(itemId);
-            if (ring === undefined || ring >= cell.ring) find(WORLD_CHECK.PRICE_RING, WORLD_CHECK_TEXT.priceRing(cell.id, itemId, ring ?? '?'), { cellId: cell.id });
+            if (ring === undefined || ring >= cell.ring) find(WORLD_CHECK.PRICE_RING, WORLD_CHECK_TEXT.priceRing(cell.id, itemId, ring ?? '?'), { cellId: cell.id, itemId });
         }
         const places = (cell.payFrom || []).map(id => byId.get(id)).filter(Boolean);
         const inward = around(cell).filter(c => c.ring === cell.ring - 1);

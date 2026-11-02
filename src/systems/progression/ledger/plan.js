@@ -15,8 +15,14 @@
  * `tier` is the stage the owner says the entry belongs to: 0 is the Starter Camp, 1 plane 1, 2
  * plane 2, and so on. It is always hand-set; the reach engine computes when the entry is actually
  * first reachable and the checks compare the two. It is not an item's weapon `tier` or a Token's
- * `tier`, which the game reads: that is why it lives inside the block. Later phases add fields of
- * their own to the block (targets, wedge and ring, waivers); everything here keeps them.
+ * `tier`, which the game reads: that is why it lives inside the block.
+ *
+ * An origin (a wild node's Token) may also say where it sits on the world map: `wedge`, a line of
+ * the world tables (`ores`, `trees`…), and `ring`, one of the strict rings. The ledger's World plan
+ * generates from the tables with these places laid on (`ledger/world.js`); the game does not read
+ * them until the world tables are synced.
+ *
+ * Later phases add fields of their own to the block (targets, waivers); everything here keeps them.
  *
  * ⚠️ The CMS, its server and its Node tools import this file, so it stays free of game state and imports nothing.
  */
@@ -40,6 +46,13 @@ const TIER_BUDGET_MS = Object.freeze({ 0: 30 * 60 * 1000, 1: 90 * 60 * 1000, 2: 
 /** The tiers the CMS offers. A record may hold a later one; {@link tierLabel} names any. */
 export const PLAN_TIERS = Object.freeze([0, 1, 2, 3, 4, 5]);
 
+/**
+ * The rings an origin may be planned in: the strict rings, which hold all of the game's content.
+ * ⚠️ Mirrors `STRICT_RINGS` in `config/worldTablesShape.js`, which this import-free file cannot
+ * read; `LedgerWorld.test.js` pins that the two agree.
+ */
+export const PLAN_RINGS = Object.freeze([1, 2, 3]);
+
 /** Author-facing words, kept together for translation. */
 export const PLAN_TEXT = Object.freeze({
     status: Object.freeze({ planned: 'Planned', draft: 'Draft', live: 'Live', parked: 'Parked' }),
@@ -51,7 +64,9 @@ export const PLAN_TEXT = Object.freeze({
     }),
     starterCamp: 'Starter Camp',
     plane: (tier) => `Plane ${tier}`,
-    noTier: 'No tier set'
+    noTier: 'No tier set',
+    noWedge: 'No wedge',
+    ring: (ring) => `Ring ${ring}`
 });
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -61,6 +76,18 @@ export function tierOrNull(value) {
     if (value === null || value === undefined || value === '') return null;
     const n = Number(value);
     return Number.isInteger(n) && n >= 0 ? n : null;
+}
+
+/** A ring an origin may be planned in (one of {@link PLAN_RINGS}), else null. */
+export function ringOrNull(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const n = Number(value);
+    return PLAN_RINGS.includes(n) ? n : null;
+}
+
+/** A wedge: a line id as text, trimmed, else null. */
+export function wedgeOrNull(value) {
+    return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
 /** A tier in words: "Starter Camp", "Plane 2", or "No tier set". */
@@ -111,21 +138,32 @@ export function planTierOf(def) {
     return planOf(def).tier;
 }
 
+/** Where a record's plan puts it on the world map: `{ wedge, ring }`, each null when unset. */
+export function planPlaceOf(def) {
+    const block = isObject(def?.plan) ? def.plan : {};
+    return { wedge: wedgeOrNull(block.wedge), ring: ringOrNull(block.ring) };
+}
+
 /**
- * A plan block with its status, tier and note tidied (a known status in lower case, a whole tier,
- * a note with text) and blanks dropped; any other field is kept as it is. Undefined when nothing is
- * left, so a record that was never planned and one cleared again are the same.
+ * A plan block with its status, tier, wedge, ring and note tidied (a known status in lower case, a
+ * whole tier, a wedge with text, a strict ring, a note with text) and blanks dropped; any other
+ * field is kept as it is. Undefined when nothing is left, so a record that was never planned and
+ * one cleared again are the same.
  */
 export function cleanPlan(block) {
     if (!isObject(block)) return undefined;
     const out = {};
     for (const [key, value] of Object.entries(block)) {
-        if (value !== undefined && value !== null && !['status', 'tier', 'note'].includes(key)) out[key] = value;
+        if (value !== undefined && value !== null && !['status', 'tier', 'wedge', 'ring', 'note'].includes(key)) out[key] = value;
     }
     const status = statusOrNull(block.status);
     const tier = tierOrNull(block.tier);
+    const wedge = wedgeOrNull(block.wedge);
+    const ring = ringOrNull(block.ring);
     if (status) out.status = status;
     if (tier !== null) out.tier = tier;
+    if (wedge) out.wedge = wedge;
+    if (ring !== null) out.ring = ring;
     if (typeof block.note === 'string' && block.note.trim()) out.note = block.note;
     return Object.keys(out).length ? out : undefined;
 }
