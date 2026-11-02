@@ -467,8 +467,8 @@
     "autoSyncId": true,
     "id": "effect_capability"
   },
-  "effect_poison": {
-    "name": "Poison",
+  "effect_venom": {
+    "name": "Venom",
     "statements": [
       {
         "id": "stm_c0_poison_tick",
@@ -495,7 +495,7 @@
       "stacks": 3,
       "ticks": 0
     },
-    "id": "effect_poison"
+    "id": "effect_venom"
   },
   "effect_burn": {
     "name": "Burn",
@@ -1942,7 +1942,7 @@
         "id": "stm_k1b_slime_acid",
         "keyword": "applies",
         "payload": {
-          "effectId": "effect_poison",
+          "effectId": "effect_venom",
           "scale": 1,
           "durationMs": 0,
           "chance": 100

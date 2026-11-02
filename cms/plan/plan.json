@@ -47,9 +47,9 @@
         "tier": 1
       },
       "item_blueberry_pie": {
-        "status": "live",
+        "status": "parked",
         "tier": 1,
-        "note": "Tier inferred (ledger first fill, to confirm): made from a plane-1 ingredient (honey, blueberry)."
+        "note": "Parked (brief 330 W6): No recipe makes it yet."
       },
       "item_dough": {
         "status": "live",
@@ -61,9 +61,9 @@
         "tier": 0
       },
       "item_shrimp_trawler_potion": {
-        "status": "live",
+        "status": "parked",
         "tier": 2,
-        "note": "Tier inferred (ledger first fill, to confirm): an Alchemy potion: Alchemy starts in plane 2 (the Alchemy Table)."
+        "note": "Parked (brief 330 W6): No recipe makes it yet."
       },
       "item_clay": {
         "status": "live",
@@ -80,9 +80,9 @@
         "tier": 0
       },
       "item_coins": {
-        "status": "live",
+        "status": "parked",
         "tier": 3,
-        "note": "Tier inferred (ledger first fill, to confirm): nothing makes or spends it (markets are cut): a later plane, or Parked."
+        "note": "Parked (brief 330 W6): Nothing makes or spends it (markets are cut)."
       },
       "item_blackberry": {
         "status": "live",
@@ -414,9 +414,9 @@
         "tier": 2
       },
       "item_elixir_of_valor": {
-        "status": "live",
+        "status": "parked",
         "tier": 2,
-        "note": "Tier inferred (ledger first fill, to confirm): an Alchemy potion: Alchemy starts in plane 2 (the Alchemy Table)."
+        "note": "Parked (brief 330 W6): No recipe makes it yet."
       },
       "item_elixir_of_ironskin": {
         "status": "live",
@@ -665,6 +665,101 @@
         "status": "live",
         "tier": 2,
         "note": "Plane 2 (ledger fix pack): cooked from salmon."
+      },
+      "item_coal_prospecting_map": {
+        "status": "live",
+        "tier": 1,
+        "note": "Prospecting map (brief 330 W6): Goblins drop it now and then, the Goblin Chief often."
+      },
+      "item_bee_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_big_lizard_banner": {
+        "status": "live",
+        "tier": 3,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_cow_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_crab_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_fire_elemental_banner": {
+        "status": "live",
+        "tier": 3,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_fire_elemental_chief_banner": {
+        "status": "live",
+        "tier": 3,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_frog_banner": {
+        "status": "live",
+        "tier": 3,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_goblin_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_goblin_chief_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_greater_slime_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_queen_bee_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_sulphur_lizard_banner": {
+        "status": "live",
+        "tier": 3,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_thorn_elemental_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_toxic_frog_banner": {
+        "status": "live",
+        "tier": 3,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_water_elemental_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_wind_elemental_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_wolf_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+      },
+      "item_wolf_alpha_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
       }
     },
     "tokens": {
@@ -673,9 +768,9 @@
         "tier": 0
       },
       "token_forge_altar": {
-        "status": "live",
+        "status": "parked",
         "tier": 3,
-        "note": "Tier inferred (ledger first fill, to confirm): an old placeholder with no source and no working rule today: a later plane, or Parked."
+        "note": "Parked (brief 330 W6): An old placeholder with no source and no work."
       },
       "token_copper_ore_minecart": {
         "status": "live",
@@ -683,23 +778,23 @@
         "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
       },
       "token_wizard_academy": {
-        "status": "live",
+        "status": "parked",
         "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): a promotion building like the Fighter's Academy; no source today (heroes are classless now)."
+        "note": "Parked (brief 330 W6): A promotion building nothing builds yet."
       },
       "token_oak_forest": {
         "status": "live",
         "tier": 0
       },
       "token_ceramics_kiln": {
-        "status": "live",
+        "status": "parked",
         "tier": 3,
-        "note": "Tier inferred (ledger first fill, to confirm): no map writes it: waits for a later plane (clay, quartz, ceramics)."
+        "note": "Parked (brief 330 W6): A Crafting station nothing builds yet."
       },
       "token_forge_2": {
-        "status": "live",
+        "status": "parked",
         "tier": 3,
-        "note": "Tier inferred (ledger first fill, to confirm): an old placeholder with no source and no working rule today: a later plane, or Parked."
+        "note": "Parked (brief 330 W6): An old placeholder with no source and no work."
       },
       "token_oak_tree": {
         "status": "live",
@@ -715,14 +810,14 @@
         "note": "Tier inferred (ledger first fill, to confirm): part of a camp node's cycle (oak sapling and stump; the Coast's shrimp state; the old wheat stages)."
       },
       "token_shrimp_market": {
-        "status": "live",
+        "status": "parked",
         "tier": 3,
-        "note": "Tier inferred (ledger first fill, to confirm): markets are cut (concept_progression): a later plane, or Parked."
+        "note": "Parked (brief 330 W6): Markets are cut; nothing builds it."
       },
       "token_campfire": {
-        "status": "live",
+        "status": "parked",
         "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): a cheap Cooking station (skill loops: good on moving day); no source today."
+        "note": "Parked (brief 330 W6): A Cooking station nothing builds yet."
       },
       "token_wheat_field": {
         "status": "live",
@@ -735,9 +830,9 @@
         "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
       },
       "token_grandma_s_kitchen": {
-        "status": "live",
+        "status": "parked",
         "tier": 1,
-        "note": "Tier inferred (ledger first fill, to confirm): skill loops: a better kitchen (Grandma's Kitchen); no source today."
+        "note": "Parked (brief 330 W6): A better kitchen nothing builds yet."
       },
       "token_guild_hall": {
         "status": "live",
@@ -748,9 +843,9 @@
         "tier": 0
       },
       "token_pickaxe_mould": {
-        "status": "live",
+        "status": "parked",
         "tier": 3,
-        "note": "Tier inferred (ledger first fill, to confirm): an old placeholder with no source and no working rule today: a later plane, or Parked."
+        "note": "Parked (brief 330 W6): An old placeholder with no source and no work."
       },
       "token_quartz_deposit": {
         "status": "live",
@@ -902,8 +997,9 @@
         "tier": 3
       },
       "token_adamantine_ore_vein": {
-        "status": "live",
-        "tier": 3
+        "status": "parked",
+        "tier": 3,
+        "note": "Parked (brief 330 W6): A second Adamantine vein with no work skill: the Adamantium Ore is the one the world places."
       },
       "token_darkmetal_ore_vein": {
         "status": "live",
@@ -924,9 +1020,9 @@
         "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
       },
       "token_volcanic_island": {
-        "status": "live",
+        "status": "parked",
         "tier": 3,
-        "note": "Tier inferred (ledger first fill, to confirm): an old placeholder with no source and no working rule today: a later plane, or Parked."
+        "note": "Parked (brief 330 W6): An old placeholder with no source and no work."
       },
       "token_cow": {
         "status": "live",
@@ -956,14 +1052,14 @@
         "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
       },
       "token_ripe_wheat": {
-        "status": "live",
+        "status": "parked",
         "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): part of a camp node's cycle (oak sapling and stump; the Coast's shrimp state; the old wheat stages)."
+        "note": "Parked (brief 330 W6): The old growing wheat: the Field grows wheat by its recipe now; nothing places it."
       },
       "token_wheat_sprout": {
-        "status": "live",
+        "status": "parked",
         "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): part of a camp node's cycle (oak sapling and stump; the Coast's shrimp state; the old wheat stages)."
+        "note": "Parked (brief 330 W6): The old growing wheat: the Field grows wheat by its recipe now; nothing places it."
       },
       "token_apple_sapling": {
         "status": "live",
@@ -988,9 +1084,9 @@
         "tier": 0
       },
       "token_copper_anvil": {
-        "status": "live",
+        "status": "parked",
         "tier": 1,
-        "note": "Tier inferred (ledger first fill, to confirm): skill loops: a Copper Anvil is the next better Smithing station; no source today."
+        "note": "Parked (brief 330 W6): A context station nothing builds yet."
       },
       "token_goblin": {
         "status": "live",
@@ -1378,6 +1474,21 @@
         "tier": 0,
         "note": "Starter Camp (ledger fix pack): a second sickle, so more than one hero can farm."
       },
+      "recipe_mythril_pickaxe": {
+        "status": "live",
+        "tier": 3,
+        "note": "The pickaxe past iron (brief 330 W6), as the Iron Pickaxe."
+      },
+      "recipe_adamantium_pickaxe": {
+        "status": "live",
+        "tier": 3,
+        "note": "The pickaxe past iron (brief 330 W6), as the Iron Pickaxe."
+      },
+      "recipe_darkmetal_pickaxe": {
+        "status": "live",
+        "tier": 3,
+        "note": "The pickaxe past iron (brief 330 W6), as the Iron Pickaxe."
+      },
       "recipe_dough": {
         "status": "live",
         "tier": 0,
@@ -1655,6 +1766,111 @@
         "status": "live",
         "tier": 2,
         "note": "Plane 2 (ledger fix pack): plant the Yellowstone grapevine at home from its seeds."
+      },
+      "recipe_build_wild_hive": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_basking_stone": {
+        "status": "live",
+        "tier": 3,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_cow_pasture": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_crab_rocks": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_ember_vents": {
+        "status": "live",
+        "tier": 3,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_smoking_crater": {
+        "status": "live",
+        "tier": 3,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_frog_pond": {
+        "status": "live",
+        "tier": 3,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_goblin_camp": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_chief_tent": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_slime_pit": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_queens_hive": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_sulphur_rocks": {
+        "status": "live",
+        "tier": 3,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_thorn_thicket": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_toxic_pool": {
+        "status": "live",
+        "tier": 3,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_tide_pool": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_wind_stones": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_wolf_den": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_alpha_den": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
+      "recipe_build_birch_forest": {
+        "status": "live",
+        "tier": 3,
+        "note": "Plant a forest from its seedlings (brief 330 W6), as the Fir Forest."
+      },
+      "recipe_build_maple_forest": {
+        "status": "live",
+        "tier": 3,
+        "note": "Plant a forest from its seedlings (brief 330 W6), as the Fir Forest."
+      },
+      "recipe_build_mahogany_forest": {
+        "status": "live",
+        "tier": 3,
+        "note": "Plant a forest from its seedlings (brief 330 W6), as the Fir Forest."
       },
       "recipe_birdwatcher": {
         "status": "live",
