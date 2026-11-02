@@ -5,6 +5,15 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Director, balancing preview beside the refill pack (290 L9 preview; owner chose 2026-11-02 afternoon)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 290 L9: automatic balancing, **preview only** (Recalculate proposes XP returns, level gates, costs and times so Typical follows the pace curve; checks E; reports what numbers can't fix) | engineer | `feat/ledger-l9` (`e3`) | **building** | Mon | |
+| Refill pack: the 25 ring-3 sources rest and refill (owner ruling) | builder | `content/world-refill` (`n4`) | **building** | Mon | |
+
+Owner 2026-11-02: Hall prices wait for a Guild Hall balance pass.
+
 ## Director, the ledger catches up with the world (T-285, T-281, T-279, T-280; content packs; owner chose 2026-11-02 morning)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
