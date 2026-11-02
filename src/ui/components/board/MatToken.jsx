@@ -61,6 +61,10 @@ function useWalkerFollow({ on, id, boxHalf, pxPerUnit, still, px, py, artRef, ov
     // Where the boxes were last sent, and the glide they carry for that step.
     const sentTo = React.useRef(null);
     const glide = React.useRef(null);
+    // What the steps last wrote on both boxes since the last render. A write equal to it is
+    // skipped: each is a CSS parse and a restyle inside the tick, and a stroll keeps one glide for
+    // many steps. Forgotten on every render, which writes the boxes itself.
+    const written = React.useRef({ transition: null, transform: null });
     // A layout effect, so it listens from the commit on, and catches up at once on any step
     // taken between the render and now.
     React.useLayoutEffect(() => {
@@ -74,10 +78,16 @@ function useWalkerFollow({ on, id, boxHalf, pxPerUnit, still, px, py, artRef, ov
             sentTo.current = { x: t.x, y: t.y };
             glide.current = transition;
             const transform = `translate(${t.x - half}px, ${t.y - half}px)`;
+            const last = written.current;
+            const newGlide = transition !== last.transition;
+            const newPlace = transform !== last.transform;
+            last.transition = transition;
+            last.transform = transform;
+            if (!newGlide && !newPlace) return;
             for (const el of [artRef.current, overlayRef.current]) {
                 if (!el) continue;
-                el.style.transition = transition;
-                el.style.transform = transform;
+                if (newGlide) el.style.transition = transition;
+                if (newPlace) el.style.transform = transform;
             }
         };
         follow();
@@ -90,6 +100,8 @@ function useWalkerFollow({ on, id, boxHalf, pxPerUnit, still, px, py, artRef, ov
     // After the effect above, so a walk's first step glides from where the boxes stood.
     React.useLayoutEffect(() => {
         sentTo.current = { x: px, y: py };
+        written.current.transition = null;
+        written.current.transform = null;
     });
     if (!on) return null;
     if (glide.current != null) return glide.current;

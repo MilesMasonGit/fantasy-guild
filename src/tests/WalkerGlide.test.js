@@ -191,4 +191,25 @@ describe('⭐ on the mat: a walking enemy’s boxes glide in whole screen pixels
         expect(BoardState.tokens().length).toBe(3);
         expect(renderedSteps).toBeGreaterThan(2);
     });
+
+    it('a step writes only what changed: a steady stroll keeps its glide without writing it again', async () => {
+        // Each write is a CSS parse and a restyle inside the engine tick (T-200).
+        const transitionSet = vi.spyOn(CSSStyleDeclaration.prototype, 'transition', 'set');
+        const transformSet = vi.spyOn(CSSStyleDeclaration.prototype, 'transform', 'set');
+        let artStyle = null;
+        let walkingSteps = 0;
+        await walk(1, (boxes, dx, dy) => {
+            artStyle = boxes[0].style;
+            walkingSteps++;
+            // What the boxes carry is unchanged: this step's glide, at the engine's point.
+            for (const el of boxes) expect(el.style.transition).toBe(walkerGlide(dx, dy, 1));
+        });
+        const onArt = (spy) => spy.mock.contexts.filter(c => c === artStyle).length;
+        expect(walkingSteps).toBeGreaterThan(50);
+        expect(onArt(transformSet)).toBeGreaterThanOrEqual(walkingSteps);
+        // Every step used to write it; now only a step whose glide differs from the last one does.
+        expect(onArt(transitionSet)).toBeLessThan(walkingSteps * 0.75);
+        transitionSet.mockRestore();
+        transformSet.mockRestore();
+    });
 });
