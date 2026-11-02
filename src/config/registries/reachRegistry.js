@@ -88,9 +88,12 @@ export const REACHES = Object.freeze([
     }
 ]);
 
+/** Each reach's declaration by id: `reachOf` is asked for every rule of every source on each rebuild. */
+const REACH_BY_ID = new Map(REACHES.map(r => [r.id, r]));
+
 /** One reach's declaration, or null. */
 export function getReach(id) {
-    return REACHES.find(r => r.id === id) || null;
+    return REACH_BY_ID.get(id) || null;
 }
 
 /**

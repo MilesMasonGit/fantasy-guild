@@ -14,6 +14,7 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { REACH, REACHES, getReach, reachOf } from '../config/registries/reachRegistry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
@@ -225,5 +226,22 @@ describe('the spawner alerts count what every camp spawned in one pass', () => {
         BoardState.tokens.mockClear();
         SpawnerSystem.syncAlerts();
         expect(BoardState.tokens.mock.calls.length).toBeLessThanOrEqual(1);
+    });
+});
+
+describe('a rule’s reach is looked up by id, with the same answers', () => {
+    it('every declared reach is its own row; anything else is none', () => {
+        for (const row of REACHES) expect(getReach(row.id)).toBe(row);
+        for (const junk of [undefined, null, '', 'adjacent', 'the_whole_kingdom', 0, '__proto__', 'toString']) {
+            expect(getReach(junk)).toBeNull();
+        }
+    });
+
+    it('reachOf keeps the old ids and falls back to nearby', () => {
+        expect(reachOf({ reach: 'adjacent' })).toBe(REACH.NEARBY);
+        expect(reachOf({ reach: 'self_and_adjacent' })).toBe(REACH.SELF_AND_NEARBY);
+        expect(reachOf({ reach: REACH.BOARD })).toBe(REACH.BOARD);
+        expect(reachOf({ reach: 'toString' })).toBe(REACH.NEARBY);
+        expect(reachOf(undefined)).toBe(REACH.NEARBY);
     });
 });
