@@ -324,6 +324,46 @@ speed -20 % and its rest -50 % as fixture stars: ore 643.6 an hour in the engine
 ranks) adds about 20,000 rates, around 1 to 2 s, at the default three stages, and about 7 s if seven
 stages are set (each stage is a Typical profile of every piece of work).
 
+## The balancing preview (L9, 2026-11-02)
+
+*Engineer's notes for brief 290 L9. Measured: the numbers on today's data (`main` 3eeed41e, default
+settings). Reasoned: the rules, each a choice the owner can overrule.*
+
+**What it does** (`ledger/balance.js`, the Ledger's Balancing page, `changePackTool.mjs balance`).
+Four passes, each reading the pace the one before left, repeated until nothing moves (three rounds
+on today's data, about ten seconds in the CMS): **boost strengths** (a building's, drink's, tool's or
+gear's effect values weakened to its kind's target at Maxed; never a Guild Hall star), **XP a cycle**
+(each skill's levels grouped by their best Typical source; the source's XP scaled so its levels take
+the curve's time; left alone within the tolerance; at most 20× either way), **level gates** (a slow
+stage's late unlocks pulled in to land by its budget, a fast stage's spread over it from the stage
+before's end, in the same order, each moved along its skill's Typical track; world-table settle
+levels are not moved), **costs and times** (a one-off step over the wait the pace allows cut to it).
+What is left is explained by cause. Nothing is applied; Apply is a locked button.
+
+**On today's data** (Typical): Starter Camp 2 h 8 min → 1 h 2 min (budget 30 min; left: Cooked
+Lobster's chain of first finds), Plane 1 1 h 32 min → 24 min (budget 1 h 30 min; left: its gates are
+the world tables' ring-1 settle levels, 5, which would need to be about 11 to 12), Plane 2 8 h 33 min
+→ 23 h 29 min (budget 1 d, within). Walls 7 → 3 (Forestry, Mining and Smithing past level 73 to 79:
+the best source runs from level 1 or 15, and the sources that open there wear out or do not exist).
+25 numbers: 7 XP (Wild Lavender 1 → 12, Elixir of Ironskin 2 → 13, Oak Tree 1 → 3…), 15 gates
+(Beer Cooking 15 → 6 and Fine Fishing Rod Crafting 10 → 5 for the camp; Plane 2's iron gear and
+cooking raised, Iron Chestplate Smithing 21 → 43), 3 boost values (Well Watering, Composter Load,
+Beehive Pollination). The exported pack passes the agent gate with its stage moves declared.
+
+**Found on the way.**
+- **The simulator's XP derivation does not see supply.** Recalculate sets a tagged source's XP a
+  cycle from the XPH pins, its Purpose and its cycle time as if a hero worked it without a break; a
+  source limited by its rest or regrowth (Wild Lavender: 1 XP on a 3 s cycle, 267 XP an hour
+  worked) teaches a fraction of the target. That is most of the Alchemy wall.
+- **Applying needs the pacing pass after Recalculate.** XP and cycle times of tagged entries are
+  derived on every Recalculate, so an applied XP proposal would be undone; a moved gate would also
+  change what Recalculate derives (both read the required level). Gates, costs and boost values are
+  authored and would stay.
+- **The budgets and the curve set the gates.** At the curve's pace a stage of 30 min ends near
+  level 8, 1 h 30 min near level 14 and a day near level 37; today's gates (camp up to 15, plane 1 at
+  5, plane 2 at 15 to 21) sit below that, so following the curve makes plane 2 too short until its
+  gates rise.
+
 ## The system design (owner, 2026-10-29)
 
 *From the analyst's [system plan](research/ledger_system_plan_2026-10-29.md);
