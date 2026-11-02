@@ -13,6 +13,8 @@ import { BankTab } from '../ui/components/drawer/BankTab.jsx';
 import { DockEquipmentGrid } from '../ui/components/dock/DockEquipmentGrid.jsx';
 import { itemTintName, itemTintStyle } from '../ui/components/base/itemTint.js';
 import { SLOT_GLYPHS, slotGlyphName } from '../ui/components/base/PixelGlyph.jsx';
+import { EventBus } from '../systems/core/EventBus.js';
+import { UI_EVENTS } from '../systems/core/engineEvents.js';
 
 vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
@@ -112,6 +114,18 @@ describe('the Bank has no inspect column; its search is in its header', () => {
         fireEvent.change(search, { target: { value: 'pick' } });
         expect(tile(view, 'fixture_tile_pick')).not.toBeNull();
         expect(tile(view, 'fixture_tile_ore')).toBeNull();
+    });
+
+    it('a plain click on a tile opens nothing: the Encyclopedia is reached from its own button and the Token card', () => {
+        InventoryManager.addItem('fixture_tile_ore', 3);
+        const view = mountBank();
+        const heard = [];
+        const off = EventBus.subscribe(UI_EVENTS.OPEN_ENCYCLOPEDIA, (d) => heard.push(d.key));
+        fireEvent.click(tile(view, 'fixture_tile_ore'));
+        off();
+        expect(heard).toEqual([]);
+        hover(tile(view, 'fixture_tile_ore'));
+        expect(tipText()).not.toMatch(/Encyclopedia/i);
     });
 });
 

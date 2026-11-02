@@ -31,6 +31,7 @@ import { SEVERITY, PROBLEM_SPRITE } from '../components/board/problemMark.js';
 import { ROSTER_STATE_CLASS } from '../components/dock/dockHeroView.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
 import { PixelGlyph, GLYPHS, SLOT_GLYPHS } from '../components/base/PixelGlyph.jsx';
+import { SkillIcon } from '../components/base/SkillIcon.jsx';
 import { pixelRingPath } from '../components/board/pixelRing.js';
 import { itemTintStyle } from '../components/base/itemTint.js';
 import { ItemTipContent } from '../components/drawer/ItemTip.jsx';
@@ -52,11 +53,71 @@ import { MARKER_ART_PX, markerCornerOffset } from '../components/board/flagGeome
 import { useCornerShare } from '../components/board/markerCorner.js';
 import { tokenSpritePath } from '../../config/registries/tokenRegistry.js';
 import { dashedLinePath, MARCH_PX_PER_S } from '../components/board/orderLine.js';
+import { ChartView } from '../components/encyclopedia/EncyclopediaChartView.jsx';
+import { encyclopedia } from '../components/encyclopedia/encyclopediaModel.js';
+import { chartOf, CHART_METRICS, ROOT } from '../components/encyclopedia/encyclopediaChart.js';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
 
 const SAMPLE_ITEMS = ['item_oak_wood', 'item_copper_ore', 'item_copper_ingot'];
+
+/** The Encyclopedia's chart, live, on a strip of parchment: Copper Ingot with its first ingredient open. */
+const EncyclopediaChartDemo = () => {
+    const [state] = useState(() => {
+        const book = encyclopedia();
+        const start = 'item:item_copper_ingot';
+        const first = chartOf(book, start).ins?.find(b => b.inputs.length)?.inputs?.[0]?.id;
+        const grown = new Set(first ? [first] : []);
+        return { book, chart: chartOf(book, start, { grown }), focus: first || ROOT };
+    });
+    if (!state.book.entryOf('item:item_copper_ingot')) return <span className="text-xs text-gi-muted">No Copper Ingot in the content.</span>;
+    return (
+        <div className="relative overflow-hidden" style={{ width: 800, height: 360, background: '#dcc79a' }}>
+            <ChartView
+                book={state.book}
+                chart={state.chart}
+                metrics={CHART_METRICS}
+                rect={{ left: 0, top: 0, width: 800, height: 360 }}
+                focusAt={state.focus}
+                glide={null}
+                got={null}
+                heroes={[]}
+                startName="Copper Ingot"
+                onNode={() => {}}
+                onStem={() => {}}
+            />
+        </div>
+    );
+};
+/** The hard 2 px outline the chart's grow and regrow marks take, drawn in code. */
+const GLYPH_OUTLINE = 'drop-shadow(2px 0 0 #000) drop-shadow(-2px 0 0 #000) drop-shadow(0 2px 0 #000) drop-shadow(0 -2px 0 #000)';
+
+/** Words on the book's parchment, as the chart draws them: the arrow tabs, a way's band, the marks on a line. */
+const InkOnPageDemo = () => {
+    const ink = 'ui-text-ink ui-text-body font-bold tabular-nums';
+    const mark = (children, red = false) => (
+        <span className="ui-text-title ui-text-outline-2 font-bold text-white inline-flex items-center gap-1 px-1 tabular-nums" style={{ background: '#e1d3a2', ...(red ? { color: 'var(--color-ui-red, #ff2d55)' } : {}) }}>{children}</span>
+    );
+    const edge = '2px solid #3b2614';
+    const tab = (side, n) => (
+        <span className={cn(ink, 'inline-flex items-center justify-center px-1')} style={{ height: 20, lineHeight: '16px', background: '#d3c290', borderTop: edge, borderBottom: edge, ...(side === 'in' ? { borderLeft: edge } : { borderRight: edge }) }}>
+            {side === 'in' ? '‹' : '›'}{n}
+        </span>
+    );
+    return (
+        <div className="flex flex-wrap items-center gap-6 px-4 py-3" style={{ background: '#e1d3a2' }}>
+            {tab('in', 2)}
+            {tab('out', 6)}
+            <span className="inline-block" style={{ width: 96, height: 32, background: 'rgba(59, 38, 20, 0.08)' }} title="A way's band" />
+            {mark(<><SkillIcon skillId="smithing" size={32} title={null} />15</>)}
+            {mark(<><SkillIcon skillId="smithing" size={32} title={null} />16</>, true)}
+            {mark(<><PixelGlyph name="grow" scale={4} style={{ filter: GLYPH_OUTLINE }} />2:30</>)}
+            {mark(<><PixelGlyph name="regrow" scale={4} style={{ filter: GLYPH_OUTLINE }} />5:00</>)}
+        </div>
+    );
+};
+
 const SAMPLE_TOKEN = 'token_oak_forest';
 const itemName = (id) => getItem(id)?.name || id;
 
@@ -860,6 +921,18 @@ export const KIT_SECTIONS = [
         source: 'BankSortButton (the Bank, beside Select)',
         rule: 'New, unapproved (brief 310). A small boxed button like Select, its words muted, white on hover; a press opens a menu under it with two lines, This tab and Entire Bank, muted words white on hover. A choice sorts and closes the menu; Escape or a press elsewhere closes it.',
         Demo: () => <div className="h-24"><BankSortButton onSortTab={() => {}} onSortAll={() => {}} /></div>
+    },
+    {
+        id: 'codex-chart', title: 'Encyclopedia chart: entries, marks on the lines, ways on bands, arrow tabs', status: 'unapproved',
+        source: 'ChartView (the Encyclopedia’s chart page)',
+        rule: 'New, unapproved (brief 300 E3, the owner’s display choices, third and fourth looks of 1 November). Drawn on the book’s parchment, read left to right, every box something the player acts on: a dark box with the frames’ bronze 2 px line (white on hover and when it is the focus), the sprite, the name, then how many one of the searched entry needs (×6, red when you have fewer) and a drop’s odds; the collected tick at its bottom right. Resting the pointer on a box shows its card (what it is, what you have, this run’s totals, the one-off starts it came from) and lights its path: the lines from it to the searched entry are drawn twice as thick; nothing fades. On the line into each step, what it asks of a hero: the skill icon at 2× and the level in light outlined words (light red when no hero has it; a fight shows a sword and the enemy’s level, never red; hover names the skill and the stations). A sapling, sprout or stump is no box: the line carries the grow mark and its time, or the regrow mark for a stump fed a seedling. When an entry has several ways in, each way sits on its own faint band of the page (no “or”). On a box’s side, an arrow tab with a count in it (‹2 on the left, ›6 on the right) says how many lines that way are not on the chart; a click opens that side, and on a box’s far side it opens it in place: the box moves out and its other ways (or uses) stand between it and its neighbour, whose line runs through. Lines are 1 art pixel of dark ink with square corners and an arrowhead into each box. Drawn here with nobody in the guild, so every level shows red.',
+        Demo: EncyclopediaChartDemo
+    },
+    {
+        id: 'codex-ink', title: 'Words on the book’s page: ink tabs and outlined marks', status: 'unapproved',
+        source: 'ui-text-ink, --color-ui-ink (arrow tabs); ui-text-title with ui-text-outline-2 (marks on the lines); the Encyclopedia’s chart',
+        rule: 'New, unapproved (the owner’s display choices, third and fourth looks of 1 November). Counts drawn on the book’s parchment sit in an arrow tab, dark ink at the body size, bold, with no outline (the game’s black outline fills ink letters in): a slightly deeper page edged in ink on its outer sides, the arrow pointing the way. What a step asks of a hero is a mark on its line: the skill icon at 2× (32 px) and the level in light words at the title size with the game’s hard 2 px black outline for words over a picture; light red when no hero has it, never for a fight. A grow or regrow mark is the same mark: its code-drawn glyph at 32 px with the same outline, its time in the same words. A mark has a patch of the page behind it, so its line breaks around it; a way in sits on a band, a thin ink wash over the page.',
+        Demo: InkOnPageDemo
     },
     {
         id: 'kit-controls', title: 'Buttons, switch, slider, boxes, slots', status: 'unapproved',

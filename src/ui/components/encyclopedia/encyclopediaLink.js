@@ -35,6 +35,9 @@ export function takeLookUp() {
     return key;
 }
 
+/** Whether the Encyclopedia is open: only the open screen listens for look-ups. */
+export const isEncyclopediaOpen = () => listeners.size > 0;
+
 /** Hear every look-up while the screen is open; returns the unsubscribe. */
 export function onLookUp(fn) {
     listeners.add(fn);

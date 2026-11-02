@@ -172,6 +172,16 @@ describe('building in place (DP-6)', () => {
         expect(BoardState.getTokenById(f.id)).toBeNull();
         expect(onMat('fixture_bip_crop')).toHaveLength(1);
     });
+
+    it('each build counts towards this run total of that Token built', () => {
+        expect(GameState.state.collection.tokensBuilt).toEqual({});
+        const f = put('fixture_bip_farmland');
+        StationRecipe.setSelectedRecipe(f, 'fixture_bip_plant_onion');
+        Orders.orderAt('h1', AT);
+        run(2500);
+        expect(onMat('fixture_bip_crop')).toHaveLength(1);
+        expect(GameState.state.collection.tokensBuilt).toEqual({ fixture_bip_crop: 1 });
+    });
 });
 
 describe('the level gate is the recipe’s (SP-49)', () => {

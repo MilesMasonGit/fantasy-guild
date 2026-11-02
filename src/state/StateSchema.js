@@ -244,7 +244,8 @@ export const INITIAL_STATE = {
         provenance: {},          // { [sourceId]: { [itemId]: true } }
         // The Encyclopedia's ticks (`collectionLog.js`); an older save gets them empty from `migrateState`.
         tokensHad: {},           // { [typeId]: true } — a Token of the type has stood on the mat
-        recipesMade: {}          // { [recipeId]: true } — a cycle of the recipe has finished
+        recipesMade: {},         // { [recipeId]: true } — a cycle of the recipe has finished
+        tokensBuilt: {}          // { [typeId]: number } — Tokens of the type built on a Foundation
     },
 
     // === UI State (Transient Focus) ===

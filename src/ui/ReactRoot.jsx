@@ -311,6 +311,12 @@ export const ReactRoot = () => {
                                 onInspectToken={onInspectToken}
                                 onClearInspect={onClearInspect}
                             />
+                            {/* The Encyclopedia lies over the mat but under the item stubs: a stub clicked while it is open turns to that item's chart. */}
+                            {isEncyclopediaOpen && (
+                                <ErrorBoundary label="EncyclopediaScreen">
+                                    <EncyclopediaScreen onClose={ui.fullscreen.close} />
+                                </ErrorBoundary>
+                            )}
                             {/**
                              * Over the mat, under the top bar: the item stubs at the right,
                              * the banners at the centre. Neither takes any width from the mat.
@@ -352,11 +358,6 @@ export const ReactRoot = () => {
                                 </ErrorBoundary>
                             )}
                         </AnimatePresence>
-                        {isEncyclopediaOpen && (
-                            <ErrorBoundary label="EncyclopediaScreen">
-                                <EncyclopediaScreen onClose={ui.fullscreen.close} />
-                            </ErrorBoundary>
-                        )}
                         <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                     </div>
                     {menuRight && <BubbleMenu ui={ui} side="right" />}

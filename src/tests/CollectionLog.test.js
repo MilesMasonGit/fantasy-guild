@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import React from 'react';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 import { GameState } from '../state/GameState.js';
 import { INITIAL_STATE, GAME_VERSION } from '../state/StateSchema.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import { handleVictory } from '../systems/combat/CombatResolutionProcessor.js';
 import { RegistryManager } from '../systems/progression/RegistryManager.js';
-import { collectedOf, noteRecipeMade } from '../systems/progression/collectionLog.js';
+import { collectedOf, noteRecipeMade, noteTokenBuilt, lifetimeOf } from '../systems/progression/collectionLog.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { EncyclopediaScreen } from '../ui/components/encyclopedia/EncyclopediaScreen.jsx';
@@ -78,6 +78,7 @@ describe('the save', () => {
     it('a new game starts with the records empty', () => {
         expect(INITIAL_STATE.collection.tokensHad).toEqual({});
         expect(INITIAL_STATE.collection.recipesMade).toEqual({});
+        expect(INITIAL_STATE.collection.tokensBuilt).toEqual({});
         const fresh = JSON.parse(JSON.stringify(INITIAL_STATE));
         const got = collectedOf(fresh);
         expect([got.items.size, got.tokens.size, got.enemies.size, got.recipes.size]).toEqual([0, 0, 0, 0]);
@@ -87,24 +88,42 @@ describe('the save', () => {
         const old = JSON.parse(JSON.stringify(INITIAL_STATE));
         delete old.collection.tokensHad;
         delete old.collection.recipesMade;
+        delete old.collection.tokensBuilt;
         old.collection.discoveredItems = { item_coal: true };
         const migrated = migrateState(old, GAME_VERSION);
         expect(migrated.collection.tokensHad).toEqual({});
         expect(migrated.collection.recipesMade).toEqual({});
+        expect(migrated.collection.tokensBuilt).toEqual({});
         expect(migrated.collection.discoveredItems).toEqual({ item_coal: true });
     });
 });
 
+describe('lifetime totals', () => {
+    it('items collected, Tokens built and enemies beaten add up, and come back through a save and a load', () => {
+        RegistryManager.recordItemGain('item_coal', 3);
+        RegistryManager.recordItemGain('item_coal', 2);
+        noteTokenBuilt('token_iron_smithy');
+        noteTokenBuilt('token_iron_smithy');
+        handleVictory({ id: 'f1', combat: { state: {} }, instanceId: null, drops: [] }, { id: 'h1' }, { id: 'token_goblin', name: 'Goblin' }, 'h1', []);
+        const loaded = migrateState(JSON.parse(JSON.stringify(GameState.state)), GAME_VERSION);
+        expect(lifetimeOf('item:item_coal', loaded)).toMatchObject({ collected: 5 });
+        expect(lifetimeOf('token:token_iron_smithy', loaded)).toMatchObject({ built: 2 });
+        expect(lifetimeOf('token:token_goblin', loaded)).toMatchObject({ killed: 1 });
+        expect(lifetimeOf('token:token_wolf', loaded)).toMatchObject({ killed: 0 });
+    });
+});
+
 describe('the screen', () => {
-    it('ticks what is collected and counts each kind', () => {
+    it('ticks what is collected on the chart and in the search, with no per-kind counts', () => {
         RegistryManager.recordItemGain('item_iron_ore', 1);
-        lookUp('item:item_iron_ore');
+        lookUp('item:item_iron_ingot');
         const { container } = render(React.createElement(EncyclopediaScreen, { onClose: () => {} }));
-        const total = encyclopedia().byKind[KIND.ITEM].length;
-        const have = Object.keys(GameState.state.collection.discoveredItems).filter(id => encyclopedia().entryOf(`item:${id}`)).length;
-        expect(container.querySelector('[data-codex-progress="items"]').textContent).toBe(`${have}/${total}`);
+        const node = (key) => [...container.querySelectorAll(`[data-codex-key="${key}"]`)].find(n => n.getAttribute('data-codex-side') === 'in');
+        expect(node('item:item_iron_ore').querySelector('[data-codex-tick]')).not.toBeNull();
+        expect(node('item:item_coal').querySelector('[data-codex-tick]')).toBeNull();
+        expect(container.querySelector('[data-codex-progress]')).toBeNull();
+        fireEvent.change(container.querySelector('[data-codex-search]'), { target: { value: 'iron ore' } });
         expect(container.querySelector('[data-codex-row="item:item_iron_ore"] [data-codex-tick]')).not.toBeNull();
-        expect(container.querySelector('[data-codex-row="item:item_iron_ingot"] [data-codex-tick]')).toBeNull();
-        expect(container.querySelector('[data-codex-entry] h3 [data-codex-tick]')).not.toBeNull();
+        expect(encyclopedia().byKind[KIND.ITEM].length).toBeGreaterThan(0);
     });
 });

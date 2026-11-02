@@ -1,6 +1,6 @@
 // the encyclopedia's facts: every item, Token, enemy and recipe, where each comes from and what uses it
 
-import { buildLedger, HOW, itemKey, tokenKey, recipeKey, parseKey, ingredientTree } from '../../../systems/progression/ledger/engine.js';
+import { buildLedger, HOW, itemKey, tokenKey, recipeKey, parseKey } from '../../../systems/progression/ledger/engine.js';
 import { getAllItems } from '../../../config/registries/itemRegistry.js';
 import { getAllTokenTypes } from '../../../config/registries/tokenRegistry.js';
 import { listRecipes } from '../../../config/registries/recipePoolRegistry.js';
@@ -13,8 +13,8 @@ import { wordStartsMatch } from '../drawer/bankSort.js';
  * registries: one picture of what makes what, shared with the CMS. Built the first time the screen
  * opens and kept, so a closed screen costs nothing.
  *
- * ⚠️ Only the world's rules and the ingredient tree are shown, never a reach tier: tiers come from
- * the owner's plan, which is not the player's business (and is stripped from the game's data).
+ * ⚠️ Only the world's rules are shown, never a reach tier: tiers come from the owner's plan, which
+ * is not the player's business (and is stripped from the game's data). `reachOf` is for ordering.
  */
 
 export const KIND = Object.freeze({ ITEM: 'items', TOKEN: 'tokens', ENEMY: 'enemies', RECIPE: 'recipes' });
@@ -60,10 +60,9 @@ function sortByName(list) {
  *   byKind: Record<string, object[]>,
  *   entryOf(key): object|null,
  *   kindOfKey(key): string|null,
- *   sourcesOf(key): {how, via, chance, firstKill, inputs}[],
- *   usesOf(key): {how, by, inputs?}[],
- *   givesOf(key): {how, key, chance, firstKill}[],
- *   treeOf(itemId): object|null,
+ *   sourcesOf(key): {how, via, chance, firstKill, perCycle, inputs, gates, oneOff}[],
+ *   usesOf(key): {how, by, quantity?, nearby?}[],
+ *   givesOf(key): {how, key, chance, firstKill, perCycle, gates}[],
  *   search(term): object[]
  * }}
  */
@@ -114,9 +113,14 @@ export function buildEncyclopedia(content = gameContent()) {
             if (!entries.has(give.key)) continue;
             push(sources, give.key, {
                 how: rule.how, via: rule.via, chance: give.chance, firstKill: give.firstKill === true,
-                inputs: rule.how === HOW.SHOP ? rule.inputs : []
+                perCycle: give.perCycle ?? null, inputs: rule.inputs, gates: rule.gates, oneOff: rule.oneOff === true
             }, r => `${r.how}|${r.via}`);
-            if (rule.via) push(gives, rule.via, { how: rule.how, key: give.key, chance: give.chance, firstKill: give.firstKill === true }, r => `${r.how}|${r.key}`);
+            if (rule.via) {
+                push(gives, rule.via, {
+                    how: rule.how, key: give.key, chance: give.chance, firstKill: give.firstKill === true,
+                    perCycle: give.perCycle ?? null, gates: rule.gates
+                }, r => `${r.how}|${r.key}`);
+            }
         }
         if (SPENT_BY.has(rule.how)) {
             const by = rule.how === HOW.SHOP || rule.how === HOW.UPCYCLE ? rule.gives[0]?.key : rule.via;
@@ -136,30 +140,17 @@ export function buildEncyclopedia(content = gameContent()) {
         }
     }
 
-    const treeOf = (itemId) => {
-        if (!world.items[itemId]) return null;
-        const tree = ingredientTree(world, ledger.reach, itemId);
-        return tree.children.length ? tree : null;
-    };
-
     return {
         entries,
         byKind,
+        /** When `key` is first reachable, for ordering only: a tier is never shown. */
+        reachOf: (key) => ledger.reach.get(key) ?? null,
         entryOf: (key) => entries.get(key) ?? null,
         kindOfKey: (key) => entries.get(key)?.kind ?? null,
         nameOf: (key) => entries.get(key)?.name ?? world.names.get(key) ?? (key ? parseKey(key).id : ''),
         sourcesOf: (key) => sources.get(key) || [],
         usesOf: (key) => uses.get(key) || [],
         givesOf: (key) => gives.get(key) || [],
-        treeOf,
-        /** A recipe's inputs, each as its tree for one unit (`tree`) and how many one craft takes (`quantity`). */
-        recipeTreesOf: (recipeId) => {
-            const recipe = world.recipes[recipeId];
-            if (!recipe) return [];
-            return (Array.isArray(recipe.inputs) ? recipe.inputs : [])
-                .filter(i => typeof i?.itemId === 'string' && world.items[i.itemId])
-                .map(i => ({ tree: ingredientTree(world, ledger.reach, i.itemId), quantity: Math.max(0, Number(i.quantity) || 1) }));
-        },
         /** Entries whose name has words starting with the typed words, in kind order then by name. */
         search: (term) => KINDS.flatMap(k => byKind[k].filter(e => wordStartsMatch(e.name, term)))
     };

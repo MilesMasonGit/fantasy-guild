@@ -43,7 +43,7 @@ import { centreOf } from './nearby.js';
 import * as Hand from './Hand.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
-import { noteRecipeMade } from '../progression/collectionLog.js';
+import { noteRecipeMade, noteTokenBuilt } from '../progression/collectionLog.js';
 
 /**
  * Re-exported so `BoardRunner.ALERT` keeps working for the engine suites that read it that way. The
@@ -404,6 +404,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         // the discard refund.
         const built = Foundations.buildInPlace(instance, buildTypeId, inputs);
         if (built) {
+            noteTokenBuilt(buildTypeId);
             EventBus.publish(BOARD_EVENTS.TOKEN_BUILT, {
                 instanceId: built.id, typeId: buildTypeId, fromTypeId, heroId: heroId || null
             });
