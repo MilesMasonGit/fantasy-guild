@@ -73,10 +73,17 @@ export function enemyBarPlace(boxPx, u = 1) {
 export const CHIP = Object.freeze({ GLYPH: 16, PAD: 2, BAND: 6, GAP: 8 });
 export const CHIP_PX = CHIP.GLYPH + 2 * (CHIP.PAD + CHIP.BAND);
 
-/** The kit's small text size in screen pixels at the player's Text size (the bar's number). */
+/**
+ * The kit's small text size in screen pixels at the player's Text size (the bar's number).
+ * ⚠️ Read off the root's own style, where `SettingsManager.applyFontSizes` writes it, before asking
+ * `getComputedStyle`: that made the browser bring every pending style up to date first, inside a
+ * render and the speech layer's poll, and every step of a walking enemy leaves its boxes pending.
+ */
 export function labelFontPx() {
     try {
-        const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--font-size-xxs'));
+        const root = document.documentElement;
+        const own = root.style.getPropertyValue('--font-size-xxs');
+        const v = parseFloat(own || getComputedStyle(root).getPropertyValue('--font-size-xxs'));
         return v > 0 ? v : 14;
     } catch {
         return 14;
