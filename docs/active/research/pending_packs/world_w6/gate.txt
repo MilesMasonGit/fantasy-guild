@@ -1,0 +1,190 @@
+PASS: Passes: 1 entry moves on the timeline, 19 newly reached, 105 problems added, 49 cleared.
+Against data/ (no CMS autosave found; the owner may have unsynced work) (fp:de905dc49a7e6ac2).
+Moved entries (20, furthest first):
+- Bee Banner: now first had at 1 h 41 min
+- Big Lizard Banner: now first had at 4 h 20 min
+- Coal Prospecting Map: now first had at 17 min
+- Cow Banner: now first had at 3 h 21 min
+- Crab Banner: now first had at 1 h 41 min
+- Fire Elemental Banner: now first had at 1 h 46 min
+- Fire Elemental Chief Banner: now first had at 4 h 20 min
+- Frog Banner: now first had at 1 h 46 min
+- Goblin Banner: now first had at 1 h 41 min
+- Goblin Chief Banner: now first had at 4 h 15 min
+- Greater Slime Banner: now first had at 4 h 15 min
+- Queen Bee Banner: now first had at 4 h 15 min
+- Sulphur Lizard Banner: now first had at 1 h 46 min
+- Thorn Elemental Banner: now first had at 3 h 21 min
+- Toxic Frog Banner: now first had at 4 h 20 min
+- and 5 more
+Checks added:
+- warn: Adamantine Ingot: Only made inside a loop with no way in: Adamantine Ingot → Adamantine Ingot → Adamantine Ore → pickaxe 3+ → Adamantium Pickaxe → Adamantium Pickaxe → Adamantine Ingot.
+- warn: Adamantine Ingot: Only made inside a loop with no way in: Adamantine Ingot → Adamantine Ore → pickaxe 3+ → Adamantium Pickaxe → Adamantium Pickaxe → Adamantine Ingot → Adamantine Ingot.
+- warn: Adamantine Ore: Only made inside a loop with no way in: Adamantine Ore → pickaxe 3+ → Adamantium Pickaxe → Adamantium Pickaxe → Adamantine Ingot → Adamantine Ingot → Adamantine Ore.
+- warn: Adamantium Pickaxe: Only made inside a loop with no way in: Adamantium Pickaxe → Adamantium Pickaxe → Adamantine Ingot → Adamantine Ingot → Adamantine Ore → pickaxe 3+ → Adamantium Pickaxe.
+- warn: Adamantium Pickaxe: Only made inside a loop with no way in: Adamantium Pickaxe → Adamantine Ingot → Adamantine Ingot → Adamantine Ore → pickaxe 3+ → Adamantium Pickaxe → Adamantium Pickaxe.
+- warn: Bee Banner: Reachable at Plane 1, before its tier (Plane 2): Bee Banner ← Bee (Combat 6, 0.5%) ← Wild Hive ← Cherry Grove Map ← Guild Hall (0.4%) ← the Guild Hall.
+- warn: Bee Banner: Only ever by luck: 0.5% from Bee, and no sure way.
+- warn: Bee Banner: Its own step (dropped Bee) takes 1 h 40 min at Typical once it can start (1 min in), 3.3× the 30 min the pace allows a wait there (a level at 1 on the curve, at least a check-in).
+- warn: Big Lizard Banner: Reachable at Plane 2, before its tier (Plane 3): Big Lizard Banner ← Big Lizard (Combat 24, 2%) ← Basking Stone ← Yellowstone Map ← Wolf Alpha (Combat 10, first kill) ← Alpha's Den ← Forest Map ← given by the tutorial.
+- warn: Big Lizard Banner: Only ever by luck: 2% from Big Lizard, and no sure way.
+- warn: Big Lizard Banner: Its own step (dropped Big Lizard) takes 4 h 10 min at Typical once it can start (10 min in), 8.3× the 30 min the pace allows a wait there (a level at 4 on the curve, at least a check-in).
+- warn: Build Alpha's Den: Reachable at Plane 1, before its tier (Plane 2): Build Alpha's Den ← Wood Foundation (Construction 1) ← bought at the Shop.
+- warn: Build Alpha's Den: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Basking Stone: Reachable at Plane 2, before its tier (Plane 3): Build Basking Stone ← Wood Foundation (Construction 5) ← bought at the Shop.
+- warn: Build Basking Stone: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Birch Forest: Never reachable, though planned for Plane 3: it needs Birch Seedling, never reached.
+- warn: Build Chief's Tent: Reachable at Plane 1, before its tier (Plane 2): Build Chief's Tent ← Wood Foundation (Construction 1) ← bought at the Shop.
+- warn: Build Chief's Tent: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Cow Pasture: Reachable at Plane 1, before its tier (Plane 2): Build Cow Pasture ← Wood Foundation (Construction 1) ← bought at the Shop.
+- warn: Build Cow Pasture: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Crab Rocks: Reachable at Plane 1, before its tier (Plane 2): Build Crab Rocks ← Wood Foundation (Construction 1) ← bought at the Shop.
+- warn: Build Crab Rocks: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Ember Vents: Reachable at Plane 2, before its tier (Plane 3): Build Ember Vents ← Wood Foundation (Construction 5) ← bought at the Shop.
+- warn: Build Ember Vents: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Frog Pond: Reachable at Plane 2, before its tier (Plane 3): Build Frog Pond ← Wood Foundation (Construction 5) ← bought at the Shop.
+- warn: Build Frog Pond: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Goblin Camp: Reachable at Starter Camp, before its tier (Plane 2): Build Goblin Camp ← Wood Foundation (Construction 1) ← bought at the Shop.
+- warn: Build Goblin Camp: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Mahogany Forest: Never reachable, though planned for Plane 3: it needs Mahogany Seedling, never reached.
+- warn: Build Maple Forest: Never reachable, though planned for Plane 3: it needs Maple Seedling, never reached.
+- warn: Build Queen's Hive: Reachable at Plane 1, before its tier (Plane 2): Build Queen's Hive ← Wood Foundation (Construction 1) ← bought at the Shop.
+- warn: Build Queen's Hive: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Slime Pit: Reachable at Plane 1, before its tier (Plane 2): Build Slime Pit ← Wood Foundation (Construction 1) ← bought at the Shop.
+- warn: Build Slime Pit: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Smoking Crater: Reachable at Plane 2, before its tier (Plane 3): Build Smoking Crater ← Wood Foundation (Construction 5) ← bought at the Shop.
+- warn: Build Smoking Crater: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Sulphur Rocks: Reachable at Plane 2, before its tier (Plane 3): Build Sulphur Rocks ← Wood Foundation (Construction 5) ← bought at the Shop.
+- warn: Build Sulphur Rocks: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Thorn Thicket: Reachable at Plane 1, before its tier (Plane 2): Build Thorn Thicket ← Wood Foundation (Construction 1) ← bought at the Shop.
+- warn: Build Thorn Thicket: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Tide Pool: Reachable at Plane 1, before its tier (Plane 2): Build Tide Pool ← Wood Foundation (Construction 1) ← bought at the Shop.
+- warn: Build Tide Pool: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Toxic Pool: Reachable at Plane 2, before its tier (Plane 3): Build Toxic Pool ← Wood Foundation (Construction 5) ← bought at the Shop.
+- warn: Build Toxic Pool: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Wild Hive: Reachable at Plane 1, before its tier (Plane 2): Build Wild Hive ← Wood Foundation (Construction 1) ← bought at the Shop.
+- warn: Build Wild Hive: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Wind Stones: Reachable at Plane 1, before its tier (Plane 2): Build Wind Stones ← Wood Foundation (Construction 1) ← bought at the Shop.
+- warn: Build Wind Stones: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Build Wolf Den: Reachable at Plane 1, before its tier (Plane 2): Build Wolf Den ← Wood Foundation (Construction 1) ← bought at the Shop.
+- warn: Build Wolf Den: Only ever by luck: 100% from Wood Foundation, and no sure way.
+- warn: Coal Prospecting Map: Reachable at Starter Camp, before its tier (Plane 1): Coal Prospecting Map ← Goblin (Combat 5, 3%) ← Goblin Camp ← in the Starter Camp.
+- warn: Cow Banner: Reachable at Plane 1, before its tier (Plane 2): Cow Banner ← Cow (Combat 1, 0.5%) ← Cow Pasture ← Meadow Map ← Guild Hall (1.6%) ← the Guild Hall.
+- warn: Cow Banner: Only ever by luck: 0.5% from Cow, and no sure way.
+- warn: Cow Banner: Its own step (dropped Cow) takes 3 h 20 min at Typical once it can start (1 min in), 6.7× the 30 min the pace allows a wait there (a level at 1 on the curve, at least a check-in).
+- warn: Crab Banner: Reachable at Plane 1, before its tier (Plane 2): Crab Banner ← Crab (Combat 3, 0.5%) ← Crab Rocks ← Coast Map ← given by the tutorial.
+- warn: Crab Banner: Only ever by luck: 0.5% from Crab, and no sure way.
+- warn: Crab Banner: Its own step (dropped Crab) takes 1 h 40 min at Typical once it can start (1 min in), 3.3× the 30 min the pace allows a wait there (a level at 1 on the curve, at least a check-in).
+- warn: Darkmetal Ingot: Only made inside a loop with no way in: Darkmetal Ingot → Darkmetal Ingot → Darkmetal Ore → pickaxe 4+ → Darkmetal Pickaxe → Darkmetal Pickaxe → Darkmetal Ingot.
+- warn: Darkmetal Ingot: Only made inside a loop with no way in: Darkmetal Ingot → Darkmetal Ore → pickaxe 4+ → Darkmetal Pickaxe → Darkmetal Pickaxe → Darkmetal Ingot → Darkmetal Ingot.
+- warn: Darkmetal Ore: Only made inside a loop with no way in: Darkmetal Ore → pickaxe 4+ → Darkmetal Pickaxe → Darkmetal Pickaxe → Darkmetal Ingot → Darkmetal Ingot → Darkmetal Ore.
+- warn: Darkmetal Pickaxe: Only made inside a loop with no way in: Darkmetal Pickaxe → Darkmetal Pickaxe → Darkmetal Ingot → Darkmetal Ingot → Darkmetal Ore → pickaxe 4+ → Darkmetal Pickaxe.
+- warn: Darkmetal Pickaxe: Only made inside a loop with no way in: Darkmetal Pickaxe → Darkmetal Ingot → Darkmetal Ingot → Darkmetal Ore → pickaxe 4+ → Darkmetal Pickaxe → Darkmetal Pickaxe.
+- warn: Fire Elemental Banner: Reachable at Plane 2, before its tier (Plane 3): Fire Elemental Banner ← Fire Elemental (Combat 17, 0.5%) ← Ember Vents ← Volcano Map ← Goblin Chief (Combat 20, first kill) ← Chief's Tent ← Mountain Map ← given by the tutorial.
+- warn: Fire Elemental Banner: Only ever by luck: 0.5% from Fire Elemental, and no sure way.
+- warn: Fire Elemental Banner: Its own step (dropped Fire Elemental) takes 1 h 40 min at Typical once it can start (6 min in), 3.3× the 30 min the pace allows a wait there (a level at 2 on the curve, at least a check-in).
+- warn: Fire Elemental Chief Banner: Reachable at Plane 2, before its tier (Plane 3): Fire Elemental Chief Banner ← Fire Elemental Chief (Combat 25, 2%) ← Smoking Crater ← Volcano Map ← Goblin Chief (Combat 20, first kill) ← Chief's Tent ← Mountain Map ← given by the tutorial.
+- warn: Fire Elemental Chief Banner: Only ever by luck: 2% from Fire Elemental Chief, and no sure way.
+- warn: Fire Elemental Chief Banner: Its own step (dropped Fire Elemental Chief) takes 4 h 10 min at Typical once it can start (10 min in), 8.3× the 30 min the pace allows a wait there (a level at 4 on the curve, at least a check-in).
+- warn: Frog Banner: Reachable at Plane 2, before its tier (Plane 3): Frog Banner ← Frog (Combat 15, 0.5%) ← Frog Pond ← Bog Map ← Water Elemental (Combat 12, first kill) ← Tide Pool ← Coast Map ← given by the tutorial.
+- warn: Frog Banner: Only ever by luck: 0.5% from Frog, and no sure way.
+- warn: Frog Banner: Its own step (dropped Frog) takes 1 h 40 min at Typical once it can start (6 min in), 3.3× the 30 min the pace allows a wait there (a level at 2 on the curve, at least a check-in).
+- warn: Goblin Banner: Reachable at Starter Camp, before its tier (Plane 2): Goblin Banner ← Goblin (Combat 5, 0.5%) ← Goblin Camp ← in the Starter Camp.
+- warn: Goblin Banner: Only ever by luck: 0.5% from Goblin, and no sure way.
+- warn: Goblin Banner: Its own step (dropped Goblin) takes 1 h 40 min at Typical once it can start (1 min in), 3.3× the 30 min the pace allows a wait there (a level at 1 on the curve, at least a check-in).
+- warn: Goblin Chief Banner: Reachable at Plane 1, before its tier (Plane 2): Goblin Chief Banner ← Goblin Chief (Combat 20, 2%) ← Chief's Tent ← Mountain Map ← given by the tutorial.
+- warn: Goblin Chief Banner: Only ever by luck: 2% from Goblin Chief, and no sure way.
+- warn: Goblin Chief Banner: Its own step (dropped Goblin Chief) takes 4 h 10 min at Typical once it can start (5 min in), 8.3× the 30 min the pace allows a wait there (a level at 2 on the curve, at least a check-in).
+- warn: Greater Slime Banner: Reachable at Plane 1, before its tier (Plane 2): Greater Slime Banner ← Greater Slime (Combat 8, 2%) ← Slime Pit ← Meadow Map ← Guild Hall (1.6%) ← the Guild Hall.
+- warn: Greater Slime Banner: Only ever by luck: 2% from Greater Slime, and no sure way.
+- warn: Greater Slime Banner: Its own step (dropped Greater Slime) takes 4 h 10 min at Typical once it can start (5 min in), 8.3× the 30 min the pace allows a wait there (a level at 2 on the curve, at least a check-in).
+- warn: Mythril Pickaxe: Never reachable, though planned for Plane 3: it needs Mythril Ingot, never reached.
+- warn: Queen Bee Banner: Reachable at Plane 1, before its tier (Plane 2): Queen Bee Banner ← Queen Bee (Combat 14, 2%) ← Queen's Hive ← Cherry Grove Map ← Guild Hall (0.4%) ← the Guild Hall.
+- warn: Queen Bee Banner: Only ever by luck: 2% from Queen Bee, and no sure way.
+- warn: Queen Bee Banner: Its own step (dropped Queen Bee) takes 4 h 10 min at Typical once it can start (5 min in), 8.3× the 30 min the pace allows a wait there (a level at 2 on the curve, at least a check-in).
+- warn: Sulphur Lizard Banner: Reachable at Plane 2, before its tier (Plane 3): Sulphur Lizard Banner ← Sulphur Lizard (Combat 16, 0.5%) ← Sulphur Rocks ← Yellowstone Map ← Wolf Alpha (Combat 10, first kill) ← Alpha's Den ← Forest Map ← given by the tutorial.
+- warn: Sulphur Lizard Banner: Only ever by luck: 0.5% from Sulphur Lizard, and no sure way.
+- warn: Sulphur Lizard Banner: Its own step (dropped Sulphur Lizard) takes 1 h 40 min at Typical once it can start (6 min in), 3.3× the 30 min the pace allows a wait there (a level at 2 on the curve, at least a check-in).
+- warn: Thorn Elemental Banner: Reachable at Plane 1, before its tier (Plane 2): Thorn Elemental Banner ← Thorn Elemental (Combat 1, 0.5%) ← Thorn Thicket ← Flower Meadow Map ← Guild Hall (0.4%) ← the Guild Hall.
+- warn: Thorn Elemental Banner: Only ever by luck: 0.5% from Thorn Elemental, and no sure way.
+- warn: Thorn Elemental Banner: Its own step (dropped Thorn Elemental) takes 3 h 20 min at Typical once it can start (1 min in), 6.7× the 30 min the pace allows a wait there (a level at 1 on the curve, at least a check-in).
+- warn: Toxic Frog Banner: Reachable at Plane 2, before its tier (Plane 3): Toxic Frog Banner ← Toxic Frog (Combat 22, 2%) ← Toxic Pool ← Bog Map ← Water Elemental (Combat 12, first kill) ← Tide Pool ← Coast Map ← given by the tutorial.
+- warn: Toxic Frog Banner: Only ever by luck: 2% from Toxic Frog, and no sure way.
+- warn: Toxic Frog Banner: Its own step (dropped Toxic Frog) takes 4 h 10 min at Typical once it can start (10 min in), 8.3× the 30 min the pace allows a wait there (a level at 4 on the curve, at least a check-in).
+- warn: Water Elemental Banner: Reachable at Plane 1, before its tier (Plane 2): Water Elemental Banner ← Water Elemental (Combat 12, 2%) ← Tide Pool ← Coast Map ← given by the tutorial.
+- warn: Water Elemental Banner: Only ever by luck: 2% from Water Elemental, and no sure way.
+- warn: Water Elemental Banner: Its own step (dropped Water Elemental) takes 4 h 10 min at Typical once it can start (5 min in), 8.3× the 30 min the pace allows a wait there (a level at 2 on the curve, at least a check-in).
+- warn: Wind Elemental Banner: Reachable at Plane 1, before its tier (Plane 2): Wind Elemental Banner ← Wind Elemental (Combat 12, 2%) ← Wind Stones ← Flower Meadow Map ← Guild Hall (0.4%) ← the Guild Hall.
+- warn: Wind Elemental Banner: Only ever by luck: 2% from Wind Elemental, and no sure way.
+- warn: Wind Elemental Banner: Its own step (dropped Wind Elemental) takes 4 h 10 min at Typical once it can start (5 min in), 8.3× the 30 min the pace allows a wait there (a level at 2 on the curve, at least a check-in).
+- warn: Wolf Alpha Banner: Reachable at Plane 1, before its tier (Plane 2): Wolf Alpha Banner ← Wolf Alpha (Combat 10, 2%) ← Alpha's Den ← Forest Map ← given by the tutorial.
+- warn: Wolf Alpha Banner: Only ever by luck: 2% from Wolf Alpha, and no sure way.
+- warn: Wolf Alpha Banner: Its own step (dropped Wolf Alpha) takes 4 h 10 min at Typical once it can start (5 min in), 8.3× the 30 min the pace allows a wait there (a level at 2 on the curve, at least a check-in).
+- warn: Wolf Banner: Reachable at Plane 1, before its tier (Plane 2): Wolf Banner ← Wolf (Combat 4, 0.5%) ← Wolf Den ← Forest Map ← given by the tutorial.
+- warn: Wolf Banner: Only ever by luck: 0.5% from Wolf, and no sure way.
+- warn: Wolf Banner: Its own step (dropped Wolf) takes 1 h 40 min at Typical once it can start (1 min in), 3.3× the 30 min the pace allows a wait there (a level at 1 on the curve, at least a check-in).
+- info: Build Coal Mine: Only by luck at Starter Camp (100% from Wood Foundation); a sure way from Plane 1.
+- info: Cedar Seedling: Made or found, but nothing spends it.
+- info: Coal Mine: Only by luck at Starter Camp (100% from Build Coal Mine); a sure way from Plane 1.
+- info: Coal Prospecting Map: Only by luck at Starter Camp (3% from Goblin); a sure way from Plane 1.
+- info: Ebony Seedling: Made or found, but nothing spends it.
+Checks cleared:
+- block: Shrimp Market: Is worked with the skill "commerce", which does not exist — no hero holds it, so nobody can work it. Pick its skill in the CMS, under Work Cycle → Skill.
+- block: Wizard Academy: One of its rules promotes the hero to "wizard": jobs are retired (every hero holds every skill), so it does nothing. Delete the rule in the CMS, or the Token if it has no other use.
+- warn: Adamantine Ingot: Never reachable, though planned for Plane 3: it needs Adamantine Ore, never reached.
+- warn: Adamantine Ingot: Never reachable, though planned for Plane 3: it needs Adamantine Ore, never reached.
+- warn: Adamantine Ore: Never reachable, though planned for Plane 3: it needs Adamantium Ore or pickaxe 3+ or Adamantine Ore Vein, never reached.
+- warn: Adamantine Ore Vein: Never reachable, though planned for Plane 3: nothing makes or places it.
+- warn: Adamantine Ore Vein: Looks like a wild origin (its work yields Adamantine Ore), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Adamantium Ore: Looks like a wild origin (its work yields Adamantine Ore), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Adamantium Pickaxe: Never reachable, though planned for Plane 3: nothing makes or places it.
+- warn: Banana Tree: Looks like a wild origin (its work yields Banana), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Birch Forest: Looks like a wild origin (its work yields Birch Wood), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Blueberry Pie: Never reachable, though planned for Plane 1: nothing makes or places it.
+- warn: Campfire: Never reachable, though planned for Starter Camp: nothing makes or places it.
+- warn: Ceramics Kiln: Never reachable, though planned for Plane 3: nothing makes or places it.
+- warn: Coconut Tree: Looks like a wild origin (its work yields Coconut), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Coins: Never reachable, though planned for Plane 3: nothing makes or places it.
+- warn: Copper Anvil: Never reachable, though planned for Plane 1: nothing makes or places it.
+- warn: Crab Meat: Only from the Coast Map (Crab, Water Elemental).
+- warn: Darkmetal Ingot: Never reachable, though planned for Plane 3: it needs Darkmetal Ore, never reached.
+- warn: Darkmetal Ingot: Never reachable, though planned for Plane 3: it needs Darkmetal Ore, never reached.
+- warn: Darkmetal Ore: Never reachable, though planned for Plane 3: it needs Darkmetal Ore Vein or pickaxe 4+, never reached.
+- warn: Darkmetal Ore Vein: Looks like a wild origin (its work yields Darkmetal Ore), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Darkmetal Pickaxe: Never reachable, though planned for Plane 3: nothing makes or places it.
+- warn: Ebony Tree: Looks like a wild origin (its work yields Ebony Wood), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Elixir of Valor: Never reachable, though planned for Plane 2: nothing makes or places it.
+- warn: Forge: Never reachable, though planned for Plane 3: nothing makes or places it.
+- warn: Forge Altar: Never reachable, though planned for Plane 3: nothing makes or places it.
+- warn: Game Meat: Only from the Forest Map (Wolf, Wolf Alpha).
+- warn: Grandma's Kitchen: Never reachable, though planned for Plane 1: nothing makes or places it.
+- warn: Iron Ore: Only from the Volcano Map (Iron Ore Vein, Fire Elemental, Fire Elemental Chief).
+- warn: Lemon Tree: Looks like a wild origin (its work yields Lemon), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Lime Tree: Looks like a wild origin (its work yields Lime), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Lizard Scale: Only from the Yellowstone Map (Sulphur Lizard, Big Lizard).
+- warn: Mahogany Forest: Looks like a wild origin (its work yields Mahogany Wood), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Maple Forest: Looks like a wild origin (its work yields Maple Wood), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Orange Tree: Looks like a wild origin (its work yields Orange), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Pickaxe Mould: Never reachable, though planned for Plane 3: nothing makes or places it.
+- warn: Pineapple Bush: Looks like a wild origin (its work yields Pineapple), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Raspberry Bush: Looks like a wild origin (its work yields Raspberry), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Ripe Wheat: Never reachable, though planned for Starter Camp: it needs Wheat Sprout, never reached.
+- warn: Shrimp Coast: Looks like a wild origin (its work yields Raw Shrimp), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Shrimp Market: Never reachable, though planned for Plane 3: nothing makes or places it.
+- warn: Shrimp Trawler Potion: Never reachable, though planned for Plane 2: nothing makes or places it.
+- warn: Trout: Only from the Bog Map (Bog Pool, Toxic Frog).
+- warn: Volcanic Island: Never reachable, though planned for Plane 3: nothing makes or places it.
+- warn: Watermelon Patch: Looks like a wild origin (its work yields Watermelon), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Wheat Sprout: Never reachable, though planned for Starter Camp: nothing makes or places it.
+- warn: Wishing Well: Looks like a wild origin (its work yields Water), but no wedge places it and nothing makes it: give it a wedge and a ring, a way to be built, or Park it.
+- warn: Wizard Academy: Never reachable, though planned for Starter Camp: nothing makes or places it.
+- info: Adamantine Ingot: Made or found, but nothing spends it.
+- info: Blackberry: Only from the Forest Map (Blackberry Bush, Thorn Elemental).
+- info: Crab Rocks: Only from the Coast Map (Crab, Water Elemental).
+- info: Darkmetal Ingot: Made or found, but nothing spends it.
+- info: Ember Vents: Only from the Volcano Map (Fire Elemental, Fire Elemental Chief).
+- info: Frog Pond: Only from the Bog Map (Frog, Toxic Frog).
+- info: Mythril Ingot: Made or found, but nothing spends it.
+- info: Sulphur Rocks: Only from the Yellowstone Map (Sulphur Lizard, Big Lizard).
+- info: Wolf Den: Only from the Forest Map (Wolf, Wolf Alpha).
+Written into the pack as "gate".

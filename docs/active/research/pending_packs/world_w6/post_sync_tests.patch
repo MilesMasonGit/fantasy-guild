@@ -1,0 +1,116 @@
+diff --git a/src/tests/CombatChain.test.js b/src/tests/CombatChain.test.js
+index ca1080a4..0e5b8fbb 100644
+--- a/src/tests/CombatChain.test.js
++++ b/src/tests/CombatChain.test.js
+@@ -125,6 +125,8 @@ describe('The Combat chain in shipped data (7.7)', () => {
+             { itemId: 'mod_rich_veins', chance: 1, minQty: 1, maxQty: 1 },
+             { itemId: 'mod_goblin_camp', chance: 0.5, minQty: 1, maxQty: 1 },
+             { itemId: 'mod_buried_copper', chance: 0.25, minQty: 1, maxQty: 1 },
++            { itemId: 'item_goblin_banner', chance: 0.5, minQty: 1, maxQty: 1 },
++            { itemId: 'item_coal_prospecting_map', chance: 3, minQty: 1, maxQty: 1 },
+         ]);
+     });
+ 
+diff --git a/src/tests/FarmingChain.test.js b/src/tests/FarmingChain.test.js
+index feebcb6f..83ecc847 100644
+--- a/src/tests/FarmingChain.test.js
++++ b/src/tests/FarmingChain.test.js
+@@ -55,10 +55,11 @@ describe('The Farming chain in shipped data (7.4)', () => {
+             expect(farmland.shop).toEqual({ price: [{ itemId: 'item_oak_wood', quantity: 10 }], section: 'farming' });
+         });
+ 
+-        it('offers exactly the six building recipes', () => {
++        it('offers exactly the nine building recipes', () => {
+             const pool = recipesForToken(getTokenType('token_farmland'));
+             expect(pool.map((r) => r.name).sort()).toEqual([
+-                'Build Apple Orchard', 'Build Field', 'Build Fir Forest', 'Build Grapevine', 'Build Herb Garden', 'Build Oak Forest',
++                'Build Apple Orchard', 'Build Birch Forest', 'Build Field', 'Build Fir Forest', 'Build Grapevine', 'Build Herb Garden',
++                'Build Mahogany Forest', 'Build Maple Forest', 'Build Oak Forest',
+             ]);
+         });
+     });
+diff --git a/src/tests/ProcessingChain.test.js b/src/tests/ProcessingChain.test.js
+index 7c72175a..7a94830f 100644
+--- a/src/tests/ProcessingChain.test.js
++++ b/src/tests/ProcessingChain.test.js
+@@ -58,12 +58,14 @@ describe('The Processing chain in shipped data (7.5)', () => {
+             expect(def.config).toBeNull();
+         });
+ 
+-        it('a Wood Foundation offers the wooden buildings: the Workbench, the Cooking Pot and the rest', () => {
++        it('a Wood Foundation offers the wooden buildings: the Workbench, the Cooking Pot and the rest, and every creature camp from its banner', () => {
+             expect(poolNames('token_wood_foundation')).toEqual([
+-                'Build Alchemy Table', 'Build Beehive', 'Build Brewery', 'Build Coal Mine', 'Build Composter',
+-                'Build Cooking Pot', 'Build Copper Mine', 'Build Dock', 'Build Farmstead', 'Build Fir Workbench',
+-                'Build Fishing Hut', 'Build Logging Camp', 'Build Minecart',
+-                'Build Quarry', 'Build Tannery', 'Build Windmill', 'Build Workbench',
++                'Build Alchemy Table', "Build Alpha's Den", 'Build Basking Stone', 'Build Beehive', 'Build Brewery', "Build Chief's Tent",
++                'Build Coal Mine', 'Build Composter', 'Build Cooking Pot', 'Build Copper Mine', 'Build Cow Pasture', 'Build Crab Rocks',
++                'Build Dock', 'Build Ember Vents', 'Build Farmstead', 'Build Fir Workbench', 'Build Fishing Hut', 'Build Frog Pond',
++                'Build Goblin Camp', 'Build Logging Camp', 'Build Minecart', 'Build Quarry', "Build Queen's Hive", 'Build Slime Pit',
++                'Build Smoking Crater', 'Build Sulphur Rocks', 'Build Tannery', 'Build Thorn Thicket', 'Build Tide Pool',
++                'Build Toxic Pool', 'Build Wild Hive', 'Build Wind Stones', 'Build Windmill', 'Build Wolf Den', 'Build Workbench',
+             ]);
+         });
+ 
+diff --git a/src/tests/LedgerChecks.test.js b/src/tests/LedgerChecks.test.js
+index 8a9a3abb..13aaaaee 100644
+--- a/src/tests/LedgerChecks.test.js
++++ b/src/tests/LedgerChecks.test.js
+@@ -204,10 +204,11 @@ describe('checks on the shipped content (the audit of 2026-10-28)', () => {
+         effects: read('effects.json'), starterCamp: read('starterCamp.json'),
+     });
+ 
+-    it('finds Iron Ore only on the Volcano map, and none of the loose ends the ledger fix pack closed', () => {
++    it('no longer finds Iron Ore only on the Volcano map, and none of the loose ends the ledger fix pack closed', () => {
+         const c = content();
+         const findings = runChecks(buildLedger(c), c);
+-        expect(on(findings, itemKey('item_iron_ore'), 'fragile')[0].message).toMatch(/^Only from the Volcano Map \(Iron Ore Vein/);
++        // A Fire Elemental Banner builds Ember Vents, whose elementals drop Iron Ore: the map is not its only way.
++        expect(on(findings, itemKey('item_iron_ore'), 'fragile')).toEqual([]);
+         // The audit's lone starter tools are made at the Workbench and the Smithy now.
+         for (const id of ['item_trap', 'item_copper_sickle', 'item_fishing_rod']) {
+             expect(on(findings, itemKey(id), 'tool-single'), id).toEqual([]);
+diff --git a/src/tests/NewGameOpening.test.js b/src/tests/NewGameOpening.test.js
+index 23e53249..3694b80b 100644
+--- a/src/tests/NewGameOpening.test.js
++++ b/src/tests/NewGameOpening.test.js
+@@ -493,7 +493,21 @@ const NOT_YET_PLACED = Object.freeze({
+     item_darkmetal_ingot: 'a later plane: smelted from Darkmetal Ore (furnace, level 90)',
+     // The brewery offers lemonade (level 15) and limeade (level 25), but no map places their trees.
+     item_lemon: 'only the Lemon Tree makes it, and no map places one (the brewery asks for it at level 15)',
+-    item_lime: 'only the Lime Tree makes it, and no map places one (the brewery asks for it at level 25)'
++    item_lime: 'only the Lime Tree makes it, and no map places one (the brewery asks for it at level 25)',
++    // Ring 3 of the world (brief 330 W6): Farmland plants their forests and the smithy forges the
++    // pickaxes past iron, but their trees and metals stand only in ring 3.
++    item_birch_seedling: 'ring 3: only the Birch Tree drops it (Farmland plants a Birch Forest from it)',
++    item_birch_wood: 'ring 3: only the Birch Tree and a planted Birch Forest make it',
++    item_maple_seedling: 'ring 3: only the Maple Tree drops it (Farmland plants a Maple Forest from it)',
++    item_maple_wood: 'ring 3: only the Maple Tree and a planted Maple Forest make it',
++    item_mahogany_seedling: 'ring 3: only the Mahogany Tree drops it (Farmland plants a Mahogany Forest from it)',
++    item_mahogany_wood: 'ring 3: only the Mahogany Tree and a planted Mahogany Forest make it',
++    item_mythril_pickaxe: 'ring 3: forged from Mythril Ingots (smithy, level 60)',
++    item_adamantium_pickaxe: 'ring 3: forged from Adamantine Ingots (smithy, level 75)',
++    item_darkmetal_pickaxe: 'ring 3: forged from Darkmetal Ingots (smithy, level 90)',
++    token_birch_forest: 'ring 3: planted from Birch Seedlings',
++    token_maple_forest: 'ring 3: planted from Maple Seedlings',
++    token_mahogany_forest: 'ring 3: planted from Mahogany Seedlings'
+ });
+ 
+ /** What makes an item anywhere in the content: Token ids and recipe ids. */
+@@ -556,11 +570,13 @@ describe('K4: from the Starter Camp, every plane-1 and plane-2 thing is reachabl
+             const shop = getTokenType(id)?.shop ? '; sold in the Shop' : '';
+             return `${id}: built by ${[...new Set(by)].join(', ') || 'no recipe'}${shop}`;
+         };
+-        expect(buildings.filter(id => !tokens.has(id)).sort().map(builtBy)).toEqual([]);
++        expect(buildings.filter(id => !tokens.has(id) && !NOT_YET_PLACED[id]).sort().map(builtBy)).toEqual([]);
+     });
+ 
+     it('every exclusion is still named by the two planes and still unreached', () => {
+-        const stale = Object.keys(NOT_YET_PLACED).filter(id => !named.has(id) || items.has(id));
++        const stale = Object.keys(NOT_YET_PLACED).filter(id => (id.startsWith('token_')
++            ? !buildings.includes(id) || tokens.has(id)
++            : !named.has(id) || items.has(id)));
+         expect(stale, 'remove these from NOT_YET_PLACED').toEqual([]);
+     });
+ });
