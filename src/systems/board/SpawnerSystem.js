@@ -121,15 +121,36 @@ export function isEnemyCampType(spawnerTypeId) {
  * How many of its family stand on the mat tethered to enemy camp `instance`: what it spawned.
  * ⚠️ A plain scan, not the census: a tether is written without a membership change (a spawn sets it
  * after landing, an older save's enemies are attached on the first tick), which a census keyed on
- * membership would miss.
+ * membership would miss. `tethered` ({@link tetherCounts}) answers it from one pass made for many
+ * camps at once, by a caller that changes nothing between the pass and its last question.
  */
-function countOwn(instance) {
+function countOwn(instance, tethered = null) {
     const ids = familySetOf(instance.typeId);
     let n = 0;
+    if (tethered) {
+        const byType = tethered.get(instance.id);
+        if (byType) for (const [typeId, count] of byType) if (ids.has(typeId)) n += count;
+        return n;
+    }
     for (const t of BoardState.tokens()) {
         if (t.tether === instance.id && ids.has(t.typeId)) n++;
     }
     return n;
+}
+
+/** Every Token on the mat with a tether, counted by tether and type: `tetherId → (typeId → n)`. */
+function tetherCounts() {
+    const out = new Map();
+    for (const t of BoardState.tokens()) {
+        if (typeof t.tether !== 'string') continue;
+        let byType = out.get(t.tether);
+        if (!byType) {
+            byType = new Map();
+            out.set(t.tether, byType);
+        }
+        byType.set(t.typeId, (byType.get(t.typeId) || 0) + 1);
+    }
+    return out;
 }
 
 /** A spawner type's family as a set, memoised with {@link familyOf}. */
@@ -161,9 +182,9 @@ function countNear(instance) {
  * allowance for one that plants within reach, what it spawned against its own allowance for an enemy
  * camp, else the mat-wide count against the family cap.
  */
-function countsOf(instance, def) {
+function countsOf(instance, def, tethered = null) {
     if (plantsWithinReach(def)) return { count: countNear(instance), cap: allowanceOf(def) };
-    if (isEnemyCampType(instance.typeId)) return { count: countOwn(instance), cap: allowanceOf(def) };
+    if (isEnemyCampType(instance.typeId)) return { count: countOwn(instance, tethered), cap: allowanceOf(def) };
     const family = familyOf(instance.typeId);
     return { count: countOf(family), cap: capOf(family) };
 }
@@ -389,12 +410,17 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
  *            cap: number, familyLabel: string}|null} null when it is not a spawner
  */
 export function spawnerStatus(instanceId) {
+    return statusOf(instanceId, null);
+}
+
+/** {@link spawnerStatus}, an enemy camp's count read from `tethered` when given ({@link countOwn}). */
+function statusOf(instanceId, tethered) {
     const instance = BoardState.getTokenById(instanceId);
     const def = instance ? getTokenType(instance.typeId) : null;
     if (!instance || instance.turnedFrom || !isSpawner(def)) return null;
 
     const family = familyOf(instance.typeId);
-    const base = { ...countsOf(instance, def), familyLabel: familyLabel(family) };
+    const base = { ...countsOf(instance, def, tethered), familyLabel: familyLabel(family) };
     const interval = intervalOf(def, instance);
     const clock = Number(instance.clocks?.spawnMs) || 0;
 
@@ -501,12 +527,16 @@ const sameList = (a = [], b = []) => a.length === b.length && a.every((v, i) => 
  */
 export function syncAlerts() {
     const live = new Set();
+    // What each enemy camp spawned, counted in one pass for all of them: nothing below adds, moves
+    // or tethers a Token (its only listeners draw).
+    let tethered = null;
     for (const s of liveSpawners()) {
         // A spawner marked for demolition never attempts (`TimedChanges` holds it), so nothing it
         // waits for is a problem: its alert drops below like a departed spawner's.
         if (Demolition.isMarked(s)) continue;
         live.add(s.id);
-        const status = spawnerStatus(s.id);
+        if (!tethered && isEnemyCampType(s.typeId)) tethered = tetherCounts();
+        const status = statusOf(s.id, tethered);
         const alert = (status && ALERT_FOR_STATE[status.state]) || null;
         const needs = alert === ALERT.SPAWN_NEEDS_ITEM ? (status.needs || []) : [];
         const prev = alerts.get(s.id);

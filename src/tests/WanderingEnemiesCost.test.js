@@ -4,6 +4,8 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as EnemyMotion from '../systems/board/EnemyMotion.js';
+import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
+import { ALERT } from '../systems/board/boardEvents.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -33,7 +35,8 @@ vi.mock('../systems/board/BoardState.js', async (importOriginal) => {
     return {
         ...real,
         heroOfInstance: vi.fn(real.heroOfInstance),
-        claimedInstanceIds: vi.fn(real.claimedInstanceIds)
+        claimedInstanceIds: vi.fn(real.claimedInstanceIds),
+        tokens: vi.fn(real.tokens)
     };
 });
 // The stat block builder, counted: the real one, wrapped.
@@ -47,6 +50,15 @@ registerTokenTypes({
         id: 'fixture_wec_camp', name: 'Fixture Wec Camp', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'fixture_enemy', weight: 1 }], allowance: 12, intervalMs: 1000, upkeep: [] }
+    },
+    /** A camp of two that wants a blackberry a spawn: short of one with an empty Bank. */
+    fixture_wec_hungry_camp: {
+        id: 'fixture_wec_hungry_camp', name: 'Fixture Wec Hungry Camp', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
+        spawner: {
+            spawns: [{ typeId: 'fixture_enemy', weight: 1 }], allowance: 2, intervalMs: 1000,
+            upkeep: [{ itemId: 'item_blackberry', quantity: 1 }]
+        }
     }
 });
 
@@ -94,6 +106,7 @@ beforeEach(() => {
     enemyProfileOf.mockClear();
     BoardState.heroOfInstance.mockClear();
     BoardState.claimedInstanceIds.mockClear();
+    SpawnerSystem.resetAlerts();
     resetMatTuning();
     setMatTuning('enemyWalkSpeed', 100);
     setMatTuning('enemyPotterRadius', 128);
@@ -180,5 +193,37 @@ describe('a step carries its pinned flag and its claim, nothing else', () => {
         expect(BoardState.flagOf('hero_2')).toMatchObject({ x: 800, y: 300 });
         expect(BoardState.claimOfHero('hero_2')).toMatchObject({ x: 800, y: 300 });
         expect(BoardState.flagOf('hero_3')).toMatchObject({ x: 600, y: 600 });
+    });
+});
+
+describe('the spawner alerts count what every camp spawned in one pass', () => {
+    /** Camp `i` of five, in a row, with `own` of its spawned enemies and `stray` other Tokens tethered to it. */
+    function hungryCamp(i, own, stray = 0) {
+        const camp = placeAt('fixture_wec_hungry_camp', 300 + i * 300, 400);
+        for (let k = 0; k < own; k++) placeAt('fixture_enemy', camp.x - 60 + k * 120, 600).tether = camp.id;
+        for (let k = 0; k < stray; k++) placeAt('fixture_producer', camp.x, 800 + k * 160).tether = camp.id;
+        return camp;
+    }
+
+    it('a camp at its cap raises nothing; one short of it says it needs its upkeep', () => {
+        const full = hungryCamp(0, 2);
+        const short = hungryCamp(1, 1, 2);   // two Tokens of another family tied to it do not count
+        const empty = hungryCamp(2, 0);
+        SpawnerSystem.syncAlerts();
+        expect(SpawnerSystem.spawnerAlertOf(full.id)).toBeNull();
+        expect(SpawnerSystem.spawnerAlertOf(short.id)).toEqual({ alert: ALERT.SPAWN_NEEDS_ITEM, needs: ['item_blackberry'] });
+        expect(SpawnerSystem.spawnerAlertOf(empty.id)).toEqual({ alert: ALERT.SPAWN_NEEDS_ITEM, needs: ['item_blackberry'] });
+        // The same counts the badge reads one camp at a time.
+        expect(SpawnerSystem.spawnerCounts(full.id)).toEqual({ count: 2, cap: 2 });
+        expect(SpawnerSystem.spawnerCounts(short.id)).toEqual({ count: 1, cap: 2 });
+        expect(SpawnerSystem.spawnerCounts(empty.id)).toEqual({ count: 0, cap: 2 });
+    });
+
+    it('one pass over the mat for the camps, however many there are', () => {
+        for (let i = 0; i < 5; i++) hungryCamp(i, i % 3);
+        SpawnerSystem.syncAlerts();                       // the census settles
+        BoardState.tokens.mockClear();
+        SpawnerSystem.syncAlerts();
+        expect(BoardState.tokens.mock.calls.length).toBeLessThanOrEqual(1);
     });
 });
