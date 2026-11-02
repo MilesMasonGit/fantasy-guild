@@ -8,6 +8,7 @@ import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, LEDGER_ENGINE_TEXT
 import { planOf, PLAN_STATUS, tierLabel } from './plan.js';
 import { xpForLevel, MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import { turnTiming } from '../../../config/registries/tokenConstants.js';
+import { SKILLS, SKILL_LAYERS } from '../../../config/registries/skillRegistry.js';
 
 /**
  * How the game is paced for the target player, worked out statically from the content at the three
@@ -40,6 +41,9 @@ import { turnTiming } from '../../../config/registries/tokenConstants.js';
  */
 
 const HOUR_MS = 3_600_000;
+
+/** A fighting style (melee, magic…): levelled by fights, never by work. */
+const isCombatStyle = (skill) => SKILLS[skill]?.layer === SKILL_LAYERS.COMBAT;
 
 /** The kinds of boost a profile chooses per piece of work (perks come with levels). */
 const BOOSTED = [BOOST_KIND.SUPPORT, BOOST_KIND.CAMP, BOOST_KIND.CONSUMABLE, BOOST_KIND.TOOL, BOOST_KIND.GEAR, BOOST_KIND.HALL];
@@ -104,7 +108,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         works.push(work);
         byKey.set(work.key, work);
     }
-    const tiers = new Set([...reach.values()].map(a => a.tier).filter(Number.isInteger));
+    // Only the content's own entries: a world cell, a tool need or a Token the world tables name but
+    // the content lacks sets no stage and asks no level.
+    const isEntry = (key) => plans.has(key) && !ledger.world.retired?.has(key);
+    const tiers = new Set([...reach.values()].filter(a => isEntry(a.key)).map(a => a.tier).filter(Number.isInteger));
     for (const s of settings.stages) tiers.add(s.tier);
     const maxTier = tiers.size ? Math.max(...tiers) : 0;
 
@@ -191,7 +198,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const at = reach.get(key);
         if (!at?.rule) return Infinity;
         const rule = at.rule;
-        if ([HOW.STARTER_CAMP, HOW.MAP, HOW.MODIFIER, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW].includes(rule.how)) return 0;
+        if ([HOW.STARTER_CAMP, HOW.MAP, HOW.MODIFIER, HOW.WORLD, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW].includes(rule.how)) return 0;
         if (rule.how === HOW.SHOP) return sum(rule.inputs.map(i => i.quantity * unitHours(parseKey(i.key).id, cap)));
         if (rule.how === HOW.CRAFT) {
             const recipe = rates.recipes[parseKey(rule.via).id];
@@ -221,11 +228,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     // ── level tracks ───────────────────────────────────────────────────────────────────────────
     const askedAt = new Map();
     for (const [key, at] of reach) {
-        if (!Number.isInteger(at.tier) || at.planned || !/^(item|token|recipe):/.test(key)) continue;
+        if (!Number.isInteger(at.tier) || at.planned || !isEntry(key)) continue;
         // A Parked entry's levels still count: a live path may run through it.
         const tier = effTier(key);
         for (const [skill, level] of Object.entries(at.levels || {})) {
-            if (skill === COMBAT) continue;
+            if (skill === COMBAT || isCombatStyle(skill)) continue;
             if (!askedAt.has(skill)) askedAt.set(skill, []);
             askedAt.get(skill).push({ level, tier, key });
         }
@@ -444,6 +451,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 gates.push({ ...g, hours: null });
                 continue;
             }
+            // A fighting style is trained by fights, which the calculator does not time: a floor.
+            if (isCombatStyle(g.skill)) {
+                gates.push({ ...g, hours: null });
+                complete = false;
+                continue;
+            }
             const h = levelHours(g.skill, g.level, profile);
             gates.push({ ...g, hours: h });
             if (h > start) { start = h; waitsOn = { skill: g.skill, level: g.level }; }
@@ -477,6 +490,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     // ── stages ─────────────────────────────────────────────────────────────────────────────────
     const entryKeys = [...plans.keys()].filter(k => /^(item|token|recipe):/.test(k));
     const counted = (key) => {
+        if (ledger.world.retired?.has(key)) return false;
         const status = statusOf(key);
         return status !== PLAN_STATUS.PLANNED && status !== PLAN_STATUS.PARKED;
     };
