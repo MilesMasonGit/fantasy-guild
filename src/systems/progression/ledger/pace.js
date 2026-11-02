@@ -336,6 +336,31 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return level > track.top ? Infinity : row.cumulative[profile];
     }
 
+    /**
+     * As {@link levelHours}, but on past the highest level any entry asks: those levels are worked
+     * at the best source open by stage `cap` (the last stage by default). What a level gate moved
+     * higher than today's top would take.
+     */
+    function hoursToLevel(skill, level, profile = PROFILE.TYPICAL, cap = null) {
+        const target = Math.min(MAX_SKILL_LEVEL, Math.floor(level));
+        if (target <= 1) return 0;
+        const track = trackOf(skill);
+        const within = Math.min(target, track.top);
+        let hours = within >= 2 ? track.levels[within - 2].cumulative[profile] : 0;
+        for (let l = Math.max(1, track.top); l < target && Number.isFinite(hours); l++) {
+            const best = bestXp(skill, l, profile, cap ?? maxTier);
+            hours += best.xp > 0 ? (xpForLevel(l + 1) - xpForLevel(l)) / best.xp : Infinity;
+        }
+        return hours;
+    }
+
+    /** The highest level of a skill had within `hours` of a new game at a profile ({@link hoursToLevel}), from 1. */
+    function levelAtHours(skill, hours, profile = PROFILE.TYPICAL, cap = null) {
+        let level = 1;
+        while (level < MAX_SKILL_LEVEL && hoursToLevel(skill, level + 1, profile, cap) <= hours) level++;
+        return level;
+    }
+
     // ── path time ──────────────────────────────────────────────────────────────────────────────
     const gatherHours = (inputs, profile, cap) => {
         // One hero on each item: the slowest item sets the time.
@@ -538,7 +563,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const slowest = timed.filter(t => !names.has(nameOf(t.key)) && names.add(nameOf(t.key))).slice(0, 5);
         return {
             tier, entries: keys.length, budgetMinutes: stage?.budgetMinutes ?? null,
-            hours: timed.length ? timed[0].hours : 0, slowest, untimed,
+            hours: timed.length ? timed[0].hours : 0, slowest, untimed, timed,
             complete: timed.every(t => t.complete)
         };
     }
@@ -597,7 +622,6 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     function findings() {
         const out = [];
         const add = (check, key, message, extra = {}) => out.push({ check, key, message, ...extra });
-        const factor = settings.wallFactor;
 
         // Walls: a run of levels far slower at Typical than the curve.
         for (const skill of [...askedAt.keys()].sort()) {
@@ -636,20 +660,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             }
         }
 
-        // A long wait for one unlock: a step's own time (gathering, a build, luck) far over what the
-        // curve gives a level where the player is by then, and never under a check-in.
-        for (const key of entryKeys) {
-            if (!counted(key)) continue;
-            const at = reach.get(key);
-            if (!at || !Number.isInteger(at.tier)) continue;
-            const r = readyOf(key, PROFILE.TYPICAL);
-            if (!Number.isFinite(r.own) || !(r.own > 0) || !Number.isFinite(r.start)) continue;
-            const level = levelAtMinutes(settings, r.start * 60);
-            const expected = Math.max(settings.player.checkInMinMinutes, minutesPerLevelAt(settings, level));
-            const ratio = r.own * 60 / expected;
-            if (ratio > factor) {
-                add('unlock-wall', key, `Its own step (${stepWords(r)}) takes ${PACE_TEXT.hours(r.own)} at Typical once it can start (${PACE_TEXT.hours(r.start)} in), ${PACE_TEXT.times(ratio)} the ${formatMinutes(expected)} the pace allows a wait there (a level at ${level} on the curve, at least a check-in).`);
-            }
+        for (const { key, r, level, expected, ratio } of unlockWalls()) {
+            add('unlock-wall', key, `Its own step (${stepWords(r)}) takes ${PACE_TEXT.hours(r.own)} at Typical once it can start (${PACE_TEXT.hours(r.start)} in), ${PACE_TEXT.times(ratio)} the ${formatMinutes(expected)} the pace allows a wait there (a level at ${level} on the curve, at least a check-in).`);
         }
 
         // Stage time against its budget.
@@ -679,16 +691,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical${opened}) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.hallPaybackHours)} a Guild Hall rank has to pay for itself.`, { name: row.name });
         }
 
-        // Boosts over their target strength, by kind, at Maxed: one finding per set of boosts, with every work it lifts.
-        const groups = new Map();
-        for (const b of boostRows()) {
-            if (b.target === null || !(b.gain > (b.target / 100) * (1 + settings.tolerancePct / 100) + 1e-9)) continue;
-            const id = `${b.kind}|${b.factors.join(',')}`;
-            if (!groups.has(id)) groups.set(id, { ...b, works: [] });
-            groups.get(id).works.push(b);
-        }
-        for (const g of groups.values()) {
-            const lifted = g.works.sort((x, y) => y.gain - x.gain);
+        for (const g of boostGroups()) {
+            const lifted = g.works;
             const shown = lifted.slice(0, 4).map(w => `${workName(w.work)} +${Math.round(w.gain * 100)} %`).join(', ');
             const more = lifted.length > 4 ? ` and ${lifted.length - 4} more` : '';
             const low = Math.min(...lifted.map(w => w.target));
@@ -709,6 +713,43 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
         for (const [key, set] of seen) add('unmodelled', key, `The calculator cannot read: ${[...set].join('; ')}.`);
         return out;
+    }
+
+    /**
+     * A long wait for one unlock: an entry whose own step (gathering, a build, luck) takes far over
+     * what the curve gives a level where the player is by then, never under a check-in, at Typical.
+     * `[{ key, r, level, expected, ratio }]`: `r` its path, `expected` the minutes the pace allows.
+     */
+    function unlockWalls() {
+        const out = [];
+        for (const key of entryKeys) {
+            if (!counted(key)) continue;
+            const at = reach.get(key);
+            if (!at || !Number.isInteger(at.tier)) continue;
+            const r = readyOf(key, PROFILE.TYPICAL);
+            if (!Number.isFinite(r.own) || !(r.own > 0) || !Number.isFinite(r.start)) continue;
+            const level = levelAtMinutes(settings, r.start * 60);
+            const expected = Math.max(settings.player.checkInMinMinutes, minutesPerLevelAt(settings, level));
+            const ratio = r.own * 60 / expected;
+            if (ratio > settings.wallFactor) out.push({ key, r, level, expected, ratio });
+        }
+        return out;
+    }
+
+    /**
+     * Boosts over their target strength at Maxed, beyond the tolerance: one group per kind and set of
+     * boosts, `{ kind, factors, factorKeys, names, target, works }`, its works most lifted first.
+     */
+    function boostGroups() {
+        const groups = new Map();
+        for (const b of boostRows()) {
+            if (b.target === null || !(b.gain > (b.target / 100) * (1 + settings.tolerancePct / 100) + 1e-9)) continue;
+            const id = `${b.kind}|${b.factors.join(',')}`;
+            if (!groups.has(id)) groups.set(id, { ...b, works: [] });
+            groups.get(id).works.push(b);
+        }
+        for (const g of groups.values()) g.works.sort((x, y) => y.gain - x.gain);
+        return [...groups.values()];
     }
 
     const stepWords = (r) => {
@@ -1069,7 +1110,17 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         },
         supplyOf: (itemId, profile, cap = maxTier) => supplyOf(itemId, profile, cap),
         trackOf,
+        hoursToLevel,
+        levelAtHours,
         walls: (skill) => wallsOf(skill),
+        unlockWalls,
+        boostGroups,
+        /** What one kind of boost adds to a work at a profile and stage (its own tier by default): a fraction, null when the profile takes none. */
+        boostGain: (target, kind, profile = PROFILE.MAXED, cap = null) => {
+            const work = byKey.get(targetKey(target));
+            if (!work || work.tier === null) return null;
+            return kindGain(work, profile, cap ?? work.tier, kind)?.gain ?? null;
+        },
         skills: () => [...new Set([...askedAt.keys(), ...skillsOfWork.keys()])].sort(),
         pathOf: (key, profile) => ({ ...readyOf(key, profile), steps: criticalPath(key, profile) }),
         stageOf,
