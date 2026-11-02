@@ -345,7 +345,8 @@ Lobster's chain of first finds), Plane 1 1 h 32 min → 24 min (budget 1 h 30 mi
 the world tables' ring-1 settle levels, 5, which would need to be about 11 to 12), Plane 2 8 h 33 min
 → 23 h 29 min (budget 1 d, within). Walls 7 → 3 (Forestry, Mining and Smithing past level 73 to 79:
 the best source runs from level 1 or 15, and the sources that open there wear out or do not exist).
-25 numbers: 7 XP (Wild Lavender 1 → 12, Elixir of Ironskin 2 → 13, Oak Tree 1 → 3…), 15 gates
+23 numbers: 5 XP (Wild Lavender 1 → 12, Oak Tree 1 → 3, Fir Tree 5 → 7, Copper Nails 2 → 3, Build
+Herb Garden 40 → 20), 15 gates
 (Beer Cooking 15 → 6 and Fine Fishing Rod Crafting 10 → 5 for the camp; Plane 2's iron gear and
 cooking raised, Iron Chestplate Smithing 21 → 43), 3 boost values (Well Watering, Composter Load,
 Beehive Pollination). The exported pack passes the agent gate with its stage moves declared.
