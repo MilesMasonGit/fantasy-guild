@@ -39,7 +39,9 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, RATE_AXES
  * star, so the pricing cannot loop. A star still closed by the neighbour rule is opened the cheapest
  * way: the stars on the way are lit at rank 1 and their price added. Maxed takes every rank.
  *
- * Milestone perks come with levels, so all three have them. Only boosts reachable by the stage
+ * Milestone perks come with levels, so all three have them, read at the hero's level: the work's own
+ * gate unless a `level` is asked, so a perk above the gate counts only where the pace asks for it (its
+ * level tracks rate each level band at the band's perk level). Only boosts reachable by the stage
  * asked (`cap`) are on offer. A boost's value is what it adds an hour: the items' worth (each at
  * the Bare hours one takes to make, inputs and drinks taken off) plus XP (an hour's worth at the
  * rate before it).
@@ -504,8 +506,10 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
     /**
      * What one Hall rank does for a work at a stage at Typical, the payback check's measure: the
      * work's Typical setup with the track at the rank before and at the rank, everything else as
-     * Typical chose. `{ saves, r0, r1, setup }`, `saves` the hours it saves an hour (as Typical
-     * weighs a rank); null when the work is not rated there.
+     * Typical chose. `{ saves, r0, r1, setup, opening }`, `saves` the hours it saves an hour (as Typical
+     * weighs a rank), `opening` what lighting the stars on the way costs when the star is still
+     * closed there (`{ path, cost }`, as Typical pays it; `cost` Infinity when no way can be had);
+     * null when the work is not rated there.
      */
     const rankRates = new Map();
     function hallRankOn(target, cap, trackId, rank) {
@@ -523,7 +527,16 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         const r1 = rateAt(rank);
         const bare = profileOf(target, PROFILE.BARE, cap).rate;
         const baseXp = Object.values(bare.xp || {}).reduce((a, b) => a + b, 0);
-        return { saves: hallSaves(ctx, r0, r1, cap, baseXp, PROFILE.TYPICAL), r0, r1, setup: at(rank) };
+        // Opening it counts the stars Typical lit only on the way to it, not those it holds for their own sake.
+        const picks = typical.chosen.filter(c => c.kind === BOOST_KIND.HALL);
+        const onTheWay = (picks.find(c => c.upgrade === trackId)?.path || [])
+            .filter(id => !picks.some(c => c.upgrade === id || (c.upgrade !== trackId && (c.path || []).includes(id))));
+        const before = at(rank - 1);
+        const unlit = { ...before, hallRanks: { ...before.hallRanks, ...Object.fromEntries(onTheWay.map(id => [id, 0])) } };
+        const opening = heldRank(unlit, trackId) >= 1
+            ? { path: [], cost: 0 }
+            : openingPath(trackId, graph, (id) => heldRank(unlit, id), (id) => lightCost(id, cap)) || { path: [], cost: Infinity };
+        return { saves: hallSaves(ctx, r0, r1, cap, baseXp, PROFILE.TYPICAL), r0, r1, setup: at(rank), opening };
     }
 
     return {

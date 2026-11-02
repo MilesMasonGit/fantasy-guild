@@ -4,7 +4,8 @@ import { isPlanned } from '../../../src/systems/progression/ledger/plan.js';
 import { mapItemFindings, isMapItem } from '../../../src/systems/atlas/mapItems.js';
 import { buildPace } from '../../../src/systems/progression/ledger/pace.js';
 import { calibrationFindings } from './calibrationStatus.js';
-import { workspaceOriginFindings } from './ledgerWorld.js';
+import { workspaceOriginFindings, baseWorldTables } from './ledgerWorld.js';
+import { plannedTables } from '../../../src/systems/progression/ledger/world.js';
 import { SKILLS, expandBearer, auditLifecycleBlocks, findUnknownRefs, toolFindings } from '../utils/constants';
 
 /**
@@ -20,7 +21,10 @@ import { SKILLS, expandBearer, auditLifecycleBlocks, findUnknownRefs, toolFindin
 /** The work whose cycle the simulator times: a Token's own work, water, a recipe. */
 const TIMED = new Set([HOW.WORK, HOW.CATCH, HOW.CRAFT]);
 
-/** The workspace as the ledger's engines take it. */
+/**
+ * The workspace as the ledger's engines take it. The world tables are the World plan's: the
+ * workspace's own when usable, else the placeholder, with the plan's wedges and rings laid on.
+ */
 export const contentOf = (state) => ({
     items: state.items,
     tokens: state.tokens,
@@ -29,6 +33,7 @@ export const contentOf = (state) => ({
     starterCamp: state.starterCamp,
     skillPerks: state.skillPerks,
     hallSky: { constellations: state.hallConstellations || {}, stars: state.hallStars || {} },
+    worldTables: plannedTables(baseWorldTables(state), state.tokens || {}).tables,
 });
 
 export function workspaceLedger(state = {}, { sim = null } = {}) {

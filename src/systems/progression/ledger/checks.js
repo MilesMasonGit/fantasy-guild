@@ -88,8 +88,8 @@ const FINAL_TYPES = new Set(['consumable', 'treasure', 'food', 'drink', 'potion'
 
 /** The rules that make an item over and over (a Region's work, a recipe, Passive Production, a side drop). */
 const PRODUCING = new Set([HOW.WORK, HOW.CATCH, HOW.DROP, HOW.CRAFT, HOW.TRICKLE, HOW.UPGRADE, HOW.BONUS]);
-/** The rules that place a Token where it stands anywhere, not only on one map. */
-const PLACES_ANYWHERE = new Set([HOW.STARTER_CAMP, HOW.SHOP, HOW.HALL, HOW.CRAFT]);
+/** The rules that place a Token where it stands anywhere, not only on one map: every world holds what its cells place for sure. */
+const PLACES_ANYWHERE = new Set([HOW.STARTER_CAMP, HOW.SHOP, HOW.HALL, HOW.CRAFT, HOW.WORLD]);
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const ANYWHERE = 'anywhere';
@@ -166,7 +166,7 @@ function placesOf(index, reach, luckBelow) {
         seen.add(key);
         const out = new Set();
         for (const rule of index.givers(key)) {
-            if (rule.gives.some((g) => g.key === key && g.firstKill !== true && g.chance < luckBelow)) continue;
+            if (rule.gives.some((g) => g.key === key && g.firstKill !== true && (g.chance < luckBelow || g.maybe === true))) continue;
             if (PLACES_ANYWHERE.has(rule.how) || rule.how === HOW.BUILD || rule.how === HOW.STATION) out.add(ANYWHERE);
             else if (rule.how === HOW.MAP || rule.how === HOW.MODIFIER) { if (!byLuck(rule.via)) out.add(rule.via); }
             else if (rule.via?.startsWith('token:')) for (const p of of(rule.via, seen)) out.add(p);
@@ -227,6 +227,8 @@ export function runChecks(ledger, content = {}, { extra = [], luckBelow = LUCK_B
     // ── per entry ───────────────────────────────────────────────────────────────────────────────
     const entryKeys = [...records.keys()];
     for (const key of entryKeys) {
+        // A retired map item is no entry of the world: it is not asked to be reached or used.
+        if (world.retired?.has(key)) continue;
         const def = records.get(key);
         const plan = planOf(def);
         const { kind, id } = parseKey(key);
@@ -282,7 +284,7 @@ export function runChecks(ledger, content = {}, { extra = [], luckBelow = LUCK_B
 
         // Luck and access.
         if (reachable && at.luckOnly) {
-            const how = at.firstKill ? LEDGER_ENGINE_TEXT.firstKill : Number.isFinite(at.chance) ? LEDGER_ENGINE_TEXT.chance(at.chance) : '';
+            const how = at.firstKill ? LEDGER_ENGINE_TEXT.firstKill : at.maybe ? LEDGER_ENGINE_TEXT.someWorlds : Number.isFinite(at.chance) ? LEDGER_ENGINE_TEXT.chance(at.chance) : '';
             const from = at.via ? ` from ${nameOf(at.via)}` : '';
             const find = at.oneOffOnly ? oneOffFindOf(reach, key) : null;
             if (find) add('luck-only', key, `Only ever through a one-off find (${nameOf(find)}), which wears out for good, and no sure way.`, { related: [find] });

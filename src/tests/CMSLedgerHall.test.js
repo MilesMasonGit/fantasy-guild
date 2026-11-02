@@ -102,6 +102,9 @@ describe('the Ledger tab', { timeout: 20000 }, () => {
         expect(row('ph_lore|1').getAttribute('data-hall-pays')).toBe('yes');
         expect(row('ph_lore|1').textContent).toMatch(/Lore 1.*Starter Camp.*10 Copper Ore.*Copper Vein/);
         expect(row('ph_lore|1').querySelector('[data-hall-proposed]').textContent).toMatch(/^\d+ Copper Ore \(pays back in 2\d h( \d+ min)?\)$/);
+        // Deep Veins was opened through Quick Picks, lit for nothing else: its price shows what that cost.
+        expect(row('ph_deep|1').querySelector('[data-hall-opening]').textContent).toMatch(/^ \+ .+ to open it, lighting Quick Picks$/);
+        expect(row('ph_lore|1').querySelector('[data-hall-opening]')).toBeNull();
         // Rank 2 raised to rank 1's price: marked, and red, for it then pays back in over a day.
         const raised = row('ph_lore|2').querySelector('[data-hall-proposed]');
         expect(raised.textContent).toMatch(/raised to the rank before\)$/);

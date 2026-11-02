@@ -120,8 +120,9 @@ export function choiceText(pace, ledger, chosen) {
 
 /**
  * The Guild Hall's ranks for the Pace page and the Guild Hall page: every rank that adds a rate,
- * with its tier, price, the hours that price takes to gather at Typical, what it saves an hour and
- * where, its payback (red when over the payback time) and the proposed price. `byStar` groups them.
+ * with its tier, price, the hours that price takes to gather at Typical, what opening a closed star
+ * costs on the way (`openingText`), what it saves an hour and where, its payback (red when over the
+ * payback time) and the proposed price. `byStar` groups them.
  */
 export function hallRows(pace) {
   return pace.hallPaybacks().map((r) => ({
@@ -130,6 +131,9 @@ export function hallRows(pace) {
     savesText: r.rate ? (r.enabler ? 'the only source of what it pays' : r.gain > 0 ? PACE_TEXT.saves(r.gain) : 'nothing at its tier') : null,
     paybackText: r.rate ? (r.enabler ? 'an enabler' : PACE_TEXT.short(r.payback)) : null,
     priceTimeText: PACE_TEXT.short(r.priceHours),
+    openingText: r.opening?.path?.length
+      ? `${PACE_TEXT.short(r.opening.cost)} to open it, lighting ${r.opening.path.map((id) => pace.hallName(id)).join(' and ')}`
+      : null,
   }));
 }
 

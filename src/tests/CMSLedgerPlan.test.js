@@ -16,7 +16,7 @@ import {
 } from '../../cms/src/engine/planFile';
 import cmsFileApi from '../../cms/vite-plugin-cms-api.js';
 import { workspaceLedger } from '../../cms/src/engine/ledgerReport';
-import { ledgerWorkspace } from './fixtures/ledgerWorld.js';
+import { ledgerWorkspace, withWorld } from './fixtures/ledgerWorld.js';
 import {
     planOf, isPlanned, withPlan, cleanPlan, tierLabel, tierBudgetMs, PLAN_STATUSES,
 } from '../systems/progression/ledger/plan.js';
@@ -216,7 +216,7 @@ describe('the economy line never sees a Planned stub', () => {
 
 describe('the engines over the workspace', () => {
     it('prices a tree at the simulator’s rates, and still knows the stubs as Planned', () => {
-        const ws = ledgerWorkspace();
+        const ws = withWorld(ledgerWorkspace());
         const smelt = ws.recipePools.smithing.find((r) => r.id === 'recipe_iron_ingot');
         smelt.sim = { tempo: 'medium', purpose: 'iph' };
         useEntityStore.getState().hydrate(ws);

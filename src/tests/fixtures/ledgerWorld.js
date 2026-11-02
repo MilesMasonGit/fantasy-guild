@@ -135,6 +135,38 @@ export function ledgerWorkspace() {
     };
 }
 
+/**
+ * World tables placing the fixture as its maps did: copper and coal on ring 1 of the Ores wedge and
+ * iron on ring 2 (the Volcano Map's plane), the Wild Hive on ring 2 of Crops, the Chief's Tent
+ * guaranteed on ring 1 (the Mountain Map's). Settling asks the line's skill at 1, 15 and 30. The
+ * CMS reads the workspace's tables, so a workspace hydrated with these keeps the maps' story.
+ */
+export const LEDGER_WORLD_RAW = Object.freeze({
+    version: 1,
+    lines: [
+        { id: 'ores', name: 'Ores', skill: 'mining', kits: { highland: 1 }, origins: { 1: [{ id: 'token_copper_vein' }, { id: 'token_coal_vein' }], 2: [{ id: 'token_iron_vein' }], 3: [] } },
+        { id: 'trees', name: 'Trees', skill: 'forestry', kits: { highland: 1 }, origins: { 1: [{ id: 'token_oak_tree' }], 2: [], 3: [] } },
+        { id: 'crops', name: 'Crops', skill: 'farming', kits: { highland: 1 }, origins: { 1: [], 2: [{ id: 'token_wild_hive' }], 3: [] } },
+        { id: 'herbs', name: 'Herbs', skill: 'alchemy', kits: { highland: 1 }, origins: { 1: [], 2: [], 3: [] } },
+        { id: 'waters', name: 'Waters', skill: 'fishing', kits: { highland: 1 }, origins: { 1: [{ id: 'token_coast' }], 2: [], 3: [] } },
+        { id: 'arcane', name: 'Arcane', skill: 'magic', kits: { highland: 1 }, origins: { 1: [], 2: [], 3: [] } }
+    ],
+    kits: [{ id: 'highland', name: 'Highland', biome: 'mountain', work: { mining: 1, forestry: 1 }, camps: ['token_goblin_camp'] }],
+    camps: { 1: ['token_chief_tent'] },
+    specialties: ['mining', 'forestry'],
+    prices: {
+        1: { items: [{ qty: 5 }], skills: [{ skill: 'line', level: 1 }] },
+        2: { items: [{ qty: 10 }], skills: [{ skill: 'line', level: 15 }] },
+        3: { items: [{ qty: 20 }], skills: [{ skill: 'line', level: 30 }] }
+    },
+    wild: { rings: 0 }
+});
+
+/** A workspace holding {@link LEDGER_WORLD_RAW} as its world tables, as the CMS store does. */
+export function withWorld(ws) {
+    return { ...ws, world: structuredClone(LEDGER_WORLD_RAW) };
+}
+
 /** The fixture with an Iron Chest (one Charge, never back) as a treasure on the Mountain Map. */
 export function withIronChest() {
     const ws = ledgerWorkspace();

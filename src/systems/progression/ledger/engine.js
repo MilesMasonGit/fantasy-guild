@@ -11,6 +11,7 @@ import {
 } from '../../../config/registries/tokenConstants.js';
 import { catchPoolsOf, hasCatchPools } from '../../../config/registries/catchPools.js';
 import { toolOf, neededToolOf, toolMeets, starterToolIds } from '../../../config/registries/toolKinds.js';
+import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesShape.js';
 
 /**
  * Two engines over one picture of the content (`buildWorld`), shared by the CMS's ledger views and,
@@ -22,24 +23,32 @@ import { toolOf, neededToolOf, toolMeets, starterToolIds } from '../../../config
  * - **Tree** (`ingredientTree`): a made item's ingredients down to their origins, with the hero time
  *   it all takes at the content's own rates, the skills it touches, its depth and its origins.
  *
- * A tier is a stage of the owner's plan, not a game rule: 0 is the Starter Camp, and a map's Region
- * is the tier the owner set on that map (`plan.tier`), or the tier its item is first had at when
- * none is set. Everything else follows from what makes what: a thing is reachable at the lowest
- * tier at which every one of its needs is.
+ * A tier is a stage of the owner's plan, not a game rule: 0 is the Starter Camp, and ring n of the
+ * world map is tier n. Everything else follows from what makes what: a thing is reachable at the
+ * lowest tier at which every one of its needs is.
+ *
+ * **The world map** (given `worldTables`, as the CMS always does): a cell of each wedge at each strict
+ * ring is settled at its ring's price (the skill levels; a ring-n cell after one of ring n − 1 of its
+ * wedge) and places what every world holds there: the origins its line's table lists for the ring,
+ * the ring's key origins and guaranteed camps (through the wedges most likely to hold them). What a
+ * world holds only sometimes (a kit's everyday and boss camps, the hidden extras, the arrivals) is
+ * placed by luck (`maybe`). The map items are retired: they place nothing and are `retired`, not
+ * checked. **Without** `worldTables` (the game's encyclopedia) the map items are read as they were: a
+ * Region at the tier set on its map, had through drops, the tutorial, bounties and trading up.
  *
  * ⚠️ Reach must reason over everything that makes a thing appear, or it reports a false "never":
  * the Starter Camp (its Tokens, its Bank, the starter tools), the Guild Hall (Passive Production,
- * the Wishing Well, bounties), the Shop, spawners, growth and turning and regrowth, what each map and
- * modifier writes, how maps are had (drops, the tutorial, bounties, trading up), Foundations and the
+ * the Wishing Well, bounties), the Shop, spawners, growth and turning and regrowth, the world's cells
+ * (or what each map and modifier writes), Foundations and the
  * buildings built on them, stations and their kinds, Fields and their crops, tool kinds and tiers,
  * catch pools and bait, drops (and first-kill drops), bonus drops and ambushes from rules. A new way
  * content appears belongs in `buildWorld`, as a rule.
  * ⚠️ A Planned entry is not in the world: it never reaches the game, so it makes nothing and nothing
  * makes it; its reach is null.
  *
- * Not modelled (each would move a reach later, never earlier): the tutorial's own steps before it
- * pays the first maps (a copper tool made, a goblin beaten), room under the Token cap, a placement
- * rule refusing a spot, the guild's roster.
+ * Not modelled (each would move a reach later, never earlier): the tutorial's own steps, a cell's
+ * price in materials (the seed picks them), which wedge a seed's key origins and camps fall in, room
+ * under the Token cap, a placement rule refusing a spot, the guild's roster.
  *
  * Pure apart from `mapItems.js`, which the CMS already imports: it reads only what it is handed.
  */
@@ -123,11 +132,13 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
         world: 'on a world cell'
     }),
     firstKill: 'first kill',
+    someWorlds: 'in some worlds',
     level: (skill, level) => `${skill === COMBAT ? 'Combat' : skill.charAt(0).toUpperCase() + skill.slice(1)} ${level}`,
     chance: (p) => `${Math.round(p * 1000) / 10}%`,
     never: 'never',
     planned: 'planned',
-    region: 'a Region'
+    region: 'a Region',
+    wedge: (line, ring) => `${line} ring ${ring}`
 });
 
 // ── keys ────────────────────────────────────────────────────────────────────────────────────────
@@ -135,10 +146,12 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
 export const itemKey = (id) => `item:${id}`;
 export const tokenKey = (id) => `token:${id}`;
 export const recipeKey = (id) => `recipe:${id}`;
+/** A cell of one wedge at one strict ring of the world map, as a place the guild settles. */
+export const wedgeKey = (line, ring) => `wedge:${line}:${ring}`;
 const toolKey = (need) => `tool:${(need.kinds || [need.kind]).join('|')}:${need.minTier}`;
 const REGION = 'region:any';
 
-/** `{ kind, id }` of a key: kind is item, token, recipe, tool or region. */
+/** `{ kind, id }` of a key: kind is item, token, recipe, tool, region or wedge. */
 export function parseKey(key) {
     const at = key.indexOf(':');
     return { kind: key.slice(0, at), id: key.slice(at + 1) };
@@ -209,16 +222,21 @@ export function isOneOff(def) {
  * The content as the engines read it: every record by key, its name, and the rules that make
  * things. Planned records are kept by name only (`planned`) and make nothing.
  *
- * A rule: `{ id, how, via, needs: key[], tool: key|null, gives: [{ key, chance, firstKill, perCycle }],
+ * A rule: `{ id, how, via, needs: key[], tool: key|null, gives: [{ key, chance, firstKill, perCycle, maybe }],
  * floor, gates: [{ skill, level }], cycleMs, inputs: [{ key, quantity }], passive, oneOff }`. `oneOff`
- * marks the work of a one-off find (a chest a map places). It fires at the
+ * marks the work of a one-off find (a chest a map or the world places); `maybe` a give only some
+ * worlds hold, never a sure way. It fires at the
  * lowest tier where every need (and its tool) is reached, and never below its `floor`. `via` is the
  * record that does the work, which a path follows back; `inputs` what one cycle spends, which a tree
  * follows down.
  *
- * @param {object} content  `{ items, tokens, recipes | recipePools, effects, starterCamp }`, as the CMS
- *   store or the game's `data/` files hold them (keyed objects or arrays). The Starter Camp is the one
- *   the game opens on; none means nothing is placed at the start.
+ * @param {object} content  `{ items, tokens, recipes | recipePools, effects, starterCamp, worldTables }`,
+ *   as the CMS store or the game's `data/` files hold them (keyed objects or arrays). The Starter Camp
+ *   is the one the game opens on; none means nothing is placed at the start. `worldTables`: the
+ *   normalised world tables the world is generated from (with the plan's places laid on, as the
+ *   World plan reads them), or none for the retired map items' reading.
+ * @returns {{ items, tokens, recipes, rules, names, planned, retired: Set<string>, worldTables: object|null }}
+ *   `retired` the map items' keys when the world is read
  */
 export function buildWorld(content = {}, { bountyMapChance = BOUNTY_MAP_CHANCE } = {}) {
     const library = isObject(content.effects) ? content.effects : {};
@@ -461,10 +479,17 @@ export function buildWorld(content = {}, { bountyMapChance = BOUNTY_MAP_CHANCE }
         }
     }
 
+    const tables = isObject(content.worldTables) && Array.isArray(content.worldTables.lines) ? content.worldTables : null;
+    const retired = new Set();
+    if (tables) {
+        for (const [id, def] of Object.entries(items)) if (isMapItem(def)) retired.add(itemKey(id));
+        worldRules(tables, { add, names, items, placeable: (id) => !!text(id) && !planned.has(tokenKey(id)) });
+    }
+
     // Maps: a Base Map writes its Region; a Modifier changes a Base Map's. And how maps are had.
     const bountyMaps = [];
     for (const [id, def] of Object.entries(items)) {
-        if (!isMapItem(def)) continue;
+        if (tables || !isMapItem(def)) continue;
         const self = itemKey(id);
         const floor = planTierOf(def) ?? 0;
         if (isBaseMap(def)) {
@@ -537,27 +562,128 @@ export function buildWorld(content = {}, { bountyMapChance = BOUNTY_MAP_CHANCE }
         const gives = [...toolNeeds].filter(([, need]) => toolMeets(tool, need)).map(([key]) => ({ key, chance: 1 }));
         if (gives.length) add({ id: `hold:${id}`, how: HOW.HOLD, via: itemKey(id), needs: [itemKey(id)], gives });
     }
-    // A one-off find: a Token that wears out for good, which only a map or a modifier places. Its work
-    // is there once, by chance, so reach keeps it on the side rather than as a way in.
+    // A one-off find: a Token that wears out for good, which only a map or a modifier places, or only
+    // some worlds hold (a treasure). Its work is there once, by chance, so reach keeps it on the side
+    // rather than as a way in. One every world places for sure is had, however soon it wears out.
     const placedBy = new Map();
     for (const rule of rules) {
         for (const give of rule.gives) {
             if (!placedBy.has(give.key)) placedBy.set(give.key, []);
-            placedBy.get(give.key).push(rule.how);
+            placedBy.get(give.key).push(rule.how === HOW.WORLD && give.maybe !== true ? null : rule.how);
         }
     }
     for (const rule of rules) {
         if ((rule.how !== HOW.WORK && rule.how !== HOW.CATCH) || !rule.via?.startsWith('token:')) continue;
         const placers = placedBy.get(rule.via) || [];
-        if (isOneOff(tokens[parseKey(rule.via).id]) && placers.length && placers.every(how => how === HOW.MAP || how === HOW.MODIFIER)) {
+        if (isOneOff(tokens[parseKey(rule.via).id]) && placers.length && placers.every(how => how === HOW.MAP || how === HOW.MODIFIER || how === HOW.WORLD)) {
             rule.oneOff = true;
         }
     }
 
     for (const [key, need] of toolNeeds) names.set(key, need.kinds ? need.kinds.join(' or ') : `${need.kind} ${need.minTier}+`);
-    names.set(REGION, LEDGER_ENGINE_TEXT.region);
+    if (!tables) names.set(REGION, LEDGER_ENGINE_TEXT.region);
 
-    return { items, tokens, recipes, rules, names, planned };
+    return { items, tokens, recipes, rules, names, planned, retired, worldTables: tables };
+}
+
+/**
+ * The world map's rules (see the file's head): a settle rule per wedge and strict ring, then what
+ * every world places there, then what only some worlds do (`maybe`).
+ *
+ * ⚠️ Which wedge a seed puts a key origin, a camp, an extra or an arrival in is the seed's: it is
+ * placed through every wedge that may hold it, those whose tables list work by that ring first, then
+ * the likeliest by kit (reach keeps the first of equals), so its path names that wedge's skill. A
+ * `specialty` price slot follows the seed's specialty and is left out.
+ */
+function worldRules(tables, { add, names, items, placeable }) {
+    const lines = tables.lines;
+    const kits = Array.isArray(tables.kits) ? tables.kits : [];
+    const rings = Array.from({ length: STRICT_RINGS }, (_, i) => i + 1);
+
+    for (const ring of rings) {
+        const template = tables.prices?.[ring] || {};
+        for (const line of lines) {
+            const key = wedgeKey(line.id, ring);
+            names.set(key, LEDGER_ENGINE_TEXT.wedge(line.name || line.id, ring));
+            const top = new Map();
+            for (const slot of list(template.skills)) {
+                const skill = slot.skill === SKILL_OF.LINE ? line.skill : slot.skill === SKILL_OF.SPECIALTY ? null : slot.skill;
+                for (const g of gate(skill, slot.level)) top.set(g.skill, Math.max(top.get(g.skill) || 0, g.level));
+            }
+            add({
+                id: `settle:${line.id}:${ring}`, how: HOW.SETTLE, via: null, floor: ring,
+                needs: ring > 1 ? [wedgeKey(line.id, ring - 1)] : [],
+                gates: [...top].map(([skill, level]) => ({ skill, level })),
+                gives: [{ key, chance: 1 }]
+            });
+        }
+    }
+
+    const place = (id, line, ring, typeIds, maybe = false) => {
+        const gives = [...new Set(typeIds)].filter(placeable).map(t => (maybe ? { key: tokenKey(t), chance: 1, maybe: true } : { key: tokenKey(t), chance: 1 }));
+        if (gives.length) add({ id, how: HOW.WORLD, via: wedgeKey(line, ring), needs: [wedgeKey(line, ring)], floor: ring, gives });
+    };
+    // A kit's share of a line's cells: its lean over the lean's total, or an even share when the line leans to none.
+    const shareOf = (line, kitId) => {
+        const lean = Object.entries(line.kits || {});
+        if (!lean.length) return kits.length ? 1 / kits.length : 0;
+        const total = lean.reduce((n, [, w]) => n + w, 0);
+        return total > 0 ? (Number(line.kits[kitId]) || 0) / total : 0;
+    };
+    // A wedge whose tables list nothing by a ring gives its skill no work to level there: it comes last.
+    const stocked = (line, ring) => rings.some(n => n <= ring && (line.origins?.[n] || []).length > 0);
+    const order = (list, ring, shareOfLine = () => 1) => list
+        .map((line, i) => ({ line, i, share: shareOfLine(line), stocked: stocked(line, ring) }))
+        .filter(x => x.share > 0)
+        .sort((a, b) => b.stocked - a.stocked || b.share - a.share || a.i - b.i)
+        .map(x => x.line);
+    const linesFor = (kitIds, ring) => order(lines, ring, (line) => Math.max(0, ...kitIds.map(k => shareOf(line, k))));
+
+    const listedBy = new Map();
+    for (const ring of rings) {
+        for (const line of lines) {
+            const ids = (line.origins?.[ring] || []).map(o => o.id);
+            for (const id of ids) if (!listedBy.has(id)) listedBy.set(id, ring);
+            place(`world:${line.id}:${ring}`, line.id, ring, ids);
+        }
+    }
+    for (const ring of rings) {
+        // A key origin no line lists by its ring still stands within a step of every cell one ring in.
+        const keys = list(tables.keys?.[ring]).filter(id => !(listedBy.get(id) <= ring));
+        if (keys.length) for (const line of order(lines, ring)) place(`key:${line.id}:${ring}`, line.id, ring, keys);
+        for (const camp of list(tables.camps?.[ring])) {
+            const kitIds = camp.kits?.length ? camp.kits : kits.filter(k => k.camps.includes(camp.id) || k.bossCamps.includes(camp.id)).map(k => k.id);
+            const holders = kitIds.length ? linesFor(kitIds, ring) : [];
+            for (const line of holders.length ? holders : order(lines, ring)) place(`camp:${camp.id}:${ring}:${line.id}`, line.id, ring, [camp.id]);
+        }
+    }
+
+    // Only in some worlds: a kit's camps (its everyday ones where it has combat work or combat is a
+    // specialty, its boss camps with a combat specialty), the hidden extras, the arrivals.
+    const combatSpecialty = list(tables.specialties).includes(COMBAT);
+    for (const kit of kits) {
+        const ids = [...((kit.work?.[COMBAT] > 0 || combatSpecialty) ? kit.camps : []), ...(combatSpecialty ? kit.bossCamps : [])];
+        if (!ids.length) continue;
+        for (const ring of rings) for (const line of linesFor([kit.id], ring)) place(`kit:${kit.id}:${line.id}:${ring}`, line.id, ring, ids, true);
+    }
+    for (const extra of list(tables.extras)) {
+        let ids = [];
+        if (extra.kind === EXTRA_KIND.TREASURE) ids = [extra.id];
+        else if (isModifier(items[extra.id])) {
+            for (const effect of list(recipeOf(items[extra.id]).effects)) {
+                if (effect.kind === 'replace') { if (text(effect.to)) ids.push(effect.to); }
+                else if (text(effect.typeId)) ids.push(effect.typeId);
+            }
+        }
+        const where = extra.lines ? lines.filter(l => extra.lines.includes(l.id)) : lines;
+        for (const ring of extra.rings || rings) for (const line of order(where, ring)) place(`extra:${extra.id}:${line.id}:${ring}`, line.id, ring, ids, true);
+    }
+    for (const ring of rings) {
+        const arrival = tables.arrival?.[ring];
+        const ids = [...list(arrival?.enemies), ...(arrival?.bossChance > 0 ? list(arrival.bosses) : [])].map(e => e.id);
+        if (!ids.length || !(arrival.count?.[1] > 0)) continue;
+        for (const line of order(lines, ring)) place(`arrival:${line.id}:${ring}`, line.id, ring, ids, true);
+    }
 }
 
 // ── reach ───────────────────────────────────────────────────────────────────────────────────────
@@ -571,7 +697,7 @@ function better(a, b) {
     return a.depth < b.depth;
 }
 
-const isSure = (give, luckBelow) => give.firstKill === true || give.chance >= luckBelow;
+const isSure = (give, luckBelow) => give.maybe !== true && (give.firstKill === true || give.chance >= luckBelow);
 const needsOf = (rule) => (rule.tool ? [...rule.needs, rule.tool] : rule.needs);
 
 /**
@@ -621,11 +747,11 @@ function settle(world, { luckBelow, sureOnly, finds = false }) {
  * earliest carries it on the side (`oneOffFind`). An entry only a one-off find gets, itself or down
  * its chain, is reached through it, as luck only (`oneOffOnly`).
  *
- * @returns {Map<string, {key, kind, id, name, planned, tier, sureTier, luckOnly, oneOffOnly, oneOffFind, how, via, chance, firstKill, levels, gate, depth, rule}>}
- *   one entry per item, Token and recipe key (and the tool and Region keys rules need). `tier` is
+ * @returns {Map<string, {key, kind, id, name, planned, tier, sureTier, luckOnly, oneOffOnly, oneOffFind, how, via, chance, firstKill, maybe, levels, gate, depth, rule}>}
+ *   one entry per item, Token and recipe key (and the tool, Region and wedge keys rules need). `tier` is
  *   null when it is never reachable; `sureTier` the lowest tier without luck (null: only ever by luck,
  *   or never); `luckOnly` that at its tier only a drop under `luckBelow` gets it (luck anywhere on its
- *   path counts); `levels` the highest level per skill the whole path asks (`combat`: the toughest
+ *   path counts); `maybe` that the world holds it only sometimes; `levels` the highest level per skill the whole path asks (`combat`: the toughest
  *   enemy on it), `gate` the highest single one; `depth` the steps from an origin. A Planned entry
  *   has `planned: true` and no tier.
  */
@@ -666,7 +792,7 @@ export function computeReach(world, { luckBelow = LUCK_BELOW } = {}) {
         if (!at) {
             out.set(key, {
                 ...base, planned: world.planned.has(key), tier: null, sureTier: null, luckOnly: false, oneOffOnly: false, oneOffFind: null,
-                how: null, via: null, chance: null, firstKill: false, levels: {}, gate: null, depth: 0, rule: null
+                how: null, via: null, chance: null, firstKill: false, maybe: false, levels: {}, gate: null, depth: 0, rule: null
             });
             continue;
         }
@@ -685,6 +811,7 @@ export function computeReach(world, { luckBelow = LUCK_BELOW } = {}) {
             via: at.rule.via,
             chance: at.give.chance,
             firstKill: at.give.firstKill === true,
+            maybe: at.give.maybe === true,
             levels,
             gate: top ? { skill: top[0], level: top[1] } : null,
             depth: at.depth,
@@ -733,7 +860,7 @@ export function oneOffFindOf(reach, key) {
  * works or drops it, the recipe that makes it, the station or Foundation a recipe runs on, the map
  * that writes it).
  *
- * @returns {{key, name, how, via, tier, chance, firstKill, gates}[]}
+ * @returns {{key, name, how, via, tier, chance, firstKill, maybe, gates}[]}
  */
 export function reachPath(reach, key) {
     const steps = [];
@@ -743,25 +870,26 @@ export function reachPath(reach, key) {
         seen.add(at.key);
         steps.push({
             key: at.key, name: at.name, how: at.how, via: at.via, tier: at.tier,
-            chance: at.chance, firstKill: at.firstKill, gates: at.rule?.gates || []
+            chance: at.chance, firstKill: at.firstKill, maybe: at.maybe === true, gates: at.rule?.gates || []
         });
         at = at.via ? reach.get(at.via) : null;
     }
     return steps;
 }
 
-/** A step's detail in words: "(Mining 15)", "(Combat 20, first kill)", "(3%)". */
+/** A step's detail in words: "(Mining 15)", "(Combat 20, first kill)", "(3%)", "(in some worlds)". */
 function stepDetail(step, luckBelow) {
     const parts = step.gates.map(g => LEDGER_ENGINE_TEXT.level(g.skill, g.level));
     if (step.firstKill) parts.push(LEDGER_ENGINE_TEXT.firstKill);
+    else if (step.maybe) parts.push(LEDGER_ENGINE_TEXT.someWorlds);
     else if (Number.isFinite(step.chance) && step.chance < 1 && step.chance < luckBelow * 4) parts.push(LEDGER_ENGINE_TEXT.chance(step.chance));
     return parts.length ? ` (${[...new Set(parts)].join(', ')})` : '';
 }
 
 /**
- * The path in one line: "Iron Ore ← Iron Vein (Mining 15) ← Volcano Map ← Goblin Chief (Combat 20, first kill) ← …",
- * ending with how the chain starts ("in the Starter Camp", "given by the tutorial"); "never" or "planned".
- * Each rule's gates and chance sit on the thing that did the work.
+ * The path in one line: "Iron Ore ← Iron Vein (Mining 15) ← Ores ring 2 ← settled on the world map (Mining 15)",
+ * ending with how the chain starts ("in the Starter Camp", "settled on the world map") and what that
+ * start asks; "never" or "planned". Each rule's gates and chance sit on the thing that did the work.
  */
 export function describePath(reach, key, { luckBelow = LUCK_BELOW } = {}) {
     const at = reach.get(key);
@@ -777,7 +905,7 @@ export function describePath(reach, key, { luckBelow = LUCK_BELOW } = {}) {
         parts.push(`${step.name}${made && made.via === step.key ? stepDetail(made, luckBelow) : ''}`);
     });
     const last = steps[steps.length - 1];
-    const start = last && !last.via ? LEDGER_ENGINE_TEXT.how[last.how] : null;
+    const start = last && !last.via ? `${LEDGER_ENGINE_TEXT.how[last.how]}${stepDetail(last, luckBelow)}` : null;
     return start ? `${parts.join(' ← ')} ← ${start}` : parts.join(' ← ');
 }
 

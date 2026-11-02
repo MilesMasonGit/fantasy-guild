@@ -8,6 +8,7 @@ import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, LEDGER_ENGINE_TEXT
 import { planOf, PLAN_STATUS, tierLabel } from './plan.js';
 import { xpForLevel, MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import { turnTiming } from '../../../config/registries/tokenConstants.js';
+import { SKILLS, SKILL_LAYERS } from '../../../config/registries/skillRegistry.js';
 
 /**
  * How the game is paced for the target player, worked out statically from the content at the three
@@ -18,8 +19,8 @@ import { turnTiming } from '../../../config/registries/tokenConstants.js';
  *   fed by one hero on the best source of each of its inputs (a smith fed by one miner). A loop
  *   (seeds that make seeds) takes its own input as in stock.
  * - **Level tracks**: for each skill, the hours each level takes: the XP it needs over the best
- *   XP an hour any work of the skill gives at that level, fed the same way, among the work reachable
- *   by the stage that first asks for that level.
+ *   XP an hour any work of the skill gives at that level (with the milestone perks held by then),
+ *   fed the same way, among the work reachable by the stage that first asks for that level.
  * - **Path time**: for each entry, when it is first had from a new game: along the path the reach
  *   engine shows, a step starts once everything it needs is had and its level gates are reached
  *   (skills level side by side, each by its own hero: one job per hero), then takes its own time
@@ -40,6 +41,12 @@ import { turnTiming } from '../../../config/registries/tokenConstants.js';
  */
 
 const HOUR_MS = 3_600_000;
+
+/** A star open already: no star to light on the way. */
+const OPEN = Object.freeze({ path: Object.freeze([]), cost: 0 });
+
+/** A fighting style (melee, magic…): levelled by fights, never by work. */
+const isCombatStyle = (skill) => SKILLS[skill]?.layer === SKILL_LAYERS.COMBAT;
 
 /** The kinds of boost a profile chooses per piece of work (perks come with levels). */
 const BOOSTED = [BOOST_KIND.SUPPORT, BOOST_KIND.CAMP, BOOST_KIND.CONSUMABLE, BOOST_KIND.TOOL, BOOST_KIND.GEAR, BOOST_KIND.HALL];
@@ -104,7 +111,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         works.push(work);
         byKey.set(work.key, work);
     }
-    const tiers = new Set([...reach.values()].map(a => a.tier).filter(Number.isInteger));
+    // Only the content's own entries: a world cell, a tool need or a Token the world tables name but
+    // the content lacks sets no stage and asks no level.
+    const isEntry = (key) => plans.has(key) && !ledger.world.retired?.has(key);
+    const tiers = new Set([...reach.values()].filter(a => isEntry(a.key)).map(a => a.tier).filter(Number.isInteger));
     for (const s of settings.stages) tiers.add(s.tier);
     const maxTier = tiers.size ? Math.max(...tiers) : 0;
 
@@ -129,11 +139,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
     };
 
-    /** A work's rate fed by the guild: one hero on the best source of each input, its scale the scarcest. */
-    function fed(work, profile, cap, stack) {
-        const key = `${work.key}|${profile}|${cap}`;
+    /**
+     * A work's rate fed by the guild: one hero on the best source of each input, its scale the scarcest.
+     * `level`: the working hero's level (its milestone perks), the work's own gate when null.
+     */
+    function fed(work, profile, cap, stack, level = null) {
+        const key = `${work.key}|${profile}|${cap}|${level ?? ''}`;
         if (fedMemo.has(key)) return fedMemo.get(key);
-        const { rate } = profiles.profileOf(work.target, profile, cap);
+        const { rate } = profiles.profileOf(work.target, profile, cap, level);
         let out;
         if (!rate.ok) {
             out = { rate, scale: 0, items: {}, xp: {}, tokens: {}, inputs: {}, short: null };
@@ -191,7 +204,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const at = reach.get(key);
         if (!at?.rule) return Infinity;
         const rule = at.rule;
-        if ([HOW.STARTER_CAMP, HOW.MAP, HOW.MODIFIER, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW].includes(rule.how)) return 0;
+        if ([HOW.STARTER_CAMP, HOW.MAP, HOW.MODIFIER, HOW.WORLD, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW].includes(rule.how)) return 0;
         if (rule.how === HOW.SHOP) return sum(rule.inputs.map(i => i.quantity * unitHours(parseKey(i.key).id, cap)));
         if (rule.how === HOW.CRAFT) {
             const recipe = rates.recipes[parseKey(rule.via).id];
@@ -216,16 +229,31 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     });
 
     /** A work's profile rate at a stage, fed. */
-    const workAt = (work, profile, cap) => fed(work, profile, cap, new Set());
+    const workAt = (work, profile, cap, level = null) => fed(work, profile, cap, new Set(), level);
+
+    /**
+     * The level a hero levelling `skill` at `level` works a piece of work at, as far as its rate goes:
+     * the last of the skill's milestone perks they hold, or the work's own gate when that is higher.
+     * Null when that is the gate (the work's default). Levels between two perks rate the same.
+     */
+    const perkLevels = (skill) => (rates.perkTables?.[skill] || []).map(r => r.level);
+    function bandLevel(work, skill, level) {
+        const held = perkLevels(skill).filter(l => l <= level);
+        const band = held.length ? Math.max(...held) : 0;
+        const gate = profiles.contextOf(work.target).gate ?? 1;
+        return band > gate ? band : null;
+    }
+    /** The band a level falls in: the last milestone perk of the skill at or below it, 0 below the first. */
+    const bandOf = (skill, level) => Math.max(0, ...perkLevels(skill).filter(l => l <= level));
 
     // ── level tracks ───────────────────────────────────────────────────────────────────────────
     const askedAt = new Map();
     for (const [key, at] of reach) {
-        if (!Number.isInteger(at.tier) || at.planned || !/^(item|token|recipe):/.test(key)) continue;
+        if (!Number.isInteger(at.tier) || at.planned || !isEntry(key)) continue;
         // A Parked entry's levels still count: a live path may run through it.
         const tier = effTier(key);
         for (const [skill, level] of Object.entries(at.levels || {})) {
-            if (skill === COMBAT) continue;
+            if (skill === COMBAT || isCombatStyle(skill)) continue;
             if (!askedAt.has(skill)) askedAt.set(skill, []);
             askedAt.get(skill).push({ level, tier, key });
         }
@@ -273,15 +301,22 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     }
 
     const bestMemo = new Map();
+    /**
+     * The best XP an hour any work of a skill gives a hero at a level, at a profile and stage: each
+     * work rated with the milestone perks the hero holds by then (`at`: the level it was rated at,
+     * null for its own gate), so the ranking is kept per level band.
+     */
     function bestXp(skill, level, profile, cap) {
-        const key = `${skill}|${profile}|${cap}`;
+        const band = bandOf(skill, level);
+        const key = `${skill}|${profile}|${cap}|${band}`;
         let ranked = bestMemo.get(key);
         if (!ranked) {
             ranked = (skillsOfWork.get(skill) || [])
                 .filter(w => w.tier !== null && w.tier <= cap)
                 .map(w => {
-                    const f = workAt(w, profile, cap);
-                    return { work: w, gate: f.rate.gates?.needed ?? 1, xp: f.xp[skill] || 0, scale: f.scale, short: f.short };
+                    const at = bandLevel(w, skill, band);
+                    const f = workAt(w, profile, cap, at);
+                    return { work: w, at, gate: f.rate.gates?.needed ?? 1, xp: f.xp[skill] || 0, scale: f.scale, short: f.short };
                 })
                 .filter(x => x.xp > 0)
                 .sort((a, b) => a.gate - b.gate);
@@ -444,6 +479,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 gates.push({ ...g, hours: null });
                 continue;
             }
+            // A fighting style is trained by fights, which the calculator does not time: a floor.
+            if (isCombatStyle(g.skill)) {
+                gates.push({ ...g, hours: null });
+                complete = false;
+                continue;
+            }
             const h = levelHours(g.skill, g.level, profile);
             gates.push({ ...g, hours: h });
             if (h > start) { start = h; waitsOn = { skill: g.skill, level: g.level }; }
@@ -477,6 +518,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     // ── stages ─────────────────────────────────────────────────────────────────────────────────
     const entryKeys = [...plans.keys()].filter(k => /^(item|token|recipe):/.test(k));
     const counted = (key) => {
+        if (ledger.world.retired?.has(key)) return false;
         const status = statusOf(key);
         return status !== PLAN_STATUS.PLANNED && status !== PLAN_STATUS.PARKED;
     };
@@ -618,7 +660,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const off = minutes / stage.budgetMinutes - 1;
             if (Math.abs(off) * 100 <= settings.tolerancePct) continue;
             const slow = s.slowest.slice(0, 3).map(x => `${nameOf(x.key)} (${PACE_TEXT.hours(x.hours)})`).join(', ');
-            const floor = s.complete && !s.untimed.length ? '' : ` A floor: ${s.untimed.length} entr${s.untimed.length === 1 ? 'y has' : 'ies have'} no time and some steps are not timed.`;
+            const untimed = s.untimed.length ? ` ${s.untimed.length} entr${s.untimed.length === 1 ? 'y has' : 'ies have'} no time` : '';
+            const steps = s.complete ? '' : `${untimed ? ' and' : ''} some steps are not timed`;
+            const floor = untimed || steps ? ` A floor:${untimed}${steps || ' '}`.trimEnd() + '.' : '';
             add('stage-budget', `stage:${stage.tier}`, `${tierLabel(stage.tier)} is done ${PACE_TEXT.hours(s.hours)} into a new game at Typical, ${off > 0 ? `${Math.round(off * 100)} % over` : `${Math.round(-off * 100)} % under`} its budget of ${formatMinutes(stage.budgetMinutes)} (±${settings.tolerancePct} %).${slow ? ` Slowest: ${slow}.` : ''}${floor}`, {
                 name: tierLabel(stage.tier), related: s.slowest.map(x => x.key)
             });
@@ -631,7 +675,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 continue;
             }
             if (row.enabler || row.pays) continue;
-            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.hallPaybackHours)} a Guild Hall rank has to pay for itself.`, { name: row.name });
+            const opened = row.opening.path.length ? `, and ${PACE_TEXT.short(row.opening.cost)} to open it, ${openingWords(row.opening)}` : '';
+            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical${opened}) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.hallPaybackHours)} a Guild Hall rank has to pay for itself.`, { name: row.name });
         }
 
         // Boosts over their target strength, by kind, at Maxed: one finding per set of boosts, with every work it lifts.
@@ -681,6 +726,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const stageWords = (row) => (row.tier !== null && row.tier > row.cap
         ? `${tierLabel(row.tier)}, measured at ${tierLabel(row.cap)}, the last stage the pace knows`
         : tierLabel(row.tier ?? row.cap));
+    /** The stars lit to open a star, in words: "lighting Gold Leaf and Lore". */
+    const openingWords = (opening) => `lighting ${opening.path.map(id => hallName(id)).join(' and ')}`;
     const savesWords = (row) => {
         if (!(row.gain > 0)) return 'and saves no time at its tier (no work it reaches is open by then)';
         const on = row.work ? ` on ${workName(row.work)}` : '';
@@ -701,13 +748,21 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * an hour on the work it saves most on, `{ gain, work }`; `gain` Infinity when it is the only
      * source of what it pays (an enabler).
      */
-    function hallRankGain(track, rank, cap) {
-        if (track.id === 'roster_size') return { gain: 1, work: null };
-        let best = { gain: 0, work: null };
+    function hallRankGain(track, rank, cap, priceHours = 0) {
+        if (track.id === 'roster_size') return { gain: 1, work: null, opening: OPEN };
+        let best = { gain: 0, work: null, opening: OPEN };
+        let bestPayback = Infinity;
         for (const work of hallWorksOf(track.id)) {
             if (work.tier > cap) continue;
             const m = profiles.hallRankOn(work.target, cap, track.id, rank);
-            if (m && m.saves > best.gain) best = { gain: m.saves, work };
+            if (!m || !(m.saves > 0)) continue;
+            const opening = m.opening || OPEN;
+            // Where it pays back soonest: its price and the stars lit to open it there, over what it saves there.
+            const payback = m.saves === Infinity ? 0 : (priceHours + opening.cost) / m.saves;
+            if (!best.work || payback < bestPayback || (payback === bestPayback && m.saves > best.gain)) {
+                best = { gain: m.saves, work, opening };
+                bestPayback = payback;
+            }
         }
         return best;
     }
@@ -741,10 +796,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                     rows.push({ ...base, rate: false, what: track.description || 'not a rate' });
                     continue;
                 }
-                const { gain, work } = hallRankGain(track, rank, cap);
+                const { gain, work, opening } = hallRankGain(track, rank, cap, base.priceHours);
                 const enabler = gain === Infinity;
-                const payback = base.priceHours === 0 ? 0 : enabler ? 0 : gain > 0 ? base.priceHours / gain : Infinity;
-                const row = { ...base, rate: true, enabler, gain, work, payback, pays: enabler || payback <= settings.hallPaybackHours };
+                const cost = base.priceHours + opening.cost;
+                const payback = cost === 0 ? 0 : enabler ? 0 : gain > 0 ? cost / gain : Infinity;
+                const row = { ...base, rate: true, enabler, gain, work, opening, payback, pays: enabler || payback <= settings.hallPaybackHours };
                 if (!track.builtIn) row.proposed = proposePrice(track, rank, row);
                 rows.push(row);
             }
@@ -772,9 +828,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 if (p.itemId === before.itemId) quantity = Math.max(quantity, before.quantity);
                 if (quantity > p.quantity) {
                     const priceHours = quantity / perHour;
+                    const payback = (priceHours + row.opening.cost) / row.gain;
                     row.proposed = {
-                        ...p, quantity, priceHours, payback: priceHours / row.gain, raised: true,
-                        pays: priceHours / row.gain <= settings.hallPaybackHours,
+                        ...p, quantity, priceHours, payback, raised: true,
+                        pays: payback <= settings.hallPaybackHours,
                         priceText: priceWords([{ itemId: p.itemId, quantity }])
                     };
                 }
@@ -802,12 +859,45 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return null;
     }
 
+    const GATHERING = [WORK.GATHER, WORK.WATER, WORK.FIELD];
+
+    const mainMemo = new Map();
+    /**
+     * What a skill's work spends, down to the gathered items it is made from, by how much an hour at
+     * Typical before the Hall (each fed as the guild can): `Map<itemId, perHour>`, among the work
+     * reachable by a stage. A smith's main input is the ore its ingots are smelted from.
+     */
+    function mainInputsOf(skill, cap) {
+        const key = `${skill}|${cap}`;
+        if (mainMemo.has(key)) return mainMemo.get(key);
+        const out = new Map();
+        for (const work of skillsOfWork.get(skill) || []) {
+            if (work.tier === null || work.tier > cap) continue;
+            for (const [itemId, perHour] of Object.entries(workAt(work, BEFORE_HALL, cap).inputs || {})) {
+                if (!(perHour > 0) || !rates.items[itemId]) continue;
+                const walk = (node, times) => {
+                    if (node.cycle) return;
+                    if (node.origin) {
+                        out.set(node.id, (out.get(node.id) || 0) + node.quantity * times);
+                        return;
+                    }
+                    for (const child of node.children) walk(child, times);
+                };
+                walk(ledger.treeOf(itemId).tree, perHour);
+            }
+        }
+        mainMemo.set(key, out);
+        return out;
+    }
+
     const materialMemo = new Map();
     /**
      * The material a rank of a tier is priced in: an item first had at that tier (the owner's tier
      * for it, else when it is first reached), gathered rather than made at a station, the most of it
      * an hour at Typical before the Hall, of the star's own skill where one is; else the tier before.
-     * Never what the star itself pays.
+     * A skill that is the best gatherer of nothing by then (Smithing, Cooking, Crafting with its
+     * chests) is priced in its main input instead: the gathered item its work spends most of, at that
+     * tier or the nearest before it. Never what the star itself pays.
      */
     function materialFor(star, tier, cap) {
         const skill = starSkill(star, cap);
@@ -815,18 +905,31 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const key = `${skill}|${tier}|${cap}|${[...own].join(',')}`;
         if (materialMemo.has(key)) return materialMemo.get(key);
         indexMakers();
-        const gathered = (itemId) => (madeBy.get(itemId) || []).some(w => [WORK.GATHER, WORK.WATER, WORK.FIELD].includes(rates.workKindOf(w.target).kind));
-        let pick = null;
-        for (let t = tier; t >= 0 && !pick; t--) {
+        const gathered = (itemId) => (madeBy.get(itemId) || []).some(w => GATHERING.includes(rates.workKindOf(w.target).kind));
+        // Each tier's gathered items, at their best source then.
+        const foundAt = [];
+        for (let t = tier; t >= 0; t--) {
             const found = [];
             for (const itemId of Object.keys(rates.items)) {
                 if (own.has(itemId) || effTier(itemKey(itemId)) !== t || !gathered(itemId)) continue;
                 const s = supplyOf(itemId, BEFORE_HALL, cap);
                 if (!(s.perHour > 0) || !Number.isFinite(s.perHour) || !s.work) continue;
-                const kind = rates.workKindOf(s.work.target).kind;
-                if (kind !== WORK.GATHER && kind !== WORK.WATER && kind !== WORK.FIELD) continue;
+                if (!GATHERING.includes(rates.workKindOf(s.work.target).kind)) continue;
                 found.push({ itemId, perHour: s.perHour, work: s.work, mine: !!skill && profiles.contextOf(s.work.target).skill === skill });
             }
+            foundAt.push(found);
+        }
+        let pick = null;
+        if (skill && !foundAt.some(found => found.some(f => f.mine))) {
+            const main = mainInputsOf(skill, cap);
+            for (const found of foundAt) {
+                const best = found.filter(f => main.get(f.itemId) > 0)
+                    .sort((a, b) => main.get(b.itemId) - main.get(a.itemId) || b.perHour - a.perHour || a.itemId.localeCompare(b.itemId))[0];
+                if (best) { pick = { ...best, main: true }; break; }
+            }
+        }
+        for (const found of foundAt) {
+            if (pick) break;
             const mine = found.filter(f => f.mine);
             pick = (mine.length ? mine : found).sort((a, b) => b.perHour - a.perHour || a.itemId.localeCompare(b.itemId))[0] || null;
         }
@@ -846,16 +949,19 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         if (!(row.gain > 0)) return { why: 'it saves no time at its tier' };
         const material = materialFor(track.star, row.tier, row.cap);
         if (!material) return { why: 'no gathered material at its tier' };
-        const quantity = Math.max(1, roundDown(settings.hallPaybackHours * row.gain * material.perHour));
+        // What is left of the payback time once the stars on the way are lit.
+        const left = settings.hallPaybackHours * row.gain - row.opening.cost;
+        if (!(left > 0)) return { why: `opening it (${openingWords(row.opening)}) takes longer than it can pay back` };
+        const quantity = Math.max(1, roundDown(left * material.perHour));
         const priceHours = quantity / material.perHour;
-        const payback = priceHours / row.gain;
+        const payback = (priceHours + row.opening.cost) / row.gain;
         return { itemId: material.itemId, quantity, priceText: priceWords([{ itemId: material.itemId, quantity }]), priceHours, payback, pays: payback <= settings.hallPaybackHours, work: material.work };
     }
 
     // ── boosts by kind ─────────────────────────────────────────────────────────────────────────
-    const kindGain = (work, profile, cap, kind) => {
-        const { chosen, context } = profiles.profileOf(work.target, profile, cap);
-        const bare = profiles.bareSetup(context, cap);
+    const kindGain = (work, profile, cap, kind, level = null) => {
+        const { chosen, context } = profiles.profileOf(work.target, profile, cap, level);
+        const bare = profiles.bareSetup(context, cap, level);
         const picks = chosen.filter(c => c.kind === kind);
         if (!picks.length) return null;
         const offers = profiles.offers(context, cap);
@@ -931,13 +1037,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 for (const profile of [PROFILE.TYPICAL, PROFILE.MAXED]) {
                     const best = bestXp(skill, level, profile, tier);
                     if (!best.work) { row.profiles[profile] = null; continue; }
-                    const bareRate = workAt(best.work, PROFILE.BARE, tier);
+                    const bareRate = workAt(best.work, PROFILE.BARE, tier, best.at);
                     const kinds = {};
                     for (const kind of BOOSTED) {
-                        const g = kindGain(best.work, profile, tier, kind);
+                        const g = kindGain(best.work, profile, tier, kind, best.at);
                         if (g) kinds[kind] = g;
                     }
-                    const perks = (best.work && workAt(best.work, profile, tier).rate.factors || []).filter(f => boostKindOf(f) === BOOST_KIND.PERK && f.axes.length);
+                    const perks = (best.work && workAt(best.work, profile, tier, best.at).rate.factors || []).filter(f => boostKindOf(f) === BOOST_KIND.PERK && f.axes.length);
                     if (perks.length) kinds[BOOST_KIND.PERK] = { gain: null, names: perks.map(f => f.name) };
                     row.profiles[profile] = {
                         work: best.work, name: workName(best.work), xp: best.xp, bareXp: bareRate.xp[skill] || 0,

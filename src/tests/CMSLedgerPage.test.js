@@ -10,7 +10,7 @@ import { sourcesOf, usesOf, layoutTree, effortText, firstReachText, TREE_LAYOUT 
 import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import { buildLedger, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
 import { tierLabel } from '../systems/progression/ledger/plan.js';
-import { ledgerWorkspace, withIronChest } from './fixtures/ledgerWorld.js';
+import { ledgerWorkspace, withIronChest, withWorld } from './fixtures/ledgerWorld.js';
 
 /**
  * The Ledger's problems list and item page (brief 290 L3) on the fixture world: the checks with the
@@ -113,7 +113,7 @@ describe('the tab', { timeout: 20000 }, () => {
         globalThis.fetch = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}), text: () => Promise.resolve('') }));
         useEntityStore.setState(empty);
         useSimulationStore.setState({ simRows: [] });
-        store().hydrate(ledgerWorkspace());
+        store().hydrate(withWorld(ledgerWorkspace()));
     });
     afterEach(() => {
         cleanup();
@@ -125,8 +125,10 @@ describe('the tab', { timeout: 20000 }, () => {
 
     it('counts each row’s problems, Block and Warn apart from Info', () => {
         const view = mount();
-        const ore = view.getByLabelText('Problems of Iron Ore');
-        expect(ore.getAttribute('data-problems')).toBe('1');
+        // The one starter sickle: a Warn, and no tier set: a note.
+        const sickle = view.getByLabelText('Problems of Copper Sickle');
+        expect(sickle.getAttribute('data-problems')).toBe('1');
+        expect(sickle.getAttribute('data-info')).toBe('1');
         // Coal has no tier set: a note only.
         const coal = view.getByLabelText('Problems of Coal');
         expect(coal.getAttribute('data-problems')).toBe('0');
@@ -143,10 +145,10 @@ describe('the tab', { timeout: 20000 }, () => {
         const shown = [...view.container.querySelectorAll('[data-finding]')].map((r) => r.getAttribute('data-finding'));
         expect(shown.length).toBeGreaterThan(0);
         expect(shown.every((c) => ['luck-only', 'fragile', 'first-kill-only', 'shop-only'].includes(c))).toBe(true);
-        fireEvent.change(view.getByLabelText('Filter by check'), { target: { value: 'fragile' } });
-        // The hubs chart beside the list names Iron Ore too: the problem's own link is the one in the list.
-        fireEvent.click(view.getAllByText('Iron Ore').find((el) => el.closest('[data-finding]')));
-        expect(view.getByLabelText('Ledger page of Iron Ore')).toBeTruthy();
+        fireEvent.change(view.getByLabelText('Filter by check'), { target: { value: 'luck-only' } });
+        // The problem's own link is the one in the list.
+        fireEvent.click(view.getAllByText('Fire Elemental').find((el) => el.closest('[data-finding]')));
+        expect(view.getByLabelText('Ledger page of Fire Elemental')).toBeTruthy();
     });
 
     it('opens an item page from a row: sources, uses, path, problems and the layered tree', () => {
@@ -164,7 +166,8 @@ describe('the tab', { timeout: 20000 }, () => {
         // A box in the tree opens its page, and so does a name; Back returns to the list.
         fireEvent.click(view.container.querySelector(`[data-node="${itemKey('item_iron_ore')}"]`));
         const orePage = view.getByLabelText('Ledger page of Iron Ore');
-        expect(within(orePage).getByText(/Only from the Volcano Map/)).toBeTruthy();
+        // Iron is had on ring 2 of the Ores wedge, settled at Mining 15.
+        expect(within(orePage).getByText(/Iron Vein \(Mining 15\) ← Ores ring 2 ← settled on the world map \(Mining 15\)/)).toBeTruthy();
         fireEvent.click(within(view.getByLabelText('Sources')).getByText('Iron Vein'));
         expect(view.getByLabelText('Ledger page of Iron Vein')).toBeTruthy();
         expect(view.container.querySelector('[data-node]')).toBeNull();

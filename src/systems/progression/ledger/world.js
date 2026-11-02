@@ -79,8 +79,11 @@ export const WORLD_PLAN_TEXT = Object.freeze({
 /** Item and Token rules that only placed through map items, which the world retired. */
 const RETIRED = new Set([HOW.MAP, HOW.MODIFIER, HOW.TUTORIAL, HOW.BOUNTY, HOW.UPCYCLE]);
 
+/** The main ledger's own reading of the world (seed-free): a seed's world puts its cells in instead. */
+const SEED_FREE = new Set([HOW.SETTLE, HOW.WORLD]);
+
 /** Rules that place a Token where it stands rather than make it. */
-const PLACING = new Set([...RETIRED, HOW.STARTER_CAMP]);
+const PLACING = new Set([...RETIRED, ...SEED_FREE, HOW.STARTER_CAMP]);
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const cellKey = (id) => `cell:${id}`;
@@ -235,6 +238,7 @@ export function worldContext(content, { baseTables, ledger = null } = {}) {
         origins.push({ check: WORLD_F.NO_WEDGE, key: tokenKey(id), severity: SEVERITY.WARN, message: WORLD_PLAN_TEXT.noWedge(yields), related: materialsOf(id).map(itemKey) });
     }
 
+    let mapReachMemo = null;
     const effort = new Map();
     const effortOf = (itemId) => {
         if (!effort.has(itemId)) effort.set(itemId, lw.items[itemId] ? base.treeOf(itemId).effortMs : 0);
@@ -244,7 +248,13 @@ export function worldContext(content, { baseTables, ledger = null } = {}) {
     return {
         content, base, tables, baseTables, moved, unknown, materialsOf, skillOf, modifierRecipe, hallOrigins,
         records, nameOf, lineName, kitName, cellName, origins, effortOf,
-        keptRules: lw.rules.filter(r => !RETIRED.has(r.how))
+        keptRules: lw.rules.filter(r => !RETIRED.has(r.how) && !SEED_FREE.has(r.how)),
+        // What the map items reached, read without the world tables (the main ledger reads them).
+        mapReach: () => {
+            if (!lw.worldTables) return base.reach;
+            mapReachMemo ??= buildLedger({ ...content, worldTables: null }).reach;
+            return mapReachMemo;
+        }
     };
 }
 
@@ -374,7 +384,7 @@ function checksOn(ctx, world, mats, { reach, index, names }) {
         if (key.startsWith('item:') && isMapItem(def)) continue;
         if (Number.isInteger(reach.get(key)?.tier)) continue;
         // Was it reachable before the world, through the map items? Then the world lost it; else it was never finished.
-        const was = ctx.base.reach.get(key)?.tier;
+        const was = ctx.mapReach().get(key)?.tier;
         const before = Number.isInteger(was) ? was : null;
         out.push(finding(WORLD_F.COVERAGE, WORLD_PLAN_TEXT.notCovered(whyNever(key, reach, index, nameOf)), { key, subject: key, name: nameOf(key), before }));
     }
