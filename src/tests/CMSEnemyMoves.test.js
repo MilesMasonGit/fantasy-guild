@@ -64,6 +64,12 @@ const flutterEffect = () => store().addEffect({
 });
 
 describe('⭐ the Token editor\'s Moves block', () => {
+    // The editor's own behaviour, on a cow with its shipped moves taken off.
+    beforeEach(() => {
+        const { moves, ...plain } = store().tokens[COW].enemy;
+        store().updateToken(COW, { enemy: plain });
+    });
+
     it('an enemy with none says it swings a plain Physical hit, and writes no key', () => {
         const { container } = tokenEditor(COW);
         expect(field(container, 'enemy-moves')).not.toBeNull();
