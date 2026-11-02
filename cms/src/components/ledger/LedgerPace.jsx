@@ -79,7 +79,7 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
             })}
           </tbody>
         </table>
-        <p className="text-[10px] text-gray-500">* a floor: some entries or steps are not timed (never reached, a bounty, trading maps up).</p>
+        <p className="text-[10px] text-gray-500">* a floor: some entries or steps are not timed (never reached, a fighting style's levels, or a step the calculator cannot time).</p>
       </section>
 
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Rate sources by skill">
