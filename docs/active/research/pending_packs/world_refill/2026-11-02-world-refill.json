@@ -1,0 +1,2013 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-02-world-refill",
+  "createdAt": "2026-11-02T23:00:57.337Z",
+  "asked": "World sources rest and refill, like the Starter Camp’s veins and forests: the ring-3 origins with 100–1000 uses and no respawn must rest and refill rather than wear out for good (owner 2026-11-02).",
+  "entries": [
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_gold_ore_vein",
+      "value": {
+        "name": "Gold Ore Vein",
+        "description": "Needs an Iron Pickaxe or better in hand.",
+        "sprite": "t_ore_vein_gold",
+        "tokenType": "resource",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [
+          "Ore"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1000,
+        "requiresHero": true,
+        "config": {
+          "skill": "mining",
+          "skillRequired": 45,
+          "cycleTimeMs": 26000,
+          "xp": 65,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_gold_ore",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_gold_ore_vein",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "pickaxe",
+          "minTier": 2
+        },
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 120000,
+          "restingSprite": "t_vein_stone"
+        }
+      },
+      "note": "Gold Ore Vein: rests 2 min at 0 charges, then refills to 1000 (as the Copper and Coal veins, twice their 1 min).",
+      "fingerprint": "fp:8853e42d2831facf"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_silver_ore_vein",
+      "value": {
+        "name": "Silver Ore Vein",
+        "description": "Needs an Iron Pickaxe or better in hand.",
+        "sprite": "t_ore_vein_silver",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Ore"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1000,
+        "requiresHero": true,
+        "config": {
+          "skill": "mining",
+          "skillRequired": 30,
+          "cycleTimeMs": 23000,
+          "xp": 18,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_silver_ore",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_silver_ore_vein",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "pickaxe",
+          "minTier": 2
+        },
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 120000,
+          "restingSprite": "t_vein_stone"
+        }
+      },
+      "note": "Silver Ore Vein: rests 2 min at 0 charges, then refills to 1000 (as the Copper and Coal veins, twice their 1 min).",
+      "fingerprint": "fp:eec66040469ffcce"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_mythril_ore_vein",
+      "value": {
+        "name": "Mythril Ore Vein",
+        "description": "Needs an Iron Pickaxe or better in hand.",
+        "sprite": "t_ore_vein_mythril",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Ore"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1000,
+        "requiresHero": true,
+        "config": {
+          "skill": "mining",
+          "skillRequired": 60,
+          "cycleTimeMs": 29000,
+          "xp": 203,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_mythril_ore",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_mythril_ore_vein",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "pickaxe",
+          "minTier": 2
+        },
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 120000,
+          "restingSprite": "t_vein_stone"
+        }
+      },
+      "note": "Mythril Ore Vein: rests 2 min at 0 charges, then refills to 1000 (as the Copper and Coal veins, twice their 1 min).",
+      "fingerprint": "fp:e0a24670db4d401a"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_adamantium_ore",
+      "value": {
+        "name": "Adamantium Ore",
+        "description": "Needs a Mythril Pickaxe or better in hand.",
+        "sprite": "t_ore_vein_addy",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Ore"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1000,
+        "requiresHero": true,
+        "config": {
+          "skill": "mining",
+          "skillRequired": 75,
+          "cycleTimeMs": 33000,
+          "xp": 726,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_adamantine_ore",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_adamantium_ore",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "pickaxe",
+          "minTier": 3
+        },
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 120000,
+          "restingSprite": "t_vein_stone"
+        }
+      },
+      "note": "Adamantium Ore: rests 2 min at 0 charges, then refills to 1000 (as the Copper and Coal veins, twice their 1 min).",
+      "fingerprint": "fp:6b2df585c6efad63"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_darkmetal_ore_vein",
+      "value": {
+        "name": "Darkmetal Ore Vein",
+        "description": "Needs an Adamantium Pickaxe or better in hand.",
+        "sprite": "t_ore_vein_dark",
+        "tokenType": "resource",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [
+          "Ore"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1000,
+        "requiresHero": true,
+        "config": {
+          "skill": "mining",
+          "skillRequired": 90,
+          "cycleTimeMs": 36000,
+          "xp": 2185,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_darkmetal_ore",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_darkmetal_ore_vein",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "pickaxe",
+          "minTier": 4
+        },
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 120000,
+          "restingSprite": "t_vein_stone"
+        }
+      },
+      "note": "Darkmetal Ore Vein: rests 2 min at 0 charges, then refills to 1000 (as the Copper and Coal veins, twice their 1 min).",
+      "fingerprint": "fp:6ede4a6f12ea5419"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_clay_deposit",
+      "value": {
+        "name": "Clay Deposit",
+        "description": "Needs a Pickaxe in hand.",
+        "sprite": "t_deposit_clay",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 500,
+        "requiresHero": true,
+        "config": {
+          "skill": "mining",
+          "skillRequired": 1,
+          "cycleTimeMs": 25000,
+          "xp": 2,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_clay",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 1,
+                "max": 4
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_clay_deposit",
+        "sim": {
+          "tempo": "slow",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "pickaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Tier inferred (ledger first fill, to confirm): no map writes it: waits for a later plane (clay, quartz, ceramics)."
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 120000,
+          "restingSprite": "t_vein_stone"
+        }
+      },
+      "note": "Clay Deposit: rests 2 min at 0 charges, then refills to 500 (as the Copper and Coal veins, twice their 1 min).",
+      "fingerprint": "fp:ef47c796b6286cac"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_quartz_deposit",
+      "value": {
+        "name": "Quartz Deposit",
+        "description": "Needs a Pickaxe in hand.",
+        "sprite": "t_deposit_quartz",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 500,
+        "requiresHero": true,
+        "config": {
+          "skill": "mining",
+          "skillRequired": 1,
+          "cycleTimeMs": 16000,
+          "xp": 2,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_quartz",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_quartz_deposit",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "pickaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Tier inferred (ledger first fill, to confirm): no map writes it: waits for a later plane (clay, quartz, ceramics)."
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 120000,
+          "restingSprite": "t_vein_stone"
+        }
+      },
+      "note": "Quartz Deposit: rests 2 min at 0 charges, then refills to 500 (as the Copper and Coal veins, twice their 1 min).",
+      "fingerprint": "fp:7bffab873e49f0dd"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_lemon_tree",
+      "value": {
+        "name": "Lemon Tree",
+        "description": "A token for the guild playmat.",
+        "sprite": "t_tree_lemon",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "farming",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 1,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_lemon",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 3,
+              "baseQty": {
+                "min": 1,
+                "max": 3
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_lemon_tree",
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 360000,
+          "restingSprite": "t_tree_oak"
+        }
+      },
+      "note": "Lemon Tree: rests 6 min at 0 charges, then refills to 100 (as the Apple, Cherry and Peach trees, twice the Apple’s 3 min).",
+      "fingerprint": "fp:69156be64917ae68"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_lime_tree",
+      "value": {
+        "name": "Lime Tree",
+        "description": "A token for the guild playmat.",
+        "sprite": "t_tree_lime",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "farming",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 1,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_lime",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 3,
+              "baseQty": {
+                "min": 1,
+                "max": 3
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_lime_tree",
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 360000,
+          "restingSprite": "t_tree_oak"
+        }
+      },
+      "note": "Lime Tree: rests 6 min at 0 charges, then refills to 100 (as the Apple, Cherry and Peach trees, twice the Apple’s 3 min).",
+      "fingerprint": "fp:0fc58842b2d99494"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_orange_tree",
+      "value": {
+        "name": "Orange Tree",
+        "description": "A token for the guild playmat.",
+        "sprite": "t_tree_orange",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "farming",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 1,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_orange",
+              "chance": 100,
+              "minQty": 2,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 2,
+                "max": 4
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_orange_tree",
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 360000,
+          "restingSprite": "t_tree_oak"
+        }
+      },
+      "note": "Orange Tree: rests 6 min at 0 charges, then refills to 100 (as the Apple, Cherry and Peach trees, twice the Apple’s 3 min).",
+      "fingerprint": "fp:a46edb2efce61ea8"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_banana_tree",
+      "value": {
+        "name": "Banana Tree",
+        "description": "A token for the guild playmat.",
+        "sprite": "t_tree_banana",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "farming",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 1,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_banana",
+              "chance": 100,
+              "minQty": 3,
+              "maxQty": 6,
+              "baseQty": {
+                "min": 3,
+                "max": 6
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_banana_tree",
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 360000,
+          "restingSprite": "t_tree_oak"
+        }
+      },
+      "note": "Banana Tree: rests 6 min at 0 charges, then refills to 100 (as the Apple, Cherry and Peach trees, twice the Apple’s 3 min).",
+      "fingerprint": "fp:5432c386ef4d4a18"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_coconut_tree",
+      "value": {
+        "name": "Coconut Tree",
+        "description": "A token for the guild playmat.",
+        "sprite": "",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "farming",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 1,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_coconut",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_coconut_tree",
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 360000,
+          "restingSprite": "t_tree_oak"
+        }
+      },
+      "note": "Coconut Tree: rests 6 min at 0 charges, then refills to 100 (as the Apple, Cherry and Peach trees, twice the Apple’s 3 min).",
+      "fingerprint": "fp:59278c4763e82539"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_raspberry_bush",
+      "value": {
+        "name": "Raspberry Bush",
+        "description": "A token for the guild playmat.",
+        "sprite": "t_bush_raspberry",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 25,
+        "requiresHero": true,
+        "config": {
+          "skill": "farming",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 1,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_raspberry",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 1,
+                "max": 4
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_raspberry_bush",
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 300000,
+          "restingSprite": "t_garden"
+        }
+      },
+      "note": "Raspberry Bush: rests 5 min at 0 charges, then refills to 25 (as the Redberry Bush, twice its 2.5 min).",
+      "fingerprint": "fp:61a8427561343f9b"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_pineapple_bush",
+      "value": {
+        "name": "Pineapple Bush",
+        "description": "A token for the guild playmat.",
+        "sprite": "t_bush_pineapple",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 25,
+        "requiresHero": true,
+        "config": {
+          "skill": "farming",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 1,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_pineapple",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_pineapple_bush",
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 300000,
+          "restingSprite": "t_garden"
+        }
+      },
+      "note": "Pineapple Bush: rests 5 min at 0 charges, then refills to 25 (as the Redberry Bush, twice its 2.5 min).",
+      "fingerprint": "fp:c22b662776bbacc5"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_watermelon_patch",
+      "value": {
+        "name": "Watermelon Patch",
+        "description": "A token for the guild playmat.",
+        "sprite": "t_patch_watermelon",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 25,
+        "requiresHero": true,
+        "config": {
+          "skill": "farming",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 1,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_watermelon",
+              "chance": 100,
+              "minQty": 8,
+              "maxQty": 16,
+              "baseQty": {
+                "min": 8,
+                "max": 16
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_watermelon_patch",
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 300000,
+          "restingSprite": "t_garden"
+        }
+      },
+      "note": "Watermelon Patch: rests 5 min at 0 charges, then refills to 25 (as the Redberry Bush, twice its 2.5 min).",
+      "fingerprint": "fp:21d52a3736e4fe5d"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_birch_forest",
+      "value": {
+        "name": "Birch Forest",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_forest_birch",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 250,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 30,
+          "cycleTimeMs": 23000,
+          "xp": 18,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_birch_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_birch_forest",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 600000
+        }
+      },
+      "note": "Birch Forest: rests 10 min at 0 charges, then refills to 250 (a grove has no stump: it rests as long as its species’ tree takes to regrow).",
+      "fingerprint": "fp:cb53c3fb0f7118c5"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_maple_forest",
+      "value": {
+        "name": "Maple Forest",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_forest_maple",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 250,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 45,
+          "cycleTimeMs": 26000,
+          "xp": 65,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_maple_wood",
+              "chance": 100,
+              "minQty": 13,
+              "maxQty": 14,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_maple_forest",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 600000
+        }
+      },
+      "note": "Maple Forest: rests 10 min at 0 charges, then refills to 250 (a grove has no stump: it rests as long as its species’ tree takes to regrow).",
+      "fingerprint": "fp:384e88f8d972d7ca"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_mahogany_forest",
+      "value": {
+        "name": "Mahogany Forest",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_forest_mahogany",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 250,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 75,
+          "cycleTimeMs": 33000,
+          "xp": 726,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_mahogany_wood",
+              "chance": 100,
+              "minQty": 12,
+              "maxQty": 13,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_mahogany_forest",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 600000
+        }
+      },
+      "note": "Mahogany Forest: rests 10 min at 0 charges, then refills to 250 (a grove has no stump: it rests as long as its species’ tree takes to regrow).",
+      "fingerprint": "fp:9067315103b51457"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_birch_tree",
+      "value": {
+        "name": "Birch Tree",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_tree_birch",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 30,
+          "cycleTimeMs": 23000,
+          "xp": 18,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_birch_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false,
+              "anchor": true
+            },
+            {
+              "itemId": "item_birch_seedling",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_birch_tree",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "regrow",
+          "into": "token_birch_stump"
+        }
+      },
+      "note": "Birch Tree: at 0 charges becomes a Birch Stump instead of wearing out (as the Oak and Fir).",
+      "fingerprint": "fp:e4e3543f927983b1"
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_birch_stump",
+      "value": {
+        "name": "Birch Stump",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_stump_birch",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Birch"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "staysPut": true,
+        "clearable": true,
+        "grows": {
+          "into": "token_birch_sapling",
+          "afterMs": 300000,
+          "cost": [
+            {
+              "itemId": "item_birch_seedling",
+              "quantity": 1
+            }
+          ]
+        },
+        "id": "token_birch_stump",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Birch Tree's cycle (world refill pack)."
+        }
+      },
+      "note": "Birch Stump: after 5 min spends one Birch Seedling from the Bank and becomes a Birch Sapling (Oak's 2.5 min, twice). Needs no Forest in reach: no Birch Forest plants saplings yet."
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_birch_sapling",
+      "value": {
+        "name": "Birch Sapling",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_sapling_birch",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Forest",
+          "Birch"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "grows": {
+          "into": "token_birch_tree",
+          "afterMs": 300000
+        },
+        "id": "token_birch_sapling",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Birch Tree's cycle (world refill pack)."
+        }
+      },
+      "note": "Birch Sapling: grows back into a Birch Tree after 5 min (Oak's 2.5 min, twice)."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_maple_tree",
+      "value": {
+        "name": "Maple Tree",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_tree_maple",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 45,
+          "cycleTimeMs": 26000,
+          "xp": 65,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_maple_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_maple_seedling",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_maple_tree",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "regrow",
+          "into": "token_maple_stump"
+        }
+      },
+      "note": "Maple Tree: at 0 charges becomes a Maple Stump instead of wearing out (as the Oak and Fir).",
+      "fingerprint": "fp:ba9ab9ed6989391b"
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_maple_stump",
+      "value": {
+        "name": "Maple Stump",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_stump_maple",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Maple"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "staysPut": true,
+        "clearable": true,
+        "grows": {
+          "into": "token_maple_sapling",
+          "afterMs": 300000,
+          "cost": [
+            {
+              "itemId": "item_maple_seedling",
+              "quantity": 1
+            }
+          ]
+        },
+        "id": "token_maple_stump",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Maple Tree's cycle (world refill pack)."
+        }
+      },
+      "note": "Maple Stump: after 5 min spends one Maple Seedling from the Bank and becomes a Maple Sapling (Oak's 2.5 min, twice). Needs no Forest in reach: no Maple Forest plants saplings yet."
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_maple_sapling",
+      "value": {
+        "name": "Maple Sapling",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_sapling_maple",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Forest",
+          "Maple"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "grows": {
+          "into": "token_maple_tree",
+          "afterMs": 300000
+        },
+        "id": "token_maple_sapling",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Maple Tree's cycle (world refill pack)."
+        }
+      },
+      "note": "Maple Sapling: grows back into a Maple Tree after 5 min (Oak's 2.5 min, twice)."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_mahogany_tree",
+      "value": {
+        "name": "Mahogany Tree",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_tree_mahogany",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 75,
+          "cycleTimeMs": 33000,
+          "xp": 726,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_mahogany_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_mahogany_seedling",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_mahogany_tree",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "regrow",
+          "into": "token_mahogany_stump"
+        }
+      },
+      "note": "Mahogany Tree: at 0 charges becomes a Mahogany Stump instead of wearing out (as the Oak and Fir).",
+      "fingerprint": "fp:c9ef1acd3706a8d3"
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_mahogany_stump",
+      "value": {
+        "name": "Mahogany Stump",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_stump_mahogany",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Mahogany"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "staysPut": true,
+        "clearable": true,
+        "grows": {
+          "into": "token_mahogany_sapling",
+          "afterMs": 300000,
+          "cost": [
+            {
+              "itemId": "item_mahogany_seedling",
+              "quantity": 1
+            }
+          ]
+        },
+        "id": "token_mahogany_stump",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Mahogany Tree's cycle (world refill pack)."
+        }
+      },
+      "note": "Mahogany Stump: after 5 min spends one Mahogany Seedling from the Bank and becomes a Mahogany Sapling (Oak's 2.5 min, twice). Needs no Forest in reach: no Mahogany Forest plants saplings yet."
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_mahogany_sapling",
+      "value": {
+        "name": "Mahogany Sapling",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_sapling_mahogany",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Forest",
+          "Mahogany"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "grows": {
+          "into": "token_mahogany_tree",
+          "afterMs": 300000
+        },
+        "id": "token_mahogany_sapling",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Mahogany Tree's cycle (world refill pack)."
+        }
+      },
+      "note": "Mahogany Sapling: grows back into a Mahogany Tree after 5 min (Oak's 2.5 min, twice)."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_ebony_tree",
+      "value": {
+        "name": "Ebony Tree",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_tree_ebony",
+        "tokenType": "resource",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 90,
+          "cycleTimeMs": 36000,
+          "xp": 2185,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_ebony_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_ebony_seedling",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_ebony_tree",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "regrow",
+          "into": "token_ebony_stump"
+        }
+      },
+      "note": "Ebony Tree: at 0 charges becomes a Ebony Stump instead of wearing out (as the Oak and Fir).",
+      "fingerprint": "fp:dff9c351628a9823"
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_ebony_stump",
+      "value": {
+        "name": "Ebony Stump",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_stump_ebony",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Ebony"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "staysPut": true,
+        "clearable": true,
+        "grows": {
+          "into": "token_ebony_sapling",
+          "afterMs": 300000,
+          "cost": [
+            {
+              "itemId": "item_ebony_seedling",
+              "quantity": 1
+            }
+          ]
+        },
+        "id": "token_ebony_stump",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Ebony Tree's cycle (world refill pack)."
+        }
+      },
+      "note": "Ebony Stump: after 5 min spends one Ebony Seedling from the Bank and becomes a Ebony Sapling (Oak's 2.5 min, twice). Needs no Forest in reach: no Ebony Forest plants saplings yet."
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_ebony_sapling",
+      "value": {
+        "name": "Ebony Sapling",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_sapling_ebony",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Forest",
+          "Ebony"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "grows": {
+          "into": "token_ebony_tree",
+          "afterMs": 300000
+        },
+        "id": "token_ebony_sapling",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Ebony Tree's cycle (world refill pack)."
+        }
+      },
+      "note": "Ebony Sapling: grows back into a Ebony Tree after 5 min (Oak's 2.5 min, twice)."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_cedar_tree",
+      "value": {
+        "name": "Cedar Tree",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_tree_cedar",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 2,
+        "uses": 1000,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 60,
+          "cycleTimeMs": 29000,
+          "xp": 203,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_cedar_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_cedar_seedling",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_cedar_tree",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "plan": {
+          "status": "live",
+          "tier": 3
+        },
+        "respawn": {
+          "mode": "regrow",
+          "into": "token_cedar_stump"
+        }
+      },
+      "note": "Cedar Tree: at 0 charges becomes a Cedar Stump instead of wearing out (as the Oak and Fir).",
+      "fingerprint": "fp:89a1c24574931edb"
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_cedar_stump",
+      "value": {
+        "name": "Cedar Stump",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_stump_cedar",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Cedar"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "staysPut": true,
+        "clearable": true,
+        "grows": {
+          "into": "token_cedar_sapling",
+          "afterMs": 300000,
+          "cost": [
+            {
+              "itemId": "item_cedar_seedling",
+              "quantity": 1
+            }
+          ]
+        },
+        "id": "token_cedar_stump",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Cedar Tree's cycle (world refill pack)."
+        }
+      },
+      "note": "Cedar Stump: after 5 min spends one Cedar Seedling from the Bank and becomes a Cedar Sapling (Oak's 2.5 min, twice). Needs no Forest in reach: no Cedar Forest plants saplings yet."
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_cedar_sapling",
+      "value": {
+        "name": "Cedar Sapling",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_sapling_cedar",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Forest",
+          "Cedar"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "grows": {
+          "into": "token_cedar_tree",
+          "afterMs": 300000
+        },
+        "id": "token_cedar_sapling",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Cedar Tree's cycle (world refill pack)."
+        }
+      },
+      "note": "Cedar Sapling: grows back into a Cedar Tree after 5 min (Oak's 2.5 min, twice)."
+    }
+  ],
+  "gate": {
+    "workspaceFingerprint": "fp:f88cc41081afe11a",
+    "toolVersion": 2,
+    "at": "2026-11-02T23:02:01.194Z",
+    "verdict": "pass",
+    "summary": "Passes: 10 entries move on the timeline, 25 newly reached, 3 problems added, 29 cleared.",
+    "blocks": [],
+    "notes": [],
+    "deltas": {
+      "stages": [],
+      "moved": [
+        {
+          "key": "item:item_adamantine_ingot",
+          "name": "Adamantine Ingot",
+          "change": "new",
+          "from": null,
+          "to": 305.7964775305268
+        },
+        {
+          "key": "item:item_adamantine_ore",
+          "name": "Adamantine Ore",
+          "change": "new",
+          "from": null,
+          "to": 128.028955195732
+        },
+        {
+          "key": "item:item_adamantium_pickaxe",
+          "name": "Adamantium Pickaxe",
+          "change": "new",
+          "from": null,
+          "to": 306.0061942637809
+        },
+        {
+          "key": "token:token_birch_forest",
+          "name": "Birch Forest",
+          "change": "new",
+          "from": null,
+          "to": 14.102056405579603
+        },
+        {
+          "key": "token:token_birch_sapling",
+          "name": "Birch Sapling",
+          "change": "new",
+          "from": null,
+          "to": 14.662927256950455
+        },
+        {
+          "key": "token:token_birch_stump",
+          "name": "Birch Stump",
+          "change": "new",
+          "from": null,
+          "to": 14.555421244444442
+        },
+        {
+          "key": "token:token_cedar_sapling",
+          "name": "Cedar Sapling",
+          "change": "new",
+          "from": null,
+          "to": 56.69860501348405
+        },
+        {
+          "key": "token:token_cedar_stump",
+          "name": "Cedar Stump",
+          "change": "new",
+          "from": null,
+          "to": 56.58407158395062
+        },
+        {
+          "key": "item:item_darkmetal_ingot",
+          "name": "Darkmetal Ingot",
+          "change": "new",
+          "from": null,
+          "to": 605.0314658201846
+        },
+        {
+          "key": "item:item_darkmetal_ore",
+          "name": "Darkmetal Ore",
+          "change": "new",
+          "from": null,
+          "to": 306.0114471738338
+        },
+        {
+          "key": "item:item_darkmetal_pickaxe",
+          "name": "Darkmetal Pickaxe",
+          "change": "new",
+          "from": null,
+          "to": 605.336396653188
+        },
+        {
+          "key": "token:token_ebony_sapling",
+          "name": "Ebony Sapling",
+          "change": "new",
+          "from": null,
+          "to": 129.43536190029138
+        },
+        {
+          "key": "token:token_ebony_stump",
+          "name": "Ebony Stump",
+          "change": "new",
+          "from": null,
+          "to": 129.31419306912255
+        },
+        {
+          "key": "item:item_gold_ingot",
+          "name": "Gold Ingot",
+          "change": "new",
+          "from": null,
+          "to": 38.25917078240174
+        },
+        {
+          "key": "item:item_lemonade",
+          "name": "Lemonade",
+          "change": "new",
+          "from": null,
+          "to": 7.45902773989899
+        },
+        {
+          "key": "item:item_limeade",
+          "name": "Limeade",
+          "change": "new",
+          "from": null,
+          "to": 7.459476224747474
+        },
+        {
+          "key": "token:token_mahogany_forest",
+          "name": "Mahogany Forest",
+          "change": "new",
+          "from": null,
+          "to": 82.94601648542843
+        },
+        {
+          "key": "token:token_mahogany_sapling",
+          "name": "Mahogany Sapling",
+          "change": "new",
+          "from": null,
+          "to": 83.71813553304749
+        },
+        {
+          "key": "token:token_mahogany_stump",
+          "name": "Mahogany Stump",
+          "change": "new",
+          "from": null,
+          "to": 83.60011966003161
+        },
+        {
+          "key": "token:token_maple_forest",
+          "name": "Maple Forest",
+          "change": "new",
+          "from": null,
+          "to": 29.05672592738496
+        },
+        {
+          "key": "token:token_maple_sapling",
+          "name": "Maple Sapling",
+          "change": "new",
+          "from": null,
+          "to": 29.676872392031427
+        },
+        {
+          "key": "token:token_maple_stump",
+          "name": "Maple Stump",
+          "change": "new",
+          "from": null,
+          "to": 29.564847139506174
+        },
+        {
+          "key": "item:item_mythril_ingot",
+          "name": "Mythril Ingot",
+          "change": "new",
+          "from": null,
+          "to": 127.87046475513483
+        },
+        {
+          "key": "item:item_mythril_pickaxe",
+          "name": "Mythril Pickaxe",
+          "change": "new",
+          "from": null,
+          "to": 128.02413826451507
+        },
+        {
+          "key": "item:item_silver_ingot",
+          "name": "Silver Ingot",
+          "change": "new",
+          "from": null,
+          "to": 9.1127096739313
+        },
+        {
+          "key": "item:item_ebony_wood",
+          "name": "Ebony Wood",
+          "change": "earlier",
+          "from": 5264.370617273016,
+          "to": 128.4452378021673
+        },
+        {
+          "key": "item:item_ebony_seedling",
+          "name": "Ebony Seedling",
+          "change": "earlier",
+          "from": 5264.411887114286,
+          "to": 128.47802856695805
+        },
+        {
+          "key": "item:item_mahogany_wood",
+          "name": "Mahogany Wood",
+          "change": "earlier",
+          "from": 1192.51975410582,
+          "to": 82.80357733198929
+        },
+        {
+          "key": "item:item_mahogany_seedling",
+          "name": "Mahogany Seedling",
+          "change": "earlier",
+          "from": 1192.557584793651,
+          "to": 82.83363553304748
+        },
+        {
+          "key": "item:item_cedar_wood",
+          "name": "Cedar Wood",
+          "change": "earlier",
+          "from": 270.34816559400355,
+          "to": 49.54767604122174
+        }
+      ],
+      "movedCount": 35,
+      "added": [
+        {
+          "check": "boost-target",
+          "key": "item:item_lemonade",
+          "severity": "warn"
+        },
+        {
+          "check": "boost-target",
+          "key": "hall:star_mining_speed",
+          "severity": "warn"
+        },
+        {
+          "check": "boost-target",
+          "key": "item:item_water",
+          "severity": "warn"
+        }
+      ],
+      "cleared": 31
+    }
+  }
+}

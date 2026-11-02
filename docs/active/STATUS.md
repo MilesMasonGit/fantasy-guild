@@ -10,7 +10,7 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | 290 L9: automatic balancing, **preview only** (Recalculate proposes XP returns, level gates, costs and times so Typical follows the pace curve; checks E; reports what numbers can't fix) | engineer | `feat/ledger-l9` (`e3`) | **building** | Mon | |
-| Refill pack: the 25 ring-3 sources rest and refill (owner ruling) | builder | `content/world-refill` (`n4`) | **building** | Mon | |
+| Refill pack: the 25 ring-3 sources rest and refill (owner ruling) | builder | `content/world-refill` (`n4`) | **in the owner's inbox** (`2026-11-02-world-refill`, 33 entries: 23 Token edits, 5 stumps, 5 saplings). Director gate against today's `data/` (fp f88cc410): PASS, fragile 25 → 0, 100/100 worlds. Rule: tier 3 rests twice the Starter Camp's (veins 2 min, fruit trees 6, bushes 5; timber trees via stump and sapling 5 + 5; groves refill in place 10). Director's content calls: charges unchanged (Gold 1000), new stumps need no Forest nearby. Three boost-strength warnings surfaced (Birdwatcher drinks on the new trees; three Hall mining stars on Clay/Quartz): left for balancing | Mon | |
 
 Owner 2026-11-02: Hall prices wait for a Guild Hall balance pass.
 
