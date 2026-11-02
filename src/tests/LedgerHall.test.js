@@ -270,3 +270,88 @@ describe('the neighbour gate', () => {
         expect(openingPath('ph_deep', graph, () => 0, (id) => (id === 'ph_quick' ? Infinity : light(id)))).toBeNull();
     });
 });
+
+describe('the payback check counts opening a star; a skill that gathers nothing is priced in its main input', () => {
+    const rowOf = (pace, id, rank) => pace.hallPaybacks().find(r => r.id === id && r.rank === rank);
+    const rule = (id, type, value, category) => ({ id: `stm_ph_${id}`, keyword: 'provides', to: { mode: 'all', value: '' }, reach: 'board', target: null, when: null, payload: { type, bucket: 'percentage', value, category } });
+    const addStar = (c, id, constellation, links, price, rules) => {
+        c.hallSky.stars[id] = { id, constellation, name: id.slice(3), description: '', node: { x: 0.5, y: 0 }, links, ranks: [{ tier: 0, price, rules, lines: [] }] };
+    };
+
+    it('a star behind one Typical never lights counts lighting it, so it does not pay back, as Typical does not buy it', () => {
+        const c = content();
+        // Only through the Gold Leaf (100,000 Oak Wood): cheap itself, dear to open.
+        addStar(c, 'ph_beyond', 'ph_mining', ['ph_gold'], [{ itemId: 'item_copper_ore', quantity: 5 }], [rule('beyond', 'YIELD', 0.5, 'mining')]);
+        const pace = buildPace(c, buildLedger(c), null);
+        const row = rowOf(pace, 'ph_beyond', 1);
+        expect(row.opening.path).toEqual(['ph_gold']);
+        expect(row.opening.cost).toBeCloseTo(100000 / pace.supplyOf('item_oak_wood', BEFORE_HALL, 0).perHour);
+        expect(row.payback).toBeCloseTo((row.priceHours + row.opening.cost) / row.gain);
+        expect(row.pays).toBe(false);
+        expect(pace.rateAt(VEIN, PROFILE.TYPICAL, 0).setup.hallRanks.ph_beyond).toBe(0);
+        // No price can make it pay: opening it alone takes longer.
+        expect(row.proposed.why).toMatch(/Gold Leaf/);
+        expect(pace.findings().find(x => x.check === 'hall-payback' && x.key === 'hall:ph_beyond').message).toMatch(/to open it, lighting Gold Leaf/);
+    });
+
+    it('a star beside one Typical holds for its own sake opens free; one Typical lit only to open it is counted', () => {
+        const pace = world();
+        expect(rowOf(pace, 'ph_quick', 1).opening).toEqual({ path: [], cost: 0 });
+        expect(rowOf(pace, 'ph_lore', 2).opening).toEqual({ path: [], cost: 0 });
+        // Typical opened Deep Veins through Quick Picks, which it holds for nothing else.
+        const deep = rowOf(pace, 'ph_deep', 1);
+        expect(deep.opening.path).toEqual(['ph_quick']);
+        expect(deep.opening.cost).toBeCloseTo(15 / pace.supplyOf('item_copper_ore', BEFORE_HALL, 0).perHour);
+    });
+
+    it('a rank whose own price is affordable but whose opening is dear is proposed what is left of the payback time', () => {
+        const c = content();
+        // Behind Long Rails (5 Copper Ore), which adds no rate, so Typical never lights it for its own sake.
+        addStar(c, 'ph_vein_lore', 'ph_mining', ['ph_rails'], [{ itemId: 'item_copper_ore', quantity: 5 }], [rule('vein_lore', 'XP_BONUS', 0.5, 'mining')]);
+        c.hallSky.stars.ph_rails.links = ['hall'];
+        const pace = buildPace(c, buildLedger(c), null);
+        const row = rowOf(pace, 'ph_vein_lore', 1);
+        expect(row.opening.path).toEqual(['ph_rails']);
+        const perHour = pace.supplyOf('item_copper_ore', BEFORE_HALL, 0).perHour;
+        expect(row.opening.cost).toBeCloseTo(5 / perHour);
+        expect(row.proposed.quantity).toBe(roundDown((24 * row.gain - row.opening.cost) * perHour));
+        expect(row.proposed.payback).toBeCloseTo((row.proposed.priceHours + row.opening.cost) / row.gain);
+        expect(row.proposed.payback).toBeLessThanOrEqual(24);
+    });
+
+    it('every rank that pays back is one Typical buys on the work it saves most on', () => {
+        const pace = world();
+        const paying = pace.hallPaybacks().filter(r => !r.builtIn && r.rate && r.pays && r.work);
+        expect(paying.length).toBeGreaterThan(2);
+        for (const row of paying) {
+            const held = pace.rateAt(row.work.target, PROFILE.TYPICAL, row.cap).setup.hallRanks?.[row.id] || 0;
+            expect([row.id, row.rank, held >= row.rank]).toEqual([row.id, row.rank, true]);
+        }
+    });
+
+    it('a star of a skill that gathers nothing is priced in that skill\'s main input, not the fastest gathered item', () => {
+        const c = content();
+        // Ten XP a brew, so the XP floor stays out of the way.
+        c.recipes.find(r => r.id === 'recipe_beer').xp = 10;
+        c.hallSky.constellations.ph_cooking = { id: 'ph_cooking', name: 'Cooking', label: { x: 0, y: 0 }, skill: 'cooking' };
+        addStar(c, 'ph_brew', 'ph_cooking', ['hall'], [{ itemId: 'item_oak_wood', quantity: 10 }], [rule('brew', 'XP_BONUS', 0.5, 'cooking')]);
+        const pace = buildPace(c, buildLedger(c), null);
+        // Copper Ore is gathered faster, but Cooking spends Oak Wood (its Beer).
+        expect(pace.supplyOf('item_copper_ore', BEFORE_HALL, 0).perHour).toBeGreaterThan(pace.supplyOf('item_oak_wood', BEFORE_HALL, 0).perHour);
+        const row = rowOf(pace, 'ph_brew', 1);
+        expect(row.rate).toBe(true);
+        expect(row.proposed.itemId).toBe('item_oak_wood');
+        // A gathering skill is still priced in its own gathered item.
+        expect(rowOf(pace, 'ph_lore', 1).proposed.itemId).toBe('item_copper_ore');
+
+        // A chest Cooking opens yields ore, but Cooking is the best source of nothing: still its main input.
+        c.tokens.token_pantry = {
+            id: 'token_pantry', name: 'Pantry', uses: 1,
+            config: { skill: 'cooking', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [{ itemId: 'item_copper_ore', chance: 100, minQty: 1, maxQty: 1 }] }
+        };
+        c.starterCamp.tokens.push({ typeId: 'token_pantry', x: 5, y: 0 });
+        const chests = buildPace(c, buildLedger(c), null);
+        expect(chests.workOf({ token: 'token_pantry' })).toBeTruthy();
+        expect(rowOf(chests, 'ph_brew', 1).proposed.itemId).toBe('item_oak_wood');
+    });
+});

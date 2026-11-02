@@ -129,7 +129,7 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Guild Hall paybacks">
         <h3 className={sectionHead}>Guild Hall paybacks</h3>
         <p className="text-[10px] text-gray-500">
-          Each rank that adds a rate, at the tier it belongs to and at Typical: the hours its price takes to gather (at Typical's rates before the Hall) against the hours it saves an hour on the work it saves most on. A sensible investor buys a rank that pays for itself within {hoursText(pace.settings.hallPaybackHours)} (the Guild Hall payback in the settings); a rank that does not is red. The proposed price is the most of its tier's material it can cost and still pay back in time, never below the rank before (raised ones are marked, and red when the raise makes them pay back too slowly): a preview, never applied. Ranks that add no rate (Bank tabs, a wound's length, a loadout slot, a camp's reach) are listed under Problems.
+          Each rank that adds a rate, at the tier it belongs to and at Typical: the hours its price takes to gather (at Typical's rates before the Hall), and for a star still closed there the stars lit to open it, against the hours it saves an hour on the work it pays back soonest on. A sensible investor buys a rank that pays for itself within {hoursText(pace.settings.hallPaybackHours)} (the Guild Hall payback in the settings); a rank that does not is red. The proposed price is the most of its tier's material it can cost and still pay back in time, never below the rank before (raised ones are marked, and red when the raise makes them pay back too slowly): a preview, never applied. Ranks that add no rate (Bank tabs, a wound's length, a loadout slot, a camp's reach) are listed under Problems.
         </p>
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
@@ -147,7 +147,9 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
               <tr key={`${h.id}|${h.rank}`} data-hall={`${h.id}|${h.rank}`} data-hall-pays={h.pays ? 'yes' : 'no'}>
                 <td style={cell}>{h.name} {h.rank}</td>
                 <td style={{ ...cell, color: 'var(--color-text-muted)' }}>{h.builtIn ? 'built in' : h.tier === null ? <span style={{ color: 'var(--color-warning)' }}>no tier set</span> : tierLabel(h.tier)}</td>
-                <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>{h.priceText} ({h.priceTimeText})</td>
+                <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>
+                  {h.priceText} ({h.priceTimeText}){h.openingText ? <span className="text-gray-500" data-hall-opening> + {h.openingText}</span> : null}
+                </td>
                 <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>
                   {h.savesText}{h.workText && !h.enabler ? <span className="text-gray-500"> on {h.workText}</span> : null}
                 </td>

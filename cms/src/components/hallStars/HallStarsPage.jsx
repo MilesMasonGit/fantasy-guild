@@ -202,7 +202,7 @@ function RankPricing({ row }) {
         style={{ color: row.enabler ? 'var(--color-text-muted)' : row.pays ? 'var(--color-success)' : 'var(--color-error)', fontWeight: row.pays ? 400 : 700 }}
         title={row.workText ? `Saves ${row.savesText} on ${row.workText}, at ${tierLabel(row.cap)}` : undefined}
       >
-        · {row.priceTimeText} to gather, saves {row.savesText}: pays back in {row.paybackText}
+        · {row.priceTimeText} to gather{row.openingText ? `, ${row.openingText}` : ''}, saves {row.savesText}: pays back in {row.paybackText}
       </span>
       <span data-hall-rank-proposed style={{ color: row.proposed && !row.proposed.why && !row.proposed.pays ? 'var(--color-error)' : 'var(--color-accent-hover)' }}>
         · proposed (preview): {row.proposed?.why ? row.proposed.why : `${row.proposed.priceText}, pays back in ${hoursText(row.proposed.payback)}${row.proposed.raised ? ', raised to the rank before' : ''}`}

@@ -42,6 +42,9 @@ import { SKILLS, SKILL_LAYERS } from '../../../config/registries/skillRegistry.j
 
 const HOUR_MS = 3_600_000;
 
+/** A star open already: no star to light on the way. */
+const OPEN = Object.freeze({ path: Object.freeze([]), cost: 0 });
+
 /** A fighting style (melee, magic…): levelled by fights, never by work. */
 const isCombatStyle = (skill) => SKILLS[skill]?.layer === SKILL_LAYERS.COMBAT;
 
@@ -670,7 +673,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 continue;
             }
             if (row.enabler || row.pays) continue;
-            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.hallPaybackHours)} a Guild Hall rank has to pay for itself.`, { name: row.name });
+            const opened = row.opening.path.length ? `, and ${PACE_TEXT.short(row.opening.cost)} to open it, ${openingWords(row.opening)}` : '';
+            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical${opened}) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.hallPaybackHours)} a Guild Hall rank has to pay for itself.`, { name: row.name });
         }
 
         // Boosts over their target strength, by kind, at Maxed: one finding per set of boosts, with every work it lifts.
@@ -720,6 +724,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const stageWords = (row) => (row.tier !== null && row.tier > row.cap
         ? `${tierLabel(row.tier)}, measured at ${tierLabel(row.cap)}, the last stage the pace knows`
         : tierLabel(row.tier ?? row.cap));
+    /** The stars lit to open a star, in words: "lighting Gold Leaf and Lore". */
+    const openingWords = (opening) => `lighting ${opening.path.map(id => hallName(id)).join(' and ')}`;
     const savesWords = (row) => {
         if (!(row.gain > 0)) return 'and saves no time at its tier (no work it reaches is open by then)';
         const on = row.work ? ` on ${workName(row.work)}` : '';
@@ -740,13 +746,21 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * an hour on the work it saves most on, `{ gain, work }`; `gain` Infinity when it is the only
      * source of what it pays (an enabler).
      */
-    function hallRankGain(track, rank, cap) {
-        if (track.id === 'roster_size') return { gain: 1, work: null };
-        let best = { gain: 0, work: null };
+    function hallRankGain(track, rank, cap, priceHours = 0) {
+        if (track.id === 'roster_size') return { gain: 1, work: null, opening: OPEN };
+        let best = { gain: 0, work: null, opening: OPEN };
+        let bestPayback = Infinity;
         for (const work of hallWorksOf(track.id)) {
             if (work.tier > cap) continue;
             const m = profiles.hallRankOn(work.target, cap, track.id, rank);
-            if (m && m.saves > best.gain) best = { gain: m.saves, work };
+            if (!m || !(m.saves > 0)) continue;
+            const opening = m.opening || OPEN;
+            // Where it pays back soonest: its price and the stars lit to open it there, over what it saves there.
+            const payback = m.saves === Infinity ? 0 : (priceHours + opening.cost) / m.saves;
+            if (!best.work || payback < bestPayback || (payback === bestPayback && m.saves > best.gain)) {
+                best = { gain: m.saves, work, opening };
+                bestPayback = payback;
+            }
         }
         return best;
     }
@@ -780,10 +794,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                     rows.push({ ...base, rate: false, what: track.description || 'not a rate' });
                     continue;
                 }
-                const { gain, work } = hallRankGain(track, rank, cap);
+                const { gain, work, opening } = hallRankGain(track, rank, cap, base.priceHours);
                 const enabler = gain === Infinity;
-                const payback = base.priceHours === 0 ? 0 : enabler ? 0 : gain > 0 ? base.priceHours / gain : Infinity;
-                const row = { ...base, rate: true, enabler, gain, work, payback, pays: enabler || payback <= settings.hallPaybackHours };
+                const cost = base.priceHours + opening.cost;
+                const payback = cost === 0 ? 0 : enabler ? 0 : gain > 0 ? cost / gain : Infinity;
+                const row = { ...base, rate: true, enabler, gain, work, opening, payback, pays: enabler || payback <= settings.hallPaybackHours };
                 if (!track.builtIn) row.proposed = proposePrice(track, rank, row);
                 rows.push(row);
             }
@@ -811,9 +826,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 if (p.itemId === before.itemId) quantity = Math.max(quantity, before.quantity);
                 if (quantity > p.quantity) {
                     const priceHours = quantity / perHour;
+                    const payback = (priceHours + row.opening.cost) / row.gain;
                     row.proposed = {
-                        ...p, quantity, priceHours, payback: priceHours / row.gain, raised: true,
-                        pays: priceHours / row.gain <= settings.hallPaybackHours,
+                        ...p, quantity, priceHours, payback, raised: true,
+                        pays: payback <= settings.hallPaybackHours,
                         priceText: priceWords([{ itemId: p.itemId, quantity }])
                     };
                 }
@@ -841,12 +857,45 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return null;
     }
 
+    const GATHERING = [WORK.GATHER, WORK.WATER, WORK.FIELD];
+
+    const mainMemo = new Map();
+    /**
+     * What a skill's work spends, down to the gathered items it is made from, by how much an hour at
+     * Typical before the Hall (each fed as the guild can): `Map<itemId, perHour>`, among the work
+     * reachable by a stage. A smith's main input is the ore its ingots are smelted from.
+     */
+    function mainInputsOf(skill, cap) {
+        const key = `${skill}|${cap}`;
+        if (mainMemo.has(key)) return mainMemo.get(key);
+        const out = new Map();
+        for (const work of skillsOfWork.get(skill) || []) {
+            if (work.tier === null || work.tier > cap) continue;
+            for (const [itemId, perHour] of Object.entries(workAt(work, BEFORE_HALL, cap).inputs || {})) {
+                if (!(perHour > 0) || !rates.items[itemId]) continue;
+                const walk = (node, times) => {
+                    if (node.cycle) return;
+                    if (node.origin) {
+                        out.set(node.id, (out.get(node.id) || 0) + node.quantity * times);
+                        return;
+                    }
+                    for (const child of node.children) walk(child, times);
+                };
+                walk(ledger.treeOf(itemId).tree, perHour);
+            }
+        }
+        mainMemo.set(key, out);
+        return out;
+    }
+
     const materialMemo = new Map();
     /**
      * The material a rank of a tier is priced in: an item first had at that tier (the owner's tier
      * for it, else when it is first reached), gathered rather than made at a station, the most of it
      * an hour at Typical before the Hall, of the star's own skill where one is; else the tier before.
-     * Never what the star itself pays.
+     * A skill that is the best gatherer of nothing by then (Smithing, Cooking, Crafting with its
+     * chests) is priced in its main input instead: the gathered item its work spends most of, at that
+     * tier or the nearest before it. Never what the star itself pays.
      */
     function materialFor(star, tier, cap) {
         const skill = starSkill(star, cap);
@@ -854,18 +903,31 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const key = `${skill}|${tier}|${cap}|${[...own].join(',')}`;
         if (materialMemo.has(key)) return materialMemo.get(key);
         indexMakers();
-        const gathered = (itemId) => (madeBy.get(itemId) || []).some(w => [WORK.GATHER, WORK.WATER, WORK.FIELD].includes(rates.workKindOf(w.target).kind));
-        let pick = null;
-        for (let t = tier; t >= 0 && !pick; t--) {
+        const gathered = (itemId) => (madeBy.get(itemId) || []).some(w => GATHERING.includes(rates.workKindOf(w.target).kind));
+        // Each tier's gathered items, at their best source then.
+        const foundAt = [];
+        for (let t = tier; t >= 0; t--) {
             const found = [];
             for (const itemId of Object.keys(rates.items)) {
                 if (own.has(itemId) || effTier(itemKey(itemId)) !== t || !gathered(itemId)) continue;
                 const s = supplyOf(itemId, BEFORE_HALL, cap);
                 if (!(s.perHour > 0) || !Number.isFinite(s.perHour) || !s.work) continue;
-                const kind = rates.workKindOf(s.work.target).kind;
-                if (kind !== WORK.GATHER && kind !== WORK.WATER && kind !== WORK.FIELD) continue;
+                if (!GATHERING.includes(rates.workKindOf(s.work.target).kind)) continue;
                 found.push({ itemId, perHour: s.perHour, work: s.work, mine: !!skill && profiles.contextOf(s.work.target).skill === skill });
             }
+            foundAt.push(found);
+        }
+        let pick = null;
+        if (skill && !foundAt.some(found => found.some(f => f.mine))) {
+            const main = mainInputsOf(skill, cap);
+            for (const found of foundAt) {
+                const best = found.filter(f => main.get(f.itemId) > 0)
+                    .sort((a, b) => main.get(b.itemId) - main.get(a.itemId) || b.perHour - a.perHour || a.itemId.localeCompare(b.itemId))[0];
+                if (best) { pick = { ...best, main: true }; break; }
+            }
+        }
+        for (const found of foundAt) {
+            if (pick) break;
             const mine = found.filter(f => f.mine);
             pick = (mine.length ? mine : found).sort((a, b) => b.perHour - a.perHour || a.itemId.localeCompare(b.itemId))[0] || null;
         }
@@ -885,9 +947,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         if (!(row.gain > 0)) return { why: 'it saves no time at its tier' };
         const material = materialFor(track.star, row.tier, row.cap);
         if (!material) return { why: 'no gathered material at its tier' };
-        const quantity = Math.max(1, roundDown(settings.hallPaybackHours * row.gain * material.perHour));
+        // What is left of the payback time once the stars on the way are lit.
+        const left = settings.hallPaybackHours * row.gain - row.opening.cost;
+        if (!(left > 0)) return { why: `opening it (${openingWords(row.opening)}) takes longer than it can pay back` };
+        const quantity = Math.max(1, roundDown(left * material.perHour));
         const priceHours = quantity / material.perHour;
-        const payback = priceHours / row.gain;
+        const payback = (priceHours + row.opening.cost) / row.gain;
         return { itemId: material.itemId, quantity, priceText: priceWords([{ itemId: material.itemId, quantity }]), priceHours, payback, pays: payback <= settings.hallPaybackHours, work: material.work };
     }
 
