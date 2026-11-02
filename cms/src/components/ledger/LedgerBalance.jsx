@@ -22,7 +22,11 @@ const LEVER_ORDER = [LEVER.XP, LEVER.GATE, LEVER.COST, LEVER.TIME, LEVER.BOOST];
 export default function LedgerBalance({ onOpen }) {
   const [state, setState] = useState({ running: false, result: null, error: null, at: null });
   const alive = useRef(true);
-  useEffect(() => () => { alive.current = false; }, []);
+  // ⚠️ Set on every mount: StrictMode mounts twice in development, and a flag only cleared would stay false.
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
 
   const run = async () => {
     setState({ running: true, result: null, error: null, at: null });
@@ -69,7 +73,7 @@ export default function LedgerBalance({ onOpen }) {
             </button>
           </div>
         </div>
-        {running && <p className="text-[11px] text-gray-400">Working the pace out again after each pass; on today&apos;s content this takes about 15 seconds.</p>}
+        {running && <p className="text-[11px] text-gray-400">Working the pace out again after each pass; on today&apos;s content this takes about ten seconds.</p>}
         {error && <p className="text-[11px]" style={{ color: 'var(--color-error)' }}>The preview could not be worked out: {error}</p>}
         {result && at && (
           <p className="text-[10px] text-gray-500" data-testid="balance-summary">

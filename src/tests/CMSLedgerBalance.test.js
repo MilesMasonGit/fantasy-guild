@@ -125,7 +125,8 @@ describe('the Balancing page', { timeout: 30000 }, () => {
 
     it('works the preview out on request: stages before and after, the numbers, what cannot be fixed, Apply locked, nothing changed', async () => {
         const before = JSON.stringify(['items', 'tokens', 'effects', 'recipePools'].map(k => useEntityStore.getState()[k]));
-        const view = render(React.createElement(LedgerPanel, { setCurrentView: () => {} }));
+        // Under StrictMode, as the CMS mounts it: effects run twice in development.
+        const view = render(React.createElement(React.StrictMode, null, React.createElement(LedgerPanel, { setCurrentView: () => {} })));
         fireEvent.click(view.getByRole('tab', { name: 'Balancing' }));
         expect(view.container.querySelector('[data-balance-stage]')).toBeNull();
         expect(view.getByTestId('balance-apply').disabled).toBe(true);
