@@ -12,9 +12,11 @@ import { currentValue, fingerprint, PACK_FORMAT, PACK_VERSION } from './changePa
 
 export { LEVER, BALANCE_TEXT, CANT_FIX };
 
-/** The preview of a workspace (its content and its Ledger settings). */
+/** The preview of a workspace (its content and its Ledger settings), with how long it took (`ms`). */
 export function workspaceBalance(state = {}) {
-    return proposeBalance(contentOf(state), state.planSettings);
+    const started = Date.now();
+    const result = proposeBalance(contentOf(state), state.planSettings);
+    return { ...result, ms: Date.now() - started };
 }
 
 /** How far a proposal moves its number: the larger over the smaller, so a halving and a doubling read alike. */

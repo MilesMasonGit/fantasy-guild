@@ -13,7 +13,7 @@ const head = { ...cell, fontSize: 9, fontWeight: 900, textTransform: 'uppercase'
 const LEVER_ORDER = [LEVER.XP, LEVER.GATE, LEVER.COST, LEVER.TIME, LEVER.BOOST];
 
 /**
- * The Ledger's Balancing page (brief 290 L9): on request, the numbers the content would need for the
+ * The Ledger's Balancing page: on request, the numbers the content would need for the
  * Typical player to follow the pace curve, each stage to meet its budget and boosts their targets
  * (XP a cycle, level gates, costs and times, boost strengths), the stages and walls before and
  * after them, and what numbers alone cannot fix. A preview: nothing is applied, and Apply stays

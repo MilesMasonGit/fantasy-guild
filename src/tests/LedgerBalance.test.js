@@ -66,6 +66,16 @@ describe('the balancing preview', () => {
         expect(wall.message).toMatch(/needs a (new )?source/i);
     });
 
+    it('puts back an XP proposal whose levels another source took over: only numbers that set a level stay', () => {
+        const c = balanceContent();
+        // The Tonic carries Alchemy 3 on, too slowly; once both are raised the Herbs carry its levels too.
+        c.recipes.find(x => x.id === 'recipe_tonic').xp = 2;
+        const r = proposeBalance(c, CAMP_ONLY);
+        expect(proposalOf(r, 'token:token_herbs', 'config.xp')).toBeTruthy();
+        expect(proposalOf(r, 'recipe:recipe_tonic', 'xp')).toBeNull();
+        expect(r.after.walls.filter(w => w.skill === 'alchemy')).toEqual([]);
+    });
+
     it('the after is the pace of the content with the proposals applied, and the content handed in is untouched', () => {
         const content = balanceContent();
         const r = proposeBalance(content, CAMP_ONLY);
@@ -95,9 +105,12 @@ describe('what the preview never does', () => {
 
     it('never proposes a negative, fractional or absurd number, even for a source thousands of times too slow', () => {
         const c = balanceContent();
-        // One Herb an hour: Alchemy about 1600 times slower than the curve.
+        // One Herb an hour: Alchemy about 1600 times slower than the curve. The Elixir is planned for
+        // plane 3, which has no budget, so its Alchemy 12 stays and Alchemy keeps its levels to follow.
         c.tokens.token_herbs.config.cycleTimeMs = 3_600_000;
         c.tokens.token_statue.shop.price[0].quantity = 5_000_000;
+        c.recipes.find(x => x.id === 'recipe_elixir').plan.tier = 3;
+        c.items.item_elixir.plan.tier = 3;
         const r = proposeBalance(c, CAMP_ONLY);
         expect(r.proposals.length).toBeGreaterThan(0);
         for (const p of r.proposals) {
@@ -113,10 +126,10 @@ describe('what the preview never does', () => {
             if (p.lever === LEVER.XP) expect(p.to).toBeLessThanOrEqual(p.from * 20);
             if (p.lever === LEVER.TIME) expect(p.to).toBeGreaterThanOrEqual(1000);
         }
-        const xp = r.proposals.find(p => p.key === 'token:token_herbs' && p.field === 'config.xp');
-        expect(xp.to).toBe(20);
-        // Capped, so the Herbs still teach too slowly: said, not hidden.
-        expect(r.cantFix.find(c => c.key === 'token:token_herbs')).toMatchObject({ cause: CANT_FIX.LIMIT });
+        // Capped at 20 times its authored XP, so Alchemy still teaches too slowly: said, not hidden.
+        const capped = r.proposals.filter(p => p.lever === LEVER.XP && p.to === p.from * 20);
+        expect(capped.length).toBeGreaterThan(0);
+        for (const p of capped) expect(r.cantFix.find(c => c.key === p.key)).toMatchObject({ cause: CANT_FIX.LIMIT });
     });
 
     it('never proposes a Guild Hall price or strength, nor moves a gate the world tables set', () => {

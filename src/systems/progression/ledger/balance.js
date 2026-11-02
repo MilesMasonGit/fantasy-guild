@@ -10,14 +10,14 @@ import { EFFECT_TYPES } from '../../effects/constants.js';
 import { SKILLS, SKILL_LAYERS } from '../../../config/registries/skillRegistry.js';
 
 /**
- * Automatic balancing as a preview (brief 290 L9): the numbers the content would need for the
+ * Automatic balancing as a preview: the numbers the content would need for the
  * Typical profile to follow the pace curve, each stage to meet its budget and boosts their strength
  * targets, worked out with the ledger's own pace (`pace.js`) and never applied. Four levers, each
  * pass re-reading the pace the one before left:
  *
  * - **Boost strengths**: a building's, drink's, tool's or gear's effect over its kind's target at
  *   Maxed is weakened (its library effect's value, or the bearer's own statement), never a Guild
- *   Hall star's (owner, 2026-11-02: the Hall waits for its own pass).
+ *   Hall star's: the Hall waits for its own balance pass.
  * - **XP a cycle**: for each skill, the levels where one source is the best at Typical are worked at
  *   that source's XP; its XP is scaled so those levels take the curve's time. Where the curve and
  *   the XP a level needs part by more than the wall factor inside one source's levels, only the
@@ -73,7 +73,7 @@ export const MAX_XP_FACTOR = 20;
 /** A time is never cut below a second. */
 const MIN_TIME_MS = 1000;
 /** Rounds of the passes: each re-reads the pace the last left. */
-const DEFAULT_ROUNDS = 3;
+const DEFAULT_ROUNDS = 4;
 
 /** The axes a boost's strength is read on (`rates.js`): their values are what a boost proposal weakens. */
 const RATE_AXES = new Set([
@@ -189,20 +189,19 @@ export function balanceSummary({ pace, ledger }) {
  * @param {object} content  as the ledger takes it (`{ items, tokens, recipes | recipePools, effects, … }`); never changed
  * @param {object} [rawSettings]  the Ledger settings (`settings.js`)
  * @param {{ rounds?: number }} [options]
- * @returns {{ before, after, proposals, cantFix, rounds, ms }} `before`/`after` from {@link balanceSummary};
+ * @returns {{ before, after, proposals, cantFix, rounds }} `before`/`after` from {@link balanceSummary};
  *   `proposals` `[{ key, kind, id, name, field, label, lever, from, to, why }]`, each field once;
  *   `cantFix` `[{ kind: 'wall'|'stage'|'unlock'|'boost', key, skill?, name, cause, message }]`
  */
 export function proposeBalance(content, rawSettings = null, { rounds = DEFAULT_ROUNDS } = {}) {
-    const started = Date.now();
     const settings = settingsOf(rawSettings);
     const original = content;
     const first = evaluate(content, settings);
     const before = balanceSummary(first);
+    // The passes change only the copy; until the first change, the authored content's pace stands for it.
     const state = {
-        settings, original, first, content: structuredClone(content), eval: null, proposals: new Map(), capped: new Map()
+        settings, original, first, content: structuredClone(content), eval: first, proposals: new Map(), capped: new Map()
     };
-    state.eval = evaluate(state.content, settings);
 
     let used = 0;
     for (let round = 0; round < rounds; round++) {
@@ -216,6 +215,7 @@ export function proposeBalance(content, rawSettings = null, { rounds = DEFAULT_R
         }
         if (!any) break;
     }
+    tidyXp(state);
 
     const kept = [...state.proposals.values()].filter(p => p.to !== p.from);
     const after = kept.length ? balanceSummary(state.eval) : before;
@@ -224,8 +224,32 @@ export function proposeBalance(content, rawSettings = null, { rounds = DEFAULT_R
     return {
         before, after, proposals,
         cantFix: explain(state, after),
-        rounds: used, ms: Date.now() - started
+        rounds: used
     };
+}
+
+/**
+ * An XP proposal made for levels another source took over in a later round sets no level in the
+ * end: it is put back to its authored number, unless that makes its source the best again.
+ */
+function tidyXp(state) {
+    const fieldId = (p) => `${p.kind}:${p.id}|${p.field}`;
+    const setting = () => new Set(xpBands(state).map(b => `${b.kind}:${b.id}|${b.field}`));
+    const live = setting();
+    const moot = [...state.proposals.values()].filter(p => p.lever === LEVER.XP && p.to !== p.from && !live.has(fieldId(p)));
+    if (!moot.length) return;
+    for (const p of moot) setPath(recordOf(state.content, p.kind, p.id), p.field, p.from);
+    state.eval = evaluate(state.content, state.settings);
+    const back = setting();
+    const keep = moot.filter(p => back.has(fieldId(p)));
+    for (const p of moot) {
+        if (keep.includes(p)) continue;
+        state.proposals.delete(`${p.key}|${p.field}`);
+        state.capped.delete(fieldId(p));
+    }
+    if (!keep.length) return;
+    for (const p of keep) setPath(recordOf(state.content, p.kind, p.id), p.field, p.to);
+    state.eval = evaluate(state.content, state.settings);
 }
 
 /**
@@ -436,7 +460,7 @@ function xpPass(state) {
         const problem = `${PACE_TEXT.skill(g.skill)} ${first} → ${last}: its best Typical source, ${name}, takes ${PACE_TEXT.times(R)} the curve's time.`;
         const result = (s) => {
             const band = finalBands(s).find(b => `${b.kind}:${b.id}|${b.field}` === fieldId);
-            if (!band) return 'Its levels now have another best source.';
+            if (!band) return 'Another source now carries those levels; at its authored number it would take them back.';
             const a = band.head[0].level;
             const b = band.head[band.head.length - 1].level + 1;
             return `Now ${PACE_TEXT.times(band.ratio)} the curve over ${PACE_TEXT.skill(band.skill)} ${a} → ${b}.`;
@@ -716,7 +740,7 @@ function explain(state, after) {
         const names = b.names.join(' with ');
         const base = { kind: 'boost', key: b.factorKeys[0], name: names };
         if (b.kind === BOOST_KIND.HALL) {
-            out.push({ ...base, cause: CANT_FIX.HALL, message: `${names} (Guild Hall) make ${b.top} +${Math.round(b.gain * 100)} % at Maxed against the ${b.target} % target: left for the Guild Hall pass (owner, 2026-11-02).` });
+            out.push({ ...base, cause: CANT_FIX.HALL, message: `${names} (Guild Hall) make ${b.top} +${Math.round(b.gain * 100)} % at Maxed against the ${b.target} % target: left for the Guild Hall balance pass.` });
         } else if (floorBound(state, b)) {
             out.push({ ...base, cause: CANT_FIX.FLOOR, message: `${names} make ${b.top} +${Math.round(b.gain * 100)} % at Maxed against the ${b.target} % target: an XP bonus on a cycle worth 1 XP always adds a whole XP (the XP floor), so no strength brings it to target; the work's XP a cycle would have to rise.` });
         } else {
