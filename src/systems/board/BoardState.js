@@ -535,6 +535,18 @@ export function savedWorkClaims() {
     return Object.entries(board()?.workClaims || {});
 }
 
+/**
+ * Every Token instance id some hero's flag has claimed, as a new Set: {@link heroOfInstance}'s
+ * question for many Tokens at once, for a caller that asks it of every enemy in a tick.
+ */
+export function claimedInstanceIds() {
+    const out = new Set();
+    const rt = flagRuntime();
+    if (!rt) return out;
+    for (const claim of rt.claims.values()) if (claim.instanceId) out.add(claim.instanceId);
+    return out;
+}
+
 /** The hero whose flag has claimed Token instance `instanceId`, or null. */
 export function heroOfInstance(instanceId) {
     if (!instanceId) return null;
