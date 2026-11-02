@@ -17,6 +17,9 @@ import { ORIGIN_ROLE, EXTREME } from './generate.js';
  *    work, all of it the cell's own origins of that skill (never the everyday ones), one of them
  *    the rarest origin of its line's table for the ring. A combat specialty makes one of the kit's
  *    camps its boss camp (`kit.bossCamps`).
+ * 2b. **Guaranteed camps** (the ring's `camps` the generation gave this cell) stand on the mat
+ *    whatever the kit's combat work, and fill that work first: the kit's everyday camps take only
+ *    what is left.
  * 3. Work for a skill nothing fills goes to the cell's own line, so the heroes kept busy hold;
  *    every origin the map shows stands on the mat at least once; and past {@link MAX_HEROES} the
  *    kit's largest everyday share gives way.
@@ -190,6 +193,7 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [], 
     let rare = null;
     let bossCamp = null;
     const fromHeroes = (skill, h) => tokensFor(tables, skill, h);
+    const guaranteed = [...new Set((cell?.camps || []).filter(id => typeof id === 'string' && id))];
 
     for (const skill of Object.keys(heroes).sort(byText)) {
         const count = tokensFor(tables, skill, heroes[skill]);
@@ -197,7 +201,7 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [], 
         if (skill === COMBAT) {
             const everyday = kit?.camps || [];
             const boss = specialty === COMBAT ? (kit?.bossCamps || []) : [];
-            let left = count;
+            let left = count - guaranteed.length;
             if (boss.length) {
                 bossCamp = boss[Math.floor(random() * boss.length)];
                 addTo(camps, bossCamp, 1);
@@ -227,6 +231,8 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [], 
             skillOfNode.set(typeId, skill);
         }
     }
+
+    for (const id of guaranteed) addTo(camps, id, 1);
 
     // Work nothing could fill goes to the cell's own line, as heroes, so the heroes kept busy hold.
     if (leftover > 0) {
@@ -286,9 +292,9 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [], 
         }
     }
     // Last, when camps alone keep it over: the camps give way, the most of one kind first, never
-    // the specialty's boss camp.
+    // the specialty's boss camp or a guaranteed camp's last.
     for (let guard = 0; guard < 100 && busyNow() > MAX_HEROES + 1e-9; guard++) {
-        const cut = [...camps].filter(([id, n]) => n > (id === bossCamp ? 1 : 0))
+        const cut = [...camps].filter(([id, n]) => n > (id === bossCamp || guaranteed.includes(id) ? 1 : 0))
             .sort(([a, x], [b, y]) => y - x || byText(a, b))[0];
         if (!cut) break;
         camps.set(cut[0], cut[1] - 1);

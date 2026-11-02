@@ -1,6 +1,7 @@
 import { splitPlanned, buildPlanFile, stripPlanBlocks, stripPlanFromList, PLAN_SYNC_KEY } from './planFile';
 import { PERK_FILE, perksFile } from './skillPerks';
 import { HALL_STARS_FILE, hallSkyFile, holdsSky } from './hallSky';
+import { WORLD_FILE, worldFile, holdsWorld } from './worldTables';
 
 /**
  * How the CMS's authored content becomes the files in `data/`. Recipes go through `recalculateEconomy` like everything else.
@@ -43,6 +44,8 @@ export function syncFiles(balanced = {}) {
         ...(balanced.skillPerks ? { [PERK_FILE]: perksFile(balanced.skillPerks) } : {}),
         // ⚠️ Only when the workspace holds a Guild Hall sky, for the same reason; a star with no rank stays in the workspace.
         ...(holdsSky(balanced) ? { [HALL_STARS_FILE]: hallSkyFile(balanced) } : {}),
+        // ⚠️ Only when the workspace holds world tables, for the same reason: without the file the game generates from its placeholder.
+        ...(holdsWorld(balanced) ? { [WORLD_FILE]: worldFile(balanced) } : {}),
         // ⚠️ Only when the workspace holds a plan, for the same reason.
         ...(plan ? { [PLAN_SYNC_KEY]: plan } : {}),
     };

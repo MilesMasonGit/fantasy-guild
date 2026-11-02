@@ -3,7 +3,7 @@ import { Shuffle, Play, Copy } from 'lucide-react';
 
 import { useEntityStore } from '../../stores/useEntityStore';
 import {
-  workspaceWorldContext, worldForSeed, sweepWorkspace, sweepText, heroTime, WORLD_TABLES_SOURCE,
+  workspaceWorldContext, worldForSeed, sweepWorkspace, sweepText, heroTime, worldTablesSource,
 } from '../../engine/ledgerWorld';
 import { F_CHECKS, WORLD_F } from '../../../../src/systems/progression/ledger/world.js';
 import { CHECKS } from '../../../../src/systems/progression/ledger/checks.js';
@@ -56,6 +56,7 @@ export default function LedgerWorld({ onOpen, baseTables = undefined }) {
   const recipePools = useEntityStore((s) => s.recipePools);
   const effects = useEntityStore((s) => s.effects);
   const starterCamp = useEntityStore((s) => s.starterCamp);
+  const worldRecord = useEntityStore((s) => s.world);
 
   const [seed, setSeed] = useState(1);
   const [seedText, setSeedText] = useState('1');
@@ -67,8 +68,8 @@ export default function LedgerWorld({ onOpen, baseTables = undefined }) {
   const [running, setRunning] = useState(false);
 
   const context = useMemo(
-    () => workspaceWorldContext({ items, tokens, recipePools, effects, starterCamp }, null, baseTables),
-    [items, tokens, recipePools, effects, starterCamp, baseTables],
+    () => workspaceWorldContext({ items, tokens, recipePools, effects, starterCamp, world: worldRecord }, null, baseTables),
+    [items, tokens, recipePools, effects, starterCamp, worldRecord, baseTables],
   );
   const plan = useMemo(() => worldForSeed(context, seed), [context, seed]);
   const cell = picked ? plan.world.cells.find((c) => c.id === picked) : null;
@@ -120,7 +121,7 @@ export default function LedgerWorld({ onOpen, baseTables = undefined }) {
           </label>
         </div>
         <p className="text-[10px] text-gray-500">
-          The world a new game with this seed generates, from {WORLD_TABLES_SOURCE}, with each origin&apos;s planned wedge and
+          The world a new game with this seed generates, from {worldTablesSource({ world: worldRecord })}, with each origin&apos;s planned wedge and
           ring laid on. Every cell&apos;s contents are a click away; a red edge is a problem of checks F on that cell.
         </p>
         {(plan.moved.length > 0 || plan.unknown.length > 0) && (

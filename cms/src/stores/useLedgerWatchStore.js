@@ -31,7 +31,7 @@ export const useLedgerWatchStore = create((set) => ({
     },
 }));
 
-const CONTENT = ['items', 'tokens', 'effects', 'recipePools', 'starterCamp', 'skillPerks', 'hallConstellations', 'hallStars', 'planSettings'];
+const CONTENT = ['items', 'tokens', 'effects', 'recipePools', 'starterCamp', 'skillPerks', 'hallConstellations', 'hallStars', 'world', 'planSettings'];
 
 /** The workspace's content, as the ledger takes it. */
 export function workspaceContent(state) {

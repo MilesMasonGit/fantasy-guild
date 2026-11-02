@@ -42,6 +42,7 @@ export const WORLD_CHECK_TEXT = Object.freeze({
     tier: (cell) => `Cell ${cell}'s tier or wild mark does not follow its ring`,
     noMain: (cell) => `Cell ${cell} has no main origin`,
     coverage: (origin, ring) => `${origin} (ring ${ring}) is in no cell of the inner rings`,
+    campCoverage: (camp, ring) => `${camp} is guaranteed in ring ${ring} but stands in none of its cells`,
     keyReach: (cell, key) => `Cell ${cell} has no cell one ring out holding the key origin ${key}`,
     bag: (ring) => `Ring ${ring}'s specialties are not an even bag`,
     pity: (cell, ring) => `Cell ${cell} (ring ${ring}) broke the pity rule: a specialty missing for too long did not come next`,
@@ -127,6 +128,13 @@ export function worldFindings(world, tables, { materialsOf = () => [], hallOrigi
     const inner = new Set(world.cells.filter(c => c.ring >= 1 && c.ring <= STRICT_RINGS).flatMap(c => c.origins.map(o => o.id)));
     for (const [id, ring] of strictOrigins(tables)) {
         if (!inner.has(id)) find(WORLD_CHECK.COVERAGE, WORLD_CHECK_TEXT.coverage(id, ring), { ring, origin: id });
+    }
+    // And every camp a strict ring guarantees, in that ring.
+    for (let n = 1; n <= Math.min(STRICT_RINGS, world.rings); n++) {
+        const held = new Set(ringOf(n).flatMap(c => c.camps || []));
+        for (const camp of tables.camps?.[n] || []) {
+            if (!held.has(camp.id)) find(WORLD_CHECK.COVERAGE, WORLD_CHECK_TEXT.campCoverage(camp.id, n), { ring: n, origin: camp.id });
+        }
     }
 
     // Key origins within a step of every cell one ring in.

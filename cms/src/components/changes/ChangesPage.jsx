@@ -4,6 +4,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { useReviewStore } from '../../stores/useReviewStore';
 import { currentValue, proposedValue, changedFields, canonicalJson } from '../../engine/changePacks';
 import { starterCampDiff } from '../../engine/starterCamp';
+import { worldDiff } from '../../engine/worldTables';
 import { SKILLS } from '../../utils/constants';
 import {
   rowState, accept, force, applyEarly, reject, acceptAll, rejectAll, finish, planUndo, undo,
@@ -23,13 +24,14 @@ const OP_LOOK = {
   edit: { word: 'Changed', color: 'var(--color-info)' },
   delete: { word: 'Deleted', color: 'var(--color-error)' },
 };
-const KIND_WORD = { item: 'Item', token: 'Token', recipe: 'Recipe', effect: 'Effect', map: 'Map', starterCamp: 'Layout', skillPerks: 'Perks', hallStar: 'Hall star', hallConstellation: 'Constellation' };
+const KIND_WORD = { item: 'Item', token: 'Token', recipe: 'Recipe', effect: 'Effect', map: 'Map', starterCamp: 'Layout', skillPerks: 'Perks', hallStar: 'Hall star', hallConstellation: 'Constellation', world: 'World' };
 
 const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
 
 /** What a row calls its entity: its name, for the Starter Camp (one record, no name) the page's, for a perk table its skill's. */
 const entityName = (kind, record, id) => {
   if (kind === 'starterCamp') return 'Starter Camp';
+  if (kind === 'world') return 'World tables';
   if (kind === 'skillPerks') return `${skillName(id)} perks`;
   return record?.name || id;
 };
@@ -49,9 +51,10 @@ function useWorkspace() {
   const skillPerks = useEntityStore((s) => s.skillPerks);
   const hallConstellations = useEntityStore((s) => s.hallConstellations);
   const hallStars = useEntityStore((s) => s.hallStars);
+  const world = useEntityStore((s) => s.world);
   const planSettings = useEntityStore((s) => s.planSettings);
-  return useMemo(() => ({ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, planSettings }),
-    [items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, planSettings]);
+  return useMemo(() => ({ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, world, planSettings }),
+    [items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, world, planSettings]);
 }
 
 /** Write review results into the workspace; an open editor on an entity that just went away is closed. */
@@ -62,6 +65,7 @@ function writeWorkspace(ws) {
   if ('skillPerks' in ws) patch.skillPerks = ws.skillPerks;
   if ('hallConstellations' in ws) patch.hallConstellations = ws.hallConstellations;
   if ('hallStars' in ws) patch.hallStars = ws.hallStars;
+  if ('world' in ws) patch.world = ws.world;
   const type = s.activeEntityType;
   const key = type === 'token' ? 'tokens' : type === 'effect' ? 'effects' : 'items';
   if (s.activeEntityId && type && !patch[key]?.[s.activeEntityId]) Object.assign(patch, { activeEntityId: null, activeEntityType: null });
@@ -222,6 +226,9 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
       setCurrentView('perks');
     } else if (entry.kind === 'hallStar' || entry.kind === 'hallConstellation') {
       setCurrentView('hallStars');
+    } else if (entry.kind === 'world') {
+      // No editor of their own: the Ledger's World page draws them.
+      setCurrentView('ledger');
     } else {
       useEntityStore.getState().setActiveEntity(entry.id, entry.kind);
       setCurrentView('editor');
@@ -349,6 +356,8 @@ function EntryRow({ entry, index, state, ws, packEffects, onAccept, onForce, onR
 
       {entry.kind === 'starterCamp'
         ? <CampDiff before={before} after={after} ws={ws} />
+        : entry.kind === 'world'
+          ? <WorldDiff before={before} after={after} ws={ws} />
         : entry.kind === 'skillPerks'
           ? <PerksDiff before={before} after={after} ws={ws} packEffects={packEffects} />
           : <BeforeAfter op={entry.op} before={before} after={after} />}
@@ -426,6 +435,21 @@ function PerksDiff({ before, after, ws, packEffects = {} }) {
       {kept.map((l) => <div key={`k${l}`} style={{ color: 'var(--color-text-secondary)' }}>Unchanged: level {l}</div>)}
       {!added.length && !removed.length && <p style={{ color: 'var(--color-text-muted)' }}>No perk differs from the workspace.</p>}
       <p style={{ color: 'var(--color-text-muted)' }}>Each perk is a library effect; accept its effect too, or the perk does nothing.</p>
+    </div>
+  );
+}
+
+/** The world tables' before / after: origins and guaranteed camps in and out per line and ring, then each other part that changed. */
+function WorldDiff({ before, after, ws }) {
+  const tokenName = (id) => ws.tokens?.[id]?.name || id;
+  const named = (text) => text.replace(/(token_[a-z0-9_]+)$/, (id) => tokenName(id));
+  const lines = worldDiff(before, after);
+  const look = { added: { color: 'var(--color-success)', word: '' }, removed: { color: 'var(--color-error)', word: 'Removed: ' }, changed: { color: 'var(--color-info)', word: '' } };
+  return (
+    <div className="text-xs space-y-0.5" data-testid="world-diff">
+      {lines.length === 0 && <p style={{ color: 'var(--color-text-muted)' }}>Nothing differs from the workspace.</p>}
+      {lines.map((l) => <div key={`${l.kind}${l.text}`} style={{ color: look[l.kind].color }}>{look[l.kind].word}{named(l.text)}</div>)}
+      <p style={{ color: 'var(--color-text-muted)' }}>The Ledger&apos;s World page draws the world these tables make, seed by seed.</p>
     </div>
   );
 }

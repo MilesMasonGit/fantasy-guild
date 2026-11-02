@@ -6,23 +6,35 @@ import {
 import { planPlaceOf } from '../../../src/systems/progression/ledger/plan.js';
 import { CHECKS } from '../../../src/systems/progression/ledger/checks.js';
 import { formatMinutes } from '../../../src/systems/progression/ledger/settings.js';
+import { usableTables } from './worldTables.js';
 
 /**
  * The World plan over the CMS workspace (`src/systems/progression/ledger/world.js` does the work).
  *
- * ⚠️ The CMS holds no world tables yet (brief 330 W6 brings them), so the World plan generates from
- * the game's placeholder tables (`src/config/worldPlaceholder.js`), exactly as a new game does
- * while `data/world.json` is absent, with the origins' planned wedges and rings laid on.
+ * The base tables are the workspace's own (`world`, which Sync writes to `data/world.json`) when it
+ * holds tables that can be generated from; else the game's placeholder (`src/config/worldPlaceholder.js`),
+ * exactly as a new game generates while `data/world.json` is absent. The origins' planned wedges
+ * and rings are laid on either.
  */
 
 /** Where the base tables come from, in words for the page. */
-export const WORLD_TABLES_SOURCE = 'the placeholder world tables (the CMS holds none yet; the game generates from the same)';
+export const WORLD_TABLES_TEXT = Object.freeze({
+    workspace: "the workspace's world tables (Sync writes them to data/world.json)",
+    placeholder: 'the placeholder world tables (the workspace holds none; a game with no data/world.json generates from the same)',
+    unusable: "the placeholder world tables: the workspace's cannot be generated from (they need six lines with distinct ids)"
+});
 
 const PLACEHOLDER = normaliseWorldTables(PLACEHOLDER_WORLD_TABLES);
 
-/** The world tables the game generates from today. */
-export function baseWorldTables() {
-    return PLACEHOLDER;
+/** The world tables a workspace generates from: its own when usable, else the placeholder. */
+export function baseWorldTables(state = {}) {
+    return usableTables(state?.world) || PLACEHOLDER;
+}
+
+/** Where {@link baseWorldTables} took the workspace's tables from, in words. */
+export function worldTablesSource(state = {}) {
+    if (state?.world == null) return WORLD_TABLES_TEXT.placeholder;
+    return usableTables(state.world) ? WORLD_TABLES_TEXT.workspace : WORLD_TABLES_TEXT.unusable;
 }
 
 /** The workspace as the World plan reads it. */
@@ -38,8 +50,8 @@ const worldContent = (state) => ({
  * The World plan's reading of the workspace, once for any number of seeds. `ledger`: one already
  * built from the same state; `baseTables`: other tables to generate from (the tests' fixtures).
  */
-export function workspaceWorldContext(state, ledger = null, baseTables = baseWorldTables()) {
-    return worldContext(worldContent(state), { baseTables, ledger });
+export function workspaceWorldContext(state, ledger = null, baseTables = baseWorldTables(state)) {
+    return worldContext(worldContent(state), { baseTables: baseTables ?? baseWorldTables(state), ledger });
 }
 
 /** The seed-free check F (wild origins no wedge places) as findings for the ledger's report. */
@@ -67,11 +79,12 @@ export function sweepWorkspace(context, count = 100) {
  * Where each Token sits on the world map, for the Entries list: id → `{ wedge, ring, planned }`,
  * `planned` when the place is its plan's own (else the game's tables'). Tokens neither places are absent.
  */
-export function originPlaces(tokens = {}) {
-    const base = placementOf(baseWorldTables());
+export function originPlaces(tokens = {}, state = {}) {
+    const baseTables = baseWorldTables(state);
+    const base = placementOf(baseTables);
     const out = new Map();
     for (const [id, place] of base) out.set(id, { wedge: place.line, ring: place.ring, planned: false });
-    const { tables } = plannedTables(baseWorldTables(), tokens);
+    const { tables } = plannedTables(baseTables, tokens);
     const planned = placementOf(tables);
     for (const [key, def] of Object.entries(tokens || {})) {
         const id = def?.id ?? key;
@@ -81,9 +94,9 @@ export function originPlaces(tokens = {}) {
     return out;
 }
 
-/** The lines the tables offer as wedges: `[{ id, name }]`. */
-export function wedgeChoices() {
-    return baseWorldTables().lines.map((l) => ({ id: l.id, name: l.name }));
+/** The lines the workspace's tables offer as wedges: `[{ id, name }]`. */
+export function wedgeChoices(state = {}) {
+    return baseWorldTables(state).lines.map((l) => ({ id: l.id, name: l.name }));
 }
 
 /** Hero time in words, for the price spreads: seconds under a minute. */

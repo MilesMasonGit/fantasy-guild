@@ -15,6 +15,7 @@ import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { setStarterCampForTests, resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
 import { artRadiusOf } from '../config/matGeometry.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -26,7 +27,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * A new game's Starter Camp has a small pond near the camp, where nothing stands: stored like a
+ * A new game's Starter Camp has a small pond near the camp, where nothing stands (and a small Stone
+ * patch, `StarterCampStone.test.js`): stored like a
  * settled Region's water, so it is drawn and the Tokens keep off it. Every other Starter Camp (an
  * older save, a board built without a camp) stays all meadow.
  */
@@ -60,7 +62,9 @@ describe('⭐ the Starter Camp\'s pond', () => {
             expect(wet).toBeGreaterThan(3);
             const hall = BoardState.tokens().find(t => t.typeId === StarterCamp.GUILD_HALL_TYPE);
             for (const t of BoardState.tokens()) {
-                expect(terrainAt(region.terrain, t.x, t.y), t.typeId).toBe(TERRAIN.GRASS);
+                // Dry: grass, or the camp's Stone patch under a mine or a mining node.
+                const forRock = getTokenType(t.typeId)?.config?.skill === 'mining' || (getTokenType(t.typeId)?.standsOn || []).includes(TERRAIN.STONE);
+                expect(forRock ? [TERRAIN.GRASS, TERRAIN.STONE] : [TERRAIN.GRASS], t.typeId).toContain(terrainAt(region.terrain, t.x, t.y));
                 expect(waterFieldAt(water, t.x, t.y).f, t.typeId).toBeLessThan(-artRadiusOf(t.typeId));
             }
             // Near the camp: its middle a few Tokens out from the Hall, past its clearing.

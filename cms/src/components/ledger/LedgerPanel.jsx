@@ -126,8 +126,9 @@ function LedgerEntries({ setCurrentView, report, onRefresh, onOpenPage }) {
   const [adding, setAdding] = useState(false);
 
   const rows = useMemo(() => ledgerRows({ items, tokens, recipePools }), [items, tokens, recipePools]);
-  const places = useMemo(() => originPlaces(tokens), [tokens]);
-  const wedges = useMemo(() => wedgeChoices(), []);
+  const world = useEntityStore((s) => s.world);
+  const places = useMemo(() => originPlaces(tokens, { world }), [tokens, world]);
+  const wedges = useMemo(() => wedgeChoices({ world }), [world]);
   const shown = useMemo(() => filterLedgerRows(rows, { kind, status, tier, search }), [rows, kind, status, tier, search]);
 
   const tiers = useMemo(() => {
