@@ -6,7 +6,7 @@
  */
 
 import { normaliseStarterCamp, isEmptyStarterCamp } from '../../../src/config/starterCampShape.js';
-import { PLAN_STATUSES, statusOrNull, tierOrNull } from '../../../src/systems/progression/ledger/plan.js';
+import { PLAN_STATUSES, PLAN_RINGS, statusOrNull, tierOrNull, ringOrNull, wedgeOrNull } from '../../../src/systems/progression/ledger/plan.js';
 import { mergePlanFile } from './planFile.js';
 import { intentErrors } from './packIntent.js';
 import { isSkillId } from '../../../src/config/registries/skillRegistry.js';
@@ -135,6 +135,8 @@ function planErrors(plan, label, kind) {
     }
     if (plan.tier !== undefined && tierOrNull(plan.tier) !== plan.tier) out.push(`${label}: "value.plan.tier" must be a whole number from 0 (0 is the Starter Camp).`);
     if (plan.note !== undefined && typeof plan.note !== 'string') out.push(`${label}: "value.plan.note" must be text.`);
+    if (plan.wedge !== undefined && wedgeOrNull(plan.wedge) !== plan.wedge) out.push(`${label}: "value.plan.wedge" must be a line's id as text (ores, trees, ...).`);
+    if (plan.ring !== undefined && ringOrNull(plan.ring) !== plan.ring) out.push(`${label}: "value.plan.ring" must be one of the strict rings, ${PLAN_RINGS.join(', ')}.`);
     return out;
 }
 
