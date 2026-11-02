@@ -308,16 +308,18 @@ export function clearAll() {
  * hostile enemy gets a hero onto it through `Hostiles` and `Flags.ambush`, not in this function.
  */
 export function tickToken(instance, delta, heroId) {
-    const enemy = enemyFor(instance);
     const id = instance?.id;
-    if (!enemy || !id) return;
 
     // No hero: the fight is over before it began. Drop any in-flight state so the enemy is whole
-    // again next time.
+    // again next time. Asked before the stat block is built: most enemies stand unfought, and a
+    // block for each of them every tick was a measurable share of the tick (`enemyFor` is pure).
     if (!heroId) {
-        if (fights.has(id)) endFight(id);
+        if (id && fights.has(id) && enemyFor(instance)) endFight(id);
         return;
     }
+
+    const enemy = enemyFor(instance);
+    if (!enemy || !id) return;
 
     // A hero id with no hero record behind it cannot fight; the fight ends rather than reading
     // an absent hero.
