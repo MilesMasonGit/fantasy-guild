@@ -18,6 +18,13 @@ import {
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { FIXTURE_WORLD_RAW } from './fixtures/worldTables.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+/** Whether the CMS has synced the world tables: the placeholder is in force only while it has not. */
+const SYNCED = fs.existsSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../data/world.json'));
+const PLACEHOLDER = normaliseWorldTables(PLACEHOLDER_WORLD_TABLES);
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -128,8 +135,9 @@ describe('the placeholder tables', () => {
     const lookups = () => World.lookups();
 
     it('are in force until the CMS syncs data/world.json', () => {
-        expect(isPlaceholderTables()).toBe(true);
-        expect(worldTables().lines.map(l => l.id)).toEqual(['ores', 'trees', 'crops', 'herbs', 'waters', 'arcane']);
+        expect(isPlaceholderTables()).toBe(!SYNCED);
+        expect(PLACEHOLDER.lines.map(l => l.id)).toEqual(['ores', 'trees', 'crops', 'herbs', 'waters', 'arcane']);
+        expect(PLACEHOLDER.issues).toEqual([]);
         expect(worldTables().issues).toEqual([]);
     });
 
@@ -144,7 +152,7 @@ describe('the placeholder tables', () => {
     it('over 500 seeds the only findings are today\'s holes, each one also listed by the generation', () => {
         // Herbs and Arcane have too few origins; a cell whose only origins yield nothing a price may
         // name (a Wild Wheat Patch's crop is not read) leaves the cell beyond it nothing to ask for.
-        const tables = worldTables();
+        const tables = PLACEHOLDER;
         const { materialsOf, hallOrigins } = lookups();
         const kinds = new Set();
         for (let seed = 1; seed <= 500; seed++) {
@@ -166,12 +174,13 @@ describe('the placeholder tables', () => {
         expect(kinds.has(WORLD_CHECK.NO_MAIN)).toBe(true);
     }, 60000);
 
-    it('iron and fir always lie a step out from every ring-1 cell', () => {
-        const tables = worldTables();
+    it('iron and fir always lie a step out from every ring-1 cell, and so in the tables in force', () => {
         const { materialsOf, hallOrigins } = lookups();
-        for (let seed = 1; seed <= 300; seed++) {
-            const world = generateWorld({ seed, tables, materialsOf, hallOrigins });
-            expect(worldFindings(world, tables, { materialsOf, hallOrigins }).filter(f => f.check === WORLD_CHECK.KEY_REACH)).toEqual([]);
+        for (const tables of [PLACEHOLDER, worldTables()]) {
+            for (let seed = 1; seed <= 300; seed++) {
+                const world = generateWorld({ seed, tables, materialsOf, hallOrigins });
+                expect(worldFindings(world, tables, { materialsOf, hallOrigins }).filter(f => f.check === WORLD_CHECK.KEY_REACH)).toEqual([]);
+            }
         }
     }, 60000);
 });
@@ -221,6 +230,6 @@ describe('the world tables\' shape', () => {
         expect(worldTables().lines[0].origins[1][0].id).toBe('f_ores_1a');
         expect(() => setWorldTablesForTests({ lines: [] })).toThrow();
         resetWorldTablesForTests();
-        expect(isPlaceholderTables()).toBe(true);
+        expect(isPlaceholderTables()).toBe(!SYNCED);
     });
 });

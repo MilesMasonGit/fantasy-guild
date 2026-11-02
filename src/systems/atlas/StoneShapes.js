@@ -77,6 +77,19 @@ function outcropShape(random, mat, clear, others) {
     return null;
 }
 
+/**
+ * An outcrop of a set size centred on a point, turned a seeded way: for ground laid out by hand
+ * (the Starter Camp's patch) rather than by the layout.
+ */
+export function outcropAt(random, x, y, { rx, ry }) {
+    return { k: STONE_SHAPE.OUTCROP, x: Math.round(x), y: Math.round(y), rx: Math.round(rx), ry: Math.round(ry), ...directionOf(random) };
+}
+
+/** A stored record holding `shapes`, salted from `random`. */
+export function stoneRecordOf(random, shapes) {
+    return { v: STONE_VERSION, salt: Math.floor(random() * 0x7fffffff), shapes };
+}
+
 /** A ridge across the mat, the long way or the short, passing to one side of the Hall's clearing. */
 function ridgeShape(random, mat, clear) {
     const hw = Math.round(between(random, RIDGE.hw[0], RIDGE.hw[1]));

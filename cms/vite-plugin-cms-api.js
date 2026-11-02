@@ -850,6 +850,10 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
             const hallSky = fs.existsSync(path.join(dataDir, 'hallStars.json'))
               ? JSON.parse(fs.readFileSync(path.join(dataDir, 'hallStars.json'), 'utf8'))
               : null;
+            // The world tables, one record (`engine/worldTables.js`); absent until a Sync first writes them.
+            const world = fs.existsSync(path.join(dataDir, 'world.json'))
+              ? JSON.parse(fs.readFileSync(path.join(dataDir, 'world.json'), 'utf8'))
+              : null;
 
             const plan = readPlan();
 
@@ -870,6 +874,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
               starterCamp,
               skillPerks,
               ...(hallSky ? { hallConstellations: hallSky.constellations || {}, hallStars: hallSky.stars || {} } : {}),
+              world,
             }, plan)));
           } catch (err) {
             res.statusCode = 500;
@@ -972,6 +977,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
                 'Starter Camp Tokens': size(files['starterCamp.json']?.tokens),
                 perks: Object.values(files['skillPerks.json'] || {}).reduce((n, record) => n + size(record?.perks), 0),
                 'Guild Hall stars': size(files['hallStars.json']?.stars),
+                'world lines': size(files['world.json']?.lines),
                 'Planned entries': plannedKeysOf(plan).size
               };
 

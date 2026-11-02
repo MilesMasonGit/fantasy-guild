@@ -341,7 +341,7 @@ function reachable({ maxPlane = 2 } = {}) {
 
 /**
  * The Tokens the world map's cells of rings 1 to `maxRing` write, from the world tables in force:
- * each line's origins and key origins of those rings, and their hidden extras (a treasure, or the
+ * each line's origins, key origins and guaranteed camps of those rings, and their hidden extras (a treasure, or the
  * Tokens a modifier names). Any cell may draw any extra its ring allows.
  */
 function worldTokens(maxRing) {
@@ -350,6 +350,8 @@ function worldTokens(maxRing) {
     for (let ring = 1; ring <= maxRing; ring++) {
         for (const line of tables.lines) for (const o of line.origins[ring] || []) out.add(o.id);
         for (const id of tables.keys[ring] || []) out.add(id);
+        // The camps the ring guarantees.
+        for (const camp of tables.camps?.[ring] || []) out.add(camp.id);
         // A place's arrival: its enemies and bosses.
         for (const e of [...(tables.arrival[ring]?.enemies || []), ...(tables.arrival[ring]?.bosses || [])]) out.add(e.id);
     }

@@ -26,6 +26,7 @@ import { isMapItem, blankCartography } from '../../../src/systems/atlas/mapItems
 import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
 import { normaliseWorkspacePerks, withPerkRow, withoutPerkRow } from '../engine/skillPerks';
 import { workspaceSkyFrom } from '../engine/hallSky';
+import { workspaceWorldFrom } from '../engine/worldTables';
 import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRenames';
 import { splitPlanned, rejoinPlanned } from '../engine/planFile';
 
@@ -793,6 +794,8 @@ export const useEntityStore = create(
              */
             hallConstellations: null,
             hallStars: null,
+            /** The world tables (`engine/worldTables.js`), as authored. ⚠️ Null means this workspace never held any, and Sync then leaves `data/world.json` alone. */
+            world: null,
             /** Change one star's top-level fields (name, description, constellation, place). */
             setHallStar: (id, patch) => set((s) => (s.hallStars?.[id]
                 ? { hallStars: { ...s.hallStars, [id]: { ...s.hallStars[id], ...patch, id } } }
@@ -1055,6 +1058,7 @@ export const useEntityStore = create(
                     starterCamp: normaliseStarterCamp(data.starterCamp),
                     skillPerks: normaliseWorkspacePerks(seeded.skillPerks),
                     ...workspaceSkyFrom(data),
+                    world: workspaceWorldFrom(data.world),
                     planSettings: data.planSettings && typeof data.planSettings === 'object' ? data.planSettings : null,
                     activeEntityId: null,
                     activeEntityType: null,
@@ -1178,7 +1182,7 @@ export const useEntityStore = create(
 
                 return {
                     items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp, skillPerks: state.skillPerks ?? null,
-                    hallConstellations: state.hallConstellations ?? null, hallStars: state.hallStars ?? null, planned, planSettings: state.planSettings ?? null
+                    hallConstellations: state.hallConstellations ?? null, hallStars: state.hallStars ?? null, world: state.world ?? null, planned, planSettings: state.planSettings ?? null
                 };
             },
 
@@ -1211,6 +1215,7 @@ export const useEntityStore = create(
                     skillPerks: null,
                     hallConstellations: null,
                     hallStars: null,
+                    world: null,
                     planSettings: null,
                     activeEntityId: null,
                     activeEntityType: null,
@@ -1244,6 +1249,7 @@ export const useEntityStore = create(
                 skillPerks: state.skillPerks,
                 hallConstellations: state.hallConstellations,
                 hallStars: state.hallStars,
+                world: state.world,
                 planSettings: state.planSettings,
                 activeEntityId: state.activeEntityId,
                 activeEntityType: state.activeEntityType,

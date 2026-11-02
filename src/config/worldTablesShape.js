@@ -24,6 +24,8 @@
  *            stone: 4,                                       // Stone terrain outcrops on its mat
  *            camps: ['token_goblin_camp'],                   // the creatures' camps its combat work is
  *            bossCamps: ['token_chief_tent'] }],             // a combat specialty's better camp
+ *   camps: { 1: ['token_wolf_den', { id: 'token_ember_vents', kits: ['highland'] }], 2: ..., 3: ... },
+ *                                   // the creatures' camps each strict ring holds in every world
  *   heroTokens: { mining: 5, fishing: 2, combat: 1 },       // Tokens one hero keeps busy, per skill (else 5)
  *   specialtyHeroes: 1,             // a specialty's skill gets at least this much work, in heroes
  *   arrival: { 1: { count: [3, 4], enemies: [{ id: 'token_goblin', weight: 3 }],
@@ -46,6 +48,10 @@
  * ring in, the default, or the Hall's cell) and the generator picks one of that place's materials;
  * a slot with `item` asks for that item. A skill slot's `skill` is a skill id, `line` (the cell's
  * line's skill) or `specialty` (the cell's specialty).
+ *
+ * A ring's `camps` each stand in at least one cell of that ring in every world (owner: every Live
+ * enemy has a guaranteed place), in a cell of one of its `kits` where the ring has one, else of a kit
+ * naming the camp; wild rings add copies through the kits.
  *
  * A kit's `work` is read by skill id, `combat` meaning camps. An arrival's `count` is how many enemies
  * a place of that ring arrives with (at most {@link MAX_ARRIVAL}); with `bossChance` one of them is a
@@ -236,6 +242,17 @@ function arrivalOf(raw) {
     return { count: enemies.length || bosses.length ? [low, high] : [0, 0], enemies, bossChance: bosses.length ? chance : 0, bosses };
 }
 
+/** A ring's guaranteed camps: `{ id, kits }`, the first of an id kept. */
+function campRows(raw) {
+    const out = [];
+    for (const row of listOf(raw)) {
+        const id = text(isObject(row) ? row.id : row);
+        if (!id || out.some(c => c.id === id)) continue;
+        out.push({ id, kits: idList(isObject(row) ? row.kits : []) });
+    }
+    return out;
+}
+
 /** Tokens one hero keeps busy, per skill: whole numbers from 1. */
 function heroTokensTable(raw) {
     const out = {};
@@ -272,6 +289,16 @@ export function normaliseWorldTables(raw) {
                 issues.push(`The ${line.name} line leans to a kit "${kit}" that is not listed`);
                 delete line.kits[kit];
             }
+        }
+    }
+
+    const camps = perRing(raw.camps, campRows);
+    for (let ring = 1; ring <= STRICT_RINGS; ring++) {
+        for (const camp of camps[ring]) {
+            const unknown = camp.kits.filter(k => !kitIds.has(k));
+            if (!unknown.length) continue;
+            issues.push(`Ring ${ring}'s camp ${camp.id} names a kit that is not listed (${unknown.join(', ')})`);
+            camp.kits = camp.kits.filter(k => kitIds.has(k));
         }
     }
 
@@ -317,6 +344,7 @@ export function normaliseWorldTables(raw) {
         blendsPerNeighbour: wholeAtLeast(raw.blendsPerNeighbour, 0, DEFAULTS.blendsPerNeighbour),
         keys: perRing(raw.keys, idList),
         kits,
+        camps,
         specialties,
         pityWindow: wholeAtLeast(raw.pityWindow, 1, DEFAULTS.pityWindow),
         extras,

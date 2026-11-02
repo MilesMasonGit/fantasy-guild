@@ -2,7 +2,7 @@
 
 import { mulberry32, seedFromText } from '../atlas/seededRandom.js';
 import { cellId, cellsWithin, neighbours, sideOf } from './hex.js';
-import { STRICT_RINGS, PRICE_FROM, SKILL_OF, MAX_ARRIVAL, lineById } from '../../config/worldTablesShape.js';
+import { STRICT_RINGS, PRICE_FROM, SKILL_OF, MAX_ARRIVAL, lineById, kitById as kitIn } from '../../config/worldTablesShape.js';
 
 /**
  * One run's world, from its seed and the world tables (`worldTablesShape.js`), all at once at a new
@@ -26,7 +26,10 @@ import { STRICT_RINGS, PRICE_FROM, SKILL_OF, MAX_ARRIVAL, lineById } from '../..
  *    specialties go round in turn. Wild cells draw freely. A cell holding nothing of its
  *    specialty's line takes one of that line's origins for its ring, so the specialty's new tier
  *    shows on the map with the rest.
- * 6. **Kits** by the line's lean.
+ * 6. **Kits** by the line's lean. Then **guaranteed camps**: each camp a strict ring's `camps` lists
+ *    goes to one cell of that ring (owner: every Live enemy has a guaranteed place in every world),
+ *    one of its own `kits` where the ring has one, else one whose kit names it, else any; always the
+ *    least loaded of those, so they spread over the ring.
  * 7. **Extras** (the hidden modifiers and treasures): a strict cell's are worth its ring's value
  *    within `valueTolerance`; a wild cell's aim at the last strict ring's value grown per ring.
  * 8. **Requirements.** A cell's price is gathered from one cell one ring in (the Hall's for ring 1)
@@ -45,7 +48,7 @@ import { STRICT_RINGS, PRICE_FROM, SKILL_OF, MAX_ARRIVAL, lineById } from '../..
  * Pure: reads only what it is handed. The game passes the registry's Tokens; the ledger its own.
  */
 
-export const WORLD_VERSION = 2;
+export const WORLD_VERSION = 3;
 
 /** How an origin came to be in a cell. */
 export const ORIGIN_ROLE = Object.freeze({ HALL: 'hall', MAIN: 'main', BLEND: 'blend', KEY: 'key', SPECIALTY: 'specialty' });
@@ -241,11 +244,13 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
             requires: null,
             payFrom: [],
             extreme: null,
-            arrival: []
+            arrival: [],
+            camps: []
         };
     });
     const byId = new Map(cells.map(c => [c.id, c]));
     const ringOf = (n) => cells.filter(c => c.ring === n);
+    const kitById = (id) => kitIn(tables, id);
     const hall = byId.get(HALL_ID);
     for (const id of hallOrigins) {
         if (!hasOrigin(hall, id)) hall.origins.push({ id, line: lineOfOrigin.get(id) || null, role: ORIGIN_ROLE.HALL });
@@ -385,6 +390,28 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
             const lean = Object.entries(lineById(tables, cell.wedge)?.kits || {});
             const pick = lean.length ? pickWeighted(random, lean, ([, weight]) => weight)?.[0] : kitIds[pickIndex(random, kitIds.length)];
             cell.kit = pick ?? null;
+        }
+    }
+
+    // 6b. Guaranteed camps, each in one cell of its ring.
+    for (let n = 1; n <= STRICT_RINGS; n++) {
+        const random = streamOf(runSeed, 'camps', n);
+        const ring = ringOf(n);
+        for (const camp of tables.camps?.[n] || []) {
+            const naming = (cell) => {
+                const kit = kitById(cell.kit);
+                return !!kit && (kit.camps.includes(camp.id) || kit.bossCamps.includes(camp.id));
+            };
+            const own = ring.filter(c => camp.kits.includes(c.kit));
+            const preferred = own.length ? own : ring.filter(naming);
+            const least = (cells) => Math.min(...cells.map(c => c.camps.length));
+            // ⚠️ A kit's preference never piles camps on one cell: past one more than the ring's
+            // least loaded, the camp goes wherever the ring is lightest.
+            const pool = preferred.length && least(preferred) <= least(ring) + 1 ? preferred : ring;
+            const fewest = least(pool);
+            const lightest = pool.filter(c => c.camps.length === fewest);
+            const cell = lightest[pickIndex(random, lightest.length)];
+            if (cell && !cell.camps.includes(camp.id)) cell.camps.push(camp.id);
         }
     }
 

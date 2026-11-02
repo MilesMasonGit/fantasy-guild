@@ -8,7 +8,8 @@ import LedgerWorld from '../../cms/src/components/ledger/LedgerWorld.jsx';
 import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import { sweepText, sweepWorkspace, workspaceWorldContext, originPlaces } from '../../cms/src/engine/ledgerWorld.js';
 import { WORLD_F } from '../systems/progression/ledger/world.js';
-import { WORLD_FIXTURE_TABLES, worldWorkspace } from './fixtures/ledgerWorldMap.js';
+import { WORLD_FIXTURE_RAW, WORLD_FIXTURE_TABLES, worldWorkspace } from './fixtures/ledgerWorldMap.js';
+import { normaliseWorldTables } from '../config/worldTablesShape.js';
 
 /**
  * The Ledger's World page (brief 330 W5): a seed's world drawn by wedge and ring with each cell's
@@ -78,8 +79,21 @@ describe('the World plan', () => {
         expect(view.container.querySelectorAll('[data-cell-panel] [data-origin]').length).toBeGreaterThan(0);
         expect(view.container.querySelectorAll('[data-cell-panel] [data-price]').length).toBeGreaterThan(0);
         expect(panel.getByText(/Worth 10 of ring 2's 10/)).toBeTruthy();
-        expect(panel.getByText(/Goblin/)).toBeTruthy();
+        expect(panel.getByText(/\d × Goblin/)).toBeTruthy();
+        // The camps on its mat, by name, the ring's guaranteed ones marked.
+        expect(view.container.querySelector('[data-cell-panel] [data-cell-camps]').textContent).toMatch(/Goblin Camp/);
         expect(panel.getByText('None.')).toBeTruthy();
+    });
+
+    it('marks the camps a ring guarantees among a cell\'s camps', () => {
+        const view = world({ baseTables: normaliseWorldTables({ ...WORLD_FIXTURE_RAW, camps: { 1: ['token_chief_tent'] } }) });
+        const marked = [];
+        for (const cell of view.container.querySelectorAll('[data-cell][data-ring="1"]')) {
+            fireEvent.click(cell);
+            const camps = view.container.querySelector('[data-cell-panel] [data-cell-camps]')?.textContent || '';
+            if (/Chief's Tent \(guaranteed\)/.test(camps)) marked.push(cell.getAttribute('data-cell'));
+        }
+        expect(marked).toHaveLength(1);
     });
 
     it('lays the problems over the map and counts them per rule; a clean world has none', () => {

@@ -13,17 +13,21 @@ import { isSkillId } from '../../../src/config/registries/skillRegistry.js';
 import { isPerkLevel } from '../../../src/systems/hero/perkTable.js';
 import { MAX_SCALE } from '../../../src/systems/effects/effectLibrary.js';
 import { workspaceSkyFrom } from './hallSky.js';
+import { workspaceWorldFrom, usableTables } from './worldTables.js';
 
 export const PACK_FORMAT = 'fantasy-guild-change-pack';
 export const PACK_VERSION = 1;
 export const OPS = Object.freeze(['create', 'edit', 'delete']);
-export const KINDS = Object.freeze(['item', 'token', 'recipe', 'effect', 'map', 'starterCamp', 'skillPerks', 'hallStar', 'hallConstellation']);
+export const KINDS = Object.freeze(['item', 'token', 'recipe', 'effect', 'map', 'starterCamp', 'skillPerks', 'hallStar', 'hallConstellation', 'world']);
 
 /**
  * The Starter Camp is one record, not a collection: its entry's id is always this, its value the
  * Starter Camp page's shape (`src/config/starterCampShape.js`), never with an `id` of its own.
  */
 export const STARTER_CAMP_ID = 'starterCamp';
+
+/** The world tables are one record too (`worldTables.js`): their entry's id is always this. */
+export const WORLD_ID = 'world';
 
 const PACK_ID = /^[a-z0-9][a-z0-9_-]{0,79}$/i;
 const FINGERPRINT = /^fp:[0-9a-f]{16}$/;
@@ -70,6 +74,7 @@ export function collectionOf(kind) {
     if (kind === 'skillPerks') return 'skillPerks';
     if (kind === 'hallStar') return 'hallStars';
     if (kind === 'hallConstellation') return 'hallConstellations';
+    if (kind === 'world') return 'world';
     return null;
 }
 
@@ -185,6 +190,10 @@ export function validatePack(pack, { fileName } = {}) {
         if (op === 'create' || op === 'edit') {
             if (!isPlainObject(value)) {
                 errors.push(`${label}: a ${op} needs "value", the entity's full new record.`);
+            } else if (kind === 'world') {
+                if (value.id !== undefined) errors.push(`${label}: the world tables carry no "value.id".`);
+                if (value.plan !== undefined) errors.push(`${label}: only items, maps, Tokens and recipes carry a "plan".`);
+                if (!usableTables(value)) errors.push(`${label}: these world tables cannot be generated from: they need six lines with distinct ids (src/config/worldTablesShape.js).`);
             } else if (kind === 'starterCamp') {
                 if (value.id !== undefined) errors.push(`${label}: the Starter Camp carries no "value.id".`);
                 else if (isEmptyStarterCamp(normaliseStarterCamp(value))) {
@@ -212,6 +221,10 @@ export function validatePack(pack, { fileName } = {}) {
         if (kind === 'starterCamp') {
             if (id !== STARTER_CAMP_ID) errors.push(`${label}: a Starter Camp entry's "id" must be "${STARTER_CAMP_ID}".`);
             if (op === 'delete') errors.push(`${label}: the Starter Camp cannot be deleted by a pack; edit it instead.`);
+        }
+        if (kind === 'world') {
+            if (id !== WORLD_ID) errors.push(`${label}: a world tables entry's "id" must be "${WORLD_ID}".`);
+            if (op === 'delete') errors.push(`${label}: the world tables cannot be deleted by a pack; edit them instead.`);
         }
         if (op === 'delete' && value !== undefined) errors.push(`${label}: a delete carries no "value".`);
         if (op === 'edit' || op === 'delete') {
@@ -244,6 +257,7 @@ function findRecipe(pools, id) {
 export function currentValue(workspace, kind, id) {
     // In its one shape, so a fingerprint taken from a raw `data/starterCamp.json` matches the store's.
     if (kind === 'starterCamp') return normaliseStarterCamp(workspace?.starterCamp);
+    if (kind === 'world') return workspaceWorldFrom(workspace?.world);
     if (kind === 'recipe') return findRecipe(workspace?.recipePools, id)?.recipe ?? null;
     const key = collectionOf(kind);
     return (key && workspace?.[key]?.[id]) ?? null;
@@ -255,6 +269,7 @@ export function currentValue(workspace, kind, id) {
  */
 export function setValue(workspace, kind, id, value) {
     if (kind === 'starterCamp') return { starterCamp: value ? normaliseStarterCamp(value) : null };
+    if (kind === 'world') return { world: workspaceWorldFrom(value) };
     if (kind === 'recipe') {
         const pools = { ...(workspace?.recipePools || {}) };
         const found = findRecipe(pools, id);
@@ -278,6 +293,7 @@ export function setValue(workspace, kind, id, value) {
 export function proposedValue(entry) {
     if (entry.op === 'delete') return null;
     if (entry.kind === 'starterCamp') return normaliseStarterCamp(entry.value);
+    if (entry.kind === 'world') return workspaceWorldFrom(entry.value);
     return { ...entry.value, id: entry.id };
 }
 
@@ -305,8 +321,8 @@ export function changedFields(before, after) {
 }
 
 /** Build the workspace a pack was made against from the game's `data/` files (as `/api/load-game-data` and the store's load do), the plan laid back on (`planFile.js`). */
-export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null, skillPerks = null, hallStars = null, plan = null }) {
+export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null, skillPerks = null, hallStars = null, world = null, plan = null }) {
     const recipePools = {};
     for (const recipe of tokenRecipes || []) (recipePools[recipe.skill || 'general'] ||= []).push(recipe);
-    return mergePlanFile({ items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp), skillPerks, ...workspaceSkyFrom({ hallSky: hallStars }) }, plan);
+    return mergePlanFile({ items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp), skillPerks, ...workspaceSkyFrom({ hallSky: hallStars }), world: workspaceWorldFrom(world) }, plan);
 }

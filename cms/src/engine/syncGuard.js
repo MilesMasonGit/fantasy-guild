@@ -7,6 +7,7 @@
 import { plannedKeysOf, PLAN_SYNC_KEY } from './planFile.js';
 import { keyedPerks, PERK_FILE } from './skillPerks.js';
 import { keyedHallSky, HALL_STARS_FILE } from './hallSky.js';
+import { keyedWorld, WORLD_FILE } from './worldTables.js';
 
 /** The collections compared, in the order the panel lists them. */
 export const SYNC_COLLECTIONS = [
@@ -18,6 +19,7 @@ export const SYNC_COLLECTIONS = [
   { key: 'starterCamp', label: 'Starter Camp Token', plural: 'Starter Camp Tokens' },
   { key: 'perks', label: 'perk', plural: 'perks' },
   { key: 'hallSky', label: 'Guild Hall star or constellation', plural: 'Guild Hall stars and constellations' },
+  { key: 'world', label: 'world map placement', plural: 'world map placements' },
   { key: 'planned', label: 'Planned entry', plural: 'Planned entries' },
 ];
 
@@ -73,6 +75,7 @@ function collections(files) {
     starterCamp: keyedPlacements(files['starterCamp.json']),
     perks: keyedPerks(files[PERK_FILE]),
     hallSky: keyedHallSky(files[HALL_STARS_FILE]),
+    world: keyedWorld(files[WORLD_FILE]),
     planned: plannedKeysOf(files[PLAN_SYNC_KEY]),
   };
 }
@@ -98,6 +101,7 @@ export function compareSync(current = {}, incoming = {}) {
     // A Starter Camp (or a plan) the Sync does not write stays on disk untouched.
     if ((key === 'starterCamp' && !incoming?.['starterCamp.json']) || (key === 'perks' && !incoming?.[PERK_FILE])
       || (key === 'hallSky' && !incoming?.[HALL_STARS_FILE])
+      || (key === 'world' && !incoming?.[WORLD_FILE])
       || (key === 'planned' && !incoming?.[PLAN_SYNC_KEY])) {
       removed[key] = [];
       added[key] = [];
