@@ -79,12 +79,12 @@ export function getProductionClause(token, items = {}, recipePools = {}) {
 }
 
 /** A Token's rules, as sentences. ⚠️ There is exactly one renderer, in the game's `statementText.js`, shared by the editor row, the rules panel here and the in-game tooltip, so a description cannot disagree with an effect. */
-export function getEffectBlockClauses(token, items = {}, tool = toolNamer()) {
+export function getEffectBlockClauses(token, items = {}, tool = toolNamer(), tokens = {}) {
   if (!token) return [];
   return statementsOf(token).map((statement) =>
     renderStatement(statement, {
       item: (id) => getItemName(id, items),
-      token: (id) => id,
+      token: (id) => tokens[id]?.name || id,
       tool,
     })
   );
@@ -196,7 +196,7 @@ export function composeTokenDescription(token, items = {}, recipePools = {}, tok
   const lootClause = getCombatLootClause(token, items);
   if (lootClause) clauses.push(lootClause);
 
-  const effectClauses = getEffectBlockClauses(token, items, tool);
+  const effectClauses = getEffectBlockClauses(token, items, tool, tokens);
   clauses.push(...effectClauses);
 
   const campClause = getCampClause(token);

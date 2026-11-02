@@ -15,12 +15,12 @@ worlds: every one gives every enemy and source a place in the ring of its tier.
    patch lies under the Copper Mine (screenshot: scratchpad
    `w6_game_starter_camp_stone_zoom.png`). Drag the Copper Mine off it: refused,
    "Needs stone."; back onto it: accepted.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-11-02: looks good)
 2. **Guaranteed camps.** QA panel → Atlas → settle a ring-1 place (any kit):
    once its arrival is beaten, its guaranteed camps are on the mat. (Until the
    pack is synced the game uses the placeholder world, so the camps you see here
    are the placeholder's; the pack's own camps show in the CMS, Part 2.)
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-11-02: looks good)
 
 ## Part 2: in the CMS (on `main`, after the director merges Part 1)
 

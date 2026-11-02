@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { composeTokenDescription, getAcceptedTokensClause } from '../../cms/src/engine/descriptionDictionary';
 
 describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', () => {
@@ -155,5 +156,16 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
       description: 'A sacred ancient grove whispered of in legends.',
     };
     expect(composeTokenDescription(token, items)).toBe('Produces 2 Oak Wood every 12s.');
+  });
+
+  it('9. a rule that spawns a Token names it, not its id', () => {
+    const token = {
+      id: 'token_vein',
+      statements: [{ ...makeStatement(KEYWORD.SPAWNS), payload: { typeId: 'token_fire_elemental', placement: 'nearest_free' } }],
+    };
+    const tokens = { token_fire_elemental: { id: 'token_fire_elemental', name: 'Fire Elemental' } };
+    const desc = composeTokenDescription(token, items, {}, tokens);
+    expect(desc).toContain('Fire Elemental');
+    expect(desc).not.toContain('token_fire_elemental');
   });
 });
