@@ -17,8 +17,14 @@
  *       The Ledger's World plan over many worlds (src/engine/ledgerWorld.js): generates seeds 1 to
  *       n (100 by default) and says how many pass checks F, what fails in how many worlds, the
  *       per-skill bands and the price spreads per ring.
+ *   node cms/changePackTool.mjs balance [--from <workspace.json>] [--out <pack.json>] [--json <result.json>]
+ *       The Ledger's balancing preview (src/engine/ledgerBalance.js): the stages and walls before
+ *       and after the numbers it proposes, the largest moves, and what numbers cannot fix. --out
+ *       writes the proposals as a change pack (never into cms/incoming/: a preview is not for the
+ *       inbox); --json writes the whole preview.
  *
- * Reads only; writes nothing but the pack file it was given (stamp, and gate with --write).
+ * Reads only; writes nothing but the pack file it was given (stamp, and gate with --write) and the
+ * files balance is told to write.
  */
 import fs from 'fs';
 import path from 'path';
@@ -102,9 +108,48 @@ if (cmd === 'world') {
     process.exit(0);
 }
 
+if (cmd === 'balance') {
+    const args = process.argv.slice(3);
+    const opt = (name) => { const i = args.indexOf(name); return i !== -1 ? args[i + 1] : null; };
+    const incoming = path.join(cmsDir, 'incoming') + path.sep;
+    for (const flag of ['--out', '--json']) {
+        const target = opt(flag);
+        if (target && (path.resolve(target) + path.sep).startsWith(incoming)) {
+            console.error(`Refused: ${flag} points into cms/incoming/. A balancing preview is staged elsewhere (the session scratchpad), never in the owner's inbox.`);
+            process.exit(2);
+        }
+    }
+    const { source, workspace } = loadWorkspace(opt('--from'));
+    const { createServer } = await import('vite');
+    const server = await createServer({
+        configFile: false, root: cmsDir, logLevel: 'error', appType: 'custom',
+        server: { middlewareMode: true, hmr: false, ws: false }, optimizeDeps: { noDiscovery: true, include: [] },
+    });
+    try {
+        const balance = await server.ssrLoadModule('/src/engine/ledgerBalance.js');
+        const result = balance.workspaceBalance(workspace);
+        console.log(`Against ${source}. Worked out in ${(result.ms / 1000).toFixed(1)} s, ${result.rounds} round(s).`);
+        console.log(balance.balanceText(result));
+        if (opt('--json')) {
+            fs.writeFileSync(opt('--json'), JSON.stringify(result, (k, v) => (v === Infinity ? 'Infinity' : v), 2) + '\n');
+            console.log(`The whole preview written to ${opt('--json')}.`);
+        }
+        if (opt('--out')) {
+            const pack = balance.balancePack(workspace, result);
+            fs.writeFileSync(opt('--out'), JSON.stringify(pack, null, 2) + '\n');
+            const check = validatePack(pack);
+            console.log(`Change pack written to ${opt('--out')}: ${pack.entries.length} entr${pack.entries.length === 1 ? 'y' : 'ies'}${check.ok ? '' : ` (the CMS would refuse it: ${check.errors.join(' ')})`}.`);
+        }
+    } finally {
+        await server.close();
+    }
+    process.exit(0);
+}
+
 if (!['check', 'stamp', 'gate'].includes(cmd) || !file) {
     console.log('Usage: node cms/changePackTool.mjs check|stamp|gate <pack.json> [--from <workspace.json>] [--write]');
     console.log('       node cms/changePackTool.mjs world [--seeds <n>] [--from <workspace.json>]');
+    console.log('       node cms/changePackTool.mjs balance [--from <workspace.json>] [--out <pack.json>] [--json <result.json>]');
     process.exit(2);
 }
 const fromIdx = rest.indexOf('--from');
