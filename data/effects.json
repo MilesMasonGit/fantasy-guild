@@ -621,31 +621,6 @@
     "autoSyncId": true,
     "id": "effect_cleaver"
   },
-  "effect_leather_armour": {
-    "name": "Leather Armour",
-    "statements": [
-      {
-        "id": "stm_c0_leather_armor",
-        "keyword": "provides",
-        "payload": {
-          "type": "ARMOR",
-          "bucket": "flat",
-          "value": 1
-        },
-        "chargeDelta": 0,
-        "to": {
-          "mode": "all",
-          "value": ""
-        },
-        "reach": "nearby",
-        "target": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_leather_armour"
-  },
   "effect_valor": {
     "name": "Valor",
     "statements": [
@@ -675,12 +650,13 @@
     "name": "Ironskin",
     "statements": [
       {
-        "id": "stm_c0_ironskin_armor",
+        "id": "stm_v5_ironskin_physical",
         "keyword": "provides",
         "payload": {
-          "type": "ARMOR",
+          "type": "TYPE_RESIST",
           "bucket": "flat",
-          "value": 1
+          "value": 20,
+          "category": "physical"
         },
         "chargeDelta": 0,
         "to": {
@@ -1604,31 +1580,6 @@
     "autoSyncId": true,
     "id": "effect_beer_drink"
   },
-  "effect_copper_armour": {
-    "name": "Copper Plate",
-    "statements": [
-      {
-        "id": "stm_k1_copper_armor",
-        "keyword": "provides",
-        "payload": {
-          "type": "ARMOR",
-          "bucket": "flat",
-          "value": 1
-        },
-        "chargeDelta": 0,
-        "to": {
-          "mode": "all",
-          "value": ""
-        },
-        "reach": "nearby",
-        "target": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_copper_armour"
-  },
   "effect_fire_elemental_ambush": {
     "name": "Fire Elemental Ambush",
     "statements": [
@@ -1737,31 +1688,6 @@
     ],
     "autoSyncId": true,
     "id": "effect_grape_juice_drink"
-  },
-  "effect_iron_armour": {
-    "name": "Iron Plate",
-    "statements": [
-      {
-        "id": "stm_k2_iron_armor",
-        "keyword": "provides",
-        "payload": {
-          "type": "ARMOR",
-          "bucket": "flat",
-          "value": 1
-        },
-        "chargeDelta": 0,
-        "to": {
-          "mode": "all",
-          "value": ""
-        },
-        "reach": "nearby",
-        "target": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_iron_armour"
   },
   "effect_tannery_station": {
     "name": "Tannery Station",
@@ -2286,5 +2212,83 @@
     ],
     "autoSyncId": true,
     "id": "effect_quick_builder"
+  },
+  "effect_sunder": {
+    "name": "Sunder",
+    "autoSyncId": true,
+    "status": {
+      "stacks": 3,
+      "ticks": 0
+    },
+    "statements": [
+      {
+        "id": "stm_v5_sunder",
+        "keyword": "provides",
+        "payload": {
+          "type": "SUNDER",
+          "bucket": "flat",
+          "value": 10
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "id": "effect_sunder"
+  },
+  "effect_sundering": {
+    "name": "Sundering",
+    "autoSyncId": true,
+    "statements": [
+      {
+        "id": "stm_v5_sundering",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_sunder",
+          "scale": 1,
+          "durationMs": 0,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "opponent"
+        },
+        "when": {
+          "scope": "self",
+          "event": "FIGHT_HIT",
+          "every": 1
+        },
+        "upkeep": null
+      }
+    ],
+    "id": "effect_sundering"
+  },
+  "effect_flutter": {
+    "name": "Flutter",
+    "autoSyncId": true,
+    "statements": [
+      {
+        "id": "stm_v5_flutter",
+        "keyword": "provides",
+        "payload": {
+          "type": "TYPE_RESIST",
+          "bucket": "flat",
+          "value": 50,
+          "category": "physical"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "id": "effect_flutter"
   }
 }
