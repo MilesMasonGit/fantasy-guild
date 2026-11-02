@@ -87,7 +87,9 @@ export const HOW = Object.freeze({
     CRAFT: 'craft',
     TRICKLE: 'trickle',
     BONUS: 'bonus',
-    HOLD: 'hold'
+    HOLD: 'hold',
+    SETTLE: 'settle',
+    WORLD: 'world'
 });
 
 /** Author-facing words, kept together for translation. */
@@ -116,7 +118,9 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
         craft: 'made',
         trickle: 'Passive Production',
         bonus: 'a bonus drop',
-        hold: 'held'
+        hold: 'held',
+        settle: 'settled on the world map',
+        world: 'on a world cell'
     }),
     firstKill: 'first kill',
     level: (skill, level) => `${skill === COMBAT ? 'Combat' : skill.charAt(0).toUpperCase() + skill.slice(1)} ${level}`,

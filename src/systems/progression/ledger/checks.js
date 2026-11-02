@@ -26,6 +26,8 @@ export { isOneOff };
  *
  * - **D. Pacing**: worked out by the rate calculator (`pace.js`) and handed in as `extra`, with the
  *   calibration's own finding (`calibration.js`); their words are here so every list reads one table.
+ * - **F. World map**: worked out on generated worlds (`world.js`); the one that needs no world (a
+ *   wild origin no wedge places) is handed in as `extra`, the rest are the World plan's.
  *
  * The CMS adds the game's own content rules and the simulator's pricing refusals
  * (`cms/src/engine/ledgerReport.js`), which need the game's registries.
@@ -70,9 +72,15 @@ export const CHECKS = Object.freeze({
     'boost-target': { group: 'D', severity: SEVERITY.WARN, label: 'A boost over its target strength' },
     unmodelled: { group: 'D', severity: SEVERITY.INFO, label: 'A factor the calculator cannot read' },
     'calibration-stale': { group: 'D', severity: SEVERITY.WARN, label: 'The calculator needs calibrating' },
+    'world-price-ring': { group: 'F', severity: SEVERITY.WARN, label: 'A world cell asks for a material of its own ring' },
+    'world-key-reach': { group: 'F', severity: SEVERITY.WARN, label: 'A key material not a step from every frontier' },
+    'world-coverage': { group: 'F', severity: SEVERITY.WARN, label: 'Not covered by the inner rings' },
+    'world-no-wedge': { group: 'F', severity: SEVERITY.WARN, label: 'A wild origin no wedge places' },
+    'world-value': { group: 'F', severity: SEVERITY.WARN, label: "A cell's extras off its ring's value" },
+    'world-rule': { group: 'F', severity: SEVERITY.WARN, label: 'Breaks another rule of the world' },
 });
 
-export const CHECK_GROUP_TEXT = Object.freeze({ A: 'Integrity', B: 'Plan against data', C: 'Luck and access', D: 'Pacing' });
+export const CHECK_GROUP_TEXT = Object.freeze({ A: 'Integrity', B: 'Plan against data', C: 'Luck and access', D: 'Pacing', F: 'World map' });
 export const SEVERITY_TEXT = Object.freeze({ block: 'Block', warn: 'Warn', info: 'Info' });
 
 /** Item types a player uses up or wears: one nothing else spends is still used. */
@@ -357,7 +365,7 @@ function whyMissing(key, reach, index) {
 }
 
 /** Why a key is never reached, in words: nothing gives it, or the first thing its sources lack. */
-function whyNever(key, reach, index, nameOf) {
+export function whyNever(key, reach, index, nameOf) {
     if (!index.givers(key).length) return 'nothing makes or places it.';
     const missing = whyMissing(key, reach, index);
     // An item made only by a recipe that never runs: say what the recipe lacks.
