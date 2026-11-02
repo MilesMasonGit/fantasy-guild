@@ -11,7 +11,8 @@ build green) · bench-queued · eye-check · merged.*
 |---|---|---|---|---|---|
 | 330 W5: the ledger meets the world (World plan view, checks F, 100-seed report) | engineer | `feat/world-w5` (`e3`) | **merged** on the gate (79f47164: 7186 tests, cycles 0 dangerous, game and CMS builds, engine work **same**; CMS only; the brief's look is W6's pack). On today's data 0/100 seeds pass checks F: 83 entries not covered by the inner rings (7 lost with the maps in every world, boss camps by luck, 60 never reachable), 17 wild origins no wedge places, Herbs and Arcane without main origins; list in `research/world_w5/sweep_100_seeds_2026-11-01.txt` = W6's input. T-285 filed | Sun | Sun |
 | 330 W6: the first world content pack (world tables in the CMS and data/world.json; every Live thing guaranteed in its tier's inner ring, 100/100 seeds; Starter Camp Stone patch T-284; the held mines pack) | engineer | `feat/world-w6` (`e3`) | **building** | Sun | |
-| T-200: wandering enemies cheaper in the engine and on the mat (sliced; each slice A/B at night) | engineer | `perf/wandering-enemies` (`n4`) | **building** | Sun | |
+| T-200: wandering enemies cheaper in the engine and on the mat (sliced; each slice A/B at night) | engineer | `perf/wandering-enemies` (`n4`) | **bench-queued** 9f735f99: 7 slices (no stat block for unfought enemies; shared reads once a tick; flags by key; one tether census for camp alerts; reach by Map; label font without a style pass; walker style writes only on change). Director gate: 7160 tests, cycles 0 dangerous, build. Engineer's Node A/B: enemies80 tick mean −23 %, p99 −19 %, S3 −5 %; work same by its own fingerprint. Ticket candidates in its report (walk-end rebuild needs a ruling; tether census; MatBoard per-tick renders; JS-stepped glide; loot flight layout in the tick) | Sun | |
+| T-282: a spawn statement names the Token, not its id | builder-lite | `fix/spawn-names` (`w1`) | **building** | Sun | |
 
 Owner rulings 2026-11-01: built nodes as fast as wild ones (T-283 removes `builtSlowerPct`); a Stone patch and a map-free first mine at the Starter Camp (T-284, with W6). Next: W6 the world pack (with T-284 and the held mines pack), then H3, L9.
 
@@ -91,6 +92,8 @@ None open. (Ruled 2026-10-19: Token outlines red for problems, gold for attentio
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
+
+**Mon 2 Nov, after the retake (director):** T-200 on `n4` 9f735f99: `npm run bench -- --compare` (work same, the gate); engine S3 base 4ddeb776 vs tip, `--only=S3 --repeats=5`, alternating; `bench:draw -- --only=enemies24,enemies80 --cpu=1 --ab=<base served>`; `bench:draw -- --compare --only=S2`. Merge on the gate if work is same and nothing regresses.
 
 **Mon 2 Nov, 01:00 (director timer, `p23b` on `main`):** `npm run bench -- --save-baseline`, then `npm run bench:draw -- --save-baseline`, machine quiet; commit both with the date. If the timer died, run it in the next quiet window. Every draw `--compare` until then reads against the old S2.
 
