@@ -19,8 +19,8 @@ import { SKILLS, SKILL_LAYERS } from '../../../config/registries/skillRegistry.j
  *   fed by one hero on the best source of each of its inputs (a smith fed by one miner). A loop
  *   (seeds that make seeds) takes its own input as in stock.
  * - **Level tracks**: for each skill, the hours each level takes: the XP it needs over the best
- *   XP an hour any work of the skill gives at that level, fed the same way, among the work reachable
- *   by the stage that first asks for that level.
+ *   XP an hour any work of the skill gives at that level (with the milestone perks held by then),
+ *   fed the same way, among the work reachable by the stage that first asks for that level.
  * - **Path time**: for each entry, when it is first had from a new game: along the path the reach
  *   engine shows, a step starts once everything it needs is had and its level gates are reached
  *   (skills level side by side, each by its own hero: one job per hero), then takes its own time
@@ -136,11 +136,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
     };
 
-    /** A work's rate fed by the guild: one hero on the best source of each input, its scale the scarcest. */
-    function fed(work, profile, cap, stack) {
-        const key = `${work.key}|${profile}|${cap}`;
+    /**
+     * A work's rate fed by the guild: one hero on the best source of each input, its scale the scarcest.
+     * `level`: the working hero's level (its milestone perks), the work's own gate when null.
+     */
+    function fed(work, profile, cap, stack, level = null) {
+        const key = `${work.key}|${profile}|${cap}|${level ?? ''}`;
         if (fedMemo.has(key)) return fedMemo.get(key);
-        const { rate } = profiles.profileOf(work.target, profile, cap);
+        const { rate } = profiles.profileOf(work.target, profile, cap, level);
         let out;
         if (!rate.ok) {
             out = { rate, scale: 0, items: {}, xp: {}, tokens: {}, inputs: {}, short: null };
@@ -223,7 +226,22 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     });
 
     /** A work's profile rate at a stage, fed. */
-    const workAt = (work, profile, cap) => fed(work, profile, cap, new Set());
+    const workAt = (work, profile, cap, level = null) => fed(work, profile, cap, new Set(), level);
+
+    /**
+     * The level a hero levelling `skill` at `level` works a piece of work at, as far as its rate goes:
+     * the last of the skill's milestone perks they hold, or the work's own gate when that is higher.
+     * Null when that is the gate (the work's default). Levels between two perks rate the same.
+     */
+    const perkLevels = (skill) => (rates.perkTables?.[skill] || []).map(r => r.level);
+    function bandLevel(work, skill, level) {
+        const held = perkLevels(skill).filter(l => l <= level);
+        const band = held.length ? Math.max(...held) : 0;
+        const gate = profiles.contextOf(work.target).gate ?? 1;
+        return band > gate ? band : null;
+    }
+    /** The band a level falls in: the last milestone perk of the skill at or below it, 0 below the first. */
+    const bandOf = (skill, level) => Math.max(0, ...perkLevels(skill).filter(l => l <= level));
 
     // ── level tracks ───────────────────────────────────────────────────────────────────────────
     const askedAt = new Map();
@@ -280,15 +298,22 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     }
 
     const bestMemo = new Map();
+    /**
+     * The best XP an hour any work of a skill gives a hero at a level, at a profile and stage: each
+     * work rated with the milestone perks the hero holds by then (`at`: the level it was rated at,
+     * null for its own gate), so the ranking is kept per level band.
+     */
     function bestXp(skill, level, profile, cap) {
-        const key = `${skill}|${profile}|${cap}`;
+        const band = bandOf(skill, level);
+        const key = `${skill}|${profile}|${cap}|${band}`;
         let ranked = bestMemo.get(key);
         if (!ranked) {
             ranked = (skillsOfWork.get(skill) || [])
                 .filter(w => w.tier !== null && w.tier <= cap)
                 .map(w => {
-                    const f = workAt(w, profile, cap);
-                    return { work: w, gate: f.rate.gates?.needed ?? 1, xp: f.xp[skill] || 0, scale: f.scale, short: f.short };
+                    const at = bandLevel(w, skill, band);
+                    const f = workAt(w, profile, cap, at);
+                    return { work: w, at, gate: f.rate.gates?.needed ?? 1, xp: f.xp[skill] || 0, scale: f.scale, short: f.short };
                 })
                 .filter(x => x.xp > 0)
                 .sort((a, b) => a.gate - b.gate);
@@ -867,9 +892,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     }
 
     // ── boosts by kind ─────────────────────────────────────────────────────────────────────────
-    const kindGain = (work, profile, cap, kind) => {
-        const { chosen, context } = profiles.profileOf(work.target, profile, cap);
-        const bare = profiles.bareSetup(context, cap);
+    const kindGain = (work, profile, cap, kind, level = null) => {
+        const { chosen, context } = profiles.profileOf(work.target, profile, cap, level);
+        const bare = profiles.bareSetup(context, cap, level);
         const picks = chosen.filter(c => c.kind === kind);
         if (!picks.length) return null;
         const offers = profiles.offers(context, cap);
@@ -945,13 +970,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 for (const profile of [PROFILE.TYPICAL, PROFILE.MAXED]) {
                     const best = bestXp(skill, level, profile, tier);
                     if (!best.work) { row.profiles[profile] = null; continue; }
-                    const bareRate = workAt(best.work, PROFILE.BARE, tier);
+                    const bareRate = workAt(best.work, PROFILE.BARE, tier, best.at);
                     const kinds = {};
                     for (const kind of BOOSTED) {
-                        const g = kindGain(best.work, profile, tier, kind);
+                        const g = kindGain(best.work, profile, tier, kind, best.at);
                         if (g) kinds[kind] = g;
                     }
-                    const perks = (best.work && workAt(best.work, profile, tier).rate.factors || []).filter(f => boostKindOf(f) === BOOST_KIND.PERK && f.axes.length);
+                    const perks = (best.work && workAt(best.work, profile, tier, best.at).rate.factors || []).filter(f => boostKindOf(f) === BOOST_KIND.PERK && f.axes.length);
                     if (perks.length) kinds[BOOST_KIND.PERK] = { gain: null, names: perks.map(f => f.name) };
                     row.profiles[profile] = {
                         work: best.work, name: workName(best.work), xp: best.xp, bareXp: bareRate.xp[skill] || 0,

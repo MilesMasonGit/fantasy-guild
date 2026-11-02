@@ -39,7 +39,9 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, RATE_AXES
  * star, so the pricing cannot loop. A star still closed by the neighbour rule is opened the cheapest
  * way: the stars on the way are lit at rank 1 and their price added. Maxed takes every rank.
  *
- * Milestone perks come with levels, so all three have them. Only boosts reachable by the stage
+ * Milestone perks come with levels, so all three have them, read at the hero's level: the work's own
+ * gate unless a `level` is asked, so a perk above the gate counts only where the pace asks for it (its
+ * level tracks rate each level band at the band's perk level). Only boosts reachable by the stage
  * asked (`cap`) are on offer. A boost's value is what it adds an hour: the items' worth (each at
  * the Bare hours one takes to make, inputs and drinks taken off) plus XP (an hour's worth at the
  * rate before it).
