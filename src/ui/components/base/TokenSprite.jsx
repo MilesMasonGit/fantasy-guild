@@ -1,9 +1,11 @@
+import { useLayoutEffect, useRef } from 'react';
 import { cn } from '../../utils/cn.js';
 import { ART_PX, tokenBodyScale } from '../../../config/matGeometry.js';
 import { tokenName, tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { preloadAlphaMask } from '../../utils/alphaHitTest.js';
 import { useMatFit } from '../board/MatFitContext.jsx';
+import { startBob } from '../board/lootBob.js';
 import {
     useSpriteFxVersion, shadowLayer, outlineLayer, layerStyle
 } from '../../utils/spriteFx.js';
@@ -169,10 +171,12 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
     const fit = useMatFit();
     const shadow = (lifted || hovering) ? shadowLayer(src, size, fit) : null;
     const ring = outline ? outlineLayer(src, size, outline) : null;
+    const artRef = useRef(null);
+    useLayoutEffect(() => (hovering ? startBob(artRef.current) : undefined), [hovering]);
 
     // `lifted` is a held object: raised by a fixed transform. `hovering` is a floating one:
-    // raised by the bob keyframes instead. Either way the shadow rises with the art, always 2
-    // art pixels down-right of it.
+    // raised by its bob (`lootBob.js`) instead. Either way the shadow rises with the art, always
+    // 2 art pixels down-right of it.
     return (
         <span
             className={cn('relative inline-block pointer-events-none select-none', className)}
@@ -180,6 +184,7 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
             data-sprite-outline={outline || undefined}
         >
             <span
+                ref={artRef}
                 className={cn('absolute left-0 top-0', hovering && 'gi-sprite-hover')}
                 style={{
                     width: size,

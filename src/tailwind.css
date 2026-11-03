@@ -373,36 +373,16 @@
  * different gestures, and D-217 draws both at 64px, so size cannot tell them
  * apart.
  *
- * Applied to the sprite's IMAGE, never its button.
+ * Applied to the sprite's IMAGE, never its button. `lootBob.js` writes it on the
+ * sprite clock. ⚠️ Not a CSS animation: that is a composited layer per pile, and
+ * more for what is drawn after it.
  */
-@keyframes gi-sprite-hover {
-  0%, 100% { transform: translateY(-3px); }
-  7.14%    { transform: translateY(-4px); }
-  14.28%   { transform: translateY(-5px); }
-  21.42%   { transform: translateY(-6px); }
-  28.57%   { transform: translateY(-7px); }
-  35.71%   { transform: translateY(-8px); }
-  42.85%   { transform: translateY(-9px); }
-  50%      { transform: translateY(-9px); }
-  57.14%   { transform: translateY(-8px); }
-  64.28%   { transform: translateY(-7px); }
-  71.42%   { transform: translateY(-6px); }
-  78.57%   { transform: translateY(-5px); }
-  85.71%   { transform: translateY(-4px); }
-  92.85%   { transform: translateY(-3px); }
-}
-
-.gi-sprite-hover {
-  animation: gi-sprite-hover 1.96s steps(1, end) infinite;
-}
-
 /* ⚠️ Reduced motion must NOT flatten the two kinds back together, or the item
    vs Token distinction disappears for anyone who sets it. The bob stops; the
    RAISED OFFSET AND THE HARD SHADOW STAY (Wave 5: only floating loot has a
    shadow at all now, so the shadow alone already says "floating"). */
 @media (prefers-reduced-motion: reduce) {
   .gi-sprite-hover {
-    animation: none;
     transform: translateY(-6px);
   }
 }
