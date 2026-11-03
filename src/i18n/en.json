@@ -129,7 +129,11 @@
             "starterCamp": "Starter Camp",
             "guildHall": "From the start",
             "tutorial": "Tutorial",
-            "shop": "Shop"
+            "shop": "Shop",
+            "worldLine": "{line} ring {ring}\nsettled on the world map",
+            "worldRing": "Ring {ring}\nsettled on the world map",
+            "someWorldsLine": "{line} ring {ring}\nin some worlds",
+            "someWorldsRing": "Ring {ring}\nin some worlds"
         }
     },
     "guildHall": {

@@ -37,7 +37,7 @@ const MEMBER = 'member';
 /** Ways in that a guild repeats (a station, a vein, a map's Tokens): the usual ones, before chance and finds. */
 const REPEATED = new Set([
     HOW.CRAFT, HOW.STATION, HOW.BUILD, HOW.WORK, HOW.CATCH, HOW.TRICKLE, HOW.UPGRADE,
-    HOW.MAP, HOW.MODIFIER, HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW
+    HOW.MAP, HOW.MODIFIER, HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW, HOW.WORLD
 ]);
 const BY_CHANCE = new Set([HOW.DROP, HOW.BONUS]);
 
@@ -129,7 +129,7 @@ function anchorOf(book, entry) {
     return null;
 }
 
-const usualness = (row) => (row.oneOff ? 2 : REPEATED.has(row.how) ? 0 : BY_CHANCE.has(row.how) ? 1 : 3);
+const usualness = (row) => (row.oneOff ? 2 : row.maybe ? 1 : REPEATED.has(row.how) ? 0 : BY_CHANCE.has(row.how) ? 1 : 3);
 const chanceOf = (row) => (row.firstKill ? 0 : finite(row.chance, 1));
 
 /** The words for a way with no box on its left, or a one-off start: a key under `encyclopedia.via`. */
@@ -142,8 +142,42 @@ function captionOf(how) {
 
 const blankWay = () => ({
     how: null, recipe: null, from: null, fromAmount: null, inputs: [], to: null,
-    chance: null, firstKill: false, takes: null, makes: null, caption: null, through: null, regrow: false
+    chance: null, firstKill: false, takes: null, makes: null, caption: null, captionArgs: null, through: null, regrow: false,
+    place: null
 });
+
+/**
+ * The world cells that place `key`, as ways in: one per ring every world holds it at (its wedge
+ * named when only one wedge does), and, before the first of those, the first ring only some worlds
+ * hold it at. `place.wedges` are the cells, likeliest first; `place.maybe` that only some worlds do.
+ */
+function worldWays(book, rows) {
+    const byRing = new Map();
+    for (const row of rows) {
+        const place = book.placeOf(row.via);
+        if (!place) continue;
+        const at = byRing.get(place.ring) || { sure: [], maybe: [] };
+        at[row.maybe ? 'maybe' : 'sure'].push(place);
+        byRing.set(place.ring, at);
+    }
+    const rings = [...byRing.keys()].sort((a, b) => a - b);
+    const firstSure = rings.find(ring => byRing.get(ring).sure.length) ?? Infinity;
+    const firstMaybe = rings.find(ring => byRing.get(ring).maybe.length && ring < firstSure);
+    const way = (ring, places, maybe) => {
+        const lines = [...new Set(places.map(p => p.lineName))];
+        const one = lines.length === 1;
+        return {
+            ...blankWay(), how: HOW.WORLD,
+            caption: `${maybe ? 'someWorlds' : 'world'}${one ? 'Line' : 'Ring'}`,
+            captionArgs: one ? { line: lines[0], ring } : { ring },
+            place: { ring, maybe, wedges: places.map(p => p.key), line: one ? lines[0] : null }
+        };
+    };
+    const out = [];
+    if (firstMaybe != null) out.push(way(firstMaybe, byRing.get(firstMaybe).maybe, true));
+    for (const ring of rings) if (byRing.get(ring).sure.length) out.push(way(ring, byRing.get(ring).sure, false));
+    return out;
+}
 
 /** A recipe's inputs as the ledger spends them (a crop's seed per harvest), else as authored. */
 function recipeInputs(book, key, row = null) {
@@ -211,7 +245,7 @@ function foldStages(book, key, ways) {
 
 /**
  * Every way to have `key`, the most usual first: the one its price comes from (`valueSource`),
- * then the way the guild first reaches it, then the repeated ways (a recipe, a vein, a map) before
+ * then the way the guild first reaches it, then the repeated ways (a recipe, a vein, a world cell) before
  * drops, one-off finds and the rest (the Shop), then the likelier, then by name. Growing stages fold
  * away; one-off starts leave (`oneOffWays` names them). A recipe is one way however many stations
  * make it; a recipe entry's own way is its station and inputs; a station type's ways are its stations.
@@ -237,14 +271,21 @@ export function waysIn(book, key) {
             -chanceOf(row)
         ];
         const name = (row) => (row.via ? book.nameOf(row.via) : '');
-        const ways = book.sourcesOf(key)
+        const rows = book.sourcesOf(key)
             .filter(row => !ONE_OFF.has(row.how))
             .map((row, i) => ({ row, i, rank: rank(row) }))
             .sort((a, b) => {
                 for (let k = 0; k < a.rank.length; k++) if (a.rank[k] !== b.rank[k]) return a.rank[k] - b.rank[k];
                 return name(a.row).localeCompare(name(b.row)) || a.i - b.i;
             })
-            .map(({ row }) => wayIn(book, row));
+            .map(({ row }) => row);
+        // The world's cells stand together, where the likeliest of them ranks.
+        const world = worldWays(book, rows.filter(row => row.how === HOW.WORLD));
+        const ways = [];
+        for (const row of rows) {
+            if (row.how !== HOW.WORLD) ways.push(wayIn(book, row));
+            else if (world.length) ways.push(...world.splice(0));
+        }
         return foldStages(book, key, ways);
     });
 }
@@ -359,9 +400,18 @@ export function requirementOf(book, key, recipe = null) {
     return { skill: requirementSkill(skill), level: Math.max(1, Math.floor(finite(Number(entry.def.config.skillRequired), 1))) };
 }
 
-/** What a hero needs to take one way in (its line): a recipe's skill, a vein's or chest's, an enemy's level. */
+/**
+ * What a hero needs to take one way in (its line): a recipe's skill, a vein's or chest's, an enemy's
+ * level, the level settling a world cell asks (one wedge's only: wedges ask their own skills).
+ */
 export function wayInRequirement(book, way) {
     if (way.recipe) return recipeRequirement(book, way.recipe);
+    if (way.how === HOW.WORLD) {
+        if (!way.place?.line) return null;
+        const top = (book.placeOf(way.place.wedges[0])?.gates || []).reduce((a, g) => (!a || g.level > a.level ? g : a), null);
+        // The skill itself, never folded into Combat: settling Arcane asks Magic, not a fight.
+        return top ? { skill: top.skill, level: top.level } : null;
+    }
     if (!way.from || NO_HERO.has(way.how) || ONE_OFF.has(way.how)) return null;
     return requirementOf(book, way.from);
 }
@@ -768,7 +818,7 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
             let leftmost = col - 1;
             if (!items.length) {
                 wayY = r(bc);
-                captions.push({ id: b.id, words: b.way.caption, label: false, x: r(leftEdge(col - 1)), y: r(bc - slot / 2), w: m.nodeW, h: m.nodeH });
+                captions.push({ id: b.id, words: b.way.caption, args: b.way.captionArgs, label: false, x: r(leftEdge(col - 1)), y: r(bc - slot / 2), w: m.nodeW, h: m.nodeH });
                 links.push({ id: `${b.id}~`, into: b.id, pairs: [], points: [[itemsRight, wayY], [joinX, wayY]] });
             } else {
                 let itemTop = bc - stackH(items, m.rowGap, itemH) / 2;
@@ -793,7 +843,7 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
                 items.forEach((it, j) => {
                     links.push({ id: `${it.id}>`, into: b.id, pairs: [pairOf(it)], points: [ends[j], [joinX, ends[j][1]], [joinX, wayY]] });
                 });
-                if (b.way.caption) captions.push({ id: `${b.id}~`, words: b.way.caption, label: true, x: r((joinX + trunkX) / 2), y: wayY - 10, w: 0, h: 0 });
+                if (b.way.caption) captions.push({ id: `${b.id}~`, words: b.way.caption, args: b.way.captionArgs, label: true, x: r((joinX + trunkX) / 2), y: wayY - 10, w: 0, h: 0 });
             }
             const pairs = items.map(pairOf);
             links.push({ id: `${b.id}>`, into: node.id, pairs, points: [[joinX, wayY], [trunkX, wayY], [trunkX, a], [intoX, a]] });

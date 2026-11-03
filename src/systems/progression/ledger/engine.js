@@ -33,7 +33,7 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
  * the ring's key origins and guaranteed camps (through the wedges most likely to hold them). What a
  * world holds only sometimes (a kit's everyday and boss camps, the hidden extras, the arrivals) is
  * placed by luck (`maybe`). The map items are retired: they place nothing and are `retired`, not
- * checked. **Without** `worldTables` (the game's encyclopedia) the map items are read as they were: a
+ * checked. **Without** `worldTables` (content from before the tables) the map items are read as they were: a
  * Region at the tier set on its map, had through drops, the tutorial, bounties and trading up.
  *
  * ⚠️ Reach must reason over everything that makes a thing appear, or it reports a false "never":

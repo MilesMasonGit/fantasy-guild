@@ -6,6 +6,7 @@ import { getAllTokenTypes } from '../../../config/registries/tokenRegistry.js';
 import { listRecipes } from '../../../config/registries/recipePoolRegistry.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
 import { starterCamp } from '../../../systems/atlas/StarterCamp.js';
+import { worldTables } from '../../../config/registries/worldTablesRegistry.js';
 import { wordStartsMatch } from '../drawer/bankSort.js';
 
 /**
@@ -31,7 +32,8 @@ export function gameContent() {
         tokens: getAllTokenTypes(),
         recipes: listRecipes(),
         effects: EFFECTS,
-        starterCamp: starterCamp()
+        starterCamp: starterCamp(),
+        worldTables: worldTables()
     };
 }
 
@@ -60,9 +62,10 @@ function sortByName(list) {
  *   byKind: Record<string, object[]>,
  *   entryOf(key): object|null,
  *   kindOfKey(key): string|null,
- *   sourcesOf(key): {how, via, chance, firstKill, perCycle, inputs, gates, oneOff}[],
+ *   sourcesOf(key): {how, via, chance, firstKill, perCycle, inputs, gates, oneOff, maybe}[],
  *   usesOf(key): {how, by, quantity?, nearby?}[],
  *   givesOf(key): {how, key, chance, firstKill, perCycle, gates}[],
+ *   placeOf(key): {key, line, lineName, ring, gates}|null,
  *   search(term): object[]
  * }}
  */
@@ -80,6 +83,20 @@ export function buildEncyclopedia(content = gameContent()) {
     for (const list of Object.values(byKind)) sortByName(list);
 
     const shown = (key) => key == null || entries.has(key);
+
+    // A world cell (a wedge at a ring) is no entry: a Token placed there names it as a place, with
+    // the levels settling it asks.
+    const lineNames = new Map((world.worldTables?.lines || []).map(line => [line.id, line.name || line.id]));
+    const settleGates = new Map();
+    for (const rule of world.rules) {
+        if (rule.how === HOW.SETTLE) for (const give of rule.gives) settleGates.set(give.key, rule.gates);
+    }
+    const placeOf = (key) => {
+        if (typeof key !== 'string' || !key.startsWith('wedge:')) return null;
+        const cut = key.lastIndexOf(':');
+        const line = key.slice('wedge:'.length, cut);
+        return { key, line, lineName: lineNames.get(line) ?? line, ring: Number(key.slice(cut + 1)), gates: settleGates.get(key) || [] };
+    };
 
     // Built once: who gives each key, who spends it, and what each record does.
     const sources = new Map();
@@ -108,14 +125,16 @@ export function buildEncyclopedia(content = gameContent()) {
             }
             continue;
         }
-        if (!shown(rule.via)) continue;
+        const placed = rule.how === HOW.WORLD;
+        if (!placed && !shown(rule.via)) continue;
         for (const give of rule.gives) {
             if (!entries.has(give.key)) continue;
             push(sources, give.key, {
                 how: rule.how, via: rule.via, chance: give.chance, firstKill: give.firstKill === true,
-                perCycle: give.perCycle ?? null, inputs: rule.inputs, gates: rule.gates, oneOff: rule.oneOff === true
+                perCycle: give.perCycle ?? null, inputs: rule.inputs, gates: rule.gates, oneOff: rule.oneOff === true,
+                maybe: give.maybe === true
             }, r => `${r.how}|${r.via}`);
-            if (rule.via) {
+            if (rule.via && !placed) {
                 push(gives, rule.via, {
                     how: rule.how, key: give.key, chance: give.chance, firstKill: give.firstKill === true,
                     perCycle: give.perCycle ?? null, gates: rule.gates
@@ -151,6 +170,8 @@ export function buildEncyclopedia(content = gameContent()) {
         sourcesOf: (key) => sources.get(key) || [],
         usesOf: (key) => uses.get(key) || [],
         givesOf: (key) => gives.get(key) || [],
+        /** A world cell's place (`wedge:` keys only): its line, ring and the levels settling it asks. */
+        placeOf,
         /** Entries whose name has words starting with the typed words, in kind order then by name. */
         search: (term) => KINDS.flatMap(k => byKind[k].filter(e => wordStartsMatch(e.name, term)))
     };
