@@ -307,7 +307,7 @@ Two scripts in `bench/catchup/` time a long run of game time, for offline progre
 | `node bench/catchup/page.mjs` | the same in the **real page**: perf build, headless Chrome, S2 with the whole UI listening, 1 game-hour at 1000 ms, alternating `ui` and `muted` × 3 | ~4 min |
 | `… page.mjs --hours=24 --modes=muted,ui --no-build` | a full 24 h in the page | ~2 min |
 | `… page.mjs --hours=24 --modes=catchup,catchup` | **the 30 s target**: the game's own catch-up (`CatchUp.run`, slices and yields included) for 24 h, twice | ~2 min |
-| `… page.mjs --hours=24 --modes=catchup --scene=cap128 --cpu=3.2` | another plain board (any `bench:draw` board, `cap<N>` included) and a CPU slowdown; the slowdown Chrome delivered before and after is printed | |
+| `… page.mjs --hours=24 --modes=catchup --scene=cap128 --cpu=3.2` | another plain board (any `bench:draw` board, `cap<N>` included) and a CPU slowdown; the slowdown Chrome delivered before and after is printed. `--slowdown-target=4` judges it against that rate instead of the one asked (`bench:draw`, "Chrome's CPU throttle") and warns when more than 25 % off | |
 
 - ⚠️ The headless numbers are about **twice** the page's for the same board (Vite's SSR
   loader turns every imported call into a property lookup; the shipped build is bundled).
@@ -555,6 +555,7 @@ times from `bench:draw`.
 |---|---|---|
 | `npm run bench:profile -- --scene=cap128 --cpu=4` | build, settle 20 s, trace 6 s, CPU profile 8 s, layers | ~2 min |
 | `npm run bench:profile -- --scene=S2 --off=bubbles` | with a drawing switch off | |
+| `npm run bench:profile -- --cpu=3.2 --slowdown-target=4` | ask Chrome for one slowdown, judge the delivered one against another (`bench:draw`, "Chrome's CPU throttle"); it warns when more than 25 % off, and the profile is still written | |
 | `npm run bench:profile -- --scene=cap128 --invalidations` | also which elements each style pass touched, and why (heavy) | |
 | `--trace=15 --sample=10 --top=40 --settle=20 --no-build` | seconds, rows, reuse `dist-perf-prof/` | |
 
@@ -562,6 +563,9 @@ Raw files for DevTools (`.trace.json`, `.cpuprofile`) and a `.summary.json` go t
 `bench/results/profile/`.
 
 ### `npm run bench:crisp`: do still Tokens stay crisp while something animates?
+
+(It runs at 1× with no throttle and compares pixels rather than timing, so it takes no
+`--slowdown-target`.)
 
 T-145: Tokens on the mat twitched and went soft for a moment, again and again. The mat is scaled
 to fit the window, so its sprites stand at fractional screen positions. Painted into the mat's own
@@ -712,7 +716,8 @@ p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
 | `npm run bench:drag -- --dev` | the dev build: React component names for the blockers | |
 | `npm run bench:drag -- --board=S3` | the torture board (~320 Tokens) instead of S2: carry stalls on a crowded mat | |
 | `npm run bench:drag -- --board=cap128` | a cap board (`cap128`, `camp128`, `cap256`); the Shop kind is refused there (the cap is full) | |
-| `npm run bench:drag -- --cpu=4` | CPU slowdown | |
+| `npm run bench:drag -- --cpu=4` | CPU slowdown; the slowdown Chrome delivered is printed per kind, with a warning (and `slowdownOff` in the results) when more than 25 % off the rate wanted | |
+| `npm run bench:drag -- --cpu=3.2 --slowdown-target=4` | ask Chrome for one slowdown, judge the delivered one against another (`bench:draw`, "Chrome's CPU throttle"). A kind off target is warned about, not measured again: its drags are done | |
 | `npm run bench:drag -- --no-build` | reuse `dist-perf/` | |
 
 | Exit | Means |

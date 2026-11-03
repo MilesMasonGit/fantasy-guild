@@ -4,6 +4,7 @@
 //   npm run bench:profile -- --scene=S2 --cpu=4       one scene, settled, then a trace and a CPU profile
 //   npm run bench:profile -- --scene=S3 --off=bubbles a draw switch off (as bench:draw --switches)
 //   npm run bench:profile -- --no-build               reuse dist-perf-prof/ as it is
+//   npm run bench:profile -- --cpu=3.2 --slowdown-target=4   ask Chrome for one, judge what it delivers against the other
 //   --settle=20 --trace=6 --sample=8                  seconds: settle, trace window, CPU-profile window
 //
 // The page is the perf build, UNMINIFIED and with source maps (dist-perf-prof/, its own folder),
@@ -27,13 +28,14 @@ import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
 import { startPerfServer, buildPerf, PROFILE_OUT_DIR } from './browser/servers.mjs';
 import { SCENES, sceneUrl, openBoard, deliveredSlowdown } from './browser/scenes.mjs';
 import { metricsOf, DRAW_SWITCHES } from './browser/drawLib.mjs';
+import { parseSlowdownTarget, slowdownReject } from './browser/slowdown.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const outDir = path.join(here, 'results', 'profile');
 
 function parseArgs(argv) {
-    const a = { scene: 'S2', cpu: 4, settleS: 20, traceS: 6, sampleS: 8, off: [], build: true, top: 30, invalidations: false };
+    const a = { scene: 'S2', cpu: 4, settleS: 20, traceS: 6, sampleS: 8, off: [], build: true, top: 30, invalidations: false, slowdownTarget: null };
     for (const arg of argv) {
         const [k, ...rest] = arg.replace(/^--/, '').split('=');
         const v = rest.join('=');
@@ -45,6 +47,7 @@ function parseArgs(argv) {
                 break;
             }
             case 'cpu': a.cpu = Number(v); break;
+            case 'slowdown-target': a.slowdownTarget = parseSlowdownTarget(v); break;
             case 'settle': a.settleS = Number(v); break;
             case 'trace': a.traceS = Number(v); break;
             case 'sample': a.sampleS = Number(v); break;
@@ -522,7 +525,12 @@ async function main() {
         fs.writeFileSync(path.join(outDir, `${stamp}.summary.json`), JSON.stringify(result, null, 2));
         await page.close();
 
-        if (args.cpu !== 1) console.log(`\nSlowdown Chrome delivered (asked ${args.cpu}×): ${slowdownBefore}× before the trace, ${slowdownAfter}× after`);
+        if (args.cpu !== 1) {
+            const target = args.slowdownTarget ?? args.cpu;
+            console.log(`\nSlowdown Chrome delivered (asked ${args.cpu}×${args.slowdownTarget ? `, wanted ${target}×` : ''}): ${slowdownBefore}× before the trace, ${slowdownAfter}× after`);
+            const off = slowdownReject(result.meta.slowdown, target);
+            if (off) console.log(`⚠ ${off}: this profile ran on a different machine; rank nothing from it.`);
+        }
         console.log(`\nPerf HUD over the trace window: ${f1(hud.fps)} fps, frame work p50/p95/p99 ${f2(hud.workP50)}/${f2(hud.workP95)}/${f2(hud.workP99)} ms, ≤16.7 ms ${f1(hud.in16Pct)} %, ${hud.tokens} Tokens, ${hud.domNodes} DOM nodes`);
         const evTop = (t.report?.events?.top || []).slice(0, 10).map(e => `${e.name} ${f1(e.perSecond)}`).join(' · ');
         console.log(`Engine events per second: ${evTop}`);

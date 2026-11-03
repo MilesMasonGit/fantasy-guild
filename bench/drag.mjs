@@ -11,6 +11,7 @@
 //   npm run bench:drag -- --dev         the dev build instead (React component names for blockers)
 //   npm run bench:drag -- --no-build    reuse dist-perf/
 //   npm run bench:drag -- --cpu=4       CPU slowdown
+//   npm run bench:drag -- --cpu=3.2 --slowdown-target=4   ask Chrome for one, judge what it delivers against the other
 //   npm run bench:drag -- --board=S3    the torture board instead of S2
 //
 // Exit codes: 0 every kind 100 % · 1 any kind below 100 % · 3 the bench failed.
@@ -27,6 +28,7 @@ import { SCENES, sceneUrl, openBoard, clickUntil, BANK_OPEN, SHOP_OPEN, delivere
 import { installDragKit } from './browser/dragKit.mjs';
 import { parseArgs, KINDS, summarise, exitCode, dragPath, EXIT, PHASES, STALL_MS, stallCells } from './browser/dragLib.mjs';
 import { table } from './browser/drawLib.mjs';
+import { slowdownNote, slowdownsOff } from './browser/slowdown.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -145,6 +147,7 @@ async function main() {
     const meta = { ...gitInfo(), date: new Date().toISOString(), node: process.version, machine: os.hostname(), cpu: os.cpus()[0]?.model?.trim(), args };
     const kinds = KINDS.filter(k => !args.kinds || args.kinds.includes(k.id));
     const passes = args.overlays ? ['plain', 'overlays'] : ['plain'];
+    const target = args.slowdownTarget ?? args.cpu;
     console.log(`Fantasy Guild drag bench — ${meta.commit} on ${meta.branch} · ${args.board} board · ${args.build} build · CPU ${args.cpu}× · ${args.n} drags per kind and pass · ${meta.machine}`);
 
     let server = null;
@@ -199,11 +202,13 @@ async function main() {
                     // ⚠️ A throttled run: the slowdown Chrome delivered may not be the one asked (bench/README.md).
                     const slowdown = args.cpu === 1 ? null : await deliveredSlowdown(page, args.cpu);
                     if (slowdown) ((meta.slowdown ||= {})[pass] ||= {})[kind.id] = slowdown;
-                    console.log(` ${s.successes}/${s.attempts}${s.skipped ? ` (${s.skipped} skipped)` : ''}${slowdown ? ` · slowdown ${slowdown}×` : ''}`);
+                    if (slowdownsOff([slowdown], target).length) (meta.slowdownOff ||= []).push(`${pass}/${kind.id}: ${slowdown}×`);
+                    console.log(` ${s.successes}/${s.attempts}${s.skipped ? ` (${s.skipped} skipped)` : ''}${slowdownNote(slowdown ? [slowdown] : null, target)}`);
                     results[pass][kind.id] = list;
                 }
                 if (pass === 'overlays') await page.evaluate('window.__dragKit.stopOverlays()');
             }
+            if (meta.slowdownOff) console.log(`⚠ Delivered more than 25 % off the ${target}× wanted, so these ran on a different machine: ${meta.slowdownOff.join(', ')}`);
             meta.pageErrors = page.consoleErrors.slice(0, 10);
             if (page.navigations > 1) { console.log(`⚠ the page reloaded during the run (${page.navigations} loads)`); failed = true; }
         } finally {
