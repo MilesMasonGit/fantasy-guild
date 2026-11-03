@@ -114,14 +114,18 @@ owner to correct)
 | 9 | **Close and edit move to the side space beside the sheet**, where the hero column stands, in the same spot whether the Bank is open or closed. | must, tweak |
 | 10 | **Loadout: drag an item from one slot to another** on the same hero. | must, tweak |
 | 11 | **Loadout: drag an item from one hero to another.** | must, tweak |
+| 12 | **Dragging a hero from the bar starts the same flag drag as moving a hero on the mat**: only the flag is carried, not the large hero picture. | must, tweak |
+| 13 | **The bottom bar's heroes "slightly more spaced out".** | must, tweak |
+| 14 | **The bottom bar's hero names "a little bit larger".** | must, tweak |
 
 **Planning agent's defaults** (simplest choice, owner may change):
 - Item 11: drop onto the other hero in the column or the bar; it lands in their
   first empty slot; a full loadout refuses with a reason and the item stays.
 - Item 7: clicking a skill still opens its exact numbers, across both columns.
+- Item 12: the Bank's hero column and the sheet's large figure send a hero out the
+  same way; dragging one hero onto another on the bar still reorders them.
 - Items 1 and 6: the builder shows two or three looks on the running game for the
   owner to pick (owner directs the art).
 
-**Looked at, no change** (owner, 2026-11-02): level-up bubbles; the bottom bar's
-spacing; the edit window. It will need the hero recolouring system in time
+**Looked at, no change** (owner, 2026-11-02): level-up bubbles; the edit window. It will need the hero recolouring system in time
 ([concept_living_game.md](concept_living_game.md)), not part of this section.
