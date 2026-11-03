@@ -56,8 +56,10 @@ const STANDARD = 'token_stone_outcrop';
 // The saplings, the stumps and the sprout, and the small creatures: the Wolf, the Crab and the Bee on
 // plane 1, the Fire Elemental, the Frog and the Sulphur Lizard on plane 2.
 const SHIPPED_SMALL = [
-    'token_apple_sapling', 'token_bee', 'token_crab', 'token_fir_sapling', 'token_fir_stump', 'token_fire_elemental',
-    'token_frog', 'token_oak_sapling', 'token_oak_stump', 'token_sulphur_lizard', 'token_wheat_sprout', 'token_wolf',
+    'token_apple_sapling', 'token_bee', 'token_birch_sapling', 'token_birch_stump', 'token_cedar_sapling', 'token_cedar_stump',
+    'token_crab', 'token_ebony_sapling', 'token_ebony_stump', 'token_fir_sapling', 'token_fir_stump', 'token_fire_elemental',
+    'token_frog', 'token_mahogany_sapling', 'token_mahogany_stump', 'token_maple_sapling', 'token_maple_stump',
+    'token_oak_sapling', 'token_oak_stump', 'token_sulphur_lizard', 'token_wheat_sprout', 'token_wolf',
 ];
 
 beforeEach(() => load(shipped()));
