@@ -1,4 +1,4 @@
-Status: draft
+Status: draft (section 3, hero bar and sheet: approved 2026-11-02, briefed: brief 340)
 
 # The detail pass: UI and UX, section by section
 
@@ -44,7 +44,7 @@ game looks and plays, gathered one screen at a time.*
 | 0 | Rules across every screen | icon rule done; more as they come up | above; `UI_STYLE.md` |
 | 1 | The mat and Tokens | not started | `design_pass_notes.md`; T-013, T-162 |
 | 2 | Top bar | not started | `ui_rework_list.md` |
-| 3 | Hero bar and hero sheet | **walked 2026-11-02; waits for approval** | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
+| 3 | Hero bar and hero sheet | **approved and briefed 2026-11-02** ([brief 340](briefs/340_hero_bar_detail.md)) | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
 | 4 | Bank | not started | |
 | 5 | Shop | not started | |
 | 6 | Guild Hall | not started | |

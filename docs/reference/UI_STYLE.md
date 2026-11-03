@@ -15,6 +15,8 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **No zero-padding** (`3`, not `03`) and **no word labels** ("Level:",
   "Charges:", "HP:") where an icon or the position already says it.
 - **XP is a thin bar**; the exact number (`1,154 / 1,500 XP`) shows on hover.
+- **A hero's HP on the hero bar and sheet: numbers over a stylized pixel bar**
+  (owner, 2026-11-02; brief 340, replaces the lines below for heroes once built).
 - **HP is a bar**; the exact number shows on hover, except in the hero panel,
   where the bar shows its numbers beside it (owner, eye-check A, 2026-10-09),
   and on the mat, where a thin bar over a fighter has its number and
