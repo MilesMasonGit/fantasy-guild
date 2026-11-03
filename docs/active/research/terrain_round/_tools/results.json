@@ -1,0 +1,2219 @@
+{
+ "rivers": {
+  "meadow": {
+   "today": {
+    "water": {
+     "pixels": 3838,
+     "share": 0.038,
+     "topTone": 0.52,
+     "tones3pc": 5,
+     "L": 55.5,
+     "Lmin": 31.2,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 60.5,
+     "C": 48.6,
+     "differ": 0.369,
+     "earthShare": 0.098,
+     "earthL": 45.7,
+     "earthC": 23.7,
+     "grassL": 62.1,
+     "edgeDL": 18.8,
+     "edgeDE": 39.1
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1385,
+      "chord": 1256,
+      "sinuosity": 1.1,
+      "bends": 3,
+      "turningPer1000": 153,
+      "widthMin": 40,
+      "widthP50": 66,
+      "widthMax": 74,
+      "widthCV": 0.12,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4135163937,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 61.9,
+     "screen": 11.3
+    },
+    "tokens": {
+     "tokenL": 35.3,
+     "tokenC": 45.2,
+     "groundL": 60.1,
+     "groundC": 47.5,
+     "tokenShare": 0.123
+    }
+   },
+   "bends": {
+    "water": {
+     "pixels": 4321,
+     "share": 0.043,
+     "topTone": 0.527,
+     "tones3pc": 5,
+     "L": 55.5,
+     "Lmin": 24.5,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 60.4,
+     "C": 48.4,
+     "differ": 0.372,
+     "earthShare": 0.102,
+     "earthL": 45.8,
+     "earthC": 23.8,
+     "grassL": 62,
+     "edgeDL": 18.7,
+     "edgeDE": 39.1
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1557,
+      "chord": 1257,
+      "sinuosity": 1.24,
+      "bends": 4,
+      "turningPer1000": 198,
+      "widthMin": 44,
+      "widthP50": 64,
+      "widthMax": 80,
+      "widthCV": 0.16,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4135163937,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 66.6,
+     "screen": 10.4
+    },
+    "tokens": {
+     "tokenL": 35.4,
+     "tokenC": 45.3,
+     "groundL": 60.1,
+     "groundC": 47.3,
+     "tokenShare": 0.123
+    }
+   },
+   "source": {
+    "water": {
+     "pixels": 2029,
+     "share": 0.02,
+     "topTone": 0.399,
+     "tones3pc": 4,
+     "L": 58.7,
+     "Lmin": 24.5,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 60.6,
+     "C": 48.7,
+     "differ": 0.369,
+     "earthShare": 0.097,
+     "earthL": 45.8,
+     "earthC": 23.8,
+     "grassL": 62.1,
+     "edgeDL": 18.7,
+     "edgeDE": 39
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1066,
+      "chord": 940,
+      "sinuosity": 1.13,
+      "bends": 5,
+      "turningPer1000": 167,
+      "widthMin": 24,
+      "widthP50": 38,
+      "widthMax": 66,
+      "widthCV": 0.29,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4135163937,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 60.9,
+     "screen": 10.8
+    },
+    "tokens": {
+     "tokenL": 35.4,
+     "tokenC": 45.3,
+     "groundL": 60.5,
+     "groundC": 48.2,
+     "tokenShare": 0.123
+    }
+   },
+   "bank": {
+    "water": {
+     "pixels": 4321,
+     "share": 0.043,
+     "topTone": 0.527,
+     "tones3pc": 5,
+     "L": 55.5,
+     "Lmin": 24.5,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 60.3,
+     "C": 48.1,
+     "differ": 0.374,
+     "earthShare": 0.102,
+     "earthL": 46,
+     "earthC": 23.7,
+     "grassL": 61.9,
+     "edgeDL": 18.4,
+     "edgeDE": 38.7
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1557,
+      "chord": 1257,
+      "sinuosity": 1.24,
+      "bends": 4,
+      "turningPer1000": 198,
+      "widthMin": 44,
+      "widthP50": 64,
+      "widthMax": 80,
+      "widthCV": 0.16,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4135163937,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 52.2,
+     "screen": 10.9
+    },
+    "tokens": {
+     "tokenL": 35.4,
+     "tokenC": 45.3,
+     "groundL": 60.1,
+     "groundC": 47.2,
+     "tokenShare": 0.123
+    }
+   }
+  },
+  "mountain": {
+   "today": {
+    "water": {
+     "pixels": 4291,
+     "share": 0.042,
+     "topTone": 0.498,
+     "tones3pc": 5,
+     "L": 54.3,
+     "Lmin": 24.5,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.1,
+     "C": 9.8,
+     "differ": 0.331,
+     "earthShare": 0.11,
+     "earthL": 56.1,
+     "earthC": 4.5,
+     "grassL": 47.1,
+     "edgeDL": 10.3,
+     "edgeDE": 13
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1446,
+      "chord": 1366,
+      "sinuosity": 1.06,
+      "bends": 5,
+      "turningPer1000": 100,
+      "widthMin": 56,
+      "widthP50": 70,
+      "widthMax": 80,
+      "widthCV": 0.1,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 3115122028,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 60.6,
+     "screen": 14.5
+    },
+    "tokens": {
+     "tokenL": 38,
+     "tokenC": 9.5,
+     "groundL": 48.2,
+     "groundC": 10.4,
+     "tokenShare": 0.19
+    }
+   },
+   "bends": {
+    "water": {
+     "pixels": 4880,
+     "share": 0.048,
+     "topTone": 0.448,
+     "tones3pc": 5,
+     "L": 53.3,
+     "Lmin": 24.5,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.2,
+     "C": 9.8,
+     "differ": 0.332,
+     "earthShare": 0.113,
+     "earthL": 56.3,
+     "earthC": 4.5,
+     "grassL": 47.2,
+     "edgeDL": 10.2,
+     "edgeDE": 12.9
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1577,
+      "chord": 1367,
+      "sinuosity": 1.15,
+      "bends": 4,
+      "turningPer1000": 166,
+      "widthMin": 42,
+      "widthP50": 70,
+      "widthMax": 90,
+      "widthCV": 0.19,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 3115122028,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 69.8,
+     "screen": 9
+    },
+    "tokens": {
+     "tokenL": 38,
+     "tokenC": 9.5,
+     "groundL": 48.3,
+     "groundC": 10.5,
+     "tokenShare": 0.19
+    }
+   },
+   "source": {
+    "water": {
+     "pixels": 2554,
+     "share": 0.025,
+     "topTone": 0.467,
+     "tones3pc": 6,
+     "L": 58.2,
+     "Lmin": 31.2,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.1,
+     "C": 9.8,
+     "differ": 0.333,
+     "earthShare": 0.11,
+     "earthL": 56,
+     "earthC": 4.5,
+     "grassL": 47.1,
+     "edgeDL": 10.4,
+     "edgeDE": 13.2
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1307,
+      "chord": 1018,
+      "sinuosity": 1.28,
+      "bends": 4,
+      "turningPer1000": 247,
+      "widthMin": 18,
+      "widthP50": 52,
+      "widthMax": 70,
+      "widthCV": 0.3,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 3115122028,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 67.3,
+     "screen": 14
+    },
+    "tokens": {
+     "tokenL": 38,
+     "tokenC": 9.5,
+     "groundL": 48.1,
+     "groundC": 10.1,
+     "tokenShare": 0.188
+    }
+   },
+   "bank": {
+    "water": {
+     "pixels": 4880,
+     "share": 0.048,
+     "topTone": 0.448,
+     "tones3pc": 5,
+     "L": 53.3,
+     "Lmin": 24.5,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.3,
+     "C": 9.9,
+     "differ": 0.335,
+     "earthShare": 0.113,
+     "earthL": 56.3,
+     "earthC": 4.6,
+     "grassL": 47.3,
+     "edgeDL": 10.2,
+     "edgeDE": 12.9
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1577,
+      "chord": 1367,
+      "sinuosity": 1.15,
+      "bends": 4,
+      "turningPer1000": 166,
+      "widthMin": 42,
+      "widthP50": 70,
+      "widthMax": 90,
+      "widthCV": 0.19,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 3115122028,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 71.1,
+     "screen": 9.7
+    },
+    "tokens": {
+     "tokenL": 38,
+     "tokenC": 9.5,
+     "groundL": 48.4,
+     "groundC": 10.5,
+     "tokenShare": 0.19
+    }
+   }
+  }
+ },
+ "water": {
+  "lake": {
+   "today": {
+    "water": {
+     "pixels": 12398,
+     "share": 0.123,
+     "topTone": 0.69,
+     "tones3pc": 3,
+     "L": 45.3,
+     "Lmin": 24.5,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 60.8,
+     "C": 48.7,
+     "differ": 0.376,
+     "earthShare": 0.1,
+     "earthL": 46.7,
+     "earthC": 24.2,
+     "grassL": 62.4,
+     "edgeDL": 18.4,
+     "edgeDE": 38.1
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 666,
+      "chord": 633,
+      "sinuosity": 1.05,
+      "bends": 2,
+      "turningPer1000": 103,
+      "widthMin": 40,
+      "widthP50": 48,
+      "widthMax": 58,
+      "widthCV": 0.1,
+      "foldsBack": false
+     },
+     {
+      "length": 402,
+      "chord": 383,
+      "sinuosity": 1.05,
+      "bends": 1,
+      "turningPer1000": 67,
+      "widthMin": 208,
+      "widthP50": 278,
+      "widthMax": 424,
+      "widthCV": 0.26,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 2122620212,
+    "sameAsCapture": true,
+    "shimmer": {
+     "waterPixels": 12398,
+     "changedPerFrame": 310,
+     "meanBoxArea": 27388,
+     "stepMs": 0.028
+    },
+    "buildMs": {
+     "plan": 52.9,
+     "screen": 10.7
+    },
+    "tokens": {
+     "tokenL": 35.5,
+     "tokenC": 45.4,
+     "groundL": 58.3,
+     "groundC": 44.4,
+     "tokenShare": 0.122
+    }
+   },
+   "bands": {
+    "water": {
+     "pixels": 12398,
+     "share": 0.123,
+     "topTone": 0.549,
+     "tones3pc": 6,
+     "L": 44.2,
+     "Lmin": 28.1,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 60.8,
+     "C": 48.7,
+     "differ": 0.376,
+     "earthShare": 0.1,
+     "earthL": 46.7,
+     "earthC": 24.2,
+     "grassL": 62.4,
+     "edgeDL": 18.4,
+     "edgeDE": 38.1
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 666,
+      "chord": 633,
+      "sinuosity": 1.05,
+      "bends": 2,
+      "turningPer1000": 103,
+      "widthMin": 40,
+      "widthP50": 48,
+      "widthMax": 58,
+      "widthCV": 0.1,
+      "foldsBack": false
+     },
+     {
+      "length": 402,
+      "chord": 383,
+      "sinuosity": 1.05,
+      "bends": 1,
+      "turningPer1000": 67,
+      "widthMin": 208,
+      "widthP50": 278,
+      "widthMax": 424,
+      "widthCV": 0.26,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 2122620212,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 52.2,
+     "screen": 11.7
+    },
+    "tokens": {
+     "tokenL": 35.5,
+     "tokenC": 45.4,
+     "groundL": 58.2,
+     "groundC": 44.4,
+     "tokenShare": 0.122
+    }
+   },
+   "bed": {
+    "water": {
+     "pixels": 12398,
+     "share": 0.123,
+     "topTone": 0.475,
+     "tones3pc": 6,
+     "L": 49.4,
+     "Lmin": 36.7,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 60.8,
+     "C": 48.7,
+     "differ": 0.376,
+     "earthShare": 0.1,
+     "earthL": 46.7,
+     "earthC": 24.2,
+     "grassL": 62.4,
+     "edgeDL": 18.4,
+     "edgeDE": 38.1
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 666,
+      "chord": 633,
+      "sinuosity": 1.05,
+      "bends": 2,
+      "turningPer1000": 103,
+      "widthMin": 40,
+      "widthP50": 48,
+      "widthMax": 58,
+      "widthCV": 0.1,
+      "foldsBack": false
+     },
+     {
+      "length": 402,
+      "chord": 383,
+      "sinuosity": 1.05,
+      "bends": 1,
+      "turningPer1000": 67,
+      "widthMin": 208,
+      "widthP50": 278,
+      "widthMax": 424,
+      "widthCV": 0.26,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 2122620212,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 48.5,
+     "screen": 11.3
+    },
+    "tokens": {
+     "tokenL": 35.5,
+     "tokenC": 45.4,
+     "groundL": 58.8,
+     "groundC": 44.6,
+     "tokenShare": 0.122
+    }
+   },
+   "moving": {
+    "water": {
+     "pixels": 12398,
+     "share": 0.123,
+     "topTone": 0.71,
+     "tones3pc": 3,
+     "L": 45.1,
+     "Lmin": 32,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 60.8,
+     "C": 48.7,
+     "differ": 0.376,
+     "earthShare": 0.1,
+     "earthL": 46.7,
+     "earthC": 24.2,
+     "grassL": 62.4,
+     "edgeDL": 18.4,
+     "edgeDE": 38.1
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 666,
+      "chord": 633,
+      "sinuosity": 1.05,
+      "bends": 2,
+      "turningPer1000": 103,
+      "widthMin": 40,
+      "widthP50": 48,
+      "widthMax": 58,
+      "widthCV": 0.1,
+      "foldsBack": false
+     },
+     {
+      "length": 402,
+      "chord": 383,
+      "sinuosity": 1.05,
+      "bends": 1,
+      "turningPer1000": 67,
+      "widthMin": 208,
+      "widthP50": 278,
+      "widthMax": 424,
+      "widthCV": 0.26,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 2122620212,
+    "sameAsCapture": null,
+    "move": {
+     "changedPerFrame": 26,
+     "movingPixels": 815,
+     "boxArea": 29232
+    },
+    "buildMs": {
+     "plan": 50.3,
+     "screen": 21.1
+    },
+    "tokens": {
+     "tokenL": 35.5,
+     "tokenC": 45.4,
+     "groundL": 58.3,
+     "groundC": 44.3,
+     "tokenShare": 0.122
+    }
+   }
+  },
+  "forest": {
+   "today": {
+    "water": {
+     "pixels": 753,
+     "share": 0.007,
+     "topTone": 0.426,
+     "tones3pc": 5,
+     "L": 50.8,
+     "Lmin": 39.8,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 43.8,
+     "C": 40.2,
+     "differ": 0.39,
+     "earthShare": 0.114,
+     "earthL": 36.6,
+     "earthC": 19.7,
+     "grassL": 44.7,
+     "edgeDL": 12.2,
+     "edgeDE": 30.3
+    },
+    "borders": null,
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 628759185,
+    "sameAsCapture": true,
+    "shimmer": {
+     "waterPixels": 753,
+     "changedPerFrame": 19,
+     "meanBoxArea": 416,
+     "stepMs": 0.004
+    },
+    "buildMs": {
+     "plan": 41.1,
+     "screen": 12.1
+    },
+    "tokens": {
+     "tokenL": 29.2,
+     "tokenC": 31.6,
+     "groundL": 43.9,
+     "groundC": 40,
+     "tokenShare": 0.135
+    }
+   },
+   "bands": {
+    "water": {
+     "pixels": 753,
+     "share": 0.007,
+     "topTone": 0.252,
+     "tones3pc": 8,
+     "L": 52.7,
+     "Lmin": 36,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 43.8,
+     "C": 40.2,
+     "differ": 0.39,
+     "earthShare": 0.114,
+     "earthL": 36.6,
+     "earthC": 19.7,
+     "grassL": 44.7,
+     "edgeDL": 12.2,
+     "edgeDE": 30.3
+    },
+    "borders": null,
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 628759185,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 41.9,
+     "screen": 12.8
+    },
+    "tokens": {
+     "tokenL": 29.2,
+     "tokenC": 31.6,
+     "groundL": 43.9,
+     "groundC": 40.1,
+     "tokenShare": 0.135
+    }
+   },
+   "bed": {
+    "water": {
+     "pixels": 753,
+     "share": 0.007,
+     "topTone": 0.296,
+     "tones3pc": 7,
+     "L": 59.7,
+     "Lmin": 39.9,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 43.8,
+     "C": 40.2,
+     "differ": 0.39,
+     "earthShare": 0.114,
+     "earthL": 36.6,
+     "earthC": 19.7,
+     "grassL": 44.7,
+     "edgeDL": 12.2,
+     "edgeDE": 30.3
+    },
+    "borders": null,
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 628759185,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 44.4,
+     "screen": 12.4
+    },
+    "tokens": {
+     "tokenL": 29.2,
+     "tokenC": 31.6,
+     "groundL": 44,
+     "groundC": 40.1,
+     "tokenShare": 0.135
+    }
+   },
+   "moving": {
+    "water": {
+     "pixels": 753,
+     "share": 0.007,
+     "topTone": 0.41,
+     "tones3pc": 5,
+     "L": 51.1,
+     "Lmin": 39.9,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 43.8,
+     "C": 40.2,
+     "differ": 0.39,
+     "earthShare": 0.114,
+     "earthL": 36.6,
+     "earthC": 19.7,
+     "grassL": 44.7,
+     "edgeDL": 12.2,
+     "edgeDE": 30.3
+    },
+    "borders": null,
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 628759185,
+    "sameAsCapture": null,
+    "move": {
+     "changedPerFrame": 2,
+     "movingPixels": 66,
+     "boxArea": 780
+    },
+    "buildMs": {
+     "plan": 45,
+     "screen": 14.6
+    },
+    "tokens": {
+     "tokenL": 29.2,
+     "tokenC": 31.6,
+     "groundL": 43.9,
+     "groundC": 40,
+     "tokenShare": 0.135
+    }
+   }
+  },
+  "mountain": {
+   "today": {
+    "water": {
+     "pixels": 4291,
+     "share": 0.042,
+     "topTone": 0.498,
+     "tones3pc": 5,
+     "L": 54.3,
+     "Lmin": 24.5,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.1,
+     "C": 9.8,
+     "differ": 0.331,
+     "earthShare": 0.11,
+     "earthL": 56.1,
+     "earthC": 4.5,
+     "grassL": 47.1,
+     "edgeDL": 10.3,
+     "edgeDE": 13
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1446,
+      "chord": 1366,
+      "sinuosity": 1.06,
+      "bends": 5,
+      "turningPer1000": 100,
+      "widthMin": 56,
+      "widthP50": 70,
+      "widthMax": 80,
+      "widthCV": 0.1,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 3115122028,
+    "sameAsCapture": null,
+    "shimmer": {
+     "waterPixels": 4270,
+     "changedPerFrame": 107,
+     "meanBoxArea": 26219,
+     "stepMs": 0.007
+    },
+    "buildMs": {
+     "plan": 46.1,
+     "screen": 8.9
+    },
+    "tokens": {
+     "tokenL": 38,
+     "tokenC": 9.5,
+     "groundL": 48.2,
+     "groundC": 10.4,
+     "tokenShare": 0.19
+    }
+   },
+   "bands": {
+    "water": {
+     "pixels": 4291,
+     "share": 0.042,
+     "topTone": 0.246,
+     "tones3pc": 6,
+     "L": 58.1,
+     "Lmin": 28.1,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.1,
+     "C": 9.8,
+     "differ": 0.331,
+     "earthShare": 0.11,
+     "earthL": 56.1,
+     "earthC": 4.5,
+     "grassL": 47.1,
+     "edgeDL": 10.3,
+     "edgeDE": 13
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1446,
+      "chord": 1366,
+      "sinuosity": 1.06,
+      "bends": 5,
+      "turningPer1000": 100,
+      "widthMin": 56,
+      "widthP50": 70,
+      "widthMax": 80,
+      "widthCV": 0.1,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 3115122028,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 52.8,
+     "screen": 9.3
+    },
+    "tokens": {
+     "tokenL": 38,
+     "tokenC": 9.5,
+     "groundL": 48.4,
+     "groundC": 10.5,
+     "tokenShare": 0.19
+    }
+   },
+   "bed": {
+    "water": {
+     "pixels": 4291,
+     "share": 0.042,
+     "topTone": 0.436,
+     "tones3pc": 7,
+     "L": 65,
+     "Lmin": 32,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.1,
+     "C": 9.8,
+     "differ": 0.331,
+     "earthShare": 0.11,
+     "earthL": 56.1,
+     "earthC": 4.5,
+     "grassL": 47.1,
+     "edgeDL": 10.3,
+     "edgeDE": 13
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1446,
+      "chord": 1366,
+      "sinuosity": 1.06,
+      "bends": 5,
+      "turningPer1000": 100,
+      "widthMin": 56,
+      "widthP50": 70,
+      "widthMax": 80,
+      "widthCV": 0.1,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 3115122028,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 66.5,
+     "screen": 9.3
+    },
+    "tokens": {
+     "tokenL": 38.3,
+     "tokenC": 9.7,
+     "groundL": 48.8,
+     "groundC": 10.6,
+     "tokenShare": 0.193
+    }
+   },
+   "moving": {
+    "water": {
+     "pixels": 4291,
+     "share": 0.042,
+     "topTone": 0.476,
+     "tones3pc": 5,
+     "L": 55.3,
+     "Lmin": 24.5,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.1,
+     "C": 9.8,
+     "differ": 0.331,
+     "earthShare": 0.11,
+     "earthL": 56.1,
+     "earthC": 4.5,
+     "grassL": 47.1,
+     "edgeDL": 10.3,
+     "edgeDE": 13
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1446,
+      "chord": 1366,
+      "sinuosity": 1.06,
+      "bends": 5,
+      "turningPer1000": 100,
+      "widthMin": 56,
+      "widthP50": 70,
+      "widthMax": 80,
+      "widthCV": 0.1,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 3115122028,
+    "sameAsCapture": null,
+    "move": {
+     "changedPerFrame": 37,
+     "movingPixels": 1057,
+     "boxArea": 32670
+    },
+    "buildMs": {
+     "plan": 48.1,
+     "screen": 14.2
+    },
+    "tokens": {
+     "tokenL": 38.3,
+     "tokenC": 9.7,
+     "groundL": 48.3,
+     "groundC": 10.4,
+     "tokenShare": 0.193
+    }
+   }
+  }
+ },
+ "terrain": {
+  "coast": {
+   "today": {
+    "water": {
+     "pixels": 707,
+     "share": 0.007,
+     "topTone": 0.397,
+     "tones3pc": 5,
+     "L": 53.7,
+     "Lmin": 39.8,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.6,
+     "C": 38.7,
+     "differ": 0.359,
+     "earthShare": 0.105,
+     "earthL": 37.7,
+     "earthC": 20.1,
+     "grassL": 49.9,
+     "edgeDL": 13.5,
+     "edgeDE": 32.1
+    },
+    "borders": {
+     "length": 2539,
+     "straightShare": 0.209,
+     "onCellLines": 0.168
+    },
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4054983098,
+    "sameAsCapture": true,
+    "buildMs": {
+     "plan": 83.7,
+     "screen": 11
+    },
+    "tokens": {
+     "tokenL": 42.4,
+     "tokenC": 29.8,
+     "groundL": 49.9,
+     "groundC": 37.1,
+     "tokenShare": 0.11
+    }
+   },
+   "edges": {
+    "water": {
+     "pixels": 707,
+     "share": 0.007,
+     "topTone": 0.397,
+     "tones3pc": 5,
+     "L": 53.7,
+     "Lmin": 39.8,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.6,
+     "C": 38.8,
+     "differ": 0.36,
+     "earthShare": 0.105,
+     "earthL": 37.6,
+     "earthC": 20.1,
+     "grassL": 49.8,
+     "edgeDL": 13.5,
+     "edgeDE": 32.2
+    },
+    "borders": {
+     "length": 2589,
+     "straightShare": 0.128,
+     "onCellLines": 0.184
+    },
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4054983098,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 75.2,
+     "screen": 11.3
+    },
+    "tokens": {
+     "tokenL": 42.4,
+     "tokenC": 29.8,
+     "groundL": 49.8,
+     "groundC": 37.2,
+     "tokenShare": 0.11
+    }
+   },
+   "patches": {
+    "water": {
+     "pixels": 707,
+     "share": 0.007,
+     "topTone": 0.397,
+     "tones3pc": 5,
+     "L": 53.7,
+     "Lmin": 39.8,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.9,
+     "C": 38.5,
+     "differ": 0.389,
+     "earthShare": 0.102,
+     "earthL": 41.9,
+     "earthC": 23.6,
+     "grassL": 49.6,
+     "edgeDL": 9.9,
+     "edgeDE": 25.4
+    },
+    "borders": {
+     "length": 2539,
+     "straightShare": 0.209,
+     "onCellLines": 0.168
+    },
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4054983098,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 67.3,
+     "screen": 11.9
+    },
+    "tokens": {
+     "tokenL": 42.4,
+     "tokenC": 29.8,
+     "groundL": 50.1,
+     "groundC": 36.9,
+     "tokenShare": 0.11
+    }
+   },
+   "calm": {
+    "water": {
+     "pixels": 707,
+     "share": 0.007,
+     "topTone": 0.397,
+     "tones3pc": 5,
+     "L": 53.7,
+     "Lmin": 39.8,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 49.4,
+     "C": 40.3,
+     "differ": 0.295,
+     "earthShare": 0.105,
+     "earthL": 37.7,
+     "earthC": 20.1,
+     "grassL": 50.8,
+     "edgeDL": 13.5,
+     "edgeDE": 31.9
+    },
+    "borders": {
+     "length": 2539,
+     "straightShare": 0.209,
+     "onCellLines": 0.168
+    },
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4054983098,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 75.5,
+     "screen": 11
+    },
+    "tokens": {
+     "tokenL": 42.4,
+     "tokenC": 29.8,
+     "groundL": 50.5,
+     "groundC": 38.5,
+     "tokenShare": 0.11
+    }
+   }
+  },
+  "stone": {
+   "today": {
+    "water": {
+     "pixels": 4769,
+     "share": 0.047,
+     "topTone": 0.47,
+     "tones3pc": 5,
+     "L": 57.1,
+     "Lmin": 31.9,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 59.3,
+     "C": 43.5,
+     "differ": 0.398,
+     "earthShare": 0.102,
+     "earthL": 46.4,
+     "earthC": 21.3,
+     "grassL": 60.8,
+     "edgeDL": 17.9,
+     "edgeDE": 35.9
+    },
+    "borders": {
+     "length": 14182,
+     "straightShare": 0.202,
+     "onCellLines": 0.178
+    },
+    "rivers": [
+     {
+      "length": 1241,
+      "chord": 1174,
+      "sinuosity": 1.06,
+      "bends": 3,
+      "turningPer1000": 112,
+      "widthMin": 42,
+      "widthP50": 64,
+      "widthMax": 96,
+      "widthCV": 0.18,
+      "foldsBack": false
+     },
+     {
+      "length": 604,
+      "chord": 437,
+      "sinuosity": 1.38,
+      "bends": 0,
+      "turningPer1000": 161,
+      "widthMin": 22,
+      "widthP50": 32,
+      "widthMax": 36,
+      "widthCV": 0.1,
+      "foldsBack": false
+     },
+     {
+      "length": 227,
+      "chord": 227,
+      "sinuosity": 1,
+      "bends": 0,
+      "turningPer1000": 0,
+      "widthMin": 40,
+      "widthP50": 56,
+      "widthMax": 56,
+      "widthCV": 0.17,
+      "foldsBack": false
+     },
+     {
+      "length": 204,
+      "chord": 193,
+      "sinuosity": 1.06,
+      "bends": 0,
+      "turningPer1000": 0,
+      "widthMin": 30,
+      "widthP50": 30,
+      "widthMax": 30,
+      "widthCV": 0,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4711,
+    "sameAsCapture": true,
+    "buildMs": {
+     "plan": 73,
+     "screen": 10.2
+    },
+    "tokens": {
+     "tokenL": 35.5,
+     "tokenC": 45.3,
+     "groundL": 59.1,
+     "groundC": 42.2,
+     "tokenShare": 0.121
+    }
+   },
+   "edges": {
+    "water": {
+     "pixels": 4769,
+     "share": 0.047,
+     "topTone": 0.47,
+     "tones3pc": 5,
+     "L": 57.1,
+     "Lmin": 31.9,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 59.3,
+     "C": 43.7,
+     "differ": 0.39,
+     "earthShare": 0.102,
+     "earthL": 46.4,
+     "earthC": 21.6,
+     "grassL": 60.8,
+     "edgeDL": 18,
+     "edgeDE": 35.6
+    },
+    "borders": {
+     "length": 4974,
+     "straightShare": 0.14,
+     "onCellLines": 0.208
+    },
+    "rivers": [
+     {
+      "length": 1241,
+      "chord": 1174,
+      "sinuosity": 1.06,
+      "bends": 3,
+      "turningPer1000": 112,
+      "widthMin": 42,
+      "widthP50": 64,
+      "widthMax": 96,
+      "widthCV": 0.18,
+      "foldsBack": false
+     },
+     {
+      "length": 604,
+      "chord": 437,
+      "sinuosity": 1.38,
+      "bends": 0,
+      "turningPer1000": 161,
+      "widthMin": 22,
+      "widthP50": 32,
+      "widthMax": 36,
+      "widthCV": 0.1,
+      "foldsBack": false
+     },
+     {
+      "length": 227,
+      "chord": 227,
+      "sinuosity": 1,
+      "bends": 0,
+      "turningPer1000": 0,
+      "widthMin": 40,
+      "widthP50": 56,
+      "widthMax": 56,
+      "widthCV": 0.17,
+      "foldsBack": false
+     },
+     {
+      "length": 204,
+      "chord": 193,
+      "sinuosity": 1.06,
+      "bends": 0,
+      "turningPer1000": 0,
+      "widthMin": 30,
+      "widthP50": 30,
+      "widthMax": 30,
+      "widthCV": 0,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4711,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 76.4,
+     "screen": 11
+    },
+    "tokens": {
+     "tokenL": 35.5,
+     "tokenC": 45.3,
+     "groundL": 59.1,
+     "groundC": 42.4,
+     "tokenShare": 0.121
+    }
+   },
+   "patches": {
+    "water": {
+     "pixels": 4769,
+     "share": 0.047,
+     "topTone": 0.47,
+     "tones3pc": 5,
+     "L": 57.1,
+     "Lmin": 31.9,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 59.7,
+     "C": 43.2,
+     "differ": 0.422,
+     "earthShare": 0.09,
+     "earthL": 53,
+     "earthC": 22.9,
+     "grassL": 60.4,
+     "edgeDL": 13.3,
+     "edgeDE": 27.3
+    },
+    "borders": {
+     "length": 14182,
+     "straightShare": 0.202,
+     "onCellLines": 0.178
+    },
+    "rivers": [
+     {
+      "length": 1241,
+      "chord": 1174,
+      "sinuosity": 1.06,
+      "bends": 3,
+      "turningPer1000": 112,
+      "widthMin": 42,
+      "widthP50": 64,
+      "widthMax": 96,
+      "widthCV": 0.18,
+      "foldsBack": false
+     },
+     {
+      "length": 604,
+      "chord": 437,
+      "sinuosity": 1.38,
+      "bends": 0,
+      "turningPer1000": 161,
+      "widthMin": 22,
+      "widthP50": 32,
+      "widthMax": 36,
+      "widthCV": 0.1,
+      "foldsBack": false
+     },
+     {
+      "length": 227,
+      "chord": 227,
+      "sinuosity": 1,
+      "bends": 0,
+      "turningPer1000": 0,
+      "widthMin": 40,
+      "widthP50": 56,
+      "widthMax": 56,
+      "widthCV": 0.17,
+      "foldsBack": false
+     },
+     {
+      "length": 204,
+      "chord": 193,
+      "sinuosity": 1.06,
+      "bends": 0,
+      "turningPer1000": 0,
+      "widthMin": 30,
+      "widthP50": 30,
+      "widthMax": 30,
+      "widthCV": 0,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4711,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 75.3,
+     "screen": 10.9
+    },
+    "tokens": {
+     "tokenL": 35.5,
+     "tokenC": 45.3,
+     "groundL": 59.5,
+     "groundC": 41.9,
+     "tokenShare": 0.121
+    }
+   },
+   "calm": {
+    "water": {
+     "pixels": 4769,
+     "share": 0.047,
+     "topTone": 0.47,
+     "tones3pc": 5,
+     "L": 57.1,
+     "Lmin": 31.9,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 60.8,
+     "C": 44.3,
+     "differ": 0.326,
+     "earthShare": 0.102,
+     "earthL": 46.4,
+     "earthC": 21.3,
+     "grassL": 62.5,
+     "edgeDL": 17.6,
+     "edgeDE": 35.5
+    },
+    "borders": {
+     "length": 14182,
+     "straightShare": 0.202,
+     "onCellLines": 0.178
+    },
+    "rivers": [
+     {
+      "length": 1241,
+      "chord": 1174,
+      "sinuosity": 1.06,
+      "bends": 3,
+      "turningPer1000": 112,
+      "widthMin": 42,
+      "widthP50": 64,
+      "widthMax": 96,
+      "widthCV": 0.18,
+      "foldsBack": false
+     },
+     {
+      "length": 604,
+      "chord": 437,
+      "sinuosity": 1.38,
+      "bends": 0,
+      "turningPer1000": 161,
+      "widthMin": 22,
+      "widthP50": 32,
+      "widthMax": 36,
+      "widthCV": 0.1,
+      "foldsBack": false
+     },
+     {
+      "length": 227,
+      "chord": 227,
+      "sinuosity": 1,
+      "bends": 0,
+      "turningPer1000": 0,
+      "widthMin": 40,
+      "widthP50": 56,
+      "widthMax": 56,
+      "widthCV": 0.17,
+      "foldsBack": false
+     },
+     {
+      "length": 204,
+      "chord": 193,
+      "sinuosity": 1.06,
+      "bends": 0,
+      "turningPer1000": 0,
+      "widthMin": 30,
+      "widthP50": 30,
+      "widthMax": 30,
+      "widthCV": 0,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4711,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 58.2,
+     "screen": 9.4
+    },
+    "tokens": {
+     "tokenL": 35.5,
+     "tokenC": 45.3,
+     "groundL": 60.5,
+     "groundC": 43,
+     "tokenShare": 0.121
+    }
+   }
+  },
+  "rock": {
+   "today": {
+    "water": {
+     "pixels": 1597,
+     "share": 0.016,
+     "topTone": 0.442,
+     "tones3pc": 5,
+     "L": 52.5,
+     "Lmin": 39.8,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 50.2,
+     "C": 31.3,
+     "differ": 0.376,
+     "earthShare": 0.096,
+     "earthL": 47.8,
+     "earthC": 12.8,
+     "grassL": 50.5,
+     "edgeDL": 11.9,
+     "edgeDE": 30
+    },
+    "borders": {
+     "length": 25957,
+     "straightShare": 0.277,
+     "onCellLines": 0.183
+    },
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 2029566479,
+    "sameAsCapture": true,
+    "buildMs": {
+     "plan": 80.7,
+     "screen": 10.2
+    },
+    "tokens": {
+     "tokenL": 34.2,
+     "tokenC": 18.6,
+     "groundL": 50.6,
+     "groundC": 32.1,
+     "tokenShare": 0.162
+    }
+   },
+   "edges": {
+    "water": {
+     "pixels": 1597,
+     "share": 0.016,
+     "topTone": 0.442,
+     "tones3pc": 5,
+     "L": 52.5,
+     "Lmin": 39.8,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 47.2,
+     "C": 28.2,
+     "differ": 0.37,
+     "earthShare": 0.115,
+     "earthL": 47.1,
+     "earthC": 13.3,
+     "grassL": 47.2,
+     "edgeDL": 11.7,
+     "edgeDE": 26.1
+    },
+    "borders": {
+     "length": 12267,
+     "straightShare": 0.216,
+     "onCellLines": 0.141
+    },
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 2029566479,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 80.4,
+     "screen": 10.2
+    },
+    "tokens": {
+     "tokenL": 34.2,
+     "tokenC": 18.6,
+     "groundL": 47.3,
+     "groundC": 28.9,
+     "tokenShare": 0.162
+    }
+   },
+   "patches": {
+    "water": {
+     "pixels": 1597,
+     "share": 0.016,
+     "topTone": 0.442,
+     "tones3pc": 5,
+     "L": 52.5,
+     "Lmin": 39.8,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 50.3,
+     "C": 31.3,
+     "differ": 0.401,
+     "earthShare": 0.088,
+     "earthL": 49.2,
+     "earthC": 14.5,
+     "grassL": 50.4,
+     "edgeDL": 8.2,
+     "edgeDE": 23.5
+    },
+    "borders": {
+     "length": 25957,
+     "straightShare": 0.277,
+     "onCellLines": 0.183
+    },
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 2029566479,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 85.1,
+     "screen": 10.6
+    },
+    "tokens": {
+     "tokenL": 34.1,
+     "tokenC": 18.4,
+     "groundL": 50.6,
+     "groundC": 32.1,
+     "tokenShare": 0.168
+    }
+   },
+   "calm": {
+    "water": {
+     "pixels": 1597,
+     "share": 0.016,
+     "topTone": 0.442,
+     "tones3pc": 5,
+     "L": 52.5,
+     "Lmin": 39.8,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 51.2,
+     "C": 32.4,
+     "differ": 0.322,
+     "earthShare": 0.096,
+     "earthL": 47.7,
+     "earthC": 12.7,
+     "grassL": 51.6,
+     "edgeDL": 11.9,
+     "edgeDE": 30.1
+    },
+    "borders": {
+     "length": 25957,
+     "straightShare": 0.277,
+     "onCellLines": 0.183
+    },
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 2029566479,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 79.2,
+     "screen": 10
+    },
+    "tokens": {
+     "tokenL": 34.3,
+     "tokenC": 18.6,
+     "groundL": 51.5,
+     "groundC": 33.3,
+     "tokenShare": 0.165
+    }
+   }
+  }
+ },
+ "together": {
+  "meadow": {
+   "today": {
+    "water": {
+     "pixels": 3838,
+     "share": 0.038,
+     "topTone": 0.52,
+     "tones3pc": 5,
+     "L": 55.5,
+     "Lmin": 31.2,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 60.5,
+     "C": 48.6,
+     "differ": 0.369,
+     "earthShare": 0.098,
+     "earthL": 45.7,
+     "earthC": 23.7,
+     "grassL": 62.1,
+     "edgeDL": 18.8,
+     "edgeDE": 39.1
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1385,
+      "chord": 1256,
+      "sinuosity": 1.1,
+      "bends": 3,
+      "turningPer1000": 153,
+      "widthMin": 40,
+      "widthP50": 66,
+      "widthMax": 74,
+      "widthCV": 0.12,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4135163937,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 62.5,
+     "screen": 10.4
+    },
+    "tokens": {
+     "tokenL": 35.3,
+     "tokenC": 45.2,
+     "groundL": 60.1,
+     "groundC": 47.5,
+     "tokenShare": 0.123
+    }
+   },
+   "picks": {
+    "water": {
+     "pixels": 4321,
+     "share": 0.043,
+     "topTone": 0.266,
+     "tones3pc": 6,
+     "L": 59.4,
+     "Lmin": 26.2,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 62.2,
+     "C": 48.4,
+     "differ": 0.333,
+     "earthShare": 0.099,
+     "earthL": 53.5,
+     "earthC": 25.3,
+     "grassL": 63.1,
+     "edgeDL": 13.4,
+     "edgeDE": 28.2
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 1557,
+      "chord": 1257,
+      "sinuosity": 1.24,
+      "bends": 4,
+      "turningPer1000": 198,
+      "widthMin": 44,
+      "widthP50": 64,
+      "widthMax": 80,
+      "widthCV": 0.16,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4135163937,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 71.7,
+     "screen": 11.5
+    },
+    "tokens": {
+     "tokenL": 35.4,
+     "tokenC": 45.3,
+     "groundL": 62,
+     "groundC": 47.6,
+     "tokenShare": 0.123
+    }
+   }
+  },
+  "lake": {
+   "today": {
+    "water": {
+     "pixels": 12398,
+     "share": 0.123,
+     "topTone": 0.69,
+     "tones3pc": 3,
+     "L": 45.3,
+     "Lmin": 24.5,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 60.8,
+     "C": 48.7,
+     "differ": 0.376,
+     "earthShare": 0.1,
+     "earthL": 46.7,
+     "earthC": 24.2,
+     "grassL": 62.4,
+     "edgeDL": 18.4,
+     "edgeDE": 38.1
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 666,
+      "chord": 633,
+      "sinuosity": 1.05,
+      "bends": 2,
+      "turningPer1000": 103,
+      "widthMin": 40,
+      "widthP50": 48,
+      "widthMax": 58,
+      "widthCV": 0.1,
+      "foldsBack": false
+     },
+     {
+      "length": 402,
+      "chord": 383,
+      "sinuosity": 1.05,
+      "bends": 1,
+      "turningPer1000": 67,
+      "widthMin": 208,
+      "widthP50": 278,
+      "widthMax": 424,
+      "widthCV": 0.26,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 2122620212,
+    "sameAsCapture": true,
+    "buildMs": {
+     "plan": 63.5,
+     "screen": 9.2
+    },
+    "tokens": {
+     "tokenL": 35.5,
+     "tokenC": 45.4,
+     "groundL": 58.3,
+     "groundC": 44.4,
+     "tokenShare": 0.122
+    }
+   },
+   "picks": {
+    "water": {
+     "pixels": 12658,
+     "share": 0.125,
+     "topTone": 0.538,
+     "tones3pc": 6,
+     "L": 44.6,
+     "Lmin": 28.1,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 62.6,
+     "C": 48.9,
+     "differ": 0.327,
+     "earthShare": 0.096,
+     "earthL": 53.9,
+     "earthC": 25.5,
+     "grassL": 63.5,
+     "edgeDL": 12.9,
+     "edgeDE": 26.7
+    },
+    "borders": null,
+    "rivers": [
+     {
+      "length": 785,
+      "chord": 641,
+      "sinuosity": 1.23,
+      "bends": 3,
+      "turningPer1000": 205,
+      "widthMin": 34,
+      "widthP50": 48,
+      "widthMax": 64,
+      "widthCV": 0.18,
+      "foldsBack": false
+     },
+     {
+      "length": 426,
+      "chord": 386,
+      "sinuosity": 1.1,
+      "bends": 1,
+      "turningPer1000": 96,
+      "widthMin": 224,
+      "widthP50": 300,
+      "widthMax": 444,
+      "widthCV": 0.27,
+      "foldsBack": false
+     }
+    ],
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 2122620212,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 81.3,
+     "screen": 11
+    },
+    "tokens": {
+     "tokenL": 35.4,
+     "tokenC": 45.4,
+     "groundL": 59.7,
+     "groundC": 44.5,
+     "tokenShare": 0.123
+    }
+   }
+  },
+  "rock": {
+   "today": {
+    "water": {
+     "pixels": 1597,
+     "share": 0.016,
+     "topTone": 0.442,
+     "tones3pc": 5,
+     "L": 52.5,
+     "Lmin": 39.8,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 50.2,
+     "C": 31.3,
+     "differ": 0.376,
+     "earthShare": 0.096,
+     "earthL": 47.8,
+     "earthC": 12.8,
+     "grassL": 50.5,
+     "edgeDL": 11.9,
+     "edgeDE": 30
+    },
+    "borders": {
+     "length": 25957,
+     "straightShare": 0.277,
+     "onCellLines": 0.183
+    },
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 2029566479,
+    "sameAsCapture": true,
+    "buildMs": {
+     "plan": 81.8,
+     "screen": 9.8
+    },
+    "tokens": {
+     "tokenL": 34.2,
+     "tokenC": 18.6,
+     "groundL": 50.6,
+     "groundC": 32.1,
+     "tokenShare": 0.162
+    }
+   },
+   "picks": {
+    "water": {
+     "pixels": 1597,
+     "share": 0.016,
+     "topTone": 0.219,
+     "tones3pc": 7,
+     "L": 55.9,
+     "Lmin": 36,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.2,
+     "C": 29.3,
+     "differ": 0.347,
+     "earthShare": 0.107,
+     "earthL": 48.7,
+     "earthC": 15.1,
+     "grassL": 48.1,
+     "edgeDL": 7.7,
+     "edgeDE": 19.5
+    },
+    "borders": {
+     "length": 12267,
+     "straightShare": 0.216,
+     "onCellLines": 0.141
+    },
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 2029566479,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 92.4,
+     "screen": 11.7
+    },
+    "tokens": {
+     "tokenL": 34.2,
+     "tokenC": 18.6,
+     "groundL": 48.4,
+     "groundC": 30,
+     "tokenShare": 0.162
+    }
+   }
+  },
+  "coast": {
+   "today": {
+    "water": {
+     "pixels": 707,
+     "share": 0.007,
+     "topTone": 0.397,
+     "tones3pc": 5,
+     "L": 53.7,
+     "Lmin": 39.8,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 48.6,
+     "C": 38.7,
+     "differ": 0.359,
+     "earthShare": 0.105,
+     "earthL": 37.7,
+     "earthC": 20.1,
+     "grassL": 49.9,
+     "edgeDL": 13.5,
+     "edgeDE": 32.1
+    },
+    "borders": {
+     "length": 2539,
+     "straightShare": 0.209,
+     "onCellLines": 0.168
+    },
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4054983098,
+    "sameAsCapture": true,
+    "buildMs": {
+     "plan": 80.6,
+     "screen": 11.1
+    },
+    "tokens": {
+     "tokenL": 42.4,
+     "tokenC": 29.8,
+     "groundL": 49.9,
+     "groundC": 37.1,
+     "tokenShare": 0.11
+    }
+   },
+   "picks": {
+    "water": {
+     "pixels": 707,
+     "share": 0.007,
+     "topTone": 0.231,
+     "tones3pc": 7,
+     "L": 57.3,
+     "Lmin": 36,
+     "Lmax": 83.6
+    },
+    "land": {
+     "L": 49.5,
+     "C": 40.1,
+     "differ": 0.331,
+     "earthShare": 0.102,
+     "earthL": 41.8,
+     "earthC": 23.6,
+     "grassL": 50.4,
+     "edgeDL": 9.5,
+     "edgeDE": 24.7
+    },
+    "borders": {
+     "length": 2589,
+     "straightShare": 0.128,
+     "onCellLines": 0.184
+    },
+    "rivers": null,
+    "canvasDiffers": 0,
+    "fit": 0.9,
+    "seed": 4054983098,
+    "sameAsCapture": null,
+    "buildMs": {
+     "plan": 95.4,
+     "screen": 13.5
+    },
+    "tokens": {
+     "tokenL": 42.4,
+     "tokenC": 29.8,
+     "groundL": 50.6,
+     "groundC": 38.3,
+     "tokenShare": 0.11
+    }
+   }
+  }
+ }
+}

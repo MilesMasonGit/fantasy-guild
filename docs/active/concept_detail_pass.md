@@ -1,4 +1,4 @@
-Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360)
+Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360; the terrain round, brief 370)
 
 # The detail pass: UI and UX, section by section
 
@@ -42,7 +42,7 @@ game looks and plays, gathered one screen at a time.*
 | # | Section | State | Old notes to bring |
 |---|---|---|---|
 | 0 | Rules across every screen | icon rule done; more as they come up | above; `UI_STYLE.md` |
-| 1 | The mat and Tokens | **approved 2026-11-02, split**: [brief 350](briefs/350_tokens_card_detail.md); terrain round open; T-295; combat items in section 8 | `design_pass_notes.md`; T-013, T-162 |
+| 1 | The mat and Tokens | **approved 2026-11-02, split**: [brief 350](briefs/350_tokens_card_detail.md); [brief 370](briefs/370_terrain_detail.md) for terrain; T-295; combat items in [brief 360](briefs/360_combat_detail.md) | `design_pass_notes.md`; T-013, T-162 |
 | 2 | Top bar | not started | `ui_rework_list.md` |
 | 3 | Hero bar and hero sheet | **approved and briefed 2026-11-02** ([brief 340](briefs/340_hero_bar_detail.md)) | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
 | 4 | Bank | not started | |
@@ -114,14 +114,12 @@ make sure that combat looks good and is clear throughout the fight." Taken up in
 section 8; items 5, 13 and 14 feed it.
 
 **Where they went** (owner, 2026-11-02): items 2, 3, 4 and 6 to 11, brief 350. Item
-12, T-295. Items 5, 13, 14, section 8. Item 1, the terrain round below.
+12, T-295. Items 5, 13, 14, section 8. Item 1, brief 370.
 
-**Terrain round (item 1), open.** A short design round before any build, for the
-terrain styling, more organic rivers and better water. The owner directs the art: bring
-looks to compare on the art bench, with measured advice, before anything is baked in.
-Start from [research/ground_gen](research/ground_gen/README.md),
-[brief 180](briefs/180_ground_structure.md), [brief 190](briefs/190_playmat_style.md)
-and [concept_art_direction.md](concept_art_direction.md). Not in the director's queue.
+**Terrain round (item 1): picked 2026-11-03**, on a live comparison
+([research/terrain_round](research/terrain_round/)); [brief 370](briefs/370_terrain_detail.md).
+Rivers: the A and C looks, with wider sections or tighter winding and different positions
+by map generation. Water: A, depth bands. Ground: A, ragged borders, and B, settled dirt.
 
 **Looked at, no change** (owner, 2026-11-02): the work plate; moving and dropping
 Tokens. **T-012 decided**: growth and transforms keep pushing spawned neighbours.
