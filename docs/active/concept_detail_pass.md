@@ -42,7 +42,7 @@ game looks and plays, gathered one screen at a time.*
 | # | Section | State | Old notes to bring |
 |---|---|---|---|
 | 0 | Rules across every screen | icon rule done; more as they come up | above; `UI_STYLE.md` |
-| 1 | The mat and Tokens | not started | `design_pass_notes.md`; T-013, T-162 |
+| 1 | The mat and Tokens | **walked 2026-11-02; waits for approval** | `design_pass_notes.md`; T-013, T-162 |
 | 2 | Top bar | not started | `ui_rework_list.md` |
 | 3 | Hero bar and hero sheet | **approved and briefed 2026-11-02** ([brief 340](briefs/340_hero_bar_detail.md)) | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
 | 4 | Bank | not started | |
@@ -62,6 +62,59 @@ sitting: this table's notes are pointers, not facts about today's screen.
 ## The list
 
 *(Items go under their section as the sittings happen.)*
+
+### 1. The mat and Tokens
+
+**The sheet (2026-11-02). From the docs and the code, not seen in the running
+game: a second game server risks disturbing the eye-check under way, so where
+this disagrees with the screen, the screen wins.**
+
+- **Ground**: one surface with no grid, drawn per place; Stone is a code-drawn
+  stand-in until the owner's pieces.
+- **A Token at rest**: its art, its name over the art's bottom edge, a "!" when it
+  waits or can't work; a station's gear; no round rings.
+- **Working**: one plate on the seam under hero and Token (skill, output or input,
+  charges); resting the pointer opens the full line. An idle Token gets the same
+  plate on hover. Enemies show name and HP only.
+- **Clicking**: the Token card, with its recipes.
+- **Moving**: a Token lands where dropped, nudges up to 160 u, or flies back; a
+  player's drop pushes nothing; up to 40 % overlap; 128 Tokens at most. Trees, veins
+  and placed nodes stay where they stand.
+- **Fights**: a thin HP bar with number and percentage over a fighter, a fight plate.
+- **Loot**: collected by hovering.
+- **Speech and effects**: hero bubbles, level-up numbers, hit floats, ambient life.
+
+**Already filed, no need to repeat**: the top bar has its own section. Skill icon
+emoji: T-292. Questions still waiting on the owner: **T-012** (should a Token growing
+or transforming push its neighbours?), **T-013** (the last soft glows and shadows on
+badges: hard-pixel too?), **T-011** (hit animations, transform glow and loot flight
+never seen by an agent). The glow and tutorial rings: section 13.
+
+**The list** (owner, 2026-11-02; the tags are the planning agent's draft)
+
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **Terrain upgrades**: "improving the terrain styling", "making the rivers look more organic, improving water appearance". | must, design |
+| 2 | **Tokens a little more spaced out from each other.** | must, tweak |
+| 3 | **Tokens may not jump to the top level when hovered** ("I think we may not want"): try it and look. | must, tweak |
+| 4 | **Heroes are always on top.** | must, tweak |
+| 5 | **Fights move to open space** when several crowd one area: heroes and enemies step to a clear spot. The minimized fight display that can be expanded is the fallback idea, not built now. | must, design |
+| 6 | **Token card: less cluttered and more stylish**, the name more of a header, the basic information a stat block. | must, design |
+| 7 | **Token card: scroll arrows only when there is more to scroll to.** | must, tweak |
+| 8 | **Token card: events like regrowing get their own section.** | must, tweak |
+| 9 | **Token card: a requirements section**, for things like tools and consumption. | must, tweak |
+| 10 | **Token card: the background art is displayed larger.** | must, tweak |
+| 11 | **Token card: long output lists (fishing) show the output it will produce**, with the others in a collapsed section. | must, tweak |
+| 12 | **Loot flight gets an arc back**: "we lost the arc effect at some point, possibly for performance"; explore ways to bring something like it back without compromising performance. | nice, design |
+| 13 | **Damage numbers appear over the hero or enemy.** | must, tweak |
+| 14 | **An effect proc appears above the health bars**, like speech bubbles. | must, tweak |
+
+**Combat look** (owner, 2026-11-02): "We will need to do more iterative designs to
+make sure that combat looks good and is clear throughout the fight." Taken up in
+section 8; items 5, 13 and 14 feed it.
+
+**Looked at, no change** (owner, 2026-11-02): the work plate; moving and dropping
+Tokens. **T-012 decided**: growth and transforms keep pushing spawned neighbours.
 
 ### 3. Hero bar and hero sheet
 
