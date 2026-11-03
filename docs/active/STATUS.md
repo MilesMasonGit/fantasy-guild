@@ -5,13 +5,25 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Director, clean-up before the new briefs (owner 2026-11-03: small tickets and doc updates approved; eye-checks closed)
+
+*Tue 3 Nov. Where we are: performance round 2 merged and pushed; K4, S9 and hero orders eye-checks closed by the owner and archived; 13 spent worktrees, 99 merged branches and 6 stray branches gone (3 kept as `archive/` tags); world map docs corrected. Next: the tickets below, two at a time. Owner: nothing needed; more planning meanwhile. Blockers: none.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| T-286: enemy arrivals stop tripping false slowdown alarms | builder | `fix/relax-deopt` (`t1`) | queued | Tue | |
+| T-289: two CMS pack-review tests stop failing on a busy machine | engineer | `fix/pack-review-flake` (`t2`) | queued | Tue | |
+| T-205 rest: bench tools hold the slowdown they ask for | builder | `fix/bench-throttle` | queued | Tue | |
+| T-292 + T-298's hint: retired map machinery out of the code | engineer | `chore/retire-map-machinery` | queued | Tue | |
+| T-287, the safe parts only: enemies cheaper with no change in look or play | engineer | `perf/enemy-next` | queued | Tue | |
+
 ## Director, four in parallel beside the balancing pack (owner 2026-11-02 10:15: all four, the two-helper limit lifted for this batch)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | T-290: the encyclopedia places things by the world tables | builder | `feat/encyclopedia-world` (`e3`) | **merged** (owner okayed; 7382 tests, cycles, builds, same work) | Mon | Mon |
 | T-249 even start after a kill; T-270/T-245 carried-rule wording; T-246 weapon stat block | builder | `fix/combat-wording` (`w1`) | **merged** (owner okayed; bench same work: its fights do not reach the even start; a test and the live check show it). Fixture line for the Composter sentence stays until the next Sync, then delete | Mon | Mon |
-| T-197 loot pile hover, T-198 hit loop and chips, T-202 stub shine (sliced) | engineer | `perf/loot-bubbles` (`w2`) | **benched, eye-check next**: work same; A/B at 3.2× work p50 floor40 11.10 → 5.55 ms, floor8 8.11 → 5.76, notify300 8.46 → 6.71, cap128 6.15 → 4.81, heroes16 10.40 → 8.41, S2 3.50 → 2.71; crisp no worse than `main` (a known failure). Not merged | Mon | |
+| T-197 loot pile hover, T-198 hit loop and chips, T-202 stub shine (sliced) | engineer | `perf/loot-bubbles` (`w2`) | **merged** 0f3ae089 2026-11-03 (owner approved; 7409 tests, cycles, build; engine work **same**; S4 `arrivalsWorst` flagged 1.24 and 1.28, five alternating pairs with `main` 16.4–18.2 vs 17.9–18.8 ms, median 17.9 vs 18.1, no engine file changed: T-286 noise). A/B at 3.2× work p50 floor40 11.10 → 5.55 ms, floor8 8.11 → 5.76, notify300 8.46 → 6.71, cap128 6.15 → 4.81, heroes16 10.40 → 8.41, S2 3.50 → 2.71; crisp no worse than `main` (a known failure) | Mon | Tue |
 | T-288 pack tool stops reading stale autosaves; T-289 waits; T-206 bench profiles; T-205 slowdown target | builder | `fix/tooling-care` (`w3`) | **merged** (94d3f747: work **same**, cycles, builds; timings doubled = load from the other helpers; the two pack-review tests still flake under load, T-289 stays open) | Mon | Mon |
 | T-291: balancing XP survives Sync (an XP pin the owner can clear) | engineer | `feat/balance-survives-sync` (`n4`) | **merged** fc6268ee (7331 tests, cycles, builds, same work). Pack `balancing_3` (16 XP numbers) goes to the inbox when the owner's folder is back on `main`; director recommends the two rises only (Wild Lavender, Oak Tree) | Mon | Mon |
 | Seed maps pack: 18 seed items "<Token> Map" with map sprites; 24 old map and modifier items deleted; 189 drop lines; no world extras (owner) | builder | `content/seed-maps` (`n4`) | **synced** 8d714721 (id-diff: items 175 → 151, nothing else removed); tests repaired aba6db48 (7383 tests, cycles, builds, engine work **same**: bench boards use their own Tokens). 9 seed maps share one sprite and 9 use stand-ins (art list). T-292 filed | Mon | Mon |

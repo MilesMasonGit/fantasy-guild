@@ -1,6 +1,6 @@
 # NOW — start here
 
-*Updated 2026-11-02. One screen: what is next and where the project stands.
+*Updated 2026-11-03. One screen: what is next and where the project stands.
 A director resumes from [HANDOFF.md](HANDOFF.md); the living table and
 summaries are [STATUS.md](STATUS.md); the queue is the order table in
 [briefs/README.md](briefs/README.md); finished work lives in git, the
@@ -20,7 +20,7 @@ changelog and `docs/archive/`.*
 
 ## Next
 
-1. Performance round 2 (`perf/loot-bubbles`): night bench results, then a short look.
+1. Clean-up in progress (STATUS): small tickets T-286, T-289, T-205, T-292, T-287's safe parts.
 2. Detail passes queued by planning: 340 hero bar and sheet, 350 Tokens and card,
    360 combat look (mock-ups first).
-3. Owner: the art list (seed map sprites); K4, S9, hero orders looks when convenient.
+3. Owner: the art list (seed map sprites).

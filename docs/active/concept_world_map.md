@@ -77,9 +77,8 @@ replace map items as the gate to new content, and reshape the Atlas
   never whether. The ledger plans rings as stages and checks the rules.
 - **A fog cell shows its core resource outputs** and its requirements
   (materials and skill levels) (owner), so a player who needs a particular
-  item can find the region that gives it. Smaller extras (treasures, a rare
-  node, modifiers like Rich Veins, a boss) can stay a surprise on arrival
-  (planning agent's default).
+  item can find the region that gives it. **No hidden extras** (owner, 2026-11-02): a
+  place holds only what its kit and specialty say, plus chests.
 - **Paying the requirements settles it at once, all at once** (owner): no
   deposits over time, no expedition timer, no heroes away.
 - **A newly settled region arrives occupied** (owner): its playmat is
@@ -128,7 +127,7 @@ balance (worries: lucky or unlucky worlds; skills progressing unevenly).*
 - **Against luck: a specialty bag per ring, a pity rule and a value budget
   per cell** (owner): every gathering skill appears as a specialty in every
   ring; a skill not offered in the last 4 options comes next; a cell's
-  modifiers and treasures stay within ±10 % of its ring's value. The ledger
+  chests stay within ±10 % of its ring's value. The ledger
   tests many generated worlds against per-skill bands.
 - Found by the study, for the ledger and content: fishing earns ~450 XP/h
   against ~1,100 for mining; most of today's maps are single-resource.
@@ -275,11 +274,12 @@ the player to **make nodes**.*
 
 ## Built pieces (owner: the recommended clean-up)
 
-- **Retire**: map items, map drops from enemies and bosses, bounty map rewards,
+- **Retire**: map items, modifier items (owner, 2026-11-02: the player no longer
+  modifies playmats), map drops from enemies and bosses, bounty map rewards,
   map upcycling, the tutorial's three maps (the tutorial's end needs a new
   reward: the first ring opening).
-- **Keep, inside generation**: region modifiers and treasures, as hidden
-  extras of a generated region.
+- **Keep, inside generation**: chests. Region modifiers and hidden extras are
+  gone (owner, 2026-11-02).
 - ~~The Cartography Table upgrade becomes "see further"~~ **retired** (owner,
   2026-10-29, Guild Hall interview): every cell's contents are visible, so
   there is nothing to reveal ahead.

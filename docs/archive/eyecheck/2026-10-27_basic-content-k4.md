@@ -1,5 +1,7 @@
 # Eye-check 2026-10-27: basic content, the full-game play-through (brief 240 K4)
 
+> **Closed 2026-11-03 (owner):** accepted as completed without line-by-line verdicts; the verdict lines below stay blank. All of it was already on `main`.
+
 *A new game on your synced content (`main` at 402b7182), played through the
 UI like a player: clicks on the orbs and Tokens, heroes, gear and food dragged
 from the Item Bank, flags dragged onto the mat, loot swept up by hovering.
@@ -10,7 +12,7 @@ not touched; this ran in a separate headless browser.*
 
 To look yourself: start the game from the main folder (`npm run dev`), New
 Game in an empty slot, and play. Shots (1920×1080) are in
-`docs/active/eyecheck/shots/2026-10-27_k4_*.png`.
+`docs/archive/eyecheck/shots/2026-10-27_k4_*.png`.
 
 ## Checks
 

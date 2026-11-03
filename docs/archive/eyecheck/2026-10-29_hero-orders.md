@@ -1,5 +1,7 @@
 # Eye-check 2026-10-29: Hero orders, parts 1 and 2 (brief 260 O1, O2)
 
+> **Closed 2026-11-03 (owner):** accepted as completed without line-by-line verdicts; the verdict lines below stay blank. All of it was already on `main`.
+
 **Branch:** your folder is on `feat/hero-orders-o2` (it holds part 1 too); the
 game runs at http://localhost:5173. ⚠️ **Don't Sync the CMS while on this
 branch**: the director switches your folder back to `main` after the look.
@@ -10,7 +12,7 @@ becomes a job, a free-standing flag a hero idling where it stood), and `main`
 can't read it back until this merges. To see the old-save conversion safely, use
 QA panel → Hero orders → "Load an old save" in the empty slot.
 
-Shots: `docs/active/eyecheck/shots/2026-10-28_orders_o1_*.png`,
+Shots: `docs/archive/eyecheck/shots/2026-10-28_orders_o1_*.png`,
 `2026-10-29_orders_o2_*.png` (sent by phone).
 
 ## Part 1: orders

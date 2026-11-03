@@ -37,8 +37,8 @@ you're back at the PC" list: `docs/archive/eyecheck/2026-10-23_backlog-A.md`,
 - Only `p23b` (the director's scratch worktree, detached at `main`) is this
   director's. Everything else listed belongs to the Systems director (`sc`,
   `se`, `sf`, `sg`, `sl`, `st`, `su`, `sx`) or the planning agents (`pp`,
-  `pcm`, `pco`, `psk`). Kept unmerged on purpose: `atlas-wip`,
-  `crunch/style-p2`.
+  `pcm`, `pco`, `psk`). `atlas-wip` and `crunch/style-p2` were removed 2026-11-03
+  (owner's clean-up), kept as the tags `archive/atlas-wip` and `archive/style-p2`.
 
 ## Left
 

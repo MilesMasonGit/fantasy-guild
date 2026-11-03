@@ -40,8 +40,8 @@ gate), `src/systems/quests/tutorialQuests.js`, the ledger engine
   several materials, its wedge's line as the main one, others blended from
   neighbours. Creatures spread by biome; fish by bait, not place.
 - **Every cell's contents are visible from the start** (core outputs and
-  requirements); smaller extras (treasures, a rare node, modifiers) stay a
-  surprise. **No landmarks**; nothing special marks a new tier.
+  requirements); a place holds only what its kit and specialty say, plus
+  chests (owner, 2026-11-02: no hidden extras). **No landmarks**; nothing special marks a new tier.
 - **Requirements are paid all at once** (materials from earlier rings and
   skill levels); **costs rise with ring distance**, so something nearer is
   always affordable. **Rules**: key materials within reach of any frontier;
@@ -62,8 +62,8 @@ gate), `src/systems/quests/tutorialQuests.js`, the ledger engine
   an Arcane node; **a creature's rare drop (a Goblin Banner) builds a copy of
   its camp, the same as the wild one**; built nodes run at the same speed as wild ones (owner 2026-11-01).
 - **Retire**: map items, map drops, bounty map rewards, map upcycling, the
-  Cartography slots, the tutorial's three maps. **Keep** modifiers and
-  treasures inside generation; the **Atlas tome becomes the world map
+  Cartography slots, the tutorial's three maps, modifier items (owner, 2026-11-02). **Keep** chests
+  inside generation; the **Atlas tome becomes the world map
   screen**; travel between settled places stays free and instant; places left
   are frozen; a new world each run after the ritual.
 - **The tutorial ends with the cartographer opening the world map**: ring 1
@@ -83,7 +83,7 @@ gate), `src/systems/quests/tutorialQuests.js`, the ledger engine
 |---|---|---|
 | W1 | **The world and its generation.** A seeded hex world per run: the Hall's cell (the Starter Camp), three strict rings, wild rings beyond; six wedges shuffled with neighbour preference; each cell's origins (wedge line plus blends), tier by ring, kit archetype, specialty; the guarantees (key materials per frontier, the specialty bag and pity rule, the value budget, no iron to reach iron, one-or-two-place prices); requirements from data (the CMS holds the per-wedge, per-ring origin tables and price templates). Pure and deterministic; tests over many seeds. | engineer |
 | W2 | **The world map screen.** The tome becomes a hex map: settled cells lit, frontier cells with their core-output icons, hover shows requirements with have/need; **settle** pays all at once and travels there; travel between settled cells as today. Map items, map drops, bounty maps, upcycling and the Cartography slots retired (code and UI). | engineer |
-| W3 | **Writing a cell's mat and the arrival.** Settling writes the Region from the cell: the kit archetype for 4–6 heroes, the specialty's better things, hidden extras, wild-ring extremes; a **Stone terrain feature** in the ground (as water is). The mat arrives **darkened** with its small fixed encounter; clearing every enemy brightens it. The tutorial's ending (the world map opens; settle your first place). | engineer |
+| W3 | **Writing a cell's mat and the arrival.** Settling writes the Region from the cell: the kit archetype for 4–6 heroes, the specialty's better things, wild-ring extremes (hidden extras were built here, then ruled out 2026-11-02; T-292 retires what is left); a **Stone terrain feature** in the ground (as water is). The mat arrives **darkened** with its small fixed encounter; clearing every enemy brightens it. The tutorial's ending (the world map opens; settle your first place). | engineer |
 | W4 | **Building nodes anywhere.** The per-skill rules: seeds and seedlings on Farmland; metal mines from a prospecting map on Stone terrain; quarries on Stone, clay and sand near water; fishing only on water mats; Arcane nodes near an Arcane node; a creature's banner builds its camp the same as wild; built nodes the same speed as wild (owner 2026-11-01). Today's Copper Mine, Coal Mine and Quarry change to these rules. | builder (engineer if placement rules need engine work) |
 | W5 | **The ledger meets the world.** Wedge and ring on origins; the **World plan** view (the hex grid by wedge and ring, cell contents, problems overlaid); checks F (a ring-N cell asking ring-N materials, key materials not guaranteed per frontier, the inner rings not covering every Live entry, an origin with no wedge, a cell's value off by more than ±10 %); generating many worlds and reporting per-skill bands and price spreads. | engineer |
 | W6 | **The first world content pack** (through the ledger gate): Ores and Trees origins by ring, placeholder lines for Crops, Herbs, Waters and Arcane, the kit archetypes, price templates per ring, arrival encounters per ring, prospecting maps and creature banners as drops, seeds where missing. | builder |

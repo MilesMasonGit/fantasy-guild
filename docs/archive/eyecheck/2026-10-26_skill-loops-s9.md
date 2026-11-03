@@ -1,5 +1,7 @@
 # Eye-check 2026-10-26: skill loops, the play-through (brief 230 S9)
 
+> **Closed 2026-11-03 (owner):** accepted as completed without line-by-line verdicts; the verdict lines below stay blank. All of it was already on `main`.
+
 *Everything is on `main` with your synced content (skill loops 47d19bec, basic
 content packs 1 and 2). You can look in two ways: the screenshots below
 (1920×1080, taken from the real content), or the running game: start the game
@@ -8,7 +10,7 @@ panel's skill-loop sections (Forestry, Orchards, Mining, Farming, Fishing,
 Stations, Work potions and drinks) to lay out each scene. Your slot 3 is not
 touched.*
 
-Shots are in `docs/active/eyecheck/shots/2026-10-26_s9_*.png`.
+Shots are in `docs/archive/eyecheck/shots/2026-10-26_s9_*.png`.
 
 ## Checks
 

@@ -8,7 +8,7 @@ game is running at http://localhost:5173. Play in your usual save (slot 3), or
 a New Game in an empty slot for a fresh Starter Camp. When you are done, the
 director switches your folder back to `main`.
 
-Shots of each state (taken by the builders, small): `docs/active/eyecheck/shots/2026-10-28_tokenbars_*.png`.
+Shots of each state (taken by the builders, small): `docs/archive/eyecheck/shots/2026-10-28_tokenbars_*.png`.
 
 ## Checks
 

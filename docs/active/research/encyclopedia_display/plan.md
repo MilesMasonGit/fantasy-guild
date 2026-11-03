@@ -1,15 +1,15 @@
 # Encyclopedia chart: what each entry shows (display plan)
 
-**Chosen (owner, 2026-11-01; recorded in the look file on `look/2026-11-01`), built on
+**Chosen (owner, 2026-11-01; recorded in `docs/archive/eyecheck/2026-11-01_encyclopedia-e3_world-w4.md`), built on
 `feat/encyclopedia-e3`:** 1A fold growing stages; 1b-A only the right stations ("Foundation" for
 buildings); 2A skill icon and number on the line; 3A dark ink, 16 px bold, no outline; the
 magnifier dropped (resting on a box shows its card); a box shows **just the need number** (×6,
 red when short; what you have is in the card); the one-off starts leave the chart, the Shop stays;
 and, beyond this plan, **a box's far-side "+N" opens that side in place** (the box moves out, the
 line to its neighbour runs through). The pictures below are the spike's prototype, before the
-build; `capture_encyclopedia_display.mjs` redraws them from `spike/encyclopedia-display` only.
+build; `capture_encyclopedia_display.mjs` redraws them from the tag `archive/spike-encyclopedia-display` only (local to the owner's PC).
 
-Status: draft 2026-11-01, for the owner's choice. Spike branch `spike/encyclopedia-display`.
+Status: draft 2026-11-01, for the owner's choice. Spike kept as the tag `archive/spike-encyclopedia-display`.
 Every picture is a real chart drawn by the game (a New Game, one hero at 15 in every skill and
 Construction 6, a few items in the Bank). The list of pictures is at the end. **02** (Iron Ingot)
 and **21** (the whole screen) show all the recommendations together; **01** and **20** are today.
