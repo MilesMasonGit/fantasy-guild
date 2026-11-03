@@ -1,4 +1,4 @@
-Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350)
+Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360)
 
 # The detail pass: UI and UX, section by section
 
@@ -49,7 +49,7 @@ game looks and plays, gathered one screen at a time.*
 | 5 | Shop | not started | |
 | 6 | Guild Hall | not started | |
 | 7 | World map | not started | |
-| 8 | Combat | **walked 2026-11-02; waits for approval** | carried in the mat list's items 5, 13, 14 |
+| 8 | Combat | **approved and briefed 2026-11-02** ([brief 360](briefs/360_combat_detail.md)) | carried in the mat list's items 5, 13, 14 |
 | 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
 | 10 | Notifications | not started | |
 | 11 | Settings and the start screen | not started | nine "coming soon" controls; T-039 |
