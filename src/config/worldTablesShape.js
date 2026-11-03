@@ -33,7 +33,7 @@
  *   specialties: ['mining', 'forestry', ...],                // the specialty bag of every strict ring
  *   pityWindow: 4,                  // a specialty absent from this many cells in a row comes next
  *   extras: [{ id: 'token_copper_chest', kind: 'treasure', value: 6, lines: ['ores'], rings: [1, 2],
- *              max: 2, weight: 1 }],                       // a place's chests; no shipped table uses the 'modifier' kind
+ *              max: 2, weight: 1 }],                       // a place's chests
  *   ringValue: { 1: 6, 2: 12, 3: 12 },                      // what a cell's extras are worth, per ring
  *   valueTolerance: 0.1,
  *   prices: { 1: { items: [{ qty: 20 }, { qty: 10, from: 'hall' }, { qty: 2, item: 'item_rope' }],
@@ -68,7 +68,7 @@ export const STRICT_RINGS = 3;
 /** One wedge per hex side. */
 export const LINE_COUNT = 6;
 
-export const EXTRA_KIND = Object.freeze({ MODIFIER: 'modifier', TREASURE: 'treasure' });
+export const EXTRA_KIND = Object.freeze({ TREASURE: 'treasure' });
 
 /** Where a price slot's material is gathered. */
 export const PRICE_FROM = Object.freeze({ SOURCE: 'source', HALL: 'hall' });
@@ -317,7 +317,7 @@ export function normaliseWorldTables(raw) {
     for (const row of listOf(raw.extras)) {
         const extra = extraOf(row);
         if (extra) extras.push(extra);
-        else issues.push(`An extra was dropped: it needs an id, a kind (modifier or treasure) and a value above 0`);
+        else issues.push(`An extra was dropped: it needs an id, the kind treasure and a value above 0`);
     }
 
     const ringValue = perRing(raw.ringValue, v => (finite(v) && v >= 0 ? v : 0));

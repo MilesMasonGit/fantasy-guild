@@ -1,7 +1,6 @@
 import { buildLedger, parseKey, itemKey, tokenKey, recipeKey, HOW } from '../../../src/systems/progression/ledger/engine.js';
 import { runChecks, SEVERITY } from '../../../src/systems/progression/ledger/checks.js';
 import { isPlanned } from '../../../src/systems/progression/ledger/plan.js';
-import { mapItemFindings, isMapItem } from '../../../src/systems/atlas/mapItems.js';
 import { buildPace } from '../../../src/systems/progression/ledger/pace.js';
 import { calibrationFindings } from './calibrationStatus.js';
 import { workspaceOriginFindings, baseWorldTables } from './ledgerWorld.js';
@@ -76,12 +75,6 @@ export function gameRuleFindings(state = {}) {
     for (const f of auditLifecycleBlocks({ tokens, items, recipes, skills: SKILLS })) push(f, f.severity === 'warning' ? SEVERITY.INFO : SEVERITY.BLOCK);
     for (const f of findUnknownRefs({ tokens, items, recipes })) push(f, SEVERITY.BLOCK);
     for (const f of toolFindings({ items, tokens, recipes })) push(f, SEVERITY.WARN);
-    for (const def of Object.values(items)) {
-        if (!isMapItem(def)) continue;
-        for (const message of mapItemFindings(def, { tokenExists: (id) => !!tokens[id], itemOf: (id) => items[id] || null })) {
-            push({ entityType: 'Item', entityId: def.id, message }, SEVERITY.WARN);
-        }
-    }
     return out;
 }
 

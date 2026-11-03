@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { buildLedger, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
 import { runChecks, CHECKS, filterFindings, findingsByKey, STARTER_CAMP_KEY } from '../systems/progression/ledger/checks.js';
 import { normaliseWorldTables } from '../config/worldTablesShape.js';
-import { ledgerWorkspace, withIronChest } from './fixtures/ledgerWorld.js';
+import { ledgerContent, withIronChest, withoutOrigin } from './fixtures/ledgerWorld.js';
 
 /**
  * The ledger's checks A to C (`ledger/checks.js`) on the fixture world (`fixtures/ledgerWorld.js`),
@@ -22,7 +22,7 @@ const recipe = (ws, id) => Object.values(ws.recipePools).flat().find((r) => r.id
 
 describe('checks on the fixture world', () => {
     it('gives every finding a known check, its group, a severity and words, worst first', () => {
-        const findings = checksOf(ledgerWorkspace());
+        const findings = checksOf(ledgerContent());
         expect(findings.length).toBeGreaterThan(0);
         for (const f of findings) {
             expect(CHECKS[f.check]).toBeTruthy();
@@ -35,7 +35,7 @@ describe('checks on the fixture world', () => {
     });
 
     it('A: names something that does not exist, as a Block on the record that names it', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         ws.tokens.token_coal_vein.config.outputs.push({ itemId: 'item_nope', chance: 100, minQty: 1, maxQty: 1 });
         ws.starterCamp.tokens.push({ typeId: 'token_gone', x: 0, y: 0 });
         const findings = checksOf(ws);
@@ -44,7 +44,7 @@ describe('checks on the fixture world', () => {
     });
 
     it('A: used but never produced, and produced but unused', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         ws.items.item_salt = { id: 'item_salt', name: 'Salt', type: 'material' };
         recipe(ws, 'recipe_copper_ingot').inputs.push({ itemId: 'item_salt', quantity: 1 });
         const findings = checksOf(ws);
@@ -57,7 +57,7 @@ describe('checks on the fixture world', () => {
     });
 
     it('A: never reachable says why, and a loop with no way in is named as one', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         ws.tokens.token_lonely = { id: 'token_lonely', name: 'Lonely Rock', config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 1000, inputs: [], outputs: [] } };
         delete ws.tokens.token_wild_patch.field;
         const findings = checksOf(ws);
@@ -67,7 +67,7 @@ describe('checks on the fixture world', () => {
     });
 
     it('A: a tool nothing gives, one starter tool for a whole skill, a recipe nothing can host', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         ws.tokens.token_deep_vein = { id: 'token_deep_vein', name: 'Deep Vein', needsTool: { kind: 'pickaxe', minTier: 5 }, config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 1000, inputs: [], outputs: [{ itemId: 'item_coal', chance: 100 }] } };
         ws.starterCamp.tokens.push({ typeId: 'token_deep_vein', x: 0, y: 0 });
         ws.recipePools.smithing.push({ id: 'recipe_pot', name: 'Pot', skill: 'smithing', stationKinds: ['kiln'], inputs: [], outputs: [{ itemId: 'item_coal' }] });
@@ -82,7 +82,7 @@ describe('checks on the fixture world', () => {
     });
 
     it('B: a leak before its tier, late after it, and an ingredient from a later tier', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         ws.items.item_copper_ingot.plan = { tier: 1 };
         ws.items.item_iron_ingot.plan = { tier: 1 };
         const findings = checksOf(ws);
@@ -90,29 +90,22 @@ describe('checks on the fixture world', () => {
         expect(on(findings, itemKey('item_iron_ingot'), 'late')[0].message).toMatch(/Plane 2, later than its tier \(Plane 1\)/);
         expect(on(findings, itemKey('item_iron_ingot'), 'later-ingredient')[0]).toMatchObject({ related: [itemKey('item_iron_ore')] });
         // In its tier, nothing to say.
-        expect(on(checksOf(ledgerWorkspace()), itemKey('item_iron_ingot'), 'late')).toHaveLength(0);
-        expect(on(checksOf(ledgerWorkspace()), itemKey('item_iron_ingot'), 'leak')).toHaveLength(0);
+        expect(on(checksOf(ledgerContent()), itemKey('item_iron_ingot'), 'late')).toHaveLength(0);
+        expect(on(checksOf(ledgerContent()), itemKey('item_iron_ingot'), 'leak')).toHaveLength(0);
     });
 
-    it('B: a map item may arrive one stage before its Region, not two', () => {
-        // The Volcano Map (plane 2) drops from the Goblin Chief on the Mountain Map (plane 1): by design.
-        expect(on(checksOf(ledgerWorkspace()), itemKey('map_volcano'), 'leak')).toHaveLength(0);
-        const ws = ledgerWorkspace();
-        ws.items.map_volcano.plan = { tier: 3 };
-        expect(on(checksOf(ws), itemKey('map_volcano'), 'leak')[0].message).toMatch(/^Reachable at Plane 1, before its tier \(Plane 3\)/);
-        // Anything else one stage early is still a leak.
-        const copper = ledgerWorkspace();
+    it('B: an entry one stage early is a leak', () => {
+        const copper = ledgerContent();
         copper.items.item_copper_ingot.plan = { tier: 1 };
         expect(on(checksOf(copper), itemKey('item_copper_ingot'), 'leak')).toHaveLength(1);
     });
 
     it('B and C: a one-off find is no leak; an entry only one gets is luck only', () => {
         const ws = withIronChest();
-        // The Mountain Map's chest gives Iron Ore at plane 1, but the Volcano's veins are the way the plan means.
+        // Ring 1's chest gives Iron Ore at plane 1, but ring 2's veins are the way the plan means.
         expect(on(checksOf(ws), itemKey('item_iron_ore'), 'leak')).toHaveLength(0);
         expect(on(checksOf(ws), itemKey('item_iron_ore'), 'luck-only')).toHaveLength(0);
-        ws.items.map_volcano.cartography.nodes = ws.items.map_volcano.cartography.nodes.filter((n) => n.typeId !== 'token_iron_vein');
-        const findings = checksOf(ws);
+        const findings = checksOf(withoutOrigin(ws, 'token_iron_vein'));
         const ore = on(findings, itemKey('item_iron_ore'), 'luck-only')[0];
         expect(ore).toMatchObject({ severity: 'warn' });
         expect(ore.message).toBe('Only ever through a one-off find (Iron Chest), which wears out for good, and no sure way.');
@@ -120,13 +113,13 @@ describe('checks on the fixture world', () => {
     });
 
     it('B: Live content that needs a Planned entry is a Block; stubs nothing points to, and items with no tier, are noted', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         recipe(ws, 'recipe_iron_pickaxe').inputs.push({ itemId: 'item_mythril_ore', quantity: 1 });
         const findings = checksOf(ws);
         expect(on(findings, recipeKey('recipe_iron_pickaxe'), 'refs-planned')[0]).toMatchObject({ severity: 'block', related: [itemKey('item_mythril_ore')] });
         // Once Live content names it, the stub is no orphan.
         expect(on(findings, itemKey('item_mythril_ore'), 'orphan-stub')).toHaveLength(0);
-        const plain = checksOf(ledgerWorkspace());
+        const plain = checksOf(ledgerContent());
         expect(on(plain, itemKey('item_mythril_ore'), 'orphan-stub')).toHaveLength(1);
         expect(on(plain, tokenKey('token_mythril_vein'), 'orphan-stub')).toHaveLength(1);
         expect(on(plain, itemKey('item_coal'), 'no-tier')[0]).toMatchObject({ severity: 'info' });
@@ -135,38 +128,22 @@ describe('checks on the fixture world', () => {
         expect(on(plain, itemKey('item_mythril_ore'), 'never-reachable')).toHaveLength(0);
     });
 
-    it('C: luck only, a single map, a first kill only, the Shop only', () => {
-        const findings = checksOf(ledgerWorkspace());
-        // Honey: 3 % from goblins in the camp; the Volcano's hive is sure.
+    it('C: luck only, the Shop only', () => {
+        const findings = checksOf(ledgerContent());
+        // Honey: 3 % from goblins in the camp; ring 2's hive is sure.
         expect(on(findings, itemKey('item_honey'), 'luck-only')[0]).toMatchObject({ severity: 'info' });
         expect(on(findings, itemKey('item_honey'), 'luck-only')[0].message).toMatch(/3% from Goblin.*sure way from Plane 2/);
-        // Iron Ore: only the Volcano's veins (the Fire Elemental's 2 % spawn is luck), and Iron Ingot needs it.
-        expect(on(findings, itemKey('item_iron_ore'), 'fragile')[0]).toMatchObject({ severity: 'warn', message: 'Only from the Volcano Map (Iron Vein).' });
-        expect(on(findings, itemKey('map_volcano'), 'first-kill-only')[0].message).toMatch(/Goblin Chief/);
         expect(on(findings, tokenKey('token_wood_foundation'), 'shop-only')[0].message).toBe('Only from the Shop, for 15 Oak Wood.');
     });
 
-    it('C: a place only luck opens does not count as a second source', () => {
-        const ws = ledgerWorkspace();
-        ws.tokens.token_fire_elemental.config.outputs.push({ itemId: 'item_iron_ore', chance: 100, minQty: 1, maxQty: 1 });
-        // A 2 % ambush in the camp's coal vein: the Fire Elemental can turn up there, but only by luck.
-        ws.tokens.token_coal_vein.statements = [{ keyword: 'spawns', payload: { typeId: 'token_fire_elemental', chance: 2 }, when: { event: 'SELF_CYCLE_COMPLETE', scope: 'self' } }];
-        expect(on(checksOf(ws), itemKey('item_iron_ore'), 'fragile')[0].message).toBe('Only from the Volcano Map (Iron Vein, Fire Elemental).');
-        // A sure one in the camp is a second source.
-        ws.tokens.token_coal_vein.statements[0].payload.chance = 50;
-        expect(on(checksOf(ws), itemKey('item_iron_ore'), 'fragile')).toHaveLength(0);
-    });
-
     it('C: luck only with no sure way at all is a Warn', () => {
-        const ws = ledgerWorkspace();
-        ws.items.map_volcano.cartography.nodes = ws.items.map_volcano.cartography.nodes.filter((n) => n.typeId !== 'token_wild_hive');
-        const honey = on(checksOf(ws), itemKey('item_honey'), 'luck-only')[0];
+        const honey = on(checksOf(withoutOrigin(ledgerContent(), 'token_wild_hive')), itemKey('item_honey'), 'luck-only')[0];
         expect(honey).toMatchObject({ severity: 'warn' });
         expect(honey.message).toMatch(/no sure way/);
     });
 
     it('silences Parked entries, and only them', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         // The Gem is Parked: only a Planned recipe makes it, so it would be never reachable.
         expect(on(checksOf(ws), itemKey('item_gem'))).toHaveLength(0);
         ws.items.item_gem.plan = { status: 'live' };
@@ -178,7 +155,7 @@ describe('checks on the fixture world', () => {
     });
 
     it('takes findings from elsewhere, silenced and sorted with the rest', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         const extra = [
             { check: 'game-rule', key: itemKey('item_coal'), severity: 'block', message: 'A rule the game refuses.' },
             { check: 'pricing', key: itemKey('item_gem'), severity: 'warn', message: 'Cannot price it.' },
@@ -189,12 +166,12 @@ describe('checks on the fixture world', () => {
     });
 
     it('filters and groups findings for the problems list and the rows', () => {
-        const findings = checksOf(ledgerWorkspace());
+        const findings = checksOf(ledgerContent());
         expect(filterFindings(findings, { group: 'C' }).every((f) => f.group === 'C')).toBe(true);
-        expect(filterFindings(findings, { severity: 'warn', check: 'fragile' }).map((f) => f.name)).toEqual(['Iron Ore']);
-        expect(filterFindings(findings, { search: 'VOLCANO MAP (iron' })).toHaveLength(1);
+        expect(filterFindings(findings, { severity: 'info', check: 'luck-only' }).map((f) => f.name)).toEqual(['Honey']);
+        expect(filterFindings(findings, { search: '3% FROM GOBLIN' })).toHaveLength(1);
         const byKey = findingsByKey(findings);
-        expect(byKey.get(itemKey('item_iron_ore')).map((f) => f.check)).toContain('fragile');
+        expect(byKey.get(itemKey('item_honey')).map((f) => f.check)).toContain('luck-only');
     });
 });
 

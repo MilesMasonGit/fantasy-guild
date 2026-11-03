@@ -966,13 +966,11 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
 
               // Count what went in, so the commit message says what changed
               // rather than just "sync". Shapes differ per file: tokens and
-              // items are keyed objects, recipes an array; maps are items.
+              // items are keyed objects, recipes an array.
               const size = (v) => (Array.isArray(v) ? v.length : v && typeof v === 'object' ? Object.keys(v).length : 0);
-              const isMap = (def) => def?.type === 'map' || def?.type === 'modifier';
               const counts = {
                 tokens: size(files['tokens.json']),
                 items: size(files['items.json']),
-                maps: Object.values(files['items.json'] || {}).filter(isMap).length,
                 recipes: size(files['tokenRecipes.json']),
                 'Starter Camp Tokens': size(files['starterCamp.json']?.tokens),
                 perks: Object.values(files['skillPerks.json'] || {}).reduce((n, record) => n + size(record?.perks), 0),

@@ -1,10 +1,11 @@
 // Fantasy Guild — test fixture: a small world for the ledger's reach and tree engines.
 //
 // A Starter Camp of copper, coal and oak with a Furnace and a Goblin Camp; a Shop that sells a
-// Foundation the Smithy is built on; the tutorial's Mountain Map (plane 1), whose Chief's Tent spawns
-// the Goblin Chief, whose first kill always drops the Volcano Map (plane 2), the only map with iron;
-// water with a baited pool; a bonus drop; Passive Production; a luck-only drop; an item nothing
-// makes; and one Planned stub of each kind.
+// Foundation the Smithy is built on; world tables with the Chief's Tent, which spawns the Goblin
+// Chief, on ring 1 and iron on ring 2 (`LEDGER_WORLD_RAW`); water with a baited pool; a bonus drop;
+// Passive Production; a luck-only drop; an item nothing makes; and one Planned stub of each kind.
+
+import { normaliseWorldTables } from '../../config/worldTablesShape.js';
 
 const out = (itemId, chance = 100, minQty = 1, maxQty = minQty, extra = {}) => ({ itemId, chance, minQty, maxQty, ...extra });
 const work = (skill, skillRequired, cycleTimeMs, outputs, inputs = []) => ({ skill, skillRequired, cycleTimeMs, xp: 1, inputs, outputs });
@@ -30,18 +31,7 @@ export const PLAN_ITEMS = {
     item_copper_sickle: { id: 'item_copper_sickle', name: 'Copper Sickle', type: 'tool', equipSlot: 'hand', tool: { kind: 'sickle', tier: 1, starter: true } },
     item_fishing_rod: { id: 'item_fishing_rod', name: 'Fishing Rod', type: 'tool', equipSlot: 'hand', tool: { kind: 'fishing_rod', tier: 1, starter: true } },
     item_iron_pickaxe: { id: 'item_iron_pickaxe', name: 'Iron Pickaxe', type: 'tool', equipSlot: 'hand', tool: { kind: 'pickaxe', tier: 2 } },
-    map_mountain: {
-        id: 'map_mountain', name: 'Mountain Map', type: 'map', plan: { tier: 1 },
-        cartography: { biome: 'mountain', points: 40, tutorial: true, nodes: [{ typeId: 'token_copper_vein', weight: 3 }], camps: [{ typeId: 'token_chief_tent', count: 1 }] },
-    },
-    map_volcano: {
-        id: 'map_volcano', name: 'Volcano Map', type: 'map', plan: { tier: 2 },
-        cartography: { biome: 'volcano', points: 40, bountyWeight: 0, nodes: [{ typeId: 'token_iron_vein', weight: 3 }, { typeId: 'token_coal_vein', weight: 1 }, { typeId: 'token_wild_hive', weight: 1 }] },
-    },
-    mod_deep_veins: {
-        id: 'mod_deep_veins', name: 'Deep Veins', type: 'modifier', plan: { tier: 1 },
-        cartography: { bountyWeight: 0, effects: [{ kind: 'density', typeId: 'token_copper_vein', points: 10 }] },
-    },
+    item_chief_banner: { id: 'item_chief_banner', name: 'Chief Banner', type: 'material', plan: { tier: 1 } },
     item_water: { id: 'item_water', name: 'Water', type: 'drink' },
     item_wheat: { id: 'item_wheat', name: 'Wheat', type: 'material' },
     item_wheat_seed: { id: 'item_wheat_seed', name: 'Wheat Seed', type: 'material' },
@@ -81,7 +71,7 @@ export const PLAN_TOKENS = {
     token_chief_tent: { id: 'token_chief_tent', name: "Chief's Tent", spawner: { spawns: [{ typeId: 'token_goblin_chief', weight: 1 }], allowance: 1, intervalMs: 300000, upkeep: [] } },
     token_goblin_chief: {
         id: 'token_goblin_chief', name: 'Goblin Chief', enemy: { level: 20, style: 'melee', boss: true },
-        config: work('', 1, 12000, [out('item_bones'), out('map_volcano', 3, 1, 1, { firstKill: true })]),
+        config: work('', 1, 12000, [out('item_bones'), out('item_chief_banner')]),
     },
     token_coast: {
         id: 'token_coast', name: 'Coast', config: work('fishing', 1, 8000, []),
@@ -136,10 +126,9 @@ export function ledgerWorkspace() {
 }
 
 /**
- * World tables placing the fixture as its maps did: copper and coal on ring 1 of the Ores wedge and
- * iron on ring 2 (the Volcano Map's plane), the Wild Hive on ring 2 of Crops, the Chief's Tent
- * guaranteed on ring 1 (the Mountain Map's). Settling asks the line's skill at 1, 15 and 30. The
- * CMS reads the workspace's tables, so a workspace hydrated with these keeps the maps' story.
+ * World tables placing the fixture: copper and coal on ring 1 of the Ores wedge and iron on ring 2,
+ * the Wild Hive on ring 2 of Crops, the Chief's Tent guaranteed on ring 1. Settling asks the line's
+ * skill at 1, 15 and 30.
  */
 export const LEDGER_WORLD_RAW = Object.freeze({
     version: 1,
@@ -167,13 +156,27 @@ export function withWorld(ws) {
     return { ...ws, world: structuredClone(LEDGER_WORLD_RAW) };
 }
 
-/** The fixture with an Iron Chest (one Charge, never back) as a treasure on the Mountain Map. */
+/** The fixture as the ledger's engines take it: the workspace with its world tables normalised. */
+export function ledgerContent(raw = LEDGER_WORLD_RAW) {
+    return { ...ledgerWorkspace(), worldTables: normaliseWorldTables(raw) };
+}
+
+/** `content` with one origin gone from every line of its world tables. */
+export function withoutOrigin(content, id) {
+    const tables = content.worldTables;
+    const lines = tables.lines.map(line => ({
+        ...line,
+        origins: Object.fromEntries(Object.entries(line.origins).map(([ring, list]) => [ring, list.filter(o => o.id !== id)]))
+    }));
+    return { ...content, worldTables: { ...tables, lines } };
+}
+
+/** The fixture with an Iron Chest (one Charge, never back) as a chest of ring 1. */
 export function withIronChest() {
-    const ws = ledgerWorkspace();
+    const ws = ledgerContent({ ...LEDGER_WORLD_RAW, extras: [{ id: 'token_iron_chest', kind: 'treasure', value: 6, rings: [1] }], ringValue: { 1: 6 } });
     ws.tokens.token_iron_chest = {
         id: 'token_iron_chest', name: 'Iron Chest', uses: 1,
         config: { skill: 'crafting', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [{ itemId: 'item_iron_ore', chance: 100, minQty: 4, maxQty: 8 }] },
     };
-    ws.items.map_mountain.cartography.treasures = [{ typeId: 'token_iron_chest', count: 1 }];
     return ws;
 }

@@ -11,7 +11,6 @@ import { isTokenType, isTokenRarity } from '../config/registries/tokenConstants.
 import { isTempo, bandFor, isInBand } from '../config/registries/tempoBands.js';
 import { openingMat } from '../systems/core/EngineBootstrap.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
-import { isMapItem } from '../systems/atlas/mapItems.js';
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 import {
     migrateLegacyIntent, applyItemResults, RETIRED_ITEM_FIELDS,
@@ -553,18 +552,7 @@ describe('The opening', () => {
  * as the design says it should. Asserted here as: the field is present on every
  */
 describe('⚠️ Rule 6 — items carry their derived value and its provenance', () => {
-    // ⚠️ Maps and Modifiers are priced by nothing (atlas roadmap A5): Recalculate writes them back exactly as authored, so they are held to that instead.
-    const items = Object.fromEntries(Object.entries(shippedItems).filter(([, item]) => !isMapItem(item)));
-    const maps = Object.fromEntries(Object.entries(shippedItems).filter(([, item]) => isMapItem(item)));
-
-    it('leaves every map item unpriced and exactly as authored', () => {
-        const solved = solveShippedCorpus();
-        for (const [id, item] of Object.entries(maps)) {
-            expect('value' in item, `${id} carries a value`).toBe(false);
-            expect('valueSource' in item, `${id} carries a valueSource`).toBe(false);
-            expect(solved.items[id], `${id} was rewritten by Recalculate`).toBe(item);
-        }
-    });
+    const items = shippedItems;
 
     it('gives every item a valueSource field', () => {
         for (const [id, item] of Object.entries(items)) {

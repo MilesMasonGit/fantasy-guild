@@ -398,8 +398,8 @@ function CellPanel({ plan, context, cell, onOpen, onPick }) {
 
       {cell.ring > 0 && (
         <div className="space-y-1">
-          <h4 className={sectionHead}>Hidden extras</h4>
-          {cell.extras.map((e, i) => <p key={`${e.id}${i}`} className="text-gray-400">{context.nameOf(e.kind === 'treasure' ? tokenKey(e.id) : itemKey(e.id))} <span className="text-gray-500">({e.kind}, worth {e.value})</span></p>)}
+          <h4 className={sectionHead}>Chests</h4>
+          {cell.extras.map((e, i) => <p key={`${e.id}${i}`} className="text-gray-400">{context.nameOf(tokenKey(e.id))} <span className="text-gray-500">({e.kind}, worth {e.value})</span></p>)}
           <p className="text-gray-500">
             Worth {cell.value}{target !== null ? ` of ring ${cell.ring}'s ${target} (±${Math.round(tables.valueTolerance * 100)} %)` : ''}.
           </p>
@@ -475,7 +475,6 @@ function WorldProblems({ plan, focus, onOpen, onPick }) {
                   </button>
                 ) : null}
                 <span style={{ color: 'var(--color-text-secondary)' }}>{f.message}</span>
-                {f.before !== undefined && <BeforeTag before={f.before} />}
               </p>
             ))}
             {list.length > LISTED && (
@@ -487,20 +486,6 @@ function WorldProblems({ plan, focus, onOpen, onPick }) {
         );
       })}
     </section>
-  );
-}
-
-/** Whether an entry the world does not cover was reachable before it (lost with the maps) or never was. */
-function BeforeTag({ before }) {
-  const lost = before !== null;
-  return (
-    <span
-      className="text-[9px] uppercase tracking-wider whitespace-nowrap px-1 rounded"
-      style={{ color: lost ? 'var(--color-error)' : 'var(--color-text-muted)', border: `1px solid ${lost ? 'var(--color-error)' : 'var(--color-border-subtle)'}` }}
-      title={lost ? `Reachable before the world map (tier ${before}), through map items` : 'Never reachable before the world map either: unfinished content'}
-    >
-      {lost ? 'lost with the maps' : 'never reachable'}
-    </span>
   );
 }
 
@@ -542,7 +527,6 @@ function SweepResult({ sweep, onOpen, onWorld }) {
                         {s.key ? (
                           <button onClick={() => onOpen(s.key)} className="underline text-left" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--color-text-primary)', font: 'inherit' }}>{s.name}</button>
                         ) : <span style={{ color: 'var(--color-text-primary)' }}>{s.name}</span>}
-                        {s.before !== undefined && <span className="ml-1"><BeforeTag before={s.before} /></span>}
                       </td>
                       <td style={{ ...td, color: 'var(--color-text-secondary)' }}>
                         <button onClick={() => onWorld(s.example.seed, s.example.cellId)} className="underline mr-1" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--color-text-muted)', font: 'inherit' }} title="Open this world on the map">

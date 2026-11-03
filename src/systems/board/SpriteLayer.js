@@ -8,7 +8,7 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { TOKEN_PX, MAT_STEP_U } from '../../config/matGeometry.js';
 import { matW, matH } from '../../config/matGeometry.js';
-import { getItem, isRetiredItem } from '../../config/registries/itemRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { logger } from '../../utils/Logger.js';
@@ -272,10 +272,6 @@ export function addSprite(kind, refId, quantity = 1, source = null) {
     if (!list || !refId || quantity <= 0) return null;
     if (kind !== 'item') {
         logger.warn('SpriteLayer', `Refused a ${kind} sprite for ${refId}: only items drop as loot`);
-        return null;
-    }
-    if (isRetiredItem(refId)) {
-        logger.debug('SpriteLayer', `Refused ${refId}: map items are retired`);
         return null;
     }
 

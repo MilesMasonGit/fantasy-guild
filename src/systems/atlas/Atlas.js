@@ -203,16 +203,10 @@ export function createStarterRegion(camp = null) {
     return region;
 }
 
-/**
- * How an ingredient reads in a practical name: the item's name without a trailing "Map"; a
- * modifier by its item type.
- */
+/** How an ingredient reads in a practical name: the item's name without a trailing "Map". */
 export function describeIngredient(itemId) {
     const item = getItem(itemId);
-    return {
-        word: String(item?.name || itemId).replace(/\s+map$/i, '').trim(),
-        modifier: item?.type === 'modifier'
-    };
+    return { word: String(item?.name || itemId).replace(/\s+map$/i, '').trim() };
 }
 
 /**
@@ -220,7 +214,7 @@ export function describeIngredient(itemId) {
  *
  * @param {object} [options]
  * @param {string[]} [options.ingredients] the item ids it is written from, in slot order
- * @param {(itemId: string) => {word: string, modifier?: boolean}} [options.describe] how each
+ * @param {(itemId: string) => {word: string}} [options.describe] how each
  *        ingredient reads in the practical name
  * @param {number} [options.seed] the layout's seed; the flavour name is generated from it
  * @param {object|null} [options.biome] biome weights
@@ -262,7 +256,7 @@ function describeRecipes(recipes) {
     return (id) => {
         const recipe = byId.get(id);
         if (!recipe?.name) return describeIngredient(id);
-        return { word: String(recipe.name).replace(/\s+map$/i, '').trim(), modifier: recipe.kind === 'modifier' };
+        return { word: String(recipe.name).replace(/\s+map$/i, '').trim() };
     };
 }
 
@@ -280,7 +274,7 @@ const copy = (v) => JSON.parse(JSON.stringify(v));
  * @param {object} options
  * @param {object[]} options.ingredients the recipes, in slot order
  * @param {number} [options.seed] the seed of the preview to write; else a fresh preview seed
- * @param {(id: string) => {word: string, modifier?: boolean}} [options.describe] how each recipe
+ * @param {(id: string) => {word: string}} [options.describe] how each recipe
  *        reads in the practical name; by default its own `name`, else its item's
  * @param {string|null} [options.cellId] the world cell the Region is settled on
  * @param {boolean} [options.allowUnplaced] write a layout even when some Token found no room
@@ -317,7 +311,7 @@ export function settle({ ingredients = [], seed, describe = null, cellId = null,
 // Dev console: placeholder map recipes, written for free
 // ---------------------------------------------------------------------------
 
-/** The dev recipes `names` pick out ('forest', 'overgrown', ...). */
+/** The dev recipes `names` pick out ('forest', 'mountain_camp', ...). */
 function devRecipes(names) {
     return (Array.isArray(names) ? names : [names]).map(name => {
         const recipe = DEV_MAPS[name];
@@ -328,11 +322,11 @@ function devRecipes(names) {
 
 /**
  * Dev console: what `names` would write
- * (`Game.Atlas.devPreview(['mountain', 'goblinCamp'])`): the Node Summary in words and the layout
+ * (`Game.Atlas.devPreview(['mountain_camp'])`): the Node Summary in words and the layout
  * drawn in text. `preview` is the plan for `Game.Atlas.reroll(...)`; `devSettle(names, seed)`
  * settles exactly this layout.
  */
-export function devPreview(names = ['forest', 'overgrown'], seed) {
+export function devPreview(names = ['forest'], seed) {
     const plan = preview(devRecipes(names), { seed });
     const summary = describeSummary(plan.summary).text;
     const picture = asciiLayout(plan.layout, { artRadius: artRadiusOf });
@@ -340,8 +334,8 @@ export function devPreview(names = ['forest', 'overgrown'], seed) {
     return { seed: plan.seed, fits: plan.fits, summary, picture, preview: plan };
 }
 
-/** Dev console: settle `names` for free (`Game.Atlas.devSettle(['forest', 'overgrown'], seed)`). */
-export function devSettle(names = ['forest', 'overgrown'], seed) {
+/** Dev console: settle `names` for free (`Game.Atlas.devSettle(['forest', 'mountain'], seed)`). */
+export function devSettle(names = ['forest'], seed) {
     const result = settle({ ingredients: devRecipes(names), seed });
     if (result.success) {
         const { id, practicalName: practical, flavourName: flavour } = result.region;

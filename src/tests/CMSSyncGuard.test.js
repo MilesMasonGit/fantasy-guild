@@ -36,7 +36,7 @@ afterEach(() => {
 
 const files = (over = {}) => ({
     'tokens.json': { token_a: { name: 'Alpha' }, token_b: { name: 'Beta' } },
-    'items.json': { item_x: { name: 'Ex', type: 'material' }, map_m: { name: 'Mire', type: 'map' } },
+    'items.json': { item_x: { name: 'Ex', type: 'material' }, item_m: { name: 'Mire', type: 'material' } },
     'tokenRecipes.json': [{ id: 'rec_1', name: 'One', skill: 'smithing' }, { name: 'Old', skill: 'cooking' }],
     'effects.json': { effect_e: { id: 'effect_e', name: 'Eff' } },
     ...over,
@@ -57,7 +57,7 @@ describe('compareSync', () => {
     it('lists removed and added entities per collection, by id and name', () => {
         const next = files({
             'tokens.json': { token_a: { name: 'Alpha' }, token_c: { name: 'Gamma' } },
-            'items.json': { map_m: { name: 'Mire', type: 'map' }, map_n: { name: 'Nook', type: 'map' } },
+            'items.json': { item_m: { name: 'Mire', type: 'material' }, item_n: { name: 'Nook', type: 'material' } },
             'effects.json': {},
         });
         const diff = compareSync(files(), next);
@@ -65,8 +65,7 @@ describe('compareSync', () => {
         expect(diff.removed.tokens).toEqual([{ id: 'token_b', name: 'Beta' }]);
         expect(diff.added.tokens).toEqual([{ id: 'token_c', name: 'Gamma' }]);
         expect(diff.removed.items).toEqual([{ id: 'item_x', name: 'Ex' }]);
-        expect(diff.removed.maps).toEqual([]);
-        expect(diff.added.maps).toEqual([{ id: 'map_n', name: 'Nook' }]);
+        expect(diff.added.items).toEqual([{ id: 'item_n', name: 'Nook' }]);
         expect(diff.removed.effects).toEqual([{ id: 'effect_e', name: 'Eff' }]);
     });
 

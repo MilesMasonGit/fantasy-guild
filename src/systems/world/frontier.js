@@ -65,7 +65,7 @@ export function priceRows(cell, { itemCount, skillLevel }) {
 
 /**
  * What a cell yields, as the map shows it: each material its origins yield, once, the key and main
- * origins' first, then the blends'. The hidden extras are never read here.
+ * origins' first, then the blends'. A place's chests are never read here.
  *
  * @param {object} cell a world cell
  * @param {(originId: string) => string[]} materialsOf

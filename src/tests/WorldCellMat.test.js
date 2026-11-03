@@ -11,7 +11,7 @@ import * as StarterCamp from '../systems/atlas/StarterCamp.js';
 
 /**
  * ⭐ What a settled place's mat holds: its kit's work for four to six heroes, its
- * specialty's better things, every origin the map shows, its hidden extras, and a wild cell's
+ * specialty's better things, every origin the map shows, its chests, and a wild cell's
  * oddness; written as one base recipe that Budget writes exactly.
  */
 
@@ -95,13 +95,12 @@ describe('⭐ a cell\'s mat (the placeholder tables)', () => {
         expect(seen).toBeGreaterThan(20);
     });
 
-    it('stands on its kit\'s ground with its kit\'s Stone; the hidden extras ride along', () => {
+    it('stands on its kit\'s ground with its kit\'s Stone; its chests ride along', () => {
         const cell = strictCells(worldOf(1000)).find(c => c.extras.length);
         const mat = cellMat(cell, TABLES, LOOKUPS);
         const kit = TABLES.kits.find(k => k.id === cell.kit);
         expect(mat.biome).toBe(kit.biome);
         expect(mat.stone).toEqual({ outcrops: kit.stone, ridge: false });
-        expect(mat.modifiers).toEqual([...new Set(cell.extras.filter(e => e.kind === 'modifier').map(e => e.id))]);
         expect(mat.treasures.reduce((n, t) => n + t.count, 0)).toBe(cell.extras.filter(e => e.kind === 'treasure').length);
     });
 
@@ -156,104 +155,13 @@ describe('a wild cell\'s oddness', () => {
     });
 });
 
-const density = (...pairs) => pairs.map(([typeId, points]) => ({ kind: 'density', typeId, points }));
-const threat = (typeId) => [{ kind: 'threat', typeId, count: 1 }];
-
-/**
- * Hidden modifiers, on fixture tables: the shipped tables hold only chests (owner, 2026-11-02), but
- * the generator, the mat and settling still read a modifier extra.
- */
-const FIXTURE_MODIFIERS = [
-    { id: 'mod_test_veins', value: 10, lines: ['ores'], effects: density(['token_copper_ore_vein', 12], ['token_coal_vein', 4]) },
-    { id: 'mod_test_trees', value: 10, lines: ['trees'], effects: density(['token_oak_tree', 16]) },
-    { id: 'mod_test_crops', value: 10, lines: ['crops'], effects: density(['token_apple_tree', 8], ['token_wild_wheat_patch', 6]) },
-    { id: 'mod_test_waters', value: 10, lines: ['waters'], effects: density(['token_coast', 8]) },
-    { id: 'mod_test_goblins', value: 8, effects: threat('token_goblin_camp') },
-    { id: 'mod_test_wolves', value: 8, lines: ['trees', 'arcane'], effects: threat('token_wolf_den') },
-    { id: 'mod_test_crabs', value: 8, lines: ['waters'], effects: threat('token_crab_rocks') },
-    { id: 'mod_test_hive', value: 8, lines: ['crops', 'herbs'], effects: threat('token_wild_hive') },
-    { id: 'mod_test_thorns', value: 8, lines: ['herbs', 'arcane'], effects: threat('token_thorn_thicket') },
-    { id: 'mod_test_embers', value: 8, rings: [2, 3], lines: ['ores', 'arcane'], effects: threat('token_ember_vents') }
-];
-const MODIFIER_TABLES = normaliseWorldTables({
-    ...PLACEHOLDER_WORLD_TABLES,
-    extras: [
-        ...FIXTURE_MODIFIERS.map(({ effects, ...extra }) => ({ ...extra, kind: 'modifier' })),
-        ...PLACEHOLDER_WORLD_TABLES.extras
-    ],
-    ringValue: { 1: 16, 2: 24, 3: 32 }
-});
-const modifierWorldOf = (seed) => generateWorld({ seed, tables: MODIFIER_TABLES, materialsOf, hallOrigins });
-
-/** A modifier extra's recipe, as settling reads one. */
-const modifierRecipe = (id) => {
-    const found = FIXTURE_MODIFIERS.find(m => m.id === id);
-    return found ? { id, kind: 'modifier', effects: found.effects.map(e => ({ ...e })) } : null;
-};
-const isDensity = (id) => (modifierRecipe(id)?.effects || []).some(e => e.kind === 'density');
-const isThreat = (id) => (modifierRecipe(id)?.effects || []).some(e => e.kind === 'threat');
-
-/** The heroes a written summary keeps busy: each node's count over its skill's Tokens per hero, camps as combat. */
-function busyOfSummary(summary) {
-    let sum = 0;
-    for (const e of summary.entries) {
-        if (e.role === 'node') sum += e.count / heroTokensOf(MODIFIER_TABLES, skillOf(e.typeId));
-        else if (e.role === 'camp') sum += e.count / heroTokensOf(MODIFIER_TABLES, COMBAT);
-    }
-    return sum;
-}
-
-describe('⭐ the hidden modifiers\' extra work counts inside the cap (owner: A)', () => {
-    it('⭐ a strict cell with Rich Veins, Teeming Waters, a camp or another extra writes at most six heroes of work', () => {
-        let seen = 0;
-        for (const seed of SEEDS) {
-            for (const cell of strictCells(modifierWorldOf(seed)).filter(c => c.origins.length)) {
-                if (!cell.extras.some(e => e.kind === 'modifier' && (isDensity(e.id) || isThreat(e.id)))) continue;
-                const { recipes } = recipesOfCell(cell, { tables: MODIFIER_TABLES, ...LOOKUPS, modifierRecipe });
-                const busy = busyOfSummary(budget(recipes, { cap: 128 }));
-                expect(busy, `${seed} ${cell.id} ${cell.extras.map(e => e.id)}`).toBeLessThanOrEqual(MAX_HEROES + 1e-9);
-                seen++;
-            }
-        }
-        expect(seen).toBeGreaterThan(30);
-    });
-
-    it('their extra nodes are in the mat itself, and Budget writes exactly the mat', () => {
-        const cell = strictCells(modifierWorldOf(1000)).find(c => c.extras.some(e => isDensity(e.id)));
-        const { mat, recipes } = recipesOfCell(cell, { tables: MODIFIER_TABLES, ...LOOKUPS, modifierRecipe });
-        for (const r of recipes.slice(1)) expect((r.effects || []).some(e => e.kind === 'density' || e.kind === 'threat'), r.id).toBe(false);
-        const summary = budget(recipes, { cap: 128 });
-        const written = (role) => Object.fromEntries(summary.entries.filter(e => e.role === role).map(e => [e.typeId, e.count]));
-        expect(written('node')).toEqual(Object.fromEntries(mat.nodes.map(n => [n.typeId, n.count])));
-        expect(written('camp')).toEqual(Object.fromEntries(mat.camps.map(c => [c.typeId, c.count])));
-        // Without the cap the modifier would have added its nodes on top.
-        const plain = cellMat({ ...cell, extras: [] }, MODIFIER_TABLES, LOOKUPS);
-        const withExtra = cellMat(cell, MODIFIER_TABLES, { ...LOOKUPS, modifierRecipe });
-        const extraNodes = recipes.length ? cell.extras.filter(e => isDensity(e.id)).flatMap(e => modifierRecipe(e.id).effects.filter(x => x.kind === 'density')) : [];
-        expect(extraNodes.length).toBeGreaterThan(0);
-        expect(busyHeroes(withExtra, MODIFIER_TABLES)).toBeGreaterThanOrEqual(busyHeroes(plain, MODIFIER_TABLES) - 1e-9);
-        // And the mat does hold them: somewhere the cap leaves a modifier more of its node than the plain mat.
-        const moreOfTheNode = SEEDS.some(seed => strictCells(modifierWorldOf(seed)).some((c) => {
-            const count = (mat2, typeId) => mat2.nodes.find(n => n.typeId === typeId)?.count ?? 0;
-            const without = cellMat({ ...c, extras: [] }, MODIFIER_TABLES, LOOKUPS);
-            const held = cellMat(c, MODIFIER_TABLES, { ...LOOKUPS, modifierRecipe });
-            return c.extras.filter(e => isDensity(e.id))
-                .flatMap(e => modifierRecipe(e.id).effects)
-                .some(e => count(held, e.typeId) > count(without, e.typeId));
-        }));
-        expect(moreOfTheNode).toBe(true);
-    });
-});
-
 describe('the recipes a mat is written from', () => {
-    it('one base recipe Budget writes exactly, then one per modifier it knows', () => {
-        const cell = strictCells(modifierWorldOf(1000)).find(c => c.extras.some(e => e.kind === 'modifier'));
-        const modifier = { id: 'mod_test', kind: 'modifier', effects: [{ kind: 'treasure', typeId: 'token_copper_chest', count: 1 }] };
-        const { mat, recipes } = recipesOfCell(cell, { tables: MODIFIER_TABLES, ...LOOKUPS, name: 'Test Place', modifierRecipe: () => modifier });
+    it('one base recipe Budget writes exactly', () => {
+        const cell = strictCells(worldOf(1000)).find(c => c.extras.length);
+        const { mat, recipes } = recipesOfCell(cell, { tables: TABLES, ...LOOKUPS, name: 'Test Place' });
+        expect(recipes).toHaveLength(1);
         expect(recipes[0]).toMatchObject({ id: cellRecipeId(cell), kind: 'base', name: 'Test Place', biome: mat.biome });
-        expect(mat.modifiers.length).toBeGreaterThan(0);
-        expect(recipes.slice(1)).toEqual(mat.modifiers.map(() => modifier));
-        const summary = budget([recipes[0]], { cap: 128 });
+        const summary = budget(recipes, { cap: 128 });
         for (const n of mat.nodes) {
             expect(summary.entries.find(e => e.typeId === n.typeId && e.role === 'node')?.count, n.typeId).toBe(n.count);
         }
@@ -262,7 +170,7 @@ describe('the recipes a mat is written from', () => {
     });
 
     it('a mat with no Stone and no odd water names neither', () => {
-        const mat = { biome: 'meadow', nodes: [{ typeId: 'a', count: 2 }], camps: [], treasures: [], modifiers: [], stone: { outcrops: 0, ridge: false }, water: null, inland: null };
+        const mat = { biome: 'meadow', nodes: [{ typeId: 'a', count: 2 }], camps: [], treasures: [], stone: { outcrops: 0, ridge: false }, water: null, inland: null };
         const [base] = recipesOfMat(mat, { id: 'x' });
         expect(base).toEqual({ id: 'x', kind: 'base', name: '', biome: 'meadow', points: 2, nodes: [{ typeId: 'a', weight: 2 }] });
         expect(budget([base], { cap: 128 }).ground).not.toHaveProperty('stone');

@@ -7,7 +7,6 @@ import { useEntityStore } from '../../cms/src/stores/useEntityStore.js';
 import App from '../../cms/src/App.jsx';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 import ItemEditor from '../../cms/src/components/editors/ItemEditor.jsx';
-import MapEditor from '../../cms/src/components/editors/MapEditor.jsx';
 import RecipeEditor from '../../cms/src/components/editors/RecipeEditor.jsx';
 import Statements, { StatementList } from '../../cms/src/components/editors/Statements.jsx';
 import AuditPanel from '../../cms/src/components/audit/AuditPanel.jsx';
@@ -133,17 +132,12 @@ describe('CMS smoke — the screens mount without throwing', () => {
         expect(container.querySelectorAll('input').length).toBeGreaterThan(3);
     });
 
-    it('renders the Item, Map and Recipe editors', () => {
+    it('renders the Item and Recipe editors', () => {
         const store = useEntityStore.getState();
         const itemId = store.addItem({ name: 'Raw Shrimp' });
-        const mapId = useEntityStore.getState().addMap('map', { name: 'Shrimp Coast Map' });
 
         useEntityStore.getState().setActiveEntity(itemId, 'item');
         expect(() => render(React.createElement(ItemEditor))).not.toThrow();
-        cleanup();
-
-        useEntityStore.getState().setActiveEntity(mapId, 'map');
-        expect(() => render(React.createElement(MapEditor))).not.toThrow();
         cleanup();
 
         expect(() => render(React.createElement(RecipeEditor))).not.toThrow();

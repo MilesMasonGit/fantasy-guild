@@ -19,7 +19,7 @@ import { nextSeed, seedFromText } from './seededRandom.js';
  * draws from `Math.random`: the seed comes from the caller or the guild's own ({@link previewSeed}).
  */
 
-const RECIPE_KINDS = Object.freeze(['base', 'modifier']);
+const RECIPE_KINDS = Object.freeze(['base']);
 
 const isPlainObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -36,15 +36,15 @@ function described(item) {
 }
 
 /**
- * The ingredient as a recipe: a recipe comes back as it is. Map items are retired: the world map
- * settles places instead, so an item id is refused like anything else.
+ * The ingredient as a recipe: a recipe comes back as it is, and an item id is refused like
+ * anything else.
  *
  * @throws {TypeError} for anything that is not a recipe
  */
 export function recipeOf(item) {
     if (isRecipe(item)) return item;
     throw new TypeError(`Atlas.recipeOf: ${described(item)} is not a map recipe `
-        + '(a recipe is { id, kind: "base" | "modifier", ... }, see Budget.js)');
+        + '(a recipe is { id, kind: "base", ... }, see Budget.js)');
 }
 
 // ---------------------------------------------------------------------------

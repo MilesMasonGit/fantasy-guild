@@ -46,8 +46,8 @@ const HILLS = Object.freeze({
     nodes: [{ typeId: ORE, weight: 1 }]
 });
 const THICKET = Object.freeze({
-    id: 'test_mod_thicket', name: 'Thicket', kind: 'modifier',
-    effects: [{ kind: 'density', typeId: OAK, points: 4 }],
+    id: 'test_map_thicket', name: 'Thicket', kind: 'base', biome: 'forest', points: 4,
+    nodes: [{ typeId: OAK, weight: 1 }],
     rules: [FORESTRY_RULE]
 });
 

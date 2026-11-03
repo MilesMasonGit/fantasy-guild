@@ -51,15 +51,9 @@ registerTokenTypes({
     [SITE]: { id: SITE, name: 'Screen Site', tokenType: 'resource', landmark: true, rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature' }
 });
 const WOOD_ITEM = 'map_test_screen_wood';
-const THICKET_ITEM = 'mod_test_screen_thicket';
 registerItems({
     [WOOD_ITEM]: {
-        id: WOOD_ITEM, name: 'Wood Map', type: 'map', stackable: true,
-        cartography: { biome: 'forest', points: 16, nodes: [{ typeId: OAK, weight: 1 }], camps: [], treasures: [] }
-    },
-    [THICKET_ITEM]: {
-        id: THICKET_ITEM, name: 'Thicket', type: 'modifier', stackable: true,
-        cartography: { effects: [{ kind: 'density', typeId: OAK, points: 4 }] }
+        id: WOOD_ITEM, name: 'Wood Map', type: 'material', stackable: true
     }
 });
 

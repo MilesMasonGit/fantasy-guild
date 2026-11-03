@@ -44,13 +44,11 @@ describe('what is recorded', () => {
         expect(collectedOf().tokens.has('token_iron_ore_vein')).toBe(true);
     });
 
-    it('an enemy once beaten (the kill count) or paid its first-kill drops', () => {
+    it('an enemy once beaten (the kill count)', () => {
         const fight = { id: 'f1', combat: { state: {} }, instanceId: null, drops: [] };
         handleVictory(fight, { id: 'h1' }, { id: 'token_goblin', name: 'Goblin' }, 'h1', []);
         expect(GameState.state.collection.enemyKillCounts.token_goblin).toBe(1);
         expect(collectedOf().enemies.has('token_goblin')).toBe(true);
-        GameState.state.collection.firstKillDrops = { token_wolf: true };
-        expect(collectedOf().enemies.has('token_wolf')).toBe(true);
     });
 
     it('an item once banked, and a recipe once made', () => {

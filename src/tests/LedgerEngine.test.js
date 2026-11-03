@@ -4,11 +4,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import {
-    buildWorld, computeReach, describePath, reachPath, ingredientTree, treeSummary, buildLedger, hubsOf,
-    itemKey, tokenKey, recipeKey, BOUNTY_MAP_CHANCE, LUCK_BELOW,
+    buildWorld, computeReach, describePath, ingredientTree, treeSummary, buildLedger, hubsOf,
+    itemKey, tokenKey, recipeKey, LUCK_BELOW,
 } from '../systems/progression/ledger/engine.js';
 import { normaliseWorldTables } from '../config/worldTablesShape.js';
-import { ledgerWorkspace, withIronChest } from './fixtures/ledgerWorld.js';
+import { ledgerContent, withIronChest, withoutOrigin } from './fixtures/ledgerWorld.js';
 
 /**
  * The ledger's engines on a small fixture world (`fixtures/ledgerWorld.js`): reach (the earliest
@@ -16,7 +16,7 @@ import { ledgerWorkspace, withIronChest } from './fixtures/ledgerWorld.js';
  */
 
 const DATA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../data');
-const ledger = () => buildLedger(ledgerWorkspace());
+const ledger = () => buildLedger(ledgerContent());
 const reachOf = (key) => ledger().reachOf(key);
 
 describe('reach: what the Starter Camp and the Guild Hall give', () => {
@@ -66,7 +66,7 @@ describe('reach: what the Starter Camp and the Guild Hall give', () => {
     });
 
     it('asks for a tool only where the work names a skill, as the game does', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         const vein = (skill) => ({ id: 'token_deep_vein', name: 'Deep Vein', needsTool: { kind: 'pickaxe', minTier: 4 }, config: { skill, skillRequired: 1, cycleTimeMs: 1000, inputs: [], outputs: [{ itemId: 'item_gem', chance: 100, minQty: 1, maxQty: 1 }] } });
         ws.starterCamp.tokens.push({ typeId: 'token_deep_vein', x: 900, y: 100 });
         ws.tokens.token_deep_vein = vein('mining');
@@ -80,48 +80,24 @@ describe('reach: what the Starter Camp and the Guild Hall give', () => {
     });
 });
 
-describe('reach: maps and the tiers they open', () => {
-    it('opens plane 1 with the tutorial map, at the tier the owner set on it', () => {
+describe('reach: the world\'s rings and the tiers they open', () => {
+    it('opens tier 1 with what ring 1 holds: a guaranteed camp, and what it spawns', () => {
         const l = ledger();
-        expect(l.reachOf(itemKey('map_mountain'))).toMatchObject({ tier: 0, how: 'tutorial' });
-        expect(l.reachOf(tokenKey('token_chief_tent'))).toMatchObject({ tier: 1, how: 'map', via: itemKey('map_mountain') });
+        expect(l.reachOf(tokenKey('token_chief_tent'))).toMatchObject({ tier: 1, how: 'world' });
         expect(l.reachOf(tokenKey('token_goblin_chief'))).toMatchObject({ tier: 1 });
     });
 
-    it('takes a first-kill drop as sure, and the map it drops opens plane 2', () => {
+    it('opens iron on ring 2, at the skill settling there asks', () => {
         const l = ledger();
-        expect(l.reachOf(itemKey('map_volcano'))).toMatchObject({ tier: 1, how: 'drop', firstKill: true, luckOnly: false });
         const iron = l.reachOf(itemKey('item_iron_ore'));
-        expect(iron).toMatchObject({ tier: 2, sureTier: 2, luckOnly: false, levels: { mining: 15, combat: 20 }, gate: { skill: 'combat', level: 20 } });
-        expect(l.pathOf(itemKey('item_iron_ore'))).toBe(
-            "Iron Ore ← Iron Vein (Mining 15) ← Volcano Map ← Goblin Chief (Combat 20, first kill) ← Chief's Tent ← Mountain Map ← given by the tutorial"
-        );
-        expect(reachPath(l.reach, itemKey('item_iron_ore')).map((s) => s.tier)).toEqual([2, 2, 1, 1, 1, 0]);
+        expect(iron).toMatchObject({ tier: 2, sureTier: 2, luckOnly: false, levels: { mining: 15 }, gate: { skill: 'mining', level: 15 } });
+        expect(l.pathOf(itemKey('item_iron_ore'))).toBe('Iron Ore ← Iron Vein (Mining 15) ← Ores ring 2 ← settled on the world map (Mining 15)');
     });
 
     it('carries the tier down a chain of recipes', () => {
         const l = ledger();
         expect(l.reachOf(recipeKey('recipe_iron_ingot'))).toMatchObject({ tier: 2, levels: { smithing: 15, mining: 15 } });
         expect(l.reachOf(itemKey('item_iron_pickaxe'))).toMatchObject({ tier: 2, levels: { smithing: 16 } });
-    });
-
-    it('a map with no set tier opens its Region at the tier its item is had', () => {
-        const ws = ledgerWorkspace();
-        delete ws.items.map_volcano.plan;
-        const l = buildLedger(ws);
-        expect(l.reachOf(itemKey('item_iron_ore')).tier).toBe(1);
-    });
-
-    // ⚠️ The game no longer pays maps from bounties (map items are retired); the ledger still
-    // models it until it reads the world map instead.
-    it('pays maps from bounties at the odds the game paid them', () => {
-        expect(BOUNTY_MAP_CHANCE).toBe(0.25);
-        const bounty = buildWorld(ledgerWorkspace()).rules.find((r) => r.how === 'bounty');
-        expect(bounty.gives).toEqual([{ key: itemKey('map_mountain'), chance: BOUNTY_MAP_CHANCE }]);
-    });
-
-    it('a modifier no one has writes nothing', () => {
-        expect(reachOf(itemKey('mod_deep_veins')).tier).toBeNull();
     });
 });
 
@@ -132,15 +108,13 @@ describe('reach: one-off finds', () => {
         expect(iron).toMatchObject({ tier: 2, sureTier: 2, luckOnly: false, via: tokenKey('token_iron_vein'), oneOffOnly: false });
         expect(iron.oneOffFind).toEqual({ tier: 1, via: tokenKey('token_iron_chest'), name: 'Iron Chest' });
         expect(l.pathOf(itemKey('item_iron_ore'))).not.toMatch(/Iron Chest/);
-        // The chest itself is still had on the map.
-        expect(l.reachOf(tokenKey('token_iron_chest'))).toMatchObject({ tier: 1, luckOnly: false });
+        // The chest itself stands in some worlds' ring 1.
+        expect(l.reachOf(tokenKey('token_iron_chest'))).toMatchObject({ tier: 1, maybe: true });
         expect(l.reachOf(itemKey('item_copper_ore')).oneOffFind).toBeNull();
     });
 
     it('reads an entry only a one-off find gets as luck only, down the chain', () => {
-        const ws = withIronChest();
-        ws.items.map_volcano.cartography.nodes = ws.items.map_volcano.cartography.nodes.filter((n) => n.typeId !== 'token_iron_vein');
-        const l = buildLedger(ws);
+        const l = buildLedger(withoutOrigin(withIronChest(), 'token_iron_vein'));
         expect(l.reachOf(itemKey('item_iron_ore'))).toMatchObject({ tier: 1, sureTier: null, luckOnly: true, oneOffOnly: true, via: tokenKey('token_iron_chest') });
         expect(l.reachOf(itemKey('item_iron_ingot'))).toMatchObject({ tier: 1, sureTier: null, luckOnly: true, oneOffOnly: true });
     });
@@ -179,7 +153,7 @@ describe('reach: luck, never and Planned', () => {
     });
 
     it('settles on the same answer whatever order the content comes in', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         const reversed = {
             ...ws,
             items: Object.fromEntries(Object.entries(ws.items).reverse()),
@@ -193,7 +167,7 @@ describe('reach: luck, never and Planned', () => {
 
 describe('hubs: where balance hinges', () => {
     it('ranks items by how many things spend them, counting each recipe once', () => {
-        const hubs = hubsOf(buildWorld(ledgerWorkspace()));
+        const hubs = hubsOf(buildWorld(ledgerContent()));
         const byId = Object.fromEntries(hubs.map((h) => [h.id, h]));
         // Coal: both ingot recipes. Oak Wood: the Iron Pickaxe and the Foundation's price. Iron Ingot: the pickaxe.
         expect(byId.item_coal).toMatchObject({ uses: 2, consumers: [recipeKey('recipe_copper_ingot'), recipeKey('recipe_iron_ingot')] });
@@ -273,12 +247,12 @@ describe('trees: a made item down to its origins', () => {
 
     it('costs no hero time for Passive Production, and takes another rate when given one', () => {
         expect(ledger().treeOf('item_seed')).toMatchObject({ effortMs: 0, complete: true });
-        const fast = buildLedger(ledgerWorkspace(), { cycleTimeOf: (rule) => (rule.how === 'craft' ? 1000 : null) });
+        const fast = buildLedger(ledgerContent(), { cycleTimeOf: (rule) => (rule.how === 'craft' ? 1000 : null) });
         expect(fast.treeOf('item_iron_ingot').effortMs).toBe(1000 + 2 * 12000 + 2 * 4000);
     });
 
     it('stops at an ingredient already on the way up', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         ws.recipePools.smithing.push({ id: 'recipe_loop', name: 'Loop', skill: 'smithing', stationKinds: ['furnace'], durationMs: 1000, inputs: [{ itemId: 'item_gem', quantity: 1 }], outputs: [{ itemId: 'item_gem', chance: 100, minQty: 2, maxQty: 2 }] });
         const world = buildWorld(ws);
         const tree = ingredientTree(world, computeReach(world), 'item_gem');

@@ -1,10 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { buildEncyclopedia, encyclopedia, KIND } from '../ui/components/encyclopedia/encyclopediaModel.js';
+import { buildEncyclopedia, encyclopedia } from '../ui/components/encyclopedia/encyclopediaModel.js';
 import { waysIn, wayInRequirement, chartOf, layoutChart } from '../ui/components/encyclopedia/encyclopediaChart.js';
-import { HOW, itemKey, tokenKey } from '../systems/progression/ledger/engine.js';
-import { isMapItem } from '../systems/atlas/mapItems.js';
-import { normaliseWorldTables } from '../config/worldTablesShape.js';
-import { ledgerWorkspace, LEDGER_WORLD_RAW } from './fixtures/ledgerWorld.js';
+import { HOW, tokenKey } from '../systems/progression/ledger/engine.js';
+import { ledgerContent } from './fixtures/ledgerWorld.js';
 import { t } from '../i18n/index.js';
 
 /**
@@ -49,7 +47,7 @@ describe('the shipped encyclopedia reads the world tables', () => {
 });
 
 describe('world ways over the fixture tables', () => {
-    const content = { ...ledgerWorkspace(), worldTables: normaliseWorldTables(LEDGER_WORLD_RAW) };
+    const content = ledgerContent();
     const book = buildEncyclopedia(content);
 
     it('a vein one wedge holds: that wedge and ring, its settle level on the line', () => {
@@ -57,7 +55,6 @@ describe('world ways over the fixture tables', () => {
         expect(vein).toMatchObject({ how: HOW.WORLD, from: null, caption: 'worldLine', captionArgs: { line: 'Ores', ring: 2 } });
         expect(wayInRequirement(book, vein)).toEqual({ skill: 'mining', level: 15 });
         // No map writes it any more.
-        expect(waysIn(book, tokenKey('token_iron_vein')).some(w => w.how === HOW.MAP)).toBe(false);
     });
 
     it('a guaranteed camp every wedge may hold: one way for its ring, no single skill on the line', () => {
@@ -65,22 +62,6 @@ describe('world ways over the fixture tables', () => {
         expect(ways).toHaveLength(1);
         expect(ways[0]).toMatchObject({ caption: 'worldRing', captionArgs: { ring: 1 } });
         expect(wayInRequirement(book, ways[0])).toBeNull();
-    });
-
-    // The fixture still holds map items, which the shipped content no longer does.
-    it('no retired map item is a way in, to anything', () => {
-        const maps = new Set(Object.entries(content.items).filter(([, def]) => isMapItem(def)).map(([id]) => itemKey(id)));
-        expect(maps.size).toBeGreaterThan(0);
-        const offenders = [];
-        for (const kind of Object.values(KIND)) {
-            for (const entry of book.byKind[kind]) {
-                for (const row of book.sourcesOf(entry.key)) if (maps.has(row.via)) offenders.push(`${entry.key} via ${row.via}`);
-                for (const way of waysIn(book, entry.key)) {
-                    for (const k of [way.from, ...way.inputs.map(i => i.key)]) if (maps.has(k)) offenders.push(`${entry.key} from ${k}`);
-                }
-            }
-        }
-        expect(offenders).toEqual([]);
     });
 
     it('the chart lays a world way out as words on the left, with their ring', () => {

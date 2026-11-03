@@ -20,7 +20,7 @@ import {
 } from '../config/areaBanners.js';
 import { BIOME_GROUND } from '../systems/atlas/Budget.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
-import { bannerForRegion, pickedBanner } from '../ui/components/atlas/regionBanner.js';
+import { bannerForRegion } from '../ui/components/atlas/regionBanner.js';
 import { coverScale, BannerArt } from '../ui/components/base/BannerArt.jsx';
 import { RegionList, regionOrder } from '../ui/components/atlas/RegionList.jsx';
 import { ArrivalCard } from '../ui/components/atlas/ArrivalCard.jsx';
@@ -41,18 +41,11 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 const OAK = 'fixture_producer';
 const FOREST = 'map_test_banner_forest';
-const COAST = 'map_test_banner_coast';
 const PLAIN = 'map_test_banner_plain';
-const MOD = 'mod_test_banner_mod';
-const base = (id, name, biome, banner) => ({
-    id, name, type: 'map', stackable: true, ...(banner ? { banner } : {}),
-    cartography: { biome, points: 8, nodes: [{ typeId: OAK, weight: 1 }], camps: [], treasures: [] }
-});
+const base = (id, name) => ({ id, name, type: 'material', stackable: true });
 registerItems({
-    [FOREST]: base(FOREST, 'Banner Forest Map', 'forest', 'b_swamp'),
-    [COAST]: base(COAST, 'Banner Coast Map', 'coast', 'b_fishing_village'),
-    [PLAIN]: base(PLAIN, 'Plain Map', 'forest', null),
-    [MOD]: { id: MOD, name: 'Banner Mod', type: 'modifier', stackable: true, banner: 'b_library', cartography: { effects: [{ kind: 'density', typeId: OAK, points: 2 }] } }
+    [FOREST]: base(FOREST, 'Banner Forest Map'),
+    [PLAIN]: base(PLAIN, 'Plain Map')
 });
 
 const q = (c, sel) => c.querySelector(sel);
@@ -125,19 +118,10 @@ describe('the banners the game has', () => {
 });
 
 describe('which banner a Region shows', () => {
-    it('its Base Map\'s pick; the main biome\'s map first; Modifiers never', () => {
-        expect(pickedBanner([FOREST])).toBe('b_swamp');
-        expect(pickedBanner([MOD, PLAIN])).toBeNull();
-        expect(pickedBanner([FOREST, COAST], 'coast')).toBe('b_fishing_village');
-        expect(pickedBanner([FOREST, COAST], 'mountain')).toBe('b_swamp');
-        expect(pickedBanner([PLAIN, COAST], 'forest')).toBe('b_fishing_village');
-    });
-
-    it('without a pick, the default for its main biome', () => {
-        const { region } = Atlas.createRegion({ ingredients: [PLAIN, MOD], ground: { main: 'forest' } });
+    it('the default for its main biome', () => {
+        const { region } = Atlas.createRegion({ ingredients: [PLAIN], ground: { main: 'forest' } });
         expect(bannerForRegion(region)).toBe('b_lush_forest');
-        const { region: picked } = Atlas.createRegion({ ingredients: [FOREST], ground: { main: 'forest' } });
-        expect(bannerForRegion({ id: picked.id })).toBe('b_swamp');
+        expect(bannerForRegion({ id: region.id })).toBe('b_lush_forest');
         const { region: bare } = Atlas.createRegion();
         expect(bannerForRegion(bare)).toBe(FALLBACK_BANNER);
     });
@@ -152,8 +136,8 @@ describe('which banner a Region shows', () => {
         expect(bannerForRegion(starter)).toBe('b_golden_plains');
     });
 
-    it('a place settled on the world map: the default for its main biome, whatever modifiers it was written with', () => {
-        const { region } = Atlas.createRegion({ ingredients: ['world_cell_0,-1', MOD], ground: { main: 'mountain' }, cellId: '0,-1' });
+    it('a place settled on the world map: the default for its main biome', () => {
+        const { region } = Atlas.createRegion({ ingredients: ['world_cell_0,-1'], ground: { main: 'mountain' }, cellId: '0,-1' });
         expect(bannerForRegion(region)).toBe(defaultBannerFor('mountain'));
     });
 
@@ -166,7 +150,7 @@ describe('which banner a Region shows', () => {
 
 describe('where the banner shows', () => {
     it('each Region row lies on its banner with only its names (its actions are on the right page); the Starter Camp first, then by the day settled', () => {
-        const { region: later } = Atlas.createRegion({ ingredients: [FOREST], ground: { main: 'forest' } });
+        const { region: later } = Atlas.createRegion({ ingredients: [FOREST], ground: { main: 'mountain' } });
         const { region: earlier } = Atlas.createRegion({ ingredients: [PLAIN], ground: { main: 'forest' } });
         Atlas.getRegion(later.id).settledAt = 5000;
         Atlas.getRegion(earlier.id).settledAt = 100;
@@ -177,7 +161,7 @@ describe('where the banner shows', () => {
         expect(rows.map(r => r.getAttribute('data-region-row'))).toEqual([starter, earlier.id, later.id]);
         expect(q(rows[0], '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_golden_plains');
         expect(q(rows[1], '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_lush_forest');
-        expect(q(rows[2], '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_swamp');
+        expect(q(rows[2], '[data-banner-art]').getAttribute('data-banner-art')).toBe(defaultBannerFor('mountain'));
         expect(q(rows[1], `[data-region-node="${OAK}"]`)).toBeNull();
         expect(q(rows[1], '[data-region-heroes]')).toBeNull();
         expect(rows[1].textContent).not.toMatch(/Settled day|Token/);
@@ -206,7 +190,7 @@ describe('where the banner shows', () => {
         const card = q(container, `[data-arrival-card="${region.id}"]`);
         expect(card).toBeTruthy();
         expect(q(card, '[data-arrival-name]').textContent).toBe(region.flavourName);
-        expect(q(card, '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_swamp');
+        expect(q(card, '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_lush_forest');
         fireEvent.pointerDown(card);
         expect(q(container, '[data-arrival-card]')).toBeNull();
         act(() => { Atlas.travel(Atlas.list().find(r => r.kind === Atlas.REGION_KIND.STARTER).id); });

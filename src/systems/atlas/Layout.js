@@ -63,7 +63,7 @@ import { planStone, readStone, sampleStone } from './StoneShapes.js';
  * "Stands on"), and not refused by the optional `allows` hook (`layoutInputs.cannotCheck` asks the
  * game's `Cannot` rules). A grove, camp or treasure also starts on ground its Token may stand on.
  * Nodes are spaced more loosely than that when the budget leaves room ({@link COMFORT_GAP}),
- * packing tighter as density modifiers add more.
+ * packing tighter as a recipe writes more.
  *
  * ⚠️ Determinism: every number comes from the seeded generator, whole-unit coordinates, and
  * arithmetic IEEE fixes exactly (+ − × ÷ sqrt). No trigonometry, no `Math.hypot`, no `**`: their

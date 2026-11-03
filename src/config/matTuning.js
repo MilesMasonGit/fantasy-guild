@@ -145,7 +145,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'questCap',
         group: 'Quests',
         label: 'Quest cap',
-        hint: 'How many bounty quests the Guild Hall keeps on the mat before the Notice Board is upgraded (TL-18; the game value is 2; dev builds only). Each Notice Board rank adds one, up to the max below. Tutorial quests do not count.',
+        hint: 'How many bounty quests the Guild Hall keeps on the mat (the game value is 2; dev builds only). The max below caps it. Tutorial quests do not count.',
         min: 0, max: 10, step: 1, def: 2,
         format: (v) => `${Math.round(v)} quests`
     },
@@ -153,7 +153,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'questCapMax',
         group: 'Quests',
         label: 'Quest cap max',
-        hint: 'The most bounty quests the Notice Board can raise the cap to (TL-18: 2 plus one per rank, to 5; the game value is 5; dev builds only).',
+        hint: 'The most this device may set the quest cap to, whatever the row above says (the game value is 5; dev builds only).',
         min: 1, max: 20, step: 1, def: 5,
         format: (v) => `${Math.round(v)} quests`
     },

@@ -8,8 +8,6 @@ export const TEXT = Object.freeze({
     STARTER_CAMP: 'Starter Camp',
     /** The practical name of a Region written from no maps at all (the dev's test Region). */
     BLANK_REGION: 'Blank Region',
-    /** The noun of a practical name with modifiers but no base map. */
-    LAND: 'Land',
     AND: 'and',
 
     REFUSE_NO_GAME: 'No game is running',
@@ -28,19 +26,16 @@ export const TEXT = Object.freeze({
 export const FLAVOUR_NAME_MAX = 32;
 
 /**
- * A Region's practical name, from what it was written with: the modifiers' words first, then the
- * base maps' ("Overgrown Forest", "Granite Forest and Mountain"). Each word once, in slot order.
+ * A Region's practical name, from what it was written with ("Forest", "Forest and Mountain"). Each
+ * word once, in slot order.
  *
- * @param {Array<{word: string, modifier?: boolean}>} parts one per ingredient
+ * @param {Array<{word: string}>} parts one per ingredient
  */
 export function practicalName(parts = []) {
-    const words = (modifier) => [...new Set(parts
-        .filter(p => p && typeof p.word === 'string' && p.word.trim() && !!p.modifier === modifier)
+    const words = [...new Set(parts
+        .filter(p => p && typeof p.word === 'string' && p.word.trim())
         .map(p => p.word.trim()))];
-    const modifiers = words(true);
-    const bases = words(false);
-    if (!modifiers.length && !bases.length) return TEXT.BLANK_REGION;
-    return [...modifiers, bases.length ? joinAnd(bases) : TEXT.LAND].join(' ');
+    return words.length ? joinAnd(words) : TEXT.BLANK_REGION;
 }
 
 /** "a", "a and b", "a, b and c". */

@@ -59,10 +59,10 @@ export const TERRAIN_DEV_WATER = Object.freeze([
  * lake view rolls on to a seed whose lake has an island.
  */
 export const TERRAIN_DEV_PLACEMENT = Object.freeze([
-    { id: 'place_meadow', label: 'Meadow, copper, camp, chest', maps: ['place_meadow', 'place_copper', 'goblinCamp', 'devChest'] },
-    { id: 'place_lake', label: 'Lake island, camp, chest', maps: ['place_lake', 'goblinCamp', 'devChest'], wants: 'island' },
-    { id: 'place_forest', label: 'Forest, camp, chest', maps: ['forest', 'goblinCamp', 'devChest'] },
-    { id: 'place_mountain', label: 'Mountain, camp, chest', maps: ['mountain', 'goblinCamp', 'devChest'] }
+    { id: 'place_meadow', label: 'Meadow, copper, camp, chest', maps: ['place_meadow_stocked', 'place_copper'] },
+    { id: 'place_lake', label: 'Lake island, camp, chest', maps: ['place_lake_stocked'], wants: 'island' },
+    { id: 'place_forest', label: 'Forest, camp, chest', maps: ['forest_stocked'] },
+    { id: 'place_mountain', label: 'Mountain, camp, chest', maps: ['mountain_stocked'] }
 ].map(Object.freeze));
 
 /** How many seeds are tried for a layout in which every node fits. */
@@ -144,7 +144,7 @@ function removeIfDev(region) {
  * @returns {{success: boolean, reason?: string, region?: object}}
  */
 export function goToDevRegion(maps, { seed } = {}) {
-    if (maps.includes('devChest')) registerDevTokens([DEV_CHEST]);
+    if (maps.some(name => DEV_MAPS[name]?.treasures?.some(t => t.typeId === DEV_CHEST.id))) registerDevTokens([DEV_CHEST]);
     const from = Atlas.activeRegion();
     const settled = settleFree(maps, Number.isFinite(seed) ? seed : firstSeedOf(maps));
     if (!settled.success) return settled;

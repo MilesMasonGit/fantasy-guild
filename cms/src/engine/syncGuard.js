@@ -13,7 +13,6 @@ import { keyedWorld, WORLD_FILE } from './worldTables.js';
 export const SYNC_COLLECTIONS = [
   { key: 'tokens', label: 'Token', plural: 'Tokens' },
   { key: 'items', label: 'item', plural: 'items' },
-  { key: 'maps', label: 'map', plural: 'maps' },
   { key: 'recipes', label: 'recipe', plural: 'recipes' },
   { key: 'effects', label: 'effect', plural: 'effects' },
   { key: 'starterCamp', label: 'Starter Camp Token', plural: 'Starter Camp Tokens' },
@@ -24,10 +23,9 @@ export const SYNC_COLLECTIONS = [
 ];
 
 /** The plan file's key for a game collection's entity, so a stub that became content (or content sent back to the plan) is not counted as lost. */
-const PLANNED_KEY = { tokens: 'tokens', items: 'items', maps: 'items', recipes: 'recipes' };
+const PLANNED_KEY = { tokens: 'tokens', items: 'items', recipes: 'recipes' };
 
 const isObject = (v) => v && typeof v === 'object' && !Array.isArray(v);
-const isMap = (def) => def?.type === 'map' || def?.type === 'modifier';
 
 function keyed(obj, keep = () => true) {
   const out = new Map();
@@ -68,8 +66,7 @@ function keyedPlacements(camp) {
 function collections(files) {
   return {
     tokens: keyed(files['tokens.json']),
-    items: keyed(files['items.json'], (d) => !isMap(d)),
-    maps: keyed(files['items.json'], isMap),
+    items: keyed(files['items.json']),
     recipes: keyedRecipes(files['tokenRecipes.json']),
     effects: keyed(files['effects.json']),
     starterCamp: keyedPlacements(files['starterCamp.json']),

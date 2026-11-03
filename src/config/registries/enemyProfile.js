@@ -211,7 +211,6 @@ export function enemyDropsOf(def) {
             itemId: o.itemId,
             chance: o.chance ?? 100,
             minQty: o.minQty ?? o.baseQty?.min ?? 1,
-            maxQty: o.maxQty ?? o.baseQty?.max ?? o.minQty ?? 1,
-            ...(o.firstKill === true ? { firstKill: true } : {})
+            maxQty: o.maxQty ?? o.baseQty?.max ?? o.minQty ?? 1
         }));
 }

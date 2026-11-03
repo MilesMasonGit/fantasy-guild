@@ -7,8 +7,7 @@ import { DatabaseManager } from '../config/DatabaseManager.js';
 import { deriveTokenType } from '../config/registries/tokenTypeDerivation.js';
 
 /**
- * The Map bursts are retired, and so is the Map catalogue behind them: maps are items now
- * (`systems/atlas/mapItems.js`).
+ * The Map bursts are retired, and so is the Map catalogue behind them.
  */
 
 const src = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -36,7 +35,7 @@ describe('The burst code is deleted (9.1)', () => {
     });
 });
 
-describe('The Map catalogue is gone: maps are items', () => {
+describe('The Map catalogue is gone', () => {
     it('no registry, no loader, no CMS pass reads data/maps.json', () => {
         expect(() => statSync(join(src, 'config/registries/mapRegistry.js'))).toThrow();
         expect(() => statSync(join(src, '../cms/src/engine/sim/mapPass.js'))).toThrow();

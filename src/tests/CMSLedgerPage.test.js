@@ -10,7 +10,7 @@ import { sourcesOf, usesOf, layoutTree, effortText, firstReachText, TREE_LAYOUT 
 import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import { buildLedger, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
 import { tierLabel } from '../systems/progression/ledger/plan.js';
-import { ledgerWorkspace, withIronChest, withWorld } from './fixtures/ledgerWorld.js';
+import { ledgerWorkspace, ledgerContent, withIronChest, withWorld } from './fixtures/ledgerWorld.js';
 
 /**
  * The Ledger's problems list and item page (brief 290 L3) on the fixture world: the checks with the
@@ -36,7 +36,7 @@ const empty = { items: {}, tokens: {}, effects: {}, recipePools: {}, starterCamp
 const store = () => useEntityStore.getState();
 
 describe('the page, worked out', () => {
-    const ledger = () => buildLedger(ledgerWorkspace());
+    const ledger = () => buildLedger(ledgerContent());
 
     it('lists every source of an item with its tier, and every use', () => {
         const l = ledger();
@@ -72,13 +72,13 @@ describe('the page, worked out', () => {
         expect(effortText(18000 + 24000 + 8000)).toBe('50 s');
         expect(effortText(42 * 60000)).toBe('42 min');
         expect(effortText(65 * 60000)).toBe('1 h 5 min');
-        expect(firstReachText(ledger().reachOf(itemKey('item_iron_ore')), tierLabel)).toBe('Plane 2 · Combat 20, Mining 15');
+        expect(firstReachText(ledger().reachOf(itemKey('item_iron_ore')), tierLabel)).toBe('Plane 2 · Mining 15');
         expect(firstReachText(ledger().reachOf(itemKey('item_mythril_ore')), tierLabel)).toBe('Planned');
     });
 
     it('puts an earlier one-off find beside first reach, not in it', () => {
         const l = buildLedger(withIronChest());
-        expect(firstReachText(l.reachOf(itemKey('item_iron_ore')), tierLabel)).toBe('Plane 2 · Combat 20, Mining 15 · a one-off find at Plane 1 (Iron Chest)');
+        expect(firstReachText(l.reachOf(itemKey('item_iron_ore')), tierLabel)).toBe('Plane 2 · Mining 15 · a one-off find at Plane 1 (Iron Chest)');
         const chest = sourcesOf(l, itemKey('item_iron_ore')).find((s) => s.viaKey === tokenKey('token_iron_chest'));
         expect(chest).toMatchObject({ tier: 1, oneOff: true });
     });
@@ -86,7 +86,7 @@ describe('the page, worked out', () => {
 
 describe('findings the CMS adds', () => {
     it('files the game’s own content rules under the entry they name, Planned stubs left out', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         ws.tokens.token_coal_vein.config.skill = 'not_a_skill';
         ws.tokens.token_mythril_vein.config = { skill: 'not_a_skill' };
         const found = gameRuleFindings(ws);
@@ -95,7 +95,7 @@ describe('findings the CMS adds', () => {
     });
 
     it('turns the last Recalculate’s refusals into pricing findings', () => {
-        const ws = ledgerWorkspace();
+        const ws = ledgerContent();
         const rows = [
             { severity: 'critical', code: 'orphan-item', message: 'Nothing produces it.', itemId: 'item_coal' },
             { severity: 'info', code: 'note', message: 'Just a note.', itemId: 'item_coal' },
@@ -144,7 +144,7 @@ describe('the tab', { timeout: 20000 }, () => {
         fireEvent.change(view.getByLabelText('Filter by group'), { target: { value: 'C' } });
         const shown = [...view.container.querySelectorAll('[data-finding]')].map((r) => r.getAttribute('data-finding'));
         expect(shown.length).toBeGreaterThan(0);
-        expect(shown.every((c) => ['luck-only', 'fragile', 'first-kill-only', 'shop-only'].includes(c))).toBe(true);
+        expect(shown.every((c) => ['luck-only', 'fragile', 'shop-only'].includes(c))).toBe(true);
         fireEvent.change(view.getByLabelText('Filter by check'), { target: { value: 'luck-only' } });
         // The problem's own link is the one in the list.
         fireEvent.click(view.getAllByText('Fire Elemental').find((el) => el.closest('[data-finding]')));

@@ -403,7 +403,6 @@ function StubForm({ tiers, onDone }) {
     const plan = stubPlan({ tier: tierOrNull(tier), note });
     const store = useEntityStore.getState();
     if (kind === 'item') store.addItem({ name: trimmed, plan });
-    else if (kind === 'map') store.addMap('map', { name: trimmed, plan });
     else if (kind === 'token') store.addToken({ name: trimmed, plan });
     else if (kind === 'enemy') store.addToken({ name: trimmed, enemy: { level: 1, style: 'melee' }, plan });
     else if (kind === 'recipe') store.addRecipe(skill, { name: trimmed, plan });

@@ -2,8 +2,8 @@ import { ITEM_TYPES } from '../../../config/registries/itemRegistry.js';
 
 /**
  * Which tile surface an item type wears (the `--color-item-tint-*` shades in `tailwind.css`).
- * Read from the item's own `type` field, as authored in the CMS. Gear shares the tools' steel,
- * maps and modifiers share parchment; any type not named here gets the plain default.
+ * Read from the item's own `type` field, as authored in the CMS. Gear shares the tools' steel; any
+ * type not named here gets the plain default.
  */
 const TINT_OF_TYPE = Object.freeze({
     [ITEM_TYPES.MATERIAL]: 'material',
@@ -14,9 +14,7 @@ const TINT_OF_TYPE = Object.freeze({
     [ITEM_TYPES.ARMOR]: 'tool',
     [ITEM_TYPES.FOOD]: 'food',
     [ITEM_TYPES.DRINK]: 'drink',
-    [ITEM_TYPES.POTION]: 'potion',
-    [ITEM_TYPES.MAP]: 'map',
-    [ITEM_TYPES.MODIFIER]: 'map'
+    [ITEM_TYPES.POTION]: 'potion'
 });
 
 /** The tint name for an item (`material`, `tool`, … or `default`). */

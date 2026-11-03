@@ -24,7 +24,6 @@ export default function SupplyChainColumn({
   onUpdate,
   onRemove,
   emptyHint,
-  firstKillOption = false,
 }) {
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
   const items = useEntityStore((s) => s.items);
@@ -86,7 +85,6 @@ export default function SupplyChainColumn({
             onAddToken={onAddToken}
             onUpdate={onUpdate}
             onRemove={onRemove}
-            firstKillOption={firstKillOption}
           />
         )}
       </div>

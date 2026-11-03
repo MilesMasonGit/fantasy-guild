@@ -32,22 +32,18 @@ export const COAST = Object.freeze({
     nodes: [{ typeId: 'token_coast', weight: 1 }]
 });
 
-export const OVERGROWN = Object.freeze({
-    id: 'mod_overgrown', kind: 'modifier',
-    effects: [{ kind: 'density', typeId: 'token_oak_tree', points: 16 }]
+/** The Forest with 16 more Oaks. */
+export const OVERGROWN_FOREST = Object.freeze({
+    ...FOREST, id: 'map_overgrown_forest', points: 56,
+    nodes: [
+        { typeId: 'token_oak_tree', weight: 46 },
+        { typeId: 'token_redberry_bush', weight: 5 },
+        { typeId: 'token_blackberry_bush', weight: 5 }
+    ]
 });
 
-export const FIR_GROVE = Object.freeze({
-    id: 'mod_fir_grove', kind: 'modifier',
-    effects: [{ kind: 'replace', from: 'token_oak_tree', to: 'token_fir_tree' }]
-});
+/** A map with an enemy camp of its own. */
+export const withGoblinCamp = (map) => ({ ...map, camps: [{ typeId: 'token_goblin_camp', count: 1 }] });
 
-export const GOBLIN_CAMP = Object.freeze({
-    id: 'mod_goblin_camp', kind: 'modifier',
-    effects: [{ kind: 'threat', typeId: 'token_goblin_camp', count: 1 }]
-});
-
-export const RUINS = Object.freeze({
-    id: 'mod_ruins', kind: 'modifier',
-    effects: [{ kind: 'treasure', typeId: 'token_ruins', count: 1 }]
-});
+/** A map with a treasure of its own. */
+export const withRuins = (map) => ({ ...map, treasures: [{ typeId: 'token_ruins', count: 1 }] });

@@ -79,7 +79,7 @@ describe('water, a Field and a coarse fight', () => {
             config: { skill: 'farming', skillRequired: 1, cycleTimeMs: 3000, xp: 1, inputs: [], outputs: [] },
             statements: [{ keyword: 'station', payload: { skill: 'farming', stationKind: 'field' } }]
         };
-        c.tokens.token_wolf = { id: 'token_wolf', name: 'Wolf', uses: 1, enemy: { level: 4, style: 'melee' }, config: { skill: '', cycleTimeMs: 12000, xp: 0, inputs: [], outputs: [{ itemId: 'item_fish', chance: 50, minQty: 1, maxQty: 1 }, { itemId: 'item_eel', chance: 100, minQty: 1, maxQty: 1, firstKill: true }] } };
+        c.tokens.token_wolf = { id: 'token_wolf', name: 'Wolf', uses: 1, enemy: { level: 4, style: 'melee' }, config: { skill: '', cycleTimeMs: 12000, xp: 0, inputs: [], outputs: [{ itemId: 'item_fish', chance: 50, minQty: 1, maxQty: 1 }] } };
         c.tokens.token_den = { id: 'token_den', name: 'Den', uses: null, config: null, spawner: { spawns: [{ typeId: 'token_wolf', weight: 1 }], allowance: 1, intervalMs: 60000, upkeep: [] } };
         c.recipes.push({ id: 'recipe_wheat', name: 'Wheat', skill: 'farming', levelRequirement: 1, stationKinds: ['field'], durationMs: 3000, xp: 1, crop: { growMs: 600000, load: 5 }, inputs: [{ itemId: 'item_seed', quantity: 1 }], outputs: [{ itemId: 'item_wheat', chance: 100, minQty: 2, maxQty: 2 }] });
         return c;
@@ -108,13 +108,11 @@ describe('water, a Field and a coarse fight', () => {
         expect(r.inputs.item_seed).toBeCloseTo(cycles / 5);
     });
 
-    it('a fight is coarse: one kill a fight cycle, as fast as its den spawns it; a first-kill drop is not a rate', () => {
+    it('a fight is coarse: one kill a fight cycle, as fast as its den spawns it', () => {
         const b = buildRateBook(content());
         const r = b.rateOf({ token: 'token_wolf' }, { family: { spawner: 'token_den' } });
         expect(r).toMatchObject({ ok: true, kind: WORK.FIGHT, cyclesPerHour: 60, limitedBy: LIMIT.SUPPLY });
         expect(r.items.item_fish).toBeCloseTo(30);
-        expect(r.items.item_eel).toBeUndefined();
-        expect(r.assumptions).toContainEqual(expect.objectContaining({ what: 'first kill' }));
     });
 });
 

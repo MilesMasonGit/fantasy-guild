@@ -30,8 +30,8 @@ import { STRICT_RINGS, PRICE_FROM, SKILL_OF, MAX_ARRIVAL, lineById, kitById as k
  *    goes to one cell of that ring (owner: every Live enemy has a guaranteed place in every world),
  *    one of its own `kits` where the ring has one, else one whose kit names it, else any; always the
  *    least loaded of those, so they spread over the ring.
- * 7. **Extras** (the hidden modifiers and treasures): a strict cell's are worth its ring's value
- *    within `valueTolerance`; a wild cell's aim at the last strict ring's value grown per ring.
+ * 7. **Extras** (a place's chests): a strict cell's are worth its ring's value within
+ *    `valueTolerance`; a wild cell's aim at the last strict ring's value grown per ring.
  * 8. **Requirements.** A cell's price is gathered from one cell one ring in (the Hall's for ring 1)
  *    and, where its ring's template says, the Hall's cell: two places at most, all of earlier rings.
  *    Its skill levels follow the template. Wild rings grow the last strict ring's template.

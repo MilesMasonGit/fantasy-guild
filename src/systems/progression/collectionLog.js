@@ -9,7 +9,7 @@ import { GameState } from '../../state/GameState.js';
  * - a **Token** once one has stood on the guild's mat (`collection.tokensHad`, written by
  *   `BoardState.addToken`), or stands on any of the guild's Regions now;
  * - an **enemy** once beaten (`collection.enemyKillCounts`, counted by `CombatResolutionProcessor`
- *   through {@link noteEnemyBeaten}), or paid its first-kill drops (`collection.firstKillDrops`);
+ *   through {@link noteEnemyBeaten});
  * - a **recipe** once a cycle of it finished (`collection.recipesMade`, written by `BoardRunner`).
  *
  * And totals: `collection.itemLifetimeCounts` (every item gained), `collection.enemyKillCounts`
@@ -66,7 +66,7 @@ export function collectedOf(state = GameState.state) {
         for (const instance of Object.values(board?.tokens || {})) if (instance?.typeId) tokens.add(instance.typeId);
     }
     const kills = c.enemyKillCounts || {};
-    const enemies = new Set([...Object.keys(kills).filter(id => kills[id] > 0), ...keys(c.firstKillDrops)]);
+    const enemies = new Set(Object.keys(kills).filter(id => kills[id] > 0));
     return {
         items: new Set(keys(c.discoveredItems)),
         tokens,

@@ -6,13 +6,14 @@ import { WATER_KIND } from './WaterShapes.js';
 
 /**
  * Map recipes for writing a Region from the dev console and the QA panel's Terrain views, for free:
- * `Game.Atlas.devPreview(['forest', 'overgrown'])`, `devSettle(...)`. They name today's Tokens;
+ * `Game.Atlas.devPreview(['forest', 'mountain'])`, `devSettle(...)`. They name today's Tokens;
  * every number is a placeholder, not content.
  *
- * The Overgrown here also carries a Region rule, +10 % Forestry yield, so a Region rule can be
- * seen applying and dropping as the guild travels. The `water_*` maps are a biome's map that names
- * one variety of its water (`inland`), for the dev panel's water views; the `place_*` maps and the
- * Test Chest (a dev-only Token the dev panel registers) are for its placement views.
+ * `forest_rule` also carries a Region rule, +10 % Forestry yield, so a Region rule can be seen
+ * applying and dropping as the guild travels. The `water_*` maps are a biome's map that names one
+ * variety of its water (`inland`), for the dev panel's water views; the `place_*` maps and the
+ * `*_stocked` maps, each with an enemy camp and a Test Chest (a dev-only Token the dev panel
+ * registers), are for its placement views.
  */
 
 export const DEV_RULE_FORESTRY_YIELD = Object.freeze({
@@ -77,19 +78,6 @@ const BASE_MAPS = Object.freeze({
             { typeId: 'token_iron_ore_vein', weight: 1 }
         ]
     }),
-    overgrown: Object.freeze({
-        id: 'dev_mod_overgrown', name: 'Overgrown', kind: 'modifier',
-        effects: [{ kind: 'density', typeId: 'token_oak_tree', points: 16 }],
-        rules: [DEV_RULE_FORESTRY_YIELD]
-    }),
-    firGrove: Object.freeze({
-        id: 'dev_mod_fir_grove', name: 'Fir Grove', kind: 'modifier',
-        effects: [{ kind: 'replace', from: 'token_oak_tree', to: 'token_fir_tree' }]
-    }),
-    goblinCamp: Object.freeze({
-        id: 'dev_mod_goblin_camp', name: 'Goblin Camp', kind: 'modifier',
-        effects: [{ kind: 'threat', typeId: 'token_goblin_camp', count: 1 }]
-    }),
     // The placement views: the placement rounds' mix, a map's common trees and bushes with two
     // of the next tier's tree, beside a little copper of a mountain.
     place_meadow: Object.freeze({
@@ -112,18 +100,29 @@ const BASE_MAPS = Object.freeze({
             { typeId: 'token_redberry_bush', weight: 8 },
             { typeId: 'token_maple_tree', weight: 2 }
         ]
-    }),
-    devChest: Object.freeze({
-        id: 'dev_mod_chest', name: 'Test Chest', kind: 'modifier',
-        effects: [{ kind: 'treasure', typeId: 'dev_treasure_chest', count: 1 }]
     })
 });
+
+const GOBLIN_CAMP = Object.freeze([Object.freeze({ typeId: 'token_goblin_camp', count: 1 })]);
+const TEST_CHEST = Object.freeze([Object.freeze({ typeId: 'dev_treasure_chest', count: 1 })]);
+
+/** A dev map with an enemy camp of its own. */
+const withCamp = (base) => Object.freeze({ ...BASE_MAPS[base], id: `dev_map_${base}_camp`, camps: GOBLIN_CAMP });
+
+/** A dev map with an enemy camp and a Test Chest of its own, for the placement views. */
+const stocked = (base) => Object.freeze({ ...BASE_MAPS[base], id: `dev_map_${base}_stocked`, camps: GOBLIN_CAMP, treasures: TEST_CHEST });
 
 /** A biome's dev map naming one variety of water. */
 const withWater = (base, kind) => Object.freeze({ ...BASE_MAPS[base], id: `dev_map_water_${kind}`, inland: kind });
 
 export const DEV_MAPS = Object.freeze({
     ...BASE_MAPS,
+    forest_rule: Object.freeze({ ...BASE_MAPS.forest, id: 'dev_map_forest_rule', rules: [DEV_RULE_FORESTRY_YIELD] }),
+    mountain_camp: withCamp('mountain'),
+    place_meadow_stocked: stocked('place_meadow'),
+    place_lake_stocked: stocked('place_lake'),
+    forest_stocked: stocked('forest'),
+    mountain_stocked: stocked('mountain'),
     water_lake_river: withWater('meadow', WATER_KIND.LAKE_RIVER),
     water_lake: withWater('meadow', WATER_KIND.LAKE),
     water_river: withWater('meadow', WATER_KIND.RIVER),

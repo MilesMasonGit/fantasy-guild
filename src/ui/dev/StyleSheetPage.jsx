@@ -573,7 +573,6 @@ const TINT_SAMPLES = [
     { type: 'food', id: 'item_shrimp' },
     { type: 'drink', id: 'item_water' },
     { type: 'potion', id: 'item_shrimp_trawler_potion' },
-    { type: 'map', id: null },
     { type: 'other', id: null }
 ];
 

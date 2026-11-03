@@ -170,8 +170,7 @@ export default function LedgerItemPage({ entryKey, report, onOpen, onBack, onRef
                 {s.atName && <span className="text-gray-500"> at {s.atName}</span>}
                 {s.gates.length > 0 && <span className="text-gray-500"> · {[...new Set(s.gates)].join(', ')}</span>}
                 {s.oneOff && <span style={{ color: 'var(--color-warning)' }}> · one-off</span>}
-                {s.firstKill ? <span style={{ color: 'var(--color-warning)' }}> · first kill</span>
-                  : Number.isFinite(s.chance) && s.chance < 1 && <span style={{ color: s.chance < 0.05 ? 'var(--color-warning)' : 'var(--color-text-muted)' }}> · {LEDGER_ENGINE_TEXT.chance(s.chance)}</span>}
+                {Number.isFinite(s.chance) && s.chance < 1 && <span style={{ color: s.chance < 0.05 ? 'var(--color-warning)' : 'var(--color-text-muted)' }}> · {LEDGER_ENGINE_TEXT.chance(s.chance)}</span>}
               </span>
             </div>
           ))}

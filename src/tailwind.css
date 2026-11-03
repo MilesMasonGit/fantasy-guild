@@ -196,7 +196,6 @@
   --color-item-tint-food: #3c2a1a;
   --color-item-tint-drink: #173439;
   --color-item-tint-potion: #352242;
-  --color-item-tint-map: #3a311c;
 }
 
 /* The screen's layers, back to front: every z-index above the mat is one of these, written as

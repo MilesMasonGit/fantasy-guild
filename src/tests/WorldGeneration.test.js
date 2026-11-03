@@ -279,8 +279,15 @@ describe('World generation: specialties, kits and the value budget', () => {
         }
     });
 
+    it('an extra that is not a chest is dropped and said, so no world holds one', () => {
+        const tables = tablesWith({ extras: [{ id: 'mod_gone', kind: 'modifier', value: 10 }, { id: 'chest_kept', kind: 'treasure', value: 10 }] });
+        expect(tables.extras.map(e => e.id)).toEqual(['chest_kept']);
+        expect(tables.issues.join(' ')).toMatch(/An extra was dropped/);
+        expect(make(5, tables).cells.flatMap(c => c.extras).every(e => e.id === 'chest_kept')).toBe(true);
+    });
+
     it('extras that cannot reach a ring\'s value are reported, not stretched', () => {
-        const tables = tablesWith({ extras: [{ id: 'mod_tiny', kind: 'modifier', value: 1 }] });
+        const tables = tablesWith({ extras: [{ id: 'chest_tiny', kind: 'treasure', value: 1 }] });
         const world = make(5, tables);
         const value = world.problems.filter(p => p.kind === PROBLEM.VALUE);
         expect(value).toHaveLength(36);
@@ -336,7 +343,7 @@ describe('World checks: each one can fail', () => {
     it('extras off the ring\'s value', () => {
         const world = copy(good);
         const cell = cellOf(world, 1);
-        cell.extras.push({ id: 'mod_camp', kind: 'modifier', value: 8 });
+        cell.extras.push({ id: 'chest_camp', kind: 'treasure', value: 8 });
         cell.value += 8;
         expect(findings(world).some(f => f.check === WORLD_CHECK.VALUE)).toBe(true);
     });

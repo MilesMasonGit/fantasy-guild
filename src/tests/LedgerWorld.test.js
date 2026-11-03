@@ -127,8 +127,6 @@ describe('checks F on a world that keeps every rule', () => {
         expect(p.reach.get(itemKey('item_ores_3')).tier).toBe(3);
         // The Chief's Tent: a combat specialty's boss camp, so somewhere in the inner rings.
         expect(p.reach.get(tokenKey('token_chief_tent')).tier).not.toBeNull();
-        // A map item places nothing any more: the Volcano Map's Wild Hive comes from the Crops wedge.
-        expect(p.reach.get(tokenKey('token_wild_hive')).how).not.toBe('map');
     });
 });
 
@@ -178,32 +176,20 @@ describe('F: the inner rings not covering every Live entry', () => {
         const hits = of(p.findings, WORLD_F.COVERAGE);
         expect(hits.map(f => f.subject).sort()).toEqual([itemKey('item_gold'), tokenKey('token_gold_vein')]);
         expect(hits.find(f => f.subject === itemKey('item_gold')).message).toMatch(/Gold Vein/);
-        // Never reachable before the world either: unfinished, not lost.
-        expect(hits.every(f => f.before === null)).toBe(true);
     });
 
-    it('Parked, Planned, map and modifier entries are not asked to be covered', () => {
+    it('Parked and Planned entries are not asked to be covered', () => {
         const p = plan(withGold(worldWorkspace(), { status: 'parked' }), 2);
         expect(of(p.findings, WORLD_F.COVERAGE).map(f => f.subject)).toEqual([itemKey('item_gold')]);
         const keys = of(plan(worldWorkspace(), 2).findings, WORLD_F.COVERAGE).map(f => f.subject);
-        expect(keys).not.toContain(itemKey('map_volcano'));
-        expect(keys).not.toContain(itemKey('mod_deep_veins'));
         expect(keys).not.toContain(tokenKey('token_mythril_vein'));
     });
 
-    it('an enemy only a map\'s camp brought is not covered once no kit or arrival brings it', () => {
+    it('an enemy no kit or arrival brings is not covered', () => {
         const ws = worldWorkspace();
         const tables = tablesWith({ kits: [{ ...WORLD_FIXTURE_RAW.kits[0], bossCamps: [] }], arrival: { ...WORLD_FIXTURE_RAW.arrival, 3: { count: [3, 3], enemies: [{ id: 'token_goblin' }] } } });
         const hits = of(plan(ws, 4, tables).findings, WORLD_F.COVERAGE);
         expect(hits.map(f => f.subject)).toEqual(expect.arrayContaining([tokenKey('token_chief_tent'), tokenKey('token_goblin_chief')]));
-        // Lost with the maps: the Mountain Map (plane 1) placed the tent.
-        expect(hits.find(f => f.subject === tokenKey('token_chief_tent')).before).toBe(1);
-        // What the world lost is listed ahead of what was never finished, in a world and over many.
-        const both = of(plan(withGold(worldWorkspace()), 4, tables).findings, WORLD_F.COVERAGE).map(f => f.before);
-        expect(both.indexOf(null)).toBeGreaterThan(both.lastIndexOf(1));
-        const subjects = sweepWorlds(contentOf(withGold(worldWorkspace())), { seeds: [1, 2], baseTables: tables }).rules[WORLD_F.COVERAGE].subjects;
-        expect(subjects[0].before).toBe(1);
-        expect(subjects[subjects.length - 1].before).toBeNull();
     });
 });
 
@@ -246,7 +232,7 @@ describe('F: a cell\'s value off by more than ±10 %', () => {
     it('a strict cell whose extras are worth more than its ring\'s value and tolerance is found', () => {
         const p = plan(worldWorkspace(), 7);
         const cell = p.world.cells.find(c => c.ring === 1);
-        cell.extras = [{ id: 'mod_deep_veins', kind: 'modifier', value: 10 }, { id: 'mod_deep_veins', kind: 'modifier', value: 10 }];
+        cell.extras = [{ id: 'token_fixture_chest', kind: 'treasure', value: 10 }, { id: 'token_fixture_chest', kind: 'treasure', value: 10 }];
         cell.value = 20;
         const hits = of(worldChecks(p), WORLD_F.VALUE);
         expect(hits.map(f => f.cellId)).toEqual([cell.id]);

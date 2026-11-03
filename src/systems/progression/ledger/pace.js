@@ -113,7 +113,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     }
     // Only the content's own entries: a world cell, a tool need or a Token the world tables name but
     // the content lacks sets no stage and asks no level.
-    const isEntry = (key) => plans.has(key) && !ledger.world.retired?.has(key);
+    const isEntry = (key) => plans.has(key);
     const tiers = new Set([...reach.values()].filter(a => isEntry(a.key)).map(a => a.tier).filter(Number.isInteger));
     for (const s of settings.stages) tiers.add(s.tier);
     const maxTier = tiers.size ? Math.max(...tiers) : 0;
@@ -204,7 +204,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const at = reach.get(key);
         if (!at?.rule) return Infinity;
         const rule = at.rule;
-        if ([HOW.STARTER_CAMP, HOW.MAP, HOW.MODIFIER, HOW.WORLD, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW].includes(rule.how)) return 0;
+        if ([HOW.STARTER_CAMP, HOW.WORLD, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW].includes(rule.how)) return 0;
         if (rule.how === HOW.SHOP) return sum(rule.inputs.map(i => i.quantity * unitHours(parseKey(i.key).id, cap)));
         if (rule.how === HOW.CRAFT) {
             const recipe = rates.recipes[parseKey(rule.via).id];
@@ -401,8 +401,6 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const def = rates.token(parseKey(rule.via).id);
             if (!def) return done(Infinity, 'no such Token');
             const f = ratedBy({ token: def.id });
-            // A first-kill drop comes with the first win: one fight.
-            if (give.firstKill && f?.rate?.ok) return done(f.rate.cycleMs / HOUR_MS, null, { firstKill: true });
             return firstOf(f, give.key);
         }
         case HOW.CATCH: {
@@ -465,10 +463,6 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const cph = f?.rate?.ok ? f.rate.cyclesPerHour * f.scale : 0;
             return cph > 0 && give.chance > 0 ? done(1 / (cph * give.chance)) : done(Infinity, 'a bonus on work not timed');
         }
-        case HOW.BOUNTY:
-            return done(0, 'bounties are not timed', { complete: false });
-        case HOW.UPCYCLE:
-            return done(0, 'trading maps up is not timed', { complete: false });
         default:
             return done(0);
         }
@@ -543,7 +537,6 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     // ── stages ─────────────────────────────────────────────────────────────────────────────────
     const entryKeys = [...plans.keys()].filter(k => /^(item|token|recipe):/.test(k));
     const counted = (key) => {
-        if (ledger.world.retired?.has(key)) return false;
         const status = statusOf(key);
         return status !== PLAN_STATUS.PLANNED && status !== PLAN_STATUS.PARKED;
     };

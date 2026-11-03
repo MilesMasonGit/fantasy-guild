@@ -8,7 +8,7 @@ import * as QuestBounties from '../systems/quests/questBounties.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import { registerItems, getItem, isRetiredItem } from '../config/registries/itemRegistry.js';
+import { registerItems, getItem } from '../config/registries/itemRegistry.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
@@ -23,9 +23,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * Map items are retired (the world map settles places): a bounty pays only its items, no drop line
- * naming a map or a modifier is rolled, and none lands on the mat whoever drops it. The bounty's own
- * roll draws exactly the random numbers it always did, whether or not maps exist.
+ * Map items are retired (the world map settles places): a bounty pays only its items. The bounty's
+ * own roll draws exactly the random numbers it always did, whether or not such records exist.
  */
 
 const HALL = { x: 880, y: 560 };
@@ -89,63 +88,6 @@ describe('nothing pays a map any more', () => {
         expect(QuestBounties.BOUNTY_MAP_REWARD).toBeUndefined();
     });
 
-    it('maps and modifiers are retired kinds; other items are not', () => {
-        registerItems(structuredClone(FIXTURE_MAPS));
-        expect(isRetiredItem('fixture_bounty_map_a')).toBe(true);
-        expect(isRetiredItem(getItem('fixture_bounty_mod_never'))).toBe(true);
-        expect(isRetiredItem('item_oak_wood')).toBe(false);
-        expect(isRetiredItem('no_such_item')).toBe(false);
-    });
-
-    it('a kill never rolls a map line, first kill or not, and the other lines roll as ever', () => {
-        registerItems(structuredClone(FIXTURE_MAPS));
-        const lines = [
-            { itemId: 'fixture_bounty_map_a', chance: 50, minQty: 1, maxQty: 1, firstKill: true },
-            { itemId: 'item_oak_wood', chance: 100, minQty: 2, maxQty: 2 },
-            { itemId: 'fixture_bounty_mod_never', chance: 100, minQty: 1, maxQty: 1 }
-        ];
-        const random = scripted([0]);
-        const spy = vi.spyOn(Math, 'random').mockImplementation(random);
-        const drops = LootSystem.rollEachLine(lines, null, null, true);
-        spy.mockRestore();
-        expect(drops.map(d => [d.itemId, d.quantity])).toEqual([['item_oak_wood', 2]]);
-        expect(random.calls()).toBe(1);
-    });
-});
-
-describe('a worked Token', () => {
-    registerTokenTypes({
-        fixture_map_bush: {
-            id: 'fixture_map_bush', name: 'Fixture Map Bush', tokenType: 'resource', rarity: 'common', theme: 'fixture',
-            uses: 500, sprite: 's_nature',
-            config: {
-                skill: 'farming', skillRequired: 1, cycleTimeMs: 6000, xp: 1, inputs: [],
-                outputs: [
-                    { itemId: 'fixture_bounty_map_a', chance: 100, minQty: 1, maxQty: 1 },
-                    { itemId: 'item_oak_wood', chance: 100, minQty: 1, maxQty: 1 }
-                ]
-            }
-        }
-    });
-
-    it('never rolls its map line: the cycle drops its other outputs and hands no map to the mat', () => {
-        registerItems(structuredClone(FIXTURE_MAPS));
-        GameState.initNew();
-        InventoryManager.init();
-        SpriteLayer.init();
-        TileModifiers.clearAll();
-        const skills = Object.fromEntries(getAllSkillIds().map(s => [s, { level: 50, xp: 0 }]));
-        GameState.state.heroes = [{ id: 'hero_1', name: 'hero_1', status: 'idle', level: 50, skills, hp: { current: 100, max: 100 }, statuses: [], effects: [] }];
-        const bush = BoardState.createTokenInstance('fixture_map_bush', tokenStartingUses('fixture_map_bush'));
-        Placement.placeTokenAt(bush, { x: 600, y: 400 });
-        Orders.orderAt('hero_1', { x: 600, y: 400 });
-        const handed = vi.spyOn(SpriteLayer, 'addSprite');
-        for (let t = 0; t < 20000; t += 100) BoardRunner.tick(100);
-        const ids = handed.mock.calls.map(c => c[1]);
-        handed.mockRestore();
-        expect(ids).toContain('item_oak_wood');
-        expect(ids).not.toContain('fixture_bounty_map_a');
-    });
 });
 
 describe('claiming a bounty', () => {
@@ -161,12 +103,6 @@ describe('claiming a bounty', () => {
         expect(res.success).toBe(true);
         expect(res.rewardItems).toEqual([{ itemId: 'item_oak_wood', quantity: 10, name: getItem('item_oak_wood').name }]);
         expect(SpriteLayer.getSprites().map(s => s.refId)).toEqual(['item_oak_wood']);
-    });
-
-    it('a map handed to the mat as loot never lands', () => {
-        expect(SpriteLayer.addSprite('item', 'fixture_bounty_map_b', 1, null)).toBeNull();
-        expect(SpriteLayer.getSprites().some(s => s.refId === 'fixture_bounty_map_b')).toBe(false);
-        expect(SpriteLayer.addSprite('item', 'item_oak_wood', 1, null)).toBeTruthy();
     });
 
     it('a refused claim pays nothing', () => {

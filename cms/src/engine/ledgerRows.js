@@ -1,6 +1,5 @@
 import { planOf, cleanPlan, PLAN_STATUS } from '../../../src/systems/progression/ledger/plan.js';
 import { itemKey, tokenKey, recipeKey } from '../../../src/systems/progression/ledger/engine.js';
-import { isMapItem } from '../../../src/systems/atlas/mapItems.js';
 
 /**
  * The Ledger tab's list: one row per item, map, Token (enemies apart) and recipe in the workspace,
@@ -8,10 +7,10 @@ import { isMapItem } from '../../../src/systems/atlas/mapItems.js';
  */
 
 /** The kinds the tab lists, in its order. */
-export const LEDGER_KINDS = Object.freeze(['item', 'map', 'token', 'enemy', 'recipe']);
+export const LEDGER_KINDS = Object.freeze(['item', 'token', 'enemy', 'recipe']);
 
 export const LEDGER_KIND_TEXT = Object.freeze({
-    item: 'Item', map: 'Map', token: 'Token', enemy: 'Enemy', recipe: 'Recipe',
+    item: 'Item', token: 'Token', enemy: 'Enemy', recipe: 'Recipe',
 });
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -29,7 +28,7 @@ export function ledgerRows({ items = {}, tokens = {}, recipePools = {} } = {}) {
     };
     for (const [id, def] of Object.entries(items || {})) {
         if (!isObject(def)) continue;
-        push({ rowKey: `items:${id}`, kind: isMapItem(def) ? 'map' : 'item', id, collection: 'items', ledgerKey: itemKey(def.id ?? id) }, def);
+        push({ rowKey: `items:${id}`, kind: 'item', id, collection: 'items', ledgerKey: itemKey(def.id ?? id) }, def);
     }
     for (const [id, def] of Object.entries(tokens || {})) {
         if (!isObject(def)) continue;

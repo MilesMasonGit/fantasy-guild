@@ -18,7 +18,7 @@ import { workspaceWorldFrom, usableTables } from './worldTables.js';
 export const PACK_FORMAT = 'fantasy-guild-change-pack';
 export const PACK_VERSION = 1;
 export const OPS = Object.freeze(['create', 'edit', 'delete']);
-export const KINDS = Object.freeze(['item', 'token', 'recipe', 'effect', 'map', 'starterCamp', 'skillPerks', 'hallStar', 'hallConstellation', 'world']);
+export const KINDS = Object.freeze(['item', 'token', 'recipe', 'effect', 'starterCamp', 'skillPerks', 'hallStar', 'hallConstellation', 'world']);
 
 /**
  * The Starter Camp is one record, not a collection: its entry's id is always this, its value the
@@ -31,10 +31,8 @@ export const WORLD_ID = 'world';
 
 const PACK_ID = /^[a-z0-9][a-z0-9_-]{0,79}$/i;
 const FINGERPRINT = /^fp:[0-9a-f]{16}$/;
-const MAP_TYPES = ['map', 'modifier'];
 
 const isPlainObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
-const isMapValue = (v) => isPlainObject(v) && MAP_TYPES.includes(v.type);
 
 /** JSON with every object's keys sorted, so two equal values always print the same. */
 export function canonicalJson(value) {
@@ -64,9 +62,9 @@ export function fingerprint(value) {
     return 'fp:' + fnv1a(text, 0x811c9dc5) + fnv1a(text, 0x01234567);
 }
 
-/** The workspace collection an entry's kind lives in. A map is an item. */
+/** The workspace collection an entry's kind lives in. */
 export function collectionOf(kind) {
-    if (kind === 'item' || kind === 'map') return 'items';
+    if (kind === 'item') return 'items';
     if (kind === 'token') return 'tokens';
     if (kind === 'effect') return 'effects';
     if (kind === 'recipe') return 'recipePools';
@@ -132,7 +130,7 @@ function perkTableErrors(value, label) {
  */
 function planErrors(plan, label, kind) {
     if (plan === undefined) return [];
-    if (kind === 'effect') return [`${label}: only items, maps, Tokens and recipes carry a "plan".`];
+    if (kind === 'effect') return [`${label}: only items, Tokens and recipes carry a "plan".`];
     if (!isPlainObject(plan)) return [`${label}: "value.plan" must be an object: { "status", "tier", "note" }.`];
     const out = [];
     if (plan.status !== undefined && !statusOrNull(plan.status)) {
@@ -192,7 +190,7 @@ export function validatePack(pack, { fileName } = {}) {
                 errors.push(`${label}: a ${op} needs "value", the entity's full new record.`);
             } else if (kind === 'world') {
                 if (value.id !== undefined) errors.push(`${label}: the world tables carry no "value.id".`);
-                if (value.plan !== undefined) errors.push(`${label}: only items, maps, Tokens and recipes carry a "plan".`);
+                if (value.plan !== undefined) errors.push(`${label}: only items, Tokens and recipes carry a "plan".`);
                 if (!usableTables(value)) errors.push(`${label}: these world tables cannot be generated from: they need six lines with distinct ids (src/config/worldTablesShape.js).`);
             } else if (kind === 'starterCamp') {
                 if (value.id !== undefined) errors.push(`${label}: the Starter Camp carries no "value.id".`);
@@ -201,15 +199,13 @@ export function validatePack(pack, { fileName } = {}) {
                 }
             } else {
                 if (value.id !== undefined && value.id !== id) errors.push(`${label}: "value.id" is "${value.id}" but the entry's "id" is "${id}".`);
-                if (kind === 'map' && !isMapValue(value)) errors.push(`${label}: a map's "value.type" must be "map" or "modifier".`);
-                if (kind === 'item' && isMapValue(value)) errors.push(`${label}: this is a map or modifier; use "kind": "map".`);
                 if (kind === 'recipe' && (typeof value.skill !== 'string' || !value.skill)) errors.push(`${label}: a recipe's "value.skill" must name its skill pool.`);
                 if (kind === 'skillPerks') {
                     errors.push(...perkTableErrors(value, label));
-                    if (value.plan !== undefined) errors.push(`${label}: only items, maps, Tokens and recipes carry a "plan".`);
+                    if (value.plan !== undefined) errors.push(`${label}: only items, Tokens and recipes carry a "plan".`);
                 } else if (kind === 'hallStar' || kind === 'hallConstellation') {
                     if (kind === 'hallStar') errors.push(...hallStarErrors(value, label));
-                    if (value.plan !== undefined) errors.push(`${label}: only items, maps, Tokens and recipes carry a "plan".`);
+                    if (value.plan !== undefined) errors.push(`${label}: only items, Tokens and recipes carry a "plan".`);
                 } else {
                     errors.push(...planErrors(value.plan, label, kind));
                 }

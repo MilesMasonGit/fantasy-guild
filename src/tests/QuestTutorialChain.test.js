@@ -21,7 +21,6 @@ import * as Flags from '../systems/board/Flags.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as Shop from '../systems/board/Shop.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
-import { isMapItem } from '../systems/atlas/mapItems.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
@@ -72,6 +71,7 @@ const MAPS = {
     }
 };
 // ⚠️ The shipped maps are hidden while a case runs, so what a case expects does not move when the owner authors a map.
+const isMapItem = (def) => def?.type === 'map' || def?.type === 'modifier';
 const SHIPPED_MAPS = Object.fromEntries(Object.entries(getAllItems()).filter(([, def]) => isMapItem(def)));
 const withoutMaps = () => {
     const items = getAllItems();

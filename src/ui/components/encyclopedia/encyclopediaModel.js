@@ -48,7 +48,7 @@ export function entryKey(kind, id) {
 const UNSHOWN = new Set([HOW.HOLD]);
 
 /** The ways something is spent: each names what spends it (the recipe, the Token, what a price buys). */
-const SPENT_BY = new Set([HOW.CRAFT, HOW.WORK, HOW.CATCH, HOW.SPAWN, HOW.GROW, HOW.SHOP, HOW.UPCYCLE]);
+const SPENT_BY = new Set([HOW.CRAFT, HOW.WORK, HOW.CATCH, HOW.SPAWN, HOW.GROW, HOW.SHOP]);
 
 function sortByName(list) {
     return list.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
@@ -62,9 +62,9 @@ function sortByName(list) {
  *   byKind: Record<string, object[]>,
  *   entryOf(key): object|null,
  *   kindOfKey(key): string|null,
- *   sourcesOf(key): {how, via, chance, firstKill, perCycle, inputs, gates, oneOff, maybe}[],
+ *   sourcesOf(key): {how, via, chance, perCycle, inputs, gates, oneOff, maybe}[],
  *   usesOf(key): {how, by, quantity?, nearby?}[],
- *   givesOf(key): {how, key, chance, firstKill, perCycle, gates}[],
+ *   givesOf(key): {how, key, chance, perCycle, gates}[],
  *   placeOf(key): {key, line, lineName, ring, gates}|null,
  *   search(term): object[]
  * }}
@@ -130,19 +130,19 @@ export function buildEncyclopedia(content = gameContent()) {
         for (const give of rule.gives) {
             if (!entries.has(give.key)) continue;
             push(sources, give.key, {
-                how: rule.how, via: rule.via, chance: give.chance, firstKill: give.firstKill === true,
+                how: rule.how, via: rule.via, chance: give.chance,
                 perCycle: give.perCycle ?? null, inputs: rule.inputs, gates: rule.gates, oneOff: rule.oneOff === true,
                 maybe: give.maybe === true
             }, r => `${r.how}|${r.via}`);
             if (rule.via && !placed) {
                 push(gives, rule.via, {
-                    how: rule.how, key: give.key, chance: give.chance, firstKill: give.firstKill === true,
+                    how: rule.how, key: give.key, chance: give.chance,
                     perCycle: give.perCycle ?? null, gates: rule.gates
                 }, r => `${r.how}|${r.key}`);
             }
         }
         if (SPENT_BY.has(rule.how)) {
-            const by = rule.how === HOW.SHOP || rule.how === HOW.UPCYCLE ? rule.gives[0]?.key : rule.via;
+            const by = rule.how === HOW.SHOP ? rule.gives[0]?.key : rule.via;
             if (!shown(by)) continue;
             for (const input of rule.inputs) {
                 if (input.key === by) continue;

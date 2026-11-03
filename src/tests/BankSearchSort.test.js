@@ -62,7 +62,7 @@ describe('the Bank search', () => {
     });
 
     it('matches from the start of a word, case-blind, words in order', () => {
-        const forestMap = item('srt_map', 'Forest Map', 'map');
+        const forestMap = item('srt_map', 'Forest Map', 'material');
         const ironOre = item('srt_ironore', 'Iron Ore', 'material');
         expect(bankSearchMatches(ironOre, 'ore')).toBe(true);
         expect(bankSearchMatches(FIXTURES.srt_ore, 'ORE')).toBe(true);

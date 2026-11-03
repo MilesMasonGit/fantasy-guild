@@ -1,6 +1,5 @@
 import React from 'react';
 import { t } from '../../../i18n/index.js';
-import { MAP_TEXT } from '../../../systems/atlas/mapItems.js';
 import { categoryOfItem, getCategoryInfo } from '../../../config/registries/equipmentConstants.js';
 import { toolOf, toolKindLabel, handsOf, HANDS } from '../../../config/registries/toolKinds.js';
 import { weaponStyleOf, isOffHand } from '../../../config/registries/weaponStyles.js';
@@ -12,7 +11,6 @@ import { UNARMED_DAMAGE, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, attackSpeedMs } 
 
 /** What kind of item it is, in the player's words. */
 export function itemTypeLabel(item) {
-    if (MAP_TEXT.typeLabel[item?.type]) return MAP_TEXT.typeLabel[item.type];
     const key = `itemTip.type.${item?.type}`;
     const label = item?.type ? t(key) : null;
     return label && label !== key ? label : (item?.type || t('itemTip.type.item'));

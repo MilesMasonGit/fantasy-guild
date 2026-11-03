@@ -20,7 +20,6 @@ import { startAutosave, autosaveName } from '../../cms/src/engine/autosave.js';
 const WORKSPACE = Object.freeze({
     items: {
         item_oak: { id: 'item_oak', name: 'Oak', type: 'material' },
-        map_glade: { id: 'map_glade', name: 'Glade', type: 'map', cartography: { nodes: [] } },
     },
     tokens: { token_mill: { id: 'token_mill', name: 'Mill', tags: ['a', 'b'] } },
     effects: { effect_x: { id: 'effect_x', name: 'X', statements: [] } },
@@ -65,7 +64,7 @@ describe('the change-pack format', () => {
         pack.entries[0].kind = 'building';
         delete pack.entries[1].fingerprint;
         pack.entries[2].value = {};
-        pack.entries.push({ op: 'create', kind: 'item', id: 'map_new', value: { type: 'map' }, note: 'x' });
+        pack.entries.push({ op: 'create', kind: 'item', id: 'item_new', value: { type: 'material' }, note: 'x' });
         pack.entries.push({ op: 'create', kind: 'recipe', id: 'recipe_c', value: { name: 'C' }, note: 'x' });
         pack.entries.push({ op: 'edit', kind: 'token', id: 'token_mill', value: {}, fingerprint: 'fp:0000000000000000', note: 'twice' });
         const { ok, errors } = validatePack(pack, { fileName: 'other.json' });
@@ -77,7 +76,6 @@ describe('the change-pack format', () => {
         expect(text).toMatch(/Entry 1 \(item_fir\): "kind" must be one of/);
         expect(text).toMatch(/Entry 2 \(token_mill\): an edit needs "fingerprint"/);
         expect(text).toMatch(/Entry 3 \(effect_x\): a delete carries no "value"/);
-        expect(text).toMatch(/Entry 4 \(map_new\): this is a map or modifier; use "kind": "map"/);
         expect(text).toMatch(/Entry 5 \(recipe_c\): a recipe's "value.skill"/);
         expect(text).toMatch(/Entry 6 \(token_mill\): the same entity is already entry 2/);
         expect(validatePack('nope').errors[0]).toMatch(/one JSON object/);
@@ -86,8 +84,8 @@ describe('the change-pack format', () => {
 });
 
 describe('applying entries to a workspace', () => {
-    it('reads, sets and removes each kind in its own collection, a map as an item and a recipe in its pool', () => {
-        expect(currentValue(WORKSPACE, 'map', 'map_glade').name).toBe('Glade');
+    it('reads, sets and removes each kind in its own collection, a recipe in its pool', () => {
+        expect(currentValue(WORKSPACE, 'item', 'item_oak').name).toBe('Oak');
         expect(currentValue(WORKSPACE, 'recipe', 'recipe_b').name).toBe('B');
         expect(currentValue(WORKSPACE, 'token', 'token_none')).toBeNull();
 
@@ -99,7 +97,7 @@ describe('applying entries to a workspace', () => {
         expect(setValue(WORKSPACE, 'recipe', 'recipe_b', null).recipePools.carpentry.map((r) => r.id)).toEqual(['recipe_a']);
 
         const items = setValue(WORKSPACE, 'item', 'item_fir', { name: 'Fir' }).items;
-        expect(Object.keys(items)).toEqual(['item_oak', 'map_glade', 'item_fir']);
+        expect(Object.keys(items)).toEqual(['item_oak', 'item_fir']);
         expect(items.item_fir.id).toBe('item_fir');
         expect(setValue(WORKSPACE, 'effect', 'effect_x', null)).toEqual({ effects: {} });
         expect(WORKSPACE.effects.effect_x).toBeDefined();

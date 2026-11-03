@@ -77,9 +77,8 @@ export function amountText(q) {
     return `×${shown.toLocaleString('en-US')}`;
 }
 
-/** A line's odds on the box it reaches: "first kill", "40%", nothing when sure. */
+/** A line's odds on the box it reaches: "40%", nothing when sure. */
 export function chanceText(node) {
-    if (node.firstKill) return t('encyclopedia.firstKill');
     if (!Number.isFinite(node.chance) || node.chance >= 1) return null;
     return t('encyclopedia.chance', { chance: Math.round(node.chance * 1000) / 10 });
 }
