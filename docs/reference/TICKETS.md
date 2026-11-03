@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-298**
+**Next free number: T-299**
 
 ---
 
@@ -84,6 +84,7 @@ here.
 | T-294 | P2 | open | **The ledger and world tables can't hold the ladder yet**: the ledger's plan tiers stop at 5 (`PLAN_TIERS`, the ladder needs 7) and a cell's settle level and price follow its ring, not its rung. Open tiers 6 and 7, let a cell's requirement follow the rung of its main material, then set stage budgets and the new pace curve in the plan ([the ladder](../active/concept_content_roadmap.md#the-ladder-owner-approved-2026-11-02)) | content roadmap 2026-11-02 |
 | T-295 | P3 | open | **Loot flight gets an arc back, without costing performance** (owner 2026-11-02: "we lost the arc effect at some point, possibly for performance"). A small experiment measured with the draw bench. Find first which flight lost it: `ParticleOverlay.jsx` still has arc code for flights to a stub. Wait for T-197 (`perf/loot-bubbles`) if it is still open. Eye-check: the owner judges the feel. |
 | T-296 | P3 | open | **Extra boards may pile up at the Hall** (seen once, 2026-11-02, by the terrain comparison's agent, after about 30 minutes of play in one dev game, world map build; not looked into, may be a test artefact). Try to reproduce in a fresh game before anything else. |
+| T-298 | P3 | open | **Stale docs found by the upgrade review**: GDD §16 still says the Token cap grows with a Hall star; the Mat Tuner hint still mentions the Notice Board. Check first, then correct. |
 | T-260 | P1 | built 79c6b01c; owner sets tiers | **Recruits may hold copper weapons** (owner 2026-10-27, reverses the C2 call that Recruits refuse weapons): no hero leaves Recruit in plane 1 (the Fighter needs Mining and Smithing 10), so crafted copper swords were useless | K4 |
 | T-176 | P2 | open | **The quest board** ([concept_quests_tutorial.md](../active/concept_quests_tutorial.md), "The quest board", owner 2026-10-20): one fixture board at the bottom-left of every Region's mat; click opens its card on the quest list; up to 3 collect/hunt bounties from reachable content, Bank have/need, Claim takes items and bursts materials as floating loot; tutorial step pinned first; gold outline and ready count at rest. Replaces the loose quest Tokens. Brief 170. | owner interview |
 | T-175 | P2 | owner | (Concept still a draft, owner 2026-10-14: not for the director yet.) **Collectors: the Guild Hall and warehouses** ([concept_collectors.md](../active/concept_collectors.md)): the Hall collects all loot in a small radius from the start, widened by a ranked Hall star; warehouses built on Foundations collect items with one tag (CMS Collects block: tag, radius, interval ~60 s), bigger radius on higher tiers, no upkeep; shared sweep clock, nearest collector wins, items fly in; Bank-full leaves loot and shows the yellow mark; reach ring on hover, drag, placing. Remove the auto-collect setting. Engineer. WORK CHANGED expected. Cost-log line. Eye-check. | concept_collectors.md |

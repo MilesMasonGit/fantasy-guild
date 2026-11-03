@@ -252,7 +252,7 @@ looks cluttered."
 | 10 | **Hall effects: drops run on one lap, 10 minutes by default, reduced to 5 by Guild Hall upgrades.** (Today: 5 minutes.) | must, design |
 | 11 | **Hall effects: no time on each item entry**; the lap's time is listed as a boost. | must, tweak |
 | 12 | **"Modifiers" are called "boosts"** there. | must, tweak |
-| 13 | **More possible upgrades**: a review of what else could be upgraded. An agent reports (every number that could be a star, what similar games let you upgrade, what each does to pacing), then an interview; the result joins the content roadmap as a star pack. | must, design |
+| 13 | **More possible upgrades**: a review of what else could be upgraded. An agent reports (every number that could be a star, what similar games let you upgrade, what each does to pacing), then an interview; the result joins the content roadmap as a star pack. Report: [research/upgrade_review_2026-11-03.md](research/upgrade_review_2026-11-03.md); interview open. | must, design |
 
 **Looked at, no change** (owner, 2026-11-03): the camera move, dragging, how the sky opens.
 
