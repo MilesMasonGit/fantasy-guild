@@ -930,7 +930,7 @@
     "stackable": true,
     "restoreAmount": 15,
     "equipSlot": "drink",
-    "value": 11,
+    "value": 8,
     "valueSource": "recipe_mtp8qjj9",
     "autoSyncId": true,
     "id": "item_beer",
