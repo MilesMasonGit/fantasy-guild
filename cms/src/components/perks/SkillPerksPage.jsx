@@ -38,7 +38,9 @@ export default function SkillPerksPage({ setCurrentView }) {
     if (useEntityStore.getState().perkFocus) useEntityStore.getState().focusPerks(null);
   }, []);
 
+  /** A perk's rules are carried by its hero, so they read as the hero's. */
   const names = useMemo(() => ({
+    carried: true,
     token: (id) => tokens[id]?.name || id,
     item: (id) => items[id]?.name || id,
     effect: (id) => effects?.[id]?.name || id,

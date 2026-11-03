@@ -150,8 +150,10 @@ export const TRIGGER_EVENTS = [
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE, ROLE.OPPONENT],
         event: BOARD_EVENTS.COMBAT_ENGAGED,
         label: "On Neighbour's Fight",
+        carriedLabel: "When this hero's fight starts",
         scopes: [TRIGGER_SCOPES.NEARBY],
-        hint: 'Fires each time a hero engages a nearby enemy — including every fresh enemy after a kill, not just the first.'
+        hint: 'Fires each time a hero engages a nearby enemy — including every fresh enemy after a kill, not just the first.',
+        carriedHint: 'Fires as the hero carrying this starts a fight, and again for each fresh enemy after a kill. How an elixir works.'
     },
     {
         /**
@@ -221,8 +223,10 @@ export const TRIGGER_EVENTS = [
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.CYCLE_START,
         label: "On Neighbour's Start",
+        carriedLabel: 'When this hero starts work',
         scopes: [TRIGGER_SCOPES.NEARBY],
-        hint: 'Fires as a nearby Token starts work — not when it finishes. A Token waiting for inputs has not started, so it does not fire until it genuinely resumes.'
+        hint: 'Fires as a nearby Token starts work — not when it finishes. A Token waiting for inputs has not started, so it does not fire until it genuinely resumes.',
+        carriedHint: 'Fires as the hero carrying this starts a work cycle, on any Token.'
     },
     {
         /**
@@ -366,6 +370,18 @@ export const FIGHT_MOMENT = Object.freeze({
 /** Whether a moment is one the combat engine fires (`FIGHT_MOMENT`). */
 export function isFightMoment(triggerId) {
     return !!getTriggerEvent(triggerId)?.fightMoment;
+}
+
+/**
+ * A moment's tag and hint as an author or player reads them. On a carried rule (an item's, a perk's)
+ * a moment that a Token hears from a neighbour is heard from the hero instead, so it says so
+ * (`carriedLabel`): an elixir's "On Neighbour's Fight" is the hero's own fight starting.
+ */
+export function momentWords(definition, carried = false) {
+    if (!definition) return { label: '', hint: '' };
+    return carried && definition.carriedLabel
+        ? { label: definition.carriedLabel, hint: definition.carriedHint || definition.hint }
+        : { label: definition.label, hint: definition.hint };
 }
 
 /** Whether a moment is heard only by a carried item (`WORK_START`), never by a Token. */

@@ -125,6 +125,12 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * damage types) stays here so content carrying one still renders and the audits
  * can name it; `paletteForKeyword` leaves it out of the editor's choices.
  *
+ * ## `heroReads` — how the axis reads on a hero
+ *
+ * A carried rule (an item's, a perk's) reads "Gives the hero …" with this phrase where the Token
+ * wording's verb does not fit a person: a hero is not "awarded" XP, they get it. An axis without it
+ * reads "Makes the hero …" with `reads`.
+ *
  * ## `heroOnly` — the axis reaches a person, never a tile
  *
  * Read off a **hero's** aggregator, so only an item (to its carrier) or an enemy
@@ -196,7 +202,10 @@ export const MODIFIER_PALETTE = [
          * to the Field's own work skill.
          */
         type: EFFECT_TYPES.CROP_LOAD,
-        reads: { up: (n) => `hold ${n} more harvests when ripe`, down: (n) => `hold ${n} fewer harvests when ripe` },
+        reads: {
+            up: (n, size) => `hold ${n} more ${size === '1' ? 'harvest' : 'harvests'} when ripe`,
+            down: (n, size) => `hold ${n} fewer ${size === '1' ? 'harvest' : 'harvests'} when ripe`
+        },
         label: 'Crop Load',
         when: 'never',
         scales: 'value',
@@ -263,6 +272,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.XP_BONUS,
         reads: { up: (n) => `award ${n} more XP`, down: (n) => `award ${n} less XP` },
+        heroReads: { up: (n) => `${n} more XP`, down: (n) => `${n} less XP` },
         label: 'XP Bonus',
         when: 'never',
         scales: 'value',
@@ -277,6 +287,7 @@ export const MODIFIER_PALETTE = [
             up: (n) => `have a ${n} chance of double loot`,
             down: (n) => `have ${n} less chance of double loot`
         },
+        heroReads: { up: (n) => `a ${n} chance of double loot`, down: (n) => `${n} less chance of double loot` },
         label: 'Double Loot Chance',
         when: 'never',
         scales: 'value',
@@ -291,6 +302,7 @@ export const MODIFIER_PALETTE = [
             up: (n) => `have a ${n} chance to fail`,
             down: (n) => `have ${n} less chance to fail`
         },
+        heroReads: { up: (n) => `a ${n} chance to fail`, down: (n) => `${n} less chance to fail` },
         label: 'Failure Chance',
         when: 'never',
         scales: 'value',

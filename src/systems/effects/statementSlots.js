@@ -5,7 +5,7 @@ import {
 import {
     CHARGE_MOMENT, chargeMomentsFor, chargeMomentOf, chargeDeltaOf
 } from '../../config/registries/chargeMomentRegistry.js';
-import { TRIGGER_EVENTS, getTriggerEvent, rolesOf, isFightMoment, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
+import { TRIGGER_EVENTS, getTriggerEvent, rolesOf, isFightMoment, everyOf, healthBelowOf, momentWords } from '../../config/registries/triggerRegistry.js';
 import { isWorkMoment } from '../core/consumableRule.js';
 import { ROLES, getRole } from '../../config/registries/roleRegistry.js';
 import { REACHES, reachOf, getReach } from '../../config/registries/reachRegistry.js';
@@ -63,12 +63,16 @@ const option = (id, label, hint = '') => ({ id, label, hint });
 /**
  * Which moments a statement may legally name: every moment, less those that run only some verbs
  * (a fight moment runs Applies, Deals, Heals and Removes). ⚠️ Callers must not offer it to a
- * keyword that cannot carry a trigger (`slotsOf` checks `KEYWORDS`).
+ * keyword that cannot carry a trigger (`slotsOf` checks `KEYWORDS`). On a carried rule (`carried`)
+ * each moment is worded as its hero hears it, as the sentence words it.
  */
-function momentOptions(keywordId) {
+function momentOptions(keywordId, carried = false) {
     return TRIGGER_EVENTS
         .filter(t => !t.keywords || t.keywords.includes(keywordId))
-        .map(t => option(t.id, t.label, t.hint));
+        .map(t => {
+            const { label, hint } = momentWords(t, carried);
+            return option(t.id, label, hint);
+        });
 }
 
 /**
@@ -522,6 +526,8 @@ function payloadSlots(statement, ctx) {
  * Order follows the sentence, not the data shape: when, verb, payload, who, how far.
  *
  * @param {object} statement
+ * @param {object} [ctx]  the vocabulary (`tokens`, `items`, `effects`, `capabilities`), and
+ *   `carried: true` when a hero carries the rule (an item's, a perk's)
  * @returns {Array<object>} slots, each with `id`, `kind`, `label`, `value` and
  *   a `patch(value)` returning the change to merge into the statement
  */
@@ -538,7 +544,7 @@ export function slotsOf(statement, ctx = {}) {
             id: 'moment', kind: SLOT_KIND.VOCABULARY, label: 'when',
             value: statement?.when?.event || null,
             required: keyword.when === WHEN.REQUIRED,
-            options: momentOptions(statement.keyword),
+            options: momentOptions(statement.keyword, !!ctx.carried),
             patch: v => {
                 const definition = getTriggerEvent(v);
                 // A skill belongs to the moment that offers one: kept, it would narrow a moment

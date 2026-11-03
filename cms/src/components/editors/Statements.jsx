@@ -43,9 +43,10 @@ const KEYWORD_ICON = {
  * @param {boolean} [lockKeyword]  the verb cannot be retyped (Requires)
  * @param {(statement) => React.ReactNode} [rowNote]  a line under each row
  * @param {string|null} [emptyNote]  what an empty list says
+ * @param {boolean} [carried]  a hero carries these rules (an item's, a perk's): the sentences and the moment picker read as the hero's
  */
 export function StatementList({
-  statements, onChange, content,
+  statements, onChange, content, carried = false,
   cursor: heldCursor, onCursor, panel = 'always', canAdd = true, lockKeyword = false,
   rowNote = null,
   emptyNote = 'This effect has a name and nothing behind it. A named effect must carry at least one rule — add one below, or delete the effect.',
@@ -60,7 +61,7 @@ export function StatementList({
   /** ⚠️ Creating an item writes to the persisted store, so a list given its own vocabulary offers no Create anywhere (panel search, conversion table, upkeep list). */
   const canCreate = !content;
   const capabilities = useCapabilityVocabulary(tokens);
-  const ctx = useMemo(() => ({ tokens, items, capabilities, effects }), [tokens, items, capabilities, effects]);
+  const ctx = useMemo(() => ({ tokens, items, capabilities, effects, carried }), [tokens, items, capabilities, effects, carried]);
   const [menuOpen, setMenuOpen] = useState(false);
 
   /** One cursor for the whole list, because there is one panel: `{ statementId, slotId, occurrence, mode, query, active, moved }`. Updates are functional so a blur arriving after a Tab cannot clobber the word Tab moved to. */
@@ -103,10 +104,11 @@ export function StatementList({
 
   /** ⚠️ `effect` is here because the line reads it; without it, picking Poison printed Applies effect_1 (the id) instead of the chosen name. */
   const names = useMemo(() => ({
+    carried,
     token: (id) => tokens[id]?.name || id,
     item: (id) => items[id]?.name || id,
     effect: (id) => effects?.[id]?.name || id,
-  }), [tokens, items, effects]);
+  }), [tokens, items, effects, carried]);
 
   const focusedStatement = cursor ? list.find((st) => st.id === cursor.statementId) || null : null;
   const panelSlot = focusedStatement
@@ -261,11 +263,13 @@ export default function Statements({ token, item }) {
   const refs = effectRefsOf(record);
   const setRequirements = (next) => updateToken(record.id, { acceptedTokens: next });
 
+  /** An item's rules are carried by its hero, so they read as the hero's; a Token's read as the Token's. */
   const names = useMemo(() => ({
+    carried: !token,
     token: (id) => tokens[id]?.name || id,
     item: (id) => items[id]?.name || id,
     effect: (id) => effects?.[id]?.name || id,
-  }), [tokens, items, effects]);
+  }), [tokens, items, effects, token]);
 
   /** Counts Tokens AND items: an effect shared between a Bay and a potion is the case the library exists for, and an edit reaches both. */
   const bearerCount = (effectId) =>
@@ -439,6 +443,7 @@ export default function Statements({ token, item }) {
                   statements={entry.statements || []}
                   onChange={(next) => setEffectStatements(effectId, next)}
                   {...cursorFor(effectId)}
+                  carried={!token}
                   panel="focused"
                   canAdd={false}
                   emptyNote="This effect has no rule left. Open it to add one, or remove it from here."
