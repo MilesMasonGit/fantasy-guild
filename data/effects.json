@@ -1091,7 +1091,7 @@
         "payload": {
           "type": "GROW_TIME",
           "bucket": "percentage",
-          "value": -0.2
+          "value": -0.09
         },
         "chargeDelta": 0,
         "to": {
@@ -1116,7 +1116,7 @@
         "payload": {
           "type": "CROP_LOAD",
           "bucket": "flat",
-          "value": 2
+          "value": 1
         },
         "chargeDelta": 0,
         "to": {
@@ -1141,7 +1141,7 @@
         "payload": {
           "type": "DOUBLE_DROP",
           "bucket": "flat",
-          "value": 20,
+          "value": 9,
           "category": "item_wheat"
         },
         "chargeDelta": 0,
