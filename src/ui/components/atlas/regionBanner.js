@@ -1,21 +1,8 @@
-// which area banner a Region shows: its Base Map's pick (a Region from before maps retired), the Starter Camp's, else its main biome's
+// which area banner a Region shows: the Starter Camp's, else its main biome's
 
 import * as Atlas from '../../../systems/atlas/Atlas.js';
-import { isBaseMap } from '../../../systems/atlas/mapItems.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
 import { authoredStarterCamp } from '../../../config/registries/starterCampRegistry.js';
 import { isAreaBanner, defaultBannerFor, STARTER_CAMP_BIOME } from '../../../config/areaBanners.js';
-
-/**
- * The banner the Base Maps among `ingredients` picked (item ids, in slot order): the one of the
- * main biome's map first, else the first map with a pick. Modifiers never change it. Null when
- * none picked one the game has.
- */
-export function pickedBanner(ingredients, mainBiome = null) {
-    const maps = (ingredients || []).map(id => getItem(id)).filter(def => isBaseMap(def) && isAreaBanner(def.banner));
-    const main = mainBiome ? maps.find(def => def.cartography?.biome === mainBiome) : null;
-    return (main || maps[0])?.banner || null;
-}
 
 /** The banner Region `region` (a record or a `list()` summary) shows. */
 export function bannerForRegion(region) {
@@ -26,8 +13,7 @@ export function bannerForRegion(region) {
         if (isAreaBanner(picked)) return picked;
         return defaultBannerFor(record.ground?.main || STARTER_CAMP_BIOME);
     }
-    const main = record.ground?.main || null;
-    return pickedBanner(record.ingredients, main) || defaultBannerFor(main);
+    return defaultBannerFor(record.ground?.main || null);
 }
 
 /** The banner of the Region the guild is in, or null before a game. */

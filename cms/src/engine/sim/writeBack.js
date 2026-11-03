@@ -3,7 +3,6 @@
 import { quantityRange } from './fieldAdapter.js';
 import { deriveTokenType } from '../../utils/constants';
 import { slugify } from '../../utils/idGenerator';
-import { isMapItem } from '../../../../src/systems/atlas/mapItems.js';
 import { hasCatchPools } from '../../../../src/config/registries/catchPools.js';
 
 /** Item fields the retired balance engine wrote. Deleted on every run. */
@@ -235,12 +234,10 @@ function deriveOutputs(outputs, downcycleEntry, tuning) {
 /**
  * Items: derived `value` and `valueSource`, retired fields gone.
  * ⚠️ An item the passes could not price keeps `value: null` and gains `valueSource: null` rather than being skipped: null means not yet computed, which is what an unreachable item is and what the audit raises as Critical.
- * ⚠️ A map item is the exception: nothing prices a map, so it is written back exactly as authored.
  */
 export function applyItemResults(items = {}, sim) {
     const next = {};
     for (const [id, item] of Object.entries(items)) {
-        if (isMapItem(item)) { next[id] = item; continue; }
         const itemId = item?.id ?? id;
         const stripped = without(item, RETIRED_ITEM_FIELDS);
         const priced = sim.values.has(itemId);

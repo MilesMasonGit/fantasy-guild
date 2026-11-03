@@ -46,7 +46,7 @@ function workspace() {
         items: {
             item_ore: { id: 'item_ore', name: 'Ore', type: 'material', plan: { status: 'live', tier: 1 } },
             item_bar: { id: 'item_bar', name: 'Bar', type: 'material' },
-            map_volcano: { id: 'map_volcano', name: 'Volcano', type: 'map' },
+            item_volcano: { id: 'item_volcano', name: 'Volcano', type: 'material' },
         },
         tokens: {
             token_vein: { id: 'token_vein', name: 'Vein', config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 6000, inputs: [], outputs: [{ itemId: 'item_ore', chance: 100, minQty: 1, maxQty: 1 }] } },
@@ -63,12 +63,12 @@ function workspace() {
 const store = () => useEntityStore.getState();
 
 describe('the rows', () => {
-    it('list every item, map, Token, enemy and recipe with its plan', () => {
+    it('list every item, Token, enemy and recipe with its plan', () => {
         const rows = ledgerRows(workspace());
         expect(rows.map((r) => [r.kind, r.id, r.status, r.tier])).toEqual([
             ['item', 'item_bar', 'live', null],
             ['item', 'item_ore', 'live', 1],
-            ['map', 'map_volcano', 'live', null],
+            ['item', 'item_volcano', 'live', null],
             ['token', 'token_vein', 'live', null],
             ['enemy', 'token_goblin', 'draft', 0],
             ['recipe', 'recipe_bar', 'live', null],
@@ -120,7 +120,7 @@ describe('the tab', () => {
 
     it('filters the list', () => {
         const view = render(React.createElement(LedgerPanel, { setCurrentView: () => {} }));
-        fireEvent.change(view.getByLabelText('Filter by kind'), { target: { value: 'map' } });
+        fireEvent.change(view.getByLabelText('Filter by kind'), { target: { value: 'item' } });
         expect(view.queryByText('Volcano')).toBeTruthy();
         expect(view.queryByText('Goblin')).toBeNull();
         fireEvent.change(view.getByLabelText('Filter by kind'), { target: { value: '' } });
@@ -147,7 +147,7 @@ describe('the tab', () => {
             fireEvent.click(form.getByText('Add'));
         };
         add('Mythril Ore', 'item', '3', 'plane 3 ore');
-        add('Sky Map', 'map', '3');
+        add('Sky Map', 'item', '3');
         add('Mythril Vein', 'token', '3');
         add('Wyrm', 'enemy', '3');
         fireEvent.change(form.getByLabelText('Stub kind'), { target: { value: 'recipe' } });

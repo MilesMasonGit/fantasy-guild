@@ -1,21 +1,15 @@
 import { useState, useMemo } from 'react';
-import { Package, Boxes, Map as MapIcon, Plus, Search, ChevronRight, ChevronDown, Sparkles } from 'lucide-react';
+import { Package, Boxes, Plus, Search, ChevronRight, ChevronDown, Sparkles } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 import { TOKEN_TYPES, derivedTokenType, expandBearer } from '../../utils/constants';
-import { isMapItem, isModifier } from '../../../../src/systems/atlas/mapItems.js';
 
 /**
  * ⚠️ There is no Enemies tab: an enemy is a Token, so it lives in the Token list and is reached through the type filter.
- * Maps and Modifiers are items, listed under Maps and never under Items: `collection` is where a tab reads, `only` which of its records it shows.
  */
 const ENTITY_TABS = [
-  { key: 'items', label: 'Items', type: 'item', collection: 'items', only: (e) => !isMapItem(e), icon: Package, color: 'var(--color-item)', adds: [{ label: 'New', action: 'addItem' }] },
+  { key: 'items', label: 'Items', type: 'item', icon: Package, color: 'var(--color-item)', adds: [{ label: 'New', action: 'addItem' }] },
   { key: 'tokens', label: 'Tokens', type: 'token', icon: Boxes, color: 'var(--color-accent)', adds: [{ label: 'New', action: 'addToken' }] },
-  {
-    key: 'maps', label: 'Maps', type: 'map', collection: 'items', only: isMapItem, icon: MapIcon, color: 'var(--color-area)',
-    adds: [{ label: 'Map', action: 'addMap', args: ['map'] }, { label: 'Modifier', action: 'addMap', args: ['modifier'] }],
-  },
   // The named effect library. A Token's rules live there, so it needs to be reachable on its own.
   { key: 'effects', label: 'Effects', type: 'effect', icon: Sparkles, color: 'var(--color-accent)', adds: [{ label: 'New', action: 'addEffect' }] },
 ];
@@ -27,11 +21,7 @@ export default function Sidebar() {
   const [collapsedGroups, setCollapsedGroups] = useState({});
 
   const tab = ENTITY_TABS.find((t) => t.key === activeTab);
-  const collection = useEntityStore((s) => s[tab.collection || tab.key]);
-  const entities = useMemo(() => {
-    if (!tab.only) return collection;
-    return Object.fromEntries(Object.entries(collection || {}).filter(([, e]) => tab.only(e)));
-  }, [collection, tab]);
+  const entities = useEntityStore((s) => s[tab.key]);
   const activeEntityId = useEntityStore((s) => s.activeEntityId);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
   // A Token's type is derived from its rules, which live in the effect library; without expanding, every Token groups as unclassified.
@@ -55,13 +45,8 @@ export default function Sidebar() {
     return list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [entities, activeTab, typeFilter, searchQuery]);
 
-  /** Items stay flat; Maps group into Base Maps and Modifiers. ⚠️ Tokens group by the derived type, not the stored one, which is only refreshed on sync, so a Token moves group as soon as its rules change. */
+  /** Items stay flat. ⚠️ Tokens group by the derived type, not the stored one, which is only refreshed on sync, so a Token moves group as soon as its rules change. */
   const groupedEntities = useMemo(() => {
-    if (activeTab === 'maps') {
-      const groups = {};
-      for (const entity of filteredEntities) (groups[isModifier(entity) ? 'Modifiers' : 'Base Maps'] ||= []).push(entity);
-      return groups;
-    }
     if (activeTab !== 'tokens') return null;
     const groups = {};
     for (const entity of filteredEntities) {

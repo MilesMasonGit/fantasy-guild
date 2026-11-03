@@ -51,16 +51,15 @@ export function authoredChance(output) {
 
 /**
  * One normalised output entry. `chance` is a fraction; `chancePercent` is authored.
- * ⚠️ An output of an `exempt` item (a map) keeps its place but names no item, like a currency or Token output: every pass skips it, and the write-back's index join still lines up.
  */
-function adaptOutput(output, exempt) {
+function adaptOutput(output) {
     const { min, max } = quantityRange(output);
     const percent = authoredChance(output);
     const avgQty = expectedQuantity(output);
     const chance = percent / 100;
     const itemId = output?.itemId ?? null;
     return Object.freeze({
-        itemId: itemId !== null && exempt.has(itemId) ? null : itemId,
+        itemId,
         chancePercent: percent,
         chance,
         minQty: min,
@@ -73,19 +72,17 @@ function adaptOutput(output, exempt) {
     });
 }
 
-function adaptInput(input, exempt) {
+function adaptInput(input) {
     const itemId = input?.itemId ?? null;
     return Object.freeze({
-        itemId: itemId !== null && exempt.has(itemId) ? null : itemId,
+        itemId,
         quantity: Number.isFinite(input?.quantity) ? input.quantity : 1,
     });
 }
 
-const NO_EXEMPT = new Set();
-
-function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, xp, inputs, outputs, sim, downcycle, rarity, tokenType, charges }, exempt = NO_EXEMPT) {
-    const adaptedOutputs = Object.freeze((outputs || []).map((o) => adaptOutput(o, exempt)));
-    const adaptedInputs = Object.freeze((inputs || []).map((i) => adaptInput(i, exempt)));
+function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, xp, inputs, outputs, sim, downcycle, rarity, tokenType, charges }) {
+    const adaptedOutputs = Object.freeze((outputs || []).map((o) => adaptOutput(o)));
+    const adaptedInputs = Object.freeze((inputs || []).map((i) => adaptInput(i)));
     return Object.freeze({
         id,
         name: name ?? id,
@@ -126,7 +123,7 @@ export function waterOutputs(def) {
     return [...shares].map(([itemId, percent]) => ({ itemId, chance: percent / basic.length, minQty: 1, maxQty: 1 }));
 }
 
-export function adaptToken(def, id = def?.id, exempt = NO_EXEMPT) {
+export function adaptToken(def, id = def?.id) {
     return adaptCommon({
         id,
         name: def?.name,
@@ -144,7 +141,7 @@ export function adaptToken(def, id = def?.id, exempt = NO_EXEMPT) {
         rarity: def?.rarity,
         tokenType: def?.tokenType,
         charges: liveCharges(def),
-    }, exempt);
+    });
 }
 
 /**
@@ -160,7 +157,7 @@ function cropInputs(def) {
 }
 
 /** `crop`: whether this recipe is grown on a Field (see `cropRecipeIds`). */
-export function adaptRecipe(def, id = def?.id, exempt = NO_EXEMPT, crop = false) {
+export function adaptRecipe(def, id = def?.id, crop = false) {
     return adaptCommon({
         id,
         name: def?.name,
@@ -178,7 +175,7 @@ export function adaptRecipe(def, id = def?.id, exempt = NO_EXEMPT, crop = false)
         rarity: null,
         tokenType: null,
         charges: null,
-    }, exempt);
+    });
 }
 
 /** Accept either a keyed object or an array of records, and yield `[id, def]`. */
@@ -208,12 +205,12 @@ export function cropRecipeIds(tokens, recipes) {
     return ids;
 }
 
-/** Adapt a whole corpus. Returns entities sorted by id: every later pass iterates this array, and a stable order is what makes two runs byte-identical. `exempt` names the items no pass may see (the maps). */
-export function adaptCorpus({ tokens, recipes, exempt = NO_EXEMPT } = {}) {
+/** Adapt a whole corpus. Returns entities sorted by id: every later pass iterates this array, and a stable order is what makes two runs byte-identical. */
+export function adaptCorpus({ tokens, recipes } = {}) {
     const crops = cropRecipeIds(tokens, recipes);
     const adapted = [
-        ...entries(tokens).map(([id, def]) => adaptToken(def, def?.id ?? id, exempt)),
-        ...entries(recipes).map(([id, def]) => adaptRecipe(def, def?.id ?? id, exempt, crops.has(def?.id ?? id))),
+        ...entries(tokens).map(([id, def]) => adaptToken(def, def?.id ?? id)),
+        ...entries(recipes).map(([id, def]) => adaptRecipe(def, def?.id ?? id, crops.has(def?.id ?? id))),
     ];
     adapted.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return adapted;

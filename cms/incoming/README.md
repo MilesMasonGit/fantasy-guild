@@ -18,8 +18,7 @@ writes one every few minutes while they edit, keeping the last five). Read your
 "before" values from there, not from `data/`, so you see what the owner sees, **unless
 `data/` is newer** (a file in it changed after that autosave: the owner has Synced since and
 the autosave is stale); then read `data/`. The helper below makes the same choice. Its shape:
-`{ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, world }`; maps are items with
-`type: "map"` or `"modifier"`; recipes sit in `recipePools[skill]`, each with an `id`.
+`{ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, world }`; recipes sit in `recipePools[skill]`, each with an `id`.
 
 ## The file
 
@@ -64,8 +63,7 @@ One JSON file per pack, named after its id: `cms/incoming/<id>.json`.
 - **`asked`**: what the owner asked for, in their words. Shown at the top of the review.
 - **`entries`**: one per entity; an entity appears once per pack.
   - **`op`**: `create`, `edit` or `delete`.
-  - **`kind`**: `item`, `token`, `recipe`, `effect` or `map` (a Base Map or Modifier;
-    its `value.type` is `map` or `modifier`; a plain item must not be one).
+  - **`kind`**: `item`, `token`, `recipe` or `effect`.
     Or `starterCamp`: the Starter Camp, one record (see below). Or `skillPerks`: one skill's
     milestone perk table (see below). Or `hallStar` / `hallConstellation`: a Guild Hall star or
     constellation (see below). Or `world`: the world tables, one record (see below).

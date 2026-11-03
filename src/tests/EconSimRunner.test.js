@@ -11,7 +11,6 @@
 import { describe, it, expect } from 'vitest';
 
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';
-import { isMapItem } from '../systems/atlas/mapItems.js';
 
 import tokenData from '../../data/tokens.json';
 import recipeData from '../../data/tokenRecipes.json';
@@ -49,12 +48,6 @@ describe('EconSim — the runner', () => {
         const explained = new Set(result.rows.filter(r => r.itemId).map(r => r.itemId));
 
         for (const [itemId, item] of Object.entries(itemData)) {
-            // ⚠️ A map is priced by nothing and explained by nothing (atlas roadmap A5).
-            if (isMapItem(item)) {
-                expect(result.values.has(itemId), `${itemId} is a map but was priced`).toBe(false);
-                expect(explained.has(itemId), `${itemId} is a map but has a row`).toBe(false);
-                continue;
-            }
             if (result.values.has(itemId)) continue;
             expect(explained.has(itemId), `${itemId} is neither priced nor explained`).toBe(true);
         }

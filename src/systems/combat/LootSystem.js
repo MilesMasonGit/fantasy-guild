@@ -1,7 +1,7 @@
 // Fantasy Guild - Loot System
 
 import { EventBus } from '../core/EventBus.js';
-import { getItem, isRetiredItem } from '../../config/registries/itemRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { randomInt } from '../../utils/RNG.js';
@@ -86,8 +86,7 @@ const LootSystem = {
     rollEachLine(entries, areaId, widen = null) {
         const results = [];
         for (const entry of (Array.isArray(entries) ? entries : [])) {
-            // A map is retired: its line is not rolled at all (the boot audit names it).
-            if (!entry || isRetiredItem(entry.itemId || entry.id)) continue;
+            if (!entry) continue;
             const chance = entry.chance ?? 100;
             if (chance < 100 && Math.random() * 100 > chance) continue;
             const drop = this._rollEntryDetails(entry, areaId);

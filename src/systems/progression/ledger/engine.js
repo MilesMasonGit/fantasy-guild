@@ -48,7 +48,7 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
  * price in materials (the seed picks them), which wedge a seed's key origins and camps fall in, room
  * under the Token cap, a placement rule refusing a spot, the guild's roster.
  *
- * Pure apart from `mapItems.js`, which the CMS already imports: it reads only what it is handed.
+ * Pure: it reads only what it is handed.
  */
 
 /** A drop under this chance (with no sure way to the same thing) is luck only. */

@@ -13,8 +13,7 @@ import { isEnemyDef, isBossEnemy } from '../../config/registries/enemyProfile.js
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy, statusBlockOf } from '../effects/effectLibrary.js';
 import { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
-import { ITEMS, getItem, isRetiredItem } from '../../config/registries/itemRegistry.js';
-import { isBaseMap, isModifier, mapItemFindings } from '../atlas/mapItems.js';
+import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
 import { STANDS_ON_CHOICES, isStandsOnWord } from '../atlas/TerrainMap.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
@@ -634,42 +633,6 @@ function auditItems(out) {
 // Enemy drops are not audited here: enemies are Tokens, so the Token walk
 // already checks their outputs, and a second pass would report each finding twice.
 
-/** The audit's words for retired map content, kept together for translation. */
-export const RETIRED_MAP_TEXT = Object.freeze({
-    baseMap: 'is a Base Map, and map items are retired: the world map settles places now. Delete it in the CMS.',
-    drops: (names) => `drops ${names.join(', ')}, but map items are retired and those lines never roll. `
-        + 'Remove them from its outputs in the CMS.'
-});
-
-/**
- * Map items are retired (the world map settles places): each Base Map is named for deletion, and
- * each Token whose outputs still name a map or a modifier, since those lines never roll. A Modifier
- * stays as a world cell's hidden extra, so its block is still checked: the Tokens it names, and an
- * effect that does nothing (the rule lives in `mapItems.js`, shared with the CMS Economy Audit).
- */
-function auditMapItems(out) {
-    const tokenExists = id => !!getTokenType(id);
-    for (const [itemId, def] of Object.entries(ITEMS || {})) {
-        if (isBaseMap(def)) {
-            out.push(finding(`Item "${itemId}"`, RETIRED_MAP_TEXT.baseMap));
-            continue;
-        }
-        if (!isModifier(def)) continue;
-        for (const what of mapItemFindings(def, { tokenExists, itemOf: getItem })) {
-            out.push(finding(`Item "${itemId}"`, what));
-        }
-    }
-    for (const [tokenId, def] of Object.entries(TOKENS || {})) {
-        const retired = [];
-        for (const output of def?.config?.outputs || []) {
-            if (isRetiredItem(output?.itemId) && !retired.includes(output.itemId)) retired.push(output.itemId);
-        }
-        if (retired.length) {
-            out.push(finding(`Token "${tokenId}"`, RETIRED_MAP_TEXT.drops(retired.map(id => getItem(id)?.name || id))));
-        }
-    }
-}
-
 /**
  * The lists written by hand in the game's own code rather than authored in the
  * CMS. They have named ids that do not exist at some point, and a CMS-side
@@ -798,7 +761,7 @@ function auditGearDefence(out) {
 export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
-        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems, auditTools, auditPerks, auditHallStars,
+        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditPerks, auditHallStars,
         auditGearDefence,
         auditHardcodedLists, (o) => auditStarterCamp(o, starterCamp)
     ];

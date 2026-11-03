@@ -138,14 +138,14 @@ describe('tiles sit on their type\'s surface', () => {
         }
         expect(css).toMatch(/\.ui-item-tile:hover\s*\{[^}]*color-mix\(/);
         // In a plain :root block: Tailwind leaves out @theme variables no class names.
-        for (const name of ['default', 'material', 'tool', 'food', 'drink', 'potion', 'map']) {
+        for (const name of ['default', 'material', 'tool', 'food', 'drink', 'potion']) {
             expect(css).toMatch(new RegExp(`:root\\s*\\{[^}]*--color-item-tint-${name}\\s*:`));
         }
     });
 
-    it('the authored types read apart: food, drink, tool, material, map', () => {
-        const names = ['food', 'drink', 'tool', 'material', 'map'].map(type => itemTintName({ type }));
-        expect(new Set(names).size).toBe(5);
+    it('the authored types read apart: food, drink, tool, material', () => {
+        const names = ['food', 'drink', 'tool', 'material'].map(type => itemTintName({ type }));
+        expect(new Set(names).size).toBe(4);
         expect(itemTintStyle({ type: 'food' })).toEqual({ '--item-tint': 'var(--color-item-tint-food)' });
     });
 

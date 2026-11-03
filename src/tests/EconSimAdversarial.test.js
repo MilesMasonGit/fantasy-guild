@@ -12,7 +12,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
-import { isMapItem } from '../systems/atlas/mapItems.js';
 
 // ── The workspace ────────────────────────────────────────────────────────────
 
@@ -42,12 +41,6 @@ function adversarialWorkspace() {
             item_adv_hoard: { id: 'item_adv_hoard', name: 'Adv Hoard', type: 'material', value: null },
             item_adv_relic_dust: { id: 'item_adv_relic_dust', name: 'Adv Relic Dust', type: 'material', value: null },
             item_adv_fang: { id: 'item_adv_fang', name: 'Adv Fang', type: 'material', value: null },
-            // Map items: never priced, never refused, whatever drops them. One is malformed.
-            map_adv_forest: {
-                id: 'map_adv_forest', name: 'Adv Forest Map', type: 'map', stackable: true,
-                cartography: { biome: 'forest', points: 30, nodes: [{ typeId: 'token_adv_surface', weight: 1 }] },
-            },
-            mod_adv_junk: { id: 'mod_adv_junk', name: 'Adv Junk Modifier', type: 'modifier', cartography: { effects: [null, { kind: 'leyline' }] } },
         },
         tokens: {
             // The healthy anchor everything else is measured against. If this
@@ -220,12 +213,11 @@ describe('⚠️ The adversarial content set — every hard case in one workspac
         expect(result.items.item_adv_bar.valueSource).toBe('recipe_adv_smelt');
     });
 
-    it('gives every item but the maps either a value or a row saying why not', () => {
+    it('gives every item either a value or a row saying why not', () => {
         const result = useEntityStore.getState().recalculateEconomy();
         const explained = new Set(result.sim.rows.filter((r) => r.itemId).map((r) => r.itemId));
         for (const itemId of Object.keys(result.items)) {
-            // A map is priced by nothing, by design: the map items case below.
-            if (result.sim.values.has(itemId) || isMapItem(result.items[itemId])) continue;
+            if (result.sim.values.has(itemId)) continue;
             expect(explained.has(itemId), `${itemId} is neither priced nor explained`).toBe(true);
         }
     });
@@ -329,34 +321,6 @@ describe('⚠️ The adversarial content set — every hard case in one workspac
         const life = result.sim.lifetimes.get('token_adv_extreme');
         expect(life.hours).toBeGreaterThan(24);
         expect(life.unlimited).toBe(false);
-    });
-
-    // ── Map items ────────────────────────────────────────────────────────────
-
-    it('prices no map and refuses none, malformed or dropped, and the drop moves nothing else', () => {
-        const plain = useEntityStore.getState().recalculateEconomy();
-        load();
-        const tokens = useEntityStore.getState().tokens;
-        const surface = tokens.token_adv_surface;
-        useEntityStore.setState({
-            tokens: {
-                ...tokens,
-                token_adv_surface: {
-                    ...surface,
-                    config: { ...surface.config, outputs: [...surface.config.outputs, { itemId: 'map_adv_forest', chance: 5, minQty: 1, maxQty: 1 }] },
-                },
-            },
-        });
-        const dropped = useEntityStore.getState().recalculateEconomy();
-        for (const result of [plain, dropped]) {
-            for (const id of ['map_adv_forest', 'mod_adv_junk']) {
-                expect(result.sim.values.has(id)).toBe(false);
-                expect(result.sim.rows.filter((r) => r.itemId === id)).toEqual([]);
-                expect(result.items[id]).toEqual(adversarialWorkspace().items[id]);
-            }
-        }
-        expect([...dropped.sim.values.entries()].sort()).toEqual([...plain.sim.values.entries()].sort());
-        expect(dropped.tokens.token_adv_surface.config.outputs[1]).toEqual({ itemId: 'map_adv_forest', chance: 5, minQty: 1, maxQty: 1 });
     });
 
     // ── 3. It is idempotent ──────────────────────────────────────────────────

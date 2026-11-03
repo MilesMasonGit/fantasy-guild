@@ -39,7 +39,7 @@ export default function SupplyChainLayout({ children }) {
   }, [token]);
 
   const itemSidebars = useMemo(() => {
-    if ((activeType !== 'item' && activeType !== 'map') || !activeId) return null;
+    if (activeType !== 'item' || !activeId) return null;
 
     const producers = [];
     const consumers = [];

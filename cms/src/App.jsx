@@ -4,7 +4,6 @@ import SupplyChainLayout from './components/layout/SupplyChainLayout';
 import ItemEditor from './components/editors/ItemEditor';
 import TokenEditor from './components/editors/TokenEditor';
 import RecipeEditor from './components/editors/RecipeEditor';
-import MapEditor from './components/editors/MapEditor';
 import EffectEditor from './components/editors/EffectEditor';
 import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
 import AuditPanel from './components/audit/AuditPanel';
@@ -16,13 +15,11 @@ import SkillPerksPage from './components/perks/SkillPerksPage';
 import HallStarsPage from './components/hallStars/HallStarsPage';
 import { useEntityStore } from './stores/useEntityStore';
 import { startLedgerWatchIfWorker } from './stores/useLedgerWatchStore';
-import { isMapItem } from '../../src/systems/atlas/mapItems.js';
-import { Package, Boxes, Map as MapIcon } from 'lucide-react';
+import { Package, Boxes } from 'lucide-react';
 
 const EDITOR_MAP = {
   item: ItemEditor,
   token: TokenEditor,
-  map: MapEditor,
   effect: EffectEditor,
 };
 
@@ -54,8 +51,6 @@ function App() {
 function EditorRouter({ openGenerate }) {
   const activeType = useEntityStore((s) => s.activeEntityType);
   const activeId = useEntityStore((s) => s.activeEntityId);
-  // A map is an item, so it can be reached as one (a drop's item link, an audit row); it always opens in the Map editor.
-  const isMap = useEntityStore((s) => isMapItem(s.items[s.activeEntityId]));
 
   if (!activeType || !activeId) {
     return (
@@ -66,17 +61,16 @@ function EditorRouter({ openGenerate }) {
         <div className="flex flex-wrap gap-3 mt-2 justify-center max-w-md">
           <Hint icon={<Package size={13} />} label="Items" />
           <Hint icon={<Boxes size={13} />} label="Tokens" />
-          <Hint icon={<MapIcon size={13} />} label="Maps" />
         </div>
         <p className="text-xs max-w-sm text-center mt-2 leading-relaxed">
           Items first — they are the leaf nodes Tokens reference, so authoring one
-          never stalls on an ingredient that does not exist yet. A Map names Tokens.
+          never stalls on an ingredient that does not exist yet.
         </p>
       </div>
     );
   }
 
-  const Editor = isMap ? MapEditor : EDITOR_MAP[activeType];
+  const Editor = EDITOR_MAP[activeType];
   if (!Editor) return <div style={{ color: 'var(--color-text-muted)' }}>Unknown entity type: {activeType}</div>;
   return <Editor openGenerate={openGenerate} />;
 }

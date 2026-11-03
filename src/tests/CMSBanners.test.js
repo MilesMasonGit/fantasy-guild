@@ -6,7 +6,6 @@ import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
-import MapEditor from '../../cms/src/components/editors/MapEditor.jsx';
 import StarterCampPage from '../../cms/src/components/starterCamp/StarterCampPage.jsx';
 import { areaBannerIds } from '../config/areaBanners.js';
 
@@ -47,38 +46,6 @@ afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
     useSimulationStore.getState().clearResults();
-});
-
-describe('a Base Map\'s banner', () => {
-    const mountMap = (kind) => {
-        const id = useEntityStore.getState().addMap(kind, { name: kind === 'map' ? 'Forest Map' : 'Overgrown' });
-        if (kind === 'map') useEntityStore.getState().updateItem(id, { cartography: { ...useEntityStore.getState().items[id].cartography, biome: 'forest' } });
-        useEntityStore.getState().setActiveEntity(id, 'map');
-        return { id, ...render(React.createElement(MapEditor)) };
-    };
-
-    it('offers every banner after Default, which names the biome\'s', () => {
-        const { container } = mountMap('map');
-        const choices = [...container.querySelectorAll('[data-banner-choice]')].map(b => b.getAttribute('data-banner-choice'));
-        expect(choices).toEqual(['default', ...areaBannerIds()]);
-        const def = container.querySelector('[data-banner-choice="default"]');
-        expect(def.getAttribute('aria-pressed')).toBe('true');
-        expect(def.getAttribute('title')).toBe('Default (Lush forest)');
-    });
-
-    it('a pick is what Sync writes into the item, and Default takes it out', () => {
-        const { id, container } = mountMap('map');
-        choose(container, 'b_swamp');
-        expect(useEntityStore.getState().items[id].banner).toBe('b_swamp');
-        expect(syncPayload()['items.json'][id].banner).toBe('b_swamp');
-        choose(container, 'default');
-        expect(syncPayload()['items.json'][id].banner).toBeUndefined();
-    });
-
-    it('a Modifier has no banner', () => {
-        const { container } = mountMap('modifier');
-        expect(container.querySelector('[data-banner-picker]')).toBeNull();
-    });
 });
 
 describe('the Starter Camp\'s banner', () => {

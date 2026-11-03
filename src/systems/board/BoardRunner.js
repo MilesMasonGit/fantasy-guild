@@ -4,7 +4,7 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType, rollOutputQuantity, outputRange, tokenName } from '../../config/registries/tokenRegistry.js';
-import { getItem, isRetiredItem } from '../../config/registries/itemRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
@@ -300,8 +300,6 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
 
     // A build makes its Token by becoming it (below), never as a sprite.
     for (const output of outputs) {
-        // A map is retired: its line is not rolled at all (the boot audit names it).
-        if (isRetiredItem(output.itemId)) continue;
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
 

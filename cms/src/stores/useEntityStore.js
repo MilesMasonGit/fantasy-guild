@@ -22,7 +22,6 @@ import {
     normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_DEFAULTS, CAMP_REACH_DEFAULT,
 } from '../utils/constants';
 import { seedSimIntent } from './simIntentNormaliser';
-import { isMapItem, blankCartography } from '../../../src/systems/atlas/mapItems.js';
 import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
 import { normaliseWorkspacePerks, withPerkRow, withoutPerkRow } from '../engine/skillPerks';
 import { workspaceSkyFrom } from '../engine/hallSky';
@@ -295,37 +294,6 @@ function renameInRecipePools(pools, oldId, newId) {
     return touched ? next : pools;
 }
 
-/** Repoint the Token ids a map item's Cartography block names: node, camp and treasure rows, and a modifier effect's `typeId`, `from` and `to`. Named explicitly: `typeId` is not an item slot. */
-function renameTokenInCartography(item, oldId, newId) {
-    const c = item?.cartography;
-    if (!isMapItem(item) || !c || typeof c !== 'object') return item;
-    let touched = false;
-    const next = { ...c };
-    for (const key of ['nodes', 'camps', 'treasures']) {
-        const list = c[key];
-        if (!Array.isArray(list) || !list.some((row) => row?.typeId === oldId)) continue;
-        touched = true;
-        next[key] = list.map((row) => (row?.typeId === oldId ? { ...row, typeId: newId } : row));
-    }
-    if (Array.isArray(c.effects) && c.effects.some((e) => e?.typeId === oldId || e?.from === oldId || e?.to === oldId)) {
-        touched = true;
-        next.effects = c.effects.map((effect) => {
-            if (!effect || typeof effect !== 'object') return effect;
-            const out = { ...effect };
-            for (const key of ['typeId', 'from', 'to']) if (out[key] === oldId) out[key] = newId;
-            return out;
-        });
-    }
-    return touched ? { ...item, cartography: next } : item;
-}
-
-/** Repoint a map item's upcycle target after an item rename. */
-function renameItemInCartography(item, oldId, newId) {
-    const upcycle = item?.cartography?.upcycle;
-    if (!isMapItem(item) || upcycle?.itemId !== oldId) return item;
-    return { ...item, cartography: { ...item.cartography, upcycle: { ...upcycle, itemId: newId } } };
-}
-
 /**
  * Move an entity to a new id and repoint everything that referenced it.
  *
@@ -333,8 +301,7 @@ function renameItemInCartography(item, oldId, newId) {
  * target id is taken by a different entity) so the caller can leave state alone.
  */
 function performRename(state, oldId, newId, kind) {
-    // A map is an item, renamed as one, so Token drops and upcycle targets follow it.
-    const entityType = kind === 'map' ? 'item' : kind;
+    const entityType = kind;
     const collectionFor = { item: 'items', token: 'tokens', effect: 'effects' };
     const collectionKey = collectionFor[entityType];
     if (!collectionKey) return {};
@@ -365,9 +332,6 @@ function performRename(state, oldId, newId, kind) {
                 ])
             );
             patch.recipePools = renameInRecipePools(state.recipePools, oldId, newId);
-            patch.items = Object.fromEntries(
-                Object.entries(renamed).map(([id, item]) => [id, renameItemInCartography(item, oldId, newId)])
-            );
         }
         if (entityType === 'token') {
             // Walks the RENAMED collection, so a Token whose spawner lists
@@ -379,9 +343,6 @@ function performRename(state, oldId, newId, kind) {
                 ])
             );
             patch.recipePools = renameTokenInRecipePools(state.recipePools, oldId, newId);
-            patch.items = Object.fromEntries(
-                Object.entries(state.items || {}).map(([id, item]) => [id, renameTokenInCartography(item, oldId, newId)])
-            );
         }
     }
 
@@ -586,29 +547,6 @@ export function makeRecipe(data = {}) {
     };
 }
 
-/** A Base Map (`type: 'map'`) or a Modifier (`type: 'modifier'`): an item with a Cartography block. No `value`: the simulator prices no map, and an absent field never claims one. */
-export function makeMapItem(type = 'map', data = {}) {
-    const kind = type === 'modifier' ? 'modifier' : 'map';
-    return {
-        name: kind === 'modifier' ? 'New Modifier' : 'New Map',
-        description: '',
-        type: kind,
-        tags: [],
-        sprite: '',
-        stackable: true,
-        autoSyncId: true,
-        cartography: blankCartography(kind),
-        ...data,
-    };
-}
-
-/** The id prefix an item's name slugifies under: a map keeps `map_` and a modifier `mod_`, so a map's id says what it is. */
-function itemPrefix(item) {
-    if (item?.type === 'map') return 'map';
-    if (item?.type === 'modifier') return 'mod';
-    return 'item';
-}
-
 /**
  * A named effect: a title wrapping the statements that do the work.
  * ⚠️ A new entry starts with one blank statement, not with none: a named effect cannot exist without a statement that works, and an entry born empty would be an audit violation the moment it is created.
@@ -702,7 +640,7 @@ function dropRetiredCollections(state) {
 }
 
 const FACTORIES = {
-    items: { make: makeItem, prefix: itemPrefix, type: 'item' },
+    items: { make: makeItem, prefix: 'item', type: 'item' },
     tokens: { make: makeToken, prefix: 'token', type: 'token' },
     effects: { make: makeEffect, prefix: 'effect', type: 'effect' },
 };
@@ -710,14 +648,13 @@ const FACTORIES = {
 /** Build the add/update/delete trio for a collection; the collections differ only in their factory and id prefix. */
 function collectionActions(collectionKey, set, get) {
     const { make, prefix, type } = FACTORIES[collectionKey];
-    const prefixOf = (entity) => (typeof prefix === 'function' ? prefix(entity) : prefix);
     const capitalized = collectionKey.charAt(0).toUpperCase() + collectionKey.slice(1, -1);
 
     return {
         [`add${capitalized}`]: (data = {}) => {
             const state = get();
             const entity = make(data);
-            const id = uniqueId(state[collectionKey], slugify(entity.name, prefixOf(entity)));
+            const id = uniqueId(state[collectionKey], slugify(entity.name, prefix));
             entity.id = id;
             set((s) => ({ [collectionKey]: { ...s[collectionKey], [id]: entity } }));
             return id;
@@ -733,7 +670,7 @@ function collectionActions(collectionKey, set, get) {
 
                 // Renaming keeps the id in step unless the author has pinned it by editing the id directly (which clears autoSyncId).
                 if ('name' in patch && next.autoSyncId) {
-                    const desired = uniqueId(collection, slugify(patch.name, prefixOf(next)), id);
+                    const desired = uniqueId(collection, slugify(patch.name, prefix), id);
                     if (desired && desired !== id) {
                         const renamePatch = performRename(
                             { ...s, [collectionKey]: { ...collection, [id]: next } },
@@ -832,31 +769,6 @@ export const useEntityStore = create(
             ...collectionActions('items', set, get),
             ...collectionActions('tokens', set, get),
             ...collectionActions('effects', set, get),
-
-            /** Author a new Base Map (`'map'`) or Modifier (`'modifier'`): an item, which the Map editor edits and Sync writes into `items.json`. Returns its id. */
-            addMap: (type = 'map', data = {}) => {
-                const entity = makeMapItem(type, data);
-                const id = uniqueId(get().items, slugify(entity.name, itemPrefix(entity)));
-                entity.id = id;
-                set((s) => ({ items: { ...s.items, [id]: entity } }));
-                return id;
-            },
-
-            /** Turn a Base Map into a Modifier or back: the other kind's blank block, keeping what both kinds carry (upcycling, bounty weight), and the id prefix that goes with it. Returns the id it ends up under. */
-            setMapKind: (id, type) => {
-                const item = get().items[id];
-                if (!isMapItem(item) || item.type === type || (type !== 'map' && type !== 'modifier')) return id;
-                const { upcycle, bountyWeight } = item.cartography || {};
-                const cartography = blankCartography(type);
-                if (upcycle !== undefined) cartography.upcycle = upcycle;
-                if (bountyWeight !== undefined) cartography.bountyWeight = bountyWeight;
-                const desired = item.autoSyncId
-                    ? uniqueId(get().items, slugify(item.name, itemPrefix({ type })), id)
-                    : id;
-                // Passing the name runs the rename, so the id takes the new kind's prefix.
-                get().updateItem(id, { type, cartography, name: item.name });
-                return get().items[desired]?.type === type ? desired : id;
-            },
 
             /**
              * Move an entity to an explicitly chosen id.
