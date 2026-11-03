@@ -9,10 +9,10 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| T-290: the encyclopedia places things by the world tables | builder | `feat/encyclopedia-world` (`e3`) | **building**; one owner look | Mon | |
+| T-290: the encyclopedia places things by the world tables | builder | `feat/encyclopedia-world` (`e3`) | **ready** 05a69c73, waits to share one look with the combat and wording fixes | Mon | |
 | T-249 even start after a kill (WORK CHANGED expected); T-270/T-245 carried-rule wording; T-246 weapon tooltip | builder | `fix/combat-wording` (`w1`) | **building**; one owner look; night bench acceptance | Mon | |
 | T-197 loot pile hover, T-198 hero bubbles, T-202 stub column (sliced) | engineer | `perf/loot-bubbles` (`w2`) | **building**; draw A/B in the 13:00–17:00 window | Mon | |
-| T-288 pack tool stops reading stale autosaves; T-289 flaky wait; T-206 bench profiles; T-205 slowdown target | builder | `fix/tooling-care` (`w3`) | **building** | Mon | |
+| T-288 pack tool stops reading stale autosaves; T-289 waits; T-206 bench profiles; T-205 slowdown target | builder | `fix/tooling-care` (`w3`) | **merged** (94d3f747: work **same**, cycles, builds; timings doubled = load from the other helpers; the two pack-review tests still flake under load, T-289 stays open) | Mon | Mon |
 | T-291: balancing XP survives Sync (then pack balancing-3: the 16 held-back numbers, Plane 1 and the four walls) | engineer | `feat/balance-survives-sync` (`n4`) | **building** (owner's go) | Mon | |
 
 Bench today 13:00–17:00: the draw baseline retake (failed three times last night on Chrome throttling), then perf slices.
