@@ -4,7 +4,6 @@ import { waysIn, wayInRequirement, chartOf, layoutChart } from '../ui/components
 import { HOW, itemKey, tokenKey } from '../systems/progression/ledger/engine.js';
 import { isMapItem } from '../systems/atlas/mapItems.js';
 import { normaliseWorldTables } from '../config/worldTablesShape.js';
-import { getAllItems } from '../config/registries/itemRegistry.js';
 import { ledgerWorkspace, LEDGER_WORLD_RAW } from './fixtures/ledgerWorld.js';
 import { t } from '../i18n/index.js';
 
@@ -27,21 +26,6 @@ describe('the shipped encyclopedia reads the world tables', () => {
         expect(first.from).toBeNull();
         expect(captionText(first)).toBe('Ores ring 2\nsettled on the world map');
         expect(wayInRequirement(book, first)).toEqual({ skill: 'mining', level: 15 });
-    });
-
-    it('no retired map item is a way in, to anything', () => {
-        const maps = new Set(Object.entries(getAllItems()).filter(([, def]) => isMapItem(def)).map(([id]) => itemKey(id)));
-        expect(maps.size).toBeGreaterThan(0);
-        const offenders = [];
-        for (const kind of Object.values(KIND)) {
-            for (const entry of book.byKind[kind]) {
-                for (const row of book.sourcesOf(entry.key)) if (maps.has(row.via)) offenders.push(`${entry.key} via ${row.via}`);
-                for (const way of waysIn(book, entry.key)) {
-                    for (const k of [way.from, ...way.inputs.map(i => i.key)]) if (maps.has(k)) offenders.push(`${entry.key} from ${k}`);
-                }
-            }
-        }
-        expect(offenders).toEqual([]);
     });
 
     it('settling Arcane asks Magic itself, not Combat', () => {
@@ -81,6 +65,22 @@ describe('world ways over the fixture tables', () => {
         expect(ways).toHaveLength(1);
         expect(ways[0]).toMatchObject({ caption: 'worldRing', captionArgs: { ring: 1 } });
         expect(wayInRequirement(book, ways[0])).toBeNull();
+    });
+
+    // The fixture still holds map items, which the shipped content no longer does.
+    it('no retired map item is a way in, to anything', () => {
+        const maps = new Set(Object.entries(content.items).filter(([, def]) => isMapItem(def)).map(([id]) => itemKey(id)));
+        expect(maps.size).toBeGreaterThan(0);
+        const offenders = [];
+        for (const kind of Object.values(KIND)) {
+            for (const entry of book.byKind[kind]) {
+                for (const row of book.sourcesOf(entry.key)) if (maps.has(row.via)) offenders.push(`${entry.key} via ${row.via}`);
+                for (const way of waysIn(book, entry.key)) {
+                    for (const k of [way.from, ...way.inputs.map(i => i.key)]) if (maps.has(k)) offenders.push(`${entry.key} from ${k}`);
+                }
+            }
+        }
+        expect(offenders).toEqual([]);
     });
 
     it('the chart lays a world way out as words on the left, with their ring', () => {

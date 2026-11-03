@@ -7,6 +7,7 @@ import {
     buildWorld, computeReach, describePath, reachPath, ingredientTree, treeSummary, buildLedger, hubsOf,
     itemKey, tokenKey, recipeKey, BOUNTY_MAP_CHANCE, LUCK_BELOW,
 } from '../systems/progression/ledger/engine.js';
+import { normaliseWorldTables } from '../config/worldTablesShape.js';
 import { ledgerWorkspace, withIronChest } from './fixtures/ledgerWorld.js';
 
 /**
@@ -224,7 +225,7 @@ describe('over the shipped content', () => {
     it('reaches Iron Ore without the Iron Chest, which stays on the side as a one-off find', () => {
         const content = {
             items: read('items.json'), tokens: read('tokens.json'), recipes: read('tokenRecipes.json'),
-            effects: read('effects.json'), starterCamp: read('starterCamp.json'),
+            effects: read('effects.json'), starterCamp: read('starterCamp.json'), worldTables: normaliseWorldTables(read('world.json')),
         };
         const l = buildLedger(content);
         const iron = l.reachOf(itemKey('item_iron_ore'));

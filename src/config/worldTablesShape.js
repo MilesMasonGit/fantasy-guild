@@ -32,9 +32,9 @@
  *                   bossChance: 0, bosses: [] }, 2: ..., 3: ... },   // the enemies a settled place arrives with
  *   specialties: ['mining', 'forestry', ...],                // the specialty bag of every strict ring
  *   pityWindow: 4,                  // a specialty absent from this many cells in a row comes next
- *   extras: [{ id: 'mod_rich_veins', kind: 'modifier', value: 10, lines: ['ores'], rings: [1, 2],
- *              max: 1, weight: 1 }],                       // the hidden extras: modifiers and treasures
- *   ringValue: { 1: 16, 2: 24, 3: 32 },                     // what a cell's extras are worth, per ring
+ *   extras: [{ id: 'token_copper_chest', kind: 'treasure', value: 6, lines: ['ores'], rings: [1, 2],
+ *              max: 2, weight: 1 }],                       // a place's chests; no shipped table uses the 'modifier' kind
+ *   ringValue: { 1: 6, 2: 12, 3: 12 },                      // what a cell's extras are worth, per ring
  *   valueTolerance: 0.1,
  *   prices: { 1: { items: [{ qty: 20 }, { qty: 10, from: 'hall' }, { qty: 2, item: 'item_rope' }],
  *                  skills: [{ skill: 'line', level: 5 }] }, 2: ..., 3: ... },
