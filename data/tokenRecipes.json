@@ -388,7 +388,7 @@
     ],
     "durationMs": 6000,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 3,
     "sim": {
       "tempo": "fast"
     },
@@ -662,7 +662,7 @@
     "stationChargeCost": 1,
     "name": "Copper Chestplate",
     "skill": "smithing",
-    "levelRequirement": 7,
+    "levelRequirement": 6,
     "inputs": [
       {
         "itemId": "item_copper_ingot",
@@ -683,7 +683,7 @@
       }
     ],
     "durationMs": 17000,
-    "xp": 3,
+    "xp": 2,
     "stationKinds": [
       "smithy"
     ],
@@ -842,7 +842,7 @@
     "stationChargeCost": 1,
     "name": "Iron Sword",
     "skill": "smithing",
-    "levelRequirement": 17,
+    "levelRequirement": 38,
     "inputs": [
       {
         "itemId": "item_iron_ingot",
@@ -862,8 +862,8 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
-    "xp": 6,
+    "durationMs": 24000,
+    "xp": 35,
     "stationKinds": [
       "smithy"
     ],
@@ -878,7 +878,7 @@
     "stationChargeCost": 1,
     "name": "Iron Cleaver",
     "skill": "smithing",
-    "levelRequirement": 18,
+    "levelRequirement": 39,
     "inputs": [
       {
         "itemId": "item_iron_ingot",
@@ -898,8 +898,8 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
-    "xp": 7,
+    "durationMs": 25000,
+    "xp": 39,
     "stationKinds": [
       "smithy"
     ],
@@ -914,7 +914,7 @@
     "stationChargeCost": 1,
     "name": "Iron Bow",
     "skill": "smithing",
-    "levelRequirement": 18,
+    "levelRequirement": 23,
     "inputs": [
       {
         "itemId": "item_iron_ingot",
@@ -938,8 +938,8 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
-    "xp": 7,
+    "durationMs": 21000,
+    "xp": 11,
     "stationKinds": [
       "smithy"
     ],
@@ -954,7 +954,7 @@
     "stationChargeCost": 1,
     "name": "Iron Wand",
     "skill": "smithing",
-    "levelRequirement": 18,
+    "levelRequirement": 23,
     "inputs": [
       {
         "itemId": "item_iron_ingot",
@@ -978,8 +978,8 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
-    "xp": 7,
+    "durationMs": 21000,
+    "xp": 11,
     "stationKinds": [
       "smithy"
     ],
@@ -994,7 +994,7 @@
     "stationChargeCost": 1,
     "name": "Iron Helmet",
     "skill": "smithing",
-    "levelRequirement": 19,
+    "levelRequirement": 41,
     "inputs": [
       {
         "itemId": "item_iron_ingot",
@@ -1014,8 +1014,8 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
-    "xp": 7,
+    "durationMs": 25000,
+    "xp": 45,
     "stationKinds": [
       "smithy"
     ],
@@ -1030,7 +1030,7 @@
     "stationChargeCost": 1,
     "name": "Iron Greatsword",
     "skill": "smithing",
-    "levelRequirement": 20,
+    "levelRequirement": 42,
     "inputs": [
       {
         "itemId": "item_iron_ingot",
@@ -1050,8 +1050,8 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
-    "xp": 8,
+    "durationMs": 25000,
+    "xp": 50,
     "stationKinds": [
       "smithy"
     ],
@@ -1066,7 +1066,7 @@
     "stationChargeCost": 1,
     "name": "Iron Chestplate",
     "skill": "smithing",
-    "levelRequirement": 21,
+    "levelRequirement": 43,
     "inputs": [
       {
         "itemId": "item_iron_ingot",
@@ -1086,8 +1086,8 @@
         "variable": false
       }
     ],
-    "durationMs": 21000,
-    "xp": 9,
+    "durationMs": 26000,
+    "xp": 56,
     "stationKinds": [
       "smithy"
     ],
@@ -1665,7 +1665,7 @@
     "stationChargeCost": 1,
     "name": "Cooked Trout",
     "skill": "cooking",
-    "levelRequirement": 15,
+    "levelRequirement": 35,
     "inputs": [
       {
         "itemId": "item_trout",
@@ -1685,8 +1685,8 @@
         "variable": false
       }
     ],
-    "durationMs": 19000,
-    "xp": 5,
+    "durationMs": 24000,
+    "xp": 29,
     "stationKinds": [
       "kitchen"
     ],
@@ -1701,7 +1701,7 @@
     "stationChargeCost": 1,
     "name": "Grape Juice",
     "skill": "cooking",
-    "levelRequirement": 15,
+    "levelRequirement": 35,
     "inputs": [
       {
         "itemId": "item_grapes",
@@ -1721,8 +1721,8 @@
         "variable": false
       }
     ],
-    "durationMs": 19000,
-    "xp": 5,
+    "durationMs": 24000,
+    "xp": 29,
     "stationKinds": [
       "brewery"
     ],
@@ -1843,7 +1843,7 @@
     "id": "recipe_lavender_salmon",
     "name": "Lavender Salmon",
     "skill": "cooking",
-    "levelRequirement": 15,
+    "levelRequirement": 35,
     "requiresContext": [],
     "stationChargeCost": 1,
     "inputs": [
@@ -1869,8 +1869,8 @@
         "variable": false
       }
     ],
-    "durationMs": 19000,
-    "xp": 5,
+    "durationMs": 24000,
+    "xp": 29,
     "stationKinds": [
       "kitchen"
     ],
@@ -2085,7 +2085,7 @@
     "id": "recipe_fine_fishing_rod",
     "name": "Fine Fishing Rod",
     "skill": "crafting",
-    "levelRequirement": 10,
+    "levelRequirement": 5,
     "requiresContext": [],
     "inputs": [
       {
@@ -2111,9 +2111,9 @@
         "anchor": true
       }
     ],
-    "durationMs": 18000,
+    "durationMs": 17000,
     "stationChargeCost": 1,
-    "xp": 3,
+    "xp": 2,
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
@@ -2125,7 +2125,7 @@
     "stationChargeCost": 1,
     "name": "Leather",
     "skill": "crafting",
-    "levelRequirement": 15,
+    "levelRequirement": 20,
     "inputs": [
       {
         "itemId": "item_lizard_scale",
@@ -2145,8 +2145,8 @@
         "variable": false
       }
     ],
-    "durationMs": 19000,
-    "xp": 5,
+    "durationMs": 20000,
+    "xp": 8,
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
@@ -2197,7 +2197,7 @@
     "stationChargeCost": 1,
     "name": "Leather Chest",
     "skill": "crafting",
-    "levelRequirement": 16,
+    "levelRequirement": 21,
     "inputs": [
       {
         "itemId": "item_leather",
@@ -2217,8 +2217,8 @@
         "variable": false
       }
     ],
-    "durationMs": 19000,
-    "xp": 6,
+    "durationMs": 21000,
+    "xp": 9,
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
@@ -2715,7 +2715,7 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 40,
+    "xp": 20,
     "foundationKinds": [
       "farmland"
     ],

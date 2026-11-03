@@ -5,12 +5,23 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Director, four in parallel beside the balancing pack (owner 2026-11-02 10:15: all four, the two-helper limit lifted for this batch)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| T-290: the encyclopedia places things by the world tables | builder | `feat/encyclopedia-world` (`e3`) | **building**; one owner look | Mon | |
+| T-249 even start after a kill (WORK CHANGED expected); T-270/T-245 carried-rule wording; T-246 weapon tooltip | builder | `fix/combat-wording` (`w1`) | **building**; one owner look; night bench acceptance | Mon | |
+| T-197 loot pile hover, T-198 hero bubbles, T-202 stub column (sliced) | engineer | `perf/loot-bubbles` (`w2`) | **building**; draw A/B in the 13:00–17:00 window | Mon | |
+| T-288 pack tool stops reading stale autosaves; T-289 flaky wait; T-206 bench profiles; T-205 slowdown target | builder | `fix/tooling-care` (`w3`) | **building** | Mon | |
+
+Bench today 13:00–17:00: the draw baseline retake (failed three times last night on Chrome throttling), then perf slices.
+
 ## Director, balancing preview beside the refill pack (290 L9 preview; owner chose 2026-11-02 afternoon)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | 290 L9: automatic balancing, **preview only** (Ledger → Balancing page; checks E; Apply locked; `changePackTool balance --out`) | engineer | `feat/ledger-l9` (`e3`) | **merged** after the refill Sync (be9fa683 + main: 7284 tests, cycles, game and CMS builds, engine work **same**; S4 worst = T-286 noise). Today's preview: Starter Camp 2 h 8 → 1 h 2 (budget 30 min), Plane 1 1 h 32 → 24 min (1 h 30), Plane 2 8 h 33 → 23 h 29 (1 d); walls 7 → 3; 23 numbers would change; 37 things numbers can't fix. Three owner questions (Plane 2 gates, Plane 1 settle levels, Beer and Cooked Lobster) asked with the next proposal | Mon | |
-| Balancing pack: the preview's proposals with the owner's answers (Plane 2 gates up; Plane 1 budget ~25 min; Beer and Cooked Lobster to Plane 1), then the preview re-run | builder | `content/balancing-1` (`n4`) | **building** | Mon | |
+| Balancing pack: the preview's proposals with the owner's answers, then the preview re-run | builder | `content/balancing-1` (`n4`) | **adding Beer Cooking 9** (owner chose Plane 1 = 25 min long, budget 55 from a new game); first version 24 entries, director gate PASS: Starter Camp 2 h 8 → 34 min, Plane 2 8 h 33 → 23 h 29; 16 derived XP proposals held back because Sync's Recalculate undoes them (T-291) | Mon | |
 | Refill pack: the 25 ring-3 sources rest and refill (owner ruling) | builder | `content/world-refill` (`n4`) | **synced** 7531bf9a (id-diff: +10 Tokens, the stumps and saplings, nothing removed); was in the inbox (`2026-11-02-world-refill`, 33 entries: 23 Token edits, 5 stumps, 5 saplings). Director gate against today's `data/` (fp f88cc410): PASS, fragile 25 → 0, 100/100 worlds. Rule: tier 3 rests twice the Starter Camp's (veins 2 min, fruit trees 6, bushes 5; timber trees via stump and sapling 5 + 5; groves refill in place 10). Director's content calls: charges unchanged (Gold 1000), new stumps need no Forest nearby. Three boost-strength warnings surfaced (Birdwatcher drinks on the new trees; three Hall mining stars on Clay/Quartz): left for balancing | Mon | |
 
 Owner 2026-11-02: Hall prices wait for a Guild Hall balance pass.
