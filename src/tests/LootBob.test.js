@@ -5,7 +5,7 @@ import path from 'path';
 import React from 'react';
 import { render, cleanup, act } from '@testing-library/react';
 import { PixelArt } from '../ui/components/base/TokenSprite.jsx';
-import { BOB_STOPS, BOB_STOP_MS, BOB_PERIOD_MS, bobAt } from '../ui/components/board/lootBob.js';
+import { BOB_STOPS, BOB_STOP_MS, BOB_PERIOD_MS, BOB_PHASE_GRID_MS, bobAt } from '../ui/components/board/lootBob.js';
 
 /**
  * ⭐ **A pile's bob is written on the shared sprite clock, not run as a CSS animation.** A transform
@@ -122,6 +122,19 @@ describe('⭐ a pile on the floor', () => {
         // Born together, so they step together: two steps in 280 ms.
         expect(framesAsked).toBeLessThanOrEqual(3);
         for (const p of piles) expect(pile(p.container).style.transform).toBe('translateY(-5px)');
+    });
+
+    it('⭐ piles landed apart step on one grid: a frame of the bob a quarter stop at most, not one every frame', () => {
+        const piles = [];
+        for (let i = 0; i < 40; i++) {
+            piles.push(render(h(PixelArt, { src: SRC, size: 64, hovering: true })));
+            run(13);
+        }
+        framesAsked = 0;
+        run(BOB_PERIOD_MS);
+        // 56 grid points a period. Each pile writing whenever it pleased: a frame nearly every frame (326).
+        expect(framesAsked).toBeLessThanOrEqual(BOB_PERIOD_MS / BOB_PHASE_GRID_MS);
+        for (const p of piles) expect(pile(p.container).style.transform).toMatch(/^translateY\(-\d+px\)$/);
     });
 
     it('leaves the clock when it goes: nothing is scheduled after the last pile', () => {

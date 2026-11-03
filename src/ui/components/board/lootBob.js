@@ -14,6 +14,12 @@ import { onDue } from './frameClock.js';
 export const BOB_STOPS = Object.freeze([-3, -4, -5, -6, -7, -8, -9, -9, -8, -7, -6, -5, -4, -3]);
 export const BOB_STOP_MS = 140;
 export const BOB_PERIOD_MS = BOB_STOPS.length * BOB_STOP_MS;
+/**
+ * A pile's phase starts on this grid, a quarter of a stop: too fine to see, and every pile's stops
+ * then fall on the same few frames. A frame that writes costs a full pass of Chrome's pipeline however
+ * little it wrote, so forty piles writing whenever they please would cost it nearly every frame.
+ */
+export const BOB_PHASE_GRID_MS = 35;
 
 /** The offset `elapsedMs` after a pile landed. */
 export function bobAt(elapsedMs) {
@@ -30,7 +36,8 @@ const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(pre
  */
 export function startBob(el) {
     if (!el || reducedMotion()) return () => {};
-    const bornAt = performance.now();
+    const landed = performance.now();
+    const bornAt = Math.floor(landed / BOB_PHASE_GRID_MS) * BOB_PHASE_GRID_MS;
     let shown = null;
     const draw = (now) => {
         const offset = bobAt(now - bornAt);
@@ -40,5 +47,5 @@ export function startBob(el) {
         }
         return bornAt + (Math.floor((now - bornAt) / BOB_STOP_MS) + 1) * BOB_STOP_MS;
     };
-    return onDue(draw, draw(bornAt));
+    return onDue(draw, draw(landed));
 }
