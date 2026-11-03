@@ -38,17 +38,17 @@ hidden extras: planning should update them.
 
 - **Performance round 2** (T-197 loot bob, T-198 hit loop and chips on the clock,
   T-202 shine fill): `perf/loot-bubbles` in `w2`, f29e6825, branched from 27c3a2a3,
-  **not merged**. The session's 01:00 timer (Tue 3 Nov, `scratchpad/night2.sh`)
-  runs the draw baseline retake on `p23b` at `main`, then the branch's work check,
-  an A/B (floor8, floor40, notify300, cap128, heroes16, S2 at `--cpu=3.2
-  --slowdown-target=4`) and `bench:crisp`. Results in `STATUS.md` once read; **if
-  the timer died, run that first.** Merge `main` into the branch, gate, then the
-  owner's short look (T-197 asks for one: piles bob, hit shake and chips, first-find
-  shine); correct the CHANGELOG's probe numbers and GDD §14 after the bench. Owner
-  question that can wait: keep the pile look (recommended) or trade it for speed.
-- **Draw baseline:** failed three times on 2 Nov (Chrome delivered 5–7× for 4×
-  asked); the engine baseline was retaken (ac8d9829). If it fails again, read
-  `--cpu=3.2 --slowdown-target=4`, but compare must then use the same.
+  **not merged, benched**. Tue 3 Nov 01:00: work **same** everywhere; A/B at 3.2×
+  against `main` cb8b051a, work p50 branch vs main: floor40 5.55 vs 11.10 ms (fps 144
+  vs 98), floor8 5.76 vs 8.11, notify300 6.71 vs 8.46, cap128 4.81 vs 6.15, heroes16
+  8.41 vs 10.40, S2 2.71 vs 3.50. `bench:crisp` exit 1 on the branch (spawn only) and
+  on `main` (land, flash, spawn, turn, gear, worked: a known failure): the branch is
+  no worse. Logs: `scratchpad/night2*.log`. **Next:** merge `main` into the branch,
+  gate, then the owner's short look (piles bob, hit shake and chips, first-find
+  shine), merge; correct the CHANGELOG's probe numbers and GDD §14. Owner question that
+  can wait: keep the pile look (recommended) or trade it for speed.
+- **Bench baselines:** engine retaken ac8d9829 (2 Nov), draw retaken b4aa17f2 (3 Nov
+  01:00, after three failures on 2 Nov from Chrome's throttle).
 
 ## Next (owner chooses; propose as one question)
 
