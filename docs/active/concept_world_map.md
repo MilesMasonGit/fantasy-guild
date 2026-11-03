@@ -176,6 +176,15 @@ each across the three inner rings: 1 + 2 + 3), tier rising outward.
   the value budget, the key-material guarantees) so progress is consistent.
   **The inner rings guarantee access to every item, enemy and Token in the
   game**: the essential progress lives there.
+- **Every Live thing has a guaranteed place in every world** (owner,
+  2026-11-01): each enemy in the inner ring matching its tier, and the same
+  for everything gatherable (veins, trees, crops, fishing spots, sources);
+  wild rings add copies, never the only one. "Otherwise a player may be
+  denied key drops or gameplay content, possibly even softlock themselves."
+  The test is the ledger's checks F: 100 of 100 worlds.
+- **World sources rest and refill** (owner, 2026-11-02), like the Starter
+  Camp's veins and forests, rather than wearing out for good. Building a
+  node stays a way to get more, not the only way to keep a source.
 - **From ring 4 outward, generation is chaotic** and **for min-maxing**: highly
   specialised cells and unconventional playmats to build on, e.g. a cell with
   a dozen goblin camps that makes killing goblins very efficient. Outer cells
@@ -219,14 +228,14 @@ the player to **make nodes**.*
 
   | Skill | What is built | Unlocked by | Where it may go | Against wild |
   |---|---|---|---|---|
-  | **Forestry** | a planted Forest of that species | its Seedling (wild trees, bird nests) | anywhere (Farmland) | weaker |
-  | **Farming** | a Field or Orchard of that crop | its seed (wild plants, Farmer enemies, altars) | anywhere (Farmland) | weaker |
-  | **Alchemy** (herbs) | an herb bed | its herb seed | anywhere (Farmland) | weaker |
-  | **Mining** (metals, gems) | a mine for that ore | **a prospecting map item**, which may come from fighting a powerful enemy rather than from mining (owner) | **on a Stone terrain feature**, a feature of the mat like water (owner) | weaker |
-  | **Mining** (stone, clay, sand) | a quarry, clay pit, sand pit | none (basic) | quarry on Stone terrain; clay and sand near water (planning agent's default) | weaker |
+  | **Forestry** | a planted Forest of that species | its Seedling (wild trees, bird nests) | anywhere (Farmland) | the same |
+  | **Farming** | a Field or Orchard of that crop | its seed (wild plants, Farmer enemies, altars) | anywhere (Farmland) | the same |
+  | **Alchemy** (herbs) | an herb bed | its herb seed | anywhere (Farmland) | the same |
+  | **Mining** (metals, gems) | a mine for that ore | **a prospecting map item**, which may come from fighting a powerful enemy rather than from mining (owner) | **on a Stone terrain feature**, a feature of the mat like water (owner) | the same |
+  | **Mining** (stone, clay, sand) | a quarry, clay pit, sand pit | none (basic) | quarry on Stone terrain; clay and sand near water (planning agent's default) | the same |
   | **Fishing** | nothing: water comes only from the mat | none | **only on mats with water**; the Dock and Fishing Hut still help | — |
   | **Combat** | **a copy of the original spawner** (owner): a **Goblin Banner**, a rare drop, builds a Goblin Camp **the same as the one on the map** | a rare drop from the creature | any free ground | **the same** (owner) |
-  | **Arcane** (motes, crystals) | a crystal growth or mote well | a seed crystal or mote from the wild | **within reach of an Arcane node** (a leyline, an altar), like water for fishing (owner) | weaker |
+  | **Arcane** (motes, crystals) | a crystal growth or mote well | a seed crystal or mote from the wild | **within reach of an Arcane node** (a leyline, an altar), like water for fishing (owner) | the same |
   | Smithing, Cooking, Crafting, Construction | stations | none (as today) | anywhere | — |
 
   ⚠️ **Stone terrain** is new: the mat's ground must be able to hold rock
@@ -237,10 +246,10 @@ the player to **make nodes**.*
   crystal, a prospecting map (mines) or a creature's rare drop (camps); the
   build recipe uses it. Finding the place once stays the gate;
   the ledger tracks the seed like any item.
-- **A built node is weaker, but always yours** (owner): it yields less or
-  rests longer than a wild one, so rich wild places (and the wild outer
-  rings) still matter. **Exception: a built creature camp is the same as the
-  wild one** (owner), since its unlock is a rare drop.
+- **A built node runs at the same speed as a wild one** (owner, 2026-11-01,
+  replacing "weaker"): "it is essentially the same node, except built ones
+  can be demolished and wild ones cannot". A built creature camp is the same
+  too.
 - **Most inner mats have some Stone terrain and some water** (owner):
   archetypes lean (Highland much stone, Riverside much water), a few lack
   one.

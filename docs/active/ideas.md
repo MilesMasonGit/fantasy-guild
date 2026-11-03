@@ -232,7 +232,9 @@ mods via the CMS after release.
 
 ## Being interviewed
 
-*(none)*
+- **The detail pass** (UI and UX, section by section): [concept_detail_pass.md](concept_detail_pass.md).
+- **The content roadmap** (every item, skill, recipe and enemy, so art is known in advance):
+  [concept_content_roadmap.md](concept_content_roadmap.md).
 
 ## Moved on
 

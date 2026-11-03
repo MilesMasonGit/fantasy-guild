@@ -28,6 +28,9 @@ couple of weeks).*
 - **Gates** (owner, unchanged): a star opens when a neighbouring star is lit;
   later stars and ranks cost materials from later tiers, so they wait
   naturally for fir, iron, gold.
+- **Star prices stay as they are until a Guild Hall balance pass** (owner,
+  2026-11-02): the 20 ranks the ledger shows over a day to pay back are not
+  re-priced now.
 - **Prices are set by the algorithm** (owner): the owner decides which tier
   each star rank belongs to; the ledger's automatic balancing picks the
   amounts and materials for each rank's place on the pace curve.

@@ -443,8 +443,11 @@ automatically**. "Prioritize" means **when the player gets things** and
   effort), **the skills it touches**, **its depth**, and **its earliest reach**
   (tier, levels, and later wedge and ring): "42 min of work, 4 skills, needs
   tier-2 ores and tier-1 herbs".
-- **A time budget per stage** (owner, 2026-10-28): camp about 30 minutes,
-  plane 1 about 1.5 hours, plane 2 about a day; stages are tiers for now.
+- **A time budget per stage** (owner, 2026-10-28; amended 2026-11-02): camp
+  about 30 minutes, plane 1 about 25 minutes (55 from a new game; ring-1
+  settle levels stay at 5), plane 2 about a day, its level gates raised to
+  fill it (top gates around 32 to 43); stages are tiers for now. Beer (Cooking
+  9) and Cooked Lobster moved to Plane 1, so the Starter Camp stays short.
 - **The reach engine** works out when each thing is actually first reachable
   and by what path ("Iron Ore ← Iron Vein (Mining 15) ← …"), as one shared
   module the CMS and later the game's encyclopedia and collection log use.

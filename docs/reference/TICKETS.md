@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-282**
+**Next free number: T-293**
 
 ---
 
@@ -78,6 +78,7 @@ here.
 | T-289 | P3 | open | **`CMSChangePackReview` "finishes, then undoes" times out under a loaded full suite**: line ~180 `waitFor(() => fs.existsSync(.../applied/test-pack.json))` uses the default 1 s; failed once on 2026-11-02 with another agent working, passes alone. Give that wait a longer timeout (the sibling `CMSChangePackStarterCamp` test may share it) | director 2026-11-02 |
 | T-290 | P3 | open | **The encyclopedia still places things by the retired map items**: pass it the world tables as the ledger now does (T-285, `content.worldTables`), so a vein's chart reads "Ores ring 2, settled on the world map" instead of a map. Game code: eye-check | ledger engineer 2026-11-02 |
 | T-291 | P2 | open | **The balancing preview's XP proposals are undone by Sync**: Sync to Game runs Recalculate (`cms/src/engine/fileUtils.js:94`), which re-derives XP a cycle for derived entries, so 16 of the first balancing pack's 18 XP proposals were held back (`docs/active/research/pending_packs/balancing_1/derived_xp_held_back.json`): they are what clears the Alchemy and Forestry walls. Build the ledger's "apply after Recalculate" (the pass runs last inside Recalculate, or Recalculate's XP pins learn from it); then re-run the preview | balancing pack 2026-11-02 |
+| T-292 | P3 | open | **Farming, Alchemy and Construction skill icons fall back to emoji**: unmapped in `AssetManager.js` SKILL_MAP though `s_farming.png` exists; the missing-item placeholder is also a hand-copied Lucide SVG ([icon audit](../active/research/icon_audit_2026-10-29.md), owner 2026-10-29). Verify in the code first. |
 | T-260 | P1 | built 79c6b01c; owner sets tiers | **Recruits may hold copper weapons** (owner 2026-10-27, reverses the C2 call that Recruits refuse weapons): no hero leaves Recruit in plane 1 (the Fighter needs Mining and Smithing 10), so crafted copper swords were useless | K4 |
 | T-176 | P2 | open | **The quest board** ([concept_quests_tutorial.md](../active/concept_quests_tutorial.md), "The quest board", owner 2026-10-20): one fixture board at the bottom-left of every Region's mat; click opens its card on the quest list; up to 3 collect/hunt bounties from reachable content, Bank have/need, Claim takes items and bursts materials as floating loot; tutorial step pinned first; gold outline and ready count at rest. Replaces the loose quest Tokens. Brief 170. | owner interview |
 | T-175 | P2 | owner | (Concept still a draft, owner 2026-10-14: not for the director yet.) **Collectors: the Guild Hall and warehouses** ([concept_collectors.md](../active/concept_collectors.md)): the Hall collects all loot in a small radius from the start, widened by a ranked Hall star; warehouses built on Foundations collect items with one tag (CMS Collects block: tag, radius, interval ~60 s), bigger radius on higher tiers, no upkeep; shared sweep clock, nearest collector wins, items fly in; Bank-full leaves loot and shows the yellow mark; reach ring on hover, drag, placing. Remove the auto-collect setting. Engineer. WORK CHANGED expected. Cost-log line. Eye-check. | concept_collectors.md |
