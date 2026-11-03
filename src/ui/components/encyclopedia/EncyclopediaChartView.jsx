@@ -416,12 +416,12 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
                     <span
                         key={c.id}
                         data-codex-caption={c.words}
-                        className={cn('absolute flex items-center pointer-events-none whitespace-nowrap', INK_WORDS, c.label ? 'justify-center' : 'justify-end pr-2')}
+                        className={cn('absolute flex items-center pointer-events-none', INK_WORDS, c.label ? 'justify-center whitespace-nowrap' : 'justify-end pr-2 whitespace-pre-line text-right leading-tight')}
                         style={c.label
                             ? { left: c.x - 40, top: c.y - 11, width: 80, height: 22, lineHeight: '22px' }
                             : { left: c.x, top: c.y, width: c.w, height: c.h }}
                     >
-                        {t(`encyclopedia.via.${c.words}`)}
+                        {t(`encyclopedia.via.${c.words}`, c.args ?? {})}
                     </span>
                 ))}
                 {layout.labels.map(l => <LineMark key={l.id} label={l} book={book} heroes={heroes} />)}
