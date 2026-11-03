@@ -71,7 +71,7 @@ export const PLAN_TOKENS = {
     token_chief_tent: { id: 'token_chief_tent', name: "Chief's Tent", spawner: { spawns: [{ typeId: 'token_goblin_chief', weight: 1 }], allowance: 1, intervalMs: 300000, upkeep: [] } },
     token_goblin_chief: {
         id: 'token_goblin_chief', name: 'Goblin Chief', enemy: { level: 20, style: 'melee', boss: true },
-        config: work('', 1, 12000, [out('item_bones'), out('item_chief_banner', 3, 1, 1, { firstKill: true })]),
+        config: work('', 1, 12000, [out('item_bones'), out('item_chief_banner')]),
     },
     token_coast: {
         id: 'token_coast', name: 'Coast', config: work('fishing', 1, 8000, []),

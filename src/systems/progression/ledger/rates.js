@@ -814,11 +814,8 @@ function prepare(book, target, setup) {
         io.inputs = [];
     } else if (kind.kind === WORK.FIGHT) {
         config = { ...config, skill: '' };
-        const firsts = io.outputs.filter(o => o?.firstKill === true && text(o.itemId));
-        io.outputs = io.outputs.filter(o => o?.firstKill !== true);
         io.xp = 0;
         notes.assumptions.push({ source: def.id, what: 'fight', why: 'coarse: one kill a fight cycle of its authored time, won every time; levels and gear left out until brief 280' });
-        if (firsts.length) notes.assumptions.push({ source: def.id, what: 'first kill', why: `${firsts.map(o => o.itemId).join(', ')} drop once, on the first kill: not a rate` });
         notes.unmodelled.push({ source: def.id, what: 'combat XP', why: 'what a fight teaches its hero is not rated' });
     }
     const baseCycleMs = Number(io.cycleTimeMs) || Number(config?.cycleTimeMs);

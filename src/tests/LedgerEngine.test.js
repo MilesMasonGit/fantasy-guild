@@ -87,10 +87,6 @@ describe('reach: the world\'s rings and the tiers they open', () => {
         expect(l.reachOf(tokenKey('token_goblin_chief'))).toMatchObject({ tier: 1 });
     });
 
-    it('takes a first-kill drop as sure', () => {
-        expect(ledger().reachOf(itemKey('item_chief_banner'))).toMatchObject({ tier: 1, how: 'drop', firstKill: true, luckOnly: false });
-    });
-
     it('opens iron on ring 2, at the skill settling there asks', () => {
         const l = ledger();
         const iron = l.reachOf(itemKey('item_iron_ore'));

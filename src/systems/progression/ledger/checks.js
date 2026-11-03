@@ -1,7 +1,7 @@
 // the progression ledger's checks: integrity, plan against data, luck and access, and the pacing group's words
 
 import { planOf, PLAN_STATUS, tierLabel } from './plan.js';
-import { HOW, LEDGER_ENGINE_TEXT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey, isOneOff, oneOffFindOf } from './engine.js';
+import { HOW, LEDGER_ENGINE_TEXT, parseKey, itemKey, tokenKey, recipeKey, isOneOff, oneOffFindOf } from './engine.js';
 import { toolOf } from '../../../config/registries/toolKinds.js';
 
 export { isOneOff };
@@ -16,7 +16,7 @@ export { isOneOff };
  *   what nothing makes, can never be reached, needs a tool or a station nothing gives).
  * - **B. Plan against data**: where the owner's plan (`plan.tier`, Planned stubs) and what the
  *   content actually does disagree.
- * - **C. Luck and access**: things only luck, a one-off find, a first kill or the
+ * - **C. Luck and access**: things only luck, a one-off find or the
  *   Shop gives. Average luck only: a chance is a chance, never a lucky or unlucky run.
  *
  * Severities: `block` breaks something in the game; `warn` is a problem to look at; `info` a fact
@@ -63,7 +63,6 @@ export const CHECKS = Object.freeze({
     'orphan-stub': { group: 'B', severity: SEVERITY.INFO, label: 'A Planned stub nothing points to' },
     'luck-only': { group: 'C', severity: SEVERITY.WARN, label: 'Luck only' },
     fragile: { group: 'C', severity: SEVERITY.WARN, label: 'A single fragile source' },
-    'first-kill-only': { group: 'C', severity: SEVERITY.WARN, label: 'First kill only' },
     'shop-only': { group: 'C', severity: SEVERITY.INFO, label: 'Shop only' },
     wall: { group: 'D', severity: SEVERITY.WARN, label: 'A wall: levels far slower than the curve' },
     'unlock-wall': { group: 'D', severity: SEVERITY.WARN, label: 'A long wait for one unlock' },
@@ -251,7 +250,7 @@ export function runChecks(ledger, content = {}, { extra = [] } = {}) {
 
         // Luck and access.
         if (reachable && at.luckOnly) {
-            const how = at.firstKill ? LEDGER_ENGINE_TEXT.firstKill : at.maybe ? LEDGER_ENGINE_TEXT.someWorlds : Number.isFinite(at.chance) ? LEDGER_ENGINE_TEXT.chance(at.chance) : '';
+            const how = at.maybe ? LEDGER_ENGINE_TEXT.someWorlds : Number.isFinite(at.chance) ? LEDGER_ENGINE_TEXT.chance(at.chance) : '';
             const from = at.via ? ` from ${nameOf(at.via)}` : '';
             const find = at.oneOffOnly ? oneOffFindOf(reach, key) : null;
             if (find) add('luck-only', key, `Only ever through a one-off find (${nameOf(find)}), which wears out for good, and no sure way.`, { related: [find] });
@@ -266,10 +265,6 @@ export function runChecks(ledger, content = {}, { extra = [] } = {}) {
                 if (!lasting.length) {
                     add('fragile', key, `Only from one-off finds (${listNames(fromTokens.map((r) => r.via))}), which wear out for good.`, { related: fromTokens.map((r) => r.via) });
                 }
-            }
-            const gives = givers.flatMap((r) => r.gives.filter((g) => g.key === key));
-            if (gives.length && gives.every((g) => g.firstKill === true)) {
-                add('first-kill-only', key, `Only a first-kill drop (${listNames(givers.map((r) => r.via).filter(Boolean))}): once per enemy, ever.`);
             }
         }
         if (kind === 'token' && reachable && givers.length && givers.every((r) => r.how === HOW.SHOP)) {

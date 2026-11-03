@@ -40,7 +40,7 @@ export function recordOf(state, key) {
 }
 
 /**
- * Every way an entry is had: `[{ id, how, howText, viaKey, viaName, atName, chance, firstKill, oneOff, gates, tier }]`,
+ * Every way an entry is had: `[{ id, how, howText, viaKey, viaName, atName, chance, oneOff, gates, tier }]`,
  * the earliest first, then the surest. `oneOff`: the Token doing it wears out for good (a chest). For a recipe's output, `viaKey` is the recipe and `atName` the
  * station it is first run at.
  */
@@ -60,7 +60,6 @@ export function sourcesOf(ledger, key, index = ruleIndex(ledger.world)) {
             viaName: viaKey ? name(viaKey) : null,
             atName: recipeAt?.via ? name(recipeAt.via) : null,
             chance: give?.chance ?? null,
-            firstKill: give?.firstKill === true,
             oneOff: !!viaKey?.startsWith('token:') && isOneOff(world.tokens[parseKey(viaKey).id]),
             gates: gates.map((g) => LEDGER_ENGINE_TEXT.level(g.skill, g.level)),
             tier: ruleTier(reach, rule),

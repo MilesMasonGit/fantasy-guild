@@ -401,8 +401,6 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const def = rates.token(parseKey(rule.via).id);
             if (!def) return done(Infinity, 'no such Token');
             const f = ratedBy({ token: def.id });
-            // A first-kill drop comes with the first win: one fight.
-            if (give.firstKill && f?.rate?.ok) return done(f.rate.cycleMs / HOUR_MS, null, { firstKill: true });
             return firstOf(f, give.key);
         }
         case HOW.CATCH: {

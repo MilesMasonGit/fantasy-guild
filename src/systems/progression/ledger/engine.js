@@ -39,7 +39,7 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
  * the Wishing Well), the Shop, spawners, growth and turning and regrowth, the world's cells,
  * Foundations and the
  * buildings built on them, stations and their kinds, Fields and their crops, tool kinds and tiers,
- * catch pools and bait, drops (and first-kill drops), bonus drops and ambushes from rules. A new way
+ * catch pools and bait, drops, bonus drops and ambushes from rules. A new way
  * content appears belongs in `buildWorld`, as a rule.
  * ⚠️ A Planned entry is not in the world: it never reaches the game, so it makes nothing and nothing
  * makes it; its reach is null.
@@ -112,7 +112,6 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
         settle: 'settled on the world map',
         world: 'on a world cell'
     }),
-    firstKill: 'first kill',
     someWorlds: 'in some worlds',
     level: (skill, level) => `${skill === COMBAT ? 'Combat' : skill.charAt(0).toUpperCase() + skill.slice(1)} ${level}`,
     chance: (p) => `${Math.round(p * 1000) / 10}%`,
@@ -201,7 +200,7 @@ export function isOneOff(def) {
  * The content as the engines read it: every record by key, its name, and the rules that make
  * things. Planned records are kept by name only (`planned`) and make nothing.
  *
- * A rule: `{ id, how, via, needs: key[], tool: key|null, gives: [{ key, chance, firstKill, perCycle, maybe }],
+ * A rule: `{ id, how, via, needs: key[], tool: key|null, gives: [{ key, chance, perCycle, maybe }],
  * floor, gates: [{ skill, level }], cycleMs, inputs: [{ key, quantity }], passive, oneOff }`. `oneOff`
  * marks the work of a one-off find (a chest the world places); `maybe` a give only some
  * worlds hold, never a sure way. It fires at the
@@ -359,7 +358,7 @@ export function buildWorld(content = {}) {
             });
         }
 
-        // An enemy's drops (items only), beaten in a fight; a first-kill line drops for certain once.
+        // An enemy's drops (items only), beaten in a fight.
         if (isEnemy) {
             const drops = list(def.config?.outputs).filter(o => text(o.itemId));
             if (drops.length) {
@@ -367,7 +366,7 @@ export function buildWorld(content = {}) {
                     id: `drop:${id}`, how: HOW.DROP, via: self, needs: [self], gates: gate(COMBAT, def.enemy.level),
                     // No fight time is authored, so a drop has no cycle a tree could price.
                     cycleMs: null,
-                    gives: drops.map(o => ({ key: itemKey(o.itemId), chance: chanceOf(o), firstKill: o.firstKill === true, perCycle: quantityOf(o) * chanceOf(o) }))
+                    gives: drops.map(o => ({ key: itemKey(o.itemId), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o) }))
                 });
             }
             continue;
@@ -631,7 +630,7 @@ function better(a, b) {
     return a.depth < b.depth;
 }
 
-const isSure = (give, luckBelow) => give.maybe !== true && (give.firstKill === true || give.chance >= luckBelow);
+const isSure = (give, luckBelow) => give.maybe !== true && give.chance >= luckBelow;
 const needsOf = (rule) => (rule.tool ? [...rule.needs, rule.tool] : rule.needs);
 
 /**
@@ -681,7 +680,7 @@ function settle(world, { luckBelow, sureOnly, finds = false }) {
  * earliest carries it on the side (`oneOffFind`). An entry only a one-off find gets, itself or down
  * its chain, is reached through it, as luck only (`oneOffOnly`).
  *
- * @returns {Map<string, {key, kind, id, name, planned, tier, sureTier, luckOnly, oneOffOnly, oneOffFind, how, via, chance, firstKill, maybe, levels, gate, depth, rule}>}
+ * @returns {Map<string, {key, kind, id, name, planned, tier, sureTier, luckOnly, oneOffOnly, oneOffFind, how, via, chance, maybe, levels, gate, depth, rule}>}
  *   one entry per item, Token and recipe key (and the tool and wedge keys rules need). `tier` is
  *   null when it is never reachable; `sureTier` the lowest tier without luck (null: only ever by luck,
  *   or never); `luckOnly` that at its tier only a drop under `luckBelow` gets it (luck anywhere on its
@@ -726,7 +725,7 @@ export function computeReach(world, { luckBelow = LUCK_BELOW } = {}) {
         if (!at) {
             out.set(key, {
                 ...base, planned: world.planned.has(key), tier: null, sureTier: null, luckOnly: false, oneOffOnly: false, oneOffFind: null,
-                how: null, via: null, chance: null, firstKill: false, maybe: false, levels: {}, gate: null, depth: 0, rule: null
+                how: null, via: null, chance: null, maybe: false, levels: {}, gate: null, depth: 0, rule: null
             });
             continue;
         }
@@ -744,7 +743,6 @@ export function computeReach(world, { luckBelow = LUCK_BELOW } = {}) {
             how: at.rule.how,
             via: at.rule.via,
             chance: at.give.chance,
-            firstKill: at.give.firstKill === true,
             maybe: at.give.maybe === true,
             levels,
             gate: top ? { skill: top[0], level: top[1] } : null,
@@ -794,7 +792,7 @@ export function oneOffFindOf(reach, key) {
  * works or drops it, the recipe that makes it, the station or Foundation a recipe runs on, the map
  * that writes it).
  *
- * @returns {{key, name, how, via, tier, chance, firstKill, maybe, gates}[]}
+ * @returns {{key, name, how, via, tier, chance, maybe, gates}[]}
  */
 export function reachPath(reach, key) {
     const steps = [];
@@ -804,18 +802,17 @@ export function reachPath(reach, key) {
         seen.add(at.key);
         steps.push({
             key: at.key, name: at.name, how: at.how, via: at.via, tier: at.tier,
-            chance: at.chance, firstKill: at.firstKill, maybe: at.maybe === true, gates: at.rule?.gates || []
+            chance: at.chance, maybe: at.maybe === true, gates: at.rule?.gates || []
         });
         at = at.via ? reach.get(at.via) : null;
     }
     return steps;
 }
 
-/** A step's detail in words: "(Mining 15)", "(Combat 20, first kill)", "(3%)", "(in some worlds)". */
+/** A step's detail in words: "(Mining 15)", "(Combat 20)", "(3%)", "(in some worlds)". */
 function stepDetail(step, luckBelow) {
     const parts = step.gates.map(g => LEDGER_ENGINE_TEXT.level(g.skill, g.level));
-    if (step.firstKill) parts.push(LEDGER_ENGINE_TEXT.firstKill);
-    else if (step.maybe) parts.push(LEDGER_ENGINE_TEXT.someWorlds);
+    if (step.maybe) parts.push(LEDGER_ENGINE_TEXT.someWorlds);
     else if (Number.isFinite(step.chance) && step.chance < 1 && step.chance < luckBelow * 4) parts.push(LEDGER_ENGINE_TEXT.chance(step.chance));
     return parts.length ? ` (${[...new Set(parts)].join(', ')})` : '';
 }

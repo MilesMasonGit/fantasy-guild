@@ -144,7 +144,7 @@ describe('the tab', { timeout: 20000 }, () => {
         fireEvent.change(view.getByLabelText('Filter by group'), { target: { value: 'C' } });
         const shown = [...view.container.querySelectorAll('[data-finding]')].map((r) => r.getAttribute('data-finding'));
         expect(shown.length).toBeGreaterThan(0);
-        expect(shown.every((c) => ['luck-only', 'fragile', 'first-kill-only', 'shop-only'].includes(c))).toBe(true);
+        expect(shown.every((c) => ['luck-only', 'fragile', 'shop-only'].includes(c))).toBe(true);
         fireEvent.change(view.getByLabelText('Filter by check'), { target: { value: 'luck-only' } });
         // The problem's own link is the one in the list.
         fireEvent.click(view.getAllByText('Fire Elemental').find((el) => el.closest('[data-finding]')));

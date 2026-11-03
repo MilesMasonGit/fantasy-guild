@@ -265,7 +265,7 @@ const BOUNTY_ITEMS = BOUNTY_REWARD_ITEMS.map(r => r.itemId);
  * close-over does not gate, as no skill level gates a recipe.
  *
  * The fight rule: an enemy Token that is reachable is beaten and drops its whole loot table
- * (its Outputs), first-kill lines included. Heroes fight bare-handed when nothing better is in
+ * (its Outputs). Heroes fight bare-handed when nothing better is in
  * hand, and levels are earned by playing, so neither gear nor level gates a fight here, as no
  * skill level gates a recipe.
  *

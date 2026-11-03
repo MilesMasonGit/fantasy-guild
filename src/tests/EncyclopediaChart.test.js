@@ -210,8 +210,7 @@ describe('ways out: uses and what it gives', () => {
 
     it('a vein gives its ore, likelier first, before the rare spawn; an enemy its drops with their odds', () => {
         expect(waysOut(book, T('token_iron_vein')).map(w => w.to)).toEqual([I('item_iron_ore'), T('token_fire_elemental')]);
-        const chief = waysOut(book, T('token_goblin_chief'));
-        expect(chief.find(w => w.to === I('item_chief_banner'))).toMatchObject({ firstKill: true });
+        expect(waysOut(book, T('token_goblin')).find(w => w.to === I('item_honey'))).toMatchObject({ chance: 0.03 });
     });
 
     it('a station gives what its recipes make; a recipe that makes several stays the recipe', () => {
@@ -273,8 +272,8 @@ describe('the chart grows a step at a time, and counts what is not on it', () =>
         const ore = chartOf(book, I('item_iron_ore'));
         const elemental = ore.ins.map(b => b.from).find(n => n.key === T('token_fire_elemental'));
         expect(elemental.chance).toBeCloseTo(0.4);
-        const chief = chartOf(book, T('token_goblin_chief'));
-        expect(chief.outs.find(u => u.node.key === I('item_chief_banner')).node.firstKill).toBe(true);
+        const goblin = chartOf(book, T('token_goblin'));
+        expect(goblin.outs.find(u => u.node.key === I('item_honey')).node.chance).toBeCloseTo(0.03);
     });
 
     it('a station type grows to its stations', () => {

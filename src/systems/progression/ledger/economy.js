@@ -67,7 +67,7 @@ export function economyFindings(ledger, content = {}, { book = null } = {}) {
     const isBuild = (recipeKey) => index.givers(recipeKey).some(r => r.how === HOW.BUILD);
     const sourceWords = (key) => (parseKey(key).kind === 'recipe' ? `the ${name(key)} recipe` : name(key));
     const producersOf = (key) => index.givers(key).filter(r => PRODUCING.has(r.how) && reached(r)
-        && r.gives.some(g => g.key === key && g.chance >= LUCK_BELOW && g.firstKill !== true));
+        && r.gives.some(g => g.key === key && g.chance >= LUCK_BELOW));
 
     // A hub with one source.
     for (const hub of ledger.hubs()) {

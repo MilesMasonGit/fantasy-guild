@@ -128,12 +128,11 @@ describe('checks on the fixture world', () => {
         expect(on(plain, itemKey('item_mythril_ore'), 'never-reachable')).toHaveLength(0);
     });
 
-    it('C: luck only, a first kill only, the Shop only', () => {
+    it('C: luck only, the Shop only', () => {
         const findings = checksOf(ledgerContent());
         // Honey: 3 % from goblins in the camp; ring 2's hive is sure.
         expect(on(findings, itemKey('item_honey'), 'luck-only')[0]).toMatchObject({ severity: 'info' });
         expect(on(findings, itemKey('item_honey'), 'luck-only')[0].message).toMatch(/3% from Goblin.*sure way from Plane 2/);
-        expect(on(findings, itemKey('item_chief_banner'), 'first-kill-only')[0].message).toMatch(/Goblin Chief/);
         expect(on(findings, tokenKey('token_wood_foundation'), 'shop-only')[0].message).toBe('Only from the Shop, for 15 Oak Wood.');
     });
 

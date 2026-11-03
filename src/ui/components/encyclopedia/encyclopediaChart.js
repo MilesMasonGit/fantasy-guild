@@ -130,7 +130,7 @@ function anchorOf(book, entry) {
 }
 
 const usualness = (row) => (row.oneOff ? 2 : row.maybe ? 1 : REPEATED.has(row.how) ? 0 : BY_CHANCE.has(row.how) ? 1 : 3);
-const chanceOf = (row) => (row.firstKill ? 0 : finite(row.chance, 1));
+const chanceOf = (row) => finite(row.chance, 1);
 
 /** The words for a way with no box on its left, or a one-off start: a key under `encyclopedia.via`. */
 function captionOf(how) {
@@ -142,7 +142,7 @@ function captionOf(how) {
 
 const blankWay = () => ({
     how: null, recipe: null, from: null, fromAmount: null, inputs: [], to: null,
-    chance: null, firstKill: false, takes: null, makes: null, caption: null, captionArgs: null, through: null, regrow: false,
+    chance: null, takes: null, makes: null, caption: null, captionArgs: null, through: null, regrow: false,
     place: null
 });
 
@@ -191,7 +191,7 @@ function recipeInputs(book, key, row = null) {
 
 /** One way in from a `sourcesOf` row. */
 function wayIn(book, row) {
-    const way = { ...blankWay(), how: row.how, chance: row.chance, firstKill: row.firstKill, caption: captionOf(row.how) };
+    const way = { ...blankWay(), how: row.how, chance: row.chance, caption: captionOf(row.how) };
     if (row.how === HOW.CRAFT) {
         way.recipe = row.via;
         way.from = stationOfRecipe(book, row.via)?.key ?? null;
@@ -320,7 +320,7 @@ export function waysOut(book, key) {
             out.push(way);
         }
         for (const g of book.givesOf(key)) {
-            const way = { ...blankWay(), how: g.how, chance: g.chance, firstKill: g.firstKill, gives: true };
+            const way = { ...blankWay(), how: g.how, chance: g.chance, gives: true };
             if (g.how === HOW.STATION || g.how === HOW.BUILD) {
                 way.recipe = g.key;
                 way.to = madeBy(book, g.key);
@@ -344,7 +344,7 @@ export function waysOut(book, key) {
             seen.add(w.to);
             return true;
         });
-        const chance = (w) => (w.firstKill ? 0 : finite(w.chance, 1));
+        const chance = (w) => finite(w.chance, 1);
         const level = (w) => requirementOf(book, w.to, w.recipe)?.level ?? 0;
         return kept
             .map((w, i) => ({ w, i }))
@@ -429,7 +429,7 @@ export const farSideOf = (node) => (node.side === 'in' ? 'out' : node.side === '
 
 /**
  * The chart from `start`, grown where the player clicked: every node `{ id, key, side, amount,
- * need, recipe, chance, firstKill, repeat, canGrow, canFar, grown, farOpen, ins, outs, hiddenIn,
+ * need, recipe, chance, repeat, canGrow, canFar, grown, farOpen, ins, outs, hiddenIn,
  * hiddenOut, passBand }`. `side` is 'start', 'in' (left of its neighbour: grows further left) or
  * 'out' (right: grows further right). `amount` is how many one step takes (×2 Iron Ore to an
  * ingot); `need` how many one of the start takes, down that path (one of the box whose far side
@@ -455,7 +455,6 @@ export function chartOf(book, start, { grown = new Set(), far = new Set(), opene
             need: link.need ?? null,
             recipe: link.recipe ?? null,
             chance: link.chance ?? null,
-            firstKill: link.firstKill === true,
             neighbour: link.neighbour ?? null,
             canGrow: !repeat && !!ways && ways.length > 0,
             canFar: false,
@@ -495,7 +494,7 @@ export function chartOf(book, start, { grown = new Set(), far = new Set(), opene
                 ? child(`${id}f`, way.from, {
                     amount: way.fromAmount,
                     need: way.fromAmount != null ? per * way.fromAmount : null,
-                    chance: way.chance, firstKill: way.firstKill
+                    chance: way.chance
                 })
                 : null;
             const inputs = way.inputs.map((input, j) => child(`${id}.${j}`, input.key, {
@@ -518,7 +517,7 @@ export function chartOf(book, start, { grown = new Set(), far = new Set(), opene
                 return { id, way, node: { id: `${id}n`, key: way.to, pass: true }, req, through: way.through };
             }
             const n = make(`${id}n`, way.to, 'out', here, {
-                recipe: way.recipe, chance: way.chance, firstKill: way.firstKill, neighbour: node.key
+                recipe: way.recipe, chance: way.chance, neighbour: node.key
             });
             visit(n, here);
             return { id, way, node: n, req, through: way.through };

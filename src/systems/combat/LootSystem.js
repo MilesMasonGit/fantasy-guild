@@ -12,7 +12,6 @@ import * as RareDrops from '../board/RareDrops.js';
 import * as BoardState from '../board/BoardState.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
-import * as FirstKill from './firstKill.js';
 
 /**
  * Loot rolls. Enemy kills roll each drop line independently.
@@ -55,9 +54,7 @@ const LootSystem = {
             ? (quantity, itemId) => OutputRules.doubleItemDrop(instanceId, itemId,
                 OutputRules.widenYield(instanceId, skill, quantity) * (doubled ? 2 : 1))
             : null;
-        const firstKill = FirstKill.isOwed(enemyId, sourceData.drops);
-        const generatedDrops = this.rollEachLine(sourceData.drops, areaId, widen, firstKill);
-        if (firstKill) FirstKill.markPaid(enemyId);
+        const generatedDrops = this.rollEachLine(sourceData.drops, areaId, widen);
 
         if (onBoard) {
             // On the board, loot drops as floating sprites where the kill
@@ -84,15 +81,14 @@ const LootSystem = {
      *
      * @param {Array} entries - `{ itemId, chance, minQty, maxQty }` lines
      * @param {Function} [widen] - `(quantity, itemId)` → the quantity that lands (the kill's output rules)
-     * @param {boolean} [firstKill] - the save's first kill of this enemy: lines marked `firstKill` land for certain (`firstKill.js`)
      * @returns {Array} the drops that landed, possibly empty
      */
-    rollEachLine(entries, areaId, widen = null, firstKill = false) {
+    rollEachLine(entries, areaId, widen = null) {
         const results = [];
         for (const entry of (Array.isArray(entries) ? entries : [])) {
             // A map is retired: its line is not rolled at all (the boot audit names it).
             if (!entry || isRetiredItem(entry.itemId || entry.id)) continue;
-            const chance = firstKill && entry.firstKill === true ? 100 : (entry.chance ?? 100);
+            const chance = entry.chance ?? 100;
             if (chance < 100 && Math.random() * 100 > chance) continue;
             const drop = this._rollEntryDetails(entry, areaId);
             if (drop && widen && drop.type !== 'combat_trigger') drop.quantity = widen(drop.quantity, drop.itemId);
