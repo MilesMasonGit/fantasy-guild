@@ -47,7 +47,7 @@ game looks and plays, gathered one screen at a time.*
 | 3 | Hero bar and hero sheet | **approved and briefed 2026-11-02** ([brief 340](briefs/340_hero_bar_detail.md)) | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
 | 4 | Bank | not started | |
 | 5 | Shop | not started | |
-| 6 | Guild Hall | not started | |
+| 6 | Guild Hall | **walking now** | |
 | 7 | World map | **approved and briefed 2026-11-03** ([brief 380](briefs/380_world_map_detail.md)) | |
 | 8 | Combat | **approved and briefed 2026-11-02** ([brief 360](briefs/360_combat_detail.md)) | carried in the mat list's items 5, 13, 14 |
 | 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
@@ -218,6 +218,43 @@ tables). Rulings kept: every cell's contents visible from the start; no landmark
 
 **Amends**: `concept_world_map.md` (a settled cell's only gate was its price; the wild
 rings came into view as you neared them), and the ledger's budgets must count the stars.
+
+### 6. Guild Hall
+
+**The sheet (2026-11-03). From the GDD, the code and the 30 October captures
+(`research/hall_h1`), not today's game; where this disagrees with the screen, the
+screen wins.**
+
+- **The sky**: a full-screen night sky of constellations, a constellation per skill plus the
+  Hearth and the Well; grey, blue and gold stars by state; links between them; dragged when it
+  doesn't fit; a camera move from the mat.
+- **A star's details**: the panel: picture, name, what it does, price, Upgrade button.
+- **Hall effects**: a popover listing what the guild holds.
+- **On the mat**: the Hall stands in the middle; quest Tokens beside it.
+
+**Already filed**: star prices wait for a Hall balance pass; ring stars arrive with brief
+380; star pictures on the art list.
+
+**The list** (owner, 2026-11-03; the tags are the planning agent's draft). "Overall it
+looks cluttered."
+
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **No rank numbers on the sky by default** (they show on hover). | must, tweak |
+| 2 | **Outlines of item sprites over the stars**, so they look distinct from each other ("I wonder if"). | must, design |
+| 3 | **Stars more spaced out.** | must, tweak |
+| 4 | **Titles always underneath the star.** | must, tweak |
+| 5 | **The sky runs full-screen under everything**: behind the nav bubbles and the panel, with no hard stop at the edges. | must, tweak |
+| 6 | **More ceremony on upgrading**: the star bursts; links light up to what it opened; a bigger moment for finishing a constellation. | must, design |
+| 7 | **The star panel has its own purple borders** ("maybe"). | nice, design |
+| 8 | **The panel's words**: a clear sentence at the top saying what the star does, then brief numbers: now, next, and a line for the max rank. | must, tweak |
+| 9 | **The panel's layout, price and Upgrade button** want work: the header and stat block style of the Token card, the price in our item style. | must, tweak |
+| 10 | **Hall effects: drops run on one lap, 10 minutes by default, reduced to 5 by Guild Hall upgrades.** (Today: 5 minutes.) | must, design |
+| 11 | **Hall effects: no time on each item entry**; the lap's time is listed as a boost. | must, tweak |
+| 12 | **"Modifiers" are called "boosts"** there. | must, tweak |
+| 13 | **More possible upgrades**: a review of what else could be upgraded. An agent reports (every number that could be a star, what similar games let you upgrade, what each does to pacing), then an interview; the result joins the content roadmap as a star pack. | must, design |
+
+**Looked at, no change** (owner, 2026-11-03): the camera move, dragging, how the sky opens.
 
 ### 3. Hero bar and hero sheet
 
