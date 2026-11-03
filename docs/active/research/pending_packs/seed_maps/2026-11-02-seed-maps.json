@@ -1,0 +1,2650 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-02-seed-maps",
+  "createdAt": "2026-11-03T04:19:45.863Z",
+  "asked": "Owner, 2026-11-02: the player no longer influences a mat through map items and modifiers. The seed items that build a creature camp are named after the Token they build (Wolf Den Map, Goblin Camp Map) and take a map sprite. The old map and modifier items retire, with their drop lines; the Coal Prospecting Map stays.",
+  "entries": [
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_wolf_alpha_banner",
+      "value": {
+        "id": "item_wolf_alpha_banner",
+        "name": "Alpha's Den Map",
+        "description": "Shows where an Alpha's Den can stand: the Build Alpha's Den recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_forest",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Wolf Alpha Banner is now the Alpha's Den Map, named after the Token it builds, with a map sprite (t_map_forest, a stand-in, from the old Forest Map). Same id, same drop, same recipe.",
+      "placeholderArt": true,
+      "fingerprint": "fp:03283c7a529df2cc"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_big_lizard_banner",
+      "value": {
+        "id": "item_big_lizard_banner",
+        "name": "Basking Stone Map",
+        "description": "Shows where a Basking Stone can stand: the Build Basking Stone recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_swamp",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Big Lizard Banner is now the Basking Stone Map, named after the Token it builds, with a map sprite (t_map_swamp, a stand-in, from the old Yellowstone Map). Same id, same drop, same recipe.",
+      "placeholderArt": true,
+      "fingerprint": "fp:bb6979da15341bbc"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_goblin_chief_banner",
+      "value": {
+        "id": "item_goblin_chief_banner",
+        "name": "Chief's Tent Map",
+        "description": "Shows where a Chief's Tent can stand: the Build Chief's Tent recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_mountain",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Goblin Chief Banner is now the Chief's Tent Map, named after the Token it builds, with a map sprite (t_map_mountain, a stand-in, from the old Mountain Map). Same id, same drop, same recipe.",
+      "placeholderArt": true,
+      "fingerprint": "fp:4f17fc51e7d166f3"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_cow_banner",
+      "value": {
+        "id": "item_cow_banner",
+        "name": "Cow Pasture Map",
+        "description": "Shows where a Cow Pasture can stand: the Build Cow Pasture recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_spooky",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Cow Banner is now the Cow Pasture Map, named after the Token it builds, with a map sprite (t_map_spooky, the old Cow Pasture modifier's own). Same id, same drop, same recipe.",
+      "fingerprint": "fp:414442c831f6d5aa"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_crab_banner",
+      "value": {
+        "id": "item_crab_banner",
+        "name": "Crab Rocks Map",
+        "description": "Shows where Crab Rocks can stand: the Build Crab Rocks recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_spooky",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Crab Banner is now the Crab Rocks Map, named after the Token it builds, with a map sprite (t_map_spooky, the old Crab Rocks modifier's own). Same id, same drop, same recipe.",
+      "fingerprint": "fp:06101bd682a8a7fc"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_fire_elemental_banner",
+      "value": {
+        "id": "item_fire_elemental_banner",
+        "name": "Ember Vents Map",
+        "description": "Shows where Ember Vents can stand: the Build Ember Vents recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_spooky",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Fire Elemental Banner is now the Ember Vents Map, named after the Token it builds, with a map sprite (t_map_spooky, the old Ember Vents modifier's own). Same id, same drop, same recipe.",
+      "fingerprint": "fp:8ac1978c18820f06"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_frog_banner",
+      "value": {
+        "id": "item_frog_banner",
+        "name": "Frog Pond Map",
+        "description": "Shows where a Frog Pond can stand: the Build Frog Pond recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_spooky",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Frog Banner is now the Frog Pond Map, named after the Token it builds, with a map sprite (t_map_spooky, the old Frog Pond modifier's own). Same id, same drop, same recipe.",
+      "fingerprint": "fp:21c5ddbe3fafb48c"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_goblin_banner",
+      "value": {
+        "id": "item_goblin_banner",
+        "name": "Goblin Camp Map",
+        "description": "Shows where a Goblin Camp can stand: the Build Goblin Camp recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_spooky",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Goblin Banner is now the Goblin Camp Map, named after the Token it builds, with a map sprite (t_map_spooky, the old Goblin Camp modifier's own). Same id, same drop, same recipe.",
+      "fingerprint": "fp:480e8443922c4ac5"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_queen_bee_banner",
+      "value": {
+        "id": "item_queen_bee_banner",
+        "name": "Queen's Hive Map",
+        "description": "Shows where a Queen's Hive can stand: the Build Queen's Hive recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_village",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Queen Bee Banner is now the Queen's Hive Map, named after the Token it builds, with a map sprite (t_map_village, a stand-in, from the old Cherry Grove Map). Same id, same drop, same recipe.",
+      "placeholderArt": true,
+      "fingerprint": "fp:ee425b5d0ead62df"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_greater_slime_banner",
+      "value": {
+        "id": "item_greater_slime_banner",
+        "name": "Slime Pit Map",
+        "description": "Shows where a Slime Pit can stand: the Build Slime Pit recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_farmland",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Greater Slime Banner is now the Slime Pit Map, named after the Token it builds, with a map sprite (t_map_farmland, a stand-in, from the old Meadow Map). Same id, same drop, same recipe.",
+      "placeholderArt": true,
+      "fingerprint": "fp:3f4c077e137131f8"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_fire_elemental_chief_banner",
+      "value": {
+        "id": "item_fire_elemental_chief_banner",
+        "name": "Smoking Crater Map",
+        "description": "Shows where a Smoking Crater can stand: the Build Smoking Crater recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_volcano",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Fire Elemental Chief Banner is now the Smoking Crater Map, named after the Token it builds, with a map sprite (t_map_volcano, a stand-in, from the old Volcano Map). Same id, same drop, same recipe.",
+      "placeholderArt": true,
+      "fingerprint": "fp:cabde4c880917c16"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_sulphur_lizard_banner",
+      "value": {
+        "id": "item_sulphur_lizard_banner",
+        "name": "Sulphur Rocks Map",
+        "description": "Shows where Sulphur Rocks can stand: the Build Sulphur Rocks recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_spooky",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Sulphur Lizard Banner is now the Sulphur Rocks Map, named after the Token it builds, with a map sprite (t_map_spooky, the old Sulphur Rocks modifier's own). Same id, same drop, same recipe.",
+      "fingerprint": "fp:e801774c9c92dd5a"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_thorn_elemental_banner",
+      "value": {
+        "id": "item_thorn_elemental_banner",
+        "name": "Thorn Thicket Map",
+        "description": "Shows where a Thorn Thicket can stand: the Build Thorn Thicket recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_spooky",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Thorn Elemental Banner is now the Thorn Thicket Map, named after the Token it builds, with a map sprite (t_map_spooky, the old Thorn Thicket modifier's own). Same id, same drop, same recipe.",
+      "fingerprint": "fp:8e34cbd49bdbd826"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_water_elemental_banner",
+      "value": {
+        "id": "item_water_elemental_banner",
+        "name": "Tide Pool Map",
+        "description": "Shows where a Tide Pool can stand: the Build Tide Pool recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_shore",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Water Elemental Banner is now the Tide Pool Map, named after the Token it builds, with a map sprite (t_map_shore, a stand-in, from the old Coast Map). Same id, same drop, same recipe.",
+      "placeholderArt": true,
+      "fingerprint": "fp:7028d4e9599aca43"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_toxic_frog_banner",
+      "value": {
+        "id": "item_toxic_frog_banner",
+        "name": "Toxic Pool Map",
+        "description": "Shows where a Toxic Pool can stand: the Build Toxic Pool recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_swamp",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Toxic Frog Banner is now the Toxic Pool Map, named after the Token it builds, with a map sprite (t_map_swamp, a stand-in, from the old Bog Map). Same id, same drop, same recipe.",
+      "placeholderArt": true,
+      "fingerprint": "fp:0d3053f20eb452e0"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_bee_banner",
+      "value": {
+        "id": "item_bee_banner",
+        "name": "Wild Hive Map",
+        "description": "Shows where a Wild Hive can stand: the Build Wild Hive recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_spooky",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Bee Banner is now the Wild Hive Map, named after the Token it builds, with a map sprite (t_map_spooky, the old Wild Hive modifier's own). Same id, same drop, same recipe.",
+      "fingerprint": "fp:521cd5eabf3cfa78"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_wind_elemental_banner",
+      "value": {
+        "id": "item_wind_elemental_banner",
+        "name": "Wind Stones Map",
+        "description": "Shows where Wind Stones can stand: the Build Wind Stones recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_flowers",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Wind Elemental Banner is now the Wind Stones Map, named after the Token it builds, with a map sprite (t_map_flowers, a stand-in, from the old Flower Meadow Map). Same id, same drop, same recipe.",
+      "placeholderArt": true,
+      "fingerprint": "fp:eca391e87c7af43e"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_wolf_banner",
+      "value": {
+        "id": "item_wolf_banner",
+        "name": "Wolf Den Map",
+        "description": "Shows where a Wolf Den can stand: the Build Wolf Den recipe spends one.",
+        "type": "material",
+        "sprite": "t_map_spooky",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "autoSyncId": true,
+        "tags": [],
+        "valueSource": null,
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Seed map: a rare drop that builds its camp."
+        }
+      },
+      "note": "Wolf Banner is now the Wolf Den Map, named after the Token it builds, with a map sprite (t_map_spooky, the old Wolf Den modifier's own). Same id, same drop, same recipe.",
+      "fingerprint": "fp:20172b47e5ce577d"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_bee",
+      "value": {
+        "name": "Bee",
+        "description": "Drops 1 Honey (60%), 1 Beeswax Comb (20%), 1 Forest Map (1%), 1 Mountain Map (1%), 1 Coast Map (1%), 1 Meadow Map (1%), 1 Flower Meadow Map (0.5%), 1 Cherry Grove Map (0.5%), 1 Volcano Map (0.25%), 1 Yellowstone Map (0.25%), 1 Bog Map (0.25%), 1 Bountiful (1%), 1 Wild Hive (0.5%), 1 Buried Copper (0.25%), and 1 Bee Banner (0.5%) when defeated in combat.",
+        "sprite": "e_bee",
+        "tokenType": "enemy",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_honey",
+              "chance": 60,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_beeswax_comb",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_bee_banner",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 6,
+          "style": "stealth",
+          "kinds": [
+            "nimble"
+          ],
+          "resistances": {
+            "fire": -25
+          },
+          "moves": [
+            {
+              "name": "Sting",
+              "damageType": "stab",
+              "weight": 2
+            },
+            {
+              "name": "Flutter",
+              "hits": false,
+              "effectId": "effect_flutter",
+              "target": "self",
+              "lasts": "attack"
+            }
+          ]
+        },
+        "artSize": "small",
+        "id": "token_bee",
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "Bee no longer drops the retired maps and modifiers: Forest Map, Mountain Map, Coast Map, Meadow Map, Flower Meadow Map, Cherry Grove Map, Volcano Map, Yellowstone Map, Bog Map, Bountiful, Wild Hive, Buried Copper.",
+      "fingerprint": "fp:453dd10f93625311"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_big_lizard",
+      "value": {
+        "name": "Big Lizard",
+        "description": "Drops 3–5 Lizard Scale, 3–6 Fir Wood, 2–4 Grapes, 1 Volcano Map (4%), 1 Yellowstone Map (8%), 1 Bog Map (4%), 1 Overgrown (5%), 1 Sulphur Rocks (3%), 1 Buried Iron (2%), and 1 Big Lizard Banner (2%) when defeated in combat.",
+        "sprite": "e_lizard",
+        "tokenType": "enemy",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_lizard_scale",
+              "chance": 100,
+              "minQty": 3,
+              "maxQty": 5,
+              "baseQty": {
+                "min": 3,
+                "max": 5
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_fir_wood",
+              "chance": 100,
+              "minQty": 3,
+              "maxQty": 6,
+              "baseQty": {
+                "min": 3,
+                "max": 6
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_grapes",
+              "chance": 100,
+              "minQty": 2,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 2,
+                "max": 4
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_big_lizard_banner",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 24,
+          "style": "melee",
+          "kinds": [
+            "armoured"
+          ],
+          "boss": true,
+          "hit": 4,
+          "resistances": {
+            "fire": 50,
+            "ice": -25
+          },
+          "moves": [
+            {
+              "name": "Bite",
+              "damageType": "stab",
+              "weight": 2
+            },
+            {
+              "name": "Tail Smash",
+              "damageType": "crush",
+              "effectId": "effect_heavy_strike",
+              "target": "self",
+              "lasts": "swing"
+            }
+          ]
+        },
+        "id": "token_big_lizard",
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "note": "Big Lizard no longer drops the retired maps and modifiers: Volcano Map, Yellowstone Map, Bog Map, Overgrown, Sulphur Rocks, Buried Iron.",
+      "fingerprint": "fp:a6784a6d5aa0b83b"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_copper_chest",
+      "value": {
+        "name": "Copper Chest",
+        "description": "A token for the guild playmat.",
+        "sprite": "t_chest_copper",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "crafting",
+          "skillRequired": 1,
+          "cycleTimeMs": 10000,
+          "xp": 2,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_copper_ore",
+              "chance": 100,
+              "minQty": 4,
+              "maxQty": 8,
+              "baseQty": {
+                "min": 4,
+                "max": 8
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_oak_wood",
+              "chance": 100,
+              "minQty": 4,
+              "maxQty": 8,
+              "baseQty": {
+                "min": 4,
+                "max": 8
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_copper_ingot",
+              "chance": 50,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_coal",
+              "chance": 50,
+              "minQty": 2,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 2,
+                "max": 4
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_copper_chest",
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "Copper Chest no longer drops the retired maps and modifiers: Meadow Map, Flower Meadow Map, Cherry Grove Map, Overgrown, Rich Veins, Teeming Waters, Bountiful, Goblin Camp, Buried Copper.",
+      "fingerprint": "fp:bf74a0c27a6e729c"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_cow",
+      "value": {
+        "name": "Cow",
+        "description": "Drops 1 Bones, 1 Raw Beef (50%), 1 Forest Map (1%), 1 Mountain Map (1%), 1 Coast Map (1%), 1 Meadow Map (1%), 1 Flower Meadow Map (0.5%), 1 Cherry Grove Map (0.5%), 1 Volcano Map (0.25%), 1 Yellowstone Map (0.25%), 1 Bog Map (0.25%), 1 Bountiful (1%), 1 Cow Pasture (0.5%), 1 Buried Copper (0.25%), and 1 Cow Banner (0.5%) when defeated in combat.",
+        "sprite": "e_cow",
+        "tokenType": "enemy",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 16000,
+          "xp": 2,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_bones",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_raw_beef",
+              "chance": 50,
+              "minQty": 1,
+              "maxQty": 1,
+              "variable": true,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              }
+            },
+            {
+              "itemId": "item_cow_banner",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_cow",
+        "enemy": {
+          "level": 1,
+          "style": "melee",
+          "moves": [
+            {
+              "name": "Headbutt",
+              "damageType": "crush"
+            },
+            {
+              "name": "Kick",
+              "damageType": "crush"
+            }
+          ]
+        },
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "Cow no longer drops the retired maps and modifiers: Forest Map, Mountain Map, Coast Map, Meadow Map, Flower Meadow Map, Cherry Grove Map, Volcano Map, Yellowstone Map, Bog Map, Bountiful, Cow Pasture, Buried Copper.",
+      "fingerprint": "fp:2c4c75bb1896fff5"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_crab",
+      "value": {
+        "name": "Crab",
+        "description": "Drops 1 Crab Meat (75%), 1–2 Raw Shrimp (30%), 1 Tropical Fish (25%), 1 Lobster (10%), 1 Forest Map (1%), 1 Mountain Map (1%), 1 Coast Map (1%), 1 Meadow Map (1%), 1 Flower Meadow Map (0.5%), 1 Cherry Grove Map (0.5%), 1 Volcano Map (0.25%), 1 Yellowstone Map (0.25%), 1 Bog Map (0.25%), 1 Teeming Waters (1%), 1 Crab Rocks (0.5%), 1 Buried Copper (0.25%), and 1 Crab Banner (0.5%) when defeated in combat.",
+        "sprite": "e_crab",
+        "tokenType": "enemy",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_crab_meat",
+              "chance": 75,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_raw_shrimp",
+              "chance": 30,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_tropical_fish",
+              "chance": 25,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_lobster",
+              "chance": 10,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_crab_banner",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 3,
+          "style": "melee",
+          "kinds": [
+            "armoured"
+          ],
+          "resistances": {
+            "crush": -50,
+            "electric": -25
+          },
+          "moves": [
+            {
+              "name": "Pinch",
+              "damageType": "crush"
+            },
+            {
+              "name": "Snip",
+              "damageType": "slash"
+            }
+          ]
+        },
+        "artSize": "small",
+        "id": "token_crab",
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "Crab no longer drops the retired maps and modifiers: Forest Map, Mountain Map, Coast Map, Meadow Map, Flower Meadow Map, Cherry Grove Map, Volcano Map, Yellowstone Map, Bog Map, Teeming Waters, Crab Rocks, Buried Copper.",
+      "fingerprint": "fp:9ccba9ce0347f0c4"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_fire_elemental",
+      "value": {
+        "name": "Fire Elemental",
+        "description": "Drops 1–2 Coal (60%), 1–2 Iron Ore (40%), 1 Volcano Map (1%), 1 Yellowstone Map (1%), 1 Bog Map (1%), 1 Rich Veins (1%), 1 Ember Vents (0.5%), 1 Buried Iron (0.25%), and 1 Fire Elemental Banner (0.5%) when defeated in combat.",
+        "sprite": "e_elemental_fire",
+        "tokenType": "enemy",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_coal",
+              "chance": 60,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_iron_ore",
+              "chance": 40,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_fire_elemental_banner",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 17,
+          "style": "magic",
+          "kinds": [
+            "brute"
+          ],
+          "resistances": {
+            "fire": 100,
+            "ice": -50
+          },
+          "moves": [
+            {
+              "name": "Scorch",
+              "damageType": "fire",
+              "weight": 2
+            },
+            {
+              "name": "Slam",
+              "damageType": "crush"
+            }
+          ]
+        },
+        "artSize": "small",
+        "id": "token_fire_elemental",
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "note": "Fire Elemental no longer drops the retired maps and modifiers: Volcano Map, Yellowstone Map, Bog Map, Rich Veins, Ember Vents, Buried Iron.",
+      "fingerprint": "fp:530541537faec719"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_fire_elemental_chief",
+      "value": {
+        "name": "Fire Elemental Chief",
+        "description": "Drops 4–8 Iron Ore, 1–3 Iron Ingot (60%), 3–6 Coal, 1 Volcano Map (8%), 1 Yellowstone Map (4%), 1 Bog Map (4%), 1 Rich Veins (5%), 1 Ember Vents (3%), 1 Buried Iron (2%), and 1 Fire Elemental Chief Banner (2%) when defeated in combat. On Every 3rd Hit: applies effect_burn to the hero.",
+        "sprite": "e_elemental_fire",
+        "tokenType": "enemy",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_iron_ore",
+              "chance": 100,
+              "minQty": 4,
+              "maxQty": 8,
+              "baseQty": {
+                "min": 4,
+                "max": 8
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_iron_ingot",
+              "chance": 60,
+              "minQty": 1,
+              "maxQty": 3,
+              "baseQty": {
+                "min": 1,
+                "max": 3
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_coal",
+              "chance": 100,
+              "minQty": 3,
+              "maxQty": 6,
+              "baseQty": {
+                "min": 3,
+                "max": 6
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_fire_elemental_chief_banner",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 25,
+          "style": "magic",
+          "kinds": [
+            "brute"
+          ],
+          "boss": true,
+          "hit": 5,
+          "resistances": {
+            "fire": 100,
+            "ice": -50
+          },
+          "moves": [
+            {
+              "name": "Inferno",
+              "damageType": "fire",
+              "weight": 2
+            },
+            {
+              "name": "Slam",
+              "damageType": "crush"
+            }
+          ]
+        },
+        "id": "token_fire_elemental_chief",
+        "effects": [
+          {
+            "effectId": "effect_fire_elemental_chief_moves",
+            "scale": 1
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "note": "Fire Elemental Chief no longer drops the retired maps and modifiers: Volcano Map, Yellowstone Map, Bog Map, Rich Veins, Ember Vents, Buried Iron.",
+      "fingerprint": "fp:eac0f6cdf8fb985f"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_frog",
+      "value": {
+        "name": "Frog",
+        "description": "Drops 1–2 Lavender (40%), 1 Lavender Seed (20%), 1 Worm (30%), 1 Volcano Map (1%), 1 Yellowstone Map (1%), 1 Bog Map (1%), 1 Teeming Waters (1%), 1 Frog Pond (0.5%), 1 Buried Iron (0.25%), and 1 Frog Banner (0.5%) when defeated in combat.",
+        "sprite": "e_frog",
+        "tokenType": "enemy",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_lavender",
+              "chance": 40,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_lavender_seed",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_worm",
+              "chance": 30,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_frog_banner",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 15,
+          "style": "stealth",
+          "kinds": [
+            "nimble"
+          ],
+          "resistances": {
+            "poison": 50,
+            "electric": -25
+          },
+          "moves": [
+            {
+              "name": "Tongue Lash",
+              "damageType": "crush"
+            },
+            {
+              "name": "Spit",
+              "damageType": "poison"
+            }
+          ]
+        },
+        "artSize": "small",
+        "id": "token_frog",
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "note": "Frog no longer drops the retired maps and modifiers: Volcano Map, Yellowstone Map, Bog Map, Teeming Waters, Frog Pond, Buried Iron.",
+      "fingerprint": "fp:c3418d90de7684ae"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_goblin",
+      "value": {
+        "name": "Goblin",
+        "description": "Drops 1 Bones, 1 Copper Ore (30%), 1 Forest Map (1.5%), 1 Mountain Map (1.5%), 1 Coast Map (1.5%), 1 Meadow Map (1.5%), 1 Rich Veins (1%), 1 Goblin Camp (0.5%), 1 Buried Copper (0.25%), 1 Goblin Banner (0.5%), and 1 Coal Prospecting Map (3%) when defeated in combat.",
+        "sprite": "e_goblin",
+        "tokenType": "enemy",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_bones",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_copper_ore",
+              "chance": 30,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_goblin_banner",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_coal_prospecting_map",
+              "chance": 3,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 5,
+          "style": "melee",
+          "hostile": true,
+          "moves": [
+            {
+              "name": "Shiv",
+              "damageType": "stab"
+            },
+            {
+              "name": "Club",
+              "damageType": "crush"
+            }
+          ]
+        },
+        "id": "token_goblin",
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "note": "Goblin no longer drops the retired maps and modifiers: Forest Map, Mountain Map, Coast Map, Meadow Map, Rich Veins, Goblin Camp, Buried Copper.",
+      "fingerprint": "fp:85db29689e34b54a"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_goblin_chief",
+      "value": {
+        "name": "Goblin Chief",
+        "description": "Drops 1–2 Copper Ingot, 1 Bones, 1 Beeswax Comb (25%), 1 Forest Map (4%), 1 Mountain Map (8%), 1 Coast Map (4%), 1 Meadow Map (4%), 1 Flower Meadow Map (2%), 1 Cherry Grove Map (2%), 1 Volcano Map (10%), 1 Yellowstone Map (3%), 1 Rich Veins (3%), 1 Goblin Camp (2%), 1 Buried Copper (1%), 1 Goblin Chief Banner (2%), and 1 Coal Prospecting Map (25%) when defeated in combat. On Every 6th Swing: applies effect_heavy_strike to the enemy for the swing.",
+        "sprite": "e_goblin_chief",
+        "tokenType": "enemy",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_copper_ingot",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_bones",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_beeswax_comb",
+              "chance": 25,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_goblin_chief_banner",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_coal_prospecting_map",
+              "chance": 25,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 12,
+          "style": "melee",
+          "kinds": [
+            "brute"
+          ],
+          "boss": true,
+          "hit": 3,
+          "moves": [
+            {
+              "name": "Cleave",
+              "damageType": "slash"
+            },
+            {
+              "name": "Bash",
+              "damageType": "crush"
+            }
+          ]
+        },
+        "id": "token_goblin_chief",
+        "effects": [
+          {
+            "effectId": "effect_goblin_chief_moves",
+            "scale": 1
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "Goblin Chief no longer drops the retired maps and modifiers: Forest Map, Mountain Map, Coast Map, Meadow Map, Flower Meadow Map, Cherry Grove Map, Volcano Map, Yellowstone Map, Rich Veins, Goblin Camp, Buried Copper.",
+      "fingerprint": "fp:cd750f8453e0f2e6"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_greater_slime",
+      "value": {
+        "name": "Greater Slime",
+        "description": "Drops 2–4 Apple, 2–4 Wheat, 1 Forest Map (4%), 1 Mountain Map (4%), 1 Coast Map (4%), 1 Meadow Map (8%), 1 Flower Meadow Map (2%), 1 Cherry Grove Map (2%), 1 Bog Map (10%), 1 Yellowstone Map (3%), 1 Bountiful (3%), 1 Cow Pasture (2%), 1 Buried Copper (1%), and 1 Greater Slime Banner (2%) when defeated in combat. On Every 3rd Hit: applies effect_venom to the hero.",
+        "sprite": "e_slime_green_greater",
+        "tokenType": "enemy",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_apple",
+              "chance": 100,
+              "minQty": 2,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 2,
+                "max": 4
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_wheat",
+              "chance": 100,
+              "minQty": 2,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 2,
+                "max": 4
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_greater_slime_banner",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 8,
+          "style": "melee",
+          "kinds": [
+            "armoured"
+          ],
+          "boss": true,
+          "hit": 2,
+          "resistances": {
+            "poison": 50,
+            "fire": -25
+          },
+          "moves": [
+            {
+              "name": "Engulf",
+              "damageType": "crush"
+            },
+            {
+              "name": "Acid Spit",
+              "damageType": "poison"
+            }
+          ]
+        },
+        "id": "token_greater_slime",
+        "effects": [
+          {
+            "effectId": "effect_greater_slime_moves",
+            "scale": 1
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "Greater Slime no longer drops the retired maps and modifiers: Forest Map, Mountain Map, Coast Map, Meadow Map, Flower Meadow Map, Cherry Grove Map, Bog Map, Yellowstone Map, Bountiful, Cow Pasture, Buried Copper.",
+      "fingerprint": "fp:05cf8bb2bf9a89a0"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_iron_chest",
+      "value": {
+        "name": "Iron Chest",
+        "description": "A token for the guild playmat.",
+        "sprite": "t_chest_iron",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "crafting",
+          "skillRequired": 1,
+          "cycleTimeMs": 10000,
+          "xp": 5,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_iron_ore",
+              "chance": 100,
+              "minQty": 4,
+              "maxQty": 8,
+              "baseQty": {
+                "min": 4,
+                "max": 8
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_fir_wood",
+              "chance": 100,
+              "minQty": 4,
+              "maxQty": 8,
+              "baseQty": {
+                "min": 4,
+                "max": 8
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_iron_ingot",
+              "chance": 50,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_lavender",
+              "chance": 30,
+              "minQty": 2,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 2,
+                "max": 4
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_iron_chest",
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "note": "Iron Chest no longer drops the retired maps and modifiers: Volcano Map, Yellowstone Map, Bog Map, Overgrown, Rich Veins, Teeming Waters, Bountiful, Ember Vents, Sulphur Rocks, Frog Pond, Buried Iron.",
+      "fingerprint": "fp:7e14f996187f91b8"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_queen_bee",
+      "value": {
+        "name": "Queen Bee",
+        "description": "Drops 2–4 Honey, 1–2 Beeswax Comb, 1 Forest Map (4%), 1 Mountain Map (4%), 1 Coast Map (4%), 1 Meadow Map (4%), 1 Flower Meadow Map (2%), 1 Cherry Grove Map (8%), 1 Volcano Map (10%), 1 Yellowstone Map (3%), 1 Bountiful (3%), 1 Wild Hive (2%), 1 Buried Copper (1%), and 1 Queen Bee Banner (2%) when defeated in combat. On Health Below 30%: applies effect_enrage to the enemy for the fight.",
+        "sprite": "e_bee",
+        "tokenType": "enemy",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_honey",
+              "chance": 100,
+              "minQty": 2,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 2,
+                "max": 4
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_beeswax_comb",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_queen_bee_banner",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 14,
+          "style": "stealth",
+          "kinds": [
+            "venomous"
+          ],
+          "boss": true,
+          "hit": 2,
+          "resistances": {
+            "fire": -25
+          },
+          "moves": [
+            {
+              "name": "Sting",
+              "damageType": "stab",
+              "weight": 2
+            },
+            {
+              "name": "Flutter",
+              "hits": false,
+              "effectId": "effect_flutter",
+              "target": "self",
+              "lasts": "attack"
+            }
+          ]
+        },
+        "id": "token_queen_bee",
+        "effects": [
+          {
+            "effectId": "effect_queen_bee_moves",
+            "scale": 1
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "Queen Bee no longer drops the retired maps and modifiers: Forest Map, Mountain Map, Coast Map, Meadow Map, Flower Meadow Map, Cherry Grove Map, Volcano Map, Yellowstone Map, Bountiful, Wild Hive, Buried Copper.",
+      "fingerprint": "fp:0ad2b6321d402b54"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_sulphur_lizard",
+      "value": {
+        "name": "Sulphur Lizard",
+        "description": "Drops 1 Lizard Scale (75%), 1 Volcano Map (1%), 1 Yellowstone Map (1%), 1 Bog Map (1%), 1 Overgrown (1%), 1 Sulphur Rocks (0.5%), 1 Buried Iron (0.25%), and 1 Sulphur Lizard Banner (0.5%) when defeated in combat.",
+        "sprite": "e_lizard",
+        "tokenType": "enemy",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_lizard_scale",
+              "chance": 75,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_sulphur_lizard_banner",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 16,
+          "style": "melee",
+          "kinds": [
+            "armoured"
+          ],
+          "resistances": {
+            "fire": 50,
+            "ice": -25
+          },
+          "moves": [
+            {
+              "name": "Bite",
+              "damageType": "stab"
+            },
+            {
+              "name": "Sulphur Spit",
+              "damageType": "fire"
+            }
+          ]
+        },
+        "artSize": "small",
+        "id": "token_sulphur_lizard",
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "note": "Sulphur Lizard no longer drops the retired maps and modifiers: Volcano Map, Yellowstone Map, Bog Map, Overgrown, Sulphur Rocks, Buried Iron.",
+      "fingerprint": "fp:4c5a759a8e7bde1c"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_thorn_elemental",
+      "value": {
+        "name": "Thorn Elemental",
+        "description": "Drops 1–2 Blackberry, 1 Forest Map (1%), 1 Mountain Map (1%), 1 Coast Map (1%), 1 Meadow Map (1%), 1 Flower Meadow Map (0.5%), 1 Cherry Grove Map (0.5%), 1 Volcano Map (0.25%), 1 Yellowstone Map (0.25%), 1 Bog Map (0.25%), 1 Bountiful (1%), 1 Thorn Thicket (0.5%), 1 Buried Copper (0.25%), and 1 Thorn Elemental Banner (0.5%) when defeated in combat. On Cycle: deals 1 damage to the hero.",
+        "sprite": "e_elemental_thorn",
+        "tokenType": "enemy",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_blackberry",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              }
+            },
+            {
+              "itemId": "item_thorn_elemental_banner",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_thorn_elemental",
+        "enemy": {
+          "level": 1,
+          "style": "melee",
+          "resistances": {
+            "fire": -50
+          },
+          "moves": [
+            {
+              "name": "Lash",
+              "damageType": "slash"
+            },
+            {
+              "name": "Prick",
+              "damageType": "stab"
+            }
+          ]
+        },
+        "effects": [
+          {
+            "effectId": "effect_thorns",
+            "scale": 1
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "Thorn Elemental no longer drops the retired maps and modifiers: Forest Map, Mountain Map, Coast Map, Meadow Map, Flower Meadow Map, Cherry Grove Map, Volcano Map, Yellowstone Map, Bog Map, Bountiful, Thorn Thicket, Buried Copper.",
+      "fingerprint": "fp:75c87dce3bcf8fd0"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_toxic_frog",
+      "value": {
+        "name": "Toxic Frog",
+        "description": "Drops 3–5 Lavender, 1–2 Lavender Seed, 2–4 Trout, 1 Volcano Map (4%), 1 Yellowstone Map (4%), 1 Bog Map (8%), 1 Teeming Waters (5%), 1 Frog Pond (3%), 1 Buried Iron (2%), and 1 Toxic Frog Banner (2%) when defeated in combat.",
+        "sprite": "e_frog_toxic",
+        "tokenType": "enemy",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_lavender",
+              "chance": 100,
+              "minQty": 3,
+              "maxQty": 5,
+              "baseQty": {
+                "min": 3,
+                "max": 5
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_lavender_seed",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_trout",
+              "chance": 100,
+              "minQty": 2,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 2,
+                "max": 4
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_toxic_frog_banner",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 22,
+          "style": "stealth",
+          "kinds": [
+            "venomous"
+          ],
+          "boss": true,
+          "hit": 4,
+          "resistances": {
+            "poison": 100,
+            "electric": -25
+          },
+          "moves": [
+            {
+              "name": "Tongue Lash",
+              "damageType": "crush"
+            },
+            {
+              "name": "Toxic Spit",
+              "damageType": "poison"
+            }
+          ]
+        },
+        "id": "token_toxic_frog",
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "note": "Toxic Frog no longer drops the retired maps and modifiers: Volcano Map, Yellowstone Map, Bog Map, Teeming Waters, Frog Pond, Buried Iron.",
+      "fingerprint": "fp:1ccf61143a90e1ba"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_water_elemental",
+      "value": {
+        "name": "Water Elemental",
+        "description": "Drops 2–4 Raw Shrimp, 1–2 Crab Meat (50%), 1–2 Salmon (50%), 1 Swordfish (25%), 1 Forest Map (4%), 1 Mountain Map (4%), 1 Coast Map (8%), 1 Meadow Map (4%), 1 Flower Meadow Map (2%), 1 Cherry Grove Map (2%), 1 Bog Map (10%), 1 Volcano Map (3%), 1 Teeming Waters (3%), 1 Crab Rocks (2%), 1 Buried Copper (1%), and 1 Water Elemental Banner (2%) when defeated in combat. On Health Below 50%: heals 10 health on itself.",
+        "sprite": "e_elemental_water",
+        "tokenType": "enemy",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_raw_shrimp",
+              "chance": 100,
+              "minQty": 2,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 2,
+                "max": 4
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_crab_meat",
+              "chance": 50,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_salmon",
+              "chance": 50,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_swordfish",
+              "chance": 25,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_water_elemental_banner",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 12,
+          "style": "magic",
+          "kinds": [
+            "armoured"
+          ],
+          "boss": true,
+          "hit": 2,
+          "resistances": {
+            "fire": 50,
+            "electric": -50
+          },
+          "moves": [
+            {
+              "name": "Crashing Wave",
+              "damageType": "crush"
+            },
+            {
+              "name": "Frost Spray",
+              "damageType": "ice"
+            }
+          ]
+        },
+        "id": "token_water_elemental",
+        "effects": [
+          {
+            "effectId": "effect_water_elemental_moves",
+            "scale": 1
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "Water Elemental no longer drops the retired maps and modifiers: Forest Map, Mountain Map, Coast Map, Meadow Map, Flower Meadow Map, Cherry Grove Map, Bog Map, Volcano Map, Teeming Waters, Crab Rocks, Buried Copper.",
+      "fingerprint": "fp:17a2fd89a365a797"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_wind_elemental",
+      "value": {
+        "name": "Wind Elemental",
+        "description": "Drops 2–4 Strawberry, 2–4 Blueberry, 1 Forest Map (4%), 1 Mountain Map (4%), 1 Coast Map (4%), 1 Meadow Map (4%), 1 Flower Meadow Map (8%), 1 Cherry Grove Map (2%), 1 Yellowstone Map (10%), 1 Volcano Map (3%), 1 Bountiful (3%), 1 Thorn Thicket (2%), 1 Buried Copper (1%), and 1 Wind Elemental Banner (2%) when defeated in combat. On Every 3rd Swing: applies effect_heavy_strike to the enemy for the swing.",
+        "sprite": "e_elemental_wind",
+        "tokenType": "enemy",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_strawberry",
+              "chance": 100,
+              "minQty": 2,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 2,
+                "max": 4
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_blueberry",
+              "chance": 100,
+              "minQty": 2,
+              "maxQty": 4,
+              "baseQty": {
+                "min": 2,
+                "max": 4
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_wind_elemental_banner",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 12,
+          "style": "ranged",
+          "kinds": [
+            "swift"
+          ],
+          "boss": true,
+          "hit": 2,
+          "resistances": {
+            "physical": 25
+          },
+          "moves": [
+            {
+              "name": "Gust",
+              "damageType": "crush"
+            },
+            {
+              "name": "Cutting Wind",
+              "damageType": "slash"
+            }
+          ]
+        },
+        "id": "token_wind_elemental",
+        "effects": [
+          {
+            "effectId": "effect_wind_elemental_moves",
+            "scale": 1
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "Wind Elemental no longer drops the retired maps and modifiers: Forest Map, Mountain Map, Coast Map, Meadow Map, Flower Meadow Map, Cherry Grove Map, Yellowstone Map, Volcano Map, Bountiful, Thorn Thicket, Buried Copper.",
+      "fingerprint": "fp:b01dac5da40b7baf"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_wolf",
+      "value": {
+        "name": "Wolf",
+        "description": "Drops 1 Game Meat (75%), 1 Bones (50%), 1 Forest Map (1%), 1 Mountain Map (1%), 1 Coast Map (1%), 1 Meadow Map (1%), 1 Flower Meadow Map (0.5%), 1 Cherry Grove Map (0.5%), 1 Volcano Map (0.25%), 1 Yellowstone Map (0.25%), 1 Bog Map (0.25%), 1 Overgrown (1%), 1 Wolf Den (0.5%), 1 Buried Copper (0.25%), and 1 Wolf Banner (0.5%) when defeated in combat.",
+        "sprite": "e_wolf",
+        "tokenType": "enemy",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_game_meat",
+              "chance": 75,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_bones",
+              "chance": 50,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_wolf_banner",
+              "chance": 0.5,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 4,
+          "style": "melee",
+          "kinds": [
+            "swift"
+          ],
+          "moves": [
+            {
+              "name": "Bite",
+              "damageType": "stab"
+            },
+            {
+              "name": "Claw",
+              "damageType": "slash"
+            }
+          ]
+        },
+        "artSize": "small",
+        "id": "token_wolf",
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "Wolf no longer drops the retired maps and modifiers: Forest Map, Mountain Map, Coast Map, Meadow Map, Flower Meadow Map, Cherry Grove Map, Volcano Map, Yellowstone Map, Bog Map, Overgrown, Wolf Den, Buried Copper.",
+      "fingerprint": "fp:fbe34e05b3da25a7"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_wolf_alpha",
+      "value": {
+        "name": "Wolf Alpha",
+        "description": "Drops 2–3 Game Meat, 1 Bones, 1 Forest Map (8%), 1 Mountain Map (4%), 1 Coast Map (4%), 1 Meadow Map (4%), 1 Flower Meadow Map (2%), 1 Cherry Grove Map (2%), 1 Yellowstone Map (10%), 1 Volcano Map (3%), 1 Overgrown (3%), 1 Wolf Den (2%), 1 Buried Copper (1%), and 1 Wolf Alpha Banner (2%) when defeated in combat. On Health Below 50%: applies effect_enrage to the enemy for the fight.",
+        "sprite": "e_wolf",
+        "tokenType": "enemy",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1,
+        "requiresHero": true,
+        "config": {
+          "skill": "",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_game_meat",
+              "chance": 100,
+              "minQty": 2,
+              "maxQty": 3,
+              "baseQty": {
+                "min": 2,
+                "max": 3
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_bones",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_wolf_alpha_banner",
+              "chance": 2,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "enemy": {
+          "level": 10,
+          "style": "melee",
+          "kinds": [
+            "brute"
+          ],
+          "boss": true,
+          "hit": 3,
+          "moves": [
+            {
+              "name": "Bite",
+              "damageType": "stab"
+            },
+            {
+              "name": "Maul",
+              "damageType": "slash"
+            }
+          ]
+        },
+        "id": "token_wolf_alpha",
+        "effects": [
+          {
+            "effectId": "effect_wolf_alpha_moves",
+            "scale": 1
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "note": "Wolf Alpha no longer drops the retired maps and modifiers: Forest Map, Mountain Map, Coast Map, Meadow Map, Flower Meadow Map, Cherry Grove Map, Yellowstone Map, Volcano Map, Overgrown, Wolf Den, Buried Copper.",
+      "fingerprint": "fp:359317097e1a3acf"
+    },
+    {
+      "op": "delete",
+      "kind": "map",
+      "id": "map_coast",
+      "note": "Coast Map: the Base Map retires (owner, 2026-11-02: the player no longer influences a mat through map items and modifiers). Nothing drops it after this pack.",
+      "fingerprint": "fp:dc45c69c7075a85e"
+    },
+    {
+      "op": "delete",
+      "kind": "map",
+      "id": "map_meadow",
+      "note": "Meadow Map: the Base Map retires (owner, 2026-11-02: the player no longer influences a mat through map items and modifiers). Nothing drops it after this pack.",
+      "fingerprint": "fp:a23aeb293f8df283"
+    },
+    {
+      "op": "delete",
+      "kind": "map",
+      "id": "map_flower_meadow",
+      "note": "Flower Meadow Map: the Base Map retires (owner, 2026-11-02: the player no longer influences a mat through map items and modifiers). Nothing drops it after this pack.",
+      "fingerprint": "fp:a4bf8ff5cd39112b"
+    },
+    {
+      "op": "delete",
+      "kind": "map",
+      "id": "map_cherry_grove",
+      "note": "Cherry Grove Map: the Base Map retires (owner, 2026-11-02: the player no longer influences a mat through map items and modifiers). Nothing drops it after this pack.",
+      "fingerprint": "fp:36d0840f69f0cca1"
+    },
+    {
+      "op": "delete",
+      "kind": "map",
+      "id": "map_yellowstone",
+      "note": "Yellowstone Map: the Base Map retires (owner, 2026-11-02: the player no longer influences a mat through map items and modifiers). Nothing drops it after this pack.",
+      "fingerprint": "fp:47c87731579c1eb7"
+    },
+    {
+      "op": "delete",
+      "kind": "map",
+      "id": "map_bog",
+      "note": "Bog Map: the Base Map retires (owner, 2026-11-02: the player no longer influences a mat through map items and modifiers). Nothing drops it after this pack.",
+      "fingerprint": "fp:95f1af85e0b98cd7"
+    },
+    {
+      "op": "delete",
+      "kind": "map",
+      "id": "mod_buried_copper",
+      "note": "Buried Copper: the modifier retires (owner, 2026-11-02: the player no longer influences a mat through map items and modifiers). Nothing drops it after this pack.",
+      "fingerprint": "fp:f1b30e64875bd4c6"
+    },
+    {
+      "op": "delete",
+      "kind": "map",
+      "id": "mod_buried_iron",
+      "note": "Buried Iron: the modifier retires (owner, 2026-11-02: the player no longer influences a mat through map items and modifiers). Nothing drops it after this pack.",
+      "fingerprint": "fp:7a20c37e2053a584"
+    },
+    {
+      "op": "delete",
+      "kind": "map",
+      "id": "map_plane_3_base_map",
+      "note": "Plane 3 Base Map: the Base Map retires (owner, 2026-11-02: the player no longer influences a mat through map items and modifiers). Nothing drops it after this pack.",
+      "fingerprint": "fp:1863c7f8a4db156e"
+    }
+  ],
+  "gate": {
+    "workspaceFingerprint": "fp:72b116ba7e6847b8",
+    "toolVersion": 2,
+    "at": "2026-11-03T04:19:47.942Z",
+    "verdict": "pass",
+    "summary": "Passes: nothing already reached moves, 24 no longer reached, 0 problems added, 0 cleared.",
+    "blocks": [],
+    "notes": [],
+    "deltas": {
+      "stages": [],
+      "moved": [
+        {
+          "key": "item:map_bog",
+          "name": "Bog Map",
+          "change": "gone",
+          "from": 1.5416666666666665,
+          "to": null
+        },
+        {
+          "key": "item:mod_bountiful",
+          "name": "Bountiful",
+          "change": "gone",
+          "from": 3.138333333333333,
+          "to": null
+        },
+        {
+          "key": "item:mod_buried_copper",
+          "name": "Buried Copper",
+          "change": "gone",
+          "from": 3.341666666666667,
+          "to": null
+        },
+        {
+          "key": "item:mod_buried_iron",
+          "name": "Buried Iron",
+          "change": "gone",
+          "from": 11.812083333333334,
+          "to": null
+        },
+        {
+          "key": "item:map_cherry_grove",
+          "name": "Cherry Grove Map",
+          "change": "gone",
+          "from": 1.3604944444444445,
+          "to": null
+        },
+        {
+          "key": "item:map_coast",
+          "name": "Coast Map",
+          "change": "gone",
+          "from": 0.5638888888888889,
+          "to": null
+        },
+        {
+          "key": "item:mod_cow_pasture",
+          "name": "Cow Pasture",
+          "change": "gone",
+          "from": 3.5854944444444445,
+          "to": null
+        },
+        {
+          "key": "item:mod_crab_rocks",
+          "name": "Crab Rocks",
+          "change": "gone",
+          "from": 1.9940222222222224,
+          "to": null
+        },
+        {
+          "key": "item:mod_ember_vents",
+          "name": "Ember Vents",
+          "change": "gone",
+          "from": 3.320484722222222,
+          "to": null
+        },
+        {
+          "key": "item:map_flower_meadow",
+          "name": "Flower Meadow Map",
+          "change": "gone",
+          "from": 1.3912111111111112,
+          "to": null
+        },
+        {
+          "key": "item:map_forest",
+          "name": "Forest Map",
+          "change": "gone",
+          "from": 0.5638888888888889,
+          "to": null
+        },
+        {
+          "key": "item:mod_frog_pond",
+          "name": "Frog Pond",
+          "change": "gone",
+          "from": 10.145416666666666,
+          "to": null
+        },
+        {
+          "key": "item:mod_goblin_camp",
+          "name": "Goblin Camp",
+          "change": "gone",
+          "from": 1.675,
+          "to": null
+        },
+        {
+          "key": "item:map_meadow",
+          "name": "Meadow Map",
+          "change": "gone",
+          "from": 0.5638888888888889,
+          "to": null
+        },
+        {
+          "key": "item:map_mountain",
+          "name": "Mountain Map",
+          "change": "gone",
+          "from": 0.5638888888888889,
+          "to": null
+        },
+        {
+          "key": "item:mod_overgrown",
+          "name": "Overgrown",
+          "change": "gone",
+          "from": 1.471180091287125,
+          "to": null
+        },
+        {
+          "key": "item:mod_rich_veins",
+          "name": "Rich Veins",
+          "change": "gone",
+          "from": 0.8416666666666667,
+          "to": null
+        },
+        {
+          "key": "item:mod_sulphur_rocks",
+          "name": "Sulphur Rocks",
+          "change": "gone",
+          "from": 3.320484722222222,
+          "to": null
+        },
+        {
+          "key": "item:mod_teeming_waters",
+          "name": "Teeming Waters",
+          "change": "gone",
+          "from": 1.1606888888888889,
+          "to": null
+        },
+        {
+          "key": "item:mod_thorn_thicket",
+          "name": "Thorn Thicket",
+          "change": "gone",
+          "from": 4.805,
+          "to": null
+        },
+        {
+          "key": "item:map_volcano",
+          "name": "Volcano Map",
+          "change": "gone",
+          "from": 0.3528777777777778,
+          "to": null
+        },
+        {
+          "key": "item:mod_wild_hive",
+          "name": "Wild Hive",
+          "change": "gone",
+          "from": 1.9104944444444445,
+          "to": null
+        },
+        {
+          "key": "item:mod_wolf_den",
+          "name": "Wolf Den",
+          "change": "gone",
+          "from": 2.304513424620458,
+          "to": null
+        },
+        {
+          "key": "item:map_yellowstone",
+          "name": "Yellowstone Map",
+          "change": "gone",
+          "from": 0.7161800912871248,
+          "to": null
+        }
+      ],
+      "movedCount": 24,
+      "added": [],
+      "cleared": 1
+    }
+  }
+}
