@@ -102,10 +102,8 @@ describe('the review rules', () => {
 const noStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 const WORKSPACE_KEY = 'fantasy-guild-cms-v2';
 
-// Each case mounts the whole CMS and round-trips the file server: slow on a busy machine, so the
-// waits get 10 s (not testing-library's 1 s), a pack file landing on disk 20 s, and each case 60 s.
-const FILE_WAIT = { timeout: 20_000 };
-
+// Each case mounts the whole CMS, slow on a busy machine, so the waits get 10 s (not testing-library's
+// 1 s) and each case 60 s. A pack file needs no wait of its own: this server moves it during the click.
 describe('the review page in the CMS', { timeout: 60_000 }, () => {
     let dir;
     let handler;
@@ -179,7 +177,7 @@ describe('the review page in the CMS', { timeout: 60_000 }, () => {
         fireEvent.click(within(view.getByTestId('entry-2')).getByText('Reject'));
         fireEvent.click(within(review).getByText(/Finish review/));
 
-        await waitFor(() => expect(fs.existsSync(path.join(dir, 'applied', 'test-pack.json'))).toBe(true), FILE_WAIT);
+        await waitFor(() => expect(fs.existsSync(path.join(dir, 'applied', 'test-pack.json'))).toBe(true));
         expect(fs.existsSync(path.join(dir, 'test-pack.json'))).toBe(false);
         const after = useEntityStore.getState();
         expect(after.items.item_fir).toMatchObject({ id: 'item_fir', name: 'Fir' });
@@ -195,7 +193,7 @@ describe('the review page in the CMS', { timeout: 60_000 }, () => {
         expect(within(view.getByTestId('undo-0')).getByText(/Edited since/)).toBeTruthy();
         fireEvent.click(within(archived).getByText('Undo this pack'));
 
-        await waitFor(() => expect(fs.existsSync(path.join(dir, 'test-pack.json'))).toBe(true), FILE_WAIT);
+        await waitFor(() => expect(fs.existsSync(path.join(dir, 'test-pack.json'))).toBe(true));
         const undone = useEntityStore.getState();
         expect(undone.tokens.token_mill).toEqual(workspace().tokens.token_mill);
         expect(undone.items.item_fir.sprite).toBe('item_fir_owner');
@@ -229,5 +227,87 @@ describe('the review page in the CMS', { timeout: 60_000 }, () => {
         fireEvent.click(view.getByText('broken'));
         expect(await view.findByText(/This pack is malformed/)).toBeTruthy();
         expect(view.queryByTestId('pack-review')).toBeNull();
+    });
+
+    describe('clicks that come before the page has finished appearing', () => {
+        /**
+         * Runs `clicks` in the very tick the review page is first drawn: React runs its effects a
+         * step later, and until then the page is not listening to the stores, so a click redraws nothing.
+         * A testing-library `findBy` lands here now and then, when the machine stalls for a millisecond.
+         */
+        async function clickAsThePageAppears(view, clicks) {
+            fireEvent.click(await view.findByText('Changes to review (1)'));
+            const card = await view.findByText('test-pack');
+            const clicked = new Promise((resolve, reject) => {
+                const observer = new MutationObserver(() => {
+                    if (!view.queryByTestId('pack-review')) return;
+                    observer.disconnect();
+                    try {
+                        resolve(clicks());
+                    } catch (err) {
+                        reject(err);
+                    }
+                });
+                observer.observe(view.container, { childList: true, subtree: true });
+            });
+            fireEvent.click(card);
+            return clicked;
+        }
+
+        const rowButton = (view, index, name) => within(view.getByTestId(`entry-${index}`)).getByText(name);
+        const finishButton = (view) => within(view.getByTestId('pack-review')).getByText(/Finish review/);
+        const archivedRecord = () => JSON.parse(fs.readFileSync(path.join(dir, 'applied', 'test-pack.json'), 'utf8')).review;
+
+        it('counts every decision at Finish', async () => {
+            const view = render(React.createElement(App));
+            const shownAfterAccept = await clickAsThePageAppears(view, () => {
+                fireEvent.click(rowButton(view, 0, 'Accept'));
+                const shown = view.getByTestId('status-0').textContent;
+                fireEvent.click(rowButton(view, 1, 'Accept'));
+                fireEvent.click(rowButton(view, 2, 'Reject'));
+                fireEvent.click(finishButton(view));
+                return shown;
+            });
+            // Not redrawn yet: without this the test would pass without testing anything.
+            expect(shownAfterAccept).toBe('To decide');
+            expect(archivedRecord().entries.map((e) => [e.decision, e.applied])).toEqual([['accepted', true], ['accepted', true], ['rejected', false]]);
+            expect(await view.findByText('Changes to review (0)')).toBeTruthy();
+        });
+
+        it('keeps an earlier decision when an entry is then opened in the editor', async () => {
+            const view = render(React.createElement(App));
+            await clickAsThePageAppears(view, () => {
+                fireEvent.click(rowButton(view, 0, 'Accept'));
+                fireEvent.click(rowButton(view, 1, 'Open in the editor'));
+            });
+            const { entries } = useReviewStore.getState().sessions['test-pack.json'];
+            expect(entries[0].decision).toBe('accepted');
+            expect(entries[1]).toMatchObject({ decision: 'accepted', appliedEarly: true });
+            expect(useEntityStore.getState().tokens.token_mill.tags).toEqual(['wood', 'fir']);
+        });
+
+        it('keeps earlier decisions through Apply anyway', async () => {
+            useEntityStore.getState().updateToken('token_mill', { tags: ['owner'] });
+            const view = render(React.createElement(App));
+            await clickAsThePageAppears(view, () => {
+                fireEvent.click(rowButton(view, 0, 'Accept'));
+                fireEvent.click(rowButton(view, 1, 'Apply anyway'));
+                fireEvent.click(rowButton(view, 2, 'Reject'));
+                fireEvent.click(finishButton(view));
+            });
+            expect(archivedRecord().entries.map((e) => [e.decision, e.applied])).toEqual([['accepted', true], ['accepted', true], ['rejected', false]]);
+            expect(useEntityStore.getState().tokens.token_mill.tags).toEqual(['wood', 'fir']);
+        });
+
+        it('takes Accept all at Finish', async () => {
+            const view = render(React.createElement(App));
+            await clickAsThePageAppears(view, () => {
+                fireEvent.click(within(view.getByTestId('pack-review')).getByText('Accept all'));
+                fireEvent.click(finishButton(view));
+            });
+            expect(archivedRecord().entries.every((e) => e.decision === 'accepted' && e.applied)).toBe(true);
+            expect(useEntityStore.getState().items.item_fir).toBeDefined();
+            expect(useEntityStore.getState().effects.effect_old).toBeUndefined();
+        });
     });
 });
