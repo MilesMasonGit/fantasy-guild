@@ -34,9 +34,11 @@ import { SKILLS, SKILL_LAYERS } from '../../../config/registries/skillRegistry.j
  * step the calculator cannot time, a chain of first finds, a proposal at its cap.
  *
  * Pure: reads only the content and settings it is handed and changes neither.
- * ⚠️ The Economy simulator's Recalculate derives XP a cycle and cycle times of tagged entries from
- * its XPH pins and Tempo bands, so an applied XP or time proposal would be undone by the next
- * Recalculate unless this pass runs after it: applying is a later phase.
+ * ⚠️ The Economy simulator's Recalculate derives XP a cycle of tagged entries from its XPH pins, so
+ * an XP proposal reaches the game only with `sim.xpPinned` beside it, which the CMS's change pack
+ * (`ledgerBalance.balancePack`) adds. A gate moved on a tagged entry with no pin also changes what
+ * Recalculate derives for it, which the pace read here does not foresee. Time proposals touch only
+ * building recipes and growths, which Recalculate does not time.
  */
 
 export const LEVER = Object.freeze({ XP: 'xp', GATE: 'gate', COST: 'cost', TIME: 'time', BOOST: 'boost' });

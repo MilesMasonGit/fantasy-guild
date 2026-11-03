@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Layers, Search, Calculator, Check, Undo2, X } from 'lucide-react';
+import { Layers, Search, Calculator, Check, Undo2, X, Pin } from 'lucide-react';
 
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
@@ -350,6 +350,7 @@ function SkillGroup({ label, rows, noSkill, onOpen, onEdit, staleOf, selected, o
                                 {Number.isFinite(row.cycleTimeMs) ? `${Math.round(row.cycleTimeMs / 1000)}s` : '—'}
                             </td>
                             <td style={{ ...cell, textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-text-muted)', opacity: stale ? 0.4 : 1 }}>
+                                {row.xpPinned && <Pin size={9} data-xp-pinned aria-label="Pinned" style={{ display: 'inline', marginRight: 3, color: 'var(--color-accent-hover)' }}><title>Pinned: Recalculate keeps this number</title></Pin>}
                                 {Number.isFinite(row.xp) ? row.xp : '—'}
                             </td>
                         </tr>

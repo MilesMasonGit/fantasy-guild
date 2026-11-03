@@ -83,7 +83,7 @@ function adaptInput(input, exempt) {
 
 const NO_EXEMPT = new Set();
 
-function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, inputs, outputs, sim, downcycle, rarity, tokenType, charges }, exempt = NO_EXEMPT) {
+function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, xp, inputs, outputs, sim, downcycle, rarity, tokenType, charges }, exempt = NO_EXEMPT) {
     const adaptedOutputs = Object.freeze((outputs || []).map((o) => adaptOutput(o, exempt)));
     const adaptedInputs = Object.freeze((inputs || []).map((i) => adaptInput(i, exempt)));
     return Object.freeze({
@@ -95,10 +95,12 @@ function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, inputs, output
         // `tempoBands.levelScale` takes).
         level: Number.isFinite(level) && level >= 1 ? level : 1,
         authoredCycleTimeMs: Number.isFinite(cycleTimeMs) ? cycleTimeMs : null,
+        authoredXp: Number.isFinite(xp) ? xp : null,
         inputs: adaptedInputs,
         outputs: adaptedOutputs,
         tempo: sim?.tempo ?? null,
         purpose: sim?.purpose ?? null,
+        xpPinned: sim?.xpPinned === true,
         downcycle: downcycle === true,
         rarity: rarity ?? null,
         tokenType: tokenType ?? null,
@@ -132,6 +134,7 @@ export function adaptToken(def, id = def?.id, exempt = NO_EXEMPT) {
         skill: def?.config?.skill,
         level: def?.config?.skillRequired,
         cycleTimeMs: def?.config?.cycleTimeMs,
+        xp: def?.config?.xp,
         inputs: def?.config?.inputs,
         outputs: hasCatchPools(def) ? waterOutputs(def) : def?.config?.outputs,
         sim: def?.sim,
@@ -165,6 +168,7 @@ export function adaptRecipe(def, id = def?.id, exempt = NO_EXEMPT, crop = false)
         skill: def?.skill,
         level: def?.levelRequirement,
         cycleTimeMs: def?.durationMs,
+        xp: def?.xp,
         inputs: crop ? cropInputs(def) : def?.inputs,
         outputs: def?.outputs,
         sim: def?.sim,

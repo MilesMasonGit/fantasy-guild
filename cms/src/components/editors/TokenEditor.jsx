@@ -6,6 +6,7 @@ import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf,
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
+import XpPin from '../shared/XpPin';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import LifecycleBlocks from './LifecycleBlocks';
@@ -273,7 +274,7 @@ export default function TokenEditor() {
                   </div>
                 </Field>
               ) : (
-                <Field label="XP per cycle" derived>
+                <Field label="XP per cycle" derived={token.sim?.xpPinned !== true}>
                   <input
                     type="number"
                     min={0}
@@ -281,6 +282,7 @@ export default function TokenEditor() {
                     onChange={(e) => updateConfig({ xp: Number(e.target.value) })}
                     className="w-full"
                   />
+                  <XpPin sim={token.sim} onChange={updateSim} />
                 </Field>
               )}
             </div>

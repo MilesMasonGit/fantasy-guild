@@ -130,6 +130,8 @@ describe('the Balancing page', { timeout: 30000 }, () => {
         fireEvent.click(view.getByRole('tab', { name: 'Balancing' }));
         expect(view.container.querySelector('[data-balance-stage]')).toBeNull();
         expect(view.getByTestId('balance-apply').disabled).toBe(true);
+        // An XP number is no longer lost to Sync: the page says it is pinned, and never that it is undone.
+        expect(view.getByTestId('ledger-balance').textContent).toMatch(/pinned on its entry, so Recalculate and Sync keep it/);
         fireEvent.click(view.getByTestId('balance-run'));
         await waitFor(() => expect(view.container.querySelector('[data-balance-stage="0"]')).toBeTruthy(), { timeout: 20000 });
 

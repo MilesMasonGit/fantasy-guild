@@ -1,6 +1,7 @@
 import { proposeBalance, applyProposals, recordOf, LEVER, BALANCE_TEXT, CANT_FIX } from '../../../src/systems/progression/ledger/balance.js';
 import { contentOf } from './ledgerReport.js';
 import { currentValue, fingerprint, PACK_FORMAT, PACK_VERSION } from './changePacks.js';
+import { adaptToken, adaptRecipe, isInert, isUntagged } from './sim/fieldAdapter.js';
 
 /**
  * The Ledger's balancing preview over the CMS workspace (`ledger/balance.js`): the numbers the
@@ -82,6 +83,7 @@ export function balanceText(result, { moves = 15 } = {}) {
     lines.push(`Numbers to change: ${result.proposals.length} (${Object.entries(by).map(([l, n]) => `${BALANCE_TEXT.lever[l]} ${n}`).join(', ') || 'none'}). Largest moves:`);
     for (const p of sortedProposals(result.proposals).slice(0, moves)) lines.push(`- ${p.name} · ${p.label}: ${changeText(p)}. ${p.why}`);
     if (result.proposals.length > moves) lines.push(`- and ${result.proposals.length - moves} more`);
+    if (by[LEVER.XP]) lines.push('XP a cycle: a change pack pins these numbers where Recalculate would derive them, so Sync keeps them.');
     lines.push(`What numbers alone cannot fix: ${result.cantFix.length}.`);
     for (const g of cantFixGroups(result.cantFix)) {
         lines.push(`- ${g.label} (${g.rows.length}):`);
@@ -99,11 +101,19 @@ function poolOf(state, recipeId) {
     return null;
 }
 
+/** Whether Recalculate derives a record's XP a cycle: real work with a Tempo and a Purpose (`sim/xpPass.js`). */
+function xpIsDerived(kind, record) {
+    const entity = kind === 'recipe' ? adaptRecipe(record) : adaptToken(record);
+    return !isInert(entity) && !isUntagged(entity);
+}
+
 /**
  * The proposals as a change pack (`cms/incoming/README.md`): one edit per entity with its whole new
  * record and the fingerprint of the workspace's record, the stages it moves beyond the tolerance
  * declared as its intent. For an agent to stage in its scratchpad (`changePackTool.mjs balance`);
  * the CMS never writes it.
+ * ⚠️ An XP number on a record Recalculate derives is pinned (`sim.xpPinned`): Sync runs Recalculate,
+ * so without the pin the number would be put back.
  */
 export function balancePack(state, result, { id = null, createdAt = new Date().toISOString() } = {}) {
     const applied = applyProposals(contentOf(state), result.proposals);
@@ -119,9 +129,11 @@ export function balancePack(state, result, { id = null, createdAt = new Date().t
         let value = recordOf(applied, kind, entityId);
         if (!current || !value) continue;
         if (kind === 'recipe' && !value.skill) value = { ...value, skill: poolOf(state, entityId) };
+        const pin = list.some((p) => p.lever === LEVER.XP) && xpIsDerived(kind, value);
+        if (pin) value = { ...value, sim: { ...value.sim, xpPinned: true } };
         entries.push({
             op: 'edit', kind, id: entityId, value, fingerprint: fingerprint(current),
-            note: list.map((p) => `${p.label} (${p.field}) ${p.from} → ${p.to}: ${p.why}`).join(' ')
+            note: list.map((p) => `${p.label} (${p.field}) ${p.from} → ${p.to}: ${p.why}`).join(' ') + (pin ? ' Pinned, so Recalculate and Sync keep it.' : '')
         });
     }
     const tol = state.planSettings?.tolerancePct ?? 25;

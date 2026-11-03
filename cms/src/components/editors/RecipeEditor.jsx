@@ -15,6 +15,7 @@ import SupplyChainColumn from '../layout/SupplyChainColumn';
 import { Field } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
+import XpPin from '../shared/XpPin';
 import PlanFields from '../shared/PlanFields';
 
 /** Pooled recipes: authoring and review on one screen. A recipe is owned by its skill, not by any Token, so this is a top-level screen. It has a stable global `id`, minted on create and never edited here. */
@@ -686,7 +687,7 @@ function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext
             className="w-full"
           />
         </Field>
-        <Field label="XP" derived>
+        <Field label="XP" derived={recipe.sim?.xpPinned !== true}>
           <input
             type="number"
             min={0}
@@ -694,6 +695,7 @@ function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext
             onChange={(e) => onChange({ xp: Number(e.target.value) })}
             className="w-full"
           />
+          <XpPin sim={recipe.sim} onChange={(patch) => onChange({ sim: { ...(recipe.sim || {}), ...patch } })} />
         </Field>
         {/* The worker's level in this recipe's skill. It gates this recipe
             alone, not the whole station. */}

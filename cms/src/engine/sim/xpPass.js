@@ -5,6 +5,7 @@
  * 3. `cycle hours` is the authored cycle length, which every hero runs at: a skill level adds no work speed.
  * ⚠️ The granularity wobble is accepted, not a bug: the minimum-1 rule makes a Fast, GPH-tagged source at low levels over-teach (1 XP on a 10-second cycle is far above its target). It is documented here and files an Info row (`xp-granularity`) so nobody mistakes it for a defect.
  * It writes nothing: like every pass it returns Maps, and `sim/writeBack.js` is the one place a result becomes a stored field.
+ * ⚠️ A pin (`sim.xpPinned`, set in the editors or by a balancing pack) means no entry, so the write-back keeps the record's own number. The curve assumes a hero works a source without a break, which a source limited by its rest or regrowth does not allow; the ledger's preview reads what it really teaches.
  */
 
 import { xpForLevel } from '../../../../src/utils/XPCurve.js';
@@ -159,6 +160,21 @@ export function runXpPass(entities = [], {
         const cycleTimeMs = cycleTimes.get(entity.id);
         const awarded = xpPerCycle(entity.level, entity.purpose, cycleTimeMs, dials);
         if (awarded === null) continue;
+        if (entity.xpPinned) {
+            rows.push(makeRow(
+                SEVERITY.INFO,
+                'xp-pinned',
+                `${entity.name}'s XP a cycle is pinned at ${entity.authoredXp ?? 'nothing'}; the curve would give ${awarded}.`,
+                {
+                    entityId: entity.id,
+                    what: `${entity.name} keeps the XP a cycle written on it, whatever its level, Tempo and Purpose would derive.`,
+                    why: 'Recalculate and Sync leave a pinned number alone. A balancing pack pins the XP numbers it sets, so they survive.',
+                    remedies: ['Untick the pin beside its XP in the editor to let Recalculate derive it again.'],
+                    detail: { pinned: entity.authoredXp, derived: awarded, cycleTimeMs, level: entity.level },
+                }
+            ));
+            continue;
+        }
         xp.set(entity.id, awarded);
 
         // Delivered XP/hour against the target the curve set. Cycles per hour here is the plain cycle rate, matching the formula's own reading.

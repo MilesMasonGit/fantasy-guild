@@ -49,7 +49,8 @@ export default function LedgerBalance({ onOpen }) {
               The numbers the content would need for the Typical player to follow the pace curve, each stage to meet its budget
               and each boost its target: XP a cycle, level gates, costs and times, and boost strengths, worked out with the
               Ledger&apos;s own rate calculator. A preview only: nothing in the workspace changes. Guild Hall prices and strengths
-              wait for their own pass, and gates the world tables set are left alone.
+              wait for their own pass, and gates the world tables set are left alone. An XP number taken as a change pack is
+              pinned on its entry, so Recalculate and Sync keep it.
             </p>
           </div>
           <div className="flex gap-2 flex-shrink-0">

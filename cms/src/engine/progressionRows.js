@@ -31,6 +31,7 @@ export function progressionRows({ tokens = {}, recipePools = {} } = {}) {
             purpose: token.sim?.purpose,
             cycleTimeMs: config.cycleTimeMs,
             xp: config.xp,
+            xpPinned: token.sim?.xpPinned === true,
         });
     }
 
@@ -51,6 +52,7 @@ export function progressionRows({ tokens = {}, recipePools = {} } = {}) {
                 purpose: recipe.sim?.purpose,
                 cycleTimeMs: recipe.durationMs,
                 xp: recipe.xp,
+                xpPinned: recipe.sim?.xpPinned === true,
                 poolSkill,
                 index,
             });

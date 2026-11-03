@@ -434,12 +434,12 @@ describe('rules that hold over whatever the corpus contains', () => {
     const sim = runSim({ tokens: tokenData, recipes: recipeData, items: itemData });
     const entities = adaptCorpus({ tokens: tokenData, recipes: recipeData });
 
-    it('derives XP for exactly the entities that got a solved cycle and a Purpose tag', () => {
+    it('derives XP for exactly the entities that got a solved cycle and a Purpose tag and carry no pin', () => {
         for (const entity of entities) {
             const solved = Number.isFinite(sim.cycleTimes.get(entity.id))
                 && !sim.skipped.has(entity.id);
             const factor = purposeXpFactor(entity.purpose, sim.dials);
-            expect(sim.xp.has(entity.id)).toBe(solved && factor > 0);
+            expect(sim.xp.has(entity.id)).toBe(solved && factor > 0 && !entity.xpPinned);
         }
     });
 
