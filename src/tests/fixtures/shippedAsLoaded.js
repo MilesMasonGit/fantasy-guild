@@ -35,7 +35,7 @@ function describeRenamedEffects(tokens) {
         let text = def?.description;
         if (typeof text === 'string') {
             for (const [oldId, { id: newId }] of Object.entries(EFFECT_ID_RENAMES)) text = text.split(oldId).join(newId);
-            text = text.replace(/1 (more|fewer) harvests/g, '1 $1 harvest');
+            text = text.replace(/\b1 (more|fewer) harvests\b/g, '1 $1 harvest');
         }
         out[id] = text !== def?.description ? { ...def, description: text } : def;
         if (out[id] !== def) changed = true;
