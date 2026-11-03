@@ -384,7 +384,9 @@ the owner's answers to its questions.*
 - **A stage turns red beyond ±25 % of its budget** (owner).
 - **Pacing philosophy** (owner): **players fly through the first levels; the
   last levels need specialised setups and resources to gain a level every few
-  days.** The tool holds a **target time-per-level curve** (a few points the
+  days** (⚠️ amended by owner 2026-11-02: about a day a level at 99, half a day at
+  60, so all 20 skills reach 99 in about 3 months; see
+  [the ladder](concept_content_roadmap.md#the-ladder-owner-approved-2026-11-02)). The tool holds a **target time-per-level curve** (a few points the
   owner sets; the curve drawn between them); **a wall** is where the pretend
   player waits much longer than the curve expects for its next unlock or
   level (default: more than twice the expected time).

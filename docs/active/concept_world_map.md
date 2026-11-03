@@ -199,6 +199,8 @@ each across the three inner rings: 1 + 2 + 3), tier rising outward.
 
 ## Tiers across the 36 cells (owner, 2026-10-29)
 
+*⚠️ Which rung sits where: [the ladder](concept_content_roadmap.md#the-ladder-owner-approved-2026-11-02) (owner, 2026-11-02).*
+
 - **Wedges from the Hall, by item line** (owner): a wedge per origin line
   (settled below: **the six wedges**). Not by skill as such: by item tier.
 - **Tier rises outward within a wedge** (owner): ring 1 of each wedge holds its
