@@ -2,6 +2,7 @@
 // in src/tests/BenchDrag.test.js.
 
 import { quantile } from '../lib/stats.mjs';
+import { parseSlowdownTarget } from './slowdown.mjs';
 
 /** Drag kinds, in run order, and what each needs open. */
 export const KINDS = [
@@ -15,7 +16,7 @@ export const KINDS = [
 export const EXIT = { OK: 0, BELOW_100: 1, BENCH_FAILED: 3 };
 
 export function parseArgs(argv) {
-    const args = { n: 50, build: 'perf', buildFirst: true, cpu: 1, overlays: true, kinds: null, port: null, board: 'S2' };
+    const args = { n: 50, build: 'perf', buildFirst: true, cpu: 1, overlays: true, kinds: null, port: null, board: 'S2', slowdownTarget: null };
     for (const a of argv) {
         const [key, ...rest] = a.replace(/^--/, '').split('=');
         const value = rest.join('=');
@@ -34,6 +35,7 @@ export function parseArgs(argv) {
                 args.cpu = c;
                 break;
             }
+            case 'slowdown-target': args.slowdownTarget = parseSlowdownTarget(value); break;
             case 'no-overlays': args.overlays = false; break;
             case 'kinds': {
                 const ids = value.split(',').map(s => s.trim()).filter(Boolean);

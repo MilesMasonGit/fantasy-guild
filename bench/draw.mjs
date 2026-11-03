@@ -32,6 +32,7 @@ import {
     parseArgs, SCENE_IDS, DRAW_SWITCHES, metricsOf, rejectReason, aggregate, costTable, compareToBaseline,
     baselineEntry, abOrder, conditionKey, sceneTable, costTableText, table, EXIT, TOLERANCE, settingsMismatch
 } from './browser/drawLib.mjs';
+import { slowdownReject, slowdownNote } from './browser/slowdown.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -107,20 +108,6 @@ function envelopeNote(m) {
     if (!e) return '';
     const v = (k) => (e[k] ? `${e[k].mean}${e[k].min !== e[k].max ? ` (${e[k].min}–${e[k].max})` : ''}` : '?');
     return ` · Tokens ${v('tokens')}, enemies ${v('enemies')}, fights ${v('fights')}, heroes ${v('heroes')}, piles ${v('piles')}, stubs ${v('stubs')}, banners ${v('banners')}, flows ${e.flowsPerMin}/min, banners ${e.bannersPerMin}/min`;
-}
-
-/** Why a throttled window cannot be used: Chrome delivered more than 25 % off the slowdown asked. */
-function slowdownReject(slowdown, cpu) {
-    if (cpu === 1 || !slowdown) return null;
-    const off = slowdown.filter(s => Number.isFinite(s) && Math.abs(s - cpu) / cpu > 0.25);
-    return off.length ? `Chrome delivered a ${off[0]}× slowdown, not the ${cpu}× asked` : null;
-}
-
-/** The slowdown Chrome delivered before and after a throttled window, when it was not what was asked. */
-function slowdownNote(m, cpu) {
-    if (cpu === 1 || !m.slowdown) return '';
-    const off = m.slowdown.some(s => Number.isFinite(s) && Math.abs(s - cpu) / cpu > 0.25);
-    return `, slowdown ${m.slowdown.map(s => (Number.isFinite(s) ? `${s}×` : '?')).join(' → ')}${off ? ` ⚠ not the ${cpu}× asked` : ''}`;
 }
 
 function label(scene, m) {
@@ -201,7 +188,7 @@ async function main() {
                             const lbl = sw ? `${sw} off` : 'all on';
                             process.stdout.write(`  ${switchScene.name} ${lbl}…`);
                             const m = await measureWithRetry(chrome, baseUrl, switchScene, cpu, args, sw ? [sw] : []);
-                            console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
+                            console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m.slowdown, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
                             if (m.reject) failed = true;
                             if (sw) (offRuns[sw] ||= []).push(m); else allOn.push(m);
                         }
@@ -218,7 +205,7 @@ async function main() {
                             for (const side of abOrder(1)) {
                                 process.stdout.write(`  ${scene.name} ${side}…`);
                                 const m = await measureWithRetry(chrome, side === 'A' ? baseUrl : args.ab, scene, cpu, args);
-                                console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
+                                console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m.slowdown, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
                                 if (m.reject) failed = true;
                                 pair[side].push(m);
                             }
@@ -230,7 +217,7 @@ async function main() {
                     for (let r = 0; r < args.repeats; r++) {
                         process.stdout.write(`  ${scene.name}${args.repeats > 1 ? ` ${r + 1}/${args.repeats}` : ''}…`);
                         const m = await measureWithRetry(chrome, baseUrl, scene, cpu, args);
-                        console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}${m.how ? ` · ${m.how}` : ''}`);
+                        console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m.slowdown, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}${m.how ? ` · ${m.how}` : ''}`);
                         if (m.reject) failed = true;
                         runs.push(m);
                     }
