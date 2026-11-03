@@ -44,7 +44,7 @@ game looks and plays, gathered one screen at a time.*
 | 0 | Rules across every screen | icon rule done; more as they come up | above; `UI_STYLE.md` |
 | 1 | The mat and Tokens | not started | `design_pass_notes.md`; T-013, T-162 |
 | 2 | Top bar | not started | `ui_rework_list.md` |
-| 3 | Hero bar and hero sheet | **walking now** | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
+| 3 | Hero bar and hero sheet | **walked 2026-11-02; waits for approval** | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
 | 4 | Bank | not started | |
 | 5 | Shop | not started | |
 | 6 | Guild Hall | not started | |
@@ -98,9 +98,30 @@ screen, the screen wins.**
   closed.
 - Never seen by an agent: HP bar thickness, colour, and its height over the sprite.
 
-**Open**
-- The owner's "lots of little tweaks" held back since 2026-10-08.
+**The list** (owner, 2026-11-02; the tags are the planning agent's draft, for the
+owner to correct)
 
-**The list**
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **HP shows as numbers on a stylized bar**, on the hero bar and the sheet: "a more stylized bar, with the numbers overtop of it. It should match our pixel style." | must, design (a look to pick) |
+| 2 | **The status moves to hover, as a speech bubble, and names the task**: "being specific about the task they are on", not just Busy. Replaces the status word under the name. | must, tweak |
+| 3 | **Alert marks beside the hero, where the flag is now**: yellow for idle, red for wounded. They show without hovering. The red one replaces the text cross. | must, tweak |
+| 4 | **The flag moves to the other side of the hero**, and on the sheet goes behind the hero. | must, tweak |
+| 5 | **The Bank's vertical hero column**: "The vertical bar needs work": larger portraits. | must, tweak |
+| 6 | **The same column: the name shown "in a more stylized way"**. | nice, design (a look to pick) |
+| 7 | **The sheet's skills fit two side by side**: each box shows icon, level and XP bar. The name moves to the hover tip, with what the skill is for and its perks. | must, tweak |
+| 8 | **The sheet scrolls with our arrow buttons at top and bottom**, not a scroll bar. | must, tweak |
+| 9 | **Close and edit move to the side space beside the sheet**, where the hero column stands, in the same spot whether the Bank is open or closed. | must, tweak |
+| 10 | **Loadout: drag an item from one slot to another** on the same hero. | must, tweak |
+| 11 | **Loadout: drag an item from one hero to another.** | must, tweak |
 
-*(The owner's items go here.)*
+**Planning agent's defaults** (simplest choice, owner may change):
+- Item 11: drop onto the other hero in the column or the bar; it lands in their
+  first empty slot; a full loadout refuses with a reason and the item stays.
+- Item 7: clicking a skill still opens its exact numbers, across both columns.
+- Items 1 and 6: the builder shows two or three looks on the running game for the
+  owner to pick (owner directs the art).
+
+**Looked at, no change** (owner, 2026-11-02): level-up bubbles; the bottom bar's
+spacing; the edit window. It will need the hero recolouring system in time
+([concept_living_game.md](concept_living_game.md)), not part of this section.
