@@ -1,4 +1,4 @@
-Status: draft (section 3, hero bar and sheet: approved 2026-11-02, briefed: brief 340)
+Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350)
 
 # The detail pass: UI and UX, section by section
 
@@ -42,14 +42,14 @@ game looks and plays, gathered one screen at a time.*
 | # | Section | State | Old notes to bring |
 |---|---|---|---|
 | 0 | Rules across every screen | icon rule done; more as they come up | above; `UI_STYLE.md` |
-| 1 | The mat and Tokens | **walked 2026-11-02; waits for approval** | `design_pass_notes.md`; T-013, T-162 |
+| 1 | The mat and Tokens | **approved 2026-11-02, split**: [brief 350](briefs/350_tokens_card_detail.md); terrain round open; T-295; combat items in section 8 | `design_pass_notes.md`; T-013, T-162 |
 | 2 | Top bar | not started | `ui_rework_list.md` |
 | 3 | Hero bar and hero sheet | **approved and briefed 2026-11-02** ([brief 340](briefs/340_hero_bar_detail.md)) | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
 | 4 | Bank | not started | |
 | 5 | Shop | not started | |
 | 6 | Guild Hall | not started | |
 | 7 | World map | not started | |
-| 8 | Combat | not started | |
+| 8 | Combat | not started | carries the mat list's items 5, 13, 14 and the owner's wish for iterative combat look designs |
 | 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
 | 10 | Notifications | not started | |
 | 11 | Settings and the start screen | not started | nine "coming soon" controls; T-039 |
@@ -112,6 +112,16 @@ never seen by an agent). The glow and tutorial rings: section 13.
 **Combat look** (owner, 2026-11-02): "We will need to do more iterative designs to
 make sure that combat looks good and is clear throughout the fight." Taken up in
 section 8; items 5, 13 and 14 feed it.
+
+**Where they went** (owner, 2026-11-02): items 2, 3, 4 and 6 to 11, brief 350. Item
+12, T-295. Items 5, 13, 14, section 8. Item 1, the terrain round below.
+
+**Terrain round (item 1), open.** A short design round before any build, for the
+terrain styling, more organic rivers and better water. The owner directs the art: bring
+looks to compare on the art bench, with measured advice, before anything is baked in.
+Start from [research/ground_gen](research/ground_gen/README.md),
+[brief 180](briefs/180_ground_structure.md), [brief 190](briefs/190_playmat_style.md)
+and [concept_art_direction.md](concept_art_direction.md). Not in the director's queue.
 
 **Looked at, no change** (owner, 2026-11-02): the work plate; moving and dropping
 Tokens. **T-012 decided**: growth and transforms keep pushing spawned neighbours.
