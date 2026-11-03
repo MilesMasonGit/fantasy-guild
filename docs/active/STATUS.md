@@ -9,12 +9,13 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| T-290: the encyclopedia places things by the world tables | builder | `feat/encyclopedia-world` (`e3`) | **ready** 05a69c73, waits to share one look with the combat and wording fixes | Mon | |
-| T-249 even start after a kill; T-270/T-245 carried-rule wording; T-246 weapon tooltip | builder | `fix/combat-wording` (`w1`) | **eye-check** with T-290 on `look/2026-11-02` (gate 7355 tests, same work: bench fights do not reach the even start; test and live check show it). Owner asked: weapon tooltip as a stat block, building | Mon | |
+| T-290: the encyclopedia places things by the world tables | builder | `feat/encyclopedia-world` (`e3`) | **merged** (owner okayed; 7382 tests, cycles, builds, same work) | Mon | Mon |
+| T-249 even start after a kill; T-270/T-245 carried-rule wording; T-246 weapon stat block | builder | `fix/combat-wording` (`w1`) | **merged** (owner okayed; bench same work: its fights do not reach the even start; a test and the live check show it). Fixture line for the Composter sentence stays until the next Sync, then delete | Mon | Mon |
 | T-197 loot pile hover, T-198 hero bubbles, T-202 stub column (sliced) | engineer | `perf/loot-bubbles` (`w2`) | **bench-queued** f29e6825: pile bob on the shared clock, shine with no held fill, hit loop and chips on the clock; engineer's probes floor40 49–71 % → ~90 % within 16.7 ms; suite, cycles, build per its report. Mon→Tue 01:00 timer: draw baseline retake on main, then work check, A/B floor8, floor40, notify300, cap128, heroes16, S2 at 3.2× target 4×, crisp. Eye-check after: piles bob, hit shake and chips, first-find shine. Owner question (can wait): keep the pile look (rec.) or trade it for more speed | Mon | |
 | T-288 pack tool stops reading stale autosaves; T-289 waits; T-206 bench profiles; T-205 slowdown target | builder | `fix/tooling-care` (`w3`) | **merged** (94d3f747: work **same**, cycles, builds; timings doubled = load from the other helpers; the two pack-review tests still flake under load, T-289 stays open) | Mon | Mon |
 | T-291: balancing XP survives Sync (an XP pin the owner can clear) | engineer | `feat/balance-survives-sync` (`n4`) | **merged** fc6268ee (7331 tests, cycles, builds, same work). Pack `balancing_3` (16 XP numbers) goes to the inbox when the owner's folder is back on `main`; director recommends the two rises only (Wild Lavender, Oak Tree) | Mon | Mon |
-| Seed maps pack: the 18 banners renamed "<Token> Map" with map sprites; old map and modifier items retired (owner) | builder | `content/seed-maps` (`n4`) | **building** | Mon | |
+| Seed maps pack: 18 seed items renamed "<Token> Map" with map sprites; 25 old map and modifier items deleted; 189 drop lines; no world extras (owner) | builder | `content/seed-maps` (`n4`) | **in the owner's inbox** (64 entries, gate PASS, 100/100 worlds). After the Sync: WorldCellMat fixture, CombatChain, golden; WORK CHANGED expected; a ticket for `worldPlaceholder.js` naming dead ids | Mon | |
+| Balancing 3: 16 XP numbers pinned | builder | pack in the inbox | **in the owner's inbox** (gate PASS). Director recommends the two rises only (Wild Lavender, Oak Tree) | Mon | |
 
 Bench today 13:00–17:00: the draw baseline retake (failed three times last night on Chrome throttling), then perf slices.
 
@@ -139,6 +140,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 **Sat 31 Oct, 01:00–02:15 (director):** engine tickets WORK CHANGED exactly as predicted (S1/S4/S7 same; identity and fidelity hold), acceptance run queued, then merge after `main` is green. Hall H1 same work, calibration ok. World W1 same, W2 same. **Draw regression is real**: alternating runs, `a4a124be` S2 4× workP50 6.2–7.3 ms, `main` 11.5–12.4 ms (bank 6.3–6.7 vs 11.8–13.7): an engineer bisects in `p23b` until 06:45 (`diag/draw-regression`).
 
 ## Summaries
+
+**Mon 2026-11-02, evening: look merged; two packs in the inbox.** `main` has T-290, T-249, T-270, T-245, T-246 and T-291 (7382 tests, same work). Owner: seed maps and balancing 3. Bench 01:00: draw baseline, perf round 2. Next: the perf look, a new-brief read (planning published brief 34).
 
 **Mon 2026-11-02, morning: world pack code merged; ledger catch-up chosen.** The owner okayed the world pack's look; W6 code and T-282 merged (main red in 16 CMS round-trip tests until the Sync). Owner now: Restore from Game, review the world pack and the Hall star pack, Sync once. Then: id-diff, post-sync test patch, golden, Venom tests. Now: the ledger catch-up (`e3`).
 

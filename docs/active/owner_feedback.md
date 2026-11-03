@@ -9,3 +9,5 @@ here is a decision; directors don't act on this page.*
 ## Open
 
 *(none)*
+- 2026-11-02 (owner, via the director): **the player no longer modifies playmats, and the world has no hidden extras**: map and modifier items retire and places hold only what their kit and specialty say, plus chests. This replaces the hidden-extras rulings in `concept_world_map.md`. **Seed items are named after the Token they build** ("Wolf Den Map") and use map sprites. (Seed-maps pack.)
+
