@@ -71,7 +71,8 @@ the code after brief 60.)
    - `onStep(fn)`: ten steps a second, every subscriber in the same frame (the
      cycle rings, the tutorial beacon's look-up);
    - `onDue(fn, dueAt)`: each subscriber at its own times, all due ones in one
-     frame (hero and enemy sprite frames).
+     frame (hero and enemy sprite frames, a worked Token's loop and chips, floor
+     loot's bob).
    Each clock stops when its last subscriber leaves, and **all of them pause
    while the window is hidden or the desktop app is minimised**
    (`setDrawingPaused`, from `src/ui/drawingPause.js`). The game's tick does
@@ -95,8 +96,24 @@ the code after brief 60.)
    to a sprite or a mat box: each becomes its own composited layer, and it
    measured 3× slower. The one deliberate use is **`will-change: contents`**,
    which keeps an animation *on the main thread* so it does not promote what is
-   drawn over it: on a live hit loop, a walker's boxes, the spawn pop and the
-   classes listed at `.gi-token-land` in `tailwind.css`.
+   drawn over it: a worked Token's wrapper (for its one-off effects), a walker's
+   boxes, the spawn pop and the classes listed at `.gi-token-land` in
+   `tailwind.css`.
+   - **What plays all the time is not an animation.** Kept on the main thread, a
+     running animation is a style pass in **every frame**, through its still parts
+     too; on the compositor it is a layer, and more for what is drawn after it (a
+     pile's bob: 3 layers a pile). A loop, or anything that plays over and over on a
+     busy mat, is held poses written on the sprite clock, so a frame where nothing
+     changes writes nothing: `fx/clockPoses.js` (a worked Token's loop),
+     `fx/strikeChips.js`, `lootBob.js`. A one-off effect may stay an animation.
+   - **An animation that ends lets go.** A `both` or `forwards` fill keeps a finished
+     animation in effect, and Chrome keeps its layer for as long as the element lives
+     (27 New stubs were 27 layers). Put the resting look in the rule and leave the
+     fill off (`.gi-stub-new::before`).
+   - **Things on phases of their own step on a grid.** A frame that writes anything
+     runs Chrome's whole pipeline however little it wrote (a slow Layerize alone is
+     about 1 ms at 1× on the 128 board), so forty piles writing whenever they please
+     cost nearly every frame (`BOB_PHASE_GRID_MS`).
 7. **Filters are the graphics card's work.** Sprite shadows, outlines and the
    effects' tinted and dithered copies are pictures generated from the sprites
    (`src/config/spriteFx.js`), not `drop-shadow` filters or CSS masks (a mask
@@ -1543,3 +1560,55 @@ Recommendation in the report to the director.
 The branch changes only bench code and the dev/perf harness (the stress boards' names, three more
 modules in `__perf.game`): `npm run bench -- --compare` on it, 15:58, **same work as the baseline**
 in every scenario, no timing regression (exit 0).
+
+## The loot, bubble and stub pass (T-197, T-198, T-202, 2026-11-02)
+
+The Envelope priced what costs; this pass found why. Three causes, none of them the thing's own
+drawing, all look-preserving to remove. **Numbers here are an engineer's probe, not the bench**: the
+perf build, 1600 × 1000, headless Chrome through `bench/browser`, other agents on the machine for part
+of it, two windows of 15 s each way (A B B A), asked 3.2× and delivered 3.3–4.6×. The director's bench
+replaces them.
+
+| Scene, ~4× | Within 16.7 ms, `main` | The branch | Frame work p50, `main` | The branch |
+|---|---|---|---|---|
+| `floor40` (39 piles) | 70.9, 48.6 % | **91.7, 89.6 %** | 12.6, 16.9 ms | 7.6, 7.8 ms |
+| `notify300` (28 rows, all New) | 77.4, 67.7 % | **92.7, 84.5 %** | 11.1, 12.8 ms | 7.4, 9.4 ms |
+| `cap128` | 86.9, 87.8 % | **94.1, 90.4 %** | 8.0, 8.3 ms | 6.1, 6.8 ms |
+| `heroes16` | 64.1, 58.2 % | 67.9, 69.3 % | 13.8, 15.1 ms | 11.6, 12.4 ms |
+| `fights8` (5 fights) | 88.4, 78.1 % | 89.6, 80.9 % | 8.3, 10.1 ms | 7.5, 9.4 ms |
+
+**1. A composited animation is layers for everything after it (the piles).** `floor40` held 129 layers
+on `main`: 39 animated pile pictures, then 62 more for what is drawn after them (`Overlap`: the next
+pile's button, each quantity badge), against 31 with the hover stopped. The bob is now written on the
+sprite clock (`lootBob.js`), and reads the level the Envelope read with the hover stopped (91.7 %).
+
+**2. A finished animation with a fill keeps its layer (the stubs).** On `notify300`,
+`document.getAnimations()` read 27 `ui-shine-sweep` in state `finished`, and the census 27 `::before`
+layers reasons `ActiveTransformAnimation`: 46 layers against 15 with no forwards fill. Bench boards find
+everything for the first time, so all their stubs are New; a player's are New only until hovered.
+What a row still costs, at 1× on a quiet moment, three windows each: the column of 26 rows 1.71–1.91 ms
+p50, with no column 1.41–1.50 ms. **Rendering only the visible rows would not help**: culling the
+off-screen ones with `content-visibility: auto` from a page style read the same or worse at ~4× (84.2,
+84.6 % against 85.6, 91.8 %), and dropping each row's shadow transform read the same at 1×.
+
+**3. A running main-thread animation is a style pass in every frame (a hero at work).** On `cap128`,
+`getAnimations()` read 6 running hit loops (1000 ms, endless) and 5 chips on average, all kept on the main
+thread, and `UpdateLayoutTree` ran in every frame, 23 elements a pass. Written on the clock: 9 elements a
+pass, style 110 → 75 ms a second at 1×. Passes still run in nearly every frame on this board: the goblins'
+glides (`walkDraw`) are the next thing holding them there. With those, the loops and the chips all off,
+the main thread was about half as busy (226 against ~480 ms a second at 1×, one window).
+
+**What makes a frame dear.** A plain page of 400 boxes, one box written a frame, traced at 1×
+(`Layerize`, ms a second, at ~168 frames a second): nothing written 0.5; a transform 214; `translate` 259;
+`top` 250; `width` 295; `clip-path` 318; a colour 54 (at 83 frames a second). Any repaint takes
+Chrome's slow path, and it grows with what is on the page, so the number of frames with work matters as
+well as what each does. Grouping every sprite's step onto one 125 ms beat (hero phases in whole
+frames, enemies on the grid) read **no change** on `cap128`: other things keep those frames busy
+there, so it was not built.
+
+**The hero bubbles of T-198's title have moved on.** The Envelope's 3.4 of 12.0 ms (16 heroes) and 5.2 of
+15.7 ms (7 fights) were the old work rings and framed HP bubbles; the work plate (T-239) and the fight
+plate and bars (C6b) replaced them. Today's cost table, one window a switch at ~4× on the branch, all on
+at the start and the end (`heroes16` 11.3, 10.8 ms p50; `fights8` 8.4, 7.9 ms): `bubbles` off saves 0.5
+and 0–0.4 ms; `workPlate` off 1.5 and 0.6; `dock` off 1.8 and 1.7 (at 1× on `fights8`, three windows
+each way, none of it above the noise); `walkDraw` off 1.8 and 3.0; `heroAnim` off 0.5 and 0.8.
