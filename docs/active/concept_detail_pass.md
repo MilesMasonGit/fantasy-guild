@@ -196,9 +196,27 @@ screen, the screen wins.**
 **Already filed**: hex art on the art list; T-294 (the ladder's rungs on the world
 tables). Rulings kept: every cell's contents visible from the start; no landmarks.
 
-**The list**
+**The list** (owner, 2026-11-03; the tags are the planning agent's draft)
 
-*(The owner's items go here.)*
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **A bigger map you can move around, like the encyclopedia.** | must, tweak |
+| 2 | **More detail and refinement on the hexes**, "perhaps showing a terrain sample"; "anything we can do to make the hexes look better". | must, design |
+| 3 | **Cell states**: settled and settle-able in full colour, a cell you can settle right now also standing out (a gold outline or small pulse); next to you but too expensive or behind a ring upgrade: darkened; not next to anything you hold: black and white; any cell turns to colour when hovered. Contents stay visible. | must, tweak |
+| 4 | **No hexes shown outside the third ring unless they are accessible.** | must, tweak |
+| 5 | **The ring shown between the hexes**: a decorated border line along the edges where rings meet, no numbers. | must, tweak |
+| 6 | **A Guild Hall star per ring from ring 2**: ring 1 open from the start; a star allows settling ring 2, another ring 3, then one per wild ring. | must, design |
+| 7 | **The hover title is the area's name** ("Elderfield") with the terrain types underneath ("Mountain Rivers"). Ring information is not shown to the player. | must, tweak |
+| 8 | **The price uses our item style**, and inventory values our 9.9k shorthand. | must, tweak |
+| 9 | **Drops and yields show on the inspection panel**, not the hover tip. | must, tweak |
+| 10 | **The right page is thinner.** | must, tweak |
+| 11 | **The settle button is larger and more prominent.** | must, tweak |
+| 12 | **No "The guild is here" text; the flag is larger and more prominent.** | must, tweak |
+| 13 | **More ceremony on settling: a title reveal**: the place's name and terrain large across the mat, with a fanfare. | must, tweak |
+| 14 | **More ceremony: a hero leads the way**: heroes walk in from the mat's edge. | must, design |
+
+**Amends**: `concept_world_map.md` (a settled cell's only gate was its price; the wild
+rings came into view as you neared them), and the ledger's budgets must count the stars.
 
 ### 3. Hero bar and hero sheet
 
