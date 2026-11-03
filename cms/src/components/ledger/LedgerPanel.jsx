@@ -19,6 +19,7 @@ import LedgerPace from './LedgerPace';
 import LedgerTimeline from './LedgerTimeline';
 import LedgerHubs, { hubScope } from './LedgerHubs';
 import LedgerWorld from './LedgerWorld';
+import LedgerBalance from './LedgerBalance';
 import { openInEditor, writePlan } from './ledgerActions';
 import { originPlaces, wedgeChoices } from '../../engine/ledgerWorld';
 import { WORLD_F } from '../../../../src/systems/progression/ledger/world.js';
@@ -34,8 +35,8 @@ function workOutReport() {
  * an origin's wedge and ring, note), edited in place and written as the same `plan` block the
  * editors' Plan section writes; the problems the checks find beside the hubs; the timeline (a lane
  * per skill against the pace curve); the pace (stage times, where each skill's rate comes from, the
- * Hall's paybacks); the World plan (a seed's world, checks F, many worlds); a page per entry; and
- * the Ledger settings. Planned stubs are added here; Sync keeps them out of `data/`.
+ * Hall's paybacks); the balancing preview (numbers proposed, never applied); the World plan (a
+ * seed's world, checks F, many worlds); a page per entry; and the Ledger settings. Planned stubs are added here; Sync keeps them out of `data/`.
  * ⚠️ First reach, the pace and the problems are worked out when the tab opens and on Refresh, not
  * on every edit: it is the whole reach engine, the rate calculator at three profiles and every check.
  */
@@ -64,7 +65,7 @@ export default function LedgerPanel({ setCurrentView }) {
             </p>
           </div>
           <div className="flex gap-1" role="tablist">
-            {[['entries', 'Entries'], ['problems', `Problems (${serious})`], ['timeline', 'Timeline'], ['pace', 'Pace'], ['world', 'World'], ['settings', 'Settings']].map(([key, label]) => (
+            {[['entries', 'Entries'], ['problems', `Problems (${serious})`], ['timeline', 'Timeline'], ['pace', 'Pace'], ['balance', 'Balancing'], ['world', 'World'], ['settings', 'Settings']].map(([key, label]) => (
               <button
                 key={key}
                 role="tab"
@@ -106,6 +107,8 @@ export default function LedgerPanel({ setCurrentView }) {
         )}
         {!openKey && page === 'timeline' && <LedgerTimeline report={report} onRefresh={refresh} onOpen={setOpenKey} onOpenSkill={openSkill} />}
         {!openKey && page === 'pace' && <LedgerPace report={report} onRefresh={refresh} onOpen={setOpenKey} focusSkill={focusSkill} />}
+        {/* Kept mounted under an entry's page, so a worked-out preview is there on the way back. */}
+        {page === 'balance' && <div style={{ display: openKey ? 'none' : undefined }}><LedgerBalance onOpen={setOpenKey} /></div>}
         {/* Kept mounted under an entry's page, so its seed and its many-worlds result are there on the way back. */}
         {page === 'world' && <div style={{ display: openKey ? 'none' : undefined }}><LedgerWorld onOpen={setOpenKey} /></div>}
         {!openKey && page === 'settings' && <LedgerSettings />}
