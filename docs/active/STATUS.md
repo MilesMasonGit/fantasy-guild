@@ -141,6 +141,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Summaries
 
+**Mon 2026-11-02, late: director session closed (owner: stop for today).** `main` green; all packs synced; pacing within budget, no walls. Waiting: performance round 2 (01:00 bench, then a look). Next: 340, 350, 360. Handoff: [HANDOFF.md](HANDOFF.md).
+
 **Mon 2026-11-02, evening: look merged; two packs in the inbox.** `main` has T-290, T-249, T-270, T-245, T-246 and T-291 (7382 tests, same work). Owner: seed maps and balancing 3. Bench 01:00: draw baseline, perf round 2. Next: the perf look, a new-brief read (planning published brief 34).
 
 **Mon 2026-11-02, morning: world pack code merged; ledger catch-up chosen.** The owner okayed the world pack's look; W6 code and T-282 merged (main red in 16 CMS round-trip tests until the Sync). Owner now: Restore from Game, review the world pack and the Hall star pack, Sync once. Then: id-diff, post-sync test patch, golden, Venom tests. Now: the ledger catch-up (`e3`).

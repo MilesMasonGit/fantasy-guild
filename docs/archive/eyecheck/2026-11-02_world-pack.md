@@ -38,11 +38,11 @@ by its code id), then starts the CMS on `main`. Then:
    ⚠️ Parking the Shrimp Market and the Wizard Academy also clears their two
    existing Block findings: reject those two rows if you'd rather fix or delete
    them.
-   Verdict: accept all / reject rows: ___
+   Verdict: **accepted, synced** (owner 2026-11-02)
 4. **Changes to review → `2026-10-30-hall-first-stars`** (the Guild Hall's first
    star list, 53 entries; re-checked last night against today's content: PASS;
    seven ranks take over a day to pay for themselves and show red).
-   Verdict: accept all / reject rows: ___
+   Verdict: **accepted, synced** (owner 2026-11-02)
 5. **Finish review, then Sync to Game once.** The Sync guard lists "world map
    placements added" and also "Poison removed, Venom added" (the combat rename
    waiting since 30 October); both expected. Then tell the director, who checks
