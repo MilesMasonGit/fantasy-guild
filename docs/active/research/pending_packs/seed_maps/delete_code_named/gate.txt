@@ -1,0 +1,22 @@
+PASS: Passes: nothing already reached moves, 24 no longer reached, 0 problems added, 0 cleared.
+Against data/ and cms/plan/plan.json, since no CMS autosave was found (the owner may have unsynced work) (fp:72b116ba7e6847b8).
+Moved entries (24, furthest first):
+- Bog Map: was first had at 1 h 32 min; now never reached
+- Bountiful: was first had at 3 h 8 min; now never reached
+- Buried Copper: was first had at 3 h 21 min; now never reached
+- Buried Iron: was first had at 11 h 49 min; now never reached
+- Cherry Grove Map: was first had at 1 h 22 min; now never reached
+- Coast Map: was first had at 34 min; now never reached
+- Cow Pasture: was first had at 3 h 35 min; now never reached
+- Crab Rocks: was first had at 2 h; now never reached
+- Ember Vents: was first had at 3 h 19 min; now never reached
+- Flower Meadow Map: was first had at 1 h 23 min; now never reached
+- Forest Map: was first had at 34 min; now never reached
+- Frog Pond: was first had at 10 h 9 min; now never reached
+- Goblin Camp: was first had at 1 h 41 min; now never reached
+- Meadow Map: was first had at 34 min; now never reached
+- Mountain Map: was first had at 34 min; now never reached
+- and 9 more
+Checks cleared:
+- info: Plane 3 Base Map: A Planned stub nothing points to: no recipe, Token or other stub names it.
+Written into the pack as "gate".
