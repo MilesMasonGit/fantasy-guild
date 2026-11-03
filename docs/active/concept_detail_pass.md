@@ -1,4 +1,4 @@
-Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360; the terrain round, brief 370; section 7, world map, brief 380; section 6, Guild Hall, brief 390)
+Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360; the terrain round, brief 370; section 7, world map, brief 380; section 6, Guild Hall, brief 390; section 4, Bank, brief 400)
 
 # The detail pass: UI and UX, section by section
 
@@ -45,7 +45,7 @@ game looks and plays, gathered one screen at a time.*
 | 1 | The mat and Tokens | **approved 2026-11-02, split**: [brief 350](briefs/350_tokens_card_detail.md); [brief 370](briefs/370_terrain_detail.md) for terrain; T-295; combat items in [brief 360](briefs/360_combat_detail.md) | `design_pass_notes.md`; T-013, T-162 |
 | 2 | Top bar | not started | `ui_rework_list.md` |
 | 3 | Hero bar and hero sheet | **approved and briefed 2026-11-02** ([brief 340](briefs/340_hero_bar_detail.md)) | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
-| 4 | Bank | not started | |
+| 4 | Bank | **approved and briefed 2026-11-03** ([brief 400](briefs/400_bank_detail.md)) | |
 | 5 | Shop | not started | |
 | 6 | Guild Hall | **approved and briefed 2026-11-03** ([brief 390](briefs/390_guild_hall_detail.md)); the upgrade review open | |
 | 7 | World map | **approved and briefed 2026-11-03** ([brief 380](briefs/380_world_map_detail.md)) | |
@@ -255,6 +255,37 @@ looks cluttered."
 | 13 | **More possible upgrades**: a review of what else could be upgraded. An agent reports (every number that could be a star, what similar games let you upgrade, what each does to pacing), then an interview; the result joins the content roadmap as a star pack. Report: [research/upgrade_review_2026-11-03.md](research/upgrade_review_2026-11-03.md); interview open. | must, design |
 
 **Looked at, no change** (owner, 2026-11-03): the camera move, dragging, how the sky opens.
+
+### 4. Bank
+
+**The sheet (2026-11-03). From the GDD, the code and the captures in `research/bank_310`, not
+today's game; where this disagrees with the screen, the screen wins.**
+
+- **The drawer**: a panel with a title and close X; while open, the mat is locked and the heroes
+  stand as a vertical column beside it (brief 340 changes that column).
+- **Tabs**: each holds 64 kinds; a tab's icon is its first item; more tabs through Bank Tabs.
+- **Tiles**: an item sprite and count; drag to reorder, or onto a hero to equip.
+- **Search**: by name, tag and type, across tabs. **Select** mode for several items. **Sort**: this
+  tab or the entire Bank, by type, tier, name.
+- **Item tooltip**: name, type, effects, sources.
+
+**Already filed**: icon rule items (the locked tab's Lucide lock becomes the pixel one; the unknown
+item look; the header icon), the item tooltip showing a weapon's damage (T-246, merged or on its way).
+
+**The list** (owner, 2026-11-03; the tags are the planning agent's draft)
+
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **A pixelated gradient background**, not plain black. | must, design |
+| 2 | **On every drawer and panel, with different colours for each**, so they look distinct. | must, tweak |
+| 3 | **Item tooltip**: name as a header, count underneath, then types and tags. | must, tweak |
+| 4 | **An inspection window at the bottom of the Bank**, with the item sprite larger "so it can be examined closely". | must, tweak |
+| 5 | **It shows stats like lifetime collected.** | must, tweak |
+| 6 | **Discard there**, with amounts 1, 50 %, All, All −1, or a slider. | must, tweak |
+| 7 | **Use there, for items that can be used** (bird nests): opens instantly, with no hero; authored in the CMS. | must, design |
+| 8 | **Use has the same amounts** as Discard. | must, tweak |
+
+**Looked at, no change** (owner, 2026-11-03): tabs, tiles, Search, Select and Sort.
 
 ### 3. Hero bar and hero sheet
 
