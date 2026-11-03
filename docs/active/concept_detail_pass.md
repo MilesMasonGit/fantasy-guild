@@ -30,7 +30,7 @@ game looks and plays, gathered one screen at a time.*
   - Top bar Disallow and Demolish buttons: the cursor's pixel art.
   - Start screen: all Lucide for now (the emoji stats go); a pixel set may come
     near release.
-  - Skill icons: T-292. Farming uses `s_farming.png`; Alchemy and Construction
+  - Skill icons: T-297. Farming uses `s_farming.png`; Alchemy and Construction
     are on the owner art list, using `s_flask` and `s_industry` until then if
     they suit; specialist skills share a plain pixel placeholder.
   - The rest of the audit is checked section by section (unknown item, locks,
@@ -48,7 +48,7 @@ game looks and plays, gathered one screen at a time.*
 | 4 | Bank | not started | |
 | 5 | Shop | not started | |
 | 6 | Guild Hall | not started | |
-| 7 | World map | not started | |
+| 7 | World map | **walking now** | |
 | 8 | Combat | **approved and briefed 2026-11-02** ([brief 360](briefs/360_combat_detail.md)) | carried in the mat list's items 5, 13, 14 |
 | 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
 | 10 | Notifications | not started | |
@@ -85,7 +85,7 @@ this disagrees with the screen, the screen wins.**
 - **Speech and effects**: hero bubbles, level-up numbers, hit floats, ambient life.
 
 **Already filed, no need to repeat**: the top bar has its own section. Skill icon
-emoji: T-292. Questions still waiting on the owner: **T-012** (should a Token growing
+emoji: T-297. Questions still waiting on the owner: **T-012** (should a Token growing
 or transforming push its neighbours?), **T-013** (the last soft glows and shadows on
 badges: hard-pixel too?), **T-011** (hit animations, transform glow and loot flight
 never seen by an agent). The glow and tutorial rings: section 13.
@@ -176,6 +176,30 @@ make sure that combat looks good and is clear throughout the fight".
 **Amends** the owner's combat screen picks of 2026-10-24/25 (GDD "The combat screen"):
 the outer-side floats, the fight plate, the one-at-a-time panel, "17 · 57%" above the bar.
 
+### 7. World map
+
+**The sheet (2026-11-03). From the code and the 30 October and 1 November captures
+(`research/world_w2`, `world_w3`), not today's game; where this disagrees with the
+screen, the screen wins.**
+
+- **The left page**: flat hexes in a colour per kit (code-drawn until the owner's hex
+  art), each with up to two item sprites and "+N" for the rest, a flag on the current
+  place. Tabs: World and Regions.
+- **Hover**: name, ring and kit, what it yields, the price with have and need, "can be
+  settled".
+- **The right page**: the chosen place: name, what it is, yields, and its settle button.
+- **The tome**: the owner's book frame, opened from the blue bubble; the close X at its
+  corner.
+- **Settling**: the requirements are paid at once and the mat arrives darkened with a
+  small fight; clearing it brightens the mat. Travel between settled places is free.
+
+**Already filed**: hex art on the art list; T-294 (the ladder's rungs on the world
+tables). Rulings kept: every cell's contents visible from the start; no landmarks.
+
+**The list**
+
+*(The owner's items go here.)*
+
 ### 3. Hero bar and hero sheet
 
 **The sheet (2026-11-02). Read from the code, not yet seen in the running game:
@@ -202,7 +226,7 @@ screen, the screen wins.**
 - Edit window: name, portrait, flag colour.
 
 **Already filed, no need to repeat**
-- Skill icons in emoji: T-292.
+- Skill icons in emoji: T-297.
 - The wounded text cross: a heart is pixel under the icon rule. The gear slot
   marks are pixel today; the icon rule moves them to Lucide.
 - Bubbles cost the most drawing time per hero: T-198.

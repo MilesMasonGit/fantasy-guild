@@ -224,7 +224,7 @@ swapping a picture in for one is a small code change.
 
 | Piece | Size | Status | Notes |
 |---|---|---|---|
-| Alchemy skill icon | 16 x 16 | NEW | stand-in until then: `s_flask` if it suits (T-292) |
-| Construction skill icon | 16 x 16 | NEW | stand-in until then: `s_industry` if it suits (T-292) |
+| Alchemy skill icon | 16 x 16 | NEW | stand-in until then: `s_flask` if it suits (T-297) |
+| Construction skill icon | 16 x 16 | NEW | stand-in until then: `s_industry` if it suits (T-297) |
 | Stealth skill icon | 16 x 16 | NEW | a combat skill with no sprite; the shared placeholder until then. On the hero sheet the icon alone identifies a skill (brief 340) |
 | Specialist skill icons | 16 x 16 | NEW, later | with the specialist skill sessions; a shared plain placeholder until then |
