@@ -10,10 +10,11 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | T-290: the encyclopedia places things by the world tables | builder | `feat/encyclopedia-world` (`e3`) | **ready** 05a69c73, waits to share one look with the combat and wording fixes | Mon | |
-| T-249 even start after a kill (WORK CHANGED expected); T-270/T-245 carried-rule wording; T-246 weapon tooltip | builder | `fix/combat-wording` (`w1`) | **building**; one owner look; night bench acceptance | Mon | |
-| T-197 loot pile hover, T-198 hero bubbles, T-202 stub column (sliced) | engineer | `perf/loot-bubbles` (`w2`) | **building**; draw A/B in the 13:00–17:00 window | Mon | |
+| T-249 even start after a kill; T-270/T-245 carried-rule wording; T-246 weapon tooltip | builder | `fix/combat-wording` (`w1`) | **eye-check** with T-290 on `look/2026-11-02` (gate 7355 tests, same work: bench fights do not reach the even start; test and live check show it). Owner asked: weapon tooltip as a stat block, building | Mon | |
+| T-197 loot pile hover, T-198 hero bubbles, T-202 stub column (sliced) | engineer | `perf/loot-bubbles` (`w2`) | **bench-queued** f29e6825: pile bob on the shared clock, shine with no held fill, hit loop and chips on the clock; engineer's probes floor40 49–71 % → ~90 % within 16.7 ms; suite, cycles, build per its report. Mon→Tue 01:00 timer: draw baseline retake on main, then work check, A/B floor8, floor40, notify300, cap128, heroes16, S2 at 3.2× target 4×, crisp. Eye-check after: piles bob, hit shake and chips, first-find shine. Owner question (can wait): keep the pile look (rec.) or trade it for more speed | Mon | |
 | T-288 pack tool stops reading stale autosaves; T-289 waits; T-206 bench profiles; T-205 slowdown target | builder | `fix/tooling-care` (`w3`) | **merged** (94d3f747: work **same**, cycles, builds; timings doubled = load from the other helpers; the two pack-review tests still flake under load, T-289 stays open) | Mon | Mon |
-| T-291: balancing XP survives Sync (then pack balancing-3: the 16 held-back numbers, Plane 1 and the four walls) | engineer | `feat/balance-survives-sync` (`n4`) | **building** (owner's go) | Mon | |
+| T-291: balancing XP survives Sync (an XP pin the owner can clear) | engineer | `feat/balance-survives-sync` (`n4`) | **merged** fc6268ee (7331 tests, cycles, builds, same work). Pack `balancing_3` (16 XP numbers) goes to the inbox when the owner's folder is back on `main`; director recommends the two rises only (Wild Lavender, Oak Tree) | Mon | Mon |
+| Seed maps pack: the 18 banners renamed "<Token> Map" with map sprites; old map and modifier items retired (owner) | builder | `content/seed-maps` (`n4`) | **building** | Mon | |
 
 Bench today 13:00–17:00: the draw baseline retake (failed three times last night on Chrome throttling), then perf slices.
 
