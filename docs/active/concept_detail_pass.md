@@ -25,19 +25,23 @@ game looks and plays, gathered one screen at a time.*
 
 ## Section zero: rules across every screen
 
-- **The icon rule** (owner, 2026-10-29): pure pixels for the in-game world;
-  Lucide (the nav bubbles' icon set) allowed for meta elements, on the mat too,
-  e.g. the hero's job flag and the equipment gear slot icons. "Be very specific
-  about where", and plan the swaps before any batch. Read
-  [research/icon_audit_2026-10-29.md](research/icon_audit_2026-10-29.md).
-  `UI_STYLE.md` still says pixel only with one exception, so this changes it.
+- **The icon rule: decided 2026-11-02**, in `UI_STYLE.md` ("The icon rule").
+  Swaps it calls for (T-293 to brief):
+  - Top bar Disallow and Demolish buttons: the cursor's pixel art.
+  - Start screen: all Lucide for now (the emoji stats go); a pixel set may come
+    near release.
+  - Skill icons: T-292. Farming uses `s_farming.png`; Alchemy and Construction
+    are on the owner art list, using `s_flask` and `s_industry` until then if
+    they suit; specialist skills share a plain pixel placeholder.
+  - The rest of the audit is checked section by section (unknown item, locks,
+    hearts, gear slot icons).
 - *(more to gather from the owner)*
 
 ## Sections
 
 | # | Section | State | Old notes to bring |
 |---|---|---|---|
-| 0 | Rules across every screen | not started | above; `UI_STYLE.md` |
+| 0 | Rules across every screen | icon rule done; more as they come up | above; `UI_STYLE.md` |
 | 1 | The mat and Tokens | not started | `design_pass_notes.md`; T-013, T-162 |
 | 2 | Top bar | not started | `ui_rework_list.md` |
 | 3 | Hero bar and hero sheet | not started | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
