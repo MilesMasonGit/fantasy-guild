@@ -1,12 +1,9 @@
-# Balancing pack 1: status (2026-11-02)
+# Balancing packs: status (2026-11-02)
 
-- Done: `2026-11-02-balancing-1.json` (24 entries), built by `build.mjs` from today's `data/`; stamp, check,
-  gate (PASS, stage moves declared) and world --seeds 100 (100 of 100) pass against a `data/` workspace.
-  Copied to the main folder's `cms/incoming/`.
-- Held back: 16 XP-a-cycle proposals (`derived_xp_held_back.json`): the Economy simulator derives those
-  numbers, so Sync's Recalculate would put them back (`postsync.mjs` shows it). They wait for an
-  apply-after-Recalculate step in the ledger.
-- Not taken: Beer Cooking 15 → 5 (owner: Beer moves to Plane 1 instead).
-- Open: Plane 1's budget is a Ledger setting (not pack-carried): owner step. Plane 1 lands at 2 h because
-  Beer keeps Cooking 15 (and Cooked Lobster's 1 h chain of first finds).
-- Rebuild: `node build.mjs <scratch dir>` then `node cms/changePackTool.mjs stamp|check|gate <pack> --from <dir>/ws0.json`.
+- Pack 1 (`2026-11-02-balancing-1.json`, `build.mjs`, 24 entries): accepted and synced, d63f9a4d.
+- Pack 2 (`2026-11-02-balancing-2.json`, `build2.mjs`, 1 entry): Beer's recipe Cooking 15 → 9. stamp, check,
+  gate (PASS) and world --seeds 100 (100 of 100) pass on today's `data/`. In the main folder's `cms/incoming/`.
+- After pack 2, with Sync's recalculation (`postsync.mjs`): Starter Camp 34 min, Plane 1 1 h 32 min (+68 % of 55,
+  out), Plane 2 23 h 29 min. Measured: Wild Lavender's XP 1 → 12 alone gives Plane 1 1 h 2 min (+12 %), but
+  Recalculate derives it (T-291; held-back numbers in `derived_xp_held_back.json`).
+- The preview on the synced data proposes no gate changes, so Plane 2's gates stay as synced.
