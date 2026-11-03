@@ -44,7 +44,7 @@ game looks and plays, gathered one screen at a time.*
 | 0 | Rules across every screen | icon rule done; more as they come up | above; `UI_STYLE.md` |
 | 1 | The mat and Tokens | not started | `design_pass_notes.md`; T-013, T-162 |
 | 2 | Top bar | not started | `ui_rework_list.md` |
-| 3 | Hero bar and hero sheet | not started | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
+| 3 | Hero bar and hero sheet | **walking now** | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
 | 4 | Bank | not started | |
 | 5 | Shop | not started | |
 | 6 | Guild Hall | not started | |
@@ -62,3 +62,45 @@ sitting: this table's notes are pointers, not facts about today's screen.
 ## The list
 
 *(Items go under their section as the sittings happen.)*
+
+### 3. Hero bar and hero sheet
+
+**The sheet (2026-11-02). Read from the code, not yet seen in the running game:
+the game would not load during the check, so where this disagrees with the
+screen, the screen wins.**
+
+**The hero bar, one hero**
+- A standing figure with their flag; drag it onto the mat to give an order.
+- Name (gold when selected, red with a text cross when wounded).
+- A status word: Idle, Busy or Hurt; or Needs a job, with a yellow mark.
+- An HP bar, the exact number on hover.
+- Level-up alerts in speech bubbles, three at a time with arrows to page, kept
+  until clicked; a perk reached gets its own bubble.
+- Hover lights the hero and their job; click opens the sheet.
+
+**The hero sheet**
+- Top: the figure at twice mat size with its flag (drag it to send them out),
+  name, HP bar, an edit quill (a placeholder) and the red close X.
+- Loadout: nine slots in a 3 by 3 grid; any item in any slot; drag to equip,
+  right-click to unequip.
+- Skills: one row per skill: icon, name, level out of 99, a thin XP bar. Hover
+  gives what the skill is for, XP and perks; a click opens exact XP, XP per hour,
+  time to next level and what each perk does.
+- Edit window: name, portrait, flag colour.
+
+**Already filed, no need to repeat**
+- Skill icons in emoji: T-292.
+- The wounded text cross: a heart is pixel under the icon rule. The gear slot
+  marks are pixel today; the icon rule moves them to Lucide.
+- Bubbles cost the most drawing time per hero: T-198.
+- Locked 2026-10-07: the bar stays horizontal at the bottom, spaced for 8 heroes;
+  the sheet is a full-height side panel in the same place with the Bank open or
+  closed.
+- Never seen by an agent: HP bar thickness, colour, and its height over the sprite.
+
+**Open**
+- The owner's "lots of little tweaks" held back since 2026-10-08.
+
+**The list**
+
+*(The owner's items go here.)*
