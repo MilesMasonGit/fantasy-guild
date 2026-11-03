@@ -91,7 +91,7 @@ export function occupy(arrival, { seed = 0 } = {}) {
             const instance = BoardState.createTokenInstance(row.typeId, 1, null, BoardState.ORIGIN.SPAWNED, arrivalId(regionId, k - 1));
             // ⚠️ `tether: null`, not absent: an enemy with no tether key is tied to the nearest camp
             // of its kind on load (`EnemyMotion.attachUntethered`), and these belong to none.
-            instance.tether = null;
+            BoardState.setTether(instance, null);
             instance.arrival = true;
             const res = Placement.placeArrivalNear(instance, { x: lair.x + ox * LAIR_SPREAD, y: lair.y + oy * LAIR_SPREAD });
             if (res?.success) ids.push(instance.id);

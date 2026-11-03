@@ -12,7 +12,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
-import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { REACH, REACHES, getReach, reachOf } from '../config/registries/reachRegistry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
@@ -226,6 +226,30 @@ describe('the spawner alerts count what every camp spawned in one pass', () => {
         BoardState.tokens.mockClear();
         SpawnerSystem.syncAlerts();
         expect(BoardState.tokens.mock.calls.length).toBeLessThanOrEqual(1);
+    });
+
+    it('asking whether a camp is full walks nothing until the mat changes, then one walk', () => {
+        const camps = [];
+        for (let i = 0; i < 5; i++) camps.push(hungryCamp(i, 2));
+        const def = getTokenType('fixture_wec_hungry_camp');
+        const askAll = () => {
+            for (let tick = 0; tick < 50; tick++) {
+                for (const camp of camps) SpawnerSystem.isFullEnemyCamp(camp, def);
+            }
+        };
+        askAll();                                         // the census settles
+        BoardState.tokens.mockClear();
+        askAll();
+        expect(BoardState.tokens).not.toHaveBeenCalled();
+        for (const camp of camps) expect(SpawnerSystem.isFullEnemyCamp(camp, def)).toBe(true);
+
+        const beaten = BoardState.tokens().find(t => t.tether === camps[0].id);
+        BoardState.removeToken(beaten.id);
+        BoardState.tokens.mockClear();
+        askAll();
+        expect(BoardState.tokens).toHaveBeenCalledTimes(1);
+        expect(SpawnerSystem.isFullEnemyCamp(camps[0], def)).toBe(false);
+        expect(SpawnerSystem.isFullEnemyCamp(camps[1], def)).toBe(true);
     });
 });
 

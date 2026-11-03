@@ -214,7 +214,7 @@ function tetherToBearer(spawnedId, bearer, workerId = null) {
     const spawned = BoardState.getTokenById(spawnedId);
     if (!spawned || !isEnemyDef(getTokenType(spawned.typeId))) return;
     if (!BoardState.getTokenById(bearer?.id)) return;
-    spawned.tether = bearer.id;
+    BoardState.setTether(spawned, bearer.id);
     spawned.ambushedFrom = bearer.id;
     spawned.usesRemaining = 1;
     if (workerId) {
