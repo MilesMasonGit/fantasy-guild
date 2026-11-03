@@ -14,13 +14,13 @@ layout/paint cost are Tier B (the in-game Perf HUD). `npm run bench:draw` and
 
 | Command | What it does | Time |
 |---|---|---|
-| `npm run bench` | S1–S8, 3 timing runs each (S6 and S8F once), profile passes for S2–S5 and S7 | ~5 min |
+| `npm run bench` | S1–S8, 3 timing runs each (S4 11, S6 and S8F once), profile passes for S2–S5 and S7 | ~5 min |
 | `npm run bench -- --only=S2,S3` | only some scenarios | |
 | `npm run bench -- --compare` | also compare with `bench/baseline.json`: **exits 2** (WORK CHANGED) if any scenario did different work, **exits 1** if any checked number is more than 20 % slower — see below | |
 | `npm run bench -- --accept-work-change=CR3-123` | compare, but let a deliberate, ruled change of work through: rewrites only the fingerprints in `bench/baseline.json` and records the ticket (implies `--compare`) | |
 | `npm run bench -- --save-baseline` | write this run's medians and fingerprints as `bench/baseline.json` | |
 | `npm run bench -- --long` | S6 for the full 8 game-hours (288,000 ticks) | ~8 min more |
-| `npm run bench -- --repeats=5` | more timing runs per scenario (the median is reported) | |
+| `npm run bench -- --repeats=5` | more timing runs per scenario (the median is reported); S4 never runs fewer than 11 | |
 | `npm run bench -- --no-profile` | skip the profile passes | faster |
 | `npm run bench -- --cpu-prof` | also write one V8 `.cpuprofile` per run to `bench/results/prof/`, named `<scenario>-<mode>-<run>-<time>.cpuprofile` (open in Chrome DevTools → Performance). Each run profiles into its own folder and only the main thread's file (the engine's) is kept; on Node 24 the module loader's thread writes a second, idle profile, which is dropped (`bench/lib/cpuprof.mjs`) | |
 | `npm run bench -- --inject-slow=0.5` | add a tick handler that busy-waits 0.5 ms — for proving `--compare` catches a slowdown | |
@@ -119,6 +119,12 @@ stops sub-microsecond timer noise on S1 from failing a run). The landing drops
 are checked on their p50 because the worst of fifty ~3 ms drops is whichever
 one a GC pause hit: it moved 4.5–8.4 ms between runs on a quiet machine, while
 the p50 stayed within 3.10–3.41 ms. Their worst is still printed.
+
+The worst arrival stays a worst, because the slowest push is what a player
+feels, but it is judged on the **median of at least 11 runs**: one run's worst
+moved 10–25 ms on unchanged code, and the median of the old three still moved
+enough to cross ×1.2 about one run in four. S4 is the cheapest scenario to
+repeat (each run is a few seconds), so its other three numbers get the same 11.
 
 ⚠ Timing is noisy: another program using the CPU moves these numbers. Take the
 baseline on a quiet machine, and when a compare fails, run it again before

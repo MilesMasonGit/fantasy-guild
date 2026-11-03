@@ -472,6 +472,45 @@ export function forceSpot(typeId, point, options = {}) {
 }
 
 /**
+ * One row of {@link relax}'s pair loop: body `i` against every later body. True when a pair moved.
+ *
+ * ⚠️ Its own function on purpose: nested inside `relax`, this loop was compiled on-stack and V8 threw
+ * that code away each time the loop ended, dozens of times a process, so a push's time swung by a
+ * factor of two from run to run.
+ */
+function pushApartFrom(bodies, i, newcomer, factor) {
+    let moved = false;
+    for (let j = i + 1; j < bodies.length; j++) {
+        const a = bodies[i];
+        const b = bodies[j];
+        if (a.fixed && b.fixed) continue;
+        if (a !== newcomer && !a.pushed && b !== newcomer && !b.pushed) continue;
+        const gap = (a.h + b.h) * factor;
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        // Axis rejection before `hypot`: if either axis is already at or past the gap, the
+        // hypot would be too, so the pair is not overlapping.
+        if (dx >= gap || dx <= -gap || dy >= gap || dy <= -gap) continue;
+        const d = Math.hypot(dx, dy);
+        if (d * d >= gap * gap - EPS) continue;
+
+        moved = true;
+        const push = gap - d + PUSH_MARGIN;
+        const nx = d === 0 ? 1 : dx / d;
+        const ny = d === 0 ? 0 : dy / d;
+        const shareA = a.fixed ? 0 : (b.fixed ? 1 : 0.5);
+        const shareB = 1 - shareA;
+        a.x -= nx * push * shareA;
+        a.y -= ny * push * shareA;
+        b.x += nx * push * shareB;
+        b.y += ny * push * shareB;
+        if (shareA) a.pushed = true;
+        if (shareB) b.pushed = true;
+    }
+    return moved;
+}
+
+/**
  * Push everything overlapping a newcomer at `at` outward until nothing
  * overlaps, or null when that cannot be done legally.
  *
@@ -506,33 +545,7 @@ function relax(typeId, at, excludeId, fixedIds) {
     for (let pass = 0; pass < PUSH_PASSES; pass++) {
         let moved = false;
         for (let i = 0; i < bodies.length; i++) {
-            for (let j = i + 1; j < bodies.length; j++) {
-                const a = bodies[i];
-                const b = bodies[j];
-                if (a.fixed && b.fixed) continue;
-                if (!answerable(a) && !answerable(b)) continue;
-                const gap = (a.h + b.h) * factor;
-                const dx = b.x - a.x;
-                const dy = b.y - a.y;
-                // Axis rejection before `hypot`: if either axis is already at or past the gap, the
-                // hypot would be too, so the pair is not overlapping.
-                if (dx >= gap || dx <= -gap || dy >= gap || dy <= -gap) continue;
-                const d = Math.hypot(dx, dy);
-                if (d * d >= gap * gap - EPS) continue;
-
-                moved = true;
-                const push = gap - d + PUSH_MARGIN;
-                const nx = d === 0 ? 1 : dx / d;
-                const ny = d === 0 ? 0 : dy / d;
-                const shareA = a.fixed ? 0 : (b.fixed ? 1 : 0.5);
-                const shareB = 1 - shareA;
-                a.x -= nx * push * shareA;
-                a.y -= ny * push * shareA;
-                b.x += nx * push * shareB;
-                b.y += ny * push * shareB;
-                if (shareA) a.pushed = true;
-                if (shareB) b.pushed = true;
-            }
+            if (pushApartFrom(bodies, i, newcomer, factor)) moved = true;
         }
         // ⚠️ Only Tokens this push has touched, and WITHOUT rounding. Rounding makes pushed Tokens
         // jitter by half a unit every pass so a packed block never settles, and rounding once at

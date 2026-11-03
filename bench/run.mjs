@@ -15,7 +15,7 @@
 //                                       records the ticket (implies --compare)
 //   npm run bench -- --save-baseline    write this run as bench/baseline.json
 //   npm run bench -- --long             S6 for the full 8 game-hours
-//   npm run bench -- --repeats=5        timing runs per scenario (default 3)
+//   npm run bench -- --repeats=5        timing runs per scenario (default 3; S4 never fewer than 11)
 //   npm run bench -- --no-profile       skip the profile passes
 //   npm run bench -- --cpu-prof         also write V8 .cpuprofile files
 //   npm run bench -- --inject-slow=0.5  add a tick handler that busy-waits
@@ -54,7 +54,8 @@ const SCENARIOS = [
     { id: 'S1', file: 's1-quiet-hall.mjs', name: 'Quiet Hall', profile: false },
     { id: 'S2', file: 's2-realistic.mjs', name: 'Realistic late game', profile: true },
     { id: 'S3', file: 's3-torture.mjs', name: 'Torture', profile: true },
-    { id: 'S4', file: 's4-push-storm.mjs', name: 'Push storm', profile: true },
+    // At least 11 runs: S4's worst arrival is one slow push in fifty, and the median of three of those still moved by a third.
+    { id: 'S4', file: 's4-push-storm.mjs', name: 'Push storm', profile: true, minRepeats: 11 },
     { id: 'S5', file: 's5-rebuild-storm.mjs', name: 'Rebuild storm', profile: true },
     { id: 'S6', file: 's6-long-idle.mjs', name: 'Long idle', profile: false, repeats: 1, longChangesWork: true },
     { id: 'S7', file: 's7-waiting-room.mjs', name: 'Waiting for room', profile: true },
@@ -452,7 +453,7 @@ async function main() {
     const rows = [];
     for (const scenario of SCENARIOS) {
         if (args.only && !args.only.has(scenario.id)) continue;
-        const repeats = scenario.repeats ?? args.repeats;
+        const repeats = scenario.repeats ?? Math.max(args.repeats, scenario.minRepeats ?? 0);
         const runs = [];
         for (let i = 0; i < repeats; i++) {
             process.stdout.write(`  ${scenario.id} ${scenario.name}: timing run ${i + 1}/${repeats}…\r`);
