@@ -19,7 +19,7 @@ import { nextSeed, seedFromText } from './seededRandom.js';
  * draws from `Math.random`: the seed comes from the caller or the guild's own ({@link previewSeed}).
  */
 
-const RECIPE_KINDS = Object.freeze(['base', 'modifier']);
+const RECIPE_KINDS = Object.freeze(['base']);
 
 const isPlainObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -44,7 +44,7 @@ function described(item) {
 export function recipeOf(item) {
     if (isRecipe(item)) return item;
     throw new TypeError(`Atlas.recipeOf: ${described(item)} is not a map recipe `
-        + '(a recipe is { id, kind: "base" | "modifier", ... }, see Budget.js)');
+        + '(a recipe is { id, kind: "base", ... }, see Budget.js)');
 }
 
 // ---------------------------------------------------------------------------

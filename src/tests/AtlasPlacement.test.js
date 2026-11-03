@@ -29,7 +29,6 @@ const options = (seed, extra = {}) => ({ seed, mat: MAT, crowding: CROWDING, art
 const SEEDS = Array.from({ length: 24 }, (_, i) => seedFromText(`place-${i}`));
 
 const base = (id, points, nodes, extra = {}) => ({ id, kind: 'base', biome: id, points, nodes, ...extra });
-const mod = (id, ...effects) => ({ id, kind: 'modifier', effects });
 const d2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 const mean = (list) => list.reduce((a, b) => a + b, 0) / list.length;
 const share = (list, test) => list.filter(test).length / list.length;
@@ -205,7 +204,7 @@ describe('rarer further out', () => {
 
 describe('camps and treasures with a reason', () => {
     const camped = (nodes) => budget([
-        base('forest', 40, nodes), mod('camp', { kind: 'threat', typeId: 'camp', count: 1 })
+        base('forest', 40, nodes, { camps: [{ typeId: 'camp', count: 1 }] })
     ], { cap: 128 });
     /** A camp's own spacing from a standard node at the comfortable gap. */
     const campGap = 1.5 * COMFORT_GAP;
@@ -246,8 +245,7 @@ describe('camps and treasures with a reason', () => {
 
     it('a treasure stands on a lake\'s island when there is one, and no node takes the island', () => {
         const summary = budget([
-            base('lakeland', 26, [{ typeId: 'oak_tree', weight: 2 }, { typeId: 'red_bush', weight: 1 }], { biome: 'meadow', inland: 'lake' }),
-            mod('chest', { kind: 'treasure', typeId: 'chest', count: 1 })
+            base('lakeland', 26, [{ typeId: 'oak_tree', weight: 2 }, { typeId: 'red_bush', weight: 1 }], { biome: 'meadow', inland: 'lake', treasures: [{ typeId: 'chest', count: 1 }] })
         ], { cap: 128 });
         let isles = 0;
         for (let k = 0; k < 80; k++) {
@@ -265,8 +263,7 @@ describe('camps and treasures with a reason', () => {
 
     it('with no island, a treasure hides away from the Hall, among the groves', () => {
         const summary = budget([
-            base('forest', 40, [{ typeId: 'oak_tree', weight: 6 }, { typeId: 'red_bush', weight: 2 }]),
-            mod('chest', { kind: 'treasure', typeId: 'chest', count: 1 })
+            base('forest', 40, [{ typeId: 'oak_tree', weight: 6 }, { typeId: 'red_bush', weight: 2 }], { treasures: [{ typeId: 'chest', count: 1 }] })
         ], { cap: 128 });
         const screens = [];
         for (const seed of SEEDS) {
@@ -304,9 +301,10 @@ describe('the result', () => {
     it('lists every Token in budget order, whatever order it was placed in', () => {
         const summary = budget([
             // The camps' wraps are placed first, and the rare maple before the bushes.
-            base('forest', 40, [{ typeId: 'oak_tree', weight: 20 }, { typeId: 'red_bush', weight: 10 }, { typeId: 'maple_tree', weight: 1 }]),
-            mod('camp', { kind: 'threat', typeId: 'camp', count: 2 }),
-            mod('chest', { kind: 'treasure', typeId: 'chest', count: 1 })
+            base('forest', 40, [{ typeId: 'oak_tree', weight: 20 }, { typeId: 'red_bush', weight: 10 }, { typeId: 'maple_tree', weight: 1 }], {
+                camps: [{ typeId: 'camp', count: 2 }],
+                treasures: [{ typeId: 'chest', count: 1 }]
+            })
         ], { cap: 128 });
         const want = summary.entries.flatMap(e => Array.from({ length: e.count }, () => `${e.role}|${e.typeId}`));
         for (const seed of SEEDS.slice(0, 8)) {

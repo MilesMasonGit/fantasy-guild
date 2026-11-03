@@ -19,22 +19,21 @@ const artRadius = () => 64;
 const options = (seed, extra = {}) => ({ seed, mat: MAT, crowding: CROWDING, artRadius, ...extra });
 
 const base = (id, points, nodes, extra = {}) => ({ id, kind: 'base', biome: id, points, nodes, ...extra });
-const mod = (id, ...effects) => ({ id, kind: 'modifier', effects });
 
 const forest = base('forest', 40, [{ typeId: 'oak', weight: 3 }, { typeId: 'berry', weight: 1 }]);
 /** A biome that brings no water of its own. */
 const plains = base('plains', 40, [{ typeId: 'oak', weight: 3 }, { typeId: 'berry', weight: 1 }]);
 const mountain = base('mountain', 36, [{ typeId: 'copper', weight: 1 }, { typeId: 'coal', weight: 1 }]);
 const coast = base('coast', 12, [{ typeId: 'fishing_spot', weight: 1 }]);
-const camp = mod('camp', { kind: 'threat', typeId: 'goblin_camp', count: 2 });
-const ruins = mod('ruins', { kind: 'treasure', typeId: 'ruins', count: 2 });
+const camp = { camps: [{ typeId: 'goblin_camp', count: 2 }] };
+const ruins = { treasures: [{ typeId: 'ruins', count: 2 }] };
 
 const SEEDS = Array.from({ length: 10 }, (_, i) => seedFromText(`terrain-${i}`));
 const RECIPES = {
-    'Forest': [forest, camp],
-    'Forest + Mountain': [forest, mountain, camp, ruins],
-    'Coast': [coast, camp, ruins],
-    'Coast + Forest + Mountain': [coast, forest, mountain, camp, ruins]
+    'Forest': [{ ...forest, ...camp }],
+    'Forest + Mountain': [{ ...forest, ...camp, ...ruins }, mountain],
+    'Coast': [{ ...coast, ...camp, ...ruins }],
+    'Coast + Forest + Mountain': [{ ...coast, ...camp, ...ruins }, forest, mountain]
 };
 
 const terrainOfBiome = (summary, biome) => summary.ground.terrains[biome] || DEFAULT_TERRAIN;
@@ -52,7 +51,7 @@ describe('the terrain map', () => {
             expect(rerolled, label).not.toBe(a.terrain.cells);
         }
         // One biome and no water is one ground, whatever the seed.
-        const flat = budget([plains, camp], { cap: 128 });
+        const flat = budget([{ ...plains, ...camp }], { cap: 128 });
         expect(layout(flat, options(nextSeed(SEEDS[0]))).terrain.cells).toBe(layout(flat, options(SEEDS[0])).terrain.cells);
     });
 
@@ -113,7 +112,7 @@ describe('the terrain map', () => {
         const full = base('coastal_wilds', 1000, [
             { typeId: 'fishing_spot', weight: 1 }, { typeId: 'oak', weight: 2 }, { typeId: 'copper', weight: 2 }
         ], { biome: 'coast' });
-        const summary = budget([full, camp, ruins], { cap: 256 });
+        const summary = budget([{ ...full, ...camp, ...ruins }], { cap: 256 });
         for (const seed of SEEDS.slice(0, 5)) {
             const result = layout(summary, options(seed));
             expect(result.unplaced).toEqual([]);
@@ -140,7 +139,7 @@ describe('the terrain map', () => {
             const summary = budget(slots, { cap: 128 });
             return SEEDS.map(seed => waterShare(layout(summary, options(seed)).terrain)).reduce((a, b) => a + b) / SEEDS.length;
         };
-        expect(share([plains, camp])).toBe(0);
+        expect(share([{ ...plains, ...camp }])).toBe(0);
         // The forest's pond: a little water, never a sea.
         const pond = share(RECIPES.Forest);
         expect(pond).toBeGreaterThan(0);
@@ -244,7 +243,7 @@ describe('the terrain map', () => {
         it('is told whether a dry cell is the shore, and water never is', () => {
             const calls = [];
             const terrainAllows = (typeId, terrain, shore) => { calls.push([terrain, shore]); return terrain !== TERRAIN.WATER; };
-            const summary = budget([coast, forest, camp], { cap: 128 });
+            const summary = budget([{ ...coast, ...camp }, forest], { cap: 128 });
             const withSeam = layout(summary, options(SEEDS[5], { terrainAllows }));
             expect(withSeam).toEqual(layout(summary, options(SEEDS[5])));
             expect(calls.some(([t, s]) => t !== TERRAIN.WATER && s === true)).toBe(true);

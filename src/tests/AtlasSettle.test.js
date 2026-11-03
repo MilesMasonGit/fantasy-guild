@@ -71,8 +71,8 @@ const HILLS = Object.freeze({
     nodes: [{ typeId: ORE, weight: 1 }]
 });
 const THICKET = Object.freeze({
-    id: 'test_mod_thicket', name: 'Thicket', kind: 'modifier',
-    effects: [{ kind: 'density', typeId: OAK, points: 8 }],
+    id: 'test_map_thicket', name: 'Thicket', kind: 'base', biome: 'forest', points: 8,
+    nodes: [{ typeId: OAK, weight: 1 }],
     rules: [FORESTRY_RULE]
 });
 const GIANT = Object.freeze({
@@ -80,18 +80,12 @@ const GIANT = Object.freeze({
     nodes: [{ typeId: COLOSSUS, weight: 1 }]
 });
 
-/** WOOD and THICKET as the Map editor authored them: retired items, which nothing settles from now. */
+/** Item ids, which nothing settles from: a recipe is the only ingredient. */
 const WOOD_ITEM = 'map_test_wood';
-const THICKET_ITEM = 'mod_test_thicket';
 const NOT_A_MAP = 'fixture_atlas_plank';
 registerItems({
     [WOOD_ITEM]: {
-        id: WOOD_ITEM, name: 'Wood Map', type: 'map', stackable: true,
-        cartography: { biome: WOOD.biome, points: WOOD.points, nodes: WOOD.nodes.map(n => ({ ...n })), camps: [], treasures: [] }
-    },
-    [THICKET_ITEM]: {
-        id: THICKET_ITEM, name: 'Thicket', type: 'modifier', stackable: true,
-        cartography: { effects: THICKET.effects.map(e => ({ ...e })) }
+        id: WOOD_ITEM, name: 'Wood Map', type: 'material', stackable: true
     },
     [NOT_A_MAP]: { id: NOT_A_MAP, name: 'Atlas Plank', type: 'material', stackable: true }
 });
@@ -152,7 +146,7 @@ describe('recipeOf: a recipe as it is, and nothing else', () => {
     it('a map item, by id or as the item, is refused like anything else: map items are retired', () => {
         expect(() => Atlas.recipeOf(WOOD_ITEM)).toThrow(/"map_test_wood" is not a map recipe/);
         expect(() => Atlas.recipeOf({ id: 'item_blank_map', type: 'map' })).toThrow(TypeError);
-        expect(() => Atlas.recipeOf(THICKET_ITEM)).toThrow(TypeError);
+        expect(() => Atlas.recipeOf({ id: 'x', kind: 'modifier', effects: [] })).toThrow(/kind "modifier"/);
         expect(() => Atlas.recipeOf(NOT_A_MAP)).toThrow(TypeError);
         expect(() => Atlas.recipeOf({ id: 'x', kind: 'plains' })).toThrow(/kind "plains"/);
         expect(() => Atlas.recipeOf(null)).toThrow(TypeError);
@@ -164,7 +158,7 @@ describe('recipeOf: a recipe as it is, and nothing else', () => {
         const result = Atlas.settle({ ingredients: [WOOD, THICKET], seed: 9 });
         expect(result.success).toBe(true);
         expect([bank(WOOD_ITEM), bank(NOT_A_MAP)]).toEqual([2, 5]);
-        expect(result.region).toMatchObject({ ingredients: [WOOD.id, THICKET.id], practicalName: 'Thicket Wood', cellId: null });
+        expect(result.region).toMatchObject({ ingredients: [WOOD.id, THICKET.id], practicalName: 'Wood and Thicket', cellId: null });
     });
 });
 
@@ -173,15 +167,15 @@ describe('the preview', () => {
         const plan = Atlas.preview([WOOD, THICKET], { seed: 7 });
         expect(plan.summary).toEqual(budget([WOOD, THICKET], { cap: MatCap.matCap() }));
         expect(plan.layout).toEqual(layout(plan.summary, layoutOptions(plan.summary, 7)));
-        expect(plan).toMatchObject({ seed: 7, ingredients: ['test_map_wood', 'test_mod_thicket'], fits: true });
+        expect(plan).toMatchObject({ seed: 7, ingredients: ['test_map_wood', 'test_map_thicket'], fits: true });
         expect(countsOf(plan.layout.nodes)).toEqual(summaryCounts(plan.summary));
     });
 
     it('a Token cap upgrade (here the dev override) changes the budget', () => {
-        setMatTuning('tokenCap', 40);
+        setMatTuning('tokenCap', 24);
         const plan = Atlas.preview([WOOD, HILLS, THICKET], { seed: 7 });
-        expect(plan.summary.limit).toBe(nodeLimit(40));
-        expect(plan.summary.total).toBe(nodeLimit(40));
+        expect(plan.summary.limit).toBe(nodeLimit(24));
+        expect(plan.summary.total).toBe(nodeLimit(24));
         expect(plan.summary.clamped).toBe(true);
     });
 
@@ -305,10 +299,10 @@ describe('settle writes the previewed layout as a Region', () => {
         expect(region).toBe(result.region);
         expect(region).toMatchObject({
             kind: Atlas.REGION_KIND.SETTLED,
-            practicalName: 'Thicket Wood',
-            ingredients: ['test_map_wood', 'test_mod_thicket'],
+            practicalName: 'Wood and Thicket',
+            ingredients: ['test_map_wood', 'test_map_thicket'],
             seed: plan.seed,
-            biome: { forest: 1 },
+            biome: { forest: 2 },
             ground: plan.summary.ground,
             terrain: plan.layout.terrain,
             rules: [FORESTRY_RULE]
@@ -477,16 +471,16 @@ describe('a board built off the mat', () => {
 
 describe('the dev console', () => {
     it('previews a layout in words and text, and settles it for free', () => {
-        const view = Atlas.devPreview(['mountain', 'goblinCamp'], 4);
+        const view = Atlas.devPreview(['mountain_camp'], 4);
         expect(view.seed).toBe(4);
         expect(view.summary.split('\n')[0]).toMatch(/^\d+ Tokens/);
         expect(view.picture).toContain('H');
         expect(view.picture.split('\n').length).toBeGreaterThan(30);
         expect(Atlas.reroll(view.preview).summary).toBe(view.preview.summary);
 
-        const result = Atlas.devSettle(['mountain', 'goblinCamp'], view.seed);
+        const result = Atlas.devSettle(['mountain_camp'], view.seed);
         expect(result.success).toBe(true);
-        expect(result.region.practicalName).toBe('Goblin Camp Mountain');
+        expect(result.region.practicalName).toBe('Mountain');
         expect(result.preview.layout).toEqual(view.preview.layout);
     });
 
@@ -494,8 +488,8 @@ describe('the dev console', () => {
         expect(() => Atlas.devPreview(['plains'])).toThrow(/forest, mountain/);
     });
 
-    it('the dev Overgrown carries a Region rule; the Forest and Mountain write today\'s Tokens', () => {
-        expect(DEV_MAPS.overgrown.rules[0]).toMatchObject({ keyword: 'provides', payload: { type: 'YIELD', category: 'forestry' } });
+    it('the dev Forest with a rule carries a Region rule; the Forest and Mountain write today\'s Tokens', () => {
+        expect(DEV_MAPS.forest_rule.rules[0]).toMatchObject({ keyword: 'provides', payload: { type: 'YIELD', category: 'forestry' } });
         expect(Cartography.isRecipe(DEV_MAPS.forest)).toBe(true);
     });
 });

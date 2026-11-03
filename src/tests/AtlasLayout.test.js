@@ -15,7 +15,7 @@ import { mulberry32, nextSeed, seedFromText } from '../systems/atlas/seededRando
 import { layoutOptions, shippedMat, shippedCrowding, cannotCheck } from '../systems/atlas/layoutInputs.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { SRC, codeOf } from './fixtures/sourceScan.js';
-import { FOREST, MOUNTAIN, COAST, OVERGROWN, GOBLIN_CAMP } from './fixtures/atlasMaps.js';
+import { FOREST, MOUNTAIN, COAST, OVERGROWN_FOREST, withGoblinCamp } from './fixtures/atlasMaps.js';
 import { terrainAt } from '../systems/atlas/TerrainMap.js';
 import { createRegionRecord } from '../state/StateSchema.js';
 
@@ -37,13 +37,12 @@ const ART = { big: 144, small: 32 };
 const artRadius = (typeId) => ART[typeId] ?? 64;
 const options = (seed, extra = {}) => ({ seed, mat: MAT, crowding: CROWDING, artRadius, ...extra });
 
-const base = (id, points, nodes) => ({ id, kind: 'base', biome: id, points, nodes });
-const mod = (id, ...effects) => ({ id, kind: 'modifier', effects });
+const base = (id, points, nodes, extra = {}) => ({ id, kind: 'base', biome: id, points, nodes, ...extra });
 
 /** A Base Map so big the cap trims it: the fullest Region the cap allows. */
 const crowded = (species) => base('crowded', 1000, species.map(typeId => ({ typeId, weight: 1 })));
-const fullBudget = (cap, species = ['oak', 'fir', 'copper', 'coal'], extra = []) =>
-    budget([crowded(species), ...extra], { cap });
+const fullBudget = (cap, species = ['oak', 'fir', 'copper', 'coal'], extra = {}) =>
+    budget([{ ...crowded(species), ...extra }], { cap });
 
 const SEEDS = Array.from({ length: 12 }, (_, i) => seedFromText(`seed-${i}`));
 
@@ -130,12 +129,12 @@ describe('the seeded random source', () => {
 describe('the layout', () => {
     describe('is fixed by its ingredients and seed', () => {
         it('the same budget and seed give the same layout', () => {
-            const summary = budget([FOREST, OVERGROWN, GOBLIN_CAMP], { cap: 128 });
+            const summary = budget([withGoblinCamp(OVERGROWN_FOREST)], { cap: 128 });
             expect(layout(summary, options(7))).toEqual(layout(summary, options(7)));
         });
 
         it('a new seed moves only coordinates: the same Tokens, in the same order', () => {
-            const summary = budget([FOREST, MOUNTAIN, GOBLIN_CAMP], { cap: 128 });
+            const summary = budget([withGoblinCamp(FOREST), MOUNTAIN], { cap: 128 });
             const first = layout(summary, options(SEEDS[0]));
             const rerolled = layout(summary, options(nextSeed(SEEDS[0])));
             const shape = (r) => r.nodes.map(n => `${n.role}|${n.typeId}`);
@@ -146,7 +145,7 @@ describe('the layout', () => {
         });
 
         it('ten rerolls never change the node summary', () => {
-            const summary = budget([FOREST, MOUNTAIN, OVERGROWN, GOBLIN_CAMP], { cap: 128 });
+            const summary = budget([withGoblinCamp(OVERGROWN_FOREST), MOUNTAIN], { cap: 128 });
             let seed = SEEDS[1];
             for (let i = 0; i < 10; i++) {
                 const result = layout(summary, options(seed));
@@ -157,7 +156,7 @@ describe('the layout', () => {
         });
 
         it('reads the mat size it is given, never the Mat Tuner', () => {
-            const summary = budget([FOREST, GOBLIN_CAMP], { cap: 128 });
+            const summary = budget([withGoblinCamp(FOREST)], { cap: 128 });
             const before = layout(summary, options(3));
             setMatTuning('matSteps', 6);
             try {
@@ -169,7 +168,7 @@ describe('the layout', () => {
         });
 
         it('lays out on any mat it is given, and keeps to it', () => {
-            const summary = budget([FOREST, GOBLIN_CAMP], { cap: 128 });
+            const summary = budget([withGoblinCamp(FOREST)], { cap: 128 });
             const small = { w: 1280, h: 819 };
             const result = layout(summary, options(5, { mat: small }));
             expect(result.unplaced).toEqual([]);
@@ -180,7 +179,7 @@ describe('the layout', () => {
 
     describe('every Token stands on a legal spot', () => {
         it('inside the mat, clear of each other and of the Hall\'s ring, on whole units', () => {
-            const summary = budget([FOREST, MOUNTAIN, OVERGROWN, GOBLIN_CAMP], { cap: 128 });
+            const summary = budget([withGoblinCamp(OVERGROWN_FOREST), MOUNTAIN], { cap: 128 });
             for (const seed of SEEDS) {
                 const result = layout(summary, options(seed));
                 expect(result.unplaced).toEqual([]);
@@ -238,7 +237,7 @@ describe('the layout', () => {
         it('a spot the rules hook refuses is never used', () => {
             // Nothing may stand in the mat's left third.
             const allows = (typeId, point) => point.x > MAT.w / 3;
-            const result = layout(budget([FOREST, GOBLIN_CAMP], { cap: 128 }), options(9, { allows }));
+            const result = layout(budget([withGoblinCamp(FOREST)], { cap: 128 }), options(9, { allows }));
             expect(result.unplaced).toEqual([]);
             expect(result.nodes.every(n => n.x > MAT.w / 3)).toBe(true);
         });
@@ -255,10 +254,10 @@ describe('the layout', () => {
     describe('fits the cap', () => {
         for (const cap of [128, 256]) {
             it(`a full Region at a cap of ${cap} places every Token legally`, () => {
-                const summary = fullBudget(cap, ['oak', 'fir', 'copper', 'coal'], [
-                    mod('camps', { kind: 'threat', typeId: 'goblin_camp', count: 2 }),
-                    mod('ruins', { kind: 'treasure', typeId: 'ruins', count: 2 })
-                ]);
+                const summary = fullBudget(cap, ['oak', 'fir', 'copper', 'coal'], {
+                    camps: [{ typeId: 'goblin_camp', count: 2 }],
+                    treasures: [{ typeId: 'ruins', count: 2 }]
+                });
                 expect(summary.total).toBe(cap / 2);
                 for (const seed of SEEDS) {
                     const result = layout(summary, options(seed));
@@ -284,7 +283,7 @@ describe('the layout', () => {
         });
 
         it('enemy camps stand away from the centre', () => {
-            const summary = budget([FOREST, mod('camps', { kind: 'threat', typeId: 'goblin_camp', count: 10 })], { cap: 128 });
+            const summary = budget([{ ...FOREST, camps: [{ typeId: 'goblin_camp', count: 10 }] }], { cap: 128 });
             for (const seed of SEEDS) {
                 const result = layout(summary, options(seed));
                 const camps = result.nodes.filter(n => n.role === ROLE.CAMP);
@@ -296,11 +295,7 @@ describe('the layout', () => {
         });
 
         it('treasures are placed once each', () => {
-            const summary = budget([
-                FOREST,
-                mod('ruins', { kind: 'treasure', typeId: 'ruins', count: 1 }),
-                mod('cache', { kind: 'treasure', typeId: 'cache', count: 2 })
-            ], { cap: 128 });
+            const summary = budget([{ ...FOREST, treasures: [{ typeId: 'ruins', count: 1 }, { typeId: 'cache', count: 2 }] }], { cap: 128 });
             for (const seed of SEEDS.slice(0, 6)) {
                 const treasures = layout(summary, options(seed)).nodes.filter(n => n.role === ROLE.TREASURE);
                 expect(treasures.map(t => t.typeId).sort()).toEqual(['cache', 'cache', 'ruins']);
@@ -361,9 +356,10 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
                     { typeId: 'atlas_t_oak', weight: 6 }, { typeId: 'atlas_t_fir', weight: 4 },
                     { typeId: 'atlas_t_cedar', weight: 1 }, { typeId: 'atlas_t_sapling', weight: 2 },
                     { typeId: 'atlas_t_coast', weight: 3 }
-                ]),
-                mod('camp', { kind: 'threat', typeId: 'atlas_t_camp', count: 2 }),
-                mod('ruins', { kind: 'treasure', typeId: 'atlas_t_ruins', count: 1 })
+                ], {
+                    camps: [{ typeId: 'atlas_t_camp', count: 2 }],
+                    treasures: [{ typeId: 'atlas_t_ruins', count: 1 }]
+                })
             ], { cap });
             for (const seed of SEEDS.slice(0, 4)) {
                 clearMat();
@@ -385,8 +381,7 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
         const summary = budget([
             { id: 'coast', kind: 'base', biome: 'coast', points: 40, nodes: [
                 { typeId: 'atlas_t_oak', weight: 4 }, { typeId: 'atlas_t_boat', weight: 1 }, { typeId: 'atlas_t_dock', weight: 1 }
-            ] },
-            mod('camp', { kind: 'threat', typeId: 'atlas_t_camp', count: 2 })
+            ], camps: [{ typeId: 'atlas_t_camp', count: 2 }] }
         ], { cap: 128 });
         for (const seed of SEEDS.slice(0, 4)) {
             clearMat();
@@ -516,9 +511,9 @@ describe('ASCII preview', () => {
             + '(capital = centre, lower case = the rest of its art, blank = the Hall\'s clearing)';
         const out = [legend];
         const cases = [
-            ['Forest + Overgrown', [FOREST, OVERGROWN], false],
-            ['Mountain + Goblin Camp', [MOUNTAIN, GOBLIN_CAMP], false],
-            ['Coast + Forest + Goblin Camp', [COAST, FOREST, GOBLIN_CAMP], true]
+            ['Forest + Overgrown', [OVERGROWN_FOREST], false],
+            ['Mountain + Goblin Camp', [withGoblinCamp(MOUNTAIN)], false],
+            ['Coast + Forest + Goblin Camp', [COAST, withGoblinCamp(FOREST)], true]
         ];
         for (const [label, slots, withGround] of cases) {
             const summary = budget(slots, { cap: 128 });

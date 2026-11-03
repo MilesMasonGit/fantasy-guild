@@ -255,13 +255,13 @@ registerTokenTypes({
 const FOREST_MAP = { id: 'gm_forest', kind: 'base', biome: 'forest', points: 40, nodes: [{ typeId: 'gm_oak', weight: 5 }, { typeId: 'gm_bush', weight: 2 }] };
 const MOUNTAIN_MAP = { id: 'gm_mountain', kind: 'base', biome: 'mountain', points: 36, nodes: [{ typeId: 'gm_ore', weight: 2 }, { typeId: 'gm_bush', weight: 1 }] };
 const COAST_MAP = { id: 'gm_coast', kind: 'base', biome: 'coast', points: 24, nodes: [{ typeId: 'gm_fish', weight: 3 }, { typeId: 'gm_oak', weight: 1 }] };
-const CAMPS = { id: 'gm_camps', kind: 'modifier', effects: [{ kind: 'threat', typeId: 'gm_camp', count: 2 }, { kind: 'treasure', typeId: 'gm_ruins', count: 2 }] };
+const CAMPS = { camps: [{ typeId: 'gm_camp', count: 2 }], treasures: [{ typeId: 'gm_ruins', count: 2 }] };
 
 describe('⭐ a layout of Tokens with no "Stands on" is exactly as before', () => {
     beforeEach(freshGame);
 
     it('same nodes, same ground, for the same maps and seeds, water or none', () => {
-        const recipes = [[FOREST_MAP], [FOREST_MAP, MOUNTAIN_MAP, CAMPS], [COAST_MAP, CAMPS], [COAST_MAP, FOREST_MAP, MOUNTAIN_MAP, CAMPS]];
+        const recipes = [[FOREST_MAP], [{ ...FOREST_MAP, ...CAMPS }, MOUNTAIN_MAP], [{ ...COAST_MAP, ...CAMPS }], [{ ...COAST_MAP, ...CAMPS }, FOREST_MAP, MOUNTAIN_MAP]];
         const out = [];
         for (const slots of recipes) {
             const summary = budget(slots, { cap: 128 });

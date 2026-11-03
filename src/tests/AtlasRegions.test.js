@@ -115,34 +115,32 @@ describe('the save schema moved: a save from before the Atlas is refused', () =>
 });
 
 describe('names: practical from the ingredients, flavour renamable', () => {
-    it('the practical name puts the modifiers before the base maps, each word once', () => {
+    it('the practical name reads the maps, each word once', () => {
         expect(Names.practicalName([{ word: 'Forest' }])).toBe('Forest');
-        expect(Names.practicalName([{ word: 'Forest' }, { word: 'Overgrown', modifier: true }])).toBe('Overgrown Forest');
         expect(Names.practicalName([
-            { word: 'Forest' }, { word: 'Mountain' }, { word: 'Granite', modifier: true }, { word: 'Forest' }
-        ])).toBe('Granite Forest and Mountain');
+            { word: 'Forest' }, { word: 'Mountain' }, { word: 'Forest' }
+        ])).toBe('Forest and Mountain');
         expect(Names.practicalName([{ word: 'Forest' }, { word: 'Mountain' }, { word: 'Coast' }]))
             .toBe('Forest, Mountain and Coast');
-        expect(Names.practicalName([{ word: 'Overgrown', modifier: true }])).toBe(`Overgrown ${Names.TEXT.LAND}`);
         expect(Names.practicalName([])).toBe(Names.TEXT.BLANK_REGION);
     });
 
     it('a Region written from ingredients is named from them, and keeps that name', () => {
         const describe = describeAs({
             item_map_forest: { word: 'Forest' },
-            item_mod_overgrown: { word: 'Overgrown', modifier: true }
+            item_map_hills: { word: 'Hills' }
         });
         const { success, region } = Atlas.createRegion({
-            ingredients: ['item_map_forest', 'item_mod_overgrown'], describe, seed: 42
+            ingredients: ['item_map_forest', 'item_map_hills'], describe, seed: 42
         });
         expect(success).toBe(true);
-        expect(region.practicalName).toBe('Overgrown Forest');
-        expect(region.ingredients).toEqual(['item_map_forest', 'item_mod_overgrown']);
+        expect(region.practicalName).toBe('Forest and Hills');
+        expect(region.ingredients).toEqual(['item_map_forest', 'item_map_hills']);
         expect(region.kind).toBe(REGION_KIND.SETTLED);
         expect(region.seed).toBe(42);
         // Renaming changes the flavour name only.
         expect(Atlas.rename(region.id, 'Home Wood').success).toBe(true);
-        expect(Atlas.getRegion(region.id).practicalName).toBe('Overgrown Forest');
+        expect(Atlas.getRegion(region.id).practicalName).toBe('Forest and Hills');
         expect(Atlas.getRegion(region.id).flavourName).toBe('Home Wood');
     });
 

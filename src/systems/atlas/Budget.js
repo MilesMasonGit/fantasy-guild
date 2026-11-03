@@ -9,57 +9,42 @@ import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
  * A pure function of the ingredients and the Token cap. It takes no seed, so a reroll (a new seed
  * for `Layout.js`) can never change it, and slot order does not matter.
  *
- * ## The recipe shape (internal; A5's adapter turns authored maps into it)
+ * ## The recipe shape (internal)
  *
- * An ingredient is one recipe (a world cell's, the dev tools', or a retired map item's), either a Base Map:
+ * An ingredient is one recipe (a world cell's, or the dev tools'), a Base Map:
  *
  *     { id: 'world_cell_3', kind: 'base', biome: 'forest', points: 40,
  *       nodes:     [{ typeId: 'token_oak_tree', weight: 6 }, { typeId: 'token_redberry_bush', weight: 1 }],
  *       camps:     [{ typeId: 'token_goblin_camp', count: 1 }],   // optional, the map's own
- *       treasures: [{ typeId: 'token_ruins', count: 1 }],         // optional, the map's own
+ *       treasures: [{ typeId: 'token_copper_chest', count: 1 }],  // optional, the map's own
  *       terrain: 'grass', water: 0 }                              // optional, see BIOME_GROUND
  *
- * or a Modifier, holding one or more effects:
+ * It may also name `stone: { outcrops, ridge }`, the Stone terrain its mat holds (outcrops of rock,
+ * and a ridge across the mat): blended like the sea, and written by the layout (`StoneShapes.js`). A
+ * budget with none has no `ground.stone`.
  *
- *     { id: 'more_oak', kind: 'modifier', effects: [
- *         { kind: 'density',  typeId: 'token_oak_tree', points: 16 },             // more of a node
- *         { kind: 'replace',  from: 'token_oak_tree', to: 'token_fir_tree',
- *                             share: 1 },                                         // a better node instead
- *         { kind: 'threat',   typeId: 'token_goblin_camp', count: 1 },            // an enemy camp
- *         { kind: 'treasure', typeId: 'token_ruins', count: 1 } ] }               // a treasure
+ * Ids must be unique per distinct ingredient: two slots holding the same map carry the same id.
  *
- * A Base Map may also name `stone: { outcrops, ridge }`, the Stone terrain its mat holds (outcrops
- * of rock, and a ridge across the mat): blended like the sea, and written by the layout
- * (`StoneShapes.js`). A budget with none has no `ground.stone`.
- *
- * `share` (0–1, default 1) and `count` (default 1) are optional. Ids must be unique per distinct
- * ingredient: two slots holding the same map carry the same id.
- *
- * Either kind may also carry a `name` (what the Region's practical name calls it: "Forest",
- * "Overgrown") and `rules`, statements in force all over the Region while the guild is there
- * (`RegionRules.js`; today a `Provides`). Neither changes the budget.
+ * A recipe may also carry a `name` (what the Region's practical name calls it: "Forest") and `rules`,
+ * statements in force all over the Region while the guild is there (`RegionRules.js`; today a
+ * `Provides`). Neither changes the budget.
  *
  * ## The rules
  * 1. **Base Maps blend.** Each writes `points / (number of Base Maps)` nodes, split by its weights,
  *    so a hybrid keeps the density of one map and two copies of a map write what one does. Their
  *    own camps and treasures take the most any one of them has, per Token.
- * 2. **Density** adds points of its node, on top, whether or not a Base Map has that node.
- * 3. **Replace** moves `share` of a node's points (densities included) to another node, all
- *    replaces at once (Oak → Fir and Fir → Birch never chain). Several replaces of one node split
- *    what they move between them. Nodes only, never camps or treasures.
- * 4. **Threat** and **treasure** add their count, per modifier slotted.
- * 5. **The cap**: the whole budget, camps and treasures included, is clamped to
+ * 2. **The cap**: the whole budget, camps and treasures included, is clamped to
  *    {@link nodeLimit}: the cap less {@link buildReserve}. Camps and treasures are kept and nodes
  *    trimmed in proportion; only if camps and treasures alone overflow are they trimmed too.
- * 6. Counts are whole numbers by largest remainder ({@link apportion}).
- * 7. **Biomes and ground.** Each node entry carries the biome that writes most of its points (a
- *    replaced node keeps its source's biome; a density node with no Base Map takes the main
- *    biome). The summary's `ground` says which terrain each biome's ground is, how much of the
- *    mat is sea (blended like points), which biomes bring the sea, the inland water the main
- *    biome brings (`BIOME_WATER`, one variety picked by the layout's seed) and the small water
- *    each other biome brings (`BIOME_SMALL_WATER`); `Layout.js` builds the terrain grid from it. Camps and treasures take the ground where they land.
+ * 3. Counts are whole numbers by largest remainder ({@link apportion}).
+ * 4. **Biomes and ground.** Each node entry carries the biome that writes most of its points. The
+ *    summary's `ground` says which terrain each biome's ground is, how much of the mat is sea
+ *    (blended like points), which biomes bring the sea, the inland water the main biome brings
+ *    (`BIOME_WATER`, one variety picked by the layout's seed) and the small water each other biome
+ *    brings (`BIOME_SMALL_WATER`); `Layout.js` builds the terrain grid from it. Camps and treasures
+ *    take the ground where they land.
  *
- * An effect kind the engine does not know is skipped and listed in `ignored`, never guessed at.
+ * A recipe of a kind the engine does not know is skipped and listed in `ignored`, never guessed at.
  */
 
 /**
@@ -191,10 +176,9 @@ const byText = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 
 /** Ingredients in one fixed order, so float sums (and so every count) come out bit-identical. */
 function canonical(ingredients) {
-    const rank = (i) => (i?.kind === 'base' ? 0 : 1);
     return [...(ingredients || [])]
         .filter(i => i && typeof i === 'object')
-        .sort((a, b) => rank(a) - rank(b) || byText(String(a.id), String(b.id)));
+        .sort((a, b) => byText(String(a.id), String(b.id)));
 }
 
 /**
@@ -216,7 +200,6 @@ export function budget(ingredients, { cap } = {}) {
 
     const slots = canonical(ingredients);
     const bases = slots.filter(i => i.kind === 'base');
-    const modifiers = slots.filter(i => i.kind === 'modifier');
     const ignored = [];
 
     // Node points per Token, kept per biome ('' for none) so each node knows whose ground it is.
@@ -260,7 +243,7 @@ export function budget(ingredients, { cap } = {}) {
         }
     }
     for (const map of slots) {
-        if (map.kind !== 'base' && map.kind !== 'modifier') ignored.push({ ingredientId: map.id, kind: map.kind });
+        if (map.kind !== 'base') ignored.push({ ingredientId: map.id, kind: map.kind });
     }
     // The main biome writes the most nodes (the Forest of a Forest and a small Coast), else, with no
     // nodes at all, it is the one slotted most.
@@ -269,52 +252,6 @@ export function budget(ingredients, { cap } = {}) {
         for (const [biome, n] of byBiome) if (biome) add(biomePoints, biome, n);
     }
     const mainBiome = heaviest(biomePoints) || heaviest(new Map(Object.entries(biomes)));
-
-    const replaces = [];
-    for (const modifier of modifiers) {
-        for (const effect of modifier.effects || []) {
-            switch (effect?.kind) {
-                case 'density':
-                    if (effect.typeId) {
-                        const home = points.has(effect.typeId) ? heaviest(points.get(effect.typeId), '') : (mainBiome || '');
-                        addPoints(effect.typeId, home, positive(effect.points, 0));
-                    }
-                    break;
-                case 'replace':
-                    if (effect.from && effect.to && effect.from !== effect.to) {
-                        replaces.push({ from: effect.from, to: effect.to, share: Math.min(1, positive(effect.share, 1)) });
-                    }
-                    break;
-                case 'threat':
-                    if (effect.typeId) add(camps, effect.typeId, Math.floor(positive(effect.count, 1)));
-                    break;
-                case 'treasure':
-                    if (effect.typeId) add(treasures, effect.typeId, Math.floor(positive(effect.count, 1)));
-                    break;
-                default:
-                    ignored.push({ ingredientId: modifier.id, kind: effect?.kind });
-            }
-        }
-    }
-
-    // All at once: what each replace moves is measured before any of them moves anything. What
-    // moves keeps its biome: Fir written over a Forest's Oak stands on forest ground.
-    const before = new Map([...points].map(([typeId, byBiome]) => [typeId, new Map(byBiome)]));
-    const byFrom = new Map();
-    for (const r of replaces) {
-        if (!byFrom.has(r.from)) byFrom.set(r.from, []);
-        byFrom.get(r.from).push(r);
-    }
-    for (const [from, group] of byFrom) {
-        const shareSum = group.reduce((n, r) => n + r.share, 0);
-        const fraction = Math.min(1, shareSum);
-        for (const [biome, had] of before.get(from) || []) {
-            const moved = had * fraction;
-            if (!(moved > 0)) continue;
-            addPoints(from, biome, -moved);
-            for (const r of group) addPoints(r.to, biome, moved * r.share / shareSum);
-        }
-    }
 
     const limit = nodeLimit(cap);
     const fixedWanted = {};
