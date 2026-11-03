@@ -1,6 +1,92 @@
 {
   "format": "fantasy-guild-plan",
   "version": 1,
+  "settings": {
+    "stages": [
+      {
+        "tier": 0,
+        "budgetMinutes": 30
+      },
+      {
+        "tier": 1,
+        "budgetMinutes": 55
+      },
+      {
+        "tier": 2,
+        "budgetMinutes": 1440
+      }
+    ],
+    "tolerancePct": 25,
+    "player": {
+      "checkInMinMinutes": 30,
+      "checkInMaxMinutes": 60,
+      "overnightHours": 8
+    },
+    "paceCurve": [
+      {
+        "level": 1,
+        "minutesPerLevel": 3
+      },
+      {
+        "level": 10,
+        "minutesPerLevel": 8
+      },
+      {
+        "level": 20,
+        "minutesPerLevel": 30
+      },
+      {
+        "level": 40,
+        "minutesPerLevel": 180
+      },
+      {
+        "level": 60,
+        "minutesPerLevel": 1440
+      },
+      {
+        "level": 99,
+        "minutesPerLevel": 4320
+      }
+    ],
+    "wallFactor": 2,
+    "profileBounds": 3,
+    "boostTargets": {
+      "support": [
+        {
+          "tier": 0,
+          "pct": 30
+        }
+      ],
+      "consumable": [
+        {
+          "tier": 0,
+          "pct": 20
+        }
+      ],
+      "hall": [
+        {
+          "tier": 1,
+          "pct": 10
+        },
+        {
+          "tier": 2,
+          "pct": 25
+        },
+        {
+          "tier": 3,
+          "pct": 50
+        },
+        {
+          "tier": 4,
+          "pct": 100
+        }
+      ]
+    },
+    "campMembers": 3,
+    "paybackHours": 2,
+    "hallPaybackHours": 24,
+    "rulesVersion": "classless-one-job"
+  },
   "entries": {
     "items": {
       "item_water": {
@@ -228,8 +314,8 @@
       },
       "item_beer": {
         "status": "live",
-        "tier": 0,
-        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+        "tier": 1,
+        "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
       },
       "item_raw_beef": {
         "status": "live",
@@ -463,8 +549,8 @@
       },
       "item_lobster": {
         "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): the camp Coast catches it (rod, or trap with Worm Bait); the docs name only shrimp for the fishing spot."
+        "tier": 1,
+        "note": "Plane 1 (director 2026-11-02, with Cooked Lobster): its first catch is a chain (Worm, Worm Bait, then the trap) that held the Starter Camp at 44 min; the camp Coast still catches it."
       },
       "item_swordfish": {
         "status": "live",
@@ -658,8 +744,8 @@
       },
       "item_cooked_lobster": {
         "status": "live",
-        "tier": 0,
-        "note": "Starter Camp (ledger fix pack): cooked from lobster."
+        "tier": 1,
+        "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
       },
       "item_lavender_salmon": {
         "status": "live",
@@ -1576,8 +1662,8 @@
       },
       "recipe_mtp8qjj9": {
         "status": "live",
-        "tier": 0,
-        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+        "tier": 1,
+        "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
       },
       "recipe_mtym8vxh": {
         "status": "live",
@@ -1618,8 +1704,8 @@
       },
       "recipe_cooked_lobster": {
         "status": "live",
-        "tier": 0,
-        "note": "Starter Camp (ledger fix pack): follows what it makes."
+        "tier": 1,
+        "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
       },
       "recipe_lavender_salmon": {
         "status": "live",

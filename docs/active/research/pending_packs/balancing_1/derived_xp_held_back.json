@@ -1,0 +1,1021 @@
+[
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_wild_lavender",
+    "value": {
+      "name": "Wild Lavender",
+      "description": "Needs a Sickle in hand.",
+      "sprite": "t_field_lavender",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 5,
+      "requiresHero": true,
+      "config": {
+        "skill": "alchemy",
+        "skillRequired": 1,
+        "cycleTimeMs": 3000,
+        "xp": 12,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_lavender",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false
+          },
+          {
+            "itemId": "item_lavender_seed",
+            "chance": 25,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": true
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "needsTool": {
+        "kind": "sickle",
+        "minTier": 1
+      },
+      "staysPut": true,
+      "respawn": {
+        "mode": "refill",
+        "afterMs": 120000,
+        "restingSprite": "t_garden"
+      },
+      "sim": {
+        "tempo": "quick",
+        "purpose": "iph"
+      },
+      "id": "token_wild_lavender",
+      "plan": {
+        "status": "live",
+        "tier": 2
+      }
+    },
+    "fingerprint": "fp:d37411157eb9e1c7",
+    "note": "XP a cycle (config.xp) 1 → 12: Alchemy 1 → 10: its best Typical source, Wild Lavender, takes 6× the curve's time. Now 0.9× the curve over Alchemy 1 → 15."
+  },
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_oak_tree",
+    "value": {
+      "name": "Oak Tree",
+      "description": "Needs a Woodaxe in hand.",
+      "sprite": "t_tree_oak",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [
+        "Forest",
+        "Oak"
+      ],
+      "provides": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 5,
+      "requiresHero": true,
+      "config": {
+        "skill": "forestry",
+        "skillRequired": 1,
+        "cycleTimeMs": 3000,
+        "xp": 3,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_oak_wood",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false
+          },
+          {
+            "itemId": "item_oak_seedling",
+            "chance": 20,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": true
+          },
+          {
+            "itemId": "item_bird_nest",
+            "chance": 3,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": true
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_oak_tree",
+      "sim": {
+        "tempo": "quick",
+        "purpose": "iph"
+      },
+      "needsTool": {
+        "kind": "woodaxe",
+        "minTier": 1
+      },
+      "staysPut": true,
+      "respawn": {
+        "mode": "regrow",
+        "into": "token_oak_stump"
+      },
+      "plan": {
+        "status": "live",
+        "tier": 0
+      }
+    },
+    "fingerprint": "fp:400ad02a5d65334c",
+    "note": "XP a cycle (config.xp) 1 → 3: Forestry 1 → 15: its best Typical source, Oak Tree, takes 2.3× the curve's time. Now 0.9× the curve over Forestry 1 → 30."
+  },
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_birch_tree",
+    "value": {
+      "name": "Birch Tree",
+      "description": "Needs a Woodaxe in hand.",
+      "sprite": "t_tree_birch",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 100,
+      "requiresHero": true,
+      "config": {
+        "skill": "forestry",
+        "skillRequired": 30,
+        "cycleTimeMs": 23000,
+        "xp": 7,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_birch_wood",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false,
+            "anchor": true
+          },
+          {
+            "itemId": "item_birch_seedling",
+            "chance": 20,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": true
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_birch_tree",
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "needsTool": {
+        "kind": "woodaxe",
+        "minTier": 1
+      },
+      "staysPut": true,
+      "respawn": {
+        "mode": "regrow",
+        "into": "token_birch_stump"
+      },
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:197a45681ae170f2",
+    "note": "XP a cycle (config.xp) 18 → 7: Forestry 30 → 45: its best Typical source, Birch Tree, takes 0.4× the curve's time. Another source now carries those levels; at its authored number it would take them back."
+  },
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_maple_tree",
+    "value": {
+      "name": "Maple Tree",
+      "description": "Needs a Woodaxe in hand.",
+      "sprite": "t_tree_maple",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [
+        "Forest"
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 100,
+      "requiresHero": true,
+      "config": {
+        "skill": "forestry",
+        "skillRequired": 45,
+        "cycleTimeMs": 26000,
+        "xp": 8,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_maple_wood",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false
+          },
+          {
+            "itemId": "item_maple_seedling",
+            "chance": 20,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": true
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_maple_tree",
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "needsTool": {
+        "kind": "woodaxe",
+        "minTier": 1
+      },
+      "staysPut": true,
+      "respawn": {
+        "mode": "regrow",
+        "into": "token_maple_stump"
+      },
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:779ae7b910cbf3b3",
+    "note": "XP a cycle (config.xp) 65 → 8: Forestry 45 → 60: its best Typical source, Maple Tree, takes 0.1× the curve's time. Another source now carries those levels; at its authored number it would take them back."
+  },
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_cedar_tree",
+    "value": {
+      "name": "Cedar Tree",
+      "description": "Needs a Woodaxe in hand.",
+      "sprite": "t_tree_cedar",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "acceptedTokens": [],
+      "size": 2,
+      "uses": 1000,
+      "requiresHero": true,
+      "config": {
+        "skill": "forestry",
+        "skillRequired": 60,
+        "cycleTimeMs": 29000,
+        "xp": 12,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_cedar_wood",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false
+          },
+          {
+            "itemId": "item_cedar_seedling",
+            "chance": 20,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": true
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_cedar_tree",
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "needsTool": {
+        "kind": "woodaxe",
+        "minTier": 1
+      },
+      "staysPut": true,
+      "respawn": {
+        "mode": "regrow",
+        "into": "token_cedar_stump"
+      },
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:21e8086bc93fa8ad",
+    "note": "XP a cycle (config.xp) 203 → 12: Forestry 60 → 70: its best Typical source, Cedar Tree, takes 0.1× the curve's time. Another source now carries those levels; at its authored number it would take them back."
+  },
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_mahogany_tree",
+    "value": {
+      "name": "Mahogany Tree",
+      "description": "Needs a Woodaxe in hand.",
+      "sprite": "t_tree_mahogany",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [
+        "Forest"
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 100,
+      "requiresHero": true,
+      "config": {
+        "skill": "forestry",
+        "skillRequired": 75,
+        "cycleTimeMs": 33000,
+        "xp": 39,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_mahogany_wood",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false
+          },
+          {
+            "itemId": "item_mahogany_seedling",
+            "chance": 20,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": true
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_mahogany_tree",
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "needsTool": {
+        "kind": "woodaxe",
+        "minTier": 1
+      },
+      "staysPut": true,
+      "respawn": {
+        "mode": "regrow",
+        "into": "token_mahogany_stump"
+      },
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:3917a402e3e178cc",
+    "note": "XP a cycle (config.xp) 726 → 39: Forestry 75 → 85: its best Typical source, Mahogany Tree, takes 0.1× the curve's time. Another source now carries those levels; at its authored number it would take them back."
+  },
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_silver_ore_vein",
+    "value": {
+      "name": "Silver Ore Vein",
+      "description": "Needs an Iron Pickaxe or better in hand.",
+      "sprite": "t_ore_vein_silver",
+      "tokenType": "resource",
+      "rarity": "uncommon",
+      "tier": 1,
+      "tags": [
+        "Ore"
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 1000,
+      "requiresHero": true,
+      "config": {
+        "skill": "mining",
+        "skillRequired": 30,
+        "cycleTimeMs": 23000,
+        "xp": 7,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_silver_ore",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            }
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_silver_ore_vein",
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "needsTool": {
+        "kind": "pickaxe",
+        "minTier": 2
+      },
+      "staysPut": true,
+      "respawn": {
+        "mode": "refill",
+        "afterMs": 120000,
+        "restingSprite": "t_vein_stone"
+      },
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:dbde22e810bad5c2",
+    "note": "XP a cycle (config.xp) 18 → 7: Mining 30 → 45: its best Typical source, Silver Ore Vein, takes 0.4× the curve's time. Another source now carries those levels; at its authored number it would take them back."
+  },
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_gold_ore_vein",
+    "value": {
+      "name": "Gold Ore Vein",
+      "description": "Needs an Iron Pickaxe or better in hand.",
+      "sprite": "t_ore_vein_gold",
+      "tokenType": "resource",
+      "rarity": "rare",
+      "tier": 1,
+      "tags": [
+        "Ore"
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 1000,
+      "requiresHero": true,
+      "config": {
+        "skill": "mining",
+        "skillRequired": 45,
+        "cycleTimeMs": 26000,
+        "xp": 7,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_gold_ore",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            }
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_gold_ore_vein",
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "needsTool": {
+        "kind": "pickaxe",
+        "minTier": 2
+      },
+      "staysPut": true,
+      "respawn": {
+        "mode": "refill",
+        "afterMs": 120000,
+        "restingSprite": "t_vein_stone"
+      },
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:24749d35cc808feb",
+    "note": "XP a cycle (config.xp) 65 → 7: Mining 45 → 60: its best Typical source, Gold Ore Vein, takes 0.1× the curve's time. Another source now carries those levels; at its authored number it would take them back."
+  },
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_mythril_ore_vein",
+    "value": {
+      "name": "Mythril Ore Vein",
+      "description": "Needs an Iron Pickaxe or better in hand.",
+      "sprite": "t_ore_vein_mythril",
+      "tokenType": "resource",
+      "rarity": "uncommon",
+      "tier": 1,
+      "tags": [
+        "Ore"
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 1000,
+      "requiresHero": true,
+      "config": {
+        "skill": "mining",
+        "skillRequired": 60,
+        "cycleTimeMs": 29000,
+        "xp": 11,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_mythril_ore",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_mythril_ore_vein",
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "needsTool": {
+        "kind": "pickaxe",
+        "minTier": 2
+      },
+      "staysPut": true,
+      "respawn": {
+        "mode": "refill",
+        "afterMs": 120000,
+        "restingSprite": "t_vein_stone"
+      },
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:5646bbe4514af002",
+    "note": "XP a cycle (config.xp) 203 → 11: Mining 60 → 70: its best Typical source, Mythril Ore Vein, takes 0.1× the curve's time. Now 1× the curve over Mining 60 → 70."
+  },
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_adamantium_ore",
+    "value": {
+      "name": "Adamantium Ore",
+      "description": "Needs a Mythril Pickaxe or better in hand.",
+      "sprite": "t_ore_vein_addy",
+      "tokenType": "resource",
+      "rarity": "uncommon",
+      "tier": 1,
+      "tags": [
+        "Ore"
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 1000,
+      "requiresHero": true,
+      "config": {
+        "skill": "mining",
+        "skillRequired": 75,
+        "cycleTimeMs": 33000,
+        "xp": 37,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_adamantine_ore",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            }
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_adamantium_ore",
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "needsTool": {
+        "kind": "pickaxe",
+        "minTier": 3
+      },
+      "staysPut": true,
+      "respawn": {
+        "mode": "refill",
+        "afterMs": 120000,
+        "restingSprite": "t_vein_stone"
+      },
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:9480d3a5700afeaf",
+    "note": "XP a cycle (config.xp) 726 → 37: Mining 75 → 85: its best Typical source, Adamantium Ore, takes 0.1× the curve's time. Now 1× the curve over Mining 75 → 85."
+  },
+  {
+    "op": "edit",
+    "kind": "recipe",
+    "id": "recipe_mtp8qjj1",
+    "value": {
+      "id": "recipe_mtp8qjj1",
+      "name": "Gold Ingot",
+      "skill": "smithing",
+      "levelRequirement": 45,
+      "requiresContext": [],
+      "inputs": [
+        {
+          "itemId": "item_gold_ore",
+          "quantity": 8
+        },
+        {
+          "itemId": "item_coal",
+          "quantity": 2
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_gold_ingot",
+          "chance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "baseQty": {
+            "min": 1,
+            "max": 1
+          },
+          "variable": false
+        }
+      ],
+      "durationMs": 26000,
+      "stationChargeCost": 1,
+      "xp": 34,
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "stationKinds": [
+        "furnace"
+      ],
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:19b383ef125d396d",
+    "note": "XP a cycle (xp) 65 → 34: Smithing 45 → 60: its best Typical source, Gold Ingot at Furnace, takes 0.5× the curve's time. Another source now carries those levels; at its authored number it would take them back."
+  },
+  {
+    "op": "edit",
+    "kind": "recipe",
+    "id": "recipe_mtp8qjj3",
+    "value": {
+      "id": "recipe_mtp8qjj3",
+      "name": "Mythril Ingot",
+      "skill": "smithing",
+      "levelRequirement": 60,
+      "requiresContext": [],
+      "inputs": [
+        {
+          "itemId": "item_mythril_ore",
+          "quantity": 10
+        },
+        {
+          "itemId": "item_coal",
+          "quantity": 4
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mythril_ingot",
+          "chance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "baseQty": {
+            "min": 1,
+            "max": 1
+          },
+          "variable": false
+        }
+      ],
+      "durationMs": 29000,
+      "stationChargeCost": 1,
+      "xp": 65,
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "stationKinds": [
+        "furnace"
+      ],
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:b7de067de2042607",
+    "note": "XP a cycle (xp) 203 → 65: Smithing 60 → 70: its best Typical source, Mythril Ingot at Furnace, takes 0.3× the curve's time. Another source now carries those levels; at its authored number it would take them back."
+  },
+  {
+    "op": "edit",
+    "kind": "recipe",
+    "id": "recipe_mtp8qjj4",
+    "value": {
+      "id": "recipe_mtp8qjj4",
+      "name": "Adamantine Ingot",
+      "skill": "smithing",
+      "levelRequirement": 75,
+      "requiresContext": [],
+      "inputs": [
+        {
+          "itemId": "item_adamantine_ore",
+          "quantity": 12
+        },
+        {
+          "itemId": "item_coal",
+          "quantity": 6
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_adamantine_ingot",
+          "chance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "baseQty": {
+            "min": 1,
+            "max": 1
+          },
+          "variable": false
+        }
+      ],
+      "durationMs": 33000,
+      "stationChargeCost": 1,
+      "xp": 258,
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "stationKinds": [
+        "furnace"
+      ],
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:51d9331423826d32",
+    "note": "XP a cycle (xp) 726 → 258: Smithing 75 → 85: its best Typical source, Adamantine Ingot at Furnace, takes 0.4× the curve's time. Now 1× the curve over Smithing 75 → 85."
+  },
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_mahogany_forest",
+    "value": {
+      "name": "Mahogany Forest",
+      "description": "Needs a Woodaxe in hand.",
+      "sprite": "t_forest_mahogany",
+      "tokenType": "resource",
+      "rarity": "uncommon",
+      "tier": 1,
+      "tags": [
+        "Forest"
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 250,
+      "requiresHero": true,
+      "config": {
+        "skill": "forestry",
+        "skillRequired": 75,
+        "cycleTimeMs": 33000,
+        "xp": 39,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_mahogany_wood",
+            "chance": 100,
+            "minQty": 12,
+            "maxQty": 13,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_mahogany_forest",
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "needsTool": {
+        "kind": "woodaxe",
+        "minTier": 1
+      },
+      "respawn": {
+        "mode": "refill",
+        "afterMs": 600000
+      },
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:9750d94ee6a4e20c",
+    "note": "XP a cycle (config.xp) 726 → 39: Forestry 75 → 85: its best Typical source, Mahogany Forest, takes 0.1× the curve's time. Another source now carries those levels; at its authored number it would take them back."
+  },
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_birch_forest",
+    "value": {
+      "name": "Birch Forest",
+      "description": "Needs a Woodaxe in hand.",
+      "sprite": "t_forest_birch",
+      "tokenType": "resource",
+      "rarity": "uncommon",
+      "tier": 1,
+      "tags": [
+        "Forest"
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 250,
+      "requiresHero": true,
+      "config": {
+        "skill": "forestry",
+        "skillRequired": 30,
+        "cycleTimeMs": 23000,
+        "xp": 7,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_birch_wood",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_birch_forest",
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "needsTool": {
+        "kind": "woodaxe",
+        "minTier": 1
+      },
+      "respawn": {
+        "mode": "refill",
+        "afterMs": 600000
+      },
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:5fbcdc8202563c64",
+    "note": "XP a cycle (config.xp) 18 → 7: Forestry 30 → 45: its best Typical source, Birch Forest, takes 0.4× the curve's time. Another source now carries those levels; at its authored number it would take them back."
+  },
+  {
+    "op": "edit",
+    "kind": "token",
+    "id": "token_maple_forest",
+    "value": {
+      "name": "Maple Forest",
+      "description": "Needs a Woodaxe in hand.",
+      "sprite": "t_forest_maple",
+      "tokenType": "resource",
+      "rarity": "uncommon",
+      "tier": 1,
+      "tags": [
+        "Forest"
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 250,
+      "requiresHero": true,
+      "config": {
+        "skill": "forestry",
+        "skillRequired": 45,
+        "cycleTimeMs": 26000,
+        "xp": 8,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_maple_wood",
+            "chance": 100,
+            "minQty": 13,
+            "maxQty": 14,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_maple_forest",
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      },
+      "needsTool": {
+        "kind": "woodaxe",
+        "minTier": 1
+      },
+      "respawn": {
+        "mode": "refill",
+        "afterMs": 600000
+      },
+      "plan": {
+        "status": "live",
+        "tier": 3
+      }
+    },
+    "fingerprint": "fp:4ab43509f2af6dd3",
+    "note": "XP a cycle (config.xp) 65 → 8: Forestry 45 → 70: its best Typical source, Maple Forest, takes 0.1× the curve's time. Another source now carries those levels; at its authored number it would take them back."
+  }
+]

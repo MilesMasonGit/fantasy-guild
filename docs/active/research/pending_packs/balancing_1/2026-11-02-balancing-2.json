@@ -1,0 +1,286 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-02-balancing-2",
+  "createdAt": "2026-11-03T02:22:22.502Z",
+  "asked": "Follow-up to the first balancing pack (owner 2026-11-02, choice (a)): Plane 1 is 25 minutes long, so its budget is 55 min from a new game, and Beer drops to Cooking 9.",
+  "intent": {
+    "stages": [
+      {
+        "tier": 1,
+        "move": "faster",
+        "toHours": 1.53,
+        "note": "Beer at Cooking 9 instead of 15: Plane 1 goes from 2 h to 1 h 32 min; the rest waits on the Alchemy XP Sync undoes (T-291)."
+      }
+    ]
+  },
+  "entries": [
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_mtp8qjj9",
+      "value": {
+        "id": "recipe_mtp8qjj9",
+        "name": "Beer",
+        "skill": "cooking",
+        "levelRequirement": 9,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_water",
+            "quantity": 2
+          },
+          {
+            "itemId": "item_wheat",
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_beer",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "anchor": true,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 19000,
+        "stationChargeCost": 1,
+        "xp": 5,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "stationKinds": [
+          "brewery"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1,
+          "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
+        }
+      },
+      "fingerprint": "fp:400bb13630ff64d0",
+      "note": "Level needed (levelRequirement) 15 → 9. Owner 2026-11-02, choice (a): Plane 1 is 25 min long (done 55 min into a new game); at Cooking 15 Beer held Plane 1 to about 2 h."
+    }
+  ],
+  "gate": {
+    "workspaceFingerprint": "fp:2743216886a38ada",
+    "toolVersion": 2,
+    "at": "2026-11-03T02:22:36.412Z",
+    "verdict": "pass",
+    "summary": "Passes: 26 entries move on the timeline, 1 stage time changes, 1 problem added, 0 cleared.",
+    "blocks": [],
+    "notes": [
+      "Plane 1 was declared faster but moved within the ±25 % tolerance: Plane 1: 2 h → 1 h 32 min, 23 % faster."
+    ],
+    "deltas": {
+      "stages": [
+        {
+          "tier": 1,
+          "before": 2.008036406657624,
+          "after": 1.538333333333333,
+          "pct": -23.4
+        }
+      ],
+      "moved": [
+        {
+          "key": "item:item_beer",
+          "name": "Beer",
+          "change": "earlier",
+          "from": 2.008036406657624,
+          "to": 0.8495024789323259
+        },
+        {
+          "key": "token:token_fir_tree",
+          "name": "Fir Tree",
+          "change": "later",
+          "from": 3.733937933687725,
+          "to": 3.9117445019585695
+        },
+        {
+          "key": "item:item_fir_wood",
+          "name": "Fir Wood",
+          "change": "later",
+          "from": 3.736921300691092,
+          "to": 3.9147278689619367
+        },
+        {
+          "key": "item:item_iron_bow",
+          "name": "Iron Bow",
+          "change": "later",
+          "from": 3.7519482356273244,
+          "to": 3.929754803898169
+        },
+        {
+          "key": "item:item_iron_wand",
+          "name": "Iron Wand",
+          "change": "later",
+          "from": 3.7519482356273244,
+          "to": 3.929754803898169
+        },
+        {
+          "key": "item:item_fir_seedling",
+          "name": "Fir Seedling",
+          "change": "later",
+          "from": 3.7563131862129775,
+          "to": 3.934119754483822
+        },
+        {
+          "key": "token:token_fir_stump",
+          "name": "Fir Stump",
+          "change": "later",
+          "from": 3.7570018225766137,
+          "to": 3.9348083908474583
+        },
+        {
+          "key": "token:token_herb_garden",
+          "name": "Herb Garden",
+          "change": "later",
+          "from": 3.7601714690412607,
+          "to": 3.937978037312105
+        },
+        {
+          "key": "item:item_birdwatcher",
+          "name": "Birdwatcher",
+          "change": "later",
+          "from": 3.7952926801174605,
+          "to": 3.9739486663279604
+        },
+        {
+          "key": "token:token_alchemy_table",
+          "name": "Alchemy Table",
+          "change": "later",
+          "from": 3.7774549033846947,
+          "to": 3.955261471655539
+        },
+        {
+          "key": "item:item_elixir_of_ironskin",
+          "name": "Elixir of Ironskin",
+          "change": "later",
+          "from": 3.786915220845012,
+          "to": 3.9647217891158566
+        },
+        {
+          "key": "token:token_tannery",
+          "name": "Tannery",
+          "change": "later",
+          "from": 3.7917549707247624,
+          "to": 3.969561538995607
+        },
+        {
+          "key": "token:token_fir_workbench",
+          "name": "Fir Workbench",
+          "change": "later",
+          "from": 3.806671805741597,
+          "to": 3.9844783740124416
+        },
+        {
+          "key": "token:token_alpha_den",
+          "name": "Alpha's Den",
+          "change": "later",
+          "from": 0.600899178046801,
+          "to": 0.6295134246204582
+        },
+        {
+          "key": "token:token_wolf_den",
+          "name": "Wolf Den",
+          "change": "later",
+          "from": 0.600899178046801,
+          "to": 0.6295134246204582
+        },
+        {
+          "key": "token:token_fir_forest",
+          "name": "Fir Forest",
+          "change": "later",
+          "from": 3.8317722771220684,
+          "to": 4.009578845392913
+        },
+        {
+          "key": "token:token_iron_furnace",
+          "name": "Iron Furnace",
+          "change": "later",
+          "from": 3.8491460424396435,
+          "to": 4.026952610710488
+        },
+        {
+          "key": "token:token_fir_sapling",
+          "name": "Fir Sapling",
+          "change": "later",
+          "from": 3.862480862980654,
+          "to": 4.0402874312515
+        },
+        {
+          "key": "token:token_wolf",
+          "name": "Wolf",
+          "change": "later",
+          "from": 0.6092325113801343,
+          "to": 0.6378467579537915
+        },
+        {
+          "key": "token:token_iron_smithy",
+          "name": "Iron Smithy",
+          "change": "later",
+          "from": 3.8964808874887744,
+          "to": 4.0742874557596185
+        },
+        {
+          "key": "item:item_game_meat",
+          "name": "Game Meat",
+          "change": "later",
+          "from": 0.6203436224912454,
+          "to": 0.6489578690649026
+        },
+        {
+          "key": "item:item_roast_meat",
+          "name": "Roast Meat",
+          "change": "later",
+          "from": 0.630925633073256,
+          "to": 0.6595398796469132
+        },
+        {
+          "key": "token:token_wolf_alpha",
+          "name": "Wolf Alpha",
+          "change": "later",
+          "from": 0.6842325113801344,
+          "to": 0.7128467579537916
+        },
+        {
+          "key": "item:map_yellowstone",
+          "name": "Yellowstone Map",
+          "change": "later",
+          "from": 0.6875658447134677,
+          "to": 0.7161800912871249
+        },
+        {
+          "key": "item:item_leather",
+          "name": "Leather",
+          "change": "later",
+          "from": 3.8751662433862433,
+          "to": 3.990725560159628
+        },
+        {
+          "key": "item:item_leather_hat",
+          "name": "Leather Hat",
+          "change": "later",
+          "from": 3.9356348752834465,
+          "to": 4.0511941920568315
+        }
+      ],
+      "movedCount": 26,
+      "added": [
+        {
+          "check": "profile-bounds",
+          "key": "skill:cooking",
+          "severity": "warn"
+        }
+      ],
+      "cleared": 0
+    }
+  }
+}
