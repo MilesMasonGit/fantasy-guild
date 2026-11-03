@@ -11,10 +11,10 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| T-286: enemy arrivals stop tripping false slowdown alarms | builder | `fix/relax-deopt` (`t1`) | queued | Tue | |
-| T-289: two CMS pack-review tests stop failing on a busy machine | engineer | `fix/pack-review-flake` (`t2`) | queued | Tue | |
+| T-286: enemy arrivals stop tripping false slowdown alarms | builder | `fix/relax-deopt` (`t1`) | **merged** 1e35a890 (7409 tests, cycles, build; engine work **same**, S4 11 runs; timings doubled across untouched scenarios = load from the helpers). Sixteen alternating runs: OSR exits 30-339 a process to 0, worst arrival median 16.5 to 11.1 ms. **Full baseline retake needed next 01:00**, not `--only` | Tue | Tue |
+| T-289: two CMS pack-review tests stop failing on a busy machine | engineer | `fix/pack-review-flake` (`t2`) | building | Tue | |
 | T-205 rest: bench tools hold the slowdown they ask for | builder | `fix/bench-throttle` | queued | Tue | |
-| T-292 + T-298's hint: retired map machinery out of the code | engineer | `chore/retire-map-machinery` | queued | Tue | |
+| T-292 + T-298's hint: retired map machinery out of the code | engineer | `chore/retire-map-machinery` (`t3`) | building | Tue | |
 | T-287, the safe parts only: enemies cheaper with no change in look or play | engineer | `perf/enemy-next` | queued | Tue | |
 
 ## Director, four in parallel beside the balancing pack (owner 2026-11-02 10:15: all four, the two-helper limit lifted for this batch)
