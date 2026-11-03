@@ -49,7 +49,7 @@ game looks and plays, gathered one screen at a time.*
 | 5 | Shop | not started | |
 | 6 | Guild Hall | not started | |
 | 7 | World map | not started | |
-| 8 | Combat | not started | carries the mat list's items 5, 13, 14 and the owner's wish for iterative combat look designs |
+| 8 | Combat | **walked 2026-11-02; waits for approval** | carried in the mat list's items 5, 13, 14 |
 | 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
 | 10 | Notifications | not started | |
 | 11 | Settings and the start screen | not started | nine "coming soon" controls; T-039 |
@@ -125,6 +125,58 @@ and [concept_art_direction.md](concept_art_direction.md). Not in the director's 
 
 **Looked at, no change** (owner, 2026-11-02): the work plate; moving and dropping
 Tokens. **T-012 decided**: growth and transforms keep pushing spawned neighbours.
+
+### 8. Combat
+
+**The sheet (2026-11-02). From the GDD and the code, not seen in the running game;
+where this disagrees with the screen, the screen wins.**
+
+- **Over each fighter**: a thin health bar with number and percentage above it
+  ("17 · 57%"); beside the enemy's bar a crossed-swords chip that opens the panel.
+- **Under their feet**: the fight plate: both styles, a divider, the hero's elixirs with
+  fights left.
+- **Floating numbers**: at each fighter's outer side, gone in half a second: white on
+  the enemy, red on the hero, Miss, a big Crit!, Weak! or Resisted with the hit's types,
+  enemy moves by name, green heals, Venom and Burn ticks. Up to three lanes.
+- **The fight panel**: one at a time, over the mat: both fighters on a strip, the versus
+  card, elixirs and statuses, enemy moves, a log closed until asked for.
+- **Enemy card**: on resting the pointer: level, style, health, hit, swing, resistances,
+  moves.
+- **Art**: the combat icons are code-drawn stand-ins; only the Cow has an animation sheet,
+  so other enemies stand still in the strip.
+
+**Carried in**: the mat list's items 5 (fights move to open space), 13 (damage numbers
+over the fighter) and 14 (procs above the health bars, like speech), and the owner's
+wish for iterative designs "to make sure that combat looks good and is clear throughout
+the fight". **Already filed**: T-249 (who swings first after a kill, on an eye-check
+branch), T-198 (bubbles cost the most per fight).
+
+**The list** (owner, 2026-11-02; the tags are the planning agent's draft). "There's a
+lot of visual information happening at once." What just happened is the hardest to tell.
+
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **The fight plate goes**: "not needed"; "the skill icons and bar are too much info"; "leave the combat matchup for the detail screen". Its elixir counts move to the window. | must, tweak |
+| 2 | **The detail view button stands where the plate was.** | must, tweak |
+| 3 | **Fighters on the mat use the same stylized HP bar with numbers on it** as the hero bar, smaller, heroes and enemies alike. | must, design |
+| 4 | **Crowded fights step to open space**: only when a fight would overlap another or a hero, a short way to a clear spot; a lone fight stays where it starts; no clear spot, it stays. (mat item 5) | must, design |
+| 5 | **Floats: fewer and clearer, over the fighter**: damage number, Crit!, Miss, heals. Type icons and Weak! or Resisted move to the window and its log. (mat item 13) | must, tweak |
+| 6 | **A named enemy move or effect proc appears above the health bar**, in a speech-style bubble. (mat item 14) | must, tweak |
+| 7 | **The fight panel becomes a window**, "more like a window in an operating system": drag it, minimize it, and open several at once. | must, design |
+| 8 | **A minimized window is a small tab**: hero against enemy with both healths, in a strip above the hero bar. | must, design |
+| 9 | **The window displays the battle larger.** | must, tweak |
+| 10 | **The header reads "Kira vs Goblin"**; no "Beat goblin in 0:11" text. | must, tweak |
+| 11 | **Combat stats are a stat block** (matching the Token card, brief 350). | must, tweak |
+| 12 | **Enemy attacks get a better style**, labelled appropriately. | must, design |
+| 13 | **Active effects shown, probably in two columns.** | must, tweak |
+
+**How it is designed** (owner, 2026-11-02): picture mock-ups of the window and the mat
+first to choose a direction, then a test fight in the running game, from a QA panel
+button, for the owner to judge the motion. More rounds as needed: "iterative designs to
+make sure that combat looks good and is clear throughout the fight".
+
+**Amends** the owner's combat screen picks of 2026-10-24/25 (GDD "The combat screen"):
+the outer-side floats, the fight plate, the one-at-a-time panel, "17 · 57%" above the bar.
 
 ### 3. Hero bar and hero sheet
 
