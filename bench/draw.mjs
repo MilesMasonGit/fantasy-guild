@@ -27,7 +27,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
 import { startDevServer, startPerfServer, buildPerf, perfBuildInfo } from './browser/servers.mjs';
-import { SCENES, sceneFor, sceneUrl, openBoard, deliveredSlowdown } from './browser/scenes.mjs';
+import { SCENES, sceneFor, sceneUrl, openBoard, deliveredSlowdown, envelopeNote } from './browser/scenes.mjs';
 import {
     parseArgs, SCENE_IDS, DRAW_SWITCHES, metricsOf, rejectReason, aggregate, costTable, compareToBaseline,
     baselineEntry, abOrder, conditionKey, sceneTable, costTableText, table, EXIT, TOLERANCE, settingsMismatch
@@ -101,14 +101,6 @@ async function measureWithRetry(...a) {
 }
 
 const SLOWDOWN_RETRIES = 2;
-
-/** An envelope scene's counts over the window (mean, and the range when it moved). */
-function envelopeNote(m) {
-    const e = m.envelope;
-    if (!e) return '';
-    const v = (k) => (e[k] ? `${e[k].mean}${e[k].min !== e[k].max ? ` (${e[k].min}–${e[k].max})` : ''}` : '?');
-    return ` · Tokens ${v('tokens')}, enemies ${v('enemies')}, fights ${v('fights')}, heroes ${v('heroes')}, piles ${v('piles')}, stubs ${v('stubs')}, banners ${v('banners')}, flows ${e.flowsPerMin}/min, banners ${e.bannersPerMin}/min`;
-}
 
 function label(scene, m) {
     return `${scene.name}${m?.reject ? ' ✗' : ''}`;

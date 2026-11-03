@@ -3,6 +3,7 @@
 //
 //   npm run bench:profile -- --scene=S2 --cpu=4       one scene, settled, then a trace and a CPU profile
 //   npm run bench:profile -- --scene=S3 --off=bubbles a draw switch off (as bench:draw --switches)
+//   npm run bench:profile -- --scene=heroes16         any bench:draw scene, the envelope's included
 //   npm run bench:profile -- --no-build               reuse dist-perf-prof/ as it is
 //   npm run bench:profile -- --cpu=3.2 --slowdown-target=4   ask Chrome for one, judge what it delivers against the other
 //   --settle=20 --trace=6 --sample=8                  seconds: settle, trace window, CPU-profile window
@@ -26,8 +27,8 @@ import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
 import { startPerfServer, buildPerf, PROFILE_OUT_DIR } from './browser/servers.mjs';
-import { SCENES, sceneUrl, openBoard, deliveredSlowdown } from './browser/scenes.mjs';
-import { metricsOf, DRAW_SWITCHES } from './browser/drawLib.mjs';
+import { SCENES, sceneFor, sceneUrl, openBoard, deliveredSlowdown, envelopeNote } from './browser/scenes.mjs';
+import { metricsOf, DRAW_SWITCHES, ENVELOPE_SCENE_NAMES } from './browser/drawLib.mjs';
 import { parseSlowdownTarget, slowdownReject } from './browser/slowdown.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -41,9 +42,9 @@ function parseArgs(argv) {
         const v = rest.join('=');
         switch (k) {
             case 'scene': {
-                const id = Object.keys(SCENES).find(s => s.toLowerCase() === v.toLowerCase());
-                if (!id) throw new Error(`unknown scene ${v}; known: ${Object.keys(SCENES).join(', ')}`);
-                a.scene = id;
+                const scene = sceneFor(v);
+                if (!scene) throw new Error(`unknown scene ${v}; known: ${Object.keys(SCENES).join(', ')}, and ${ENVELOPE_SCENE_NAMES}`);
+                a.scene = scene.id;
                 break;
             }
             case 'cpu': a.cpu = Number(v); break;
@@ -492,7 +493,7 @@ const f1 = (v) => (Number.isFinite(v) ? v.toFixed(1) : '—');
 
 async function main() {
     const args = parseArgs(process.argv.slice(2));
-    const scene = SCENES[args.scene];
+    const scene = sceneFor(args.scene);
     let commit = 'unknown';
     try { commit = execSync('git rev-parse --short HEAD', { cwd: root }).toString().trim(); } catch { /* not a checkout */ }
     console.log(`Fantasy Guild drawing profile — ${commit} · ${scene.name} · CPU ${args.cpu}× · settle ${args.settleS} s, trace ${args.traceS} s, CPU profile ${args.sampleS} s${args.off.length ? ` · off: ${args.off.join(',')}` : ''}`);
@@ -504,19 +505,21 @@ async function main() {
     const server = await startPerfServer({ outDir: PROFILE_OUT_DIR });
     const chrome = await launchChrome({ width: 1600, height: 1000 });
     try {
-        const page = await openBoard(chrome, sceneUrl(server.url, scene, args.off), { cpu: args.cpu, stress: scene.stress });
+        const page = await openBoard(chrome, sceneUrl(server.url, scene, args.off), { cpu: args.cpu, stress: scene.stress, stressId: scene.stressId });
         const how = scene.ui ? await scene.ui(page) : null;
         if (how) console.log(`  ${how}`);
         await sleep(args.settleS * 1000);
         const slowdownBefore = await deliveredSlowdown(page, args.cpu);
+        if (scene.probe) await page.evaluate('window.__envWindowStart = performance.now(), true');
         const t = await trace(page, args.traceS, { invalidations: args.invalidations });
         const slowdownAfter = await deliveredSlowdown(page, args.cpu);
         const hud = metricsOf(t.report);
         const tr = analyseTrace(t.events, maps, args.traceS);
         const prof = await cpuProfile(page, args.sampleS);
         const layers = await layerCensus(page);
+        const envelope = scene.probe ? await page.evaluate(scene.probe) : null;
         const cp = analyseProfile(prof, maps, args.top);
-        const result = { meta: { commit, date: new Date().toISOString(), args, chrome: chrome.info.product, slowdown: [slowdownBefore, slowdownAfter] }, hud, events: t.report?.events?.top || [], trace: tr, cpu: cp, layers };
+        const result = { meta: { commit, date: new Date().toISOString(), args, chrome: chrome.info.product, slowdown: [slowdownBefore, slowdownAfter] }, ...(envelope ? { envelope } : {}), hud, events: t.report?.events?.top || [], trace: tr, cpu: cp, layers };
 
         fs.mkdirSync(outDir, { recursive: true });
         const stamp = `${result.meta.date.replace(/[:.]/g, '-')}-${args.scene}-${args.cpu}x${args.off.length ? '-off-' + args.off.join('+') : ''}`;
@@ -532,6 +535,7 @@ async function main() {
             if (off) console.log(`⚠ ${off}: this profile ran on a different machine; rank nothing from it.`);
         }
         console.log(`\nPerf HUD over the trace window: ${f1(hud.fps)} fps, frame work p50/p95/p99 ${f2(hud.workP50)}/${f2(hud.workP95)}/${f2(hud.workP99)} ms, ≤16.7 ms ${f1(hud.in16Pct)} %, ${hud.tokens} Tokens, ${hud.domNodes} DOM nodes`);
+        if (envelope) console.log(`The board over both windows${envelopeNote({ envelope })}`);
         const evTop = (t.report?.events?.top || []).slice(0, 10).map(e => `${e.name} ${f1(e.perSecond)}`).join(' · ');
         console.log(`Engine events per second: ${evTop}`);
         if (tr.error) console.log(`trace: ${tr.error}`);

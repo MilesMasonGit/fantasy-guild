@@ -7,7 +7,8 @@
 //                                        contents` on the animations among the resting Tokens,
 //                                        hidden name labels not painted): shows the fault (exits
 //                                        1); `--neuter=anims` or `--neuter=labels` for one
-//   npm run bench:crisp -- --scene=cap128 --no-build --keep=<dir>   another board; keep the shots
+//   npm run bench:crisp -- --scene=cap128 --no-build --keep=<dir>   another board (a plain one or an
+//                                        envelope scene); keep the shots
 //   --verbose                            each judged Token's share of exact pixels at rest
 //
 // How: the board is built, settled and FROZEN (the game loop stopped, the running animations
@@ -34,7 +35,8 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
 import { startDevServer, startPerfServer, buildPerf } from './browser/servers.mjs';
-import { SCENES, sceneUrl, openBoard } from './browser/scenes.mjs';
+import { sceneFor, sceneUrl, openBoard } from './browser/scenes.mjs';
+import { ENVELOPE_SCENE_NAMES } from './browser/drawLib.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -55,9 +57,9 @@ function parseArgs(argv) {
                 break;
             }
             case 'scene': {
-                const id = Object.keys(SCENES).find(s => s.toLowerCase() === v.toLowerCase());
-                if (!id || SCENES[id].ui) throw new Error(`--scene: one of the plain boards (S1, S2, S3, cap128, camp128, cap256), not ${v}`);
-                a.scene = id;
+                const scene = sceneFor(v);
+                if (!scene || (scene.ui && !scene.probe)) throw new Error(`--scene: one of the plain boards (S1, S2, S3, cap128, camp128, cap256) or ${ENVELOPE_SCENE_NAMES}, not ${v}`);
+                a.scene = scene.id;
                 break;
             }
             case 'settle': a.settleS = Number(v); break;
@@ -278,9 +280,11 @@ async function main() {
             server = await startPerfServer();
         }
         chrome = await launchChrome({ width: args.width, height: args.height });
-        const scene = SCENES[args.scene];
+        const scene = sceneFor(args.scene);
         console.log(`${server.build} build, ${scene.name}, ${chrome.info.product}${args.neuter.length ? `, NEUTERED: ${args.neuter.join(' and ')}` : ''}`);
-        const page = await openBoard(chrome, sceneUrl(server.url, scene), { cpu: 1, stress: scene.stress });
+        const page = await openBoard(chrome, sceneUrl(server.url, scene), { cpu: 1, stress: scene.stress, stressId: scene.stressId });
+        const how = scene.ui ? await scene.ui(page) : null;
+        if (how) console.log(how);
         await page.send('LayerTree.enable');
         let layers = 0;
         page.on('LayerTree.layerTreeDidChange', (p) => { layers = (p.layers || []).filter(l => l.drawsContent).length; });
@@ -290,7 +294,8 @@ async function main() {
         await sleep(args.settleS * 1000);
         // Labels made later (a spawn) keep their own visibility; the board is frozen below.
         if (args.neuter.includes('labels')) await page.evaluate(`(document.querySelectorAll('[data-token-name]').forEach(el => { el.style.visibility = 'visible'; }), true)`);
-        await page.evaluate('(window.__perf.game.GameLoop.stop(), true)');
+        // An envelope scene's page timers would keep changing the screen on a frozen board.
+        await page.evaluate('(window.__perf.game.GameLoop.stop(), clearInterval(window.__benchTimer), clearInterval(window.__envSampler), true)');
         await sleep(4500);   // a floater lasts 3 s; slides, hops and flashes less
 
         const tokens = await page.evaluate(`(() => {
