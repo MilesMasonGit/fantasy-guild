@@ -183,7 +183,9 @@ Without `--from`, `stamp`, `gate`, `world` and `balance` read the newest autosav
 newer than every file in `data/`; otherwise (`data/` is newer, or there is no autosave) they read
 `data/` with `cms/plan/plan.json`, which may flag conflicts the owner then judges. Each prints
 which it used and why (`Stamped ... against ...`, `Against ...`). `--from <workspace.json>`
-names another. `check` reads no workspace. The CMS lists a
+names another. `check` reads no workspace. The choice goes by file times, and switching branch
+rewrites `data/`'s, so after one an autosave with the owner's unsynced work can read as older: when
+the printed reason looks wrong, name the autosave with `--from`. The CMS lists a
 malformed pack with the same reasons and will not open it for review.
 
 ### The gate
