@@ -28,6 +28,8 @@ couple of weeks).*
 - **Gates** (owner, unchanged): a star opens when a neighbouring star is lit;
   later stars and ranks cost materials from later tiers, so they wait
   naturally for fir, iron, gold.
+- **Drops run on one lap: 10 minutes by default, reduced to 5 by Guild Hall upgrades**
+  (owner, 2026-11-03; brief 390; replaces the 5-minute lap of T-099).
 - **A star per ring from ring 2 allows settling further rings** (owner, 2026-11-03;
   `concept_world_map.md`, brief 380).
 - **Star prices stay as they are until a Guild Hall balance pass** (owner,
