@@ -28,6 +28,8 @@ couple of weeks).*
 - **Gates** (owner, unchanged): a star opens when a neighbouring star is lit;
   later stars and ranks cost materials from later tiers, so they wait
   naturally for fir, iron, gold.
+- **A star per ring from ring 2 allows settling further rings** (owner, 2026-11-03;
+  `concept_world_map.md`, brief 380).
 - **Star prices stay as they are until a Guild Hall balance pass** (owner,
   2026-11-02): the 20 ranks the ledger shows over a day to pay back are not
   re-priced now.

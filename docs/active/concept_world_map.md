@@ -287,6 +287,16 @@ the player to **make nodes**.*
 - Travel between settled places stays free and instant; one place, one
   Region (above).
 
+## Amended by the detail pass (owner, 2026-11-03; brief 380)
+
+- **A Guild Hall star per ring from ring 2**: ring 1 is open from the start; a star
+  allows settling ring 2, another ring 3, then one per wild ring. A cell's price is no
+  longer its only gate. The ledger counts the stars.
+- **No hexes outside the third ring unless accessible.** Inside it, every cell's contents
+  stay visible.
+- **Rings are shown only as border lines** between the hexes; no ring numbers for the player.
+- **The tome's tabs go**: one screen, the world map.
+
 ## Open
 
 - How a cell's requirements are priced (the simulator and the ledger's stage

@@ -1,4 +1,4 @@
-Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360; the terrain round, brief 370)
+Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360; the terrain round, brief 370; section 7, world map, brief 380)
 
 # The detail pass: UI and UX, section by section
 
@@ -48,7 +48,7 @@ game looks and plays, gathered one screen at a time.*
 | 4 | Bank | not started | |
 | 5 | Shop | not started | |
 | 6 | Guild Hall | not started | |
-| 7 | World map | **walking now** | |
+| 7 | World map | **approved and briefed 2026-11-03** ([brief 380](briefs/380_world_map_detail.md)) | |
 | 8 | Combat | **approved and briefed 2026-11-02** ([brief 360](briefs/360_combat_detail.md)) | carried in the mat list's items 5, 13, 14 |
 | 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
 | 10 | Notifications | not started | |
@@ -214,6 +214,7 @@ tables). Rulings kept: every cell's contents visible from the start; no landmark
 | 12 | **No "The guild is here" text; the flag is larger and more prominent.** | must, tweak |
 | 13 | **More ceremony on settling: a title reveal**: the place's name and terrain large across the mat, with a fanfare. | must, tweak |
 | 14 | **More ceremony: a hero leads the way**: heroes walk in from the mat's edge. | must, design |
+| 15 | **The tome's tabs go.** Travel is on the panel; what else the Regions page held moves there. | must, tweak |
 
 **Amends**: `concept_world_map.md` (a settled cell's only gate was its price; the wild
 rings came into view as you neared them), and the ledger's budgets must count the stars.
