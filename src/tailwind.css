@@ -1091,15 +1091,18 @@
 body.gi-dnd-active :is([data-item-stubs], [data-banners]),
 body.gi-dnd-active :is([data-item-stubs], [data-banners]) .pointer-events-auto { pointer-events: none !important; }
 
-/* A first find's stub: the button shine passes across it once as it appears. */
+/* A first find's stub: the button shine passes across it once as it appears.
+   ⚠️ No forwards fill: held at its end it stays in effect as long as the stub is new, a composited
+   layer per stub and one more for each stub drawn after it. */
 .gi-stub-new::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
+  opacity: 0;
   background: linear-gradient(110deg, transparent 0 40%, rgba(255, 255, 255, 0.4) 40% 60%, transparent 60% 100%);
-  animation: ui-shine-sweep 420ms steps(7, end) 1 both;
+  animation: ui-shine-sweep 420ms steps(7, end) 1;
 }
 
 /* Banners (BannerStack.jsx): they drop from behind the top bar with one small overshoot, and lift
