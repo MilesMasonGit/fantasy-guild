@@ -214,6 +214,7 @@ describe('⭐ collected loot flies to its stub', () => {
         expect(view.container.querySelector('[data-stubs-scroll]')).not.toBeNull();
 
         await collectPile('fixture_oak_wood', 3);
+        frame();                                       // placed on its first frame, and drawn with it
         const copy = view.container.querySelector('[data-stub-copy="fixture_oak_wood"]');
         expect(copy).not.toBeNull();
         expect(shownOn(copy)).toBe('0');
@@ -237,6 +238,7 @@ describe('⭐ collected loot flies to its stub', () => {
         const view = mountGame();
         act(() => ItemStubs.flush());
         await collectPile('fixture_oak_wood', 3);
+        frame();
         const copy = () => view.container.querySelector('[data-stub-copy="fixture_oak_wood"]');
         act(() => { fireEvent.click(copy()); });
         expect(ItemStubs.getStub('fixture_oak_wood').pinned).toBe(true);
