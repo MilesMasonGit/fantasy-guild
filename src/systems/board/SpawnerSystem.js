@@ -114,39 +114,23 @@ export function isEnemyCampType(spawnerTypeId) {
 }
 
 /**
- * How many of its family stand on the mat tethered to enemy camp `instance`: what it spawned.
- * ⚠️ A plain scan, not the census: a tether is written without a membership change (a spawn sets it
- * after landing, an older save's enemies are attached on the first tick), which a census keyed on
- * membership would miss. `tethered` ({@link tetherCounts}) answers it from one pass made for many
- * camps at once, by a caller that changes nothing between the pass and its last question.
+ * ⚠️ Under the test suite every count from the census is compared with a walk of the mat, and a
+ * difference fails the test that saw it (`tests/setup/tetherCensusCheck.js`). Off everywhere else: a
+ * walk per answer is the very cost the census saves.
  */
-function countOwn(instance, tethered = null) {
+const CHECK_TETHER_CENSUS = import.meta.env?.MODE === 'test';
+
+/** How many of its family stand on the mat tethered to enemy camp `instance`: what it spawned. */
+function countOwn(instance) {
     const ids = familySetOf(instance.typeId);
     let n = 0;
-    if (tethered) {
-        const byType = tethered.get(instance.id);
-        if (byType) for (const [typeId, count] of byType) if (ids.has(typeId)) n += count;
-        return n;
-    }
-    for (const t of BoardState.tokens()) {
-        if (t.tether === instance.id && ids.has(t.typeId)) n++;
+    const byType = ensureCensus().tethered.get(instance.id);
+    if (byType) for (const [typeId, count] of byType) if (ids.has(typeId)) n += count;
+    if (CHECK_TETHER_CENSUS) {
+        const walked = BoardState.walkTethered(instance.id, ids);
+        if (walked !== n) console.error(`Tether census out of step: ${instance.typeId} ${instance.id} counts ${n}, the mat holds ${walked}`);
     }
     return n;
-}
-
-/** Every Token on the mat with a tether, counted by tether and type: `tetherId → (typeId → n)`. */
-function tetherCounts() {
-    const out = new Map();
-    for (const t of BoardState.tokens()) {
-        if (typeof t.tether !== 'string') continue;
-        let byType = out.get(t.tether);
-        if (!byType) {
-            byType = new Map();
-            out.set(t.tether, byType);
-        }
-        byType.set(t.typeId, (byType.get(t.typeId) || 0) + 1);
-    }
-    return out;
 }
 
 /** A spawner type's family as a set, memoised with {@link familyOf}. */
@@ -178,9 +162,9 @@ function countNear(instance) {
  * allowance for one that plants within reach, what it spawned against its own allowance for an enemy
  * camp, else the mat-wide count against the family cap.
  */
-function countsOf(instance, def, tethered = null) {
+function countsOf(instance, def) {
     if (plantsWithinReach(def)) return { count: countNear(instance), cap: allowanceOf(def) };
-    if (isEnemyCampType(instance.typeId)) return { count: countOwn(instance, tethered), cap: allowanceOf(def) };
+    if (isEnemyCampType(instance.typeId)) return { count: countOwn(instance), cap: allowanceOf(def) };
     const family = familyOf(instance.typeId);
     return { count: countOf(family), cap: capOf(family) };
 }
@@ -238,24 +222,37 @@ export function familyOf(spawnerTypeId) {
 
 /**
  * The census: one pass over the mat, rebuilt lazily only when membership changes
- * (`BoardState.membershipVersion`) or the Token registry does. `attemptSpawn`'s cap check and
- * `syncAlerts`' once-a-tick rescan share one scan per tick (or per spawn, since a spawn earlier in
- * the same pass bumps membership and the next spawner re-counts).
+ * (`BoardState.membershipVersion`), a tether is written (`BoardState.tetherVersion`) or the Token
+ * registry changes. `attemptSpawn`'s cap check, every full enemy camp's question each tick and
+ * `syncAlerts`' once-a-tick rescan share one scan (a spawn earlier in the same pass bumps membership
+ * and the next spawner re-counts).
+ *
+ * `tethered` is every Token on the mat with a tether, by tether and type: `tetherId → (typeId → n)`.
  */
-let census = { tokens: null, version: -1, regVersion: -1, spawners: [], countByType: new Map(), capsByKey: new Map() };
+let census = { tokens: null, version: -1, tetherVersion: -1, regVersion: -1, spawners: [], countByType: new Map(), tethered: new Map(), capsByKey: new Map() };
 
 function ensureCensus() {
     const { tokens, version } = BoardState.membershipVersion();
+    const tetherVersion = BoardState.tetherVersion();
     const regVersion = registryVersion();
-    if (census.tokens === tokens && census.version === version && census.regVersion === regVersion) return census;
+    if (census.tokens === tokens && census.version === version && census.tetherVersion === tetherVersion && census.regVersion === regVersion) return census;
 
     const countByType = new Map();
+    const tethered = new Map();
     const spawners = [];
     for (const t of BoardState.tokens()) {
         countByType.set(t.typeId, (countByType.get(t.typeId) || 0) + 1);
         if (!t.turnedFrom && isSpawner(getTokenType(t.typeId))) spawners.push(t);
+        if (typeof t.tether === 'string') {
+            let byType = tethered.get(t.tether);
+            if (!byType) {
+                byType = new Map();
+                tethered.set(t.tether, byType);
+            }
+            byType.set(t.typeId, (byType.get(t.typeId) || 0) + 1);
+        }
     }
-    census = { tokens, version, regVersion, spawners, countByType, capsByKey: new Map() };
+    census = { tokens, version, tetherVersion, regVersion, spawners, countByType, tethered, capsByKey: new Map() };
     return census;
 }
 
@@ -372,7 +369,7 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
     // Tethered to the spawner that made it (this instance, not its type), saved: an enemy potters by
     // it (`EnemyMotion`), and an enemy camp counts what it spawned by it, an enemy or not.
     if (spawned && (isEnemyCampType(instance.typeId) || isEnemyDef(getTokenType(spawned.typeId)))) {
-        spawned.tether = instance.id;
+        BoardState.setTether(spawned, instance.id);
     }
     if (spawned && ctx.overMs > 0 && typeof ctx.advance === 'function') ctx.advance(spawned, ctx.overMs, random);
 
@@ -406,17 +403,12 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
  *            cap: number, familyLabel: string}|null} null when it is not a spawner
  */
 export function spawnerStatus(instanceId) {
-    return statusOf(instanceId, null);
-}
-
-/** {@link spawnerStatus}, an enemy camp's count read from `tethered` when given ({@link countOwn}). */
-function statusOf(instanceId, tethered) {
     const instance = BoardState.getTokenById(instanceId);
     const def = instance ? getTokenType(instance.typeId) : null;
     if (!instance || instance.turnedFrom || !isSpawner(def)) return null;
 
     const family = familyOf(instance.typeId);
-    const base = { ...countsOf(instance, def, tethered), familyLabel: familyLabel(family) };
+    const base = { ...countsOf(instance, def), familyLabel: familyLabel(family) };
     const interval = intervalOf(def);
     const clock = Number(instance.clocks?.spawnMs) || 0;
 
@@ -523,16 +515,12 @@ const sameList = (a = [], b = []) => a.length === b.length && a.every((v, i) => 
  */
 export function syncAlerts() {
     const live = new Set();
-    // What each enemy camp spawned, counted in one pass for all of them: nothing below adds, moves
-    // or tethers a Token (its only listeners draw).
-    let tethered = null;
     for (const s of liveSpawners()) {
         // A spawner marked for demolition never attempts (`TimedChanges` holds it), so nothing it
         // waits for is a problem: its alert drops below like a departed spawner's.
         if (Demolition.isMarked(s)) continue;
         live.add(s.id);
-        if (!tethered && isEnemyCampType(s.typeId)) tethered = tetherCounts();
-        const status = statusOf(s.id, tethered);
+        const status = spawnerStatus(s.id);
         const alert = (status && ALERT_FOR_STATE[status.state]) || null;
         const needs = alert === ALERT.SPAWN_NEEDS_ITEM ? (status.needs || []) : [];
         const prev = alerts.get(s.id);

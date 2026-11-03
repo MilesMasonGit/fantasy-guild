@@ -199,6 +199,45 @@ export function membershipVersion() {
 }
 
 /**
+ * The tether version: a counter bumped by {@link setTether}, kept per `tokens` object like the
+ * counters above. A tether is written apart from its Token's arrival (a spawn sets it after landing,
+ * an older save's enemies are attached on the first tick), so {@link membershipVersion} alone does
+ * not cover what `SpawnerSystem`'s census counts by tether.
+ */
+const tetherVersions = new WeakMap();
+
+/** How many tethers have been written on the current board, ever (a position, not a size). */
+export function tetherVersion() {
+    const tokensObj = board()?.tokens || null;
+    return tokensObj ? (tetherVersions.get(tokensObj) || 0) : 0;
+}
+
+/**
+ * Tie `instance` to the Token it belongs to: `tether` is that Token's instance id, or null for one
+ * that belongs to none (`EnemyMotion.attachUntethered` leaves a null alone, an absent one it attaches).
+ * ⚠️ The only way to write a tether (`TetherCensus.test.js` scans for any other): a cached count by
+ * tether stays right only because every write passes here.
+ */
+export function setTether(instance, tether) {
+    instance.tether = tether;
+    const tokensObj = board()?.tokens;
+    if (tokensObj) tetherVersions.set(tokensObj, (tetherVersions.get(tokensObj) || 0) + 1);
+}
+
+/**
+ * How many Tokens on the mat are tethered to `tether` with a type in `typeIds`, by walking them.
+ * The slow answer, for the test suite's check on `SpawnerSystem`'s census: called inside this file's
+ * `tokens()`, so a test counting who asks for the list does not see the check.
+ */
+export function walkTethered(tether, typeIds) {
+    let n = 0;
+    for (const t of tokens()) {
+        if (t.tether === tether && typeIds.has(t.typeId)) n++;
+    }
+    return n;
+}
+
+/**
  * The move journal: every {@link setTokenPoint} records the moved id and its from and to points
  * here, kept per `tokens` object like the counters above. A reader that caches something about who
  * is near whom (`nearby.neighbourIds`) replays the moves it has not seen ({@link eachMoveSince})

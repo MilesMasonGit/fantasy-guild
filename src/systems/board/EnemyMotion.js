@@ -139,7 +139,7 @@ export function attachUntethered() {
     for (const t of BoardState.tokens()) {
         if (!isEnemyTypeId(t.typeId) || 'tether' in t) continue;
         const spawner = nearestFamilySpawner(t.typeId, t);
-        if (spawner) { t.tether = spawner.id; attached++; }
+        if (spawner) { BoardState.setTether(t, spawner.id); attached++; }
     }
     board.enemyTethers = 1;
     return attached;
