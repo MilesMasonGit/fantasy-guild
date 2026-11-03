@@ -144,6 +144,12 @@ Ledger's World page shows the same).
 
 Numbers are a proposal: the owner runs Recalculate after accepting.
 
+Sync runs Recalculate too, so a number it derives on a tagged entry (a cycle time, XP a cycle, an
+item's value) is put back whatever a pack says. XP a cycle has a way out: `"sim": { "xpPinned": true }`
+beside the entry's `tempo` and `purpose` keeps its `config.xp` (a recipe's `xp`) as written.
+`changePackTool.mjs balance --out` sets it on the XP numbers it proposes. The owner sees and clears a
+pin in the editor, under the XP field.
+
 ### Declaring a move (optional)
 
 A pack that means to move a stage's time (the time a new game first has everything planned for

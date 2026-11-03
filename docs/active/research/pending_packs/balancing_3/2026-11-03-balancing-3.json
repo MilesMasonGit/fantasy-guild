@@ -1,0 +1,1306 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-03-balancing-3",
+  "createdAt": "2026-11-03T02:44:11.787Z",
+  "asked": "The XP numbers the first balancing pack had to hold back, because Sync would have put them back: they clear the Alchemy and Forestry walls and bring Plane 1 near its 55 minutes. Each is now pinned on its entry, so Recalculate and Sync keep it (T-291).",
+  "intent": {
+    "stages": [
+      {
+        "tier": 1,
+        "move": "faster",
+        "toHours": 1.03,
+        "note": "The balancing preview brings Plane 1 toward its budget of 55 min."
+      }
+    ]
+  },
+  "entries": [
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_wild_lavender",
+      "value": {
+        "name": "Wild Lavender",
+        "description": "Needs a Sickle in hand.",
+        "sprite": "t_field_lavender",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 5,
+        "requiresHero": true,
+        "config": {
+          "skill": "alchemy",
+          "skillRequired": 1,
+          "cycleTimeMs": 3000,
+          "xp": 12,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_lavender",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_lavender_seed",
+              "chance": 25,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "needsTool": {
+          "kind": "sickle",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 120000,
+          "restingSprite": "t_garden"
+        },
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "id": "token_wild_lavender",
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "fingerprint": "fp:d37411157eb9e1c7",
+      "note": "XP a cycle (config.xp) 1 → 12: Alchemy 1 → 10: its best Typical source, Wild Lavender, takes 6× the curve's time. Now 0.9× the curve over Alchemy 1 → 15. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_oak_tree",
+      "value": {
+        "name": "Oak Tree",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_tree_oak",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Forest",
+          "Oak"
+        ],
+        "provides": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 5,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 1,
+          "cycleTimeMs": 3000,
+          "xp": 3,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_oak_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_oak_seedling",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_bird_nest",
+              "chance": 3,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_oak_tree",
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "respawn": {
+          "mode": "regrow",
+          "into": "token_oak_stump"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "fingerprint": "fp:400ad02a5d65334c",
+      "note": "XP a cycle (config.xp) 1 → 3: Forestry 1 → 15: its best Typical source, Oak Tree, takes 2.4× the curve's time. Now 0.9× the curve over Forestry 1 → 30. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_birch_tree",
+      "value": {
+        "name": "Birch Tree",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_tree_birch",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 30,
+          "cycleTimeMs": 23000,
+          "xp": 7,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_birch_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false,
+              "anchor": true
+            },
+            {
+              "itemId": "item_birch_seedling",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_birch_tree",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "respawn": {
+          "mode": "regrow",
+          "into": "token_birch_stump"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:197a45681ae170f2",
+      "note": "XP a cycle (config.xp) 18 → 7: Forestry 30 → 45: its best Typical source, Birch Tree, takes 0.4× the curve's time. Another source now carries those levels; at its authored number it would take them back. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_maple_tree",
+      "value": {
+        "name": "Maple Tree",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_tree_maple",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 45,
+          "cycleTimeMs": 26000,
+          "xp": 8,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_maple_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_maple_seedling",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_maple_tree",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "respawn": {
+          "mode": "regrow",
+          "into": "token_maple_stump"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:779ae7b910cbf3b3",
+      "note": "XP a cycle (config.xp) 65 → 8: Forestry 45 → 60: its best Typical source, Maple Tree, takes 0.1× the curve's time. Another source now carries those levels; at its authored number it would take them back. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_cedar_tree",
+      "value": {
+        "name": "Cedar Tree",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_tree_cedar",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 2,
+        "uses": 1000,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 60,
+          "cycleTimeMs": 29000,
+          "xp": 12,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_cedar_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_cedar_seedling",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_cedar_tree",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "respawn": {
+          "mode": "regrow",
+          "into": "token_cedar_stump"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:21e8086bc93fa8ad",
+      "note": "XP a cycle (config.xp) 203 → 12: Forestry 60 → 70: its best Typical source, Cedar Tree, takes 0.1× the curve's time. Another source now carries those levels; at its authored number it would take them back. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_mahogany_tree",
+      "value": {
+        "name": "Mahogany Tree",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_tree_mahogany",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 100,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 75,
+          "cycleTimeMs": 33000,
+          "xp": 39,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_mahogany_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_mahogany_seedling",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_mahogany_tree",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "respawn": {
+          "mode": "regrow",
+          "into": "token_mahogany_stump"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:3917a402e3e178cc",
+      "note": "XP a cycle (config.xp) 726 → 39: Forestry 75 → 85: its best Typical source, Mahogany Tree, takes 0.1× the curve's time. Another source now carries those levels; at its authored number it would take them back. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_silver_ore_vein",
+      "value": {
+        "name": "Silver Ore Vein",
+        "description": "Needs an Iron Pickaxe or better in hand.",
+        "sprite": "t_ore_vein_silver",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Ore"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1000,
+        "requiresHero": true,
+        "config": {
+          "skill": "mining",
+          "skillRequired": 30,
+          "cycleTimeMs": 23000,
+          "xp": 7,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_silver_ore",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_silver_ore_vein",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "pickaxe",
+          "minTier": 2
+        },
+        "staysPut": true,
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 120000,
+          "restingSprite": "t_vein_stone"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:dbde22e810bad5c2",
+      "note": "XP a cycle (config.xp) 18 → 7: Mining 30 → 45: its best Typical source, Silver Ore Vein, takes 0.4× the curve's time. Another source now carries those levels; at its authored number it would take them back. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_gold_ore_vein",
+      "value": {
+        "name": "Gold Ore Vein",
+        "description": "Needs an Iron Pickaxe or better in hand.",
+        "sprite": "t_ore_vein_gold",
+        "tokenType": "resource",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [
+          "Ore"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1000,
+        "requiresHero": true,
+        "config": {
+          "skill": "mining",
+          "skillRequired": 45,
+          "cycleTimeMs": 26000,
+          "xp": 7,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_gold_ore",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_gold_ore_vein",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "pickaxe",
+          "minTier": 2
+        },
+        "staysPut": true,
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 120000,
+          "restingSprite": "t_vein_stone"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:24749d35cc808feb",
+      "note": "XP a cycle (config.xp) 65 → 7: Mining 45 → 60: its best Typical source, Gold Ore Vein, takes 0.1× the curve's time. Another source now carries those levels; at its authored number it would take them back. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_mythril_ore_vein",
+      "value": {
+        "name": "Mythril Ore Vein",
+        "description": "Needs an Iron Pickaxe or better in hand.",
+        "sprite": "t_ore_vein_mythril",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Ore"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1000,
+        "requiresHero": true,
+        "config": {
+          "skill": "mining",
+          "skillRequired": 60,
+          "cycleTimeMs": 29000,
+          "xp": 11,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_mythril_ore",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_mythril_ore_vein",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "pickaxe",
+          "minTier": 2
+        },
+        "staysPut": true,
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 120000,
+          "restingSprite": "t_vein_stone"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:5646bbe4514af002",
+      "note": "XP a cycle (config.xp) 203 → 11: Mining 60 → 70: its best Typical source, Mythril Ore Vein, takes 0.1× the curve's time. Now 1× the curve over Mining 60 → 70. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_adamantium_ore",
+      "value": {
+        "name": "Adamantium Ore",
+        "description": "Needs a Mythril Pickaxe or better in hand.",
+        "sprite": "t_ore_vein_addy",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Ore"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 1000,
+        "requiresHero": true,
+        "config": {
+          "skill": "mining",
+          "skillRequired": 75,
+          "cycleTimeMs": 33000,
+          "xp": 37,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_adamantine_ore",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_adamantium_ore",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "pickaxe",
+          "minTier": 3
+        },
+        "staysPut": true,
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 120000,
+          "restingSprite": "t_vein_stone"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:9480d3a5700afeaf",
+      "note": "XP a cycle (config.xp) 726 → 37: Mining 75 → 85: its best Typical source, Adamantium Ore, takes 0.1× the curve's time. Now 1× the curve over Mining 75 → 85. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_mtp8qjj1",
+      "value": {
+        "id": "recipe_mtp8qjj1",
+        "name": "Gold Ingot",
+        "skill": "smithing",
+        "levelRequirement": 45,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_gold_ore",
+            "quantity": 8
+          },
+          {
+            "itemId": "item_coal",
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_gold_ingot",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 26000,
+        "stationChargeCost": 1,
+        "xp": 34,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "stationKinds": [
+          "furnace"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:19b383ef125d396d",
+      "note": "XP a cycle (xp) 65 → 34: Smithing 45 → 60: its best Typical source, Gold Ingot at Furnace, takes 0.5× the curve's time. Another source now carries those levels; at its authored number it would take them back. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_mtp8qjj3",
+      "value": {
+        "id": "recipe_mtp8qjj3",
+        "name": "Mythril Ingot",
+        "skill": "smithing",
+        "levelRequirement": 60,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_mythril_ore",
+            "quantity": 10
+          },
+          {
+            "itemId": "item_coal",
+            "quantity": 4
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_mythril_ingot",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 29000,
+        "stationChargeCost": 1,
+        "xp": 65,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "stationKinds": [
+          "furnace"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:b7de067de2042607",
+      "note": "XP a cycle (xp) 203 → 65: Smithing 60 → 70: its best Typical source, Mythril Ingot at Furnace, takes 0.3× the curve's time. Another source now carries those levels; at its authored number it would take them back. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_mtp8qjj4",
+      "value": {
+        "id": "recipe_mtp8qjj4",
+        "name": "Adamantine Ingot",
+        "skill": "smithing",
+        "levelRequirement": 75,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_adamantine_ore",
+            "quantity": 12
+          },
+          {
+            "itemId": "item_coal",
+            "quantity": 6
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_adamantine_ingot",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 33000,
+        "stationChargeCost": 1,
+        "xp": 258,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "stationKinds": [
+          "furnace"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:51d9331423826d32",
+      "note": "XP a cycle (xp) 726 → 258: Smithing 75 → 85: its best Typical source, Adamantine Ingot at Furnace, takes 0.4× the curve's time. Now 1× the curve over Smithing 75 → 85. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_mahogany_forest",
+      "value": {
+        "name": "Mahogany Forest",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_forest_mahogany",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 250,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 75,
+          "cycleTimeMs": 33000,
+          "xp": 39,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_mahogany_wood",
+              "chance": 100,
+              "minQty": 12,
+              "maxQty": 13,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_mahogany_forest",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 600000
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:9750d94ee6a4e20c",
+      "note": "XP a cycle (config.xp) 726 → 39: Forestry 75 → 85: its best Typical source, Mahogany Forest, takes 0.1× the curve's time. Another source now carries those levels; at its authored number it would take them back. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_birch_forest",
+      "value": {
+        "name": "Birch Forest",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_forest_birch",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 250,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 30,
+          "cycleTimeMs": 23000,
+          "xp": 7,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_birch_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_birch_forest",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 600000
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:5fbcdc8202563c64",
+      "note": "XP a cycle (config.xp) 18 → 7: Forestry 30 → 45: its best Typical source, Birch Forest, takes 0.4× the curve's time. Another source now carries those levels; at its authored number it would take them back. Pinned, so Recalculate and Sync keep it."
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_maple_forest",
+      "value": {
+        "name": "Maple Forest",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_forest_maple",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 250,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 45,
+          "cycleTimeMs": 26000,
+          "xp": 8,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_maple_wood",
+              "chance": 100,
+              "minQty": 13,
+              "maxQty": 14,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_maple_forest",
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "respawn": {
+          "mode": "refill",
+          "afterMs": 600000
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:4ab43509f2af6dd3",
+      "note": "XP a cycle (config.xp) 65 → 8: Forestry 45 → 70: its best Typical source, Maple Forest, takes 0.1× the curve's time. Another source now carries those levels; at its authored number it would take them back. Pinned, so Recalculate and Sync keep it."
+    }
+  ],
+  "gate": {
+    "workspaceFingerprint": "fp:72b116ba7e6847b8",
+    "toolVersion": 2,
+    "at": "2026-11-03T02:44:35.132Z",
+    "verdict": "pass",
+    "summary": "Passes: 87 entries move on the timeline, 1 stage time changes, 3 problems added, 9 cleared.",
+    "blocks": [],
+    "notes": [
+      "Plane 1: 1 h 32 min → 1 h 2 min, 33 % faster, as declared: The balancing preview brings Plane 1 toward its budget of 55 min."
+    ],
+    "deltas": {
+      "stages": [
+        {
+          "tier": 1,
+          "before": 1.538333333333333,
+          "after": 1.0277325953629808,
+          "pct": -33.2
+        }
+      ],
+      "moved": [
+        {
+          "key": "item:item_ebony_wood",
+          "name": "Ebony Wood",
+          "change": "later",
+          "from": 129.1423156374592,
+          "to": 1623.2004857086272
+        },
+        {
+          "key": "item:item_ebony_seedling",
+          "name": "Ebony Seedling",
+          "change": "later",
+          "from": 129.17510640224995,
+          "to": 1623.2292954859993
+        },
+        {
+          "key": "token:token_ebony_stump",
+          "name": "Ebony Stump",
+          "change": "later",
+          "from": 130.01127090441446,
+          "to": 1624.0700534351854
+        },
+        {
+          "key": "token:token_ebony_sapling",
+          "name": "Ebony Sapling",
+          "change": "later",
+          "from": 130.1324397355833,
+          "to": 1624.1866288193328
+        },
+        {
+          "key": "item:item_mahogany_wood",
+          "name": "Mahogany Wood",
+          "change": "later",
+          "from": 83.5006551672812,
+          "to": 773.5714394404762
+        },
+        {
+          "key": "item:item_mahogany_seedling",
+          "name": "Mahogany Seedling",
+          "change": "later",
+          "from": 83.53071336833939,
+          "to": 773.6014976415344
+        },
+        {
+          "key": "token:token_mahogany_forest",
+          "name": "Mahogany Forest",
+          "change": "later",
+          "from": 83.64309432072034,
+          "to": 773.7138785939153
+        },
+        {
+          "key": "token:token_mahogany_stump",
+          "name": "Mahogany Stump",
+          "change": "later",
+          "from": 84.29719749532352,
+          "to": 774.3679817685185
+        },
+        {
+          "key": "token:token_mahogany_sapling",
+          "name": "Mahogany Sapling",
+          "change": "later",
+          "from": 84.4152133683394,
+          "to": 774.4859976415344
+        },
+        {
+          "key": "item:item_adamantine_ore",
+          "name": "Adamantine Ore",
+          "change": "later",
+          "from": 118.3416948601725,
+          "to": 753.9919710726313
+        },
+        {
+          "key": "token:token_frog_pond",
+          "name": "Frog Pond",
+          "change": "earlier",
+          "from": 8.470416666666667,
+          "to": 1.4384160256410257
+        },
+        {
+          "key": "token:token_toxic_pool",
+          "name": "Toxic Pool",
+          "change": "earlier",
+          "from": 8.470416666666667,
+          "to": 1.4384160256410257
+        },
+        {
+          "key": "token:token_frog",
+          "name": "Frog",
+          "change": "earlier",
+          "from": 8.47875,
+          "to": 1.446749358974359
+        },
+        {
+          "key": "token:token_slime_pit",
+          "name": "Slime Pit",
+          "change": "earlier",
+          "from": 1.4549999999999998,
+          "to": 0.2425
+        },
+        {
+          "key": "token:token_thorn_thicket",
+          "name": "Thorn Thicket",
+          "change": "earlier",
+          "from": 1.4549999999999998,
+          "to": 0.2425
+        },
+        {
+          "key": "token:token_wild_lavender",
+          "name": "Wild Lavender",
+          "change": "earlier",
+          "from": 1.4549999999999998,
+          "to": 0.2425
+        },
+        {
+          "key": "item:item_lavender",
+          "name": "Lavender",
+          "change": "earlier",
+          "from": 1.4599999999999997,
+          "to": 0.24726190476190477
+        },
+        {
+          "key": "token:token_toxic_frog",
+          "name": "Toxic Frog",
+          "change": "earlier",
+          "from": 8.55375,
+          "to": 1.521749358974359
+        },
+        {
+          "key": "item:item_darkmetal_ore",
+          "name": "Darkmetal Ore",
+          "change": "later",
+          "from": 296.32418683827433,
+          "to": 1602.0404643487645
+        },
+        {
+          "key": "token:token_thorn_elemental",
+          "name": "Thorn Elemental",
+          "change": "earlier",
+          "from": 1.4716666666666665,
+          "to": 0.25916666666666666
+        },
+        {
+          "key": "token:token_greater_slime",
+          "name": "Greater Slime",
+          "change": "earlier",
+          "from": 1.538333333333333,
+          "to": 0.3258333333333333
+        },
+        {
+          "key": "item:map_bog",
+          "name": "Bog Map",
+          "change": "earlier",
+          "from": 1.5416666666666665,
+          "to": 0.32916666666666666
+        },
+        {
+          "key": "item:item_mythril_ore",
+          "name": "Mythril Ore",
+          "change": "later",
+          "from": 42.7988863692172,
+          "to": 185.92869118165785
+        },
+        {
+          "key": "item:item_cedar_wood",
+          "name": "Cedar Wood",
+          "change": "later",
+          "from": 50.24475387651365,
+          "to": 210.99932807445722
+        },
+        {
+          "key": "item:item_cedar_seedling",
+          "name": "Cedar Seedling",
+          "change": "later",
+          "from": 50.27179395988706,
+          "to": 211.02308533620703
+        },
+        {
+          "key": "token:token_cedar_stump",
+          "name": "Cedar Stump",
+          "change": "later",
+          "from": 57.281149419242524,
+          "to": 218.03622866666666
+        },
+        {
+          "key": "token:token_cedar_sapling",
+          "name": "Cedar Sapling",
+          "change": "later",
+          "from": 57.395682848775955,
+          "to": 218.14697422509593
+        },
+        {
+          "key": "item:item_frog_banner",
+          "name": "Frog Banner",
+          "change": "earlier",
+          "from": 10.145416666666666,
+          "to": 3.1134160256410257
+        },
+        {
+          "key": "item:mod_frog_pond",
+          "name": "Frog Pond",
+          "change": "earlier",
+          "from": 10.145416666666666,
+          "to": 3.1134160256410257
+        },
+        {
+          "key": "item:item_darkmetal_ingot",
+          "name": "Darkmetal Ingot",
+          "change": "later",
+          "from": 595.3442054846251,
+          "to": 1602.1205086924278
+        }
+      ],
+      "movedCount": 87,
+      "added": [
+        {
+          "check": "unlock-wall",
+          "key": "item:item_frog_banner",
+          "severity": "warn"
+        },
+        {
+          "check": "hall-payback",
+          "key": "hall:star_well_oak_wood",
+          "severity": "warn"
+        },
+        {
+          "check": "hall-payback",
+          "key": "hall:star_forestry_xp",
+          "severity": "warn"
+        }
+      ],
+      "cleared": 9
+    }
+  }
+}

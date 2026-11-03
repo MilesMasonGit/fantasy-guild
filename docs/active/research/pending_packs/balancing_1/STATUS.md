@@ -7,3 +7,4 @@
   out), Plane 2 23 h 29 min. Measured: Wild Lavender's XP 1 → 12 alone gives Plane 1 1 h 2 min (+12 %), but
   Recalculate derives it (T-291; held-back numbers in `derived_xp_held_back.json`).
 - The preview on the synced data proposes no gate changes, so Plane 2's gates stay as synced.
+- The held-back numbers are now pinned and packed: `../balancing_3/`.

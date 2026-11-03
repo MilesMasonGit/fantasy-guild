@@ -356,14 +356,32 @@ Beehive Pollination). The exported pack passes the agent gate with its stage mov
   cycle from the XPH pins, its Purpose and its cycle time as if a hero worked it without a break; a
   source limited by its rest or regrowth (Wild Lavender: 1 XP on a 3 s cycle, 267 XP an hour
   worked) teaches a fraction of the target. That is most of the Alchemy wall.
-- **Applying needs the pacing pass after Recalculate.** XP and cycle times of tagged entries are
-  derived on every Recalculate, so an applied XP proposal would be undone; a moved gate would also
-  change what Recalculate derives (both read the required level). Gates, costs and boost values are
-  authored and would stay.
+- **XP numbers needed a way through Recalculate.** XP of tagged entries is derived on every
+  Recalculate and Sync runs it, so a pack's XP number was put back. Built (T-291, below). A moved gate
+  also changes what Recalculate derives for a tagged entry with no pin (both read the required level).
+  Gates, costs and boost values are authored and stay; time proposals touch only building recipes and
+  growths, which Recalculate does not time.
 - **The budgets and the curve set the gates.** At the curve's pace a stage of 30 min ends near
   level 8, 1 h 30 min near level 14 and a day near level 37; today's gates (camp up to 15, plane 1 at
   5, plane 2 at 15 to 21) sit below that, so following the curve makes plane 2 too short until its
   gates rise.
+
+**The pin (T-291, 2026-11-02).** `sim.xpPinned` on a Token or recipe, beside Tempo and Purpose: the XP
+pass gives it no answer, so the write-back keeps its number, the rule untagged work already had. The
+number stays one number, `config.xp` or a recipe's `xp`. `balancePack` pins the XP numbers it sets on
+real work with both tags; the editors show and clear a pin. Chosen over the other two ways:
+- **Recalculate learns rest and regrowth**: of the 16 numbers the preview wants on today's data, 14 are
+  cuts of 1.9× to 20× at levels 30 to 75 where a source is too fast for the curve, not rest at all, so
+  a rest-aware derivation would give them neither; and it moves numbers on every tagged entry that
+  rests, where the bar was Recalculate unchanged.
+- **The pacing pass runs last inside Recalculate**: that is automatic Apply, which the owner keeps
+  locked until the calculator has been seen agreeing with real play, and it would add the preview's
+  own time to every Sync (6 s for one round to a minute for four, measured with other work running).
+
+Measured on `main` ba62dbd9, with the Sync emulator (`pending_packs/balancing_1/postsync.mjs`) and the
+CMS's own Accept, Recalculate and Sync against a scratch data folder: no pins, 0 numbers change; the
+first round's 14 numbers pinned by hand on the old code, all 14 put back; on the new code the pack's 16
+all kept, and the real Sync differs from `data/` by those 16 numbers and their 16 pins and nothing else.
 
 ## The system design (owner, 2026-10-29)
 
