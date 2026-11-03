@@ -458,12 +458,14 @@ describe('what the screen shows', () => {
     });
 
     it('the item tooltip says what a weapon hits with and what an arrow adds', () => {
-        expect(itemTipFacts({ id: 'dt_ember_wand', equipSlot: 'hand', styles: ['magic'], damage: 2, damageType: 'fire' }).hits)
-            .toBe('Hits 2 Fire, as Magic');
-        expect(itemTipFacts({ id: 'dt_sword', equipSlot: 'hand', styles: ['melee'], damage: 2 }).hits).toBe('Hits 2 Slash, as Melee');
+        const row = (item, id) => itemTipFacts(item).stats.find(s => s.id === id)?.value;
+        const wand = { id: 'dt_ember_wand', equipSlot: 'hand', styles: ['magic'], damage: 2, damageType: 'fire' };
+        expect([row(wand, 'damage'), row(wand, 'type'), row(wand, 'skill')]).toEqual(['2', 'Fire', 'Magic']);
+        const sword = { id: 'dt_sword', equipSlot: 'hand', styles: ['melee'], damage: 2 };
+        expect([row(sword, 'damage'), row(sword, 'type'), row(sword, 'skill')]).toEqual(['2', 'Slash', 'Melee']);
         expect(itemTipFacts({ id: 'dt_arrow', equipSlot: 'consumable', arrow: { damage: 1, damageType: 'stab' } }).arrow)
             .toBe('Arrow: +1 Stab a shot, from a bow');
-        expect(itemTipFacts({ id: 'x', equipSlot: 'hat' })).toMatchObject({ hits: null, arrow: null });
+        expect(itemTipFacts({ id: 'x', equipSlot: 'hat' })).toMatchObject({ stats: null, arrow: null });
     });
 
     it('the enemy card: its hit\'s type and its lines as written, groups first', () => {

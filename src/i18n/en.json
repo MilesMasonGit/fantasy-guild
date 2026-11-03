@@ -40,10 +40,15 @@
         "count": "×{count}",
         "equippable": "Equippable: {slot}",
         "tool": "{kind}, tier {tier}",
-        "twoHanded": "Takes both hands",
         "restores": "Restores {amount} HP",
-        "weaponHits": "Hits {damage} {type}, as {style}",
-        "weaponSpeed": "{speed} swing, every {time}",
+        "stat": {
+            "damage": "DMG",
+            "type": "Type",
+            "skill": "Skill",
+            "speed": "Speed",
+            "speedValue": "{speed} ({time})",
+            "hands": "Hands"
+        },
         "speedName": {
             "fast": "Fast",
             "normal": "Normal",
