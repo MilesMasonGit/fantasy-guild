@@ -7,6 +7,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { clearStaleProfiles, watchLauncher, killProfileHolders, isAlive, PROFILE_PREFIX } from './benchHygiene.mjs';
 
 const CHROME_PATHS = [
     process.env.CHROME_PATH,
@@ -71,6 +72,24 @@ function removeDir(dir) {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+let tidied = false;
+/** Once a run: clear old benches' profiles, and stop with the `npm run` that started this one. */
+function tidyOnce() {
+    if (tidied) return;
+    tidied = true;
+    const { removed, failed } = clearStaleProfiles();
+    if (removed.length) console.error(`Cleared ${removed.length} stale ${PROFILE_PREFIX}* profile(s) from the temp folder.`);
+    if (failed.length) console.error(`${failed.length} stale ${PROFILE_PREFIX}* profile(s) could not be removed (a Chrome left running holds them).`);
+    watchLauncher((gone) => {
+        if (exiting) return;
+        exiting = true;
+        console.error(`
+The process that started this bench (${gone.name}, ${gone.pid}) has ended: stopping Chrome and servers…`);
+        runCleanups();
+        process.exit(3);
+    });
+}
 
 // ---------------------------------------------------------------------------
 // The protocol connection
@@ -246,7 +265,8 @@ export class Page {
  */
 export async function launchChrome({ width = 1600, height = 1000, headless = true, extraArgs = [] } = {}) {
     const exe = findChrome();
-    const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fg-bench-chrome-'));
+    tidyOnce();
+    const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), PROFILE_PREFIX));
     const args = [
         `--user-data-dir=${profileDir}`,
         '--remote-debugging-port=0',
@@ -272,6 +292,7 @@ export async function launchChrome({ width = 1600, height = 1000, headless = tru
 
     const unregister = onCleanup(() => {
         killTree(child.pid);
+        killProfileHolders(profileDir);
         removeDir(profileDir);
     });
 
@@ -282,7 +303,9 @@ export async function launchChrome({ width = 1600, height = 1000, headless = tru
     while (Date.now() - t0 < 30000) {
         if (exited) break;
         if (fs.existsSync(portFile)) {
-            const [port, wsPath] = fs.readFileSync(portFile, 'utf8').split('\n').map((s) => s.trim());
+            let text = '';
+            try { text = fs.readFileSync(portFile, 'utf8'); } catch { /* Chrome is still writing it */ }
+            const [port, wsPath] = text.split('\n').map((s) => s.trim());
             if (port && wsPath) { wsUrl = `ws://127.0.0.1:${port}${wsPath}`; break; }
         }
         await sleep(100);
@@ -290,6 +313,7 @@ export async function launchChrome({ width = 1600, height = 1000, headless = tru
     if (!wsUrl) {
         unregister();
         killTree(child.pid);
+        killProfileHolders(profileDir);
         removeDir(profileDir);
         throw new Error(`Chrome did not start (${exe})`);
     }
@@ -335,7 +359,7 @@ export async function launchChrome({ width = 1600, height = 1000, headless = tru
             while (!exited && Date.now() - t1 < 5000) await sleep(100);
             if (!exited) killTree(child.pid);
             unregister();
-            // Chrome's child processes can hold the profile for a moment after the browser exits.
+            killProfileHolders(profileDir);
             let removed = false;
             for (let i = 0; i < 10 && !removed; i++) {
                 removed = removeDir(profileDir);
@@ -347,10 +371,6 @@ export async function launchChrome({ width = 1600, height = 1000, headless = tru
     }
 
     return { cdp, newPage, info, close, profileDir };
-}
-
-function isAlive(pid) {
-    try { process.kill(pid, 0); return true; } catch { return false; }
 }
 
 export { sleep };
