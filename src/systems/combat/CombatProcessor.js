@@ -40,8 +40,12 @@ export function processCombat(fight, trait, deltaTime) {
         if (combat.state.intermissionTimer <= 0) {
             combat.state.intermissionTimer = 0;
             combat.enemyHp = { current: enemy.hp, max: enemy.hp };
-            // A fresh enemy is a fresh fight: its swings and hits count from one again.
+            // A fresh enemy is a fresh fight: its swings and hits count from one again, and both
+            // swing timers start from zero, or the side whose timer was furthest along at the kill
+            // gets a free first hit.
             resetTallies(fight);
+            combat.enemyTickProgress = 0;
+            combat.heroTickProcesses = {};
             fight.status = 'active';
         }
         return;

@@ -23,16 +23,21 @@ export default function EffectEditor() {
 
   if (!effect) return <Empty text="Select an effect from the sidebar" />;
 
-  const names = {
-    token: (id) => tokens[id]?.name || id,
-    item: (id) => items[id]?.name || id,
-  };
-
   const users = Object.values(tokens)
     .map((t) => ({ token: t, ref: effectRefsOf(t).find((r) => r.effectId === effect.id) }))
     .filter((u) => u.ref);
 
   const perkUsers = perkUsersOf(effect.id, skillPerks, (id) => SKILLS.find((s) => s.id === id)?.name || id);
+
+  /** ⚠️ A library entry can be shared by Tokens and items: it reads as the hero's only when no Token uses it, and something a hero carries does. */
+  const carried = users.length === 0
+    && (perkUsers.length > 0 || Object.values(items).some((i) => effectRefsOf(i).some((r) => r.effectId === effect.id)));
+
+  const names = {
+    carried,
+    token: (id) => tokens[id]?.name || id,
+    item: (id) => items[id]?.name || id,
+  };
 
   const lines = rulesLinesOf(effect, names);
   const backed = hasWorkingStatements(effect);
@@ -154,6 +159,7 @@ export default function EffectEditor() {
         <StatementList
           statements={effect.statements || []}
           onChange={(next) => setEffectStatements(effect.id, next)}
+          carried={carried}
         />
       </Section>
 

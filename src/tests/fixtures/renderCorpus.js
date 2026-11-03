@@ -1,6 +1,7 @@
 import shippedTokens from '../../../data/tokens.json';
 import shippedItems from '../../../data/items.json';
 import shippedEffects from '../../../data/effects.json';
+import shippedPerks from '../../../data/skillPerks.json';
 import { KEYWORD, KEYWORDS, makeStatement } from '../../systems/effects/statements.js';
 import { renderStatement, upkeepLine, rulesLinesOf } from '../../systems/effects/statementText.js';
 import { TRIGGER_EVENTS } from '../../config/registries/triggerRegistry.js';
@@ -108,6 +109,8 @@ export function buildCorpus() {
                 addS(`axis:${entry.type}:${bucket}:${value}`, S(KEYWORD.PROVIDES, { payload }));
             }
         }
+        addS(`axis:${entry.type}:flat-one`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'flat', value: 1 } }));
+        addS(`axis:${entry.type}:flat-minus-one`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'flat', value: -1 } }));
         addS(`axis:${entry.type}:category`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'flat', value: 2, category: 'mining' } }));
         addS(`axis:${entry.type}:category-unknown`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'flat', value: 2, category: 'not_a_skill' } }));
         addS(`axis:${entry.type}:item`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'flat', value: 25, itemId: FIX.item2, quantity: 3 } }), shippedNames);
@@ -331,6 +334,36 @@ export function buildCorpus() {
             S(KEYWORD.DEALS, { payload: { amount: 2 }, when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 4000 } })
         ]
     }, shippedNames)));
+
+    // ---- 11. A rule a hero carries: an item's, a perk's ---------------------
+    const carried = { ...shippedNames, carried: true };
+    for (const [id, item] of Object.entries(shippedItems).sort()) {
+        for (const { effectId } of item.effects || []) {
+            (shippedEffects[effectId]?.statements || []).forEach((st, i) => {
+                addS(`carried:item:${id}:${effectId}:${i}`, st, carried);
+            });
+        }
+    }
+    for (const [skill, record] of Object.entries(shippedPerks).sort()) {
+        for (const { level, effectId } of record.perks || []) {
+            (shippedEffects[effectId]?.statements || []).forEach((st, i) => {
+                addS(`carried:perk:${skill}:${level}:${effectId}:${i}`, st, carried);
+            });
+        }
+    }
+    for (const entry of MODIFIER_PALETTE) {
+        for (const value of [5, -5, 0.25, -0.25, 0]) {
+            addS(`carried:axis:${entry.type}:${value}`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'percentage', value } }), carried);
+        }
+        addS(`carried:axis:${entry.type}:mining`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'flat', value: 2, category: 'mining' } }), carried);
+    }
+    for (const t of TRIGGER_EVENTS) {
+        const when = { event: t.id, scope: t.scopes[0] };
+        addS(`carried:moment:${t.id}:applies`, S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, chance: 100 }, when }), carried);
+        addS(`carried:moment:${t.id}:grants`, S(KEYWORD.GRANTS, { payload: { itemId: FIX.item, quantity: 1 }, when }), carried);
+        addS(`carried:moment:${t.id}:deals`, S(KEYWORD.DEALS, { payload: { amount: 1 }, when, target: { role: 'opponent' } }), carried);
+    }
+    addS('carried:grants:standing', S(KEYWORD.GRANTS, { payload: { itemId: FIX.item, quantity: 1, chance: 5 } }), carried);
 
     return cases;
 }

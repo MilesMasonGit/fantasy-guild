@@ -516,7 +516,7 @@ describe('the item tooltip', () => {
         expect(fur.resists).toEqual(['Weak to Fire 10%', 'Resists Ice 25%']);
         const shield = itemTipFacts(getItem('gd_shield'));
         expect(shield.offHand).toBe('Off hand: beside a weapon, never swung');
-        expect(shield.hits).toBeNull();
+        expect(shield.stats).toBeNull();
         expect(shield.resists).toEqual(['Resists Physical 15%', 'Resists Fire 10%']);
     });
 });

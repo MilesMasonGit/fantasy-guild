@@ -12,6 +12,9 @@ import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js'
  * id, with every reference and a Token description naming the old id (the CMS composes a rule's
  * text with the id) following it.
  *
+ * Also a Token description saying "1 more harvests", as the next Recalculate rewrites it now the
+ * renderer agrees with its count.
+ *
  * Byte-identical to the file whenever there is nothing to change, which is the case once
  * the owner's next Sync has written the new ids into `data/` and the
  * last Map Token (Volcanic Island) is deleted or refiled.
@@ -32,6 +35,7 @@ function describeRenamedEffects(tokens) {
         let text = def?.description;
         if (typeof text === 'string') {
             for (const [oldId, { id: newId }] of Object.entries(EFFECT_ID_RENAMES)) text = text.split(oldId).join(newId);
+            text = text.replace(/\b1 (more|fewer) harvests\b/g, '1 $1 harvest');
         }
         out[id] = text !== def?.description ? { ...def, description: text } : def;
         if (out[id] !== def) changed = true;

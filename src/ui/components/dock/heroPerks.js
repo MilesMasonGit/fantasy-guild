@@ -32,6 +32,7 @@ export function perkLines(row) {
     const entry = EFFECTS[row?.effectId];
     if (!entry) return [];
     const names = {
+        carried: true,
         token: id => tokenName(id) || id,
         item: id => getItem(id)?.name || id,
         tool: toolNamer(getAllTokenTypes())

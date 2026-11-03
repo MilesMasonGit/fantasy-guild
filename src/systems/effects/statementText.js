@@ -1,7 +1,7 @@
 import { KEYWORD, WHEN, getKeyword, statementsOf, effectEntryOf, firingChanceOf } from './statements.js';
 import { statusBlockOf } from './effectLibrary.js';
 import { MODIFIER_SHAPES } from '../../config/registries/modifierPalette.js';
-import { getTriggerEvent, isFightMoment, isCarriedMoment, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
+import { getTriggerEvent, isFightMoment, isCarriedMoment, everyOf, healthBelowOf, momentWords } from '../../config/registries/triggerRegistry.js';
 import { getRestrictionKind, limitOf } from '../../config/registries/restrictionPalette.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
@@ -34,8 +34,17 @@ import { getCategoryInfo } from '../../config/registries/equipmentCategories.js'
  * that golden must be regenerated and its diff read.
  */
 
-/** Names, supplied by whoever is rendering — the registries, or the CMS store. */
+/**
+ * Names, supplied by whoever is rendering — the registries, or the CMS store.
+ *
+ * `carried: true` says who carries the rules: a hero (an item's or a perk's rules), not a Token. A
+ * carried rule reaches its hero, and the work or fight the hero is doing, never the Tokens around
+ * it (`TileModifiers.heroContributions`, `LoadoutMoments`), so it reads as the hero's ("Gives the
+ * hero a 5% chance of double loot at Mining"). An effect is a library entry shared by Tokens and
+ * items alike, so the bearer is the caller's to say.
+ */
 const DEFAULT_NAMES = {
+    carried: false,
     token: id => id || 'a Token',
     item: id => id || 'an item',
     // A library effect's own title. Resolved by the caller for the same reason
@@ -165,7 +174,7 @@ function magnitude(entry, payload) {
  * axis would render -25 and +25 identically. An axis with `reads` picks the wording by sign
  * before the size is absolute-valued.
  */
-function effectSegments(statement, names) {
+function effectSegments(statement, names, onHero = false) {
     const entry = effectEntryOf(statement);
     const payload = statement?.payload || {};
     if (!entry) return segs(d('…', 'type'));
@@ -192,7 +201,7 @@ function effectSegments(statement, names) {
     if (payload.type === EFFECT_TYPES.CATCH_WEIGHT) {
         const fish = payload.category ? names.item(payload.category) : 'any fish';
         const more = Number(payload.value) < 0 ? 'fewer' : 'more';
-        return segs(d(`${size} ${more}`, 'value'), ' ', d('bites', 'type'), ' of ', d(fish, categorySlot(statement)));
+        return segs(d(`${size} ${more}`, 'value'), ' ', d(size === '1' ? 'bite' : 'bites', 'type'), ' of ', d(fish, categorySlot(statement)));
     }
 
     const label = entry.label.toLowerCase();
@@ -200,12 +209,14 @@ function effectSegments(statement, names) {
 
     if (!value) return segs('no change to ', d(label, 'type'));
 
-    if (entry.reads) {
-        const read = value < 0 ? entry.reads.down : entry.reads.up;
-        const parts = around(read(MARK));
+    const reads = (onHero && entry.heroReads) || entry.reads;
+    if (reads) {
+        const read = value < 0 ? reads.down : reads.up;
+        // The real size rides beside the marker, so a template can agree with it ("1 more harvest").
+        const parts = around(read(MARK, size));
         return parts
             ? segs(d(parts[0], 'type'), d(size, 'value'), d(parts[1], 'type'))
-            : segs(d(read(size), 'type'));
+            : segs(d(read(size, size), 'type'));
     }
 
     if (entry.shape === MODIFIER_SHAPES.PROC) return segs('a ', d(size, 'value'), ' ', d(label, 'type'));
@@ -380,6 +391,13 @@ function skillScopeSegments(statement) {
     return segs(', but only for ', d(skill?.name || category, categorySlot(statement)), ' work');
 }
 
+/** " at Mining" — a carried rule's skill narrowing: the hero's work at that skill, or nothing. */
+function heroSkillSegments(statement) {
+    const category = statement?.payload?.category;
+    if (!category || effectEntryOf(statement)?.categories === 'item') return [];
+    return segs(' at ', d(getSkill(category)?.name || category, categorySlot(statement)));
+}
+
 /**
  * The `category` slot — but only on an axis whose editor offers one.
  *
@@ -452,7 +470,7 @@ function whenSegments(statement, names) {
 
     const keyword = getKeyword(statement?.keyword);
     const definition = getTriggerEvent(when.event);
-    const label = definition?.label || when.event;
+    const label = momentWords(definition, !!names.carried).label || when.event;
 
     // The moment is a slot only on keywords that take one; its detail (the item
     // watched, the threshold) is a slot whenever the moment itself is known.
@@ -561,7 +579,17 @@ function bodySegments(statement, names) {
                 if (entry.reads) return segs(d('Makes', K), ' every hero ', effectSegments(statement, names));
                 return segs(d('Provides', K), ' ', effectSegments(statement, names), ' to every hero');
             }
+            // A carried rule reaches its hero, so it names the hero and its skill, never Tokens or a reach.
+            const carried = !!names.carried;
+            const lead = carried ? segs(d('Gives', K), ' the hero ') : segs(d('Provides', K), ' ');
+            const reach = carried ? '' : COMBAT_REACH;
+
             if (entry?.reads) {
+                if (carried) {
+                    // "no change to work time" is a noun phrase, whatever the axis's verb would have been.
+                    const verb = entry.heroReads || !Number(payload.value) ? 'Gives' : 'Makes';
+                    return segs(d(verb, K), ' the hero ', effectSegments(statement, names, true), heroSkillSegments(statement));
+                }
                 return segs(d('Makes', K), ' ', targetSegments(statement, names, ''), ' ', effectSegments(statement, names));
             }
 
@@ -570,8 +598,8 @@ function bodySegments(statement, names) {
              * "3 more status immunity" would be meaningless. The words name the status instead.
              */
             if (payload.type === EFFECT_TYPES.STATUS_IMMUNITY) {
-                return segs(d('Provides', K), ' ', d('immunity to', 'type'), ' ',
-                    d(statusName(payload.category, names), categorySlot(statement)), COMBAT_REACH);
+                return segs(lead, d('immunity to', 'type'), ' ',
+                    d(statusName(payload.category, names), categorySlot(statement)), reach);
             }
 
             // "Provides Poison stacks at most 1 lower": a cap is about one status, so it names it.
@@ -579,7 +607,7 @@ function bodySegments(statement, names) {
                 const shift = Number(payload.value) || 0;
                 const change = shift < 0 ? `at most ${-shift} lower` : shift > 0 ? `up to ${shift} higher` : 'no different';
                 return segs(d('Provides', K), ' ', d(statusName(payload.category, names), categorySlot(statement)), ' ',
-                    d('stacks', 'type'), ' ', d(change, 'value'), COMBAT_REACH);
+                    d('stacks', 'type'), ' ', d(change, 'value'), carried ? ' on the hero' : COMBAT_REACH);
             }
 
             // "Provides 15% more Poison damage", "Provides 20% Physical resistance": a type row names its type.
@@ -599,7 +627,7 @@ function bodySegments(statement, names) {
                         ? segs(n < 0 ? 'a ' : '', d(size, 'value'), ' ', type, ' ', d(noun, 'type'))
                         : segs(n < 0 ? 'a ' : '', d(size, 'value'), ' ', d(noun, 'type'), ' to ', type);
                 }
-                return segs(d('Provides', K), ' ', phrase, ' in combat', COMBAT_REACH);
+                return segs(lead, phrase, ' in combat', reach);
             }
 
             // "Provides Sunder 10: every resistance 10 points lower, never below 0". Below 1 it does
@@ -607,14 +635,15 @@ function bodySegments(statement, names) {
             if (payload.type === EFFECT_TYPES.SUNDER) {
                 const n = Number(payload.value) || 0;
                 const what = n > 0
-                    ? segs(': every resistance ', d(`${n} points lower`, 'value'), ', never below 0,')
+                    ? segs(': every resistance ', d(`${n} ${n === 1 ? 'point' : 'points'} lower`, 'value'), ', never below 0,')
                     : segs(': ', d('no change', 'value'));
-                return segs(d('Provides', K), ' ', d('Sunder', 'type'), ' ', d(String(n), 'value'), what, ' in combat', COMBAT_REACH);
+                return segs(lead, d('Sunder', 'type'), ' ', d(String(n), 'value'), what, ' in combat', reach);
             }
 
             if (entry?.heroOnly) {
-                return segs(d('Provides', K), ' ', effectSegments(statement, names), ' in combat', COMBAT_REACH);
+                return segs(lead, effectSegments(statement, names), ' in combat', reach);
             }
+            if (carried) return segs(lead, effectSegments(statement, names, true), heroSkillSegments(statement));
             return segs(d('Provides', K), ' ', effectSegments(statement, names), ' ',
                 targetSegments(statement, names), skillScopeSegments(statement));
         }
@@ -624,6 +653,11 @@ function bodySegments(statement, names) {
             const item = payload.itemId ? names.item(payload.itemId) : '…';
             const chance = payload.chance ?? 100;
             const odds = chance >= 100 ? [] : segs(', ', d(`${chance}%`, 'chance'), ' of the time');
+            if (names.carried) {
+                // A carried grant lands where its hero is working, at the moment, or as they finish work.
+                return segs(d('Grants', K), ' ', d(String(quantity), 'quantity'), ' ', d(item, 'itemId'),
+                    statement.when?.event ? ' to the hero' : ' to the hero when they finish work', odds);
+            }
             const moment = statement.when ? '' : ' when they finish work';
             return segs(d('Grants', K), ' ', d(String(quantity), 'quantity'), ' ', d(item, 'itemId'), ' ',
                 targetSegments(statement, names), moment, odds);
@@ -797,7 +831,14 @@ function bodySegments(statement, names) {
              * sentence names it and nothing else: "applies Poison to the enemy".
              */
             const byRole = !!statement?.target?.role;
-            const who = () => (byRole ? roleSegments(statement) : occupantSegments(statement, names));
+            /**
+             * A carried rule with no role, on its hero's own moment (a fight or work starting), lands on
+             * whoever works the Token where it happened: its hero (`LoadoutMoments`). ⚠️ Not on a fight
+             * moment: there it reaches the heroes around the enemy (`FightMoments`), as an enemy's does.
+             */
+            const onHero = names.carried && !isFightMoment(statement?.when?.event);
+            const who = () => (byRole ? roleSegments(statement)
+                : onHero ? segs('the hero') : occupantSegments(statement, names));
 
             /**
              * A library effect (a status included). With a duration it lingers, "for the fight" it
