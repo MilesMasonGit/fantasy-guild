@@ -1236,417 +1236,6 @@
       "Mining"
     ]
   },
-  "map_forest": {
-    "id": "map_forest",
-    "name": "Forest Map",
-    "description": "A wooded country of oak, with berry bushes in the clearings. Wolves den here, and their Alpha keeps close.",
-    "type": "map",
-    "tags": [],
-    "sprite": "t_map_forest",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "biome": "forest",
-      "points": 61,
-      "nodes": [
-        {
-          "typeId": "token_oak_tree",
-          "weight": 16
-        },
-        {
-          "typeId": "token_oak_forest",
-          "weight": 1
-        },
-        {
-          "typeId": "token_redberry_bush",
-          "weight": 2
-        },
-        {
-          "typeId": "token_blackberry_bush",
-          "weight": 2
-        }
-      ],
-      "camps": [
-        {
-          "typeId": "token_wolf_den",
-          "count": 1
-        },
-        {
-          "typeId": "token_alpha_den",
-          "count": 1
-        }
-      ],
-      "treasures": [
-        {
-          "typeId": "token_copper_chest",
-          "count": 1
-        }
-      ],
-      "tutorial": true,
-      "bountyWeight": 1
-    }
-  },
-  "map_mountain": {
-    "id": "map_mountain",
-    "name": "Mountain Map",
-    "description": "Rocky slopes seamed with copper and coal. Goblins camp on them, and their Chief keeps a tent of his own.",
-    "type": "map",
-    "tags": [],
-    "sprite": "t_map_mountain",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "biome": "mountain",
-      "points": 61,
-      "nodes": [
-        {
-          "typeId": "token_copper_ore_vein",
-          "weight": 3
-        },
-        {
-          "typeId": "token_coal_vein",
-          "weight": 2
-        },
-        {
-          "typeId": "token_stone_outcrop",
-          "weight": 2
-        }
-      ],
-      "camps": [
-        {
-          "typeId": "token_goblin_camp",
-          "count": 1
-        },
-        {
-          "typeId": "token_chief_tent",
-          "count": 1
-        }
-      ],
-      "treasures": [
-        {
-          "typeId": "token_copper_chest",
-          "count": 1
-        }
-      ],
-      "tutorial": true,
-      "bountyWeight": 1
-    }
-  },
-  "map_coast": {
-    "id": "map_coast",
-    "name": "Coast Map",
-    "description": "A sandy shore where the land meets the sea. Crabs scuttle on the rocks, and something stirs in a tide pool.",
-    "type": "map",
-    "tags": [],
-    "sprite": "t_map_shore",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "biome": "coast",
-      "points": 24,
-      "nodes": [
-        {
-          "typeId": "token_coast",
-          "weight": 1
-        }
-      ],
-      "camps": [
-        {
-          "typeId": "token_crab_rocks",
-          "count": 1
-        },
-        {
-          "typeId": "token_tide_pool",
-          "count": 1
-        }
-      ],
-      "treasures": [
-        {
-          "typeId": "token_copper_chest",
-          "count": 1
-        }
-      ],
-      "tutorial": true,
-      "bountyWeight": 1
-    }
-  },
-  "map_meadow": {
-    "id": "map_meadow",
-    "name": "Meadow Map",
-    "description": "Open grassland with apple trees, wild wheat and berry bushes, and a lake or river. Cows graze; a Greater Slime oozes about.",
-    "type": "map",
-    "tags": [],
-    "sprite": "t_map_farmland",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "biome": "meadow",
-      "points": 61,
-      "nodes": [
-        {
-          "typeId": "token_apple_tree",
-          "weight": 6
-        },
-        {
-          "typeId": "token_apple_orchard",
-          "weight": 1
-        },
-        {
-          "typeId": "token_wild_wheat_patch",
-          "weight": 4
-        },
-        {
-          "typeId": "token_redberry_bush",
-          "weight": 1
-        },
-        {
-          "typeId": "token_blackberry_bush",
-          "weight": 1
-        }
-      ],
-      "camps": [
-        {
-          "typeId": "token_cow_pasture",
-          "count": 1
-        },
-        {
-          "typeId": "token_slime_pit",
-          "count": 1
-        }
-      ],
-      "treasures": [
-        {
-          "typeId": "token_copper_chest",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 1
-    }
-  },
-  "map_flower_meadow": {
-    "id": "map_flower_meadow",
-    "name": "Flower Meadow Map",
-    "description": "A meadow in bloom: strawberries, blueberries and the odd apple tree.",
-    "type": "map",
-    "tags": [],
-    "sprite": "t_map_flowers",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "biome": "flower_meadow",
-      "points": 61,
-      "nodes": [
-        {
-          "typeId": "token_strawberry_bush",
-          "weight": 8
-        },
-        {
-          "typeId": "token_blueberry_bush",
-          "weight": 4
-        },
-        {
-          "typeId": "token_apple_tree",
-          "weight": 4
-        },
-        {
-          "typeId": "token_apple_orchard",
-          "weight": 1
-        }
-      ],
-      "camps": [
-        {
-          "typeId": "token_thorn_thicket",
-          "count": 1
-        },
-        {
-          "typeId": "token_wind_stones",
-          "count": 1
-        }
-      ],
-      "treasures": [
-        {
-          "typeId": "token_copper_chest",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 0.25
-    }
-  },
-  "map_cherry_grove": {
-    "id": "map_cherry_grove",
-    "name": "Cherry Grove Map",
-    "description": "Cherry trees in rows, with a few peaches among them. Bees hum in a wild hive, and their Queen in a bigger one.",
-    "type": "map",
-    "tags": [],
-    "sprite": "t_map_village",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "biome": "cherry_grove",
-      "points": 61,
-      "nodes": [
-        {
-          "typeId": "token_cherry_tree",
-          "weight": 4
-        },
-        {
-          "typeId": "token_peach_tree",
-          "weight": 1
-        }
-      ],
-      "camps": [
-        {
-          "typeId": "token_wild_hive",
-          "count": 1
-        },
-        {
-          "typeId": "token_queens_hive",
-          "count": 1
-        }
-      ],
-      "treasures": [
-        {
-          "typeId": "token_copper_chest",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 0.25
-    }
-  },
-  "map_yellowstone": {
-    "id": "map_yellowstone",
-    "name": "Yellowstone Map",
-    "description": "Fir-clad hills around steaming sulphur springs, with wild grapevines on the slopes. Sulphur Lizards bask on the rocks; a Big Lizard keeps the warmest stone.",
-    "type": "map",
-    "tags": [],
-    "sprite": "t_map_swamp",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "biome": "yellowstone",
-      "points": 61,
-      "nodes": [
-        {
-          "typeId": "token_fir_tree",
-          "weight": 12
-        },
-        {
-          "typeId": "token_fir_forest",
-          "weight": 1
-        },
-        {
-          "typeId": "token_grapevine",
-          "weight": 3
-        },
-        {
-          "typeId": "token_stone_outcrop",
-          "weight": 2
-        }
-      ],
-      "camps": [
-        {
-          "typeId": "token_sulphur_rocks",
-          "count": 1
-        },
-        {
-          "typeId": "token_basking_stone",
-          "count": 1
-        }
-      ],
-      "treasures": [
-        {
-          "typeId": "token_iron_chest",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 0
-    }
-  },
-  "map_volcano": {
-    "id": "map_volcano",
-    "name": "Volcano Map",
-    "description": "Black rock and ash, rich in coal and iron. Fire Elementals flicker in the vents, and their Chief smoulders in a crater.",
-    "type": "map",
-    "tags": [],
-    "sprite": "t_map_volcano",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "biome": "volcano",
-      "points": 61,
-      "nodes": [
-        {
-          "typeId": "token_iron_ore_vein",
-          "weight": 3
-        },
-        {
-          "typeId": "token_coal_vein",
-          "weight": 2
-        },
-        {
-          "typeId": "token_stone_outcrop",
-          "weight": 2
-        }
-      ],
-      "camps": [
-        {
-          "typeId": "token_ember_vents",
-          "count": 1
-        },
-        {
-          "typeId": "token_smoking_crater",
-          "count": 1
-        }
-      ],
-      "treasures": [
-        {
-          "typeId": "token_iron_chest",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 0
-    }
-  },
-  "mod_overgrown": {
-    "id": "mod_overgrown",
-    "name": "Overgrown",
-    "description": "The woods run wild: many more oak trees.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_jungle",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "density",
-          "typeId": "token_oak_tree",
-          "points": 16
-        }
-      ],
-      "bountyWeight": 1
-    }
-  },
-  "mod_goblin_camp": {
-    "id": "mod_goblin_camp",
-    "name": "Goblin Camp",
-    "description": "Goblins have made camp here.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_spooky",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "threat",
-          "typeId": "token_goblin_camp",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 1
-    }
-  },
   "item_iron_pickaxe": {
     "name": "Iron Pickaxe",
     "description": "",
@@ -2458,47 +2047,6 @@
       "stealth": 10
     }
   },
-  "map_bog": {
-    "name": "Bog Map",
-    "description": "Murky water, reeds and mist. Wild lavender grows on the hummocks and trout lurk in the pools; frogs croak everywhere, and one of them is poisonous.",
-    "type": "map",
-    "tags": [],
-    "sprite": "t_map_swamp",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "biome": "bog",
-      "points": 40,
-      "nodes": [
-        {
-          "typeId": "token_wild_lavender",
-          "weight": 5
-        },
-        {
-          "typeId": "token_bog_pool",
-          "weight": 3
-        }
-      ],
-      "camps": [
-        {
-          "typeId": "token_frog_pond",
-          "count": 1
-        },
-        {
-          "typeId": "token_toxic_pool",
-          "count": 1
-        }
-      ],
-      "treasures": [
-        {
-          "typeId": "token_iron_chest",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 0
-    },
-    "id": "map_bog"
-  },
   "item_grape_seed": {
     "name": "Grape Seed",
     "description": "",
@@ -2839,281 +2387,6 @@
       "stealth": 15
     }
   },
-  "mod_rich_veins": {
-    "id": "mod_rich_veins",
-    "name": "Rich Veins",
-    "description": "The rock is seamed with copper: many more copper and coal veins.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_mountain_copper",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "density",
-          "typeId": "token_copper_ore_vein",
-          "points": 12
-        },
-        {
-          "kind": "density",
-          "typeId": "token_coal_vein",
-          "points": 4
-        }
-      ],
-      "bountyWeight": 1
-    }
-  },
-  "mod_teeming_waters": {
-    "id": "mod_teeming_waters",
-    "name": "Teeming Waters",
-    "description": "The shore is alive with fish: many more fishing spots.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_islands",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "density",
-          "typeId": "token_coast",
-          "points": 8
-        }
-      ],
-      "bountyWeight": 1
-    }
-  },
-  "mod_bountiful": {
-    "id": "mod_bountiful",
-    "name": "Bountiful",
-    "description": "Fruit and grain everywhere: many more apple trees and wild wheat.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_palm",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "density",
-          "typeId": "token_apple_tree",
-          "points": 8
-        },
-        {
-          "kind": "density",
-          "typeId": "token_apple_orchard",
-          "points": 1
-        },
-        {
-          "kind": "density",
-          "typeId": "token_wild_wheat_patch",
-          "points": 6
-        }
-      ],
-      "bountyWeight": 1
-    }
-  },
-  "mod_wolf_den": {
-    "id": "mod_wolf_den",
-    "name": "Wolf Den",
-    "description": "Wolves have made a den here.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_spooky",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "threat",
-          "typeId": "token_wolf_den",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 1
-    }
-  },
-  "mod_crab_rocks": {
-    "id": "mod_crab_rocks",
-    "name": "Crab Rocks",
-    "description": "Crabs crowd the rocks here.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_spooky",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "threat",
-          "typeId": "token_crab_rocks",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 1
-    }
-  },
-  "mod_wild_hive": {
-    "id": "mod_wild_hive",
-    "name": "Wild Hive",
-    "description": "A wild hive hums here.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_spooky",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "threat",
-          "typeId": "token_wild_hive",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 1
-    }
-  },
-  "mod_cow_pasture": {
-    "id": "mod_cow_pasture",
-    "name": "Cow Pasture",
-    "description": "Cows graze here (peaceful).",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_spooky",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "threat",
-          "typeId": "token_cow_pasture",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 1
-    }
-  },
-  "mod_thorn_thicket": {
-    "id": "mod_thorn_thicket",
-    "name": "Thorn Thicket",
-    "description": "Thorn Elementals stir in a thicket (peaceful).",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_spooky",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "threat",
-          "typeId": "token_thorn_thicket",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 1
-    }
-  },
-  "mod_ember_vents": {
-    "id": "mod_ember_vents",
-    "name": "Ember Vents",
-    "description": "Fire Elementals flicker in the vents here.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_spooky",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "threat",
-          "typeId": "token_ember_vents",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 0
-    }
-  },
-  "mod_sulphur_rocks": {
-    "id": "mod_sulphur_rocks",
-    "name": "Sulphur Rocks",
-    "description": "Sulphur Lizards bask here.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_spooky",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "threat",
-          "typeId": "token_sulphur_rocks",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 0
-    }
-  },
-  "mod_frog_pond": {
-    "id": "mod_frog_pond",
-    "name": "Frog Pond",
-    "description": "Frogs croak in a pond here.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_spooky",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "threat",
-          "typeId": "token_frog_pond",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 0
-    }
-  },
-  "mod_buried_copper": {
-    "id": "mod_buried_copper",
-    "name": "Buried Copper",
-    "description": "Someone hid a copper chest here.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_pirate",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "treasure",
-          "typeId": "token_copper_chest",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 1
-    }
-  },
-  "mod_buried_iron": {
-    "id": "mod_buried_iron",
-    "name": "Buried Iron",
-    "description": "Someone hid an iron chest here.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_pirate",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "treasure",
-          "typeId": "token_iron_chest",
-          "count": 1
-        }
-      ],
-      "bountyWeight": 0
-    }
-  },
   "item_cooked_tropical_fish": {
     "id": "item_cooked_tropical_fish",
     "name": "Cooked Tropical Fish",
@@ -3202,10 +2475,10 @@
   },
   "item_bee_banner": {
     "id": "item_bee_banner",
-    "name": "Bee Banner",
-    "description": "A Bee's banner: builds a Wild Hive like the one in the wild.",
+    "name": "Wild Hive Map",
+    "description": "Shows where a Wild Hive can stand: the Build Wild Hive recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_spooky",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3216,10 +2489,10 @@
   },
   "item_big_lizard_banner": {
     "id": "item_big_lizard_banner",
-    "name": "Big Lizard Banner",
-    "description": "A Big Lizard's banner: builds a Basking Stone like the one in the wild.",
+    "name": "Basking Stone Map",
+    "description": "Shows where a Basking Stone can stand: the Build Basking Stone recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_swamp",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3230,10 +2503,10 @@
   },
   "item_cow_banner": {
     "id": "item_cow_banner",
-    "name": "Cow Banner",
-    "description": "A Cow's banner: builds a Cow Pasture like the one in the wild.",
+    "name": "Cow Pasture Map",
+    "description": "Shows where a Cow Pasture can stand: the Build Cow Pasture recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_spooky",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3244,10 +2517,10 @@
   },
   "item_crab_banner": {
     "id": "item_crab_banner",
-    "name": "Crab Banner",
-    "description": "A Crab's banner: builds a Crab Rocks like the one in the wild.",
+    "name": "Crab Rocks Map",
+    "description": "Shows where Crab Rocks can stand: the Build Crab Rocks recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_spooky",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3258,10 +2531,10 @@
   },
   "item_fire_elemental_banner": {
     "id": "item_fire_elemental_banner",
-    "name": "Fire Elemental Banner",
-    "description": "A Fire Elemental's banner: builds a Ember Vents like the one in the wild.",
+    "name": "Ember Vents Map",
+    "description": "Shows where Ember Vents can stand: the Build Ember Vents recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_spooky",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3272,10 +2545,10 @@
   },
   "item_fire_elemental_chief_banner": {
     "id": "item_fire_elemental_chief_banner",
-    "name": "Fire Elemental Chief Banner",
-    "description": "A Fire Elemental Chief's banner: builds a Smoking Crater like the one in the wild.",
+    "name": "Smoking Crater Map",
+    "description": "Shows where a Smoking Crater can stand: the Build Smoking Crater recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_volcano",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3286,10 +2559,10 @@
   },
   "item_frog_banner": {
     "id": "item_frog_banner",
-    "name": "Frog Banner",
-    "description": "A Frog's banner: builds a Frog Pond like the one in the wild.",
+    "name": "Frog Pond Map",
+    "description": "Shows where a Frog Pond can stand: the Build Frog Pond recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_spooky",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3300,10 +2573,10 @@
   },
   "item_goblin_banner": {
     "id": "item_goblin_banner",
-    "name": "Goblin Banner",
-    "description": "A Goblin's banner: builds a Goblin Camp like the one in the wild.",
+    "name": "Goblin Camp Map",
+    "description": "Shows where a Goblin Camp can stand: the Build Goblin Camp recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_spooky",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3314,10 +2587,10 @@
   },
   "item_goblin_chief_banner": {
     "id": "item_goblin_chief_banner",
-    "name": "Goblin Chief Banner",
-    "description": "A Goblin Chief's banner: builds a Chief's Tent like the one in the wild.",
+    "name": "Chief's Tent Map",
+    "description": "Shows where a Chief's Tent can stand: the Build Chief's Tent recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_mountain",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3328,10 +2601,10 @@
   },
   "item_greater_slime_banner": {
     "id": "item_greater_slime_banner",
-    "name": "Greater Slime Banner",
-    "description": "A Greater Slime's banner: builds a Slime Pit like the one in the wild.",
+    "name": "Slime Pit Map",
+    "description": "Shows where a Slime Pit can stand: the Build Slime Pit recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_farmland",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3342,10 +2615,10 @@
   },
   "item_queen_bee_banner": {
     "id": "item_queen_bee_banner",
-    "name": "Queen Bee Banner",
-    "description": "A Queen Bee's banner: builds a Queen's Hive like the one in the wild.",
+    "name": "Queen's Hive Map",
+    "description": "Shows where a Queen's Hive can stand: the Build Queen's Hive recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_village",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3356,10 +2629,10 @@
   },
   "item_sulphur_lizard_banner": {
     "id": "item_sulphur_lizard_banner",
-    "name": "Sulphur Lizard Banner",
-    "description": "A Sulphur Lizard's banner: builds a Sulphur Rocks like the one in the wild.",
+    "name": "Sulphur Rocks Map",
+    "description": "Shows where Sulphur Rocks can stand: the Build Sulphur Rocks recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_spooky",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3370,10 +2643,10 @@
   },
   "item_thorn_elemental_banner": {
     "id": "item_thorn_elemental_banner",
-    "name": "Thorn Elemental Banner",
-    "description": "A Thorn Elemental's banner: builds a Thorn Thicket like the one in the wild.",
+    "name": "Thorn Thicket Map",
+    "description": "Shows where a Thorn Thicket can stand: the Build Thorn Thicket recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_spooky",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3384,10 +2657,10 @@
   },
   "item_toxic_frog_banner": {
     "id": "item_toxic_frog_banner",
-    "name": "Toxic Frog Banner",
-    "description": "A Toxic Frog's banner: builds a Toxic Pool like the one in the wild.",
+    "name": "Toxic Pool Map",
+    "description": "Shows where a Toxic Pool can stand: the Build Toxic Pool recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_swamp",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3398,10 +2671,10 @@
   },
   "item_water_elemental_banner": {
     "id": "item_water_elemental_banner",
-    "name": "Water Elemental Banner",
-    "description": "A Water Elemental's banner: builds a Tide Pool like the one in the wild.",
+    "name": "Tide Pool Map",
+    "description": "Shows where a Tide Pool can stand: the Build Tide Pool recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_shore",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3412,10 +2685,10 @@
   },
   "item_wind_elemental_banner": {
     "id": "item_wind_elemental_banner",
-    "name": "Wind Elemental Banner",
-    "description": "A Wind Elemental's banner: builds a Wind Stones like the one in the wild.",
+    "name": "Wind Stones Map",
+    "description": "Shows where Wind Stones can stand: the Build Wind Stones recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_flowers",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3426,10 +2699,10 @@
   },
   "item_wolf_banner": {
     "id": "item_wolf_banner",
-    "name": "Wolf Banner",
-    "description": "A Wolf's banner: builds a Wolf Den like the one in the wild.",
+    "name": "Wolf Den Map",
+    "description": "Shows where a Wolf Den can stand: the Build Wolf Den recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_spooky",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -3440,10 +2713,10 @@
   },
   "item_wolf_alpha_banner": {
     "id": "item_wolf_alpha_banner",
-    "name": "Wolf Alpha Banner",
-    "description": "A Wolf Alpha's banner: builds a Alpha's Den like the one in the wild.",
+    "name": "Alpha's Den Map",
+    "description": "Shows where an Alpha's Den can stand: the Build Alpha's Den recipe spends one.",
     "type": "material",
-    "sprite": "t_banner_red",
+    "sprite": "t_map_forest",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",

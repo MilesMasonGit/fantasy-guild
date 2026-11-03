@@ -391,46 +391,6 @@
         "status": "live",
         "tier": 0
       },
-      "map_forest": {
-        "status": "live",
-        "tier": 1
-      },
-      "map_mountain": {
-        "status": "live",
-        "tier": 1
-      },
-      "map_coast": {
-        "status": "live",
-        "tier": 1
-      },
-      "map_meadow": {
-        "status": "live",
-        "tier": 1
-      },
-      "map_flower_meadow": {
-        "status": "live",
-        "tier": 1
-      },
-      "map_cherry_grove": {
-        "status": "live",
-        "tier": 1
-      },
-      "map_yellowstone": {
-        "status": "live",
-        "tier": 2
-      },
-      "map_volcano": {
-        "status": "live",
-        "tier": 2
-      },
-      "mod_overgrown": {
-        "status": "live",
-        "tier": 1
-      },
-      "mod_goblin_camp": {
-        "status": "live",
-        "tier": 1
-      },
       "item_iron_pickaxe": {
         "status": "live",
         "tier": 2
@@ -613,10 +573,6 @@
         "tier": 0,
         "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
       },
-      "map_bog": {
-        "status": "live",
-        "tier": 2
-      },
       "item_grape_seed": {
         "status": "live",
         "tier": 2,
@@ -680,58 +636,6 @@
         "status": "live",
         "tier": 2
       },
-      "mod_rich_veins": {
-        "status": "live",
-        "tier": 1
-      },
-      "mod_teeming_waters": {
-        "status": "live",
-        "tier": 1
-      },
-      "mod_bountiful": {
-        "status": "live",
-        "tier": 1
-      },
-      "mod_wolf_den": {
-        "status": "live",
-        "tier": 1
-      },
-      "mod_crab_rocks": {
-        "status": "live",
-        "tier": 1
-      },
-      "mod_wild_hive": {
-        "status": "live",
-        "tier": 1
-      },
-      "mod_cow_pasture": {
-        "status": "live",
-        "tier": 1
-      },
-      "mod_thorn_thicket": {
-        "status": "live",
-        "tier": 1
-      },
-      "mod_ember_vents": {
-        "status": "live",
-        "tier": 2
-      },
-      "mod_sulphur_rocks": {
-        "status": "live",
-        "tier": 2
-      },
-      "mod_frog_pond": {
-        "status": "live",
-        "tier": 2
-      },
-      "mod_buried_copper": {
-        "status": "live",
-        "tier": 1
-      },
-      "mod_buried_iron": {
-        "status": "live",
-        "tier": 2
-      },
       "item_cooked_tropical_fish": {
         "status": "live",
         "tier": 0,
@@ -760,92 +664,92 @@
       "item_bee_banner": {
         "status": "live",
         "tier": 2,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_big_lizard_banner": {
         "status": "live",
         "tier": 3,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_cow_banner": {
         "status": "live",
         "tier": 2,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_crab_banner": {
         "status": "live",
         "tier": 2,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_fire_elemental_banner": {
         "status": "live",
         "tier": 3,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_fire_elemental_chief_banner": {
         "status": "live",
         "tier": 3,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_frog_banner": {
         "status": "live",
         "tier": 3,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_goblin_banner": {
         "status": "live",
         "tier": 2,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_goblin_chief_banner": {
         "status": "live",
         "tier": 2,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_greater_slime_banner": {
         "status": "live",
         "tier": 2,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_queen_bee_banner": {
         "status": "live",
         "tier": 2,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_sulphur_lizard_banner": {
         "status": "live",
         "tier": 3,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_thorn_elemental_banner": {
         "status": "live",
         "tier": 2,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_toxic_frog_banner": {
         "status": "live",
         "tier": 3,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_water_elemental_banner": {
         "status": "live",
         "tier": 2,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_wind_elemental_banner": {
         "status": "live",
         "tier": 2,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_wolf_banner": {
         "status": "live",
         "tier": 2,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_wolf_alpha_banner": {
         "status": "live",
         "tier": 2,
-        "note": "Creature banner (brief 330 W6): a rare drop that builds its camp."
+        "note": "Seed map: a rare drop that builds its camp."
       },
       "item_copper_arrow": {
         "status": "parked",
@@ -2067,17 +1971,6 @@
         },
         "autoSyncId": true,
         "id": "item_healing_potion"
-      },
-      "map_plane_3_base_map": {
-        "name": "Plane 3 Base Map",
-        "type": "map",
-        "plan": {
-          "status": "planned",
-          "tier": 3,
-          "note": "concept_basic_content round 9: plane-2 bosses drop plane-3 maps once that plane exists; owner 2026-10-27: a later plane places the Lemon and Lime Trees; round 1: silver, gold and mythril come in a later pass. A placeholder until the plane is designed."
-        },
-        "autoSyncId": true,
-        "id": "map_plane_3_base_map"
       }
     },
     "tokens": {

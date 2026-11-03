@@ -188,10 +188,11 @@
     ],
     "durationMs": 26000,
     "stationChargeCost": 1,
-    "xp": 65,
+    "xp": 34,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     },
     "stationKinds": [
       "furnace"
@@ -268,10 +269,11 @@
     ],
     "durationMs": 29000,
     "stationChargeCost": 1,
-    "xp": 203,
+    "xp": 65,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     },
     "stationKinds": [
       "furnace"
@@ -308,10 +310,11 @@
     ],
     "durationMs": 33000,
     "stationChargeCost": 1,
-    "xp": 726,
+    "xp": 258,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     },
     "stationKinds": [
       "furnace"
