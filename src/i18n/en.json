@@ -43,6 +43,12 @@
         "twoHanded": "Takes both hands",
         "restores": "Restores {amount} HP",
         "weaponHits": "Hits {damage} {type}, as {style}",
+        "weaponSpeed": "{speed} swing, every {time}",
+        "speedName": {
+            "fast": "Fast",
+            "normal": "Normal",
+            "slow": "Slow"
+        },
         "arrow": "Arrow: +{damage} {type} a shot, from a bow",
         "offHand": "Off hand: beside a weapon, never swung",
         "resists": "Resists {type} {n}%",

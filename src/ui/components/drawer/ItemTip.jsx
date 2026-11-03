@@ -7,7 +7,7 @@ import { weaponDamageTypeOf, arrowOf, DAMAGE_GROUPS, DAMAGE_TYPES } from '../../
 import { gearResistancesOf, gearDamageCutOf } from '../../../config/registries/gearDefence.js';
 import { COMBAT_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
-import { UNARMED_DAMAGE } from '../../../config/FormulaRegistry.js';
+import { UNARMED_DAMAGE, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, attackSpeedMs } from '../../../config/FormulaRegistry.js';
 
 /** What kind of item it is, in the player's words. */
 export function itemTypeLabel(item) {
@@ -34,6 +34,15 @@ function cutLines(item) {
         .map(id => t('itemTip.styleCut', { style: getSkill(id)?.name || id, n: cuts[id] }));
 }
 
+/** A weapon's swing: "Slow swing, every 4 s". Anything but the three speeds fights at normal. */
+function speedLine(item) {
+    const speed = ATTACK_SPEED_MS[item?.speed] ? item.speed : DEFAULT_ATTACK_SPEED;
+    return t('itemTip.weaponSpeed', {
+        speed: t(`itemTip.speedName.${speed}`),
+        time: t('fight.seconds', { n: attackSpeedMs(speed) / 1000 })
+    });
+}
+
 /**
  * Everything the tooltip says about an item, as plain facts (the component below draws them).
  * Mounted only while a tooltip is open, so nothing here runs per frame.
@@ -55,6 +64,7 @@ export function itemTipFacts(item) {
             type: t(`fight.types.${weaponDamageTypeOf(item, style)}`),
             style: getSkill(style)?.name || style
         }) : null,
+        speed: style ? speedLine(item) : null,
         arrow: arrow ? t('itemTip.arrow', { damage: arrow.damage, type: t(`fight.types.${arrow.damageType}`) }) : null,
         offHand: isOffHand(item) ? t('itemTip.offHand') : null,
         // What a worn piece resists, and what it costs: the styles it cuts, shown red.
@@ -89,6 +99,7 @@ export const ItemTipContent = ({ item, count = null, hint = null }) => {
             )}
             {facts.tool && <div className="text-white">{facts.tool}</div>}
             {facts.hits && <div data-item-tip-hits className="text-white">{facts.hits}</div>}
+            {facts.speed && <div data-item-tip-speed className="text-white">{facts.speed}</div>}
             {facts.arrow && <div data-item-tip-arrow className="text-white">{facts.arrow}</div>}
             {facts.offHand && <div data-item-tip-offhand className="text-white/70">{facts.offHand}</div>}
             {facts.resists.map(line => <div key={line} data-item-tip-resist className="text-white">{line}</div>)}
