@@ -41,8 +41,6 @@ const CAMP = 'token_goblin_camp';
 const GOBLIN = 'token_goblin';
 const CHIEF = 'token_goblin_chief';
 const TENT = 'token_chief_tent';
-const MAP_DROPS = (chance) => ['map_forest', 'map_mountain', 'map_coast', 'map_meadow']
-    .map((itemId) => ({ itemId, chance, minQty: 1, maxQty: 1 }));
 
 describe('The Combat chain in shipped data (7.7)', () => {
     const camp = tokens[CAMP];
@@ -121,14 +119,10 @@ describe('The Combat chain in shipped data (7.7)', () => {
         expect(goblin.uses).toBe(1);
     });
 
-    it('a Goblin drops Bones, sometimes Copper Ore, and now and then a plane-1 map or modifier', () => {
+    it('a Goblin drops Bones, sometimes Copper Ore, and now and then its seed map or a Coal Prospecting Map', () => {
         expect(enemyDropsOf(goblin)).toEqual([
             { itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 },
             { itemId: 'item_copper_ore', chance: 30, minQty: 1, maxQty: 1 },
-            ...MAP_DROPS(1.5),
-            { itemId: 'mod_rich_veins', chance: 1, minQty: 1, maxQty: 1 },
-            { itemId: 'mod_goblin_camp', chance: 0.5, minQty: 1, maxQty: 1 },
-            { itemId: 'mod_buried_copper', chance: 0.25, minQty: 1, maxQty: 1 },
             { itemId: 'item_goblin_banner', chance: 0.5, minQty: 1, maxQty: 1 },
             { itemId: 'item_coal_prospecting_map', chance: 3, minQty: 1, maxQty: 1 },
         ]);
@@ -151,18 +145,14 @@ describe('The Combat chain in shipped data (7.7)', () => {
         expect(c.xpAwarded).toBeGreaterThan(g.xpAwarded);
     });
 
-    it('a Chief drops better loot: Copper Ingots, Bones, sometimes a Beeswax Comb, and the boss map drops', () => {
-        expect(enemyDropsOf(chief).slice(0, 3)).toEqual([
+    it('a Chief drops better loot: Copper Ingots, Bones, sometimes a Beeswax Comb, its seed map, and a good chance of a Coal Prospecting Map', () => {
+        expect(enemyDropsOf(chief)).toEqual([
             { itemId: 'item_copper_ingot', chance: 100, minQty: 1, maxQty: 2 },
             { itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 },
             { itemId: 'item_beeswax_comb', chance: 25, minQty: 1, maxQty: 1 },
+            { itemId: 'item_goblin_chief_banner', chance: 2, minQty: 1, maxQty: 1 },
+            { itemId: 'item_coal_prospecting_map', chance: 25, minQty: 1, maxQty: 1 },
         ]);
-        // Its first kill always pays a Volcano Map (plane 2).
-        expect(chief.config.outputs.find((o) => o.itemId === 'map_volcano'))
-            .toMatchObject({ chance: 10, firstKill: true });
-        const chiefMaps = enemyDropsOf(chief).map((d) => d.itemId).filter((id) => id.startsWith('map_'));
-        expect(chiefMaps).toEqual(['map_forest', 'map_mountain', 'map_coast', 'map_meadow',
-            'map_flower_meadow', 'map_cherry_grove', 'map_volcano', 'map_yellowstone']);
     });
 
     it('the lifecycle audit says only that the camp and the tent spawn for free (allowed, SP-70)', () => {

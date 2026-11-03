@@ -149,6 +149,11 @@ describe('the placeholder tables', () => {
         for (const id of [...ids, ...keys, ...treasures]) expect(getTokenType(id), id).toBeTruthy();
     });
 
+    it('hold no hidden extras: only chests (owner, 2026-11-02)', () => {
+        expect(PLACEHOLDER.extras.map(e => e.kind)).toEqual(PLACEHOLDER.extras.map(() => 'treasure'));
+        expect(PLACEHOLDER.extras.length).toBeGreaterThan(0);
+    });
+
     it('over 500 seeds the only findings are today\'s holes, each one also listed by the generation', () => {
         // Herbs and Arcane have too few origins; a cell whose only origins yield nothing a price may
         // name (a Wild Wheat Patch's crop is not read) leaves the cell beyond it nothing to ask for.

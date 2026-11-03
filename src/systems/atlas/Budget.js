@@ -13,7 +13,7 @@ import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
  *
  * An ingredient is one recipe (a world cell's, the dev tools', or a retired map item's), either a Base Map:
  *
- *     { id: 'map_forest', kind: 'base', biome: 'forest', points: 40,
+ *     { id: 'world_cell_3', kind: 'base', biome: 'forest', points: 40,
  *       nodes:     [{ typeId: 'token_oak_tree', weight: 6 }, { typeId: 'token_redberry_bush', weight: 1 }],
  *       camps:     [{ typeId: 'token_goblin_camp', count: 1 }],   // optional, the map's own
  *       treasures: [{ typeId: 'token_ruins', count: 1 }],         // optional, the map's own
@@ -21,7 +21,7 @@ import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
  *
  * or a Modifier, holding one or more effects:
  *
- *     { id: 'mod_overgrown', kind: 'modifier', effects: [
+ *     { id: 'more_oak', kind: 'modifier', effects: [
  *         { kind: 'density',  typeId: 'token_oak_tree', points: 16 },             // more of a node
  *         { kind: 'replace',  from: 'token_oak_tree', to: 'token_fir_tree',
  *                             share: 1 },                                         // a better node instead

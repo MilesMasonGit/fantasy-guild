@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 
 import { buildLedger, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
 import { runChecks, CHECKS, filterFindings, findingsByKey, STARTER_CAMP_KEY } from '../systems/progression/ledger/checks.js';
+import { normaliseWorldTables } from '../config/worldTablesShape.js';
 import { ledgerWorkspace, withIronChest } from './fixtures/ledgerWorld.js';
 
 /**
@@ -201,7 +202,7 @@ describe('checks on the shipped content (the audit of 2026-10-28)', () => {
     const read = (file) => JSON.parse(fs.readFileSync(path.join(DATA, file), 'utf8'));
     const content = () => ({
         items: read('items.json'), tokens: read('tokens.json'), recipes: read('tokenRecipes.json'),
-        effects: read('effects.json'), starterCamp: read('starterCamp.json'),
+        effects: read('effects.json'), starterCamp: read('starterCamp.json'), worldTables: normaliseWorldTables(read('world.json')),
     });
 
     it('no longer finds Iron Ore only on the Volcano map, and none of the loose ends the ledger fix pack closed', () => {
@@ -217,15 +218,17 @@ describe('checks on the shipped content (the audit of 2026-10-28)', () => {
         for (const id of ['item_bones', 'item_beeswax_comb', 'item_grape_seed', 'item_salmon']) {
             expect(on(findings, itemKey(id), 'unused'), id).toEqual([]);
         }
-        // Many entries are never reachable; nothing yet tells parked from broken.
-        expect(findings.filter((f) => f.check === 'never-reachable' && f.key.startsWith('item:')).length).toBeGreaterThan(20);
-        expect(findings.filter((f) => f.check === 'never-reachable' && f.key.startsWith('token:')).length).toBeGreaterThan(20);
+        // Some entries are never reachable; nothing yet tells parked from broken.
+        expect(findings.filter((f) => f.check === 'never-reachable' && f.key.startsWith('item:')).length).toBeGreaterThan(0);
+        expect(findings.filter((f) => f.check === 'never-reachable' && f.key.startsWith('token:')).length).toBeGreaterThan(0);
     });
 
     it('turns the camp leaks red once they carry their plane as a tier', () => {
         const c = content();
-        const leaks = ['token_beehive', 'token_alchemy_table', 'token_apple_orchard', 'token_goblin_camp'].map(tokenKey).concat(itemKey('item_lavender'));
-        for (const key of leaks) {
+        const leaks = ['token_beehive', 'token_apple_orchard', 'token_goblin_camp'].map(tokenKey);
+        // Reached no earlier than their tier once they carry it: no leak.
+        const closed = [tokenKey('token_alchemy_table'), itemKey('item_lavender')];
+        for (const key of [...leaks, ...closed]) {
             const [kind, id] = key.split(':');
             c[kind === 'item' ? 'items' : 'tokens'][id].plan = { tier: 1 };
         }
@@ -235,6 +238,7 @@ describe('checks on the shipped content (the audit of 2026-10-28)', () => {
             expect(leak, key).toBeTruthy();
             expect(leak.message).toMatch(/^Reachable at Starter Camp, before its tier \(Plane 1\)/);
         }
+        for (const key of closed) expect(on(findings, key, 'leak'), key).toEqual([]);
         // Parked, it is left alone.
         c.tokens.token_beehive.plan = { tier: 1, status: 'parked' };
         expect(on(runChecks(buildLedger(c), c), tokenKey('token_beehive'))).toHaveLength(0);
