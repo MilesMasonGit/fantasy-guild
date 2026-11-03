@@ -25,6 +25,7 @@ export const SCENE_IDS = ['S1', 'S2', 'S3', 'bank', 'shop', 'notify', 'loot', 'i
 export const EXTRA_SCENE_IDS = ['cap128', 'camp128', 'cap256', 'hall', 'atlas', 'hallglide'];
 /** The Performance Envelope's scenes, any number (`bench/browser/scenes.mjs`, `sceneFor`). */
 export const ENVELOPE_SCENE = /^((cap|heroes|enemies|fights|floor|floorstill)\d+|notify\d+(i\d+)?)$/;
+export const ENVELOPE_SCENE_NAMES = "the envelope's cap<N>, heroes<N>, enemies<N>, fights<N>, floor<N>, floorstill<N>, notify<N>";
 
 export const DEFAULTS = {
     settleS: 20,
@@ -108,7 +109,7 @@ export function parseArgs(argv) {
         const ids = [...SCENE_IDS, ...EXTRA_SCENE_IDS];
         const known = new Set(ids.map(s => s.toLowerCase()));
         const bad = args.only.filter(s => !known.has(s.toLowerCase()) && !ENVELOPE_SCENE.test(s.toLowerCase()));
-        if (bad.length) throw new Error(`unknown scene ${bad.join(', ')}; known: ${ids.join(', ')}, and the envelope's cap<N>, heroes<N>, enemies<N>, fights<N>, floor<N>, notify<N>`);
+        if (bad.length) throw new Error(`unknown scene ${bad.join(', ')}; known: ${ids.join(', ')}, and ${ENVELOPE_SCENE_NAMES}`);
         args.only = args.only.map(s => ids.find(id => id.toLowerCase() === s.toLowerCase()) || s.toLowerCase());
     }
     // The cost table is one condition: the plan's "perf build, 1×" unless --cpu says otherwise.

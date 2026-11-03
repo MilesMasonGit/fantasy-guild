@@ -401,7 +401,8 @@ For each scene: a fresh tab at **1600 × 1000, DPR 1**, the CPU slowdown set
 
 **The Performance Envelope's scenes** (brief 90; `sceneFor` in `bench/browser/scenes.mjs`, the boards
 in `bench/scenarios/envelope.mjs`). Named with a number, any number, so one limit can be swept while
-everything else stays at the 128 board (`--only=cap96,cap128,cap160`). Only with `--only`.
+everything else stays at the 128 board (`--only=cap96,cap128,cap160`). Only with `--only`. `bench:drag`
+(`--board`), `bench:profile` and `bench:crisp` (`--scene`) take them too, one at a time.
 
 | Scene | What |
 |---|---|
@@ -561,6 +562,7 @@ times from `bench:draw`.
 |---|---|---|
 | `npm run bench:profile -- --scene=cap128 --cpu=4` | build, settle 20 s, trace 6 s, CPU profile 8 s, layers | ~2 min |
 | `npm run bench:profile -- --scene=S2 --off=bubbles` | with a drawing switch off | |
+| `npm run bench:profile -- --scene=heroes16` | any `bench:draw` scene, the envelope's included; an envelope scene's counts over both windows are printed and kept as `envelope` in the summary | |
 | `npm run bench:profile -- --cpu=3.2 --slowdown-target=4` | ask Chrome for one slowdown, judge the delivered one against another (`bench:draw`, "Chrome's CPU throttle"); it warns when more than 25 % off, and the profile is still written | |
 | `npm run bench:profile -- --scene=cap128 --invalidations` | also which elements each style pass touched, and why (heavy) | |
 | `--trace=15 --sample=10 --top=40 --settle=20 --no-build` | seconds, rows, reuse `dist-perf-prof/` | |
@@ -608,6 +610,7 @@ exact. Not a timing tool: one run is ~1 min and compares pixels only within itse
 | `npm run bench:crisp -- --neuter` | both guards switched off in the page (every `will-change` on the mat back to auto, labels painted): shows the fault (2026-10-14, perf build, S2: the cases among the resting Tokens changed 62 of 69 still Tokens, 0 of 15 exact even at rest; with the guards on 0–2 of 67 and 14 of 14) | 1 |
 | `--neuter=anims`, `--neuter=labels` | one guard off (anims: the cases among the resting Tokens change 13 of 68; labels: 2 of 14 soft at rest, 26 layers at rest against 9) | 1 |
 | `--dev --no-build --scene=cap128 --keep=<dir> --settle=10 --verbose` | the dev build; reuse `dist-perf/`; another board; keep the screenshots; each Token's exact share | |
+| `--scene=heroes12`, `--scene=floor60` | a plain board (`S1`, `S2`, `S3`, `cap128`, `camp128`, `cap256`) or an envelope scene, whose page timers stop when the board is frozen. Not the scenes that open a drawer or a sheet | |
 
 ### `npm run bench:drag`: does dragging always work?
 
@@ -721,7 +724,7 @@ p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
 | `npm run bench:drag -- --no-overlays` | the plain pass only | |
 | `npm run bench:drag -- --dev` | the dev build: React component names for the blockers | |
 | `npm run bench:drag -- --board=S3` | the torture board (~320 Tokens) instead of S2: carry stalls on a crowded mat | |
-| `npm run bench:drag -- --board=cap128` | a cap board (`cap128`, `camp128`, `cap256`); the Shop kind is refused there (the cap is full) | |
+| `npm run bench:drag -- --board=cap128` | a cap board (`cap128`, `camp128`, `cap256`) or any envelope scene (`cap<N>`, `heroes<N>`, `enemies<N>`, `fights<N>`, `floor<N>`, `floorstill<N>`, `notify<N>`); on a full board the Shop kind is skipped (the cap refuses a purchase). An envelope scene's counts over the drags are printed and kept as `meta.envelope` | |
 | `npm run bench:drag -- --cpu=4` | CPU slowdown; the slowdown Chrome delivered is printed per kind, with a warning (and `slowdownOff` in the results) when more than 25 % off the rate wanted | |
 | `npm run bench:drag -- --cpu=3.2 --slowdown-target=4` | ask Chrome for one slowdown, judge the delivered one against another (`bench:draw`, "Chrome's CPU throttle"). A kind off target is warned about, not measured again: its drags are done | |
 | `npm run bench:drag -- --no-build` | reuse `dist-perf/` | |

@@ -256,6 +256,13 @@ export const ENVELOPE_PROBE = `(() => {
     return out;
 })()`;
 
+/** An envelope scene's counts (mean, and the range when it moved), as a line's tail. */
+export function envelopeNote({ envelope: e }) {
+    if (!e) return '';
+    const v = (k) => (e[k] ? `${e[k].mean}${e[k].min !== e[k].max ? ` (${e[k].min}–${e[k].max})` : ''}` : '?');
+    return ` · Tokens ${v('tokens')}, enemies ${v('enemies')}, fights ${v('fights')}, heroes ${v('heroes')}, piles ${v('piles')}, stubs ${v('stubs')}, banners ${v('banners')}, flows ${e.flowsPerMin}/min, banners ${e.bannersPerMin}/min`;
+}
+
 async function startSampler(page) {
     await page.evaluate(SAMPLER);
 }

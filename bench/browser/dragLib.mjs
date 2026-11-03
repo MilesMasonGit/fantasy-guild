@@ -3,6 +3,7 @@
 
 import { quantile } from '../lib/stats.mjs';
 import { parseSlowdownTarget } from './slowdown.mjs';
+import { ENVELOPE_SCENE, ENVELOPE_SCENE_NAMES } from './drawLib.mjs';
 
 /** Drag kinds, in run order, and what each needs open. */
 export const KINDS = [
@@ -45,8 +46,9 @@ export function parseArgs(argv) {
                 break;
             }
             case 'board': {
-                if (!['S2', 'S3', 'cap128', 'camp128', 'cap256'].includes(value)) throw new Error('--board is S2 (realistic, the default), S3 (torture), cap128, camp128 or cap256 (S2 mix at a Token cap)');
-                args.board = value;
+                const envelope = ENVELOPE_SCENE.test(value.toLowerCase());
+                if (!envelope && !['S2', 'S3', 'camp128'].includes(value)) throw new Error(`--board is S2 (realistic, the default), S3 (torture), camp128 or ${ENVELOPE_SCENE_NAMES}`);
+                args.board = envelope ? value.toLowerCase() : value;
                 break;
             }
             case 'port': args.port = Math.floor(Number(value)) || null; break;

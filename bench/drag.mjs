@@ -12,7 +12,8 @@
 //   npm run bench:drag -- --no-build    reuse dist-perf/
 //   npm run bench:drag -- --cpu=4       CPU slowdown
 //   npm run bench:drag -- --cpu=3.2 --slowdown-target=4   ask Chrome for one, judge what it delivers against the other
-//   npm run bench:drag -- --board=S3    the torture board instead of S2
+//   npm run bench:drag -- --board=S3    the torture board instead of S2 (also camp128 and any
+//                                       envelope scene: cap<N>, heroes<N>, floor<N>, ...)
 //
 // Exit codes: 0 every kind 100 % · 1 any kind below 100 % · 3 the bench failed.
 // It reports drag bugs; it does not fix them.
@@ -24,7 +25,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
 import { startDevServer, startPerfServer, buildPerf, perfBuildInfo } from './browser/servers.mjs';
-import { SCENES, sceneUrl, openBoard, clickUntil, BANK_OPEN, SHOP_OPEN, deliveredSlowdown } from './browser/scenes.mjs';
+import { sceneFor, sceneUrl, openBoard, clickUntil, BANK_OPEN, SHOP_OPEN, deliveredSlowdown, envelopeNote } from './browser/scenes.mjs';
 import { installDragKit } from './browser/dragKit.mjs';
 import { parseArgs, KINDS, summarise, exitCode, dragPath, EXIT, PHASES, STALL_MS, stallCells } from './browser/dragLib.mjs';
 import { table } from './browser/drawLib.mjs';
@@ -164,8 +165,11 @@ async function main() {
         }
         chrome = await launchChrome({ width: 1600, height: 1000 });
         meta.chrome = { product: chrome.info.product, gpu: chrome.info.gpu };
-        const page = await openBoard(chrome, sceneUrl(server.url, SCENES[args.board]), { cpu: args.cpu, stress: SCENES[args.board].stress });
+        const scene = sceneFor(args.board);
+        const page = await openBoard(chrome, sceneUrl(server.url, scene), { cpu: args.cpu, stress: scene.stress, stressId: scene.stressId });
         try {
+            const how = scene.ui ? await scene.ui(page) : null;
+            if (how) console.log(`  ${how}`);
             await sleep(5000);
             // The Perf HUD is the harness's own overlay (bottom left), not part of the game: it would
             // block presses on the Shop's lower rows.
@@ -174,6 +178,7 @@ async function main() {
             meta.equipStock = await page.evaluate('window.__dragKit.ensureEquipStock()');
             // Its trial equips open a hero sheet a moment later; the first `arrange` closes it.
             await sleep(600);
+            if (scene.probe) await page.evaluate('window.__envWindowStart = performance.now(), true');
             for (const pass of passes) {
                 results[pass] = {};
                 if (pass === 'overlays') {
@@ -182,7 +187,7 @@ async function main() {
                     meta.overlays = { ...c, after: await page.evaluate('window.__dragKit.overlayCounts()') };
                     console.log(`\nPass: overlays (speech bubbles re-raised every 2.5 s on every hero; ${meta.overlays.after.alerts} callouts on the mat)`);
                 } else {
-                    console.log('\nPass: plain (S2 as it is)');
+                    console.log(`\nPass: plain (${scene.name} as it is)`);
                 }
                 for (const kind of kinds) {
                     await arrange(page, kind.needs);
@@ -209,6 +214,10 @@ async function main() {
                 if (pass === 'overlays') await page.evaluate('window.__dragKit.stopOverlays()');
             }
             if (meta.slowdownOff) console.log(`⚠ Delivered more than 25 % off the ${target}× wanted, so these ran on a different machine: ${meta.slowdownOff.join(', ')}`);
+            if (scene.probe) {
+                meta.envelope = await page.evaluate(scene.probe);
+                console.log(`\nThe board over the drags${envelopeNote(meta)}`);
+            }
             meta.pageErrors = page.consoleErrors.slice(0, 10);
             if (page.navigations > 1) { console.log(`⚠ the page reloaded during the run (${page.navigations} loads)`); failed = true; }
         } finally {
