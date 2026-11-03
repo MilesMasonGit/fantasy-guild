@@ -5,6 +5,17 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Director, four in parallel beside the balancing pack (owner 2026-11-02 10:15: all four, the two-helper limit lifted for this batch)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| T-290: the encyclopedia places things by the world tables | builder | `feat/encyclopedia-world` (`e3`) | **building**; one owner look | Mon | |
+| T-249 even start after a kill (WORK CHANGED expected); T-270/T-245 carried-rule wording; T-246 weapon tooltip | builder | `fix/combat-wording` (`w1`) | **building**; one owner look; night bench acceptance | Mon | |
+| T-197 loot pile hover, T-198 hero bubbles, T-202 stub column (sliced) | engineer | `perf/loot-bubbles` (`w2`) | **building**; draw A/B in the 13:00–17:00 window | Mon | |
+| T-288 pack tool stops reading stale autosaves; T-289 flaky wait; T-206 bench profiles; T-205 slowdown target | builder | `fix/tooling-care` (`w3`) | **building** | Mon | |
+
+Bench today 13:00–17:00: the draw baseline retake (failed three times last night on Chrome throttling), then perf slices.
+
 ## Director, balancing preview beside the refill pack (290 L9 preview; owner chose 2026-11-02 afternoon)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
