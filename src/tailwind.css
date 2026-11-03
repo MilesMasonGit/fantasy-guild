@@ -373,36 +373,16 @@
  * different gestures, and D-217 draws both at 64px, so size cannot tell them
  * apart.
  *
- * Applied to the sprite's IMAGE, never its button.
+ * Applied to the sprite's IMAGE, never its button. `lootBob.js` writes it on the
+ * sprite clock. ⚠️ Not a CSS animation: that is a composited layer per pile, and
+ * more for what is drawn after it.
  */
-@keyframes gi-sprite-hover {
-  0%, 100% { transform: translateY(-3px); }
-  7.14%    { transform: translateY(-4px); }
-  14.28%   { transform: translateY(-5px); }
-  21.42%   { transform: translateY(-6px); }
-  28.57%   { transform: translateY(-7px); }
-  35.71%   { transform: translateY(-8px); }
-  42.85%   { transform: translateY(-9px); }
-  50%      { transform: translateY(-9px); }
-  57.14%   { transform: translateY(-8px); }
-  64.28%   { transform: translateY(-7px); }
-  71.42%   { transform: translateY(-6px); }
-  78.57%   { transform: translateY(-5px); }
-  85.71%   { transform: translateY(-4px); }
-  92.85%   { transform: translateY(-3px); }
-}
-
-.gi-sprite-hover {
-  animation: gi-sprite-hover 1.96s steps(1, end) infinite;
-}
-
 /* ⚠️ Reduced motion must NOT flatten the two kinds back together, or the item
    vs Token distinction disappears for anyone who sets it. The bob stops; the
    RAISED OFFSET AND THE HARD SHADOW STAY (Wave 5: only floating loot has a
    shadow at all now, so the shadow alone already says "floating"). */
 @media (prefers-reduced-motion: reduce) {
   .gi-sprite-hover {
-    animation: none;
     transform: translateY(-6px);
   }
 }
@@ -1111,15 +1091,18 @@
 body.gi-dnd-active :is([data-item-stubs], [data-banners]),
 body.gi-dnd-active :is([data-item-stubs], [data-banners]) .pointer-events-auto { pointer-events: none !important; }
 
-/* A first find's stub: the button shine passes across it once as it appears. */
+/* A first find's stub: the button shine passes across it once as it appears.
+   ⚠️ No forwards fill: held at its end it stays in effect as long as the stub is new, a composited
+   layer per stub and one more for each stub drawn after it. */
 .gi-stub-new::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
+  opacity: 0;
   background: linear-gradient(110deg, transparent 0 40%, rgba(255, 255, 255, 0.4) 40% 60%, transparent 60% 100%);
-  animation: ui-shine-sweep 420ms steps(7, end) 1 both;
+  animation: ui-shine-sweep 420ms steps(7, end) 1;
 }
 
 /* Banners (BannerStack.jsx): they drop from behind the top bar with one small overshoot, and lift

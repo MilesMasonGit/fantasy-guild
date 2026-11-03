@@ -17,9 +17,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenHitArt, COMBAT_ATTACK_EVENT } from '../ui/components/board/TokenHitArt.jsx';
-import {
-    HIT_ANIMATIONS, HIT_PERIOD_MS, STRIKE_DELAY_MS, STRIKE_FRAME, heroFrameAt
-} from '../ui/components/board/hitAnimations.js';
+import { HIT_ANIMATIONS, STRIKE_DELAY_MS } from '../ui/components/board/hitAnimations.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -30,13 +28,14 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ **A worked Token's hit loop is not a layer of its own** (brief 60, P2-5). The loop is an
- * endless transform animation; Chrome put each one on its own composited layer, and then every
- * Token, hero, flag and name badge drawn over it had to be a layer too (30 of the 128 board's
- * ~60). `will-change: contents` on the element that loops tells Chrome to run its animations
- * on the main thread instead, so nothing is promoted. Chrome's layers cannot be seen from
- * jsdom: these guard the property that keeps them away, and that the loop still runs where and
- * when it did.
+ * ⭐ **A worked Token's hit loop is not a layer of its own** (brief 60, P2-5), **and no animation at
+ * all** (T-198). As an endless transform animation Chrome put each one on its own composited layer,
+ * and then every Token, hero, flag and name badge drawn over it had to be a layer too (30 of the 128
+ * board's ~60). Kept on the main thread by `will-change: contents`, it then made a style pass in
+ * every frame, through the long still part of its loop too. Now its poses are written on the sprite
+ * clock (`fx/clockPoses.js`), which cannot be promoted. `will-change: contents` stays on the wrapper
+ * for the one-off effects played on it. Chrome's layers cannot be seen from jsdom: these guard what
+ * keeps them away, and that the loop still runs where and when it did.
  */
 
 const h = React.createElement;
@@ -62,34 +61,36 @@ let anim;
 beforeEach(() => { anim = stubAnimate(); });
 afterEach(() => { cleanup(); anim.restore(); vi.restoreAllMocks(); });
 
-describe('the work loop runs where Chrome keeps it off the compositor', () => {
-    it('⭐ the element that loops carries will-change: contents', () => {
-        render(tree(h(TokenHitArt, { instanceId: 't1', skill: 'forestry', heroId: 'hero_1', active: true, tokenX: 500 }, h('span'))));
-        expect(loops(anim.calls)).toHaveLength(1);
-        expect(willChangeOf(loops(anim.calls)[0].el)).toBe('contents');
+describe('the work loop stays off the compositor', () => {
+    it('⭐ it is not an animation: nothing for Chrome to promote, or to run every frame', () => {
+        const { container } = render(tree(h(TokenHitArt, { instanceId: 't1', skill: 'forestry', heroId: 'hero_1', active: true, tokenX: 500 }, h('span'))));
+        expect(anim.calls).toHaveLength(0);
+        const el = container.querySelector('[data-token-hit-live="true"]');
+        expect(el.style.transform).toMatch(/^translate\(/);
+        expect(willChangeOf(el)).toBe('contents');
     });
 
-    it('every work animation on the list does', () => {
+    it('no work animation on the list is one', () => {
         for (const skill of ['forestry', 'mining', 'fishing', 'farming', 'smithing', 'crafting', 'cooking', 'construction']) {
             cleanup();
             anim.calls.length = 0;
-            render(tree(h(TokenHitArt, { instanceId: skill, skill, heroId: 'hero_1', active: true }, h('span'))));
-            expect(loops(anim.calls), skill).toHaveLength(1);
-            expect(willChangeOf(loops(anim.calls)[0].el), skill).toBe('contents');
+            const { container } = render(tree(h(TokenHitArt, { instanceId: skill, skill, heroId: 'hero_1', active: true }, h('span'))));
+            expect(anim.calls, skill).toHaveLength(0);
+            const el = container.querySelector('[data-token-hit-live="true"]');
+            expect(el, skill).not.toBeNull();
+            expect(willChangeOf(el), skill).toBe('contents');
         }
     });
 
-    it('the loop still starts every turn on the hero’s strike frame, and stops when the hero does', () => {
+    it('it stops when the hero does: nothing left on the element', () => {
         const { rerender, container } = render(tree(h(TokenHitArt, { instanceId: 't1', skill: 'mining', heroId: 'hero_7', active: true }, h('span'))));
-        const [loop] = loops(anim.calls);
-        expect(loop.options).toEqual({ duration: HIT_PERIOD_MS, iterations: Infinity });
-        expect(heroFrameAt(loop.startTime, 'hero_7')).toBe(STRIKE_FRAME);
+        const el = container.querySelector('[data-token-hit="jitter"]');
+        expect(el.style.transform).not.toBe('');
 
         // Stuck (an alert): no loop, and nothing left on the element.
         rerender(tree(h(TokenHitArt, { instanceId: 't1', skill: 'mining', heroId: 'hero_7', active: false }, h('span'))));
-        expect(loop.cancel).toHaveBeenCalled();
-        const el = container.querySelector('[data-token-hit="jitter"]');
         expect(el.getAttribute('data-token-hit-live')).toBeNull();
+        expect(el.style.transform).toBe('');
         expect(willChangeOf(el)).toBe('');
     });
 
@@ -130,7 +131,7 @@ describe('⭐ on the mat', () => {
         ];
     });
 
-    it('a Token a hero works loops from an element with will-change: contents, and nothing above it up to its box asks for a layer', () => {
+    it('a Token a hero works loops on the clock, its wrapper with will-change: contents, and nothing above it up to its box asks for a layer', () => {
         const forest = BoardState.createTokenInstance('fixture_producer', tokenStartingUses('fixture_producer'));
         Placement.placeTokenAt(forest, AT);
         Orders.orderAt('h1', AT);
@@ -139,7 +140,8 @@ describe('⭐ on the mat', () => {
         const { container } = render(tree(h(MatBoard, {})));
         const live = container.querySelector(`[data-token-art][data-token-id="${forest.id}"] [data-token-hit-live="true"]`);
         expect(live).not.toBeNull();
-        expect(loops(anim.calls).map(c => c.el)).toContain(live);
+        expect(loops(anim.calls)).toHaveLength(0);
+        expect(live.style.transform).toMatch(/^translate\(/);
         expect(willChangeOf(live)).toBe('contents');
         for (let el = live.parentElement; el && !el.matches('[data-token-art]'); el = el.parentElement) {
             expect(willChangeOf(el)).toBe('');

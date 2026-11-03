@@ -1,6 +1,7 @@
-import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
+import { FX_FRAME_MS } from './pixelSteps.js';
 import { fxInt, seedOf } from './fxRandom.js';
 import { spriteOf } from './spriteCopy.js';
+import { poseTransform } from './clockPoses.js';
 import { onDue } from '../frameClock.js';
 
 /**
@@ -8,8 +9,8 @@ import { onDue } from '../frameClock.js';
  * being worked pop off the side the blow lands on and fall, gone in four frames. The code-only
  * stand-in for the owner's strike art (leaves, rock chips, sparks).
  * The chips are made when the work starts and taken away when it stops; between strikes they are
- * hidden and nothing plays. Each strike is one short animation per chip, started on the mat's
- * shared clock (`frameClock.onDue`), not a loop of its own.
+ * hidden and nothing plays. A strike's frames are written on the mat's shared clock
+ * (`frameClock.onDue`); not an animation, for the reason in `clockPoses.js`.
  */
 
 /** The chips' colour, per skill: bark, ore, water, straw, sparks, shavings, steam, dust. */
@@ -31,7 +32,8 @@ const PATHS = Object.freeze([
     [[0, 0], [3, -1], [5, 0], [6, 2]]
 ]);
 export const CHIP_COUNT = PATHS.length;
-export const CHIP_MS = PATHS[0].length * FX_FRAME_MS;
+const PATH_FRAMES = PATHS[0].length;
+export const CHIP_MS = PATH_FRAMES * FX_FRAME_MS;
 
 /**
  * Start the chips on a worked Token's hit wrapper.
@@ -62,45 +64,67 @@ export function startStrikeChips(wrapper, { skill, firstStrike, periodMs, dir, u
             height: `${unit}px`,
             background: colour,
             pointerEvents: 'none',
-            visibility: 'hidden',
-            // ⚠️ On the main thread, like the hit loop around it (tailwind.css, at `.gi-token-land`).
-            willChange: 'contents'
+            visibility: 'hidden'
         });
         wrapper.appendChild(el);
         return el;
     });
     const base = seedOf(seed);
     let strike = 0;
-    const play = () => {
+    /** The strike playing: per chip, its transform in each frame. */
+    let frames = null;
+    let startedAt = 0;
+    let drawn = -1;
+    const start = (now) => {
         const d = dir() < 0 ? -1 : 1;
         // Where the blow lands: a quarter of the art across, towards the hero, a little above the middle.
         const fromX = Math.round(-d * sprite.size / 4 / unit);
         const fromY = -Math.round(sprite.size / 8 / unit);
-        PATHS.forEach((path, i) => {
+        frames = PATHS.map((path, i) => {
             const jx = fxInt(base, strike * CHIP_COUNT + i, -1, 1);
-            const poses = path.map(([x, y], k) => ({
-                ms: FX_FRAME_MS,
-                x: fromX + d * (x + (k ? jx : 0)),
-                y: fromY + y,
-                visibility: 'visible'
-            }));
-            const { keyframes, duration } = heldPoses(poses, { unit, rest: { x: fromX, y: fromY, visibility: 'hidden' } });
-            chips[i].animate(keyframes, { duration, fill: 'none' });
+            return path.map(([x, y], k) => poseTransform(fromX + d * (x + (k ? jx : 0)), fromY + y, unit));
         });
+        startedAt = now;
+        drawn = -1;
         strike += 1;
     };
-    const next = (now) => firstStrike + Math.ceil((now - firstStrike) / periodMs) * periodMs;
-    const step = (now) => {
-        play();
-        return next(now + 1);
+    /** The strike's frame at `now`, written if it changed. Returns when the next one is due. */
+    const drawStrike = (now) => {
+        if (!frames) return Infinity;
+        const k = Math.floor((now - startedAt) / FX_FRAME_MS);
+        if (k >= PATH_FRAMES) {
+            for (const el of chips) el.style.visibility = 'hidden';
+            frames = null;
+            return Infinity;
+        }
+        if (k !== drawn) {
+            drawn = k;
+            chips.forEach((el, i) => {
+                el.style.transform = frames[i][k];
+                el.style.visibility = 'visible';
+            });
+        }
+        return startedAt + (k + 1) * FX_FRAME_MS;
     };
-    const off = onDue(step, next(performance.now()));
+    const next = (now) => firstStrike + Math.ceil((now - firstStrike) / periodMs) * periodMs;
+    let nextStrike = next(performance.now());
+    const step = (now) => {
+        if (now >= nextStrike) {
+            start(now);
+            nextStrike = next(now + 1);
+        }
+        return Math.min(drawStrike(now), nextStrike);
+    };
+    const off = onDue(step, nextStrike);
     const stop = () => {
         off();
-        for (const el of chips) {
-            for (const a of el.getAnimations?.() || []) a.cancel();
-            el.remove();
-        }
+        for (const el of chips) el.remove();
+    };
+    /** One strike's chips now, off the beat. */
+    const play = () => {
+        const now = performance.now();
+        start(now);
+        onDue(step, Math.min(drawStrike(now), nextStrike));
     };
     stop.strike = play;
     return stop;

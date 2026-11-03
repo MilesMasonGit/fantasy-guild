@@ -15,7 +15,7 @@ import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { setSpriteFxManifest } from '../ui/utils/spriteFx.js';
 import {
-    heroSpriteFrame, heroPhaseMs, HERO_FRAME_MS, HIT_PERIOD_MS, STRIKE_FRAME, STRIKE_DELAY_MS
+    heroSpriteFrame, heroPhaseMs, strikeStartTime, HERO_FRAME_MS, HIT_PERIOD_MS, STRIKE_FRAME, STRIKE_DELAY_MS
 } from '../ui/components/board/hitAnimations.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -294,15 +294,19 @@ describe('⭐ the strike frame meets the hit', () => {
                 h(TokenHitArt, { key: 't', instanceId: 't1', skill: 'forestry', heroId: 'hero_7', active: true }, h('span')),
                 h('div', { key: 's', 'data-sprite': 'hero' }, h(AnimatedHeroSprite, { src: 'h.png', heroId: 'hero_7', size: 128, animationState: 'attack' }))
             );
-            expect(anim.calls).toHaveLength(1);
-            const loopStart = anim.calls[0].startTime;
+            expect(anim.calls).toHaveLength(0);
+            const hit = container.querySelector('[data-token-hit-live="true"]');
+            const loopStart = strikeStartTime(clock, 'hero_7');
             let strikes = 0;
             for (let i = 0; i < 500; i++) {
                 frame();
                 const s = shown(spriteEl(container, 'hero'));
                 expect(s.row).toBe('attack');
-                const hitBegins = mod(clock - loopStart, HIT_PERIOD_MS) < HERO_FRAME_MS;
+                const into = mod(clock - loopStart, HIT_PERIOD_MS);
+                const hitBegins = into < HERO_FRAME_MS;
                 expect(s.frame === STRIKE_FRAME).toBe(hitBegins);
+                // The shake's first pose exactly while the loop begins: the blow and the Token agree.
+                expect(hit.style.transform === 'translate(-2px, 0px)').toBe(into < 60 || (into >= 120 && into < 180));
                 if (hitBegins) strikes += 1;
             }
             expect(strikes).toBeGreaterThan(40);   // ~21 frames a strike, 3 strikes

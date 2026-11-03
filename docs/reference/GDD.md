@@ -1402,10 +1402,9 @@ on the owner's PC every board measured stays at 98.6 % or better.*
 collected) reads 88-93 % on the slow laptop, just under smooth. That is
 accepted for now; later optimisation passes aim at 95 %. **Content must not
 make a Region cost more than the reference.** Anything added is paid for by
-taking something away. In Tokens' worth: one loot pile is about 4, one
-item-stub row about 3, one enemy 4-10, one hero about 20, one fight about 30.
-What costs most is the moving things (heroes, enemies, fights, hovering loot,
-stub rows), not the Token count.
+taking something away. In Tokens' worth: one item-stub row about 3, one enemy 4-10, one hero about 20, one fight about 30.
+What costs most is the moving things (heroes, enemies, fights, stub rows), not
+the Token count.
 
 1. **Tokens.** A Region's base design holds at most **128 Tokens**, and a Base
    Map's budget must fit 128, spawned Tokens and landmarks included. The cap is
@@ -1419,9 +1418,9 @@ stub rows), not the Token count.
    and many enemies also lengthen the catch-up.
 4. **Fights.** Design for at most **1-2 fights at once** on a Region; no content
    that sets all heroes fighting together (4 fights: 78 %, 7: 69 %).
-5. **Loot on the floor.** About **8 piles** in normal play. The pile cap stays
-   40 (owner); until the piles' hover is made cheaper (T-197), 38 piles cost as
-   much as about 160 Tokens (72 %).
+5. **Loot on the floor.** The pile cap stays **40** (owner). Since the piles'
+   hover was made cheaper (T-197, 2026-11-03), 40 piles cost a frame what 8 do
+   (5.55 and 5.76 ms of work at a 3.2x slowdown; 40 cost 11.10 ms before).
 6. **Notifications.** Any rate is fine; keep the number of **different items
    flowing at once** low (each stub row is about 3 Tokens; 26 rows read
    80-86 %). At most 3 banners show, by design.

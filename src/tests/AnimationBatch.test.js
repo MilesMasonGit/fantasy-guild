@@ -267,15 +267,11 @@ describe('strike chips (effect 2)', () => {
         const stop = startStrikeChips(w, { skill: 'mining', firstStrike: 0, periodMs: 1000, dir: () => 1, seed: 't' });
         const chips = w.querySelectorAll('[data-fx-chip]');
         expect(chips).toHaveLength(CHIP_COUNT);
-        expect([...chips].every(c => c.style.visibility === 'hidden' && c.style.willChange === 'contents')).toBe(true);
-        // A strike: each chip pops off away from the hero and falls, four held frames, then hides.
+        expect([...chips].every(c => c.style.visibility === 'hidden')).toBe(true);
+        // A strike: the chips show at once, written, not animated (their frames: HitLoopClock.test.js).
         stop.strike();
-        expect(rec.calls).toHaveLength(CHIP_COUNT);
-        for (const a of rec.calls) {
-            expect(a.options.duration).toBe(4 * FX_FRAME_MS);
-            expect(a.keyframes.slice(0, -1).every(k => k.visibility === 'visible' && k.easing === 'steps(1, end)')).toBe(true);
-            expect(a.keyframes.at(-1).visibility).toBe('hidden');
-        }
+        expect(rec.calls).toHaveLength(0);
+        expect([...chips].every(c => c.style.visibility === 'visible' && /^translate\(/.test(c.style.transform))).toBe(true);
         stop();
         expect(w.querySelectorAll('[data-fx-chip]')).toHaveLength(0);
         const none = startStrikeChips(w, { skill: 'commerce', firstStrike: 0, periodMs: 1000, dir: () => 1 });
