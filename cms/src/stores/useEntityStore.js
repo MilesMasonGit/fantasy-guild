@@ -29,9 +29,9 @@ import { workspaceWorldFrom } from '../engine/worldTables';
 import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRenames';
 import { splitPlanned, rejoinPlanned } from '../engine/planFile';
 
-/** The CMS's authored content, in one store: the keyed collections `items` and `tokens`, the named effect library, and the per-skill recipe pools. Enemy is a filtered view of the Token list, and a Map or Modifier is an item (type `map` / `modifier`) that only the Map editor edits: one record, so nothing keeps two copies in step. */
+/** The CMS's authored content, in one store: the keyed collections `items` and `tokens`, the named effect library, and the per-skill recipe pools. Enemy is a filtered view of the Token list. */
 
-// Cross-references, in one place: renaming an entity has to chase its id everywhere else, so every reference site is listed here rather than open-coded in each rename branch. An item id can appear in a Token's production inputs/outputs, pooled recipes and a map's upcycle target. A token id can appear in a map's Cartography block, a `tokenId` output on a recipe or a Token's config, and a Token's lifecycle blocks.
+// Cross-references, in one place: renaming an entity has to chase its id everywhere else, so every reference site is listed here rather than open-coded in each rename branch. An item id can appear in a Token's production inputs/outputs and pooled recipes. A token id can appear in a `tokenId` output on a recipe or a Token's config, and a Token's lifecycle blocks.
 
 /**
  * Fields anywhere in an entity that hold an item id.
@@ -300,8 +300,7 @@ function renameInRecipePools(pools, oldId, newId) {
  * Returns a partial state patch, or `{}` when the rename is impossible (the
  * target id is taken by a different entity) so the caller can leave state alone.
  */
-function performRename(state, oldId, newId, kind) {
-    const entityType = kind;
+function performRename(state, oldId, newId, entityType) {
     const collectionFor = { item: 'items', token: 'tokens', effect: 'effects' };
     const collectionKey = collectionFor[entityType];
     if (!collectionKey) return {};

@@ -323,7 +323,7 @@ export const SUMMARY_TEXT = Object.freeze({
 });
 
 /**
- * The Node Summary in words, for the dev console's preview and the CMS Map editor's "What it writes":
+ * The Node Summary in words, for the dev console's preview:
  * one line per Token in budget order (nodes, then camps, then treasures).
  *
  * @param {object|object[]} nodeSummary  a {@link budget} result, or just its `entries`

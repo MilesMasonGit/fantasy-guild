@@ -48,7 +48,7 @@ export default function AuditPanel({ openGenerate }) {
     }
   };
 
-  // Only what the editor router has a screen for can be selected: a row about a Recipe or the simulator has none. A map is an item, and the router opens it in the Map editor.
+  // Only what the editor router has a screen for can be selected: a row about a Recipe or the simulator has none.
   const SELECTABLE = ['item', 'token'];
 
   const handleRowClick = (issue) => {

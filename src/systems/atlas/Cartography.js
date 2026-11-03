@@ -36,8 +36,8 @@ function described(item) {
 }
 
 /**
- * The ingredient as a recipe: a recipe comes back as it is. Map items are retired: the world map
- * settles places instead, so an item id is refused like anything else.
+ * The ingredient as a recipe: a recipe comes back as it is, and an item id is refused like
+ * anything else.
  *
  * @throws {TypeError} for anything that is not a recipe
  */

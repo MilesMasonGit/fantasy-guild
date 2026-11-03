@@ -411,20 +411,18 @@ steps stay until claimed. The discard bin (and its refunds) is gone.
 *(`Demolition.js`, `QuestTokens.dismissBounty`, `TokenInspection.jsx`)*
 
 ### Maps — Retired (brief 330 W2); the world map settles places instead
-Map items (a **Base Map**, type `map`, and a **Modifier**, type `modifier`) are
-retired: nothing drops, pays or makes one, a drop line naming one never rolls
-and one handed to the mat never lands, and there is no Cartography table,
-upcycling or bounty map. The boot audit names each Base Map and each Token
-that still drops a map, for the owner to delete in the CMS (the Map editor
-still opens them). A Modifier's Cartography block (more of a node, a better
-node instead, an enemy camp, a treasure) lives on as a world cell's hidden
-extra (§10, `world/cellRegion.js`). The generation engine still writes a
+The map and modifier item types are gone, with the CMS's Map editor, the
+Cartography table, upcycling and bounty maps. The items named "<Token> Map" are
+ordinary materials that wear map art: they build their Token, and nothing here
+reads them as maps. A save still holding a deleted item loads and plays: the
+stack stays in the save, the Bank does not show it (it still takes a slot), and
+the load names it in the log. The generation engine still writes a
 Region from recipes (`Budget.js` → `Layout.js`, `Cartography.js`), each biome
 its own ground and water: meadow, forest, mountain, coast, flower meadow,
 cherry grove, Yellowstone, volcano, and the **Bog**, dark grass and mud with
 a marsh of many small ponds (`terrainRegistry.js`); the QA panel's Terrain
 views use it. Map bursts, the Map shop, the Explore skill and the old Map
-catalogue (`data/maps.json`) are retired too; the last Map Token, **Volcanic
+catalogue are retired too; the last Map Token, **Volcanic
 Island**, does nothing and is the owner's to delete in the CMS.
 
 ---
@@ -826,13 +824,6 @@ Their resistances, weaknesses and moves come with the combat content pack
   (Encounters, below). Boss moves will hang on this mark.
 - Each kill uses one of the enemy's uses; at 0 it's gone. Otherwise it
   respawns at full HP after a 2 s pause.
-- **First kill always drops**: a drop line ticked so in the CMS (an enemy's
-  Drops) lands for certain the first time the save kills that enemy type, then
-  at its own chance. The save remembers each type paid
-  (`collection.firstKillDrops`); a save from before the record has been paid
-  nothing, whatever its kill counts. Time away pays it as live play does.
-  *(`combat/firstKill.js`)*
-
 ### Encounters — Built (brief 220 C5)
 - **Every fight is one-on-one**, bosses and guardians included: a Token holds
   one hero's claim. A second hero sent to a busy enemy waits beside it, takes
@@ -844,8 +835,8 @@ Their resistances, weaknesses and moves come with the combat content pack
 - **Bosses and guardians come from camps of one**: an ordinary spawner (a
   "Warlord's Den", a "Guardian's Hollow") whose spawn list names the one enemy,
   allowance 1, on its own interval: the same machinery and CMS fields as any
-  camp. The boss or guardian potters by its camp; a Base Map brings one by
-  listing the camp Token under its camps. The camp's clock stands at zero
+  camp. The boss or guardian potters by its camp; a place brings one through
+  the world tables' camps. The camp's clock stands at zero
   while the camp is full, so a beaten boss or guardian comes back one whole
   interval after it falls (§3, Spawners).
 - **A guardian** is simply a tough enemy whose camp stands by a rich node. It
@@ -1290,12 +1281,10 @@ drawers**. The menu can be flipped to the right.
   so it shows on the map), one Token of it the rarest of its line's table for
   the ring; a combat specialty makes one of the kit's camps its boss camp.
   Every origin the map shows stands on the mat; work nothing fills goes to the
-  cell's own line. The hidden modifiers' extra work (Rich Veins' veins, Teeming
-  Waters' waters, a modifier's camp) is part of the natural work, and a mat
-  keeps at most six heroes of it all (the rest is built): the largest share
-  that is not the specialty's gives way first, then the specialty's, then the
-  camps (never the boss camp, never an origin's last Token) (owner). The
-  modifiers' other effects and the treasures ride along as before; a wild cell
+  cell's own line. A mat keeps at most six heroes of natural work (the rest is
+  built): the largest share that is not the specialty's gives way first, then
+  the specialty's, then the camps (never the boss camp, never an origin's last
+  Token) (owner). Its chests ride along; a wild cell
   has one origin almost everywhere (three quarters of its nodes) or an odd
   layout (islands, mostly water, a chasm of Stone, cramped). **The arrival**: a
   settled place arrives occupied by the enemies its cell lists (3 to 6, more
