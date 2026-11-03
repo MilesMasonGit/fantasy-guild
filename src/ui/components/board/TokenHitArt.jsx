@@ -13,6 +13,7 @@ import { isDrawn } from '../../dev/perf/drawSwitches.js';
 import { playTokenFx } from './fx/tokenFxPlay.js';
 import { SPARK_MS } from './fx/matFx.js';
 import { startStrikeChips } from './fx/strikeChips.js';
+import { loopPoses } from './fx/clockPoses.js';
 
 /** The engine's one-per-attack combat event (`CombatAttackProcessor`). */
 export const COMBAT_ATTACK_EVENT = ENGINE_EVENTS.COMBAT_HERO_ATTACK;
@@ -26,21 +27,15 @@ export const CYCLE_BLINK_FRAMES = 1;
 /** A Token that has just become another: its outline white for this many effect frames. */
 export const TRANSFORM_FLASH_FRAMES = 3;
 
-const timelineNow = () =>
-    (typeof document !== 'undefined' && document.timeline?.currentTime != null)
-        ? document.timeline.currentTime
-        : performance.now();
-
 /**
  * The Token's art, reacting to its hero's blows.
  * A wrapper round the sprite and nothing else, so only the art moves: the Token's point, its
- * round hit area (the box around this), its badges and its drag are untouched. Animated with
- * the Web Animations API, transforms in whole art pixels (`unit` mat units each): no React render
- * per hit.
+ * round hit area (the box around this), its badges and its drag are untouched. Transforms in
+ * whole art pixels (`unit` mat units each): no React render per hit.
  * * **Work** (`skill` a work skill): while `heroId` works it and nothing is wrong (`active`),
- * one looping animation whose every loop starts on the hero's strike frame
- * (`strikeStartTime`), and a few chips in the colour of what is worked popping off each strike
- * (`fx/strikeChips.js`).
+ * poses looping on the shared sprite clock (`fx/clockPoses.js`), every loop starting on the hero's
+ * strike frame (`strikeStartTime`), and a few chips in the colour of what is worked popping off
+ * each strike (`fx/strikeChips.js`).
  * * **Combat** (an enemy): on each landed `combat_hero_attack`, on the hero's strike frame
  * ({@link STRIKE_DELAY_MS}: the hero plays its attack row once from that same event), the enemy
  * turns white for {@link HIT_FLASH_FRAMES} frames and is knocked back away from the hero who
@@ -64,16 +59,13 @@ export function TokenHitArt({ instanceId, skill, heroId = null, active = false, 
     // Work: a loop on the strike clock while the hero is at it, and the chips each strike knocks off.
     React.useEffect(() => {
         const el = ref.current;
-        if (!el || !anim || onAttack || !heroId || !active || typeof el.animate !== 'function') return undefined;
-        const reduced = prefersReducedMotion();
-        const keyframes = buildHitKeyframes(anim, { periodMs: HIT_PERIOD_MS, reducedMotion: reduced, unit });
-        if (!keyframes.length) return undefined;
-        const loop = el.animate(keyframes, { duration: HIT_PERIOD_MS, iterations: Infinity });
-        loop.startTime = strikeStartTime(timelineNow(), heroId);
-        const stopChips = !reduced && isDrawn('tokenFx')
+        if (!el || !anim || onAttack || !heroId || !active || prefersReducedMotion()) return undefined;
+        const startAt = strikeStartTime(performance.now(), heroId);
+        const stopLoop = loopPoses(el, anim.poses, { startAt, periodMs: HIT_PERIOD_MS, unit });
+        const stopChips = isDrawn('tokenFx')
             ? startStrikeChips(el, {
                 skill,
-                firstStrike: loop.startTime,
+                firstStrike: startAt,
                 periodMs: HIT_PERIOD_MS,
                 dir: () => {
                     const body = BoardState.heroBodyOf(heroId);
@@ -84,7 +76,7 @@ export function TokenHitArt({ instanceId, skill, heroId = null, active = false, 
             })
             : null;
         return () => {
-            loop.cancel();
+            stopLoop();
             stopChips?.();
         };
     }, [anim, onAttack, heroId, active, unit, skill, instanceId]);

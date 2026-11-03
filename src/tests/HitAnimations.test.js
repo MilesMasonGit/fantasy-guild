@@ -274,25 +274,23 @@ describe('TokenHitArt', () => {
         };
     }
 
-    it('loops the skill animation on the strike clock while the hero works, and stops when they stop', () => {
+    it('loops the skill’s poses while the hero works, as no animation, and stops when they stop', () => {
         const anim = stubAnimate();
         try {
             const { rerender, container } = mount(h(TokenHitArt, {
                 instanceId: 't1', skill: 'forestry', heroId: 'hero_1', active: true, tokenX: 500
             }, h('span')));
-            expect(anim.calls).toHaveLength(1);
-            const loop = anim.calls[0];
-            expect(loop.options).toEqual({ duration: HIT_PERIOD_MS, iterations: Infinity });
-            expect(heroFrameAt(loop.startTime, 'hero_1')).toBe(STRIKE_FRAME);
+            expect(anim.calls).toHaveLength(0);
             const el = container.querySelector('[data-token-hit="shake"]');
             expect(el).not.toBeNull();
             expect(el.getAttribute('data-token-hit-live')).toBe('true');
+            expect(el.style.transform).toMatch(/^translate\(/);
 
             // Stuck (an alert): the hero is not really striking.
             rerender(h(DndContext, null,
                 h(TokenHitArt, { instanceId: 't1', skill: 'forestry', heroId: 'hero_1', active: false, tokenX: 500 }, h('span'))));
-            expect(loop.cancel).toHaveBeenCalled();
-            expect(anim.calls).toHaveLength(1);
+            expect(el.style.transform).toBe('');
+            expect(anim.calls).toHaveLength(0);
         } finally {
             anim.restore();
         }
