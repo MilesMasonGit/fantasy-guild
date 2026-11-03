@@ -219,3 +219,11 @@ swapping a picture in for one is a small code change.
 |---|---|---|
 | A picture per star kind (XP, yield, work speed, a vein's rest, regrowth, camp reach, a Well line, the Infirmary, a loadout slot) | **NEW** (when ready) | The details panel's 128 px picture of an authored star (32 art px at 4×). Placeholder: the gold star (`ui_star_gold.png`); a star may name its own `sprite` |
 | Each skill constellation's picture | **NEW** (when ready) | The finished-constellation glow draws its lines today; a drawn picture is for later |
+
+## 9. Skill icons (owner, 2026-11-02)
+
+| Piece | Size | Status | Notes |
+|---|---|---|---|
+| Alchemy skill icon | 16 x 16 | NEW | stand-in until then: `s_flask` if it suits (T-292) |
+| Construction skill icon | 16 x 16 | NEW | stand-in until then: `s_industry` if it suits (T-292) |
+| Specialist skill icons | 16 x 16 | NEW, later | with the specialist skill sessions; a shared plain placeholder until then |

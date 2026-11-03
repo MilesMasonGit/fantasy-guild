@@ -17,6 +17,7 @@
 //   node bench/catchup/page.mjs --hours=24 --modes=muted,ui --no-build
 //   node bench/catchup/page.mjs --step=100 --hours=1
 //   node bench/catchup/page.mjs --hours=24 --modes=catchup --scene=cap128 --cpu=3.2   another board, slowed
+//   ... --cpu=3.2 --slowdown-target=4                 ask Chrome for one, judge what it delivers against the other
 //
 // Builds dist-perf/ first unless --no-build. Chrome, the server and the profile are cleaned up on
 // every way out (bench/browser/cdp.mjs).
@@ -24,6 +25,7 @@
 import { launchChrome, runCleanups } from '../browser/cdp.mjs';
 import { buildPerf, startPerfServer } from '../browser/servers.mjs';
 import { openBoard, sceneUrl, sceneFor, deliveredSlowdown } from '../browser/scenes.mjs';
+import { parseSlowdownTarget, slowdownNote } from '../browser/slowdown.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => {
     const [k, ...v] = a.replace(/^--/, '').split('=');
@@ -37,6 +39,7 @@ const modes = String(args.modes || 'ui,muted,ui,muted,ui,muted').split(',');
 const scene = sceneFor(args.scene || 'S2');
 if (!scene || (scene.ui && !scene.stressId)) throw new Error(`--scene: a plain board (S2, cap128, cap256…), not ${args.scene}`);
 const cpu = Number(args.cpu) || 1;
+const slowdownTarget = args['slowdown-target'] ? parseSlowdownTarget(args['slowdown-target']) : cpu;
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 const inPage = (mode) => `(() => {
@@ -84,7 +87,7 @@ try {
         const before = await deliveredSlowdown(page, cpu);
         const r = await page.evaluate(mode === 'catchup' ? inPageCatchUp() : inPage(mode), { timeoutMs: 1_800_000 });
         const after = await deliveredSlowdown(page, cpu);
-        r.slowdown = cpu > 1 ? ` · slowdown ${before}× → ${after}×` : '';
+        r.slowdown = cpu > 1 ? slowdownNote([before, after], slowdownTarget) : '';
         console.log(`  ${r.mode.padEnd(7)}  ${r.seconds.toFixed(2).padStart(7)} s  ${r.msPerStep.toFixed(3)} ms/step  ${r.steps} steps  ${r.tokens} Tokens  ${r.listeners} listeners${r.slowdown}`);
         await page.close();
     }

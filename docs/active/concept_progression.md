@@ -14,7 +14,9 @@ starts.
 
 ## Pacing
 
-- **First ritual in about 1–3 months** of play for a typical player.
+- **First ritual in about 1–3 months** of play for a typical player. ⚠️ Amended
+  by owner 2026-11-02: about 3 months, needing all 20 skills' final challenges, on a
+  faster pace curve ([the ladder](concept_content_roadmap.md#the-ladder-owner-approved-2026-11-02)).
 - **The target player leaves the game open in the background and glances
   often**, with occasional focused sessions to rearrange things. Offline
   catch-up covers the gaps.
@@ -148,7 +150,7 @@ rare finds, perks) is a new design problem. Settled so far:
 - **It holds an assortment of essential tutorial nodes and special sites.**
 - **The endgame sites live in the Starter Camp**, visible from the first
   minute, so the player sees the final goal from the beginning:
-  - **one site per skill, all 25**; each **is that skill's final challenge**
+  - **one site per skill, all 20** (⚠️ was 25, before five skills were cut); each **is that skill's final challenge**
     (the legendary job);
   - a site needs **the skill at 99** and **specific late-game items** (e.g.
     100 of an item an endgame boss drops one of per kill);

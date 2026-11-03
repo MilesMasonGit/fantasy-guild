@@ -5,7 +5,7 @@ import os from 'os';
 import path from 'path';
 import { EventEmitter } from 'events';
 import React from 'react';
-import { render, cleanup, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, cleanup, fireEvent, waitFor, within, configure, getConfig } from '@testing-library/react';
 
 import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useReviewStore } from '../../cms/src/stores/useReviewStore';
@@ -142,21 +142,29 @@ describe('reviewing, applying and undoing', () => {
 const noStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 const WORKSPACE_KEY = 'fantasy-guild-cms-v2';
 
-describe('the review page in the CMS', () => {
+// As in CMSChangePackReview: the whole CMS and the file server are slow on a busy machine, so the
+// waits get 10 s, a pack file landing on disk 20 s, and each case 60 s.
+const FILE_WAIT = { timeout: 20_000 };
+
+describe('the review page in the CMS', { timeout: 60_000 }, () => {
     let dir;
     let handler;
     let storedBefore;
+    let asyncUtilTimeout;
     const dataDir = path.resolve(__dirname, '../../data');
     const dataBefore = () => fs.readdirSync(dataDir).filter((f) => f.endsWith('.json')).map((f) => [f, fs.statSync(path.join(dataDir, f)).mtimeMs]);
     let dataStamp;
 
     beforeAll(() => {
+        asyncUtilTimeout = getConfig().asyncUtilTimeout;
+        configure({ asyncUtilTimeout: 10_000 });
         storedBefore = localStorage.getItem(WORKSPACE_KEY);
         dataStamp = dataBefore();
         useEntityStore.persist.setOptions({ storage: noStorage });
         useReviewStore.persist.setOptions({ storage: noStorage });
     });
     afterAll(() => {
+        configure({ asyncUtilTimeout });
         expect(localStorage.getItem(WORKSPACE_KEY)).toBe(storedBefore);
         expect(dataBefore()).toEqual(dataStamp);
     });
@@ -205,14 +213,14 @@ describe('the review page in the CMS', () => {
 
         fireEvent.click(within(row).getByText('Accept'));
         fireEvent.click(within(view.getByTestId('pack-review')).getByText(/Finish review/));
-        await waitFor(() => expect(fs.existsSync(path.join(dir, 'applied', 'camp-pack.json'))).toBe(true));
+        await waitFor(() => expect(fs.existsSync(path.join(dir, 'applied', 'camp-pack.json'))).toBe(true), FILE_WAIT);
         expect(useEntityStore.getState().starterCamp).toEqual(normaliseStarterCamp(PROPOSED));
 
         fireEvent.click(await view.findByText('camp-pack'));
         const archived = await view.findByTestId('archived-pack');
         expect(within(view.getByTestId('undo-0')).getByText('Starter Camp')).toBeTruthy();
         fireEvent.click(within(archived).getByText('Undo this pack'));
-        await waitFor(() => expect(fs.existsSync(path.join(dir, 'camp-pack.json'))).toBe(true));
+        await waitFor(() => expect(fs.existsSync(path.join(dir, 'camp-pack.json'))).toBe(true), FILE_WAIT);
         expect(useEntityStore.getState().starterCamp).toEqual(normaliseStarterCamp(CAMP));
     });
 

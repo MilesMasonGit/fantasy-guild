@@ -49,7 +49,9 @@ sketches only. Builds on [concept_progression.md](concept_progression.md)
     Pickaxe or better. **Gating only for now** (no speed or yield from the
     tool; numbers later). **Owner 2026-10-20 (supersedes the example): an
     ore needs the pick of the tier below it** — iron is mined with a copper
-    pick, mythril with an iron pick, and so on.
+    pick, mythril with an iron pick, and so on. ⚠️ Owner 2026-11-02: silver and
+    mythril take an iron pick, gold and adamantine a mythril pick, darkmetal an
+    adamantine pick; silver and gold make no tools (concept_content_roadmap.md).
   - **No tool**: the hero does other allowed work; the Token they'd work
     shows a **"Needs Pickaxe" speech bubble** (the kind of tool it needs).
   - **Swapping is by hand only**, like weapons, from the Bank.

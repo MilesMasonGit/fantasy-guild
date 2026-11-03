@@ -153,13 +153,18 @@ normal text colour; a new meaning needs the owner's OK.
   blur: otherwise the Tokens in front go soft and jump a pixel (T-145;
   `npm run bench:crisp` checks it). Not on the whole mat: that cost a third
   more frame work.
-- **Pixel sprites only.** No vector icon sets. Where no sprite exists yet, use
-  a placeholder sprite and add the icon to
-  [`owner_art_list.md`](../active/owner_art_list.md). Vector icons go as each
-  screen is touched.
-  The one exception so far is a meta mark (owner, 2026-10-29): the hero's job
-  flag, Lucide's `FlagTriangleRight` (`FlagMark`), on the mat and wherever
-  the flag is shown.
+- **The icon rule** (owner, 2026-11-02; audit in
+  [`icon_audit_2026-10-29.md`](../active/research/icon_audit_2026-10-29.md)):
+  - **Pixel** for anything that is a thing in the world: items, Tokens, skills,
+    heroes, enemies, statuses, hearts, locks. Where no sprite exists yet, use a
+    placeholder sprite and add the icon to
+    [`owner_art_list.md`](../active/owner_art_list.md).
+  - **Lucide** for meta marks and the app's own controls: nav bubbles, Settings,
+    the start screen, small panel buttons (search, select, edit, expand), and on
+    the mat the hero's job flag (`FlagMark`) and the gear slot icons.
+  - **No emoji** anywhere a player can see.
+  - Where a panel already has pixel art for the same idea (the close X, a lock),
+    the pixel version wins.
 
 ## Item references
 

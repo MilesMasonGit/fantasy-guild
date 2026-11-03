@@ -6,7 +6,8 @@
  *       Says whether the CMS will accept the pack, and why not.
  *   node cms/changePackTool.mjs stamp <pack.json> [--from <workspace.json>]
  *       Fills in the "fingerprint" of every edit and delete from the workspace the pack is made
- *       against: by default the newest CMS autosave (cms/backups/autosave_*.json), else data/.
+ *       against: by default the newest CMS autosave (cms/backups/autosave_*.json) while it is newer
+ *       than data/, else data/ with the plan (cms/packWorkspace.mjs). Every command prints which.
  *       Overwrites the fingerprints already there, so stamp right after reading the values.
  *   node cms/changePackTool.mjs gate <pack.json> [--from <workspace.json>] [--write]
  *       The agent gate (src/engine/packGate.js): applies the pack to the same workspace in memory,
@@ -29,46 +30,18 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { validatePack, fingerprint, currentValue, workspaceFromDataFiles } from './src/engine/changePacks.js';
+import { validatePack, fingerprint, currentValue } from './src/engine/changePacks.js';
+import { loadWorkspace as loadWorkspaceAt } from './packWorkspace.mjs';
 
 const cmsDir = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(cmsDir, '..');
-
-function newestAutosave() {
-    const dir = path.join(cmsDir, 'backups');
-    if (!fs.existsSync(dir)) return null;
-    const saves = fs.readdirSync(dir)
-        .filter((f) => f.startsWith('autosave_') && f.endsWith('.json'))
-        .map((f) => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs }))
-        .sort((a, b) => b.t - a.t || b.f.localeCompare(a.f));
-    return saves.length ? path.join(dir, saves[0].f) : null;
-}
 
 function readJson(file) {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
-function loadWorkspace(from) {
-    const file = from || newestAutosave();
-    if (file) return { source: file, workspace: readJson(file) };
-    const data = path.join(root, 'data');
-    const opt = (name, fallback) => (fs.existsSync(path.join(data, name)) ? readJson(path.join(data, name)) : fallback);
-    return {
-        source: 'data/ (no CMS autosave found; the owner may have unsynced work)',
-        workspace: workspaceFromDataFiles({
-            items: readJson(path.join(data, 'items.json')),
-            tokens: readJson(path.join(data, 'tokens.json')),
-            effects: opt('effects.json', {}),
-            tokenRecipes: opt('tokenRecipes.json', []),
-            starterCamp: opt('starterCamp.json', null),
-            skillPerks: opt('skillPerks.json', null),
-            hallStars: opt('hallStars.json', null),
-            world: opt('world.json', null),
-            // The plan is kept out of data/, beside it.
-            plan: fs.existsSync(path.join(root, 'cms', 'plan', 'plan.json')) ? readJson(path.join(root, 'cms', 'plan', 'plan.json')) : null,
-        }),
-    };
-}
+// Every command that reads a workspace prints its source, which names the file and why it was chosen.
+const loadWorkspace = (from) => loadWorkspaceAt(root, from);
 
 /**
  * The ledger's engines through Vite, as the CMS runs them: they use Vite's own imports (the
