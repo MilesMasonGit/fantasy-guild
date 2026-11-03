@@ -48,7 +48,7 @@ export function entryKey(kind, id) {
 const UNSHOWN = new Set([HOW.HOLD]);
 
 /** The ways something is spent: each names what spends it (the recipe, the Token, what a price buys). */
-const SPENT_BY = new Set([HOW.CRAFT, HOW.WORK, HOW.CATCH, HOW.SPAWN, HOW.GROW, HOW.SHOP, HOW.UPCYCLE]);
+const SPENT_BY = new Set([HOW.CRAFT, HOW.WORK, HOW.CATCH, HOW.SPAWN, HOW.GROW, HOW.SHOP]);
 
 function sortByName(list) {
     return list.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
@@ -142,7 +142,7 @@ export function buildEncyclopedia(content = gameContent()) {
             }
         }
         if (SPENT_BY.has(rule.how)) {
-            const by = rule.how === HOW.SHOP || rule.how === HOW.UPCYCLE ? rule.gives[0]?.key : rule.via;
+            const by = rule.how === HOW.SHOP ? rule.gives[0]?.key : rule.via;
             if (!shown(by)) continue;
             for (const input of rule.inputs) {
                 if (input.key === by) continue;

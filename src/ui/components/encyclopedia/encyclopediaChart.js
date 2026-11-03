@@ -34,18 +34,18 @@ export const STATIONS = 'stations';
 /** A way in from a station type to one of its stations. */
 const MEMBER = 'member';
 
-/** Ways in that a guild repeats (a station, a vein, a map's Tokens): the usual ones, before chance and finds. */
+/** Ways in that a guild repeats (a station, a vein, a place's Tokens): the usual ones, before chance and finds. */
 const REPEATED = new Set([
     HOW.CRAFT, HOW.STATION, HOW.BUILD, HOW.WORK, HOW.CATCH, HOW.TRICKLE, HOW.UPGRADE,
-    HOW.MAP, HOW.MODIFIER, HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW, HOW.WORLD
+    HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW, HOW.WORLD
 ]);
 const BY_CHANCE = new Set([HOW.DROP, HOW.BONUS]);
 
 /** Ways the player cannot take again (the opening Bank, the Starter Camp): off the chart, named in the card. */
-const ONE_OFF = new Set([HOW.STARTER_BANK, HOW.STARTER_TOOL, HOW.STARTER_CAMP, HOW.HALL, HOW.TUTORIAL]);
+const ONE_OFF = new Set([HOW.STARTER_BANK, HOW.STARTER_TOOL, HOW.STARTER_CAMP, HOW.HALL]);
 
-/** Ways no hero takes: a map writes, a spawner spawns, a stage grows, the Shop sells. */
-const NO_HERO = new Set([HOW.MAP, HOW.MODIFIER, HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW, HOW.TRICKLE, HOW.UPCYCLE, HOW.BOUNTY, HOW.SHOP, HOW.UPGRADE, MEMBER]);
+/** Ways no hero takes: a spawner spawns, a stage grows, the Shop sells. */
+const NO_HERO = new Set([HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW, HOW.TRICKLE, HOW.SHOP, HOW.UPGRADE, MEMBER]);
 
 /** How deep growing stages fold (a stump grows a sapling grows a tree). */
 const FOLD_DEPTH = 4;
@@ -136,7 +136,7 @@ const chanceOf = (row) => (row.firstKill ? 0 : finite(row.chance, 1));
 function captionOf(how) {
     return {
         [HOW.STARTER_BANK]: 'starterBank', [HOW.STARTER_TOOL]: 'starterTool', [HOW.STARTER_CAMP]: 'starterCamp',
-        [HOW.HALL]: 'guildHall', [HOW.TUTORIAL]: 'tutorial', [HOW.SHOP]: 'shop'
+        [HOW.HALL]: 'guildHall', [HOW.SHOP]: 'shop'
     }[how] ?? null;
 }
 
@@ -203,11 +203,6 @@ function wayIn(book, row) {
     const inputs = (row.inputs || []).filter(i => i.key !== row.via && book.entryOf(i.key));
     if (row.how === HOW.SHOP) {
         way.inputs = inputs;
-        return way;
-    }
-    if (row.how === HOW.UPCYCLE) {
-        way.from = row.via;
-        way.fromAmount = (row.inputs || []).find(i => i.key === row.via)?.quantity ?? null;
         return way;
     }
     way.from = row.via && book.entryOf(row.via) ? row.via : null;

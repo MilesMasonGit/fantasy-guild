@@ -9,7 +9,6 @@ import { cellMat, COMBAT } from '../../world/cellMat.js';
 import { materialsFromTokens, hallOriginsOf } from '../../world/materials.js';
 import { STRICT_RINGS, heroTokensOf, kitById, lineById } from '../../../config/worldTablesShape.js';
 import { normaliseStarterCamp } from '../../../config/starterCampShape.js';
-import { isMapItem } from '../../atlas/mapItems.js';
 import { stationSkillOf } from '../../effects/statements.js';
 
 /**
@@ -19,8 +18,8 @@ import { stationSkillOf } from '../../effects/statements.js';
  *   {@link plannedTables} lays those places on the world tables the game generates from, so the
  *   World plan shows the world the plan makes. With no place set it is exactly the game's world.
  * - **A world for a seed, read as places** ({@link worldPlan}): the generated world, each cell's mat
- *   (`cellMat.js`, as settling writes it), and a reach over the content with the retired map items
- *   taken out and each inner cell put in: a cell places what its mat holds (origins, everyday nodes,
+ *   (`cellMat.js`, as settling writes it), and a reach over the content with each inner cell put
+ *   in: a cell places what its mat holds (origins, everyday nodes,
  *   camps, chests, its arrival) at its ring.
  * - **Checks F** on that world: a ring-N cell asking ring-N materials; a key material not a step from
  *   every frontier; the inner rings not covering every Live entry; a wild origin no wedge places; a
@@ -28,9 +27,7 @@ import { stationSkillOf } from '../../effects/statements.js';
  *   the four that are checks F under these names, the rest as "another rule of the world".
  * - **Many worlds** ({@link sweepWorlds}): how many pass, each rule's failures grouped by what fails
  *   across worlds, per-skill bands (cells offering a skill's new work, heroes it keeps busy) and
- *   price spreads per ring (items and hero time). A coverage finding says whether the entry was
- *   reachable before the world (`before`: its tier through the map items, or null), which tells
- *   what the world lost from content that was never finished.
+ *   price spreads per ring (items and hero time).
  *
  * ⚠️ Coverage reads what the inner rings place and make as if every inner cell were settled: whether
  * a cell's price can be paid is the price checks' to say, so one bad price is one finding, not every
@@ -68,22 +65,17 @@ export const WORLD_PLAN_TEXT = Object.freeze({
     priceRing: (cell, name, ring, at) => `Cell ${cell} (ring ${ring}) asks for ${name}, first had at ring ${at}: not an earlier ring.`,
     priceNever: (cell, name) => `Cell ${cell} asks for ${name}, which the inner rings never give.`,
     notCovered: (why) => `Not reachable from the inner rings: ${why}`,
-    lost: (tier) => `reachable before the world map (tier ${tier}, through map items)`,
-    neverBefore: 'never reachable before the world map either',
     noMain: (line, ring) => `no-main: ${line} ring ${ring}`,
     ring: (ring) => `ring ${ring}`,
     cell: (id, kit, line) => [kit, line].filter(Boolean).join(' ') + ` (${id})`,
     hall: 'The Starter Camp'
 });
 
-/** Item and Token rules that only placed through map items, which the world retired. */
-const RETIRED = new Set([HOW.MAP, HOW.MODIFIER, HOW.TUTORIAL, HOW.BOUNTY, HOW.UPCYCLE]);
-
 /** The main ledger's own reading of the world (seed-free): a seed's world puts its cells in instead. */
 const SEED_FREE = new Set([HOW.SETTLE, HOW.WORLD]);
 
 /** Rules that place a Token where it stands rather than make it. */
-const PLACING = new Set([...RETIRED, ...SEED_FREE, HOW.STARTER_CAMP]);
+const PLACING = new Set([...SEED_FREE, HOW.STARTER_CAMP]);
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const cellKey = (id) => `cell:${id}`;
@@ -160,15 +152,9 @@ export function placementOf(tables) {
     return out;
 }
 
-/** The Token ids a generated cell may hold as a treasure: the tables' treasure extras and the maps' treasures. */
-function treasureIdsOf(tables, ledgerWorld) {
-    const out = new Set(tables.extras.filter(e => e.kind === 'treasure').map(e => e.id));
-    for (const def of Object.values(ledgerWorld.items)) {
-        if (!isMapItem(def)) continue;
-        for (const t of def.cartography?.treasures || []) if (t?.typeId) out.add(t.typeId);
-        for (const e of def.cartography?.effects || []) if (e?.kind === 'treasure' && e.typeId) out.add(e.typeId);
-    }
-    return out;
+/** The Token ids a generated cell may hold as a chest: the tables' extras. */
+function treasureIdsOf(tables) {
+    return new Set(tables.extras.map(e => e.id));
 }
 
 /**
@@ -231,13 +217,12 @@ export function worldContext(content, { baseTables, ledger = null } = {}) {
         if (!parked(id)) origins.push({ check: WORLD_F.NO_WEDGE, key: tokenKey(id), severity: SEVERITY.WARN, message: WORLD_PLAN_TEXT.unknownWedge(wedge), related: [] });
     }
     const said = new Set(unknown.map(u => u.id));
-    for (const id of wildOriginIds(lw, materialsOf, treasureIdsOf(tables, lw))) {
+    for (const id of wildOriginIds(lw, materialsOf, treasureIdsOf(tables))) {
         if (placed.has(id) || campTokens.has(id) || said.has(id) || parked(id)) continue;
         const yields = materialsOf(id).map(m => nameOf(itemKey(m))).join(', ');
         origins.push({ check: WORLD_F.NO_WEDGE, key: tokenKey(id), severity: SEVERITY.WARN, message: WORLD_PLAN_TEXT.noWedge(yields), related: materialsOf(id).map(itemKey) });
     }
 
-    let mapReachMemo = null;
     const effort = new Map();
     const effortOf = (itemId) => {
         if (!effort.has(itemId)) effort.set(itemId, lw.items[itemId] ? base.treeOf(itemId).effortMs : 0);
@@ -247,13 +232,7 @@ export function worldContext(content, { baseTables, ledger = null } = {}) {
     return {
         content, base, tables, baseTables, moved, unknown, materialsOf, skillOf, hallOrigins,
         records, nameOf, lineName, kitName, cellName, origins, effortOf,
-        keptRules: lw.rules.filter(r => !RETIRED.has(r.how) && !SEED_FREE.has(r.how)),
-        // What the map items reached, read without the world tables (the main ledger reads them).
-        mapReach: () => {
-            if (!lw.worldTables) return base.reach;
-            mapReachMemo ??= buildLedger({ ...content, worldTables: null }).reach;
-            return mapReachMemo;
-        }
+        keptRules: lw.rules.filter(r => !SEED_FREE.has(r.how))
     };
 }
 
@@ -282,9 +261,9 @@ function placedTokens(mat) {
 const ruleOf = (rule) => ({ needs: [], tool: null, gives: [], floor: 0, gates: [], cycleMs: null, inputs: [], passive: false, oneOff: false, ...rule });
 
 /**
- * Reach over the content with the world's inner cells as its places: the retired map rules out, and
- * each inner cell settled at its ring placing what its mat holds. A one-off find only cells place is
- * kept on the side, as the engine does for one only maps placed.
+ * Reach over the content with the world's inner cells as its places: each inner cell settled at its
+ * ring placing what its mat holds. A one-off find only cells place is kept on the side, as the
+ * engine does.
  */
 function worldReach(ctx, world, mats) {
     const lw = ctx.base.world;
@@ -329,10 +308,8 @@ function matsOf(ctx, world) {
 }
 
 /** A finding of checks F in the World plan's shape. */
-function finding(check, message, { cellId = null, key = null, subject, name, related = [], before } = {}) {
-    const out = { check, severity: SEVERITY.WARN, cellId, key, subject, name: name ?? subject, message, related };
-    if (before !== undefined) out.before = before;
-    return out;
+function finding(check, message, { cellId = null, key = null, subject, name, related = [] } = {}) {
+    return { check, severity: SEVERITY.WARN, cellId, key, subject, name: name ?? subject, message, related };
 }
 
 /** Every finding of checks F (and the world's other rules) on one world. */
@@ -370,21 +347,16 @@ function checksOn(ctx, world, mats, { reach, index, names }) {
         }
     }
 
-    // The inner rings cover every Live entry (map items and modifiers are retired, Parked ones kept on purpose).
+    // The inner rings cover every Live entry (Parked ones kept on purpose).
     for (const [key, def] of ctx.records) {
         const status = statusOf(def);
         if (status === PLAN_STATUS.PLANNED || status === PLAN_STATUS.PARKED) continue;
-        if (key.startsWith('item:') && isMapItem(def)) continue;
         if (Number.isInteger(reach.get(key)?.tier)) continue;
-        // Was it reachable before the world, through the map items? Then the world lost it; else it was never finished.
-        const was = ctx.mapReach().get(key)?.tier;
-        const before = Number.isInteger(was) ? was : null;
-        out.push(finding(WORLD_F.COVERAGE, WORLD_PLAN_TEXT.notCovered(whyNever(key, reach, index, nameOf)), { key, subject: key, name: nameOf(key), before }));
+        out.push(finding(WORLD_F.COVERAGE, WORLD_PLAN_TEXT.notCovered(whyNever(key, reach, index, nameOf)), { key, subject: key, name: nameOf(key) }));
     }
 
     for (const f of ctx.origins) out.push(finding(f.check, f.message, { key: f.key, subject: f.key, name: nameOf(f.key), related: f.related }));
-    // Coverage: what the world lost ahead of what was never finished.
-    return out.sort((a, b) => (a.before === null ? 1 : 0) - (b.before === null ? 1 : 0));
+    return out;
 }
 
 /** What a seed's world offers per skill and ring, and what each cell costs. */
@@ -510,7 +482,6 @@ export function sweepWorlds(content, { seeds, baseTables, ledger = null, context
             const group = rules[f.check].subjects;
             if (!group.has(f.subject)) {
                 group.set(f.subject, { subject: f.subject, name: f.name, key: f.key, worlds: 0, findings: 0, example: { seed: p.seed, cellId: f.cellId, message: f.message } });
-                if (f.before !== undefined) group.get(f.subject).before = f.before;
             }
             const row = group.get(f.subject);
             row.findings++;
@@ -537,9 +508,7 @@ export function sweepWorlds(content, { seeds, baseTables, ledger = null, context
             if (!kinds.has(k)) { kinds.add(k); generation.get(k).worlds++; }
         }
     }
-    // What the world lost (reachable before it) ahead of what was never finished, then the most worlds first.
-    const unfinished = (s) => (s.before === null ? 1 : 0);
-    const byWorlds = (a, b) => unfinished(a) - unfinished(b) || b.worlds - a.worlds || b.findings - a.findings || String(a.name).localeCompare(String(b.name));
+    const byWorlds = (a, b) => b.worlds - a.worlds || b.findings - a.findings || String(a.name).localeCompare(String(b.name));
     return {
         seeds: seeds.length,
         passed,

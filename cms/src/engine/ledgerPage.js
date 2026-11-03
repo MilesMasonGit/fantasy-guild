@@ -19,7 +19,6 @@ export const USE_TEXT = Object.freeze({
     [HOW.GROW]: 'paid to grow',
     [HOW.SHOP]: 'the price of',
     [HOW.UPGRADE]: 'the price of',
-    [HOW.UPCYCLE]: 'traded up into',
     tool: 'the tool for',
     other: 'needed by',
 });

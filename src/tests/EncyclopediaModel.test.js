@@ -4,7 +4,7 @@ import { HOW, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger
 import { getAllItems } from '../config/registries/itemRegistry.js';
 import { getAllTokenTypes } from '../config/registries/tokenRegistry.js';
 import { listRecipes } from '../config/registries/recipePoolRegistry.js';
-import { ledgerWorkspace } from './fixtures/ledgerWorld.js';
+import { ledgerContent } from './fixtures/ledgerWorld.js';
 
 describe('the encyclopedia over the shipped content', () => {
     const book = encyclopedia();
@@ -41,7 +41,7 @@ describe('the encyclopedia over the shipped content', () => {
 });
 
 describe('sources, uses and gives (fixture world)', () => {
-    const book = buildEncyclopedia(ledgerWorkspace());
+    const book = buildEncyclopedia(ledgerContent());
 
     it('files a recipe under where it is made, and its inputs under what spends them', () => {
         const ingot = book.sourcesOf(itemKey('item_iron_ingot'));

@@ -1,7 +1,6 @@
 // the progression ledger's engines: when each entry is first reachable (reach) and what a made item costs to its origins (tree)
 
-import { isPlanned, planTierOf } from './plan.js';
-import { isMapItem, isBaseMap, isModifier, recipeOf, givenByTutorial, upcycleOf, bountyWeightOf } from '../../atlas/mapItems.js';
+import { isPlanned } from './plan.js';
 import { normaliseStarterCamp } from '../../../config/starterCampShape.js';
 import { getUpgradeDef, WISHING_WELL_ITEM, wishingWellWater } from '../../../config/guildUpgrades.js';
 import { expandBearer } from '../../effects/effectLibrary.js';
@@ -18,7 +17,7 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
  * later, the game's encyclopedia and collection log:
  *
  * - **Reach** (`computeReach`): for every item, Token and recipe, the earliest tier at which a player
- *   can have it, the path that gets there ("Iron Ore ← Iron Vein (Mining 15) ← Volcano Map ← …"),
+ *   can have it, the path that gets there ("Iron Ore ← Iron Vein (Mining 15) ← Ores ring 2 ← …"),
  *   the skill levels that path asks, and whether, at that tier, only luck gets it.
  * - **Tree** (`ingredientTree`): a made item's ingredients down to their origins, with the hero time
  *   it all takes at the content's own rates, the skills it touches, its depth and its origins.
@@ -32,14 +31,13 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
  * wedge) and places what every world holds there: the origins its line's table lists for the ring,
  * the ring's key origins and guaranteed camps (through the wedges most likely to hold them). What a
  * world holds only sometimes (a kit's everyday and boss camps, the chests, the arrivals) is
- * placed by luck (`maybe`). The map items are retired: they place nothing and are `retired`, not
- * checked. **Without** `worldTables` (content from before the tables) the map items are read as they were: a
- * Region at the tier set on its map, had through drops, the tutorial, bounties and trading up.
+ * placed by luck (`maybe`). Without `worldTables` nothing is placed beyond the start: the World plan
+ * reads the content that way, then puts one seed's cells in itself.
  *
  * ⚠️ Reach must reason over everything that makes a thing appear, or it reports a false "never":
  * the Starter Camp (its Tokens, its Bank, the starter tools), the Guild Hall (Passive Production,
- * the Wishing Well, bounties), the Shop, spawners, growth and turning and regrowth, the world's cells
- * (or what each map and modifier writes), Foundations and the
+ * the Wishing Well), the Shop, spawners, growth and turning and regrowth, the world's cells,
+ * Foundations and the
  * buildings built on them, stations and their kinds, Fields and their crops, tool kinds and tiers,
  * catch pools and bait, drops (and first-kill drops), bonus drops and ambushes from rules. A new way
  * content appears belongs in `buildWorld`, as a rule.
@@ -57,13 +55,6 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
 export const LUCK_BELOW = 0.05;
 
 /**
- * How often a claimed bounty pays a map, before the pick by bounty weight.
- * ⚠️ Mirrors `BOUNTY_MAP_REWARD.chance` in `src/systems/quests/questBounties.js`, which this file cannot
- * import (it loads the game's data); `LedgerEngine.test.js` pins that the two agree.
- */
-export const BOUNTY_MAP_CHANCE = 0.25;
-
-/**
  * The pseudo-skill a fight is filed under. Its level is the enemy's level, which sets how hard the
  * fight is: the game checks no hero level to fight, so it is a measure of the path, not a gate.
  */
@@ -79,11 +70,6 @@ export const HOW = Object.freeze({
     HALL: 'guild-hall',
     UPGRADE: 'upgrade',
     SHOP: 'shop',
-    MAP: 'map',
-    MODIFIER: 'modifier',
-    TUTORIAL: 'tutorial',
-    BOUNTY: 'bounty',
-    UPCYCLE: 'upcycle',
     SPAWN: 'spawn',
     GROW: 'grow',
     TURN: 'turn',
@@ -110,11 +96,6 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
         'guild-hall': 'the Guild Hall',
         upgrade: 'a Guild Hall upgrade',
         shop: 'bought at the Shop',
-        map: 'written by a map',
-        modifier: 'written by a modifier',
-        tutorial: 'given by the tutorial',
-        bounty: 'paid by a bounty',
-        upcycle: 'traded up',
         spawn: 'spawned',
         grow: 'grows',
         turn: 'turns',
@@ -137,7 +118,6 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
     chance: (p) => `${Math.round(p * 1000) / 10}%`,
     never: 'never',
     planned: 'planned',
-    region: 'a Region',
     wedge: (line, ring) => `${line} ring ${ring}`
 });
 
@@ -149,9 +129,8 @@ export const recipeKey = (id) => `recipe:${id}`;
 /** A cell of one wedge at one strict ring of the world map, as a place the guild settles. */
 export const wedgeKey = (line, ring) => `wedge:${line}:${ring}`;
 const toolKey = (need) => `tool:${(need.kinds || [need.kind]).join('|')}:${need.minTier}`;
-const REGION = 'region:any';
 
-/** `{ kind, id }` of a key: kind is item, token, recipe, tool, region or wedge. */
+/** `{ kind, id }` of a key: kind is item, token, recipe, tool or wedge. */
 export function parseKey(key) {
     const at = key.indexOf(':');
     return { kind: key.slice(0, at), id: key.slice(at + 1) };
@@ -224,7 +203,7 @@ export function isOneOff(def) {
  *
  * A rule: `{ id, how, via, needs: key[], tool: key|null, gives: [{ key, chance, firstKill, perCycle, maybe }],
  * floor, gates: [{ skill, level }], cycleMs, inputs: [{ key, quantity }], passive, oneOff }`. `oneOff`
- * marks the work of a one-off find (a chest a map or the world places); `maybe` a give only some
+ * marks the work of a one-off find (a chest the world places); `maybe` a give only some
  * worlds hold, never a sure way. It fires at the
  * lowest tier where every need (and its tool) is reached, and never below its `floor`. `via` is the
  * record that does the work, which a path follows back; `inputs` what one cycle spends, which a tree
@@ -234,11 +213,10 @@ export function isOneOff(def) {
  *   as the CMS store or the game's `data/` files hold them (keyed objects or arrays). The Starter Camp
  *   is the one the game opens on; none means nothing is placed at the start. `worldTables`: the
  *   normalised world tables the world is generated from (with the plan's places laid on, as the
- *   World plan reads them), or none for the retired map items' reading.
- * @returns {{ items, tokens, recipes, rules, names, planned, retired: Set<string>, worldTables: object|null }}
- *   `retired` the map items' keys when the world is read
+ *   World plan reads them), or none to place nothing beyond the start.
+ * @returns {{ items, tokens, recipes, rules, names, planned, worldTables: object|null }}
  */
-export function buildWorld(content = {}, { bountyMapChance = BOUNTY_MAP_CHANCE } = {}) {
+export function buildWorld(content = {}) {
     const library = isObject(content.effects) ? content.effects : {};
     const allItems = keyed(content.items);
     const allTokens = keyed(content.tokens);
@@ -459,7 +437,7 @@ export function buildWorld(content = {}, { bountyMapChance = BOUNTY_MAP_CHANCE }
                     id: `station:${recipe.id}:${s.id}`, how: HOW.STATION, via: tokenKey(s.id), needs: [tokenKey(s.id), ...needKeys(inputs)], inputs,
                     tool: heroToolOf(s.def), gates, gives: [{ key: self, chance: 1 }]
                 });
-                // A Field that starts ripe with this crop (a map's wild wheat patch) needs no seed for its first harvests.
+                // A Field that starts ripe with this crop (a wild wheat patch) needs no seed for its first harvests.
                 if (crop && fieldOf(s.def)?.startsWith === recipe.id) {
                     add({
                         id: `station:${recipe.id}:${s.id}:ripe`, how: HOW.STATION, via: tokenKey(s.id), needs: [tokenKey(s.id)],
@@ -480,43 +458,7 @@ export function buildWorld(content = {}, { bountyMapChance = BOUNTY_MAP_CHANCE }
     }
 
     const tables = isObject(content.worldTables) && Array.isArray(content.worldTables.lines) ? content.worldTables : null;
-    const retired = new Set();
-    if (tables) {
-        for (const [id, def] of Object.entries(items)) if (isMapItem(def)) retired.add(itemKey(id));
-        worldRules(tables, { add, names, placeable: (id) => !!text(id) && !planned.has(tokenKey(id)) });
-    }
-
-    // Maps: a Base Map writes its Region; a Modifier changes a Base Map's. And how maps are had.
-    const bountyMaps = [];
-    for (const [id, def] of Object.entries(items)) {
-        if (tables || !isMapItem(def)) continue;
-        const self = itemKey(id);
-        const floor = planTierOf(def) ?? 0;
-        if (isBaseMap(def)) {
-            const recipe = recipeOf(def);
-            const writes = [...recipe.nodes, ...(recipe.camps || []), ...(recipe.treasures || [])].map(r => r.typeId);
-            add({ id: `map:${id}`, how: HOW.MAP, via: self, needs: [self], floor, gives: [...new Set(writes)].map(t => ({ key: tokenKey(t), chance: 1 })) });
-            add({ id: `region:${id}`, how: HOW.MAP, via: self, needs: [self], floor, gives: [{ key: REGION, chance: 1 }] });
-            if (givenByTutorial(def)) add({ id: `tutorial:${id}`, how: HOW.TUTORIAL, via: null, gives: [{ key: self, chance: 1 }] });
-        } else if (isModifier(def)) {
-            const writes = [];
-            for (const effect of list(recipeOf(def).effects)) {
-                if (effect.kind === 'replace') { if (text(effect.to)) writes.push(effect.to); }
-                else if (text(effect.typeId)) writes.push(effect.typeId);
-            }
-            add({ id: `modifier:${id}`, how: HOW.MODIFIER, via: self, needs: [self, REGION], floor, gives: [...new Set(writes)].map(t => ({ key: tokenKey(t), chance: 1 })) });
-        }
-        const upcycle = upcycleOf(def);
-        if (upcycle) {
-            add({ id: `upcycle:${id}`, how: HOW.UPCYCLE, via: self, needs: [self], inputs: [{ key: self, quantity: upcycle.ratio }], gives: [{ key: itemKey(upcycle.itemId), chance: 1 }] });
-        }
-        if (bountyWeightOf(def) > 0) bountyMaps.push({ id, weight: bountyWeightOf(def) });
-    }
-    if (bountyMaps.length && tokens[GUILD_HALL]) {
-        // Bounties come to the Hall from the start; a claimed one pays a map at `bountyMapChance`, picked by weight.
-        const total = bountyMaps.reduce((sum, m) => sum + m.weight, 0);
-        add({ id: 'bounty', how: HOW.BOUNTY, via: hall, needs: [hall], gives: bountyMaps.map(m => ({ key: itemKey(m.id), chance: bountyMapChance * m.weight / total })) });
-    }
+    if (tables) worldRules(tables, { add, names, placeable: (id) => !!text(id) && !planned.has(tokenKey(id)) });
 
     // Things made on the side by rules: a bonus drop granted to the work in reach (or carried by a
     // hero, or lent for a cycle by a status an item applies), a Token spawned by an ambush.
@@ -575,15 +517,14 @@ export function buildWorld(content = {}, { bountyMapChance = BOUNTY_MAP_CHANCE }
     for (const rule of rules) {
         if ((rule.how !== HOW.WORK && rule.how !== HOW.CATCH) || !rule.via?.startsWith('token:')) continue;
         const placers = placedBy.get(rule.via) || [];
-        if (isOneOff(tokens[parseKey(rule.via).id]) && placers.length && placers.every(how => how === HOW.MAP || how === HOW.MODIFIER || how === HOW.WORLD)) {
+        if (isOneOff(tokens[parseKey(rule.via).id]) && placers.length && placers.every(how => how === HOW.WORLD)) {
             rule.oneOff = true;
         }
     }
 
     for (const [key, need] of toolNeeds) names.set(key, need.kinds ? need.kinds.join(' or ') : `${need.kind} ${need.minTier}+`);
-    if (!tables) names.set(REGION, LEDGER_ENGINE_TEXT.region);
 
-    return { items, tokens, recipes, rules, names, planned, retired, worldTables: tables };
+    return { items, tokens, recipes, rules, names, planned, worldTables: tables };
 }
 
 /**
@@ -741,7 +682,7 @@ function settle(world, { luckBelow, sureOnly, finds = false }) {
  * its chain, is reached through it, as luck only (`oneOffOnly`).
  *
  * @returns {Map<string, {key, kind, id, name, planned, tier, sureTier, luckOnly, oneOffOnly, oneOffFind, how, via, chance, firstKill, maybe, levels, gate, depth, rule}>}
- *   one entry per item, Token and recipe key (and the tool, Region and wedge keys rules need). `tier` is
+ *   one entry per item, Token and recipe key (and the tool and wedge keys rules need). `tier` is
  *   null when it is never reachable; `sureTier` the lowest tier without luck (null: only ever by luck,
  *   or never); `luckOnly` that at its tier only a drop under `luckBelow` gets it (luck anywhere on its
  *   path counts); `maybe` that the world holds it only sometimes; `levels` the highest level per skill the whole path asks (`combat`: the toughest
@@ -911,7 +852,7 @@ const PRODUCING = new Set([HOW.WORK, HOW.CATCH, HOW.DROP, HOW.CRAFT, HOW.TRICKLE
  * The rule a tree follows for one item: the simulator's anchor (`valueSource`, the source the item's
  * price comes from) when it names one that makes it, else the rule that first reaches it if that one
  * produces it, else the first reachable rule that does, else any. Null for an origin (the Bank, a
- * starter tool, a map given by the tutorial) or an item nothing makes.
+ * starter tool) or an item nothing makes.
  */
 function sourceRule(world, reach, itemId) {
     const key = itemKey(itemId);
@@ -1057,8 +998,8 @@ export function hubsOf(world) {
  *
  * @returns {{ world, reach, reachOf(key), pathOf(key), hubs(), treeOf(itemId) }}
  */
-export function buildLedger(content, { luckBelow = LUCK_BELOW, cycleTimeOf = null, bountyMapChance = BOUNTY_MAP_CHANCE } = {}) {
-    const world = buildWorld(content, { bountyMapChance });
+export function buildLedger(content, { luckBelow = LUCK_BELOW, cycleTimeOf = null } = {}) {
+    const world = buildWorld(content);
     const reach = computeReach(world, { luckBelow });
     return {
         world,

@@ -7,7 +7,7 @@ import {
     chartMetrics, SHOWN_AT_FIRST, ROOT, STATIONS
 } from '../ui/components/encyclopedia/encyclopediaChart.js';
 import { HOW, COMBAT, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
-import { ledgerWorkspace, withIronChest } from './fixtures/ledgerWorld.js';
+import { ledgerContent, withIronChest } from './fixtures/ledgerWorld.js';
 import en from '../i18n/en.json';
 
 /**
@@ -187,8 +187,8 @@ describe('what a step asks of a hero, on its line', () => {
     it('each use too: the pickaxe\'s recipe; an enemy\'s drops its level; a tool the vein it works', () => {
         const [pick] = waysOut(book, I('item_iron_ingot'));
         expect(wayOutRequirement(book, I('item_iron_ingot'), pick)).toMatchObject({ skill: 'smithing', level: 16 });
-        const volcano = waysOut(book, T('token_goblin_chief')).find(w => w.to === I('map_volcano'));
-        expect(wayOutRequirement(book, T('token_goblin_chief'), volcano)).toEqual({ skill: COMBAT, level: 20 });
+        const banner = waysOut(book, T('token_goblin_chief')).find(w => w.to === I('item_chief_banner'));
+        expect(wayOutRequirement(book, T('token_goblin_chief'), banner)).toEqual({ skill: COMBAT, level: 20 });
         const vein = waysOut(book, I('item_copper_pickaxe')).find(w => w.to === T('token_copper_vein'));
         expect(wayOutRequirement(book, I('item_copper_pickaxe'), vein)).toEqual({ skill: 'mining', level: 1 });
     });
@@ -211,7 +211,7 @@ describe('ways out: uses and what it gives', () => {
     it('a vein gives its ore, likelier first, before the rare spawn; an enemy its drops with their odds', () => {
         expect(waysOut(book, T('token_iron_vein')).map(w => w.to)).toEqual([I('item_iron_ore'), T('token_fire_elemental')]);
         const chief = waysOut(book, T('token_goblin_chief'));
-        expect(chief.find(w => w.to === I('map_volcano'))).toMatchObject({ firstKill: true });
+        expect(chief.find(w => w.to === I('item_chief_banner'))).toMatchObject({ firstKill: true });
     });
 
     it('a station gives what its recipes make; a recipe that makes several stays the recipe', () => {
@@ -274,7 +274,7 @@ describe('the chart grows a step at a time, and counts what is not on it', () =>
         const elemental = ore.ins.map(b => b.from).find(n => n.key === T('token_fire_elemental'));
         expect(elemental.chance).toBeCloseTo(0.4);
         const chief = chartOf(book, T('token_goblin_chief'));
-        expect(chief.outs.find(u => u.node.key === I('map_volcano')).node.firstKill).toBe(true);
+        expect(chief.outs.find(u => u.node.key === I('item_chief_banner')).node.firstKill).toBe(true);
     });
 
     it('a station type grows to its stations', () => {
@@ -683,7 +683,7 @@ describe('the fixture world stays as the tests assume', () => {
     it('has the Smithy built on a Foundation and the Iron Chest as a one-off find', () => {
         const book = buildEncyclopedia(withIronChest());
         expect(book.sourcesOf(I('item_iron_ore')).find(r => r.via === T('token_iron_chest'))?.oneOff).toBe(true);
-        expect(buildEncyclopedia(ledgerWorkspace()).sourcesOf(R('recipe_build_smithy'))[0].how).toBe(HOW.BUILD);
+        expect(buildEncyclopedia(ledgerContent()).sourcesOf(R('recipe_build_smithy'))[0].how).toBe(HOW.BUILD);
         expect(KIND.ITEM).toBe('items');
     });
 });

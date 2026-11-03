@@ -3,7 +3,6 @@
 import { planOf, PLAN_STATUS, tierLabel } from './plan.js';
 import { HOW, LEDGER_ENGINE_TEXT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey, isOneOff, oneOffFindOf } from './engine.js';
 import { toolOf } from '../../../config/registries/toolKinds.js';
-import { isMapItem } from '../../atlas/mapItems.js';
 
 export { isOneOff };
 
@@ -17,7 +16,7 @@ export { isOneOff };
  *   what nothing makes, can never be reached, needs a tool or a station nothing gives).
  * - **B. Plan against data**: where the owner's plan (`plan.tier`, Planned stubs) and what the
  *   content actually does disagree.
- * - **C. Luck and access**: things only luck, a single map, a one-off find, a first kill or the
+ * - **C. Luck and access**: things only luck, a one-off find, a first kill or the
  *   Shop gives. Average luck only: a chance is a chance, never a lucky or unlucky run.
  *
  * Severities: `block` breaks something in the game; `warn` is a problem to look at; `info` a fact
@@ -90,19 +89,15 @@ export const CHECK_GROUP_TEXT = Object.freeze({ A: 'Integrity', B: 'Plan against
 export const SEVERITY_TEXT = Object.freeze({ block: 'Block', warn: 'Warn', info: 'Info' });
 
 /** Item types a player uses up or wears: one nothing else spends is still used. */
-const FINAL_TYPES = new Set(['consumable', 'treasure', 'food', 'drink', 'potion', 'weapon', 'armor', 'tool', 'fuel', 'drop', 'map', 'modifier']);
+const FINAL_TYPES = new Set(['consumable', 'treasure', 'food', 'drink', 'potion', 'weapon', 'armor', 'tool', 'fuel', 'drop']);
 
 /** The rules that make an item over and over (a Region's work, a recipe, Passive Production, a side drop). */
 const PRODUCING = new Set([HOW.WORK, HOW.CATCH, HOW.DROP, HOW.CRAFT, HOW.TRICKLE, HOW.UPGRADE, HOW.BONUS]);
-/** The rules that place a Token where it stands anywhere, not only on one map: every world holds what its cells place for sure. */
-const PLACES_ANYWHERE = new Set([HOW.STARTER_CAMP, HOW.SHOP, HOW.HALL, HOW.CRAFT, HOW.WORLD]);
-
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
-const ANYWHERE = 'anywhere';
 
 /**
  * The entry a rule belongs to, which a finding about the rule is filed under: the recipe a station
- * or build rule runs, the Token a Shop sells, the map the tutorial gives, the Starter Camp for what
+ * or build rule runs, the Token a Shop sells, the Starter Camp for what
  * it places, else the record doing the work.
  */
 export function ruleOwner(rule) {
@@ -159,47 +154,17 @@ export function ruleIndex(world) {
 }
 
 /**
- * The places a Token is had: a set of map keys, or `anywhere`; empty when nothing places it. A way
- * in only luck takes (a 2 % spawn, a map or modifier only luck gives) is not a place the player can
- * count on, so it is left out.
- */
-function placesOf(index, reach, luckBelow) {
-    const byLuck = (key) => { const at = reach.get(key); return !!at && at.luckOnly && at.sureTier === null; };
-    const memo = new Map();
-    const of = (key, seen) => {
-        if (memo.has(key)) return memo.get(key);
-        if (seen.has(key)) return new Set();
-        seen.add(key);
-        const out = new Set();
-        for (const rule of index.givers(key)) {
-            if (rule.gives.some((g) => g.key === key && g.firstKill !== true && (g.chance < luckBelow || g.maybe === true))) continue;
-            if (PLACES_ANYWHERE.has(rule.how) || rule.how === HOW.BUILD || rule.how === HOW.STATION) out.add(ANYWHERE);
-            else if (rule.how === HOW.MAP || rule.how === HOW.MODIFIER) { if (!byLuck(rule.via)) out.add(rule.via); }
-            else if (rule.via?.startsWith('token:')) for (const p of of(rule.via, seen)) out.add(p);
-            else if (rule.via) out.add(ANYWHERE);
-            if (out.has(ANYWHERE)) break;
-        }
-        seen.delete(key);
-        const result = out.has(ANYWHERE) ? new Set([ANYWHERE]) : out;
-        memo.set(key, result);
-        return result;
-    };
-    return (key) => of(key, new Set());
-}
-
-/**
  * Every finding of checks A to C, worst first, then by entry name.
  *
  * @param {object} ledger   `buildLedger(content)`
  * @param {object} content  what the ledger was built from (with Planned stubs: their plan blocks are read here)
- * @param {{ extra?: object[], luckBelow?: number }} options  `extra`: findings from elsewhere (the CMS's game rules and
- *   pricing), silenced and sorted with the rest; `luckBelow` as the ledger was built with
+ * @param {{ extra?: object[] }} options  `extra`: findings from elsewhere (the CMS's game rules and
+ *   pricing), silenced and sorted with the rest
  */
-export function runChecks(ledger, content = {}, { extra = [], luckBelow = LUCK_BELOW } = {}) {
+export function runChecks(ledger, content = {}, { extra = [] } = {}) {
     const { world, reach } = ledger;
     const records = recordsOf(content);
     const index = ruleIndex(world);
-    const places = placesOf(index, reach, luckBelow);
     const nameOf = (key) => (key === STARTER_CAMP_KEY ? 'Starter Camp' : world.names.get(key) ?? parseKey(key).id);
     const effTier = (key) => planOf(records.get(key)).tier ?? reach.get(key)?.tier ?? null;
     const findings = [];
@@ -233,8 +198,6 @@ export function runChecks(ledger, content = {}, { extra = [], luckBelow = LUCK_B
     // ── per entry ───────────────────────────────────────────────────────────────────────────────
     const entryKeys = [...records.keys()];
     for (const key of entryKeys) {
-        // A retired map item is no entry of the world: it is not asked to be reached or used.
-        if (world.retired?.has(key)) continue;
         const def = records.get(key);
         const plan = planOf(def);
         const { kind, id } = parseKey(key);
@@ -276,9 +239,7 @@ export function runChecks(ledger, content = {}, { extra = [], luckBelow = LUCK_B
         // Plan against data.
         if (reachable && plan.tier !== null) {
             const path = ledger.pathOf(key);
-            // Tutorial, bounty and boss first-kill maps are handed out a stage before their Region by design.
-            const early = kind === 'item' && isMapItem(def) ? 1 : 0;
-            if (at.tier < plan.tier - early) add('leak', key, `Reachable at ${tierLabel(at.tier)}, before its tier (${tierLabel(plan.tier)}): ${path}.`);
+            if (at.tier < plan.tier) add('leak', key, `Reachable at ${tierLabel(at.tier)}, before its tier (${tierLabel(plan.tier)}): ${path}.`);
             if (at.tier > plan.tier) add('late', key, `First reachable at ${tierLabel(at.tier)}, later than its tier (${tierLabel(plan.tier)}): ${path}.`);
         }
         if (kind === 'item' && plan.tier !== null && reachable) {
@@ -304,16 +265,6 @@ export function runChecks(ledger, content = {}, { extra = [], luckBelow = LUCK_B
                 const lasting = fromTokens.filter((r) => !isOneOff(world.tokens[parseKey(r.via).id]));
                 if (!lasting.length) {
                     add('fragile', key, `Only from one-off finds (${listNames(fromTokens.map((r) => r.via))}), which wear out for good.`, { related: fromTokens.map((r) => r.via) });
-                } else {
-                    const where = new Set();
-                    for (const r of lasting) for (const p of places(r.via)) where.add(p);
-                    if (!where.has(ANYWHERE) && where.size === 1) {
-                        const map = [...where][0];
-                        // A map's own goods are a design choice; it matters when other things need the item.
-                        add('fragile', key, `Only from the ${nameOf(map)} (${listNames(lasting.map((r) => r.via))}).`, {
-                            severity: takers.length ? SEVERITY.WARN : SEVERITY.INFO, related: [map, ...lasting.map((r) => r.via)]
-                        });
-                    }
                 }
             }
             const gives = givers.flatMap((r) => r.gives.filter((g) => g.key === key));

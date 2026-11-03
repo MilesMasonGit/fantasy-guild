@@ -33,7 +33,7 @@ const PRODUCING = new Set([HOW.WORK, HOW.CATCH, HOW.DROP, HOW.CRAFT, HOW.TRICKLE
 /** The rules that spend an item over and over: a recipe's cycle, a work's input or bait, an upkeep, a regrowth. */
 const REPEATING = new Set([HOW.STATION, HOW.CRAFT, HOW.WORK, HOW.CATCH, HOW.SPAWN, HOW.GROW]);
 /** Item types a player uses up or wears: spending them is the player's, not a recipe's. */
-const FINAL_TYPES = new Set(['consumable', 'treasure', 'food', 'drink', 'potion', 'weapon', 'armor', 'tool', 'fuel', 'drop', 'map', 'modifier']);
+const FINAL_TYPES = new Set(['consumable', 'treasure', 'food', 'drink', 'potion', 'weapon', 'armor', 'tool', 'fuel', 'drop']);
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const list = (v) => (Array.isArray(v) ? v : []);
@@ -58,7 +58,7 @@ export function economyFindings(ledger, content = {}, { book = null } = {}) {
     const items = itemsOf(content);
     const name = (key) => world.names.get(key) ?? parseKey(key).id;
     const reached = (rule) => Number.isInteger(ruleTier(reach, rule));
-    const counted = (key) => !world.retired?.has(key) && !world.planned?.has(key);
+    const counted = (key) => !world.planned?.has(key);
     const out = [];
     const listNames = (keys, max = 3) => {
         const names = [...new Set(keys.map(name))];

@@ -115,8 +115,7 @@ export function sweepText(sweep, { nameOfCheck = (c) => CHECKS[c]?.label || c } 
         out.push('');
         out.push(`${nameOfCheck(check)}: fails in ${rule.worlds} of ${sweep.seeds} worlds${rule.subjects.length ? `, ${rule.subjects.length} subjects` : ''}`);
         for (const s of rule.subjects) {
-            const before = s.before === undefined ? '' : s.before === null ? ' [never reachable before the world map]' : ` [lost: tier ${s.before} through map items]`;
-            out.push(`  ${String(s.worlds).padStart(4)} worlds  ${s.name}${s.key && s.name !== s.key ? ` (${s.key})` : ''}${before}`);
+            out.push(`  ${String(s.worlds).padStart(4)} worlds  ${s.name}${s.key && s.name !== s.key ? ` (${s.key})` : ''}`);
             out.push(`               e.g. world ${s.example.seed}: ${s.example.message}`);
         }
     }

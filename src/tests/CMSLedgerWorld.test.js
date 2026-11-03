@@ -105,7 +105,6 @@ describe('the World plan', () => {
         expect(chip(view, WORLD_F.COVERAGE).getAttribute('data-count')).toBe('2');
         expect(chip(view, WORLD_F.NO_WEDGE).getAttribute('data-count')).toBe('1');
         expect(view.container.querySelector('[data-rule-list="world-coverage"]').textContent).toMatch(/Gold Vein/);
-        expect(view.container.querySelector('[data-rule-list="world-coverage"]').textContent).toMatch(/never reachable/);
     });
 
     it('follows an origin\'s planned wedge and ring as soon as it is set', () => {

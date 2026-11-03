@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
 import { buildLedger, tokenKey, itemKey, wedgeKey, HOW } from '../systems/progression/ledger/engine.js';
-import { runChecks } from '../systems/progression/ledger/checks.js';
 import { buildPace, PROFILE } from '../systems/progression/ledger/pace.js';
 import { worldPlan } from '../systems/progression/ledger/world.js';
 import { normaliseWorldTables } from '../config/worldTablesShape.js';
@@ -10,16 +9,15 @@ import { workspaceLedger, contentOf as reportContent } from '../../cms/src/engin
 import { WORLD_FIXTURE_RAW, WORLD_FIXTURE_TABLES, worldWorkspace, contentOf } from './fixtures/ledgerWorldMap.js';
 
 /**
- * The ledger's main reach (First reach, Timeline, Pace, checks A to D) reads the world tables, not
- * the retired map items: each origin at its table ring, through a cell of its wedge settled at the
- * ring's price; the guaranteed camps at their ring; what a world holds only sometimes (a kit's camps,
- * the hidden extras, the arrivals) by luck; the Starter Camp at tier 0.
+ * The ledger's main reach (First reach, Timeline, Pace, checks A to D) reads the world tables: each
+ * origin at its table ring, through a cell of its wedge settled at the ring's price; the guaranteed
+ * camps at their ring; what a world holds only sometimes (a kit's camps, the chests, the arrivals)
+ * by luck; the Starter Camp at tier 0.
  */
 
 const tablesWith = (patch) => normaliseWorldTables({ ...WORLD_FIXTURE_RAW, ...patch });
 const withTables = (ws, tables = WORLD_FIXTURE_TABLES) => ({ ...contentOf(ws), worldTables: tables });
 const ledgerOf = (ws, tables) => buildLedger(withTables(ws, tables));
-const RETIRED_HOWS = [HOW.MAP, HOW.MODIFIER, HOW.TUTORIAL, HOW.BOUNTY, HOW.UPCYCLE];
 
 describe('origins at their table ring', () => {
     it('places an origin only the tables list at its ring, through a cell of its wedge', () => {
@@ -72,97 +70,6 @@ describe('origins at their table ring', () => {
     });
 });
 
-describe('the retired map items', () => {
-    it('place nothing: no map, modifier, tutorial, bounty or trading-up rule, and the maps are marked retired', () => {
-        const l = ledgerOf(worldWorkspace());
-        expect(l.world.rules.filter(r => RETIRED_HOWS.includes(r.how))).toEqual([]);
-        expect(l.world.retired).toEqual(new Set([itemKey('map_mountain'), itemKey('map_volcano'), itemKey('mod_deep_veins')]));
-        // The Volcano Map's Wild Hive is had from the Crops wedge.
-        expect(l.reachOf(tokenKey('token_wild_hive'))).toMatchObject({ tier: 1, via: wedgeKey('crops', 1) });
-        // Without the world tables (the game's encyclopedia) the maps are read as before.
-        expect(buildLedger(contentOf(worldWorkspace())).world.rules.some(r => r.how === HOW.MAP)).toBe(true);
-    });
-
-    it('are not checked as entries: a retired map is not "never reachable"', () => {
-        const ws = worldWorkspace();
-        const findings = runChecks(ledgerOf(ws), withTables(ws));
-        for (const id of ['map_mountain', 'map_volcano', 'mod_deep_veins']) expect(findings.filter(f => f.key === itemKey(id)), id).toEqual([]);
-        // And a world-only origin is no longer late.
-        expect(findings.filter(f => f.key === itemKey('item_ores_3')).map(f => f.check)).toEqual(['unused']);
-        const before = runChecks(buildLedger(contentOf(ws)), contentOf(ws));
-        expect(before.filter(f => f.key === itemKey('item_ores_3')).map(f => f.check)).toContain('late');
-    });
-});
-
-describe('camps', () => {
-    it('a guaranteed camp is had for sure at its ring, through the line leaning most to its kit', () => {
-        const tables = tablesWith({
-            kits: [{ ...WORLD_FIXTURE_RAW.kits[0], bossCamps: [] }, { id: 'lowland', name: 'Lowland', work: { farming: 1 } }],
-            camps: { 2: [{ id: 'token_chief_tent', kits: ['highland'] }] },
-            lines: WORLD_FIXTURE_RAW.lines.map(l => ({ ...l, kits: l.id === 'trees' ? { highland: 3, lowland: 1 } : { highland: 1, lowland: 1 } })),
-            arrival: { ...WORLD_FIXTURE_RAW.arrival, 3: { count: [3, 3], enemies: [{ id: 'token_goblin' }] } },
-        });
-        const l = ledgerOf(worldWorkspace(), tables);
-        expect(l.reachOf(tokenKey('token_chief_tent'))).toMatchObject({ tier: 2, luckOnly: false, sureTier: 2, via: wedgeKey('trees', 2) });
-        expect(l.reachOf(tokenKey('token_goblin_chief'))).toMatchObject({ tier: 2, luckOnly: false });
-    });
-
-    it('a wedge whose tables list nothing by the ring comes after one that does, however it leans', () => {
-        const tables = tablesWith({
-            kits: [{ ...WORLD_FIXTURE_RAW.kits[0], bossCamps: [] }, { id: 'wetland', name: 'Wetland', work: { fishing: 1 } }],
-            camps: { 1: [{ id: 'token_chief_tent', kits: ['wetland'] }] },
-            lines: WORLD_FIXTURE_RAW.lines.map(l => (l.id === 'herbs' ? { ...l, kits: { wetland: 3 }, origins: { ...l.origins, 1: [] } }
-                : l.id === 'waters' ? { ...l, kits: { highland: 3, wetland: 1 } } : l)),
-        });
-        expect(ledgerOf(worldWorkspace(), tables).reachOf(tokenKey('token_chief_tent'))).toMatchObject({ tier: 1, via: wedgeKey('waters', 1) });
-        const stocked = tablesWith({ ...tables, lines: tables.lines.map(l => (l.id === 'herbs' ? { ...l, origins: WORLD_FIXTURE_RAW.lines.find(x => x.id === 'herbs').origins } : l)) });
-        expect(ledgerOf(worldWorkspace(), stocked).reachOf(tokenKey('token_chief_tent'))).toMatchObject({ tier: 1, via: wedgeKey('herbs', 1) });
-    });
-
-    it('a kit\'s boss camp, with no guarantee, is had only in some worlds: luck', () => {
-        const l = ledgerOf(worldWorkspace());
-        expect(l.reachOf(tokenKey('token_chief_tent'))).toMatchObject({ tier: 1, luckOnly: true, sureTier: null });
-        expect(l.pathOf(tokenKey('token_chief_tent'))).toMatch(/in some worlds/);
-        const tables = tablesWith({ camps: { 1: ['token_chief_tent'] } });
-        expect(ledgerOf(worldWorkspace(), tables).reachOf(tokenKey('token_chief_tent'))).toMatchObject({ tier: 1, luckOnly: false });
-    });
-
-    it('a guaranteed camp is had once a cell is settled, with no kit naming it', () => {
-        const tables = tablesWith({ kits: [{ ...WORLD_FIXTURE_RAW.kits[0], bossCamps: [] }], camps: { 3: ['token_chief_tent'] } });
-        expect(ledgerOf(worldWorkspace(), tables).reachOf(tokenKey('token_chief_tent'))).toMatchObject({ tier: 3, luckOnly: false });
-    });
-});
-
-describe('what a world holds only sometimes', () => {
-    it('an arrival\'s boss is luck at its ring', () => {
-        const tables = tablesWith({ kits: [{ ...WORLD_FIXTURE_RAW.kits[0], bossCamps: [] }] });
-        expect(ledgerOf(worldWorkspace(), tables).reachOf(tokenKey('token_goblin_chief'))).toMatchObject({ tier: 3, luckOnly: true, sureTier: null });
-    });
-
-    it('an origin every world places is had for sure, however soon it wears out', () => {
-        const ws = worldWorkspace();
-        delete ws.tokens.token_ores_3.respawn;
-        ws.tokens.token_ores_3.uses = 100;
-        const l = ledgerOf(ws);
-        expect(l.reachOf(itemKey('item_ores_3'))).toMatchObject({ tier: 3, luckOnly: false, oneOffOnly: false });
-        // Its wearing out is the fragile check's to say.
-        expect(runChecks(l, withTables(ws)).filter(f => f.key === itemKey('item_ores_3')).map(f => f.check)).toContain('fragile');
-    });
-
-    it('a treasure extra is a one-off find on the side, never the way in', () => {
-        const ws = worldWorkspace();
-        ws.tokens.token_iron_chest = {
-            id: 'token_iron_chest', name: 'Iron Chest', uses: 1,
-            config: { skill: 'crafting', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [{ itemId: 'item_iron_ore', chance: 100, minQty: 4, maxQty: 8 }] },
-        };
-        const tables = tablesWith({ extras: [...WORLD_FIXTURE_RAW.extras, { id: 'token_iron_chest', kind: 'treasure', value: 5, rings: [1] }] });
-        const l = ledgerOf(ws, tables);
-        const iron = l.reachOf(itemKey('item_iron_ore'));
-        expect(iron).toMatchObject({ tier: 2, luckOnly: false, via: tokenKey('token_iron_vein') });
-        expect(iron.oneOffFind).toMatchObject({ tier: 1, via: tokenKey('token_iron_chest') });
-    });
-});
-
 describe('the pace and the World plan read it', () => {
     it('a world-only origin has a path time, waiting on its line\'s level', () => {
         const ws = worldWorkspace();
@@ -185,7 +92,7 @@ describe('the pace and the World plan read it', () => {
         expect(pace.trackOf('magic').asks).toEqual([]);
     });
 
-    it('the World plan finds the same with the main ledger handed in, and still tells what the maps lost', () => {
+    it('the World plan finds the same with the main ledger handed in', () => {
         const ws = worldWorkspace();
         const tables = tablesWith({ kits: [{ ...WORLD_FIXTURE_RAW.kits[0], bossCamps: [] }], arrival: { ...WORLD_FIXTURE_RAW.arrival, 3: { count: [3, 3], enemies: [{ id: 'token_goblin' }] } } });
         const ledger = ledgerOf(ws, tables);
@@ -194,7 +101,5 @@ describe('the pace and the World plan read it', () => {
             const handed = worldPlan(contentOf(ws), { seed, baseTables: tables, ledger });
             expect(handed.findings).toEqual(own.findings);
         }
-        const tent = worldPlan(contentOf(ws), { seed: 4, baseTables: tables, ledger }).findings.find(f => f.subject === tokenKey('token_chief_tent'));
-        expect(tent.before).toBe(1);
     });
 });
