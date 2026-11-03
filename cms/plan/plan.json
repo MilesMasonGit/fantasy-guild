@@ -1354,6 +1354,56 @@
         "status": "live",
         "tier": 0,
         "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+      },
+      "token_birch_stump": {
+        "status": "live",
+        "tier": 3,
+        "note": "Part of the Birch Tree's cycle (world refill pack)."
+      },
+      "token_birch_sapling": {
+        "status": "live",
+        "tier": 3,
+        "note": "Part of the Birch Tree's cycle (world refill pack)."
+      },
+      "token_maple_stump": {
+        "status": "live",
+        "tier": 3,
+        "note": "Part of the Maple Tree's cycle (world refill pack)."
+      },
+      "token_maple_sapling": {
+        "status": "live",
+        "tier": 3,
+        "note": "Part of the Maple Tree's cycle (world refill pack)."
+      },
+      "token_mahogany_stump": {
+        "status": "live",
+        "tier": 3,
+        "note": "Part of the Mahogany Tree's cycle (world refill pack)."
+      },
+      "token_mahogany_sapling": {
+        "status": "live",
+        "tier": 3,
+        "note": "Part of the Mahogany Tree's cycle (world refill pack)."
+      },
+      "token_ebony_stump": {
+        "status": "live",
+        "tier": 3,
+        "note": "Part of the Ebony Tree's cycle (world refill pack)."
+      },
+      "token_ebony_sapling": {
+        "status": "live",
+        "tier": 3,
+        "note": "Part of the Ebony Tree's cycle (world refill pack)."
+      },
+      "token_cedar_stump": {
+        "status": "live",
+        "tier": 3,
+        "note": "Part of the Cedar Tree's cycle (world refill pack)."
+      },
+      "token_cedar_sapling": {
+        "status": "live",
+        "tier": 3,
+        "note": "Part of the Cedar Tree's cycle (world refill pack)."
       }
     },
     "recipes": {
