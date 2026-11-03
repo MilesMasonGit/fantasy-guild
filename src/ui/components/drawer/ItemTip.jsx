@@ -107,7 +107,7 @@ export const ItemTipContent = ({ item, count = null, hint = null }) => {
             )}
             {facts.tool && <div className="text-white">{facts.tool}</div>}
             {facts.stats && (
-                <div data-item-tip-stats className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
+                <div data-item-tip-stats className="grid grid-cols-[48px_1fr] gap-x-3 gap-y-0.5">
                     {facts.stats.map(({ id, label, value }) => (
                         <React.Fragment key={id}>
                             <span className="text-gi-muted">{label}</span>

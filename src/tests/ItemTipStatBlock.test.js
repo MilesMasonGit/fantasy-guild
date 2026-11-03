@@ -55,7 +55,7 @@ describe('the tooltip draws it', () => {
     it('as two columns of dim labels and bright values, in place of the old sentences', () => {
         const { container } = render(React.createElement(ItemTipContent, { item: weapon({ damage: 3, speed: 'slow', hands: 2 }) }));
         const block = container.querySelector('[data-item-tip-stats]');
-        expect(block.className).toContain('grid-cols-[auto_1fr]');
+        expect(block.className).toContain('grid-cols-[48px_1fr]');
         const cells = [...block.children];
         expect(cells.map(c => c.textContent)).toEqual(['DMG', '3', 'Type', 'Slash', 'Skill', 'Melee', 'Speed', 'Slow (4 s)', 'Hands', '2']);
         cells.forEach((cell, i) => expect(cell.className).toContain(i % 2 ? 'text-white' : 'text-gi-muted'));
