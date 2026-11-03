@@ -1,0 +1,1392 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-02-balancing-1",
+  "createdAt": "2026-11-03T02:10:09.409Z",
+  "asked": "The first balancing pack: the ledger balancing preview, with the owner answers of 2026-11-02 (Plane 2 raises its level gates; Plane 1 budget about 25 min; Beer and Cooked Lobster move to Plane 1 instead of lowering their gates; Guild Hall prices and strengths stay).",
+  "intent": {
+    "stages": [
+      {
+        "tier": 0,
+        "move": "faster",
+        "toHours": 0.57,
+        "note": "Beer, Cooked Lobster and Lobster planned for Plane 1, Fine Fishing Rod at Crafting 5: the Starter Camp lands near its 30 min (34 min)."
+      },
+      {
+        "tier": 1,
+        "move": "slower",
+        "toHours": 2,
+        "note": "Plane 1 now holds Beer (Cooking 15, kept: owner) and Cooked Lobster (a 1 h chain of first finds): about 2 h."
+      },
+      {
+        "tier": 2,
+        "move": "slower",
+        "toHours": 23.48,
+        "note": "Plane 2 raises its level gates to fill its one-day budget (owner 2026-11-02)."
+      }
+    ]
+  },
+  "entries": [
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_beer",
+      "value": {
+        "name": "Beer",
+        "description": "",
+        "type": "drink",
+        "sprite": "i_beer",
+        "stackable": true,
+        "restoreAmount": 15,
+        "equipSlot": "drink",
+        "value": 11,
+        "valueSource": "recipe_mtp8qjj9",
+        "autoSyncId": true,
+        "id": "item_beer",
+        "effects": [
+          {
+            "effectId": "effect_beer_drink",
+            "scale": 1
+          }
+        ],
+        "tags": [
+          "Drink",
+          "Alcohol"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1,
+          "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
+        }
+      },
+      "fingerprint": "fp:b44821e44ac5a66e",
+      "note": "Plan tier 0 → 1. Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_mtp8qjj9",
+      "value": {
+        "id": "recipe_mtp8qjj9",
+        "name": "Beer",
+        "skill": "cooking",
+        "levelRequirement": 15,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_water",
+            "quantity": 2
+          },
+          {
+            "itemId": "item_wheat",
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_beer",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "anchor": true,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 19000,
+        "stationChargeCost": 1,
+        "xp": 5,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "stationKinds": [
+          "brewery"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1,
+          "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
+        }
+      },
+      "fingerprint": "fp:dbaf83e8454d63ce",
+      "note": "Plan tier 0 → 1. Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_cooked_lobster",
+      "value": {
+        "id": "item_cooked_lobster",
+        "name": "Cooked Lobster",
+        "description": "",
+        "type": "food",
+        "sprite": "i_lobster",
+        "stackable": true,
+        "restoreAmount": 10,
+        "equipSlot": "food",
+        "value": null,
+        "valueSource": null,
+        "autoSyncId": true,
+        "tags": [
+          "Food",
+          "Seafood",
+          "Cooked"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1,
+          "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
+        }
+      },
+      "fingerprint": "fp:649f748f257b2729",
+      "note": "Plan tier 0 → 1. Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_cooked_lobster",
+      "value": {
+        "id": "recipe_cooked_lobster",
+        "name": "Cooked Lobster",
+        "skill": "cooking",
+        "levelRequirement": 5,
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "inputs": [
+          {
+            "itemId": "item_lobster",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_cooked_lobster",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 17000,
+        "xp": 2,
+        "stationKinds": [
+          "kitchen"
+        ],
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 1,
+          "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
+        }
+      },
+      "fingerprint": "fp:eecb2679ddb9e77f",
+      "note": "Plan tier 0 → 1. Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_lobster",
+      "value": {
+        "name": "Lobster",
+        "description": "",
+        "type": "material",
+        "sprite": "i_lobster_raw",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "valueSource": null,
+        "autoSyncId": true,
+        "id": "item_lobster",
+        "tags": [
+          "Seafood"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1,
+          "note": "Plane 1 (director 2026-11-02, with Cooked Lobster): its first catch is a chain (Worm, Worm Bait, then the trap) that held the Starter Camp at 44 min; the camp Coast still catches it."
+        }
+      },
+      "fingerprint": "fp:4ccc8ef33b7eb1c5",
+      "note": "Plan tier 0 → 1. Plane 1 (director 2026-11-02, with Cooked Lobster): its first catch is a chain (Worm, Worm Bait, then the trap) that held the Starter Camp at 44 min; the camp Coast still catches it."
+    },
+    {
+      "op": "edit",
+      "kind": "effect",
+      "id": "effect_well_watering",
+      "value": {
+        "name": "Well Watering",
+        "statements": [
+          {
+            "id": "stm_s8_well_watering",
+            "keyword": "provides",
+            "payload": {
+              "type": "GROW_TIME",
+              "bucket": "percentage",
+              "value": -0.09
+            },
+            "chargeDelta": 0,
+            "to": {
+              "mode": "tag",
+              "value": "Field"
+            },
+            "reach": "nearby",
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true,
+        "id": "effect_well_watering"
+      },
+      "fingerprint": "fp:cf2c5b8ea606555c",
+      "note": "Value (statements.0.payload.value) -0.2 → -0.09: Well with Composter with Beehive (buildings) make Wheat at Field +63 % at Maxed against the 30 % target. Weakened: +26 % there."
+    },
+    {
+      "op": "edit",
+      "kind": "effect",
+      "id": "effect_composter_load",
+      "value": {
+        "name": "Composter Load",
+        "statements": [
+          {
+            "id": "stm_s8_composter_load",
+            "keyword": "provides",
+            "payload": {
+              "type": "CROP_LOAD",
+              "bucket": "flat",
+              "value": 1
+            },
+            "chargeDelta": 0,
+            "to": {
+              "mode": "tag",
+              "value": "Field"
+            },
+            "reach": "nearby",
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true,
+        "id": "effect_composter_load"
+      },
+      "fingerprint": "fp:7659d0e1bef7cb9b",
+      "note": "Value (statements.0.payload.value) 2 → 1: Well with Composter with Beehive (buildings) make Wheat at Field +63 % at Maxed against the 30 % target. Weakened: +26 % there."
+    },
+    {
+      "op": "edit",
+      "kind": "effect",
+      "id": "effect_beehive_pollination",
+      "value": {
+        "name": "Beehive Pollination",
+        "statements": [
+          {
+            "id": "stm_s8_beehive_pollination",
+            "keyword": "provides",
+            "payload": {
+              "type": "DOUBLE_DROP",
+              "bucket": "flat",
+              "value": 9,
+              "category": "item_wheat"
+            },
+            "chargeDelta": 0,
+            "to": {
+              "mode": "tag",
+              "value": "Field"
+            },
+            "reach": "nearby",
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true,
+        "id": "effect_beehive_pollination"
+      },
+      "fingerprint": "fp:30be74a33eac2371",
+      "note": "Value (statements.0.payload.value) 20 → 9: Well with Composter with Beehive (buildings) make Wheat at Field +63 % at Maxed against the 30 % target. Weakened: +26 % there."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_muily2ph",
+      "value": {
+        "id": "recipe_muily2ph",
+        "name": "Copper Nails",
+        "skill": "smithing",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_copper_ingot",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_coal",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_copper_nails",
+            "chance": 100,
+            "minQty": 2,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 2,
+              "max": 2
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 6000,
+        "stationChargeCost": 1,
+        "xp": 3,
+        "sim": {
+          "tempo": "fast"
+        },
+        "stationKinds": [
+          "smithy"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_copper_nails, Starter Camp)."
+        }
+      },
+      "fingerprint": "fp:3719c5cb369e390d",
+      "note": "XP a cycle (xp) 2 → 3: Smithing 1 → 10: its best Typical source, Copper Nails at Copper Smithy, takes 1.7× the curve's time. Now 1× the curve over Smithing 1 → 12."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_fine_fishing_rod",
+      "value": {
+        "id": "recipe_fine_fishing_rod",
+        "name": "Fine Fishing Rod",
+        "skill": "crafting",
+        "levelRequirement": 5,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 3
+          },
+          {
+            "itemId": "item_copper_nails",
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_fine_fishing_rod",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false,
+            "anchor": true
+          }
+        ],
+        "durationMs": 18000,
+        "stationChargeCost": 1,
+        "xp": 3,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+        }
+      },
+      "fingerprint": "fp:41d69cb06e04a9fa",
+      "note": "Level needed (levelRequirement) 10 → 5: Starter Camp is done 1 h 13 min into a new game at Typical against its 30 min: Crafting 10 is reached 1 h 12 min in. Crafting 5 is reached about 24 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_copper_chestplate",
+      "value": {
+        "id": "recipe_copper_chestplate",
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "name": "Copper Chestplate",
+        "skill": "smithing",
+        "levelRequirement": 6,
+        "inputs": [
+          {
+            "itemId": "item_copper_ingot",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_copper_chestplate",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 17000,
+        "xp": 3,
+        "stationKinds": [
+          "smithy"
+        ],
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+        }
+      },
+      "fingerprint": "fp:8bb90c3f5c6beab9",
+      "note": "Level needed (levelRequirement) 7 → 6: Starter Camp is done 1 h 13 min into a new game at Typical against its 30 min: Smithing 7 is reached 47 min in. Smithing 6 is reached about 25 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_iron_chestplate",
+      "value": {
+        "id": "recipe_iron_chestplate",
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "name": "Iron Chestplate",
+        "skill": "smithing",
+        "levelRequirement": 43,
+        "inputs": [
+          {
+            "itemId": "item_iron_ingot",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_iron_chestplate",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 21000,
+        "xp": 9,
+        "stationKinds": [
+          "smithy"
+        ],
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "fingerprint": "fp:7b550c2c4e55df96",
+      "note": "Level needed (levelRequirement) 21 → 43: Plane 2 is done 8 h 33 min into a new game at Typical against its 1 d, so its unlocks spread over the stage: Smithing 21 is reached 3 h 37 min in. Smithing 43 is reached about 23 h 24 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_iron_greatsword",
+      "value": {
+        "id": "recipe_iron_greatsword",
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "name": "Iron Greatsword",
+        "skill": "smithing",
+        "levelRequirement": 42,
+        "inputs": [
+          {
+            "itemId": "item_iron_ingot",
+            "quantity": 4
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_iron_greatsword",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 20000,
+        "xp": 8,
+        "stationKinds": [
+          "smithy"
+        ],
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "fingerprint": "fp:820cd045991d6cb7",
+      "note": "Level needed (levelRequirement) 20 → 42: Plane 2 is done 8 h 33 min into a new game at Typical against its 1 d, so its unlocks spread over the stage: Smithing 20 is reached 3 h 17 min in. Smithing 42 is reached about 21 h 12 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_iron_helmet",
+      "value": {
+        "id": "recipe_iron_helmet",
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "name": "Iron Helmet",
+        "skill": "smithing",
+        "levelRequirement": 41,
+        "inputs": [
+          {
+            "itemId": "item_iron_ingot",
+            "quantity": 3
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_iron_helmet",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 20000,
+        "xp": 7,
+        "stationKinds": [
+          "smithy"
+        ],
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "fingerprint": "fp:2bcc216e90267f0c",
+      "note": "Level needed (levelRequirement) 19 → 41: Plane 2 is done 8 h 33 min into a new game at Typical against its 1 d, so its unlocks spread over the stage: Smithing 19 is reached 2 h 58 min in. Smithing 41 is reached about 19 h 12 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_grape_juice",
+      "value": {
+        "id": "recipe_grape_juice",
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "name": "Grape Juice",
+        "skill": "cooking",
+        "levelRequirement": 35,
+        "inputs": [
+          {
+            "itemId": "item_grapes",
+            "quantity": 4
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_grape_juice",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 19000,
+        "xp": 5,
+        "stationKinds": [
+          "brewery"
+        ],
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_grape_juice, Plane 2)."
+        }
+      },
+      "fingerprint": "fp:19215f2a2cec2e1c",
+      "note": "Level needed (levelRequirement) 15 → 35: Plane 2 is done 8 h 33 min into a new game at Typical against its 1 d, so its unlocks spread over the stage: Cooking 15 is reached 1 h 59 min in. Cooking 35 is reached about 16 h 17 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_lavender_salmon",
+      "value": {
+        "id": "recipe_lavender_salmon",
+        "name": "Lavender Salmon",
+        "skill": "cooking",
+        "levelRequirement": 35,
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "inputs": [
+          {
+            "itemId": "item_salmon",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_lavender",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_lavender_salmon",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 19000,
+        "xp": 5,
+        "stationKinds": [
+          "kitchen"
+        ],
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Plane 2 (ledger fix pack): follows what it makes."
+        }
+      },
+      "fingerprint": "fp:3bd3fab2e6e20998",
+      "note": "Level needed (levelRequirement) 15 → 35: Plane 2 is done 8 h 33 min into a new game at Typical against its 1 d, so its unlocks spread over the stage: Cooking 15 is reached 1 h 59 min in. Cooking 35 is reached about 16 h 17 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_cooked_trout",
+      "value": {
+        "id": "recipe_cooked_trout",
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "name": "Cooked Trout",
+        "skill": "cooking",
+        "levelRequirement": 35,
+        "inputs": [
+          {
+            "itemId": "item_trout",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_cooked_trout",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 19000,
+        "xp": 5,
+        "stationKinds": [
+          "kitchen"
+        ],
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_cooked_trout, Plane 2)."
+        }
+      },
+      "fingerprint": "fp:56df7c9bcd43b731",
+      "note": "Level needed (levelRequirement) 15 → 35: Plane 2 is done 8 h 33 min into a new game at Typical against its 1 d, so its unlocks spread over the stage: Cooking 15 is reached 1 h 59 min in. Cooking 35 is reached about 16 h 17 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_iron_cleaver",
+      "value": {
+        "id": "recipe_iron_cleaver",
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "name": "Iron Cleaver",
+        "skill": "smithing",
+        "levelRequirement": 39,
+        "inputs": [
+          {
+            "itemId": "item_iron_ingot",
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_iron_cleaver",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 20000,
+        "xp": 7,
+        "stationKinds": [
+          "smithy"
+        ],
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "fingerprint": "fp:e629d6ffb6eb4185",
+      "note": "Level needed (levelRequirement) 18 → 39: Plane 2 is done 8 h 33 min into a new game at Typical against its 1 d, so its unlocks spread over the stage: Smithing 18 is reached 2 h 42 min in. Smithing 39 is reached about 15 h 44 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_iron_sword",
+      "value": {
+        "id": "recipe_iron_sword",
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "name": "Iron Sword",
+        "skill": "smithing",
+        "levelRequirement": 38,
+        "inputs": [
+          {
+            "itemId": "item_iron_ingot",
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_iron_sword",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 20000,
+        "xp": 6,
+        "stationKinds": [
+          "smithy"
+        ],
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "fingerprint": "fp:43d07d046b13d98a",
+      "note": "Level needed (levelRequirement) 17 → 38: Plane 2 is done 8 h 33 min into a new game at Typical against its 1 d, so its unlocks spread over the stage: Smithing 17 is reached 2 h 27 min in. Smithing 38 is reached about 14 h 15 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_herb_garden",
+      "value": {
+        "id": "recipe_build_herb_garden",
+        "name": "Build Herb Garden",
+        "skill": "construction",
+        "levelRequirement": 5,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_fir_wood",
+            "quantity": 5
+          },
+          {
+            "itemId": "item_stone",
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_herb_garden",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 20,
+        "foundationKinds": [
+          "farmland"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Plane 2 (owner 2026-10-30, ledger fix pack): the Herb Garden is built from fir, so Lavender grows in plane 2."
+        }
+      },
+      "fingerprint": "fp:9d6c9e54a1dba132",
+      "note": "XP a cycle (xp) 40 → 20: Construction 5 → 10: its best Typical source, Build Herb Garden at Farmland, takes 0.5× the curve's time. Another source now carries those levels; at its authored number it would take them back."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_leather_chest",
+      "value": {
+        "id": "recipe_leather_chest",
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "name": "Leather Chest",
+        "skill": "crafting",
+        "levelRequirement": 21,
+        "inputs": [
+          {
+            "itemId": "item_leather",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_leather_chest",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 19000,
+        "xp": 6,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "stationKinds": [
+          "tannery"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "fingerprint": "fp:0b08342c0e4a9786",
+      "note": "Level needed (levelRequirement) 16 → 21: Plane 2 is done 8 h 33 min into a new game at Typical against its 1 d, so its unlocks spread over the stage: Crafting 16 is reached 2 h 32 min in. Crafting 21 is reached about 4 h 19 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_leather",
+      "value": {
+        "id": "recipe_leather",
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "name": "Leather",
+        "skill": "crafting",
+        "levelRequirement": 20,
+        "inputs": [
+          {
+            "itemId": "item_lizard_scale",
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_leather",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 19000,
+        "xp": 5,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "stationKinds": [
+          "tannery"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "fingerprint": "fp:e24cc9a4ac052206",
+      "note": "Level needed (levelRequirement) 15 → 20: Plane 2 is done 8 h 33 min into a new game at Typical against its 1 d, so its unlocks spread over the stage: Crafting 15 is reached 2 h 15 min in. Crafting 20 is reached about 3 h 51 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_iron_bow",
+      "value": {
+        "id": "recipe_iron_bow",
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "name": "Iron Bow",
+        "skill": "smithing",
+        "levelRequirement": 23,
+        "inputs": [
+          {
+            "itemId": "item_iron_ingot",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_fir_wood",
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_iron_bow",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 20000,
+        "xp": 7,
+        "stationKinds": [
+          "smithy"
+        ],
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "fingerprint": "fp:86fc7c7214d427a4",
+      "note": "Level needed (levelRequirement) 18 → 23: Plane 2 is done 8 h 33 min into a new game at Typical against its 1 d, so its unlocks spread over the stage: Smithing 18 is reached 2 h 42 min in. Smithing 23 is reached about 3 h 10 min in."
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_iron_wand",
+      "value": {
+        "id": "recipe_iron_wand",
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "name": "Iron Wand",
+        "skill": "smithing",
+        "levelRequirement": 23,
+        "inputs": [
+          {
+            "itemId": "item_iron_ingot",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_fir_wood",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_iron_wand",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 20000,
+        "xp": 7,
+        "stationKinds": [
+          "smithy"
+        ],
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "fingerprint": "fp:30f7bef9842afb0f",
+      "note": "Level needed (levelRequirement) 18 → 23: Plane 2 is done 8 h 33 min into a new game at Typical against its 1 d, so its unlocks spread over the stage: Smithing 18 is reached 2 h 42 min in. Smithing 23 is reached about 3 h 10 min in."
+    }
+  ],
+  "gate": {
+    "workspaceFingerprint": "fp:3adc0cc5cf2747e3",
+    "toolVersion": 2,
+    "at": "2026-11-03T02:10:11.397Z",
+    "verdict": "pass",
+    "summary": "Passes: 77 entries move on the timeline, 3 stage times change, 8 problems added, 6 cleared.",
+    "blocks": [],
+    "notes": [
+      "Starter Camp: 2 h 8 min → 34 min, 73 % faster, as declared: Beer, Cooked Lobster and Lobster planned for Plane 1, Fine Fishing Rod at Crafting 5: the Starter Camp lands near its 30 min (34 min).",
+      "Plane 1: 1 h 32 min → 2 h, 31 % slower, as declared: Plane 1 now holds Beer (Cooking 15, kept: owner) and Cooked Lobster (a 1 h chain of first finds): about 2 h.",
+      "Plane 2: 8 h 33 min → 23 h 29 min, 175 % slower, as declared: Plane 2 raises its level gates to fill its one-day budget (owner 2026-11-02)."
+    ],
+    "deltas": {
+      "stages": [
+        {
+          "tier": 0,
+          "before": 2.139049494949495,
+          "after": 0.5722222222222223,
+          "pct": -73.2
+        },
+        {
+          "tier": 1,
+          "before": 1.538333333333333,
+          "after": 2.008036406657624,
+          "pct": 30.5
+        },
+        {
+          "tier": 2,
+          "before": 8.55375,
+          "after": 23.483205120776862,
+          "pct": 174.5
+        }
+      ],
+      "moved": [
+        {
+          "key": "item:item_cooked_trout",
+          "name": "Cooked Trout",
+          "change": "later",
+          "from": 2.1195944444444446,
+          "to": 16.443384444444444
+        },
+        {
+          "key": "item:item_lavender_salmon",
+          "name": "Lavender Salmon",
+          "change": "later",
+          "from": 2.1208676767676766,
+          "to": 16.444657676767676
+        },
+        {
+          "key": "item:item_grape_juice",
+          "name": "Grape Juice",
+          "change": "later",
+          "from": 2.124630412348594,
+          "to": 16.448420412348593
+        },
+        {
+          "key": "item:item_iron_helmet",
+          "name": "Iron Helmet",
+          "change": "later",
+          "from": 3.016916692392879,
+          "to": 19.23971937609686
+        },
+        {
+          "key": "item:item_iron_greatsword",
+          "name": "Iron Greatsword",
+          "change": "later",
+          "from": 3.3364921499846294,
+          "to": 21.25759710841652
+        },
+        {
+          "key": "item:item_iron_chestplate",
+          "name": "Iron Chestplate",
+          "change": "later",
+          "from": 3.6873190656355983,
+          "to": 23.483205120776862
+        },
+        {
+          "key": "item:item_iron_cleaver",
+          "name": "Iron Cleaver",
+          "change": "later",
+          "from": 2.726141598110604,
+          "to": 15.767270103226828
+        },
+        {
+          "key": "item:item_iron_sword",
+          "name": "Iron Sword",
+          "change": "later",
+          "from": 2.4761299336368583,
+          "to": 14.278230042758196
+        },
+        {
+          "key": "item:item_fine_fishing_rod",
+          "name": "Fine Fishing Rod",
+          "change": "earlier",
+          "from": 1.209526984126984,
+          "to": 0.40972063492063493
+        },
+        {
+          "key": "item:item_copper_chestplate",
+          "name": "Copper Chestplate",
+          "change": "earlier",
+          "from": 0.7926156686281298,
+          "to": 0.4216600899965387
+        },
+        {
+          "key": "item:item_copper_shield",
+          "name": "Copper Shield",
+          "change": "earlier",
+          "from": 0.6198998500057691,
+          "to": 0.4147926618206993
+        },
+        {
+          "key": "item:item_copper_greatsword",
+          "name": "Copper Greatsword",
+          "change": "earlier",
+          "from": 0.6244781354563287,
+          "to": 0.4193709472712589
+        },
+        {
+          "key": "item:item_copper_helmet",
+          "name": "Copper Helmet",
+          "change": "earlier",
+          "from": 0.4731658013153341,
+          "to": 0.3177330102688359
+        },
+        {
+          "key": "item:item_copper_bow",
+          "name": "Copper Bow",
+          "change": "earlier",
+          "from": 0.33592429412055586,
+          "to": 0.22535870048954162
+        },
+        {
+          "key": "item:item_copper_wand",
+          "name": "Copper Wand",
+          "change": "earlier",
+          "from": 0.3361356697819315,
+          "to": 0.2255700761509173
+        },
+        {
+          "key": "item:item_copper_cleaver",
+          "name": "Copper Cleaver",
+          "change": "earlier",
+          "from": 0.3362750663436022,
+          "to": 0.225709472712588
+        },
+        {
+          "key": "item:item_copper_sword",
+          "name": "Copper Sword",
+          "change": "earlier",
+          "from": 0.21369147340486908,
+          "to": 0.14398707742009925
+        },
+        {
+          "key": "item:item_gold_ingot",
+          "name": "Gold Ingot",
+          "change": "earlier",
+          "from": 38.25917078240174,
+          "to": 28.571910446842228
+        },
+        {
+          "key": "item:item_iron_dagger",
+          "name": "Iron Dagger",
+          "change": "earlier",
+          "from": 2.2349895080368714,
+          "to": 1.6790511381360305
+        },
+        {
+          "key": "item:item_leather_chest",
+          "name": "Leather Chest",
+          "change": "later",
+          "from": 3.3900987523095663,
+          "to": 4.412058830939784
+        },
+        {
+          "key": "item:item_copper_dagger",
+          "name": "Copper Dagger",
+          "change": "earlier",
+          "from": 0.10215299411561095,
+          "to": 0.07853482866043615
+        },
+        {
+          "key": "item:item_cooked_lobster",
+          "name": "Cooked Lobster",
+          "change": "later",
+          "from": 0.8301992225461612,
+          "to": 1.0277325953629808
+        },
+        {
+          "key": "item:item_lobster",
+          "name": "Lobster",
+          "change": "later",
+          "from": 0.5872448979591836,
+          "to": 0.7269709567328615
+        },
+        {
+          "key": "item:item_worm_bait",
+          "name": "Worm Bait",
+          "change": "later",
+          "from": 0.33214285714285713,
+          "to": 0.4111712361712362
+        },
+        {
+          "key": "item:item_worm",
+          "name": "Worm",
+          "change": "later",
+          "from": 0.22499999999999998,
+          "to": 0.2785353535353535
+        },
+        {
+          "key": "item:item_iron_ingot",
+          "name": "Iron Ingot",
+          "change": "earlier",
+          "from": 2.0304616694927398,
+          "to": 1.6640242031997985
+        },
+        {
+          "key": "item:item_iron_sickle",
+          "name": "Iron Sickle",
+          "change": "earlier",
+          "from": 2.0605155393652037,
+          "to": 1.6940780730722624
+        },
+        {
+          "key": "item:item_iron_woodaxe",
+          "name": "Iron Woodaxe",
+          "change": "earlier",
+          "from": 2.075542474301436,
+          "to": 1.7091050080084944
+        },
+        {
+          "key": "item:item_iron_pickaxe",
+          "name": "Iron Pickaxe",
+          "change": "earlier",
+          "from": 2.0905694092376677,
+          "to": 1.7241319429447264
+        },
+        {
+          "key": "item:item_dough",
+          "name": "Dough",
+          "change": "later",
+          "from": 0.16124893797790996,
+          "to": 0.1971819104204737
+        }
+      ],
+      "movedCount": 77,
+      "added": [
+        {
+          "check": "leak",
+          "key": "item:item_beer",
+          "severity": "warn"
+        },
+        {
+          "check": "leak",
+          "key": "recipe:recipe_mtp8qjj9",
+          "severity": "warn"
+        },
+        {
+          "check": "leak",
+          "key": "item:item_cooked_lobster",
+          "severity": "warn"
+        },
+        {
+          "check": "leak",
+          "key": "recipe:recipe_cooked_lobster",
+          "severity": "warn"
+        },
+        {
+          "check": "profile-bounds",
+          "key": "skill:cooking",
+          "severity": "warn"
+        },
+        {
+          "check": "leak",
+          "key": "item:item_lobster",
+          "severity": "warn"
+        },
+        {
+          "check": "stage-budget",
+          "key": "stage:1",
+          "severity": "warn"
+        },
+        {
+          "check": "boost-target",
+          "key": "hall:star_fishing_speed",
+          "severity": "warn"
+        }
+      ],
+      "cleared": 6
+    }
+  }
+}
