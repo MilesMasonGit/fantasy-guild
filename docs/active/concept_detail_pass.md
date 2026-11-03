@@ -1,4 +1,4 @@
-Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360)
+Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360; the terrain round, brief 370; section 7, world map, brief 380; section 6, Guild Hall, brief 390; section 4, Bank, brief 400)
 
 # The detail pass: UI and UX, section by section
 
@@ -30,7 +30,7 @@ game looks and plays, gathered one screen at a time.*
   - Top bar Disallow and Demolish buttons: the cursor's pixel art.
   - Start screen: all Lucide for now (the emoji stats go); a pixel set may come
     near release.
-  - Skill icons: T-292. Farming uses `s_farming.png`; Alchemy and Construction
+  - Skill icons: T-297. Farming uses `s_farming.png`; Alchemy and Construction
     are on the owner art list, using `s_flask` and `s_industry` until then if
     they suit; specialist skills share a plain pixel placeholder.
   - The rest of the audit is checked section by section (unknown item, locks,
@@ -42,13 +42,13 @@ game looks and plays, gathered one screen at a time.*
 | # | Section | State | Old notes to bring |
 |---|---|---|---|
 | 0 | Rules across every screen | icon rule done; more as they come up | above; `UI_STYLE.md` |
-| 1 | The mat and Tokens | **approved 2026-11-02, split**: [brief 350](briefs/350_tokens_card_detail.md); terrain round open; T-295; combat items in section 8 | `design_pass_notes.md`; T-013, T-162 |
+| 1 | The mat and Tokens | **approved 2026-11-02, split**: [brief 350](briefs/350_tokens_card_detail.md); [brief 370](briefs/370_terrain_detail.md) for terrain; T-295; combat items in [brief 360](briefs/360_combat_detail.md) | `design_pass_notes.md`; T-013, T-162 |
 | 2 | Top bar | not started | `ui_rework_list.md` |
 | 3 | Hero bar and hero sheet | **approved and briefed 2026-11-02** ([brief 340](briefs/340_hero_bar_detail.md)) | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
-| 4 | Bank | not started | |
+| 4 | Bank | **approved and briefed 2026-11-03** ([brief 400](briefs/400_bank_detail.md)) | |
 | 5 | Shop | not started | |
-| 6 | Guild Hall | not started | |
-| 7 | World map | not started | |
+| 6 | Guild Hall | **approved and briefed 2026-11-03** ([brief 390](briefs/390_guild_hall_detail.md)); the upgrade review open | |
+| 7 | World map | **approved and briefed 2026-11-03** ([brief 380](briefs/380_world_map_detail.md)) | |
 | 8 | Combat | **approved and briefed 2026-11-02** ([brief 360](briefs/360_combat_detail.md)) | carried in the mat list's items 5, 13, 14 |
 | 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
 | 10 | Notifications | not started | |
@@ -85,7 +85,7 @@ this disagrees with the screen, the screen wins.**
 - **Speech and effects**: hero bubbles, level-up numbers, hit floats, ambient life.
 
 **Already filed, no need to repeat**: the top bar has its own section. Skill icon
-emoji: T-292. Questions still waiting on the owner: **T-012** (should a Token growing
+emoji: T-297. Questions still waiting on the owner: **T-012** (should a Token growing
 or transforming push its neighbours?), **T-013** (the last soft glows and shadows on
 badges: hard-pixel too?), **T-011** (hit animations, transform glow and loot flight
 never seen by an agent). The glow and tutorial rings: section 13.
@@ -114,14 +114,12 @@ make sure that combat looks good and is clear throughout the fight." Taken up in
 section 8; items 5, 13 and 14 feed it.
 
 **Where they went** (owner, 2026-11-02): items 2, 3, 4 and 6 to 11, brief 350. Item
-12, T-295. Items 5, 13, 14, section 8. Item 1, the terrain round below.
+12, T-295. Items 5, 13, 14, section 8. Item 1, brief 370.
 
-**Terrain round (item 1), open.** A short design round before any build, for the
-terrain styling, more organic rivers and better water. The owner directs the art: bring
-looks to compare on the art bench, with measured advice, before anything is baked in.
-Start from [research/ground_gen](research/ground_gen/README.md),
-[brief 180](briefs/180_ground_structure.md), [brief 190](briefs/190_playmat_style.md)
-and [concept_art_direction.md](concept_art_direction.md). Not in the director's queue.
+**Terrain round (item 1): picked 2026-11-03**, on a live comparison
+([research/terrain_round](research/terrain_round/)); [brief 370](briefs/370_terrain_detail.md).
+Rivers: the A and C looks, with wider sections or tighter winding and different positions
+by map generation. Water: A, depth bands. Ground: A, ragged borders, and B, settled dirt.
 
 **Looked at, no change** (owner, 2026-11-02): the work plate; moving and dropping
 Tokens. **T-012 decided**: growth and transforms keep pushing spawned neighbours.
@@ -178,6 +176,117 @@ make sure that combat looks good and is clear throughout the fight".
 **Amends** the owner's combat screen picks of 2026-10-24/25 (GDD "The combat screen"):
 the outer-side floats, the fight plate, the one-at-a-time panel, "17 · 57%" above the bar.
 
+### 7. World map
+
+**The sheet (2026-11-03). From the code and the 30 October and 1 November captures
+(`research/world_w2`, `world_w3`), not today's game; where this disagrees with the
+screen, the screen wins.**
+
+- **The left page**: flat hexes in a colour per kit (code-drawn until the owner's hex
+  art), each with up to two item sprites and "+N" for the rest, a flag on the current
+  place. Tabs: World and Regions.
+- **Hover**: name, ring and kit, what it yields, the price with have and need, "can be
+  settled".
+- **The right page**: the chosen place: name, what it is, yields, and its settle button.
+- **The tome**: the owner's book frame, opened from the blue bubble; the close X at its
+  corner.
+- **Settling**: the requirements are paid at once and the mat arrives darkened with a
+  small fight; clearing it brightens the mat. Travel between settled places is free.
+
+**Already filed**: hex art on the art list; T-294 (the ladder's rungs on the world
+tables). Rulings kept: every cell's contents visible from the start; no landmarks.
+
+**The list** (owner, 2026-11-03; the tags are the planning agent's draft)
+
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **A bigger map you can move around, like the encyclopedia.** | must, tweak |
+| 2 | **More detail and refinement on the hexes**, "perhaps showing a terrain sample"; "anything we can do to make the hexes look better". | must, design |
+| 3 | **Cell states**: settled and settle-able in full colour, a cell you can settle right now also standing out (a gold outline or small pulse); next to you but too expensive or behind a ring upgrade: darkened; not next to anything you hold: black and white; any cell turns to colour when hovered. Contents stay visible. | must, tweak |
+| 4 | **No hexes shown outside the third ring unless they are accessible.** | must, tweak |
+| 5 | **The ring shown between the hexes**: a decorated border line along the edges where rings meet, no numbers. | must, tweak |
+| 6 | **A Guild Hall star per ring from ring 2**: ring 1 open from the start; a star allows settling ring 2, another ring 3, then one per wild ring. | must, design |
+| 7 | **The hover title is the area's name** ("Elderfield") with the terrain types underneath ("Mountain Rivers"). Ring information is not shown to the player. | must, tweak |
+| 8 | **The price uses our item style**, and inventory values our 9.9k shorthand. | must, tweak |
+| 9 | **Drops and yields show on the inspection panel**, not the hover tip. | must, tweak |
+| 10 | **The right page is thinner.** | must, tweak |
+| 11 | **The settle button is larger and more prominent.** | must, tweak |
+| 12 | **No "The guild is here" text; the flag is larger and more prominent.** | must, tweak |
+| 13 | **More ceremony on settling: a title reveal**: the place's name and terrain large across the mat, with a fanfare. | must, tweak |
+| 14 | **More ceremony: a hero leads the way**: heroes walk in from the mat's edge. | must, design |
+| 15 | **The tome's tabs go.** Travel is on the panel; what else the Regions page held moves there. | must, tweak |
+
+**Amends**: `concept_world_map.md` (a settled cell's only gate was its price; the wild
+rings came into view as you neared them), and the ledger's budgets must count the stars.
+
+### 6. Guild Hall
+
+**The sheet (2026-11-03). From the GDD, the code and the 30 October captures
+(`research/hall_h1`), not today's game; where this disagrees with the screen, the
+screen wins.**
+
+- **The sky**: a full-screen night sky of constellations, a constellation per skill plus the
+  Hearth and the Well; grey, blue and gold stars by state; links between them; dragged when it
+  doesn't fit; a camera move from the mat.
+- **A star's details**: the panel: picture, name, what it does, price, Upgrade button.
+- **Hall effects**: a popover listing what the guild holds.
+- **On the mat**: the Hall stands in the middle; quest Tokens beside it.
+
+**Already filed**: star prices wait for a Hall balance pass; ring stars arrive with brief
+380; star pictures on the art list.
+
+**The list** (owner, 2026-11-03; the tags are the planning agent's draft). "Overall it
+looks cluttered."
+
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **No rank numbers on the sky by default** (they show on hover). | must, tweak |
+| 2 | **Outlines of item sprites over the stars**, so they look distinct from each other ("I wonder if"). | must, design |
+| 3 | **Stars more spaced out.** | must, tweak |
+| 4 | **Titles always underneath the star.** | must, tweak |
+| 5 | **The sky runs full-screen under everything**: behind the nav bubbles and the panel, with no hard stop at the edges. | must, tweak |
+| 6 | **More ceremony on upgrading**: the star bursts; links light up to what it opened; a bigger moment for finishing a constellation. | must, design |
+| 7 | **The star panel has its own purple borders** ("maybe"). | nice, design |
+| 8 | **The panel's words**: a clear sentence at the top saying what the star does, then brief numbers: now, next, and a line for the max rank. | must, tweak |
+| 9 | **The panel's layout, price and Upgrade button** want work: the header and stat block style of the Token card, the price in our item style. | must, tweak |
+| 10 | **Hall effects: drops run on one lap, 10 minutes by default, reduced to 5 by Guild Hall upgrades.** (Today: 5 minutes.) | must, design |
+| 11 | **Hall effects: no time on each item entry**; the lap's time is listed as a boost. | must, tweak |
+| 12 | **"Modifiers" are called "boosts"** there. | must, tweak |
+| 13 | **More possible upgrades**: a review of what else could be upgraded. An agent reports (every number that could be a star, what similar games let you upgrade, what each does to pacing), then an interview; the result joins the content roadmap as a star pack. Report: [research/upgrade_review_2026-11-03.md](research/upgrade_review_2026-11-03.md); interview open. | must, design |
+
+**Looked at, no change** (owner, 2026-11-03): the camera move, dragging, how the sky opens.
+
+### 4. Bank
+
+**The sheet (2026-11-03). From the GDD, the code and the captures in `research/bank_310`, not
+today's game; where this disagrees with the screen, the screen wins.**
+
+- **The drawer**: a panel with a title and close X; while open, the mat is locked and the heroes
+  stand as a vertical column beside it (brief 340 changes that column).
+- **Tabs**: each holds 64 kinds; a tab's icon is its first item; more tabs through Bank Tabs.
+- **Tiles**: an item sprite and count; drag to reorder, or onto a hero to equip.
+- **Search**: by name, tag and type, across tabs. **Select** mode for several items. **Sort**: this
+  tab or the entire Bank, by type, tier, name.
+- **Item tooltip**: name, type, effects, sources.
+
+**Already filed**: icon rule items (the locked tab's Lucide lock becomes the pixel one; the unknown
+item look; the header icon), the item tooltip showing a weapon's damage (T-246, merged or on its way).
+
+**The list** (owner, 2026-11-03; the tags are the planning agent's draft)
+
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **A pixelated gradient background**, not plain black. | must, design |
+| 2 | **On every drawer and panel, with different colours for each**, so they look distinct. | must, tweak |
+| 3 | **Item tooltip**: name as a header, count underneath, then types and tags. | must, tweak |
+| 4 | **An inspection window at the bottom of the Bank**, with the item sprite larger "so it can be examined closely". | must, tweak |
+| 5 | **It shows stats like lifetime collected.** | must, tweak |
+| 6 | **Discard there**, with amounts 1, 50 %, All, All −1, or a slider. | must, tweak |
+| 7 | **Use there, for items that can be used** (bird nests): opens instantly, with no hero; authored in the CMS. | must, design |
+| 8 | **Use has the same amounts** as Discard. | must, tweak |
+
+**Looked at, no change** (owner, 2026-11-03): tabs, tiles, Search, Select and Sort.
+
 ### 3. Hero bar and hero sheet
 
 **The sheet (2026-11-02). Read from the code, not yet seen in the running game:
@@ -204,7 +313,7 @@ screen, the screen wins.**
 - Edit window: name, portrait, flag colour.
 
 **Already filed, no need to repeat**
-- Skill icons in emoji: T-292.
+- Skill icons in emoji: T-297.
 - The wounded text cross: a heart is pixel under the icon rule. The gear slot
   marks are pixel today; the icon rule moves them to Lucide.
 - Bubbles cost the most drawing time per hero: T-198.

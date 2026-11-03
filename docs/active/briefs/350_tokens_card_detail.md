@@ -44,7 +44,7 @@ T1 and T2 touch different files and may run in parallel.
 
 ## Not in this brief
 
-Terrain and water (item 1): a design round first, "Terrain round" in the concept.
+Terrain and water (item 1): brief 370.
 Fights moving to open space, damage numbers and effect procs (items 5, 13, 14): the
 combat section. The loot arc (item 12): T-295.
 
