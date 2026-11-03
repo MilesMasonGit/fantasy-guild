@@ -64,25 +64,34 @@ join up. A chain that needs something not designed yet gets a stub and a line in
 
 After each session the new art goes into [owner_art_list.md](owner_art_list.md).
 
-## Session order (proposed)
+## Session order (owner, 2026-11-02)
 
 1. **The ladder**: the game's rungs from copper to the end, each rung's time
-   budget and level band, and which specialist skills are in scope. Everything
-   else hangs from this.
+   budget, wood and level band. Everything else hangs from this.
 2. **Food and drink**: Farming, Fishing, Cooking, drinks.
 3. **Metal and gear**: Mining, Smithing, weapons per style, armour families.
 4. **Wood and buildings**: Forestry, Construction, Crafting, stations.
 5. **Herbs and potions**: Alchemy.
 6. **Enemies**: the roster per rung, drops, bosses, weapon effects.
-7. **Specialist skills in scope**, one at a time.
+7. **Specialist skills**, one at a time.
 8. **Roll-up**: the full art list, and the ledger run over the whole plan.
 
 Later sessions will revise earlier ones; that is expected.
 
 ## Decisions
 
-*(As sessions happen.)*
+- **Where it lives** (owner, 2026-11-02): readable chain pages first. An approved
+  chain goes into the CMS as Planned entries through a pack, so the ledger can
+  check it; Planned entries never reach the game.
+- **One rung per metal** (owner, 2026-11-02): seven rungs, copper, iron, silver,
+  gold, mythril, adamantine, darkmetal.
+- **The seven specialist skills are confirmed for now and designed after the core
+  chains** (owner, 2026-11-02); skills may still be added or cut later.
+- **Food and drink is the first chain after the ladder** (owner, 2026-11-02).
 
 ## Open links
 
 *(Things one chain needs from another not yet designed.)*
+
+- **Arrows need Fletching**, which comes after the core chains. Metal and gear
+  plans Ranged with arrows as stubs.
