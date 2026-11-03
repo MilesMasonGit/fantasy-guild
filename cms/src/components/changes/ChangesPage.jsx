@@ -203,6 +203,9 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
   const art = rows.filter((r) => r.entry.placeholderArt).length;
   const packEffects = Object.fromEntries(pack.entries.filter((e) => e.kind === 'effect' && e.value?.name).map((e) => [e.id, e.value.name]));
 
+  // ⚠️ A click reads the stores as they are now, never this drawing's copies: until React has run this page's effects it is not listening to the stores, so a decision just made is in the store but in no drawing, and acting on the drawing's copy forgets it.
+  const liveSession = () => useReviewStore.getState().sessionFor(file);
+
   const step = (result) => {
     if (!result) return;
     if (result.workspace) writeWorkspace(result.workspace);
@@ -212,7 +215,7 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
 
   const openInEditor = (entry, index) => {
     if (entry.op !== 'delete') {
-      const result = applyEarly(useEntityStore.getState(), pack, session, index);
+      const result = applyEarly(useEntityStore.getState(), pack, liveSession(), index);
       if (!result) return;
       step(result);
     }
@@ -236,7 +239,7 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
   };
 
   const onFinish = async () => {
-    const result = finish(useEntityStore.getState(), pack, session);
+    const result = finish(useEntityStore.getState(), pack, liveSession());
     if (result.blocked) {
       setBlocked(result.blocked);
       return;
@@ -267,8 +270,8 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
             </div>
           </div>
           <div className="flex gap-2 shrink-0">
-            <button className="btn-ghost flex items-center gap-1" onClick={() => step({ session: acceptAll(ws, pack, session) })}><CheckCheck size={14} /> Accept all</button>
-            <button className="btn-ghost flex items-center gap-1" onClick={() => step(rejectAll(useEntityStore.getState(), pack, session))}><Ban size={14} /> Reject all</button>
+            <button className="btn-ghost flex items-center gap-1" onClick={() => step({ session: acceptAll(useEntityStore.getState(), pack, liveSession()) })}><CheckCheck size={14} /> Accept all</button>
+            <button className="btn-ghost flex items-center gap-1" onClick={() => step(rejectAll(useEntityStore.getState(), pack, liveSession()))}><Ban size={14} /> Reject all</button>
             <button className="btn-primary flex items-center gap-1" disabled={busy} onClick={onFinish}>
               <Check size={14} /> Finish review{accepted ? ` (apply ${accepted})` : ''}
             </button>
@@ -296,9 +299,9 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
           state={state}
           ws={ws}
           packEffects={packEffects}
-          onAccept={() => step({ session: accept(ws, pack, session, index) })}
-          onForce={() => step({ session: force(session, index) })}
-          onReject={() => step(reject(useEntityStore.getState(), pack, session, index))}
+          onAccept={() => step({ session: accept(useEntityStore.getState(), pack, liveSession(), index) })}
+          onForce={() => step({ session: force(liveSession(), index) })}
+          onReject={() => step(reject(useEntityStore.getState(), pack, liveSession(), index))}
           onOpen={() => openInEditor(entry, index)}
         />
       ))}

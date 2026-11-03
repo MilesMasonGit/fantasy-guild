@@ -122,6 +122,8 @@ into `data/` by the next Sync to Game. Mount the component on a throwaway
 `useEntityStore.persist.setOptions({ storage: <no-op> })` before seeding and
 checking `localStorage['fantasy-guild-cms-v2']` is unchanged afterwards.
 
+**A click can beat React's effects.** When something drawn by a late update (a fetch's answer) is found by `findBy`/`waitFor`, its effects have usually run, but if the machine stalls for a millisecond the test's next line comes first. The component is not yet listening to its stores, so a click that changes a store redraws nothing, and a second click in the same step runs the old drawing's handler. A handler should read a store at click time (`getState()`), not the value from its render; a test can force the moment with a `MutationObserver` (`CMSChangePackReview`, "clicks that come before").
+
 ## Code tools and their blind spots
 
 `npm run lint`, `npm run cycles`, `node tools/reachability.mjs`.

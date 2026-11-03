@@ -142,10 +142,7 @@ describe('reviewing, applying and undoing', () => {
 const noStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 const WORKSPACE_KEY = 'fantasy-guild-cms-v2';
 
-// As in CMSChangePackReview: the whole CMS and the file server are slow on a busy machine, so the
-// waits get 10 s, a pack file landing on disk 20 s, and each case 60 s.
-const FILE_WAIT = { timeout: 20_000 };
-
+// As in CMSChangePackReview: the whole CMS is slow on a busy machine, so the waits get 10 s and each case 60 s.
 describe('the review page in the CMS', { timeout: 60_000 }, () => {
     let dir;
     let handler;
@@ -213,14 +210,14 @@ describe('the review page in the CMS', { timeout: 60_000 }, () => {
 
         fireEvent.click(within(row).getByText('Accept'));
         fireEvent.click(within(view.getByTestId('pack-review')).getByText(/Finish review/));
-        await waitFor(() => expect(fs.existsSync(path.join(dir, 'applied', 'camp-pack.json'))).toBe(true), FILE_WAIT);
+        await waitFor(() => expect(fs.existsSync(path.join(dir, 'applied', 'camp-pack.json'))).toBe(true));
         expect(useEntityStore.getState().starterCamp).toEqual(normaliseStarterCamp(PROPOSED));
 
         fireEvent.click(await view.findByText('camp-pack'));
         const archived = await view.findByTestId('archived-pack');
         expect(within(view.getByTestId('undo-0')).getByText('Starter Camp')).toBeTruthy();
         fireEvent.click(within(archived).getByText('Undo this pack'));
-        await waitFor(() => expect(fs.existsSync(path.join(dir, 'camp-pack.json'))).toBe(true), FILE_WAIT);
+        await waitFor(() => expect(fs.existsSync(path.join(dir, 'camp-pack.json'))).toBe(true));
         expect(useEntityStore.getState().starterCamp).toEqual(normaliseStarterCamp(CAMP));
     });
 
