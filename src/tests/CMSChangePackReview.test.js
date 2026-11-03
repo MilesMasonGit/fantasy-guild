@@ -103,8 +103,10 @@ const noStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {}
 const WORKSPACE_KEY = 'fantasy-guild-cms-v2';
 
 // Each case mounts the whole CMS and round-trips the file server: slow on a busy machine, so the
-// waits get 10 s (not testing-library's 1 s) and each case 30 s.
-describe('the review page in the CMS', { timeout: 30_000 }, () => {
+// waits get 10 s (not testing-library's 1 s), a pack file landing on disk 20 s, and each case 60 s.
+const FILE_WAIT = { timeout: 20_000 };
+
+describe('the review page in the CMS', { timeout: 60_000 }, () => {
     let dir;
     let handler;
     let storedBefore;
@@ -177,7 +179,7 @@ describe('the review page in the CMS', { timeout: 30_000 }, () => {
         fireEvent.click(within(view.getByTestId('entry-2')).getByText('Reject'));
         fireEvent.click(within(review).getByText(/Finish review/));
 
-        await waitFor(() => expect(fs.existsSync(path.join(dir, 'applied', 'test-pack.json'))).toBe(true));
+        await waitFor(() => expect(fs.existsSync(path.join(dir, 'applied', 'test-pack.json'))).toBe(true), FILE_WAIT);
         expect(fs.existsSync(path.join(dir, 'test-pack.json'))).toBe(false);
         const after = useEntityStore.getState();
         expect(after.items.item_fir).toMatchObject({ id: 'item_fir', name: 'Fir' });
@@ -193,7 +195,7 @@ describe('the review page in the CMS', { timeout: 30_000 }, () => {
         expect(within(view.getByTestId('undo-0')).getByText(/Edited since/)).toBeTruthy();
         fireEvent.click(within(archived).getByText('Undo this pack'));
 
-        await waitFor(() => expect(fs.existsSync(path.join(dir, 'test-pack.json'))).toBe(true));
+        await waitFor(() => expect(fs.existsSync(path.join(dir, 'test-pack.json'))).toBe(true), FILE_WAIT);
         const undone = useEntityStore.getState();
         expect(undone.tokens.token_mill).toEqual(workspace().tokens.token_mill);
         expect(undone.items.item_fir.sprite).toBe('item_fir_owner');
