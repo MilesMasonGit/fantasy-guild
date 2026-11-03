@@ -5,6 +5,8 @@ import { render, cleanup, act } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import { TokenHitArt } from '../ui/components/board/TokenHitArt.jsx';
 import { loopPoses } from '../ui/components/board/fx/clockPoses.js';
+import { startStrikeChips, CHIP_COUNT } from '../ui/components/board/fx/strikeChips.js';
+import { FX_FRAME_MS } from '../ui/components/board/fx/pixelSteps.js';
 import { HIT_ANIMATIONS, HIT_PERIOD_MS, strikeStartTime } from '../ui/components/board/hitAnimations.js';
 import { setSpriteFxManifest } from '../ui/utils/spriteFx.js';
 
@@ -18,6 +20,7 @@ import { setSpriteFxManifest } from '../ui/utils/spriteFx.js';
  */
 
 const h = React.createElement;
+const SPRITE = 'assets/items/test/chip.png';
 
 let queue;
 let nextId;
@@ -177,6 +180,84 @@ describe('⭐ a worked Token', () => {
         render(worked({ heroId: null, active: false }));
         framesAsked = 0;
         run(1500);
+        expect(framesAsked).toBe(0);
+    });
+});
+
+describe('⭐ strike chips', () => {
+    beforeEach(() => {
+        setSpriteFxManifest({ sprites: { [SPRITE]: { w: 64, h: 64, outlined: true, hash: 'a' } } });
+    });
+
+    function wrapper(size = 128) {
+        const el = document.createElement('div');
+        el.innerHTML = `<span><span><img src="/${SPRITE}" style="width: ${size}px; height: ${size}px"></span></span>`;
+        document.body.appendChild(el);
+        return el;
+    }
+    const chipsOf = (w) => [...w.querySelectorAll('[data-fx-chip]')];
+
+    it('hidden between strikes; each strike shows them for four frames, on time, and no animation runs', () => {
+        const anim = stubAnimate();
+        try {
+            const w = wrapper();
+            const firstStrike = clock + 100;
+            const stop = startStrikeChips(w, { skill: 'mining', firstStrike, periodMs: 1000, dir: () => 1, seed: 't' });
+            const chips = chipsOf(w);
+            expect(chips).toHaveLength(CHIP_COUNT);
+            run(90);
+            expect(chips.every(c => c.style.visibility === 'hidden')).toBe(true);
+            run(15);
+            expect(chips.every(c => c.style.visibility === 'visible')).toBe(true);
+            const frames = new Set();
+            while (clock < firstStrike + 4 * FX_FRAME_MS - 6) { frames.add(chips[0].style.transform); frame(); }
+            expect(frames.size).toBe(4);
+            run(12);
+            expect(chips.every(c => c.style.visibility === 'hidden')).toBe(true);
+            // The next strike, a period later.
+            run(1000 - 4 * FX_FRAME_MS);
+            expect(chips.every(c => c.style.visibility === 'visible')).toBe(true);
+            expect(anim.calls).toHaveLength(0);
+            stop();
+            expect(chipsOf(w)).toHaveLength(0);
+        } finally {
+            anim.restore();
+        }
+    });
+
+    it('the same scatter as a fixed function of the Token and the strike', () => {
+        const paths = () => {
+            const w = wrapper();
+            const stop = startStrikeChips(w, { skill: 'mining', firstStrike: clock + 1000, periodMs: 1000, dir: () => -1, seed: 'tok_9' });
+            stop.strike();
+            const shown = chipsOf(w).map(c => c.style.transform).join('|');
+            stop();
+            return shown;
+        };
+        expect(paths()).toEqual(paths());
+    });
+
+    it('frames are whole art pixels of the unit', () => {
+        const w = wrapper();
+        const stop = startStrikeChips(w, { skill: 'mining', firstStrike: clock + 1000, periodMs: 1000, dir: () => 1, unit: 2, seed: 't' });
+        stop.strike();
+        for (const c of chipsOf(w)) {
+            const [, x, y] = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(c.style.transform);
+            expect(Math.abs(Number(x)) % 2).toBe(0);
+            expect(Math.abs(Number(y)) % 2).toBe(0);
+        }
+        stop();
+    });
+
+    it('stopped mid-strike: nothing left, nothing scheduled', () => {
+        const w = wrapper();
+        const stop = startStrikeChips(w, { skill: 'mining', firstStrike: clock + 1000, periodMs: 1000, dir: () => 1, seed: 't' });
+        stop.strike();
+        stop();
+        expect(chipsOf(w)).toHaveLength(0);
+        framesAsked = 0;
+        queue = [];
+        run(2500);
         expect(framesAsked).toBe(0);
     });
 });
