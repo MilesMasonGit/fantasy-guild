@@ -93,6 +93,10 @@ export function boardPointToScreen(boardEl, x, y) {
  * drawn. A short trail of hard 2×2 pixels behind it and a four-pixel plink where it lands draw
  * for loot only with `LOOT_FLIGHT_SPARKLES` on; a hero lifted from the dock keeps its trail.
  * Nothing random: every flight with the same path draws the same pixels.
+ * ⚠️ A collection reads no box. Auto-collect runs inside the engine's tick, where one box read lays
+ * the page out in the middle of the tick and again for the frame. A flight is booked when it is
+ * collected and placed by the frame loop (`ParticleSystem.placeBooked`), before it draws for the
+ * first time: that read is the layout the frame was about to do anyway.
  * Two of these are mounted, one per layer (`layer`): `mat` takes the collections off the mat and
  * draws over the mat but under the drawers, the hero panel and the nav; `pointer` takes a hero
  * lifted from the dock, which flies to the pointer wherever it is, so it draws over everything.
@@ -124,8 +128,6 @@ export const ParticleOverlay = ({ disabled, layer = 'mat' }) => {
         const ctx = canvas.getContext('2d');
         const system = new ParticleSystem(canvas, ctx);
         systemRef.current = system;
-        // Flights to a stub are placed a moment after they are booked, once the column has drawn.
-        system.onPlaced = () => wakeRef.current?.();
 
         const handleResize = () => system.setViewport(window.innerWidth, window.innerHeight);
 
@@ -138,7 +140,7 @@ export const ParticleOverlay = ({ disabled, layer = 'mat' }) => {
         const onCollected = (data) => {
             if (disabledRef.current || !isDrawn('itemFlight')) return;
             system.spawnCollected(data);
-            if (system.particles.length) wakeRef.current?.();
+            if (system.booked.length || system.particles.length) wakeRef.current?.();
         };
         const unsubscribe = EventBus.subscribe(LAYERS[layer].event, onCollected, UI_LISTENER);
 
@@ -169,6 +171,8 @@ export const ParticleOverlay = ({ disabled, layer = 'mat' }) => {
             frameIdRef.current = null;
             const system = systemRef.current;
             if (!system) return;
+            // ⚠️ Before anything this frame writes: `draw` moves and sizes the canvas.
+            system.placeBooked();
             system.update(time);
             if (system.particles.length || system.sparkles.length) {
                 system.draw();
@@ -210,10 +214,8 @@ class ParticleSystem {
         this.ctx = ctx;
         this.particles = [];
         this.sparkles = [];
-        /** Flights to a stub booked this burst, waiting to be placed (`_placeBooked`). */
-        this._booked = [];
-        /** Called once booked flights are in the air. */
-        this.onPlaced = null;
+        /** Flights collected since the last frame, waiting to be placed ({@link placeBooked}). */
+        this.booked = [];
         this.spriteCache = new Map();
         // The burst queue (`_nextSlot`): a place for the next particle, and when one was last asked for.
         this._slot = 0;
@@ -235,9 +237,9 @@ class ParticleSystem {
      */
     dropAll() {
         for (const p of this.particles) landFlight(p.booking);
-        for (const b of this._booked) landFlight(b.booking);
+        for (const b of this.booked) landFlight(b.booking);
         this.particles = [];
-        this._booked = [];
+        this.booked = [];
         this.sparkles = [];
     }
 
@@ -301,17 +303,15 @@ class ParticleSystem {
 
     /**
      * One collected sprite, flying from where it lay to where it went.
-     * Loot banked from the mat lands on its own item stub, its count held back until it lands
-     * (`stubLanding.js`); the flight is booked now and placed a moment later, after the column
-     * has drawn a stub this collection made ({@link _placeBooked}). With the stubs not drawn,
-     * items land on the Guild Hall Token on the mat, found live by `lootFlightTarget` so a
-     * dragged Hall is followed; the Bank bubble is the fallback when the Hall is not on
-     * screen. Items fly at the size they lay on the floor.
+     * Loot banked from the mat lands on its own item stub, its count held back from now until it
+     * lands (`stubLanding.js`). With the stubs not drawn, items land on the Guild Hall Token on the
+     * mat, found live by `lootFlightTarget` so a dragged Hall is followed; the Bank bubble is the
+     * fallback when the Hall is not on screen. Items fly at the size they lay on the floor.
      * ⚠️ The stagger is global, not per-call. Collection is one call per sprite, so a Collect
      * All over forty sprites would fire forty particles on the same frame. `_nextSlot()`
      * spreads them across a shared queue and refuses beyond `MAX_CONCURRENT`; the loot is
      * still collected, it just stops drawing after a point, because forty simultaneous arcs is
-     * noise rather than spectacle.
+     * noise rather than spectacle. A refused one holds nothing back: its count shows at once.
      */
     spawnCollected({ kind, refId, heroId, quantity, x, y, fromScreenX, fromScreenY, toScreenX, toScreenY, destination, instanceId }) {
         if (!SettingsManager.get('ui.itemParticles')) return;
@@ -339,167 +339,103 @@ class ParticleSystem {
         }
         if (!template) return;
 
-        let fromRect;
-        if (fromScreenX != null && fromScreenY != null) {
-            fromRect = {
-                left: fromScreenX,
-                top: fromScreenY,
-                width: 0,
-                height: 0,
-                right: fromScreenX,
-                bottom: fromScreenY
-            };
-        } else {
-            fromRect = this._getRect({ boardX: x, boardY: y });
-        }
+        const to = toScreenX != null && toScreenY != null ? { x: toScreenX, y: toScreenY } : null;
+        const toStub = !to && !isHero && destination === 'bank' && fliesToStub(actualRefId);
 
-        let toRect;
-        let landsOn = null;
-        let toStub = false;
-        if (toScreenX != null && toScreenY != null) {
-            toRect = {
-                left: toScreenX,
-                top: toScreenY,
-                width: 0,
-                height: 0,
-                right: toScreenX,
-                bottom: toScreenY
-            };
-        } else if (isHero) {
-            toRect = this._getRect({ target: 'dock', heroId: actualRefId });
-        } else if (destination === 'bank' && fliesToStub(actualRefId)) {
-            toStub = true;
-        } else {
-            const landing = lootFlightTarget(document);
-            toRect = landing?.rect;
-            landsOn = landing?.target ?? null;
-        }
-        if (!fromRect || (!toRect && !toStub)) return;
-        if (!this._isRectInViewport(fromRect)) return;
+        const slot = this._nextSlot();
+        if (slot == null) return;
+        // The hold now, in the same tick as the Bank's change, so the stub never shows the item early.
+        const booking = toStub ? bookFlight(template.id, quantity) : null;
+        if (toStub && !booking) return;
 
         this._preloadSprite(template);
-
-        const startX = fromRect.left + (fromRect.width ? fromRect.width / 2 : 0);
-        const startY = fromRect.top + (fromRect.height ? fromRect.height / 2 : 0);
-        if (toStub) {
-            this._bookStubFlight(template, quantity, startX, startY);
-            return;
-        }
-        const endX = toRect.left + (toRect.width ? toRect.width / 2 : 0);
-        const endY = toRect.top + (toRect.height ? toRect.height / 2 : 0);
-
-        const dx = endX - startX;
-        const dy = endY - startY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 1) return;
-
-        const cpX = (startX + endX) / 2;
-        const cpY = ((startY + endY) / 2) - dist * 0.2;
-
-        if (![startX, startY, endX, endY, cpX, cpY].every(Number.isFinite)) return;
-
-        // At most MAX_CONCURRENT from one burst, STAGGER_MS apart. Asked only once this
-        // particle would really fly, so a refused one does not use up a place. The loot is
-        // collected either way.
-        const slot = this._nextSlot();
-        if (slot == null) return;
-
-        const particle = {
-            itemId: template.id,
-            icon: template.icon,
-            spriteKey: template.id,
-            mode: 'gain',
+        this.booked.push({
+            template,
+            booking,
+            heroId: isHero ? actualRefId : null,
             destination,
-            landsOn,
-            booking: null,
+            instanceId,
+            from: fromScreenX != null && fromScreenY != null ? { x: fromScreenX, y: fromScreenY } : null,
+            boardPoint: { x, y },
+            to,
             // An item keeps its floor size in flight; a hero keeps 32.
             size: isHero ? 32 : this._floorItemPx(),
-            instanceId,
-            startTime: performance.now() + slot * STAGGER_MS,
-            duration: destination === 'cursor' ? 320 : flightDurationMs(dist),
-            path: { startX, startY, endX, endY, cpX, cpY },
-            color: template.color || TRAIL_COLOUR,
-            trail: isHero || LOOT_FLIGHT_SPARKLES
-        };
-        this.particles.push(particle);
-        this._include(particle.path, particle.size);
-    }
-
-    /**
-     * Book a collected item's flight to its stub: its place in the burst now, and the stub's count
-     * held back from now (so it never shows the item before it lands). Where it lands is read for
-     * the whole burst at once, in a microtask: after React has drawn a stub this collection made,
-     * before the next frame, so the flight is placed before it is ever drawn.
-     * ⚠️ The order matters: React schedules its draw of the new stub (a microtask) when the hold
-     * makes the store announce, and the placing microtask is queued after it.
-     */
-    _bookStubFlight(template, quantity, startX, startY) {
-        if (!Number.isFinite(startX) || !Number.isFinite(startY)) return;
-        const slot = this._nextSlot();
-        if (slot == null) return;
-        const booking = bookFlight(template.id, quantity);
-        if (!booking) return;
-        this._booked.push({
-            booking,
-            template,
-            startX,
-            startY,
-            startTime: performance.now() + slot * STAGGER_MS,
-            size: this._floorItemPx()
+            startTime: performance.now() + slot * STAGGER_MS
         });
-        if (this._booked.length === 1) queueMicrotask(() => this._placeBooked());
     }
 
     /**
-     * Put the burst's booked flights in the air: one batch of reads for every stub they go to.
-     * One with no place on the stubs (no column any more, no room for another copy) flies to
-     * the Guild Hall instead; its count still ticks when it lands.
+     * Put the flights collected since the last frame in the air: one batch of reads for all of them,
+     * after React has drawn any stub a collection made. A flight that turns out to have nowhere to
+     * go (a point off the screen, a landing it already stands on) lets its count through.
      */
-    _placeBooked() {
-        const booked = this._booked;
-        this._booked = [];
+    placeBooked() {
+        const booked = this.booked;
         if (!booked.length) return;
-        placeFlights(booked.map(b => b.booking));
+        this.booked = [];
+        const toStubs = booked.filter(b => b.booking).map(b => b.booking);
+        if (toStubs.length) placeFlights(toStubs);
         let hall;
+        const hallLanding = () => {
+            if (hall === undefined) hall = lootFlightTarget(document);
+            return hall;
+        };
         for (const b of booked) {
-            let end = b.booking.spot;
-            let landsOn = 'stub';
-            if (!end) {
-                if (hall === undefined) hall = lootFlightTarget(document);
-                const r = hall?.rect;
-                end = r ? { x: r.left + (r.width ? r.width / 2 : 0), y: r.top + (r.height ? r.height / 2 : 0) } : null;
-                landsOn = hall?.target ?? null;
-            }
-            const dx = end ? end.x - b.startX : 0;
-            const dy = end ? end.y - b.startY : 0;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const cpX = end ? (b.startX + end.x) / 2 : NaN;
-            // Arcs as any flight does, but never over the top of the screen: the stubs sit just
-            // under it, and an arc there would leave the screen and come back.
-            const cpY = end ? Math.max(STUB_ARC_TOP_PX, ((b.startY + end.y) / 2) - dist * 0.2) : NaN;
-            if (!end || dist < 1 || ![end.x, end.y, cpX, cpY].every(Number.isFinite)) {
+            const particle = this._flightOf(b, hallLanding);
+            if (!particle) {
                 landFlight(b.booking);
                 continue;
             }
-            const particle = {
-                itemId: b.template.id,
-                icon: b.template.icon,
-                spriteKey: b.template.id,
-                mode: 'gain',
-                destination: 'bank',
-                landsOn,
-                booking: b.booking,
-                size: b.size,
-                startTime: b.startTime,
-                duration: flightDurationMs(dist),
-                path: { startX: b.startX, startY: b.startY, endX: end.x, endY: end.y, cpX, cpY },
-                color: b.template.color || TRAIL_COLOUR,
-                trail: LOOT_FLIGHT_SPARKLES
-            };
             this.particles.push(particle);
             this._include(particle.path, particle.size);
         }
-        if (this.particles.length) this.onPlaced?.();
+    }
+
+    /** A booked flight with its path worked out from the boxes as they stand now, or null. */
+    _flightOf(b, hallLanding) {
+        const from = b.from || this._boardPoint(b.boardPoint);
+        if (!from || !this._isPointInViewport(from)) return null;
+
+        // A flight to a stub with no place on the stubs (no column any more, no room for another
+        // copy) flies to the Guild Hall instead; its count still ticks when it lands.
+        let end = b.to || b.booking?.spot || null;
+        let landsOn = b.booking?.spot ? 'stub' : null;
+        if (!end) {
+            const landing = b.heroId ? { rect: this._dockRect(b.heroId) } : hallLanding();
+            const r = landing?.rect;
+            end = r ? { x: r.left + (r.width ? r.width / 2 : 0), y: r.top + (r.height ? r.height / 2 : 0) } : null;
+            landsOn = landing?.target ?? null;
+        }
+        if (!end) return null;
+
+        const dx = end.x - from.x;
+        const dy = end.y - from.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 1) return null;
+
+        const cpX = (from.x + end.x) / 2;
+        const arc = ((from.y + end.y) / 2) - dist * 0.2;
+        // Booked for a stub, it arcs as any flight does, but never over the top of the screen: the
+        // stubs sit just under it, and an arc there would leave the screen and come back.
+        const cpY = b.booking ? Math.max(STUB_ARC_TOP_PX, arc) : arc;
+        if (![from.x, from.y, end.x, end.y, cpX, cpY].every(Number.isFinite)) return null;
+
+        return {
+            itemId: b.template.id,
+            icon: b.template.icon,
+            spriteKey: b.template.id,
+            mode: 'gain',
+            destination: b.destination,
+            landsOn,
+            booking: b.booking,
+            size: b.size,
+            instanceId: b.instanceId,
+            startTime: b.startTime,
+            duration: b.destination === 'cursor' ? 320 : flightDurationMs(dist),
+            path: { startX: from.x, startY: from.y, endX: end.x, endY: end.y, cpX, cpY },
+            color: b.template.color || TRAIL_COLOUR,
+            trail: !!b.heroId || LOOT_FLIGHT_SPARKLES
+        };
     }
 
     /**
@@ -515,25 +451,18 @@ class ParticleSystem {
         return this._slot++;
     }
 
-    /** `source` is a board point (`{ boardX, boardY }`) or a hero in the dock (`{ target: 'dock', heroId }`). */
-    _getRect(source) {
-        // A point on the board, in board coordinates.
-        if (source && typeof source === 'object' && source.boardX != null) {
-            const board = document.querySelector('[data-board-origin]');
-            if (!board) return null;
-            const { x, y } = boardPointToScreen(board, source.boardX, source.boardY);
-            return { left: x, top: y, width: 0, height: 0, right: x, bottom: y };
-        }
-        if (source?.target === 'dock') {
-            const heroId = source.heroId;
-            if (heroId) {
-                const heroCard = document.querySelector(`[data-dock-hero-id="${heroId}"]`);
-                if (heroCard) return heroCard.getBoundingClientRect();
-            }
-            const dockEl = document.querySelector('[data-vertical-dock]') || document.getElementById('vertical-dock-recall');
-            if (dockEl) return dockEl.getBoundingClientRect();
-        }
-        return null;
+    /** Where a board point is on screen, or null with no board. */
+    _boardPoint({ x, y }) {
+        const board = document.querySelector('[data-board-origin]');
+        return board ? boardPointToScreen(board, x, y) : null;
+    }
+
+    /** The box of a hero in the dock, or of the dock. */
+    _dockRect(heroId) {
+        const heroCard = document.querySelector(`[data-dock-hero-id="${heroId}"]`);
+        if (heroCard) return heroCard.getBoundingClientRect();
+        const dockEl = document.querySelector('[data-vertical-dock]') || document.getElementById('vertical-dock-recall');
+        return dockEl ? dockEl.getBoundingClientRect() : null;
     }
 
     /** An item's on-screen floor size, from the mat's live fit (`data-board-scale`). */
@@ -543,13 +472,8 @@ class ParticleSystem {
         return lootSpriteScreenPx(fit > 0 ? fit : 1);
     }
 
-    _isRectInViewport(rect) {
-        return (
-            rect.bottom >= 0 &&
-            rect.right >= 0 &&
-            rect.top <= window.innerHeight &&
-            rect.left <= window.innerWidth
-        );
+    _isPointInViewport({ x, y }) {
+        return y >= 0 && x >= 0 && y <= window.innerHeight && x <= window.innerWidth;
     }
 
     /**

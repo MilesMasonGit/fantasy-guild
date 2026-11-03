@@ -12,8 +12,8 @@ import { GAP_PX, HEADER_PX, PITCH_PX, SPRITE_INSET_PX, STUB_PX } from './stubGeo
  * copies are a small store of their own that the column draws.
  *
  * Cost: one query per collection to see whether the column is drawn (no layout), and one batch of
- * box reads per burst of flights ({@link placeFlights}), made after the column has drawn any new
- * stub, so the boxes are already laid out. Nothing here runs per frame.
+ * box reads per burst of flights ({@link placeFlights}), made by the overlay's frame loop, after the
+ * column has drawn any new stub. Nothing here runs per frame.
  */
 
 /** How long a copy stays out after its last landing, so the count can be read. */
