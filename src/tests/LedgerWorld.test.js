@@ -246,7 +246,7 @@ describe('F: a cell\'s value off by more than ±10 %', () => {
     it('a strict cell whose extras are worth more than its ring\'s value and tolerance is found', () => {
         const p = plan(worldWorkspace(), 7);
         const cell = p.world.cells.find(c => c.ring === 1);
-        cell.extras = [{ id: 'mod_deep_veins', kind: 'modifier', value: 10 }, { id: 'mod_deep_veins', kind: 'modifier', value: 10 }];
+        cell.extras = [{ id: 'token_fixture_chest', kind: 'treasure', value: 10 }, { id: 'token_fixture_chest', kind: 'treasure', value: 10 }];
         cell.value = 20;
         const hits = of(worldChecks(p), WORLD_F.VALUE);
         expect(hits.map(f => f.cellId)).toEqual([cell.id]);

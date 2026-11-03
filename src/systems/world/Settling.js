@@ -7,8 +7,6 @@ import * as CatchUp from '../core/CatchUp.js';
 import * as Atlas from '../atlas/Atlas.js';
 import { nextSeed } from '../atlas/seededRandom.js';
 import { TEXT as REGION_TEXT } from '../atlas/regionNames.js';
-import { recipeOf as modifierRecipeOf, isModifier } from '../atlas/mapItems.js';
-import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { worldTables } from '../../config/registries/worldTablesRegistry.js';
 import { lineById } from '../../config/worldTablesShape.js';
@@ -111,12 +109,6 @@ export function cellName(cell, tables = worldTables()) {
     return [kit, line].filter(Boolean).join(' ');
 }
 
-/** A modifier extra's recipe, from its item; null for anything that is not a modifier. */
-function modifierRecipe(itemId) {
-    const def = getItem(itemId);
-    return isModifier(def) ? modifierRecipeOf(def) : null;
-}
-
 /** The layout a place is written with: the first of a few seeds in which every Token fits, else the first. */
 function seedFor(cell, recipes) {
     let seed = cell.seed >>> 0;
@@ -142,9 +134,9 @@ export function writePlace(cell, { cellId = null } = {}) {
     const tables = worldTables();
     const hall = currentWorld()?.cells.find(c => c.ring === 0);
     const { mat, recipes } = recipesOfCell(cell, {
-        tables, skillOf, hallOrigins: (hall?.origins || []).map(o => o.id), modifierRecipe, name: cellName(cell, tables)
+        tables, skillOf, hallOrigins: (hall?.origins || []).map(o => o.id), name: cellName(cell, tables)
     });
-    const describe = (recipeId) => (recipeId === recipes[0].id ? { word: recipes[0].name } : { word: '' });
+    const describe = () => ({ word: recipes[0].name });
     const written = Atlas.settle({ ingredients: recipes, seed: seedFor(cell, recipes), describe, cellId, allowUnplaced: true });
     if (!written.success) return refuse(SETTLE_TEXT.NOT_WRITTEN, { written });
     return { success: true, region: written.region, mat };

@@ -31,7 +31,7 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
  * ring is settled at its ring's price (the skill levels; a ring-n cell after one of ring n − 1 of its
  * wedge) and places what every world holds there: the origins its line's table lists for the ring,
  * the ring's key origins and guaranteed camps (through the wedges most likely to hold them). What a
- * world holds only sometimes (a kit's everyday and boss camps, the hidden extras, the arrivals) is
+ * world holds only sometimes (a kit's everyday and boss camps, the chests, the arrivals) is
  * placed by luck (`maybe`). The map items are retired: they place nothing and are `retired`, not
  * checked. **Without** `worldTables` (content from before the tables) the map items are read as they were: a
  * Region at the tier set on its map, had through drops, the tutorial, bounties and trading up.
@@ -483,7 +483,7 @@ export function buildWorld(content = {}, { bountyMapChance = BOUNTY_MAP_CHANCE }
     const retired = new Set();
     if (tables) {
         for (const [id, def] of Object.entries(items)) if (isMapItem(def)) retired.add(itemKey(id));
-        worldRules(tables, { add, names, items, placeable: (id) => !!text(id) && !planned.has(tokenKey(id)) });
+        worldRules(tables, { add, names, placeable: (id) => !!text(id) && !planned.has(tokenKey(id)) });
     }
 
     // Maps: a Base Map writes its Region; a Modifier changes a Base Map's. And how maps are had.
@@ -595,7 +595,7 @@ export function buildWorld(content = {}, { bountyMapChance = BOUNTY_MAP_CHANCE }
  * the likeliest by kit (reach keeps the first of equals), so its path names that wedge's skill. A
  * `specialty` price slot follows the seed's specialty and is left out.
  */
-function worldRules(tables, { add, names, items, placeable }) {
+function worldRules(tables, { add, names, placeable }) {
     const lines = tables.lines;
     const kits = Array.isArray(tables.kits) ? tables.kits : [];
     const rings = Array.from({ length: STRICT_RINGS }, (_, i) => i + 1);
@@ -659,7 +659,7 @@ function worldRules(tables, { add, names, items, placeable }) {
     }
 
     // Only in some worlds: a kit's camps (its everyday ones where it has combat work or combat is a
-    // specialty, its boss camps with a combat specialty), the hidden extras, the arrivals.
+    // specialty, its boss camps with a combat specialty), the chests, the arrivals.
     const combatSpecialty = list(tables.specialties).includes(COMBAT);
     for (const kit of kits) {
         const ids = [...((kit.work?.[COMBAT] > 0 || combatSpecialty) ? kit.camps : []), ...(combatSpecialty ? kit.bossCamps : [])];
@@ -667,14 +667,7 @@ function worldRules(tables, { add, names, items, placeable }) {
         for (const ring of rings) for (const line of linesFor([kit.id], ring)) place(`kit:${kit.id}:${line.id}:${ring}`, line.id, ring, ids, true);
     }
     for (const extra of list(tables.extras)) {
-        let ids = [];
-        if (extra.kind === EXTRA_KIND.TREASURE) ids = [extra.id];
-        else if (isModifier(items[extra.id])) {
-            for (const effect of list(recipeOf(items[extra.id]).effects)) {
-                if (effect.kind === 'replace') { if (text(effect.to)) ids.push(effect.to); }
-                else if (text(effect.typeId)) ids.push(effect.typeId);
-            }
-        }
+        const ids = extra.kind === EXTRA_KIND.TREASURE ? [extra.id] : [];
         const where = extra.lines ? lines.filter(l => extra.lines.includes(l.id)) : lines;
         for (const ring of extra.rings || rings) for (const line of order(where, ring)) place(`extra:${extra.id}:${line.id}:${ring}`, line.id, ring, ids, true);
     }

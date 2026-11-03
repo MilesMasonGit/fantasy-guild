@@ -9,7 +9,7 @@ import { cellMat, COMBAT } from '../../world/cellMat.js';
 import { materialsFromTokens, hallOriginsOf } from '../../world/materials.js';
 import { STRICT_RINGS, heroTokensOf, kitById, lineById } from '../../../config/worldTablesShape.js';
 import { normaliseStarterCamp } from '../../../config/starterCampShape.js';
-import { isMapItem, isModifier, recipeOf as mapRecipeOf } from '../../atlas/mapItems.js';
+import { isMapItem } from '../../atlas/mapItems.js';
 import { stationSkillOf } from '../../effects/statements.js';
 
 /**
@@ -21,7 +21,7 @@ import { stationSkillOf } from '../../effects/statements.js';
  * - **A world for a seed, read as places** ({@link worldPlan}): the generated world, each cell's mat
  *   (`cellMat.js`, as settling writes it), and a reach over the content with the retired map items
  *   taken out and each inner cell put in: a cell places what its mat holds (origins, everyday nodes,
- *   camps, treasures, its arrival, its hidden modifiers' Tokens) at its ring.
+ *   camps, chests, its arrival) at its ring.
  * - **Checks F** on that world: a ring-N cell asking ring-N materials; a key material not a step from
  *   every frontier; the inner rings not covering every Live entry; a wild origin no wedge places; a
  *   cell's extras off its ring's value. The world's own rules (`world/checks.js`) are read here too:
@@ -208,7 +208,6 @@ export function worldContext(content, { baseTables, ledger = null } = {}) {
     const live = (id) => (lw.tokens[id] ? rawTokens[id] : undefined);
     const materialsOf = materialsFromTokens(live);
     const skillOf = (id) => live(id)?.config?.skill || null;
-    const modifierRecipe = (id) => (isModifier(lw.items[id]) ? mapRecipeOf(lw.items[id]) : null);
     const camp = normaliseStarterCamp(content.starterCamp);
     const hallOrigins = hallOriginsOf(camp?.tokens, materialsOf);
     const campTokens = new Set((camp?.tokens || []).map(t => t.typeId));
@@ -246,7 +245,7 @@ export function worldContext(content, { baseTables, ledger = null } = {}) {
     };
 
     return {
-        content, base, tables, baseTables, moved, unknown, materialsOf, skillOf, modifierRecipe, hallOrigins,
+        content, base, tables, baseTables, moved, unknown, materialsOf, skillOf, hallOrigins,
         records, nameOf, lineName, kitName, cellName, origins, effortOf,
         keptRules: lw.rules.filter(r => !RETIRED.has(r.how) && !SEED_FREE.has(r.how)),
         // What the map items reached, read without the world tables (the main ledger reads them).
@@ -270,19 +269,13 @@ export function originFindings(content, { baseTables, ledger = null } = {}) {
     return worldContext(content, { baseTables, ledger }).origins;
 }
 
-/** Every Token a cell's mat stands on it: nodes, camps, treasures, its arrival and its modifiers' own Tokens. */
-function placedTokens(mat, modifierRecipe) {
+/** Every Token a cell's mat stands on it: nodes, camps, chests and its arrival. */
+function placedTokens(mat) {
     const out = new Set();
     for (const n of mat.nodes) out.add(n.typeId);
     for (const c of mat.camps) out.add(c.typeId);
     for (const t of mat.treasures) out.add(t.typeId);
     for (const a of mat.arrival) out.add(a.typeId);
-    for (const id of mat.modifiers) {
-        for (const effect of modifierRecipe(id)?.effects || []) {
-            if (effect?.kind === 'replace' && effect.to) out.add(effect.to);
-            else if (effect?.typeId) out.add(effect.typeId);
-        }
-    }
     return [...out];
 }
 
@@ -303,7 +296,7 @@ function worldReach(ctx, world, mats) {
         names.set(key, ctx.cellName(cell));
         const gates = (cell.requires?.skills || []).map(s => ({ skill: s.skill, level: s.level }));
         rules.push(ruleOf({ id: `settle:${cell.id}`, how: HOW.SETTLE, via: null, floor: cell.ring, gates, gives: [{ key, chance: 1 }] }));
-        const placed = placedTokens(mats.get(cell.id), ctx.modifierRecipe);
+        const placed = placedTokens(mats.get(cell.id));
         if (placed.length) {
             rules.push(ruleOf({ id: `world:${cell.id}`, how: HOW.WORLD, via: key, needs: [key], floor: cell.ring, gives: placed.map(t => ({ key: tokenKey(t), chance: 1 })) }));
         }
@@ -330,7 +323,7 @@ function matsOf(ctx, world) {
     const hallOrigins = (hallCell?.origins || []).map(o => o.id);
     const out = new Map();
     for (const cell of world.cells) {
-        if (cell.ring >= 1) out.set(cell.id, cellMat(cell, ctx.tables, { skillOf: ctx.skillOf, hallOrigins, modifierRecipe: ctx.modifierRecipe }));
+        if (cell.ring >= 1) out.set(cell.id, cellMat(cell, ctx.tables, { skillOf: ctx.skillOf, hallOrigins }));
     }
     return out;
 }

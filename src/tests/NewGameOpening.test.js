@@ -16,7 +16,6 @@ import { getItem, getAllItems, registerItems } from '../config/registries/itemRe
 import { starterToolIds, neededToolOf, toolOf, toolMeets } from '../config/registries/toolKinds.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { catchPoolsOf } from '../config/registries/catchPools.js';
-import { isModifier, tokenRefsOf } from '../systems/atlas/mapItems.js';
 import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
 import { BOUNTY_REWARD_ITEMS, RANDOM_ITEMS, RANDOM_HUNTS } from '../systems/quests/questBounties.js';
 import { worldTables } from '../config/registries/worldTablesRegistry.js';
@@ -341,8 +340,8 @@ function reachable({ maxPlane = 2 } = {}) {
 
 /**
  * The Tokens the world map's cells of rings 1 to `maxRing` write, from the world tables in force:
- * each line's origins, key origins and guaranteed camps of those rings, and their hidden extras (a treasure, or the
- * Tokens a modifier names). Any cell may draw any extra its ring allows.
+ * each line's origins, key origins and guaranteed camps of those rings, and their chests. Any cell may draw any
+ * extra its ring allows.
  */
 function worldTokens(maxRing) {
     const tables = worldTables();
@@ -360,8 +359,6 @@ function worldTokens(maxRing) {
     for (const extra of tables.extras) {
         if (extra.rings && !extra.rings.some(r => r <= maxRing)) continue;
         if (extra.kind === 'treasure') out.add(extra.id);
-        const def = getItem(extra.id);
-        if (extra.kind === 'modifier' && isModifier(def)) for (const ref of tokenRefsOf(def)) out.add(ref.typeId);
     }
     return out;
 }

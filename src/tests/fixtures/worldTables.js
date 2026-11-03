@@ -28,9 +28,9 @@ export const FIXTURE_WORLD_RAW = Object.freeze({
     specialties: ['mining', 'forestry', 'farming', 'fishing', 'alchemy', 'combat'],
     pityWindow: 4,
     extras: [
-        ...LINES.map(line => ({ id: `mod_rich_${line}`, kind: 'modifier', value: 10, lines: [line] })),
-        { id: 'mod_camp', kind: 'modifier', value: 8 },
-        { id: 'mod_den', kind: 'modifier', value: 8, rings: [2, 3] },
+        ...LINES.map(line => ({ id: `chest_rich_${line}`, kind: 'treasure', value: 10, lines: [line] })),
+        { id: 'chest_camp', kind: 'treasure', value: 8 },
+        { id: 'chest_den', kind: 'treasure', value: 8, rings: [2, 3] },
         { id: 'chest_small', kind: 'treasure', value: 6, rings: [1, 2], max: 2 },
         { id: 'chest_big', kind: 'treasure', value: 12, rings: [2, 3], max: 2 }
     ],

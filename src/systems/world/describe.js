@@ -4,7 +4,7 @@ import { STRICT_RINGS } from '../../config/worldTablesShape.js';
 
 /**
  * A generated world as plain text, for the QA panel and the tests: a hex picture of the wedges,
- * then every cell ring by ring with its origins, kit, specialty, requirements and hidden extras,
+ * then every cell ring by ring with its origins, kit, specialty, requirements and chests,
  * then what the generation could not meet and what the checks found.
  *
  * Names come from the lookups handed in (the game passes its registries), so this file stays pure.
@@ -60,7 +60,7 @@ export function hexPicture(world, { lineName = same } = {}) {
  * @param {object} world a `generateWorld` result
  * @param {object} [options]
  * @param {(id: string) => string} [options.tokenName] an origin's (or a treasure's) name
- * @param {(id: string) => string} [options.itemName] an item's (or a modifier's) name
+ * @param {(id: string) => string} [options.itemName] an item's name
  * @param {(id: string) => string} [options.lineName] a line's name
  * @param {(id: string) => string} [options.kitName] a kit's name
  * @param {(id: string) => string} [options.skillName] a skill's name

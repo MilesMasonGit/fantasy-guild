@@ -398,8 +398,8 @@ function CellPanel({ plan, context, cell, onOpen, onPick }) {
 
       {cell.ring > 0 && (
         <div className="space-y-1">
-          <h4 className={sectionHead}>Hidden extras</h4>
-          {cell.extras.map((e, i) => <p key={`${e.id}${i}`} className="text-gray-400">{context.nameOf(e.kind === 'treasure' ? tokenKey(e.id) : itemKey(e.id))} <span className="text-gray-500">({e.kind}, worth {e.value})</span></p>)}
+          <h4 className={sectionHead}>Chests</h4>
+          {cell.extras.map((e, i) => <p key={`${e.id}${i}`} className="text-gray-400">{context.nameOf(tokenKey(e.id))} <span className="text-gray-500">({e.kind}, worth {e.value})</span></p>)}
           <p className="text-gray-500">
             Worth {cell.value}{target !== null ? ` of ring ${cell.ring}'s ${target} (±${Math.round(tables.valueTolerance * 100)} %)` : ''}.
           </p>

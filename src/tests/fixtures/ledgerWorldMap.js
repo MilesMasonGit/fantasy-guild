@@ -40,7 +40,7 @@ export const WORLD_FIXTURE_RAW = Object.freeze({
     heroTokens: { combat: 1 },
     specialties: ['mining', 'forestry', 'farming', 'fishing', 'alchemy', 'combat'],
     pityWindow: 4,
-    extras: [{ id: 'mod_deep_veins', kind: 'modifier', value: 10 }],
+    extras: [{ id: 'token_fixture_chest', kind: 'treasure', value: 10 }],
     ringValue: { 1: 10, 2: 10, 3: 10 },
     valueTolerance: 0.1,
     prices: {
@@ -61,6 +61,10 @@ export const WORLD_FIXTURE_TABLES = normaliseWorldTables(WORLD_FIXTURE_RAW);
 /** The fixture world's content: the ledger fixture with a plain node and its material for every gap. */
 export function worldWorkspace() {
     const ws = ledgerWorkspace();
+    ws.tokens.token_fixture_chest = {
+        id: 'token_fixture_chest', name: 'Fixture Chest', uses: 1,
+        config: { skill: 'crafting', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [{ itemId: 'item_copper_ore', chance: 100, minQty: 4, maxQty: 8 }] }
+    };
     for (const [line, skill] of Object.entries(LINE_SKILL)) {
         for (let ring = 1; ring <= 3; ring++) {
             const id = nodeId(line, ring);

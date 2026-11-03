@@ -1,4 +1,4 @@
-// what a world cell's mat holds: its kit's work, its specialty's better things, its hidden extras and its wild oddness (pure)
+// what a world cell's mat holds: its kit's work, its specialty's better things, its chests and its wild oddness (pure)
 
 import { STRICT_RINGS, heroTokensOf, kitById, lineById } from '../../config/worldTablesShape.js';
 import { mulberry32, seedFromText } from '../atlas/seededRandom.js';
@@ -23,10 +23,7 @@ import { ORIGIN_ROLE, EXTREME } from './generate.js';
  * 3. Work for a skill nothing fills goes to the cell's own line, so the heroes kept busy hold;
  *    every origin the map shows stands on the mat at least once; and past {@link MAX_HEROES} the
  *    kit's largest everyday share gives way.
- * 4. **Hidden extras**: the cell's modifiers and treasures, as generated (`generate.js`, step 7). A
- *    modifier's extra work, its "more of" nodes (`density`) and its camps (`threat`), is natural
- *    work like the rest: written here, inside the cap, and taken out of the recipe Budget reads
- *    (`cellRegion.js`; owner: they count inside the six heroes).
+ * 4. **Chests**: the cell's treasures, as generated (`generate.js`, step 7).
  * 5. **Wild extremes**: one origin almost everywhere (`wild.compositionShare` of the nodes), or an
  *    odd layout ({@link LAYOUT_GROUND}).
  * 6. **Stone**: the kit's Stone terrain outcrops; **arrival**: the enemies the place arrives with.
@@ -163,17 +160,16 @@ function tokensFor(tables, skill, heroes) {
  * @param {object} lookups
  * @param {(typeId: string) => string|null} lookups.skillOf a Token's work skill
  * @param {string[]} [lookups.hallOrigins] the Hall's cell's origins (the Starter Camp's)
- * @param {(itemId: string) => object|null} [lookups.modifierRecipe] a modifier extra's recipe, or null
  * @returns {{
  *   biome: string, heroes: Record<string, number>,
  *   nodes: {typeId: string, count: number, skill: string|null}[],
  *   camps: {typeId: string, count: number}[], treasures: {typeId: string, count: number}[],
- *   modifiers: string[], arrival: {typeId: string, count: number, boss?: boolean}[],
+ *   arrival: {typeId: string, count: number, boss?: boolean}[],
  *   stone: {outcrops: number, ridge: boolean}, water: number|null, inland: string|null,
  *   rare: string|null, extreme: object|null
  * }}
  */
-export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [], modifierRecipe = () => null } = {}) {
+export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [] } = {}) {
     const tier = Math.min(Math.max(1, cell?.ring || 1), STRICT_RINGS);
     const kit = kitById(tables, cell?.kit);
     const random = mulberry32(seedFromText(`${cell?.seed >>> 0}|mat`));
@@ -256,22 +252,6 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [], 
         skillOfNode.set(o.id, skill);
     }
 
-    // The hidden modifiers' extra work, each modifier once: more of a node, or a camp.
-    const modifierIds = new Set((cell?.extras || []).filter(e => e.kind === 'modifier').map(e => e.id));
-    for (const id of modifierIds) {
-        for (const effect of modifierRecipe(id)?.effects || []) {
-            if (!effect?.typeId) continue;
-            if (effect.kind === 'density') {
-                const n = Math.round(Number(effect.points) || 0);
-                if (n <= 0) continue;
-                addTo(nodes, effect.typeId, n);
-                if (!skillOfNode.has(effect.typeId)) skillOfNode.set(effect.typeId, skillOf(effect.typeId));
-            } else if (effect.kind === 'threat') {
-                addTo(camps, effect.typeId, Math.max(1, Math.floor(Number(effect.count) || 1)));
-            }
-        }
-    }
-
     // At most `MAX_HEROES` of natural work: the largest share of nodes that is not the
     // specialty's gives way first, then, if that is not enough, the specialty's own; never an
     // origin's or the rare node's last Token.
@@ -317,10 +297,8 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [], 
     if (ground.nodes > 1 && total > 0) counts = shares(counts, Math.round(total * ground.nodes));
 
     const treasures = new Map();
-    const modifiers = [];
     for (const extra of cell?.extras || []) {
         if (extra.kind === 'treasure') addTo(treasures, extra.id, 1);
-        else if (extra.kind === 'modifier' && !modifiers.includes(extra.id)) modifiers.push(extra.id);
     }
 
     const list = (map) => [...map].map(([typeId, count]) => ({ typeId, count }));
@@ -331,7 +309,6 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [], 
             .map(([typeId, count]) => ({ typeId, count, skill: skillOfNode.get(typeId) ?? null })),
         camps: list(camps),
         treasures: list(treasures),
-        modifiers,
         arrival: (cell?.arrival || []).map(r => ({ ...r })),
         stone: { outcrops: (kit?.stone || 0) + (ground.stone || 0), ridge: !!ground.ridge },
         water: Number.isFinite(ground.water) ? ground.water : null,
