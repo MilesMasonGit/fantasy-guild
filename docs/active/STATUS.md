@@ -7,7 +7,7 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Director, clean-up before the new briefs (owner 2026-11-03: small tickets and doc updates approved; eye-checks closed)
 
-*Tue 3 Nov. Where we are: performance round 2 merged and pushed; K4, S9 and hero orders eye-checks closed by the owner and archived; 13 spent worktrees, 99 merged branches and 6 stray branches gone (3 kept as `archive/` tags); world map docs corrected. Next: the tickets below, two at a time. Owner: nothing needed; more planning meanwhile. Blockers: none.*
+*Tue 3 Nov 17:00. Where we are: clean-up done. All five phases merged and pushed, eye-checks closed, no code branch open, only `p23b` and the planning worktrees left. Next: the owner's go on the new briefs. Owner: nothing needed; optional, delete the Token Volcanic Island. Blockers: none. Baseline retake queued for Wed 01:00.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
@@ -15,7 +15,7 @@ build green) · bench-queued · eye-check · merged.*
 | T-289: two CMS pack-review tests stop failing on a busy machine | engineer | `fix/pack-review-flake` (`t2`) | **merged** 44bcf746 (7322 tests, cycles, game and CMS builds; engine work the same; S4 arrivals and S5 p99 slow against the old baseline with a helper holding a core, retake queued); the cause was a click before the page listens to its stores, fixed in the page | Tue | Tue |
 | T-205 rest: bench tools hold the slowdown they ask for | builder | `fix/bench-throttle` | **merged** 44bcf746 (7322 tests, cycles, game and CMS builds; engine work the same; S4 arrivals and S5 p99 slow against the old baseline with a helper holding a core, retake queued); the Bank kind was already cured by T-240 | Tue | Tue |
 | T-292 + T-298's hint: retired map machinery out of the code | engineer | `chore/retire-map-machinery` (`t3`) | **merged** 44bcf746 (7322 tests, cycles, game and CMS builds; engine work the same; S4 arrivals and S5 p99 slow against the old baseline with a helper holding a core, retake queued); 406 worlds hash the same; calibration stamp retaken | Tue | Tue |
-| T-287, the safe parts only: enemies cheaper with no change in look or play | engineer | `perf/enemy-next` | building (`t2`) | Tue | Tue |
+| T-287, the safe parts only: enemies cheaper with no change in look or play | engineer | `perf/enemy-next` | **merged** a8245248 (7350 tests, cycles, build; engine work the same, every timing ok on a quiet machine; no frame gain to quote, see PERFORMANCE) | Tue | Tue |
 
 ## Director, four in parallel beside the balancing pack (owner 2026-11-02 10:15: all four, the two-helper limit lifted for this batch)
 
@@ -140,6 +140,8 @@ None open. (Ruled 2026-10-19: Token outlines red for problems, gold for attentio
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
+
+**Wed 4 Nov, 01:00 (director timer, `p23b` on `main`):** engine and draw baselines retaken after the 3 Nov merges; commit with the date. If the timer died, run them in the next quiet window (HANDOFF, Bench).
 
 **Mon 2 Nov, 01:00–04:30 (director): done.** Engine baseline retaken and committed (ac8d9829). **Draw baseline did not save**: three full runs (01:02, 01:42, 02:23) each had one window where Chrome delivered 5–7× for 4× asked (rejected → exit 3); retake it in the next quiet window, or with `--cpu=3.2 --slowdown-target=4` if it keeps failing (the Envelope's workaround). Until then draw `--compare` reads against the 29 Oct draw baseline. T-200 benched (row above).
 

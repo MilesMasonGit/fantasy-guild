@@ -8,7 +8,7 @@ changelog and `docs/archive/`.*
 
 ## Where the project is
 
-- **Version** 0.8.x on `main`. **Tests:** ~7,380, green, seeded per test.
+- **Version** 0.8.x on `main`. **Tests:** ~7,350, green, seeded per test.
 - **Built since 31 Oct:** the encyclopedia as a searchable flowchart book (300 E3),
   the world's building nodes, ledger and first content (330 W4–W6), combat and
   fish content, sources that refill, the ledger on the world, the balancing preview
@@ -20,7 +20,7 @@ changelog and `docs/archive/`.*
 
 ## Next
 
-1. Clean-up in progress (STATUS): small tickets T-286, T-289, T-205, T-292, T-287's safe parts.
+1. Clean-up done 3 Nov: small tickets merged, eye-checks closed, no code branch open. **Waiting for the owner's go on the new briefs.**
 2. Detail passes queued by planning: 340 hero bar and sheet, 350 Tokens and card,
    360 combat look (mock-ups first).
-3. Owner: the art list (seed map sprites).
+3. Owner: the art list (seed map sprites); optional, delete the Token Volcanic Island in the CMS.

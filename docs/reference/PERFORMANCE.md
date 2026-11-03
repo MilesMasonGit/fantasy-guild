@@ -1625,3 +1625,5 @@ plate and bars (C6b) replaced them. Today's cost table, one window a switch at ~
 at the start and the end (`heroes16` 11.3, 10.8 ms p50; `fights8` 8.4, 7.9 ms): `bubbles` off saves 0.5
 and 0–0.4 ms; `workPlate` off 1.5 and 0.6; `dock` off 1.8 and 1.7 (at 1× on `fights8`, three windows
 each way, none of it above the noise); `walkDraw` off 1.8 and 3.0; `heroAnim` off 0.5 and 0.8.
+
+**T-287's safe parts** (director, 2026-11-03 16:40; `bench:draw --only=enemies80 --cpu=3.2 --slowdown-target=4 --ab`, A B B A, a8245248 against 02167383, engine work the same): one clean pair, 48.6 fps and 19.10 ms after, 48.3 fps and 18.61 ms before; the other pair is throttle drift (4.4–5× delivered on the after side, 3.6–4.1× on the before side), so its median of 36.3 and 39.6 fps says nothing. The census's gain is the count, about 2,830 Token visits a tick to 0 for that question, too small to show in a frame on this board. The loot flight alone against the census alone: 36.4 fps both ways.
