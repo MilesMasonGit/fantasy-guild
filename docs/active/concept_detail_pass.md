@@ -1,4 +1,4 @@
-Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360; the terrain round, brief 370; section 7, world map, brief 380; section 6, Guild Hall, brief 390; section 4, Bank, brief 400; section 5, Shop, brief 410; section 2, top bar, brief 420)
+Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360; the terrain round, brief 370; section 7, world map, brief 380; section 6, Guild Hall, brief 390; section 4, Bank, brief 400; section 5, Shop, brief 410; section 2, top bar, brief 420; section 10, notifications, brief 430)
 
 # The detail pass: UI and UX, section by section
 
@@ -51,7 +51,7 @@ game looks and plays, gathered one screen at a time.*
 | 7 | World map | **approved and briefed 2026-11-03** ([brief 380](briefs/380_world_map_detail.md)) | |
 | 8 | Combat | **approved and briefed 2026-11-02** ([brief 360](briefs/360_combat_detail.md)) | carried in the mat list's items 5, 13, 14 |
 | 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
-| 10 | Notifications | **walking now** | |
+| 10 | Notifications | **approved and briefed 2026-11-03** ([brief 430](briefs/430_notifications_detail.md)) | |
 | 11 | Settings and the start screen | not started | nine "coming soon" controls; T-039 |
 | 12 | While-you-were-away summary | not started | |
 | 13 | Tutorial and highlights | not started | `design_pass_notes.md`: the glow and assist rings |

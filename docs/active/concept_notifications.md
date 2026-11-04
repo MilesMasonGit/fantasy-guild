@@ -101,6 +101,8 @@ level-up.
 
 ## Banners
 
+*Amended by brief 430 (owner, 2026-11-03): time away no longer loses these; a place settled gets a gold banner.*
+
 - **Shape**: a wide scroll or ribbon (~480 px), **dropping down at the top
   centre from below the top bar** over the mat: a big sprite on the left (the
   recipe's output, the hero's face, the upgrade's icon), a large title ("New
