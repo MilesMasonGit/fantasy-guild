@@ -44,6 +44,8 @@ its source. Brief 300.*
 
 ### The search-first rework (owner interview with the director, 2026-10-31)
 
+*Amended by brief 470 (owner, 2026-11-04): the chart tells requirements from products; counts and progress bars in the corner; links from a recipe's ingredients. The Atlas leaves the book, so the encyclopedia keeps it.*
+
 E1 and E2 work and are merged; the owner judged the screen's lists too long to
 be useful. The encyclopedia becomes **search-first with a flowchart**. The
 player's main use: find an item they want (or a new rare drop), then follow

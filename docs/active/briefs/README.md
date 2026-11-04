@@ -63,6 +63,7 @@ multiple choice at wave start.
 | 43 | [440 Away summary, detail pass](440_away_summary_detail.md): two columns, item changes as one net list on the left and news on the right; fights as kill counts; a centred heading; a second confirm on both buttons; save slots show the away time built up; two phases; no owner CMS | 430 N1 | yes, one short look |
 | 44 | [450 Settings and start screen, detail pass](450_settings_start_detail.md): a cleaner three-tab settings window; a title screen; saves become real files with a button that opens their folder; a new game names the Guild, shows the world with a reroll and makes the first hero; four phases, S3 alone (never lose a save); no owner CMS | S4: S2 | yes, three looks |
 | 45 | [460 Hard pixel finish, detail pass](460_hard_pixel_finish.md): the last soft glows, text shadows and drop shadows go to hard pixel (T-013); a sheet for the owner first, then the change; no owner CMS | — | yes, the sheet, then a short look |
+| 46 | [470 Encyclopedia, detail pass](470_encyclopedia_detail.md): mock-ups, then a clear difference on the chart between what is required and what is produced; counts and small progress bars in the book's corner; a recipe's ingredients link to their pages; three phases; no owner CMS | — | yes, the mock-ups' pick, then a look |
 
 Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,
 then class rework v2, then the hero bar/panel on the new skill list, then
