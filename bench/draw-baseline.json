@@ -1,14 +1,14 @@
 {
   "meta": {
-    "commit": "cb8b051a",
+    "commit": "c46d6775",
     "branch": "HEAD",
     "dirty": {
       "src": false,
       "data": false,
-      "bench": false,
+      "bench": true,
       "public": false
     },
-    "date": "2026-11-03T09:00:03.462Z",
+    "date": "2026-11-04T08:02:39.295Z",
     "node": "v24.11.1",
     "machine": "DESKTOP-IEM8MOS",
     "cpu": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
@@ -39,7 +39,7 @@
       "slowdownTarget": null,
       "switchOnly": null
     },
-    "perfBuildS": 20.666,
+    "perfBuildS": 23.763,
     "chrome": {
       "product": "Chrome/156.0.8078.80",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
@@ -57,7 +57,7 @@
     "chromeClosed": {
       "exited": true,
       "profileRemoved": true,
-      "profileDir": "C:\\Users\\16048\\AppData\\Local\\Temp\\fg-bench-chrome-459Dy1"
+      "profileDir": "C:\\Users\\16048\\AppData\\Local\\Temp\\fg-bench-chrome-RqU2xZ"
     },
     "note": "Medians per condition and scene. Machine-specific: re-take on the owner's PC, machine quiet: npm run bench:draw -- --save-baseline"
   },
@@ -71,148 +71,148 @@
     "perf@1x": {
       "S1": {
         "fps": 165,
-        "workP50": 0.8,
-        "workP99": 3.5,
-        "inBudgetPct": 99.94,
-        "tokens": 7,
-        "domNodes": 293,
-        "n": 3
-      },
-      "S2": {
-        "fps": 162.9,
-        "workP50": 1.01,
-        "workP99": 9.2,
-        "inBudgetPct": 96.56,
-        "tokens": 101,
-        "domNodes": 1451,
-        "n": 3
-      },
-      "S3": {
-        "fps": 162.5,
-        "workP50": 2.01,
-        "workP99": 11.7,
-        "inBudgetPct": 95.97,
-        "tokens": 310,
-        "domNodes": 3151,
-        "n": 3
-      },
-      "bank": {
-        "fps": 163.4,
-        "workP50": 1,
-        "workP99": 8.61,
-        "inBudgetPct": 96.51,
-        "tokens": 101,
-        "domNodes": 1618,
-        "n": 3
-      },
-      "shop": {
-        "fps": 163,
-        "workP50": 1.11,
-        "workP99": 9.11,
-        "inBudgetPct": 96.07,
-        "tokens": 101,
-        "domNodes": 1555,
-        "n": 3
-      },
-      "notify": {
-        "fps": 163.7,
-        "workP50": 1.1,
-        "workP99": 8.61,
-        "inBudgetPct": 96.3,
-        "tokens": 101,
-        "domNodes": 1444,
-        "n": 3
-      },
-      "loot": {
-        "fps": 162.2,
-        "workP50": 1.8,
-        "workP99": 11.2,
-        "inBudgetPct": 96.12,
-        "tokens": 101,
-        "domNodes": 1749,
-        "n": 3
-      },
-      "inspect": {
-        "fps": 162.7,
-        "workP50": 1.1,
-        "workP99": 9.31,
-        "inBudgetPct": 96.16,
-        "tokens": 101,
-        "domNodes": 1685,
-        "n": 3
-      }
-    },
-    "perf@4x": {
-      "S1": {
-        "fps": 165,
-        "workP50": 1.6,
-        "workP99": 7.2,
-        "inBudgetPct": 97.24,
+        "workP50": 0.31,
+        "workP99": 2.5,
+        "inBudgetPct": 100,
         "tokens": 7,
         "domNodes": 295,
         "n": 3
       },
       "S2": {
-        "fps": 129.9,
-        "workP50": 5.31,
-        "workP99": 30.2,
-        "inBudgetPct": 55.5,
+        "fps": 164.8,
+        "workP50": 0.91,
+        "workP99": 6.01,
+        "inBudgetPct": 99.03,
         "tokens": 101,
-        "domNodes": 1451,
+        "domNodes": 1444,
         "n": 3
       },
       "S3": {
-        "fps": 48.8,
-        "workP50": 22.51,
-        "workP99": 83.21,
-        "inBudgetPct": 7.72,
-        "tokens": 310,
-        "domNodes": 3155,
+        "fps": 162.7,
+        "workP50": 2.1,
+        "workP99": 11.5,
+        "inBudgetPct": 95.48,
+        "tokens": 311,
+        "domNodes": 3147,
         "n": 3
       },
       "bank": {
-        "fps": 132.6,
-        "workP50": 5.1,
-        "workP99": 29.6,
-        "inBudgetPct": 56.88,
+        "fps": 164.7,
+        "workP50": 0.71,
+        "workP99": 7.2,
+        "inBudgetPct": 98.51,
         "tokens": 101,
         "domNodes": 1624,
         "n": 3
       },
       "shop": {
-        "fps": 130.8,
-        "workP50": 5.11,
-        "workP99": 30.21,
-        "inBudgetPct": 56.31,
+        "fps": 164.6,
+        "workP50": 0.81,
+        "workP99": 6.51,
+        "inBudgetPct": 98.88,
         "tokens": 101,
-        "domNodes": 1555,
+        "domNodes": 1571,
         "n": 3
       },
       "notify": {
-        "fps": 133,
-        "workP50": 5.51,
-        "workP99": 27.6,
-        "inBudgetPct": 53.65,
+        "fps": 164.8,
+        "workP50": 0.9,
+        "workP99": 6.5,
+        "inBudgetPct": 98.76,
         "tokens": 101,
-        "domNodes": 1457,
+        "domNodes": 1449,
         "n": 3
       },
       "loot": {
-        "fps": 78,
-        "workP50": 11.6,
-        "workP99": 64.2,
-        "inBudgetPct": 27.58,
+        "fps": 163.3,
+        "workP50": 1.51,
+        "workP99": 8.61,
+        "inBudgetPct": 97.89,
         "tokens": 101,
-        "domNodes": 1755,
+        "domNodes": 1749,
         "n": 3
       },
       "inspect": {
-        "fps": 126.6,
-        "workP50": 5.71,
-        "workP99": 31.71,
-        "inBudgetPct": 52.05,
-        "tokens": 102,
-        "domNodes": 1721,
+        "fps": 164.5,
+        "workP50": 0.81,
+        "workP99": 6.51,
+        "inBudgetPct": 98.81,
+        "tokens": 101,
+        "domNodes": 1699,
+        "n": 3
+      }
+    },
+    "perf@4x": {
+      "S1": {
+        "fps": 164.9,
+        "workP50": 1.51,
+        "workP99": 7.71,
+        "inBudgetPct": 96.12,
+        "tokens": 7,
+        "domNodes": 294,
+        "n": 3
+      },
+      "S2": {
+        "fps": 132.8,
+        "workP50": 5.51,
+        "workP99": 30.21,
+        "inBudgetPct": 54.18,
+        "tokens": 101,
+        "domNodes": 1445,
+        "n": 3
+      },
+      "S3": {
+        "fps": 49.1,
+        "workP50": 23,
+        "workP99": 92.4,
+        "inBudgetPct": 7.84,
+        "tokens": 310,
+        "domNodes": 3130,
+        "n": 3
+      },
+      "bank": {
+        "fps": 134.4,
+        "workP50": 4.7,
+        "workP99": 32.21,
+        "inBudgetPct": 60.89,
+        "tokens": 101,
+        "domNodes": 1622,
+        "n": 3
+      },
+      "shop": {
+        "fps": 129,
+        "workP50": 5.31,
+        "workP99": 32.21,
+        "inBudgetPct": 55.52,
+        "tokens": 101,
+        "domNodes": 1553,
+        "n": 3
+      },
+      "notify": {
+        "fps": 137.5,
+        "workP50": 4.6,
+        "workP99": 27.41,
+        "inBudgetPct": 61.8,
+        "tokens": 101,
+        "domNodes": 1444,
+        "n": 3
+      },
+      "loot": {
+        "fps": 96.3,
+        "workP50": 8.51,
+        "workP99": 56.61,
+        "inBudgetPct": 38.33,
+        "tokens": 101,
+        "domNodes": 1751,
+        "n": 3
+      },
+      "inspect": {
+        "fps": 127.8,
+        "workP50": 5.01,
+        "workP99": 33.6,
+        "inBudgetPct": 57.54,
+        "tokens": 101,
+        "domNodes": 1690,
         "n": 3
       }
     }

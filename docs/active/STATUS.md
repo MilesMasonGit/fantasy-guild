@@ -141,7 +141,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-**Wed 4 Nov, 01:00 (director timer, `p23b` on `main`):** engine and draw baselines retaken after the 3 Nov merges; commit with the date. If the timer died, run them in the next quiet window (HANDOFF, Bench).
+**Wed 4 Nov, 01:00 (director timer, `p23b` on `main`): done.** Engine and draw baselines retaken at c46d6775 and committed; both saved first time. Chrome delivered about 4.5× (4.06–4.89) for the 4× asked, inside the limit, so the draw baseline's 4× rows read a little harsh.
 
 **Mon 2 Nov, 01:00–04:30 (director): done.** Engine baseline retaken and committed (ac8d9829). **Draw baseline did not save**: three full runs (01:02, 01:42, 02:23) each had one window where Chrome delivered 5–7× for 4× asked (rejected → exit 3); retake it in the next quiet window, or with `--cpu=3.2 --slowdown-target=4` if it keeps failing (the Envelope's workaround). Until then draw `--compare` reads against the 29 Oct draw baseline. T-200 benched (row above).
 

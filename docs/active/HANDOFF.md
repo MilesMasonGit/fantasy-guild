@@ -1,6 +1,6 @@
 # HANDOFF — what a fresh director resumes from
 
-*Replaced whole each time a director session ends. Written 2026-11-03 17:00, at the
+*Replaced whole each time a director session ends. Written 2026-11-03 17:00 (Bench updated 4 Nov), at the
 end of the clean-up the owner asked for before the new briefs. Read `CLAUDE.md`, this
 file and `STATUS.md`, then verify with `git worktree list` and `git log --oneline -5`.*
 
@@ -50,13 +50,10 @@ before anyone builds it: it is parked on the ticket, not asked yet.
 
 ## Bench
 
-Engine baseline ac8d9829 (2 Nov), draw baseline b4aa17f2 (3 Nov), both older than today's
-merges. **Retake queued for Wed 4 Nov 01:00** on `p23b` by a timer script
-(`npm run bench -- --save-baseline`, then `npm run bench:draw -- --save-baseline`; logs
-`baseline_*.log` in the session scratchpad). If this session is gone or no baseline commit
-dated 4 Nov is on `main`, run them in the next quiet window and commit with the date. A
-draw baseline can refuse on Chrome's throttle (three failures on 2 Nov): retry it, leave
-the engine one. Never `--only=… --save-baseline`: it drops the other scenarios.
+Engine and draw baselines retaken Wed 4 Nov 01:00 at c46d6775, after all the 3 Nov merges, on a
+quiet machine. Chrome delivered about 4.5× for the 4× asked, inside the limit, so the draw
+baseline's 4× rows read a little harsh. A draw baseline can refuse on Chrome's throttle
+(three failures on 2 Nov): retry it, leave the engine one. Never `--only=… --save-baseline`: it drops the other scenarios.
 
 ## Worktrees
 
