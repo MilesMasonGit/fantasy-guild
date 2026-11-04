@@ -232,7 +232,6 @@ mods via the CMS after release.
 
 ## Being interviewed
 
-- **A Tailor skill** (owner, 2026-11-04, considering): makes Stealth and Magic gear and String; Ranged gear stays in Crafting, Melee in Smithing. Noted in [concept_content_roadmap.md](concept_content_roadmap.md), Open links.
 
 
 - **The detail pass** (UI and UX, section by section): [concept_detail_pass.md](concept_detail_pass.md).
@@ -240,6 +239,8 @@ mods via the CMS after release.
   [concept_content_roadmap.md](concept_content_roadmap.md).
 
 ## Moved on
+
+- **A Tailor skill** (owner, 2026-11-04) → [concept_content_roadmap.md](concept_content_roadmap.md), T-304.
 
 - **The very early game and a new tutorial** (owner, 2026-11-04) → [concept_tutorial_npc.md](concept_tutorial_npc.md), brief 480.
 

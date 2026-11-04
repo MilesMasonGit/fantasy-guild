@@ -1,4 +1,4 @@
-Status: draft
+Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 # Content roadmap: Fletching
 
@@ -13,7 +13,7 @@ Status: draft
 - **"I'm okay with some more gaps in Fletching."** Later skills such as Alchemy add things like poisoned arrows.
 - **Materials**: wood from Forestry, String, Feathers.
 - **Five woods only**: Oak, Fir, Maple, Mahogany, Ebony. "Birch and Cedar won't be used for Fletching. We'll make use of these with Enchanting/wandmaking."
-- **Under consideration: a Tailor skill** for Stealth and Magic gear and String; Ranged gear stays in Crafting and Melee in Smithing.
+- **String comes from Tailor**, a new skill (owner, 2026-11-04).
 
 ## The list
 
@@ -55,7 +55,7 @@ Tiers follow the 20-level rule; woods and metals open at the ladder's amended le
 
 ## Open links
 
-- **String**: from Tailor if that skill is added; it must be available at level 1, or the first bow waits.
+- **String**: Tailor must make it at level 1, or the first bow waits.
 - **Enemies, nature**: a steady source of Feathers; the Bird Nest can give some.
 - **Wood and buildings**: a Fletcher's Bench.
 - **Alchemy**: poisoned arrows. **Enchanting**: magical variants, and which skill makes them.
