@@ -15,7 +15,7 @@ against the current game and decided:
 |---|---|
 | **Resource nodes** | **Respawning fixtures** (as §3.3): the map places permanent nodes that deplete and come back in place. Spawners remain **only for enemies and lures**. |
 | **Respawn** | Time **set per Token in the CMS** (10–15 s is a starting value). Each node type also chooses **refill or regrow**: an ore vein refills; a tree comes back as a sapling that grows (today's growth system), keeping the mat visibly alive. |
-| **The Shop** | Sells **buildings and tools only** (Foundations, anvils, tools, lures). Resources come from the Region. |
+| **The Shop** | Sells **buildings and tools only** (Foundations, anvils, tools, lures). Resources come from the Region. **Amended (owner, 2026-11-03; brief 410): Foundations only.** |
 | **Removing buildings** | **Demolition is a low-level Construction job**: the player marks a Token for demolition and a hero with Construction removes it. **No refund.** Replaces the discard bin. (Replaces the concept's "hold to deconstruct".) |
 | **Token cap** | **Everything on the mat counts**, generated nodes included, so a map's budget must fit the cap; Guild upgrades raise it. |
 | **New game** | A **hand-made Starter Camp** Region: fixed nodes for the tutorial, a few enemies, safe. The tutorial ends by giving the first Maps. |

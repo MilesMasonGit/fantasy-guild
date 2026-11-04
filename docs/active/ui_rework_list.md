@@ -246,6 +246,7 @@ The hero will say "Leveled up Mining to 25! (+4)"
 That hero bar bubble should persist until cleared, this way after returning from a long afk session the player can see all the levels gained just by scanning the bottom bar.
 
 **Shop UI:**
+*Amended by brief 410 (owner, 2026-11-03): a panel from the bottom with cards side by side; arrow buttons, the large sprite and the dropdown stay.*
 We need to use the arrow bars at the top and bottom instead of a scroll bar.
 The sprite icon of what's being purchased should be 128px size and on the right side. I want to give the feeling of taking an item out of the shop and placing it on the map.
 The sprite should be the central focus, and I want the rest of the information to not exceed the vertical height of that sprite. Each container needs to be consistently sized. We can display the item costs in a 2x2 grid.
