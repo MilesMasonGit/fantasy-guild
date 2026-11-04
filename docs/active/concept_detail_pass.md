@@ -277,9 +277,25 @@ against the arrow button rule.
 
 **Coming**: new recipes, first finds and items lost to a full Bank (brief 430).
 
-**The list**
+**The list** (owner, 2026-11-03; the tags are the planning agent's draft)
 
-*(The owner's items go here.)*
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **Two columns**: item changes on the left, in the rows as they are today; a second column for the news on the right. | must, tweak |
+| 2 | **One item list, net amount**: each item once, green + or red −, with gained and spent on hover. | must, tweak |
+| 3 | **"Fights are news, just shows the killcount for an enemy"**: the enemy and how many. Won and lost, used and drops go. | must, tweak |
+| 4 | **The heading centred**: "While you were away" and "You were away 32 min". | must, tweak |
+| 5 | **A second confirm box on both** Return to the Guild and Load as I left it. | must, tweak |
+| 6 | **Save slots show how much away time has built up.** | must, tweak |
+
+**Planning agent's calls**: the news column holds knock-outs and items lost first, then new recipes, first
+finds (brief 430), level-ups, Tokens used up and the kill counts. Items waiting on the mat keep a small mark in
+the list. Esc asks the same confirm as Return. Scrolling uses our arrow buttons. XP per skill is not added: the
+owner was offered it and didn't take it.
+
+**Checked** (planning agent, from the code, not in a running game): the owner asked whether time away works
+with the game closed. It does: the save's time is stored, and loading plays from it (`SaveManager.loadedSavedAt`,
+`EngineBootstrap`, `CatchUp.run`), up to 24 hours; anything beyond is dropped and reported.
 
 ### 10. Notifications
 
