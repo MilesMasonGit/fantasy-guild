@@ -91,6 +91,8 @@ Later sessions will revise earlier ones; that is expected.
 
 ## The ladder (owner, approved 2026-11-02)
 
+**Amended by the owner, 2026-11-04: "each new tier to start every 20 levels. Copper is 1-19, Iron is 20-39, etc. We'll fit silver and gold in where it fits."** Metals open at copper 1, iron 20, silver 30, mythril 40, gold 50, adamantine 60, darkmetal 80. The table's "Opens at level" and its times below are from before this and must be worked out again; [Cooking's list](content_food_and_drink.md) still uses the old bands and follows when its pack is made. ⚠️ Darkmetal opens six levels sooner and iron five later, which moves the ledger's budgets.
+
 | Rung | Plan tier | Wood | Opens at level | Mined with | Focused guild reaches it | Even spread reaches it | Rings (main-line cells, roughly) | What the player is chasing |
 |---|---|---|---|---|---|---|---|---|
 | **Copper** | 0, 1 | Oak | 1 | copper pick | start | start | Hall + ring 1 (7) | First tools and weapons, first fight, first place settled |
@@ -135,7 +137,7 @@ measured.*
 ## Chain pages
 
 - [Food and drink](content_food_and_drink.md): approved 2026-11-04; 99 Cooking recipes.
-- [Smithing](content_smithing.md): draft; 99 recipes.
+- [Smithing](content_smithing.md): approved 2026-11-04; 81 recipes, the rest of its levels open for later skills.
 
 ## Open links
 
