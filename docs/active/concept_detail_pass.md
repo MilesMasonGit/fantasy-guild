@@ -280,9 +280,20 @@ different items into one number. Tokens opens on a click and Upkeep on a hover.
 **Already filed or coming**: the buttons take their cursor's pixel art (T-293); new Token and upkeep
 icons (`owner_art_list.md`); every panel's gradient (brief 400 B1, which doesn't name this bar).
 
-**The list**
+**The list** (owner, 2026-11-03; the tags are the planning agent's draft)
 
-*(The owner's items go here.)*
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **The background image larger**, so it goes further across the bar. | must, tweak |
+| 2 | **Tokens and Upkeep both open on hover.** Replaces the click on Tokens (`ui_rework_list.md`, Token Summary). | must, tweak |
+| 3 | **Demolish gets a pixel X icon.** | must, tweak |
+| 4 | **Disallow goes**: "We don't need disallow anymore." | must, design |
+
+**Looked at, no change** (owner, 2026-11-03): the gold coin stays as the Upkeep icon, so it needs no new
+art; the Upkeep number; the Demolish message.
+
+**Planning agent's calls**: Demolish keeps its word beside the icon. Disallow is removed as a whole
+mechanic, not just its button: a Token marked in a save simply becomes workable again.
 
 ### 5. Shop
 
