@@ -8,7 +8,7 @@ the Starter Camp is in [concept_progression.md](concept_progression.md).*
 
 ## The tutorial
 
-*Superseded (owner, 2026-11-04): a completely different tutorial is planned, [concept_tutorial_npc.md](concept_tutorial_npc.md), draft. What follows stays true of today's game until it is built.*
+*Superseded (owner, 2026-11-04): a completely different tutorial is planned, [concept_tutorial_npc.md](concept_tutorial_npc.md), brief 480. What follows stays true of today's game until it is built.*
 
 - **The cartographer's quests, one at a time**: today's step-by-step quest
   Tokens, spoken by the cartographer in his eerie, muddled voice

@@ -232,13 +232,14 @@ mods via the CMS after release.
 
 ## Being interviewed
 
-- **The very early game, with a new tutorial** (owner, 2026-11-04): plan the first stretch of play separately from the detail pass; the tutorial takes the player through the basics to get them started, with an NPC and special speech bubbles. Draft: [concept_tutorial_npc.md](concept_tutorial_npc.md).
 
 - **The detail pass** (UI and UX, section by section): [concept_detail_pass.md](concept_detail_pass.md).
 - **The content roadmap** (every item, skill, recipe and enemy, so art is known in advance):
   [concept_content_roadmap.md](concept_content_roadmap.md).
 
 ## Moved on
+
+- **The very early game and a new tutorial** (owner, 2026-11-04) → [concept_tutorial_npc.md](concept_tutorial_npc.md), brief 480.
 
 - **Owner refinement pass** ([refinement_pass_todo.md](refinement_pass_todo.md),
   2026-10-10) was fully worked through by the planning session on

@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed (approved 2026-11-04; [brief 480](briefs/480_early_game_slurm.md))
 
 # The very early game, and Slurm the guide
 
@@ -61,8 +61,7 @@ are part of this work.
 
 ## What it touches
 
-- **Brief 450 S4** drops the old first step and adds the lessons switch; the first hero is the player's. Slurm's lessons build on
-  it.
+- **Brief 450 S4** drops the old first step; the first hero is the player's. Brief 480 adds the lessons switch to that screen.
 - **Brief 410**: the Foundation lesson uses the new Shop and Foundations.
 - **The quest board's pinned row (T-176)** doesn't apply as designed. **T-258** and the drafts in `tutorialText.js` go with it.
 - **T-014**: Slurm's words, in code or the CMS, is the brief's to propose.

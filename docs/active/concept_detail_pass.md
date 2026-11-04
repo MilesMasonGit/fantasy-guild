@@ -54,7 +54,7 @@ game looks and plays, gathered one screen at a time.*
 | 10 | Notifications | **approved and briefed 2026-11-03** ([brief 430](briefs/430_notifications_detail.md)) | |
 | 11 | Settings and the start screen | **approved and briefed 2026-11-04** ([brief 450](briefs/450_settings_start_detail.md)) | |
 | 12 | While-you-were-away summary | **approved and briefed 2026-11-03** ([brief 440](briefs/440_away_summary_detail.md)) | |
-| 13 | Tutorial and highlights | **walked 2026-11-04**: the tutorial moved to [its own draft](concept_tutorial_npc.md); T-013 [brief 460](briefs/460_hard_pixel_finish.md) | |
+| 13 | Tutorial and highlights | **walked 2026-11-04**: the tutorial moved to [its own concept and brief 480](concept_tutorial_npc.md); T-013 [brief 460](briefs/460_hard_pixel_finish.md) | |
 
 The sheet for each section is checked against the running game before the
 sitting: this table's notes are pointers, not facts about today's screen.
