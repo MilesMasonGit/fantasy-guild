@@ -61,6 +61,7 @@ multiple choice at wave start.
 | 41 | [420 Top bar, detail pass](420_top_bar_detail.md): a larger banner across the bar; the Token Summary opens on hover like Upkeep; a pixel X on Demolish; Disallow retires as a whole mechanic; two phases; no owner CMS | — | yes, one look (banner size) |
 | 42 | [430 Notifications, detail pass](430_notifications_detail.md): new recipes, first finds, a full Bank and knock-outs no longer go missing after time away, listed in the summary and shown as banners on closing it; a gold banner when a place is settled; two phases; no owner CMS | — | yes, one short look |
 | 43 | [440 Away summary, detail pass](440_away_summary_detail.md): two columns, item changes as one net list on the left and news on the right; fights as kill counts; a centred heading; a second confirm on both buttons; save slots show the away time built up; two phases; no owner CMS | 430 N1 | yes, one short look |
+| 44 | [450 Settings and start screen, detail pass](450_settings_start_detail.md): a cleaner three-tab settings window; a title screen; saves become real files with a button that opens their folder; a new game names the Guild, shows the world with a reroll and makes the first hero; four phases, S3 alone (never lose a save); no owner CMS | S4: S2 | yes, three looks |
 
 Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,
 then class rework v2, then the hero bar/panel on the new skill list, then

@@ -101,6 +101,7 @@ player for these is T-138 (built when the first strips exist).
   the cursor over a Token in Disallow mode (muted grey) and in Demolish mode
   (red); about 11 × 11, drawn at 2×. Code-drawn placeholders (a crossed
   circle, an X) stand in until then.
+- **Title screen** (NEW, brief 450): a game logo and a title painting. Placeholders until drawn: the name in the display font over a banner picture.
 - **Top bar icons** (NEW, [concept_map_tools.md](concept_map_tools.md); the owner keeps the gold coin for Upkeep, 2026-11-03, so only the Token icon is wanted): a
   Token icon (Tokens 45/128) and an upkeep icon (Upkeep 2/min), shown at
   32 px in the bar's item bars (the Region name has no icon now: its banner
