@@ -132,6 +132,11 @@ measured.*
   wood with its metal. Creature banners now in tier 3 stay at silver. Sites and the
   ritual go to darkmetal. Naming is **adamantine** throughout.
 
+## Chain pages
+
+- [Food and drink](content_food_and_drink.md): approved 2026-11-04; 99 Cooking recipes.
+- [Smithing](content_smithing.md): draft; 99 recipes.
+
 ## Open links
 
 *(Things one chain needs from another not yet designed.)*

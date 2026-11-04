@@ -1,4 +1,4 @@
-Status: draft
+Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 # Content roadmap: food and drink
 
