@@ -51,7 +51,7 @@ game looks and plays, gathered one screen at a time.*
 | 7 | World map | **approved and briefed 2026-11-03** ([brief 380](briefs/380_world_map_detail.md)) | |
 | 8 | Combat | **approved and briefed 2026-11-02** ([brief 360](briefs/360_combat_detail.md)) | carried in the mat list's items 5, 13, 14 |
 | 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
-| 10 | Notifications | not started | |
+| 10 | Notifications | **walking now** | |
 | 11 | Settings and the start screen | not started | nine "coming soon" controls; T-039 |
 | 12 | While-you-were-away summary | not started | |
 | 13 | Tutorial and highlights | not started | `design_pass_notes.md`: the glow and assist rings |
@@ -255,6 +255,31 @@ looks cluttered."
 | 13 | **More possible upgrades**: a review of what else could be upgraded. An agent reports (every number that could be a star, what similar games let you upgrade, what each does to pacing), then an interview; the result joins the content roadmap as a star pack. Report: [research/upgrade_review_2026-11-03.md](research/upgrade_review_2026-11-03.md); interview open. | must, design |
 
 **Looked at, no change** (owner, 2026-11-03): the camera move, dragging, how the sky opens.
+
+### 10. Notifications
+
+**The sheet (2026-11-03). From [concept_notifications.md](concept_notifications.md), the code and a
+capture from `research/encyclopedia_300`, not today's game; where this disagrees with the screen, the
+screen wins.**
+
+- **Item stubs**, flush to the right edge under the top bar: amount and sprite, one per item, the net
+  flow, green or red. Hover grows the box left with the name and rate per hour. Left-click pins, right-click
+  clears, Clear all above the column. A stub fades about 5 minutes after its item last changed. A first
+  find is gold with "New!" until hovered. Collected loot flies to its stub.
+- **Banners**, top centre under the bar, about 480 px: a sprite, a large title, a line of detail, on
+  black with a gold edge (milestones) or red (problems). **Each stays until clicked**, up to three
+  stacked, then "+N". Hover outlines the hero or Token it names.
+- **Milestones today**: new recipe, new hero, promotion, Guild Hall upgrade. **Problems today**: a hero
+  knocked out, a full Bank losing items, a damaged save or a failed load.
+- **Deliberately no notification**: new enemy seen, quests, a Token used up, hero recovered, combat won,
+  Shop purchases. Level-ups show on the hero; refusals are callouts on the mat.
+- **No log** (T-193, only if it proves needed).
+
+**Already filed or coming**: the ribbon art for banners (owner, later); the speech frame (T-243, merged).
+
+**The list**
+
+*(The owner's items go here.)*
 
 ### 2. Top bar
 
