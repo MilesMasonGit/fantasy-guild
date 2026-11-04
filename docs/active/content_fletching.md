@@ -11,7 +11,9 @@ Status: draft
 - **"Basic arrows (Copper arrow, mythril arrow) should just do physical stab damage, but magical variants will mix this up."**
 - **Silver and gold may be one ingredient on higher level bows. Silver arrowheads yes, gold no.**
 - **"I'm okay with some more gaps in Fletching."** Later skills such as Alchemy add things like poisoned arrows.
-- **Materials**: wood from Forestry, String from Crafting, Feathers.
+- **Materials**: wood from Forestry, String, Feathers.
+- **Five woods only**: Oak, Fir, Maple, Mahogany, Ebony. "Birch and Cedar won't be used for Fletching. We'll make use of these with Enchanting/wandmaking."
+- **Under consideration: a Tailor skill** for Stealth and Magic gear and String; Ranged gear stays in Crafting and Melee in Smithing.
 
 ## The list
 
@@ -25,12 +27,10 @@ Tiers follow the 20-level rule; woods and metals open at the ladder's amended le
 | 20 | Fir Bow | Ranged weapon | Fir Wood, String | A |
 | 21 | Iron Arrow | ammo, Stab | Fir Wood, Feather, Iron Arrowheads | A |
 | 25 | Iron Crossbow | Ranged weapon | Iron Ingot, Fir Wood, String | A |
-| 30 | Birch Bow | Ranged weapon | Birch Wood, String | A |
-| 31 | Silver Arrow | ammo, Stab | Birch Wood, Feather, Silver Arrowheads | A |
+| 31 | Silver Arrow | ammo, Stab | Fir Wood, Feather, Silver Arrowheads | A |
 | 40 | Maple Bow | Ranged weapon | Maple Wood, String | A |
 | 41 | Mythril Arrow | ammo, Stab | Maple Wood, Feather, Mythril Arrowheads | A |
 | 45 | Mythril Crossbow | Ranged weapon | Mythril Ingot, Maple Wood, String | A |
-| 50 | Cedar Bow | Ranged weapon | Cedar Wood, String, Silver Ingot | A |
 | 60 | Mahogany Bow | Ranged weapon | Mahogany Wood, String, Silver Ingot | A |
 | 61 | Adamantine Arrow | ammo, Stab | Mahogany Wood, Feather, Adamantine Arrowheads | A |
 | 65 | Adamantine Crossbow | Ranged weapon | Adamantine Ingot, Mahogany Wood, String | A |
@@ -38,15 +38,15 @@ Tiers follow the 20-level rule; woods and metals open at the ladder's amended le
 | 81 | Darkmetal Arrow | ammo, Stab | Ebony Wood, Feather, Darkmetal Arrowheads | A |
 | 85 | Darkmetal Crossbow | Ranged weapon | Darkmetal Ingot, Ebony Wood, String | A |
 
-**18 recipes; every other level stays open** for magical and poisoned arrows and whatever later skills add.
+**16 recipes; every other level stays open** for magical and poisoned arrows and whatever later skills add.
 
-**Art: 1 have, 15 adapt, 2 new.** One bow and one crossbow to draw, then recolours. A String and a Fletching station are for their own sessions.
+**Art: 1 have, 13 adapt, 2 new.** One bow and one crossbow to draw, then recolours. A String and a Fletching station are for their own sessions.
 
 ## Planning agent's calls
 
 - **Crossbows fire the same arrows**, with no separate bolts, so ammo doesn't double. Their job is **slow and strong**, against the bow's faster shots; the ledger sets the numbers.
 - **The bow keeps its own damage type**, as combat has it; plain arrows add Stab. Which bow carries which type is for the magical variants.
-- **Gold on the Ebony Bow, silver on the Cedar and Mahogany Bows.**
+- **Silver on the Mahogany Bow, gold on the Ebony Bow.** The Silver Arrow uses Fir, the wood open at that level.
 
 ## Moved or changed from today
 
@@ -55,7 +55,7 @@ Tiers follow the 20-level rule; woods and metals open at the ladder's amended le
 
 ## Open links
 
-- **Crafting**: String at level 1, or the first bow waits.
+- **String**: from Tailor if that skill is added; it must be available at level 1, or the first bow waits.
 - **Enemies, nature**: a steady source of Feathers; the Bird Nest can give some.
 - **Wood and buildings**: a Fletcher's Bench.
 - **Alchemy**: poisoned arrows. **Enchanting**: magical variants, and which skill makes them.

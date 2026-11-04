@@ -138,12 +138,13 @@ measured.*
 
 - [Food and drink](content_food_and_drink.md): approved 2026-11-04; 99 Cooking recipes.
 - [Smithing](content_smithing.md): approved 2026-11-04; 80 recipes, the rest of its levels open for later skills.
-- [Fletching](content_fletching.md): draft; 18 recipes, most levels open.
+- [Fletching](content_fletching.md): draft; 16 recipes, five woods, most levels open.
 
 ## Open links
 
 *(Things one chain needs from another not yet designed.)*
 
+- **A Tailor skill, under consideration** (owner, 2026-11-04): Stealth and Magic gear, and String. Ranged gear stays in Crafting, Melee in Smithing. It would be a 21st skill: the first ritual needs every skill's final challenge, and each skill adds about 4 days at 8 heroes, so the ladder's about 86 days moves. Crafting's notes (leather and cloth armour, Crafted String) and Fletching's String follow it.
 - **Arrows need Fletching**, which comes after the core chains. Metal and gear
   plans Ranged with arrows as stubs.
 - **Fruit and their drinks in tier 3** (8 fruits, Lemonade, Limeade): the food and
