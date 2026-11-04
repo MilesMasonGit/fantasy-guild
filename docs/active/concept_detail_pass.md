@@ -43,7 +43,7 @@ game looks and plays, gathered one screen at a time.*
 |---|---|---|---|
 | 0 | Rules across every screen | icon rule done; more as they come up | above; `UI_STYLE.md` |
 | 1 | The mat and Tokens | **approved 2026-11-02, split**: [brief 350](briefs/350_tokens_card_detail.md); [brief 370](briefs/370_terrain_detail.md) for terrain; T-295; combat items in [brief 360](briefs/360_combat_detail.md) | `design_pass_notes.md`; T-013, T-162 |
-| 2 | Top bar | not started | `ui_rework_list.md` |
+| 2 | Top bar | **walking now** | `ui_rework_list.md` |
 | 3 | Hero bar and hero sheet | **approved and briefed 2026-11-02** ([brief 340](briefs/340_hero_bar_detail.md)) | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
 | 4 | Bank | **approved and briefed 2026-11-03** ([brief 400](briefs/400_bank_detail.md)) | |
 | 5 | Shop | **approved and briefed 2026-11-03** ([brief 410](briefs/410_shop_detail.md)) | |
@@ -255,6 +255,34 @@ looks cluttered."
 | 13 | **More possible upgrades**: a review of what else could be upgraded. An agent reports (every number that could be a star, what similar games let you upgrade, what each does to pacing), then an interview; the result joins the content roadmap as a star pack. Report: [research/upgrade_review_2026-11-03.md](research/upgrade_review_2026-11-03.md); interview open. | must, design |
 
 **Looked at, no change** (owner, 2026-11-03): the camera move, dragging, how the sky opens.
+
+### 2. Top bar
+
+**The sheet (2026-11-03). From the code and the captures in `research/top_bar` (23 October), not
+today's game; where this disagrees with the screen, the screen wins.**
+
+- **The bar**: a strip above the mat, as wide as it, 76 px tall, in the studded frame on black. Only on
+  the mat, never on the Guild Hall screen.
+- **Left, the place**: its name in the display size over its banner picture, fading into the black.
+- **Middle, Tokens**: a placeholder tree icon and "Tokens 2/128", red at the cap. **A click** opens the
+  Token Summary (one row per type, missing items on top, hover lights them on the mat).
+- **Middle, Upkeep**: a placeholder gold coin icon and "Upkeep 3/min", the items per minute of every
+  kind added together. **A hover** opens the Upkeep Summary (per item: rate, stock, a rough
+  runs-out, who uses it, who waits unpaid).
+- **Right, modes**: Disallow and Demolish buttons with text marks (⊘, ✕) and their names.
+- **While a mode is on**: its sentence replaces the middle in full. Demolish, in red: "Click Tokens to
+  mark them. A Construction hero takes them down. Nothing is refunded." Beside it, Cancel All Marks
+  (Disallow has its own clear button).
+
+**Noticed**: gold left the game, so the coin suggests something that no longer exists. "3/min" adds
+different items into one number. Tokens opens on a click and Upkeep on a hover.
+
+**Already filed or coming**: the buttons take their cursor's pixel art (T-293); new Token and upkeep
+icons (`owner_art_list.md`); every panel's gradient (brief 400 B1, which doesn't name this bar).
+
+**The list**
+
+*(The owner's items go here.)*
 
 ### 5. Shop
 
