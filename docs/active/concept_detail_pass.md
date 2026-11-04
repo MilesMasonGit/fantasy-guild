@@ -54,7 +54,7 @@ game looks and plays, gathered one screen at a time.*
 | 10 | Notifications | **approved and briefed 2026-11-03** ([brief 430](briefs/430_notifications_detail.md)) | |
 | 11 | Settings and the start screen | **approved and briefed 2026-11-04** ([brief 450](briefs/450_settings_start_detail.md)) | |
 | 12 | While-you-were-away summary | **approved and briefed 2026-11-03** ([brief 440](briefs/440_away_summary_detail.md)) | |
-| 13 | Tutorial and highlights | not started | `design_pass_notes.md`: the glow and assist rings |
+| 13 | Tutorial and highlights | **walking now** | `design_pass_notes.md`: the glow and assist rings |
 
 The sheet for each section is checked against the running game before the
 sitting: this table's notes are pointers, not facts about today's screen.
@@ -255,6 +255,28 @@ looks cluttered."
 | 13 | **More possible upgrades**: a review of what else could be upgraded. An agent reports (every number that could be a star, what similar games let you upgrade, what each does to pacing), then an interview; the result joins the content roadmap as a star pack. Report: [research/upgrade_review_2026-11-03.md](research/upgrade_review_2026-11-03.md); interview open. | must, design |
 
 **Looked at, no change** (owner, 2026-11-03): the camera move, dragging, how the sky opens.
+
+### 13. Tutorial and highlights
+
+**The sheet (2026-11-04). From the code and `research/quiet_tokens` (a capture before the 30 October text), not
+today's game; where this disagrees with the screen, the screen wins.**
+
+- **How a step shows**: one small quest Token beside the Hall, "0/1", with a tooltip on hover: title, the
+  cartographer's line, the plain instruction, progress, reward. Nothing else on screen says what to do next. Claim by
+  clicking the finished Token; its reward lands as loot.
+- **The 12 steps**: recruit a hero (Bunk Beds; changing, brief 450); equip a Woodaxe; send your hero to a tree; gather
+  3 times; collect 10 loot; buy a Foundation; build a station; craft something; build a camp; make a copper tool; beat a
+  Goblin; settle your first place. The last three are marked drafts for the owner to rewrite.
+- **Highlights**: none guide the player today; the gold outline is used for banners and quest attention.
+- **Not taught**: Hall stars beyond the first; Work Permissions; Demolish; the Token Summary; food beyond one line.
+
+**Already filed or coming**: the owner's note of 2026-10-08, replace glows and assist rings with a hard gold outline;
+T-013, the last glows and text shadows; the quest board, where the current step would be the top row (T-176, postponed);
+moving the tutorial into the CMS (T-014); the Old Site step (T-258).
+
+**The list**
+
+*(The owner's items go here.)*
 
 ### 11. Settings and the start screen
 
