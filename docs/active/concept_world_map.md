@@ -283,6 +283,7 @@ the player to **make nodes**.*
 - ~~The Cartography Table upgrade becomes "see further"~~ **retired** (owner,
   2026-10-29, Guild Hall interview): every cell's contents are visible, so
   there is nothing to reveal ahead.
+- *Amended by the owner, 2026-11-04 (brief 380): no tome; the view pans down to a generated world map, the hex map and panels over it.*
 - **The Atlas tome becomes the world map screen.**
 - Travel between settled places stays free and instant; one place, one
   Region (above).

@@ -215,6 +215,7 @@ tables). Rulings kept: every cell's contents visible from the start; no landmark
 | 13 | **More ceremony on settling: a title reveal**: the place's name and terrain large across the mat, with a fanfare. | must, tweak |
 | 14 | **More ceremony: a hero leads the way**: heroes walk in from the mat's edge. | must, design |
 | 15 | **The tome's tabs go.** Travel is on the panel; what else the Regions page held moves there. | must, tweak |
+| 16 | **A different style for the world map** (owner, 2026-11-04, from the encyclopedia walk): "I want the view to pan downwards to look at a generated world map with the hex map and inspection panels sitting overtop of it." Replaces the book frame. | must, design |
 
 **Amends**: `concept_world_map.md` (a settled cell's only gate was its price; the wild
 rings came into view as you neared them), and the ledger's budgets must count the stars.
@@ -274,9 +275,16 @@ the screen wins.** After five looks the owner okayed it on 1 November: "this wil
 
 **Already filed or coming**: a separate encyclopedia book and a Combat mark (`owner_art_list.md`).
 
-**The list**
+**The list** (owner, 2026-11-04; the tags are the planning agent's draft)
 
-*(The owner's items go here.)*
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **Requirements and products read differently on the chart.** "The Iron Woodaxe chains into the trees, which is accurate but it's different than an Oak Tree producing Oak Wood. We should examine a better way to display these relationships." | must, design |
+| 2 | **Counts and small progress bars in the bottom left corner of the book**: how much of each kind this run has found. | must, tweak |
+| 3 | **A recipe's ingredients link to their pages.** | must, tweak |
+| 4 | **The Bank's inspection window links to the page**, as promised when its tile click was removed (planning agent, from the concept; add to brief 400 B3). | must, tweak |
+
+**Looked at, no change**: the rest of the chart. **The book stays**: with the world map leaving the tome, the encyclopedia keeps the book (owner's new world map style, section 7, item 16).
 
 ### 13. Tutorial and highlights
 

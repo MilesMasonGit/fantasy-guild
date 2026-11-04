@@ -4,6 +4,8 @@
 Concept: [concept_detail_pass.md](../concept_detail_pass.md), "7. World map": read its list
 first; the item numbers below are that list's, and the owner's wish is what counts.*
 
+**Amended 2026-11-04 (owner; item 16): no book.** "I want the view to pan downwards to look at a generated world map with the hex map and inspection panels sitting overtop of it." The view pans down from the mat, as the Guild Hall glides up (`HallCamera.jsx`); a picture of the world generated from its own data lies beneath, and the hexes and panels sit over it. M1 mock-ups show this first, with two or three ways of generating that picture and their cost; M2 builds the pick; the book frame leaves the world map, and the encyclopedia keeps it. Where the brief says tome or book, read this. Check that travel, settling and the arrival still work with the pan, and that the Hall's glide and this one cannot run together.
+
 ## Read first
 
 `CLAUDE.md`, `docs/reference/TESTING.md`, `docs/reference/UI_STYLE.md`,
