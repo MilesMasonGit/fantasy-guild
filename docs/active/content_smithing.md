@@ -10,6 +10,8 @@ Status: draft
 - **Level 1 ingot, level 2 dagger, level 3 woodaxe** (brief 480), with improved versions at later metals ("iron dagger at level 22").
 - **"Some base items will be available in every kind, such as chestplate and pickaxe. Others will be metal specific (a Cleaver may only be Iron)."**
 - **Nails: copper, iron and mythril only.**
+- **The base set is settled** (below). **Gems need no tool to be cut, so the Chisel leaves the game.** Mythril has its Shield.
+- **Gaps stay open for items later skills need.**
 - **Wire, chains and gears may serve later Science recipes.**
 - **Not items**: Sickle, Greatsword, Fittings, Hinges, Hoops, Hooks, Cooking Pot, Throwing Axe, Mirror, Spear and the like.
 - **Silver and gold don't get weapon sets**: "they will smith some components, perhaps some silver weapons."
@@ -19,10 +21,10 @@ Status: draft
 
 ## The shape
 
-- **Base items on copper, iron, mythril, adamantine and darkmetal**: Ingot, Dagger, Woodaxe, Pickaxe, Sword, Helmet, Chestplate, Plate Gloves, Plate Boots, Arrowheads, Chisel.
-- **Shield** on copper, iron, adamantine and darkmetal. **Kunai** on copper and iron. **Cleaver and Mace** on iron.
+- **Base items on copper, iron, mythril, adamantine and darkmetal**: Ingot, Dagger, Woodaxe, Pickaxe, Sword, Helmet, Chestplate, Plate Gloves, Plate Boots, Arrowheads, Shield. **Settled by the owner, 2026-11-04.**
+- **Beyond it**: Nails on copper, iron and mythril. Kunai on copper and iron. Cleaver and Mace on iron.
 - **Silver and gold** are component metals.
-- **85 recipes and 14 open levels.** The planning agent cut rather than padded. Open levels: 34, 35, 36, 37, 46, 47, 48, 49, 68, 69, 70, 71, 72, 73. They hold room for what Fletching, Enchanting and Science turn out to need.
+- **81 recipes and 18 open levels.** The planning agent cut rather than padded. Open levels: 14, 33, 34, 35, 36, 37, 46, 47, 48, 49, 68, 69, 70, 71, 72, 73, 85, 99. Left open for what later skills need (owner).
 - **Handles use that rung's wood**, so Forestry and Smithing climb together.
 - **Rules kept**: ingots at the Furnace, everything else at the Smithy; better stations are faster, not new lists; coal is the fuel.
 
@@ -43,7 +45,7 @@ Status: draft
 | 11 | Copper Plate Boots | boots (new slot) | Copper Ingot |  | A |
 | 12 | Copper Shield | off hand | Copper Ingot, Oak Wood |  | N |
 | 13 | Copper Chestplate | chest | Copper Ingot |  | H |
-| 14 | Copper Chisel | tool | Copper Ingot, Oak Wood | Crafting: cutting gems | H |
+| 14 | *open* |  |  |  |  |
 
 ## Iron (levels 15 to 37, wood: Fir)
 
@@ -66,8 +68,8 @@ Status: draft
 | 29 | Iron Plate Boots | boots (new slot) | Iron Ingot |  | H |
 | 30 | Iron Kunai | Stealth ammo: thrown and used up | Iron Ingot |  | A |
 | 31 | Iron Chestplate | chest | Iron Ingot |  | H |
-| 32 | Iron Chisel | tool | Iron Ingot, Fir Wood | Crafting: cutting gems | H |
-| 33 | Iron Mace | Melee weapon, Crush | Iron Ingot, Fir Wood |  | N |
+| 32 | Iron Mace | Melee weapon, Crush | Iron Ingot, Fir Wood |  | N |
+| 33 | *open* |  |  |  |  |
 | 34 | *open* |  |  |  |  |
 | 35 | *open* |  |  |  |  |
 | 36 | *open* |  |  |  |  |
@@ -103,9 +105,9 @@ Status: draft
 | 56 | Mythril Helmet | hat | Mythril Ingot |  | A |
 | 57 | Mythril Arrowheads | material | Mythril Ingot | Fletching: arrows | A |
 | 58 | Mythril Plate Gloves | gloves (new slot) | Mythril Ingot |  | A |
-| 59 | Mythril Plate Boots | boots (new slot) | Mythril Ingot |  | A |
-| 60 | Mythril Chestplate | chest | Mythril Ingot |  | H |
-| 61 | Mythril Chisel | tool | Mythril Ingot, Maple Wood | Crafting: cutting gems | H |
+| 59 | Mythril Shield | off hand | Mythril Ingot, Maple Wood |  | A |
+| 60 | Mythril Plate Boots | boots (new slot) | Mythril Ingot |  | A |
+| 61 | Mythril Chestplate | chest | Mythril Ingot |  | H |
 
 ## Gold (levels 62 to 73, wood: Cedar)
 
@@ -139,7 +141,7 @@ Status: draft
 | 82 | Adamantine Shield | off hand | Adamantine Ingot, Mahogany Wood |  | A |
 | 83 | Adamantine Plate Boots | boots (new slot) | Adamantine Ingot |  | A |
 | 84 | Adamantine Chestplate | chest | Adamantine Ingot |  | H |
-| 85 | Adamantine Chisel | tool | Adamantine Ingot, Mahogany Wood | Crafting: cutting gems | H |
+| 85 | *open* |  |  |  |  |
 
 ## Darkmetal (levels 86 to 99, wood: Ebony)
 
@@ -156,9 +158,9 @@ Status: draft
 | 94 | Darkmetal Shield | off hand | Darkmetal Ingot, Ebony Wood |  | A |
 | 95 | Darkmetal Plate Boots | boots (new slot) | Darkmetal Ingot |  | A |
 | 96 | Darkmetal Chestplate | chest | Darkmetal Ingot |  | H |
-| 97 | Darkmetal Chisel | tool | Darkmetal Ingot, Ebony Wood | Crafting: cutting gems | H |
-| 98 | Master Hammer | tool | Darkmetal Ingot, Ebony Wood | Smithing final challenge (later) | N |
-| 99 | Masterwork Blade | the best Melee weapon | Darkmetal Ingot, Adamantine Ingot, Ebony Wood | final challenge (later) | N |
+| 97 | Master Hammer | tool | Darkmetal Ingot, Ebony Wood | Smithing final challenge (later) | N |
+| 98 | Masterwork Blade | the best Melee weapon | Darkmetal Ingot, Adamantine Ingot, Ebony Wood | final challenge (later) | N |
+| 99 | *open* |  |  |  |  |
 
 ## Possible weapons, to cut later
 
@@ -180,7 +182,7 @@ Status: draft
 
 ## Art
 
-**37 have, 37 adapt, 11 new.** You have every ingot, pick, woodaxe and chisel, five plates, two swords, the iron cleaver (`battleaxe_iron`), and steel gloves, boots and helmet, used here for iron. New shapes: Dagger, Arrowheads, Kunai, Shield, Mace, Wire, Gears, Ring and Amulet Bands, and the two final pieces. Most other entries recolour those, using `color_mythril`, `color_addy` and `color_darkmetal`. `glove_leather`, `boot_leather` and `boot_slipper` wait for other skills.
+**32 have, 38 adapt, 11 new.** You have every ingot, pick and woodaxe, five plates, two swords, the iron cleaver (`battleaxe_iron`), and steel gloves, boots and helmet, used here for iron. New shapes: Dagger, Arrowheads, Kunai, Shield, Mace, Wire, Gears, Ring and Amulet Bands, and the two final pieces. Most other entries recolour those, using `color_mythril`, `color_addy` and `color_darkmetal`. `glove_leather`, `boot_leather` and `boot_slipper` wait for other skills; the `chisel_*` and `tongs` pictures go unused.
 
 ## Moved or changed from today
 
@@ -193,8 +195,9 @@ Status: draft
 ## Open links
 
 - **Fletching**: bows and arrows, using Arrowheads. **Enchanting**: wands. Both planned next.
-- **Crafting**: gems set into 24 pieces of jewellery; uses for Nails. **Science**: Wire, Chain and Gears.
+- **Crafting**: gems cut with no tool and set into 24 pieces of jewellery; uses for Nails. **Science**: Wire, Chain and Gears.
 - **Gloves and boots** (T-303): slots, numbers and the hero sheet. Leather and cloth versions come with Crafting.
 - **Farming**: no sickle, so check what gates its harvests.
-- **Open levels**: filled only by something with a job, or left without a new recipe.
+- **Woodaxes**: a copper axe takes every tree today, so better axes need a reason (wood and buildings session).
+- **Open levels**: left for items later skills need; any still empty bring no new recipe.
 - **The ledger**: an XP curve to fit, as for Cooking.
