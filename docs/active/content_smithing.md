@@ -24,7 +24,7 @@ Status: draft
 - **Base items on copper, iron, mythril, adamantine and darkmetal**: Ingot, Dagger, Woodaxe, Pickaxe, Sword, Helmet, Chestplate, Plate Gloves, Plate Boots, Arrowheads, Shield. **Settled by the owner, 2026-11-04.**
 - **Beyond it**: Nails on copper, iron and mythril. Kunai on copper and iron. Cleaver and Mace on iron.
 - **Silver and gold** are component metals.
-- **81 recipes and 18 open levels.** The planning agent cut rather than padded. Open levels: 14, 33, 34, 35, 36, 37, 46, 47, 48, 49, 68, 69, 70, 71, 72, 73, 85, 99. Left open for what later skills need (owner).
+- **81 recipes and 18 open levels.** The planning agent cut rather than padded. Open levels: 14, 33, 34, 35, 36, 37, 46, 47, 48, 49, 68, 69, 70, 71, 72, 73, 85, 97. Left open for what later skills need (owner).
 - **Handles use that rung's wood**, so Forestry and Smithing climb together.
 - **Rules kept**: ingots at the Furnace, everything else at the Smithy; better stations are faster, not new lists; coal is the fuel.
 
@@ -158,9 +158,9 @@ Status: draft
 | 94 | Darkmetal Shield | off hand | Darkmetal Ingot, Ebony Wood |  | A |
 | 95 | Darkmetal Plate Boots | boots (new slot) | Darkmetal Ingot |  | A |
 | 96 | Darkmetal Chestplate | chest | Darkmetal Ingot |  | H |
-| 97 | Master Hammer | tool | Darkmetal Ingot, Ebony Wood | Smithing final challenge (later) | N |
-| 98 | Masterwork Blade | the best Melee weapon | Darkmetal Ingot, Adamantine Ingot, Ebony Wood | final challenge (later) | N |
-| 99 | *open* |  |  |  |  |
+| 97 | *open* |  |  |  |  |
+| 98 | Master Hammer | tool | Darkmetal Ingot, Ebony Wood | Smithing final challenge (later) | N |
+| 99 | Masterwork Blade | the best Melee weapon | Darkmetal Ingot, Adamantine Ingot, Ebony Wood | final challenge (later) | N |
 
 ## Possible weapons, to cut later
 
