@@ -1,4 +1,4 @@
-Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360; the terrain round, brief 370; section 7, world map, brief 380; section 6, Guild Hall, brief 390; section 4, Bank, brief 400; section 5, Shop, brief 410)
+Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360; the terrain round, brief 370; section 7, world map, brief 380; section 6, Guild Hall, brief 390; section 4, Bank, brief 400; section 5, Shop, brief 410; section 2, top bar, brief 420)
 
 # The detail pass: UI and UX, section by section
 
@@ -27,7 +27,7 @@ game looks and plays, gathered one screen at a time.*
 
 - **The icon rule: decided 2026-11-02**, in `UI_STYLE.md` ("The icon rule").
   Swaps it calls for (T-293 to brief):
-  - Top bar Disallow and Demolish buttons: the cursor's pixel art.
+  - Top bar Demolish button: the cursor's pixel art (brief 420; Disallow retires).
   - Start screen: all Lucide for now (the emoji stats go); a pixel set may come
     near release.
   - Skill icons: T-297. Farming uses `s_farming.png`; Alchemy and Construction
@@ -43,7 +43,7 @@ game looks and plays, gathered one screen at a time.*
 |---|---|---|---|
 | 0 | Rules across every screen | icon rule done; more as they come up | above; `UI_STYLE.md` |
 | 1 | The mat and Tokens | **approved 2026-11-02, split**: [brief 350](briefs/350_tokens_card_detail.md); [brief 370](briefs/370_terrain_detail.md) for terrain; T-295; combat items in [brief 360](briefs/360_combat_detail.md) | `design_pass_notes.md`; T-013, T-162 |
-| 2 | Top bar | **walking now** | `ui_rework_list.md` |
+| 2 | Top bar | **approved and briefed 2026-11-03** ([brief 420](briefs/420_top_bar_detail.md)) | `ui_rework_list.md` |
 | 3 | Hero bar and hero sheet | **approved and briefed 2026-11-02** ([brief 340](briefs/340_hero_bar_detail.md)) | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
 | 4 | Bank | **approved and briefed 2026-11-03** ([brief 400](briefs/400_bank_detail.md)) | |
 | 5 | Shop | **approved and briefed 2026-11-03** ([brief 410](briefs/410_shop_detail.md)) | |
