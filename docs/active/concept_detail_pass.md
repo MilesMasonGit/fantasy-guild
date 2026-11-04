@@ -53,7 +53,7 @@ game looks and plays, gathered one screen at a time.*
 | 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
 | 10 | Notifications | **approved and briefed 2026-11-03** ([brief 430](briefs/430_notifications_detail.md)) | |
 | 11 | Settings and the start screen | not started | nine "coming soon" controls; T-039 |
-| 12 | While-you-were-away summary | not started | |
+| 12 | While-you-were-away summary | **walking now** | |
 | 13 | Tutorial and highlights | not started | `design_pass_notes.md`: the glow and assist rings |
 
 The sheet for each section is checked against the running game before the
@@ -255,6 +255,31 @@ looks cluttered."
 | 13 | **More possible upgrades**: a review of what else could be upgraded. An agent reports (every number that could be a star, what similar games let you upgrade, what each does to pacing), then an interview; the result joins the content roadmap as a star pack. Report: [research/upgrade_review_2026-11-03.md](research/upgrade_review_2026-11-03.md); interview open. | must, design |
 
 **Looked at, no change** (owner, 2026-11-03): the camera move, dragging, how the sky opens.
+
+### 12. While-you-were-away summary
+
+**The sheet (2026-11-03). From the code and a capture of 25 October
+(`docs/archive/eyecheck/shots/2026-10-25_c6b_catchup.png`), not today's game; where this disagrees with
+the screen, the screen wins.**
+
+- **When**: after a gap of 2 minutes or more, up to 24 hours played; a loading bar first, then the panel.
+- **The panel**: 28 rem wide, centred over the dimmed game, up to 85 % of the height, then a scroll bar.
+- **In order**: how long you were away; Items produced (waiting on the mat); Items banked; Items spent, each
+  a full-width row per item; the fights (won and lost, beaten, knocked out, used, drops); Level-ups; Tokens
+  used up.
+- **Buttons**: Return to the Guild (or Esc), and Load as I left it, with a confirmation, which throws away
+  the time away.
+- **XP**: only level-ups show (owner, earlier: "items and XP gained").
+
+**Noticed**: the same item can show up to three times (produced, then under drops; spent, then under used). Rows
+get tall: the capture is nearly full at 20 minutes with few kinds, and level-ups come last. A scroll bar goes
+against the arrow button rule.
+
+**Coming**: new recipes, first finds and items lost to a full Bank (brief 430).
+
+**The list**
+
+*(The owner's items go here.)*
 
 ### 10. Notifications
 
