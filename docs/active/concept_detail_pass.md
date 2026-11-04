@@ -46,7 +46,7 @@ game looks and plays, gathered one screen at a time.*
 | 2 | Top bar | not started | `ui_rework_list.md` |
 | 3 | Hero bar and hero sheet | **approved and briefed 2026-11-02** ([brief 340](briefs/340_hero_bar_detail.md)) | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
 | 4 | Bank | **approved and briefed 2026-11-03** ([brief 400](briefs/400_bank_detail.md)) | |
-| 5 | Shop | not started | |
+| 5 | Shop | **walking now** | |
 | 6 | Guild Hall | **approved and briefed 2026-11-03** ([brief 390](briefs/390_guild_hall_detail.md)); the upgrade review open | |
 | 7 | World map | **approved and briefed 2026-11-03** ([brief 380](briefs/380_world_map_detail.md)) | |
 | 8 | Combat | **approved and briefed 2026-11-02** ([brief 360](briefs/360_combat_detail.md)) | carried in the mat list's items 5, 13, 14 |
@@ -255,6 +255,39 @@ looks cluttered."
 | 13 | **More possible upgrades**: a review of what else could be upgraded. An agent reports (every number that could be a star, what similar games let you upgrade, what each does to pacing), then an interview; the result joins the content roadmap as a star pack. Report: [research/upgrade_review_2026-11-03.md](research/upgrade_review_2026-11-03.md); interview open. | must, design |
 
 **Looked at, no change** (owner, 2026-11-03): the camera move, dragging, how the sky opens.
+
+### 5. Shop
+
+**The sheet (2026-11-03). From the code and `data/tokens.json`, with a capture from 24 October
+(`research/drawers/after_1920_shop.png`), not today's game; where this disagrees with the screen,
+the screen wins.**
+
+- **The drawer**: from the left edge, a third of the screen wide; a title, "Tokens x / y" and a
+  close X; arrow bars instead of a scroll bar. The hint line reads "Drag a Token onto the mat to
+  buy it".
+- **Rows**: a fixed height, the name and price on the left and the Token at 128 px on the right; the
+  whole row is the handle (owner, earlier: "taking an item out of the shop and placing it on the
+  map"). The price is a 2 x 2 grid of item ribbons, have / need, short in red.
+- **Sections**: a heading per skill, or General.
+- **On sale today, five**: Wood Foundation and Stone Foundation (Construction), Farmland (Farming),
+  Coast (Fishing), Goblin Camp (Melee). Everything is listed from the start; price is the only gate.
+  The GDD still says ten (stale).
+- **Can't be bought**: dimmed, can't be picked up, and a red "Need 10× Stone, 5× Oak Wood" beside the
+  name, which repeats what the ribbons below already show.
+- **The drag**: the drawer slides to a lip while over the mat and back when over the drawer. Payment
+  happens on the drop. A drop on the drawer is a cancel.
+- **What a Token does**: nowhere. There's no inspect panel; the tooltip only says "Drag X onto the mat
+  to buy it", so a new player buys a Foundation without being told it becomes a station.
+- **A purchase**: no moment of its own (`concept_notifications.md`: Shop purchases notify nothing).
+- **Groups**: one row with a dropdown (Foundation tiers, anvils) is built, and no Token uses it yet.
+
+**Already filed or coming**: the panel's green gradient (brief 400 B1); the Token card's header and stat
+block (brief 350 T2); the audit for a respawning Token on sale (T-141); an unreachable refund path
+(T-082).
+
+**The list**
+
+*(The owner's items go here.)*
 
 ### 4. Bank
 
