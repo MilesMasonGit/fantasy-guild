@@ -277,9 +277,21 @@ screen wins.**
 
 **Already filed or coming**: the ribbon art for banners (owner, later); the speech frame (T-243, merged).
 
-**The list**
+**The list** (owner, 2026-11-03; the tags are the planning agent's draft)
 
-*(The owner's items go here.)*
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **Milestones and warnings no longer go missing after time away**, shown both ways: listed in the away summary, and as banners after it closes. | must, bug |
+| 2 | **A gold banner when a place is settled.** | must, tweak |
+
+**Checked for item 1** (planning agent, from the code): the owner suspected this and is right. Every
+notification route is a `UI_LISTENER` and a catch-up keeps the bus quiet (`CatchUp.js`, `routing.js`), so
+new recipes, a full Bank losing items and first finds are lost; the summary lists none of them. A knocked-out
+hero is lost as a banner but listed under wounded. New heroes and Hall upgrades are bought by the player, so
+they cannot happen while away.
+
+**Looked at, no change** (owner, 2026-11-03): banners stay until clicked; item stubs; banners stay black
+until the owner's ribbon art.
 
 ### 2. Top bar
 
