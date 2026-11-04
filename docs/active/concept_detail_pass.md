@@ -50,7 +50,7 @@ game looks and plays, gathered one screen at a time.*
 | 6 | Guild Hall | **approved and briefed 2026-11-03** ([brief 390](briefs/390_guild_hall_detail.md)); the upgrade review open | |
 | 7 | World map | **approved and briefed 2026-11-03** ([brief 380](briefs/380_world_map_detail.md)) | |
 | 8 | Combat | **approved and briefed 2026-11-02** ([brief 360](briefs/360_combat_detail.md)) | carried in the mat list's items 5, 13, 14 |
-| 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
+| 9 | Encyclopedia | **walking now** | the owner's "this will work for now", 2026-11-01 |
 | 10 | Notifications | **approved and briefed 2026-11-03** ([brief 430](briefs/430_notifications_detail.md)) | |
 | 11 | Settings and the start screen | **approved and briefed 2026-11-04** ([brief 450](briefs/450_settings_start_detail.md)) | |
 | 12 | While-you-were-away summary | **approved and briefed 2026-11-03** ([brief 440](briefs/440_away_summary_detail.md)) | |
@@ -255,6 +255,28 @@ looks cluttered."
 | 13 | **More possible upgrades**: a review of what else could be upgraded. An agent reports (every number that could be a star, what similar games let you upgrade, what each does to pacing), then an interview; the result joins the content roadmap as a star pack. Report: [research/upgrade_review_2026-11-03.md](research/upgrade_review_2026-11-03.md); interview open. | must, design |
 
 **Looked at, no change** (owner, 2026-11-03): the camera move, dragging, how the sky opens.
+
+### 9. Encyclopedia
+
+**The sheet (2026-11-04). From [concept_knowledge.md](concept_knowledge.md), the code and
+`research/encyclopedia_display` (a prototype before the build), not today's game; where this disagrees with the screen,
+the screen wins.** After five looks the owner okayed it on 1 November: "this will work for now".
+
+- **The frame**: the Atlas's book, open on two pages. A green nav bubble opens it. The mat and top bar stay behind it.
+- **Opening page**: search across items, Tokens, enemies and recipes; recently viewed; recently collected new items.
+- **The chart**: the entry in the middle, where it comes from on the left and what it goes into on the right. Black boxes with
+  gold edges on the parchment, sprite and name, with the need in red when short. Skill marks and levels on the lines. A click grows the
+  chart and makes that box the focus; drag to look around; Back to Start and Contents at the top.
+- **Knowledge**: everything is shown from the start (owner, ruled); ticks mark what this run has.
+- **Opened from**: its bubble, a Token card's book button, and clicking an item stub while the book is open.
+- **Not there**: totals (how much of the game this run has found). A link from the Bank: its tile click was removed, to
+  return with the future item inspection panel, which brief 400 B3 now builds without naming the link.
+
+**Already filed or coming**: a separate encyclopedia book and a Combat mark (`owner_art_list.md`).
+
+**The list**
+
+*(The owner's items go here.)*
 
 ### 13. Tutorial and highlights
 
