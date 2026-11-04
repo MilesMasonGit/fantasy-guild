@@ -274,9 +274,29 @@ today's game; where this disagrees with the screen, the screen wins.**
 **Already filed or coming**: the emoji stats become Lucide (T-293); away time on each slot (brief 440); the red gradient
 (brief 400 B1).
 
-**The list**
+**The list** (owner, 2026-11-03 and 11-04; the tags are the planning agent's draft)
 
-*(The owner's items go here.)*
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **The five "coming soon" controls go.** | must, tweak |
+| 2 | **A title screen**: the game name in the display font over a banner picture, the slots beneath in the pixel kit. The owner's logo and painting replace it later. | must, design |
+| 3 | **Three tabs**: Display, Game, Audio (Dev Tools only in dev builds); "1 Minute (Dev)" leaves shipped builds. | must, tweak |
+| 4 | **Back up a save**: "should just open the folder where the save file is, let the player copy or modify it". | must, design |
+| 5 | **A new game names the Guild**; one name, the Guild's, shown on the slot and renameable. | must, design |
+| 6 | **A new game shows the world hex map, fully shown, with a reroll.** | must, design |
+| 7 | **A new game makes the first hero**: name, appearance, flag colour, and recolour the sprite once that system exists. | must, design |
+
+**Not taken** (owner, 2026-11-03): sound on by default and panel hotkeys.
+
+**Checked** (planning agent, from the code):
+
+- **Item 4: saves are not files today.** They live in the app's browser storage (`localStorage`, `SaveManager.js`), so
+  there is no folder to open. Saves must become real files in the desktop build, read at load, so a copied or edited one
+  works; today's saves move across once. The app also needs the right to write files and open a folder (`src-tauri`).
+- **Item 6: the pieces exist.** `World.previewWorld(seed)` makes a world without keeping it, and generation is seeded.
+  Today the seed comes from when the game was created, so a chosen seed must be kept in the save.
+- **Item 7: the recolour system is not built**, so it joins this screen later (T-302). The rest reuses the hero edit
+  window. The tutorial's first step (buy Bunk Beds, the first hero free) must change.
 
 ### 12. While-you-were-away summary
 

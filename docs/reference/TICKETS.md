@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-302**
+**Next free number: T-303**
 
 ---
 
@@ -85,6 +85,7 @@ here.
 | T-295 | P3 | open | **Loot flight gets an arc back, without costing performance** (owner 2026-11-02: "we lost the arc effect at some point, possibly for performance"). A small experiment measured with the draw bench. Find first which flight lost it: `ParticleOverlay.jsx` still has arc code for flights to a stub. Wait for T-197 (`perf/loot-bubbles`) if it is still open. Eye-check: the owner judges the feel. |
 | T-296 | P3 | open | **Extra boards may pile up at the Hall** (seen once, 2026-11-02, by the terrain comparison's agent, after about 30 minutes of play in one dev game, world map build; not looked into, may be a test artefact). Try to reproduce in a fresh game before anything else. |
 | T-301 | P3 | open | **Audit how item counts are shown across the game** (owner 2026-11-03): the Shop's price ribbons show the full number instead of our shorthand. List every place an item count shows, say which use the shorthand, and bring the rest in line. |
+| T-302 | P3 | open, needs an interview | **The hero recolour system** (owner 2026-11-02 and 11-04): players recolour a hero's sprite in the edit window and on the new game screen (detail pass, section 11). Not designed yet: the planning agent interviews the owner first, with looks from real art. |
 | T-300 | P3 | open | **Leftovers from the map retirement, for a decision**: Region rules (`RegionRules.js`, recipe `rules`, the ledger's region factor) are tested but no shipped recipe carries one, leave until brief 380 settles; `data/maps.json` is `{}` and read by nothing; `src/ui/dev/terrainDev.js` is imported only by tests; a saved stack of a deleted item stays hidden and still takes a Bank slot (no fix recommended: old saves are abandoned) | T-292 engineer 2026-11-03 |
 | T-299 | P3 | open | **Forced layouts bigger than the loot flight's** (20 s trace on enemies80, busy machine, one run): `HeroBubbleLayer.jsx:168` 24 style and 25 layout, 82.5 ms; `healthTextWidth` in `FightLayer.jsx` 3, 15.6 ms. Measure on a quiet machine first | T-287 engineer 2026-11-03 |
 | T-298 | P3 | done (merged 2026-11-03) | **Stale docs found by the upgrade review**: GDD §16 still says the Token cap grows with a Hall star; the Mat Tuner hint still mentions the Notice Board. Check first, then correct. |
