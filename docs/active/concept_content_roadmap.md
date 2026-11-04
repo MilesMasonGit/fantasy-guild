@@ -137,7 +137,8 @@ measured.*
 ## Chain pages
 
 - [Food and drink](content_food_and_drink.md): approved 2026-11-04; 99 Cooking recipes.
-- [Smithing](content_smithing.md): approved 2026-11-04; 81 recipes, the rest of its levels open for later skills.
+- [Smithing](content_smithing.md): approved 2026-11-04; 80 recipes, the rest of its levels open for later skills.
+- [Fletching](content_fletching.md): draft; 18 recipes, most levels open.
 
 ## Open links
 
