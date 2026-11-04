@@ -10,6 +10,7 @@ line each is enough.
   (the 10-08 notes are covered there).
 
 ## Highlights and tutorial
+- Moved on 2026-11-04: [concept_tutorial_npc.md](concept_tutorial_npc.md); T-013 decided.
 - Replace the glow and the tutorial assist rings with something in the game's
   look: e.g. the hard outline style as a permanent glowing gold outline
   (owner, 2026-10-08).

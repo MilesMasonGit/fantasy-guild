@@ -54,7 +54,7 @@ game looks and plays, gathered one screen at a time.*
 | 10 | Notifications | **approved and briefed 2026-11-03** ([brief 430](briefs/430_notifications_detail.md)) | |
 | 11 | Settings and the start screen | **approved and briefed 2026-11-04** ([brief 450](briefs/450_settings_start_detail.md)) | |
 | 12 | While-you-were-away summary | **approved and briefed 2026-11-03** ([brief 440](briefs/440_away_summary_detail.md)) | |
-| 13 | Tutorial and highlights | **walking now** | `design_pass_notes.md`: the glow and assist rings |
+| 13 | Tutorial and highlights | **walked 2026-11-04**: the tutorial moved to [its own draft](concept_tutorial_npc.md); T-013 decided | |
 
 The sheet for each section is checked against the running game before the
 sitting: this table's notes are pointers, not facts about today's screen.
@@ -274,9 +274,14 @@ today's game; where this disagrees with the screen, the screen wins.**
 T-013, the last glows and text shadows; the quest board, where the current step would be the top row (T-176, postponed);
 moving the tutorial into the CMS (T-014); the Old Site step (T-258).
 
-**The list**
+**The list** (owner, 2026-11-04; the tags are the planning agent's draft)
 
-*(The owner's items go here.)*
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **A completely different tutorial**: an NPC with special speech bubbles who hand-holds the player through the essentials; the first step probably shows how to assign a hero to a task. Moved to [concept_tutorial_npc.md](concept_tutorial_npc.md), draft. | design |
+| 2 | **A hard gold outline on the thing to use next.** With item 1. | design |
+| 3 | **The very early game planned separately**, with the tutorial. Listed in [ideas.md](ideas.md). | design |
+| 4 | **All the last soft glows, text shadows and drop shadows go to hard pixel** (T-013, decided). | must, design |
 
 ### 11. Settings and the start screen
 
