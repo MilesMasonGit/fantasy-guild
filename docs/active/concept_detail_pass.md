@@ -52,7 +52,7 @@ game looks and plays, gathered one screen at a time.*
 | 8 | Combat | **approved and briefed 2026-11-02** ([brief 360](briefs/360_combat_detail.md)) | carried in the mat list's items 5, 13, 14 |
 | 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
 | 10 | Notifications | **approved and briefed 2026-11-03** ([brief 430](briefs/430_notifications_detail.md)) | |
-| 11 | Settings and the start screen | not started | nine "coming soon" controls; T-039 |
+| 11 | Settings and the start screen | **walking now** | five "coming soon" controls; T-039 |
 | 12 | While-you-were-away summary | **approved and briefed 2026-11-03** ([brief 440](briefs/440_away_summary_detail.md)) | |
 | 13 | Tutorial and highlights | not started | `design_pass_notes.md`: the glow and assist rings |
 
@@ -255,6 +255,28 @@ looks cluttered."
 | 13 | **More possible upgrades**: a review of what else could be upgraded. An agent reports (every number that could be a star, what similar games let you upgrade, what each does to pacing), then an interview; the result joins the content roadmap as a star pack. Report: [research/upgrade_review_2026-11-03.md](research/upgrade_review_2026-11-03.md); interview open. | must, design |
 
 **Looked at, no change** (owner, 2026-11-03): the camera move, dragging, how the sky opens.
+
+### 11. Settings and the start screen
+
+**The sheet (2026-11-03). From the code and `research/pixel_frames/round2/sheet_2_settings.png`, not
+today's game; where this disagrees with the screen, the screen wins.**
+
+- **Settings**: a window with tabs down the side. **Accessibility**: Typography Scale, Font, All Caps. **Notifications**:
+  one switch, Item Stubs. **Gameplay**: Auto-Save Interval (1 minute, labelled Dev; 10 minutes; 1 hour; Off), Save Game
+  Now, Background Tile, Menu on Right Side, Flying Items. **Audio**: Master, Music, SFX; master starts at 0, so a new
+  game is silent. **Dev Tools**: only in dev builds. Reset Defaults and Done at the bottom.
+- **"Coming soon", five, not the nine older notes say**: Theme Mode, Zoom to Cursor, Animations, Master Tooltips, Item
+  Tooltips.
+- **The start screen**: a plain window, "Choose a Save", over a dark screen, with no logo. Three slots; a filled one
+  shows heroes, playtime and last saved as emoji, then Load and a delete with a confirm.
+- **Not there**: gameplay hotkeys; a way to back up a save (the code can export and import one, with no button).
+
+**Already filed or coming**: the emoji stats become Lucide (T-293); away time on each slot (brief 440); the red gradient
+(brief 400 B1).
+
+**The list**
+
+*(The owner's items go here.)*
 
 ### 12. While-you-were-away summary
 
