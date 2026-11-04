@@ -60,6 +60,7 @@ multiple choice at wave start.
 | 40 | [410 Shop and Foundations, detail pass](410_shop_detail.md): five Foundations each for their own kind of building, with new Excavation and Battlefield; the Shop sells Foundations only and pops up from the bottom as a row of cards with skill icons and costs; two phases, expect WORK CHANGED on the first; owner CMS: review the Foundations pack, Sync, then S2 | S2: S1's Sync | yes, one look |
 | 41 | [420 Top bar, detail pass](420_top_bar_detail.md): a larger banner across the bar; the Token Summary opens on hover like Upkeep; a pixel X on Demolish; Disallow retires as a whole mechanic; two phases; no owner CMS | — | yes, one look (banner size) |
 | 42 | [430 Notifications, detail pass](430_notifications_detail.md): new recipes, first finds, a full Bank and knock-outs no longer go missing after time away, listed in the summary and shown as banners on closing it; a gold banner when a place is settled; two phases; no owner CMS | — | yes, one short look |
+| 43 | [440 Away summary, detail pass](440_away_summary_detail.md): two columns, item changes as one net list on the left and news on the right; fights as kill counts; a centred heading; a second confirm on both buttons; save slots show the away time built up; two phases; no owner CMS | 430 N1 | yes, one short look |
 
 Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,
 then class rework v2, then the hero bar/panel on the new skill list, then

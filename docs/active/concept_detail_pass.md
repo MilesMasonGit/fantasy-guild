@@ -1,4 +1,4 @@
-Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360; the terrain round, brief 370; section 7, world map, brief 380; section 6, Guild Hall, brief 390; section 4, Bank, brief 400; section 5, Shop, brief 410; section 2, top bar, brief 420; section 10, notifications, brief 430)
+Status: draft (approved 2026-11-02 and briefed: section 3, hero bar and sheet, brief 340; section 1, Tokens and the card, brief 350; section 8, combat, brief 360; the terrain round, brief 370; section 7, world map, brief 380; section 6, Guild Hall, brief 390; section 4, Bank, brief 400; section 5, Shop, brief 410; section 2, top bar, brief 420; section 10, notifications, brief 430; section 12, away summary, brief 440)
 
 # The detail pass: UI and UX, section by section
 
@@ -53,7 +53,7 @@ game looks and plays, gathered one screen at a time.*
 | 9 | Encyclopedia | not started | the owner's "this will work for now", 2026-11-01 |
 | 10 | Notifications | **approved and briefed 2026-11-03** ([brief 430](briefs/430_notifications_detail.md)) | |
 | 11 | Settings and the start screen | not started | nine "coming soon" controls; T-039 |
-| 12 | While-you-were-away summary | **walking now** | |
+| 12 | While-you-were-away summary | **approved and briefed 2026-11-03** ([brief 440](briefs/440_away_summary_detail.md)) | |
 | 13 | Tutorial and highlights | not started | `design_pass_notes.md`: the glow and assist rings |
 
 The sheet for each section is checked against the running game before the
@@ -290,7 +290,7 @@ against the arrow button rule.
 
 **Planning agent's calls**: the news column holds knock-outs and items lost first, then new recipes, first
 finds (brief 430), level-ups, Tokens used up and the kill counts. Items waiting on the mat keep a small mark in
-the list. Esc asks the same confirm as Return. Scrolling uses our arrow buttons. XP per skill is not added: the
+the list. Esc asks the same confirm as Return. Scrolling uses our arrow buttons. A slot past 24 hours reads "24 h (max)". XP per skill is not added: the
 owner was offered it and didn't take it.
 
 **Checked** (planning agent, from the code, not in a running game): the owner asked whether time away works
