@@ -285,9 +285,34 @@ the screen wins.**
 block (brief 350 T2); the audit for a respawning Token on sale (T-141); an unreachable refund path
 (T-082).
 
-**The list**
+**The list** (owner, 2026-11-03; the tags are the planning agent's draft)
 
-*(The owner's items go here.)*
+| # | The owner's wish | Tags |
+|---|---|---|
+| 1 | **A Shop that pops up from the bottom, over the hero bar**, in place of the drawer from the left. | must, design |
+| 2 | **Foundations only**: Coast and Goblin Camp leave the Shop. | must, design |
+| 3 | **Skill icons on each Foundation**, to hint at what it is good for, with the item costs underneath them. They replace the skill headings. | must, tweak |
+| 4 | **Foundation types reworked**: each type is used for a different kind of construction (table below). Wood is the main support structure, first on the list. | must, design |
+| 5 | **An Excavation Foundation** for mineshafts and quarries. | must, design |
+| 6 | **A Battlefield Foundation** for enemy spawners ("maybe"). | must, design |
+| 7 | **When you can't afford one**: only the red short amounts, and the Token sprite dimmed. | must, tweak |
+
+**Foundations** (the owner's rule, with today's buildings placed by the planning agent):
+
+| Foundation | Skill icons | Builds |
+|---|---|---|
+| Wood (first) | Crafting, Cooking, Alchemy, Fishing, Forestry | Workbench, Cooking Pot, Brewery, Alchemy Table, Tannery, Fir Workbench, Windmill, Composter, Beehive, Dock, Fishing Hut, Logging Camp, Farmstead, Minecart, **Mining Camp (moves from Stone)** |
+| Stone | Smithing, Faith | Furnace, Iron Furnace, Copper Smithy, Iron Smithy, Well, Fighter's Academy (retired) |
+| Farmland | Farming, Forestry | Field, Herb Garden, Grapevine, Apple Orchard, and the planted forests |
+| Excavation (new) | Mining | Copper Mine, Coal Mine, Quarry (from Wood) |
+| Battlefield (new) | Melee, Ranged, Magic | The 22 enemy spawners built from a banner: Goblin Camp, Wolf Den, Slime Pit and the rest (from Wood) |
+
+**Looked at, no change** (owner, 2026-11-03): buying has no moment of its own; the Token landing is the
+feedback.
+
+**Planning agent's calls**: a full Token cap keeps its message, since no price shows it. Hovering a
+skill icon names the skill, and hovering a card lists what the Foundation builds. The dropdown for
+tiers stays on a card for when tiers arrive (`ui_rework_list.md`).
 
 ### 4. Bank
 
