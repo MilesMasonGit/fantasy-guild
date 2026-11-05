@@ -142,6 +142,7 @@ measured.*
 - [Fletching](content_fletching.md): approved 2026-11-04; 16 recipes, five woods, most levels open.
 - [Enchanting](content_enchanting.md): approved 2026-11-04; 55 recipes, 44 levels open; Leylines give Motes.
 - [Tailor](content_tailor.md): approved 2026-11-04; 56 recipes, 43 levels open.
+- [Crafting](content_crafting.md): draft; 76 recipes, 23 levels open.
 
 ## Open links
 

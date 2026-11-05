@@ -38,21 +38,21 @@ A hero with Enchanting works a Leyline, like a vein, and gets its Motes and very
 | Level | Name | Kind | Made with | Art |
 |---|---|---|---|---|
 | 1 | Novice Wand | Magic weapon, no type of its own | Oak Wood, Fire Motes | N |
-| 3 | Fire Tome | off hand: turns a Wand's damage Fire | Fire Motes, Parchment | N |
-| 4 | Ice Tome | off hand: turns a Wand's damage Ice | Water and Wind Motes, Parchment | A |
-| 5 | Electric Tome | off hand: turns a Wand's damage Electric | Wind and Light Motes, Parchment | A |
+| 3 | Fire Tome | off hand: turns a Wand's damage Fire | Fire Motes, Blank Book | N |
+| 4 | Ice Tome | off hand: turns a Wand's damage Ice | Water and Wind Motes, Blank Book | A |
+| 5 | Electric Tome | off hand: turns a Wand's damage Electric | Wind and Light Motes, Blank Book | A |
 | 7 | Novice Fire Staff | Magic weapon, Fire | Oak Wood, Fire Motes | N |
 | 9 | Novice Ice Staff | Magic weapon, Ice | Oak Wood, Water and Wind Motes | A |
 | 11 | Novice Electric Staff | Magic weapon, Electric | Oak Wood, Wind and Light Motes | A |
 | 14 | Warded Copper Chestplate | chest, with a defence bonus | Copper Chestplate (Smithing), Nature Motes | A |
 | 20 | Adept Wand | Magic weapon, no type of its own | Fir Wood, Birch Wood, Water Motes | A |
-| 22 | Poison Tome | off hand: turns a Wand's damage Poison | Nature and Dark Motes, Parchment | A |
+| 22 | Poison Tome | off hand: turns a Wand's damage Poison | Nature and Dark Motes, Blank Book | A |
 | 24 | Adept Fire Staff | Magic weapon, Fire | Fir Wood, Birch Wood, Fire Motes, Ruby | A |
 | 26 | Adept Ice Staff | Magic weapon, Ice | Fir Wood, Birch Wood, Water and Wind Motes, Sapphire | A |
 | 28 | Adept Electric Staff | Magic weapon, Electric | Fir Wood, Birch Wood, Wind and Light Motes, Topaz | A |
 | 34 | Warded Iron Chestplate | chest, with a defence bonus | Iron Chestplate (Smithing), Nature Motes | A |
 | 40 | Expert Wand | Magic weapon, no type of its own | Maple Wood, Birch Wood, Wind Motes | A |
-| 42 | Dark Tome | off hand: turns a Wand's damage Dark | Dark Motes, Parchment | A |
+| 42 | Dark Tome | off hand: turns a Wand's damage Dark | Dark Motes, Blank Book | A |
 | 43 | Enchanted Silver Ruby Ring | trinket | Silver Ruby Ring (Crafting), Fire Motes | A |
 | 44 | Expert Fire Staff | Magic weapon, Fire | Maple Wood, Birch Wood, Fire Motes, Ruby | A |
 | 45 | Enchanted Silver Sapphire Ring | trinket | Silver Sapphire Ring (Crafting), Water Motes | A |
@@ -70,7 +70,7 @@ A hero with Enchanting works a Leyline, like a vein, and gets its Motes and very
 | 57 | Enchanted Silver Amethyst Amulet | trinket | Silver Amethyst Amulet (Crafting), Dark Motes | A |
 | 58 | Enchanted Silver Diamond Amulet | trinket | Silver Diamond Amulet (Crafting), Light Motes | A |
 | 60 | Master Wand | Magic weapon, no type of its own | Mahogany Wood, Cedar Wood, Dark Motes | A |
-| 62 | Light Tome | off hand: turns a Wand's damage Light | Light Motes, Parchment | A |
+| 62 | Light Tome | off hand: turns a Wand's damage Light | Light Motes, Blank Book | A |
 | 63 | Enchanted Gold Ruby Ring | trinket | Gold Ruby Ring (Crafting), Fire Motes | A |
 | 64 | Master Fire Staff | Magic weapon, Fire | Mahogany Wood, Cedar Wood, Fire Motes, Ruby | A |
 | 65 | Enchanted Gold Sapphire Ring | trinket | Gold Sapphire Ring (Crafting), Water Motes | A |
@@ -114,7 +114,7 @@ A hero with Enchanting works a Leyline, like a vein, and gets its Motes and very
 
 - ⚠️ **A Leyline you can't reach is a wall**: a run whose world lacks an element must still reach it. World generation must place them (T-294), and every recipe's Motes must be reachable by its level.
 - **Very little XP**: Enchanting levels come mostly from recipes, so its early levels depend on making Wands and Tomes (ledger).
-- **Parchment** for Tomes: Crafting or Tailor.
+- **Blank Books** for Tomes come from Crafting.
 - **Tailor**: its gear, for enchanted versions. **Crafting**: its 24 pieces of jewellery, which these need first.
 - **Fletching**: which magical arrows, and who makes them.
 - **Mining**: gems must be available by level 24.
