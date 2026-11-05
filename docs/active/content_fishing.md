@@ -38,8 +38,8 @@ Fish keep their order from [food and drink](content_food_and_drink.md), on the 2
 |---|---|---|---|---|
 | Trap | Crafting | 4 | Oak Wood, Copper Nails | H |
 | Fishing Rod | Crafting | 3 | Oak Wood, Copper Nails, String | H |
-| Fine Rod | Crafting | 16 | Oak Wood, Copper Nails, String | A |
-| **Master Rod** | Crafting | 35 | Maple Plank, Mythril Nails, String | A |
+| Fine Rod | Crafting | 16 | Bamboo, Copper Nails, String | A |
+| **Master Rod** | Crafting | 42 | Maple Plank, Mythril Nails, String | A |
 | **Lobster Pot** | Crafting | 36 | Fir Plank, Iron Nails, String | A |
 | **Adamantine Harpoon** | Smithing | 74 | Adamantine Ingot, Mahogany Wood, String | N |
 | **Darkmetal Harpoon** | Smithing | 81 | Darkmetal Ingot, Ebony Wood, String | A |

@@ -91,9 +91,9 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | Group | What | Level | Made with | Art |
 |---|---|---|---|---|
 | Excavation | Quarry; Mines for Copper, Iron, Silver, Mythril, Gold, Adamantine, Darkmetal; Coal Mine | at each metal's level | Planks, Stone, Gears from 40 | H: seven `mineshaft_*` |
-| Minecarts | One per metal, restocking veins | at each metal's level | Planks, Nails, Gears | H: seven `minecart_*` |
+| Minecarts | One per metal, restocking veins | at each metal's level | Planks, Nails, Gears from 40 | H: seven `minecart_*` |
 | Farmland | Field, Herb Garden, Orchards, Grapevine, planted Forests | as today | Seeds, Seedlings | H |
-| Support | Well, Composter, Beehive, Dock, Windmill | 1 to 25 | Windmill: Gears, Sack. Dock: Sail | H, A |
+| Support | Well, Composter, Beehive, Dock, Windmill | 1 to 25 | Windmill: Oak Plank, Stone. Dock: Oak Plank | H, A |
 | **Guard Tower** | Temporary: stops enemy spawns nearby until it wears out | 15 | Planks, Stone, Torches | N |
 | **Town Square** | A large late building that boosts many nearby Tokens a little | 85 | Ebony Plank, Basalt, Drapes, Gold Ingot | N |
 | Battlefield | The 22 enemy spawners, from their map items | at each enemy's level | as today | H |
@@ -104,7 +104,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - ⚠️ **War Camp is a new rule**: a hero fighting everything in reach, like a camp working its trees. Check it against the arrival fights and Guard Towers when briefed.
 - **Each skill's stations fold into one building**: food and drinks both at the Kitchen; ingots and gear both at the Blacksmith; leather at the Workshop. Names are suggestions.
 - **Torches gain their job** on the Guard Tower.
-- **Gears and Sails gain jobs**; Wire and Chain stay for Science.
+- **Gears and Sails have their jobs from level 40**, in the costs above. They stay off the Windmill and Dock, which come first: Bread needs the Windmill's Flour early.
 - **Fighter's Academy** retires, as already noted.
 
 ## Open links

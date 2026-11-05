@@ -142,11 +142,11 @@ measured.*
 **Where it stands (2026-11-04)**: the core chains are approved on paper. Next: the enemies session (Hide, scales, Silk, Milk, meats, weapon effects, late potions' drops), the five remaining specialists, then the roll-up. Nothing is in the CMS yet (T-305) and the drawings aren't on the art list as rows yet: each page has an Art column, and [the art list](owner_art_list.md) points here.
 
 - [Food and drink](content_food_and_drink.md): approved 2026-11-04; 99 Cooking recipes.
-- [Smithing](content_smithing.md): approved 2026-11-04; 82 recipes, the rest of its levels open for later skills.
+- [Smithing](content_smithing.md): approved 2026-11-04; 76 recipes after the 2026-11-05 review, the rest of its levels open for later skills.
 - [Fletching](content_fletching.md): approved 2026-11-04; 16 recipes, five woods, most levels open.
 - [Enchanting](content_enchanting.md): approved 2026-11-04; 55 recipes, 44 levels open; Leylines give Motes.
 - [Tailor](content_tailor.md): approved 2026-11-04; 56 recipes, 43 levels open.
-- [Crafting](content_crafting.md): approved 2026-11-04; 78 recipes, 21 levels open.
+- [Crafting](content_crafting.md): approved 2026-11-04; 76 recipes after the 2026-11-05 review, 23 levels open.
 - [Mining and Forestry Tokens](content_mining_forestry.md): approved 2026-11-04; the owner's picks for the gaps between tiers.
 - [Construction](content_construction.md): approved 2026-11-04; a building per skill, 35 variants, tiered materials.
 - [Fishing](content_fishing.md): approved 2026-11-04; fish gated by tools, four special waters.
@@ -166,8 +166,8 @@ measured.*
   need gems from Mining and a place in the two Trinket slots.
 - **Boots and gloves** (metal and gear): the Planned leather boots and gloves have
   no slot; gear today is hand, hat, chest and two trinkets.
-- **Axes and sickles don't gate** (metal and gear, wood): every tree takes a copper
-  axe today, and only copper and iron axes and sickles exist as items.
+- **Better trees need better axes** (owner, 2026-11-05; [Smithing](content_smithing.md)): every tree takes a copper
+  axe today, and only copper and iron axes exist as items. Sickles are cut.
 - **The darkmetal pick has nothing to mine**: it becomes a requirement of Mining's
   final challenge (enemies and final challenges).
 - **Cedar and ebony have no planted Forest** (wood and buildings), though their

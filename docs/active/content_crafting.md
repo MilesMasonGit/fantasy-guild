@@ -16,9 +16,9 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 - **Five armour tiers, five pieces each**: Leather, Hard, Studded, Drake, Dragonscale.
 - **Nails get their job**: Copper in rods and traps, Iron in Hard Leather, Mythril in Studded Leather.
-- **Planks for all seven woods**, at the ladder's levels.
+- **Planks for five woods**: Oak, Fir, Maple, Mahogany and Ebony, the ones Construction asks for. Birch and Cedar go to Enchanting as raw wood (review, 2026-11-05; amends "Planks for all seven woods").
 - **Six gems cut, 24 pieces of jewellery** for your drawn silver and gold.
-- **78 recipes, 21 levels open.**
+- **76 recipes, 23 levels open.**
 
 | Level | Name | Kind | Made with | Also used by | Art |
 |---|---|---|---|---|---|
@@ -34,10 +34,10 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 10 | Leather Chest | chest, Ranged | Leather |  | H |
 | 11 | Shrimp Bait | bait | Raw Shrimp | Fishing | H |
 | 12 | Worm Bait | bait | Worm | Fishing | H |
-| 13 | Torch | material | Oak Wood, Charcoal | (needs a job: see below) | H |
+| 13 | Torch | material | Oak Wood, Charcoal | Construction: Guard Tower | H |
 | 14 | Parchment | material | Hide or Oak Wood | Blank Book | N |
 | 15 | Blank Book | material | Parchment, Leather | Enchanting: Tomes | N |
-| 16 | Fine Fishing Rod | tool | Oak Wood, Copper Nails, String | Fishing | A |
+| 16 | Fine Fishing Rod | tool | Bamboo, Copper Nails, String | Fishing | A |
 | 20 | Fir Plank | material | Fir Wood | Construction | H |
 | 21 | Hard Leather | material | Leather, Iron Nails | Hard armour | A |
 | 22 | Hard Hat | hat, Ranged | Hard Leather |  | A |
@@ -48,32 +48,30 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 27 | Cut Topaz | material | Uncut Topaz (Mining) | Enchanting: Staffs; jewellery | H |
 | 28 | Cut Ruby | material | Uncut Ruby (Mining) | Enchanting: Staffs; jewellery | H |
 | 29 | Cut Sapphire | material | Uncut Sapphire (Mining) | Enchanting: Staffs; jewellery | H |
-| 30 | Birch Plank | material | Birch Wood | Construction | H |
 | 31 | Cut Emerald | material | Uncut Emerald (Mining) | Enchanting: Staffs; jewellery | H |
 | 32 | Cut Amethyst | material | Uncut Amethyst (Mining) | Enchanting: Staffs; jewellery | H |
 | 33 | Cut Diamond | material | Uncut Diamond (Mining) | Enchanting: Staffs; jewellery | H |
-| 35 | Master Rod | tool | Maple Plank, Mythril Nails, String | Fishing | A |
 | 36 | Lobster Pot | tool | Fir Plank, Iron Nails, String | Fishing | A |
 | 40 | Maple Plank | material | Maple Wood | Construction | H |
 | 41 | Studded Leather | material | Hard Leather, Mythril Nails | Studded armour | A |
-| 42 | Studded Hat | hat, Ranged | Studded Leather |  | A |
-| 43 | Studded Gloves | gloves, Ranged | Studded Leather |  | A |
-| 44 | Studded Boots | boots, Ranged | Studded Leather |  | A |
-| 45 | Studded Shield | off hand, Ranged | Studded Leather |  | A |
-| 46 | Studded Chest | chest, Ranged | Studded Leather |  | A |
-| 47 | Silver Ruby Ring | trinket | Silver Ring Band, Cut Ruby | Enchanting: its enchanted version | H |
-| 48 | Silver Sapphire Ring | trinket | Silver Ring Band, Cut Sapphire | Enchanting: its enchanted version | H |
-| 49 | Silver Emerald Ring | trinket | Silver Ring Band, Cut Emerald | Enchanting: its enchanted version | H |
-| 50 | Cedar Plank | material | Cedar Wood | Construction | H |
+| 42 | Master Rod | tool | Maple Plank, Mythril Nails, String | Fishing | A |
+| 43 | Studded Hat | hat, Ranged | Studded Leather |  | A |
+| 44 | Studded Gloves | gloves, Ranged | Studded Leather |  | A |
+| 45 | Studded Boots | boots, Ranged | Studded Leather |  | A |
+| 46 | Studded Shield | off hand, Ranged | Studded Leather |  | A |
+| 47 | Studded Chest | chest, Ranged | Studded Leather |  | A |
+| 48 | Silver Ruby Ring | trinket | Silver Ring Band, Cut Ruby | Enchanting: its enchanted version | H |
+| 49 | Silver Sapphire Ring | trinket | Silver Ring Band, Cut Sapphire | Enchanting: its enchanted version | H |
+| 50 | Silver Emerald Ring | trinket | Silver Ring Band, Cut Emerald | Enchanting: its enchanted version | H |
 | 51 | Silver Topaz Ring | trinket | Silver Ring Band, Cut Topaz | Enchanting: its enchanted version | H |
 | 52 | Silver Amethyst Ring | trinket | Silver Ring Band, Cut Amethyst | Enchanting: its enchanted version | H |
 | 53 | Silver Diamond Ring | trinket | Silver Ring Band, Cut Diamond | Enchanting: its enchanted version | H |
-| 54 | Silver Ruby Amulet | trinket | Silver Amulet Band, Cut Ruby | Enchanting: its enchanted version | H |
-| 55 | Silver Sapphire Amulet | trinket | Silver Amulet Band, Cut Sapphire | Enchanting: its enchanted version | H |
-| 56 | Silver Emerald Amulet | trinket | Silver Amulet Band, Cut Emerald | Enchanting: its enchanted version | H |
-| 57 | Silver Topaz Amulet | trinket | Silver Amulet Band, Cut Topaz | Enchanting: its enchanted version | H |
-| 58 | Silver Amethyst Amulet | trinket | Silver Amulet Band, Cut Amethyst | Enchanting: its enchanted version | H |
-| 59 | Silver Diamond Amulet | trinket | Silver Amulet Band, Cut Diamond | Enchanting: its enchanted version | H |
+| 54 | Silver Ruby Amulet | trinket | Silver Chain, Cut Ruby | Enchanting: its enchanted version | H |
+| 55 | Silver Sapphire Amulet | trinket | Silver Chain, Cut Sapphire | Enchanting: its enchanted version | H |
+| 56 | Silver Emerald Amulet | trinket | Silver Chain, Cut Emerald | Enchanting: its enchanted version | H |
+| 57 | Silver Topaz Amulet | trinket | Silver Chain, Cut Topaz | Enchanting: its enchanted version | H |
+| 58 | Silver Amethyst Amulet | trinket | Silver Chain, Cut Amethyst | Enchanting: its enchanted version | H |
+| 59 | Silver Diamond Amulet | trinket | Silver Chain, Cut Diamond | Enchanting: its enchanted version | H |
 | 60 | Mahogany Plank | material | Mahogany Wood | Construction | H |
 | 61 | Drake Leather | material | Blue Scale (enemy drop) | Drake armour | H |
 | 62 | Drake Hat | hat, Ranged | Drake Leather |  | A |
@@ -87,12 +85,12 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 70 | Gold Topaz Ring | trinket | Gold Ring Band, Cut Topaz | Enchanting: its enchanted version | H |
 | 71 | Gold Amethyst Ring | trinket | Gold Ring Band, Cut Amethyst | Enchanting: its enchanted version | H |
 | 72 | Gold Diamond Ring | trinket | Gold Ring Band, Cut Diamond | Enchanting: its enchanted version | H |
-| 73 | Gold Ruby Amulet | trinket | Gold Amulet Band, Cut Ruby | Enchanting: its enchanted version | H |
-| 74 | Gold Sapphire Amulet | trinket | Gold Amulet Band, Cut Sapphire | Enchanting: its enchanted version | H |
-| 75 | Gold Emerald Amulet | trinket | Gold Amulet Band, Cut Emerald | Enchanting: its enchanted version | H |
-| 76 | Gold Topaz Amulet | trinket | Gold Amulet Band, Cut Topaz | Enchanting: its enchanted version | H |
-| 77 | Gold Amethyst Amulet | trinket | Gold Amulet Band, Cut Amethyst | Enchanting: its enchanted version | H |
-| 78 | Gold Diamond Amulet | trinket | Gold Amulet Band, Cut Diamond | Enchanting: its enchanted version | H |
+| 73 | Gold Ruby Amulet | trinket | Gold Chain, Cut Ruby | Enchanting: its enchanted version | H |
+| 74 | Gold Sapphire Amulet | trinket | Gold Chain, Cut Sapphire | Enchanting: its enchanted version | H |
+| 75 | Gold Emerald Amulet | trinket | Gold Chain, Cut Emerald | Enchanting: its enchanted version | H |
+| 76 | Gold Topaz Amulet | trinket | Gold Chain, Cut Topaz | Enchanting: its enchanted version | H |
+| 77 | Gold Amethyst Amulet | trinket | Gold Chain, Cut Amethyst | Enchanting: its enchanted version | H |
+| 78 | Gold Diamond Amulet | trinket | Gold Chain, Cut Diamond | Enchanting: its enchanted version | H |
 | 80 | Ebony Plank | material | Ebony Wood | Construction | H |
 | 81 | Dragonscale | material | Red Scale (enemy drop) | Dragonscale armour | H |
 | 82 | Dragonscale Hat | hat, Ranged | Dragonscale |  | A |
@@ -101,7 +99,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 85 | Dragonscale Shield | off hand, Ranged | Dragonscale |  | A |
 | 86 | Dragonscale Chest | chest, Ranged | Dragonscale |  | A |
 
-**Art: 48 have, 27 adapt, 3 new.** You have all 24 pieces of jewellery, six cut and six uncut gems, seven planks, three scales, and leather gloves and boots. To draw: a Leather Shield, Parchment and a Blank Book; most armour is recolours.
+**Art: 46 have, 27 adapt, 3 new.** You have all 24 pieces of jewellery, six cut and six uncut gems, seven planks (Birch and Cedar go unused), three scales, and leather gloves and boots. To draw: a Leather Shield, Parchment and a Blank Book; most armour is recolours.
 
 ## Planning agent's calls
 
@@ -112,12 +110,11 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 ## Moved or changed from today
 
 - **Leather Hat 15 becomes 6, Leather Chest 21 becomes 10; Leather 20 becomes 5**, and comes from Hide, not Lizard Scale.
-- **Fishing Rod** uses String in place of Beeswax Comb, so Honey's comb needs another use (Farming).
+- **Fishing Rod** uses String in place of Beeswax Comb, and Leather no longer uses Lizard Scale; both become weird items in [Alchemy](content_alchemy.md).
 - **"Search a Bird Nest" retires** with the Bank's Use button (brief 400).
 
 ## Open links
 
-- ⚠️ **Torch has no user yet**: you kept it, and something must ask for it, such as Construction or dark places, or it goes.
 - **Planks** must be asked for by Construction's buildings (wood and buildings).
 - **Mining**: uncut gems. **Enemies**: Hide, Blue and Red Scales.
 - **A Leather Shield** for Ranged: Shields lend defence; how it differs from metal ones is the ledger's.

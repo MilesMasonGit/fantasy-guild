@@ -11,7 +11,7 @@
 
 ## Rules for items
 
-- **No clutter.** "We have very limited space in our recipe list, so I don't want you to clutter it with items that have no practical purpose." Every item has a concrete job in play. An item with no user is flagged, and goes unless one is found.
+- **No clutter.** "We have very limited space in our recipe list, so I don't want you to clutter it with items that have no practical purpose." Every item has a concrete job in play. An item with no user is flagged, and goes unless one is found. Something waiting on an unfinished system isn't clutter: "Kunai and Silver are not fully integrated yet, but I will want them to be" (2026-11-05).
 - **Gaps beat filler.** Leave a level open, for what later skills need. Don't invent something to fill it.
 - **Ideas live apart.** Speculative things go in a "possible" list, clearly not recipes. Ideas and names are cheap: offer plenty, and expect most to be cut.
 - **Base set, then specifics.** Settle a small base set first. Base items improve at each main tier ("Some base items will be available in every kind, such as chestplate and pickaxe"). Others are specific ("a Cleaver may only be Iron").
@@ -31,7 +31,7 @@
 
 | Skill | Makes | Building |
 |---|---|---|
-| Smithing | Melee weapons, metal armour, Daggers, gathering tools, ingots, Nails, Arrowheads, bands, Wire, Chain, Gears | Blacksmith |
+| Smithing | Melee weapons, metal armour, Daggers, gathering tools, ingots, Nails, Arrowheads, Ring Bands, Chain, Gears | Blacksmith |
 | Fletching | Bows, Crossbows, Arrows | Fletcher's Lodge |
 | Enchanting | Wands, Staves, Tomes; enchants jewellery and gear; special weapons | Enchanter's Tower |
 | Tailor | Stealth and Magic armour, Capes, String, fabrics, cloth for buildings | Tailor's Shop |
@@ -54,15 +54,17 @@ Faith, Summoning, Science, Crime and Taming are still to design. Placeholder bui
 | Mining | Clay, Quartz | Alchemy |
 | Forestry | Wood | Smithing's handles, Fletching, Enchanting, Crafting's Planks |
 | Forestry | Feathers | Fletching, Alchemy |
+| Forestry | Bamboo | Crafting's Fine Rod |
 | Forestry | Mushrooms | Alchemy, Cooking |
 | Farming | Crops, fruit | Cooking |
 | Farming | Herbs | Alchemy |
 | Farming | Flax | Tailor |
 | Fishing | Fish | Cooking |
 | Fishing | Seaweed, Pearls | Alchemy |
-| Combat | Hide, scales, meats, Silk, parts | Crafting, Cooking, Tailor, Alchemy |
+| Combat | Hide, scales, meats, Silk, parts, Lizard Scale, Beeswax Comb | Crafting, Cooking, Tailor, Alchemy |
 | Smithing | Arrowheads | Fletching |
-| Smithing | Bands, Chain | Crafting's jewellery |
+| Smithing | Pickaxes, Woodaxes | Mining, Forestry: better ones reach better veins and trees |
+| Smithing | Ring Bands, Silver and Gold Chain | Crafting's jewellery |
 | Smithing | Chestplates | Enchanting |
 | Smithing | Nails, Gears | Crafting, Construction |
 | Tailor | String | Fletching, Crafting's rods |
@@ -80,7 +82,7 @@ Faith, Summoning, Science, Crime and Taming are still to design. Placeholder bui
 
 **Gathering is Tokens, not chains.** Mining, Forestry and Fishing have no item ladder. Their interest comes from creative Tokens in the gaps between tiers, each playing differently and supplying something useful: a Geode's burst, a Hollow Tree's birds, a Coral Reef.
 
-**Farming** has no tool: progress is crop levels, places, and buildings that boost production. Tools gate some other things (picks, rods, harpoons), and that's by skill, not a rule.
+**Farming** has no tool: progress is crop levels, places, and buildings that boost production. Tools gate some other things (picks, axes, rods, harpoons), and that's by skill, not a rule.
 
 ## Buildings
 

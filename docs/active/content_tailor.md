@@ -33,7 +33,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 10 | Linen Tunic | chest, Stealth | Linen |  | H |
 | 11 | Linen Cape | cape, any style | Linen |  | H |
 | 12 | Canvas | material | Linen, String | Construction: camps | N |
-| 13 | Sack | material | Linen, String | Construction: Windmill, stores | N |
+| 13 | Sack | material | Linen, String | Construction: buildings from level 20 | N |
 | 20 | Wool Cloth | material | Wool | Tailor: tier 2; Sail | A |
 | 23 | Wool Hat | hat, Magic | Wool Cloth |  | A |
 | 24 | Wool Hood | hat, Stealth | Wool Cloth |  | A |
@@ -44,7 +44,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 29 | Wool Robe | chest, Magic | Wool Cloth |  | A |
 | 30 | Wool Tunic | chest, Stealth | Wool Cloth |  | A |
 | 31 | Wool Cape | cape, any style | Wool Cloth |  | H |
-| 32 | Sail | material | Wool Cloth, String | Construction: Dock, Windmill | N |
+| 32 | Sail | material | Wool Cloth, String | Construction: buildings from level 40 | N |
 | 33 | Hunter's Cloak | cape, Ranged bonus | Wool Cloth, Leather |  | A |
 | 40 | Silk Cloth | material | Silk | Tailor: tiers 3 to 5; Drapes | A |
 | 43 | Silk Hat | hat, Magic | Silk Cloth |  | A |

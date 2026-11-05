@@ -12,7 +12,7 @@ import glob, io, re, sys, collections
 PAGES = sorted(glob.glob('docs/active/content_*.md'))
 SOURCE_COLS = ('name', 'gives', 'catch', 'mote', 'herb', 'tool', 'ingredient', 'unlock', 'potion', 'fruit', 'crop')
 # Raw things gathered or dropped that the pages name but don't list as their own row.
-KNOWN_RAW = {'Water', 'Coal', 'Worm', 'Hide', 'Blue Scale', 'Red Scale', 'Silk', 'Wool', 'Stone', 'Bones', 'Feather'}
+KNOWN_RAW = {'Water', 'Coal', 'Worm', 'Hide', 'Blue Scale', 'Red Scale', 'Silk', 'Wool', 'Stone', 'Bones', 'Feather', 'Lizard Scale', 'Beeswax Comb'}
 
 
 def tables(text):

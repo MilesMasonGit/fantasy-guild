@@ -56,8 +56,8 @@ Each Herb's Alchemy use opens at its Farming level. Planted at a Herb Garden, or
 | 40 | Elixir of Keen Eye | elixir | More crit | Mandrake | Pearl | Grape Juice |
 | 45 | Bountiful Draught | work: any | More yield | Mandrake, Rose | Mushroom | Lemonade |
 | 50 | Poison | poison | Stronger Poison | Nightshade, Mandrake | enemy drop | Grape Juice |
-| 60 | Greater Ironskin | elixir | Stronger Resist Physical | Moonpetal | enemy drop | Orange Juice |
-| 65 | Greater Valor | elixir | Stronger damage | Moonpetal, Mandrake | enemy drop | Orange Juice |
+| 60 | Greater Ironskin | elixir | Stronger Resist Physical | Moonpetal | Lizard Scale | Orange Juice |
+| 65 | Greater Valor | elixir | Stronger damage | Moonpetal, Mandrake | Beeswax Comb | Orange Juice |
 | 70 | Deadly Poison | poison | The strongest Poison | Nightshade, Moonpetal | enemy drop | Wine |
 | 75 | Grand Scholar's Tonic | work: any | Much more XP | Moonpetal, Rose | Pearl | Wine |
 | 80 | Elixir of Legends | elixir | Damage and resist together | Starflower | enemy drop | Mead |
@@ -69,7 +69,7 @@ Each Herb's Alchemy use opens at its Farming level. Planted at a Herb Garden, or
 
 ## What this settles elsewhere
 
-- **Jobs found**: Clay, Quartz, Seaweed, Mushrooms and Pearls now have users. Feathers and Bones gain another. Bamboo still has none.
+- **Jobs found**: Clay, Quartz, Seaweed, Mushrooms and Pearls now have users. Feathers and Bones gain another. Lizard Scale and Beeswax Comb, which lost their old recipes, take two of the late potions (2026-11-05).
 - **Herbs join Farming's open levels** (5, 12, 20, 30, 35, 40, 60, 80).
 - **Today's Shrimp Trawler Potion retires**; Birdwatcher's recipe changes; Ironskin and Valor move up.
 
