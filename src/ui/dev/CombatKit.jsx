@@ -1,6 +1,7 @@
 // The combat screen on the style sheet page, drawn by the real components fed a fixture fight
-// (`combatKit.js`): the fight's pieces on the mat (bars, chip, plate, every float), the fight panel
-// with its log closed and open, and the enemy card fought and never fought.
+// (`combatKit.js`): the fight's pieces on the mat (bars, chip, plate, every float), the fight window
+// with its log closed and open, a minimized window's tab mid-fight and after a win, and the enemy
+// card fought and never fought.
 
 import { useLayoutEffect, useRef, useState } from 'react';
 import { HealthBar } from '../components/board/HealthBar.jsx';
@@ -8,9 +9,10 @@ import { WorkPlateView } from '../components/board/WorkPlateLayer.jsx';
 import { buildFloat } from '../components/board/fx/fightFloats.js';
 import { FightPanelView } from '../components/combat/FightPanel.jsx';
 import { EnemyCardRows } from '../components/combat/EnemyCard.jsx';
+import { FightTabView } from '../components/combat/FightTab.jsx';
 import { PixelFrame, FRAME_KIND } from '../components/base/PixelFrame.jsx';
 import { glyphSrc, GLYPH_COLOUR } from '../components/combat/combatGlyphs.js';
-import { KIT_FIGHTS, KIT_PLATE_CELLS, KIT_FLOATS, KIT_CARDS, kitPanelView } from './combatKit.js';
+import { KIT_FIGHTS, KIT_PLATE_CELLS, KIT_FLOATS, KIT_CARDS, KIT_TABS, kitPanelView } from './combatKit.js';
 
 /** The grass under the mat pieces: the mat's own mean green (the real mat is textured). */
 const GROUND = '#5d9440';
@@ -61,8 +63,11 @@ const Panels = () => {
     const view = kitPanelView();
     return (
         <div className="flex flex-wrap items-start gap-4 p-3" style={{ background: GROUND }} data-kit-combat="panels">
-            <FightPanelView view={view} fights={KIT_FIGHTS} onClose={() => {}} logOpen={open} onToggleLog={() => setOpen(o => !o)} tab={tab} onTab={setTab} />
+            <FightPanelView view={view} fights={KIT_FIGHTS} onClose={() => {}} onMinimize={() => {}} logOpen={open} onToggleLog={() => setOpen(o => !o)} tab={tab} onTab={setTab} />
             <FightPanelView view={view} fights={KIT_FIGHTS} onClose={() => {}} logOpen onToggleLog={() => {}} tab="last" onTab={() => {}} />
+            <div className="flex flex-col gap-2" data-kit-combat="tabs">
+                {KIT_TABS.map((tab, i) => <FightTabView key={i} heroId={view.heroId} tab={tab} still={view.hero.art.still} onOpen={() => {}} />)}
+            </div>
         </div>
     );
 };

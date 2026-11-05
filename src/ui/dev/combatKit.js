@@ -56,6 +56,7 @@ export function kitPanelView() {
             { itemId: 'item_elixir_of_ironskin', name: 'Elixir of Ironskin', left: 2, count: 3 }
         ],
         statuses: [{ id: 'effect_venom', name: 'Venom', stacks: 2, maxStacks: 3, ticksLeft: null, icon: 'drop' }],
+        buffs: ['Valor', 'Ironskin'],
         art: { sheet: 'assets/heroes/hn_fighter_sheet.png', still: 'assets/heroes/hm_fighter_por.png' }
     };
     const enemy = {
@@ -69,6 +70,12 @@ export function kitPanelView() {
         enemy: { ...enemy, hpText: healthText(24, 40) }
     };
 }
+
+/** Two minimized windows' tabs: one mid-fight, one between fights after a win. */
+export const KIT_TABS = Object.freeze([
+    { heroName: 'Aela', enemyName: 'Goblin Warlord', typeId: 'token_goblin_chief', hero: { cur: 17, max: 30 }, enemy: { cur: 24, max: 40 }, outcome: null },
+    { heroName: 'Aela', enemyName: 'Goblin Scout', typeId: 'token_goblin', hero: { cur: 28, max: 30 }, enemy: { cur: 0, max: 25 }, outcome: 'won' }
+]);
 
 /** The fight plate's cells as the mat shows them, the hero on the enemy's right. */
 export const KIT_PLATE_CELLS = Object.freeze([

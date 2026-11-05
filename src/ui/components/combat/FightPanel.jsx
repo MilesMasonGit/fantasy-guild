@@ -286,7 +286,7 @@ const SideStats = ({ side, who, hitTip, hitLines, hit }) => {
     const style = styleName(side.style);
     const swing = side.swingMs ? secondsText(side.swingMs) : '–';
     return (
-        <div className="grid grid-cols-2 gap-x-2 gap-y-1 min-w-0" data-fight-stats={who}>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1 min-w-0" data-fight-stats={who}>
             <StatCell caption={style || t('fight.panel.noStyle')} data-fight-stat="style">
                 <Value
                     tip={style ? t('fight.tip.level', { name: side.name, style, level: levelText(side.level) }) : t(side.armed ? 'fight.tip.noStyleArmed' : 'fight.tip.noStyle', { name: side.name })}
@@ -317,7 +317,7 @@ const SideStats = ({ side, who, hitTip, hitLines, hit }) => {
 export const FightStats = ({ view }) => {
     const { hero, enemy } = view;
     return (
-        <div data-fight-card className="grid grid-cols-2 gap-3">
+        <div data-fight-card className="grid grid-cols-[1fr_2px_1fr] gap-2.5">
             <SideStats
                 side={hero}
                 who="hero"
@@ -325,6 +325,7 @@ export const FightStats = ({ view }) => {
                 hitTip={t('fight.tip.heroHit', { hit: damageText(hero.hit) })}
                 hitLines={hero.hitLines}
             />
+            <div aria-hidden="true" className="bg-white/10" />
             <SideStats
                 side={enemy}
                 who="enemy"
@@ -375,6 +376,7 @@ export const AttackList = ({ enemy }) => {
                 <div className="ui-text-small text-gi-muted pt-0.5" data-fight-kinds="unknown">{t('fight.panel.unknownKinds')}</div>
             ) : enemy.kinds.length > 0 && (
                 <div className="flex flex-wrap gap-x-3 pt-0.5 ui-text-small" data-fight-kinds="known">
+                    <span className="text-gi-muted">{t('fight.card.kinds')}</span>
                     {enemy.kinds.map(k => (
                         <Tooltip key={k.id} title={k.name} lines={[k.tip]}>
                             <span className="font-bold text-white cursor-help" data-fight-kind={k.id}>{k.name}</span>

@@ -8,6 +8,7 @@ import {
 } from '../ui/components/combat/fightPanelStore.js';
 import { FightPanelPopup, keepOnScreen, panelPlace } from '../ui/components/combat/FightPanelPopup.jsx';
 import { FightTabStrip } from '../ui/components/combat/FightTab.jsx';
+import { CombatKit } from '../ui/dev/CombatKit.jsx';
 import { pushEscapeLayer, escapeLayerCount } from '../ui/utils/escapeLayers.js';
 
 /**
@@ -134,6 +135,19 @@ describe('where a window stands', () => {
 });
 
 describe('the tab strip', () => {
+    it('⭐ a tab: both faces, both names, both healths with their numbers; Won in place of the enemy after a win', () => {
+        const { container } = render(React.createElement(CombatKit));
+        const tabs = [...container.querySelectorAll('[data-kit-combat="tabs"] [data-fight-tab]')];
+        expect(tabs).toHaveLength(2);
+        const hp = (tab, who) => tab.querySelector(`[data-fight-tab-hp="${who}"]`).textContent;
+        expect([hp(tabs[0], 'hero'), hp(tabs[0], 'enemy')]).toEqual(['17/30', '24/40']);
+        expect(tabs[0].querySelector('[data-fight-tab-enemy]').textContent).toBe('Goblin Warlord');
+        expect(tabs[1].querySelector('[data-fight-tab-enemy]')).toBeNull();
+        expect(tabs[1].querySelector('[data-fight-tab-result]').getAttribute('data-fight-tab-result')).toBe('won');
+        expect(hp(tabs[1], 'enemy')).toBe('0/25');
+        expect(tabs[0].querySelectorAll('img').length).toBe(2);
+    });
+
     it('draws nothing until a window is minimized', () => {
         const { container } = render(React.createElement(FightTabStrip));
         act(() => { openFightPanel('kira'); });

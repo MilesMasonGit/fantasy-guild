@@ -51,7 +51,14 @@ export const FightTab = memo(function FightTab({ heroId }) {
     const tab = readKey(key);
     if (!tab) return null;
     const sprite = HeroManager.getHero(heroId)?.spriteId || HeroManager.getHero(heroId)?.classId || null;
-    const still = heroArt(sprite).still;
+    return <FightTabView heroId={heroId} tab={tab} still={heroArt(sprite).still} onOpen={() => restoreFightPanel(heroId)} />;
+});
+
+/**
+ * The tab as drawn from what it shows: `tab` is `{ heroName, enemyName, typeId, hero: {cur, max},
+ * enemy: {cur, max}, outcome }`, `still` the hero's picture.
+ */
+export const FightTabView = ({ heroId, tab, still, onOpen }) => {
     const result = resultWord(tab.outcome);
     const enemyPx = tab.typeId ? tokenSizeFor(TOKEN_SURFACE.INSPECT, tab.typeId) : 64;
     const label = `${t('fight.panel.title', { hero: tab.heroName, enemy: tab.enemyName })}: ${t('fight.window.restore')}`;
@@ -61,7 +68,7 @@ export const FightTab = memo(function FightTab({ heroId }) {
             data-fight-tab={heroId}
             aria-label={label}
             title={label}
-            onClick={() => restoreFightPanel(heroId)}
+            onClick={onOpen}
             className="ui-icon-button block p-0 m-0 border-0 bg-transparent cursor-pointer pointer-events-auto text-left"
         >
             <PixelFrame kind={FRAME_KIND.CHAMFER}>
@@ -95,7 +102,7 @@ export const FightTab = memo(function FightTab({ heroId }) {
             </PixelFrame>
         </button>
     );
-});
+};
 
 /**
  * The tabs of the minimized windows, in a strip above the hero bar from the mat's left edge, the
