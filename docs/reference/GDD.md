@@ -1047,21 +1047,39 @@ Statuses are not drawn on the board.
   by name, green heals (a meal, or a rule's heal on either side), and Venom
   and Burn ticks in red with a drop or a flame. Two at once on one side stack
   upward.
-- **The fight panel** opens over the mat beside the chip, one at a time (the
-  X, Escape or a click off it closes it): the battlefield strip with both
-  fighters at 1×, the hero on the left facing right, moving as on the mat
-  (idle, one swing per real swing; an enemy without an animation sheet stands
-  still: today every enemy but the Cow); the **versus card**, one shared icon
-  column so each pair reads across: style and level, health, hit (before the
-  other side's resistances and the matchup: the player does the sums),
-  resistances and weaknesses (the enemy's as they stand in the fight, after
-  effects on it and Sunder), swing; the hero's elixirs and statuses (with
-  stacks) beside the enemy's kinds (once fought), its move list (the last one
-  made bright), statuses and lingering effects; and the **log**, closed
-  until asked for, holding the whole of this fight and the last one ("This
-  fight" / "Last fight", newest first, at most 400 lines a fight). A fight is
-  one enemy engaged: each kill starts the next. The log is kept in memory per
-  hero and never saved.
+- **The fight windows** (owner's picks, 2026-11-05: window B "the slim card",
+  tab D "faces and bars"): one window per hero, opened by the fight's button
+  beside the chip on the side away from the fight, several open at once. A
+  window **belongs to its hero**: it shows whatever they fight next ("Kira vs
+  Goblin" becomes "Kira vs Wolf") and the last result between fights (Won or
+  Lost in its title bar), until its X or Escape closes it (Escape closes the
+  top window, one at a time). Its title bar drags it (it stays on the
+  screen); pressing a window brings it to the top. One narrow column: the
+  **battle**, the owner's battlefield with both fighters at twice their art,
+  the hero on the left facing right, moving as on the mat (an enemy without
+  an animation sheet stands still: today every enemy but the Cow), the hero
+  bar's HP bar with its numbers over each, and what just landed over each
+  fighter (the number, Miss, Crit!, Weak! or Resisted and the hit's types,
+  heals) with the enemy's named move in a speech bubble over its bar; the two
+  sides' **stat blocks** side by side, as the Token card's (style and level,
+  hit with its types, before the other side's resistances and the matchup:
+  the player does the sums; swing; resistances and weaknesses, the enemy's as
+  they stand in the fight); the **enemy's attacks**, each with its type in a
+  small tile, the last one marked "just used" in gold, and its kinds once
+  fought; **what is on each fighter** in two columns (statuses with stacks,
+  lingering effects with a gold star); the hero's **elixirs** with the fights
+  each has left; and the **log**, closed until asked for, holding the whole of
+  this fight and the last one ("This fight" / "Last fight", newest first, at
+  most 400 lines a fight). **Minimize** puts a window away as a **tab** (only
+  a minimized window has one): the hero's face, both names (the enemy's gives
+  way to Won or Lost between fights), both health bars with their numbers,
+  the enemy's face, in a strip along the mat's foot above the hero bar from
+  its left; clicking it brings the window back where it was. ⚠️ Nothing
+  redraws faster than its fight changes (T-198): a window draws again only
+  when its fight's record changes, a minimized window draws nothing, and a
+  tab only when a name, a health or the result changes. A fight is one enemy
+  engaged: each kill starts the next. The log is kept in memory per hero and
+  never saved.
 - **The enemy card** shows by the pointer resting on an enemy: level, style,
   health, hit, swing, its resistances and weaknesses and its moves (from the
   start), and its kinds once the guild has fought one ("? fight one to learn"
@@ -1074,7 +1092,8 @@ Statuses are not drawn on the board.
   panel opens. Placeholder icons are drawn in code (`owner_art_list.md`). The
   QA panel's Combat screen section sets up two fights and an enemy nobody has
   fought, and plays 20 minutes away.
-  *(`ui/components/combat/`, `board/FightLayer.jsx`, `board/fx/fightFloats.js`,
+  *(`ui/components/combat/` (the windows: `FightPanelPopup.jsx`, `FightPanel.jsx`,
+  `FightTab.jsx`, `fightPanelStore.js`), `board/FightLayer.jsx`, `board/fx/fightFloats.js`,
   `board/HealthBar.jsx`, `hud/CatchUpOverlay.jsx`)*
 
 ---

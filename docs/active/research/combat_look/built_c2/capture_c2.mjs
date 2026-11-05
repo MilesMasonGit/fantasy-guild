@@ -67,7 +67,7 @@ try {
     for (let i = 0; i < 4; i++) {
         await page.key('Escape', 'Escape', 27);
         await sleep(300);
-        console.log('escape', i + 1, JSON.stringify(await state()));
+        console.log('escape', i + 1, await page.evaluate(`document.querySelectorAll('[data-fight-window]').length + ' windows, ' + document.querySelectorAll('[data-fight-tab]').length + ' tabs on screen'`));
     }
 } finally {
     await chrome.close();

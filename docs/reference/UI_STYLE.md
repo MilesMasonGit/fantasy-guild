@@ -147,6 +147,19 @@ normal text colour; a new meaning needs the owner's OK.
 - A fight's link sits in the same place, the **fight plate**: both styles with a divider, then the
   hero's elixirs with the fights each has left; HP bars stay above (combat screen, 2026-10-25).
 
+## Fight windows (owner, 2026-11-05)
+
+- **A window, "like an operating system's"**: the chamfer frame and hard shadow, a title bar
+  ("Kira vs Goblin", "vs" muted) that drags it, then a **minimize** button (a gold bar at its
+  foot, drawn in code, the X's size) beside the red close X. Several open at once; the one pressed
+  is on top; Escape closes the top one.
+- **One narrow column** (pick B): the battle with the fighters at 2×, the hero's `VitalBar` with
+  its numbers over each fighter; the two sides' stat blocks in the Token card's cells (caption over
+  value) side by side with a faint line between; the enemy's attacks in small type tiles, the last
+  gold-edged and "just used"; effects in two columns; elixirs and the Log button at the foot.
+- **A minimized window is a tab** (pick D): faces at 1× cropped to 44 px, both names, two small
+  `VitalBar`s. Tabs stand in a strip along the mat's foot above the hero bar, from the left.
+
 ## Sprites and icons
 
 - **Every sprite draws at a whole multiple of its art size** (1×, 2×, 3×),
