@@ -42,6 +42,10 @@ built, so batches stay small and the owner looks often):
   session (project skills in `.claude/skills/`); each reads its own
   checklist and begins. Pick the model in the app first (Fable for the
   director).
+- **Content agent** (owner, 2026-11-04): type `/content` in a fresh session to plan
+  or tweak items, recipes, Tokens and buildings. It works on branch
+  `planning-content`, by the owner's rules in
+  [`docs/reference/CONTENT_PHILOSOPHY.md`](docs/reference/CONTENT_PHILOSOPHY.md).
 - **Owner**: shares ideas and answers interviews with the planning agent,
   makes art, plays the game and the eye-checks, writes what they notice into
   `owner_feedback.md`, and answers the director's parked questions.

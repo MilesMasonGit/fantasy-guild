@@ -43,6 +43,8 @@ them; they don't re-open their rulings.
 
 ## How a session works
 
+*Sessions now run through the `/content` agent, by [the content philosophy](../reference/CONTENT_PHILOSOPHY.md) (owner, 2026-11-04).*
+
 The agent brings a **full proposal for one chain** as tables; the owner edits it.
 No item-by-item questions: the simplest choice is taken and said in a line.
 

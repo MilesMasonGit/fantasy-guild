@@ -47,18 +47,18 @@ A hero with Enchanting works a Leyline, like a vein, and gets its Motes and very
 | 14 | Warded Copper Chestplate | chest, with a defence bonus | Copper Chestplate (Smithing), Nature Motes | A |
 | 20 | Adept Wand | Magic weapon, no type of its own | Fir Wood, Birch Wood, Water Motes | A |
 | 22 | Poison Tome | off hand: turns a Wand's damage Poison | Nature and Dark Motes, Blank Book | A |
-| 24 | Adept Fire Staff | Magic weapon, Fire | Fir Wood, Birch Wood, Fire Motes, Ruby | A |
-| 26 | Adept Ice Staff | Magic weapon, Ice | Fir Wood, Birch Wood, Water and Wind Motes, Sapphire | A |
-| 28 | Adept Electric Staff | Magic weapon, Electric | Fir Wood, Birch Wood, Wind and Light Motes, Topaz | A |
+| 24 | Adept Fire Staff | Magic weapon, Fire | Fir Wood, Birch Wood, Fire Motes, Cut Ruby | A |
+| 26 | Adept Ice Staff | Magic weapon, Ice | Fir Wood, Birch Wood, Water and Wind Motes, Cut Sapphire | A |
+| 28 | Adept Electric Staff | Magic weapon, Electric | Fir Wood, Birch Wood, Wind and Light Motes, Cut Topaz | A |
 | 34 | Warded Iron Chestplate | chest, with a defence bonus | Iron Chestplate (Smithing), Nature Motes | A |
 | 40 | Expert Wand | Magic weapon, no type of its own | Maple Wood, Birch Wood, Wind Motes | A |
 | 42 | Dark Tome | off hand: turns a Wand's damage Dark | Dark Motes, Blank Book | A |
 | 43 | Enchanted Silver Ruby Ring | trinket | Silver Ruby Ring (Crafting), Fire Motes | A |
-| 44 | Expert Fire Staff | Magic weapon, Fire | Maple Wood, Birch Wood, Fire Motes, Ruby | A |
+| 44 | Expert Fire Staff | Magic weapon, Fire | Maple Wood, Birch Wood, Fire Motes, Cut Ruby | A |
 | 45 | Enchanted Silver Sapphire Ring | trinket | Silver Sapphire Ring (Crafting), Water Motes | A |
-| 46 | Expert Ice Staff | Magic weapon, Ice | Maple Wood, Birch Wood, Water and Wind Motes, Sapphire | A |
+| 46 | Expert Ice Staff | Magic weapon, Ice | Maple Wood, Birch Wood, Water and Wind Motes, Cut Sapphire | A |
 | 47 | Enchanted Silver Emerald Ring | trinket | Silver Emerald Ring (Crafting), Nature Motes | A |
-| 48 | Expert Electric Staff | Magic weapon, Electric | Maple Wood, Birch Wood, Wind and Light Motes, Topaz | A |
+| 48 | Expert Electric Staff | Magic weapon, Electric | Maple Wood, Birch Wood, Wind and Light Motes, Cut Topaz | A |
 | 49 | Enchanted Silver Topaz Ring | trinket | Silver Topaz Ring (Crafting), Wind Motes | A |
 | 50 | Enchanted Silver Amethyst Ring | trinket | Silver Amethyst Ring (Crafting), Dark Motes | A |
 | 51 | Enchanted Silver Diamond Ring | trinket | Silver Diamond Ring (Crafting), Light Motes | A |
@@ -72,11 +72,11 @@ A hero with Enchanting works a Leyline, like a vein, and gets its Motes and very
 | 60 | Master Wand | Magic weapon, no type of its own | Mahogany Wood, Cedar Wood, Dark Motes | A |
 | 62 | Light Tome | off hand: turns a Wand's damage Light | Light Motes, Blank Book | A |
 | 63 | Enchanted Gold Ruby Ring | trinket | Gold Ruby Ring (Crafting), Fire Motes | A |
-| 64 | Master Fire Staff | Magic weapon, Fire | Mahogany Wood, Cedar Wood, Fire Motes, Ruby | A |
+| 64 | Master Fire Staff | Magic weapon, Fire | Mahogany Wood, Cedar Wood, Fire Motes, Cut Ruby | A |
 | 65 | Enchanted Gold Sapphire Ring | trinket | Gold Sapphire Ring (Crafting), Water Motes | A |
-| 66 | Master Ice Staff | Magic weapon, Ice | Mahogany Wood, Cedar Wood, Water and Wind Motes, Sapphire | A |
+| 66 | Master Ice Staff | Magic weapon, Ice | Mahogany Wood, Cedar Wood, Water and Wind Motes, Cut Sapphire | A |
 | 67 | Enchanted Gold Emerald Ring | trinket | Gold Emerald Ring (Crafting), Nature Motes | A |
-| 68 | Master Electric Staff | Magic weapon, Electric | Mahogany Wood, Cedar Wood, Wind and Light Motes, Topaz | A |
+| 68 | Master Electric Staff | Magic weapon, Electric | Mahogany Wood, Cedar Wood, Wind and Light Motes, Cut Topaz | A |
 | 69 | Enchanted Gold Topaz Ring | trinket | Gold Topaz Ring (Crafting), Wind Motes | A |
 | 70 | Enchanted Gold Amethyst Ring | trinket | Gold Amethyst Ring (Crafting), Dark Motes | A |
 | 71 | Enchanted Gold Diamond Ring | trinket | Gold Diamond Ring (Crafting), Light Motes | A |
@@ -88,9 +88,9 @@ A hero with Enchanting works a Leyline, like a vein, and gets its Motes and very
 | 77 | Enchanted Gold Diamond Amulet | trinket | Gold Diamond Amulet (Crafting), Light Motes | A |
 | 78 | Warded Adamantine Chestplate | chest, with a defence bonus | Adamantine Chestplate (Smithing), Nature Motes | A |
 | 80 | Grandmaster Wand | Magic weapon, no type of its own | Ebony Wood, Cedar Wood, Light Motes | A |
-| 84 | Grandmaster Fire Staff | Magic weapon, Fire | Ebony Wood, Cedar Wood, Fire Motes, Ruby | A |
-| 86 | Grandmaster Ice Staff | Magic weapon, Ice | Ebony Wood, Cedar Wood, Water and Wind Motes, Sapphire | A |
-| 88 | Grandmaster Electric Staff | Magic weapon, Electric | Ebony Wood, Cedar Wood, Wind and Light Motes, Topaz | A |
+| 84 | Grandmaster Fire Staff | Magic weapon, Fire | Ebony Wood, Cedar Wood, Fire Motes, Cut Ruby | A |
+| 86 | Grandmaster Ice Staff | Magic weapon, Ice | Ebony Wood, Cedar Wood, Water and Wind Motes, Cut Sapphire | A |
+| 88 | Grandmaster Electric Staff | Magic weapon, Electric | Ebony Wood, Cedar Wood, Wind and Light Motes, Cut Topaz | A |
 | 94 | Warded Darkmetal Chestplate | chest, with a defence bonus | Darkmetal Chestplate (Smithing), Nature Motes | A |
 
 **Art: 52 adapt, 3 new.** To draw: one wand, one staff, one tome. Enchanted jewellery could be your 24 pieces with a shine added in code, and Warded Chestplates your plates likewise. `body_mage_plus` and `hat_mage_plus` suit enchanted Tailor gear.
