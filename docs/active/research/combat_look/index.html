@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Combat Look</title>
+<style>
+@font-face { font-family: 'Pixelify Sans'; font-weight: 400; src: url(../../../../public/fonts/pixelify-sans-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Pixelify Sans'; font-weight: 700; src: url(../../../../public/fonts/pixelify-sans-latin-700-normal.woff2) format('woff2'); }
+:root { color-scheme: dark; --bg: #0a0a0a; --panel: #181410; --text: #f1ece2; --muted: #a39b8c; --gold: #fbbf24; --line: #977316; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 24px 16px 64px; background: var(--bg); color: var(--text); font: 400 18px/1.35 'Pixelify Sans', monospace; font-variant-ligatures: none; }
+main { max-width: 1400px; margin: 0 auto; }
+h1 { font-size: 32px; margin: 0 0 4px; }
+h2 { font-size: 26px; margin: 44px 0 12px; border-bottom: 2px solid var(--line); padding-bottom: 6px; }
+p { margin: 0 0 8px; color: var(--muted); max-width: 900px; }
+.row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+figure { margin: 0; max-width: 100%; }
+img { display: block; max-width: 100%; height: auto; image-rendering: pixelated; }
+figcaption { padding-top: 8px; max-width: 720px; }
+.letter { color: var(--gold); font-weight: 700; font-size: 26px; margin-right: 8px; }
+.name { font-weight: 700; }
+.trade { display: block; color: var(--muted); }
+.look { background: var(--panel); padding: 16px; margin-bottom: 20px; }
+.wide { width: 100%; }
+</style>
+</head>
+<body>
+<main>
+<h1>How combat looks: pick by letter</h1>
+<p>Every picture is the real game at 1920 × 1080, with the new pieces drawn on top: your sprites, the game's font and frames. Nothing in the game has changed.</p>
+<p>The numbers inside the windows are samples. The red health bar and the stat block are stand-ins: they will follow your picks in the hero bar and Token card batches. The small attack and effect icons are the code-drawn ones until you draw them.</p>
+
+<h2>The fight window</h2>
+<div class="look">
+    <div class="row">
+        <figure>
+            <img src="window_today.png" alt="Today's fight panel in the game">
+            <figcaption><span class="name">Today, for comparison.</span> <span class="trade">One at a time, small battle, no window controls.</span></figcaption>
+        </figure>
+    </div>
+</div>
+
+<div class="look">
+    <div class="row">
+        <figure>
+            <img src="window_A.png" alt="Window A">
+            <figcaption><span class="letter">A</span><span class="name">The big arena.</span> Fighters at three times their art, numbers underneath. <span class="trade">Trades away: mat space. Three open cover most of it.</span></figcaption>
+        </figure>
+        <figure style="flex:1 1 560px">
+            <a href="window_A_three.png"><img class="wide" src="window_A_three.png" alt="Three of window A open on the mat"></a>
+            <figcaption>Three A windows open at once. Click for full size.</figcaption>
+        </figure>
+    </div>
+</div>
+
+<div class="look">
+    <div class="row">
+        <figure>
+            <img src="window_B.png" alt="Window B">
+            <figcaption><span class="letter">B</span><span class="name">The slim card.</span> Fighters at twice their art, the two sides read across a shared icon column, as you picked before. <span class="trade">Trades away: battle size, about the size they are on the mat.</span></figcaption>
+        </figure>
+        <figure style="flex:1 1 560px">
+            <a href="window_B_three.png"><img class="wide" src="window_B_three.png" alt="Three of window B open on the mat"></a>
+            <figcaption>Three B windows open at once. Click for full size.</figcaption>
+        </figure>
+    </div>
+</div>
+
+<div class="look">
+    <div class="row">
+        <figure>
+            <img class="wide" src="window_C.png" alt="Window C">
+            <figcaption><span class="letter">C</span><span class="name">Ringside.</span> The battle in the middle, each side's numbers beside its own fighter. <span class="trade">Trades away: width. Only two fit side by side.</span></figcaption>
+        </figure>
+        <figure style="flex:1 1 560px">
+            <a href="window_C_three.png"><img class="wide" src="window_C_three.png" alt="Three of window C open on the mat"></a>
+            <figcaption>Three C windows open at once. Click for full size.</figcaption>
+        </figure>
+    </div>
+</div>
+
+<h2>A minimized window: its tab, in a strip above the hero bar</h2>
+<div class="look">
+    <figure>
+        <img src="tabs_D.png" alt="Tab look D">
+        <figcaption><span class="letter">D</span><span class="name">Faces and bars.</span> Both fighters' heads, both names, both healths. The last tab shows a finished fight. <span class="trade">Trades away: height. A taller band over the mat's bottom edge. About five fit.</span></figcaption>
+    </figure>
+</div>
+<div class="look">
+    <figure>
+        <img src="tabs_E.png" alt="Tab look E">
+        <figcaption><span class="letter">E</span><span class="name">Words and bars.</span> One thin line, no art. <span class="trade">Trades away: the quick look at who is fighting what. About five fit here too, just thinner.</span></figcaption>
+    </figure>
+</div>
+
+<h2>A busy mat: five fights crowded together</h2>
+<div class="look">
+    <figure>
+        <img src="mat_today.png" alt="The busy mat today">
+        <figcaption><span class="name">Today, a real moment from the game.</span> <span class="trade">Plates on top of fighters, floats beside them landing on the next fight.</span></figcaption>
+    </figure>
+</div>
+<div class="look">
+    <figure>
+        <img src="mat_after.png" alt="The busy mat after">
+        <figcaption><span class="letter">F</span><span class="name">After.</span> No plate, the detail button where it stood, health numbers on the bars, floats over the fighter, a named move in a bubble above the bar. <span class="trade">Trades away: the matchup and elixir counts at a glance, which move to the window. These fights still stand close: stepping apart comes in a later batch.</span></figcaption>
+    </figure>
+</div>
+<div class="look">
+    <figure>
+        <img src="mat_moments.png" alt="Six moments of one fight, doubled">
+        <figcaption><span class="letter">F</span><span class="name">F close up, doubled.</span> One fight, six moments: damage, Crit!, Miss, heal, a named move, an effect landing.</figcaption>
+    </figure>
+</div>
+</main>
+</body>
+</html>
