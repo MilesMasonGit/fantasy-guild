@@ -51,9 +51,23 @@ Status: draft
 
 **Construction has no building** (owner): a hero goes to each Foundation. The five specialist buildings are placeholders; their sessions may change what they do.
 
-## Variants, to design next
+## Variants
 
-"The higher tiers are variants." Each building later gets variants with different benefits: for example faster work, or a chance of double outputs. Not listed until the basic buildings are settled.
+"The higher tiers are variants." **Every building won't have every type; each picks from this menu** (owner, 2026-11-04).
+
+| Type | What it does | Suits | In the game today? |
+|---|---|---|---|
+| **Faster Work** | Work here takes less time | any | to check |
+| **Double Output** | A chance of two from one | craft buildings, camps | yes: Double Item Chance |
+| **Save Materials** | A chance not to spend ingredients | craft buildings | to check |
+| **More XP** | Work here pays extra XP | any | to check |
+| **Wider Reach** | A larger radius of work | camps, War Camp | to check |
+| **Quick Refill** | Nearby veins, trees and water rest less | gathering camps | to check |
+| **Rare Finds** | More gems, nests, rare catches or drops from work nearby | camps, War Camp | to check |
+
+**Not taken**: Second Worker, Works on Its Own, Auto Collect.
+
+Which building gets which, with names and levels, comes next.
 
 ## Other buildings
 
