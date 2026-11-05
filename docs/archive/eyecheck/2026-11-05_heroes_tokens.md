@@ -1,5 +1,7 @@
 # Eye-check: the hero bar and sheet, Tokens and the Token card (5 Nov)
 
+**Closed 2026-11-05.** The owner picked from screenshots ([looks_2026-11-05](looks_2026-11-05/index.html)) instead of the QA switches: smooth HP bar (A), dark name plate under Bank column names (A), card B with the art behind everything and arrows only when there is more to scroll, 30 % spacing, hover lift off. Defaults kept where unanswered: yellow alert for parked heroes or heroes at the Hall; a worked Token still rises above resting ones; the crowded Forest is T-308 (a). Then the spacing cost: kept 30 %, spawners follow the bus rule. Merged at 495986ce. The line verdicts below are superseded.
+
 **Where:** the owner's folder is already on `crunch/hero-detail`, and the game runs at the address the director gave. If you need to get back to it yourself:
 
 ```bash

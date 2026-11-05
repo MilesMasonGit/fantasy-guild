@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Look Picks</title>
+<style>
+  :root { --bg: #f6f4ef; --fg: #1d1b18; --muted: #5d574e; --card: #ffffff; --line: #d9d3c7; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #181715; --fg: #ece8e1; --muted: #a8a196; --card: #23211e; --line: #3a3732; } }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 16px/1.45 system-ui, sans-serif; }
+  main { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  h2 { font-size: 1.15rem; margin: 32px 0 4px; }
+  h3 { font-size: 1rem; margin: 18px 0 4px; color: var(--muted); }
+  p { margin: 4px 0 10px; }
+  .q { font-weight: 600; }
+  .note { color: var(--muted); font-size: 0.92rem; }
+  .row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+  figure { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px; max-width: 100%; }
+  figure img { display: block; max-width: 100%; height: auto; image-rendering: pixelated; }
+  figcaption { font-weight: 700; font-size: 1.1rem; margin-top: 6px; text-align: center; }
+  figcaption span { display: block; font-weight: 400; font-size: 0.85rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+<h1>Pick a look by eye</h1>
+<p class="note">Screenshots from the hero-bar branch build, at full size (1920 x 1080 window, cropped tight, not scaled). Each group asks one question; write your pick under it in the eye-check file.</p>
+
+<h2>1. Hero HP bar</h2>
+<p class="q">Which HP bar look do you want: A, B or C?</p>
+<p>A is a smooth plate, B splits the bar into tick segments, C adds a heart in front of the bar.</p>
+<h3>Bottom hero bar (QA Waiter wounded 5/11, QA No Job healthy 11/11, QA Hurt knocked out 0/11)</h3>
+<div class="row">
+  <figure><img src="1_hp_bar_A.png" alt="HP bar look A on the hero bar"><figcaption>A<span>smooth plate</span></figcaption></figure>
+  <figure><img src="1_hp_bar_B.png" alt="HP bar look B on the hero bar"><figcaption>B<span>tick segments</span></figcaption></figure>
+  <figure><img src="1_hp_bar_C.png" alt="HP bar look C on the hero bar"><figcaption>C<span>heart and bar</span></figcaption></figure>
+</div>
+<h3>Hero sheet (QA Waiter, wounded)</h3>
+<div class="row">
+  <figure><img src="1_hp_sheet_A.png" alt="HP bar look A on the hero sheet"><figcaption>A<span>smooth plate</span></figcaption></figure>
+  <figure><img src="1_hp_sheet_B.png" alt="HP bar look B on the hero sheet"><figcaption>B<span>tick segments</span></figcaption></figure>
+  <figure><img src="1_hp_sheet_C.png" alt="HP bar look C on the hero sheet"><figcaption>C<span>heart and bar</span></figcaption></figure>
+</div>
+
+<h2>2. Hero names in the Bank's hero column</h2>
+<p class="q">How should a hero's name be written in the Bank's hero column: A, B or C?</p>
+<p>A puts the name on a dark plate under the portrait, B on a gold ribbon, C writes it in outlined letters over the portrait. Bank open, 8 heroes.</p>
+<div class="row">
+  <figure><img src="2_bank_A.png" alt="Hero column look A"><figcaption>A<span>dark plate</span></figcaption></figure>
+  <figure><img src="2_bank_B.png" alt="Hero column look B"><figcaption>B<span>gold ribbon</span></figcaption></figure>
+  <figure><img src="2_bank_C.png" alt="Hero column look C"><figcaption>C<span>outlined letters</span></figcaption></figure>
+</div>
+
+<h2>3. Token card</h2>
+<p class="q">Which Token card layout do you want: A, B or C?</p>
+<p>A shows the art in a strip across the top, B puts the art behind the whole card, C puts the art in a column down the left (a wider card).</p>
+<h3>Copper Ore Vein (a gathering Token with card art)</h3>
+<div class="row">
+  <figure><img src="3_card_ore_A.png" alt="Copper Ore Vein card, look A"><figcaption>A<span>art strip on top</span></figcaption></figure>
+  <figure><img src="3_card_ore_B.png" alt="Copper Ore Vein card, look B"><figcaption>B<span>art behind everything</span></figcaption></figure>
+  <figure><img src="3_card_ore_C.png" alt="Copper Ore Vein card, look C"><figcaption>C<span>art column at the side</span></figcaption></figure>
+</div>
+<h3>Campfire (a station showing its recipe list)</h3>
+<p class="note">While the recipe list shows, C leaves the art out to give the rows their width, so C looks like a card with no art.</p>
+<div class="row">
+  <figure><img src="3_card_station_A.png" alt="Campfire card, look A"><figcaption>A<span>art strip on top</span></figcaption></figure>
+  <figure><img src="3_card_station_B.png" alt="Campfire card, look B"><figcaption>B<span>art behind everything</span></figcaption></figure>
+  <figure><img src="3_card_station_C.png" alt="Campfire card, look C"><figcaption>C<span>no art while listing</span></figcaption></figure>
+</div>
+<h3>Oak Tree (a tree)</h3>
+<p class="note">Trees have no card art yet, so all three looks draw the same plain card.</p>
+<div class="row">
+  <figure><img src="3_card_tree_A.png" alt="Oak Tree card, look A"><figcaption>A<span>same: no art yet</span></figcaption></figure>
+  <figure><img src="3_card_tree_B.png" alt="Oak Tree card, look B"><figcaption>B<span>same: no art yet</span></figcaption></figure>
+  <figure><img src="3_card_tree_C.png" alt="Oak Tree card, look C"><figcaption>C<span>same: no art yet</span></figcaption></figure>
+</div>
+<h3>Goblin (an enemy)</h3>
+<p class="note">Enemies have no card art yet either, so all three looks draw the same plain card.</p>
+<div class="row">
+  <figure><img src="3_card_enemy_A.png" alt="Goblin card, look A"><figcaption>A<span>same: no art yet</span></figcaption></figure>
+  <figure><img src="3_card_enemy_B.png" alt="Goblin card, look B"><figcaption>B<span>same: no art yet</span></figcaption></figure>
+  <figure><img src="3_card_enemy_C.png" alt="Goblin card, look C"><figcaption>C<span>same: no art yet</span></figcaption></figure>
+</div>
+
+<h2>4. Token spacing</h2>
+<p class="q">How closely may Tokens crowd together: 40 % overlap (old), 35 %, or 30 % (new)?</p>
+<p>The same twelve Tokens dropped near the same spot with the dial at each setting; less overlap leaves more of each Token showing.</p>
+<div class="row">
+  <figure><img src="4_spacing_40.png" alt="Tokens at 40 percent overlap"><figcaption>A<span>40 % (old)</span></figcaption></figure>
+  <figure><img src="4_spacing_35.png" alt="Tokens at 35 percent overlap"><figcaption>B<span>35 %</span></figcaption></figure>
+  <figure><img src="4_spacing_30.png" alt="Tokens at 30 percent overlap"><figcaption>C<span>30 % (new)</span></figcaption></figure>
+</div>
+
+<h2>5. Hover</h2>
+<p class="q">When the pointer rests on a Token half hidden behind others, should it lift to the front: A off or B on?</p>
+<p>The pink arrow marks the pointer, on the Oak Tree tucked behind the berry bush (40 % crowding). With the lift on, the tree draws in front of the bush.</p>
+<div class="row">
+  <figure><img src="5_hover_off.png" alt="Hover with lift off"><figcaption>A<span>hover lift off</span></figcaption></figure>
+  <figure><img src="5_hover_on.png" alt="Hover with lift on"><figcaption>B<span>hover lift on</span></figcaption></figure>
+</div>
+
+<h2>6. Heroes on top</h2>
+<p class="q">Heroes now always draw in front of Tokens. Is that right?</p>
+<p>Only the new way can be shown on this build. Two heroes sent into the crowded spot: the lower one stands in front of the copper ore and berry bush, the upper one in front of the ore at his feet.</p>
+<div class="row">
+  <figure><img src="6_heroes_on_top.png" alt="Heroes drawn in front of Tokens"><figcaption>After<span>heroes always on top</span></figcaption></figure>
+</div>
+</main>
+</body>
+</html>

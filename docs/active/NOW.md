@@ -20,6 +20,6 @@ changelog and `docs/archive/`.*
 
 ## Next
 
-1. Building now (STATUS): 340 hero bar and sheet, 350 Tokens and card, 360 C1 combat mock-ups.
-2. Next from the queue: the rest of 360, then the owner's pick.
+1. Merged 5 Nov: hero bar and sheet (340), Tokens and card (350), the spawner bus rule. Building next: 360 C2 and C3, the combat look the owner picked.
+2. Next from the queue: 360 C4, then 370 rivers and ground.
 3. Owner: the art list (seed map sprites); optional, delete the Token Volcanic Island in the CMS.

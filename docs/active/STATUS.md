@@ -1,4 +1,4 @@
-# STATUS — the directors' living tableundefinedbuilt 9e8ea970: 7356 pass, 1 red (an event left with no publisher; fix going in with H2); cycles, build ok; drag bench queuedundefinedThuundefined |undefinedbuildingundefinedThuundefined |undefinedbuilt 65f42c7e, gate runningundefinedThuundefined |undefinedbuildingundefinedThuundefined |undefined**merged** 7217b146, pictures only; owner picked 2026-11-05: window B, tab D, mat F with the combat icon between the health bars (recorded in brief 360); C2 and C3 wait for the hero bar and Token card to mergeundefinedThuundefinedThu |undefined**eye-check** on `crunch/hero-detail` 174df534 (one look, [file](eyecheck/2026-11-05_heroes_tokens.md)); bench queuedundefinedThuundefinedThu |undefined**eye-check** on `crunch/hero-detail` 174df534 (one look, [file](eyecheck/2026-11-05_heroes_tokens.md)); bench queuedundefinedThuundefinedThu |undefined**eye-check** on `crunch/hero-detail` 174df534 (one look, [file](eyecheck/2026-11-05_heroes_tokens.md)); bench queuedundefinedThuundefinedThu |undefined**eye-check** on `crunch/hero-detail` 174df534 (one look, [file](eyecheck/2026-11-05_heroes_tokens.md)); bench queuedundefinedThuundefinedThu |undefined**eye-check** on `crunch/hero-detail` 174df534 (one look, [file](eyecheck/2026-11-05_heroes_tokens.md)); bench queuedundefinedThuundefinedThu |undefined**eye-check** on `crunch/hero-detail` 174df534 (one look, [file](eyecheck/2026-11-05_heroes_tokens.md)); bench queued; includes the planting fix (a Forest plants with its tree's room; a tree could strand out of reach at the wider spacing). 7449 tests pass, 8 position goldens red until the work check accepts them, cycles and build okundefinedThuundefinedThu |
+# STATUS — the directors' living table
 
 *The director keeps this file; nobody else edits it. One row per phase; a
 five-line summary at each batch's edges (proposed, looked at); anything older
@@ -7,17 +7,18 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
 
-*Thu 5 Nov 15:10. Where we are: the owner picked the looks (smooth HP bar, dark name plate, card B, 30 % spacing, no hover lift), applied at 954368b8. Benches found the 310-Token board draws about 25 % slower (accepted by the owner) and a full board at the new spacing retries spawns every tick, about 100 ms a tick against 0.8 on main. Owner ruled: keep 30 %, fix the spawners by the bus rule (a spawner checks for room once when its timer ends; no room means the spawn is missed and the full cycle restarts). Drag bench fixed for the flag drag (720a1cb1). Next: engineer on the spawner fix in h1, then work check, goldens, merge, then combat C2 and C3. Owner: nothing. Blockers: the spawner fix.*
+*Thu 5 Nov 17:30. Where we are: the batch is merged and pushed (495986ce). The owner picked the looks from screenshots; the wider spacing costs about 25 % more drawing on the 310-Token board (accepted) and made full boards retry spawns every tick, cured by the owner's bus rule (C256 tick 126 to 1.9 ms, draw 17 to 162 fps). Work change accepted (T-311), goldens updated, in-game check ok. Next: 360 C2 and C3. Owner: nothing. Blockers: none.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 340 H1: drag a hero's flag from the bar, the Bank's column and the sheet; spacing and names | builder | `crunch/hero-detail` (`h1`) | building | Thu | |
-| 340 H2: HP looks, status on hover, alerts, flag side | builder | same | queued | | |
-| 340 H3: two-column skills, arrows, close and edit, Bank column, no emoji icons | builder | same | queued | | |
-| 340 H4: moving items between slots and heroes (reproduce first) | builder | same | queued | | |
-| 350 T2: the Token card rebuilt (runs first: settles `ArrowScrollList` before H3) | builder | `crunch/tokens-detail` (`k1`) | building | Thu | |
-| 350 T1: heroes on top, hover lift a switch, more space (expect WORK CHANGED) | builder | same | queued | | |
-| 360 C1: combat mock-ups, pictures only | builder | `docs/combat-mockups` (`c1`) | building | Thu | |
+| 340 H1: drag a hero's flag from the bar, the Bank's column and the sheet | builder | `crunch/hero-detail` (`h1`) | **merged** 495986ce | Thu | Thu |
+| 340 H2: smooth HP bar, status on hover, alerts, flag side | builder | same | **merged** 495986ce | Thu | Thu |
+| 340 H3: two-column skills, close and edit, Bank column on a dark plate, no emoji icons | builder | same | **merged** 495986ce | Thu | Thu |
+| 340 H4: moving items between slots and heroes | builder | same | **merged** 495986ce | Thu | Thu |
+| 350 T2: the Token card, card B (art behind everything, arrows only when needed) | builder | `crunch/tokens-detail` (`k1`) | **merged** 495986ce | Thu | Thu |
+| 350 T1: heroes on top, 30 % spacing, no hover lift, planting with room | builder | same | **merged** 495986ce (WORK CHANGED, accepted T-311) | Thu | Thu |
+| Spawner bus rule and cheaper failed pushes; C240 and C256 engine scenarios | engineer | `crunch/hero-detail` (`h1`) | **merged** 495986ce | Thu | Thu |
+| 360 C1: combat mock-ups | builder | `docs/combat-mockups` | **merged** 7217b146; picks: window B, tab D, mat F with the combat icon between the health bars | Thu | Thu |
 
 ## Director, clean-up before the new briefs (owner 2026-11-03: small tickets and doc updates approved; eye-checks closed)
 
