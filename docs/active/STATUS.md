@@ -1,4 +1,4 @@
-# STATUS — the directors' living tableundefinedbuilt 9e8ea970: 7356 pass, 1 red (an event left with no publisher; fix going in with H2); cycles, build ok; drag bench queuedundefinedThuundefined |undefinedbuildingundefinedThuundefined |undefinedbuilt 65f42c7e, gate runningundefinedThuundefined |undefinedbuildingundefinedThuundefined |undefined**merged** 7217b146, pictures only; **waiting for the owner's pick**undefinedThuundefinedThu |
+# STATUS — the directors' living tableundefinedbuilt 9e8ea970: 7356 pass, 1 red (an event left with no publisher; fix going in with H2); cycles, build ok; drag bench queuedundefinedThuundefined |undefinedbuildingundefinedThuundefined |undefinedbuilt 65f42c7e, gate runningundefinedThuundefined |undefinedbuildingundefinedThuundefined |undefined**merged** 7217b146, pictures only; owner picked 2026-11-05: window B, tab D, mat F with the combat icon between the health bars (recorded in brief 360); C2 and C3 wait for the hero bar and Token card to mergeundefinedThuundefinedThu |
 
 *The director keeps this file; nobody else edits it. One row per phase; a
 five-line summary at each batch's edges (proposed, looked at); anything older
