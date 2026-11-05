@@ -44,7 +44,7 @@ game looks and plays, gathered one screen at a time.*
 | 0 | Rules across every screen | icon rule done; more as they come up | above; `UI_STYLE.md` |
 | 1 | The mat and Tokens | **approved 2026-11-02, split**: [brief 350](briefs/350_tokens_card_detail.md); [brief 370](briefs/370_terrain_detail.md) for terrain; T-295; combat items in [brief 360](briefs/360_combat_detail.md) | `design_pass_notes.md`; T-013, T-162 |
 | 2 | Top bar | **approved and briefed 2026-11-03** ([brief 420](briefs/420_top_bar_detail.md)) | `ui_rework_list.md` |
-| 3 | Hero bar and hero sheet | **approved and briefed 2026-11-02** ([brief 340](briefs/340_hero_bar_detail.md)) | `design_pass_notes.md`: the owner held back "lots of little tweaks"; ask for that list |
+| 3 | Hero bar and hero sheet | **approved and briefed 2026-11-02** ([brief 340](briefs/340_hero_bar_detail.md)) | owner 2026-11-05: no held-back list remains; brief 340 covers it |
 | 4 | Bank | **approved and briefed 2026-11-03** ([brief 400](briefs/400_bank_detail.md)) | |
 | 5 | Shop | **approved and briefed 2026-11-03** ([brief 410](briefs/410_shop_detail.md)) | |
 | 6 | Guild Hall | **approved and briefed 2026-11-03** ([brief 390](briefs/390_guild_hall_detail.md)); the upgrade review open | |
@@ -220,6 +220,9 @@ tables). Rulings kept: every cell's contents visible from the start; no landmark
 **Amends**: `concept_world_map.md` (a settled cell's only gate was its price; the wild
 rings came into view as you neared them), and the ledger's budgets must count the stars.
 
+**Settling's order** (owner, 2026-11-05): the gold banner, the title, heroes walk in and stand
+idle around the Hall; no fight starts by itself. The enemies stand spread out, still until attacked.
+
 ### 6. Guild Hall
 
 **The sheet (2026-11-03). From the GDD, the code and the 30 October captures
@@ -340,7 +343,7 @@ today's game; where this disagrees with the screen, the screen wins.**
 | 3 | **Three tabs**: Display, Game, Audio (Dev Tools only in dev builds); "1 Minute (Dev)" leaves shipped builds. | must, tweak |
 | 4 | **Back up a save**: "should just open the folder where the save file is, let the player copy or modify it". | must, design |
 | 5 | **A new game names the Guild**; one name, the Guild's, shown on the slot and renameable. | must, design |
-| 6 | **A new game shows the world hex map, fully shown, with a reroll.** | must, design |
+| 6 | **A new game shows the world hex map with a reroll.** *(Owner 2026-11-05: rings 1 to 3 only, not fully shown.)* | must, design |
 | 7 | **A new game makes the first hero**: name, appearance, flag colour, and recolour the sprite once that system exists. | must, design |
 
 **Not taken** (owner, 2026-11-03): sound on by default and panel hotkeys.
@@ -470,7 +473,7 @@ icons (`owner_art_list.md`); every panel's gradient (brief 400 B1, which doesn't
 art; the Upkeep number; the Demolish message.
 
 **Planning agent's calls**: Demolish keeps its word beside the icon. Disallow is removed as a whole
-mechanic, not just its button: a Token marked in a save simply becomes workable again.
+mechanic, not just its button.
 
 ### 5. Shop
 
@@ -555,7 +558,7 @@ item look; the header icon), the item tooltip showing a weapon's damage (T-246, 
 | 3 | **Item tooltip**: name as a header, count underneath, then types and tags. | must, tweak |
 | 4 | **An inspection window at the bottom of the Bank**, with the item sprite larger "so it can be examined closely". | must, tweak |
 | 5 | **It shows stats like lifetime collected.** | must, tweak |
-| 6 | **Discard there**, with amounts 1, 50 %, All, All −1, or a slider. | must, tweak |
+| 6 | **Discard there**, with amounts 1, 50 %, All, All −1, or a slider. *(Moved later, T-306; owner 2026-11-05: always confirm, and hoping to sell instead.)* | must, tweak |
 | 7 | **Use there, for items that can be used** (bird nests): opens instantly, with no hero; authored in the CMS. | must, design |
 | 8 | **Use has the same amounts** as Discard. | must, tweak |
 

@@ -18,7 +18,7 @@ Code to start from (verify): `src/systems/core/CatchUp.js`, `SaveManager.js`,
 
 ## Needs
 
-Nothing. If the away summary's own detail pass (section 12) has run or runs later, keep its layout: this
+Nothing. If brief 440 has run or runs later, keep its layout: this
 brief only adds to what it lists.
 
 ## Phases
@@ -26,7 +26,7 @@ brief only adds to what it lists.
 | Phase | What | Tier |
 |---|---|---|
 | N1 | **Nothing goes missing after time away** (item 1). Today a catch-up keeps the bus quiet, so every notification route is skipped and new recipes, a full Bank losing items, first finds and knock-outs give no banner or stub; the summary lists only the wounded of those. **Shown both ways, as the owner chose.** **In the summary**: new recipes, first finds and items lost to a full Bank, as sections of their own; say what shows when there's none. **As banners and stubs when the summary closes**: recipes, Bank full and knock-outs through the normal banners, merged as live play merges them ("Aela unlocked 3 recipes"), each staying until clicked; first finds as gold "New!" stubs. Sounds play as for live banners. ⚠️ **Count them while the catch-up runs and hand them over afterwards**, as the summary counts its own; don't un-quiet the bus, and draw no random numbers: the catch-up must play the same as live play. ⚠️ **Undo**: turning a catch-up down reloads the old save, so nothing from it may appear. ⚠️ **A short catch-up shows no summary** (`SHOW_GAP_MS`): its banners appear at once. ⚠️ Loading clears banners (`GAME_LOADED`), so hand over after it. A long absence must stay merged and not produce a wall of banners or stubs. | builder |
-| N2 | **A gold banner when a place is settled** (item 2). A new banner kind from the Atlas's `created` announcement, with the place's name; the first camp of a new game says nothing. A settled place's arrival fight may start at the same moment: check they read well together, and it must not cover the reveal on the world map; say what you did. | builder-lite |
+| N2 | **A gold banner when a place is settled** (item 2). A new banner kind from the Atlas's `created` announcement, with the place's name; the first camp of a new game says nothing. **The order (owner, 2026-11-05): this banner first, then the title and the heroes walking in (brief 380 M5); no fight starts by itself.** It must not cover the reveal; say what you did. | builder-lite |
 
 Either order; N2 is one route and one banner kind, and may share N1's branch.
 
@@ -43,7 +43,7 @@ Either order; N2 is one route and one banner kind, and may share N1's branch.
 
 ## Not in this brief
 
-The log (T-193). The ribbon art. The away summary's other details (section 12, not yet walked).
+The log (T-193). The ribbon art. The away summary's other details (brief 440).
 
 ## Owner to-do
 

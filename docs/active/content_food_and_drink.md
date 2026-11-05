@@ -264,7 +264,7 @@ Recipes: **24 have, 48 adapt, 27 new** (H, A, N above). Adapt means a recolour o
 - **Fish recipes match their catch levels**: Shrimp 1, Trout 5, Oyster 25, Tropical Fish 30, Salmon 40, Lobster 50, Swordfish 60, Shark 80. Other recipes shift a level or so around them. Today's levels are placeholders: Swordfish cooks at 4, Trout at 35.
 - **Steak moves up**: it heals 35 at level 1 today, more than anything.
 - **The eight tier 3 fruits are placed**, closing that Open link; so are Lemonade and Limeade.
-- **Slurm's first fight still eats Redberries** (brief 480).
+- **Limes's first fight still eats Redberries** (brief 480).
 - **Which drink helps which skill replaces today's effects**, by the ledger; Beer's XP and Grape Juice's fishing buff are starting points.
 
 ## Open links

@@ -1,6 +1,6 @@
 Status: briefed (approved 2026-11-04; [brief 480](briefs/480_early_game_slurm.md))
 
-# The very early game, and Slurm the guide
+# The very early game, and Limes the guide
 
 *Owner interview, 2026-11-04, from the detail pass's section 13. Replaces the cartographer's quest Tokens in
 [concept_quests_tutorial.md](concept_quests_tutorial.md). The owner's words are in quotes; "planning agent" marks what the
@@ -8,18 +8,18 @@ agent filled in.*
 
 ## The guide
 
-- **Slurm**, a friendly new NPC, using `public/assets/enemies/slime/e_slurm.png` (32 px, at a whole-number scale).
+- **Limes**, a friendly new NPC, using `public/assets/enemies/slime/e_slurm.png` (32 px, at a whole-number scale).
 - **"Displayed quite large in the bottom right corner"**, a large portrait over the mat, "popping out when it has something
   to say, and back when it's done".
-- **The bubble stays until the step is done.** It can be minimised, which shrinks Slurm into the corner and the bubble to a
+- **The bubble stays until the step is done.** It can be minimised, which shrinks Limes into the corner and the bubble to a
   small "...".
 - **Voice: cheerful and blobby.** Short, warm, a little silly ("Blorp! Drag your hero onto that bush. Berries!"), clear words,
   easy to translate. The owner reads and edits every line at the eye-check.
 - **It guides, never locks.** The next thing to use has a **hard gold outline**. Anything else can be done meanwhile; a step
   done out of order just counts.
-- **Slurm stays as a helper** after the lessons, for big moments and new systems. **The cartographer stays as the eerie story
+- **Limes stays as a helper** after the lessons, for big moments and new systems. **The cartographer stays as the eerie story
   figure for the ritual and doesn't teach.**
-- **A switch on the new game screen**: Slurm's lessons on or off, on by default. Off gives the same start with no bubbles or
+- **A switch on the new game screen**: Limes's lessons on or off, on by default. Off gives the same start with no bubbles or
   outlines.
 
 ## The opening
@@ -47,7 +47,7 @@ agent filled in.*
 7. Craft something.
 8. **A safe first fight**: a new small slime near the Hall, with the Rusty Sword and berries as food.
 
-Then Slurm shows the world map, and **one big goal carries the rest of the Starter Camp: settle a place**. It names the items
+Then Limes shows the world map, and **one big goal carries the rest of the Starter Camp: settle a place**. It names the items
 and the player works out how. Planning agent: the first places' prices must lead through copper and the Goblins' drops, so they
 are part of this work.
 
@@ -64,7 +64,8 @@ are part of this work.
 - **Brief 450 S4** drops the old first step; the first hero is the player's. Brief 480 adds the lessons switch to that screen.
 - **Brief 410**: the Foundation lesson uses the new Shop and Foundations.
 - **The quest board's pinned row (T-176)** doesn't apply as designed. **T-258** and the drafts in `tutorialText.js` go with it.
-- **T-014**: Slurm's words, in code or the CMS, is the brief's to propose.
+- **T-014**: Limes's words, in code or the CMS, is the brief's to propose.
 - **Content by CMS change pack**: the heap, rusty items, the small slime, the empty Bank, Smithing's levels, ring 1's prices.
 - **The ledger** reads the heap as a tool source, and the Starter Camp's budget (30 minutes) must be reported after the change.
-- **Owner art**: the scrap heap, three rusty tools, the small slime if none of the art fits, and any larger Slurm.
+- **Rulings of 2026-11-05** (owner, the brief review): the guide is **Limes**, not Slurm. The Redberry Bush's **Thorns has a 10 % chance per cycle**. Breaking is checked **only when a cycle completes**, combat's included; the swing is just art. The Starter Camp's budget becomes **about 40 minutes**. **Seedlings, Forests and trees** are still open for discussion. The pop-up Shop may cover the guide. Brief 480's content waits for the buildings (T-307). Old saves aren't protected.
+- **Owner art**: the scrap heap, three rusty tools, the small slime if none of the art fits, and any larger Limes.

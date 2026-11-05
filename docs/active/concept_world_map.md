@@ -89,6 +89,7 @@ replace map items as the gate to new content, and reshape the Atlas
   enemies (3–6) sized to the ring's level, sometimes a boss; they don't respawn. Clearing takes minutes to an hour, not a
   siege. While the player is away, heroes sent at it keep fighting as long as
   they win; a defeated hero waits at the Hall (hero orders).
+- **Amended (owner, 2026-11-05)**: no fight starts by itself. Settling runs the gold banner, the title, then heroes walking in to stand idle around the Hall. The enemies stand spread out across the mat, still until attacked, and the player sends heroes at them. The mat stays dark and fight-only until the last falls ([brief 380](briefs/380_world_map_detail.md) M5).
 - **Places the guild has left are frozen**, as today (owner): only the active
   Region runs.
 

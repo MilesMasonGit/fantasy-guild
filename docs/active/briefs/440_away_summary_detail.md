@@ -24,7 +24,7 @@ those sections would land and leave them to it.
 | Phase | What | Tier |
 |---|---|---|
 | A1 | **The panel** (items 1, 2, 3, 4, 5). **Two columns**, wider, still fitting a 1366 screen. **Left, item changes**, in today's rows, one list: each item once with its **net** amount, green + or red −, gained and spent on hover. Items still waiting on the mat keep a small mark and say so on hover; explain how a mat item and a banked one combine, and check against `net` and `floor` in `CatchUp.js`. **Right, the news**, in this order: knock-outs and items lost, new recipes, first finds, level-ups, Tokens used up, then **fights: only each enemy with its kill count**. Won and lost, used and drops go from the panel. A section with nothing is left out; say what the right column shows when it's empty. **Heading centred**: "While you were away" and "You were away 32 min". **Scrolling**: our arrow buttons per column, no scroll bar. **A second confirm box on both buttons**: Return to the Guild (no loss, so plain wording) and Load as I left it (keeps today's warning that everything from the time away is lost). Esc asks the same as Return. Banners from brief 430 appear after that confirm. Keep the entrance animation only if it stays cheap with both columns. | builder |
-| A2 | **Save slots show away time** (item 6). Each slot on the start screen shows how much time away has built up since it was saved, in the summary's own wording (`formatAway`), read from the slot's save time. ⚠️ Only 24 hours are ever played, so past that it reads "24 h (max)" and matches what the player gets. "Last saved" may be replaced or stay: show which reads better and say. An empty or damaged slot shows nothing. The start screen's other changes (T-293, section 11) are not part of this. | builder-lite |
+| A2 | **Save slots show away time** (item 6). Each slot on the start screen shows how much time away has built up since it was saved, in the summary's own wording (`formatAway`), read from the slot's save time. ⚠️ Only 24 hours are ever played, so past that it reads "24 h (max)" and matches what the player gets. "Last saved" may be replaced or stay: show which reads better and say. An empty or damaged slot shows nothing. The start screen's other changes (brief 450) are not part of this. | builder-lite |
 
 Either order, one branch each or together.
 
@@ -42,7 +42,7 @@ Either order, one branch each or together.
 
 ## Not in this brief
 
-XP per skill: offered, not taken. The rest of the start screen: section 11, not yet walked.
+XP per skill: offered, not taken. The rest of the start screen: brief 450.
 
 ## Owner to-do
 

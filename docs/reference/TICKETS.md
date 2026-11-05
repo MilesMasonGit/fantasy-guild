@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-306**
+**Next free number: T-308**
 
 ---
 
@@ -89,6 +89,8 @@ here.
 | T-303 | P2 | open, needs a brief | **Gloves, boots and cape slots** (owner 2026-11-04, [content_smithing.md](../active/content_smithing.md), [content_tailor.md](../active/content_tailor.md)): heroes get three new gear slots. Touches `EquipmentManager`, the hero sheet (brief 340 lays it out), gear defence numbers and the CMS. Today gear is hand, hat, chest and two trinkets. |
 | T-304 | P2 | open, needs a brief | **Tailor, a 21st skill** (owner 2026-11-04, [concept_content_roadmap.md](../active/concept_content_roadmap.md)): the skill itself in the registry and CMS, a skill icon for the art list, a station, and every place that counts skills (the ritual's final challenges, hero sheet, ledger). Its content list comes from a roadmap session first. |
 | T-305 | P2 | open, needs a brief | **Put the approved content roadmap in the CMS as Planned entries** (owner 2026-11-02, [concept_content_roadmap.md](../active/concept_content_roadmap.md)): a pack per chain page, so the ledger can check the whole plan. Needs T-294 first (tiers, the 20-level ladder). Planned entries never reach the game. |
+| T-306 | P3 | open, needs an interview | **Discard, or selling, in the Bank's inspection window** (owner 2026-11-05, moved out of brief 400 B3): amounts 1, 50 %, All, All −1 or a slider, and **Discard always confirms**. The owner hopes to find a way to sell items instead ([ideas.md](../active/ideas.md)); gold left the game, so a sale needs designing first. |
+| T-307 | P2 | open, needs a brief | **One clear building per skill** ([content_construction.md](../active/content_construction.md); owner 2026-11-05): a spread of buildings, so the different building effects can be tested. **Waits until the owner has polished content planning.** Today's rules split recipes by station kind, and the tutorial, ledger and Starter Camp name today's stations. Brief 480's L2 to L4 wait for this; brief 410 doesn't. |
 | T-300 | P3 | open | **Leftovers from the map retirement, for a decision**: Region rules (`RegionRules.js`, recipe `rules`, the ledger's region factor) are tested but no shipped recipe carries one, leave until brief 380 settles; `data/maps.json` is `{}` and read by nothing; `src/ui/dev/terrainDev.js` is imported only by tests; a saved stack of a deleted item stays hidden and still takes a Bank slot (no fix recommended: old saves are abandoned) | T-292 engineer 2026-11-03 |
 | T-299 | P3 | open | **Forced layouts bigger than the loot flight's** (20 s trace on enemies80, busy machine, one run): `HeroBubbleLayer.jsx:168` 24 style and 25 layout, 82.5 ms; `healthTextWidth` in `FightLayer.jsx` 3, 15.6 ms. Measure on a quiet machine first | T-287 engineer 2026-11-03 |
 | T-298 | P3 | done (merged 2026-11-03) | **Stale docs found by the upgrade review**: GDD §16 still says the Token cap grows with a Hall star; the Mat Tuner hint still mentions the Notice Board. Check first, then correct. |
