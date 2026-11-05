@@ -10,6 +10,10 @@ Status: draft
 - **Three tools: Rod, Trap, Harpoon.**
 - **Special waters: Shipwreck, Oyster Bed.**
 - **Other catch: Seaweed.**
+- **An Oyster item for the Oyster Bed.**
+- **Special Tokens let certain fish spawn**: "A coral reef for tropical fish and Shark-Infested Waters for the Shark."
+- **A fish's Cooking recipe opens at the Fishing level to catch it.** "If a salmon needs level 40 to be caught, it should be cooking level 40."
+- **More special spots to come**, for interesting ingredients for Alchemy and other skills.
 - **Kept**: water never runs out; water type, bait and tool choose the catch; bait is optional; better bait shifts the odds.
 
 ## Fish and what catches them
@@ -21,11 +25,12 @@ Fish keep their order from [food and drink](content_food_and_drink.md), on the 2
 | 1 | Raw Shrimp | Coast | Trap | Cooking | H |
 | 5 | Trout | River, Lake | Fishing Rod | Cooking | H |
 | 15 | Seaweed | Coast | any | ⚠️ Farming, as fertiliser, or Alchemy | N |
-| 30 | Tropical Fish | Coast | Fine Rod | Cooking | H |
+| 25 | Oyster | **Oyster Bed** | Trap | Cooking; rarely a Pearl | N |
+| 30 | Tropical Fish | **Coral Reef** | Fine Rod | Cooking | H |
 | 40 | Salmon | River, Lake | Master Rod | Cooking | H |
 | 50 | Lobster | Coast | Lobster Pot | Cooking | H |
 | 60 | Swordfish | Coast | Adamantine Harpoon | Cooking | H |
-| 80 | Shark | Coast | Darkmetal Harpoon | Cooking | H |
+| 80 | Shark | **Shark-Infested Waters** | Darkmetal Harpoon | Cooking | H |
 
 ## Tools
 
@@ -45,8 +50,10 @@ These fill open levels on [Crafting](content_crafting.md) and [Smithing](content
 
 | Level | Token | Gives | Its job | What's different | Art |
 |---|---|---|---|---|---|
-| 25 | **Oyster Bed** | Pearls, Raw Shrimp | ⚠️ needs a user: jewellery or Enchanting | Worked with a Trap; slow, rare | N |
+| 25 | **Oyster Bed** | Oysters, rarely a Pearl | Cooking's Oyster Stew; ⚠️ Pearls need a user | Worked with a Trap | N |
+| 30 | **Coral Reef** | Tropical Fish | The only home of Tropical Fish | A reef in warm seas; worked with a Fine Rod | N |
 | 45 | **Shipwreck** | Planks, Nails, a chance of gems and a chest | A treasure rush | Rod or Trap; a few uses, then gone | N |
+| 80 | **Shark-Infested Waters** | Sharks | The only home of Sharks | Harpoon only; a big rare spot | N |
 
 ## Planning agent's calls
 
@@ -56,8 +63,9 @@ These fill open levels on [Crafting](content_crafting.md) and [Smithing](content
 
 ## What this changes
 
-- **Cooking's fish levels** follow when its list is realigned to the 20-level tiers.
+- **Cooking's fish levels now match** ([food and drink](content_food_and_drink.md)), and that list has moved to the 20-level tiers.
 - **Today's Coast** gives Tropical Fish, Salmon and Swordfish with a plain rod, and Rivers give Salmon: those pools change.
 - **Tool gating** needs a rule: a water's catch pool asks for a tool of a certain tier, which it doesn't today (to check when briefed).
 - **Seaweed and Pearls** need their users, or they go by the no-clutter rule.
+- **More special spots for Alchemy**: to come with its session.
 - **A Fishing Hut's Wider Reach and Rare Finds** variants follow ([Construction](content_construction.md)).
