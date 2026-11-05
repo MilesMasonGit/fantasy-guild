@@ -126,7 +126,7 @@ export function setUpHeroAlertsScene() {
         outputs: [{ itemId: OAK_WOOD, chance: 100, minQty: 1, maxQty: 1 }] };
     const plain = (id, name, extra) => ({ id, name, tokenType: 'resource', rarity: 'common', theme: 'fixture', sprite: 's_nature', requiresHero: true, uses: null, config: quick, ...extra });
     registerTokenTypes({
-        [ALERT_TYPES.AXE_OAK]: plain(ALERT_TYPES.AXE_OAK, 'QA Axe Oak', { needsTool: { kind: 'woodaxe', minTier: 1 } }),
+        [ALERT_TYPES.AXE_OAK]: plain(ALERT_TYPES.AXE_OAK, 'QA Axe Oak'),
         [ALERT_TYPES.ANVIL]: plain(ALERT_TYPES.ANVIL, 'QA Hungry Anvil', { config: { ...quick, inputs: [{ itemId: OAK_WOOD, quantity: 999999 }] } }),
         [ALERT_TYPES.BERRY]: plain(ALERT_TYPES.BERRY, 'QA Slow Bush', { uses: 1, staysPut: true, respawn: { mode: 'refill', afterMs: 600000 } })
     });
@@ -141,9 +141,12 @@ export function setUpHeroAlertsScene() {
     const [worker, noAxe, noWood, waiter, , hurt] = ['QA Worker', 'QA No Axe', 'QA No Wood', 'QA Waiter', 'QA No Job', 'QA Hurt'].map(hire);
     if (!worker || !noAxe || !noWood || !waiter || !hurt) return { ok: false, error: 'The roster would not take the heroes' };
     Flags.orderToken(worker.id, oak);
-    // An order is refused without the tool: this is the order they already had when it broke.
-    BoardState.setFlag(noAxe.id, { x: axeOak.x, y: axeOak.y, pinnedTo: axeOak.id, plantedAt: BoardState.takeFlagOrder() });
-    HeroMotion.enter(noAxe.id);
+    // An order is refused without the tool, so the Token only asks for one once they hold the
+    // order: as if their axe had just broken.
+    Flags.orderToken(noAxe.id, axeOak);
+    registerTokenTypes({
+        [ALERT_TYPES.AXE_OAK]: plain(ALERT_TYPES.AXE_OAK, 'QA Axe Oak', { needsTool: { kind: 'woodaxe', minTier: 1 } })
+    });
     Flags.orderToken(noWood.id, anvil);
     Flags.orderToken(waiter.id, berry);
     HeroManager.getHero(hurt.id).hp.current = 0;
