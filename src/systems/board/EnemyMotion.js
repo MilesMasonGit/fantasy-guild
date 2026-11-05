@@ -28,7 +28,7 @@ import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.j
  * An enemy with no live spawner (placed by hand, or its spawner gone) stands still.
  *
  * The tether: `instance.tether` is the spawner's instance id, written by
- * `SpawnerSystem.attemptSpawn` when it spawns an enemy, and saved with the Token. An enemy with no
+ * `SpawnerSystem` when it spawns an enemy, and saved with the Token. An enemy with no
  * `tether` (an older save) is attached once, on its first tick, to the nearest live spawner whose
  * family (`SpawnerSystem.familyOf`) holds its type; `board.enemyTethers` records that it has been
  * done, so an enemy the player later places by hand is never attached by a reload.

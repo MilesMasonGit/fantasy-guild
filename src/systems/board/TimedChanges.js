@@ -286,8 +286,8 @@ export const HANDLERS = [
         }
     },
     {
-        // A spawner's interval. Acts without replacing the Token: a spawn returns the spawner
-        // itself; a blocked attempt returns null.
+        // A spawner's interval. Acts without replacing the Token: a spawn, or a spawn missed for want
+        // of room, returns the spawner itself and the next lap starts; a held attempt returns null.
         id: 'spawner',
         clock: 'spawnMs',
         // A full enemy camp's clock stands at zero: a beaten member comes back an interval later.
@@ -295,7 +295,7 @@ export const HANDLERS = [
         idleWhile: (instance, def) => SpawnerSystem.isSleepingCamp(instance) || SpawnerSystem.isFullEnemyCamp(instance, def),
         applies: (instance, def) => !instance.turnedFrom && SpawnerSystem.isSpawner(def),
         dueMs: (instance, def) => SpawnerSystem.intervalOf(def),
-        fire: (instance, def, random, ctx) => SpawnerSystem.attemptSpawn(instance, def, random, ctx)
+        fire: (instance, def, random, ctx) => SpawnerSystem.spawnerTurn(instance, def, random, ctx)
     },
     {
         // A Field's own crop (`Fields.js`): a growing crop ripens, an empty Field sows its pick

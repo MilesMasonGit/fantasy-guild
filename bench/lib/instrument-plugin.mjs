@@ -65,7 +65,7 @@ export const PROBES = {
         { fn: 'forceSpot', name: 'MatPlacement.forceSpot', timed: true }
     ],
     'src/systems/board/SpawnerSystem.js': [
-        { fn: 'attemptSpawn', name: 'SpawnerSystem.attemptSpawn', timed: true }
+        { fn: 'tryToSpawn', name: 'SpawnerSystem.tryToSpawn', timed: true }
     ]
 };
 

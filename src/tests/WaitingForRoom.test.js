@@ -132,7 +132,7 @@ describe('⭐ a failed placement search is remembered only while nothing it read
     });
 });
 
-describe('⭐ a waiting spawner spawns the tick room appears (CR3-201, R10)', () => {
+describe('⭐ a spawner that missed for want of room spawns at its next try once room has appeared (CR3-201, R10)', () => {
     it('room made by an unrelated Token MOVING away, not by a removal', () => {
         const blockers = packedMat();
         const forest = placeAt('fixture_wfr_forest', FOREST_AT.x, FOREST_AT.y);
@@ -152,6 +152,8 @@ describe('⭐ a waiting spawner spawns the tick room appears (CR3-201, R10)', ()
             }
         }
         TimedChanges.tick(100);
+        expect(spawned()).toHaveLength(0);                // the miss at 5 s waits for the try at 10 s
+        TimedChanges.tick(4700);
         expect(spawned()).toHaveLength(1);
         expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();
     });
