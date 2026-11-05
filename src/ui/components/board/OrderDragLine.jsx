@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { useActiveDrag } from '../../dnd/DndKit.jsx';
-import { DRAG_KIND } from '../../dnd/dragConstants.js';
+import { useActiveDrag, snapshotDndRegions, surfaceWithinRegions } from '../../dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { boardScaleAt } from '../base/TokenSprite.jsx';
@@ -112,6 +112,7 @@ function MarchingLine({ heroId, session, matRef }) {
         let frame = 0;
         let last = '';
         const ghost = createGhostSnap(heroId);
+        const regions = snapshotDndRegions();
         let aimed = null;
         const aim = createOrderAim(heroId);
         const still = reducedMotion();
@@ -121,7 +122,10 @@ function MarchingLine({ heroId, session, matRef }) {
             frame = requestAnimationFrame(draw);
             const from = HeroMotion.heroPointOf(heroId);
             const matEl = matRef?.current || null;
-            const rect = pointer && matEl ? matRectForDrag(matEl, session) : null;
+            // Over the bar, the Bank's column or a drawer a drop gives no order, so nothing here
+            // says it would. Worked out here, not from the provider's surface, so crossing a region redraws nothing.
+            const overDrawer = pointer && surfaceWithinRegions(pointer.x, pointer.y, regions) === DND_SURFACE.DRAWER;
+            const rect = pointer && matEl && !overDrawer ? matRectForDrag(matEl, session) : null;
             const at = rect ? pointerToMat(pointer, rect) : null;
             // The drop's own hit test, on the pointer: snapping moves the flag, never the aim.
             const aimNow = aim(at);

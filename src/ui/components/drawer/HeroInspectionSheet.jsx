@@ -13,7 +13,7 @@ import { Tooltip } from '../base/Tooltip.jsx';
 import { VitalBar, vitalTone } from '../base/VitalBar.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
-import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { DRAG_KIND, DND_SURFACE, rosterFlagPayload } from '../../dnd/dragConstants.js';
 import { Feather } from 'lucide-react';
 import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
 import { skillPurpose } from '../../../config/registries/skillRegistry.js';
@@ -125,14 +125,8 @@ const HeroFigure = ({ hero, heroId, size }) => {
     const drag = useEntityDrag({
         id: `inspect-hero-drag-${heroId}`,
         sourceSurface: DND_SURFACE.DRAWER,
-        kind: DRAG_KIND.HERO,
-        payload: {
-            kind: DRAG_KIND.HERO,
-            heroId,
-            name: hero?.name,
-            spriteId: hero?.spriteId || hero?.icon,
-            from: { dock: true, inspection: true }
-        }
+        kind: DRAG_KIND.FLAG,
+        payload: rosterFlagPayload(heroId, hero?.name, { dock: true, inspection: true })
     });
     const sprite = hero.spriteId || hero.classId || null;
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
@@ -149,7 +143,7 @@ const HeroFigure = ({ hero, heroId, size }) => {
         >
             <div
                 data-hero-panel-flag
-                className="absolute"
+                className={cn('absolute', drag.isDragging && 'invisible')}
                 style={{ left: `calc(50% + ${Math.round(size * 0.12)}px)`, top: Math.round(size * 0.04), width: flagPx, height: flagPx }}
             >
                 <FlagMark size={flagPx} colour={hero.flagColour} alt="" />

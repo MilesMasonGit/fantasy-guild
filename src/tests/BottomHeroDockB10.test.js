@@ -17,11 +17,9 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
-import { dockHeroDragPayload } from '../ui/components/dock/DockHeroFigure.jsx';
 import {
     DOCK_STRIP_PX, dockArtPx, dockArtOffset, hpPercent, hpTone, ROSTER_STATE_CLASS,
     ROSTER_FLAG_PX, rosterFlagPlace
@@ -152,20 +150,6 @@ describe('B10 horizontal hero dock', () => {
         expect(onSelectHero).toHaveBeenCalledWith('h2');
         fireEvent.doubleClick(figure(view, 'h3'));
         expect(onDoubleClickHero).toHaveBeenCalledWith('h3');
-    });
-
-    it('drags the same payload the old dock tab did', () => {
-        const hr = hero('h1', 'Aldric');
-        // The old HeroDockTab payload, verbatim.
-        const old = {
-            kind: DRAG_KIND.HERO,
-            heroId: 'h1',
-            name: hr?.name,
-            spriteId: hr?.spriteId || hr?.icon || hr?.heroSprite || hr?.classId,
-            from: { dock: true }
-        };
-        expect(dockHeroDragPayload('h1', hr)).toEqual(old);
-        expect(dockHeroDragPayload('h9', { classId: 'fighter' }).spriteId).toBe('fighter');
     });
 
     it('marks the selected hero', () => {

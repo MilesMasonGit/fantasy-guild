@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
 import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
-import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { DRAG_KIND, DND_SURFACE, rosterFlagPayload, isRosterFlag } from '../../dnd/dragConstants.js';
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Flags from '../../../systems/board/Flags.js';
@@ -20,9 +20,10 @@ import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/e
  * HeroDockTab: a hero's tab in the hero column beside the Bank (`BankHeroPanel`): a portrait (the
  * head and shoulders of the hero's own sheet, facing left, cut once per sheet) and the
  * name, nothing else, in one thin frame. Hover lights the frame and shows the game's tooltip
- * (what they are doing, HP, items); nothing slides out. Click opens the hero panel; drag
- * gives the hero an order (dropped on the mat); an item dropped on it equips, another tab
- * reorders. Hovering outlines the hero on the mat and lights their job.
+ * (what they are doing, HP, items); nothing slides out. Click opens the hero panel; dragging
+ * carries the hero's flag, as on the mat: dropped on the mat it gives an order, dropped on another
+ * tab it reorders. An item dropped on it equips. Hovering outlines the hero on the mat and lights
+ * their job.
  */
 export const HeroDockTab = ({
     heroId,
@@ -45,14 +46,8 @@ export const HeroDockTab = ({
     const drag = useEntityDrag({
         id: `${dragIdPrefix}-${heroId}`,
         sourceSurface: DND_SURFACE.DRAWER,
-        kind: DRAG_KIND.HERO,
-        payload: {
-            kind: DRAG_KIND.HERO,
-            heroId,
-            name: hero?.name,
-            spriteId: hero?.spriteId || hero?.icon || hero?.heroSprite || hero?.classId,
-            from: { dock: true }
-        }
+        kind: DRAG_KIND.FLAG,
+        payload: rosterFlagPayload(heroId, hero?.name)
     });
 
     const drop = useEntityDrop({
@@ -60,14 +55,14 @@ export const HeroDockTab = ({
         surface: DND_SURFACE.DRAWER,
         // An item equips; a tab dragged within the column is a reorder.
         accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId)
-            || (p.kind === DRAG_KIND.HERO && p.heroId !== heroId),
+            || (isRosterFlag(p) && p.heroId !== heroId),
         onDrop: p => {
             if (p.kind === DRAG_KIND.ITEM && p.itemId) {
                 if (!equipOrAnnounce(EquipmentManager, heroId, p.itemId, null, p)) return false;
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
                 EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId, afterDrop: true });
-            } else if (p.kind === DRAG_KIND.HERO && p.heroId && p.heroId !== heroId) {
+            } else if (isRosterFlag(p) && p.heroId && p.heroId !== heroId) {
                 onReorder?.(p.heroId, heroId);
             }
         }
@@ -79,7 +74,7 @@ export const HeroDockTab = ({
     // An item dragged over the tab marks it as a drop target. A hero dragged within the column
     // shows only the insertion line. No hover cue while a reorder is settling (~320 ms).
     const isDraggingItem = globalDragging && drop.activePayload?.kind === DRAG_KIND.ITEM;
-    const isDraggingHero = globalDragging && drop.activePayload?.kind === DRAG_KIND.HERO;
+    const isDraggingHero = globalDragging && isRosterFlag(drop.activePayload);
     const hovering = isHovered && !globalDragging && !isDragSettling && !drag.isDragging;
 
     const isHeroDropValid = drop.valid && isDraggingHero;
@@ -211,9 +206,9 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
             {heroCue && (
                 <div
                     className={cn(
-                        'absolute h-0.5 w-20 z-50 pointer-events-none bg-gi-gold',
+                        'absolute h-1 w-20 z-50 pointer-events-none bg-gi-gold',
                         isDockLeft ? 'left-0' : 'right-0',
-                        isInsertionBelow ? '-bottom-1.5' : '-top-1.5'
+                        isInsertionBelow ? '-bottom-2' : '-top-2'
                     )}
                 />
             )}
@@ -222,6 +217,7 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
                 {...handleProps}
                 {...droppableProps}
                 data-hero-tab-face
+                data-dnd-region={DND_SURFACE.DRAWER}
                 data-hero-tab-status={isWounded ? 'wounded' : (status?.state || 'docked')}
                 onClick={() => {
                     if (justDroppedRef.current) return;

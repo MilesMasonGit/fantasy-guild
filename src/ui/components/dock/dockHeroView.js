@@ -14,12 +14,18 @@ import { boardArtSteps } from '../base/TokenSprite.jsx';
 export const DOCK_STRIP_PX = 64;
 
 /**
- * A hero's slot at full width, and the narrowest it shrinks to on a small window. Sized so
- * eight heroes (the owner's planned roster cap) fit the bar at the usual window width, each with room
- * for a level-up bubble that never reaches a neighbour.
+ * A hero's slot at full width, and the narrowest it shrinks to on a small window. This is the
+ * bar's spacing: change it here to spread the heroes. Sized so eight heroes (the owner's planned
+ * roster cap) fit the bar at the usual window width (at most 175), each with room for a level-up
+ * bubble that never reaches a neighbour.
+ * ⚠️ Spacing is the slot's width, not a gap between slots: every pixel of the row stays a hero
+ * to drop on, so a reorder never lands in a dead strip.
  */
-export const DOCK_SLOT_PX = 144;
+export const DOCK_SLOT_PX = 160;
 export const DOCK_SLOT_MIN_PX = 56;
+
+/** The size of a hero's name on the bar: one of the kit's text sizes (UI_STYLE, "Text sizes"). */
+export const DOCK_NAME_TEXT_CLASS = 'ui-text-title';
 
 /** Gap between the top of the sprite frame and the bottom of the name/HP block. */
 export const DOCK_LABEL_GAP_PX = 2;

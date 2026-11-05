@@ -4,7 +4,7 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
 import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
-import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { DRAG_KIND, DND_SURFACE, rosterFlagPayload, isRosterFlag } from '../../dnd/dragConstants.js';
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Flags from '../../../systems/board/Flags.js';
@@ -23,24 +23,10 @@ import { BubbleText } from '../board/BubbleText.jsx';
 import { SpeechFrame } from '../board/SpeechFrame.jsx';
 import { SPEECH_TONE } from '../board/speechTone.js';
 import {
-    DOCK_STRIP_PX, DOCK_LABEL_GAP_PX, ROSTER_FLAG_PX,
+    DOCK_STRIP_PX, DOCK_LABEL_GAP_PX, DOCK_NAME_TEXT_CLASS, ROSTER_FLAG_PX,
     dockArtOffset, rosterFlagPlace, hpPercent, hpTone, HP_TONE_CLASS, ROSTER_STATE_CLASS
 } from './dockHeroView.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
-
-/**
- * The drag payload a hero picked up on the roster carries: dropped on the mat it gives the hero an
- * order (`Orders.orderAt`), exactly as dragging their figure on the mat does.
- */
-export function dockHeroDragPayload(heroId, hero) {
-    return {
-        kind: DRAG_KIND.HERO,
-        heroId,
-        name: hero?.name,
-        spriteId: hero?.spriteId || hero?.icon || hero?.heroSprite || hero?.classId,
-        from: { dock: true }
-    };
-}
 
 /**
  * One hero standing on the roster.
@@ -53,8 +39,8 @@ export function dockHeroDragPayload(heroId, hero) {
  * frame re-renders nothing: not this figure, and not the slot, whose reorder animation would
  * measure its layout again.
  * Click finds the hero (outlined on the mat, their sheet open); hovering outlines them and lights
- * their job; drag onto the mat gives an order; drop an item to equip, another roster hero to
- * reorder.
+ * their job; dragging carries their flag, as on the mat: dropped on the mat it gives an order,
+ * dropped on another roster hero it reorders. Drop an item to equip.
  * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
  * drag start, end and change of target. The hooks live in this thin shell, which works out the
  * few things the figure draws from a drag (lifted, a drop cue, held); the figure itself
@@ -72,8 +58,8 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
     const drag = useEntityDrag({
         id: `dock-hero-${heroId}`,
         sourceSurface: DND_SURFACE.DRAWER,
-        kind: DRAG_KIND.HERO,
-        payload: dockHeroDragPayload(heroId, hero)
+        kind: DRAG_KIND.FLAG,
+        payload: rosterFlagPayload(heroId, hero?.name)
     });
 
     const drop = useEntityDrop({
@@ -81,14 +67,14 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
         surface: DND_SURFACE.DRAWER,
         // An item equips, another roster hero reorders.
         accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId)
-            || (p.kind === DRAG_KIND.HERO && p.heroId !== heroId),
+            || (isRosterFlag(p) && p.heroId !== heroId),
         onDrop: p => {
             if (p.kind === DRAG_KIND.ITEM && p.itemId) {
                 if (!equipOrAnnounce(EquipmentManager, heroId, p.itemId, null, p)) return false;
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
                 EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId, afterDrop: true });
-            } else if (p.kind === DRAG_KIND.HERO && p.heroId && p.heroId !== heroId) {
+            } else if (isRosterFlag(p) && p.heroId && p.heroId !== heroId) {
                 onReorder?.(p.heroId, heroId);
             }
         }
@@ -97,7 +83,7 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
 
     const carried = drop.activePayload;
     const itemCue = drop.valid && globalDragging && carried?.kind === DRAG_KIND.ITEM;
-    const heroCue = drop.valid && globalDragging && carried?.kind === DRAG_KIND.HERO;
+    const heroCue = drop.valid && globalDragging && isRosterFlag(carried);
     const sourceIndex = heroCue ? heroIds.indexOf(carried.heroId) : -1;
     const targetIndex = index ?? heroIds.indexOf(heroId);
     const insertAfter = sourceIndex !== -1 && targetIndex !== -1 && sourceIndex < targetIndex;
@@ -234,9 +220,10 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
             {/* Reorder cue: a gold line on the side the dragged hero lands. */}
             {heroCue && (
                 <div
+                    data-dock-reorder-cue={insertAfter ? 'after' : 'before'}
                     className={cn(
-                        'absolute top-0 bottom-0 w-0.5 z-50 pointer-events-none bg-gi-gold',
-                        insertAfter ? '-right-px' : '-left-px'
+                        'absolute top-0 bottom-0 w-1 z-50 pointer-events-none bg-gi-gold',
+                        insertAfter ? '-right-0.5' : '-left-0.5'
                     )}
                 />
             )}
@@ -246,10 +233,10 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                 <div data-dock-drop-cue className="absolute inset-x-1 inset-y-0 bg-gi-primary/20 outline-2 outline-solid -outline-offset-2 outline-[var(--color-ui-white)] pointer-events-none" />
             )}
 
-            {/* The hero's flag at their shoulder: behind the art, part of the figure, so hovering it is hovering the hero. */}
+            {/* The hero's flag at their shoulder: behind the art, part of the figure, so hovering it is hovering the hero. Gone while it is in the hand. */}
             <div
                 data-dock-flag={heroId}
-                className="absolute pointer-events-none transition-transform duration-200 ease-out"
+                className={cn('absolute pointer-events-none transition-transform duration-200 ease-out', held && 'invisible')}
                 style={{
                     left: `calc(50% + ${flagPlace.left}px)`,
                     bottom: flagPlace.bottom,
@@ -308,7 +295,8 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                 <span
                     data-dock-name={heroId}
                     className={cn(
-                        'max-w-full truncate px-1 ui-text-body font-bold leading-none tracking-wide',
+                        'max-w-full truncate px-1 font-bold leading-none tracking-wide',
+                        DOCK_NAME_TEXT_CLASS,
                         isSelected ? 'text-gi-gold' : isWounded ? 'text-red-300' : 'text-white'
                     )}
                     style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}
@@ -370,7 +358,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
 const RosterStatusLine = ({ heroId }) => <span>{flagStatusLine(heroId)}</span>;
 
 /** The name, HP bar and state line's height plus a small gap, so a bubble's tail stops clear of them. */
-const LABEL_PX = 44;
+const LABEL_PX = 46;
 
 /** A wheel turn this soon after the last one is the same flick: one page per flick. */
 const WHEEL_GAP_MS = 200;
