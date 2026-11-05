@@ -627,11 +627,11 @@ away from open drawers.
 
 | Kind | Source → target | Success (read from the game's state) |
 |---|---|---|
-| hero dock → mat | a dock hero → an open spot | the hero's flag planted within 60 u of the aim (or pinned) |
+| hero dock → mat | a dock hero → an open spot (the drag carries the hero's flag, as on the mat) | the hero's flag planted within 60 u of the aim (or pinned) |
 | flag → mat | a planted flag → an open spot | the same |
 | Token → mat | a Token on the mat → an open spot | the Token stands within 150 u of the aim |
 | Shop row → mat | an affordable Shop row → an open spot | a new Token of that type stands there (it is then removed, so the mat cap never fills) |
-| Bank item → dock hero | an equippable Bank item → a hero who can wear it, on their figure in the hero bar or their portrait tab beside the Bank | the hero wears it (their gear is cleared first), and one item, one hero holds: a gear copy left the Bank (one fewer there), a shared item (food, drink, potions) took no copy (its count is not checked: working heroes eat and drink from it meanwhile) |
+| Bank item → dock hero | an equippable Bank item → a hero who can wear it, on their figure in the hero bar or their portrait tab beside the Bank, where that is drawn on top at its centre (a figure the open Bank covers takes no drop, by design) | the hero wears it (their gear is cleared first), and one item, one hero holds: a gear copy left the Bank (one fewer there), a shared item (food, drink, potions) took no copy (its count is not checked: working heroes eat and drink from it meanwhile) |
 
 Every kind runs twice: a **plain** pass, and an **overlays** pass with speech
 bubbles over every hero (a level-up event for each hero every 2.5 s, which also
