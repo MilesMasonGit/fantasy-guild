@@ -7,7 +7,7 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
 
-*Thu 5 Nov 15:10. Where we are: the owner picked the looks (smooth HP bar, dark name plate, card B, 30 % spacing, no hover lift), applied at 954368b8. Benches found the 310-Token board draws about 25 % slower (accepted by the owner) and a full board at the new spacing retries spawns every tick, about 100 ms a tick against 0.8 on main. Owner ruled: keep 30 %, fix the spawners. Drag bench fixed for the flag drag (720a1cb1). Next: engineer on the spawner fix in h1, then work check, goldens, merge, then combat C2 and C3. Owner: nothing. Blockers: the spawner fix.*
+*Thu 5 Nov 15:10. Where we are: the owner picked the looks (smooth HP bar, dark name plate, card B, 30 % spacing, no hover lift), applied at 954368b8. Benches found the 310-Token board draws about 25 % slower (accepted by the owner) and a full board at the new spacing retries spawns every tick, about 100 ms a tick against 0.8 on main. Owner ruled: keep 30 %, fix the spawners by the bus rule (a spawner checks for room once when its timer ends; no room means the spawn is missed and the full cycle restarts). Drag bench fixed for the flag drag (720a1cb1). Next: engineer on the spawner fix in h1, then work check, goldens, merge, then combat C2 and C3. Owner: nothing. Blockers: the spawner fix.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
