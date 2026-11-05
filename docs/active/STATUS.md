@@ -5,6 +5,16 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Director, combat look (brief 360 C2 and C3; owner's picks 2026-11-05: window B, tab D, mat F with the combat icon between the health bars)
+
+*Thu 5 Nov 17:45. Where we are: C2 and C3 started in parallel, both from main 40eae16c. Next: verify both, one draw bench with the crowd and several windows, then one look for the owner. Owner: nothing yet. Blockers: none. C4 (crowded fights step apart, WORK CHANGED) follows C3.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 360 C2: the fight window B, minimized tabs D, several at once | builder | `crunch/combat-window` (`c2`) | building | Thu | |
+| 360 C3: the mat F, the combat icon between the bars, floats, move bubbles, QA crowd button | builder | `crunch/combat-mat` (`c3`) | building | Thu | |
+| 360 C4: crowded fights step to open space (expect WORK CHANGED) | engineer | | queued after C3 | | |
+
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
 
 *Thu 5 Nov 17:30. Where we are: the batch is merged and pushed (495986ce). The owner picked the looks from screenshots; the wider spacing costs about 25 % more drawing on the 310-Token board (accepted) and made full boards retry spawns every tick, cured by the owner's bus rule (C256 tick 126 to 1.9 ms, draw 17 to 162 fps). Work change accepted (T-311), goldens updated, in-game check ok. Next: 360 C2 and C3. Owner: nothing. Blockers: none.*
