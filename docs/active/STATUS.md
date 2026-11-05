@@ -1,4 +1,4 @@
-# STATUS — the directors' living table
+# STATUS — the directors' living tableundefinedbuilt 9e8ea970: 7356 pass, 1 red (an event left with no publisher; fix going in with H2); cycles, build ok; drag bench queuedundefinedThuundefined |undefinedbuildingundefinedThuundefined |undefinedbuilt 65f42c7e, gate runningundefinedThuundefined |undefinedbuildingundefinedThuundefined |undefined**merged** 7217b146, pictures only; **waiting for the owner's pick**undefinedThuundefinedThu |
 
 *The director keeps this file; nobody else edits it. One row per phase; a
 five-line summary at each batch's edges (proposed, looked at); anything older
@@ -153,6 +153,8 @@ None open. (Ruled 2026-10-19: Token outlines red for problems, gold for attentio
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
+
+**Thu 5 Nov, 13:00–17:00 (director):** drag bench on `crunch/hero-detail` (H1 is drag code); work check on 350 T1 when ready.
 
 **Wed 4 Nov, 01:00 (director timer, `p23b` on `main`): done.** Engine and draw baselines retaken at c46d6775 and committed; both saved first time. Chrome delivered about 4.5× (4.06–4.89) for the 4× asked, inside the limit, so the draw baseline's 4× rows read a little harsh.
 
