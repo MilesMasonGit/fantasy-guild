@@ -16,8 +16,6 @@ import { SkillIcon, skillArt, SKILL_PLACEHOLDER_SPRITE } from '../ui/components/
 import { resolveSpritePath } from '../utils/AssetManager.js';
 import { getSkill } from '../config/registries/skillRegistry.js';
 import { heroSkillList } from '../ui/components/dock/heroPanelSkills.js';
-import { HERO_COLUMN_LOOK, setHeroColumnLook, getHeroColumnLook } from '../ui/components/base/heroColumnLook.js';
-import { ColumnLookDevSection } from '../ui/dev/ColumnLookDevSection.jsx';
 import { PORTRAIT_PX, PORTRAIT_ART_PX } from '../ui/components/dock/heroPortrait.js';
 import { SLOT_ORDER } from '../config/registries/equipmentConstants.js';
 
@@ -40,7 +38,6 @@ beforeEach(() => {
     GameState.initNew();
     GameState.state.heroes = [hero('h1', 'Aldric'), hero('h2', 'Brenna')];
     setLiveMatFit(1);
-    setHeroColumnLook(HERO_COLUMN_LOOK.PLATE);
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
@@ -195,14 +192,13 @@ describe('the Bank\'s hero column', () => {
         expect(document.body.querySelector('[data-top-bar-tip]').textContent).toContain(`0/${SLOT_ORDER.length} items`);
     });
 
-    it('the QA panel switches the name\'s look on every tab', () => {
-        const r = render(h(React.Fragment, null, h(ColumnLookDevSection), panel({ selectedHeroId: null, showTabs: true })));
-        const looks = () => [...r.container.querySelectorAll('[data-hero-tab-name]')].map(el => el.getAttribute('data-column-look'));
-        expect(looks()).toEqual(['plate', 'plate']);
-        for (const id of ['ribbon', 'outline', 'plate']) {
-            fireEvent.click(r.container.querySelector(`[data-qa-column-look="${id}"]`));
-            expect(getHeroColumnLook()).toBe(id);
-            expect(looks()).toEqual([id, id]);
+    it('every tab writes its name on the dark stepped plate', () => {
+        const r = render(panel({ selectedHeroId: null, showTabs: true }));
+        const names = [...r.container.querySelectorAll('[data-hero-tab-name]')];
+        expect(names.map(el => el.textContent)).toEqual(['Aldric', 'Brenna']);
+        for (const el of names) {
+            expect(el.style.background).toMatch(/^(#000|rgb\(0, 0, 0\))$/);
+            expect(el.style.clipPath).toContain('polygon(');
         }
     });
 });

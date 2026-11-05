@@ -17,8 +17,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../utils/AssetManager.js';
-import { TokenCard, coverScale, artPlacement } from '../ui/components/board/TokenCard.jsx';
-import { CARD_LOOKS, getCardLook, setCardLook } from '../ui/components/board/cardLook.js';
+import { TokenCard, coverScale, artPlacement, CARD_WIDTH_PX } from '../ui/components/board/TokenCard.jsx';
 import { requestRecipeList } from '../ui/components/board/recipeFlip.js';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
 import { tokenCardModel, cardArtOf, activityOf, CARD_BLOCK, cardLifecycle, drivenBy } from '../ui/components/board/tokenCard.js';
@@ -449,7 +448,7 @@ describe('one card at a time', () => {
         mount(popup(vein, () => {}));
         const frame = document.querySelector('[data-pixel-frame]');
         expect(frame.getAttribute('data-pixel-frame')).toBe('chamfer');
-        expect(document.querySelector('[data-token-card-popup]').style.minWidth).toBe(`${getCardLook().plainWidth + 12}px`);
+        expect(document.querySelector('[data-token-card-popup]').style.minWidth).toBe(`${CARD_WIDTH_PX + 12}px`);
     });
 
     it('flipping to the list and choosing a recipe keep the card open; Escape in the list goes back first', async () => {
@@ -566,9 +565,7 @@ describe('a water’s catches', () => {
     });
 });
 
-describe('the art and the looks', () => {
-    afterEach(() => act(() => setCardLook('banner')));
-
+describe('the art behind the whole card', () => {
     it('the art draws at a whole multiple, at least 2×, at whole-pixel offsets', () => {
         expect(artPlacement(320, 160)).toEqual({ scale: 2, left: -96, top: -176 });
         expect(artPlacement(321, 161)).toEqual({ scale: 2, left: Math.round((321 - 512) / 2), top: Math.round((161 - 512) / 2) });
@@ -581,38 +578,28 @@ describe('the art and the looks', () => {
         }
     });
 
-    it.each(Object.keys(CARD_LOOKS))('look %s lays out the same sections around pixelated art', (id) => {
-        act(() => setCardLook(id));
+    it('lays out the sections over pixelated art that fills the card', () => {
         const vein = put('card_vein');
         const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
         const card = container.querySelector('[data-token-card]');
-        expect(card.dataset.cardLook).toBe(id);
-        expect(card.style.width).toBe(`${CARD_LOOKS[id].width}px`);
+        expect(card.style.width).toBe(`${CARD_WIDTH_PX}px`);
         expect(domOrder(container)).toEqual(['name', 'stats', 'requires', 'makes', 'lifecycle']);
+        expect(container.querySelector('[data-card-art-window]').className).toContain('inset-0');
+        expect(container.querySelector('[data-card-art-gap]')).not.toBeNull();
         const img = container.querySelector('[data-card-art-img]');
         expect(img.style.imageRendering).toBe('pixelated');
         expect(img.style.maxWidth).toBe('none');
         expect(Number(img.dataset.cardArtScale)).toBeGreaterThanOrEqual(2);
     });
 
-    it.each(Object.keys(CARD_LOOKS))('look %s: a card with no art is the plain panel', (id) => {
-        act(() => setCardLook(id));
+    it('a card with no art is the plain panel, at the same width', () => {
         const tree = put('card_tree');
         const { container } = mount(h(TokenCard, { typeId: 'card_tree', instanceId: tree.id }));
         expect(container.querySelector('[data-card-art-window]')).toBeNull();
-        expect(container.querySelector('[data-token-card]').style.width).toBe(`${CARD_LOOKS[id].plainWidth}px`);
+        expect(container.querySelector('[data-token-card]').style.width).toBe(`${CARD_WIDTH_PX}px`);
     });
 
-    it('an open card follows the QA panel’s pick at once', () => {
-        const vein = put('card_vein');
-        const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
-        expect(container.querySelector('[data-token-card]').dataset.cardLook).toBe('banner');
-        act(() => setCardLook('side'));
-        expect(container.querySelector('[data-token-card]').dataset.cardLook).toBe('side');
-    });
-
-    it.each(Object.keys(CARD_LOOKS))('look %s: the recipe list keeps the name header', (id) => {
-        act(() => setCardLook(id));
+    it('the recipe list keeps the name header and drops the window of art', () => {
         GameState.state.heroes = [{ id: 'smith', name: 'Smith', skills: { fixture_station_skill: { level: 10, xp: 0 } } }];
         const station = pickRecipe(put('fixture_station'), 'recipe_a');
         requestRecipeList(station.id);
@@ -620,5 +607,31 @@ describe('the art and the looks', () => {
         expect(container.querySelector('[data-token-card]').dataset.cardView).toBe('recipes');
         expect(container.querySelector('[data-card-block="name"] h3').textContent).toBe('Fixture Station');
         expect(container.querySelector('[data-card-panel] [data-recipe-list]')).not.toBeNull();
+        expect(container.querySelector('[data-card-art-gap]')).toBeNull();
+    });
+
+    /**
+     * A card taller than the screen's cap scrolls. The art runs behind the arrow bars, and the bars
+     * take their room inside the cap: a cap on the list alone put the bars outside it, so a card a
+     * few pixels over the cap got bars taller than what they hid. jsdom has no layout, so the list
+     * is made to overflow by hand.
+     */
+    it('the arrow bars sit inside the capped card, over its art', () => {
+        const rect = { left: 400, top: 300, right: 464, bottom: 364, width: 64, height: 64, x: 400, y: 300 };
+        const vein = put('card_vein');
+        mount(h(TokenInspectPopup, { typeId: 'card_vein', instanceId: vein.id, anchorRect: rect, onClose: () => {} }));
+        const list = document.querySelector('[data-token-card-popup] [data-scroll-list]');
+        Object.defineProperty(list, 'scrollHeight', { value: 900, configurable: true });
+        Object.defineProperty(list, 'clientHeight', { value: 400, configurable: true });
+        act(() => { list.dispatchEvent(new Event('scroll')); });
+        const card = document.querySelector('[data-token-card]');
+        const bars = [...document.querySelectorAll('[data-scroll-arrow]')];
+        expect(bars).toHaveLength(2);
+        for (const bar of bars) expect(bar.parentElement).toBe(card);
+        expect(card.querySelector(':scope > [data-card-art-window]')).not.toBeNull();
+        expect(card.className).toContain('max-h-[75vh]');
+        expect(card.className).toContain('flex-col');
+        expect(list.className).not.toContain('max-h-');
+        expect(list.className).toContain('min-h-0');
     });
 });

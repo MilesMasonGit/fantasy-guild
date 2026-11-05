@@ -893,7 +893,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'token-card', title: 'Token card', status: 'unapproved', source: 'TokenCard (the card a click on a Token opens)',
-        rule: 'The name is a header with the book and the X; then one panel of ruled sections: the stat block, the recipe picked, Requires (tools as hollow bars, then what is used up), Makes or a water\'s catches, Events, Boosted by, Drops. A section with nothing to say is left out. The 256 px activity scene draws at whole-pixel scales, 2× or more; a Token with none gets the plain panel. Every icon and number explains itself on hover. The layout follows the QA panel\'s Token card look.',
+        rule: 'The name is a header with the book and the X; then one panel of ruled sections: the stat block, the recipe picked, Requires (tools as hollow bars, then what is used up), Makes or a water\'s catches, Events, Boosted by, Drops. A section with nothing to say is left out. The 256 px activity scene draws at whole-pixel scales, 2× or more; a Token with none gets the plain panel. Every icon and number explains itself on hover. The art sits behind the whole card, a window of it between the name and a see-through panel; a card taller than three quarters of the screen scrolls, its arrows inside the card over the art.',
         Demo: TokenCardDemo
     },
     {

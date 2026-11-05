@@ -14,7 +14,6 @@ import { PROBLEM_SPRITE, SEVERITY } from '../board/problemMark.js';
 import { setRosterHover } from '../board/orderLit.js';
 import { TopBarTip } from '../board/TopBarTip.jsx';
 import { useHeroPortrait, PORTRAIT_PX } from './heroPortrait.js';
-import { HERO_COLUMN_LOOK, useHeroColumnLook } from '../base/heroColumnLook.js';
 import { SLOT_ORDER } from '../../../config/registries/equipmentConstants.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
@@ -24,21 +23,8 @@ const TAB_H_PX = 88;
 /** The alert's size on a tab: its 16 art pixels at 2×, as on the hero bar at 128 px. */
 const TAB_ALERT_PX = 32;
 
-/** A hard outline, so a name reads over the portrait. */
-const NAME_EDGE = '1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000';
-
-/** The stepped corners of the frames and the HP bar. */
+/** The stepped corners of the frames and the HP bar, on the dark plate behind a name. */
 const STEPPED = 'polygon(2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px), 0 2px, 2px 2px)';
-
-/** A banner's two notched ends, in whole art pixels. */
-const RIBBON = 'polygon(0 0, 100% 0, calc(100% - 4px) 50%, 100% 100%, 0 100%, 4px 50%)';
-
-/** What each look puts behind the name (the owner picks one in the QA panel). */
-const NAME_LOOKS = Object.freeze({
-    [HERO_COLUMN_LOOK.PLATE]: { className: 'ui-text-body py-1 px-1', style: { background: '#000', clipPath: STEPPED } },
-    [HERO_COLUMN_LOOK.RIBBON]: { className: 'ui-text-body py-1 px-2', style: { background: 'var(--color-ui-frame)', clipPath: RIBBON, textShadow: NAME_EDGE } },
-    [HERO_COLUMN_LOOK.OUTLINE]: { className: 'ui-text-title px-0.5 pb-0.5', style: { textShadow: NAME_EDGE } }
-});
 
 /**
  * HeroDockTab: a hero's tab in the hero column beside the Bank (`BankHeroPanel`): a portrait (the
@@ -183,7 +169,6 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
 }) {
     const faceRef = useRef(null);
     const setFace = useCallback((el) => { faceRef.current = el; nodeRef(el); }, [nodeRef]);
-    const look = useHeroColumnLook();
 
     // The hero bar's own state and alert. `HERO_MOVED` announces every order, claim and defeat,
     // `HEROES_WALKED` a hero arriving, `HEROES_UPDATED` a wound healing, `ALERT_CHANGED` a Token
@@ -211,7 +196,6 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
         `${hp.toLocaleString('en-US')} / ${hpMax.toLocaleString('en-US')} HP`,
         `${hero.equippedCount}/${SLOT_ORDER.length} items`
     ] : null;
-    const nameLook = NAME_LOOKS[look];
 
     return (
         <div
@@ -298,13 +282,12 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
                 )}
                 <span
                     data-hero-tab-name
-                    data-column-look={look}
                     className={cn(
                         'absolute inset-x-0 bottom-0 break-words text-center font-bold leading-none pointer-events-none',
-                        nameLook.className,
+                        'ui-text-body py-1 px-1',
                         isSelected ? 'text-gi-gold' : isWounded ? 'text-red-300' : 'text-white'
                     )}
-                    style={nameLook.style}
+                    style={{ background: '#000', clipPath: STEPPED }}
                 >
                     {hero.name}
                 </span>

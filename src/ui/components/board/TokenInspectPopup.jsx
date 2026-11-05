@@ -1,9 +1,7 @@
 import { useRef, useLayoutEffect, useState, useEffect, useCallback } from 'react';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { cn } from '../../utils/cn.js';
-import { TokenCard } from './TokenCard.jsx';
-import { useCardLook } from './cardLook.js';
-import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
+import { TokenCard, CARD_WIDTH_PX } from './TokenCard.jsx';
 import { PixelFrame, FRAME_KIND, FRAME_BAND_PX } from '../base/PixelFrame.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useTokenEvent } from './tokenEvents.js';
@@ -19,16 +17,13 @@ import { useTokenEvent } from './tokenEvents.js';
  * over 220ms and measuring mid-slide would anchor to where it was passing through.
  */
 
-/** How far an arrow press scrolls the sheet. */
-const POPUP_SCROLL_STEP_PX = 140;
-
 /** Long enough for `MatToken`'s left/top transition to have settled. */
 const MOVE_SETTLE_MS = 280;
 
 export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClose }) => {
     const popupRef = useRef(null);
-    // The narrowest card of this look inside its chamfer frame.
-    const minWidth = useCardLook().plainWidth + 2 * FRAME_BAND_PX;
+    // The card inside its chamfer frame.
+    const minWidth = CARD_WIDTH_PX + 2 * FRAME_BAND_PX;
     const [coords, setCoords] = useState({ top: 0, left: 0, dir: 'top' });
     const [isVisible, setIsVisible] = useState(false);
     const [targetRect, setTargetRect] = useState(anchorRect || null);
@@ -179,9 +174,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
             style={{ top: coords.top, left: coords.left, minWidth }}
         >
             <PixelFrame kind={FRAME_KIND.CHAMFER}>
-                <ArrowScrollList step={POPUP_SCROLL_STEP_PX} compact className="max-h-[75vh]">
-                    <TokenCard typeId={typeId} instanceId={instanceId} onClose={onClose} onViewChange={onFlip} />
-                </ArrowScrollList>
+                <TokenCard typeId={typeId} instanceId={instanceId} onClose={onClose} onViewChange={onFlip} />
             </PixelFrame>
         </div>
     );

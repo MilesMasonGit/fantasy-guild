@@ -16,7 +16,8 @@ clunky labels like "LVL 03" where "3/99" says it better.
   "Charges:", "HP:") where an icon or the position already says it.
 - **XP is a thin bar**; the exact number (`1,154 / 1,500 XP`) shows on hover.
 - **A hero's HP on the hero bar and sheet: the numbers over a stepped pixel bar**
-  (`VitalBar`; owner, 2026-11-02).
+  (`VitalBar`; owner, 2026-11-02): a smooth fill on a plain black edge, no ticks
+  (owner's pick, 2026-11-05).
 - **HP elsewhere is a bar**; the exact number shows on hover, except on the mat, where a thin bar over a fighter has its number and
   percentage written above it, `17 · 57%` (owner, combat screen, 2026-10-25).
 - Times read `0:34` / `4:05`; thousands get separators (`1,154`).
@@ -198,7 +199,9 @@ item held.
   the top right**: `ui_cancel_red.png` (16 px) at 2×. Same on every panel,
   drawer and modal. Small floating pop-ups (tooltips) have no header and no X.
   **One exception**: the hero sheet's close and edit stand in the side space
-  beside it, where the Bank's hero column stands (owner, 2026-11-02).
+  beside it, where the Bank's hero column stands (owner, 2026-11-02). In that
+  column a hero's name sits on a dark stepped plate over the portrait's foot
+  (owner's pick, 2026-11-05).
 
 ## Buttons
 

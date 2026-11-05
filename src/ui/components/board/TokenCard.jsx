@@ -11,8 +11,7 @@ import { LeaveMatControl } from '../drawer/LeaveMatControl.jsx';
 import { useTokenDetail } from './useTokenDetail.js';
 import { subscribeToken } from './tokenEvents.js';
 import { CARD_BLOCK, tokenCardModel, cycleText, drivenBy } from './tokenCard.js';
-import { useCardLook } from './cardLook.js';
-import { PixelTriangle } from '../base/ArrowScrollList.jsx';
+import { ArrowScrollList, PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { withArticle } from '../../../systems/effects/toolNames.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -29,6 +28,15 @@ import { t } from '../../../i18n/index.js';
 
 /** The activity scenes are 256 px square; they only ever draw at whole multiples of it. */
 export const CARD_ART_PX = 256;
+
+/** The card's width in screen pixels. */
+export const CARD_WIDTH_PX = 320;
+
+/** The window of art between the name and the panel. */
+const CARD_ART_GAP_PX = 96;
+
+/** How far an arrow press scrolls the card. */
+const CARD_SCROLL_STEP_PX = 140;
 
 /** The art's smallest scale on a card. */
 const CARD_ART_MIN_SCALE = 2;
@@ -540,62 +548,33 @@ const ArtWindow = ({ art, className, style, children }) => {
     );
 };
 
-/** The card's layout in each look: where the art sits, and the header and panel around it. */
-const CardLayout = ({ look, art, header, panel, listing }) => {
-    const panelBox = (extra) => <div data-card-panel className={cn('flex flex-col', extra)}>{panel}</div>;
-    if (art && look.art === 'banner') {
-        return (
-            <>
-                <ArtWindow art={art} className="relative flex flex-col justify-end" style={{ height: look.artHeight }}>
-                    <div className="relative">{header}</div>
-                </ArtWindow>
-                {panelBox('bg-gi-base')}
-            </>
-        );
-    }
-    if (art && look.art === 'cover') {
-        return (
-            <>
-                <ArtWindow art={art} className="absolute inset-0" />
-                <div className="relative flex flex-col">
-                    {header}
-                    {!listing && <div data-card-art-gap style={{ height: look.artGap }} />}
-                    {panelBox('bg-black/70')}
-                </div>
-            </>
-        );
-    }
-    // The recipe rows need the width a side column would take.
-    if (art && look.art === 'side' && !listing) {
-        return (
-            <div className="flex items-stretch">
-                <ArtWindow art={art} className="relative shrink-0" style={{ width: look.artWidth }} />
-                <div className="flex-1 min-w-0 flex flex-col bg-gi-base">
-                    {header}
-                    {panelBox()}
-                </div>
-            </div>
-        );
-    }
-    return (
-        <>
+/**
+ * The card's body: the art behind the whole card, a window of it between the name and a
+ * see-through panel. ⚠️ The height cap is on the card, not the list, so the arrow bars take their
+ * room inside it and run over the art. A cap on the list alone puts them outside it, so a card
+ * a few pixels over the cap gets bars taller than what they hide.
+ */
+const CardBody = ({ art, header, panel, listing }) => (
+    <>
+        {art && <ArtWindow art={art} className="absolute inset-0" />}
+        <ArrowScrollList step={CARD_SCROLL_STEP_PX} compact className="relative min-h-0 flex flex-col" barClassName="relative">
             {header}
-            {panelBox('bg-gi-base')}
-        </>
-    );
-};
+            {art && !listing && <div data-card-art-gap className="shrink-0" style={{ height: CARD_ART_GAP_PX }} />}
+            <div data-card-panel className={cn('flex flex-col', art ? 'bg-black/70' : 'bg-gi-base')}>{panel}</div>
+        </ArrowScrollList>
+    </>
+);
 
 const STAT_BLOCKS = new Set([CARD_BLOCK.HP, CARD_BLOCK.COMBAT, CARD_BLOCK.WORK, CARD_BLOCK.CYCLE]);
 
 /**
- * The Token card: the card a click on a Token opens, in the look the QA panel has picked. A header
- * with the name, then one panel of sections following `tokenCardModel`: the stat block, the recipe
- * picked, Requires, Makes or a water's catches, Events, Boosted by, Drops. A section with nothing
- * to say is left out. Every icon and number explains itself on hover.
+ * The Token card: the card a click on a Token opens. A header with the name, then one panel of
+ * sections following `tokenCardModel`: the stat block, the recipe picked, Requires, Makes or a
+ * water's catches, Events, Boosted by, Drops. A section with nothing to say is left out. Every
+ * icon and number explains itself on hover.
  */
 export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewChange = null }) => {
     const def = getTokenType(typeId);
-    const look = useCardLook();
     const [view, setView] = useCardView(instanceId, onViewChange);
     // Charges, a picked recipe, a hero arriving: re-read on this Token's own events.
     useTokenDetail(instanceId, def);
@@ -658,17 +637,15 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
         </>
     );
 
-    const width = art ? look.width : look.plainWidth;
     return (
         <div
             data-token-card={model.enemy ? 'enemy' : 'token'}
             data-card-art={art ? art.source : 'none'}
             data-card-view={listing ? 'recipes' : 'card'}
-            data-card-look={look.id}
-            className="relative overflow-hidden"
-            style={listing ? { width: 'max-content', minWidth: width, maxWidth: 'calc(100vw - 48px)' } : { width }}
+            className="relative overflow-hidden flex flex-col max-h-[75vh]"
+            style={listing ? { width: 'max-content', minWidth: CARD_WIDTH_PX, maxWidth: 'calc(100vw - 48px)' } : { width: CARD_WIDTH_PX }}
         >
-            <CardLayout look={look} art={art} header={header} panel={panel} listing={listing} />
+            <CardBody art={art} header={header} panel={panel} listing={listing} />
         </div>
     );
 };
