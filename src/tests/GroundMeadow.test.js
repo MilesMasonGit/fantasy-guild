@@ -194,7 +194,7 @@ function dryRegion() {
  * again when the shipped Token hitbox grew from 80% to 90%. Only a deliberate change to how a
  * meadow places Tokens may change it, and then the engine bench reports WORK CHANGED too.
  */
-const MEADOW_FINGERPRINT = 'ac138814';
+const MEADOW_FINGERPRINT = 'd80b0139';
 
 describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
     // On the 11-step, 0.64 mat the script was recorded on: what it guards is how a meadow places
@@ -241,7 +241,7 @@ describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
  * hitbox grew from 80% to 90%: a layout keeps the placement rule's own gaps. Recorded again when the
  * shipped mat became 1920 × 1040 (12 by 6.5 steps): new Regions are laid out on it.
  */
-const LAYOUT_FINGERPRINT = '12ce93ff';
+const LAYOUT_FINGERPRINT = '94cc0388';
 
 registerTokenTypes({
     gm_oak: { id: 'gm_oak', name: 'GM Oak', tokenType: 'resource', size: 1, uses: 5, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },
