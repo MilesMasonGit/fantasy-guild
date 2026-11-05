@@ -1,6 +1,6 @@
 # NOW — start here
 
-*Updated 2026-11-03. One screen: what is next and where the project stands.
+*Updated 2026-11-05. One screen: what is next and where the project stands.
 A director resumes from [HANDOFF.md](HANDOFF.md); the living table and
 summaries are [STATUS.md](STATUS.md); the queue is the order table in
 [briefs/README.md](briefs/README.md); finished work lives in git, the
@@ -20,7 +20,6 @@ changelog and `docs/archive/`.*
 
 ## Next
 
-1. Clean-up done 3 Nov: small tickets merged, eye-checks closed, no code branch open. **Waiting for the owner's go on the new briefs.**
-2. Detail passes queued by planning: 340 hero bar and sheet, 350 Tokens and card,
-   360 combat look (mock-ups first).
+1. Building now (STATUS): 340 hero bar and sheet, 350 Tokens and card, 360 C1 combat mock-ups.
+2. Next from the queue: the rest of 360, then the owner's pick.
 3. Owner: the art list (seed map sprites); optional, delete the Token Volcanic Island in the CMS.

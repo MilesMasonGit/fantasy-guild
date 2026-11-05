@@ -5,6 +5,20 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
+
+*Thu 5 Nov 10:15. Where we are: batch proposed and chosen, helpers starting. Six phases on two lines, plus pictures. Next: the combat pick, then one look at the hero bar and one at Tokens and the card. Owner: nothing until the looks. Blockers: none.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 340 H1: drag a hero's flag from the bar, the Bank's column and the sheet; spacing and names | builder | `crunch/hero-detail` (`h1`) | building | Thu | |
+| 340 H2: HP looks, status on hover, alerts, flag side | builder | same | queued | | |
+| 340 H3: two-column skills, arrows, close and edit, Bank column, no emoji icons | builder | same | queued | | |
+| 340 H4: moving items between slots and heroes (reproduce first) | builder | same | queued | | |
+| 350 T2: the Token card rebuilt (runs first: settles `ArrowScrollList` before H3) | builder | `crunch/tokens-detail` (`k1`) | building | Thu | |
+| 350 T1: heroes on top, hover lift a switch, more space (expect WORK CHANGED) | builder | same | queued | | |
+| 360 C1: combat mock-ups, pictures only | builder | `docs/combat-mockups` (`c1`) | building | Thu | |
+
 ## Director, clean-up before the new briefs (owner 2026-11-03: small tickets and doc updates approved; eye-checks closed)
 
 *Tue 3 Nov 17:00. Where we are: clean-up done. All five phases merged and pushed, eye-checks closed, no code branch open, only `p23b` and the planning worktrees left. Next: the owner's go on the new briefs. Owner: nothing needed; optional, delete the Token Volcanic Island. Blockers: none. Baseline retake queued for Wed 01:00.*
@@ -129,7 +143,6 @@ None open.
 
 - **Ledger L5 answered (owner 2026-10-30):** the analyst's pace curve (1: 3 min, 10: 8 min, 20: 30 min, 40: 3 h, 60: 1 day, 99: 3 days), set as the default in L6; the other four as built (no check-in waits, 2 h payback, camps work 3, keep the Beer finding).
 
-- **W4, the Starter Camp and mines (ask with the next proposal):** once mines need Stone and a prospecting map, the Starter Camp (meadow, no Stone) can no longer build a Copper or Coal Mine, and its built-in Copper Mine can no longer be moved. Options: (A, rec.) the Starter Camp gets a small patch of Stone ground, and its first mine recipe needs no map; (B) the Starter Camp is exempt from the mine rules; (C) mines start on ring 1, the Starter Camp keeps only its built-in one. The pack is held until this and W6's map sources are settled.
 
 - ~~W6, boss camps~~ **Answered 2026-11-01 (owner):** every Live enemy and source is guaranteed in every world, in the inner ring of its tier (owner_feedback). Was: today a boss camp (Queen's Hive, Chief's Tent, Alpha's Den…) appears only when a cell's specialty is combat on a kit that has it, so 18–34 % of worlds hold each. (A, rec.) each ring's arrival table lists its bosses, so every world has them; (B) every kit gets every boss camp; (C) leave them to each world's luck.
 
