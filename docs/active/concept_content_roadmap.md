@@ -143,7 +143,7 @@ measured.*
 - [Enchanting](content_enchanting.md): approved 2026-11-04; 55 recipes, 44 levels open; Leylines give Motes.
 - [Tailor](content_tailor.md): approved 2026-11-04; 56 recipes, 43 levels open.
 - [Crafting](content_crafting.md): approved 2026-11-04; 76 recipes, 23 levels open.
-- [Mining and Forestry Tokens](content_mining_forestry.md): draft; ideas for the gaps between tiers.
+- [Mining and Forestry Tokens](content_mining_forestry.md): draft; the owner's picks for the gaps between tiers.
 
 ## Open links
 
