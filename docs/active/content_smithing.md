@@ -23,8 +23,8 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 - **Metal levels**: copper 1, iron 20, silver 30, mythril 40, gold 50, adamantine 60, darkmetal 80.
 - **Base set, on copper, iron, mythril, adamantine and darkmetal, at the same place in each tier**: Ingot at the tier's start, then Dagger +2, Woodaxe +3, Pickaxe +4, Sword +6, Helmet +7, Arrowheads +8, Plate Gloves +9, Plate Boots +11, Shield +12, Chestplate +13 (counted from a round 20, 40, 60, 80; copper from 0). So an improved version arrives exactly 20 levels after the last.
-- **Beyond it**: Nails on copper, iron and mythril. Kunai on copper and iron. Cleaver and Mace on iron.
-- **80 recipes and 19 open levels**, left for what later skills need: 14, 15, 16, 17, 18, 19, 74, 75, 76, 77, 78, 79, 81, 85, 90, 94, 95, 96, 97.
+- **Beyond it**: Nails on copper, iron and mythril. Kunai on copper and iron. Cleaver and Mace on iron. Harpoons on adamantine and darkmetal (Fishing).
+- **82 recipes and 17 open levels**, left for what later skills need: 14, 15, 16, 17, 18, 19, 75, 76, 77, 78, 79, 85, 90, 94, 95, 96, 97.
 - **Handles use that metal's wood**, so Forestry and Smithing climb together.
 - **Everything is made at the Blacksmith** (owner, 2026-11-04; [Construction](content_construction.md)); its variants have different benefits, not new lists; coal is the fuel.
 
@@ -120,7 +120,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 71 | Adamantine Plate Boots | boots (new slot) | Adamantine Ingot |  | A |
 | 72 | Adamantine Shield | off hand | Adamantine Ingot, Mahogany Wood |  | A |
 | 73 | Adamantine Chestplate | chest | Adamantine Ingot |  | H |
-| 74 | *open* |  |  |  |  |
+| 74 | Adamantine Harpoon | tool | Adamantine Ingot, Mahogany Wood, String | Fishing: Swordfish | N |
 | 75 | *open* |  |  |  |  |
 | 76 | *open* |  |  |  |  |
 | 77 | *open* |  |  |  |  |
@@ -132,7 +132,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | Level | Name | Kind | Made with | Also used by | Art |
 |---|---|---|---|---|---|
 | 80 | Darkmetal Ingot | material | Darkmetal Ore, Coal | everything of this metal | H |
-| 81 | *open* |  |  |  |  |
+| 81 | Darkmetal Harpoon | tool | Darkmetal Ingot, Ebony Wood, String | Fishing: Shark | A |
 | 82 | Darkmetal Dagger | Stealth weapon | Darkmetal Ingot, Ebony Wood |  | A |
 | 83 | Darkmetal Woodaxe | tool | Darkmetal Ingot, Ebony Wood |  | H |
 | 84 | Darkmetal Pickaxe | tool | Darkmetal Ingot, Ebony Wood |  | H |
@@ -171,7 +171,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 ## Art
 
-**32 have, 37 adapt, 11 new.** You have every ingot, pick and woodaxe, five plates, two swords, the iron cleaver (`battleaxe_iron`), and steel gloves, boots and helmet, used here for iron. New shapes: Dagger, Arrowheads, Kunai, Shield, Mace, Wire, Gears, Ring and Amulet Bands, and the two final pieces. Most other entries recolour those, using `color_mythril`, `color_addy` and `color_darkmetal`. `glove_leather`, `boot_leather` and `boot_slipper` wait for other skills; the `chisel_*` and `tongs` pictures go unused.
+**32 have, 38 adapt, 12 new.** You have every ingot, pick and woodaxe, five plates, two swords, the iron cleaver (`battleaxe_iron`), and steel gloves, boots and helmet, used here for iron. New shapes: Dagger, Arrowheads, Kunai, Shield, Mace, Wire, Gears, Ring and Amulet Bands, and the two final pieces. Most other entries recolour those, using `color_mythril`, `color_addy` and `color_darkmetal`. `glove_leather`, `boot_leather` and `boot_slipper` wait for other skills; the `chisel_*` and `tongs` pictures go unused.
 
 ## Moved or changed from today
 

@@ -18,7 +18,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - **Nails get their job**: Copper in rods and traps, Iron in Hard Leather, Mythril in Studded Leather.
 - **Planks for all seven woods**, at the ladder's levels.
 - **Six gems cut, 24 pieces of jewellery** for your drawn silver and gold.
-- **76 recipes, 23 levels open.**
+- **78 recipes, 21 levels open.**
 
 | Level | Name | Kind | Made with | Also used by | Art |
 |---|---|---|---|---|---|
@@ -52,6 +52,8 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 31 | Cut Emerald | material | Uncut Emerald (Mining) | Enchanting: Staffs; jewellery | H |
 | 32 | Cut Amethyst | material | Uncut Amethyst (Mining) | Enchanting: Staffs; jewellery | H |
 | 33 | Cut Diamond | material | Uncut Diamond (Mining) | Enchanting: Staffs; jewellery | H |
+| 35 | Master Rod | tool | Maple Plank, Mythril Nails, String | Fishing | A |
+| 36 | Lobster Pot | tool | Fir Plank, Iron Nails, String | Fishing | A |
 | 40 | Maple Plank | material | Maple Wood | Construction | H |
 | 41 | Studded Leather | material | Hard Leather, Mythril Nails | Studded armour | A |
 | 42 | Studded Hat | hat, Ranged | Studded Leather |  | A |
@@ -99,7 +101,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 85 | Dragonscale Shield | off hand, Ranged | Dragonscale |  | A |
 | 86 | Dragonscale Chest | chest, Ranged | Dragonscale |  | A |
 
-**Art: 48 have, 25 adapt, 3 new.** You have all 24 pieces of jewellery, six cut and six uncut gems, seven planks, three scales, and leather gloves and boots. To draw: a Leather Shield, Parchment and a Blank Book; most armour is recolours.
+**Art: 48 have, 27 adapt, 3 new.** You have all 24 pieces of jewellery, six cut and six uncut gems, seven planks, three scales, and leather gloves and boots. To draw: a Leather Shield, Parchment and a Blank Book; most armour is recolours.
 
 ## Planning agent's calls
 
@@ -118,5 +120,4 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - ⚠️ **Torch has no user yet**: you kept it, and something must ask for it, such as Construction or dark places, or it goes.
 - **Planks** must be asked for by Construction's buildings (wood and buildings).
 - **Mining**: uncut gems. **Enemies**: Hide, Blue and Red Scales.
-- **Fishing**: whether rods tier beyond Fine.
 - **A Leather Shield** for Ranged: Shields lend defence; how it differs from metal ones is the ledger's.

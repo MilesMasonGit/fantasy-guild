@@ -138,14 +138,14 @@ measured.*
 ## Chain pages
 
 - [Food and drink](content_food_and_drink.md): approved 2026-11-04; 99 Cooking recipes.
-- [Smithing](content_smithing.md): approved 2026-11-04; 80 recipes, the rest of its levels open for later skills.
+- [Smithing](content_smithing.md): approved 2026-11-04; 82 recipes, the rest of its levels open for later skills.
 - [Fletching](content_fletching.md): approved 2026-11-04; 16 recipes, five woods, most levels open.
 - [Enchanting](content_enchanting.md): approved 2026-11-04; 55 recipes, 44 levels open; Leylines give Motes.
 - [Tailor](content_tailor.md): approved 2026-11-04; 56 recipes, 43 levels open.
-- [Crafting](content_crafting.md): approved 2026-11-04; 76 recipes, 23 levels open.
+- [Crafting](content_crafting.md): approved 2026-11-04; 78 recipes, 21 levels open.
 - [Mining and Forestry Tokens](content_mining_forestry.md): approved 2026-11-04; the owner's picks for the gaps between tiers.
 - [Construction](content_construction.md): approved 2026-11-04; a building per skill, 35 variants, tiered materials.
-- [Fishing](content_fishing.md): draft; fish gated by tools, four special waters.
+- [Fishing](content_fishing.md): approved 2026-11-04; fish gated by tools, four special waters.
 
 ## Open links
 

@@ -1,4 +1,4 @@
-Status: draft
+Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 # Content roadmap: Fishing
 
@@ -8,7 +8,7 @@ Status: draft
 
 - **Better tools gate fish.** ⚠️ Amends "a tool's tier never gates" ([GDD](../reference/GDD.md), brief 230 S5; `concept_skill_loops.md`).
 - **Three tools: Rod, Trap, Harpoon.**
-- **Special waters: Shipwreck, Oyster Bed.**
+- **Special waters: Shipwreck, Oyster Bed**, with the Coral Reef and Shark-Infested Waters below.
 - **Other catch: Seaweed.**
 - **An Oyster item for the Oyster Bed.**
 - **Special Tokens let certain fish spawn**: "A coral reef for tropical fish and Shark-Infested Waters for the Shark."
