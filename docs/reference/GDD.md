@@ -304,6 +304,9 @@ Owner rulings 2026-10-24. **Water** is a Token with **catch pools**
 editor's Catch pools block), one weighted pool per **tool kind × bait**; the
 pool with no bait is the water's **basic** catch. One sprite per water type
 (sea, river, lake) is content.
+- **The card says what bites**: with a hero on the water, what their tool and bait
+  land now, at the odds rolled; the water's other pools, or all of them with no
+  hero on it, sit in shut lists by tool, at their authored odds.
 - **Each finished cycle lands one catch** picked from a pool, in place of the
   Token's own Outputs, then widened like any output (Yield, Double Item Chance).
   A **rare catch drops like any other item**: no pop, no twinkle (owner
@@ -1207,6 +1210,12 @@ drawers**. The menu can be flipped to the right.
   is a leftover sci-fi theme ("SYSTEM BOOT").
 - **Bubble menu**: Guild Hall, Item Bank, Shop, Settings.
 - **Top bar**: Tokens / cap, upkeep per minute, disallow mode.
+- **Token card** (a click on a Token): the name as a header, then a stat block
+  (level, XP, time, charges; an enemy's HP, level, XP) and sections: the recipe
+  picked, **Requires** (tools and what is used up), **Makes** or a water's
+  catches, **Events** (regrowing, growing, spawning), Boosted by, Drops. A section
+  with nothing to say is left out. The art draws at whole-pixel scales, 2× or
+  more. A station's recipe list keeps the header and the art.
 - **Notification column**: toasts (collapse / clear all).
 - **Hero bar** (bottom): the roster, heroes as standing figures with HP numbers
   over a pixel bar, each with their job flag and an alert when wounded or the

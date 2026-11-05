@@ -206,11 +206,12 @@ Two kinds, nothing else:
 
 - Panels **grow tall first**, using the screen's height, then scroll. Text is
   **never cut off with "…"**: it wraps.
-- **No scrollbars.** A scrolling list has an **arrow bar above and below**: one
-  shared piece, not a copy per panel.
+- **No scrollbars.** A list with more to scroll to has an **arrow bar above and
+  below**: one shared piece, not a copy per panel. **A list that fits has no
+  bars**, and no space kept for them (owner, 2026-11-02).
   - The arrow is a small pixel triangle drawn in code at whole-pixel scale.
-  - At the end of the list that arrow **dims but keeps its space**, so the list
-    never jumps.
+  - At the end of a list that scrolls, that arrow **dims but keeps its space**,
+    so the list does not jump while it is scrolled.
   - **A click scrolls about two rows**, smoothly; **holding** keeps scrolling;
     the **mouse wheel** works as normal.
 

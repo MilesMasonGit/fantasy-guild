@@ -15,8 +15,10 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
+import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../utils/AssetManager.js';
-import { TokenCard, coverScale } from '../ui/components/board/TokenCard.jsx';
+import { TokenCard, coverScale, artPlacement } from '../ui/components/board/TokenCard.jsx';
+import { CARD_LOOKS, getCardLook, setCardLook } from '../ui/components/board/cardLook.js';
 import { requestRecipeList } from '../ui/components/board/recipeFlip.js';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
 import { tokenCardModel, cardArtOf, activityOf, CARD_BLOCK, cardLifecycle, drivenBy } from '../ui/components/board/tokenCard.js';
@@ -89,8 +91,25 @@ const CARD_TOKENS = {
         id: 'card_bad_art', name: 'Card Bad Art', tokenType: 'resource', rarity: 'common', uses: 5,
         sprite: 's_nature', cardArt: 'b_no_such_picture',
         config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 3000, xp: 1, inputs: [], outputs: [] }
+    },
+    card_water: {
+        id: 'card_water', name: 'Card Water', tokenType: 'resource', rarity: 'common', uses: null,
+        sprite: 't_lake_small', requiresHero: true,
+        config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 3000, xp: 1, inputs: [], outputs: [] },
+        catchPools: [
+            { tool: 'fishing_rod', catches: [{ itemId: 'card_trout', weight: 3 }, { itemId: 'card_salmon', weight: 1 }] },
+            { tool: 'fishing_rod', bait: 'card_worm', catches: [{ itemId: 'card_salmon', weight: 1 }] },
+            { tool: 'fishing_net', catches: [{ itemId: 'card_shrimp', weight: 1 }] }
+        ]
     }
 };
+registerItems({
+    card_trout: { id: 'card_trout', name: 'Card Trout', type: 'material', stackable: true, equipSlot: '', sprite: 'i_trout_raw' },
+    card_salmon: { id: 'card_salmon', name: 'Card Salmon', type: 'material', stackable: true, equipSlot: '', sprite: 'i_salmon_raw' },
+    card_shrimp: { id: 'card_shrimp', name: 'Card Shrimp', type: 'material', stackable: true, equipSlot: '', sprite: 'i_trout_raw' },
+    card_worm: { id: 'card_worm', name: 'Card Worm', type: 'material', stackable: true, equipSlot: 'consumable', sprite: 'i_fish_bait' },
+    card_rod: { id: 'card_rod', name: 'Card Rod', type: 'tool', equipSlot: 'hand', stackable: true, sprite: 'i_rod_wood', tool: { kind: 'fishing_rod', tier: 1 } }
+});
 registerTokenTypes(CARD_TOKENS);
 
 const h = React.createElement;
@@ -140,7 +159,7 @@ describe('the blocks, top to bottom, per kind', () => {
         expect(model.blocks[4].lines.map(l => l.icon)).toEqual(['regrow']);
 
         const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
-        expect(domOrder(container)).toEqual(['name', 'work', 'cycle', 'recipe', 'lifecycle']);
+        expect(domOrder(container)).toEqual(['name', 'stats', 'requires', 'makes', 'lifecycle']);
         expect(container.querySelector('[data-card-cycle]').textContent).toBe('4s');
         expect(container.querySelector('[data-card-charges]').textContent).toBe('37');
         // The tool is a hollow bar with no count.
@@ -168,6 +187,8 @@ describe('the blocks, top to bottom, per kind', () => {
         expect(recipe.tools.map(t => t.typeId)).toEqual(['fixture_context_a']);
         expect(recipe.change).toEqual({ label: 'Change recipe', chosen: true, empty: 'No recipe chosen' });
 
+        const { container } = mount(h(TokenCard, { typeId: 'fixture_station', instanceId: station.id }));
+        expect(domOrder(container)).toEqual(['name', 'stats', 'recipe', 'requires', 'makes']);
     });
 
     it('Change recipe flips the card to its list on the same art; a click on a row chooses it and flips back', () => {
@@ -300,7 +321,7 @@ describe('what the card says', () => {
     it('long names in a card ribbon wrap instead of being cut off', () => {
         const vein = put('card_vein');
         const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
-        const names = [...container.querySelectorAll('[data-card-block="recipe"] [data-item-bar-name]')];
+        const names = [...container.querySelectorAll('[data-card-block="makes"] [data-item-bar-name]')];
         expect(names.length).toBeGreaterThan(0);
         for (const el of names) {
             expect(el.className).toContain('break-words');
@@ -324,7 +345,7 @@ describe('the enemy card', () => {
 
         const { container } = mount(h(TokenCard, { typeId: 'card_enemy', instanceId: goblin.id }));
         expect(container.querySelector('[data-token-card]').getAttribute('data-token-card')).toBe('enemy');
-        expect(domOrder(container)).toEqual(['name', 'hp', 'combat', 'drops']);
+        expect(domOrder(container)).toEqual(['name', 'stats', 'drops']);
         expect(container.querySelector('[data-card-hp-text]').textContent).toBe(`${hp.max}/${hp.max}`);
         expect(container.querySelectorAll('[data-card-block="drops"] [data-item-bar]')).toHaveLength(2);
     });
@@ -367,7 +388,7 @@ describe('the art', () => {
         expect(container.querySelector('[data-token-card]').getAttribute('data-card-art')).toBe('override');
         const img = container.querySelector('[data-card-art-img]');
         expect(img.getAttribute('src')).toBe(resolveSpritePath('b_forge'));
-        expect(img.style.width).toBe('256px');
+        expect(img.style.width).toBe('512px');
         expect(img.style.imageRendering).toBe('pixelated');
     });
 });
@@ -423,12 +444,12 @@ describe('one card at a time', () => {
         expect(onClose).toHaveBeenCalledTimes(3);
     });
 
-    it('wears the chamfer frame, at the art’s width', () => {
+    it('wears the chamfer frame, at the card’s width', () => {
         const vein = put('card_vein');
         mount(popup(vein, () => {}));
         const frame = document.querySelector('[data-pixel-frame]');
         expect(frame.getAttribute('data-pixel-frame')).toBe('chamfer');
-        expect(document.querySelector('[data-token-card-popup]').style.minWidth).toBe(`${256 + 12}px`);
+        expect(document.querySelector('[data-token-card-popup]').style.minWidth).toBe(`${getCardLook().plainWidth + 12}px`);
     });
 
     it('flipping to the list and choosing a recipe keep the card open; Escape in the list goes back first', async () => {
@@ -457,5 +478,147 @@ describe('one card at a time', () => {
         gone.addEventListener('click', () => gone.remove());
         fireEvent.click(gone);
         expect(onClose).not.toHaveBeenCalled();
+    });
+});
+
+describe('the sections', () => {
+    it('the stat block holds skill, XP, time and charges; the name is the header', () => {
+        const vein = put('card_vein');
+        const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id, onClose: () => {} }));
+        const header = container.querySelector('[data-card-block="name"]');
+        expect(header.tagName).toBe('HEADER');
+        expect(header.querySelector('h3').textContent).toBe('Card Vein');
+        expect(header.querySelector('[data-card-close]')).not.toBeNull();
+        const stats = container.querySelector('[data-card-block="stats"]');
+        expect(stats.querySelector('[data-card-skill="mining"]').textContent).toContain('20');
+        expect(stats.textContent).toContain('+35');
+        expect(stats.querySelector('[data-card-cycle]')).not.toBeNull();
+        expect(stats.querySelector('[data-card-charges]')).not.toBeNull();
+    });
+
+    it('Requires holds the tool and what is used up; Makes what comes out; Events the regrowing', () => {
+        const vein = put('card_vein');
+        const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
+        const requires = container.querySelector('[data-card-block="requires"]');
+        expect(requires.querySelector('[data-card-tool="card_pick"]')).not.toBeNull();
+        expect(requires.querySelector('[data-card-needs] [data-item-bar]').textContent).toContain('0/3');
+        expect(container.querySelectorAll('[data-card-block="makes"] [data-item-bar]')).toHaveLength(2);
+        const events = container.querySelector('[data-card-block="lifecycle"]');
+        expect(events.textContent).toContain('Events');
+        expect(events.querySelector('[data-card-life="regrow"]').textContent).toContain('Regrows');
+    });
+
+    it('a card with nothing for a section leaves it out', () => {
+        const tree = put('card_tree');
+        const a = mount(h(TokenCard, { typeId: 'card_tree', instanceId: tree.id }));
+        expect(domOrder(a.container)).toEqual(['name', 'stats', 'makes']);
+        cleanup();
+        const b = mount(h(TokenCard, { typeId: 'card_sapling' }));
+        expect(domOrder(b.container)).toEqual(['name']);
+    });
+
+    it('a demolition or a camp line names itself rather than taking its icon’s word', () => {
+        const lines = cardLifecycle({ id: 'x', typeId: 'y', demolish: true }, {}, { workerOf: () => null, demolishMs: 1000 });
+        expect(lines[0].label).toBe('Demolition');
+    });
+});
+
+describe('a water’s catches', () => {
+    const fisher = (grid) => ({ id: 'angler', name: 'Angler', status: 'idle', level: 1, skills: { fishing: { level: 5, xp: 0 } },
+        hp: { current: 10, max: 10 }, equipment: Array.from({ length: 9 }, (_, i) => grid[i] || null),
+        heldCopies: Array.from({ length: 9 }, (_, i) => !!grid[i] && getAllItems()[grid[i]]?.equipSlot === 'hand') });
+    const open = (el) => fireEvent.click(el.querySelector('[data-card-collapse]'));
+
+    it('with no hero: everything is in lists by tool, shut until clicked, bait nested inside', () => {
+        const water = put('card_water');
+        const { container } = mount(h(TokenCard, { typeId: 'card_water', instanceId: water.id }));
+        expect(container.querySelector('[data-card-block="makes"]')).toBeNull();
+        expect(container.querySelector('[data-card-catch-setup]')).toBeNull();
+        const section = container.querySelector('[data-card-block="catch"]');
+        const rod = section.querySelector('[data-card-catch-tool="fishing_rod"]');
+        expect(section.querySelector('[data-card-catch-tool="fishing_net"]')).not.toBeNull();
+        expect(section.querySelectorAll('[data-item-bar]')).toHaveLength(0);
+        open(rod);
+        expect(rod.querySelector('[data-card-collapse]').dataset.cardCollapse).toBe('open');
+        expect(rod.querySelector('[data-card-catch-pool="plain"]').textContent).toContain('No bait');
+        expect(rod.querySelector('[data-card-catch-pool="plain"]').textContent).toContain('75%');
+        expect(rod.querySelector('[data-card-catch-pool="card_worm"]').textContent).toContain('With Card Worm');
+        open(rod);
+        expect(rod.querySelector('[data-card-catch-pool="plain"]')).toBeNull();
+    });
+
+    it('with a hero: what they land stands open, naming their gear; the rest stay shut', () => {
+        const water = put('card_water');
+        GameState.state.heroes = [fisher(['card_rod'])];
+        const spy = vi.spyOn(BoardState, 'workerOf').mockReturnValue('angler');
+        try {
+            const { container } = mount(h(TokenCard, { typeId: 'card_water', instanceId: water.id }));
+            const setup = container.querySelector('[data-card-catch-setup]');
+            expect(setup.textContent).toContain('Angler catches');
+            expect(container.querySelector('[data-card-catch-gear]').textContent).toBe('Card Rod, no bait');
+            expect(setup.querySelectorAll('[data-item-bar]')).toHaveLength(2);
+            expect(setup.textContent).toContain('25%');
+            expect([...container.querySelectorAll('[data-card-catch-tool]')].map(el => el.dataset.cardCatchTool)).toEqual(['fishing_rod', 'fishing_net']);
+            expect([...container.querySelectorAll('[data-card-collapse]')].every(el => el.dataset.cardCollapse === 'shut')).toBe(true);
+        } finally {
+            spy.mockRestore();
+        }
+    });
+});
+
+describe('the art and the looks', () => {
+    afterEach(() => act(() => setCardLook('banner')));
+
+    it('the art draws at a whole multiple, at least 2×, at whole-pixel offsets', () => {
+        expect(artPlacement(320, 160)).toEqual({ scale: 2, left: -96, top: -176 });
+        expect(artPlacement(321, 161)).toEqual({ scale: 2, left: Math.round((321 - 512) / 2), top: Math.round((161 - 512) / 2) });
+        expect(artPlacement(600, 100).scale).toBe(3);
+        for (const [w, h] of [[320, 160], [333, 777], [1025, 5], [0, 0]]) {
+            const { scale, left, top } = artPlacement(w, h);
+            expect(Number.isInteger(scale) && Number.isInteger(left) && Number.isInteger(top)).toBe(true);
+            expect(left === 0 ? 0 : left).toBeLessThanOrEqual(0);
+            expect(scale).toBeGreaterThanOrEqual(2);
+        }
+    });
+
+    it.each(Object.keys(CARD_LOOKS))('look %s lays out the same sections around pixelated art', (id) => {
+        act(() => setCardLook(id));
+        const vein = put('card_vein');
+        const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
+        const card = container.querySelector('[data-token-card]');
+        expect(card.dataset.cardLook).toBe(id);
+        expect(card.style.width).toBe(`${CARD_LOOKS[id].width}px`);
+        expect(domOrder(container)).toEqual(['name', 'stats', 'requires', 'makes', 'lifecycle']);
+        const img = container.querySelector('[data-card-art-img]');
+        expect(img.style.imageRendering).toBe('pixelated');
+        expect(img.style.maxWidth).toBe('none');
+        expect(Number(img.dataset.cardArtScale)).toBeGreaterThanOrEqual(2);
+    });
+
+    it.each(Object.keys(CARD_LOOKS))('look %s: a card with no art is the plain panel', (id) => {
+        act(() => setCardLook(id));
+        const tree = put('card_tree');
+        const { container } = mount(h(TokenCard, { typeId: 'card_tree', instanceId: tree.id }));
+        expect(container.querySelector('[data-card-art-window]')).toBeNull();
+        expect(container.querySelector('[data-token-card]').style.width).toBe(`${CARD_LOOKS[id].plainWidth}px`);
+    });
+
+    it('an open card follows the QA panel’s pick at once', () => {
+        const vein = put('card_vein');
+        const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
+        expect(container.querySelector('[data-token-card]').dataset.cardLook).toBe('banner');
+        act(() => setCardLook('side'));
+        expect(container.querySelector('[data-token-card]').dataset.cardLook).toBe('side');
+    });
+
+    it.each(Object.keys(CARD_LOOKS))('look %s: the recipe list keeps the name header', (id) => {
+        act(() => setCardLook(id));
+        GameState.state.heroes = [{ id: 'smith', name: 'Smith', skills: { fixture_station_skill: { level: 10, xp: 0 } } }];
+        const station = pickRecipe(put('fixture_station'), 'recipe_a');
+        requestRecipeList(station.id);
+        const { container } = mount(h(TokenCard, { typeId: 'fixture_station', instanceId: station.id }));
+        expect(container.querySelector('[data-token-card]').dataset.cardView).toBe('recipes');
+        expect(container.querySelector('[data-card-block="name"] h3').textContent).toBe('Fixture Station');
+        expect(container.querySelector('[data-card-panel] [data-recipe-list]')).not.toBeNull();
     });
 });

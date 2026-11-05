@@ -30,7 +30,7 @@ import { toolFindings } from '../systems/core/toolRule.js';
 import { rulesLinesOf } from '../systems/effects/statementText.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { problemText } from '../ui/components/board/problemMark.js';
-import { tokenCardModel, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
+import { tokenCardModel, liveCardSources, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -461,13 +461,86 @@ describe('how water reads', () => {
         expect(derived.warn).toBeFalsy();
     });
 
-    it('its card lists every fish its pools can land, and the tools it takes', () => {
+    const recipeOf = (lake, src) => tokenCardModel('s5_lake', lake.id, src).blocks.find(b => b.id === CARD_BLOCK.RECIPE);
+    const withWorker = (heroId) => ({ ...liveCardSources(), workerOf: () => heroId });
+    const odds = (rows) => rows.map(r => [r.itemId, r.chance]);
+
+    it('with no hero on it, its card lists every pool by tool, and the tools it takes', () => {
         const lake = put('s5_lake');
         const model = tokenCardModel('s5_lake', lake.id);
         const recipe = model.blocks.find(b => b.id === CARD_BLOCK.RECIPE);
-        expect(recipe.makes.map(m => m.itemId)).toEqual(['s5_trout', 's5_salmon', 's5_dolphin', 's5_shrimp']);
+        expect(recipe.makes).toEqual([]);
         expect(recipe.tools.map(t => t.name)).toEqual(['Fishing Rod or Fishing Net']);
         expect(model.blocks.find(b => b.id === CARD_BLOCK.CYCLE).uses).toBeNull();
+        expect(recipe.catches.setup).toBeNull();
+        expect(recipe.catches.heroName).toBeNull();
+        expect(recipe.catches.groups.map(g => [g.tool, g.label])).toEqual([['fishing_rod', 'Fishing Rod'], ['fishing_net', 'Fishing Net']]);
+        const [rod, net] = recipe.catches.groups;
+        expect(rod.pools.map(p => [p.bait, p.baitName])).toEqual([[null, null], ['s5_worm', 'Worm']]);
+        expect(odds(rod.pools[0].catches)).toEqual([['s5_trout', 50], ['s5_salmon', 40], ['s5_dolphin', 10]]);
+        expect(odds(net.pools[0].catches)).toEqual([['s5_shrimp', 100]]);
+    });
+
+    it('with a hero on it, the card says what their tool lands, the rest stay by tool', () => {
+        const lake = put('s5_lake');
+        setHeroes(hero('fisher', ['s5_rod']));
+        const { catches } = recipeOf(lake, withWorker('fisher'));
+        expect(catches.heroName).toBe('fisher');
+        expect(catches.setup).toMatchObject({ toolId: 's5_rod', toolName: 'Wooden Rod', baitId: null, baitName: null });
+        expect(odds(catches.setup.catches)).toEqual([['s5_trout', 50], ['s5_salmon', 40], ['s5_dolphin', 10]]);
+        // The pool they fish is not repeated below it.
+        const [rod, net] = catches.groups;
+        expect(rod.pools.map(p => p.bait)).toEqual(['s5_worm']);
+        expect(net.pools.map(p => p.bait)).toEqual([null]);
+    });
+
+    it('bait the hero carries picks the pool the card shows, and when it runs out the card follows', () => {
+        const lake = put('s5_lake');
+        setHeroes(hero('fisher', ['s5_rod', 's5_worm']));
+        InventoryManager.addItem('s5_worm', 1);
+        const baited = recipeOf(lake, withWorker('fisher')).catches;
+        expect(baited.setup).toMatchObject({ baitId: 's5_worm', baitName: 'Worm' });
+        expect(odds(baited.setup.catches)).toEqual([['s5_salmon', 100]]);
+        expect(baited.groups[0].pools.map(p => p.bait)).toEqual([null]);
+
+        InventoryManager.removeItem('s5_worm', 1);
+        const plain = recipeOf(lake, withWorker('fisher')).catches;
+        expect(plain.setup.baitId).toBeNull();
+        expect(plain.setup.catches.map(c => c.itemId)).toEqual(['s5_trout', 's5_salmon', 's5_dolphin']);
+    });
+
+    it('the odds on the card are the weights the engine rolls, a Catch Weight rule included', () => {
+        const lake = put('s5_lake');
+        setHeroes(hero('fine', ['s5_fine_rod']));
+        Orders.orderAt('fine', LAKE);
+        run(5000);
+        expect(BoardState.workerOf(lake.id)).toBe('fine');
+        const weights = Fishing.fishingOf(getTokenType('s5_lake'), 'fine').pool.catches
+            .map(c => TileModifiers.resolveAxis(lake.id, EFFECT_TYPES.CATCH_WEIGHT, c.weight, c.itemId));
+        const total = weights.reduce((a, b) => a + b, 0);
+        const { setup } = tokenCardModel('s5_lake', lake.id).blocks.find(b => b.id === CARD_BLOCK.RECIPE).catches;
+        expect(setup.catches.map(c => c.chance)).toEqual(weights.map(w => Math.round((w / total) * 1000) / 10));
+        // The Fine Rod's lure is what moved it: the authored 10 % would read lower.
+        expect(setup.catches.find(c => c.itemId === 's5_dolphin').chance).toBeGreaterThan(10);
+    });
+
+    it('a hero on it holding nothing it takes is named, and nothing is claimed for them', () => {
+        const lake = put('s5_lake');
+        setHeroes(hero('miner', ['s5_pick']));
+        const { catches } = recipeOf(lake, withWorker('miner'));
+        expect(catches).toMatchObject({ heroName: 'miner', setup: null, unable: true });
+        expect(catches.groups.map(g => g.tool)).toEqual(['fishing_rod', 'fishing_net']);
+    });
+
+    it('reading the card draws no random number and spends no bait', () => {
+        const lake = put('s5_lake');
+        setHeroes(hero('fisher', ['s5_rod', 's5_worm']));
+        InventoryManager.addItem('s5_worm', 3);
+        const random = vi.spyOn(Math, 'random');
+        recipeOf(lake, withWorker('fisher'));
+        expect(random).not.toHaveBeenCalled();
+        random.mockRestore();
+        expect(InventoryManager.getItemCount('s5_worm')).toBe(3);
     });
 
     it('a Catch Weight rule reads as more bites of its fish', () => {

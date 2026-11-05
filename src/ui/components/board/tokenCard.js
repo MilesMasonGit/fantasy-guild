@@ -3,8 +3,8 @@ import {
 } from '../../../config/registries/tokenRegistry.js';
 import { contextRequirementsOf, getRecipe } from '../../../config/registries/recipePoolRegistry.js';
 import { getItem, getAllItems } from '../../../config/registries/itemRegistry.js';
-import { neededToolOf, toolNeedPhrase, toolItemFor } from '../../../config/registries/toolKinds.js';
-import { hasCatchPools, catchItemIds } from '../../../config/registries/catchPools.js';
+import { neededToolOf, toolNeedPhrase, toolItemFor, toolKindLabel } from '../../../config/registries/toolKinds.js';
+import { hasCatchPools, catchPoolsOf } from '../../../config/registries/catchPools.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
 import { turnTiming, fieldOf, cropTermsOf, campOf } from '../../../config/registries/tokenConstants.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
@@ -17,8 +17,11 @@ import * as Respawn from '../../../systems/board/Respawn.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Fields from '../../../systems/board/Fields.js';
+import * as Fishing from '../../../systems/board/Fishing.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
-import { workTimeOf } from '../../../systems/board/TileModifiers.js';
+import { workTimeOf, resolveAxis } from '../../../systems/board/TileModifiers.js';
+import { EFFECT_TYPES } from '../../../systems/effects/constants.js';
+import { GameState } from '../../../state/GameState.js';
 import { effectiveIO } from '../../../systems/board/RecipeResolver.js';
 import { availableOf } from '../../../systems/board/InputAllocator.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
@@ -107,6 +110,9 @@ export function liveCardSources() {
         itemName: (id) => getItem(id)?.name || id,
         instanceOf: BoardState.getTokenById,
         workerOf: BoardState.workerOf,
+        heroName: (id) => (GameState.state?.heroes || []).find(h => h?.id === id)?.name || null,
+        fishingOf: Fishing.fishingOf,
+        catchWeight: (instanceId, itemId, weight) => resolveAxis(instanceId, EFFECT_TYPES.CATCH_WEIGHT, weight, itemId),
         effectiveIO,
         workTime: workTimeOf,
         available: availableOf,
@@ -217,6 +223,44 @@ function needsOf(inputs, src) {
         .map(i => ({ itemId: i.itemId, need: Number(i.quantity), have: Math.floor(src.available(i.itemId) || 0) }));
 }
 
+/** Weights as a pool's odds in percent, one decimal at most, in pool order. */
+function catchRows(catches, weightOf = (c) => c.weight) {
+    const weights = catches.map(c => Math.max(0, Number(weightOf(c)) || 0));
+    const total = weights.reduce((sum, w) => sum + w, 0);
+    return catches
+        .map((c, i) => ({ itemId: c.itemId, chance: total > 0 ? Math.round((weights[i] / total) * 1000) / 10 : 0 }))
+        .filter(row => row.chance > 0);
+}
+
+/**
+ * What a water's card says it catches. With a hero on it: `setup`, what that hero's tool and bait
+ * land now, at the odds the engine rolls (`Fishing.catchOf`), and `groups`, the water's other
+ * pools by tool at their authored odds. With none, every pool is in `groups`. `unable` names a
+ * hero on it whose hands give them no pool here.
+ */
+function catchBlockOf(def, instance, src) {
+    const heroId = instance ? src.workerOf?.(instance.id) : null;
+    const plan = heroId ? src.fishingOf?.(def, heroId) : null;
+    const setup = plan && {
+        toolId: plan.tool.itemId,
+        toolName: src.itemName(plan.tool.itemId),
+        baitId: plan.bait,
+        baitName: plan.bait ? src.itemName(plan.bait) : null,
+        catches: catchRows(plan.pool.catches, (c) => src.catchWeight(instance.id, c.itemId, c.weight))
+    };
+    const groups = [];
+    for (const pool of catchPoolsOf(def)) {
+        if (plan && pool === plan.pool) continue;
+        let group = groups.find(g => g.tool === pool.tool);
+        if (!group) {
+            group = { tool: pool.tool, label: toolKindLabel(pool.tool), pools: [] };
+            groups.push(group);
+        }
+        group.pools.push({ bait: pool.bait, baitName: pool.bait ? src.itemName(pool.bait) : null, catches: catchRows(pool.catches) });
+    }
+    return { heroName: heroId ? (src.heroName?.(heroId) || 'This hero') : null, setup: setup || null, unable: !!heroId && !plan, groups };
+}
+
 const seconds = (ms) => Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
 
 /** "1 Oak Seedling", "1 Oak Seedling and 2 Resin". */
@@ -293,8 +337,8 @@ export function cardLifecycle(instance, def, src) {
         const worked = !!src.workerOf?.(instance.id);
         const left = (Number(src.demolishMs) || 0) - (Number(instance.cycleElapsedMs) || 0);
         out.push(worked
-            ? { icon: 'clock', text: formatClock(left), tip: `Marked for demolition: gone in ${spoken(left)}`, tone: 'warning' }
-            : { icon: 'clock', text: '–', tip: 'Marked for demolition: waiting for a hero with Construction', tone: 'warning' });
+            ? { icon: 'clock', label: 'Demolition', text: formatClock(left), tip: `Marked for demolition: gone in ${spoken(left)}`, tone: 'warning' }
+            : { icon: 'clock', label: 'Demolition', text: '–', tip: 'Marked for demolition: waiting for a hero with Construction', tone: 'warning' });
         return out;
     }
 
@@ -328,7 +372,7 @@ export function cardLifecycle(instance, def, src) {
     if (camp) {
         const skill = getSkill(camp.skill)?.name || camp.skill;
         out.push({
-            icon: 'reach', text: `${skill} · ${Math.round(camp.reach)} u`,
+            icon: 'reach', label: 'Camp', text: `${skill} · ${Math.round(camp.reach)} u`,
             tip: `A camp: heroes sent here work the ${skill} Tokens within ${Math.round(camp.reach)} u, one hero each`
         });
     }
@@ -352,7 +396,7 @@ export function cardLifecycle(instance, def, src) {
                 : { icon: 'regrow', text: formatClock(r.afterMs), tip: `Respawns ${spoken(r.afterMs)} after it's used up` });
         } else {
             const into = src.tokenName(r.into);
-            out.push({ icon: 'regrow', text: into, tip: r.resting ? `Becomes ${into}, which grows back` : `Becomes ${into} when it's used up, which grows back` });
+            out.push({ icon: 'regrow', label: 'Becomes', text: into, tip: r.resting ? `Becomes ${into}, which grows back` : `Becomes ${into} when it's used up, which grows back` });
         }
     }
 
@@ -360,7 +404,7 @@ export function cardLifecycle(instance, def, src) {
     const pays = (passive?.lines || []).filter(l => l?.itemId && Number(l.quantity) > 0);
     if (pays.length) {
         out.push({
-            icon: 'clock', text: formatClock(passive.nextInMs),
+            icon: 'clock', label: 'Produces', text: formatClock(passive.nextInMs),
             tip: `Passive Production: ${pays.map(l => `${Math.floor(Number(l.quantity))} ${src.itemName(l.itemId)}`).join(', ')}, next in ${spoken(passive.nextInMs)}`
         });
     }
@@ -395,8 +439,9 @@ function spawnLine(def, status, src) {
  * holds only the blocks that apply.
  *
  * A Token's card: name; work (skill, level, XP); cycle (time, charges); the current recipe
- * (needs, tools, makes, and a station's Change recipe); lifecycle lines; drops.
+ * (needs, tools, makes or a water's catches, and a station's Change recipe); lifecycle lines; drops.
  * An enemy's card: name; HP; combat (style, level, XP a kill); drops.
+ * The card draws `hp`, `combat`, `work` and `cycle` together as its stat block.
  * After them, `more`: what the card's layout has no block for yet (a landmark's challenge, a
  * buff, the stations a tool Token drives).
  */
@@ -448,10 +493,9 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
     if (!marked) {
         // A crop's inputs are its seed, paid once per sowing (its lifecycle line says so), not per harvest.
         const inputs = isField ? [] : isStation ? (recipe?.inputs || []) : (def.config?.inputs || []);
-        // Water lists every fish its pools can land: what bites depends on the tool and bait.
-        const outputs = isStation ? (recipe?.outputs || [])
-            : hasCatchPools(def) ? catchItemIds(def).map(itemId => ({ itemId, minQty: 1, maxQty: 1 }))
-            : (def.config?.outputs || []);
+        // Water makes no Outputs: what bites depends on the tool and bait (`catches`).
+        const water = hasCatchPools(def);
+        const outputs = isStation ? (recipe?.outputs || []) : water ? [] : (def.config?.outputs || []);
         const needs = needsOf(inputs, src);
         const tools = toolsOf(def, recipe, src);
         const makes = makesOf(outputs);
@@ -462,8 +506,9 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
                 empty: def.foundation ? 'Nothing chosen to build' : isField ? 'No crop chosen' : 'No recipe chosen'
             }
             : null;
-        if (needs.length || tools.length || makes.length || change) {
-            blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, change });
+        const catches = water ? catchBlockOf(def, instance, src) : null;
+        if (needs.length || tools.length || makes.length || change || catches) {
+            blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, change, catches });
         }
     }
 

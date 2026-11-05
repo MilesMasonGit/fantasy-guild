@@ -111,3 +111,70 @@ describe('ArrowScrollList', () => {
         expect(up.disabled).toBe(false);
     });
 });
+
+describe('ArrowScrollList: arrows only when there is more to scroll to', () => {
+    afterEach(() => cleanup());
+
+    /**
+     * A box whose height can answer to the bars: `flex` gives the list the bars' height back when
+     * they are gone (a `flex-1` list), a fixed box (`max-h`) does not. jsdom has no layout, so each
+     * bar counts as `BAR` tall unless it is hidden or not in the document.
+     */
+    const BAR = 20;
+    function mountSized({ content, height, flex = false }) {
+        const view = render(h('div', null, h(ArrowScrollList, { step: STEP }, h('p', null, 'rows'))));
+        const list = view.container.querySelector('[data-scroll-list]');
+        const size = { content };
+        const shownBars = () => [...view.container.querySelectorAll('[data-scroll-arrow]')].filter(b => b.style.display !== 'none').length;
+        Object.defineProperty(list, 'scrollTop', { value: 0, writable: true, configurable: true });
+        Object.defineProperty(list, 'scrollHeight', { get: () => size.content, configurable: true });
+        Object.defineProperty(list, 'clientHeight', { get: () => (flex ? height - shownBars() * BAR : height), configurable: true });
+        Object.defineProperty(HTMLButtonElement.prototype, 'offsetHeight', { get: () => BAR, configurable: true });
+        const settle = () => act(() => { list.dispatchEvent(new Event('scroll')); });
+        settle();
+        const arrows = () => view.container.querySelectorAll('[data-scroll-arrow]');
+        return { view, list, size, settle, arrows };
+    }
+    afterEach(() => { delete HTMLButtonElement.prototype.offsetHeight; });
+
+    it('content that fits gets no bars at all', () => {
+        const { arrows } = mountSized({ content: 150, height: 200 });
+        expect(arrows()).toHaveLength(0);
+    });
+
+    it('content exactly the height of the box gets none either', () => {
+        const { arrows } = mountSized({ content: 200, height: 200 });
+        expect(arrows()).toHaveLength(0);
+    });
+
+    it('both bars come when the content outgrows the box and go when it shrinks back', () => {
+        const { arrows, size, settle } = mountSized({ content: 150, height: 200 });
+        size.content = 500;
+        settle();
+        expect(arrows()).toHaveLength(2);
+        size.content = 150;
+        settle();
+        expect(arrows()).toHaveLength(0);
+    });
+
+    it('a list that takes the bars height back drops them when it would then fit', () => {
+        // 200 tall without bars, 160 with: 180 of content overflows only because of the bars.
+        const { arrows, size, settle, list } = mountSized({ content: 500, height: 200, flex: true });
+        expect(arrows()).toHaveLength(2);
+        size.content = 180;
+        settle();
+        expect(arrows()).toHaveLength(0);
+        expect(list.scrollHeight).toBeLessThanOrEqual(list.clientHeight);
+    });
+
+    it('a capped list a little over its cap keeps its bars and does not flip every measure', () => {
+        // Hiding the bars gains a max-height list nothing, so 210 still overflows.
+        const { arrows, size, settle } = mountSized({ content: 500, height: 200 });
+        size.content = 210;
+        for (let i = 0; i < 4; i++) {
+            settle();
+            expect(arrows()).toHaveLength(2);
+            for (const bar of arrows()) expect(bar.style.display).toBe('');
+        }
+    });
+});
