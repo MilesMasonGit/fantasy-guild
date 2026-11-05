@@ -7,6 +7,7 @@ Status: draft
 ## The owner's rulings (2026-11-04)
 
 - **"Some Stations will be tiered, giving boosts that improve work speed at those stations. Alternatively, we could have a few different versions for stations, that give different benefits. One might boost work speed, another might give a chance of double outputs."**
+- **"We'll replace Smithy and Furnace with a single Blacksmith. I want a very clear Building for each skill that needs it. The higher tiers are variants. I also want these to be structures, not pieces of furniture. We should start by making those basic Stations, then we'll make the variants."**
 - **Tiered materials**: later buildings ask for Planks, Nails, cloth and metal parts.
 - **Three stone tiers.** "Other kinds of stone will either be cut or used in another skill."
 - **Guard Tower and Town Square** join. Today's camps, Mines, Minecarts, Well, Composter, Beehive, Dock and Windmill stay.
@@ -22,24 +23,25 @@ Status: draft
 | 60 | Mahogany Plank | Marble | Mythril Nails, Drapes, Gears |
 | 80 | Ebony Plank | Basalt | Drapes, Gold Ingot |
 
-## Stations
+## Skill buildings
 
-Tiered **Smithy**, with versions of the rest: a base, a **fast** version and a **double output** version. A guild can run both, or pick.
+**One clear building per skill that needs one, a structure and not a piece of furniture.** These come first; variants come after (below).
 
-| Station family | Base (level) | Fast version (level) | Double output version (level) | Art |
+| Skill | Building | Level | Replaces today | Art |
 |---|---|---|---|---|
-| **Smithy, five tiers, each faster** | Copper 1, Iron 20, Mythril 40, Adamantine 60, Darkmetal 80 | | | H: five anvils |
-| Furnace | Furnace 1 | Forge 25 | Great Forge 55 | H: `smelter`, `forge`, `forge_major` |
-| Kitchen | Campfire, Cooking Pot 1 | Kitchen 25 | Grandma's Kitchen 55 | H: `campfire`, `cooking_pot`, `kitchen_cozy`; A |
-| Brewery | Brewery 5 | Cellar 30 | Distillery 60 | A, N |
-| Workbench | Workbench 1 | Fine Workbench 25 | Master Workbench 55 | H, A, A |
-| Tannery | Tannery 10 | Tanning Yard 30 | Master Tannery 60 | H: `shears`; N |
-| Loom | Loom 1 | Fine Loom 25 | Grand Loom 55 | N, A, A |
-| Fletcher's Bench | Bench 1 | Fine Bench 25 | Master Bench 55 | N, A, A |
-| Alchemy Table | Alchemy Table 5 | Alembic 30 | Grand Alembic 60 | H: `alembic_small`; A |
-| Enchanting Table | Enchanting Table 1 | Runed Table 30 | Grand Table 60 | H: `enchant`; A |
+| Smithing | **Blacksmith** | 1 | Furnace, Copper and Iron Smithy, Iron Furnace | N |
+| Cooking | **Kitchen** | 1 | Campfire, Cooking Pot, Brewery | N (`kitchen_cozy` may adapt) |
+| Crafting | **Workshop** | 1 | Workbench, Fir Workbench, Tannery | N |
+| Tailor | **Tailor's Shop** | 1 | new | N |
+| Fletching | **Fletcher's Lodge** | 1 | new | N |
+| Alchemy | **Apothecary** | 1 | Alchemy Table | N |
+| Enchanting | **Enchanter's Tower** | 1 | new | N |
 
-**32 stations.** ⚠️ Fletching, Tailor and Enchanting need theirs at level 1, because their first recipes are level 1.
+**Later, with their sessions**: Faith, Summoning, Science, Crime and Taming, if they need one.
+
+## Variants, to design next
+
+"The higher tiers are variants." Each building later gets variants with different benefits: for example faster work, or a chance of double outputs. Not listed until the basic buildings are settled.
 
 ## Other buildings
 
@@ -57,14 +59,15 @@ Tiered **Smithy**, with versions of the rest: a base, a **fast** version and a *
 ## Planning agent's calls
 
 - **The three stones are Stone, Marble and Basalt**, matching your Foundation tiers of 7 October. Granite and Sandstone are cut or go to another skill. Marble comes in at 40, Basalt at 80; Mining's Marble Vein at 45 and Basalt Vein at 85 are placed just after, so level them to suit when balanced.
-- **Fast and double output are the two versions** you named. The ledger sets how much.
+- **Each skill's stations fold into one building**: food and drinks both at the Kitchen; ingots and gear both at the Blacksmith; leather at the Workshop. Names are suggestions.
 - **Torches gain their job** on the Guard Tower.
 - **Gears and Sails gain jobs**; Wire and Chain stay for Science.
 - **Fighter's Academy** retires, as already noted.
 
 ## Open links
 
-- ⚠️ **New rule**: a station with a double output chance. The Yield rules may cover it; check when briefed.
+- ⚠️ **One building a skill changes today's rules**: recipes are split by station kind (`stationKinds`), and the tutorial, ledger and Starter Camp name today's stations. **Art**: seven new structures; today's pictures stand in until drawn.
+- **Variants** may use a double output chance; the Yield rules may cover it, to check when designed.
 - **Foundation tiers** (Oak to Ebony, Stone to Basalt): the older ruling says a better building needs a better Foundation. Whether that still holds, with costs now tiered, is the balance's to say.
 - **Clay and Quartz** still have no user.
 - **Guard Tower's** rules: combat. **Town Square's** bonus: the ledger.

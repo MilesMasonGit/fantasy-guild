@@ -16,8 +16,8 @@ Built around the art in `public/assets/items/`: [the labelled sheet](research/fo
 
 ## Rules kept
 
-From [concept_skill_loops.md](concept_skill_loops.md): food heals in fights; **drinks never heal**, they're work buffs; plain recipes; food at a Campfire or Kitchen, drinks at
-a Brewery; better stations are faster, not new lists.
+From [concept_skill_loops.md](concept_skill_loops.md), amended 2026-11-04: food heals in fights; **drinks never heal**, they're work buffs; plain recipes; food and drinks both at the Kitchen (was: a Campfire or Kitchen, and
+a Brewery); its variants have different benefits, not new lists.
 
 ## The count
 

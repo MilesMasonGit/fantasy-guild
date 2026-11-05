@@ -26,7 +26,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - **Beyond it**: Nails on copper, iron and mythril. Kunai on copper and iron. Cleaver and Mace on iron.
 - **80 recipes and 19 open levels**, left for what later skills need: 14, 15, 16, 17, 18, 19, 74, 75, 76, 77, 78, 79, 81, 85, 90, 94, 95, 96, 97.
 - **Handles use that metal's wood**, so Forestry and Smithing climb together.
-- **Rules kept**: ingots at the Furnace, everything else at the Smithy; better stations are faster, not new lists; coal is the fuel.
+- **Everything is made at the Blacksmith** (owner, 2026-11-04; [Construction](content_construction.md)); its variants have different benefits, not new lists; coal is the fuel.
 
 ## Copper (levels 1 to 19)
 

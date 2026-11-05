@@ -19,6 +19,8 @@ Code to start from (verify): `src/systems/quests/tutorialQuests.js`, `tutorialTe
 - **Brief 410** (the new Shop and Foundations): lesson 6 teaches them.
 - L1 needs nothing and may run early.
 
+*Note (owner, 2026-11-04): the Workbench may become a Workshop, one building per skill ([content_construction.md](../content_construction.md)). Use whatever Crafting's building is called when this runs.*
+
 ## Phases
 
 | Phase | What | Tier |
