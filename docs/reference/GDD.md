@@ -95,6 +95,10 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
   jump back); only its name and gear come up over the rest. A press goes to the Token
   whose centre is nearest the pointer, whichever is drawn on top, except on a hero's
   drawn pixel, which is the hero's. *(`matLayers.js`, `pressRouting.js`)*
+- **A Forest or Orchard plants with room for the tree**: within its reach, a Token that grows lands
+  at the gap its grown form will need, from what its neighbours will grow into too, so growing
+  moves nothing and no tree drifts out of reach. With no such spot in reach it takes the small gap
+  rather than not planting. *(`EffectActions.js`)*
 - **A player drop never pushes anything.** Arrivals (spawns, growth, builds)
   may push **spawned** Tokens aside; **placed Tokens are never pushed**.
 - **Fixed Tokens** can't be dragged or pushed: a map's node, a Starter Camp
