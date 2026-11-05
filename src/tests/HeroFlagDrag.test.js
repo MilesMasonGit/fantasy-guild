@@ -7,7 +7,7 @@ import { DRAG_KIND, DND_SURFACE, isRosterFlag, rosterFlagPayload } from '../ui/d
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { HeroManager } from '../systems/hero/HeroManager.js';
-import { UI_EVENTS } from '../systems/core/engineEvents.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { DOCK_SLOT_PX, DOCK_NAME_TEXT_CLASS } from '../ui/components/dock/dockHeroView.js';
@@ -54,7 +54,7 @@ beforeEach(() => {
     GameState.initNew();
     GameState.state.heroes = ['h1', 'h2', 'h3'].map(hero);
     flights = [];
-    unsub = EventBus.subscribe(UI_EVENTS.UI_PARTICLE_FLY, (p) => flights.push(p));
+    unsub = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, (p) => flights.push(p));
 });
 afterEach(() => {
     unsub();

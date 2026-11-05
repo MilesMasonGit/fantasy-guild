@@ -66,11 +66,8 @@ const STUB_ARC_TOP_PX = 25;
 
 const CANVAS_STYLE = { imageRendering: 'pixelated', display: 'none' };
 
-/** Per layer: the flights it takes and its place in the screen's layers (tailwind.css). */
-const LAYERS = {
-    mat: { event: BOARD_EVENTS.SPRITE_COLLECTED, className: 'fixed left-0 top-0 z-(--z-mat-flights) pointer-events-none' },
-    pointer: { event: UI_EVENTS.UI_PARTICLE_FLY, className: 'fixed left-0 top-0 z-(--z-pointer-flight) pointer-events-none' }
-};
+/** Over the mat, under the drawers, the hero panel and the nav (tailwind.css). */
+const CANVAS_CLASS = 'fixed left-0 top-0 z-(--z-mat-flights) pointer-events-none';
 
 /**
  * Where a board point (natural board pixels / mat units) is on screen.
@@ -91,20 +88,17 @@ export function boardPointToScreen(boardEl, x, y) {
  * ParticleOverlay: a Canvas layer for UI-space effects. Visualizes collected loot flying to
  * where it went (effect 5, crisp): its own item stub, or the Guild Hall when the stubs are not
  * drawn. A short trail of hard 2×2 pixels behind it and a four-pixel plink where it lands draw
- * for loot only with `LOOT_FLIGHT_SPARKLES` on; a hero lifted from the dock keeps its trail.
+ * for loot only with `LOOT_FLIGHT_SPARKLES` on; a recalled hero keeps its trail.
  * Nothing random: every flight with the same path draws the same pixels.
  * ⚠️ A collection reads no box. Auto-collect runs inside the engine's tick, where one box read lays
  * the page out in the middle of the tick and again for the frame. A flight is booked when it is
  * collected and placed by the frame loop (`ParticleSystem.placeBooked`), before it draws for the
  * first time: that read is the layout the frame was about to do anyway.
- * Two of these are mounted, one per layer (`layer`): `mat` takes the collections off the mat and
- * draws over the mat but under the drawers, the hero panel and the nav; `pointer` takes a hero
- * lifted from the dock, which flies to the pointer wherever it is, so it draws over everything.
  * The canvas is only as big as the flights in the air (`ParticleSystem._fit`) and is hidden
  * while nothing flies: a window-sized one was cleared and redrawn whole on every frame of every
  * flight, and stayed a full-window layer in between.
  */
-export const ParticleOverlay = ({ disabled, layer = 'mat' }) => {
+export const ParticleOverlay = ({ disabled }) => {
     const canvasRef = useRef(null);
     const systemRef = useRef(null);
     const frameIdRef = useRef(null);
@@ -142,14 +136,14 @@ export const ParticleOverlay = ({ disabled, layer = 'mat' }) => {
             system.spawnCollected(data);
             if (system.booked.length || system.particles.length) wakeRef.current?.();
         };
-        const unsubscribe = EventBus.subscribe(LAYERS[layer].event, onCollected, UI_LISTENER);
+        const unsubscribe = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, onCollected, UI_LISTENER);
 
         return () => {
             window.removeEventListener('resize', handleResize);
             unsubscribe();
             system.dropAll();
         };
-    }, [layer]);
+    }, []);
 
     /**
      * The frame loop.
@@ -202,7 +196,7 @@ export const ParticleOverlay = ({ disabled, layer = 'mat' }) => {
     return (
         <canvas
             ref={canvasRef}
-            className={LAYERS[layer].className}
+            className={CANVAS_CLASS}
             style={CANVAS_STYLE}
         />
     );
@@ -321,7 +315,7 @@ class ParticleSystem {
         if (!actualRefId) return;
 
         if (kind === 'token') return;
-        const isHero = kind === 'hero' || destination === 'dock' || destination === 'cursor';
+        const isHero = kind === 'hero' || destination === 'dock';
 
         // Items resolve through the item registry; Heroes have their own
         let template;
@@ -431,7 +425,7 @@ class ParticleSystem {
             size: b.size,
             instanceId: b.instanceId,
             startTime: b.startTime,
-            duration: b.destination === 'cursor' ? 320 : flightDurationMs(dist),
+            duration: flightDurationMs(dist),
             path: { startX: from.x, startY: from.y, endX: end.x, endY: end.y, cpX, cpY },
             color: b.template.color || TRAIL_COLOUR,
             trail: !!b.heroId || LOOT_FLIGHT_SPARKLES

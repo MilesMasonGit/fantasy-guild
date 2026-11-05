@@ -215,9 +215,8 @@ export const BOARD_EVENTS = {
     /**
      * A sprite was successfully taken off the floor and into storage. Payload: `{ kind, refId,
      * quantity, x, y, destination }`, where `x`/`y` are board coordinates (the point it flew from)
-     * and `destination` is where it went (`'bank'` for an item; `'dock'` for a recalled hero). A
-     * hero picked up off the mat by drag (`DndKit`, a UI publisher) adds `heroId`, `toScreenX`,
-     * `toScreenY` and `destination: 'cursor'`; a hero recall adds `heroId`.
+     * and `destination` is where it went (`'bank'` for an item; `'dock'` for a recalled hero, which
+     * adds `heroId`).
      *
      * ⚠️ Fires on success only, and that is load-bearing. Collection can legitimately fail: a full
      * Bank leaves the item on the floor as a visible-litter signal, and a Token with nowhere to go

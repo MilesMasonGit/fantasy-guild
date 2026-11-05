@@ -266,13 +266,13 @@ describe('⭐ everything a flight draws lands inside the canvas', () => {
         expect(run(() => 0, [[[[500, 600], [800, 400]]]])).toBeGreaterThan(20);
     });
 
-    it('a hero lifted from the dock, flying to the cursor', () => {
+    it('a recalled hero, flying home with its trail', () => {
         vi.spyOn(Math, 'random').mockImplementation(cycling([0.99, 0, NEAR_ONE, 0, NEAR_ONE, 0]));
-        const { container } = render(React.createElement(ParticleOverlay, { layer: 'pointer', disabled: false }));
+        const { container } = render(React.createElement(ParticleOverlay, { disabled: false }));
         const canvas = canvasOf(container);
         act(() => {
-            EventBus.publish(UI_EVENTS.UI_PARTICLE_FLY, {
-                kind: 'hero', heroId: 'h1', destination: 'cursor',
+            EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+                kind: 'hero', heroId: 'h1', destination: 'dock',
                 fromScreenX: 800, fromScreenY: 900, toScreenX: 760, toScreenY: 600
             });
         });
