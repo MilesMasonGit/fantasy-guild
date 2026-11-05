@@ -141,7 +141,7 @@ measured.*
 - [Smithing](content_smithing.md): approved 2026-11-04; 80 recipes, the rest of its levels open for later skills.
 - [Fletching](content_fletching.md): approved 2026-11-04; 16 recipes, five woods, most levels open.
 - [Enchanting](content_enchanting.md): approved 2026-11-04; 55 recipes, 44 levels open; Leylines give Motes.
-- [Tailor](content_tailor.md): draft; 56 recipes, 43 levels open.
+- [Tailor](content_tailor.md): approved 2026-11-04; 56 recipes, 43 levels open.
 
 ## Open links
 
