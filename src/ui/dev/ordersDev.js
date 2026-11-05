@@ -34,6 +34,7 @@ export const QA_ORDER_TYPES = Object.freeze({
 
 const GOBLIN_CAMP = 'token_goblin_camp';
 const FOOD = 'item_steak';
+const OAK_WOOD = 'item_oak_wood';
 
 function registerQaTypes() {
     const plain = (id, name, extra) => ({ id, name, tokenType: 'resource', rarity: 'common', theme: 'fixture', sprite: 's_nature', ...extra });
@@ -106,6 +107,67 @@ export function setUpOrdersScene() {
     return { ok: true };
 }
 
+const ALERT_TYPES = Object.freeze({
+    AXE_OAK: 'qa_alerts_axe_oak',
+    ANVIL: 'qa_alerts_anvil',
+    BERRY: 'qa_alerts_berry'
+});
+
+/**
+ * One hero for each thing the hero bar's alerts tell apart, all on test Tokens around the Hall:
+ * QA Worker (none), QA No Axe (yellow: their tool is gone), QA No Wood (yellow: ingredients), QA
+ * Waiter (none: a bush that comes back in ten minutes), QA No Job (yellow: no order), QA Hurt (red).
+ * ⚠️ Changes the game, like Spawn Party.
+ * @returns {{ok: boolean, error?: string}}
+ */
+export function setUpHeroAlertsScene() {
+    registerQaTypes();
+    const quick = { skill: 'forestry', skillRequired: 1, cycleTimeMs: 500, xp: 1, inputs: [],
+        outputs: [{ itemId: OAK_WOOD, chance: 100, minQty: 1, maxQty: 1 }] };
+    const plain = (id, name, extra) => ({ id, name, tokenType: 'resource', rarity: 'common', theme: 'fixture', sprite: 's_nature', requiresHero: true, uses: null, config: quick, ...extra });
+    registerTokenTypes({
+        [ALERT_TYPES.AXE_OAK]: plain(ALERT_TYPES.AXE_OAK, 'QA Axe Oak'),
+        [ALERT_TYPES.ANVIL]: plain(ALERT_TYPES.ANVIL, 'QA Hungry Anvil', { config: { ...quick, inputs: [{ itemId: OAK_WOOD, quantity: 999999 }] } }),
+        [ALERT_TYPES.BERRY]: plain(ALERT_TYPES.BERRY, 'QA Slow Bush', { uses: 1, staysPut: true, respawn: { mode: 'refill', afterMs: 600000 } })
+    });
+    const c = hallPoint();
+    const oak = put(QA_ORDER_TYPES.OAK, { x: c.x - 360, y: c.y + 200 });
+    const axeOak = put(ALERT_TYPES.AXE_OAK, { x: c.x - 180, y: c.y + 260 });
+    const anvil = put(ALERT_TYPES.ANVIL, { x: c.x + 180, y: c.y + 260 });
+    const berry = put(ALERT_TYPES.BERRY, { x: c.x + 360, y: c.y + 200 });
+    if (!oak || !axeOak || !anvil || !berry) return { ok: false, error: 'No room around the Guild Hall for the scene' };
+
+    const hire = (name) => qaHero(name, { forestry: 30 });
+    const [worker, noAxe, noWood, waiter, , hurt] = ['QA Worker', 'QA No Axe', 'QA No Wood', 'QA Waiter', 'QA No Job', 'QA Hurt'].map(hire);
+    if (!worker || !noAxe || !noWood || !waiter || !hurt) return { ok: false, error: 'The roster would not take the heroes' };
+    Flags.orderToken(worker.id, oak);
+    // An order is refused without the tool, so the Token only asks for one once they hold the
+    // order: as if their axe had just broken.
+    Flags.orderToken(noAxe.id, axeOak);
+    registerTokenTypes({
+        [ALERT_TYPES.AXE_OAK]: plain(ALERT_TYPES.AXE_OAK, 'QA Axe Oak', { needsTool: { kind: 'woodaxe', minTier: 1 } })
+    });
+    Flags.orderToken(noWood.id, anvil);
+    Flags.orderToken(waiter.id, berry);
+    HeroManager.getHero(hurt.id).hp.current = 0;
+    BoardCombat.resolveStatusDefeat(hurt.id);
+    Flags.markDirty();
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_alerts_scene' });
+    return { ok: true };
+}
+
+/** A level-up bubble on the first hero the alerts scene would show working, else the first hero. */
+export function levelUpAHero() {
+    const heroes = GameState.state?.heroes || [];
+    const hero = heroes.find(h => h.name === 'QA Worker') || heroes[0];
+    if (!hero) return { ok: false, error: 'No hero' };
+    qaLevelUps += 1;
+    EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, { heroId: hero.id, heroName: hero.name, skillId: 'forestry', skillName: QA_LEVEL_SKILLS[qaLevelUps % QA_LEVEL_SKILLS.length], oldLevel: qaLevelUps, newLevel: qaLevelUps + 1 });
+    return { ok: true, name: hero.name };
+}
+const QA_LEVEL_SKILLS = Object.freeze(['Forestry', 'Mining', 'Fishing', 'Cooking']);
+let qaLevelUps = 0;
+
 /** The first hero with an order, else the first on the roster. */
 function someHero() {
     const heroes = GameState.state?.heroes || [];
@@ -129,7 +191,6 @@ export function knockOutAHero() {
 export const TUTORIAL_JUMPS = Object.freeze({ tree: 'cart_flag', camp: 'cart_camp' });
 
 const WOODAXE = 'item_copper_woodaxe';
-const OAK_WOOD = 'item_oak_wood';
 
 /**
  * Jump the tutorial to `stepId`: every earlier step counted as claimed, the step on the mat now. The

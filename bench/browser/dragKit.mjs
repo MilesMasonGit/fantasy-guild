@@ -221,6 +221,13 @@ export function installDragKit() {
         if (right - left < 2 || bottom - top < 2) return null;
         return { x: Math.round((left + right) / 2), y: Math.round((top + bottom) / 2) };
     };
+    /** Whether `el`'s visible centre is drawn on top: what the browser hit-tests there is `el` or inside it. */
+    const seenAtCentre = (el) => {
+        const c = visibleCentre(el);
+        if (!c) return false;
+        const top = document.elementFromPoint(c.x, c.y);
+        return !!top && (top === el || el.contains(top));
+    };
     const drawerRects = () => [...document.querySelectorAll('[data-dnd-region="drawer"]')]
         .filter(el => !el.hasAttribute('data-bottom-hero-dock'))
         .map(el => el.getBoundingClientRect())
@@ -537,7 +544,9 @@ export function installDragKit() {
             const heroId = el.getAttribute('data-dock-hero');
             const to = kit.freeSpot();
             if (!to) return { skip: 'no free spot' };
-            return { source: { ...visibleCentre(el), what: `dock hero ${heroId}`, hand: `dock hero ${heroId}` }, target: to.screen, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat } };
+            // A hero picked up off the hero bar carries their flag, as on the mat (`rosterFlagPayload`):
+            // the drop plants it, an order.
+            return { source: { ...visibleCentre(el), what: `dock hero ${heroId}`, hand: `flag ${heroId}` }, target: to.screen, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat } };
         },
         flag() {
             const els = [...document.querySelectorAll('button[data-flag]')].filter(visibleCentre);
@@ -603,11 +612,13 @@ export function installDragKit() {
             const tiles = [...document.querySelectorAll('button[data-bank-item]')]
                 .map(el => ({ el, itemId: el.getAttribute('data-bank-item') }))
                 .filter(t => kit.equipStock?.has(t.itemId) && visibleCentre(t.el));
-            // A hero takes an item on their figure in the hero bar or on their portrait tab beside the Bank.
+            // A hero takes an item on their figure in the hero bar or on their portrait tab beside the Bank,
+            // where it is drawn on top at the drop point. A figure the open Bank is drawn over takes no
+            // drop by design (`beneathDrawers`, DndKit.jsx): nobody can aim at what they cannot see.
             const targetsOf = (h) => [
                 { on: 'dock figure', el: document.querySelector(`[data-dock-hero="${h}"]`) },
                 { on: 'Bank hero tab', el: document.querySelector(`[data-dock-hero-id="${h}"] [data-hero-tab-face]`) }
-            ].filter(t => visibleCentre(t.el));
+            ].filter(t => seenAtCentre(t.el));
             const pairs = [];
             for (const t of tiles) for (const h of heroes) {
                 if (!G.EquipmentValidator.canHeroEquip(h, t.itemId).canEquip) continue;

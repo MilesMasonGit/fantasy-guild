@@ -17,14 +17,12 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
-import { dockHeroDragPayload } from '../ui/components/dock/DockHeroFigure.jsx';
 import {
-    DOCK_STRIP_PX, dockArtPx, dockArtOffset, hpPercent, hpTone, ROSTER_STATE_CLASS,
-    ROSTER_FLAG_PX, rosterFlagPlace
+    DOCK_STRIP_PX, dockArtPx, dockArtOffset, hpPercent, hpTone,
+    ROSTER_FLAG_PX, rosterFlagPlace, rosterAlertPlace, rosterAlertPx
 } from '../ui/components/dock/dockHeroView.js';
 import { flagFill } from '../systems/board/FlagColours.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
@@ -101,7 +99,7 @@ describe('B10 horizontal hero dock', () => {
         expect(view.container.querySelector('[data-bottom-hero-dock]').getAttribute('data-dock-art-px')).toBe('128');
     });
 
-    it('every hero is on the mat: no art sinks or darkens; each says idle, busy or hurt', () => {
+    it('every hero is on the mat: no art sinks or darkens; no status word under the name', () => {
         STATUS.set('h2', 'working');
         const view = mount();
         const home = figure(view, 'h1');
@@ -114,11 +112,9 @@ describe('B10 horizontal hero dock', () => {
         expect(home.getAttribute('data-dock-state')).toBe('idle');
         expect(out.getAttribute('data-dock-state')).toBe('busy');
         expect(figure(view, 'h3').getAttribute('data-dock-state')).toBe('hurt');
-        const word = (f) => f.querySelector('[data-dock-state-word]');
-        expect(word(home).textContent).toBe('Idle');
-        expect(word(home).className).toContain(ROSTER_STATE_CLASS.idle);
-        expect(word(out).textContent).toBe('Busy');
-        expect(word(figure(view, 'h3')).textContent).toBe('Hurt');
+        for (const f of [home, out, figure(view, 'h3')]) {
+            expect(f.querySelector('[data-dock-state-word]')).toBeNull();
+        }
 
         // Labels at one height for everybody.
         expect(labelOf(out).style.bottom).toBe(labelOf(home).style.bottom);
@@ -152,20 +148,6 @@ describe('B10 horizontal hero dock', () => {
         expect(onSelectHero).toHaveBeenCalledWith('h2');
         fireEvent.doubleClick(figure(view, 'h3'));
         expect(onDoubleClickHero).toHaveBeenCalledWith('h3');
-    });
-
-    it('drags the same payload the old dock tab did', () => {
-        const hr = hero('h1', 'Aldric');
-        // The old HeroDockTab payload, verbatim.
-        const old = {
-            kind: DRAG_KIND.HERO,
-            heroId: 'h1',
-            name: hr?.name,
-            spriteId: hr?.spriteId || hr?.icon || hr?.heroSprite || hr?.classId,
-            from: { dock: true }
-        };
-        expect(dockHeroDragPayload('h1', hr)).toEqual(old);
-        expect(dockHeroDragPayload('h9', { classId: 'fighter' }).spriteId).toBe('fighter');
     });
 
     it('marks the selected hero', () => {
@@ -262,11 +244,13 @@ describe('the hero bar shows each hero’s flag', () => {
         expect(fillOf(flagOf(view, 'h3'))).toBe(flagFill(null));
     });
 
-    it('stands at the shoulder: beside the head, below the name, HP bar and state word', () => {
+    it('stands at the shoulder, across the hero from the alert: below the name and HP bar', () => {
         const view = mount();
         const flag = flagOf(view, 'h1');
         const place = rosterFlagPlace(128);
-        expect(flag.style.left).toBe(`calc(50% + ${place.left}px)`);
+        expect(flag.style.left).toBe(`calc(50% - ${-place.left}px)`);
+        expect(place.left).toBe(-rosterAlertPlace(128).left - ROSTER_FLAG_PX);
+        expect(rosterAlertPx(128)).toBe(32);
         expect(parseFloat(flag.style.bottom)).toBe(place.bottom);
         // Its top is below the labels' bottom edge, and inside the strip.
         expect(place.bottom + ROSTER_FLAG_PX).toBeLessThanOrEqual(parseFloat(labelOf(figure(view, 'h1')).style.bottom));

@@ -15,7 +15,7 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
-import { resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { Board } from '../ui/components/board/Board.jsx';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
@@ -299,7 +299,21 @@ describe('⭐ re-stacking redraws no Token: their z is written, not rendered, an
     const zOf = (container, id) => Number(container.querySelector(`[data-token-art][data-token-id="${id}"]`).style.zIndex);
     const zOfBadges = (container, id) => Number(container.querySelector(`[data-token-overlay="${id}"]`).style.zIndex);
 
-    it('hovering a Token lifts it to the front and redraws only it', () => {
+    it('hovering a Token leaves the stack alone and redraws only it', () => {
+        const { a, b, c, d, container } = scene();
+        const zBefore = [a, b, c, d].map(t => zOf(container, t.id));
+        const before = snap();
+        act(() => { fireEvent.pointerMove(container.querySelector('[data-mat-board]'), { clientX: 600, clientY: 400 }); });
+        expect(container.querySelector(`[data-token-art][data-token-id="${a.id}"]`).getAttribute('data-outline')).toBe('hover');
+        expect([a, b, c, d].map(t => zOf(container, t.id))).toEqual(zBefore);
+        const dd = delta(drawn.token, before.token);
+        expect(dd[b.id]).toBe(0);
+        expect(dd[c.id]).toBe(0);
+        expect(dd[d.id]).toBe(0);
+    });
+
+    it('with the hover lift on, hovering a Token lifts it to the front and redraws only it', () => {
+        setMatTuning('hoverLift', 1);
         const { a, b, c, d, container } = scene();
         const zBefore = [b, c, d].map(t => zOf(container, t.id));
         const before = snap();
@@ -345,11 +359,11 @@ describe('⭐ re-stacking redraws no Token: their z is written, not rendered, an
         // Async: the mat hears of the move through the engine's events, a microtask later.
         await act(async () => { fireEvent.pointerUp(document, ptr(700, 800)); });
         expect(BoardState.getTokenById(a.id).y).toBeCloseTo(800, 0);
-        // Back to front now: B, D, A, C; each Token's badges two above its art.
+        // Back to front now: B, D, A, C; each Token's badges one above its art.
         expect(zOf(container, b.id)).toBeLessThan(zOf(container, d.id));
         expect(zOf(container, d.id)).toBeLessThan(zOf(container, a.id));
         expect(zOf(container, a.id)).toBeLessThan(zOf(container, c.id));
-        for (const t of [a, b, c, d]) expect(zOfBadges(container, t.id)).toBe(zOf(container, t.id) + 2);
+        for (const t of [a, b, c, d]) expect(zOfBadges(container, t.id)).toBe(zOf(container, t.id) + 1);
         expect([b, c, d].map(t => zOf(container, t.id))).toEqual(zBefore);
         const dd = delta(drawn.token, before.token);
         expect(dd[a.id]).toBeGreaterThan(0);

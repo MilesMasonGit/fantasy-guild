@@ -18,6 +18,7 @@ import { GameState } from '../state/GameState.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
+import { pointerOutsideList } from '../ui/components/dock/DockEquipmentGrid.jsx';
 
 const h = React.createElement;
 
@@ -37,6 +38,31 @@ beforeEach(() => {
     setLiveMatFit(1);
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
+
+describe('a slot the sheet has scrolled out of sight', () => {
+    let list;
+    beforeEach(() => {
+        list = document.createElement('div');
+        list.setAttribute('data-scroll-list', '');
+        list.innerHTML = '<div data-dnd-droppable-id="slot-a"></div>';
+        list.getBoundingClientRect = () => ({ left: 100, right: 300, top: 200, bottom: 400 });
+        document.body.appendChild(list);
+    });
+    afterEach(() => list.remove());
+
+    it('takes a release inside the list that holds it', () => {
+        expect(pointerOutsideList('slot-a', { x: 150, y: 300 })).toBe(false);
+    });
+
+    it('does not take one over the sheet\'s header or its arrows, outside that list', () => {
+        expect(pointerOutsideList('slot-a', { x: 150, y: 150 })).toBe(true);
+        expect(pointerOutsideList('slot-a', { x: 150, y: 450 })).toBe(true);
+    });
+
+    it('a slot in no scrolling list has nothing to be outside of', () => {
+        expect(pointerOutsideList('slot-nowhere', { x: 0, y: 0 })).toBe(false);
+    });
+});
 
 describe('closed hero sheet drop targets', () => {
     it('registers equipment-slot drop targets while open and none once closed', () => {

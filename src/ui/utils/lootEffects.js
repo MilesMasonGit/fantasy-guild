@@ -16,6 +16,6 @@ export const LOOT_PILE_PULSE = false;
 
 /**
  * Collected loot's flight: the 2 px trail behind the item and the four-pixel plink where it lands
- * (`ParticleOverlay`). A hero lifted from the dock keeps its trail.
+ * (`ParticleOverlay`). A recalled hero keeps its trail.
  */
 export const LOOT_FLIGHT_SPARKLES = false;

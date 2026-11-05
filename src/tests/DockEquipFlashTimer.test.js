@@ -49,6 +49,14 @@ describe('the equip shine', () => {
         expect(r.container.querySelector('[data-equip-shine]')).toBeNull();
     });
 
+    it('plays on the slot an item was moved to in the same loadout', () => {
+        const r = mount();
+        act(() => {
+            EventBus.publish(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, { action: 'move', heroId: 'h1', slot: SLOT_ORDER[2], fromSlot: SLOT_ORDER[0] });
+        });
+        expect(r.container.querySelectorAll('[data-equip-shine]')).toHaveLength(1);
+    });
+
     it('plays again for a second item in the same slot', () => {
         const r = mount();
         equip();

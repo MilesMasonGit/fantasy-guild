@@ -14,7 +14,7 @@ layout/paint cost are Tier B (the in-game Perf HUD). `npm run bench:draw` and
 
 | Command | What it does | Time |
 |---|---|---|
-| `npm run bench` | S1–S8, 3 timing runs each (S4 11, S6 and S8F once), profile passes for S2–S5 and S7 | ~5 min |
+| `npm run bench` | S1–S8, C240 and C256, 3 timing runs each (S4 11, S6 and S8F once), profile passes for S2–S5, S7, C240 and C256 | ~6 min |
 | `npm run bench -- --only=S2,S3` | only some scenarios | |
 | `npm run bench -- --compare` | also compare with `bench/baseline.json`: **exits 2** (WORK CHANGED) if any scenario did different work, **exits 1** if any checked number is more than 20 % slower — see below | |
 | `npm run bench -- --accept-work-change=CR3-123` | compare, but let a deliberate, ruled change of work through: rewrites only the fingerprints in `bench/baseline.json` and records the ticket (implies `--compare`) | |
@@ -110,7 +110,7 @@ it to make a speed fix pass: a speed fix that changes the work is not identical.
 
 #### The timings
 
-`--compare` checks, per scenario, **p50 and p99** of the tick (S1–S3, S5–S7),
+`--compare` checks, per scenario, **p50 and p99** of the tick (S1–S3, S5–S7, C240, C256),
 for S4 the **worst arrival**, the **p50 landing drop**, the **worst
 refused drop** and **the shrink**, each on its own, and for S8 the **wall time
 of the catch-up hour**. A number fails when it is
@@ -169,10 +169,12 @@ timings from one machine mean nothing on another.
 | S4 | Push storm | 20-step mat, 60 placed + a Forest packed round with 24 trees. 50 **arrivals** at the Forest (`EffectActions.spawn`, which pushes); 50 **refused player drops** in the cluster's middle (`Placement.placeTokenAt` — every one flies back, **by design**: FP-46, a drop never pushes); 50 **landing player drops** aimed round the cluster's rim (the radius is measured: the farthest tree from the Forest; angles i × 2π/50), each landing with a nudge, then taken off again; then the mat **shrunk 20 → 6**. Each operation timed on its own (CR3-156). | — |
 | S5 | Rebuild storm | S2 plus one board-reach aura | 500 + 1,500 |
 | S6 | Long idle | S2, 30 game-minutes with a checkpoint every 5 (`--long`: 8 game-hours, every 30) — heap after GC and the size of every runtime structure the bench can see | 1,000 + 18,000 |
-| S7 | Waiting for room | 8-step mat packed with placed passives until not even a tree fits within 800 u of the two waiters: a **Forest under its cap with nowhere to spawn**, and a **Foundation building a 2×2 station with no room to stand**, a builder pinned to it. Both re-run their placement search every tick (CR3-201). Its own types and recipe are registered inside the scenario, so no other scenario's work changes. Added to `baseline.json` on its own (`meta.addedScenarios`). | 300 + 1,500 |
+| S7 | Waiting for room | 8-step mat packed with placed passives until not even a tree fits within 800 u of the two waiters: a **Forest under its cap with nowhere to spawn**, and a **Foundation building a 2×2 station with no room to stand**, a builder pinned to it. The Foundation re-runs its placement search every tick (CR3-201); the Forest searches once each 5 s interval, when its clock comes round, and misses that spawn (a spawner with no room waits a whole interval for its next try). Its own types and recipe are registered inside the scenario, so no other scenario's work changes. Added to `baseline.json` on its own (`meta.addedScenarios`). | 300 + 1,500 |
 | S8 | Catch-up hour | S2, warmed up as S2 is (1,000 ticks), **saved and loaded** as a player's slot is, then one game-hour of the game's own catch-up (`CatchUp.run`): 1000 ms steps, the game clock, the bus quiet, toasts and sounds off, slices with yields. The virtual wall clock stands still through it, as the real one nearly does. | 1,000 + 3,600 steps |
 | S8L | Same hour, plain 1000 ms steps | The same save and load, then 3,600 × `GameLoop.runHandlers(1000)` with the virtual clock moving, as live play's would. The reference S8 must equal. | 1,000 + 3,600 steps |
 | S8F | Same hour, 100 ms ticks | The same save and load, then 36,000 ticks of 100 ms: the fidelity reference. Run once. | 1,000 + 36,000 |
+| C240 | Cap 240, mat about full | S2's mix on the shipped 11-step mat with the Token cap at 240 (`scenarios/cap.mjs`, `capPlaced`): every free 160 u cell built, more Forests and Quarries than S2, filled by the spawners. At the 30 % overlap the mat holds about this many Tokens, so the spawners meet the Token cap (cheap: held) and a mat with no room (a missed try) by turns. Same 8 heroes and flags as S2. | 1,000 + 3,000 |
+| C256 | Cap 256, mat full first | As C240 at the top cap, 256 (`cap256`, the drawing bench's board). The mat fills before the cap does, so some twenty Forests and Quarries under their own caps miss every try for want of room all run long: the cost of a spawner with no room on a big full mat. Their clocks start together, so they all try in the same tick once each 5 s interval. | 1,000 + 3,000 |
 
 Every spawner is filled to its cap before the heroes arrive (`prefillSpawners`,
 through the real `SpawnerSystem.attemptSpawn`), so the warm-up warms the JIT
@@ -627,11 +629,11 @@ away from open drawers.
 
 | Kind | Source → target | Success (read from the game's state) |
 |---|---|---|
-| hero dock → mat | a dock hero → an open spot | the hero's flag planted within 60 u of the aim (or pinned) |
+| hero dock → mat | a dock hero → an open spot (the drag carries the hero's flag, as on the mat) | the hero's flag planted within 60 u of the aim (or pinned) |
 | flag → mat | a planted flag → an open spot | the same |
 | Token → mat | a Token on the mat → an open spot | the Token stands within 150 u of the aim |
 | Shop row → mat | an affordable Shop row → an open spot | a new Token of that type stands there (it is then removed, so the mat cap never fills) |
-| Bank item → dock hero | an equippable Bank item → a hero who can wear it, on their figure in the hero bar or their portrait tab beside the Bank | the hero wears it (their gear is cleared first), and one item, one hero holds: a gear copy left the Bank (one fewer there), a shared item (food, drink, potions) took no copy (its count is not checked: working heroes eat and drink from it meanwhile) |
+| Bank item → dock hero | an equippable Bank item → a hero who can wear it, on their figure in the hero bar or their portrait tab beside the Bank, where that is drawn on top at its centre (a figure the open Bank covers takes no drop, by design) | the hero wears it (their gear is cleared first), and one item, one hero holds: a gear copy left the Bank (one fewer there), a shared item (food, drink, potions) took no copy (its count is not checked: working heroes eat and drink from it meanwhile) |
 
 Every kind runs twice: a **plain** pass, and an **overlays** pass with speech
 bubbles over every hero (a level-up event for each hero every 2.5 s, which also

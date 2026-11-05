@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, act } from '@testing-library/react';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { DRAG_KIND, DND_SURFACE } from '../ui/dnd/dragConstants.js';
 import { matW } from '../config/matGeometry.js';
 import { lineCells, dashedLinePath, DASH_PX, GAP_PX } from '../ui/components/board/orderLine.js';
 
@@ -91,6 +91,27 @@ describe('on the mat', () => {
         const d = svg.querySelector('path:last-child').getAttribute('d');
         expect(d.length).toBeGreaterThan(0);
         expect(svg.querySelector('path:first-child').getAttribute('d')).toBe(d);
+    });
+
+    it('over the bar, the column or a drawer a drop gives no order: no dashes until the pointer is back on the mat', async () => {
+        const drag = { isDragging: true, activePayload: { kind: DRAG_KIND.FLAG, heroId: 'h1' } };
+        const bar = document.createElement('div');
+        bar.setAttribute('data-dnd-region', DND_SURFACE.DRAWER);
+        bar.getBoundingClientRect = () => ({ left: 0, top: 500, width: 2000, height: 100, right: 2000, bottom: 600 });
+        document.body.appendChild(bar);
+        const view = mount(drag);
+        const move = (clientY) => act(async () => {
+            window.dispatchEvent(new PointerEvent('pointermove', { clientX: 500, clientY }));
+            await new Promise(r => setTimeout(r, 60));
+        });
+        const dashes = () => view.container.querySelector('svg[data-order-line="h1"] path:last-child').getAttribute('d');
+        await move(550);
+        expect(dashes()).toBe('');
+        await move(300);
+        expect(dashes().length).toBeGreaterThan(0);
+        await move(550);
+        expect(dashes()).toBe('');
+        bar.remove();
     });
 
     it('a hero with no figure on the mat draws no dashes', async () => {

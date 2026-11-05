@@ -89,7 +89,7 @@ export const RequirementLine = ({ requirement, heroes, book, className, style })
                 className={cn('inline-flex items-center gap-1 tabular-nums', className)}
                 style={has ? style : { ...style, color: 'var(--color-ui-red)' }}
             >
-                <SkillIcon skillId={requirement.skill} size={16} title={null} />
+                <SkillIcon skillId={requirement.skill} size={16} />
                 {words}
             </span>
         </Tooltip>

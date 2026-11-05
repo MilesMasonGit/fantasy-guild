@@ -9,7 +9,7 @@ import { cn } from '../utils/cn.js';
 import { useEscapeLayer } from '../utils/escapeLayers.js';
 import { EntityRibbon } from '../components/base/EntityRibbon.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
-import { VitalBar, vitalTone } from '../components/base/VitalBar.jsx';
+import { VitalBar } from '../components/base/VitalBar.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../components/base/TokenSprite.jsx';
 import { StationGearBadge } from '../components/board/TokenBadges.jsx';
 import { Tooltip } from '../components/base/Tooltip.jsx';
@@ -28,7 +28,6 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ProblemMark } from '../components/board/ProblemMark.jsx';
 import { SEVERITY, PROBLEM_SPRITE } from '../components/board/problemMark.js';
-import { ROSTER_STATE_CLASS } from '../components/dock/dockHeroView.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
 import { PixelGlyph, GLYPHS, SLOT_GLYPHS } from '../components/base/PixelGlyph.jsx';
 import { SkillIcon } from '../components/base/SkillIcon.jsx';
@@ -110,8 +109,8 @@ const InkOnPageDemo = () => {
             {tab('in', 2)}
             {tab('out', 6)}
             <span className="inline-block" style={{ width: 96, height: 32, background: 'rgba(59, 38, 20, 0.08)' }} title="A way's band" />
-            {mark(<><SkillIcon skillId="smithing" size={32} title={null} />15</>)}
-            {mark(<><SkillIcon skillId="smithing" size={32} title={null} />16</>, true)}
+            {mark(<><SkillIcon skillId="smithing" size={32} />15</>)}
+            {mark(<><SkillIcon skillId="smithing" size={32} />16</>, true)}
             {mark(<><PixelGlyph name="grow" scale={4} style={{ filter: GLYPH_OUTLINE }} />2:30</>)}
             {mark(<><PixelGlyph name="regrow" scale={4} style={{ filter: GLYPH_OUTLINE }} />5:00</>)}
         </div>
@@ -451,15 +450,13 @@ const ProblemMarkDemo = () => (
     </div>
 );
 
-/** Hero orders' new pieces: the roster's state words and the "needs a job" mark. */
+/** Hero orders' new pieces: the roster's alerts. */
 const HeroOrdersDemo = () => (
     <div className="flex items-end gap-6 px-4 py-3" style={{ background: '#4a6b34' }}>
-        {['idle', 'busy', 'hurt'].map(state => (
-            <figure key={state} className="flex flex-col items-center gap-1">
-                <span className={`ui-text-small font-bold ${ROSTER_STATE_CLASS[state]}`} style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}>{state.toUpperCase()}</span>
-                <figcaption className="text-xs text-white/80">roster: {state}</figcaption>
-            </figure>
-        ))}
+        <figure className="flex flex-col items-center gap-1">
+            <img src={PROBLEM_SPRITE[SEVERITY.CANT]} alt="Wounded" style={{ width: 32, height: 32, imageRendering: 'pixelated', filter: 'drop-shadow(2px 2px 0 #000)' }} />
+            <figcaption className="text-xs text-white/80">wounded</figcaption>
+        </figure>
         <figure className="flex flex-col items-center gap-1">
             <img src={PROBLEM_SPRITE[SEVERITY.WAITING]} alt="Needs a job" style={{ width: 32, height: 32, imageRendering: 'pixelated', filter: 'drop-shadow(2px 2px 0 #000)' }} />
             <figcaption className="text-xs text-white/80">needs a job</figcaption>
@@ -636,7 +633,7 @@ const SlotMarksDemo = () => (
 const TokenCardDemo = () => (
     <div className="flex items-start gap-6 flex-wrap">
         {['token_copper_ore_vein', 'token_oak_tree'].map(id => (
-            <PixelFrame key={id} style={{ width: 256 + 12 }}>
+            <PixelFrame key={id} style={{ width: 'fit-content' }}>
                 <TokenCard typeId={id} />
             </PixelFrame>
         ))}
@@ -743,12 +740,12 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar (the hero panel)',
-        rule: 'HP is a bar; in the hero panel its numbers show beside it.',
+        id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar (the hero bar and the hero panel)',
+        rule: 'A hero’s HP: the numbers over a stepped pixel bar.',
         Demo: () => (
             <div className="w-48 flex flex-col gap-1">
                 {[[62, 100], [30, 100], [12, 100]].map(([value, max]) => (
-                    <VitalBar key={value} value={value} max={max} barClass={vitalTone(value, max)} />
+                    <VitalBar key={value} value={value} max={max} />
                 ))}
             </div>
         )
@@ -826,7 +823,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'arrow-bars', title: 'Arrow bars', status: 'shared', source: 'ArrowScrollList',
-        rule: 'No scrollbars: an arrow bar above and below that dims at the end but keeps its space. A click scrolls about two rows, holding repeats, the wheel works.',
+        rule: 'No scrollbars: while the list has more to scroll to, an arrow bar above and below that dims at the end but keeps its space; a list that fits has no bars. A click scrolls about two rows, holding repeats, the wheel works.',
         Demo: ArrowBarDemo
     },
     {
@@ -896,7 +893,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'token-card', title: 'Token card', status: 'unapproved', source: 'TokenCard (the card a click on a Token opens)',
-        rule: 'The 256 px activity scene fills the card behind the information, at 1×; a Token with none gets a plain card. Each block sits in a see-through box: name and X; work; cycle; the current recipe (needs, tools as hollow bars, makes); lifecycle; drops. Every icon and number explains itself on hover.',
+        rule: 'The name is a header with the book and the X; then one panel of ruled sections: the stat block, the recipe picked, Requires (tools as hollow bars, then what is used up), Makes or a water\'s catches, Events, Boosted by, Drops. A section with nothing to say is left out. The 256 px activity scene draws at whole-pixel scales, 2× or more; a Token with none gets the plain panel. Every icon and number explains itself on hover. The art sits behind the whole card, a window of it between the name and a see-through panel; a card taller than three quarters of the screen scrolls, its arrows inside the card over the art.',
         Demo: TokenCardDemo
     },
     {

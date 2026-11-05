@@ -9,12 +9,23 @@ export const DRAG_KIND = {
     HERO: 'hero',
     ITEM: 'item',
     /**
-     * A hero's flag: moves the flag. Carries `heroId`. Started by the flag itself **or by a
-     * hero on the board**: the player never moves a hero. Dropping it on the Dock recalls.
-     * `HERO` is only a hero carried out of the Dock or the hero sheet.
+     * A hero's flag: moves the flag. Carries `heroId`. Started by the flag itself, by a hero on
+     * the board, or by a hero on the bar, in the Bank's column or on their sheet
+     * (`rosterFlagPayload`): the player never moves a hero.
      */
     FLAG: 'flag'
 };
+
+/**
+ * What a hero picked up off the mat carries: a flag, as on the mat, so it gets the same ghost,
+ * snapping and order line. `from.dock` is what lets it also reorder the bar or the column
+ * (`isRosterFlag`), which a flag picked up on the mat does not.
+ */
+export function rosterFlagPayload(heroId, name, from = { dock: true }) {
+    return { kind: DRAG_KIND.FLAG, heroId, name, from };
+}
+
+export const isRosterFlag = (payload) => payload?.kind === DRAG_KIND.FLAG && !!payload.from?.dock;
 
 /**
  * Surfaces the pointer can hover over during a drag. The big containers tag themselves with

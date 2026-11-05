@@ -25,9 +25,14 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * How it runs: it rides `TimedChanges.tick`, which `BoardRunner.tick(delta)` calls, advanced by the
  * tick's `delta` only, so a catch-up and the dev Advance fast-forward it with everything else.
  * The spawner is one row of `TimedChanges.HANDLERS` (clock `spawnMs`, due at `intervalMs`). Its
- * `fire` is {@link attemptSpawn}, which returns the SAME instance after a spawn (the clock starts
- * its next lap, and a big tick can spawn several times) or null when blocked (the clock is held
+ * `fire` is {@link spawnerTurn}, which returns the SAME instance when the turn is over (the clock
+ * starts its next lap, and a big tick can take several turns) or null when held (the clock is held
  * full and the attempt is retried next tick, never looped within one).
+ *
+ * A turn is over after a spawn, and after a spawn missed for want of room: a spawner with nowhere to
+ * land tries once when its clock comes round and then waits one whole interval for the next try,
+ * whatever leaves the mat meanwhile (owner: a missed bus waits for the next one). Only its cap, the
+ * mat's Token cap and its upkeep hold the clock full, since those are cheap to ask every tick.
  *
  * One attempt, in order:
  * 1. Cap: the family's live count must be below its cap (for a spawner that plants within its
@@ -46,7 +51,7 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  *
  * State: clocks are saved on the instance. Nothing else is: the reported state is worked out live
  * from the mat and the Bank, except no room, which is only known by trying; that one is remembered
- * in memory until the next attempt.
+ * in memory until a spawn.
  */
 
 /** Shortest spawn interval the engine honours (`intervalMs ≥ 1000`). */
@@ -62,8 +67,13 @@ export const SPAWNER_STATE = Object.freeze({
     SLEEPING: 'sleeping'
 });
 
-/** Spawner instance ids whose last attempt found no room — cleared by the next success. */
+/** Spawner instance ids whose last landing found no room — cleared by the next success. */
 const noRoom = new Set();
+
+/** How one attempt ended (see {@link tryToSpawn}). */
+const SPAWNED = 'spawned';
+const MISSED = 'missed';
+const HELD = 'held';
 
 /** The `spawner` block of a type, when it can actually spawn something; else null. */
 function spawnerBlock(def) {
@@ -324,7 +334,8 @@ function missingUpkeep(def) {
 }
 
 /**
- * One spawn attempt: `TimedChanges`' handler `fire` for a spawner.
+ * One spawn attempt, for anything that wants a spawn now: the dev tools, the bench's prefill, tests.
+ * The game's own clock calls {@link spawnerTurn}.
  *
  * @param {object} instance the spawner on the mat
  * @param {object} def its type
@@ -333,21 +344,39 @@ function missingUpkeep(def) {
  *        how long ago the attempt fell due, and the function that advances a
  *        Token's clocks — the new Token lives that leftover time, so a Sapling
  *        spawned part-way through a big tick grows as if the ticks had been small
- * @returns {object|null} the spawner itself after a spawn; null when blocked
+ * @returns {object|null} the spawner itself after a spawn; null when blocked or there was no room
  */
 export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
+    return tryToSpawn(instance, def, random, ctx) === SPAWNED ? instance : null;
+}
+
+/**
+ * One turn of a spawner's clock: `TimedChanges`' handler `fire` for a spawner. An attempt, as
+ * {@link attemptSpawn}; a spawn missed for want of room still ends the turn, so the spawner waits
+ * one whole interval for its next try instead of searching the mat again every tick.
+ *
+ * @returns {object|null} the spawner itself after a spawn or a miss (the clock starts its next lap);
+ *          null when held by its cap, the mat's Token cap or its upkeep (retried next tick)
+ */
+export function spawnerTurn(instance, def, random = Math.random, ctx = {}) {
+    return tryToSpawn(instance, def, random, ctx) === HELD ? null : instance;
+}
+
+/** One attempt: {@link SPAWNED}, {@link MISSED} (nowhere to land) or {@link HELD}. */
+function tryToSpawn(instance, def, random, ctx) {
     const block = spawnerBlock(def);
-    if (!block) return null;
+    if (!block) return HELD;
 
     const { count, cap } = countsOf(instance, def);
-    if (count >= cap) return null;                               // at cap: waits
-    if (!MatCap.canPlaceMore(1)) return null;                    // the mat's Token cap is full: waits
-    if (missingUpkeep(def).length) return null;                  // needs an item: waits
+    if (count >= cap) return HELD;                               // at cap: waits
+    if (!MatCap.canPlaceMore(1)) return HELD;                    // the mat's Token cap is full: waits
+    if (missingUpkeep(def).length) return HELD;                  // needs an item: waits
 
     const typeId = pickWeighted(block.spawns, random);
-    if (!typeId) return null;
+    if (!typeId) return HELD;
 
-    // A Forest that plants within its reach lands its Sapling there or nowhere.
+    // A Forest that plants within its reach lands its Sapling there or nowhere, with the room its
+    // tree will need when it can (`EffectActions.spotWithin`).
     const landed = EffectActions.spawn(
         { payload: { typeId, placement: PLACEMENT.NEAREST_FREE } },
         { self: instance.id },
@@ -355,9 +384,9 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
         plantsWithinReach(def) ? { within: nearRadius() } : {}
     );
     if (!landed) {
-        // Nowhere to go. Nothing was paid; the clock waits full.
+        // Nowhere to go. Nothing was paid.
         noRoom.add(instance.id);
-        return null;
+        return MISSED;
     }
     noRoom.delete(instance.id);
 
@@ -384,7 +413,7 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
     }
 
     logger.debug('SpawnerSystem', `${instance.typeId} spawned ${typeId}`);
-    return instance;
+    return SPAWNED;
 }
 
 /**
@@ -393,7 +422,7 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
  * - `mat_full`: the mat is at or over its Token cap (`MatCap`);
  * - `needs_item`: the Bank and the loot on the mat cannot pay one spawn's upkeep between them
  * (`needs`: item ids);
- * - `no_room`: its last attempt found nowhere to land, and it is waiting;
+ * - `no_room`: its last landing found nowhere to land, and it waits for its next try (`nextInMs`);
  * - `sleeping`: an enemy camp on a mat its arrival holds ({@link isSleepingCamp});
  * - `spawning`: otherwise, with `nextInMs` to the next attempt.
  *
@@ -417,8 +446,9 @@ export function spawnerStatus(instanceId) {
     if (!MatCap.canPlaceMore(1)) return { state: SPAWNER_STATE.MAT_FULL, ...base };
     const needs = missingUpkeep(def);
     if (needs.length) return { state: SPAWNER_STATE.NEEDS_ITEM, needs, ...base };
-    if (noRoom.has(instanceId) && clock >= interval) return { state: SPAWNER_STATE.NO_ROOM, ...base };
-    return { state: SPAWNER_STATE.SPAWNING, nextInMs: Math.max(0, interval - clock), ...base };
+    const nextInMs = Math.max(0, interval - clock);
+    if (noRoom.has(instanceId)) return { state: SPAWNER_STATE.NO_ROOM, nextInMs, ...base };
+    return { state: SPAWNER_STATE.SPAWNING, nextInMs, ...base };
 }
 
 /**

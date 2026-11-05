@@ -1,6 +1,8 @@
 
 import * as Flags from '../../../systems/board/Flags.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
+import * as Demolition from '../../../systems/board/Demolition.js';
+import * as Growth from '../../../systems/board/Growth.js';
 import { tokenName, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { getAllItems } from '../../../config/registries/itemRegistry.js';
@@ -8,6 +10,7 @@ import { neededToolOf, toolNeedPhrase } from '../../../config/registries/toolKin
 import { withArticle } from '../../../systems/effects/toolNames.js';
 import { GameState } from '../../../state/GameState.js';
 import { skipHint } from './boardConstants.js';
+import { problemOf, problemText } from './problemMark.js';
 import { t } from '../../../i18n/index.js';
 
 /**
@@ -108,13 +111,16 @@ export function tokenSkipLines(instanceId) {
 
 /**
  * A status line from `Flags.statusOf` (plus `waitingFor`, the type of what the hero waits for,
- * {@link waitingTypeOf}): Working: X · Walking to: X · Waiting for X · Nothing to work near X (a
+ * {@link waitingTypeOf}): Working: X · Fighting: X · Demolishing: X · Walking to: X · Waiting for X · Nothing to work near X (a
  * camp) · Idle here · Needs a job · At the Guild Hall.
  */
 export function dockStatusLine(status) {
     const token = (typeId) => tokenName(typeId) || 'a Token';
     switch (status?.state) {
-        case 'working': return t('orders.working', { token: token(status.typeId) });
+        case 'working':
+            if (isEnemyDef(getTokenType(status.typeId))) return t('orders.fighting', { token: token(status.typeId) });
+            if (Demolition.isMarked(BoardState.getTokenById(status.instanceId))) return t('orders.demolishing', { token: token(status.typeId) });
+            return t('orders.working', { token: token(status.typeId) });
         case 'walking': return status.instanceId ? t('orders.walkingTo', { token: token(status.typeId) }) : t('orders.walkingSpot');
         case 'idle':
             if (status.needsJob) return t('orders.needsJob');
@@ -124,6 +130,56 @@ export function dockStatusLine(status) {
         case 'returning': return status.limping ? t('orders.limpingHome') : t('orders.headingHome');
         default: return t('orders.atHall');
     }
+}
+
+/** A hero's alert on the roster: a wound, or something only the player can put right. */
+export const ROSTER_ALERT = Object.freeze({ WOUNDED: 'wounded', ACT: 'act' });
+
+/**
+ * Whether only the player can get this hero going: no order, a spot, a job gone, an order they
+ * cannot work (tool, level), or a Token stuck under them (ingredients, no recipe). Waiting by a
+ * Token coming back, or for another hero to finish, is their job.
+ * ⚠️ The same answer as `BoardRunner.isHeroIdle` (`HeroBarAlerts.test.js` pins it), but that reads
+ * the hero through `HeroManager.getHero`, which can rebuild a hero: not from a selector.
+ */
+function playerMustAct(heroId) {
+    const s = Flags.statusOf(heroId);
+    if (s.state === 'docked' || s.state === 'returning' || s.needsJob) return true;
+    if (s.state === 'working') return !!BoardState.getTokenById(s.instanceId)?.alert;
+    if (s.state === 'walking' && s.instanceId) return false;
+    return s.order === 'spot' || !Flags.waitingOf(heroId);
+}
+
+/** Which alert a hero wears, or null. */
+export function rosterAlertOf(heroId) {
+    if (healingLeftMs(heroId) != null) return ROSTER_ALERT.WOUNDED;
+    return playerMustAct(heroId) ? ROSTER_ALERT.ACT : null;
+}
+
+/** "Iron Forge: Needs Coal": a Token and exactly what it lacks, or null when it is no such problem. */
+function stuckLine(typeId, instanceId, stuck) {
+    const problem = problemOf(stuck);
+    return problem ? `${tokenName(typeId)}: ${problemText(problem, instanceId)}` : null;
+}
+
+/**
+ * What the hover bubble says: {@link flagStatusLine}, except where that would only say "Idle" or
+ * "Working" of a hero who is stuck, where it says what is in the way. Read live.
+ */
+export function rosterBubbleLine(heroId) {
+    const s = Flags.statusOf(heroId);
+    if (healingLeftMs(heroId) != null || s.order !== 'token') return flagStatusLine(heroId);
+    if (s.instanceId) {
+        const instance = BoardState.getTokenById(s.instanceId);
+        return (instance && stuckLine(instance.typeId, instance.id, { alert: instance.alert })) || flagStatusLine(heroId);
+    }
+    if (Flags.waitingOf(heroId)) return flagStatusLine(heroId);
+    const skip = Flags.skipsOfHero(heroId).find(sk => sk.reason !== Flags.SKIP.CLAIMED);
+    if (skip) return stuckLine(skip.typeId, skip.instanceId, { alert: skip.reason }) || skipLine(skip);
+    const pinned = s.campId ? null : Flags.pinnedTokenOf(heroId);
+    if (!pinned) return flagStatusLine(heroId);
+    return stuckLine(pinned.typeId, pinned.id, { growth: Growth.growthAlertOf(pinned.id) })
+        || t('orders.nothingAt', { token: tokenName(pinned.typeId) });
 }
 
 /**

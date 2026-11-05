@@ -16,6 +16,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { matW, matH } from '../config/matGeometry.js';
+import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { WEB_W, WEB_H } from '../ui/components/board/GuildHallBoard.jsx';
 import { fitScale, useBoardScale } from '../ui/hooks/useBoardScale.js';
 import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
@@ -71,7 +72,7 @@ function hero(id, skills) {
 
 beforeAll(() => Flags.init());
 afterAll(() => Flags.teardown());
-afterEach(() => { cleanup(); vi.useRealTimers(); });
+afterEach(() => { cleanup(); vi.useRealTimers(); resetMatTuning(); });
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -322,7 +323,27 @@ describe('⭐ which Token the pointer is on (overlapping art)', () => {
         });
     };
 
-    it('picks the nearer centre and raises it to the front', () => {
+    it('picks the nearer centre, and leaves the stack alone', () => {
+        const a = placeAt('fixture_producer', 500, 500);
+        const b = placeAt('fixture_producer', 560, 500);
+        const { container } = mount(h(MatBoard));
+        const root = container.querySelector('[data-mat-board]');
+        unscaled(root);
+        const zs = [zOf(container, a.id), zOf(container, b.id)];
+        const outlined = (t) => container.querySelector(`[data-token-art][data-token-id="${t.id}"]`).getAttribute('data-outline');
+
+        fireEvent.pointerMove(root, { clientX: 545, clientY: 500 });
+        expect(outlined(b)).toBe('hover');
+        expect([zOf(container, a.id), zOf(container, b.id)]).toEqual(zs);
+
+        fireEvent.pointerMove(root, { clientX: 515, clientY: 500 });
+        expect(outlined(a)).toBe('hover');
+        expect(outlined(b)).not.toBe('hover');
+        expect([zOf(container, a.id), zOf(container, b.id)]).toEqual(zs);
+    });
+
+    it('with the hover lift on, picks the nearer centre and raises it to the front', () => {
+        setMatTuning('hoverLift', 1);
         // 60 u apart: each point below lies inside BOTH art circles (r = 64).
         const a = placeAt('fixture_producer', 500, 500);
         const b = placeAt('fixture_producer', 560, 500);

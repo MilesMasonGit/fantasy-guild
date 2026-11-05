@@ -15,11 +15,10 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **No zero-padding** (`3`, not `03`) and **no word labels** ("Level:",
   "Charges:", "HP:") where an icon or the position already says it.
 - **XP is a thin bar**; the exact number (`1,154 / 1,500 XP`) shows on hover.
-- **A hero's HP on the hero bar and sheet: numbers over a stylized pixel bar**
-  (owner, 2026-11-02; brief 340, replaces the lines below for heroes once built).
-- **HP is a bar**; the exact number shows on hover, except in the hero panel,
-  where the bar shows its numbers beside it (owner, eye-check A, 2026-10-09),
-  and on the mat, where a thin bar over a fighter has its number and
+- **A hero's HP on the hero bar and sheet: the numbers over a stepped pixel bar**
+  (`VitalBar`; owner, 2026-11-02): a smooth fill on a plain black edge, no ticks
+  (owner's pick, 2026-11-05).
+- **HP elsewhere is a bar**; the exact number shows on hover, except on the mat, where a thin bar over a fighter has its number and
   percentage written above it, `17 · 57%` (owner, combat screen, 2026-10-25).
 - Times read `0:34` / `4:05`; thousands get separators (`1,154`).
 
@@ -55,6 +54,9 @@ clunky labels like "LVL 03" where "3/99" says it better.
 
 - **Icon + name + number**: `[pickaxe] Mining 25/99`. The icon is for
   scanning, the name so nobody has to guess.
+  **One exception**: the hero sheet's skills are icon and level, two side by
+  side, with the name in the hover tip (owner, 2026-11-02). In a narrow window
+  there the level drops its `/99`, which the tip keeps.
 - Icons are drawn crisp at whole-pixel scales (the owner noticed fuzzy skill
   icons in the Token inspection).
 
@@ -110,7 +112,7 @@ normal text colour; a new meaning needs the owner's OK.
   and knob, a meaning colour when on); sliders are `ui-range` (flat, square
   thumb). No rounded corners, soft shadows or glows on any of them.
 - **Speech on the mat** (owner, 2026-10-24): hero speech, the hero bar's
-  level-up alerts and every callout use one `SpeechFrame`: the chamfer frame
+  level-up alerts and hover status and every callout use one `SpeechFrame`: the chamfer frame
   with its hard shadow and a stepped pixel tail, white words; the frame is
   bronze for news, gold for attention, red for "can't". They rise and fade
   but never scale.
@@ -129,6 +131,10 @@ normal text colour; a new meaning needs the owner's OK.
   above any plate and never moves when one comes or goes (owner, 2026-10-29). A small Token's
   plate stands where a full-size Token's would, so its name sits under the small art, on the
   same line. Heroes' names still drop below their plate.
+- **The hovered Token's name and gear draw over everything but the plates** (owner's list,
+  2026-11-02): its art stays where it stands, behind whatever is in front of it, and heroes are
+  always over Tokens, so without this a hover could bring up a name nobody can read. A hero's
+  name and health bar stand with their figure, over every Token. A plate is over heroes' feet.
 - **One gear size on a Token** (owner, 2026-10-29): the gear is drawn the size of the "!" mark
   (its 16 px sprite at the Token's art pixel), on a Foundation, a station with nothing chosen
   and a station with a recipe alike. A choice waiting shows the yellow "!" at rest; the moment
@@ -167,6 +173,8 @@ normal text colour; a new meaning needs the owner's OK.
   - **No emoji** anywhere a player can see.
   - Where a panel already has pixel art for the same idea (the close X, a lock),
     the pixel version wins.
+  - **A skill with no icon yet** draws the one shared placeholder, a plain pixel
+    stone (`SkillIcon`); a skill never falls back to its emoji.
 
 ## Item references
 
@@ -190,6 +198,10 @@ item held.
 - **Title on the left** (with an optional sprite), **the red pixel close X at
   the top right**: `ui_cancel_red.png` (16 px) at 2×. Same on every panel,
   drawer and modal. Small floating pop-ups (tooltips) have no header and no X.
+  **One exception**: the hero sheet's close and edit stand in the side space
+  beside it, where the Bank's hero column stands (owner, 2026-11-02). In that
+  column a hero's name sits on a dark stepped plate over the portrait's foot
+  (owner's pick, 2026-11-05).
 
 ## Buttons
 
@@ -208,11 +220,12 @@ Two kinds, nothing else:
 
 - Panels **grow tall first**, using the screen's height, then scroll. Text is
   **never cut off with "…"**: it wraps.
-- **No scrollbars.** A scrolling list has an **arrow bar above and below**: one
-  shared piece, not a copy per panel.
+- **No scrollbars.** A list with more to scroll to has an **arrow bar above and
+  below**: one shared piece, not a copy per panel. **A list that fits has no
+  bars**, and no space kept for them (owner, 2026-11-02).
   - The arrow is a small pixel triangle drawn in code at whole-pixel scale.
-  - At the end of the list that arrow **dims but keeps its space**, so the list
-    never jumps.
+  - At the end of a list that scrolls, that arrow **dims but keeps its space**,
+    so the list does not jump while it is scrolled.
   - **A click scrolls about two rows**, smoothly; **holding** keeps scrolling;
     the **mouse wheel** works as normal.
 

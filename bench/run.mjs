@@ -3,7 +3,7 @@
 // Runs each scenario in a fresh Node process (bench/worker.mjs), a few times,
 // takes the median, prints a table and writes JSON to bench/results/.
 //
-//   npm run bench                       S1–S8, default lengths
+//   npm run bench                       S1–S8 and C240, C256, default lengths
 //   npm run bench -- --only=S2,S3       some scenarios
 //   npm run bench -- --compare          also compare with bench/baseline.json:
 //                                       the work first (fingerprints), then
@@ -63,7 +63,11 @@ const SCENARIOS = [
     // Only S8's time is checked; S8L and S8F are the references its work is checked against.
     { id: 'S8', file: 's8-catchup.mjs', name: 'Catch-up hour', profile: false, catchUp: true, timed: true },
     { id: 'S8L', file: 's8l-steps.mjs', name: 'Same hour, plain 1000 ms steps', profile: false, catchUp: true },
-    { id: 'S8F', file: 's8f-ticks.mjs', name: 'Same hour, 100 ms ticks', profile: false, catchUp: true, repeats: 1 }
+    { id: 'S8F', file: 's8f-ticks.mjs', name: 'Same hour, 100 ms ticks', profile: false, catchUp: true, repeats: 1 },
+    // S2's mix filled to the Token cap on the shipped mat (bench/scenarios/cap.mjs). C256's mat
+    // fills before its cap, so its Forests and Quarries wait for room all run long; C240 sits at the edge.
+    { id: 'C240', file: 'c240-cap.mjs', name: 'Cap 240, mat about full', profile: true },
+    { id: 'C256', file: 'c256-cap.mjs', name: 'Cap 256, mat full first', profile: true }
 ];
 
 /** A regression is > 20 % slower AND more than this many ms slower (timer noise floor). */

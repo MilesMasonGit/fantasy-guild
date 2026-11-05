@@ -460,7 +460,7 @@ describe('⭐ spawns push spawned Tokens but never placed ones (SP-46, SP-68)', 
         expect(ring.map(t => ({ x: t.x, y: t.y }))).toEqual(before);
     });
 
-    it('with nowhere to land it waits, reports no_room, and pays nothing (FP-46)', () => {
+    it('with nowhere to land it misses that spawn, reports no_room, pays nothing, and tries again a whole interval later (FP-46)', () => {
         setMatTuning('matSteps', 6);
         setMatTuning('tokenCap', 2000);   // crowding is the point, not the Token cap
         give(SEED, 10);
@@ -478,12 +478,16 @@ describe('⭐ spawns push spawned Tokens but never placed ones (SP-46, SP-68)', 
         TimedChanges.tick(25000);
         expect(family()).toHaveLength(0);
         expect(seeds()).toBe(10);
-        expect(forest.clocks.spawnMs).toBe(20000);
-        expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ state: 'no_room', count: 0, cap: 5 });
+        // Missed at 20 s: the clock started its next lap then, keeping the 5 s since.
+        expect(forest.clocks.spawnMs).toBe(5000);
+        expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ state: 'no_room', nextInMs: 15000, count: 0, cap: 5 });
 
         for (const b of blockers) {
             if (Math.hypot(b.x - 200, b.y - 200) < 400) BoardState.removeToken(b.id);
         }
+        TimedChanges.tick(14900);
+        expect(family()).toHaveLength(0);                 // room now, but the next try is at 40 s
+        expect(seeds()).toBe(10);
         TimedChanges.tick(100);
         expect(family()).toHaveLength(1);
         expect(seeds()).toBe(9);
@@ -601,7 +605,7 @@ describe('⭐ a waiting spawner raises an on-mat alert, and drops it when fixed 
         expect(SpawnerSystem.spawnerAlertOf(orchard.id)).toEqual({ alert: ALERT.SPAWN_NEEDS_ITEM, needs: [TWINE] });
     });
 
-    it('no_room: up once an attempt finds nowhere to land, down the tick room appears', () => {
+    it('no_room: up once an attempt finds nowhere to land, down at the next try that lands', () => {
         setMatTuning('matSteps', 6);
         setMatTuning('tokenCap', 2000);   // crowding is the point, not the Token cap
         give(SEED, 10);
@@ -626,6 +630,9 @@ describe('⭐ a waiting spawner raises an on-mat alert, and drops it when fixed 
             if (Math.hypot(b.x - 200, b.y - 200) < 400) BoardState.removeToken(b.id);
         }
         TimedChanges.tick(100);
+        expect(family()).toHaveLength(0);                 // missed at 20 s: next try at 40 s
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toEqual({ alert: ALERT.SPAWN_NO_ROOM, needs: [] });
+        TimedChanges.tick(14900);
         expect(family()).toHaveLength(1);
         expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();
         expect(seen).toEqual([ALERT.SPAWN_NO_ROOM, null]);

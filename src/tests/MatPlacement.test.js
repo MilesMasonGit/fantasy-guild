@@ -87,28 +87,28 @@ const gap = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 // ---------------------------------------------------------------------------
 
 describe('how close two Tokens may sit (FP-63)', () => {
-    it('two small Tokens may sit 69.8 u apart, but not 69.4', () => {
-        expect(MatPlacement.minGap('mp_small', 'mp_small')).toBeCloseTo(69.6, 6);
+    it('two small Tokens may sit 81.4 u apart, but not 81.0', () => {
+        expect(MatPlacement.minGap('mp_small', 'mp_small')).toBeCloseTo(81.2, 6);
 
         placeAt('mp_small', 800, 600);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 69.8, y: 600 })).toBe(true);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 69.4, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 81.4, y: 600 })).toBe(true);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 81.0, y: 600 })).toBe(false);
     });
 
-    it('a small beside a large needs 113, not 112.6', () => {
-        expect(MatPlacement.minGap('mp_small', 'mp_large')).toBeCloseTo(112.8, 6);
+    it('a small beside a large needs 132, not 131.4', () => {
+        expect(MatPlacement.minGap('mp_small', 'mp_large')).toBeCloseTo(131.6, 6);
 
         placeAt('mp_large', 800, 600);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 113, y: 600 })).toBe(true);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 112.6, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 132, y: 600 })).toBe(true);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 131.4, y: 600 })).toBe(false);
     });
 
-    it('two large Tokens need 156', () => {
-        expect(MatPlacement.minGap('mp_large', 'mp_large')).toBeCloseTo(156, 6);
+    it('two large Tokens need 182', () => {
+        expect(MatPlacement.minGap('mp_large', 'mp_large')).toBeCloseTo(182, 6);
 
         placeAt('mp_large', 800, 600);
-        expect(MatPlacement.isLegal('mp_large', { x: 800 + 156, y: 600 })).toBe(true);
-        expect(MatPlacement.isLegal('mp_large', { x: 800 + 155.5, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('mp_large', { x: 800 + 182, y: 600 })).toBe(true);
+        expect(MatPlacement.isLegal('mp_large', { x: 800 + 181.5, y: 600 })).toBe(false);
     });
 
     it('⭐ the Mat Tuner changes the rule for the very next drop, with no reload', () => {
@@ -172,15 +172,15 @@ describe('where a dropped Token actually lands', () => {
         const sitting = placeAt('mp_small', 800, 600);
 
         // 40 u away: too close, and the nearest legal point is straight on out
-        // along the same line, at the 69.6 u limit.
+        // along the same line, at the 81.2 u limit.
         const res = Placement.placeTokenAt(instance('mp_small'), { x: 840, y: 600 });
 
         expect(res.success).toBe(true);
         expect(res.nudged).toBe(true);
         const landed = { x: res.x, y: res.y };
-        expect(gap(landed, sitting)).toBeGreaterThanOrEqual(69.6 - 1e-6);
+        expect(gap(landed, sitting)).toBeGreaterThanOrEqual(81.2 - 1e-6);
         // Nearest means nearest: it should not have wandered past the limit.
-        expect(gap(landed, sitting)).toBeLessThan(69.6 + 6);
+        expect(gap(landed, sitting)).toBeLessThan(81.2 + 6);
         // And it went the way it was pushed, not backwards over the other Token.
         expect(landed.x).toBeGreaterThan(sitting.x);
     });

@@ -6,7 +6,6 @@ import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { DRAG_KIND } from './dragConstants.js';
 import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt, boardArtSteps } from '../components/base/TokenSprite.jsx';
 import { resolveSpritePath } from '../../utils/AssetManager.js';
-import { GameState } from '../../state/GameState.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
 import { flagColourOf } from '../../systems/board/FlagColours.js';
 import { MARKER_ART_PX, MARKER_FOOT } from '../components/board/flagGeometry.js';
@@ -14,10 +13,9 @@ import { MARKER_ART_PX, MARKER_FOOT } from '../components/board/flagGeometry.js'
 /**
  * DragGhost: the floating representation of whatever is being dragged.
  * `bold` is true while the cursor is over the board, false over a drawer.
- * Bloom is retired for Tokens and Heroes: carried Tokens and Heroes never change size or show
- * card frames. They are 128px from pick-up to release, and being held is expressed by the
- * shadow instead, the hard pixel shadow of `PixelArt`'s lifted state. `bold` is therefore
- * ignored by `TokenGhost` and `HeroGhost`.
+ * Bloom is retired for Tokens: a carried Token never changes size or shows a card frame. It is
+ * 128px from pick-up to release, and being held is expressed by the shadow instead, the hard
+ * pixel shadow of `PixelArt`'s lifted state. `bold` is therefore ignored by `TokenGhost`.
  * `ItemGhost` always draws a single 64px icon, lifted like the others.
  */
 
@@ -39,7 +37,6 @@ export const DragGhost = ({ payload, bold }) => {
             return isGuildHallPayload(payload)
                 ? <GuildHallGhost payload={payload} bold={bold} />
                 : <CarriedToken payload={payload} bold={bold} offBoard={false} />;
-        case DRAG_KIND.HERO: return <div data-order-ghost={payload.heroId || ''} style={NOT_DIMMED} className="transition-opacity duration-150"><HeroGhost payload={payload} bold={bold} /></div>;
         case DRAG_KIND.ITEM: return <div style={NOT_DIMMED} className="transition-opacity duration-150"><ItemGhost payload={payload} bold={bold} /></div>;
         case DRAG_KIND.FLAG: return <FlagGhost payload={payload} bold={bold} />;
         default: return null;
@@ -80,7 +77,7 @@ const CarriedToken = ({ payload, bold, offBoard }) => (
 
 /**
  * A flag in flight: the job flag at the mat's size (24 px at its usual fit), with no hero drawn.
- * A flag drag moves only the flag, and so does dragging a hero on the board.
+ * A flag drag moves only the flag, and so does dragging a hero, on the board or off it.
  * ⚠️ The ghost's box is centred on the pointer (`pickupFlight.js`), and the drop lands on the
  * pointer: the flag is shifted inside its box so its pole foot is the box's middle, where it
  * will stand. Over a Token the hero can work, `OrderDragLine` moves the box (`data-order-ghost`)
@@ -115,27 +112,6 @@ const TokenGhost = ({ payload }) => {
         // depending on where it was picked up. Which is bloom, reintroduced by accident.
         <div className="flex items-center justify-center" style={{ width: size, height: size }}>
             <TokenSprite typeId={payload.typeId} surface={TOKEN_SURFACE.CARRY} scale={artScale} lifted />
-        </div>
-    );
-};
-
-/**
- * A Hero in flight: one size (128px), no card frame, sprite-only (same style as Tokens).
- */
-const HeroGhost = ({ payload }) => {
-    const artScale = boardArtSteps(liveBoardFit());
-    const size = tokenSizeFor(TOKEN_SURFACE.CARRY, 1, artScale);
-    const hero = payload.heroId ? (GameState.heroes || []).find(h => h.id === payload.heroId) : null;
-    const spriteRef = payload.spriteId || payload.heroSprite || payload.classId || hero?.spriteId || hero?.icon || hero?.heroSprite || hero?.classId || payload;
-    const src = resolveSpritePath(spriteRef);
-    return (
-        <div className="flex items-center justify-center" style={{ width: size, height: size }}>
-            <PixelArt
-                src={src}
-                alt={payload.name || hero?.name || 'Hero'}
-                size={size}
-                lifted
-            />
         </div>
     );
 };

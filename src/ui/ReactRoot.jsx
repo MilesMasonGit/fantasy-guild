@@ -214,7 +214,6 @@ export const ReactRoot = () => {
     return (
         <ViewportProvider>
             <DeckDndProvider>
-            {particlesDrawn && <ParticleOverlay layer="pointer" disabled={ui.isAnyModalOpen} />}
             <ScreenCalloutLayer />
             <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                 <div
@@ -368,7 +367,7 @@ export const ReactRoot = () => {
                      * is open: the mat is wholly under it and the stubs are off screen, so a flight
                      * would only cross the hero column.
                      */}
-                    {particlesDrawn && <ParticleOverlay layer="mat" disabled={ui.isAnyModalOpen || isBankOpen} />}
+                    {particlesDrawn && <ParticleOverlay disabled={ui.isAnyModalOpen || isBankOpen} />}
                     {/**
                      * The hero panel: one full-height panel on the notification side,
                      * opened from the hero bar or from the Bank. A crash in it stays local.

@@ -74,6 +74,21 @@ export function minGap(typeA, typeB) {
     return (hitRadiusOf(typeA) + hitRadiusOf(typeB)) * (1 - matTuning('overlapPct') / 100);
 }
 
+/**
+ * What a Token ends up as by its own growth: where its `grows.into` chain stops (a Stump and a
+ * Sapling end as their Tree), or the type itself when it does not grow.
+ */
+export function grownFormOf(typeId) {
+    const seen = new Set([typeId]);
+    let form = typeId;
+    for (;;) {
+        const next = getTokenType(form)?.grows?.into;
+        if (!next || seen.has(next) || !getTokenType(next)) return form;
+        seen.add(next);
+        form = next;
+    }
+}
+
 /** How far a refused drop may be nudged before it flies back instead. */
 export function nudgeReach() {
     return matTuning('nudgeReach');
@@ -162,8 +177,8 @@ function bucketNeighbours(neighbours, cell) {
  * is never built at all. The ground is read once too: `ground` is null when the Token may stand on
  * every cell here, so a meadow asks nothing per candidate.
  */
-function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudgeReach(), siteOf = null } = {}) {
-    const hit = hitRadiusOf(typeId);
+function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudgeReach(), siteOf = null, asGrown = false } = {}) {
+    const hit = hitRadiusOf(asGrown ? grownFormOf(typeId) : typeId);
     const largestHit = Math.round(LARGEST_ART_RADIUS * matTuning('hitboxPct') / 100);
     const largestGap = (hit + largestHit) * (1 - matTuning('overlapPct') / 100);
 
@@ -178,7 +193,7 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
 
     // The mat edge, read once per search rather than once per candidate: `insideBounds` below uses
     // this instead of `insideMat` recomputing `artRadiusOf`/`matW`/`matH` every time.
-    const bounds = { r: artRadiusOf(typeId), w: matW(), h: matH() };
+    const bounds = { r: artRadiusOf(asGrown ? grownFormOf(typeId) : typeId), w: matW(), h: matH() };
 
     const neighbours = [];
     let cannotMatters = hasCannot(typeId);
@@ -188,7 +203,7 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
         if (!Number.isFinite(other.x) || !Number.isFinite(other.y)) continue;
         const d2 = distanceSq(point, other);
         if (d2 <= blockSpanSq) {
-            const gap = minGap(typeId, other.typeId);
+            const gap = asGrown ? minGap(grownFormOf(typeId), grownFormOf(other.typeId)) : minGap(typeId, other.typeId);
             neighbours.push({ id: other.id, x: other.x, y: other.y, gapSq: gap * gap });
         }
         if (!cannotMatters && d2 <= cannotSpanSq && hasCannot(other.typeId)) cannotMatters = true;
@@ -200,7 +215,11 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
     const ground = GroundRules.rulesFor(siteType);
     const nearRules = SiteRules.nearRulesFor(siteType);
     const near = nearRules ? { ...nearRules, anchors: SiteRules.anchorsFor(nearRules, excludeId), radius: nearRadius() } : null;
-    return { typeId, neighbours, buckets, cell: largestGap, cannotMatters, ground, near, plan, excludeId, reach, bounds };
+    return {
+        typeId, neighbours, buckets, cell: largestGap, cannotMatters, ground, near, plan, excludeId, reach, bounds,
+        // `clearAt`'s neighbours round the cell it last looked in, and every cell it has looked in.
+        aroundX: NaN, aroundY: NaN, around: null, aroundCache: buckets ? new Map() : null
+    };
 }
 
 /** {@link insideMat}, against bounds already read once for this search. */
@@ -227,20 +246,40 @@ function clearAt(x, y, ctx) {
     // can hold a neighbour close enough to block it.
     const cx = Math.floor(x / ctx.cell);
     const cy = Math.floor(y / ctx.cell);
+    if (cx !== ctx.aroundX || cy !== ctx.aroundY) {
+        ctx.around = neighboursAround(ctx, cx, cy);
+        ctx.aroundX = cx;
+        ctx.aroundY = cy;
+    }
+    for (const n of ctx.around) {
+        const dx = x - n.x;
+        const dy = y - n.y;
+        if (dx * dx + dy * dy < n.gapSq - EPS) return false;
+    }
+    return true;
+}
+
+/**
+ * The neighbours in the 3×3 cells round cell `(cx, cy)`, gathered once per cell and search: a ring
+ * walk asks a dozen candidates in a row in the same cell, and a wide search comes back to the same
+ * cells ring after ring, so this saves a dozen bucket lookups per candidate.
+ */
+function neighboursAround(ctx, cx, cy) {
+    // Cell indices stay far inside ±2^15 on any mat, so the key never collides.
+    const key = (cx + 32768) * 65536 + (cy + 32768);
+    let list = ctx.aroundCache.get(key);
+    if (list) return list;
+    list = [];
     for (let ix = cx - 1; ix <= cx + 1; ix++) {
         const column = ctx.buckets.get(ix);
         if (!column) continue;
         for (let iy = cy - 1; iy <= cy + 1; iy++) {
             const bucket = column.get(iy);
-            if (!bucket) continue;
-            for (const n of bucket) {
-                const dx = x - n.x;
-                const dy = y - n.y;
-                if (dx * dx + dy * dy < n.gapSq - EPS) return false;
-            }
+            if (bucket) for (const n of bucket) list.push(n);
         }
     }
-    return true;
+    ctx.aroundCache.set(key, list);
+    return list;
 }
 
 /**
@@ -315,6 +354,9 @@ function failureMemo() {
  *
  * Also used by `MatResize`, which clamps the point onto the smaller mat and asks this where it can
  * actually go.
+ * @param {object} [options]
+ * @param {boolean} [options.asGrown] keep the room this Token and its neighbours will need once
+ * grown ({@link grownFormOf}), so that growing in place moves nothing
  * @returns {{x: number, y: number, nudge: number}|null}
  */
 export function findSpot(typeId, point, options = {}) {
@@ -325,7 +367,7 @@ export function findSpot(typeId, point, options = {}) {
     // a Token that cannot be put down at all, a harder failure to recognise and not this file's
     // call to make.
     const memo = options.plan ? null : failureMemo();
-    const key = memo ? `${typeId}|${point.x}|${point.y}|${options.excludeId ?? ''}|${options.reach ?? ''}|${options.siteOf ?? ''}` : null;
+    const key = memo ? `${typeId}|${point.x}|${point.y}|${options.excludeId ?? ''}|${options.reach ?? ''}|${options.siteOf ?? ''}|${options.asGrown ? 'grown' : ''}` : null;
     if (memo?.has(key)) return null;
 
     const ctx = contextFor(typeId, point, options);
@@ -471,41 +513,144 @@ export function forceSpot(typeId, point, options = {}) {
     return spot ? { x: spot.x, y: spot.y, pushed: [] } : null;
 }
 
+/** Whether bodies `a` and a later `b` overlap by more than float slack: {@link relax}'s final check. */
+function overlapsAt(a, b, factor) {
+    const gap = (a.h + b.h) * factor;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    // Same axis rejection as the pass loop, before `distanceSq`.
+    if (dx >= gap || dx <= -gap || dy >= gap || dy <= -gap) return false;
+    return distanceSq(a, b) < gap * gap - EPS;
+}
+
+/** The position in ascending `list` of its first entry above `i` (`list.length` when none is). */
+function firstAbove(list, i) {
+    let lo = 0;
+    let hi = list.length;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (list[mid] > i) hi = mid;
+        else lo = mid + 1;
+    }
+    return lo;
+}
+
 /**
- * One row of {@link relax}'s pair loop: body `i` against every later body. True when a pair moved.
+ * What {@link relax} knows of the bodies it has touched: their indices, ascending (`touched`), and a
+ * box round their points as they are now, with the largest hit radius among them, so that a body far
+ * outside it is known to overlap none of them without trying each.
+ */
+function touchedBodies(bodies) {
+    const chain = { touched: [bodies.length - 1], minX: 0, minY: 0, maxX: 0, maxY: 0, maxH: 0 };
+    refitBox(chain, bodies);
+    return chain;
+}
+
+/** Shrink the box back round the touched bodies' points (it only ever grows between refits). */
+function refitBox(chain, bodies) {
+    chain.minX = Infinity;
+    chain.minY = Infinity;
+    chain.maxX = -Infinity;
+    chain.maxY = -Infinity;
+    chain.maxH = 0;
+    for (const k of chain.touched) holdInBox(chain, bodies[k]);
+}
+
+/** Grow the box to hold body `t` where it now stands. */
+function holdInBox(chain, t) {
+    if (t.x < chain.minX) chain.minX = t.x;
+    if (t.x > chain.maxX) chain.maxX = t.x;
+    if (t.y < chain.minY) chain.minY = t.y;
+    if (t.y > chain.maxY) chain.maxY = t.y;
+    if (t.h > chain.maxH) chain.maxH = t.h;
+}
+
+/**
+ * Whether body `a` stands too far from the box for any touched body to overlap it: on some axis it is
+ * further than any gap it could have with one of them (plus a unit, so float rounding cannot matter),
+ * so every pair with a touched body fails the axis rejection that {@link pushPair} and
+ * {@link overlapsAt} start with.
+ */
+function clearOfTouched(a, chain, factor) {
+    const reach = (a.h + chain.maxH) * factor + 1;
+    return a.x <= chain.minX - reach || a.x >= chain.maxX + reach || a.y <= chain.minY - reach || a.y >= chain.maxY + reach;
+}
+
+/**
+ * One pair of {@link relax}'s loop, `bodies[i]` against a later `bodies[j]`: pushed apart when they
+ * overlap and the push has touched at least one of them. True when they moved. A body pushed for
+ * the first time joins `push.touched` (ascending body indices).
+ */
+function pushPair(bodies, i, j, newcomer, factor, chain) {
+    const a = bodies[i];
+    const b = bodies[j];
+    if (a.fixed && b.fixed) return false;
+    if (a !== newcomer && !a.pushed && b !== newcomer && !b.pushed) return false;
+    const gap = (a.h + b.h) * factor;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    // Axis rejection before `hypot`: if either axis is already at or past the gap, the
+    // hypot would be too, so the pair is not overlapping.
+    if (dx >= gap || dx <= -gap || dy >= gap || dy <= -gap) return false;
+    const d = Math.hypot(dx, dy);
+    if (d * d >= gap * gap - EPS) return false;
+
+    const push = gap - d + PUSH_MARGIN;
+    const nx = d === 0 ? 1 : dx / d;
+    const ny = d === 0 ? 0 : dy / d;
+    const shareA = a.fixed ? 0 : (b.fixed ? 1 : 0.5);
+    const shareB = 1 - shareA;
+    a.x -= nx * push * shareA;
+    a.y -= ny * push * shareA;
+    b.x += nx * push * shareB;
+    b.y += ny * push * shareB;
+    if (shareA && !a.pushed) {
+        a.pushed = true;
+        chain.touched.splice(firstAbove(chain.touched, i), 0, i);
+    }
+    if (shareB && !b.pushed) {
+        b.pushed = true;
+        chain.touched.splice(firstAbove(chain.touched, j), 0, j);
+    }
+    // The newcomer never moves; any other touched body is held in the box where it now stands.
+    if (a.pushed) holdInBox(chain, a);
+    if (b.pushed) holdInBox(chain, b);
+    return true;
+}
+
+/**
+ * One row of {@link relax}'s pair loop: body `i` against every later body, in order. True when a
+ * pair moved.
+ *
+ * A pair moves only when the push has touched one of the two, so while body `i` is untouched only the
+ * touched bodies after it are tried, and none at all when it stands clear of their box: the same
+ * pairs in the same order that act, without walking the whole mat for each of them. Should one of
+ * them push it, the rest of its row is tried in full. On a packed mat a push that cannot be solved
+ * runs all its passes, and this is what keeps that cheap.
  *
  * ⚠️ Its own function on purpose: nested inside `relax`, this loop was compiled on-stack and V8 threw
  * that code away each time the loop ended, dozens of times a process, so a push's time swung by a
  * factor of two from run to run.
  */
-function pushApartFrom(bodies, i, newcomer, factor) {
+function pushApartFrom(bodies, i, newcomer, factor, chain) {
+    const a = bodies[i];
     let moved = false;
-    for (let j = i + 1; j < bodies.length; j++) {
-        const a = bodies[i];
-        const b = bodies[j];
-        if (a.fixed && b.fixed) continue;
-        if (a !== newcomer && !a.pushed && b !== newcomer && !b.pushed) continue;
-        const gap = (a.h + b.h) * factor;
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        // Axis rejection before `hypot`: if either axis is already at or past the gap, the
-        // hypot would be too, so the pair is not overlapping.
-        if (dx >= gap || dx <= -gap || dy >= gap || dy <= -gap) continue;
-        const d = Math.hypot(dx, dy);
-        if (d * d >= gap * gap - EPS) continue;
-
-        moved = true;
-        const push = gap - d + PUSH_MARGIN;
-        const nx = d === 0 ? 1 : dx / d;
-        const ny = d === 0 ? 0 : dy / d;
-        const shareA = a.fixed ? 0 : (b.fixed ? 1 : 0.5);
-        const shareB = 1 - shareA;
-        a.x -= nx * push * shareA;
-        a.y -= ny * push * shareA;
-        b.x += nx * push * shareB;
-        b.y += ny * push * shareB;
-        if (shareA) a.pushed = true;
-        if (shareB) b.pushed = true;
+    let j = i + 1;
+    if (a !== newcomer && !a.pushed) {
+        if (clearOfTouched(a, chain, factor)) return false;
+        const touched = chain.touched;
+        for (let k = firstAbove(touched, i); k < touched.length; k++) {
+            j = touched[k];
+            if (pushPair(bodies, i, j, newcomer, factor, chain)) moved = true;
+            // Only this pair can have touched body `i` (no other body moved), so `touched` from
+            // here on is as it was, bar `i` itself.
+            if (a.pushed) break;
+        }
+        if (!a.pushed) return moved;
+        j++;
+    }
+    for (; j < bodies.length; j++) {
+        if (pushPair(bodies, i, j, newcomer, factor, chain)) moved = true;
     }
     return moved;
 }
@@ -541,17 +686,27 @@ function relax(typeId, at, excludeId, fixedIds) {
     const newcomer = { id: null, typeId, x: at.x, y: at.y, h: hitRadiusOf(typeId), fixed: true };
     bodies.push(newcomer);
 
-    const answerable = (t) => t === newcomer || t.pushed;
+    // The newcomer and a fixed Token never move, so a newcomer that already overlaps one overlaps it
+    // after every pass too and the check at the end refuses the push: refused here without the
+    // passes, the same answer. On a packed mat that is most spawns with nowhere to go.
+    for (let i = 0; i < bodies.length - 1; i++) {
+        if (bodies[i].fixed && overlapsAt(bodies[i], newcomer, factor)) return null;
+    }
+
+    // The bodies this push has touched: the newcomer (last), then every one it pushes, in a chain.
+    const chain = touchedBodies(bodies);
     for (let pass = 0; pass < PUSH_PASSES; pass++) {
         let moved = false;
+        refitBox(chain, bodies);
         for (let i = 0; i < bodies.length; i++) {
-            if (pushApartFrom(bodies, i, newcomer, factor)) moved = true;
+            if (pushApartFrom(bodies, i, newcomer, factor, chain)) moved = true;
         }
         // ⚠️ Only Tokens this push has touched, and WITHOUT rounding. Rounding makes pushed Tokens
         // jitter by half a unit every pass so a packed block never settles, and rounding once at
         // the end shrinks a 61.25 u gap. Points stay fractional, as the ones `findSpot` returns
         // already are.
-        for (const t of bodies) {
+        for (const k of chain.touched) {
+            const t = bodies[k];
             if (t.fixed || !t.pushed) continue;
             const c = clampOnto(t.typeId, t);
             t.x = c.x;
@@ -561,19 +716,21 @@ function relax(typeId, at, excludeId, fixedIds) {
     }
 
     // Every pair the push is answerable for must now be clear: the newcomer's, and every moved
-    // Token's. Two Tokens that were already overlapping before (a mat shrink can leave them so) are
-    // not this push's business; counting them would make every push on that mat fail.
+    // Token's (`chain.touched`). Two Tokens that were already overlapping before (a mat shrink can
+    // leave them so) are not this push's business; counting them would make every push on that mat
+    // fail. So an untouched body is checked only against the touched ones after it.
+    refitBox(chain, bodies);
+    const touched = chain.touched;
     for (let i = 0; i < bodies.length; i++) {
-        for (let j = i + 1; j < bodies.length; j++) {
-            const a = bodies[i];
-            const b = bodies[j];
-            if (!answerable(a) && !answerable(b)) continue;
-            const gap = (a.h + b.h) * factor;
-            const dx = b.x - a.x;
-            const dy = b.y - a.y;
-            // Same axis rejection as the pass loop, before `distanceSq`.
-            if (dx >= gap || dx <= -gap || dy >= gap || dy <= -gap) continue;
-            if (distanceSq(a, b) < gap * gap - EPS) return null;
+        const a = bodies[i];
+        if (a === newcomer || a.pushed) {
+            for (let j = i + 1; j < bodies.length; j++) {
+                if (overlapsAt(a, bodies[j], factor)) return null;
+            }
+        } else if (!clearOfTouched(a, chain, factor)) {
+            for (let k = firstAbove(touched, i); k < touched.length; k++) {
+                if (overlapsAt(a, bodies[touched[k]], factor)) return null;
+            }
         }
     }
 

@@ -85,8 +85,20 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
 - A dropped Token lands **exactly where it is let go** if the spot is legal;
   otherwise it nudges to the nearest legal spot within 160 u, otherwise it flies
   back. A legal spot: art circle inside the mat; not crowding a neighbour
-  (hitbox 90 % of the art radius, up to 40 % overlap); breaks no `Cannot` rule.
-  *(`MatPlacement.js`)*
+  (hitbox 90 % of the art radius, up to 30 % overlap: two standard Tokens 81 u
+  apart at the closest); breaks no `Cannot` rule. *(`MatPlacement.js`)*
+- **Who draws over whom**: Tokens and flags by where they stand, lower on the mat in
+  front; a Token being worked in front of those at rest. **Heroes are always on top of
+  every Token and flag**, working, idle or walking, lower on the mat in front of each
+  other. Over the heroes: loot, plates, numbers, callouts, bubbles. **Hovering a Token
+  doesn't move it** in the stack (the Mat Tuner's "Hover lifts a Token" brings the old
+  jump back); only its name and gear come up over the rest. A press goes to the Token
+  whose centre is nearest the pointer, whichever is drawn on top, except on a hero's
+  drawn pixel, which is the hero's. *(`matLayers.js`, `pressRouting.js`)*
+- **A Forest or Orchard plants with room for the tree**: within its reach, a Token that grows lands
+  at the gap its grown form will need, from what its neighbours will grow into too, so growing
+  moves nothing and no tree drifts out of reach. With no such spot in reach it takes the small gap
+  rather than not planting. *(`EffectActions.js`)*
 - **A player drop never pushes anything.** Arrivals (spawns, growth, builds)
   may push **spawned** Tokens aside; **placed Tokens are never pushed**.
 - **Fixed Tokens** can't be dragged or pushed: a map's node, a Starter Camp
@@ -304,6 +316,9 @@ Owner rulings 2026-10-24. **Water** is a Token with **catch pools**
 editor's Catch pools block), one weighted pool per **tool kind × bait**; the
 pool with no bait is the water's **basic** catch. One sprite per water type
 (sea, river, lake) is content.
+- **The card says what bites**: with a hero on the water, what their tool and bait
+  land now, at the odds rolled; the water's other pools, or all of them with no
+  hero on it, sit in shut lists by tool, at their authored odds.
 - **Each finished cycle lands one catch** picked from a pool, in place of the
   Token's own Outputs, then widened like any output (Yield, Double Item Chance).
   A **rare catch drops like any other item**: no pop, no twinkle (owner
@@ -555,6 +570,17 @@ trinket 2, food 1, drink 1, consumable unlimited). Gear, weapons and tools are
 one copy per hero: equipping takes the copy out of the Bank. **Bait** for
 fishing and **arrows** for a bow are carried in consumable cells and spent from
 the Bank, one per catch or per shot (§3 Fishing, §6 The fight).
+- **Moving items by drag.** Dropped on another slot of the same hero, an item
+  moves there and swaps with what is there; no slot has rules of its own, so a
+  swap can never be refused, and a tool moved mid-job keeps the hero working.
+  The first weapon or tool in grid order is the one used, so a move can change
+  which that is. Dropped on another hero in the bar or the Bank's column, it
+  leaves the giver (food and potions too; their stack stays in the Bank) and
+  lands in the receiver's first empty slot. A full loadout, a level the receiver
+  lacks or an item they already carry refuses with the reason and the item
+  stays. Past a category's cap or a full pair of hands, what the receiver puts
+  down goes to the Bank, as with any equip. A hero handed away from their work
+  tool stops, keeps their flag and shows the yellow alert.
 - **A weapon** is anything held in the hands that is not a gathering tool or an
   off-hand item. It names **one style** (`styles: ['melee']`; an older list of
   two fights in its first and the audits say so), its **damage**, its **speed**
@@ -619,7 +645,8 @@ dragging them** (hero orders, brief 260; owner 2026-10-28: one hero, one job,
 less micromanagement than area flags).
 - **Heroes live on the mat.** One with no job waits in a row in front of the
   Guild Hall. The hero bar is the roster: it finds a hero on the mat, opens
-  their sheet, says Idle, Busy or Hurt, and can be dragged from.
+  their sheet, says on hover what they are doing, wears a yellow alert when only
+  the player can get them going or a red one when wounded, and can be dragged from.
 - **Drag a hero onto a Token** they can work (their figure, their job flag, or
   their figure on the hero bar): they walk there and work **only that Token**,
   a tree, a vein, a station, a Field, an enemy or a boss (a retired Promotion
@@ -1206,13 +1233,26 @@ drawers**. The menu can be flipped to the right.
   is a leftover sci-fi theme ("SYSTEM BOOT").
 - **Bubble menu**: Guild Hall, Item Bank, Shop, Settings.
 - **Top bar**: Tokens / cap, upkeep per minute, disallow mode.
+- **Token card** (a click on a Token): the name as a header, then a stat block
+  (level, XP, time, charges; an enemy's HP, level, XP) and sections: the recipe
+  picked, **Requires** (tools and what is used up), **Makes** or a water's
+  catches, **Events** (regrowing, growing, spawning), Boosted by, Drops. A section
+  with nothing to say is left out. The art sits behind the whole card, a window
+  of it between the name and a see-through panel, and draws at whole-pixel
+  scales, 2× or more. A card taller than three quarters of the screen scrolls,
+  its arrows inside the card over the art. A station's recipe list keeps the
+  header and the art.
 - **Notification column**: toasts (collapse / clear all).
-- **Hero bar** (bottom): the roster, heroes as standing figures with HP bars,
-  each with their job flag and Idle, Busy or Hurt; drag a figure onto the mat
-  to give that hero a job. Click → **hero sheet** (loadout grid, every skill with
-  its XP rate and its perks, held and next) → Edit (rename, portrait, flag colour).
+- **Hero bar** (bottom): the roster, heroes as standing figures with HP numbers
+  over a smooth pixel bar, each with their job flag and an alert when wounded or the
+  player must act; hover for what they are doing; drag a figure onto the mat
+  to give that hero a job. Click → **hero sheet** (loadout grid, every skill two side
+  by side as icon, level and XP bar; hover for its name, purpose and perks, click for its exact
+  XP and rate; scroll arrows when it does not fit; close and edit in the side space beside it, in
+  the same spot with the Bank open or shut) → Edit (rename, portrait, flag colour).
 - **Bank drawer**: tabbed item lists, search, reorder; drag an item onto a hero
-  to equip. While open, the mat is locked and a vertical hero panel appears.
+  to equip. While open, the mat is locked and a vertical hero panel appears: large
+  portraits with the name on a dark plate over them and the hero bar's alerts; hover for what they are doing.
 - **Shop drawer**: drag a row onto the mat to buy; it slides aside while you
   carry an item over the mat.
 - **Guild Hall view**: the upgrade web, Hall effects panel, upgrade inspector.

@@ -198,7 +198,7 @@ const LineMark = memo(function LineMark({ label, book, heroes }) {
             >
                 {label.through && <PixelGlyph name={label.regrow ? 'regrow' : 'grow'} scale={4} style={{ filter: GLYPH_OUTLINE }} />}
                 {label.through && growMs > 0 && <span>{formatClock(growMs)}</span>}
-                {req && <SkillIcon skillId={isCombat ? 'melee' : req.skill} size={32} title={null} />}
+                {req && <SkillIcon skillId={isCombat ? 'melee' : req.skill} size={32} />}
                 {req && <span>{req.level}</span>}
             </span>
         </Tooltip>

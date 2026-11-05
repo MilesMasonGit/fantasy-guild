@@ -124,7 +124,7 @@ const StyleLevel = ({ side, mirror = false }) => {
     return (
         <Tooltip title={style ? t('fight.tip.level', { name: side.name, style, level: levelText(side.level) }) : t(side.armed ? 'fight.tip.noStyleArmed' : 'fight.tip.noStyle', { name: side.name })}>
             <span className={`inline-flex items-center gap-1.5 ui-text-body cursor-help ${mirror ? 'flex-row-reverse' : ''}`} data-fight-style={side.style || 'none'}>
-                {side.style ? <SkillIcon skill={side.style} size={16} title={null} /> : null}
+                {side.style ? <SkillIcon skill={side.style} size={16} /> : null}
                 <span className="ui-text-small tabular-nums text-gi-muted">{side.style ? levelText(side.level) : t('fight.panel.noStyle')}</span>
             </span>
         </Tooltip>

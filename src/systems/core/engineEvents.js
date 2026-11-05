@@ -206,14 +206,6 @@ export const UI_EVENTS = Object.freeze({
     /** A collect particle reached its Token. Payload: `{ instanceId, … }`. */
     PARTICLE_LANDED: 'particle_landed',
     /**
-     * A flying sprite for the eye only — a hero picked up from the dock flies
-     * from their mat point to the cursor. Same payload as the board's
-     * `SPRITE_COLLECTED` (`{ kind, refId, quantity, x, y, toScreenX, toScreenY,
-     * destination }`). That event is the
-     * engine's; quests count it.
-     */
-    UI_PARTICLE_FLY: 'ui:particle_fly',
-    /**
      * A message on one Token that the engine did not raise — the Guild Hall
      * dragged off the mat. Same payload as the board's `TILE_EVENT_ALERT`
      * (`{ instanceId, severity, type, title, message, … }`); the mat says its `title` as a

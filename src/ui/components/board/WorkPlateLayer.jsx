@@ -67,7 +67,7 @@ function PlateCell({ cell, u, tip }) {
     let body;
     switch (cell.kind) {
         case CELL.SKILL:
-            body = <img src={skillArt(cell.id).spritePath || undefined} alt="" draggable={false} style={icon} />;
+            body = <img src={skillArt(cell.id).spritePath} alt="" draggable={false} style={icon} />;
             break;
         case CELL.MISSING:
             body = (

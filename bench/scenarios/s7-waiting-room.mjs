@@ -1,13 +1,14 @@
 // S7 — Waiting for room (CR3-201, round 3 review R3). Z §4 Wave 3 step 4.
 //
 // Everything that has to wait for room on the mat re-runs its placement
-// search every tick until room appears (R3 CR3-201). No other scenario has
-// anything waiting, so none of them can see that cost. This board has two:
+// search until room appears (R3 CR3-201). No other scenario but the cap boards
+// has anything waiting, so none of them can see that cost. This board has two:
 //
-//   * a Forest under its family cap with nowhere for a tree to land: every
-//     tick its clock is held full and `SpawnerSystem.attemptSpawn` searches
+//   * a Forest under its family cap with nowhere for a tree to land: once each
+//     interval its clock comes round and `SpawnerSystem.spawnerTurn` searches
 //     (`EffectActions.spawn` → `MatPlacement.findSpot`, then `forceSpot`,
-//     which tries a push and then a 640 u fallback search);
+//     which tries a push and then a 640 u fallback search), misses, and waits
+//     the whole interval again;
 //   * a Foundation, worked by a hero, building a 2×2 station that has no room
 //     to stand: `Foundations.hasRoomToBuild` → `forceSpot` every tick.
 //

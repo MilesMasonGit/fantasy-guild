@@ -8,8 +8,7 @@ import { motion } from 'framer-motion';
 import { cn } from '../utils/cn.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { DragGhost } from './DragGhost.jsx';
-import { DND_SURFACE, DRAG_SFX, DRAG_KIND } from './dragConstants.js';
-import { displayPointOf } from '../../systems/board/BoardState.js';
+import { DND_SURFACE, DRAG_SFX } from './dragConstants.js';
 import { createPickupFlight } from './pickupFlight.js';
 
 /**
@@ -126,9 +125,14 @@ export function smallestWithin(args) {
 
         /**
          * ⚠️ Drawers beat the board where they overlap, the same rule `surfaceAtPoint` states
-         * below.
+         * below. A target that drawers are drawn over (`beneathDrawers`: the hero bar, which the
+         * Bank and the hero sheet cover) comes after the drawers, however small: nobody can aim
+         * at what they cannot see.
          */
-        const rank = (c) => (surfaceOf(c) === DND_SURFACE.DRAWER ? 0 : 1);
+        const rank = (c) => {
+            if (surfaceOf(c) !== DND_SURFACE.DRAWER) return 2;
+            return c?.data?.droppableContainer?.data?.current?.beneathDrawers ? 1 : 0;
+        };
 
         return [...hits].sort((a, b) => rank(a) - rank(b) || area(a) - area(b));
     }
@@ -258,7 +262,7 @@ export const useDragSurface = () => React.useContext(DragSurfaceContext);
 import { isElementOpaqueAtPoint, onFigurePart } from '../utils/alphaHitTest.js';
 import { isMapModeOn } from '../hooks/useMapMode.js';
 import { isMatBankLocked } from '../hooks/useMatBankLock.js';
-import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * Owns the per-frame cursor publish, so a frame where only the cursor moved re-renders just
@@ -429,30 +433,6 @@ export const DeckDndProvider = ({ children }) => {
         if (typeof document !== 'undefined') document.body.classList.add('gi-dnd-active');
         followDropTargetScroll(true);
         sfx(DRAG_SFX.pickup);
-
-        // Starting a hero drag from the dock tab or inspection panel while the hero is already
-        // on the playmat shoots a flying sprite from where the hero stands straight to the cursor.
-        if (payload?.kind === DRAG_KIND.HERO && payload.heroId && payload.from?.dock) {
-            const at = displayPointOf(payload.heroId);
-            if (at) {
-                const { x, y } = at;
-                const toScreenX = a?.clientX ?? (typeof window !== 'undefined' ? window.innerWidth - 40 : 0);
-                const toScreenY = a?.clientY ?? (typeof window !== 'undefined' ? window.innerHeight / 2 : 0);
-
-                // A UI-only event: SPRITE_COLLECTED is the engine's, and quests count it.
-                EventBus.publish(UI_EVENTS.UI_PARTICLE_FLY, {
-                    kind: 'hero',
-                    refId: payload.heroId,
-                    heroId: payload.heroId,
-                    quantity: 1,
-                    x,
-                    y,
-                    toScreenX,
-                    toScreenY,
-                    destination: 'cursor'
-                });
-            }
-        }
     }, [drags]);
 
     const finishDrag = useCallback(() => {
@@ -652,11 +632,11 @@ export function useEntityDrag({
  * under the cursor is ever `isOver`, via pointerWithin) plus the props the provider needs to
  * find and resolve the drop.
  */
-export function useEntityDrop({ id, surface = DND_SURFACE.BOARD, accepts, onDrop, disabled = false }) {
+export function useEntityDrop({ id, surface = DND_SURFACE.BOARD, accepts, onDrop, disabled = false, beneathDrawers = false }) {
     const { setNodeRef, isOver, active } = useDroppable({
         id,
         disabled,
-        data: { surface, accepts, onDrop }
+        data: { surface, accepts, onDrop, beneathDrawers }
     });
     const payload = active?.data?.current || null;
     const canAccept = !!(payload && accepts?.(payload));

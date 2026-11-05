@@ -6,6 +6,7 @@ import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 import { SaveManager } from '../systems/core/SaveManager.js';
 import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import * as HeroTools from '../systems/equipment/HeroTools.js';
+import { holdsCopy, markHeld, heldCount } from '../systems/equipment/heldCopies.js';
 import * as HeroEffects from '../systems/hero/HeroEffects.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -47,6 +48,8 @@ const ITEMS = {
     oo_ale: { id: 'oo_ale', name: 'Test Ale', type: 'drink', equipSlot: 'drink', stackable: true },
     oo_starter_pick: hand('oo_starter_pick', 'Test Starter Pickaxe', { tool: { kind: 'pickaxe', tier: 1, starter: true } })
 };
+ITEMS.oo_hat_req = { id: 'oo_hat_req', name: 'Test Crown', type: 'armor', equipSlot: 'trinket', stackable: true, requirements: [{ skill: 'melee', level: 99 }] };
+for (let i = 0; i < 9; i++) ITEMS[`oo_scroll_${i}`] = { id: `oo_scroll_${i}`, name: `Test Scroll ${i}`, type: 'consumable', equipSlot: 'consumable', stackable: true };
 const FILLERS = Array.from({ length: 12 }, (_, i) => `oo_fill_${i}`);
 for (const id of FILLERS) ITEMS[id] = { id, name: `Filler ${id}`, type: 'material', stackable: true };
 
@@ -247,6 +250,236 @@ describe('handing a copy from one hero to another', () => {
         expect(equipOrAnnounce(EquipmentManager, bram.id, 'oo_pick', null, payload)).toBe(true);
         expect(grid(bram)).toContain('oo_pick');
         expect(grid(aela)).not.toContain('oo_pick');
+    });
+});
+
+const lift = (hero, id) => ({ kind: 'item', itemId: id, fromHeroId: hero.id, fromSlot: slotOf(hero, id) });
+
+/** Every slot of a hero's loadout filled with something shared. */
+function fillLoadout(hero, from = 0) {
+    GameState.state.inventory.maxSlots = 30;
+    for (let slot = from; slot < 9; slot++) {
+        give(`oo_scroll_${slot}`);
+        equipOk(hero.id, `oo_scroll_${slot}`, slot);
+    }
+}
+
+describe('moving an item between a hero\'s own slots', () => {
+    it('dragged to an empty slot it moves there, still theirs, and the Bank is untouched', () => {
+        const aela = addHero('Aela');
+        give('oo_pick', 1);
+        equipOk(aela.id, 'oo_pick', 0);
+
+        expect(equipOrAnnounce(EquipmentManager, aela.id, 'oo_pick', 4, lift(aela, 'oo_pick'))).toBe(true);
+        expect(slotOf(aela, 'oo_pick')).toBe(4);
+        expect(aela.equipment[0]).toBeNull();
+        expect(bank('oo_pick')).toBe(0);
+        // Still the hero's own copy: taking it off puts it back.
+        expect(EquipmentManager.unequipItem(aela.id, 4).success).toBe(true);
+        expect(bank('oo_pick')).toBe(1);
+    });
+
+    it('dragged onto a filled slot the two swap, each keeping what it is', () => {
+        const aela = addHero('Aela');
+        give('oo_pick', 1);
+        give('oo_bread', 3);
+        equipOk(aela.id, 'oo_pick', 0);
+        equipOk(aela.id, 'oo_bread', 5);
+
+        expect(equipOrAnnounce(EquipmentManager, aela.id, 'oo_pick', 5, lift(aela, 'oo_pick'))).toBe(true);
+        expect(aela.equipment[5]).toBe('oo_pick');
+        expect(aela.equipment[0]).toBe('oo_bread');
+        expect(holdsCopy(aela, 5)).toBe(true);
+        expect(holdsCopy(aela, 0)).toBe(false);
+        expect(bank('oo_pick')).toBe(0);
+        expect(bank('oo_bread')).toBe(3);
+    });
+
+    it('a two-handed weapon swaps inside a full loadout: no rule depends on the slot', () => {
+        const aela = addFighter('Aela');
+        give('oo_great', 1);
+        equipOk(aela.id, 'oo_great', 0);
+        fillLoadout(aela, 1);
+        const before = grid(aela);
+
+        expect(EquipmentManager.moveItem(aela.id, 'oo_great', 0, 8).success).toBe(true);
+        expect(aela.equipment[8]).toBe('oo_great');
+        expect(aela.equipment[0]).toBe(before[8]);
+        expect(grid(aela).sort()).toEqual(before.sort());
+    });
+
+    it('moves gear the hero is below the level for: it was in their hands already', () => {
+        const aela = addHero('Aela');
+        aela.equipment[0] = 'oo_hat_req';
+        markHeld(aela, 0, true);
+        expect(EquipmentManager.moveItem(aela.id, 'oo_hat_req', 0, 1).success).toBe(true);
+        expect(aela.equipment[1]).toBe('oo_hat_req');
+    });
+
+    it('recounts what the loadout lends and says so once, as a move and not a new equip', () => {
+        const aela = addHero('Aela');
+        give('oo_plate', 1);
+        equipOk(aela.id, 'oo_plate', 0);
+        const seen = [];
+        const off = EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, (e) => seen.push(e));
+        const recount = vi.spyOn(HeroEffects, 'loadoutDefenceContributions');
+        expect(EquipmentManager.moveItem(aela.id, 'oo_plate', 0, 3).success).toBe(true);
+        off();
+        expect(seen).toEqual([expect.objectContaining({ heroId: aela.id, slot: 3, itemId: 'oo_plate', action: 'move' })]);
+        expect(recount).toHaveBeenCalled();
+        recount.mockRestore();
+    });
+
+    it('refuses an empty slot, a slot that no longer holds the item, its own slot and a slot off the grid', () => {
+        const aela = addHero('Aela');
+        give('oo_pick', 1);
+        equipOk(aela.id, 'oo_pick', 0);
+        const was = grid(aela);
+        expect(EquipmentManager.moveItem(aela.id, 'oo_pick', 2, 3).success).toBe(false);
+        expect(EquipmentManager.moveItem(aela.id, 'oo_axe', 0, 3).success).toBe(false);
+        expect(EquipmentManager.moveItem(aela.id, 'oo_pick', 0, 0).success).toBe(false);
+        expect(EquipmentManager.moveItem(aela.id, 'oo_pick', 0, 9).success).toBe(false);
+        expect(grid(aela)).toEqual(was);
+    });
+
+    it('a tool moved in its hero\'s loadout still answers the job', () => {
+        const aela = addHero('Aela');
+        give('oo_pick', 1);
+        equipOk(aela.id, 'oo_pick', 0);
+        expect(EquipmentManager.moveItem(aela.id, 'oo_pick', 0, 7).success).toBe(true);
+        expect(HeroTools.holdsToolFor(aela.id, { kinds: ['pickaxe'] })).toBe(true);
+    });
+});
+
+describe('handing an item to another hero: what a drop on them does', () => {
+    it('lands in their first empty slot', () => {
+        const aela = addHero('Aela');
+        const bram = addHero('Bram');
+        give('oo_pick', 1);
+        give('oo_hat_a', 1);
+        equipOk(aela.id, 'oo_pick');
+        equipOk(bram.id, 'oo_hat_a', 0);
+        expect(equipOrAnnounce(EquipmentManager, bram.id, 'oo_pick', null, lift(aela, 'oo_pick'))).toBe(true);
+        expect(slotOf(bram, 'oo_pick')).toBe(1);
+    });
+
+    it('food moves too: it leaves the giver, and the Bank\'s stack stays', () => {
+        const aela = addHero('Aela');
+        const bram = addHero('Bram');
+        give('oo_bread', 3);
+        equipOk(aela.id, 'oo_bread');
+        expect(equipOrAnnounce(EquipmentManager, bram.id, 'oo_bread', null, lift(aela, 'oo_bread'))).toBe(true);
+        expect(grid(aela)).not.toContain('oo_bread');
+        expect(grid(bram)).toContain('oo_bread');
+        expect(bank('oo_bread')).toBe(3);
+        expect(holdsCopy(bram, slotOf(bram, 'oo_bread'))).toBe(false);
+    });
+
+    it('food the Bank has run out of can still be handed over', () => {
+        const aela = addHero('Aela');
+        const bram = addHero('Bram');
+        give('oo_bread', 1);
+        equipOk(aela.id, 'oo_bread');
+        InventoryManager.removeItem('oo_bread', 1);
+        expect(equipOrAnnounce(EquipmentManager, bram.id, 'oo_bread', null, lift(aela, 'oo_bread'))).toBe(true);
+        expect(grid(aela)).not.toContain('oo_bread');
+        expect(grid(bram)).toContain('oo_bread');
+    });
+
+    it('food dropped from the Bank still goes to two heroes at once', () => {
+        const aela = addHero('Aela');
+        const bram = addHero('Bram');
+        give('oo_bread', 3);
+        equipOk(aela.id, 'oo_bread');
+        equipOk(bram.id, 'oo_bread');
+        expect(grid(aela)).toContain('oo_bread');
+        expect(grid(bram)).toContain('oo_bread');
+    });
+
+    it('a full loadout refuses with the reason, and the item stays with the giver', () => {
+        const aela = addHero('Aela');
+        const bram = addHero('Bram');
+        give('oo_pick', 1);
+        equipOk(aela.id, 'oo_pick');
+        fillLoadout(bram);
+        const before = grid(bram);
+        const res = EquipmentManager.equipItem(bram.id, 'oo_pick', null, { heroId: aela.id, slot: slotOf(aela, 'oo_pick') });
+        expect(res).toEqual({ success: false, error: 'No free slot in the loadout' });
+        expect(grid(aela)).toContain('oo_pick');
+        expect(grid(bram)).toEqual(before);
+        expect(heldCount('oo_pick')).toBe(1);
+    });
+
+    it('a full loadout refuses even when it holds one of the same kind to trade', () => {
+        const aela = addHero('Aela');
+        const bram = addHero('Bram');
+        give('oo_hat_a', 1);
+        give('oo_hat_b', 1);
+        equipOk(aela.id, 'oo_hat_a');
+        equipOk(bram.id, 'oo_hat_b', 0);
+        fillLoadout(bram, 1);
+        const res = EquipmentManager.equipItem(bram.id, 'oo_hat_a', null, { heroId: aela.id, slot: slotOf(aela, 'oo_hat_a') });
+        expect(res.success).toBe(false);
+        expect(grid(aela)).toContain('oo_hat_a');
+        expect(bram.equipment[0]).toBe('oo_hat_b');
+    });
+
+    it('a drop from the Bank onto a full hero still trades one of a kind, as it always did', () => {
+        const bram = addHero('Bram');
+        give('oo_hat_a', 1);
+        give('oo_hat_b', 1);
+        equipOk(bram.id, 'oo_hat_a', 0);
+        fillLoadout(bram, 1);
+        equipOk(bram.id, 'oo_hat_b');
+        expect(bram.equipment[0]).toBe('oo_hat_b');
+        expect(bank('oo_hat_a')).toBe(1);
+    });
+
+    it('a level the receiver lacks refuses with the reason, and the item stays', () => {
+        const aela = addHero('Aela');
+        const bram = addHero('Bram');
+        aela.equipment[0] = 'oo_hat_req';
+        markHeld(aela, 0, true);
+        const res = EquipmentManager.equipItem(bram.id, 'oo_hat_req', null, { heroId: aela.id, slot: 0 });
+        expect(res.success).toBe(false);
+        expect(res.error).toMatch(/Needs/);
+        expect(aela.equipment[0]).toBe('oo_hat_req');
+        expect(grid(bram)).not.toContain('oo_hat_req');
+    });
+
+    it('a receiver already carrying it refuses, and neither copy moves', () => {
+        const aela = addHero('Aela');
+        const bram = addHero('Bram');
+        give('oo_pick', 2);
+        equipOk(aela.id, 'oo_pick');
+        equipOk(bram.id, 'oo_pick');
+        const res = EquipmentManager.equipItem(bram.id, 'oo_pick', null, { heroId: aela.id, slot: slotOf(aela, 'oo_pick') });
+        expect(res.success).toBe(false);
+        expect(heldCount('oo_pick')).toBe(2);
+    });
+
+    it('what the receiver puts down goes to the Bank, and with no room there nothing moves', () => {
+        const aela = addHero('Aela');
+        const bram = addHero('Bram');
+        give('oo_hat_a', 1);
+        give('oo_hat_b', 1);
+        equipOk(aela.id, 'oo_hat_a');
+        equipOk(bram.id, 'oo_hat_b');
+        fillBank();
+        const res = EquipmentManager.equipItem(bram.id, 'oo_hat_a', null, { heroId: aela.id, slot: slotOf(aela, 'oo_hat_a') });
+        expect(res.success).toBe(false);
+        expect(grid(aela)).toContain('oo_hat_a');
+        expect(grid(bram)).toContain('oo_hat_b');
+    });
+
+    it('a tool handed over mid-job leaves the giver without it and the receiver with it', () => {
+        const aela = addHero('Aela');
+        const bram = addHero('Bram');
+        give('oo_pick', 1);
+        equipOk(aela.id, 'oo_pick');
+        expect(equipOrAnnounce(EquipmentManager, bram.id, 'oo_pick', null, lift(aela, 'oo_pick'))).toBe(true);
+        expect(HeroTools.holdsToolFor(aela.id, { kinds: ['pickaxe'] })).toBe(false);
+        expect(HeroTools.holdsToolFor(bram.id, { kinds: ['pickaxe'] })).toBe(true);
     });
 });
 

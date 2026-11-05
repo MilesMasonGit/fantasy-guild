@@ -21,7 +21,7 @@ export const EQUIP_SHINE_MS = 400;
  * DockEquipmentGrid: the pinned card's loadout grid: NINE flexible slots in 3 rows of 3, as
  * 64px item sprites. Gear and consumables share the grid, and any item may sit in any slot.
  * Supports drag-to-equip directly onto any slot, right-click to unequip back to bank, and drag
- * to transfer / bank.
+ * to another slot (moves or swaps), another hero or the Bank.
  */
 export const DockEquipmentGrid = ({ heroId }) => {
     // The slot an item just landed in, and a count so a second landing in the same slot plays again.
@@ -32,7 +32,7 @@ export const DockEquipmentGrid = ({ heroId }) => {
         const timers = new Set();
         let count = 0;
         const handleEquipped = (data) => {
-            if (data?.action === 'equip' && data?.heroId === heroId && data?.slot != null) {
+            if ((data?.action === 'equip' || data?.action === 'move') && data?.heroId === heroId && data?.slot != null) {
                 count += 1;
                 const mine = count;
                 setShine({ slot: data.slot, n: mine });
@@ -94,7 +94,19 @@ export const DockEquipmentGrid = ({ heroId }) => {
     );
 };
 
-/** One slot: right-click to unequip, drag to hand the item to another hero or bank, drop to equip. */
+/**
+ * ⚠️ dnd-kit's boxes know nothing of clipping: a slot the sheet has scrolled out of sight still has
+ * its box, over the sheet's header or arrows, and being small it wins the drop. A release outside
+ * the list holding the slot is not on the slot.
+ */
+export function pointerOutsideList(droppableId, pointer) {
+    const list = document.querySelector(`[data-dnd-droppable-id="${droppableId}"]`)?.closest('[data-scroll-list]');
+    if (!list || !pointer) return false;
+    const r = list.getBoundingClientRect();
+    return pointer.x < r.left || pointer.x > r.right || pointer.y < r.top || pointer.y > r.bottom;
+}
+
+/** One slot: right-click to unequip, drag to another slot, another hero or the Bank, drop to equip. */
 const EquipSlotCell = ({ heroId, slot, itemId, quantity, shineKey = null }) => {
     const drag = useEntityDrag({
         id: `dock-equip-${heroId}-${slot}`,
@@ -104,11 +116,13 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, shineKey = null }) => {
         disabled: !itemId
     });
 
+    const dropId = `dock-slot-drop-${heroId}-${slot}`;
     const drop = useEntityDrop({
-        id: `dock-slot-drop-${heroId}-${slot}`,
+        id: dropId,
         surface: DND_SURFACE.DRAWER,
-        accepts: p => p.kind === DRAG_KIND.ITEM,
-        onDrop: p => {
+        accepts: p => p.kind === DRAG_KIND.ITEM && !(p.fromHeroId === heroId && p.fromSlot === slot),
+        onDrop: (p, at) => {
+            if (pointerOutsideList(dropId, at?.pointer)) return false;
             if (p.itemId) return equipOrAnnounce(EquipmentManager, heroId, p.itemId, slot, p);
         }
     });
@@ -162,7 +176,7 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
             {...droppableProps}
         >
             {item ? (
-                <span style={{ imageRendering: 'pixelated' }} className="flex items-center justify-center pointer-events-none">
+                <span style={{ imageRendering: 'pixelated' }} className="ui-loadout-item flex items-center justify-center pointer-events-none">
                     <ItemIcon item={item} size={64} />
                 </span>
             ) : (
