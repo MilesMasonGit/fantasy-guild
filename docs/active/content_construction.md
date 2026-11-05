@@ -11,6 +11,8 @@ Status: draft
 - **Tiered materials**: later buildings ask for Planks, Nails, cloth and metal parts.
 - **Three stone tiers.** "Other kinds of stone will either be cut or used in another skill."
 - **Guard Tower and Town Square** join. Today's camps, Mines, Minecarts, Well, Composter, Beehive, Dock and Windmill stay.
+- **"Basic buildings for other skills as well. For example, we'll want to have a Logging camp that allows the hero to work all trees in the nearby radius."**
+- **One War Camp for all combat styles. No building for Construction.**
 - **Kept from before**: Crafting makes items, Construction builds every Token; a better station is a new building, with no upgrade in place; recipes are gated by the skill's level, not the station.
 
 ## Costs by tier
@@ -36,8 +38,18 @@ Status: draft
 | Fletching | **Fletcher's Lodge** | 1 | new | N |
 | Alchemy | **Apothecary** | 1 | Alchemy Table | N |
 | Enchanting | **Enchanter's Tower** | 1 | new | N |
+| Forestry | Logging Camp | 1 | stays: a hero works every tree nearby | H |
+| Mining | Mining Camp | 1 | stays: a hero works every vein nearby | H |
+| Fishing | Fishing Hut | 1 | stays: a hero works every water nearby | H |
+| Farming | Farmstead | 1 | stays: a hero works every field and bush nearby | H |
+| Melee, Ranged, Magic, Stealth | **War Camp** | 1 | new: a hero there fights every enemy nearby, in their own style | N |
+| Faith | **Chapel** | its session | placeholder | N |
+| Summoning | **Summoning Circle** | its session | placeholder | N |
+| Science | **Laboratory** | its session | placeholder | N |
+| Crime | **Hideout** | its session | placeholder | N |
+| Taming | **Stable** | its session | placeholder | N |
 
-**Later, with their sessions**: Faith, Summoning, Science, Crime and Taming, if they need one.
+**Construction has no building** (owner): a hero goes to each Foundation. The five specialist buildings are placeholders; their sessions may change what they do.
 
 ## Variants, to design next
 
@@ -47,7 +59,6 @@ Status: draft
 
 | Group | What | Level | Made with | Art |
 |---|---|---|---|---|
-| Camps | Logging Camp, Mining Camp, Fishing Hut, Farmstead | 1, later ones with Canvas | Wood, Stone, Canvas | H |
 | Excavation | Quarry; Mines for Copper, Iron, Silver, Mythril, Gold, Adamantine, Darkmetal; Coal Mine | at each metal's level | Planks, Stone, Gears from 40 | H: seven `mineshaft_*` |
 | Minecarts | One per metal, restocking veins | at each metal's level | Planks, Nails, Gears | H: seven `minecart_*` |
 | Farmland | Field, Herb Garden, Orchards, Grapevine, planted Forests | as today | Seeds, Seedlings | H |
@@ -59,6 +70,7 @@ Status: draft
 ## Planning agent's calls
 
 - **The three stones are Stone, Marble and Basalt**, matching your Foundation tiers of 7 October. Granite and Sandstone are cut or go to another skill. Marble comes in at 40, Basalt at 80; Mining's Marble Vein at 45 and Basalt Vein at 85 are placed just after, so level them to suit when balanced.
+- ⚠️ **War Camp is a new rule**: a hero fighting everything in reach, like a camp working its trees. Check it against the arrival fights and Guard Towers when briefed.
 - **Each skill's stations fold into one building**: food and drinks both at the Kitchen; ingots and gear both at the Blacksmith; leather at the Workshop. Names are suggestions.
 - **Torches gain their job** on the Guard Tower.
 - **Gears and Sails gain jobs**; Wire and Chain stay for Science.
