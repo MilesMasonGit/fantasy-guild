@@ -82,11 +82,15 @@ function rivalHandSlot(hero, itemId) {
     return rival ? rival.index : null;
 }
 
-/** Another hero's slot holding its own copy of `itemId`, when the drop came from there; else null. */
+/**
+ * Another hero's slot `itemId` is being handed over from, when the drop came from there; else null.
+ * Gear must be that hero's own copy (an older save's link gives nothing); food, drink and potions
+ * only name the Bank's stack, so the name moves and the stack stays.
+ */
 function giverOf(heroId, itemId, from) {
     if (!from || from.heroId == null || from.slot == null || from.heroId === heroId) return null;
     const hero = HeroManager.getHero(from.heroId);
-    if (!hero || getGrid(hero)[from.slot] !== itemId || !holdsCopy(hero, from.slot)) return null;
+    if (!hero || getGrid(hero)[from.slot] !== itemId || holdsCopy(hero, from.slot) !== takesCopy(itemId)) return null;
     return { heroId: from.heroId, hero, slot: from.slot };
 }
 
@@ -121,11 +125,12 @@ function vacate(heroId, hero, slot, { returnCopy = true } = {}) {
  * Equip an item to a hero. The slot is derived from the item's category —
  * callers don't choose it (see resolveTargetSlot).
  *
- * A copy item comes out of the Bank, or, when `from` names another hero's slot holding one, out of
- * that hero's hands (a hand-over). What it displaces goes back to the Bank; if the Bank has no room
- * for it, nothing happens and the refusal says so.
+ * A copy item comes out of the Bank, or, when `from` names another hero's slot holding it, out of
+ * that hero's hands (a hand-over; a shared item leaves that hero's loadout too). What it displaces
+ * goes back to the Bank; if the Bank has no room for it, nothing happens and the refusal says so.
+ * A hand-over dropped on the hero rather than on a slot needs an empty slot in their loadout.
  *
- * @param {{heroId: string, slot: number}|null} [from] where a dragged copy was picked up
+ * @param {{heroId: string, slot: number}|null} [from] where a dragged item was picked up
  */
 export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     const hero = HeroManager.getHero(heroId);
@@ -147,10 +152,14 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     }
 
     const copy = takesCopy(itemId);
-    const giver = copy ? giverOf(heroId, itemId, from) : null;
+    const giver = giverOf(heroId, itemId, from);
     if (!giver && !InventoryManager.hasItem(itemId, 1)) {
         if (copy && heldCount(itemId) > 0) return { success: false, error: t('equipment.allInUse', { item: template.name }) };
         return { success: false, error: 'Out of stock' };
+    }
+
+    if (giver && preferredSlot === null && findFreeSlot(hero) === -1) {
+        return { success: false, error: 'No free slot in the loadout' };
     }
 
     let slot;
@@ -201,6 +210,33 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'equipItem', heroId });
 
     logger.info('EquipmentManager', `${hero.name} equipped ${template.name} to ${slot}`);
+    return { success: true };
+}
+
+/**
+ * Move `itemId` from one of a hero's slots to another, swapping with whatever is there. The hero
+ * carries the same things afterwards and no rule depends on which slot an item is in, so a level, a
+ * cap or the hands cannot refuse it; gear held below its level moves like any other.
+ * ⚠️ Grid order still means something: the first weapon or tool in the hands is the one used
+ * (`getPrimaryWeaponSlot`, `catchToolOf`), so a move may change which that is.
+ */
+export function moveItem(heroId, itemId, fromSlot, toSlot) {
+    const hero = HeroManager.getHero(heroId);
+    if (!Array.isArray(hero?.equipment) || hero.equipment[fromSlot] !== itemId) return { success: false, error: 'Slot is empty' };
+    if (fromSlot === toSlot || !(toSlot >= 0 && toSlot < hero.equipment.length)) return { success: false, error: 'Could not move that' };
+
+    const movingHeld = holdsCopy(hero, fromSlot);
+    const otherHeld = holdsCopy(hero, toSlot);
+    hero.equipment[fromSlot] = hero.equipment[toSlot] || null;
+    hero.equipment[toSlot] = itemId;
+    markHeld(hero, toSlot, movingHeld);
+    markHeld(hero, fromSlot, otherHeld);
+    recalculateEquipmentModifiers(hero);
+
+    EventBus.publish(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, { heroId, slot: toSlot, fromSlot, itemId, action: 'move' });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'moveItem', heroId });
+
+    logger.info('EquipmentManager', `${hero.name} moved ${itemId} from ${fromSlot} to ${toSlot}`);
     return { success: true };
 }
 
@@ -336,6 +372,7 @@ export function recalculateEquipmentModifiers(hero) {
 
 export const EquipmentManager = {
     equipItem,
+    moveItem,
     unequipItem,
     destroyEquipped,
     reconcileHeldCopies,

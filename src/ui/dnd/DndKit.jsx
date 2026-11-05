@@ -125,9 +125,14 @@ export function smallestWithin(args) {
 
         /**
          * ⚠️ Drawers beat the board where they overlap, the same rule `surfaceAtPoint` states
-         * below.
+         * below. A target that drawers are drawn over (`beneathDrawers`: the hero bar, which the
+         * Bank and the hero sheet cover) comes after the drawers, however small: nobody can aim
+         * at what they cannot see.
          */
-        const rank = (c) => (surfaceOf(c) === DND_SURFACE.DRAWER ? 0 : 1);
+        const rank = (c) => {
+            if (surfaceOf(c) !== DND_SURFACE.DRAWER) return 2;
+            return c?.data?.droppableContainer?.data?.current?.beneathDrawers ? 1 : 0;
+        };
 
         return [...hits].sort((a, b) => rank(a) - rank(b) || area(a) - area(b));
     }
@@ -627,11 +632,11 @@ export function useEntityDrag({
  * under the cursor is ever `isOver`, via pointerWithin) plus the props the provider needs to
  * find and resolve the drop.
  */
-export function useEntityDrop({ id, surface = DND_SURFACE.BOARD, accepts, onDrop, disabled = false }) {
+export function useEntityDrop({ id, surface = DND_SURFACE.BOARD, accepts, onDrop, disabled = false, beneathDrawers = false }) {
     const { setNodeRef, isOver, active } = useDroppable({
         id,
         disabled,
-        data: { surface, accepts, onDrop }
+        data: { surface, accepts, onDrop, beneathDrawers }
     });
     const payload = active?.data?.current || null;
     const canAccept = !!(payload && accepts?.(payload));

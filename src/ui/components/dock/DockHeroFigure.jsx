@@ -64,6 +64,7 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
     const drop = useEntityDrop({
         id: `dock-hero-drop-${heroId}`,
         surface: DND_SURFACE.DRAWER,
+        beneathDrawers: true,
         // An item equips, another roster hero reorders.
         accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId)
             || (isRosterFlag(p) && p.heroId !== heroId),

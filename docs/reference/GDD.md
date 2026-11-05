@@ -558,6 +558,17 @@ trinket 2, food 1, drink 1, consumable unlimited). Gear, weapons and tools are
 one copy per hero: equipping takes the copy out of the Bank. **Bait** for
 fishing and **arrows** for a bow are carried in consumable cells and spent from
 the Bank, one per catch or per shot (§3 Fishing, §6 The fight).
+- **Moving items by drag.** Dropped on another slot of the same hero, an item
+  moves there and swaps with what is there; no slot has rules of its own, so a
+  swap can never be refused, and a tool moved mid-job keeps the hero working.
+  The first weapon or tool in grid order is the one used, so a move can change
+  which that is. Dropped on another hero in the bar or the Bank's column, it
+  leaves the giver (food and potions too; their stack stays in the Bank) and
+  lands in the receiver's first empty slot. A full loadout, a level the receiver
+  lacks or an item they already carry refuses with the reason and the item
+  stays. Past a category's cap or a full pair of hands, what the receiver puts
+  down goes to the Bank, as with any equip. A hero handed away from their work
+  tool stops, keeps their flag and shows the yellow alert.
 - **A weapon** is anything held in the hands that is not a gathering tool or an
   off-hand item. It names **one style** (`styles: ['melee']`; an older list of
   two fights in its first and the audits say so), its **damage**, its **speed**

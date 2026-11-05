@@ -9,15 +9,18 @@ import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
  * Discarding `equipItem`'s result would make a refused equip (already carried, no free slot,
  * out of stock) look exactly like a successful one, with nothing on screen saying why.
  *
- * `payload`: the drag's own payload. When it was lifted from another hero's slot, that hero's copy
- * is handed over rather than another taken from the Bank.
+ * `payload`: the drag's own payload. Lifted from this hero's own slot and dropped on another of
+ * theirs, it moves there and swaps with what is there. Lifted from another hero's slot, it is handed
+ * over rather than another taken from the Bank.
  * @returns {boolean} whether the equip actually happened
  */
 export function equipOrAnnounce(equipment, heroId, itemId, preferredSlot = null, payload = null) {
     const from = payload?.fromHeroId != null && payload?.fromSlot != null
         ? { heroId: payload.fromHeroId, slot: payload.fromSlot }
         : null;
-    const result = equipment.equipItem(heroId, itemId, preferredSlot, from);
+    const result = from?.heroId === heroId && preferredSlot !== null
+        ? equipment.moveItem(heroId, itemId, from.slot, preferredSlot)
+        : equipment.equipItem(heroId, itemId, preferredSlot, from);
     if (!result?.success) {
         EventBus.publish(UI_EVENTS.UI_SCREEN_CALLOUT, { text: result?.error || 'Could not equip that' });
         return false;
