@@ -17,19 +17,21 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | Level | Token | Gives | Its job | What's different | Art |
 |---|---|---|---|---|---|
 | 1 | Copper Ore Vein, Coal Vein, Stone Outcrop | Copper Ore, Coal, Stone | Smithing, Construction | The everyday rhythm | H |
-| 8 | Clay Deposit | Clay | ⚠️ none yet | Quick, soft, refills fast | check |
+| 8 | Clay Deposit | Clay | ⚠️ none yet | Quick, soft, refills fast | H |
 | 12 | Quartz Deposit | Quartz | ⚠️ none yet | Slow, gives a lot | H |
 | 15 | **Geode** | Any uncut gem, rarer ones less often | Crafting's gems, Enchanting's Staffs | One big burst, then a long rest | N |
 | 20 | Iron Ore Vein | Iron Ore | Smithing | | H |
 | 30 | Silver Ore Vein | Silver Ore | Smithing | | H |
 | 40 | Mythril Ore Vein | Mythril Ore | Smithing | | H |
+| 45 | Marble Vein | Marble | Construction from 40 | | H |
 | 50 | Gold Ore Vein | Gold Ore | Smithing | | H |
 | 60 | Adamantine Ore Vein | Adamantine Ore | Smithing | | H |
 | 70 | **Fallen Star** | Adamantine and Darkmetal Ore | A head start on the next metal | A rare find; one rich strike, then gone | N |
 | 80 | Darkmetal Ore Vein | Darkmetal Ore | Smithing | | H |
+| 85 | Basalt Vein | Basalt | Construction from 80 | Near volcanoes | H |
 | 90 | **Fossil Bed** | Bones, Red Scales | Crafting's Dragonscale, an alternative to fighting for it | Slow digging, big finds | N |
 
-**Not decided**: Granite (25), Marble (45) and Basalt (65) veins wait for the wood and buildings session, which says whether buildings ask for better stone.
+**Stone**: three tiers, Stone, Marble and Basalt (owner, 2026-11-04; [Construction](content_construction.md)). Granite and Sandstone are cut or go to another skill.
 
 ## Forestry
 

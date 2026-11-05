@@ -144,6 +144,7 @@ measured.*
 - [Tailor](content_tailor.md): approved 2026-11-04; 56 recipes, 43 levels open.
 - [Crafting](content_crafting.md): approved 2026-11-04; 76 recipes, 23 levels open.
 - [Mining and Forestry Tokens](content_mining_forestry.md): approved 2026-11-04; the owner's picks for the gaps between tiers.
+- [Construction](content_construction.md): draft; stations in tiers and versions, tiered materials.
 
 ## Open links
 
