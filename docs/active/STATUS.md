@@ -1,4 +1,4 @@
-# STATUS — the directors' living table
+# STATUS — the directors' living tableundefinedbuilt 9e8ea970: 7356 pass, 1 red (an event left with no publisher; fix going in with H2); cycles, build ok; drag bench queuedundefinedThuundefined |undefinedbuildingundefinedThuundefined |undefinedbuilt 65f42c7e, gate runningundefinedThuundefined |undefinedbuildingundefinedThuundefined |undefined**merged** 7217b146, pictures only; owner picked 2026-11-05: window B, tab D, mat F with the combat icon between the health bars (recorded in brief 360); C2 and C3 wait for the hero bar and Token card to mergeundefinedThuundefinedThu |undefined**eye-check** on `crunch/hero-detail` 174df534 (one look, [file](eyecheck/2026-11-05_heroes_tokens.md)); bench queuedundefinedThuundefinedThu |undefined**eye-check** on `crunch/hero-detail` 174df534 (one look, [file](eyecheck/2026-11-05_heroes_tokens.md)); bench queuedundefinedThuundefinedThu |undefined**eye-check** on `crunch/hero-detail` 174df534 (one look, [file](eyecheck/2026-11-05_heroes_tokens.md)); bench queuedundefinedThuundefinedThu |undefined**eye-check** on `crunch/hero-detail` 174df534 (one look, [file](eyecheck/2026-11-05_heroes_tokens.md)); bench queuedundefinedThuundefinedThu |undefined**eye-check** on `crunch/hero-detail` 174df534 (one look, [file](eyecheck/2026-11-05_heroes_tokens.md)); bench queuedundefinedThuundefinedThu |undefined**eye-check** on `crunch/hero-detail` 174df534 (one look, [file](eyecheck/2026-11-05_heroes_tokens.md)); bench queued; includes the planting fix (a Forest plants with its tree's room; a tree could strand out of reach at the wider spacing). 7449 tests pass, 8 position goldens red until the work check accepts them, cycles and build okundefinedThuundefinedThu |
 
 *The director keeps this file; nobody else edits it. One row per phase; a
 five-line summary at each batch's edges (proposed, looked at); anything older
@@ -7,7 +7,7 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
 
-*Thu 5 Nov 10:15. Where we are: batch proposed and chosen, helpers starting. Six phases on two lines, plus pictures. Next: the combat pick, then one look at the hero bar and one at Tokens and the card. Owner: nothing until the looks. Blockers: none.*
+*Thu 5 Nov 11:50. Where we are: all six phases built and combined on `crunch/hero-detail`, combat picks recorded. Next: the owner's look; drag, work and draw benches from 13:00; then the goldens and the merge. Owner: the eye-check file, including one decision on a crowded Forest. Blockers: none.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
@@ -153,6 +153,8 @@ None open. (Ruled 2026-10-19: Token outlines red for problems, gold for attentio
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
+
+**Thu 5 Nov, 13:00–17:00 (director):** drag bench on `crunch/hero-detail` (H1 is drag code); work check on 350 T1 when ready.
 
 **Wed 4 Nov, 01:00 (director timer, `p23b` on `main`): done.** Engine and draw baselines retaken at c46d6775 and committed; both saved first time. Chrome delivered about 4.5× (4.06–4.89) for the 4× asked, inside the limit, so the draw baseline's 4× rows read a little harsh.
 

@@ -26,6 +26,12 @@ this brief): `src/ui/components/combat/` (`FightPanel.jsx`, `EnemyCard.jsx`,
   and the stat block (brief 350 T2). Build them after those merge, not before.
 - C4 touches the mat's spacing and stack: after brief 350 T1.
 
+## The owner's picks (2026-11-05, [mock-ups](../research/combat_look/index.html))
+
+- **Fight window: B, the slim card.** **Minimized tab: D, faces and bars.** **Busy mat: F, the reduced plate.**
+- **One change to F:** the combat icon (the detail view button) sits between the two health bars, not below the fight.
+- The HP bar and stat block in the pictures are stand-ins: they follow the picks at briefs 340 H2 and 350 T2.
+
 ## Phases
 
 | Phase | What | Tier |
