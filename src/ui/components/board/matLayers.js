@@ -7,8 +7,14 @@ import { keepPlaces } from './stackPlaces.js';
  */
 export const STACK_PLACES = 2 ** 24;
 
-/** The first z above every Token's, flag's, hero's and badge's place. */
-const TOKEN_TOP = 10 + STACK_PLACES * 3;
+/** The first z above every Token's and flag's place: where the heroes start. */
+const HERO_BASE = 10 + STACK_PLACES * 2;
+
+/** The rows of the standing heroes' band, one z per mat unit down the mat: more than any mat is tall. */
+const HERO_ROWS = 8192;
+
+/** The first z above every standing hero. */
+const TOKEN_TOP = HERO_BASE + HERO_ROWS;
 
 /**
  * The mat's stacking order, in one place.
@@ -16,13 +22,13 @@ const TOKEN_TOP = 10 + STACK_PLACES * 3;
  * every layer, otherwise a Token's progress bar ends up behind the hero standing on it.
  * ⚠️ Tokens and flags share a range, not a number. Each Token and each flag is sorted by where
  * it stands (lower on the mat draws in front, the 2.5D reading) by {@link matStackOrder}, and
- * holds a place in the stack, three z values wide: a Token's art, the hero working it and the
- * badges written on it; a flag's cloth, the idle hero beside it and its gear. Everything else on
- * the mat sits above the whole range.
- * Every z below `WAITING_HERO` is set on an element that is a direct stacking sibling of the
+ * holds a place in the stack, two z values wide: a Token's art and the badges written on it; a
+ * flag has its cloth alone. Every hero is above that whole range ({@link heroZ}), and everything
+ * else on the mat above the heroes.
+ * Every z below `STANDING_HERO` is set on an element that is a direct stacking sibling of the
  * others (no wrapper with its own z-index), which is what lets a flag slot in between two
  * Tokens.
- * ⚠️ The numbers run to about fifty million. They stay inside the mat only because the board's
+ * ⚠️ The numbers run to about thirty-four million. They stay inside the mat only because the board's
  * scaled box (`Board.jsx`, `data-board-origin`, its `transform`) is a stacking context; without
  * one, every Token would draw over the rest of the game's screens.
  */
@@ -40,12 +46,18 @@ export const MAT_Z = Object.freeze({
      * z as the grid, drawn before it, so the grid still reads while placing.
      */
     HELD_SHADE: 3,
-    /** Tokens, flags, their heroes and badges: `TOKEN_BASE + place * 3`. */
+    /** Tokens, flags and Token badges: `TOKEN_BASE + place * 2`. */
     TOKEN_BASE: 10,
-    /** Heroes with no Token to stand on and no flag to stand beside. */
-    WAITING_HERO: TOKEN_TOP + 10,
-    /** Heroes on the move: above every Token they walk over. */
+    /** Heroes standing still, above every Token and flag: this plus how far down the mat they stand. */
+    STANDING_HERO: HERO_BASE,
+    /** Heroes on the move: above the standing ones too. */
     WALKING_HERO: TOKEN_TOP + 15,
+    /**
+     * The badges of the Token the pointer is on (its name, its gear): over the heroes and over any
+     * Token in front of it, so what a hover brings up can be read and clicked though the Token's
+     * art stays where it is.
+     */
+    HOVERED_BADGES: TOKEN_TOP + 16,
     /**
      * The sky's ambient life (`AmbientLife`): cloud shadows over everything on the mat below, then
      * the drifting leaves, petals and embers and the small birds on the Tokens' tops.
@@ -76,9 +88,9 @@ export const MAT_Z = Object.freeze({
     HERO_BUBBLE: TOKEN_TOP + 180
 });
 
-/** The z of a Token or flag at `place` in the stack. Its hero is +1, its badges +2. */
+/** The z of a Token or flag at `place` in the stack. A Token's badges are +1. */
 export function placeZ(place) {
-    return MAT_Z.TOKEN_BASE + place * 3;
+    return MAT_Z.TOKEN_BASE + place * 2;
 }
 
 /** Back to front: higher on the mat first; a Token before a flag on the same line; then placing order. */
@@ -92,10 +104,9 @@ function backToFront(a, b) {
  * line a flag stands in front of a Token; between two Tokens the earlier placed is behind,
  * between two flags the earlier planted.
  * 2. **Worked Tokens**: a Token with a hero working it, in front of every Token and flag at
- * rest, sorted among themselves the same way. Its hero takes the slot above it, so the pair
- * rises together; when the work ends the Token drops back into band 1.
- * 3. **The hovered Token**, frontmost, so its own drag, click and right-click listeners are
- * the ones under the pointer.
+ * rest, sorted among themselves the same way; when the work ends it drops back into band 1.
+ * 3. **The lifted Token**, frontmost: `hoveredId`, which the mat passes only while the Mat Tuner's
+ * hover lift is on.
  */
 function stackSequence({ tokens = [], flags = [], workedIds = [], hoveredId = null }) {
     const worked = workedIds instanceof Set ? workedIds : new Set(workedIds);
@@ -226,26 +237,14 @@ export function matStackOrder(input = {}, stack = createMatStack()) {
 }
 
 /**
- * The z of one hero on the mat, given {@link matStackOrder}'s answer.
- * - **Walking** somewhere (not a stroll by an idle hero): above every Token and flag it
- * passes.
- * - **Idle** beside the Token their order names (waiting for it): just in front of that Token,
- * so they are never drawn behind what they wait for.
- * - **Idle** at a spot: just in front of its flag, so the pair sorts with the Tokens around it.
- * - **Working** a Token: just in front of it. The Token is in the worked band, so the hero is
- * too.
- * - Anything else (at home by the Guild Hall): above every Token, below the walkers.
- * @param {{heroId: string, state: string, tokenId?: string|null, jobId?: string|null, moving?: boolean}} hero
- * @param {{tokenZ: Map<string, number>, flagZ: Map<string, number>}} order
+ * The z of one hero on the mat: always above every Token and flag, whatever they are doing.
+ * Standing heroes sort among themselves by where they stand, lower on the mat in front; a hero on
+ * the move has no point here (`MatHero` follows its own steps) and draws over the standing ones.
+ * @param {{y?: number|null, moving?: boolean}} hero
  */
-export function heroZ(hero, { tokenZ: tz, flagZ: fz }) {
-    if (hero.state === 'idle') {
-        if (hero.jobId && tz.has(hero.jobId)) return tz.get(hero.jobId) + 1;
-        return fz.has(hero.heroId) ? fz.get(hero.heroId) + 1 : MAT_Z.WAITING_HERO;
-    }
-    if (hero.moving) return MAT_Z.WALKING_HERO;
-    if (hero.tokenId && tz.has(hero.tokenId)) return tz.get(hero.tokenId) + 1;
-    return MAT_Z.WAITING_HERO;
+export function heroZ({ y, moving }) {
+    if (moving || y == null) return MAT_Z.WALKING_HERO;
+    return MAT_Z.STANDING_HERO + Math.max(0, Math.min(HERO_ROWS - 1, Math.round(y)));
 }
 
 /**

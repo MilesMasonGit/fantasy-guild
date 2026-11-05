@@ -40,9 +40,7 @@ function throughHeroes(e, matEl) {
  * - **A Token** where two circles overlap: the Token the game says is under the pointer
  * (`tokenAtPoint`: of the circles holding the point, the nearest centre), whichever is drawn on
  * top there. Each Token takes the pointer only inside its own circle (`MatToken`'s
- * `data-token-hit`). Usually the hover has already raised the right Token to the front
- * (`MatBoard`); this covers a press with no pointer move before it, such as just after a drop or
- * when a Token slid under a still pointer.
+ * `data-token-hit`).
  *
  * Called in the capture phase on the mat: a press that belongs elsewhere is stopped before it
  * reaches the element it landed on, and a copy is sent to the right one, where its own drag,

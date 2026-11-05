@@ -3,6 +3,7 @@ import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z, createMatStack, heroZ, walkerSortY } from './matLayers.js';
 import { createStackWriter } from './stackWriter.js';
 import { pointerToMat } from './matPoint.js';
+import { matTuning } from '../../../config/matTuning.js';
 import { installPressRouting } from './pressRouting.js';
 import { flagClothOver } from './flagCloth.js';
 import { useHoverRest } from './hoverRest.js';
@@ -63,10 +64,10 @@ import { EventBus } from '../../../systems/core/EventBus.js';
  * Which Token the pointer is on is decided once, here. Token art is a circle and Tokens may
  * overlap, so a box-shaped hover would let the corner of one steal the pointer from another. A
  * single `pointermove` on the mat asks the engine (`Flags.tokenAtPoint`: nearest centre,
- * earliest placed on a tie), and the answer is raised to the front of the Token layer, which
- * puts its own drag, click and right-click listeners under the pointer. Badges reaching
- * outside the art circle keep the hover while the pointer is on them, so a gear badge can
- * still be clicked.
+ * earliest placed on a tie). A press goes to that same Token however they overlap
+ * (`pressRouting.js`), and its badges come up over everything else (`stackWriter.js`). Badges
+ * reaching outside the art circle keep the hover while the pointer is on them, so a gear badge
+ * can still be clicked.
  * The hover pass steps aside entirely while a drag is live: dnd-kit owns the pointer then, and
  * re-ordering Tokens under a drag made the ghost flicker.
  * ⚠️ Memoised: its parent holds the mat's drop target, which dnd-kit re-renders at every drag
@@ -308,9 +309,8 @@ export const MatBoard = React.memo(function MatBoard({
         if (!el) return;
         /**
          * Flags have no hitbox over Tokens, except their cloth. A point on a Token's art circle
-         * is that Token's, even when a flag is drawn in front of it: the Token is hovered (and
-         * so raised to the front), and every flag lets the pointer through until it leaves the
-         * circle. Only the cloth of a flag drawn in front of that Token keeps the pointer, so a
+         * is that Token's, even when a flag is drawn in front of it: the Token is hovered, and
+         * every flag lets the pointer through until it leaves the circle. Only the cloth of a flag drawn in front of that Token keeps the pointer, so a
          * flag standing among Tokens can always be picked up by its banner.
          */
         const point = pointerToMat({ x: e.clientX, y: e.clientY }, el.getBoundingClientRect());
@@ -320,6 +320,10 @@ export const MatBoard = React.memo(function MatBoard({
             setHoveredId(prev => (prev === null ? prev : null));
             return;
         }
+        // On a hero's drawn pixel a press is the hero's, so no Token behind them lights as if it
+        // would take it. Their own Token stays lit: hero and Token read as one there.
+        const heroId = e.target?.closest?.('[data-board-hero]')?.getAttribute('data-board-hero');
+        if (heroId && id && Flags.statusOf(heroId).instanceId !== id) id = null;
         const onToken = !!id;
         setFlagsYield(prev => (prev === onToken ? prev : onToken));
         if (!id) {
@@ -345,7 +349,7 @@ export const MatBoard = React.memo(function MatBoard({
     const clearHover = useCallback(() => { setHoveredId(null); setFlagsYield(false); }, []);
 
     // A press where two Tokens' circles overlap goes to the one hovering would pick, even when no
-    // pointer move has raised it to the front yet.
+    // pointer move has lit it yet.
     useEffect(() => {
         const el = rootRef.current;
         return el ? installPressRouting(el, Flags.tokenAtPoint) : undefined;
@@ -469,22 +473,24 @@ export const MatBoard = React.memo(function MatBoard({
     const campRingShown = useMemo(() => campRing, [campRingKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
     /**
-     * Who is in front of whom: Tokens and flags sorted together; a worked Token, with its
-     * hero, in front of every Token and flag at rest; the hovered Token frontmost. The stack
+     * Who is in front of whom: Tokens and flags sorted together; a worked Token in front of every
+     * Token and flag at rest; the hovered Token frontmost only with the Mat Tuner's hover lift on,
+     * which is read when the hover changes. Every hero is above all of them. The stack
      * keeps each one's place between renders, so a Token that moves changes its own z only
      * (`matLayers.js`), and the answer is the same object while no z changes.
      */
     // Keyed by the worked ids, not the heroes: heroes redraw every walking step.
     const workedKey = [...workedBy.keys()].sort().join('|');
     const [matStack] = useState(createMatStack);
+    const liftedId = matTuning('hoverLift') === 1 ? hoveredId : null;
     const order = useMemo(
-        () => matStack.order({ tokens, flags: flagPoints, workedIds: workedKey ? workedKey.split('|') : [], hoveredId }),
-        [matStack, tokens, flagPoints, workedKey, hoveredId]
+        () => matStack.order({ tokens, flags: flagPoints, workedIds: workedKey ? workedKey.split('|') : [], hoveredId: liftedId }),
+        [matStack, tokens, flagPoints, workedKey, liftedId]
     );
     // Each Token's z goes straight onto its boxes, so a change of place redraws no Token. A
     // layout effect: written in the same commit, before anything is painted.
     const stack = useMemo(() => createStackWriter(), []);
-    useLayoutEffect(() => { stack.apply(order.tokenZ); }, [stack, order]);
+    useLayoutEffect(() => { stack.apply(order.tokenZ, hoveredId); }, [stack, order, hoveredId]);
 
     return (
         <div
@@ -545,8 +551,8 @@ export const MatBoard = React.memo(function MatBoard({
             />
 
             {/**
-             * The stack (`MAT_Z.TOKEN_BASE` up): Tokens, the heroes on them, and what is written
-             * on them; flags and idle heroes sort in among them (FlagLayer, below).
+             * The stack (`MAT_Z.TOKEN_BASE` up): Tokens and what is written on them; flags sort in
+             * among them (FlagLayer, below).
              */}
             {ordered.map(t => (
                 <MatToken
@@ -576,6 +582,7 @@ export const MatBoard = React.memo(function MatBoard({
             ))}
             <MatTokenGrab pressedRef={pressedRef} grabRef={grabRef} />
 
+            {/* `MAT_Z.STANDING_HERO` and `MAT_Z.WALKING_HERO`: every hero, over every Token and flag. */}
             {heroes.map(h => {
                 // A moving hero's point is MatHero's own.
                 const place = h.x == null ? { left: null, top: null } : heroPlacement(h);
@@ -591,7 +598,7 @@ export const MatBoard = React.memo(function MatBoard({
                         sprite={h.sprite}
                         left={place.left}
                         top={place.top}
-                        z={heroZ(h, order)}
+                        z={heroZ(h)}
                         outline={heroOutline({
                             hovered: litHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId),
                             selected: inspectedHeroId === h.heroId,

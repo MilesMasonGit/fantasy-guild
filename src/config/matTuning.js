@@ -103,9 +103,17 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'overlapPct',
         group: 'Crowding',
         label: 'Overlap allowed',
-        hint: 'How far two hitboxes may overlap before a drop is refused. At 90% hitbox, 40% overlap lets two small Tokens sit 70 u apart centre to centre — well under a 160 u tile step.',
-        min: 0, max: 80, step: 1, def: 40,
+        hint: 'How far two hitboxes may overlap before a drop is refused: lower spaces Tokens further apart. At 90% hitbox, 30% overlap lets two small Tokens sit 81 u apart centre to centre (40%, 70 u, was the old default). ⚠️ It applies to the next drop or spawn: Tokens already down stay put, and a new place is laid out at the shipped default, never this slider.',
+        min: 0, max: 80, step: 1, def: 30,
         format: (v) => `${Math.round(v)}% · two small ${Math.round(2 * Math.round(SMALL_ART_R * matTuning('hitboxPct') / 100) * (1 - v / 100))} u apart`
+    },
+    {
+        key: 'hoverLift',
+        group: 'Crowding',
+        label: 'Hover lifts a Token',
+        hint: 'Whether the Token under the pointer jumps in front of its neighbours. Off, it stays where it stands and only its name and gear come up over the others. Either way a click goes to the Token whose centre is nearest the pointer. The default here is the switch for the shipped game.',
+        min: 0, max: 1, step: 1, def: 0,
+        format: (v) => (Math.round(v) === 1 ? 'on' : 'off')
     },
     {
         key: 'nudgeReach',
@@ -181,6 +189,7 @@ const STORAGE_KEY = 'fantasy_guild_mat_tuning';
  */
 const RETIRED_DEFAULTS = Object.freeze({
     hitboxPct: [80],
+    overlapPct: [40],
     matSteps: [11]
 });
 

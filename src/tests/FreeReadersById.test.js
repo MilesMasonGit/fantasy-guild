@@ -179,9 +179,9 @@ describe('⭐ spawns land by point (slices 1.6b and 1.8)', () => {
 
     it('a crowded spawn pushes its neighbours aside, never its bearer (FP-17, slice 1.8)', () => {
         // ⚠️ Packed at exactly the minimum gap, which leaves NO legal point
-        // inside the block: the hole between any four is only 49 u across. So
+        // inside the block: the hole between any four is only 57 u across. So
         // `findSpot` finds nothing and the spawn has to push.
-        const P = (c, r) => ({ x: 600 + c * 69.6, y: 380 + r * 69.6 });
+        const P = (c, r) => ({ x: 600 + c * 81.2, y: 300 + r * 81.2 });
         for (let r = 0; r < 9; r++) {
             for (let c = 0; c < 9; c++) {
                 if (c === 4 && r === 4) continue;

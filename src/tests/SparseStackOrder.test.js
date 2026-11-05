@@ -45,14 +45,14 @@ function zByKey(order) {
     return out;
 }
 
-/** Pairwise: the stack puts every pair the way the rule does, three z values apart or more. */
+/** Pairwise: the stack puts every pair the way the rule does, two z values apart or more. */
 function expectRuleOrder(order, input) {
     const z = zByKey(order);
     const want = ruleOrder(input);
     expect(z.size).toBe(want.length);
     for (let i = 1; i < want.length; i++) {
         const gap = z.get(want[i]) - z.get(want[i - 1]);
-        if (!(gap >= 3)) throw new Error(`${want[i - 1]} (${z.get(want[i - 1])}) should be behind ${want[i]} (${z.get(want[i])}) with room for its hero and badges`);
+        if (!(gap >= 2)) throw new Error(`${want[i - 1]} (${z.get(want[i - 1])}) should be behind ${want[i]} (${z.get(want[i])}) with room for its hero and badges`);
     }
 }
 
@@ -204,18 +204,18 @@ describe('⭐ no clamp: 256 Tokens, 25 Starter Camp sites, the Hall, quests and 
             for (const t of tokens) {
                 if (t.y <= f.y) continue;
                 pairs++;
-                expect(order.tokenZ.get(t.id)).toBeGreaterThan(order.flagZ.get(f.heroId) + 2);
+                expect(order.tokenZ.get(t.id)).toBeGreaterThan(order.flagZ.get(f.heroId) + 1);
             }
         }
         expect(pairs).toBeGreaterThan(500);
     });
 
-    it('the worked Tokens above everything at rest, the hovered one above them, all below the walking heroes', () => {
+    it('the worked Tokens above everything at rest, the hovered one above them, all below every hero', () => {
         const restMax = Math.max(...tokens.filter(t => !workedIds.includes(t.id) && t.id !== 't100').map(t => order.tokenZ.get(t.id)), ...order.flagZ.values());
         const worked = workedIds.map(id => order.tokenZ.get(id));
-        expect(Math.min(...worked)).toBeGreaterThan(restMax + 2);
-        expect(order.tokenZ.get('t100')).toBeGreaterThan(Math.max(...worked) + 2);
-        expect(order.tokenZ.get('t100') + 2).toBeLessThan(MAT_Z.WAITING_HERO);
+        expect(Math.min(...worked)).toBeGreaterThan(restMax + 1);
+        expect(order.tokenZ.get('t100')).toBeGreaterThan(Math.max(...worked) + 1);
+        expect(order.tokenZ.get('t100') + 1).toBeLessThan(MAT_Z.STANDING_HERO);
     });
 });
 
@@ -234,7 +234,7 @@ describe('when there is no free place left', () => {
             expectRuleOrder(next, { tokens, flags: [], workedIds: [], hoveredId: null });
             const zs = [...next.tokenZ.values()];
             expect(Math.min(...zs)).toBeGreaterThanOrEqual(MAT_Z.TOKEN_BASE);
-            expect(Math.max(...zs)).toBeLessThanOrEqual(MAT_Z.TOKEN_BASE + 1023 * 3);
+            expect(Math.max(...zs)).toBeLessThanOrEqual(MAT_Z.TOKEN_BASE + 1023 * 2);
             mostMoved = Math.max(mostMoved, changedKeys(last, next).length);
             last = next;
         }
@@ -275,6 +275,29 @@ describe('⭐ the stack writer writes only the boxes whose z changed', () => {
         return el;
     }
 
+    it('the hovered Token: its badges over the heroes, its art where it is, nothing else written', () => {
+        const writer = createStackWriter();
+        const els = { a: { art: box(), badges: box() }, b: { art: box(), badges: box() } };
+        for (const id of ['a', 'b']) {
+            writer.attach(id, 'art', els[id].art);
+            writer.attach(id, 'badges', els[id].badges);
+        }
+        const order = createMatStack().order({ tokens: [{ id: 'a', y: 1 }, { id: 'b', y: 2 }] });
+        writer.apply(order.tokenZ);
+        const artZ = Number(els.a.art.z);
+        const writes = () => els.a.art.writes + els.a.badges.writes + els.b.art.writes + els.b.badges.writes;
+        const before = writes();
+
+        writer.apply(order.tokenZ, 'a');
+        expect(Number(els.a.badges.z)).toBe(MAT_Z.HOVERED_BADGES);
+        expect(Number(els.a.art.z)).toBe(artZ);
+        expect(writes()).toBe(before + 1);
+
+        writer.apply(order.tokenZ);
+        expect(Number(els.a.badges.z)).toBe(artZ + 1);
+        expect(writes()).toBe(before + 2);
+    });
+
     it('one Token moved: its two boxes, nothing else', () => {
         const writer = createStackWriter();
         const els = {};
@@ -288,7 +311,7 @@ describe('⭐ the stack writer writes only the boxes whose z changed', () => {
         writer.apply(stack.order({ tokens }).tokenZ);
         const writes = () => Object.fromEntries(Object.entries(els).map(([id, b]) => [id, b.art.writes + b.badges.writes]));
         expect(writes()).toEqual({ a: 2, b: 2, c: 2 });
-        expect(Number(els.a.badges.z)).toBe(Number(els.a.art.z) + 2);
+        expect(Number(els.a.badges.z)).toBe(Number(els.a.art.z) + 1);
 
         // The same order again: nothing written.
         writer.apply(stack.order({ tokens: tokens.map(t => ({ ...t })) }).tokenZ);
