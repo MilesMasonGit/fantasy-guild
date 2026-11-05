@@ -145,6 +145,7 @@ measured.*
 - [Crafting](content_crafting.md): approved 2026-11-04; 76 recipes, 23 levels open.
 - [Mining and Forestry Tokens](content_mining_forestry.md): approved 2026-11-04; the owner's picks for the gaps between tiers.
 - [Construction](content_construction.md): approved 2026-11-04; a building per skill, 35 variants, tiered materials.
+- [Fishing](content_fishing.md): draft; seven fish gated by tools, two special waters.
 
 ## Open links
 
