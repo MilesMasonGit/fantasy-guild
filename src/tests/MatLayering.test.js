@@ -11,7 +11,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MAT_Z, STACK_PLACES, placeZ, matStackOrder, createMatStack, heroZ } from '../ui/components/board/matLayers.js';
@@ -58,12 +58,12 @@ describe('matStackOrder — the rule', () => {
         expect(tz.get('a')).toBeLessThan(fz.get('h2'));
     });
 
-    it('each takes three slots, so a hero (+1) and badges or a gear (+2) fit between neighbours', () => {
+    it('each takes two slots, so a Token\'s badges (+1) fit between neighbours', () => {
         const { tokenZ: tz, flagZ: fz } = matStackOrder({
             tokens: [{ id: 'a', y: 100 }], flags: [{ heroId: 'h1', y: 200 }]
         });
-        expect(fz.get('h1') - tz.get('a')).toBeGreaterThanOrEqual(3);
-        expect((fz.get('h1') - tz.get('a')) % 3).toBe(0);
+        expect(fz.get('h1') - tz.get('a')).toBeGreaterThanOrEqual(2);
+        expect((fz.get('h1') - tz.get('a')) % 2).toBe(0);
         expect(tz.get('a')).toBeGreaterThanOrEqual(MAT_Z.TOKEN_BASE);
     });
 
@@ -98,13 +98,13 @@ describe('matStackOrder — the rule', () => {
         expect(tz.get('hovered')).toBeGreaterThan(tz.get('worked'));
     });
 
-    it('stays below the heroes-on-the-move band, however many things are on the mat', () => {
+    it('stays below every hero, however many things are on the mat', () => {
         const tokens = Array.from({ length: 400 }, (_, i) => ({ id: `t${i}`, y: i }));
         const { tokenZ: tz } = matStackOrder({ tokens, workedIds: ['t0'], hoveredId: 't1' });
         const top = Math.max(...tz.values());
-        expect(top + 2).toBeLessThan(MAT_Z.WAITING_HERO);
+        expect(top + 1).toBeLessThan(MAT_Z.STANDING_HERO);
         // The last place there is, and its badges, still sit below.
-        expect(placeZ(STACK_PLACES - 1) + 2).toBeLessThan(MAT_Z.WAITING_HERO);
+        expect(placeZ(STACK_PLACES - 1) + 1).toBeLessThan(MAT_Z.STANDING_HERO);
     });
 });
 
@@ -119,16 +119,16 @@ describe('⭐ CR3-354: a busy mat (S3 size) keeps worked and hovered Tokens in f
 
     it('every worked Token is above every resting Token and flag, each at its own z', () => {
         const worked = workedIds.map(id => tz.get(id));
-        expect(Math.min(...worked)).toBeGreaterThan(Math.max(...restingZ) + 2);
+        expect(Math.min(...worked)).toBeGreaterThan(Math.max(...restingZ) + 1);
         expect(new Set(worked).size).toBe(workedIds.length);
         // Among themselves, the usual back-to-front rule.
         expect([...worked].sort((a, b) => a - b)).toEqual(worked);
     });
 
-    it('the hovered Token is above them all, and the whole stack stays below the walking heroes', () => {
+    it('the lifted Token is above them all, and the whole stack stays below every hero', () => {
         const top = tz.get('t300');
         expect(top).toBeGreaterThan(Math.max(...workedIds.map(id => tz.get(id))));
-        expect(top + 2).toBeLessThan(MAT_Z.WAITING_HERO);
+        expect(top + 1).toBeLessThan(MAT_Z.STANDING_HERO);
     });
 
     it('no Token or flag shares a z: nothing is clamped, so page order never decides', () => {
@@ -142,35 +142,31 @@ describe('⭐ CR3-354: a busy mat (S3 size) keeps worked and hovered Tokens in f
         const moved = tokens.filter(t => after.tokenZ.get(t.id) !== before.tokenZ.get(t.id)).map(t => t.id);
         expect(moved).toEqual(['t10']);
         expect(after.flagZ).toBe(before.flagZ);
-        expect(after.tokenZ.get('t10')).toBeGreaterThan(Math.max(...restingZ) + 2);
+        expect(after.tokenZ.get('t10')).toBeGreaterThan(Math.max(...restingZ) + 1);
     });
 });
 
 describe('heroZ — where each hero goes', () => {
-    const order = matStackOrder({
-        tokens: [{ id: 'tok', y: 500 }, { id: 'other', y: 900 }],
-        flags: [{ heroId: 'idler', y: 300 }],
-        workedIds: ['tok']
+    it('⭐ a standing hero is above the very last place in the stack, wherever they stand', () => {
+        const top = placeZ(STACK_PLACES - 1) + 1;
+        for (const y of [0, 500, 1040, 2560]) {
+            expect(heroZ({ y, moving: false })).toBeGreaterThan(top);
+            expect(heroZ({ y, moving: false })).toBeLessThan(MAT_Z.WALKING_HERO);
+        }
     });
 
-    it('a working hero is one above their Token, so both rise together (FB-2)', () => {
-        const z = heroZ({ heroId: 'w', state: 'working', tokenId: 'tok', moving: false }, order);
-        expect(z).toBe(order.tokenZ.get('tok') + 1);
-        expect(z).toBeGreaterThan(order.tokenZ.get('other') + 2);
+    it('standing heroes sort among themselves: lower on the mat in front', () => {
+        expect(heroZ({ y: 600, moving: false })).toBeGreaterThan(heroZ({ y: 599, moving: false }));
     });
 
-    it('an idle hero is one above their flag, strolling or not (FP-84)', () => {
-        expect(heroZ({ heroId: 'idler', state: 'idle', moving: false }, order)).toBe(order.flagZ.get('idler') + 1);
-        expect(heroZ({ heroId: 'idler', state: 'idle', moving: true }, order)).toBe(order.flagZ.get('idler') + 1);
+    it('a hero on the move is above the standing ones, strolling or walking', () => {
+        expect(heroZ({ y: null, moving: true })).toBe(MAT_Z.WALKING_HERO);
+        expect(heroZ({ y: 900, moving: true })).toBe(MAT_Z.WALKING_HERO);
     });
 
-    it('a walking hero is above every Token and flag; a hero with nowhere to stand just below them (HM-3)', () => {
-        expect(heroZ({ heroId: 'x', state: 'walking', moving: true }, order)).toBe(MAT_Z.WALKING_HERO);
-        expect(heroZ({ heroId: 'x', state: 'working', tokenId: 'tok', moving: true }, order)).toBe(MAT_Z.WALKING_HERO);
-        expect(heroZ({ heroId: 'x', state: 'walking', moving: false }, order)).toBe(MAT_Z.WAITING_HERO);
-    });
-
-    it('everything above the Tokens keeps its place: rings, loot, callouts, bubbles', () => {
+    it('a hovered Token\'s badges are over every hero; everything else keeps its place: rings, loot, callouts, bubbles', () => {
+        expect(MAT_Z.HOVERED_BADGES).toBeGreaterThan(MAT_Z.WALKING_HERO);
+        expect(MAT_Z.HOVERED_BADGES).toBeLessThan(MAT_Z.RINGS);
         expect(MAT_Z.WALKING_HERO).toBeLessThan(MAT_Z.RINGS);
         expect(MAT_Z.RINGS).toBeLessThan(MAT_Z.LOOT);
         expect(MAT_Z.LOOT).toBeLessThan(MAT_Z.CALLOUT);
@@ -211,15 +207,16 @@ describe('on the mat', () => {
         const { container } = mount(h(MatBoard));
         expect(zOfFlag(container, 'h1')).toBeLessThan(zOfToken(container, tok.id));
         expect(zOfFlag(container, 'h2')).toBeGreaterThan(zOfBadges(container, tok.id));
-        // Each idle hero stands just in front of their own flag.
-        expect(zOfHero(container, 'h1')).toBe(zOfFlag(container, 'h1') + 1);
-        expect(zOfHero(container, 'h2')).toBe(zOfFlag(container, 'h2') + 1);
+        // Both idle heroes are over the Token, the one standing higher on the mat too.
+        expect(zOfHero(container, 'h1')).toBeGreaterThan(zOfBadges(container, tok.id));
+        expect(zOfHero(container, 'h2')).toBeGreaterThan(zOfBadges(container, tok.id));
+        expect(zOfHero(container, 'h1')).toBeGreaterThan(zOfFlag(container, 'h2'));
         // ⚠️ The flags' box has no z-index of its own — with one, every flag
         // would sit above or below every Token together.
         expect(container.querySelector('[data-flag-layer]').style.zIndex).toBe('');
     });
 
-    it('FB-2: a worked Token and its hero draw above a lower neighbour; when work stops, the order is normal again', async () => {
+    it('FB-2: a worked Token draws above a lower neighbour, and its hero above both; when work stops, the order is normal again', async () => {
         const worked = placeAt('fixture_producer', 600, 500);
         const front = placeAt('fixture_producer', 660, 560);       // lower: normally in front
         Orders.orderAt('h1', { x: 600, y: 500 });
@@ -227,12 +224,28 @@ describe('on the mat', () => {
 
         const { container } = mount(h(MatBoard));
         expect(zOfToken(container, worked.id)).toBeGreaterThan(zOfBadges(container, front.id));
-        expect(zOfHero(container, 'h1')).toBe(zOfToken(container, worked.id) + 1);
-        expect(zOfBadges(container, worked.id)).toBe(zOfToken(container, worked.id) + 2);
+        expect(zOfHero(container, 'h1')).toBeGreaterThan(zOfBadges(container, worked.id));
+        expect(zOfBadges(container, worked.id)).toBe(zOfToken(container, worked.id) + 1);
 
         // The hook batches its reads in a microtask, hence the async act.
         await act(async () => { Flags.furl('h1'); });
         expect(zOfToken(container, worked.id)).toBeLessThan(zOfToken(container, front.id));
+    });
+
+    it('⭐ heroes on top: a hero working a Token draws over a worked Token lower on the mat, and over one higher', () => {
+        const high = placeAt('fixture_producer', 600, 300);
+        const mid = placeAt('fixture_producer', 900, 500);
+        const low = placeAt('fixture_producer', 1200, 800);
+        Orders.orderAt('h1', { x: mid.x, y: mid.y });
+        Orders.orderAt('h2', { x: low.x, y: low.y });
+        expect(Flags.statusOf('h1')).toMatchObject({ state: 'working', instanceId: mid.id });
+        expect(Flags.statusOf('h2')).toMatchObject({ state: 'working', instanceId: low.id });
+
+        const { container } = mount(h(MatBoard));
+        for (const t of [high, mid, low]) {
+            expect(zOfHero(container, 'h1')).toBeGreaterThan(zOfBadges(container, t.id));
+            expect(zOfHero(container, 'h2')).toBeGreaterThan(zOfBadges(container, t.id));
+        }
     });
 
     it('a worked Token also rises above a flag standing lower on the mat', () => {
@@ -242,7 +255,7 @@ describe('on the mat', () => {
         expect(Flags.statusOf('h2').state).toBe('idle');
 
         const { container } = mount(h(MatBoard));
-        expect(zOfToken(container, worked.id)).toBeGreaterThan(zOfFlag(container, 'h2') + 2);
+        expect(zOfToken(container, worked.id)).toBeGreaterThan(zOfFlag(container, 'h2') + 1);
     });
 
     /**
@@ -265,12 +278,62 @@ describe('on the mat', () => {
 
         // A point inside the Token's art circle, though the event lands on the flag.
         fireEvent.pointerMove(flagEl, { clientX: 600, clientY: 640 });
-        expect(zOfToken(container, tok.id)).toBeGreaterThan(zOfFlag(container, 'h1'));
+        expect(container.querySelector(`[data-token-art][data-token-id="${tok.id}"]`).getAttribute('data-outline')).toBe('hover');
         expect(flagEl.className).toContain('pointer-events-none');
 
         // Off the Token, on the flag's cloth over bare mat: the flag has the pointer again.
         fireEvent.pointerMove(flagEl, { clientX: 640, clientY: 700 });
         expect(flagEl.className).toContain('pointer-events-auto');
         expect(zOfFlag(container, 'h1')).toBeGreaterThan(zOfToken(container, tok.id));
+    });
+
+    describe('⭐ hovering a Token', () => {
+        const scene = () => {
+            const behind = placeAt('fixture_producer', 600, 500);
+            const front = placeAt('fixture_producer', 660, 540);
+            const { container } = mount(h(MatBoard));
+            const root = container.querySelector('[data-mat-board]');
+            root.getBoundingClientRect = () => ({ left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0 });
+            return { behind, front, container, root };
+        };
+
+        it('leaves it where it stands, but brings its badges up over the Token in front', () => {
+            const { behind, front, container, root } = scene();
+            const before = [zOfToken(container, behind.id), zOfToken(container, front.id)];
+            fireEvent.pointerMove(root, { clientX: 590, clientY: 500 });
+            expect([zOfToken(container, behind.id), zOfToken(container, front.id)]).toEqual(before);
+            expect(zOfToken(container, behind.id)).toBeLessThan(zOfToken(container, front.id));
+            expect(zOfBadges(container, behind.id)).toBe(MAT_Z.HOVERED_BADGES);
+            expect(zOfBadges(container, front.id)).toBe(zOfToken(container, front.id) + 1);
+        });
+
+        it('with the Mat Tuner\'s hover lift on, jumps in front, still under the heroes', () => {
+            setMatTuning('hoverLift', 1);
+            const { behind, front, container, root } = scene();
+            fireEvent.pointerMove(root, { clientX: 590, clientY: 500 });
+            expect(zOfToken(container, behind.id)).toBeGreaterThan(zOfToken(container, front.id));
+            expect(zOfToken(container, behind.id)).toBeLessThan(MAT_Z.STANDING_HERO);
+        });
+
+        it('⭐ the pointer on a hero\'s drawn pixel lights no Token behind them, only their own', () => {
+            const job = placeAt('fixture_producer', 900, 500);
+            const other = placeAt('fixture_producer', 1300, 500);
+            Orders.orderAt('h1', { x: job.x, y: job.y });
+            expect(Flags.statusOf('h1')).toMatchObject({ state: 'working', instanceId: job.id });
+            const { container } = mount(h(MatBoard));
+            const root = container.querySelector('[data-mat-board]');
+            root.getBoundingClientRect = () => ({ left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0 });
+            const heroEl = container.querySelector('[data-board-hero="h1"]');
+            const outline = (t) => container.querySelector(`[data-token-art][data-token-id="${t.id}"]`).getAttribute('data-outline');
+
+            fireEvent.pointerMove(heroEl, { clientX: other.x, clientY: other.y });
+            expect(outline(other)).not.toBe('hover');
+
+            fireEvent.pointerMove(root, { clientX: other.x, clientY: other.y });
+            expect(outline(other)).toBe('hover');
+
+            fireEvent.pointerMove(heroEl, { clientX: job.x, clientY: job.y });
+            expect(outline(job)).toBe('hover');
+        });
     });
 });

@@ -130,6 +130,10 @@ normal text colour; a new meaning needs the owner's OK.
   above any plate and never moves when one comes or goes (owner, 2026-10-29). A small Token's
   plate stands where a full-size Token's would, so its name sits under the small art, on the
   same line. Heroes' names still drop below their plate.
+- **The hovered Token's name and gear draw over everything but the plates** (owner's list,
+  2026-11-02): its art stays where it stands, behind whatever is in front of it, and heroes are
+  always over Tokens, so without this a hover could bring up a name nobody can read. A hero's
+  name and health bar stand with their figure, over every Token. A plate is over heroes' feet.
 - **One gear size on a Token** (owner, 2026-10-29): the gear is drawn the size of the "!" mark
   (its 16 px sprite at the Token's art pixel), on a Foundation, a station with nothing chosen
   and a station with a recipe alike. A choice waiting shows the yellow "!" at rest; the moment

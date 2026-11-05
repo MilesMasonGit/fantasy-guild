@@ -74,6 +74,21 @@ export function minGap(typeA, typeB) {
     return (hitRadiusOf(typeA) + hitRadiusOf(typeB)) * (1 - matTuning('overlapPct') / 100);
 }
 
+/**
+ * What a Token ends up as by its own growth: where its `grows.into` chain stops (a Stump and a
+ * Sapling end as their Tree), or the type itself when it does not grow.
+ */
+export function grownFormOf(typeId) {
+    const seen = new Set([typeId]);
+    let form = typeId;
+    for (;;) {
+        const next = getTokenType(form)?.grows?.into;
+        if (!next || seen.has(next) || !getTokenType(next)) return form;
+        seen.add(next);
+        form = next;
+    }
+}
+
 /** How far a refused drop may be nudged before it flies back instead. */
 export function nudgeReach() {
     return matTuning('nudgeReach');
@@ -162,8 +177,8 @@ function bucketNeighbours(neighbours, cell) {
  * is never built at all. The ground is read once too: `ground` is null when the Token may stand on
  * every cell here, so a meadow asks nothing per candidate.
  */
-function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudgeReach(), siteOf = null } = {}) {
-    const hit = hitRadiusOf(typeId);
+function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudgeReach(), siteOf = null, asGrown = false } = {}) {
+    const hit = hitRadiusOf(asGrown ? grownFormOf(typeId) : typeId);
     const largestHit = Math.round(LARGEST_ART_RADIUS * matTuning('hitboxPct') / 100);
     const largestGap = (hit + largestHit) * (1 - matTuning('overlapPct') / 100);
 
@@ -178,7 +193,7 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
 
     // The mat edge, read once per search rather than once per candidate: `insideBounds` below uses
     // this instead of `insideMat` recomputing `artRadiusOf`/`matW`/`matH` every time.
-    const bounds = { r: artRadiusOf(typeId), w: matW(), h: matH() };
+    const bounds = { r: artRadiusOf(asGrown ? grownFormOf(typeId) : typeId), w: matW(), h: matH() };
 
     const neighbours = [];
     let cannotMatters = hasCannot(typeId);
@@ -188,7 +203,7 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
         if (!Number.isFinite(other.x) || !Number.isFinite(other.y)) continue;
         const d2 = distanceSq(point, other);
         if (d2 <= blockSpanSq) {
-            const gap = minGap(typeId, other.typeId);
+            const gap = asGrown ? minGap(grownFormOf(typeId), grownFormOf(other.typeId)) : minGap(typeId, other.typeId);
             neighbours.push({ id: other.id, x: other.x, y: other.y, gapSq: gap * gap });
         }
         if (!cannotMatters && d2 <= cannotSpanSq && hasCannot(other.typeId)) cannotMatters = true;
@@ -315,6 +330,9 @@ function failureMemo() {
  *
  * Also used by `MatResize`, which clamps the point onto the smaller mat and asks this where it can
  * actually go.
+ * @param {object} [options]
+ * @param {boolean} [options.asGrown] keep the room this Token and its neighbours will need once
+ * grown ({@link grownFormOf}), so that growing in place moves nothing
  * @returns {{x: number, y: number, nudge: number}|null}
  */
 export function findSpot(typeId, point, options = {}) {
@@ -325,7 +343,7 @@ export function findSpot(typeId, point, options = {}) {
     // a Token that cannot be put down at all, a harder failure to recognise and not this file's
     // call to make.
     const memo = options.plan ? null : failureMemo();
-    const key = memo ? `${typeId}|${point.x}|${point.y}|${options.excludeId ?? ''}|${options.reach ?? ''}|${options.siteOf ?? ''}` : null;
+    const key = memo ? `${typeId}|${point.x}|${point.y}|${options.excludeId ?? ''}|${options.reach ?? ''}|${options.siteOf ?? ''}|${options.asGrown ? 'grown' : ''}` : null;
     if (memo?.has(key)) return null;
 
     const ctx = contextFor(typeId, point, options);
