@@ -17,8 +17,10 @@
 // * `cap256`: the top cap. The mat has 72 free 160 u cells for placed Tokens, fewer than S2's
 //   share of 256 (95), so every cell is built and more of the producers are swapped for Forests
 //   and Quarries until the spawners can fill the rest: a denser, more spawned mat than S2.
+// * `cap240`: as `cap256`, at about as many Tokens as the mat holds at the 30 % overlap.
 //
-// Drawing bench only (`?stress=cap128` …); the engine bench has no cap scenario.
+// The drawing bench draws `cap128`, `camp128` and `cap256` (`?stress=cap128` …); the engine bench
+// runs `cap240` and `cap256` as C240 and C256 (`c240-cap.mjs`, `c256-cap.mjs`).
 
 import { buildBoard, REALISTIC_PLACED } from './realistic.mjs';
 
@@ -68,5 +70,7 @@ function capScenario(id, name, n) {
 export const cap128 = capScenario('C128', 'Realistic at cap 128', 128);
 /** The Starter Camp at the base cap: 25 uncounted sites besides the 128 (Atlas D-1 B). */
 export const camp128 = capScenario('K128', 'Starter Camp at cap 128 (153 Tokens)', 153);
+/** About what the shipped mat holds of this mix at the 30 % overlap: the cap and a full mat by turns. */
+export const cap240 = capScenario('C240', 'Realistic at cap 240', 240);
 /** The top cap (Atlas D-9). */
 export const cap256 = capScenario('C256', 'Realistic at cap 256', 256);
