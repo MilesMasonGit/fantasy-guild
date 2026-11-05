@@ -35,6 +35,7 @@ import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { selectGuildInspectSelection } from './guildInspectSelection.js';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 import { FightPanelPopup } from './components/combat/FightPanelPopup.jsx';
+import { FightTabStrip } from './components/combat/FightTab.jsx';
 
 import { FPSCounter } from './components/base/FPSCounter.jsx';
 import { ParticleOverlay } from './components/base/ParticleOverlay.jsx';
@@ -327,6 +328,8 @@ export const ReactRoot = () => {
                                 <ItemStubColumn />
                                 <BannerStack />
                             </ErrorBoundary>
+                            {/* Minimized fight windows: a strip of tabs at the mat's foot, above the hero bar. */}
+                            <ErrorBoundary label="FightTabs"><FightTabStrip /></ErrorBoundary>
                             </div>
                         </div>
                         </div>

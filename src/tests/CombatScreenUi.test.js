@@ -104,33 +104,42 @@ describe('the fight panel', () => {
     const kit = () => render(React.createElement(CombatKit)).container;
     const panels = (root) => root.querySelectorAll('[data-fight-panel]');
 
-    // Rewritten for damage types: the hit row carries its type's glyph, and resistances stand where
-    // armour stood.
-    it('the versus card reads across: level and style, health as "number · %", hit with its type, resistances, swing', () => {
+    // Rewritten for the fight window (owner's pick B, 2026-11-05): each side's numbers are a stat
+    // block like the Token card's, side by side; health is the bar with its numbers over each fighter.
+    it('the stat blocks read across: style and level, hit with its type, swing, resistances; health over each fighter', () => {
         const panel = panels(kit())[0];
-        const row = (id) => [...panel.querySelectorAll(`[data-fight-row="${id}"] [data-fight-side]`)].map(text);
-        expect(row('hit')).toEqual(['4', '3']);
-        expect([...panel.querySelectorAll('[data-fight-row="hit"] [data-fight-hit-type]')].map(e => e.getAttribute('data-fight-hit-type'))).toEqual(['slash', 'physical']);
-        expect(row('resists')).toEqual(['25%', '50%−25%']);
-        expect([...panel.querySelectorAll('[data-fight-side="enemy"] [data-fight-resist]')].map(e => e.getAttribute('data-fight-resist'))).toEqual(['fire', 'slash']);
-        expect(row('swing')).toEqual(['3 s', '4 s']);
-        expect(text(q(panel, '[data-fight-hp="hero"]'))).toBe('17 · 57%');
-        expect(text(q(panel, '[data-fight-hp="enemy"]'))).toBe('24 · 60%');
-        expect(words(q(panel, '[data-fight-row="style"]'))).toBe('20/99 vs 20/99');
-        // The hero's elixirs with the fights each has left, and statuses with stacks; the enemy's kinds.
+        const stat = (who, id) => text(q(panel, `[data-fight-stats="${who}"] [data-fight-stat="${id}"]`));
+        expect(stat('hero', 'style')).toBe('Melee20/99');
+        expect(stat('enemy', 'style')).toBe('Melee20/99');
+        expect(stat('hero', 'hit')).toBe('Hit4');
+        expect(stat('enemy', 'hit')).toBe('Hit3');
+        expect([...panel.querySelectorAll('[data-fight-stat="hit"] [data-fight-hit-type]')].map(e => e.getAttribute('data-fight-hit-type'))).toEqual(['slash', 'physical']);
+        expect(stat('hero', 'resists')).toBe('Resist25%');
+        expect(stat('enemy', 'resists')).toBe('Resist50%−25%');
+        expect([...panel.querySelectorAll('[data-fight-stats="enemy"] [data-fight-resist]')].map(e => e.getAttribute('data-fight-resist'))).toEqual(['fire', 'slash']);
+        expect(stat('hero', 'swing')).toBe('Swing3 s');
+        expect(stat('enemy', 'swing')).toBe('Swing4 s');
+        expect(text(q(panel, '[data-fight-hp="hero"]'))).toBe('17/30');
+        expect(text(q(panel, '[data-fight-hp="enemy"]'))).toBe('24/40');
+        expect(text(q(panel, '[data-fight-title]'))).toBe('Aela vs Goblin Warlord');
+        // The hero's elixirs with the fights each has left; statuses with stacks in two columns; the enemy's kinds.
         expect(text(q(panel, '[data-fight-elixir="item_elixir_of_valor"]'))).toBe('7');
         expect(text(q(panel, '[data-fight-elixir="item_elixir_of_ironskin"]'))).toBe('3');
-        expect(words(q(panel, '[data-fight-status="effect_venom"]'))).toBe('Venom ×2');
+        expect(words(q(panel, '[data-fight-effects="hero"] [data-fight-status="effect_venom"]'))).toBe('Venom ×2');
+        expect(words(q(panel, '[data-fight-effects="enemy"]'))).toBe('On Goblin Warlord None');
         expect([...panel.querySelectorAll('[data-fight-kind]')].map(text)).toEqual(['Brute', 'Venomous']);
+        // An enemy without moves has its one plain swing as its attack.
+        expect([...panel.querySelectorAll('[data-fight-move]')].map(e => e.getAttribute('data-fight-move'))).toEqual(['Attack']);
     });
 
-    it('the strip: the hero at its left end, the enemy at its right, both at 1×', () => {
+    it('the battle: the hero on the left, the enemy on the right, both at twice their art, whole pixels', () => {
         const panel = panels(kit())[0];
-        const hero = q(panel, '[data-fight-strip] [data-fight-fighter="hero"]');
-        const enemy = q(panel, '[data-fight-strip] [data-fight-fighter="enemy"]');
-        expect(hero.style.left).toBe('18px');
-        expect(enemy.style.right).toBe('18px');
-        expect(hero.style.width).toBe('64px');
+        const arena = q(panel, '[data-fight-arena]');
+        const hero = q(arena, '[data-fight-fighter="hero"]');
+        const enemy = q(arena, '[data-fight-fighter="enemy"]');
+        expect(hero.style.width).toBe('128px');
+        expect(parseFloat(hero.style.left)).toBeLessThan(parseFloat(enemy.style.left));
+        for (const v of [hero.style.left, enemy.style.left, enemy.style.width]) expect(Number.isInteger(parseFloat(v))).toBe(true);
         // A Goblin has no animation sheet: it stands still.
         expect(enemy.getAttribute('data-fight-enemy-moves')).toBe('false');
     });
@@ -140,7 +149,7 @@ describe('the fight panel', () => {
         const panel = panels(root)[0];
         expect(q(panel, '[data-fight-log]').getAttribute('data-fight-log')).toBe('closed');
         expect(q(panel, '[data-fight-log-line]')).toBeNull();
-        expect(text(q(panel, '[data-fight-log-toggle]'))).toBe(t('fight.panel.showLog'));
+        expect(text(q(panel, '[data-fight-log-toggle]'))).toBe(t('fight.window.log'));
 
         act(() => { fireEvent.click(q(panel, '[data-fight-log-toggle]')); });
         expect(q(panel, '[data-fight-log]').getAttribute('data-fight-log')).toBe('open');

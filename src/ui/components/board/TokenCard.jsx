@@ -22,6 +22,7 @@ import { GameState } from '../../../state/GameState.js';
 import { RecipeList } from './RecipeList.jsx';
 import { takeRecipeListRequest, onRecipeListRequest } from './recipeFlip.js';
 import { CloseX } from '../base/CloseX.jsx';
+import { StatCell } from '../base/StatCell.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { lookUpRibbon, lookUpToken, lookUpRecipe } from '../encyclopedia/encyclopediaLink.js';
 import { t } from '../../../i18n/index.js';
@@ -70,14 +71,6 @@ const Stat = ({ icon, text, tip, tone, ...rest }) => (
             <span className="tabular-nums font-bold">{text}</span>
         </span>
     </Tooltip>
-);
-
-/** One cell of the stat block: a small caption over its value. */
-const StatCell = ({ caption, children }) => (
-    <div className="flex flex-col min-w-0">
-        <span className="ui-text-small gi-caps tracking-wider text-gi-muted leading-tight">{caption}</span>
-        <span className="ui-text-body text-gi-text">{children}</span>
-    </div>
 );
 
 /** The book: this card's entry in the Encyclopedia. */

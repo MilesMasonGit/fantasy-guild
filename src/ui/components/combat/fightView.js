@@ -212,6 +212,13 @@ function enemyBuffs(fight) {
         .map(e => EFFECTS[e.effectId]?.name || e.effectId);
 }
 
+/** What lingers on a hero for the fight besides statuses (an elixir's Valor). */
+function heroBuffs(hero) {
+    return (hero?.effects || [])
+        .filter(e => e?.forFight && e.stacks == null && !e.forSwing)
+        .map(e => EFFECTS[e.effectId]?.name || e.effectId);
+}
+
 /** The hero's side of the versus card, read live. */
 export function heroSide(hero) {
     if (!hero) return null;
@@ -255,7 +262,8 @@ export function heroSide(hero) {
         resists: heroResistLines(hero),
         swingMs,
         elixirs: activeElixirsOf(hero),
-        statuses: statusesView(hero)
+        statuses: statusesView(hero),
+        buffs: heroBuffs(hero)
     };
 }
 
@@ -340,7 +348,7 @@ export function fightPanelView(heroId, fights, now = Date.now()) {
     const liveFight = fight && fight.assignedHeroId === heroId ? fight : null;
     const heroView = heroSide(hero) || {
         id: heroId, name: record.heroName, style: null, level: null, sprite: null, hp: record.hp.hero,
-        hit: 0, hitParts: [], arrows: null, hitLines: [], resists: [], swingMs: 0, elixirs: [], statuses: []
+        hit: 0, hitParts: [], arrows: null, hitLines: [], resists: [], swingMs: 0, elixirs: [], statuses: [], buffs: []
     };
     const enemyView = enemySide(record.typeId, liveFight) || {
         typeId: record.typeId, name: record.enemyName, style: 'melee', level: null, hp: record.hp.enemy,
@@ -349,6 +357,7 @@ export function fightPanelView(heroId, fights, now = Date.now()) {
     if (!live) {
         heroView.hp = { ...record.hp.hero };
         heroView.statuses = [];
+        heroView.buffs = [];
         enemyView.hp = { ...record.hp.enemy };
         enemyView.statuses = [];
         enemyView.buffs = [];

@@ -165,18 +165,19 @@ describe('what the screen lists', () => {
         expect(q(root, '[data-enemy-card-moves]')).toBeNull();
     });
 
-    it('the panel: the moves in the enemy\'s column, the last one bright; the hit row shows each type', () => {
+    it('the window: the enemy\'s attacks, the last one marked just used; its hit shows each type', () => {
         const view = kitPanelView();
         const moves = movesView(enemyMovesOf({ moves: CHICKEN_MOVES }));
         view.enemy = { ...view.enemy, name: 'Chicken', hitType: 'stab', hitTypes: ['stab', 'slash'], moves, lastMove: 'Scratch' };
         const root = render(React.createElement(FightPanelView, {
             view, fights: { current: KIT_CURRENT, last: null }, onClose: () => {}, logOpen: false, onToggleLog: () => {}, tab: 'this', onTab: () => {}
         })).container;
-        const listed = [...root.querySelectorAll('[data-fight-effects="enemy"] [data-fight-move]')];
+        const listed = [...root.querySelectorAll('[data-fight-moves] [data-fight-move]')];
         expect(listed.map(e => e.getAttribute('data-fight-move'))).toEqual(['Peck', 'Scratch', 'Flutter']);
         expect(listed.map(e => e.getAttribute('data-fight-move-last'))).toEqual(['false', 'true', 'false']);
-        expect(listed[1].className).toContain('text-white');
-        expect([...root.querySelectorAll('[data-fight-row="hit"] [data-fight-side="enemy"] [data-fight-hit-type]')].map(e => e.getAttribute('data-fight-hit-type'))).toEqual(['stab', 'slash']);
+        expect(listed[1].textContent).toContain(t('fight.window.justUsed'));
+        expect(listed[0].textContent).not.toContain(t('fight.window.justUsed'));
+        expect([...root.querySelectorAll('[data-fight-stats="enemy"] [data-fight-stat="hit"] [data-fight-hit-type]')].map(e => e.getAttribute('data-fight-hit-type'))).toEqual(['stab', 'slash']);
     });
 
     it('every new line has its words in the strings file', () => {

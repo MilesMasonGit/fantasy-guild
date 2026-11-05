@@ -414,6 +414,55 @@ describe('a fight\'s link on the mat', () => {
     });
 });
 
+describe('the fight window belongs to its hero (owner, 2026-11-05)', () => {
+    registerTokenTypes({ cs_wolfish: enemy('cs_wolfish', 'Screen Wolf', { level: 5 }) });
+
+    it('⭐ shows the last result between fights, then turns to the next enemy: Kira vs Goblin becomes Kira vs Wolf', () => {
+        const { heroId } = buildFight();
+        const stop = startFightWatch();
+        const name = HeroManager.getHero(heroId).name;
+        runUntil(() => !!fightsOf(heroId).current, 20);
+        const { container } = render(React.createElement(LiveFightPanel, { heroId, onClose: () => {} }));
+        const title = () => container.querySelector('[data-fight-title]').textContent.replace(/\s+/g, ' ').trim();
+        expect(title()).toBe(`${name} vs Screen Venomous`);
+        expect(container.querySelector('[data-fight-result]')).toBeNull();
+
+        act(() => runUntil(() => fightsOf(heroId).last?.outcome === OUTCOME.WON));
+        expect(fightsOf(heroId).current).toBeNull();
+        expect(title()).toBe(`${name} vs Screen Venomous`);
+        expect(container.querySelector('[data-fight-result]').getAttribute('data-fight-result')).toBe(OUTCOME.WON);
+        expect(container.querySelector('[data-fight-hp="enemy"]').textContent).toBe('0/30');
+
+        const wolf = fixtures.placeAt('cs_wolfish', 900, 400);
+        act(() => { fixtures.orderAt(heroId, { x: wolf.x, y: wolf.y }); });
+        act(() => runUntil(() => fightsOf(heroId).current?.typeId === 'cs_wolfish', 60));
+        expect(title()).toBe(`${name} vs Screen Wolf`);
+        expect(container.querySelector('[data-fight-result]')).toBeNull();
+        expect(fightsOf(heroId).last.enemyName).toBe('Screen Venomous');
+        stop();
+    });
+
+    it('a minimized window tab shows both healths and draws again only when one of them changes', async () => {
+        const { FightTab, tabKey } = await import('../ui/components/combat/FightTab.jsx');
+        const { heroId } = buildFight();
+        const stop = startFightWatch();
+        runUntil(() => (fightsOf(heroId).current?.log.length || 0) > 2, 20);
+        const { container } = render(React.createElement(FightTab, { heroId }));
+        const record = fightsOf(heroId).current;
+        const hp = (who) => container.querySelector(`[data-fight-tab-hp="${who}"]`).textContent;
+        expect(hp('hero')).toBe(`${record.hp.hero.cur}/${record.hp.hero.max}`);
+        expect(hp('enemy')).toBe(`${record.hp.enemy.cur}/${record.hp.enemy.max}`);
+        expect(container.querySelector('[data-fight-tab-enemy]').textContent).toBe('Screen Venomous');
+        // A new log line with no change of health is the same tab.
+        const before = tabKey(fightsOf(heroId));
+        expect(tabKey({ current: { ...record, log: [...record.log, { n: 999 }] }, last: null })).toBe(before);
+        act(() => runUntil(() => fightsOf(heroId).current?.hp.enemy.cur !== record.hp.enemy.cur || !fightsOf(heroId).current, 20));
+        const now = fightsOf(heroId).current || fightsOf(heroId).last;
+        expect(hp('enemy')).toBe(`${now.hp.enemy.cur}/${now.hp.enemy.max}`);
+        stop();
+    });
+});
+
 describe('an elixir counts the fight it is working in (owner, 2026-10-25: 10 down to 1)', () => {
     it('a fresh one shows 10, one less as each fight ends, 1 in its last fight, then it is gone', () => {
         const { heroId, enemyId } = buildFight();
