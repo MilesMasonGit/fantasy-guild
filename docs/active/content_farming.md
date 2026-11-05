@@ -6,53 +6,52 @@ Status: draft
 
 ## The owner's rulings (2026-11-04)
 
-- **A crop's Farming level matches its first Cooking recipe**, as with fish.
+- **A crop's Farming level matches its first Cooking recipe**, as with fish. **"Try and keep one unlock per level."** Where two would share a level, one comes a level or two sooner.
 - **No tool**: progress is "crop levels and places, it'll have a variety of buildings to boost production."
 - **Animal goods stay enemy drops**: Beef, Milk, Chicken, Eggs. "I'll think about what to do about Wool."
 - **"I think we'll have quite a few herbs for alchemy."**
 - **Kept**: Fields grow long, then give a load of harvests; the player picks the crop; Farming owns all planting.
 
-## Crops
+## Unlocks
 
-| Farming level | Crop | Grows in | First Cooking use, same level | Art |
+**One unlock per level** (owner, 2026-11-04), including the fruit trees and bushes. A planted unlock comes from its seed; wild ones also stand in places on the world map. Crop levels sit at or just before the first recipe that uses them, so a cook is never left waiting.
+
+| Farming level | Unlock | Gives | First use | Art |
 |---|---|---|---|---|
-| 1 | Flax | field | Tailor: String and Linen, at Tailor 1 | N, seed N |
-| 1 | Wheat | field | Flour, then Dough at Cooking 4 | H |
-| 2 | Potato | field | Baked Potato | H, seed A |
-| 9 | Carrot | field | Carrot Soup | H |
-| 16 | Onion | field | Mirepoix | H, seed A |
-| 16 | Celery | field | Mirepoix | H, seed A |
-| 27 | Leek | field | Trout and Leek | H, seed A |
-| 43 | Cabbage | field | Garden Stew | H, seed A |
-| 43 | Turnip | field | Garden Stew | H, seed A |
-| 52 | Tomato | field | Sofrito | H, seed A |
-| 52 | Garlic | field | Sofrito | H, seed A |
-| 65 | Corn | field | Corn Chowder | H, seed A |
-| 76 | Emberroot | field, hot places | Emberroot Soup | N, seed N |
-| 87 | Voidcap | field, dark places | Voidcap Soup | N, spore N |
+| 1 | Redberry Bush | Redberry | Raw food in the first lesson (brief 480) | H |
+| 2 | Potato Field | Potato | Baked Potato | H; seed A |
+| 3 | Flax Field | Flax | Tailor: String, Linen | N; seed N |
+| 4 | Wheat Field | Wheat | Flour, then Dough | H |
+| 6 | Apple Tree | Apple | Apple Juice | H |
+| 9 | Carrot Field | Carrot | Carrot Soup | H |
+| 14 | Blackberry Bush | Blackberry | Blackberry Pie | H |
+| 15 | Onion Field | Onion | Mirepoix | H; seed A |
+| 16 | Celery Field | Celery | Mirepoix | H; seed A |
+| 19 | Grapevine | Grapes | Grape Juice | H |
+| 22 | Blueberry Bush | Blueberry | Blueberry Pie | H |
+| 24 | Cherry Tree | Cherry | Cherry Cordial | H |
+| 27 | Leek Field | Leek | Trout and Leek | H; seed A |
+| 32 | Strawberry Bush | Strawberry | Strawberry Milk | H |
+| 41 | Lemon Tree | Lemon | Lemonade | H |
+| 42 | Turnip Field | Turnip | Garden Stew | H; seed A |
+| 43 | Cabbage Field | Cabbage | Garden Stew | H; seed A |
+| 44 | Peach Tree | Peach | Peach Nectar | H |
+| 47 | Raspberry Bush | Raspberry | Raspberry Cordial | H |
+| 51 | Garlic Field | Garlic | Sofrito | H; seed A |
+| 52 | Tomato Field | Tomato | Sofrito | H; seed A |
+| 54 | Lime Tree | Lime | Limeade | H |
+| 56 | Orange Tree | Orange | Orange Juice | H |
+| 65 | Corn Field | Corn | Corn Chowder | H; seed A |
+| 66 | Pineapple Bush | Pineapple | Pineapple Punch | H |
+| 69 | Banana Tree | Banana | Banana Smoothie | H |
+| 75 | Coconut Tree | Coconut | Coconut Milk | H |
+| 76 | Emberroot Field | Emberroot | Emberroot Soup | N; seed N |
+| 77 | Watermelon Patch | Watermelon | Watermelon Cooler | H |
+| 87 | Voidcap Field | Voidcap | Voidcap Soup | N; spore N |
 
-## Fruit
+**30 unlocks, 69 levels open** for herbs and anything later. Open: 5, 7, 8, 10, 11, 12, 13, 17, 18, 20, 21, 23, 25, 26, 28, 29, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 45, 46, 48, 49, 50, 53, 55, 57, 58, 59, 60, 61, 62, 63, 64, 67, 68, 70, 71, 72, 73, 74, 78, 79, 80, 81, 82, 83, 84, 85, 86, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99.
 
-All edible raw, and worked without a tool. Levels match the first recipe that uses them.
-
-| Farming level | Fruit | Grows on | First recipe | Art |
-|---|---|---|---|---|
-| 1 | Redberry | bush | Raw food from the first lesson (brief 480); Redberry Tea at Cooking 10 | H |
-| 6 | Apple | orchard | Apple Juice | H |
-| 14 | Blackberry | bush | Blackberry Pie | H |
-| 19 | Grapes | vine | Grape Juice | H |
-| 22 | Blueberry | bush | Blueberry Pie | H |
-| 24 | Cherry | orchard | Cherry Cordial | H |
-| 32 | Strawberry | bush | Strawberry Milk | H |
-| 42 | Lemon | orchard | Lemonade | H |
-| 44 | Peach | orchard | Peach Nectar | H |
-| 47 | Raspberry | bush | Raspberry Cordial | H |
-| 54 | Lime | orchard | Limeade | H |
-| 56 | Orange | orchard | Orange Juice | H |
-| 66 | Pineapple | bush | Pineapple Punch | H |
-| 69 | Banana | orchard | Banana Smoothie | H |
-| 75 | Coconut | orchard | Coconut Milk | H |
-| 77 | Watermelon | patch | Watermelon Cooler | H |
+Tree and bush pictures are drawn (`tree_apple`, `tree_cherry`, `bush_blue` and so on); the fruit trees here are the ones you have: Apple, Cherry, Lemon, Peach, Lime, Orange, Banana, Coconut. Fields use your shared growing picture, with a ripe picture per crop to draw or adapt. Pear, Plum or others aren't in the art, so aren't listed.
 
 ## Herbs
 
