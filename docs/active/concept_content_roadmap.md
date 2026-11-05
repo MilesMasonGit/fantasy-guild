@@ -137,6 +137,8 @@ measured.*
 
 ## Chain pages
 
+**Where it stands (2026-11-04)**: the core chains are approved on paper. Next: the enemies session (Hide, scales, Silk, Milk, meats, weapon effects, late potions' drops), the five remaining specialists, then the roll-up. Nothing is in the CMS yet (T-305) and the drawings aren't on the art list as rows yet: each page has an Art column, and [the art list](owner_art_list.md) points here.
+
 - [Food and drink](content_food_and_drink.md): approved 2026-11-04; 99 Cooking recipes.
 - [Smithing](content_smithing.md): approved 2026-11-04; 82 recipes, the rest of its levels open for later skills.
 - [Fletching](content_fletching.md): approved 2026-11-04; 16 recipes, five woods, most levels open.
@@ -146,8 +148,8 @@ measured.*
 - [Mining and Forestry Tokens](content_mining_forestry.md): approved 2026-11-04; the owner's picks for the gaps between tiers.
 - [Construction](content_construction.md): approved 2026-11-04; a building per skill, 35 variants, tiered materials.
 - [Fishing](content_fishing.md): approved 2026-11-04; fish gated by tools, four special waters.
-- [Farming](content_farming.md): approved 2026-11-04; 30 unlocks, one per level, herbs to come.
-- [Alchemy](content_alchemy.md): draft; 21 potions, eight herbs.
+- [Farming](content_farming.md): approved 2026-11-04; 38 unlocks, one per level.
+- [Alchemy](content_alchemy.md): approved 2026-11-04; 21 potions, eight herbs.
 
 ## Open links
 

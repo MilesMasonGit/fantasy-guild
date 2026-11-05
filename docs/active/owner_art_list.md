@@ -101,6 +101,7 @@ player for these is T-138 (built when the first strips exist).
   the cursor over a Token in Disallow mode (muted grey) and in Demolish mode
   (red); about 11 × 11, drawn at 2×. Code-drawn placeholders (a crossed
   circle, an X) stand in until then.
+- **The content roadmap** (2026-11-04): each approved page has an Art column (H have, A adapt, N new): [food and drink](content_food_and_drink.md), [Smithing](content_smithing.md), [Fletching](content_fletching.md), [Enchanting](content_enchanting.md), [Tailor](content_tailor.md), [Crafting](content_crafting.md), [Mining and Forestry](content_mining_forestry.md), [Construction](content_construction.md), [Fishing](content_fishing.md), [Farming](content_farming.md), [Alchemy](content_alchemy.md). The roll-up session merges them here.
 - **The very early game** (NEW, brief 480): a Scrap Heap Token; Rusty Woodaxe, Rusty Pickaxe and Rusty Sword; a small slime if the slime folder has none that fits; Slurm uses `e_slurm` scaled up until a larger one is drawn, if one is wanted. Stand-ins until drawn.
 - **Title screen** (NEW, brief 450): a game logo and a title painting. Placeholders until drawn: the name in the display font over a banner picture.
 - **Top bar icons** (NEW, [concept_map_tools.md](concept_map_tools.md); the owner keeps the gold coin for Upkeep, 2026-11-03, so only the Token icon is wanted): a

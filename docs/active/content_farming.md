@@ -22,16 +22,22 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 2 | Potato Field | Potato | Baked Potato | H; seed A |
 | 3 | Flax Field | Flax | Tailor: String, Linen | N; seed N |
 | 4 | Wheat Field | Wheat | Flour, then Dough | H |
+| 5 | Lavender Herb | Lavender | [Alchemy](content_alchemy.md) at the same level | H |
 | 6 | Apple Tree | Apple | Apple Juice | H |
 | 9 | Carrot Field | Carrot | Carrot Soup | H |
+| 12 | Mint Herb | Mint | [Alchemy](content_alchemy.md) at the same level | N; seed A |
 | 14 | Blackberry Bush | Blackberry | Blackberry Pie | H |
 | 15 | Onion Field | Onion | Mirepoix | H; seed A |
 | 16 | Celery Field | Celery | Mirepoix | H; seed A |
 | 19 | Grapevine | Grapes | Grape Juice | H |
+| 20 | Sage Herb | Sage | [Alchemy](content_alchemy.md) at the same level | N; seed A |
 | 22 | Blueberry Bush | Blueberry | Blueberry Pie | H |
 | 24 | Cherry Tree | Cherry | Cherry Cordial | H |
 | 27 | Leek Field | Leek | Trout and Leek | H; seed A |
+| 30 | Rose Herb | Rose | [Alchemy](content_alchemy.md) at the same level | H; seed A |
 | 32 | Strawberry Bush | Strawberry | Strawberry Milk | H |
+| 35 | Nightshade Herb | Nightshade | [Alchemy](content_alchemy.md) at the same level | N; seed A |
+| 40 | Mandrake Herb | Mandrake | [Alchemy](content_alchemy.md) at the same level | N; seed A |
 | 41 | Lemon Tree | Lemon | Lemonade | H |
 | 42 | Turnip Field | Turnip | Garden Stew | H; seed A |
 | 43 | Cabbage Field | Cabbage | Garden Stew | H; seed A |
@@ -41,21 +47,23 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 52 | Tomato Field | Tomato | Sofrito | H; seed A |
 | 54 | Lime Tree | Lime | Limeade | H |
 | 56 | Orange Tree | Orange | Orange Juice | H |
+| 60 | Moonpetal Herb | Moonpetal | [Alchemy](content_alchemy.md) at the same level | N; seed A |
 | 65 | Corn Field | Corn | Corn Chowder | H; seed A |
 | 66 | Pineapple Bush | Pineapple | Pineapple Punch | H |
 | 69 | Banana Tree | Banana | Banana Smoothie | H |
 | 75 | Coconut Tree | Coconut | Coconut Milk | H |
 | 76 | Emberroot Field | Emberroot | Emberroot Soup | N; seed N |
 | 77 | Watermelon Patch | Watermelon | Watermelon Cooler | H |
+| 80 | Starflower Herb | Starflower | [Alchemy](content_alchemy.md) at the same level | N; seed A |
 | 87 | Voidcap Field | Voidcap | Voidcap Soup | N; spore N |
 
-**30 unlocks, 69 levels open** for herbs and anything later. Open: 5, 7, 8, 10, 11, 12, 13, 17, 18, 20, 21, 23, 25, 26, 28, 29, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 45, 46, 48, 49, 50, 53, 55, 57, 58, 59, 60, 61, 62, 63, 64, 67, 68, 70, 71, 72, 73, 74, 78, 79, 80, 81, 82, 83, 84, 85, 86, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99.
+**38 unlocks, 61 levels open** for anything later. Open: 7, 8, 10, 11, 13, 17, 18, 21, 23, 25, 26, 28, 29, 31, 33, 34, 36, 37, 38, 39, 45, 46, 48, 49, 50, 53, 55, 57, 58, 59, 61, 62, 63, 64, 67, 68, 70, 71, 72, 73, 74, 78, 79, 81, 82, 83, 84, 85, 86, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99.
 
 Tree and bush pictures are drawn (`tree_apple`, `tree_cherry`, `bush_blue` and so on); the fruit trees here are the ones you have: Apple, Cherry, Lemon, Peach, Lime, Orange, Banana, Coconut. Fields use your shared growing picture, with a ripe picture per crop to draw or adapt. Pear, Plum or others aren't in the art, so aren't listed.
 
 ## Herbs
 
-**Quite a few**, for Alchemy, which sets the list. Lavender exists today. Herb Gardens and wild patches grow them.
+**Eight, in the table above** ([Alchemy](content_alchemy.md)): grown in Herb Gardens, or wild in fitting places.
 
 ## Buildings that boost production
 
