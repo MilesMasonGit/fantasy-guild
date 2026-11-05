@@ -147,6 +147,7 @@ measured.*
 - [Construction](content_construction.md): approved 2026-11-04; a building per skill, 35 variants, tiered materials.
 - [Fishing](content_fishing.md): approved 2026-11-04; fish gated by tools, four special waters.
 - [Farming](content_farming.md): approved 2026-11-04; 30 unlocks, one per level, herbs to come.
+- [Alchemy](content_alchemy.md): draft; 21 potions, eight herbs.
 
 ## Open links
 
