@@ -146,7 +146,7 @@ measured.*
 - [Mining and Forestry Tokens](content_mining_forestry.md): approved 2026-11-04; the owner's picks for the gaps between tiers.
 - [Construction](content_construction.md): approved 2026-11-04; a building per skill, 35 variants, tiered materials.
 - [Fishing](content_fishing.md): approved 2026-11-04; fish gated by tools, four special waters.
-- [Farming](content_farming.md): draft; crops and fruit at their first recipe's level.
+- [Farming](content_farming.md): approved 2026-11-04; 30 unlocks, one per level, herbs to come.
 
 ## Open links
 
