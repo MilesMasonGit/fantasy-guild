@@ -67,7 +67,24 @@ Status: draft
 
 **Not taken**: Second Worker, Works on Its Own, Auto Collect.
 
-Which building gets which, with names and levels, comes next.
+**Proposed variants** (names are suggestions). Levels follow the tiers: 20, 40, 60, with 80 left for later. A variant is built on its own new Foundation and is an option beside the base building, not a replacement.
+
+| Building | From 20 | From 40 | From 60 |
+|---|---|---|---|
+| Blacksmith | Foundry: Faster Work | Master Smithy: Save Materials | Grand Forge: Double Output |
+| Kitchen | Bakehouse: Faster Work | Brewery: Double Output | Banquet Hall: Save Materials |
+| Workshop | Guild Workshop: Faster Work | Tannery: Save Materials | Jeweller's Hall: Double Output |
+| Tailor's Shop | Weaving Hall: Faster Work | Clothier's: Save Materials | Royal Atelier: Double Output |
+| Fletcher's Lodge | Bowyer's Hall: Faster Work | Arrow Works: Double Output |  |
+| Apothecary | Herbalist's Hut: Save Materials | Alchemist's Hall: Double Output | Master's Study: More XP |
+| Enchanter's Tower | Arcane Library: More XP | Runed Spire: Save Materials | Grand Spire: Faster Work |
+| Logging Camp | Sawmill: Double Output | Forester's Lodge: Wider Reach | Grovekeeper's Hut: Quick Refill |
+| Mining Camp | Mine Head: Quick Refill | Prospector's Camp: Rare Finds | Deep Workings: Wider Reach |
+| Fishing Hut | Pier: Wider Reach | Bait Shop: Rare Finds | Fish Market: Double Output |
+| Farmstead | Barn: Double Output | Greenhouse: Quick Refill | Manor Farm: Wider Reach |
+| War Camp | Barracks: More XP | Hunting Lodge: Rare Finds | Fortress: Wider Reach |
+
+**35 variants.** Art you may already have: `sawmill`, `market_fish`, `greenhouse`, `shrine_forge_major`, `forge_major`. The rest are new structures, or adapted from their base building. Specialist skills' variants come with their sessions.
 
 ## Other buildings
 
