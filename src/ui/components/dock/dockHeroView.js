@@ -1,6 +1,7 @@
 
 import { ART_PX } from '../../../config/matGeometry.js';
 import { boardArtSteps } from '../base/TokenSprite.jsx';
+import { PROBLEM_MARK_ART_PX } from '../board/problemMark.js';
 
 /**
  * The horizontal hero dock is a strip under the mat with the heroes standing in it. Each hero is drawn
@@ -56,27 +57,28 @@ export function dockArtOffset(artPx, { hovered = false } = {}) {
 export const ROSTER_FLAG_PX = 24;
 
 /**
- * Where the hero's flag stands on the roster: at the shoulder, as on the hero panel (the box's
- * left edge 12 % of the art right of the hero's middle, its top 4 % of the art below the top of
- * the sprite frame), so it sits beside the head and below the name, HP bar and state word.
+ * Where the hero's flag stands on the roster: at the shoulder on the hero's left (the box's right
+ * edge 12 % of the art left of the hero's middle, its top 4 % of the art below the top of the
+ * sprite frame), so it sits beside the head and below the name and HP bar.
  * `left` is from the slot's middle, `bottom` from the strip's bottom edge; both in screen px.
  */
 export function rosterFlagPlace(artPx) {
     return {
-        left: Math.round(artPx * 0.12),
+        left: -Math.round(artPx * 0.12) - ROSTER_FLAG_PX,
         bottom: Math.round(artPx / 2 - artPx * 0.04 - ROSTER_FLAG_PX)
     };
 }
 
-/**
- * The roster's state word's colour (UI_STYLE meanings): idle in gold, for attention (spotting idle
- * heroes is what a returning player does first); hurt in red; busy in the muted grey.
- */
-export const ROSTER_STATE_CLASS = Object.freeze({
-    idle: 'text-ui-gold',
-    hurt: 'text-ui-red',
-    busy: 'text-ui-muted'
-});
+/** The alert sprite's art size, at the hero's art-pixel size like the mat's marks: 32 px at 128. */
+export const rosterAlertPx = (artPx) => Math.round((PROBLEM_MARK_ART_PX * artPx) / ART_PX);
+
+/** Where a hero's alert stands: the other shoulder, mirroring the flag. Same units as the flag. */
+export function rosterAlertPlace(artPx) {
+    return {
+        left: Math.round(artPx * 0.12),
+        bottom: Math.round(artPx / 2 - artPx * 0.04 - rosterAlertPx(artPx))
+    };
+}
 
 /** HP as a whole percent, 0–100. */
 export function hpPercent(hp) {
@@ -92,9 +94,6 @@ export function hpTone(percent) {
     return 'red';
 }
 
-/** Tailwind fill for each tone. */
-export const HP_TONE_CLASS = {
-    green: 'bg-emerald-500',
-    amber: 'bg-amber-500',
-    red: 'bg-red-500 animate-pulse'
-};
+/** The hero's HP bar on the roster: wide enough for its numbers, never wider than a narrow slot. */
+export const DOCK_HP_BAR_PX = 88;
+export const DOCK_HP_BAR_HEIGHT_PX = 14;

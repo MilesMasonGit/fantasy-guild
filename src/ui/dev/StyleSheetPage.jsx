@@ -9,7 +9,7 @@ import { cn } from '../utils/cn.js';
 import { useEscapeLayer } from '../utils/escapeLayers.js';
 import { EntityRibbon } from '../components/base/EntityRibbon.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
-import { VitalBar, vitalTone } from '../components/base/VitalBar.jsx';
+import { VitalBar } from '../components/base/VitalBar.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../components/base/TokenSprite.jsx';
 import { StationGearBadge } from '../components/board/TokenBadges.jsx';
 import { Tooltip } from '../components/base/Tooltip.jsx';
@@ -28,7 +28,6 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ProblemMark } from '../components/board/ProblemMark.jsx';
 import { SEVERITY, PROBLEM_SPRITE } from '../components/board/problemMark.js';
-import { ROSTER_STATE_CLASS } from '../components/dock/dockHeroView.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
 import { PixelGlyph, GLYPHS, SLOT_GLYPHS } from '../components/base/PixelGlyph.jsx';
 import { SkillIcon } from '../components/base/SkillIcon.jsx';
@@ -451,15 +450,13 @@ const ProblemMarkDemo = () => (
     </div>
 );
 
-/** Hero orders' new pieces: the roster's state words and the "needs a job" mark. */
+/** Hero orders' new pieces: the roster's alerts. */
 const HeroOrdersDemo = () => (
     <div className="flex items-end gap-6 px-4 py-3" style={{ background: '#4a6b34' }}>
-        {['idle', 'busy', 'hurt'].map(state => (
-            <figure key={state} className="flex flex-col items-center gap-1">
-                <span className={`ui-text-small font-bold ${ROSTER_STATE_CLASS[state]}`} style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}>{state.toUpperCase()}</span>
-                <figcaption className="text-xs text-white/80">roster: {state}</figcaption>
-            </figure>
-        ))}
+        <figure className="flex flex-col items-center gap-1">
+            <img src={PROBLEM_SPRITE[SEVERITY.CANT]} alt="Wounded" style={{ width: 32, height: 32, imageRendering: 'pixelated', filter: 'drop-shadow(2px 2px 0 #000)' }} />
+            <figcaption className="text-xs text-white/80">wounded</figcaption>
+        </figure>
         <figure className="flex flex-col items-center gap-1">
             <img src={PROBLEM_SPRITE[SEVERITY.WAITING]} alt="Needs a job" style={{ width: 32, height: 32, imageRendering: 'pixelated', filter: 'drop-shadow(2px 2px 0 #000)' }} />
             <figcaption className="text-xs text-white/80">needs a job</figcaption>
@@ -743,12 +740,12 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar (the hero panel)',
-        rule: 'HP is a bar; in the hero panel its numbers show beside it.',
+        id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar (the hero bar and the hero panel)',
+        rule: 'A hero’s HP: the numbers over a stepped pixel bar.',
         Demo: () => (
             <div className="w-48 flex flex-col gap-1">
                 {[[62, 100], [30, 100], [12, 100]].map(([value, max]) => (
-                    <VitalBar key={value} value={value} max={max} barClass={vitalTone(value, max)} />
+                    <VitalBar key={value} value={value} max={max} />
                 ))}
             </div>
         )

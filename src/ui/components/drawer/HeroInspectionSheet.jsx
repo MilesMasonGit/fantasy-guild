@@ -10,7 +10,7 @@ import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { FlagMark } from '../board/FlagMark.jsx';
 import { MARKER_ART_PX } from '../board/flagGeometry.js';
 import { Tooltip } from '../base/Tooltip.jsx';
-import { VitalBar, vitalTone } from '../base/VitalBar.jsx';
+import { VitalBar } from '../base/VitalBar.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE, rosterFlagPayload } from '../../dnd/dragConstants.js';
@@ -90,7 +90,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                     <div className="flex items-baseline gap-2 min-w-0">
                         <h3 className="min-w-0 text-sm font-bold text-white truncate">{hero.name}</h3>
                     </div>
-                    <VitalBar value={hero.hp} max={hero.hpMax} barClass={vitalTone(hero.hp, hero.hpMax)} />
+                    <VitalBar data-hero-panel-hp value={hero.hp} max={hero.hpMax} height={18} textClass="ui-text-body" />
                 </div>
             </div>
 

@@ -322,7 +322,7 @@ describe('H2: the panel header', () => {
 
     it('shows the HP numbers on the bar', () => {
         const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
-        expect(r.container.querySelector('[data-hero-panel-hp-text]').textContent).toBe('80 / 100');
+        expect(r.container.querySelector('[data-hero-panel-hp] [data-hp-numbers]').textContent).toBe('80/100');
     });
 
     it('closes with the game\'s red X icon', () => {

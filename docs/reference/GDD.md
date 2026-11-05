@@ -619,7 +619,8 @@ dragging them** (hero orders, brief 260; owner 2026-10-28: one hero, one job,
 less micromanagement than area flags).
 - **Heroes live on the mat.** One with no job waits in a row in front of the
   Guild Hall. The hero bar is the roster: it finds a hero on the mat, opens
-  their sheet, says Idle, Busy or Hurt, and can be dragged from.
+  their sheet, says on hover what they are doing, wears a yellow alert when only
+  the player can get them going or a red one when wounded, and can be dragged from.
 - **Drag a hero onto a Token** they can work (their figure, their job flag, or
   their figure on the hero bar): they walk there and work **only that Token**,
   a tree, a vein, a station, a Field, an enemy or a boss (a retired Promotion
@@ -1207,8 +1208,9 @@ drawers**. The menu can be flipped to the right.
 - **Bubble menu**: Guild Hall, Item Bank, Shop, Settings.
 - **Top bar**: Tokens / cap, upkeep per minute, disallow mode.
 - **Notification column**: toasts (collapse / clear all).
-- **Hero bar** (bottom): the roster, heroes as standing figures with HP bars,
-  each with their job flag and Idle, Busy or Hurt; drag a figure onto the mat
+- **Hero bar** (bottom): the roster, heroes as standing figures with HP numbers
+  over a pixel bar, each with their job flag and an alert when wounded or the
+  player must act; hover for what they are doing; drag a figure onto the mat
   to give that hero a job. Click → **hero sheet** (loadout grid, every skill with
   its XP rate and its perks, held and next) → Edit (rename, portrait, flag colour).
 - **Bank drawer**: tabbed item lists, search, reorder; drag an item onto a hero

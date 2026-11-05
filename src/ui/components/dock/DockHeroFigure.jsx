@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
@@ -7,15 +7,13 @@ import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dn
 import { DRAG_KIND, DND_SURFACE, rosterFlagPayload, isRosterFlag } from '../../dnd/dragConstants.js';
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
-import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { FlagMark } from '../board/FlagMark.jsx';
-import { rosterStateOf, flagStatusLine } from '../board/flagText.js';
+import { rosterStateOf, rosterAlertOf, rosterBubbleLine, ROSTER_ALERT } from '../board/flagText.js';
 import { setRosterHover } from '../board/orderLit.js';
 import { PROBLEM_SPRITE, SEVERITY } from '../board/problemMark.js';
-import { Tooltip } from '../base/Tooltip.jsx';
-import { t } from '../../../i18n/index.js';
+import { VitalBar } from '../base/VitalBar.jsx';
 import { useDragSettleHover } from './useDragSettleHover.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { useHeroBarBubbles, clearHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from './heroBarBubbles.js';
@@ -23,18 +21,19 @@ import { BubbleText } from '../board/BubbleText.jsx';
 import { SpeechFrame } from '../board/SpeechFrame.jsx';
 import { SPEECH_TONE } from '../board/speechTone.js';
 import {
-    DOCK_STRIP_PX, DOCK_LABEL_GAP_PX, DOCK_NAME_TEXT_CLASS, ROSTER_FLAG_PX,
-    dockArtOffset, rosterFlagPlace, hpPercent, hpTone, HP_TONE_CLASS, ROSTER_STATE_CLASS
+    DOCK_STRIP_PX, DOCK_LABEL_GAP_PX, DOCK_NAME_TEXT_CLASS, ROSTER_FLAG_PX, DOCK_HP_BAR_PX, DOCK_HP_BAR_HEIGHT_PX,
+    dockArtOffset, rosterFlagPlace, rosterAlertPlace, rosterAlertPx, hpPercent, hpTone
 } from './dockHeroView.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * One hero standing on the roster.
  * The idle sprite the mat uses (`AnimatedHeroSprite`), at the mat's art size, cut off at the
- * waist by the strip's bottom edge. The name, HP bar and state (idle, busy, hurt) sit above the
- * head at the same height for every hero, with the "needs a job" mark beside the name when the
- * hero's Token is gone for good; the art lifts on hover. The hero's job flag, in their colour,
- * stands at their shoulder (`rosterFlagPlace`), lifting and lit with them on hover.
+ * waist by the strip's bottom edge. The name and HP bar sit above the head at the same height for
+ * every hero; the art lifts on hover. The hero's job flag, in their colour, stands at one shoulder
+ * (`rosterFlagPlace`), lifting and lit with them on hover; at the other, an alert when they are
+ * wounded or the player must act (`rosterAlertOf`). What they are doing is a speech bubble while
+ * hovered.
  * The sprite writes its frames straight to the element (the shared sprite clock), so an idle
  * frame re-renders nothing: not this figure, and not the slot, whose reorder animation would
  * measure its layout again.
@@ -156,14 +155,18 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
     onHoverChange,
     justDroppedRef
 }) {
-    // Idle, busy or hurt, and whether their job is gone: `HERO_MOVED` announces every order,
-    // claim and defeat, `HEROES_WALKED` a hero arriving, `HEROES_UPDATED` a wound healing.
+    // `HERO_MOVED` announces every order, claim and defeat, `HEROES_WALKED` a hero arriving,
+    // `HEROES_UPDATED` a wound healing, `ALERT_CHANGED` a Token sticking under its hero,
+    // `TOOL_NEEDED` a flag finding on its next look (no other event says so) that the tool is gone.
     const roster = useGameState(
-        () => ({ state: rosterStateOf(heroId), needsJob: !!Flags.statusOf(heroId).needsJob }),
-        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET],
+        () => ({ state: rosterStateOf(heroId), alert: rosterAlertOf(heroId) }),
+        [
+            BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.ALERT_CHANGED,
+            BOARD_EVENTS.GROWTH_ALERT_CHANGED, BOARD_EVENTS.TOOL_NEEDED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET
+        ],
         null,
         { deps: [heroId] }
-    ) || { state: 'idle', needsJob: false };
+    ) || { state: 'idle', alert: null };
 
     const bubbles = useHeroBarBubbles(heroId);
 
@@ -175,6 +178,8 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
 
     const offset = dockArtOffset(artPx, { hovered: lifted });
     const flagPlace = rosterFlagPlace(artPx);
+    const alertPlace = rosterAlertPlace(artPx);
+    const alertPx = rosterAlertPx(artPx);
 
     const sprite = hero.spriteId || hero.classId || null;
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
@@ -191,7 +196,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
             {...droppableProps}
             data-dock-hero={heroId}
             data-dock-state={roster.state}
-            data-dock-needs-job={roster.needsJob ? 'true' : undefined}
+            data-dock-alert={roster.alert || undefined}
             data-dock-hover={lifted ? 'true' : 'false'}
             data-dock-selected={isSelected ? 'true' : undefined}
             data-dock-wounded={isWounded ? 'true' : undefined}
@@ -286,7 +291,27 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                 </div>
             </div>
 
-            {/* Name, HP bar and state: one height for every hero. */}
+            {roster.alert && (
+                <img
+                    data-dock-alert-mark={roster.alert}
+                    src={PROBLEM_SPRITE[roster.alert === ROSTER_ALERT.WOUNDED ? SEVERITY.CANT : SEVERITY.WAITING]}
+                    alt=""
+                    draggable={false}
+                    className="absolute pointer-events-none transition-transform duration-200 ease-out"
+                    style={{
+                        left: `calc(50% + ${alertPlace.left}px)`,
+                        bottom: alertPlace.bottom,
+                        width: alertPx,
+                        height: alertPx,
+                        maxWidth: 'none',
+                        imageRendering: 'pixelated',
+                        filter: 'drop-shadow(2px 2px 0 #000)',
+                        transform: `translateY(${offset}px)`
+                    }}
+                />
+            )}
+
+            {/* Name and HP bar: one height for every hero. */}
             <div
                 data-dock-label
                 className="absolute inset-x-0 flex flex-col items-center gap-0.5 pointer-events-none"
@@ -301,63 +326,65 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                     )}
                     style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}
                 >
-                    {isWounded && <span aria-label="Wounded" className="text-red-400">✚ </span>}
                     {hero.name}
                 </span>
-                <span className="flex items-center gap-1 leading-none">
-                    {roster.needsJob && (
-                        <Tooltip content={t('orders.needsJob')}>
-                            <img
-                                data-dock-needs-job-mark
-                                src={PROBLEM_SPRITE[SEVERITY.WAITING]}
-                                alt={t('orders.needsJob')}
-                                draggable={false}
-                                className="pointer-events-auto"
-                                style={{ width: 16, height: 16, imageRendering: 'pixelated', filter: 'drop-shadow(1px 1px 0 #000)' }}
-                            />
-                        </Tooltip>
-                    )}
-                    <Tooltip content={<RosterStatusLine heroId={heroId} />}>
-                        <span
-                            data-dock-state-word={roster.state}
-                            className={cn('ui-text-small font-bold pointer-events-auto', ROSTER_STATE_CLASS[roster.state])}
-                            style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}
-                        >
-                            {t(`orders.${roster.state}`)}
-                        </span>
-                    </Tooltip>
-                </span>
-                <div
+                <VitalBar
                     data-dock-hp={pct}
                     data-dock-hp-tone={tone}
-                    title={`${hp.toLocaleString()} / ${hpMax.toLocaleString()} HP${isWounded ? ' (wounded)' : ''}`}
-                    className={cn(
-                        'w-14 h-1 bg-black/70 overflow-hidden',
-                        isWounded && 'ring-1 ring-red-500/80'
-                    )}
-                >
-                    <div
-                        className={cn('h-full transition-[width] duration-300', HP_TONE_CLASS[tone])}
-                        style={{ width: `${pct}%` }}
-                    />
-                </div>
+                    value={hp}
+                    max={hpMax}
+                    height={DOCK_HP_BAR_HEIGHT_PX}
+                    style={{ width: DOCK_HP_BAR_PX, maxWidth: '100%' }}
+                />
             </div>
 
-            {bubbles.length > 0 && (
-                <BarBubbles
-                    heroId={heroId}
-                    bubbles={bubbles}
-                    bottom={labelBottom + LABEL_PX}
-                />
+            {/**
+             * The level-ups keep their place over the name; the hover's bubble takes the top of
+             * the same column, so it stands above them and never moves or covers one.
+             */}
+            {(lifted || bubbles.length > 0) && (
+                <div
+                    data-dock-speech={heroId}
+                    className="absolute inset-x-0 flex flex-col items-center gap-1.5 pointer-events-none"
+                    style={{ bottom: labelBottom + LABEL_PX }}
+                >
+                    {lifted && <StatusBubble heroId={heroId} alert={roster.alert} tail={bubbles.length === 0} />}
+                    {bubbles.length > 0 && <BarBubbles heroId={heroId} bubbles={bubbles} />}
+                </div>
             )}
         </div>
     );
 });
 
-/** What the hero is doing in words, read when the state word's tooltip opens. */
-const RosterStatusLine = ({ heroId }) => <span>{flagStatusLine(heroId)}</span>;
+const BUBBLE_TONE = { [ROSTER_ALERT.WOUNDED]: SPEECH_TONE.CANT, [ROSTER_ALERT.ACT]: SPEECH_TONE.ATTENTION };
 
-/** The name, HP bar and state line's height plus a small gap, so a bubble's tail stops clear of them. */
+/** The hover bubble's words come from the engine: a look each second keeps them true (a heal's clock, a change of work). */
+const STATUS_BUBBLE_REFRESH_MS = 1000;
+
+/**
+ * What the hero is doing, exactly, as speech.
+ * ⚠️ Mounted only while the hero is hovered: bubbles are the largest drawing cost per hero. It may
+ * be wider than a slot, since only one hero is hovered at a time and that hero stands on top.
+ */
+const StatusBubble = ({ heroId, alert, tail }) => {
+    const [line, setLine] = useState(() => rosterBubbleLine(heroId));
+    useEffect(() => {
+        const timer = setInterval(() => setLine(rosterBubbleLine(heroId)), STATUS_BUBBLE_REFRESH_MS);
+        return () => clearInterval(timer);
+    }, [heroId]);
+    return (
+        <SpeechFrame
+            data-dock-status-bubble={heroId}
+            tone={BUBBLE_TONE[alert] || SPEECH_TONE.PLAIN}
+            tail={tail}
+            className="w-max max-w-[220px] ui-text-body font-bold leading-tight text-center"
+        >
+            {line}
+        </SpeechFrame>
+    );
+};
+
+/** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of them. */
 const LABEL_PX = 46;
 
 /** A wheel turn this soon after the last one is the same flick: one page per flick. */
@@ -370,7 +397,7 @@ const WHEEL_GAP_MS = 200;
  * a line may wrap to two. A click on an alert fades out and clears that one alert without opening
  * the hero; they let the pointer through while something is being dragged.
  */
-const BarBubbles = ({ heroId, bubbles, bottom }) => {
+const BarBubbles = ({ heroId, bubbles }) => {
     const { isDragging: passive } = useActiveDrag();
     const [page, setPage] = useState(0);
     const [slide, setSlide] = useState(null);
@@ -418,10 +445,10 @@ const BarBubbles = ({ heroId, bubbles, bottom }) => {
         <div
             data-bar-bubbles={heroId}
             className={cn(
-                'absolute inset-x-0 mx-auto flex flex-col items-center gap-0.5 px-0.5',
+                'relative w-full flex flex-col items-center gap-0.5 px-0.5',
                 passive ? 'pointer-events-none' : 'pointer-events-auto'
             )}
-            style={{ bottom, maxWidth: '100%' }}
+            style={{ maxWidth: '100%' }}
             // ⚠️ Stops the press reaching the hero's drag handle: a bubble is clicked, not dragged.
             onPointerDown={stop}
             onClick={stop}

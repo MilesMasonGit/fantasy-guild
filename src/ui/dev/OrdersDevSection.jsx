@@ -3,7 +3,7 @@
 // ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
 
 import { useState } from 'react';
-import { setUpOrdersScene, knockOutAHero, healEveryone, loadOldFlagsSave, jumpTutorialTo, TUTORIAL_JUMPS } from './ordersDev.js';
+import { setUpHeroAlertsScene, levelUpAHero, setUpOrdersScene, knockOutAHero, healEveryone, loadOldFlagsSave, jumpTutorialTo, TUTORIAL_JUMPS } from './ordersDev.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
@@ -26,6 +26,30 @@ export function OrdersDevSection() {
                     }}
                 >
                     Ambush and needs-a-job scene (test Tokens, gone on reload)
+                </button>
+                <button
+                    type="button"
+                    data-qa-alerts-scene
+                    className={buttonClass}
+                    onClick={() => {
+                        const r = setUpHeroAlertsScene();
+                        setStatus(r.ok
+                            ? 'Six QA heroes on the bar: Worker none, No Axe and No Wood yellow, Waiter none (once the bush has run out), No Job yellow, Hurt red. Hover one for what they are doing'
+                            : r.error);
+                    }}
+                >
+                    Hero bar alerts scene (test Tokens, gone on reload)
+                </button>
+                <button
+                    type="button"
+                    data-qa-alerts-level
+                    className={buttonClass}
+                    onClick={() => {
+                        const r = levelUpAHero();
+                        setStatus(r.ok ? `${r.name} levelled up: their bubble stands on the bar, hover them to see both` : r.error);
+                    }}
+                >
+                    Level up a hero (a bubble, no real XP)
                 </button>
                 <button
                     type="button"

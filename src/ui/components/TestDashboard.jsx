@@ -40,6 +40,7 @@ import { FishingDevSection } from '../dev/FishingDevSection.jsx';
 import { StationsDevSection } from '../dev/StationsDevSection.jsx';
 import { WorkConsumablesDevSection } from '../dev/WorkConsumablesDevSection.jsx';
 import { FarmingDevSection } from '../dev/FarmingDevSection.jsx';
+import { HpLookDevSection } from '../dev/HpLookDevSection.jsx';
 import { OrdersDevSection } from '../dev/OrdersDevSection.jsx';
 import { ClasslessDevSection } from '../dev/ClasslessDevSection.jsx';
 import { PerksDevSection } from '../dev/PerksDevSection.jsx';
@@ -313,6 +314,7 @@ export const TestDashboard = React.memo(() => {
                         {import.meta.env.DEV && <StarterCampDevSection />}
                         {import.meta.env.DEV && <ClasslessDevSection />}
                         {import.meta.env.DEV && <PerksDevSection />}
+                        {import.meta.env.DEV && <HpLookDevSection />}
                         {import.meta.env.DEV && <OrdersDevSection />}
                         {import.meta.env.DEV && <CampsDevSection />}
                         {import.meta.env.DEV && <AtlasDevSection />}
