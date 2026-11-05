@@ -17,7 +17,7 @@ Status: draft
 | Farming level | Crop | Grows in | First Cooking use, same level | Art |
 |---|---|---|---|---|
 | 1 | Flax | field | Tailor: String and Linen, at Tailor 1 | N, seed N |
-| 1 | Wheat | field; needs a mill for Flour | Beer | H |
+| 1 | Wheat | field | Flour, then Dough at Cooking 4 | H |
 | 2 | Potato | field | Baked Potato | H, seed A |
 | 9 | Carrot | field | Carrot Soup | H |
 | 16 | Onion | field | Mirepoix | H, seed A |
@@ -37,8 +37,8 @@ All edible raw, and worked without a tool. Levels match the first recipe that us
 
 | Farming level | Fruit | Grows on | First recipe | Art |
 |---|---|---|---|---|
+| 1 | Redberry | bush | Raw food from the first lesson (brief 480); Redberry Tea at Cooking 10 | H |
 | 6 | Apple | orchard | Apple Juice | H |
-| 10 | Redberry | bush | Redberry Tea | H |
 | 14 | Blackberry | bush | Blackberry Pie | H |
 | 19 | Grapes | vine | Grape Juice | H |
 | 22 | Blueberry | bush | Blueberry Pie | H |
