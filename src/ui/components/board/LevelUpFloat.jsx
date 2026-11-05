@@ -26,10 +26,10 @@ const LevelUpFloat = memo(function LevelUpFloat({ f, unit, fit }) {
     const roll = rollMs(values);
     const fadeDelay = Math.max(0, f.at + FLOAT_MS - FADE_MS - shownAt);
 
-    const { spritePath, def } = skillArt(f.skillId || f.skillName);
+    const { spritePath } = skillArt(f.skillId || f.skillName);
     const iconPx = ICON_ART_PX * unit;
-    const src = spritePath ? (spritePath.startsWith('/') ? spritePath : `/${spritePath}`) : null;
-    const shadow = src ? shadowLayer(src, iconPx, fit) : null;
+    const src = spritePath.startsWith('assets/') ? `/${spritePath}` : spritePath;
+    const shadow = shadowLayer(src, iconPx, fit);
 
     return (
         <div
@@ -46,18 +46,12 @@ const LevelUpFloat = memo(function LevelUpFloat({ f, unit, fit }) {
             <div className="flex items-center" style={{ gap: unit * 2 }}>
             <span className="relative inline-block shrink-0" style={{ width: iconPx, height: iconPx }}>
                 {shadow && <span aria-hidden="true" style={layerStyle(shadow.url, shadow.offset, shadow.offset, iconPx, iconPx)} />}
-                {src ? (
-                    <img
-                        src={src}
-                        alt={f.skillName}
-                        draggable={false}
-                        style={{ position: 'relative', width: iconPx, height: iconPx, maxWidth: 'none', imageRendering: 'pixelated' }}
-                    />
-                ) : (
-                    <span className="relative flex items-center justify-center w-full h-full leading-none" style={{ fontSize: iconPx * 0.7 }}>
-                        {def?.icon || '✨'}
-                    </span>
-                )}
+                <img
+                    src={src}
+                    alt={f.skillName}
+                    draggable={false}
+                    style={{ position: 'relative', width: iconPx, height: iconPx, maxWidth: 'none', imageRendering: 'pixelated' }}
+                />
             </span>
             <span data-level-window className="gi-lvl-window ui-text-display relative overflow-hidden font-bold text-white">
                 <span

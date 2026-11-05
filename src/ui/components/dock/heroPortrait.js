@@ -12,7 +12,7 @@ export const PORTRAIT_ROW = 2;
 /** The portrait's side in art pixels: head and shoulders of a 64 px frame. */
 export const PORTRAIT_ART_PX = 24;
 /** Its whole-number scale on screen. */
-export const PORTRAIT_SCALE = 2;
+export const PORTRAIT_SCALE = 3;
 /** Its side on screen. */
 export const PORTRAIT_PX = PORTRAIT_ART_PX * PORTRAIT_SCALE;
 /** Art pixels of headroom kept above the topmost drawn pixel. */

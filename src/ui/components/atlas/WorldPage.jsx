@@ -119,7 +119,7 @@ const PriceRows = ({ price, compact = false }) => {
                 ))}
                 {price.skills.map(r => (
                     <div key={r.skill} data-world-price-skill={r.skill} className="flex items-center gap-1.5">
-                        <SkillIcon skillId={r.skill} size={32} title={null} />
+                        <SkillIcon skillId={r.skill} size={32} />
                         <span className="text-white/85">{skillName(r.skill)}</span>
                         <span className={cn('ml-auto pl-3 tabular-nums', r.short ? 'text-[var(--color-ui-red)]' : 'text-white')}>
                             {r.have}/{r.need}
@@ -138,7 +138,7 @@ const PriceRows = ({ price, compact = false }) => {
                 <EntityRibbon
                     key={r.skill}
                     data-world-price-skill={r.skill}
-                    icon={<SkillIcon skillId={r.skill} size={32} title={null} />}
+                    icon={<SkillIcon skillId={r.skill} size={32} />}
                     name={skillName(r.skill)}
                     have={r.have}
                     required={r.need}

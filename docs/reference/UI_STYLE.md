@@ -53,6 +53,9 @@ clunky labels like "LVL 03" where "3/99" says it better.
 
 - **Icon + name + number**: `[pickaxe] Mining 25/99`. The icon is for
   scanning, the name so nobody has to guess.
+  **One exception**: the hero sheet's skills are icon and level, two side by
+  side, with the name in the hover tip (owner, 2026-11-02). In a narrow window
+  there the level drops its `/99`, which the tip keeps.
 - Icons are drawn crisp at whole-pixel scales (the owner noticed fuzzy skill
   icons in the Token inspection).
 
@@ -165,6 +168,8 @@ normal text colour; a new meaning needs the owner's OK.
   - **No emoji** anywhere a player can see.
   - Where a panel already has pixel art for the same idea (the close X, a lock),
     the pixel version wins.
+  - **A skill with no icon yet** draws the one shared placeholder, a plain pixel
+    stone (`SkillIcon`); a skill never falls back to its emoji.
 
 ## Item references
 
@@ -188,6 +193,8 @@ item held.
 - **Title on the left** (with an optional sprite), **the red pixel close X at
   the top right**: `ui_cancel_red.png` (16 px) at 2×. Same on every panel,
   drawer and modal. Small floating pop-ups (tooltips) have no header and no X.
+  **One exception**: the hero sheet's close and edit stand in the side space
+  beside it, where the Bank's hero column stands (owner, 2026-11-02).
 
 ## Buttons
 

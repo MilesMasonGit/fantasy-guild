@@ -166,10 +166,10 @@ describe('the hero sheet\'s skill row lists the perks held and the next one', ()
     it('opens to each perk held with what it does, then the next; a skill with no table shows none', () => {
         const r = panel();
         fireEvent.click(r.container.querySelector('[data-skill-row="forestry"]'));
-        const perks = r.container.querySelector('[data-skill-row="forestry"] [data-skill-perks]');
+        const perks = r.container.querySelector('[data-skill-opened="forestry"] [data-skill-perks]');
         expect(perks.querySelector('[data-skill-perk="k4ui_felling"]').textContent).toBe('10/99 Clean Felling×2 loot 5 % (Forestry)');
         expect(perks.querySelector('[data-skill-next-perk="k4ui_seeds"]').textContent).toBe('Next perk: 25/99 Seed Finder II');
         fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
-        expect(r.container.querySelector('[data-skill-row="mining"] [data-skill-perks]')).toBeNull();
+        expect(r.container.querySelector('[data-skill-opened="mining"] [data-skill-perks]')).toBeNull();
     });
 });

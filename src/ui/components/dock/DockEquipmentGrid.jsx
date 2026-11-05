@@ -162,7 +162,7 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
             {...droppableProps}
         >
             {item ? (
-                <span style={{ imageRendering: 'pixelated' }} className="flex items-center justify-center pointer-events-none">
+                <span style={{ imageRendering: 'pixelated' }} className="ui-loadout-item flex items-center justify-center pointer-events-none">
                     <ItemIcon item={item} size={64} />
                 </span>
             ) : (

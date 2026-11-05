@@ -42,7 +42,7 @@ export const EnemyCardRows = ({ card }) => {
             <span className="font-bold tabular-nums" data-enemy-card-level>{levelText(card.level)}</span>
             <span className="text-gi-muted">{t('fight.card.style')}</span>
             <span className="inline-flex items-center gap-1 font-bold" data-enemy-card-style={card.style}>
-                <SkillIcon skill={card.style} size={16} title={null} />
+                <SkillIcon skill={card.style} size={16} />
                 {styleName(card.style)}
             </span>
             <span className="text-gi-muted">{t('fight.card.health')}</span>

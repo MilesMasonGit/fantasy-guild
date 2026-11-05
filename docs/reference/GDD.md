@@ -1220,10 +1220,13 @@ drawers**. The menu can be flipped to the right.
 - **Hero bar** (bottom): the roster, heroes as standing figures with HP numbers
   over a pixel bar, each with their job flag and an alert when wounded or the
   player must act; hover for what they are doing; drag a figure onto the mat
-  to give that hero a job. Click → **hero sheet** (loadout grid, every skill with
-  its XP rate and its perks, held and next) → Edit (rename, portrait, flag colour).
+  to give that hero a job. Click → **hero sheet** (loadout grid, every skill two side
+  by side as icon, level and XP bar; hover for its name, purpose and perks, click for its exact
+  XP and rate; scroll arrows when it does not fit; close and edit in the side space beside it, in
+  the same spot with the Bank open or shut) → Edit (rename, portrait, flag colour).
 - **Bank drawer**: tabbed item lists, search, reorder; drag an item onto a hero
-  to equip. While open, the mat is locked and a vertical hero panel appears.
+  to equip. While open, the mat is locked and a vertical hero panel appears: large
+  portraits with the name over them and the hero bar's alerts; hover for what they are doing.
 - **Shop drawer**: drag a row onto the mat to buy; it slides aside while you
   carry an item over the mat.
 - **Guild Hall view**: the upgrade web, Hall effects panel, upgrade inspector.

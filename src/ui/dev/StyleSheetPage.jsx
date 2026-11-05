@@ -109,8 +109,8 @@ const InkOnPageDemo = () => {
             {tab('in', 2)}
             {tab('out', 6)}
             <span className="inline-block" style={{ width: 96, height: 32, background: 'rgba(59, 38, 20, 0.08)' }} title="A way's band" />
-            {mark(<><SkillIcon skillId="smithing" size={32} title={null} />15</>)}
-            {mark(<><SkillIcon skillId="smithing" size={32} title={null} />16</>, true)}
+            {mark(<><SkillIcon skillId="smithing" size={32} />15</>)}
+            {mark(<><SkillIcon skillId="smithing" size={32} />16</>, true)}
             {mark(<><PixelGlyph name="grow" scale={4} style={{ filter: GLYPH_OUTLINE }} />2:30</>)}
             {mark(<><PixelGlyph name="regrow" scale={4} style={{ filter: GLYPH_OUTLINE }} />5:00</>)}
         </div>

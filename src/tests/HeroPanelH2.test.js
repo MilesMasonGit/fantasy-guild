@@ -218,10 +218,10 @@ describe('H2: skills', () => {
         expect(skillDetail(xpForLevel(99), 500)).toMatchObject({ level: null, rate: null, eta: null });
     });
 
-    it('draws each skill as icon, name and n/99 with a thin bar, the XP in the game\'s own tooltip', () => {
+    it('draws each skill as icon and n/99 with a thin bar, the name and XP in the game\'s own tooltip', () => {
         const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
         const row = r.container.querySelector('[data-skill-row="melee"]');
-        expect(row.textContent).toContain('Melee');
+        expect(row.textContent).toBe('25/99');
         expect(row.querySelector('[data-skill-level]').textContent).toBe('25/99');
         expect(r.container.textContent).not.toMatch(/Lv\.|LVL|Level/);
         // Never the browser's own title tooltip.
@@ -262,13 +262,13 @@ describe('H2: skills', () => {
         expect(r.container.textContent).not.toContain('★');
     });
 
-    it('expands a row on click to its exact XP numbers and rate, and folds it on a second click', () => {
+    it('opens a skill on click to its exact XP numbers and rate, and folds it on a second click', () => {
         XpRateTracker.recordGain('h1', 'melee', 1000);
         const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
         const row = () => r.container.querySelector('[data-skill-row="melee"]');
-        expect(row().querySelector('[data-skill-detail]')).toBeNull();
+        expect(r.container.querySelector('[data-skill-detail]')).toBeNull();
         fireEvent.click(row());
-        const detail = row().querySelector('[data-skill-detail]');
+        const detail = r.container.querySelector('[data-skill-opened="melee"] [data-skill-detail]');
         expect(row().getAttribute('aria-expanded')).toBe('true');
         const d = skillDetail(GameState.state.heroes[0].skills.melee.xp, 1000 / (15 / 3600));
         expect(detail.textContent).toContain(d.level);
@@ -276,9 +276,9 @@ describe('H2: skills', () => {
         expect(detail.textContent).toContain('XP/h+240,000');
         expect(detail.textContent).toContain(d.eta);
         expect(detail.textContent).toMatch(/\d+:\d\d/);
-        // Only one row open at a time.
+        // Only one open at a time.
         fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
-        expect(row().querySelector('[data-skill-detail]')).toBeNull();
+        expect(r.container.querySelector('[data-skill-opened="melee"]')).toBeNull();
         fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
         expect(r.container.querySelector('[data-skill-detail]')).toBeNull();
     });
@@ -351,7 +351,7 @@ describe('H2: the hero tabs beside the Bank', () => {
         expect(document.body.querySelector('[data-top-bar-tip]')).toBeNull();
     });
 
-    it('reads each tab as a portrait and the name, nothing else', () => {
+    it('reads each tab as a portrait and the name, no bar or dot', () => {
         const r = render(panel({ selectedHeroId: null, showTabs: true }));
         const tab = r.container.querySelector('[data-dock-hero-id="h1"]');
         expect(tab.textContent).toBe('Aldric');

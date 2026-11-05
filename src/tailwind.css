@@ -968,6 +968,18 @@
   }
 }
 
+/* Item art is 32 px and draws at a whole multiple. Below this window width (the hero column is a
+   share of it) three 64 px loadout slots no longer fit beside the side space.
+   ⚠️ In an earlier layer than `.gi-icon-64` on purpose: for !important the earlier layer wins. */
+@layer components {
+  @media (max-width: 1539px) {
+    .ui-loadout-item .gi-icon-64 {
+      width: 32px !important;
+      height: 32px !important;
+    }
+  }
+}
+
 /* Connect Tailwind font-size utilities to custom CSS variables for fluid layout control */
 .text-\[6px\], .text-\[7px\], .text-\[8px\], .text-xxs {
   font-size: var(--font-size-xxs) !important;

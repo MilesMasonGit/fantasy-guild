@@ -14,12 +14,11 @@ import { VitalBar } from '../base/VitalBar.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE, rosterFlagPayload } from '../../dnd/dragConstants.js';
-import { Feather } from 'lucide-react';
 import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
 import { skillPurpose } from '../../../config/registries/skillRegistry.js';
 import { heroSkillList, skillLevelText, skillXpView, skillDetail } from '../dock/heroPanelSkills.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
-import { CloseX } from '../base/CloseX.jsx';
+import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { skillPerkView, perkLines } from '../dock/heroPerks.js';
 import { t } from '../../../i18n/index.js';
 
@@ -28,14 +27,21 @@ const TIER_BG = {
     specialist: 'bg-sky-900/30'
 };
 
+/** Two rows of skills, about what one press of a scroll arrow moves. */
+const SCROLL_STEP_PX = 80;
+
+/** How far the flag's near edge stands from the hero's middle, as a share of the art. */
+const SHEET_FLAG_OFFSET = 0.04;
+
 /**
  * The hero panel's contents: the hero idling at twice the mat size with their flag behind, name
- * and HP; the loadout grid; then one list of every skill (combat, Starting, specialist). A row
- * opens on a click to its exact XP and rate.
+ * and HP; the loadout grid; then every skill (combat, Starting, specialist), two side by side. A
+ * skill opens on a click to its exact XP and rate, across both columns. Close and edit stand in
+ * the side space beside it (`BankHeroPanel`).
  */
 // Memoised: the panel around it holds a drop target, which dnd-kit redraws at every drag start,
 // end and change of target.
-export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, onClose, onEdit }) {
+export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId }) {
     // Flat projection, per the useGameState selector contract: a string that changes only when
     // something drawn here changes.
     const signature = useGameState(
@@ -63,23 +69,13 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
 
     const toggle = (id) => setExpandedId(prev => (prev === id ? null : id));
 
+    // An opened skill's numbers go under the pair of skills it stands in.
+    const opened = rows.findIndex(r => r.id === expandedId);
+    const pairEnd = opened < 0 ? -1 : Math.min(opened | 1, rows.length - 1);
+
     return (
         <div data-hero-panel-body={heroId} className="flex flex-col h-full min-h-0 text-gi-text select-none">
-            <div className="relative shrink-0 px-3 pt-2">
-                <div className="absolute top-2 right-2 z-10 flex items-center gap-0.5">
-                    <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onEdit?.(heroId); }}
-                        data-hero-panel-edit
-                        aria-label="Edit hero"
-                        className="w-7 h-7 flex items-center justify-center text-gi-muted hover:text-[var(--color-ui-white)] transition-colors cursor-pointer"
-                    >
-                        {/* ⚠️ Placeholder quill until the owner draws one. */}
-                        <Feather size={16} />
-                    </button>
-                    <CloseX data-hero-panel-close onClick={(e) => { e.stopPropagation(); onClose?.(); }} />
-                </div>
-
+            <div className="shrink-0 px-2 pt-2">
                 <HeroFigure
                     hero={hero}
                     heroId={heroId}
@@ -94,23 +90,27 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto gi-scrollbar px-3 pb-3">
+            <ArrowScrollList step={SCROLL_STEP_PX} className="flex-1 min-h-0 px-2 pb-2">
                 <div className="py-2.5 border-t border-white/5 flex justify-center">
                     <DockEquipmentGrid heroId={heroId} />
                 </div>
 
-                <div data-skill-group="held" className="py-2 border-t border-white/5 flex flex-col gap-0.5">
-                    {rows.map(r => (
-                        <SkillRow
-                            key={r.id}
-                            row={r}
-                            heroId={heroId}
-                            expanded={expandedId === r.id}
-                            onToggle={() => toggle(r.id)}
-                        />
-                    ))}
+                <div data-skill-group="held" className="py-2 border-t border-white/5 grid grid-cols-2 gap-1">
+                    {rows.flatMap((r, i) => {
+                        const cell = (
+                            <SkillCell
+                                key={r.id}
+                                row={r}
+                                expanded={expandedId === r.id}
+                                onToggle={() => toggle(r.id)}
+                            />
+                        );
+                        return i === pairEnd
+                            ? [cell, <SkillOpened key={`${r.id}:opened`} row={rows[opened]} heroId={heroId} />]
+                            : [cell];
+                    })}
                 </div>
-            </div>
+            </ArrowScrollList>
         </div>
     );
 });
@@ -131,8 +131,8 @@ const HeroFigure = ({ hero, heroId, size }) => {
     const sprite = hero.spriteId || hero.classId || null;
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
     const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hn_recruit_por');
-    // The job flag at its size on the mat beside a hero (12 of the hero's 64 art pixels), in the
-    // top-right quarter of the hero's box, clear of their head, above their shoulder.
+    // The job flag at its size on the mat beside a hero (12 of the hero's 64 art pixels), standing
+    // behind their head on the same side as on the bar (`rosterFlagPlace`).
     const flagPx = Math.round((size * MARKER_ART_PX) / 64);
     return (
         <div
@@ -144,7 +144,7 @@ const HeroFigure = ({ hero, heroId, size }) => {
             <div
                 data-hero-panel-flag
                 className={cn('absolute', drag.isDragging && 'invisible')}
-                style={{ left: `calc(50% + ${Math.round(size * 0.12)}px)`, top: Math.round(size * 0.04), width: flagPx, height: flagPx }}
+                style={{ left: `calc(50% - ${Math.round(size * SHEET_FLAG_OFFSET) + flagPx}px)`, top: Math.round(size * 0.04), width: flagPx, height: flagPx }}
             >
                 <FlagMark size={flagPx} colour={hero.flagColour} alt="" />
             </div>
@@ -178,15 +178,16 @@ const HeroFigure = ({ hero, heroId, size }) => {
 const perkAtText = (p) => t('heroPanel.perkAt', { level: skillLevelText(p.level), perk: p.title });
 
 /**
- * `[icon] Forestry 25/99` over a thin XP bar, the XP and the skill's milestone perks (those held,
- * then the next) in the game's own tooltip on hover. A click opens it to its exact numbers and
- * what each perk held does.
+ * `[icon] 25/99` over a thin XP bar. The icon alone says which skill: its name, what it is for, the
+ * XP and its milestone perks (those held, then the next) are in the game's own tooltip on hover.
  */
-const SkillRow = ({ row, heroId, expanded = false, onToggle }) => {
+const SkillCell = ({ row, expanded = false, onToggle }) => {
     const xp = skillXpView(row.xp);
     // What the skill is for comes first: the line the old Work Permissions headers carried.
     const purpose = skillPurpose(row.id);
     const perks = skillPerkView(row.id, row.level);
+    const levelText = skillLevelText(row.level);
+    const slash = levelText.indexOf('/');
     const tipLines = [
         ...(purpose ? [purpose] : []),
         xp.title,
@@ -194,37 +195,44 @@ const SkillRow = ({ row, heroId, expanded = false, onToggle }) => {
         ...perks.next.map(p => t('heroPanel.nextPerk', { perk: perkAtText(p) }))
     ];
     return (
-        <Tooltip title={row.name} lines={tipLines}>
-        <div
-            data-skill-row={row.id}
-            data-skill-tier={row.tier || undefined}
-            aria-expanded={expanded}
-            onClick={onToggle}
-            className={cn(
-                'flex flex-col gap-1 px-1 py-0.5 cursor-pointer hover:bg-white/5',
-                row.tier && TIER_BG[row.tier]
-            )}
-        >
-            <div className="flex items-center gap-2">
-                <SkillIcon skillId={row.id} size={32} title={null} />
+        <Tooltip title={`${row.name} ${levelText}`} lines={tipLines}>
+            <div
+                data-skill-row={row.id}
+                data-skill-tier={row.tier || undefined}
+                aria-expanded={expanded}
+                onClick={onToggle}
+                className={cn(
+                    'min-w-0 flex items-center gap-1 p-0.5 cursor-pointer hover:bg-white/5',
+                    row.tier && TIER_BG[row.tier],
+                    expanded && 'bg-white/10'
+                )}
+            >
+                <SkillIcon skillId={row.id} size={32} />
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
-                    <div className="flex items-baseline gap-1.5 text-xs leading-none">
-                        <span className="truncate font-medium">{row.name}</span>
-                        <span data-skill-level className="ml-auto tabular-nums font-bold">{skillLevelText(row.level)}</span>
-                    </div>
+                    <span data-skill-level className="text-xs leading-none tabular-nums font-bold whitespace-nowrap">
+                        {levelText.slice(0, slash)}
+                        {/* ⚠️ `/99` does not fit beside the icon in a narrow window; the tip has it. */}
+                        <span className="max-[1539px]:hidden">{levelText.slice(slash)}</span>
+                    </span>
                     <div className="h-[3px] w-full bg-black/60 overflow-hidden">
                         <div className="h-full bg-gi-primary" style={{ width: `${Math.round(xp.fill * 100)}%` }} />
                     </div>
                 </div>
             </div>
-            {expanded && <SkillDetail heroId={heroId} row={row} />}
-            {expanded && <SkillPerks perks={perks} />}
-        </div>
         </Tooltip>
     );
 };
 
-/** A skill's exact numbers, read when the row opens (`skillDetail`). */
+/** An opened skill, across both columns: its name, exact numbers and perks. */
+const SkillOpened = ({ row, heroId }) => (
+    <div data-skill-opened={row.id} className="col-span-2 p-1 flex flex-col gap-1 bg-white/10">
+        <span className="ui-text-body font-bold text-white">{row.name}</span>
+        <SkillDetail heroId={heroId} row={row} />
+        <SkillPerks perks={skillPerkView(row.id, row.level)} />
+    </div>
+);
+
+/** A skill's exact numbers, read when it opens (`skillDetail`). */
 const SkillDetail = ({ heroId, row }) => {
     const d = skillDetail(row.xp, XpRateTracker.getRate(heroId, row.id));
     const lines = [
@@ -235,7 +243,7 @@ const SkillDetail = ({ heroId, row }) => {
         d.eta && ['Next level', d.eta]
     ].filter(Boolean);
     return (
-        <dl data-skill-detail className="ml-1 mr-1 mb-1 grid grid-cols-2 gap-x-3 gap-y-1 leading-tight">
+        <dl data-skill-detail className="grid grid-cols-2 gap-x-3 gap-y-1 leading-tight">
             {lines.map(([label, value], i) => (
                 // The first line, this level's XP, is the longest: it takes the full width.
                 <div key={label} className={cn('min-w-0 flex flex-col', i === 0 && d.level && 'col-span-2')}>
@@ -247,11 +255,11 @@ const SkillDetail = ({ heroId, row }) => {
     );
 };
 
-/** An opened row's milestone perks: each held one with what it does, then the next. Rows never boxed. */
+/** An opened skill's milestone perks: each held one with what it does, then the next. Rows never boxed. */
 const SkillPerks = ({ perks }) => {
     if (!perks.earned.length && !perks.next.length) return null;
     return (
-        <div data-skill-perks className="ml-1 mr-1 mb-1 flex flex-col gap-1 leading-tight">
+        <div data-skill-perks className="flex flex-col gap-1 leading-tight">
             {perks.earned.length > 0 && (
                 <span className="text-(length:--font-size-xs) text-gi-muted">{t('heroPanel.perks')}</span>
             )}

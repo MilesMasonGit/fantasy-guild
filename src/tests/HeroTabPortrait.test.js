@@ -51,9 +51,9 @@ describe('the Bank hero tabs: portrait and name', () => {
         expect(img('h2').getAttribute('src')).toBe('data:image/png;cut=/assets/heroes/hn_wizard_sheet.png');
         expect(img('h3').getAttribute('src')).toBe(img('h1').getAttribute('src'));
         expect(cuts).toEqual(['/assets/heroes/hn_fighter_sheet.png', '/assets/heroes/hn_wizard_sheet.png']);
-        expect(PORTRAIT_PX).toBe(48);
-        expect(img('h1').style.width).toBe('48px');
-        expect(img('h1').style.height).toBe('48px');
+        expect(PORTRAIT_PX).toBe(72);
+        expect(img('h1').style.width).toBe('72px');
+        expect(img('h1').style.height).toBe('72px');
         expect(img('h1').style.imageRendering).toBe('pixelated');
         // The cut already faces left; a hero with no sheet keeps their still portrait, turned left.
         expect(img('h1').style.transform).toBe('');
