@@ -636,7 +636,7 @@ const SlotMarksDemo = () => (
 const TokenCardDemo = () => (
     <div className="flex items-start gap-6 flex-wrap">
         {['token_copper_ore_vein', 'token_oak_tree'].map(id => (
-            <PixelFrame key={id} style={{ width: 256 + 12 }}>
+            <PixelFrame key={id} style={{ width: 'fit-content' }}>
                 <TokenCard typeId={id} />
             </PixelFrame>
         ))}
@@ -826,7 +826,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'arrow-bars', title: 'Arrow bars', status: 'shared', source: 'ArrowScrollList',
-        rule: 'No scrollbars: an arrow bar above and below that dims at the end but keeps its space. A click scrolls about two rows, holding repeats, the wheel works.',
+        rule: 'No scrollbars: while the list has more to scroll to, an arrow bar above and below that dims at the end but keeps its space; a list that fits has no bars. A click scrolls about two rows, holding repeats, the wheel works.',
         Demo: ArrowBarDemo
     },
     {
@@ -896,7 +896,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'token-card', title: 'Token card', status: 'unapproved', source: 'TokenCard (the card a click on a Token opens)',
-        rule: 'The 256 px activity scene fills the card behind the information, at 1×; a Token with none gets a plain card. Each block sits in a see-through box: name and X; work; cycle; the current recipe (needs, tools as hollow bars, makes); lifecycle; drops. Every icon and number explains itself on hover.',
+        rule: 'The name is a header with the book and the X; then one panel of ruled sections: the stat block, the recipe picked, Requires (tools as hollow bars, then what is used up), Makes or a water\'s catches, Events, Boosted by, Drops. A section with nothing to say is left out. The 256 px activity scene draws at whole-pixel scales, 2× or more; a Token with none gets the plain panel. Every icon and number explains itself on hover. The layout follows the QA panel\'s Token card look.',
         Demo: TokenCardDemo
     },
     {

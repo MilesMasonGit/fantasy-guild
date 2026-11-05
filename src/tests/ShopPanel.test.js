@@ -79,6 +79,14 @@ afterEach(() => { cleanup(); resetMatTuning(); });
 
 /** The drawer inside a drag system, optionally with a drag in the hand and
  * over a given surface (the lip/open state now depends on it). */
+/** jsdom has no layout: makes the Shop's list taller than its box, which is when it has arrows. */
+const overflowList = (view) => {
+    const list = view.container.querySelector('[data-scroll-list]');
+    Object.defineProperty(list, 'clientHeight', { value: 200, configurable: true });
+    Object.defineProperty(list, 'scrollHeight', { value: 1000, configurable: true });
+    act(() => { list.dispatchEvent(new Event('scroll')); });
+};
+
 function mountDrawer({ isOpen = true, carrying = null, surface = undefined } = {}) {
     let inner = h(ShopDrawer, { isOpen, onClose: () => {} });
     if (surface !== undefined) {
@@ -200,6 +208,7 @@ describe('the Shop drawer (B4)', () => {
         InventoryManager.addItem(WOOD, 10);
         const view = mountDrawer();
         expect(row(view, 'fixture_sp_forest')).toBeTruthy();
+        overflowList(view);
         const buttons = [...view.container.querySelectorAll('button')];
         expect(buttons.map(b => b.title).sort()).toEqual(['Close Shop', 'Scroll down', 'Scroll up']);
     });
@@ -277,6 +286,7 @@ describe('Shop layout (U5)', () => {
 
     it('has arrow buttons at the top and bottom, and no visible scrollbar', () => {
         const view = mountDrawer();
+        overflowList(view);
         const up = view.container.querySelector('[data-scroll-arrow="up"]');
         const down = view.container.querySelector('[data-scroll-arrow="down"]');
         expect(up).toBeTruthy();

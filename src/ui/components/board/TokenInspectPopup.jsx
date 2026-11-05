@@ -1,7 +1,8 @@
 import { useRef, useLayoutEffect, useState, useEffect, useCallback } from 'react';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { cn } from '../../utils/cn.js';
-import { TokenCard, CARD_ART_PX } from './TokenCard.jsx';
+import { TokenCard } from './TokenCard.jsx';
+import { useCardLook } from './cardLook.js';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { PixelFrame, FRAME_KIND, FRAME_BAND_PX } from '../base/PixelFrame.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -24,11 +25,10 @@ const POPUP_SCROLL_STEP_PX = 140;
 /** Long enough for `MatToken`'s left/top transition to have settled. */
 const MOVE_SETTLE_MS = 280;
 
-/** The card inside its chamfer frame. */
-const POPUP_W = CARD_ART_PX + 2 * FRAME_BAND_PX;
-
 export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClose }) => {
     const popupRef = useRef(null);
+    // The narrowest card of this look inside its chamfer frame.
+    const minWidth = useCardLook().plainWidth + 2 * FRAME_BAND_PX;
     const [coords, setCoords] = useState({ top: 0, left: 0, dir: 'top' });
     const [isVisible, setIsVisible] = useState(false);
     const [targetRect, setTargetRect] = useState(anchorRect || null);
@@ -80,7 +80,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
         if (!targetRect || !popupRef.current) return;
 
         const popupEl = popupRef.current;
-        const popupW = popupEl.offsetWidth || POPUP_W;
+        const popupW = popupEl.offsetWidth || minWidth;
         const popupH = popupEl.offsetHeight || 320;
 
         const viewportW = window.innerWidth;
@@ -142,7 +142,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
         placedAt.current = { top: Math.round(top), left: Math.round(left) };
         setCoords({ top: Math.round(top), left: Math.round(left), dir });
         requestAnimationFrame(() => setIsVisible(true));
-    }, [targetRect, typeId, layoutTick]);
+    }, [targetRect, typeId, layoutTick, minWidth]);
 
     useEffect(() => {
         const handleGlobalClick = (e) => {
@@ -176,7 +176,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
                 "fixed z-(--z-token-popup) transition-opacity duration-200 ease-out",
                 isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
-            style={{ top: coords.top, left: coords.left, minWidth: POPUP_W }}
+            style={{ top: coords.top, left: coords.left, minWidth }}
         >
             <PixelFrame kind={FRAME_KIND.CHAMFER}>
                 <ArrowScrollList step={POPUP_SCROLL_STEP_PX} compact className="max-h-[75vh]">

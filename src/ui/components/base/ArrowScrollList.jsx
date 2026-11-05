@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 
 /**
- * The one scrolling list (UI_STYLE "Lists and scrolling"): no scrollbar, an arrow bar above
- * and below. An arrow dims at its end of the list but keeps its space, so the list never
- * jumps. A press scrolls `step` pixels smoothly (about two rows: the caller knows its row
+ * The one scrolling list (UI_STYLE "Lists and scrolling"): no scrollbar, and an arrow bar above
+ * and below only while the content is taller than the box. Content that fits gets no bars and
+ * no empty space for them. While it scrolls, an arrow dims at its end of the list but keeps its
+ * space. A press scrolls `step` pixels smoothly (about two rows: the caller knows its row
  * height), holding keeps scrolling, and the mouse wheel scrolls the box natively.
  *
- * Renders three siblings (bar, list, bar), so the parent should be a flex column; `className`
- * sizes and lays out the list box itself (`flex-1 min-h-0`, `max-h-[75vh]`, padding, gaps).
+ * Renders up to three siblings (bar, list, bar), so the parent should be a flex column;
+ * `className` sizes and lays out the list box itself (`flex-1 min-h-0`, `max-h-[75vh]`, padding,
+ * gaps). A list inside a box that grows with its content (a `max-h`) moves down by a bar when the
+ * bars arrive.
  */
 
 /** One art pixel of the arrow, in screen pixels: UI sprites draw at 2×. */
@@ -51,6 +54,24 @@ const barClass = (compact) => cn(
     'disabled:opacity-30 disabled:cursor-default disabled:hover:text-gi-muted'
 );
 
+/**
+ * Whether the content is taller than the box. A `flex-1` list gets the bars' height back when
+ * they go and a `max-h` list does not, so inside that margin only taking them out says which:
+ * guessing would flip the bars on and off at every measure, or keep them over content that fits.
+ * ⚠️ Hidden and restored within this call, so nothing paints without them.
+ */
+function contentOverflows(el, { up, down }) {
+    const over = el.scrollHeight - el.clientHeight;
+    if (over <= 1) return false;
+    if (!up || !down || over > up.offsetHeight + down.offsetHeight + 1) return true;
+    up.style.display = 'none';
+    down.style.display = 'none';
+    const stillOver = el.scrollHeight - el.clientHeight > 1;
+    up.style.display = '';
+    down.style.display = '';
+    return stillOver;
+}
+
 export const ArrowScrollList = ({
     children,
     step = 120,
@@ -60,7 +81,8 @@ export const ArrowScrollList = ({
     listProps
 }) => {
     const ref = useRef(null);
-    const [ends, setEnds] = useState({ top: true, bottom: true });
+    const [ends, setEnds] = useState({ top: true, bottom: true, scrolls: false });
+    const bars = useRef({ up: null, down: null });
     const target = useRef({ top: 0, at: -Infinity });
     const hold = useRef({ delay: null, repeat: null });
 
@@ -69,11 +91,13 @@ export const ArrowScrollList = ({
         if (!el) return;
         const top = el.scrollTop <= 0;
         const bottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-        setEnds(prev => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
+        const scrolls = contentOverflows(el, bars.current);
+        setEnds(prev => (prev.top === top && prev.bottom === bottom && prev.scrolls === scrolls ? prev : { top, bottom, scrolls }));
     }, []);
 
-    // Content or box size may have changed since the last paint.
-    useEffect(measure);
+    // Content or box size may have changed since the last paint. Before the paint, so a list
+    // that needs bars never shows a frame without them.
+    useLayoutEffect(measure);
 
     useEffect(() => {
         window.addEventListener('resize', measure);
@@ -143,6 +167,7 @@ export const ArrowScrollList = ({
         return (
             <button
                 type="button"
+                ref={(node) => { bars.current[dir] = node; }}
                 data-scroll-arrow={dir}
                 title={dir === 'up' ? 'Scroll up' : 'Scroll down'}
                 aria-label={dir === 'up' ? 'Scroll up' : 'Scroll down'}
@@ -161,7 +186,7 @@ export const ArrowScrollList = ({
 
     return (
         <>
-            {bar('up')}
+            {ends.scrolls && bar('up')}
             <div
                 {...listProps}
                 ref={ref}
@@ -171,7 +196,7 @@ export const ArrowScrollList = ({
             >
                 {children}
             </div>
-            {bar('down')}
+            {ends.scrolls && bar('down')}
         </>
     );
 };
