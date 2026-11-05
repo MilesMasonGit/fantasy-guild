@@ -109,6 +109,7 @@ a brief's read-only research may overlap another's build.
   engineer); `CLAUDE.md` says how the director picks one and spot-checks. The
   director verifies every claim before merging. Benches run only in the
   owner's downtime, by the director (TESTING.md, gate item 2).
+- **Looks are picked from screenshots, then one is built** (owner, 2026-11-05): where a brief says "show two or three looks" or "for the owner to pick", the phase first renders them as a screenshot comparison page (mock-ups or the real game, side by side, a letter each). The owner picks, and only the picked design is built. No look switches in the QA panel. Eye-checks then cover how it plays.
 - **Old saves aren't protected** (owner, 2026-11-05; GDD: refused until 1.0): no brief spends work keeping a save from before a change playable. A new game is the test. File saves, once brief 450 S3 lands, must still never lose data.
 - **Bookkeeping**: close tickets into `docs/archive/tickets_done.md`, log
   changes in `CHANGELOG.md`, update `docs/active/NOW.md` at the end of a
