@@ -57,6 +57,7 @@ import { dashedLinePath, MARCH_PX_PER_S } from '../components/board/orderLine.js
 import { ChartView } from '../components/encyclopedia/EncyclopediaChartView.jsx';
 import { encyclopedia } from '../components/encyclopedia/encyclopediaModel.js';
 import { chartOf, CHART_METRICS, ROOT } from '../components/encyclopedia/encyclopediaChart.js';
+import { t } from '../../i18n/index.js';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -101,6 +102,19 @@ const InkOnPageDemo = () => {
         <span className="ui-text-title ui-text-outline-2 font-bold text-white inline-flex items-center gap-1 px-1 tabular-nums" style={{ background: '#e1d3a2', ...(red ? { color: 'var(--color-ui-red, #ff2d55)' } : {}) }}>{children}</span>
     );
     const edge = '2px solid #3b2614';
+    // A line's word: on a use's line before its arrow (the line broken round it), or above a way in's line by its box.
+    const lineWord = (key, onLine) => (
+        <span className="relative inline-flex" style={{ width: 120, height: 28 }}>
+            <span className="absolute left-0" style={{ right: 8, top: onLine ? 13 : 21, height: 2, background: '#3b2614' }} />
+            {onLine && <span className="absolute right-0" style={{ top: 9, borderLeft: '8px solid #3b2614', borderTop: '5px solid transparent', borderBottom: '5px solid transparent' }} />}
+            <span
+                className="absolute ui-text-ink ui-text-small font-bold whitespace-nowrap"
+                style={{ lineHeight: '14px', padding: '0 2px', ...(onLine ? { right: 16, top: 7, background: '#e1d3a2' } : { left: 6, top: 3 }) }}
+            >
+                {t(`encyclopedia.line.${key}`)}
+            </span>
+        </span>
+    );
     const tab = (side, n) => (
         <span className={cn(ink, 'inline-flex items-center justify-center px-1')} style={{ height: 20, lineHeight: '16px', background: '#d3c290', borderTop: edge, borderBottom: edge, ...(side === 'in' ? { borderLeft: edge } : { borderRight: edge }) }}>
             {side === 'in' ? '‹' : '›'}{n}
@@ -115,6 +129,8 @@ const InkOnPageDemo = () => {
             {mark(<><SkillIcon skillId="smithing" size={32} />16</>, true)}
             {mark(<><PixelGlyph name="grow" scale={4} style={{ filter: GLYPH_OUTLINE }} />2:30</>)}
             {mark(<><PixelGlyph name="regrow" scale={4} style={{ filter: GLYPH_OUTLINE }} />5:00</>)}
+            {lineWord('toolFor', true)}
+            {lineWord('madeAt', false)}
         </div>
     );
 };
@@ -939,13 +955,13 @@ export const KIT_SECTIONS = [
     {
         id: 'codex-chart', title: 'Encyclopedia chart: entries, marks on the lines, ways on bands, arrow tabs', status: 'unapproved',
         source: 'ChartView (the Encyclopedia’s chart page)',
-        rule: 'New, unapproved (brief 300 E3, the owner’s display choices, third and fourth looks of 1 November). Drawn on the book’s parchment, read left to right, every box something the player acts on: a dark box with the frames’ bronze 2 px line (white on hover and when it is the focus), the sprite, the name, then how many one of the searched entry needs (×6, red when you have fewer) and a drop’s odds; the collected tick at its bottom right. Resting the pointer on a box shows its card (what it is, what you have, this run’s totals, the one-off starts it came from) and lights its path: the lines from it to the searched entry are drawn twice as thick; nothing fades. On the line into each step, what it asks of a hero: the skill icon at 2× and the level in light outlined words (light red when no hero has it; a fight shows a sword and the enemy’s level, never red; hover names the skill and the stations). A sapling, sprout or stump is no box: the line carries the grow mark and its time, or the regrow mark for a stump fed a seedling. When an entry has several ways in, each way sits on its own faint band of the page (no “or”). On a box’s side, an arrow tab with a count in it (‹2 on the left, ›6 on the right) says how many lines that way are not on the chart; a click opens that side, and on a box’s far side it opens it in place: the box moves out and its other ways (or uses) stand between it and its neighbour, whose line runs through. Lines are 1 art pixel of dark ink with square corners and an arrowhead into each box. Drawn here with nobody in the guild, so every level shows red.',
+        rule: 'New, unapproved (brief 300 E3, the owner’s display choices, third and fourth looks of 1 November). Drawn on the book’s parchment, read left to right, every box something the player acts on: a dark box with the frames’ bronze 2 px line (white on hover and when it is the focus), the sprite, the name, then how many one of the searched entry needs (×6, red when you have fewer) and a drop’s odds; the collected tick at its bottom right. Resting the pointer on a box shows its card (what it is, what you have, this run’s totals, the one-off starts it came from) and lights its path: the lines from it to the searched entry are drawn twice as thick; nothing fades. On the line into each step, what it asks of a hero: the skill icon at 2× and the level in light outlined words (light red when no hero has it; a fight shows a sword and the enemy’s level, never red; hover names the skill and the stations). A sapling, sprout or stump is no box: the line carries the grow mark and its time, or the regrow mark for a stump fed a seedling. When an entry has several ways in, each way sits on its own faint band of the page (no “or”). On a box’s side, an arrow tab with a count in it (‹2 on the left, ›6 on the right) says how many lines that way are not on the chart; a click opens that side, and on a box’s far side it opens it in place: the box moves out and its other ways (or uses) stand between it and its neighbour, whose line runs through. Lines are 1 art pixel of dark ink with square corners and an arrowhead into each box. New, unapproved (brief 470 E2, the owner’s pick C): every line that is not used up carries a small ink word saying what it means (made at, built on, one of, tool for, beside, gives, opens, catch, drops, bonus, spawns, grows, leaves, turns, makes, builds); an ingredient, a seed planted, bait or a price stays the plain line. A way in’s word rides just above its line beside the box it comes from; a use’s sits on its line before the arrow, the line broken round it. Hover says it in a sentence. The columns stand 60 px further apart so a word never sits over a mark. Drawn here with nobody in the guild, so every level shows red.',
         Demo: EncyclopediaChartDemo
     },
     {
         id: 'codex-ink', title: 'Words on the book’s page: ink tabs and outlined marks', status: 'unapproved',
         source: 'ui-text-ink, --color-ui-ink (arrow tabs); ui-text-title with ui-text-outline-2 (marks on the lines); the Encyclopedia’s chart',
-        rule: 'New, unapproved (the owner’s display choices, third and fourth looks of 1 November). Counts drawn on the book’s parchment sit in an arrow tab, dark ink at the body size, bold, with no outline (the game’s black outline fills ink letters in): a slightly deeper page edged in ink on its outer sides, the arrow pointing the way. What a step asks of a hero is a mark on its line: the skill icon at 2× (32 px) and the level in light words at the title size with the game’s hard 2 px black outline for words over a picture; light red when no hero has it, never for a fight. A grow or regrow mark is the same mark: its code-drawn glyph at 32 px with the same outline, its time in the same words. A mark has a patch of the page behind it, so its line breaks around it; a way in sits on a band, a thin ink wash over the page.',
+        rule: 'New, unapproved (the owner’s display choices, third and fourth looks of 1 November). Counts drawn on the book’s parchment sit in an arrow tab, dark ink at the body size, bold, with no outline (the game’s black outline fills ink letters in): a slightly deeper page edged in ink on its outer sides, the arrow pointing the way. What a step asks of a hero is a mark on its line: the skill icon at 2× (32 px) and the level in light words at the title size with the game’s hard 2 px black outline for words over a picture; light red when no hero has it, never for a fight. A grow or regrow mark is the same mark: its code-drawn glyph at 32 px with the same outline, its time in the same words. A mark has a patch of the page behind it, so its line breaks around it; a way in sits on a band, a thin ink wash over the page. A line’s word (new, unapproved, brief 470 E2) is dark ink at the small size, bold, no outline: on a use’s line with a patch of the page behind it, or just above a way in’s line.',
         Demo: InkOnPageDemo
     },
     {

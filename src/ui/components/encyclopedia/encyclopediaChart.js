@@ -664,8 +664,9 @@ export const CHART_METRICS = Object.freeze({
     nodeH: 60,
     /**
      * Between two columns: an arrow tab each side, the join and trunk, and between them a mark and
-     * a line's word side by side, never one over the other: a use's grow mark and its time ("5:00")
-     * with "spawns", or a two-figure skill mark with "tool for", in the widest of the game's fonts.
+     * a line's word side by side, never one over the other. The widest pair in the content needs
+     * 242 (a grow mark and its time with "beside" or "spawns"; a two-figure skill mark with "tool
+     * for"), in the widest of the game's fonts; 260 holds a grow time up to 99:59.
      */
     gapX: 260,
     /** From a box's side to the line that joins or splits there: room for its arrow tab ("›30"). */
