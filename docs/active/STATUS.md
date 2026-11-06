@@ -26,6 +26,10 @@ build green) · bench-queued · eye-check · merged.*
 | 460 P1: every soft glow and shadow listed, a before/after sheet for the owner | builder | `docs/hard-pixel-sheet` (`p1`, from main) | **merged** (docs only): `research/hard_pixel/sheet_before_after.png`, `list.md`; 13 live soft effects left; waits for the owner's go | Fri | Fri |
 | 470 E1: mock-ups of what each encyclopedia line means | builder | `docs/encyclopedia-lines` (`x1`, from main) | **merged** (docs only): `research/encyclopedia_lines/contact_lines.png`, README; waits for the owner's pick | Fri | Fri |
 | 470 E3: progress bars per kind in the book's corner, recipe ingredients link to their pages | builder | `crunch/encyclopedia-progress` (`x3`, from main) | ready 388596b4 for the eye-check (engine work expected same); director: 594 files green, cycles, build; note: a total can grow when something unreachable is found (owner may find it odd) | Fri | |
+| 380 M2 and M3: the world map, board tiles over a painted map, cell states, ring lines; then the hover tip, a thinner panel, no tabs | builder | `crunch/world-map` (`m2`, from main) | building (owner's picks 2026-11-06) | Fri | |
+| 390 G2 and G3: the sky (bright item outlines over stars, 1.4x spacing, titles under, ranks on hover, full screen); the purple panel with now and next | builder | `crunch/hall-sky` (`g2`, from main) | building (owner's picks 2026-11-06) | Fri | |
+| 470 E2: a word on each encyclopedia line | engineer | after x3 merges | waits for the look at x3 | | |
+| 460 P2: the last soft glows and shadows go hard, words with a 1 px outline | builder | after the waiting merges | waits | | |
 | 400 B1 to B3: coloured pixel backgrounds behind every panel, the item tooltip, the inspection window (B4 Use later) | builder | `crunch/bank-detail` (`b4`, from main) | ready 09e6f15a for the eye-check (engine work expected same); director: 595 files green, cycles, build; screenshots in `research/bank_detail/built/`; the fight window's backdrop (rust) is one prop to add after the combat merge | Thu | |
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
@@ -164,15 +168,15 @@ None open.
 
 ## Questions for the owner
 
-- **Hard pixel finish (460 P1, `research/hard_pixel/`):** go ahead with P2 as shown? Plus: (1) words on the mat (Token name, the -1): a. 2 px hard outline (recommended, reads better than today), b. 1 px only, c. keep the soft shadow; (2) the mat's soft edge while the ground is off: a. drop it (recommended), b. a hard dark band, c. keep; (3) the drag refusal mark's bounce: a. stop it, as UI_STYLE says (recommended), b. keep it.
+- ~~Hard pixel finish~~ **Answered 2026-11-06 (owner): B, the hard versions as listed, but words keep a 1 px hard outline primarily** (2 px only where it already is, the Region name). Director, taking the recommendations not answered: the mat's soft edge while the ground is off is dropped; the drag refusal mark stops bouncing. P2 runs after the waiting merges (it touches the Bank, Hall and fight files).
 
-- **Encyclopedia lines (470 E1):** A today (every line the same), B line styles (used up solid, needed and kept dashed, comes out of doubled, a small key; recommended), C a word on each line, D B in colour (blue kept, green comes out of; green already means ready). Also: keep used up as the plain unlabelled line (recommended), or give it a word too.
+- ~~Encyclopedia lines~~ **Answered 2026-11-06 (owner): C, a word on each line** that is not used up (made at, tool for, gives, drops, spawns, opens, beside). Used up stays the plain unlabelled line (recommended, not answered). E2 (engineer) after x3 merges; the columns need about 60 px more gap.
 
-- **Bounties on a full mat (brief 500 fix):** A. a due bounty with no room is skipped and the next comes 3 minutes later, the spawners' bus rule (built, recommended); B. it waits and lands as soon as room opens, as today (just as cheap).
+- **Bounties on a full mat (brief 500 fix):** A. a due bounty with no room is skipped and the next comes 3 minutes later, the spawners' bus rule (built, recommended); B. it waits and lands as soon as room opens, as today (just as cheap). *Still open; A stays unless the owner says B.*
 
-- **Guild Hall look (390 G1, pictures in `research/hall_look/`):** stars A plain (today), B faint item outline behind the star (recommended), C bright outline over it, D a ring of dots; panel E today's bronze frame, F the same in purple, G a purple night panel (recommended); sky H today, I spaced 1.4x with titles under every star and ranks on hover (recommended). Also: (1) each star's item: a. a code table by star kind with a per-star override in `hallStars.json` (recommended), b. a CMS picker, c. code table only; (2) spacing: a. 1.4 (recommended), b. 1.25, less dragging.
+- ~~Guild Hall look~~ **Answered 2026-11-06 (owner): stars C (the item's outline bright over the star, dark edge), panel F (today's frame in purple), sky I (1.4x spacing, titles under every star, ranks on hover).** Director, recommendations not answered: each star's item from a code table by star kind with a per-star override in `hallStars.json`; spacing 1.4.
 
-- **World map look (380 M1, pictures in `research/world_hexes/`):** hexes A clear glass (recommended, no new art), B framed tiles, C board tiles (needs art); the world picture beneath D painted map, E real ground (recommended), F miniature world with Tokens; cells you can settle now: steady gold or a pulse (recommended). Also: (1) the "you are here" flag: a. the hero job flag mark drawn larger (recommended, the icon rule), b. the pixel banner; (2) beyond ring 3: a. fades into fog (recommended), b. shows clearly; (3) if F: a. its Tokens only outside the hexes (recommended), b. under them too.
+- ~~World map look~~ **Answered 2026-11-06 (owner): hexes C, board tiles; the world beneath D, painted map.** C wants the owner's art (6 tile bases about 84 x 78 art px, one per kind of land and the Hall, and rope pieces): M2 builds with code-drawn stand-ins until then (owner_art_list). Director, recommendations not answered: a cell you can settle now pulses; the "you are here" flag is the hero job flag mark drawn larger; beyond ring 3 fades into fog.
 
 
 
