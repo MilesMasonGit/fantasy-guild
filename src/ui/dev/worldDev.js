@@ -20,13 +20,19 @@ import { ORIGIN_ROLE } from '../../systems/world/generate.js';
 import { worldTables } from '../../config/registries/worldTablesRegistry.js';
 import { TUTORIAL_QUESTS, tutorialTemplate } from '../../systems/quests/tutorialQuests.js';
 import * as QuestTokens from '../../systems/quests/QuestTokens.js';
+import { authoredHallSky, registerHallSky } from '../../config/registries/hallStarRegistry.js';
+import { authoredStars, getUpgradeDef, getUpgradePrice } from '../../config/guildUpgrades.js';
+import { ringStarsOf } from '../../systems/world/ringStars.js';
+import { qaRingStarSky } from './qaRingStars.js';
 
 /**
  * Everything the frontier asks, put in place so any frontier cell can be settled at once: each
  * item short added to the Bank (enough for every frontier cell together), and each skill raised
- * on the first hero to the highest level asked, through ordinary XP. Nothing is taken.
+ * on the first hero to the highest level asked, through ordinary XP. A frontier cell whose ring
+ * waits for a Guild Hall star gets that star's price in the Bank too, for the star to be bought in
+ * the Hall (it is not bought here). Nothing is taken.
  *
- * @returns {{success: boolean, reason?: string, cells?: number, items?: number, skills?: number}}
+ * @returns {{success: boolean, reason?: string, cells?: number, items?: number, skills?: number, stars?: number}}
  */
 export function meetFrontierPrices() {
     const world = World.currentWorld();
@@ -35,9 +41,15 @@ export function meetFrontierPrices() {
     const frontier = world.cells.filter(c => states.get(c.id) === CELL_STATE.FRONTIER);
     const items = new Map();
     const skills = new Map();
+    const stars = new Set();
     for (const cell of frontier) {
         for (const { itemId, qty } of cell.requires?.items || []) items.set(itemId, (items.get(itemId) || 0) + qty);
         for (const { skill, level } of cell.requires?.skills || []) skills.set(skill, Math.max(skills.get(skill) || 0, level));
+        const lock = World.ringLockOf(cell);
+        if (lock) stars.add(lock.stars[0].id);
+    }
+    for (const id of stars) {
+        for (const { itemId, quantity } of getUpgradePrice(getUpgradeDef(id), 0) || []) items.set(itemId, (items.get(itemId) || 0) + quantity);
     }
     let added = 0;
     for (const [itemId, need] of items) {
@@ -57,7 +69,26 @@ export function meetFrontierPrices() {
         addXP(hero.id, skill, Math.max(1, xpForLevel(level) - xp));
         raised++;
     }
-    return { success: true, cells: frontier.length, items: added, skills: raised };
+    return { success: true, cells: frontier.length, items: added, skills: raised, stars: stars.size };
+}
+
+/**
+ * Put the ring stars' pack in the sky beside the authored stars (`qaRingStars.js`), so the world
+ * map's locked rings show before the pack is synced. Adds nothing once any authored star opens a
+ * ring (the synced stars win). Gone on reload.
+ *
+ * @returns {{success: boolean, reason?: string, added?: number}}
+ */
+export function installRingStars() {
+    if (ringStarsOf(authoredStars()).size) return { success: false, reason: 'The sky has its ring stars already' };
+    const authored = authoredHallSky();
+    const qa = qaRingStarSky();
+    registerHallSky({
+        constellations: { ...authored.constellations, ...qa.constellations },
+        stars: { ...authored.stars, ...qa.stars }
+    });
+    // No upgrade event: a quest step reads one as a purchase. The Hall and the map read the sky as they open.
+    return { success: true, added: Object.keys(qa.stars).length };
 }
 
 /** The specialty each kit's fixture place takes: its own line's skill. */

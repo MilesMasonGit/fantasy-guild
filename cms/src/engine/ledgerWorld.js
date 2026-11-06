@@ -44,6 +44,8 @@ const worldContent = (state) => ({
     recipePools: state.recipePools || {},
     effects: state.effects || {},
     starterCamp: state.starterCamp ?? null,
+    // Its ring stars gate the rings they open.
+    hallSky: { constellations: state.hallConstellations || {}, stars: state.hallStars || {} },
 });
 
 /**

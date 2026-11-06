@@ -69,6 +69,7 @@ export const CHECKS = Object.freeze({
     'stage-budget': { group: 'D', severity: SEVERITY.WARN, label: 'A stage off its time budget' },
     'profile-bounds': { group: 'D', severity: SEVERITY.WARN, label: 'Bare or Maxed out of bounds' },
     'hall-payback': { group: 'D', severity: SEVERITY.WARN, label: 'A Guild Hall rank slow to pay back' },
+    'ring-open': { group: 'D', severity: SEVERITY.WARN, label: 'A ring of the world map opening before the stage before it ends' },
     'boost-target': { group: 'D', severity: SEVERITY.WARN, label: 'A boost over its target strength' },
     unmodelled: { group: 'D', severity: SEVERITY.INFO, label: 'A factor the calculator cannot read' },
     'calibration-stale': { group: 'D', severity: SEVERITY.WARN, label: 'The calculator needs calibrating' },
@@ -81,6 +82,7 @@ export const CHECKS = Object.freeze({
     'world-coverage': { group: 'F', severity: SEVERITY.WARN, label: 'Not covered by the inner rings' },
     'world-no-wedge': { group: 'F', severity: SEVERITY.WARN, label: 'A wild origin no wedge places' },
     'world-value': { group: 'F', severity: SEVERITY.WARN, label: "A cell's extras off its ring's value" },
+    'world-ring-star': { group: 'F', severity: SEVERITY.WARN, label: 'A ring with no Guild Hall star, or one that cannot be lit before it' },
     'world-rule': { group: 'F', severity: SEVERITY.WARN, label: 'Breaks another rule of the world' },
 });
 

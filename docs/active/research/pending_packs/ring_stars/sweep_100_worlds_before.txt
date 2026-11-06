@@ -1,0 +1,56 @@
+0 of 100 worlds pass checks F; 0 keep every rule of the world.
+
+A world cell asks for a material of its own ring: fails in 0 of 100 worlds
+
+A key material not a step from every frontier: fails in 0 of 100 worlds
+
+Not covered by the inner rings: fails in 0 of 100 worlds
+
+A wild origin no wedge places: fails in 0 of 100 worlds
+
+A cell's extras off its ring's value: fails in 0 of 100 worlds
+
+A ring with no Guild Hall star, or one that cannot be lit before it: fails in 100 of 100 worlds, 5 subjects
+   100 worlds  ring 2: no star
+               e.g. world 1: No Guild Hall star opens ring 2: the rule is a star per ring past the first. The game leaves it open.
+   100 worlds  ring 3: no star
+               e.g. world 1: No Guild Hall star opens ring 3: the rule is a star per ring past the first. The game leaves it open.
+   100 worlds  ring 4: no star
+               e.g. world 1: No Guild Hall star opens ring 4: the rule is a star per ring past the first. The game leaves it open.
+   100 worlds  ring 5: no star
+               e.g. world 1: No Guild Hall star opens ring 5: the rule is a star per ring past the first. The game leaves it open.
+   100 worlds  ring 6: no star
+               e.g. world 1: No Guild Hall star opens ring 6: the rule is a star per ring past the first. The game leaves it open.
+
+Breaks another rule of the world: fails in 0 of 100 worlds
+
+Per skill and ring (cells offering its new work; heroes its natural work keeps busy): min / median / max
+  ring 1 mining     cells 3/3/4   heroes 1.8/4.4/6.2
+  ring 1 forestry   cells 3/4/4   heroes 2.8/4.0/6.0
+  ring 1 farming    cells 3/3/4   heroes 4.3/5.7/7.0
+  ring 1 alchemy    cells 3/4/4   heroes 1.7/2.7/3.7
+  ring 1 fishing    cells 3/3/4   heroes 3.0/4.5/6.0
+  ring 1 magic      cells 0/0/0   heroes 0.0/0.0/0.0   none in 100 worlds
+  ring 1 combat     cells 3/5/6   heroes 11.0/12.0/12.0
+  ring 2 mining     cells 6/8/10   heroes 8.0/10.6/14.4
+  ring 2 forestry   cells 6/7/8   heroes 8.5/11.8/14.8
+  ring 2 farming    cells 5/5/6   heroes 10.0/12.7/17.0
+  ring 2 alchemy    cells 5/5/6   heroes 3.7/5.3/8.0
+  ring 2 fishing    cells 5/5/6   heroes 8.5/11.0/14.5
+  ring 2 magic      cells 0/0/0   heroes 0.0/0.0/0.0   none in 100 worlds
+  ring 2 combat     cells 2/2/2   heroes 12.0/14.0/16.0
+  ring 3 mining     cells 9/10/13   heroes 12.0/16.8/20.8
+  ring 3 forestry   cells 7/7/8   heroes 14.5/18.3/22.0
+  ring 3 farming    cells 7/7/8   heroes 16.3/19.3/22.3
+  ring 3 alchemy    cells 7/7/8   heroes 5.3/7.0/10.0
+  ring 3 fishing    cells 7/7/8   heroes 14.0/17.0/21.5
+  ring 3 magic      cells 0/0/0   heroes 0.0/0.0/0.0   none in 100 worlds
+  ring 3 combat     cells 3/3/3   heroes 18.0/18.0/18.0
+
+Price per cell, by ring (items; hero time at the content's own rates): min / median / max
+  ring 1  items 30/30/30   hero time 1 min / 1 min / 4 min   level 5
+  ring 2  items 120/120/120   hero time 2 min / 7 min / 15 min   level 15
+  ring 3  items 300/300/300   hero time 9 min / 38 min / 59 min   level 30
+  ring 4  items 451/451/451   hero time 11 min / 1 h 3 min / 3 h 7 min   level 40
+  ring 5  items 676/676/676   hero time 11 min / 1 h 12 min / 4 h 19 min   level 50
+  ring 6  items 1012/1012/1012   hero time 17 min / 1 h 47 min / 6 h 40 min   level 60

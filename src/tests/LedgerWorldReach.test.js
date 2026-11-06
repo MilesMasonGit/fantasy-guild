@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { buildLedger, tokenKey, itemKey, wedgeKey, HOW } from '../systems/progression/ledger/engine.js';
+import { buildLedger, tokenKey, itemKey, wedgeKey, ringKey, HOW } from '../systems/progression/ledger/engine.js';
 import { buildPace, PROFILE } from '../systems/progression/ledger/pace.js';
 import { worldPlan } from '../systems/progression/ledger/world.js';
 import { normaliseWorldTables } from '../config/worldTablesShape.js';
@@ -37,10 +37,11 @@ describe('origins at their table ring', () => {
     it('settling a cell asks its line\'s skill at its ring\'s level, after a cell of the ring before', () => {
         const l = ledgerOf(worldWorkspace());
         expect(l.reachOf(tokenKey('token_ores_3')).levels).toEqual({ mining: 20 });
-        expect(l.reachOf(tokenKey('token_trees_3')).levels).toEqual({ forestry: 20 });
+        // Ring 3's Guild Hall star is paid in Copper Ore, mined at Mining 1.
+        expect(l.reachOf(tokenKey('token_trees_3')).levels).toEqual({ forestry: 20, mining: 1 });
         expect(l.reachOf(tokenKey('token_crops_1')).levels).toEqual({ farming: 2 });
         const settle = l.world.rules.find(r => r.how === HOW.SETTLE && r.gives[0].key === wedgeKey('ores', 3));
-        expect(settle).toMatchObject({ floor: 3, needs: [wedgeKey('ores', 2)], gates: [{ skill: 'mining', level: 20 }] });
+        expect(settle).toMatchObject({ floor: 3, needs: [wedgeKey('ores', 2), ringKey(3)], gates: [{ skill: 'mining', level: 20 }] });
     });
 
     it('keeps the Starter Camp at tier 0', () => {

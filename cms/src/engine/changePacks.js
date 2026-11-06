@@ -14,6 +14,7 @@ import { isPerkLevel } from '../../../src/systems/hero/perkTable.js';
 import { MAX_SCALE } from '../../../src/systems/effects/effectLibrary.js';
 import { workspaceSkyFrom } from './hallSky.js';
 import { workspaceWorldFrom, usableTables } from './worldTables.js';
+import { FIRST_STAR_RING, opensRingOf } from '../../../src/config/hallStars.js';
 
 export const PACK_FORMAT = 'fantasy-guild-change-pack';
 export const PACK_VERSION = 1;
@@ -84,6 +85,9 @@ function hallStarErrors(value, label) {
     const out = [];
     if (typeof value.constellation !== 'string' || !value.constellation.trim()) out.push(`${label}: a star's "value.constellation" must name its constellation.`);
     if (!Array.isArray(value.links) || !value.links.length) out.push(`${label}: a star's "value.links" must name the Hall ("hall") or another star.`);
+    if (value.opensRing !== undefined && opensRingOf(value.opensRing) !== value.opensRing) {
+        out.push(`${label}: a star's "value.opensRing" must be a whole ring number from ${FIRST_STAR_RING} (ring 1 is always open).`);
+    }
     if (!Array.isArray(value.ranks) || !value.ranks.length) {
         out.push(`${label}: a star's "value.ranks" must be a list of at least one rank: { "tier", "price", "rules", "lines" }.`);
         return out;

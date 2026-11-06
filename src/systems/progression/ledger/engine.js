@@ -2,7 +2,9 @@
 
 import { isPlanned } from './plan.js';
 import { normaliseStarterCamp } from '../../../config/starterCampShape.js';
-import { getUpgradeDef, WISHING_WELL_ITEM, wishingWellWater } from '../../../config/guildUpgrades.js';
+import { getUpgradeDef, WISHING_WELL_ITEM, wishingWellWater, BUILT_IN_UPGRADE_IDS, HALL_NODE } from '../../../config/guildUpgrades.js';
+import { normaliseHallSky } from '../../../config/hallStars.js';
+import { ringStarsOf, ringOfStar } from '../../world/ringStars.js';
 import { expandBearer } from '../../effects/effectLibrary.js';
 import { stationSkillOf, stationKindOf, KEYWORD } from '../../effects/statements.js';
 import {
@@ -28,7 +30,8 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
  *
  * **The world map** (given `worldTables`, as the CMS always does): a cell of each wedge at each strict
  * ring is settled at its ring's price (the skill levels; a ring-n cell after one of ring n − 1 of its
- * wedge) and places what every world holds there: the origins its line's table lists for the ring,
+ * wedge; from ring 2, once the Guild Hall star that opens the ring is lit, given `hallSky`: see
+ * {@link hallStarRules}) and places what every world holds there: the origins its line's table lists for the ring,
  * the ring's key origins and guaranteed camps (through the wedges most likely to hold them). What a
  * world holds only sometimes (a kit's everyday and boss camps, the chests, the arrivals) is
  * placed by luck (`maybe`). Without `worldTables` nothing is placed beyond the start: the World plan
@@ -84,7 +87,8 @@ export const HOW = Object.freeze({
     BONUS: 'bonus',
     HOLD: 'hold',
     SETTLE: 'settle',
-    WORLD: 'world'
+    WORLD: 'world',
+    STAR: 'hall-star'
 });
 
 /** Author-facing words, kept together for translation. */
@@ -110,8 +114,10 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
         bonus: 'a bonus drop',
         hold: 'held',
         settle: 'settled on the world map',
-        world: 'on a world cell'
+        world: 'on a world cell',
+        'hall-star': 'a Guild Hall star lit'
     }),
+    ring: (ring) => `Ring ${ring} opened`,
     someWorlds: 'in some worlds',
     level: (skill, level) => `${skill === COMBAT ? 'Combat' : skill.charAt(0).toUpperCase() + skill.slice(1)} ${level}`,
     chance: (p) => `${Math.round(p * 1000) / 10}%`,
@@ -127,9 +133,13 @@ export const tokenKey = (id) => `token:${id}`;
 export const recipeKey = (id) => `recipe:${id}`;
 /** A cell of one wedge at one strict ring of the world map, as a place the guild settles. */
 export const wedgeKey = (line, ring) => `wedge:${line}:${ring}`;
+/** A Guild Hall star lit (its first rank bought). */
+export const starKey = (id) => `star:${id}`;
+/** A ring of the world map the guild may settle: its ring star lit. */
+export const ringKey = (ring) => `ring:${ring}`;
 const toolKey = (need) => `tool:${(need.kinds || [need.kind]).join('|')}:${need.minTier}`;
 
-/** `{ kind, id }` of a key: kind is item, token, recipe, tool or wedge. */
+/** `{ kind, id }` of a key: kind is item, token, recipe, tool, wedge, star or ring. */
 export function parseKey(key) {
     const at = key.indexOf(':');
     return { kind: key.slice(0, at), id: key.slice(at + 1) };
@@ -208,12 +218,13 @@ export function isOneOff(def) {
  * record that does the work, which a path follows back; `inputs` what one cycle spends, which a tree
  * follows down.
  *
- * @param {object} content  `{ items, tokens, recipes | recipePools, effects, starterCamp, worldTables }`,
+ * @param {object} content  `{ items, tokens, recipes | recipePools, effects, starterCamp, worldTables, hallSky }`,
  *   as the CMS store or the game's `data/` files hold them (keyed objects or arrays). The Starter Camp
  *   is the one the game opens on; none means nothing is placed at the start. `worldTables`: the
  *   normalised world tables the world is generated from (with the plan's places laid on, as the
- *   World plan reads them), or none to place nothing beyond the start.
- * @returns {{ items, tokens, recipes, rules, names, planned, worldTables: object|null }}
+ *   World plan reads them), or none to place nothing beyond the start. `hallSky`: the Guild Hall's
+ *   authored sky (`data/hallStars.json`'s shape), whose ring stars gate the rings they open.
+ * @returns {{ items, tokens, recipes, rules, names, planned, worldTables: object|null, ringStars: Map<number, string[]> }}
  */
 export function buildWorld(content = {}) {
     const library = isObject(content.effects) ? content.effects : {};
@@ -456,8 +467,14 @@ export function buildWorld(content = {}) {
         }
     }
 
+    const ringStars = hallStarRules(content.hallSky, { add, names, inputsOf });
     const tables = isObject(content.worldTables) && Array.isArray(content.worldTables.lines) ? content.worldTables : null;
-    if (tables) worldRules(tables, { add, names, placeable: (id) => !!text(id) && !planned.has(tokenKey(id)) });
+    if (tables) {
+        worldRules(tables, {
+            add, names, placeable: (id) => !!text(id) && !planned.has(tokenKey(id)),
+            ringNeeds: (ring) => (ringStars.has(ring) ? [ringKey(ring)] : [])
+        });
+    }
 
     // Things made on the side by rules: a bonus drop granted to the work in reach (or carried by a
     // hero, or lent for a cycle by a status an item applies), a Token a rule spawns. ⚠️ A rule that
@@ -524,7 +541,62 @@ export function buildWorld(content = {}) {
 
     for (const [key, need] of toolNeeds) names.set(key, need.kinds ? need.kinds.join(' or ') : `${need.kind} ${need.minTier}+`);
 
-    return { items, tokens, recipes, rules, names, planned, worldTables: tables };
+    return { items, tokens, recipes, rules, names, planned, worldTables: tables, ringStars };
+}
+
+/**
+ * The Guild Hall's ring stars as rules (`hallStars.opensRing`, `world/ringStars.js`): lighting a star
+ * pays its first rank's price once it is open, and a ring star's light opens its ring, which every
+ * settle rule of that ring then needs. A star opens once a star it is linked to is lit, or at once when
+ * linked to the Hall, so a star gets one rule per link and every star on the way to a ring star is
+ * modelled too. Only those: the rest of the sky opens nothing the reach follows.
+ *
+ * A ring no star opens is open, as in the game.
+ *
+ * @returns {Map<number, string[]>} each ring a star opens, with the stars that open it
+ */
+function hallStarRules(hallSky, { add, names, inputsOf }) {
+    const { stars } = normaliseHallSky(isObject(hallSky) ? hallSky : {});
+    const byRing = ringStarsOf(stars);
+    const out = new Map([...byRing].map(([ring, list]) => [ring, list.map(s => s.id)]));
+    if (!byRing.size) return out;
+
+    const authored = new Map(stars.map(s => [s.id, s]));
+    const builtIn = (id) => (BUILT_IN_UPGRADE_IDS.includes(id) ? getUpgradeDef(id) : null);
+    const recordOf = (id) => {
+        const star = authored.get(id);
+        if (star) return { id, name: star.name, links: star.links, price: star.ranks[0]?.price || [], ring: ringOfStar(star) };
+        const def = builtIn(id);
+        return def ? { id, name: def.name, links: def.links || [], price: def.prices?.[0] || [], ring: null } : null;
+    };
+    // A link counts from both ends: a star's neighbours are the ones it names and the ones naming it.
+    const neighbours = (record) => [...record.links, ...stars.filter(s => s.links.includes(record.id)).map(s => s.id)];
+    const modelled = new Map();
+    const queue = [...byRing.values()].flat().map(s => s.id);
+    while (queue.length) {
+        const id = queue.shift();
+        if (modelled.has(id)) continue;
+        const record = recordOf(id);
+        if (!record) continue;
+        modelled.set(id, record);
+        for (const link of neighbours(record)) if (link !== HALL_NODE && !modelled.has(link)) queue.push(link);
+    }
+
+    for (const [ring] of byRing) names.set(ringKey(ring), LEDGER_ENGINE_TEXT.ring(ring));
+    for (const record of modelled.values()) {
+        names.set(starKey(record.id), record.name);
+        const inputs = inputsOf(record.price);
+        const gives = [{ key: starKey(record.id), chance: 1 }, ...(record.ring !== null ? [{ key: ringKey(record.ring), chance: 1 }] : [])];
+        const ways = new Set(neighbours(record).filter(l => l === HALL_NODE || modelled.has(l)));
+        for (const way of ways) {
+            add({
+                id: `star:${record.id}:${way}`, how: HOW.STAR, via: null,
+                needs: [...(way === HALL_NODE ? [] : [starKey(way)]), ...inputs.map(i => i.key)],
+                inputs, gives
+            });
+        }
+    }
+    return out;
 }
 
 /**
@@ -536,7 +608,7 @@ export function buildWorld(content = {}) {
  * the likeliest by kit (reach keeps the first of equals), so its path names that wedge's skill. A
  * `specialty` price slot follows the seed's specialty and is left out.
  */
-function worldRules(tables, { add, names, placeable }) {
+function worldRules(tables, { add, names, placeable, ringNeeds = () => [] }) {
     const lines = tables.lines;
     const kits = Array.isArray(tables.kits) ? tables.kits : [];
     const rings = Array.from({ length: STRICT_RINGS }, (_, i) => i + 1);
@@ -553,7 +625,7 @@ function worldRules(tables, { add, names, placeable }) {
             }
             add({
                 id: `settle:${line.id}:${ring}`, how: HOW.SETTLE, via: null, floor: ring,
-                needs: ring > 1 ? [wedgeKey(line.id, ring - 1)] : [],
+                needs: [...(ring > 1 ? [wedgeKey(line.id, ring - 1)] : []), ...ringNeeds(ring)],
                 gates: [...top].map(([skill, level]) => ({ skill, level })),
                 gives: [{ key, chance: 1 }]
             });

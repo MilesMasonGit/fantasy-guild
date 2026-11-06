@@ -207,11 +207,14 @@ normal text colour; a new meaning needs the owner's OK.
 - **The guild's place** carries the hero job flag (`FlagMark`), drawn at 48 px, on the map and
   in the panel's header; no "the guild is here" words.
 - **The hover tip**: the place's name as its title, its land and line under it, then the price
-  as pills (sprite, have/need in the 9.9k shorthand, red when short). No ring, no yields.
+  as pills (sprite, have/need in the 9.9k shorthand, red when short). No ring, no yields. A cell
+  behind a ring star adds one small line naming the Guild Hall star ("Light the Guild Hall's
+  Charted Roads star to settle here"), never the ring's number (brief 380 M4).
 - **The inspection panel**: one studs frame, thin (336 px), over the map's right edge: the name
   (a rename once settled), the land and line, the close X; then what it yields as ribbons, its
   price as rows, and a large main **Settle** across the panel's width (greyed with what is short
-  under it), or, once settled, its mat drawn small, its facts and a large **Travel**.
+  under it, or with the ring star's line when its ring waits for one), or, once settled, its mat
+  drawn small, its facts and a large **Travel**.
 
 ## The Guild Hall's upgrade ceremony (brief 390 G4)
 

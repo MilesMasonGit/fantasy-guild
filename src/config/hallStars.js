@@ -13,7 +13,7 @@
  *   constellations: { mining: { id, name, label: { x, y }, skill? } },
  *   stars: {
  *     star_mining_xp: {
- *       id, constellation, name, description, node: { x, y }, tag?, links: ['hall'], sprite?, outline?,
+ *       id, constellation, name, description, node: { x, y }, tag?, links: ['hall'], sprite?, outline?, opensRing?,
  *       ranks: [{ tier, price: [{ itemId, quantity }], rules: [statement], lines: [{ itemId, quantity }] }]
  *     }
  *   }
@@ -29,9 +29,21 @@
  *   every lap, beside the Wishing Well's Water.
  * - `outline` picks the item whose outline the sky draws over the star: an item id or a sprite name.
  *   Left out, the sky picks one by the star's kind (`hallStarOutline.js`).
+ * - `opensRing` makes it a ring star: once its first rank is bought the guild may settle that ring of
+ *   the world map (a whole number from 2; ring 1 is always open). See `systems/world/ringStars.js`.
  * - `tier` is the tier the owner gives the rank (the ledger prices by it); `price` is what the rank
  *   costs, paid from the Bank.
  */
+
+/** The first ring of the world map a star can open: ring 1 is open from the start. */
+export const FIRST_STAR_RING = 2;
+
+/** A star's `opensRing`: a whole number from {@link FIRST_STAR_RING}, else null. */
+export function opensRingOf(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const n = Number(value);
+    return Number.isInteger(n) && n >= FIRST_STAR_RING ? n : null;
+}
 
 /** The file Sync writes. */
 export const HALL_STARS_FILE = 'hallStars.json';
@@ -95,6 +107,7 @@ export function normaliseStar(raw, key) {
     const tag = TAG_SIDES.includes(raw.tag) ? raw.tag : 'below';
     const sprite = text(raw.sprite);
     const outline = text(raw.outline);
+    const opensRing = opensRingOf(raw.opensRing);
     return {
         id,
         constellation: text(raw.constellation),
@@ -105,6 +118,7 @@ export function normaliseStar(raw, key) {
         links: [...new Set((Array.isArray(raw.links) ? raw.links : []).map(text).filter(Boolean))],
         ...(sprite ? { sprite } : {}),
         ...(outline ? { outline } : {}),
+        ...(opensRing !== null ? { opensRing } : {}),
         ranks
     };
 }

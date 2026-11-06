@@ -534,6 +534,7 @@
         "settle": "Settle",
         "travel": "Travel",
         "short": "Short of {what}",
+        "ringLocked": "Light the Guild Hall's {star} star to settle here",
         "pickCell": "Pick a place on the map."
     }
 }

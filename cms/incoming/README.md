@@ -112,7 +112,10 @@ rule to its skill (`payload.category`), and it spends nothing.
 
 `"kind": "hallConstellation"`, `"id"` its id (a skill's constellation takes the skill's id, `mining`):
 `{ "name", "label": { "x", "y" }, "skill"? }`. `"kind": "hallStar"`, `"id"` the star's id:
-`{ "constellation", "name", "description", "node": { "x", "y" }, "tag"?, "links": ["hall"], "sprite"?, "ranks": [...] }`.
+`{ "constellation", "name", "description", "node": { "x", "y" }, "tag"?, "links": ["hall"], "sprite"?, "outline"?, "opensRing"?, "ranks": [...] }`.
+`opensRing` (a whole number from 2) makes a **ring star**: buying its first rank lets the guild settle
+that ring of the world map; ring 1 is always open, and a ring no star opens is left open (the
+Ledger's checks F say so). One star per ring past the first, the wild rings too.
 Positions are in the sky's unit space centred on the Hall (+x right, +y down; the built-in stars sit 0.5
 out). `links` name the Hall (`"hall"`) or other stars (the built-in `roster_size`, `bank_tabs`,
 `wishing_well` included); a star opens once a linked star has a rank, at once when linked to the Hall.

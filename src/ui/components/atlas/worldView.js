@@ -58,7 +58,8 @@ function cartographerNote() {
  * its look, its names, outputs and price against the Bank and the heroes now. Null with no world.
  *
  * A cell's `name` is the place's ("Elderfield": its Region's, which the player may have renamed,
- * or the name it will take); its `terrain` the kind of land and line ("Highland Ores").
+ * or the name it will take); its `terrain` the kind of land and line ("Highland Ores"); its `lock`
+ * the Guild Hall stars its ring waits for, or null (`World.ringLockOf`).
  */
 export function worldView() {
     const world = World.currentWorld();
@@ -86,10 +87,11 @@ export function worldView() {
             shown: cell.ring <= rings,
             outputs: World.outputsOf(cell),
             price: World.priceOf(cell),
+            lock: settled.has(cell.id) ? null : World.ringLockOf(cell),
             token: tokens.get(cell.id) ?? null,
             regionId
         };
-        shaped.look = cellLook(shaped);
+        shaped.look = cellLook(shaped, { ringOpen: () => !shaped.lock });
         return shaped;
     });
     return { seed: world.seed, world, rings, cells, here, note: cartographerNote() };

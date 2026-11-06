@@ -48,6 +48,12 @@ export function shortWords(price) {
     return parts.length ? t('worldMap.short', { what: parts.join(', ') }) : null;
 }
 
+/** Why a cell's ring cannot be settled yet, as words naming its Guild Hall star, or null when it can. */
+export function lockWords(lock) {
+    if (!lock?.stars?.length) return null;
+    return t('worldMap.ringLocked', { star: lock.stars.map(s => s.name).join(' or ') });
+}
+
 /** A have/need count in the 9.9k shorthand. */
 const haveNeed = (have, need) => `${formatCompact(have)}/${formatCompact(need)}`;
 
@@ -92,13 +98,15 @@ const PriceRows = ({ price }) => {
 
 /**
  * The hover over a cell (its title is the place's name, `Tooltip`'s): the kind of land under it,
- * then for a place not yet settled its price, and why it cannot be settled when it is out of reach.
+ * then for a place not yet settled its price, and why it cannot be settled when it is out of reach
+ * or its ring waits for a Guild Hall star.
  */
 export const CellTip = ({ cell }) => (
     <div data-world-tip={cell.id} className="flex flex-col gap-1">
         <div data-world-tip-terrain className="text-white/70">{cell.terrain}</div>
         {cell.state !== CELL_STATE.SETTLED && <PricePills price={cell.price} />}
         {cell.state === CELL_STATE.BEYOND && <div className="ui-text-small text-white/55">{t('worldMap.beyond')}</div>}
+        {cell.lock && <div data-world-tip-lock className="ui-text-small text-white/70">{lockWords(cell.lock)}</div>}
     </div>
 );
 
@@ -216,7 +224,8 @@ const CartographerNote = ({ note }) => (
  * The inspection panel over the map's right edge: the chosen place's name (renamed here once
  * settled) with the guild's flag when it is there, the kind of land, the cartographer's words
  * while the tutorial asks for a place, what it yields, then its price and a large Settle while it
- * is on the frontier, or its picture, facts and Travel once settled.
+ * is on the frontier (greyed with the words for what is short, or for the Guild Hall star its ring
+ * waits for), or its picture, facts and Travel once settled.
  *
  * @param {object} props
  * @param {object|null} props.cell a `worldView()` cell
@@ -225,7 +234,8 @@ export const WorldPanel = ({ cell, note, version, message, onMessage, onSettle, 
     const settled = cell?.state === CELL_STATE.SETTLED;
     const frontier = cell?.state === CELL_STATE.FRONTIER;
     const region = cell?.regionId ? Atlas.getRegion(cell.regionId) : null;
-    const short = frontier ? shortWords(cell.price) : null;
+    const locked = frontier && !!cell.lock;
+    const short = frontier ? (lockWords(cell.lock) || shortWords(cell.price)) : null;
     return (
         <PixelFrame
             kind="studs"
@@ -272,6 +282,9 @@ export const WorldPanel = ({ cell, note, version, message, onMessage, onSettle, 
                                     <PriceRows price={cell.price} />
                                 </div>
                             )}
+                            {cell.state === CELL_STATE.BEYOND && cell.lock && (
+                                <p data-world-detail-lock className="font-pixel ui-text-small text-white/60">{lockWords(cell.lock)}</p>
+                            )}
                         </section>
                     )}
                 </div>
@@ -282,7 +295,8 @@ export const WorldPanel = ({ cell, note, version, message, onMessage, onSettle, 
                         <KitButton
                             tone={KIT_BUTTON_TONE.MAIN}
                             data-world-settle={cell.id}
-                            disabled={!cell.price.met}
+                            data-world-settle-locked={locked || undefined}
+                            disabled={locked || !cell.price.met}
                             onClick={() => onSettle(cell.id)}
                             className="w-full"
                             buttonClassName="font-pixel ui-text-title py-2"

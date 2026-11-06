@@ -62,7 +62,8 @@ export function describeStarRank(star, rank, names = hallNames()) {
     if (!record) return '';
     return [
         ...record.rules.map(s => hallRuleSentence(s, names)),
-        ...record.lines.map(l => hallLineText(l, names))
+        ...record.lines.map(l => hallLineText(l, names)),
+        ...(star.opensRing ? [RING_STAR_TEXT.amount] : [])
     ].join(' ');
 }
 
@@ -72,6 +73,12 @@ const BUILT_IN_SENTENCE = {
     roster_size: 'Every rank makes room for one more hero.',
     wishing_well: 'The Guild Hall draws Water every lap, no hero needed.'
 };
+
+/** A ring star's words (`hallStars.opensRing`): no ring numbers for the player, only the next border. */
+export const RING_STAR_TEXT = Object.freeze({
+    sentence: 'The guild may settle the lands past the next border of the world map.',
+    amount: 'Lands past the next border'
+});
 
 /** "work" → "works", "carry" → "carries": the verb after "Every …". */
 function verbS(word) {
@@ -168,6 +175,7 @@ export function starSentence(def, names = hallNames()) {
     if (first.lines.length) {
         parts.push(`The Guild Hall draws ${andList(first.lines.map(l => names.item(l.itemId)))} every lap, no hero needed.`);
     }
+    if (def.star.opensRing) parts.push(RING_STAR_TEXT.sentence);
     return parts.join(' ') || def.description || '';
 }
 
@@ -186,5 +194,6 @@ export function starAmount(def, rank, names = hallNames()) {
     if (!record) return null;
     const amounts = [...new Set(effectGroups(record, names).map(g => g.amount))];
     for (const line of record.lines) amounts.push(`${line.quantity} ${names.item(line.itemId)}`);
+    if (def.star.opensRing) amounts.push(RING_STAR_TEXT.amount);
     return amounts.join(', ') || null;
 }

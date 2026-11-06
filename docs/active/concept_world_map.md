@@ -296,8 +296,16 @@ the player to **make nodes**.*
   dragged around. The hover names the place from its cell's seed (its Region takes that name on
   settling), its land and line under it, the price in pills; the thin panel holds yields, price,
   a large Settle, and for a settled place its mat drawn small, facts, rename and Travel. The
-  Regions page's archive, restore and abandon have no button now (the engine keeps them). Ring
-  stars (M4) and the settling ceremony (M5) are not built.
+  Regions page's archive, restore and abandon have no button now (the engine keeps them). The
+  settling ceremony (M5) is not built.
+- **Built (brief 380 M4, 2026-11-06)**: a Guild Hall **ring star** per ring from ring 2 (a star's
+  `opensRing`): until it is bought, that ring's cells read darkened on the map, the hover and the
+  panel name the star, and Settle refuses; ring 1 is open from the start, so the tutorial's first
+  settle is untouched; a ring no star opens stays open. The stars are a change pack for the owner
+  (the Compass constellation, five stars left of the Hall, priced by the ledger: a ring opens when
+  the stage before it ends; wild rings by the tables' price growth). The ledger counts them: reach
+  and path time wait for the star's price, checks F find a ring with no star or one asking its own
+  ring's goods, and a pacing check finds a ring that opens well before the stage before it ends.
 
 ## Amended by the detail pass (owner, 2026-11-03; brief 380)
 

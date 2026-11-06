@@ -134,6 +134,11 @@ export function hallRows(pace) {
     openingText: r.opening?.path?.length
       ? `${PACE_TEXT.short(r.opening.cost)} to open it, lighting ${r.opening.path.map((id) => pace.hallName(id)).join(' and ')}`
       : null,
+    ...(r.ring ? {
+      litText: PACE_TEXT.hours(r.litAt),
+      opensText: PACE_TEXT.hours(r.opensAt),
+      budgetText: r.budgetHours === null ? null : PACE_TEXT.hours(r.budgetHours),
+    } : {}),
   }));
 }
 

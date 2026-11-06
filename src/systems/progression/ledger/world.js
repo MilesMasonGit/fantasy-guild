@@ -1,7 +1,7 @@
 // the ledger meets the world: origins' wedges and rings, a world for a seed read as places, checks F, many worlds swept (pure)
 
 import { PLAN_STATUS, statusOf, planPlaceOf } from './plan.js';
-import { HOW, buildLedger, computeReach, itemKey, tokenKey, recipeKey, isOneOff } from './engine.js';
+import { HOW, buildLedger, computeReach, itemKey, tokenKey, recipeKey, ringKey, isOneOff } from './engine.js';
 import { SEVERITY, ruleIndex, whyNever } from './checks.js';
 import { generateWorld, priceTemplateOf } from '../../world/generate.js';
 import { worldFindings, WORLD_CHECK } from '../../world/checks.js';
@@ -23,8 +23,12 @@ import { stationSkillOf } from '../../effects/statements.js';
  *   camps, chests, its arrival) at its ring.
  * - **Checks F** on that world: a ring-N cell asking ring-N materials; a key material not a step from
  *   every frontier; the inner rings not covering every Live entry; a wild origin no wedge places; a
- *   cell's extras off its ring's value. The world's own rules (`world/checks.js`) are read here too:
- *   the four that are checks F under these names, the rest as "another rule of the world".
+ *   cell's extras off its ring's value; a ring past the first with no Guild Hall star to open it, or
+ *   whose star cannot be lit with what earlier rings give. The world's own rules (`world/checks.js`)
+ *   are read here too: the four that are checks F under these names, the rest as "another rule of
+ *   the world".
+ * - **Ring stars**: a cell of a ring a Guild Hall star opens is settled only once that star is lit
+ *   (`engine.hallStarRules`), so what the ring places waits for the star's price.
  * - **Many worlds** ({@link sweepWorlds}): how many pass, each rule's failures grouped by what fails
  *   across worlds, per-skill bands (cells offering a skill's new work, heroes it keeps busy) and
  *   price spreads per ring (items and hero time).
@@ -44,11 +48,12 @@ export const WORLD_F = Object.freeze({
     COVERAGE: 'world-coverage',
     NO_WEDGE: 'world-no-wedge',
     VALUE: 'world-value',
+    RING_STAR: 'world-ring-star',
     RULE: 'world-rule'
 });
 
-/** The five checks F the owner named; a world passes when none of them finds anything. */
-export const F_CHECKS = Object.freeze([WORLD_F.PRICE_RING, WORLD_F.KEY_REACH, WORLD_F.COVERAGE, WORLD_F.NO_WEDGE, WORLD_F.VALUE]);
+/** The checks F: the five the owner named, and the ring stars (brief 380 M4); a world passes when none of them finds anything. */
+export const F_CHECKS = Object.freeze([WORLD_F.PRICE_RING, WORLD_F.KEY_REACH, WORLD_F.COVERAGE, WORLD_F.NO_WEDGE, WORLD_F.VALUE, WORLD_F.RING_STAR]);
 
 /** The world's own checks that are checks F; any other is "another rule of the world". */
 const AS_F = Object.freeze({
@@ -65,6 +70,10 @@ export const WORLD_PLAN_TEXT = Object.freeze({
     priceRing: (cell, name, ring, at) => `Cell ${cell} (ring ${ring}) asks for ${name}, first had at ring ${at}: not an earlier ring.`,
     priceNever: (cell, name) => `Cell ${cell} asks for ${name}, which the inner rings never give.`,
     notCovered: (why) => `Not reachable from the inner rings: ${why}`,
+    noRingStar: (ring) => `No Guild Hall star opens ring ${ring}: the rule is a star per ring past the first. The game leaves it open.`,
+    ringStarNever: (ring, stars, why) => `The Guild Hall star that opens ring ${ring} (${stars}) can never be lit: ${why}`,
+    ringStarLate: (ring, stars, name, at) => `The Guild Hall star that opens ring ${ring} (${stars}) asks for ${name}, first had at ring ${at}: not an earlier ring.`,
+    ringSubject: (ring, what) => `ring ${ring}: ${what}`,
     noMain: (line, ring) => `no-main: ${line} ring ${ring}`,
     ring: (ring) => `ring ${ring}`,
     cell: (id, kit, line) => [kit, line].filter(Boolean).join(' ') + ` (${id})`,
@@ -274,7 +283,8 @@ function worldReach(ctx, world, mats) {
         const key = cellKey(cell.id);
         names.set(key, ctx.cellName(cell));
         const gates = (cell.requires?.skills || []).map(s => ({ skill: s.skill, level: s.level }));
-        rules.push(ruleOf({ id: `settle:${cell.id}`, how: HOW.SETTLE, via: null, floor: cell.ring, gates, gives: [{ key, chance: 1 }] }));
+        const needs = lw.ringStars?.has(cell.ring) ? [ringKey(cell.ring)] : [];
+        rules.push(ruleOf({ id: `settle:${cell.id}`, how: HOW.SETTLE, via: null, floor: cell.ring, needs, gates, gives: [{ key, chance: 1 }] }));
         const placed = placedTokens(mats.get(cell.id));
         if (placed.length) {
             rules.push(ruleOf({ id: `world:${cell.id}`, how: HOW.WORLD, via: key, needs: [key], floor: cell.ring, gives: placed.map(t => ({ key: tokenKey(t), chance: 1 })) }));
@@ -356,6 +366,46 @@ function checksOn(ctx, world, mats, { reach, index, names }) {
     }
 
     for (const f of ctx.origins) out.push(finding(f.check, f.message, { key: f.key, subject: f.key, name: nameOf(f.key), related: f.related }));
+    out.push(...ringStarFindings(ctx, world, { reach, index, nameOf }));
+    return out;
+}
+
+/**
+ * Checks F on the ring stars: each ring past the first that the world has needs a Guild Hall star
+ * to open it, and one of its stars must be lit with what earlier rings give (no iron to reach iron):
+ * a star asking only for its own ring's material would shut the guild out of the ring for good.
+ */
+function ringStarFindings(ctx, world, { reach, index, nameOf }) {
+    const out = [];
+    const opening = ctx.base.world.ringStars || new Map();
+    for (let ring = 2; ring <= world.rings; ring++) {
+        const ids = opening.get(ring) || [];
+        if (!ids.length) {
+            const subject = WORLD_PLAN_TEXT.ringSubject(ring, 'no star');
+            out.push(finding(WORLD_F.RING_STAR, WORLD_PLAN_TEXT.noRingStar(ring), { subject }));
+            continue;
+        }
+        const tier = reach.get(ringKey(ring))?.tier;
+        if (Number.isInteger(tier) && tier < ring) continue;
+        const stars = ids.map(id => nameOf(`star:${id}`)).join(' or ');
+        if (!Number.isInteger(tier)) {
+            const subject = WORLD_PLAN_TEXT.ringSubject(ring, 'star never lit');
+            out.push(finding(WORLD_F.RING_STAR, WORLD_PLAN_TEXT.ringStarNever(ring, stars, whyNever(ringKey(ring), reach, index, nameOf)), { subject }));
+            continue;
+        }
+        // The price items its earliest way asks that are first had at its ring or later.
+        const late = new Set();
+        for (const rule of index.givers(ringKey(ring))) {
+            for (const input of rule.inputs) {
+                const at = reach.get(input.key)?.tier;
+                if (!Number.isInteger(at) || at >= ring) late.add(input.key);
+            }
+        }
+        for (const key of late.size ? late : [ringKey(ring)]) {
+            const at = reach.get(key)?.tier ?? tier;
+            out.push(finding(WORLD_F.RING_STAR, WORLD_PLAN_TEXT.ringStarLate(ring, stars, nameOf(key), at), { key: key.startsWith('item:') ? key : null, subject: WORLD_PLAN_TEXT.ringSubject(ring, nameOf(key)) }));
+        }
+    }
     return out;
 }
 
