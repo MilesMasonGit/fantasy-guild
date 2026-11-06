@@ -19,7 +19,10 @@ import { BOARD_EVENTS } from './boardEvents.js';
 
 /**
  * Sells every Token type that carries a `shop` block: `shop: { price: [{ itemId, quantity }],
- * section: '<skill id>' | 'general', group?: '<label>' }`.
+ * section: '<skill id>' | 'general', group?: '<label>', skills?: ['<skill id>'], order?: n }`.
+ * `skills` are the skill icons the Shop shows on the Token, authored rather than worked out from
+ * its recipes (several buildings have no skill of their own); `order` is its place in the list,
+ * lowest first, with unordered Tokens after the ordered ones.
  *
  * Everything with a `shop` block is listed from the start; the price is the only gate. Items are
  * the only price, paid all or nothing through `InputAllocator` (Bank first, then loot on the
@@ -39,6 +42,19 @@ const refuse = (reason) => ({ success: false, reason });
 export function shopBlockOf(typeId) {
     const shop = getTokenType(typeId)?.shop;
     return shop && Array.isArray(shop.price) ? shop : null;
+}
+
+/** The skill icons a sold Token shows, in authored order: real skill ids only, each once. */
+export function shopSkillsOf(typeId) {
+    const skills = shopBlockOf(typeId)?.skills;
+    if (!Array.isArray(skills)) return [];
+    return [...new Set(skills.filter(id => typeof id === 'string' && getSkill(id)))];
+}
+
+/** A sold Token's place in the list, or Infinity when it has none. */
+export function shopOrderOf(typeId) {
+    const order = shopBlockOf(typeId)?.order;
+    return Number.isFinite(order) ? order : Infinity;
 }
 
 /** A Token's price, merged per item: `[{ itemId, quantity }]`. */
@@ -168,8 +184,10 @@ const tierWeight = (typeId) => {
 };
 
 /**
- * The catalogue for the panel: every sold Token, grouped by section. Sections
- * are ordered by name with General last; entries within a section by name.
+ * The catalogue for the panel: every sold Token, grouped by section. Entries within a section go by
+ * `shop.order`, then name; sections by their first entry's order, then name, with General last.
+ * With no `order` authored anywhere this is plain name order. Each entry carries its `skills`
+ * (icons) and `order`; a group takes its first option's skills and its lowest option's order.
  *
  * Tokens whose `shop.group` is the same label are one entry: `{ group, name: <label>, options,
  * typeId, price, affordability }`, where `options` lists the members lowest Foundation tier first,
@@ -177,7 +195,7 @@ const tierWeight = (typeId) => {
  * option's. The entry sits in the section of its first member. Every option is selectable; each is
  * gated only by its own price.
  *
- * @returns {Array<{section, name, items: Array<{typeId, name, price, affordability, group?, options?}>}>}
+ * @returns {Array<{section, name, order, items: Array<{typeId, name, price, affordability, skills, order, group?, options?}>}>}
  */
 export function catalogue() {
     const bySection = new Map();
@@ -186,7 +204,9 @@ export function catalogue() {
         typeId,
         name: tokenName(typeId) || typeId,
         price: priceLines(typeId),
-        affordability: canBuy(typeId)
+        affordability: canBuy(typeId),
+        skills: shopSkillsOf(typeId),
+        order: shopOrderOf(typeId)
     });
     for (const typeId of Object.keys(getAllTokenTypes())) {
         const shop = shopBlockOf(typeId);
@@ -213,17 +233,20 @@ export function catalogue() {
         entry.typeId = first.typeId;
         entry.price = first.price;
         entry.affordability = first.affordability;
+        entry.skills = first.skills;
+        entry.order = Math.min(...entry.options.map(o => o.order));
     }
+    // Infinity - Infinity is NaN, so unordered entries compare by hand.
+    const byOrder = (a, b) => (a.order === b.order ? 0 : a.order < b.order ? -1 : 1);
     return [...bySection.entries()]
-        .map(([section, items]) => ({
-            section,
-            name: sectionName(section),
-            items: items.sort((a, b) => a.name.localeCompare(b.name))
-        }))
+        .map(([section, items]) => {
+            items.sort((a, b) => byOrder(a, b) || a.name.localeCompare(b.name));
+            return { section, name: sectionName(section), order: items[0]?.order ?? Infinity, items };
+        })
         .sort((a, b) => {
             if (a.section === GENERAL_SECTION) return 1;
             if (b.section === GENERAL_SECTION) return -1;
-            return a.name.localeCompare(b.name);
+            return byOrder(a, b) || a.name.localeCompare(b.name);
         });
 }
 

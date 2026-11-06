@@ -74,7 +74,7 @@ function clean() {
             token_stone_foundation: {
                 id: 'token_stone_foundation', name: 'Stone Foundation',
                 foundation: { kind: 'stone', skill: 'construction' },
-                shop: { price: [{ itemId: 'item_oak_wood', quantity: 5 }], section: 'general' },
+                shop: { price: [{ itemId: 'item_oak_wood', quantity: 5 }], section: 'general', skills: ['construction', 'farming'], order: 2 },
             },
             token_furnace: { id: 'token_furnace', name: 'Furnace' },
         },
@@ -291,7 +291,29 @@ describe('Lifecycle audit — errors: shape rules', () => {
 
     it('a foundation kind that is not one of FOUNDATION_KINDS', () => {
         expectOne((w) => { w.tokens.token_stone_foundation.foundation.kind = 'marble'; },
-            { id: 'token_stone_foundation', field: 'foundation.kind', includes: ['marble', 'wood, stone, bench, farmland'] });
+            { id: 'token_stone_foundation', field: 'foundation.kind', includes: ['marble', 'wood, stone, bench, farmland, excavation, battlefield'] });
+    });
+
+    it('a shop skill icon that is not a real skill', () => {
+        expectOne((w) => { w.tokens.token_stone_foundation.shop.skills = ['construction', 'masonry']; },
+            { id: 'token_stone_foundation', field: 'shop.skills[1]', includes: ['masonry', 'not a real skill'] });
+    });
+
+    it('shop skill icons that are not a list', () => {
+        expectOne((w) => { w.tokens.token_stone_foundation.shop.skills = 'construction'; },
+            { id: 'token_stone_foundation', field: 'shop.skills', includes: ['must be a list'] });
+    });
+
+    it('a shop place in the list that is not a whole number of 1 or more', () => {
+        expectOne((w) => { w.tokens.token_stone_foundation.shop.order = 0; },
+            { id: 'token_stone_foundation', field: 'shop.order', includes: ['place in the list is 0'] });
+    });
+
+    it('a shop block without icons or a place is fine', () => {
+        const world = clean();
+        delete world.tokens.token_stone_foundation.shop.skills;
+        delete world.tokens.token_stone_foundation.shop.order;
+        expect(auditLifecycleBlocks(world)).toEqual([]);
     });
 
     it('a foundation skill that is not a real skill', () => {

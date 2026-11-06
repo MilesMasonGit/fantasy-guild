@@ -15,6 +15,14 @@ project's first tagged baseline — everything before it was untagged developmen
   exist a Kenney pot sound plays and no picture is drawn. QA panel: "A star that opens others"
   and "A constellation one star short".
 
+- **Foundations for each kind of building** (brief 410 S1): two new kinds of Foundation,
+  Excavation (mines and quarries) and Battlefield (enemy camps built from a banner). A Token sold
+  at the Shop can carry skill icons and a place in the list, both set in the CMS's Shop block
+  (the Shop lists by that place, then name; icons are for the coming pop-up Shop), and the content
+  audit checks both. A change pack for the owner's review adds the two Foundations (stand-in art,
+  placeholder Oak Wood prices), moves the mines, the Quarry, the 18 banner camps and the Mining
+  Camp to their Foundations, sets the list order and icons, and takes Coast and Goblin Camp out
+  of the Shop. Nothing changes in play until the owner accepts it and Syncs.
 - **"While you were away" in two columns** (brief 440 A1): the items on the left, each item once
   with its net change in green or red (gained and spent on hover, a small mark on loot still on
   the mat), the news on the right (knock-outs, the Bank refusing items, new recipes, first finds,

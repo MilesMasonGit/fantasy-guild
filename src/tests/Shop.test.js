@@ -61,6 +61,21 @@ registerTokenTypes({
     fixture_tgrp_t2: {
         id: 'fixture_tgrp_t2', name: 'Fixture Tier 2', size: 1, foundation: { kind: 'wood', skill: 'construction', tier: 2 },
         shop: { price: [{ itemId: WOOD, quantity: 9 }], section: 'smithing', group: 'Fixture Tier Group' }
+    },
+    // A section whose Tokens carry a place in the list and skill icons.
+    fixture_ord_a: { id: 'fixture_ord_a', name: 'Fixture Ord A', size: 1, shop: { price: [], section: 'ranged', order: 3 } },
+    fixture_ord_z: {
+        id: 'fixture_ord_z', name: 'Fixture Ord Z', size: 1,
+        shop: { price: [], section: 'ranged', order: 1, skills: ['mining', 'not_a_skill', 'mining', 'faith'] }
+    },
+    fixture_ord_b: { id: 'fixture_ord_b', name: 'Fixture Ord B', size: 1, shop: { price: [], section: 'ranged' } },
+    fixture_ord_g1: {
+        id: 'fixture_ord_g1', name: 'Fixture Ord G1', size: 1,
+        shop: { price: [{ itemId: WOOD, quantity: 1 }], section: 'ranged', order: 5, group: 'Fixture Ord Group', skills: ['melee'] }
+    },
+    fixture_ord_g2: {
+        id: 'fixture_ord_g2', name: 'Fixture Ord G2', size: 1,
+        shop: { price: [{ itemId: WOOD, quantity: 2 }], section: 'ranged', order: 2, group: 'Fixture Ord Group', skills: ['magic'] }
     }
 });
 
@@ -123,9 +138,35 @@ describe('the catalogue', () => {
         expect(entry.typeId).toBe('fixture_tgrp_t1');
     });
 
+    it('orders entries by their place in the list, then name, with unordered ones last', () => {
+        const ranged = Shop.catalogue().find(g => g.section === 'ranged');
+        expect(ranged.items.map(i => i.group || i.typeId)).toEqual(['fixture_ord_z', 'Fixture Ord Group', 'fixture_ord_a', 'fixture_ord_b']);
+        expect(ranged.items.map(i => i.order)).toEqual([1, 2, 3, Infinity]);
+    });
+
+    it('orders sections by their first place in the list, then name, General still last', () => {
+        const sections = Shop.catalogue().map(g => g.section);
+        expect(sections[0]).toBe('ranged');
+        // Sections with no place at all keep name order.
+        expect(sections.indexOf('forestry')).toBeLessThan(sections.indexOf('smithing'));
+        expect(sections[sections.length - 1]).toBe('general');
+    });
+
+    it('carries the authored skill icons: real skills only, each once, in order', () => {
+        const all = Shop.catalogue().flatMap(g => g.items);
+        expect(all.find(i => i.typeId === 'fixture_ord_z').skills).toEqual(['mining', 'faith']);
+        expect(all.find(i => i.typeId === 'fixture_ord_a').skills).toEqual([]);
+        // A group shows its first option's icons.
+        const group = all.find(i => i.group === 'Fixture Ord Group');
+        expect(group.typeId).toBe('fixture_ord_g1');
+        expect(group.skills).toEqual(['melee']);
+        expect(Shop.shopSkillsOf('fixture_not_sold')).toEqual([]);
+        expect(Shop.shopOrderOf('fixture_not_sold')).toBe(Infinity);
+    });
+
     it('each option is gated by its own price only', () => {
         InventoryManager.addItem(WOOD, 5);
-        const entry = Shop.catalogue().flatMap(g => g.items).find(i => i.group);
+        const entry = Shop.catalogue().flatMap(g => g.items).find(i => i.group === 'Fixture Group');
         expect(entry.options.find(o => o.typeId === 'fixture_grp_small').affordability.success).toBe(true);
         expect(entry.options.find(o => o.typeId === 'fixture_grp_big').affordability.success).toBe(false);
     });

@@ -324,11 +324,22 @@ mines) keeps counting while full and replaces a loss on the next tick.
 Buy a Foundation, pick a build recipe on it, and a hero builds it into a
 station in place (30 s, level 1). *(`Foundations.js`)*
 
-| Foundation | Price | Builds |
-|---|---|---|
-| Wood Foundation | 15 Oak Wood | Workbench, Cooking Pot (5 Oak Wood each) |
-| Stone Foundation | 10 Stone + 5 Oak Wood | Furnace (5 Stone), Fighter's Academy (10 Stone + 10 Oak Wood; retired, for the owner to delete) |
-| Farmland | 10 Oak Wood | Wheat Field (1 Wheat Seed), Apple Orchard (1 Apple Seed) |
+Each kind of Foundation is for its own kind of building (owner, 2026-11-03; brief 410).
+The Shop sells only Foundations, in the order below; each shows skill icons that
+hint at what it is good for. The icons and the place in the list are authored in
+the CMS on the Token's `shop` block (`skills`, `order`), not worked out from its
+recipes: several buildings have no skill of their own. The kinds are
+`FOUNDATION_KINDS` (`tokenConstants.js`); a building recipe names the kinds it
+builds on. Prices are *placeholders*. *(The Excavation and Battlefield rows, and
+the moves, arrive with the owner's Sync of the Foundations pack.)*
+
+| Foundation | Price | Skill icons | Builds |
+|---|---|---|---|
+| Wood Foundation | 15 Oak Wood | Crafting, Cooking, Alchemy, Fishing, Forestry | Workbench, Cooking Pot, Brewery, Alchemy Table, Tannery, Fir Workbench, Windmill, Composter, Beehive, Dock, Fishing Hut, Logging Camp, Farmstead, Minecart, Mining Camp |
+| Stone Foundation | 10 Stone + 5 Oak Wood | Smithing, Faith | Furnace, Iron Furnace, Copper Smithy, Iron Smithy, Well, Fighter's Academy (retired) |
+| Farmland | 10 Oak Wood | Farming, Forestry | Field, Herb Garden, Grapevine, Apple Orchard, the planted forests |
+| Excavation | 15 Oak Wood (no Stone: the first Quarry is what gets you Stone) | Mining | Copper Mine, Coal Mine, Quarry |
+| Battlefield | 15 Oak Wood | Melee, Ranged, Magic | The 18 enemy spawners built from a banner (Goblin Camp, Wolf Den, Slime Pit and the rest) |
 
 ### Fishing — Built (brief 230 S5); no content yet
 Owner rulings 2026-10-24. **Water** is a Token with **catch pools**
@@ -795,11 +806,9 @@ less micromanagement than area flags).
   1 Oak Seed, 1 Wheat Seed and 1 Apple Seed (*placeholder*; the CMS block is
   still called `trickle` in the data), plus the Wishing Well's Water.
   *(`PassiveProduction.js`)*
-- **The Shop** sells 10 Tokens, all available from the start; price is the
-  only gate (*placeholder* prices): Oak Forest, Coast, Farmland (10 Oak Wood
-  each), Copper/Coal Mine and Quarry (15 Oak Wood), Wood Foundation (15 Oak
-  Wood), Stone Foundation (10 Stone + 5 Oak Wood), Copper Anvil (5 Copper
-  Ingot), Goblin Camp (10 Stone + 10 Oak Wood). *(`Shop.js`)*
+- **The Shop** sells the Foundations only (see §3, Foundations), all available
+  from the start; price is the only gate (*placeholder* prices). Coast and Goblin
+  Camp come from the Starter Camp and the world map's tables instead. *(`Shop.js`)*
 
 ---
 

@@ -222,7 +222,7 @@ describe('Renames reach the lifecycle blocks', () => {
 describe('The recipe field foundationKinds', () => {
     it('is the game’s list, re-exported rather than copied', () => {
         expect(FOUNDATION_KINDS).toBe(GAME_FOUNDATION_KINDS);
-        expect([...FOUNDATION_KINDS]).toEqual(['wood', 'stone', 'bench', 'farmland']);
+        expect([...FOUNDATION_KINDS]).toEqual(['wood', 'stone', 'bench', 'farmland', 'excavation', 'battlefield']);
     });
 
     it('survives load → edit → Recalculate → Sync, and absent stays absent', () => {
@@ -312,6 +312,30 @@ describe('The Token editor’s Lifecycle section', () => {
         fireEvent.change(container.querySelector('[data-block="shop"] [data-field="shop-group"]'), { target: { value: '' } });
         expect(useEntityStore.getState().tokens[id].shop).toEqual({ price: [], section: 'general' });
         expect(JSON.parse(JSON.stringify(syncPayload()['tokens.json'][id].shop))).not.toHaveProperty('group');
+    });
+
+    it('the Shop block edits its skill icons and place in the list; empty drops the keys, and both reach tokens.json', () => {
+        const id = useEntityStore.getState().addToken({ name: 'Icons Fixture' });
+        useEntityStore.getState().updateToken(id, { shop: { price: [], section: 'general' } });
+        useEntityStore.getState().setActiveEntity(id, 'token');
+        const { container } = render(React.createElement(TokenEditor));
+        const add = () => container.querySelector('[data-block="shop"] [data-field="shop-skill-add"]');
+        fireEvent.change(add(), { target: { value: 'smithing' } });
+        fireEvent.change(add(), { target: { value: 'faith' } });
+        expect(useEntityStore.getState().tokens[id].shop.skills).toEqual(['smithing', 'faith']);
+        // A chosen skill is not offered twice.
+        expect([...add().querySelectorAll('option')].map((o) => o.value)).not.toContain('smithing');
+
+        const order = container.querySelector('[data-block="shop"] [data-field="shop-order"]');
+        fireEvent.change(order, { target: { value: '2' } });
+        expect(useEntityStore.getState().tokens[id].shop).toEqual({ price: [], section: 'general', skills: ['smithing', 'faith'], order: 2 });
+        expect(syncPayload()['tokens.json'][id].shop).toEqual({ price: [], section: 'general', skills: ['smithing', 'faith'], order: 2 });
+
+        fireEvent.change(container.querySelector('[data-block="shop"] [data-field="shop-order"]'), { target: { value: '' } });
+        fireEvent.click(container.querySelector('[data-block="shop"] [data-skill="smithing"] button'));
+        expect(useEntityStore.getState().tokens[id].shop.skills).toEqual(['faith']);
+        fireEvent.click(container.querySelector('[data-block="shop"] [data-skill] button'));
+        expect(useEntityStore.getState().tokens[id].shop).toEqual({ price: [], section: 'general' });
     });
 
     it('the Foundation block edits its tier: an absent tier shows 1, and an edit reaches tokens.json', () => {
