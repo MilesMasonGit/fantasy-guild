@@ -42,7 +42,7 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
     const orbSrc = `/assets/ui/u_orb_${color === 'blue' ? 'lblu' : color}.png`;
 
     return (
-        <div id={id} ref={ref} {...droppableProps} className={cn("relative isolate flex flex-col items-center rounded-full", isValidDrop && "ring-4 ring-gi-success shadow-[0_0_15px_rgba(34,197,94,0.6)]")}>
+        <div id={id} ref={ref} {...droppableProps} className={cn("relative isolate flex flex-col items-center rounded-full", isValidDrop && "ring-4 ring-gi-success")}>
             <button
                 title={label}
                 aria-label={label}
@@ -61,9 +61,8 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
                     imageRendering: 'pixelated'
                 }}
             >
-                <Icon 
-                    className="w-6 h-6 md:w-12 md:h-12 text-yellow-50" 
-                    style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.75))' }} 
+                <Icon
+                    className="w-6 h-6 md:w-12 md:h-12 text-yellow-50 drop-shadow-[0_2px_0_rgba(0,0,0,0.75)] md:drop-shadow-[0_4px_0_rgba(0,0,0,0.75)]"
                 />
             </button>
             {!disabled && ORB_OUTLINE_OFFSETS.map(([dx, dy]) => (

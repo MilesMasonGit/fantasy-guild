@@ -190,10 +190,10 @@ export const EntityRibbon = ({
             <div
                 className={cn(
                     sizeConfig.box,
-                    'relative rounded-md bg-black border border-white/10 flex items-center justify-center shrink-0 shadow-inner group-hover:border-white/25 transition-colors overflow-visible z-10'
+                    'relative rounded-md bg-black border border-white/10 flex items-center justify-center shrink-0 group-hover:border-white/25 transition-colors overflow-visible z-10'
                 )}
             >
-                <div data-item-bar-sprite className={cn(sizeConfig.box, 'relative flex items-center justify-center transition-transform duration-200 ease-out group-hover:scale-[2] group-hover:z-50 group-hover:drop-shadow-[0_6px_14px_rgba(0,0,0,0.95)] pointer-events-none origin-center')}>
+                <div data-item-bar-sprite className={cn(sizeConfig.box, 'relative flex items-center justify-center transition-transform duration-200 ease-out group-hover:scale-[2] group-hover:z-50 pointer-events-none origin-center')}>
                     {icon ?? (!isDiscovered ? (
                         <PixelGlyph name="unknown" data-item-unknown className="text-gi-muted/60" />
                     ) : resolvedKind === 'xp' ? (

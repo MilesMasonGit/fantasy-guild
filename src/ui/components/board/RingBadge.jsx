@@ -121,8 +121,7 @@ export const RingBadge = ({ kind, fraction, text, greyed = false, title, rootRef
                 style={{
                     color: colour,
                     fontSize: fontFor(shown),
-                    visibility: greyed ? 'hidden' : 'visible',
-                    textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000'
+                    visibility: greyed ? 'hidden' : 'visible'
                 }}
             >
                 {controlled ? shown : null}

@@ -176,13 +176,6 @@
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 12px;
-
-  /* Shadows */
-  --shadow-glow: 0 0 25px rgba(233, 69, 96, 0.4);
-  --shadow-rim: 0 0 10px rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.2);
-  --shadow-bevel: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 4px 15px rgba(0, 0, 0, 0.6);
-  --shadow-progress-rim: 0 0 8px rgba(255, 255, 255, 0.3);
-  --shadow-progress-glow: 0 0 12px rgba(233, 69, 96, 0.4);
 }
 
 :root {
@@ -283,56 +276,6 @@
     border-radius: 0;
   }
   .ui-pixel-edge:is(:hover, :focus-within):not(:disabled, [aria-disabled="true"]) { border-color: var(--color-ui-white); }
-
-  .gi-shadow-deep {
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7);
-  }
-
-  .progress-fill--yellow-chroma {
-    position: relative;
-    overflow: hidden;
-    background: linear-gradient(
-      135deg,
-      #fffbeb 0%,
-      #fef08a 20%,
-      #eab308 45%,
-      #ca8a04 70%,
-      #facc15 100%
-    );
-    background-size: 200% 200%;
-    animation: chroma-swirl-gradient 2.5s ease infinite;
-    box-shadow: 0 0 10px rgba(250, 204, 21, 0.95), 0 0 20px rgba(234, 179, 8, 0.7), 0 0 30px rgba(202, 138, 4, 0.5);
-  }
-
-  .progress-fill--red-chroma {
-    position: relative;
-    overflow: hidden;
-    background: linear-gradient(
-      135deg,
-      #fff1f2 0%,
-      #fca5a5 20%,
-      #ef4444 45%,
-      #b91c1c 70%,
-      #f87171 100%
-    );
-    background-size: 200% 200%;
-    animation: chroma-swirl-gradient 2.5s ease infinite;
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.95), 0 0 20px rgba(220, 38, 38, 0.7), 0 0 30px rgba(185, 28, 28, 0.5);
-  }
-
-  /* Text Outline for legibility on backgrounds */
-  .gi-text-outline {
-    text-shadow:
-      -2px -2px 0 #000,
-      2px -2px 0 #000,
-      -2px 2px 0 #000,
-      2px 2px 0 #000,
-      -2px 0px 0 #000,
-      2px 0px 0 #000,
-      0px -2px 0 #000,
-      0px 2px 0 #000,
-      0px 2px 4px rgba(0, 0, 0, 0.8) !important;
-  }
 }
 
 /* Loot flying out (D-40, D-235, UI §5 "loot has mass").
@@ -855,47 +798,6 @@
   }
 }
 
-@keyframes chroma-swirl-gradient {
-  0% {
-    background-position: 0% 0%;
-  }
-  50% {
-    background-position: 100% 100%;
-  }
-  100% {
-    background-position: 0% 0%;
-  }
-}
-
-@keyframes bubble-float {
-  0% {
-    transform: translateY(100%) translateX(0);
-    opacity: 0;
-  }
-
-  20% {
-    opacity: var(--bubble-opacity, 0.6);
-  }
-
-  80% {
-    opacity: calc(var(--bubble-opacity, 0.6) * 0.5);
-  }
-
-  100% {
-    transform: translateY(-120%) translateX(var(--bubble-drift, 10px));
-    opacity: 0;
-  }
-}
-
-.bubble {
-  @apply absolute bottom-0 bg-white/40 rounded-full blur-[1px] pointer-events-none;
-  animation: bubble-float var(--bubble-speed, 2s) ease-in infinite;
-  left: var(--bubble-left, 50%);
-  width: var(--bubble-size, 4px);
-  height: var(--bubble-size, 4px);
-  opacity: 0;
-}
-
 @keyframes bit-drift {
   0% {
     transform: translate(0, 0);
@@ -928,20 +830,6 @@
   width: var(--bit-size, 3px);
   height: var(--bit-size, 3px);
   opacity: 0;
-}
-
-@keyframes bloom {
-
-  0%,
-  100% {
-    box-shadow: 0 0 0px var(--bar-color, currentColor);
-    opacity: var(--bloom-opacity, 0.8);
-  }
-
-  50% {
-    box-shadow: 0 0 var(--bloom-blur, 12px) var(--bloom-spread, 2px) var(--bar-color, currentColor);
-    opacity: 1;
-  }
 }
 
 @layer utilities {

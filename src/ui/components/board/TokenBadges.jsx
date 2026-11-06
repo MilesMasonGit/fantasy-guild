@@ -18,9 +18,7 @@ import { Tooltip } from '../base/Tooltip.jsx';
  * moment rather than a state.
  */
 
-const NAME_STYLE = Object.freeze({ textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000' });
-const FLOATER_STYLE = Object.freeze({ textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000' });
-const FLOATER_AT_REST_STYLE = Object.freeze({ ...FLOATER_STYLE, willChange: 'contents' });
+const FLOATER_AT_REST_STYLE = Object.freeze({ willChange: 'contents' });
 
 /**
  * ⚠️ The -1 / +50 floaters are switched off: a worked Token's charges count down on its work plate
@@ -86,10 +84,10 @@ export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ i
                     className={cn(
                         "gi-charge-float",
                         anchor === 'ring' ? "absolute left-0 bottom-0 -translate-x-1/2" : "absolute right-0 bottom-0",
-                        "font-bold ui-text-title tabular-nums leading-none tracking-tight pointer-events-none select-none drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)] whitespace-nowrap",
+                        "font-bold ui-text-title tabular-nums leading-none tracking-tight pointer-events-none select-none whitespace-nowrap",
                         d.delta > 0 ? "text-emerald-300" : "text-amber-200"
                     )}
-                    style={atRest ? FLOATER_AT_REST_STYLE : FLOATER_STYLE}
+                    style={atRest ? FLOATER_AT_REST_STYLE : undefined}
                 >
                     {d.delta > 0 ? `+${d.delta.toLocaleString()}` : (d.delta < 0 ? `-${Math.abs(d.delta).toLocaleString()}` : `${d.delta}`)}
                 </div>
@@ -117,9 +115,6 @@ export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ i
  * any of these change.
  */
 export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, shown = false, below = false, offset = 0, foot = null }) {
-    // ⚠️ Not drawn at all until shown, never drawn hidden: the label's drop shadow is a filter
-    // Chrome draws on a layer of its own, and every Token drawn after a hidden label then needed
-    // a layer too, drawn soft and a pixel off.
     if (!name || isDragging || !shown) return null;
 
     // A full-width flex row centres the label without a `transform`: a transform on every
@@ -137,9 +132,7 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, s
                 : below ? { top: `calc(100% + ${4 + offset}px)` } : { bottom: `calc(100% + ${4 + offset}px)` }}
         >
             <span
-                className="ui-text-small w-max max-w-[240px] shrink-0 font-bold text-white leading-tight tracking-tight px-1 drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)]"
-                style={NAME_STYLE}
-            >
+                className="ui-text-small w-max max-w-[240px] shrink-0 font-bold text-white leading-tight tracking-tight px-1">
                 {name}
             </span>
         </div>
@@ -216,7 +209,7 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
                     className={cn(
                         !big && 'w-7 h-7',
                         'flex items-center justify-center p-0 cursor-pointer select-none',
-                        'filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]',
+                        'drop-shadow-[2px_2px_0_#000]',
                         'group/gear',
                         pulsing && 'relative'
                     )}
@@ -259,7 +252,7 @@ export const MarkedBadge = ({ title }) => (
     <div
         data-demolish-badge="true"
         aria-label={title}
-        className="shrink-0 select-none w-7 h-7 flex items-center justify-center rounded-full bg-black/70 border border-gi-warning/80 filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
+        className="shrink-0 select-none w-7 h-7 flex items-center justify-center rounded-full bg-black/70 border border-gi-warning/80 drop-shadow-[2px_2px_0_#000]"
     >
         <SkillIcon skill={getSkill(DEMOLITION_SKILL_ID)} skillId={DEMOLITION_SKILL_ID} size={16} />
     </div>

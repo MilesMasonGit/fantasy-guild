@@ -235,7 +235,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                 />
             )}
 
-            {/* Item drop cue: a soft glow in the strip under the hero. */}
+            {/* Item drop cue: a flat tint with a hard white outline in the strip under the hero. */}
             {itemCue && (
                 <div data-dock-drop-cue className="absolute inset-x-1 inset-y-0 bg-gi-primary/20 outline-2 outline-solid -outline-offset-2 outline-[var(--color-ui-white)] pointer-events-none" />
             )}
@@ -326,7 +326,6 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                         DOCK_NAME_TEXT_CLASS,
                         isSelected ? 'text-gi-gold' : isWounded ? 'text-red-300' : 'text-white'
                     )}
-                    style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}
                 >
                     {hero.name}
                 </span>
@@ -471,7 +470,6 @@ const BarBubbles = ({ heroId, bubbles }) => {
                 <div
                     data-bar-bubble-pager
                     className="flex items-center gap-0.5 ui-text-body font-bold leading-none text-yellow-100"
-                    style={{ textShadow: '2px 2px 0 #000' }}
                 >
                     <button
                         type="button"

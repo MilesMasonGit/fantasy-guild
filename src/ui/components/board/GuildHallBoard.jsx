@@ -105,7 +105,6 @@ const HIT_PX = 56;
 /** One art pixel of the 2× sky: the width of a line. */
 const LINE_PX = 2;
 
-const OUTLINE = '0 1px 0 #000, 1px 0 0 #000, 0 -1px 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000';
 
 /** A node's centre in the web's natural pixels (a `size` from {@link webSize}). The Hall is the middle. */
 export function webPoint(nodeId, size = { w: WEB_W, h: WEB_H }) {
@@ -359,7 +358,6 @@ export const GuildHallBoard = ({
                             >
                                 <span
                                     className={cn('whitespace-nowrap ui-text-title tracking-[0.2em] uppercase', done ? 'text-[#fff1c4]' : 'text-[#aab4ff] opacity-40')}
-                                    style={{ textShadow: OUTLINE }}
                                 >
                                     {c.name}
                                 </span>
@@ -393,7 +391,6 @@ export const GuildHallBoard = ({
                         </button>
                         <div
                             className="mt-1 whitespace-nowrap ui-text-title leading-tight text-[#fff1c4] pointer-events-none"
-                            style={{ textShadow: OUTLINE }}
                         >
                             Guild Hall
                         </div>
@@ -458,7 +455,6 @@ export const GuildHallBoard = ({
                                             'relative whitespace-nowrap ui-text-title leading-tight',
                                             state === 'locked' ? 'text-stone-400' : state === 'maxed' ? 'text-[#ffd84a]' : 'text-white'
                                         )}
-                                        style={{ textShadow: OUTLINE }}
                                     >
                                         {def.name}
                                         <span data-node-rank className="gi-star-rank absolute left-full top-0 pl-[0.4em]">{` ${rank}/${def.maxRank}`}</span>
