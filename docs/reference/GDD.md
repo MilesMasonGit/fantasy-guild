@@ -1407,7 +1407,8 @@ drawers**. The menu can be flipped to the right.
   most six gold "New!" stubs, with their sounds. A gap with no summary shows
   them at once; "Load as I left it" shows none.
 - **Saves**: 3 slots in browser `localStorage` with a one-step backup;
-  autosave every 10 min by default. **Saves from another version are refused,
+  autosave every 10 min by default (10 min, 1 h or off; 1 min in dev builds only).
+  Each slot on the title screen shows the time away it has built up. **Saves from another version are refused,
   not migrated** (`GAME_VERSION = '0.8.1'`, moved by the Atlas's Regions), and
   that stays the policy **until 1.0** (owner 2026-10-06). A new game is saved
   immediately.

@@ -156,8 +156,8 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
         if (slotInfo.damaged) {
             return (
                 <div key={index} data-save-slot={slotNumber} data-slot-state="damaged" className={cn(ROW, 'gap-4', rowLook)}>
-                    <div className="flex flex-col">
-                        <span className="text-red-400 font-bold uppercase tracking-widest text-sm">{t('titleScreen.slotDamaged', { n: slotNumber })}</span>
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-red-400 font-bold uppercase tracking-widest text-sm whitespace-nowrap">{t('titleScreen.slotDamaged', { n: slotNumber })}</span>
                         <span className="ui-text-body text-gray-500">{t('titleScreen.damagedHint')}</span>
                     </div>
                     {slotButtons(index, isPendingDelete)}

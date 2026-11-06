@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import GIModal from '../components/base/GIModal.jsx';
-import { SettingsManager, IS_DEV_BUILD, autoSaveChoices } from '../../systems/core/SettingsManager.js';
+import { SettingsManager, isDevBuild, autoSaveChoices } from '../../systems/core/SettingsManager.js';
 // Static: SaveManager is already in the main chunk (main.jsx and the slot screen import it),
 // so a dynamic import here would split nothing.
 import { SaveManager } from '../../systems/core/SaveManager.js';
@@ -51,7 +51,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
         { id: 'game', label: t('settings.tabGame'), icon: <Save size={16} /> },
         { id: 'audio', label: t('settings.tabAudio'), icon: <Volume2 size={16} /> },
         { id: 'dev', label: t('settings.tabDev'), icon: <Wrench size={16} /> }
-    ].filter(tab => tab.id !== 'dev' || IS_DEV_BUILD);
+    ].filter(tab => tab.id !== 'dev' || isDevBuild());
 
     const getVal = (path) => path.split('.').reduce((acc, k) => (acc && acc[k] !== undefined) ? acc[k] : undefined, settings);
     const bind = (path) => ({ settingKey: path, value: getVal(path), onChange: (v) => handleSettingChange(path, v) });

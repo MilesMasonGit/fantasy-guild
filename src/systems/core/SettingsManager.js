@@ -11,12 +11,12 @@ const SETTINGS_STORAGE_KEY = 'fantasy_guild_settings';
 const DEV_MUTE_MIGRATION_KEY = 'fantasy_guild_dev_mute_applied';
 
 /** Dev and perf builds: the only ones with the 1-minute auto-save and the Dev Tools tab. */
-export const IS_DEV_BUILD = !!(import.meta.env?.DEV || import.meta.env?.MODE === 'perf');
+export const isDevBuild = () => !!(import.meta.env?.DEV || import.meta.env?.MODE === 'perf');
 
 /** The auto-save choices, in minutes (0 is off); 1 minute is for dev builds only. */
 export const AUTO_SAVE_DEV_MINUTES = 1;
 export const AUTO_SAVE_DEFAULT_MINUTES = 10;
-export function autoSaveChoices(devBuild = IS_DEV_BUILD) {
+export function autoSaveChoices(devBuild = isDevBuild()) {
     return devBuild ? [AUTO_SAVE_DEV_MINUTES, 10, 60, 0] : [10, 60, 0];
 }
 
@@ -136,7 +136,7 @@ class SettingsManagerClass {
      * A stored file from an older build: retired keys go, and a shipped build turns a dev-only
      * 1-minute auto-save (or any choice it doesn't offer) into the default.
      */
-    _tidyLoaded(devBuild = IS_DEV_BUILD) {
+    _tidyLoaded(devBuild = isDevBuild()) {
         for (const path of RETIRED_KEYS) {
             const [group, key] = path.split('.');
             if (this.settings[group]) delete this.settings[group][key];
