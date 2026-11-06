@@ -11,9 +11,6 @@ export const TONE_FILL = Object.freeze({
 /** One art pixel off each corner, so the bar has the frames' stepped corners and no rounding. */
 export const STEPPED = 'polygon(2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px), 0 2px, 2px 2px)';
 
-/** A hard outline, so the numbers read over any fill and over the empty trough. */
-const NUMBER_EDGE = '1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000';
-
 /**
  * VitalBar: a hero's HP on the hero bar and the sheet (UI_STYLE "Numbers"), the numbers over a
  * stepped pixel bar. Heroes only: fighters on the mat have their own thin bar.
@@ -44,7 +41,6 @@ export const VitalBar = ({ value, max, height = 16, textClass = 'ui-text-small',
             <span
                 data-hp-numbers
                 className={`absolute inset-0 flex items-center justify-center font-bold leading-none tabular-nums text-white ${textClass}`}
-                style={{ textShadow: NUMBER_EDGE }}
             >
                 {`${value.toLocaleString('en-US')}/${max.toLocaleString('en-US')}`}
             </span>

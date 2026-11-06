@@ -22,9 +22,8 @@ import { tuning } from '../../../config/playmatTuning.js';
  *
  * ⚠️ **The mat's edge is in the picture.** The picture covers the mat's surface, so the surface's
  * rounded corners and its faint light edge (`MAT_EDGE`) are drawn here, per ground pixel, with the
- * darker rim ({@link RIM}) or, the rim off, the surface's soft inset shadow; the surface stops
- * drawing them while the ground is drawn. A soft CSS shadow painted under an opaque picture costs
- * a blur on every repaint of the tiles it covers and shows nothing.
+ * darker rim ({@link RIM}) or, the rim off, an inset shading stepped per ground pixel; the
+ * surface stops drawing them while the ground is drawn.
  */
 
 /** Token pixels across one ground pixel, from its slider: a whole number from 1 to 3. */
@@ -45,8 +44,9 @@ export const RIM = Object.freeze({ edge: 4 / 11, band: 0.2 / 0.38, rag: 3 / 11, 
 const RIM_CHANNEL = 0x7e01;
 
 /**
- * The mat surface's edge, in mat units: its corner radius, its 2-unit light edge and its inset
- * shadow (`MatBoard.jsx` draws them with CSS while the ground is not drawn).
+ * The mat surface's edge, in mat units: its corner radius, its 2-unit light edge and the inset
+ * shading the ground's picture draws per ground pixel. While the ground is not drawn `MatBoard.jsx`
+ * draws only the radius and the light edge, with CSS: no soft shadow.
  */
 export const MAT_EDGE = Object.freeze({
     radius: 28,
@@ -56,10 +56,9 @@ export const MAT_EDGE = Object.freeze({
     shadowAlpha: 0.40
 });
 
-/** The surface's CSS for the same edge, so the two cannot drift apart. */
+/** The surface's CSS for the same light edge, so the two cannot drift apart. */
 export const MAT_EDGE_CSS = Object.freeze({
-    border: `${MAT_EDGE.border}px solid rgba(255, 255, 255, ${MAT_EDGE.borderLight})`,
-    insetShadow: `inset 0 0 ${MAT_EDGE.shadowBlur}px rgba(0, 0, 0, ${MAT_EDGE.shadowAlpha.toFixed(2)})`
+    border: `${MAT_EDGE.border}px solid rgba(255, 255, 255, ${MAT_EDGE.borderLight})`
 });
 
 /**

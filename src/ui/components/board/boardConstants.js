@@ -105,13 +105,3 @@ export function skipHint(reason, { holder = null, tool = null } = {}) {
     const text = SKIP_HINT[reason] || 'can’t work it';
     return text.replace('{holder}', holder || 'another hero').replace('{tool}', tool || 'a tool');
 }
-
-/** Alerts drawn in warning yellow; every other alert is drawn in red. */
-const YELLOW_ALERTS = [ALERT.INPUTS, ALERT.SPAWN_NEEDS_ITEM];
-
-/** Whether an alert is drawn in warning yellow rather than red. */
-export const isYellowAlert = (alert) => YELLOW_ALERTS.includes(alert);
-
-/** The bar's fill class for an alert value. */
-export const alertFillClass = (alert) =>
-    isYellowAlert(alert) ? 'progress-fill--yellow-chroma' : 'progress-fill--red-chroma';

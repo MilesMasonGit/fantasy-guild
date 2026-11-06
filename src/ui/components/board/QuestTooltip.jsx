@@ -78,7 +78,7 @@ export const QuestTooltip = ({ instanceId, quest, anchorOf = artOf }) => {
                             key={r.itemId}
                             data-quest-reward={r.itemId}
                             title={itemName(r.itemId)}
-                            className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/40 border border-black/40 shadow-inner font-bold tabular-nums"
+                            className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/40 border border-black/40 font-bold tabular-nums"
                         >
                             <ItemIcon item={r.itemId} size={16} />
                             <span>{Number(r.quantity).toLocaleString()}</span>

@@ -66,12 +66,11 @@ const CarriedToken = ({ payload, bold, offBoard }) => (
                 <img
                     src="/assets/ui/u_disallow_red.png"
                     alt="Disallow"
-                    className="w-8 h-8 object-contain select-none animate-bounce drop-shadow-[0_0_8px_rgba(239,68,68,0.9)]"
+                    className="w-8 h-8 object-contain select-none drop-shadow-[2px_2px_0_#000]"
                     style={{
                         width: '32px',
                         height: '32px',
-                        imageRendering: 'pixelated',
-                        animationDuration: '2s'
+                        imageRendering: 'pixelated'
                     }}
                 />
             </div>

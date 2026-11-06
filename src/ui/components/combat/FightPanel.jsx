@@ -61,9 +61,6 @@ const TONE_GLYPH = Object.freeze({
     [TONE.MISS]: GLYPH_COLOUR.muted, [TONE.NOTE]: GLYPH_COLOUR.text
 });
 
-/** A hard black edge, so words over the battlefield read on any ground. */
-const EDGE = '2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000';
-
 // ---------------------------------------------------------------------------------------------
 // The battle
 // ---------------------------------------------------------------------------------------------
@@ -123,7 +120,7 @@ const Landed = ({ m, cx, bottom }) => {
             data-fight-landed={m.on}
             data-fight-landed-kind={m.kind}
             className="absolute flex flex-col items-center pointer-events-none font-bold leading-none whitespace-nowrap"
-            style={{ left: cx, bottom, transform: 'translateX(-50%)', textShadow: EDGE }}
+            style={{ left: cx, bottom, transform: 'translateX(-50%)' }}
         >
             {m.kind === MOMENT.CRIT && <span className="ui-text-small" style={{ color: 'var(--color-ui-gold)' }}>{t('fight.float.crit')}</span>}
             {verdict && (

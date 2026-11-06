@@ -384,24 +384,24 @@ describe('⭐ one ground pixel is a whole number of Token pixels', () => {
 });
 
 describe('⭐ the terrain draw switch', () => {
-    it('⭐ off, the ground is not mounted and the surface keeps its own edge; on, the picture takes it over', () => {
+    it('⭐ off, the ground is not mounted and the surface keeps its own hard edge; on, the picture takes it over', () => {
         setDrawn('terrain', false);
         const { container } = mountMat();
         const surface = () => container.querySelector('[data-mat-surface]');
         expect(groundCanvas(container)).toBeNull();
         expect(plans).not.toHaveBeenCalled();
-        expect(surface().style.boxShadow).toMatch(/inset/);
+        expect(surface().style.boxShadow).not.toMatch(/inset/);
         expect(surface().style.border).toMatch(/rgba\(255, 255, 255, 0\.08\)/);
 
         act(() => setDrawn('terrain', true));
         expect(groundCanvas(container)).not.toBeNull();
         expect(plans).toHaveBeenCalledTimes(1);
-        expect(surface().style.boxShadow).not.toMatch(/inset/);
+        expect(surface().style.border).toMatch(/transparent/);
         expect(surface().style.borderRadius).toBe(`${GroundScreen.MAT_EDGE.radius}px`);
 
         act(() => setDrawn('terrain', false));
         expect(groundCanvas(container)).toBeNull();
-        expect(surface().style.boxShadow).toMatch(/inset/);
+        expect(surface().style.border).toMatch(/rgba\(255, 255, 255, 0\.08\)/);
     });
 
     it('sits over the surface and under every Token, and takes no pointer', () => {

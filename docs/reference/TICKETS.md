@@ -37,7 +37,6 @@ here.
 | T-010 | **Speech bubble audit**: add/remove list for `docs/reference/speech_bubble_lines.md`. | FB §5.5 |
 | T-011 | **Watch by eye** (no agent has seen these on screen): Token hit animations + transform glow, loot flight to the Hall, Shop drawer, countdown badge. | FB §5.6 |
 | T-012 | **Decided (owner 2026-11-02): keep.** Transforms push neighbouring spawned Tokens, as they do today; nothing to build. | FMR |
-| T-013 | **Decided (owner 2026-11-04): all to hard pixel; brief 460.** **The last ~65 alert-icon glows and ~105 label text-shadows**: switch them to the hard-pixel style too? Also covers the soft drop shadows on the state badges (recipe gear, warnings, the −1 number), which each take a drawing layer while shown (owner 2026-10-15: settle them in this ruling). | CR3 summary; T-145 |
 | T-014 | **Quest content is written in engine code** (the tutorial chain, `tutorialQuests.js`), not the CMS. Move it to content? (Design call, never asked; Atlas A8 rewrites the chain.) The opening half is closed: the Starter Camp is content (Atlas A7). | CR3-515 |
 | T-127 | **Markets are cut for now** (owner 2026-10-09, D2): the Shrimp Market Token runs but pays nothing. Retire or repurpose it in the CMS (it turns up from Shrimp Coast content). The GDD §16 question is closed. | concept_progression.md |
 

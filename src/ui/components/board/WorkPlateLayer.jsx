@@ -63,7 +63,7 @@ function PlateCell({ cell, u, tip }) {
     const icon = { width: PLATE.ICON * u, height: PLATE.ICON * u, ...PIXELATED };
     const glyph = { width: 16 * u, height: 16 * u, ...PIXELATED };
     // The kit's small size, counter-scaled so the pixel font lands on whole screen pixels on the mat.
-    const num = { fontSize: `calc(var(--font-size-xxs, 14px) * ${u})`, textShadow: `${2 * u}px ${2 * u}px 0 #000` };
+    const num = { fontSize: `calc(var(--font-size-xxs, 14px) * ${u})` };
     let body;
     switch (cell.kind) {
         case CELL.SKILL:

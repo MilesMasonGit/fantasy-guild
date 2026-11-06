@@ -3,10 +3,6 @@ import { TONE_FILL } from '../base/VitalBar.jsx';
 import { hpTone } from '../dock/dockHeroView.js';
 import { SPEECH_FILL } from './speechTone.js';
 
-/** A hard outline of `e` units around text: eight unblurred copies, no soft shadow. */
-const edge = (e) => [[e, 0], [-e, 0], [0, e], [0, -e], [e, e], [-e, e], [e, -e], [-e, -e]]
-    .map(([x, y]) => `${x}px ${y}px 0 #000`).join(', ');
-
 /** The frames' stepped corners, `s` mat units a step. */
 const stepped = (s) => `polygon(${s}px 0, calc(100% - ${s}px) 0, calc(100% - ${s}px) ${s}px, 100% ${s}px, 100% calc(100% - ${s}px), calc(100% - ${s}px) calc(100% - ${s}px), calc(100% - ${s}px) 100%, ${s}px 100%, ${s}px calc(100% - ${s}px), 0 calc(100% - ${s}px), 0 ${s}px, ${s}px ${s}px)`;
 
@@ -57,8 +53,7 @@ export const HealthBar = ({ who, of = null, cur, max, style, u = 1, outward = 0,
                     // Centred while it fits; wider than the bar, it grows outward only.
                     justifyContent: 'safe center',
                     flexDirection: outward < 0 ? 'row-reverse' : 'row',
-                    fontSize: `calc(var(--font-size-xxs, 14px) * ${u})`,
-                    textShadow: edge(u)
+                    fontSize: `calc(var(--font-size-xxs, 14px) * ${u})`
                 }}
             >
                 {text}

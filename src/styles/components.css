@@ -25,7 +25,6 @@
     background: var(--color-bg-card-hover);
     border-color: var(--color-accent-primary);
     transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
 }
 
 /* ========================================
@@ -80,9 +79,9 @@ gi-slot-label {
     .order-reason-bubble { animation: none; }
 }
 
-/* The Token Summary lights every Token of the hovered type. */
+/* The Token Summary lights every Token of the hovered type: the gold attention outline. */
 [data-summary-highlight="true"] {
-    filter: drop-shadow(0 0 2px #fde047) drop-shadow(0 0 6px #fde047);
+    filter: drop-shadow(2px 0 0 #facc15) drop-shadow(-2px 0 0 #facc15) drop-shadow(0 2px 0 #facc15) drop-shadow(0 -2px 0 #facc15);
 }
 
 /* === Catch-up loading bar ====================================================

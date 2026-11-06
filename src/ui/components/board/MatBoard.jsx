@@ -505,12 +505,11 @@ export const MatBoard = React.memo(function MatBoard({
             onPointerLeave={clearHover}
         >
             {/**
-             * 0: the mat itself, a plain darker surface with a soft rounded border. With free
-             * placement it is the only edge there is, since a Token may stand anywhere on it.
+             * 0: the mat itself, a plain darker surface with a rounded light edge and no soft
+             * shadow. With free placement it is the only edge there is, since a Token may stand
+             * anywhere on it.
              * ⚠️ While the ground is drawn it covers the surface, so its light edge and inset
-             * shadow are drawn in the ground's picture instead (`groundScreen.js`, `MAT_EDGE`): a
-             * blurred shadow under an opaque picture would cost a blur on every repaint and show
-             * nothing.
+             * shading are drawn in the ground's picture instead (`groundScreen.js`, `MAT_EDGE`).
              */}
             <div
                 data-mat-surface
@@ -522,9 +521,7 @@ export const MatBoard = React.memo(function MatBoard({
                     borderRadius: MAT_EDGE.radius,
                     backgroundColor: 'rgba(0, 0, 0, 0.22)',
                     border: ground ? `${MAT_EDGE.border}px solid transparent` : MAT_EDGE_CSS.border,
-                    boxShadow: ground
-                        ? '0 0 0 1px rgba(0, 0, 0, 0.35)'
-                        : `${MAT_EDGE_CSS.insetShadow}, 0 0 0 1px rgba(0, 0, 0, 0.35)`
+                    boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.35)'
                 }}
             />
 

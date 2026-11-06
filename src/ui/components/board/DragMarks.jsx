@@ -54,8 +54,7 @@ function Mark({ src, size, outline = null, label = null, kind, pass }) {
                     style={{
                         right: -shadow,
                         bottom: -shadow,
-                        fontSize: Math.round((size * 3) / 8),
-                        textShadow: `${shadow}px ${shadow}px 0 #000, -${shadow}px 0 0 #000, 0 -${shadow}px 0 #000, ${shadow}px 0 0 #000, 0 ${shadow}px 0 #000`
+                        fontSize: Math.round((size * 3) / 8)
                     }}
                 >
                     {label}

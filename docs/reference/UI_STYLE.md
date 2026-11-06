@@ -112,6 +112,15 @@ normal text colour; a new meaning needs the owner's OK.
   may pulse its colour between two golds but never move or resize; **a
   problem (stuck, no input) is a red one** (owner, 2026-10-19). No glows,
   no bobbing, no scaling (T-147, T-153).
+- **Hard pixel, everywhere** (owner, 2026-11-04 and 2026-11-06): no soft
+  glow, soft shadow or blur anywhere in the game (dev pages aside). A shadow
+  is a hard black copy down-right (panels, the problem mark, the state
+  badges on a Token, the drag refusal mark); an outline is hard, in a
+  meaning colour (the Token Summary lights a type with the gold one). Words
+  wear the game's global **1 px** black outline, the mat's words included (a
+  name under the pointer, the −1); the 2 px outline stays only on the Region
+  name banner. An inline `textShadow` loses to the global outline, so none is
+  written. `HardPixelShadows.test.js` checks `src/ui` and the style sheets.
 - **Item tiles are tinted by the item's kind** (owner, 2026-10-23): Bank
   tiles and filled loadout slots sit on a dark surface tinted by the item's
   `type` (material, tool, food, drink, potion, map; `itemTint.js`), and hover
