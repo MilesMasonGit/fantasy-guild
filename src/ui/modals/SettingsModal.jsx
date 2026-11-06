@@ -190,7 +190,7 @@ const GuildNameSetting = () => {
                 placeholder={t('newGame.defaultGuildName')}
                 onChange={(e) => setDraft(e.target.value)}
                 onBlur={commit}
-                onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') commit(); }}
                 className="ui-pixel-edge bg-black/60 text-white px-3 py-1 outline-none font-bold w-64"
             />
         </label>

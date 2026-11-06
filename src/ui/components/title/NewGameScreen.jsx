@@ -64,7 +64,7 @@ const WorldPreview = ({ view }) => (
  */
 export const NewGameScreen = ({ slotIndex, onBegin, onBack }) => {
     const [guildName, setGuildName] = useState('');
-    const [world, setWorld] = useState(() => roll(World.freshWorldSeed()));
+    const [world, setWorld] = useState(() => roll(World.freshWorldSeed(Date.now())));
     const [heroName, setHeroName] = useState(() => getRandomName());
     const [spriteId, setSpriteId] = useState(() => HERO_PORTRAITS[Math.floor(Math.random() * HERO_PORTRAITS.length)]);
     const [flagColour, setFlagColour] = useState(FLAG_COLOURS[0]);

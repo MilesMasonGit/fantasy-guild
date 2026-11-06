@@ -10,6 +10,8 @@ the Starter Camp is in [concept_progression.md](concept_progression.md).*
 
 *Superseded (owner, 2026-11-04): a completely different tutorial is planned, [concept_tutorial_npc.md](concept_tutorial_npc.md), brief 480. What follows stays true of today's game until it is built.*
 
+*The first step, "buy Bunk Beds, the first hero is free", is gone (brief 450 S4, 2026-11-06): the first hero is made on the new-game screen and stands in Bunk Beds' free first rank from the start, so the chain opens on equipping a tool. Nothing new was written for it; brief 480 replaces the whole tutorial.*
+
 - **The cartographer's quests, one at a time**: today's step-by-step quest
   Tokens, spoken by the cartographer in his eerie, muddled voice
   ([concept_tone_and_world.md](concept_tone_and_world.md)). Runs in the

@@ -5,6 +5,8 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **A new game starts on its own screen** (brief 450 S4). Picking an empty slot's New Game opens one screen before play: **name the Guild** (the name shows on the save slot, the slot number beside it; rename it later in Settings, Game tab), see **the world's first three rings** as the world map draws them (a small read-only map, drag to look around; past ring 3 stays fog) and **Reroll** it as often as you like, for nothing, and make **the first hero** with the hero edit window's own name, portrait and flag colour controls. Begin plays with exactly that: the rolled world's seed is kept in the save and the world map is the world previewed. A reroll never gives a world that fails the ledger's checks F (a seed that does is passed over for the next). The world's ground is painted off the page's thread, so a reroll does not freeze the screen (and the world map opens without a hitch). The first hero holds Bunk Beds' free first rank, so the next rank is the second hero at 20 Oak Wood, as before; later heroes still arrive auto-named. **The tutorial's first step ("buy Bunk Beds, the first hero is free") is gone**: it opens on equipping a tool. A save from before keeps working and shows its slot number.
+
 - **"While you were away" in two columns** (brief 440 A1): the items on the left, each item once
   with its net change in green or red (gained and spent on hover, a small mark on loot still on
   the mat), the news on the right (knock-outs, the Bank refusing items, new recipes, first finds,

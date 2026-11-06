@@ -58,8 +58,8 @@ export const ROLL_CHECKS = Object.freeze([WORLD_CHECK.PRICE_RING, WORLD_CHECK.KE
 /** How many seeds a roll tries for a world with none of {@link ROLL_CHECKS}. */
 export const ROLL_TRIES = 20;
 
-/** A first seed for the new-game screen, from the moment it is asked for. */
-export function freshWorldSeed(now = Date.now()) {
+/** A first seed for the new-game screen, from the moment it is asked for (the screen's clock: no game runs yet). */
+export function freshWorldSeed(now) {
     return seedFromText(`world|${now}`);
 }
 

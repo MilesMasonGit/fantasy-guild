@@ -86,6 +86,40 @@ function standInUrl(land) {
 }
 
 /**
+ * The painter's worker (`worldPicture.worker.js`), made on first use; null where a page has none or
+ * it failed, and the picture is then painted here. Painting takes a few hundred ms: on this thread
+ * it would freeze the screen each time a new world is shown (the new-game screen's Reroll).
+ */
+let painter;
+let paintJobs = 0;
+const paintWaiting = new Map();
+function paintOffThread(args) {
+    if (painter === undefined) {
+        try {
+            painter = typeof Worker === 'undefined' ? null : new Worker(new URL('./worldPicture.worker.js', import.meta.url), { type: 'module' });
+        } catch {
+            painter = null;
+        }
+        painter?.addEventListener('message', (e) => {
+            const { id, pixels } = e.data || {};
+            paintWaiting.get(id)?.(pixels || null);
+            paintWaiting.delete(id);
+        });
+        painter?.addEventListener('error', () => {
+            painter = null;
+            for (const resolve of paintWaiting.values()) resolve(null);
+            paintWaiting.clear();
+        });
+    }
+    if (!painter) return Promise.resolve(null);
+    const id = ++paintJobs;
+    return new Promise((resolve) => {
+        paintWaiting.set(id, resolve);
+        painter.postMessage({ id, args });
+    });
+}
+
+/**
  * The painted world and the rope for one world and rings shown, as canvases: built once and kept
  * (the last few), so opening the map again costs nothing. The time each took is kept with them.
  */
@@ -102,7 +136,10 @@ async function worldPictures(view) {
     const frame = pictureFrame(view.rings);
     if (!canvasOf(1, 1)) return null;
     const started = performance.now();
-    const world = putPixels(canvasOf(frame.width, frame.height), paintWorld({ cells: view.world.cells, rings: view.rings, symbols }));
+    const args = { cells: view.world.cells, rings: view.rings, symbols };
+    const pixels = (await paintOffThread(args)) || paintWorld(args);
+    if (pictures.has(key)) return pictures.get(key);
+    const world = putPixels(canvasOf(frame.width, frame.height), pixels);
     const painted = performance.now();
     const edges = ringEdges(view.world.cells, view.rings, cellCentreArt);
     const drawnRope = ['flat', 'rise', 'fall'].filter(kind => ropeArt(kind));
@@ -343,6 +380,8 @@ export const WorldMap = ({ view, selectedId = null, onSelect, reserveRight = 0, 
     const [picture, setPicture] = useState(null);
     useEffect(() => {
         let live = true;
+        // A new world drops the last one's ground at once, rather than show it under the new tiles.
+        setPicture(null);
         worldPictures(view).then(p => { if (live) setPicture(p); });
         return () => { live = false; };
     }, [view.seed, view.rings]); // eslint-disable-line react-hooks/exhaustive-deps
