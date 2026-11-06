@@ -106,6 +106,11 @@ builds everything a lower one can. This is the same rule tools already use
 | Anvil | Copper · Iron · Mythril · Adamantite · Darkmetal | Copper Anvil exists today; art exists for all five. Follows the metal ladder. |
 | Any other family | — | e.g. Oak / Fir / … Forests, if the owner groups them in the CMS. |
 
+*Amended by brief 410 (owner, 2026-11-03):* the Shop sells **Foundations only**, five kinds in
+this order: Wood, Stone, Farmland, Excavation (mines, quarries), Battlefield (enemy camps from a
+banner). Each carries authored skill icons and its place in the list (`shop.skills`,
+`shop.order`). The tier groups above still apply within a kind; an anvil is no longer sold.
+
 Work split: code builds the group mechanic and the Foundation "minimum tier"
 (engine, CMS fields, Shop dropdown); the owner authors the content in the CMS
 (new Foundation tiers, Marble and Basalt items and sources, anvil tiers,
