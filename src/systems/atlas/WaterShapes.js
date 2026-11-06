@@ -94,7 +94,7 @@ const MEANDER = Object.freeze({
      */
     wideLen: Object.freeze([240, 480]), wideRamp: 120, wideTwo: 1200,
     /** A split river's main arm bends this much of its usual where it parts round the island. */
-    calm: 0.5
+    calm: 0.3
 });
 
 /**
@@ -1081,6 +1081,13 @@ const CHANNEL_HW = 16;
  */
 const MARSH = Object.freeze({ perArea: 1, least: 4, r: [40, 60], twoLobes: 0.6 });
 
+/**
+ * A split's side channel keeps `clear` from its middle to the main arm's banks round the island,
+ * past `ends` units from where it leaves and rejoins the main: its own half-width, both banks'
+ * raggedness and land between.
+ */
+const SPLIT = Object.freeze({ clear: 40, ends: 150 });
+
 /** How much more than its first lobe a lake covers, about, with the others merged in. */
 const LOBE_GAIN = 1.35;
 
@@ -1719,7 +1726,34 @@ class Maker {
             const L = dist(x1, y1, x2, y2) || 1;
             return [x - (y2 - y1) / L * wide, y + (x2 - x1) / L * wide];
         };
-        const channel = this.path([S, off(0.18, swing * 0.55), off(0.42, swing), off(0.7, swing * 0.75), off(0.9, swing * 0.3), J], 12, CHANNEL_HW);
+        // Land between the arms all round the island: away from where it leaves and rejoins the
+        // main arm, the channel keeps `SPLIT.clear` past the main's banks, swinging further, then
+        // to the other side, until it does (else the clearest of the tries).
+        const banks = (pts) => {
+            const total = lengthOf(pts);
+            let least = Infinity;
+            let s = 0;
+            for (let i = 0; i < pts.length; i++) {
+                if (i) s += dist(pts[i][0], pts[i][1], pts[i - 1][0], pts[i - 1][1]);
+                if (s < SPLIT.ends || total - s < SPLIT.ends) continue;
+                for (let k = iS; k <= iJ && k < main.length; k++) {
+                    const room = dist(pts[i][0], pts[i][1], main[k][0], main[k][1]) - mainHws[k];
+                    if (room < least) least = room;
+                }
+            }
+            return least;
+        };
+        let channel = null;
+        let clearest = -Infinity;
+        for (const sw of [swing, swing * 1.3, swing * 1.6, -swing, -swing * 1.3, -swing * 1.6]) {
+            const tried = this.path([S, off(0.18, sw * 0.55), off(0.42, sw), off(0.7, sw * 0.75), off(0.9, sw * 0.3), J], 12, CHANNEL_HW);
+            const room = banks(tried);
+            if (room > clearest) {
+                channel = tried;
+                clearest = room;
+            }
+            if (room >= SPLIT.clear) break;
+        }
         if (this.random() < 0.7) {
             // The delta: the main stops short of the edge and forks into two mouths.
             const F = vertexAt(main, this.between(0.84, 0.9));
