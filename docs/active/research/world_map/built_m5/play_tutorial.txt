@@ -1,0 +1,5 @@
+tutorial step before [{"id":"cart_first_place","done":false,"progress":null}]
+settled 1,0 {"success":true,"reason":null,"walkIn":2,"enemies":3}
+tutorial step after [{"id":"cart_first_place","done":true,"progress":null}] title Elderbrook
+shot T1_tutorial_first_settle.png
+console errors []

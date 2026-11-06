@@ -9,7 +9,7 @@ import { REGION_BANNER_SCALE } from '../board/MatRegionName.jsx';
  * from the world map (`WorldCamera`), stays, and opens and closes in held frames. The heroes' walk
  * in is the engine's (`HeroMotion.WALK_IN`), timed to start once the title is up.
  */
-export const SETTLE_TITLE = Object.freeze({ delayMs: 600, holdMs: 2600, openMs: 200, closeMs: 150 });
+export const SETTLE_TITLE = Object.freeze({ delayMs: 850, holdMs: 2600, openMs: 200, closeMs: 150 });
 
 /** The clip the title plays as it opens (`AudioSystem`). */
 export const SETTLE_FANFARE = 'settle_fanfare';

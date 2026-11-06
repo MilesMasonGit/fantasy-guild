@@ -1,0 +1,9 @@
+fixture true
++389 ms {"reduced":false,"banner":true,"title":null,"heroes":["waiting","waiting","waiting","waiting"],"enemies":4}
++886 ms {"reduced":false,"banner":true,"title":null,"heroes":["waiting","waiting","waiting","waiting"],"enemies":4}
+shot F1_fixture_title_opening.png
++1713 ms {"reduced":false,"banner":true,"title":{"name":"Old Oak Hollow","terrain":"Highland Ores","clip":"inset(0%)","closing":null},"heroes":[[952,942,"walking"],"waiting","waiting","waiting"],"enemies":4}
++3411 ms {"reduced":false,"banner":true,"title":{"name":"Old Oak Hollow","terrain":"Highland Ores","clip":"inset(0%)","closing":"true"},"heroes":[[905,744,"walking"],[946,798,"walking"],[970,845,"walking"],[977,907,"walking"]],"enemies":4}
++6206 ms {"reduced":false,"banner":true,"title":null,"heroes":[[876,624,"home"],[932,624,"home"],[988,624,"home"],[1044,624,"home"]],"enemies":4}
+shot F2_fixture_heroes_home.png
+console errors []

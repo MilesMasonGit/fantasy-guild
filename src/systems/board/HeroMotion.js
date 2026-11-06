@@ -136,7 +136,7 @@ export const HOME_POTTER = 24;
  * Settling's walk in, in game ms: the first hero steps onto the mat this long after the guild
  * arrives (the gold banner and the place's title come first), each next one this much later.
  */
-export const WALK_IN = Object.freeze({ firstMs: 1200, gapMs: 450 });
+export const WALK_IN = Object.freeze({ firstMs: 1400, gapMs: 450 });
 
 /** Heroes waiting for their turn to walk in, by the flag runtime of the board they are walking onto: heroId → game ms left. */
 const walkIns = new WeakMap();

@@ -1,0 +1,434 @@
+[
+ {
+  "seed": 101,
+  "how": "lair",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 101.4,
+  "cleared": true,
+  "heroWalkS": 5.4
+ },
+ {
+  "seed": 101,
+  "how": "spread",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 134.7,
+  "cleared": true,
+  "heroWalkS": 17.7
+ },
+ {
+  "seed": 101,
+  "how": "lair",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 49.8,
+  "cleared": true,
+  "heroWalkS": 24
+ },
+ {
+  "seed": 101,
+  "how": "spread",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 69.9,
+  "cleared": true,
+  "heroWalkS": 47.8
+ },
+ {
+  "seed": 202,
+  "how": "lair",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 101.3,
+  "cleared": true,
+  "heroWalkS": 5.3
+ },
+ {
+  "seed": 202,
+  "how": "spread",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 123.5,
+  "cleared": true,
+  "heroWalkS": 21.5
+ },
+ {
+  "seed": 202,
+  "how": "lair",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 61.6,
+  "cleared": true,
+  "heroWalkS": 35
+ },
+ {
+  "seed": 202,
+  "how": "spread",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 57.3,
+  "cleared": true,
+  "heroWalkS": 70.8
+ },
+ {
+  "seed": 303,
+  "how": "lair",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 131.9,
+  "cleared": true,
+  "heroWalkS": 5.9
+ },
+ {
+  "seed": 303,
+  "how": "spread",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 155.8,
+  "cleared": true,
+  "heroWalkS": 20.8
+ },
+ {
+  "seed": 303,
+  "how": "lair",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 77.2,
+  "cleared": true,
+  "heroWalkS": 41
+ },
+ {
+  "seed": 303,
+  "how": "spread",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 58.1,
+  "cleared": true,
+  "heroWalkS": 27.1
+ },
+ {
+  "seed": 404,
+  "how": "lair",
+  "heroes": 1,
+  "enemies": 3,
+  "clearS": 70.9,
+  "cleared": true,
+  "heroWalkS": 4.9
+ },
+ {
+  "seed": 404,
+  "how": "spread",
+  "heroes": 1,
+  "enemies": 3,
+  "clearS": 81,
+  "cleared": true,
+  "heroWalkS": 15
+ },
+ {
+  "seed": 404,
+  "how": "lair",
+  "heroes": 3,
+  "enemies": 3,
+  "clearS": 32.9,
+  "cleared": true,
+  "heroWalkS": 21.7
+ },
+ {
+  "seed": 404,
+  "how": "spread",
+  "heroes": 3,
+  "enemies": 3,
+  "clearS": 49.8,
+  "cleared": true,
+  "heroWalkS": 34.4
+ },
+ {
+  "seed": 505,
+  "how": "lair",
+  "heroes": 1,
+  "enemies": 3,
+  "clearS": 92,
+  "cleared": true,
+  "heroWalkS": 5
+ },
+ {
+  "seed": 505,
+  "how": "spread",
+  "heroes": 1,
+  "enemies": 3,
+  "clearS": 104.7,
+  "cleared": true,
+  "heroWalkS": 11.7
+ },
+ {
+  "seed": 505,
+  "how": "lair",
+  "heroes": 3,
+  "enemies": 3,
+  "clearS": 56.5,
+  "cleared": true,
+  "heroWalkS": 26.8
+ },
+ {
+  "seed": 505,
+  "how": "spread",
+  "heroes": 3,
+  "enemies": 3,
+  "clearS": 50.3,
+  "cleared": true,
+  "heroWalkS": 29.9
+ },
+ {
+  "seed": 606,
+  "how": "lair",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 125.5,
+  "cleared": true,
+  "heroWalkS": 5.5
+ },
+ {
+  "seed": 606,
+  "how": "spread",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 131.2,
+  "cleared": true,
+  "heroWalkS": 20.2
+ },
+ {
+  "seed": 606,
+  "how": "lair",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 54.9,
+  "cleared": true,
+  "heroWalkS": 19.5
+ },
+ {
+  "seed": 606,
+  "how": "spread",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 74.3,
+  "cleared": true,
+  "heroWalkS": 57.6
+ },
+ {
+  "seed": 707,
+  "how": "lair",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 100.2,
+  "cleared": true,
+  "heroWalkS": 4.2
+ },
+ {
+  "seed": 707,
+  "how": "spread",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 104.6,
+  "cleared": true,
+  "heroWalkS": 14.6
+ },
+ {
+  "seed": 707,
+  "how": "lair",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 49.2,
+  "cleared": true,
+  "heroWalkS": 16.9
+ },
+ {
+  "seed": 707,
+  "how": "spread",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 56,
+  "cleared": true,
+  "heroWalkS": 37.8
+ },
+ {
+  "seed": 808,
+  "how": "lair",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 96.6,
+  "cleared": true,
+  "heroWalkS": 6.6
+ },
+ {
+  "seed": 808,
+  "how": "spread",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 107.6,
+  "cleared": true,
+  "heroWalkS": 20.6
+ },
+ {
+  "seed": 808,
+  "how": "lair",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 57.9,
+  "cleared": true,
+  "heroWalkS": 34.1
+ },
+ {
+  "seed": 808,
+  "how": "spread",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 60.1,
+  "cleared": true,
+  "heroWalkS": 64.3
+ },
+ {
+  "seed": 909,
+  "how": "lair",
+  "heroes": 1,
+  "enemies": 3,
+  "clearS": 105.7,
+  "cleared": true,
+  "heroWalkS": 3.7
+ },
+ {
+  "seed": 909,
+  "how": "spread",
+  "heroes": 1,
+  "enemies": 3,
+  "clearS": 97.5,
+  "cleared": true,
+  "heroWalkS": 16.5
+ },
+ {
+  "seed": 909,
+  "how": "lair",
+  "heroes": 3,
+  "enemies": 3,
+  "clearS": 38.7,
+  "cleared": true,
+  "heroWalkS": 12.4
+ },
+ {
+  "seed": 909,
+  "how": "spread",
+  "heroes": 3,
+  "enemies": 3,
+  "clearS": 44.4,
+  "cleared": true,
+  "heroWalkS": 25.6
+ },
+ {
+  "seed": 1010,
+  "how": "lair",
+  "heroes": 1,
+  "enemies": 3,
+  "clearS": 93.9,
+  "cleared": true,
+  "heroWalkS": 3.9
+ },
+ {
+  "seed": 1010,
+  "how": "spread",
+  "heroes": 1,
+  "enemies": 3,
+  "clearS": 118.8,
+  "cleared": true,
+  "heroWalkS": 13.8
+ },
+ {
+  "seed": 1010,
+  "how": "lair",
+  "heroes": 3,
+  "enemies": 3,
+  "clearS": 44.7,
+  "cleared": true,
+  "heroWalkS": 21.8
+ },
+ {
+  "seed": 1010,
+  "how": "spread",
+  "heroes": 3,
+  "enemies": 3,
+  "clearS": 67.2,
+  "cleared": true,
+  "heroWalkS": 40.2
+ },
+ {
+  "seed": 1111,
+  "how": "lair",
+  "heroes": 1,
+  "enemies": 3,
+  "clearS": 68.1,
+  "cleared": true,
+  "heroWalkS": 5.1
+ },
+ {
+  "seed": 1111,
+  "how": "spread",
+  "heroes": 1,
+  "enemies": 3,
+  "clearS": 84.2,
+  "cleared": true,
+  "heroWalkS": 15.2
+ },
+ {
+  "seed": 1111,
+  "how": "lair",
+  "heroes": 3,
+  "enemies": 3,
+  "clearS": 36.3,
+  "cleared": true,
+  "heroWalkS": 23.5
+ },
+ {
+  "seed": 1111,
+  "how": "spread",
+  "heroes": 3,
+  "enemies": 3,
+  "clearS": 29.7,
+  "cleared": true,
+  "heroWalkS": 23.5
+ },
+ {
+  "seed": 1212,
+  "how": "lair",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 137.4,
+  "cleared": true,
+  "heroWalkS": 5.4
+ },
+ {
+  "seed": 1212,
+  "how": "spread",
+  "heroes": 1,
+  "enemies": 4,
+  "clearS": 158.4,
+  "cleared": true,
+  "heroWalkS": 17.4
+ },
+ {
+  "seed": 1212,
+  "how": "lair",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 65.2,
+  "cleared": true,
+  "heroWalkS": 22.6
+ },
+ {
+  "seed": 1212,
+  "how": "spread",
+  "heroes": 3,
+  "enemies": 4,
+  "clearS": 97.2,
+  "cleared": true,
+  "heroWalkS": 66.7
+ }
+]
