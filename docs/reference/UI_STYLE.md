@@ -263,6 +263,22 @@ item held.
   kind, details, collected this run, then the book and the X at its top right. The tile it
   shows has the white selection line. *New, unapproved.*
 
+## The title screen (brief 450)
+
+- **The game's name in the display size over a picture, the slots beneath** in one chamfer
+  window (`ui-text-title` heading, rows unboxed). Stand-ins until the owner's art exists: the
+  name written out with the hard 2 px outline, and the `b_guild_hall` banner. The owner's files
+  replace them with no code change: **`public/assets/ui/u_title_logo.png`** (the logo, drawn at
+  the largest whole multiple that fits the slots' width and 240 px) and
+  **`public/assets/backgrounds/title/b_title_painting.png`** (the painting, covering its box at a
+  whole multiple). Three looks are built (`TITLE_LOOK` in `titleArt.js`): **framed** (the
+  picture in a studs frame the slots' width, the name on a plate at its foot; the default
+  until the owner picks), **backdrop** (the picture fills the screen) and **strip** (a band at
+  3× fading at its sides). *New, unapproved.*
+- A slot's stats are Lucide: heroes, playtime, and the time away (an hourglass; `24 h (max)` past
+  the cap), whose tip gives the last save (`AWAY_REPLACES_LAST_SAVED`; false shows both). A slot whose save can't be read
+  says **Damaged** in red, and keeps Load and delete.
+
 ## Panel headers
 
 - **Title on the left** (with an optional sprite), **the red pixel close X at

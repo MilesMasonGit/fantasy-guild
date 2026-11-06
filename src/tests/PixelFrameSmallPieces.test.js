@@ -22,6 +22,7 @@ describe('the surfaces inside windows wear the pixel kit, not soft boxes (UI_STY
         'ui/components/dock/DockEquipmentGrid.jsx',
         'ui/modals/SettingsModal.jsx',
         'ui/modals/SlotSelectionModal.jsx',
+        'ui/components/title/TitleScreen.jsx',
         'ui/modals/TypographyScaleModal.jsx',
         'ui/modals/HeroEditModal.jsx',
         'ui/components/hud/CatchUpOverlay.jsx',
@@ -94,7 +95,7 @@ describe('Settings: rows unboxed, switches and buttons from the kit', () => {
 
     it('no element in any tab is rounded or boxed with a soft shadow', () => {
         render(h(SettingsModal, { isOpen: true, onClose: () => {} }));
-        for (const tab of ['Accessibility', 'Notifications', 'Gameplay', 'Audio']) {
+        for (const tab of ['Display', 'Game', 'Audio', 'Dev Tools']) {
             fireEvent.click([...document.querySelectorAll('button')].find(b => b.textContent.includes(tab)));
             const body = document.body.querySelector('[data-pixel-frame="chamfer"]');
             const soft = [...body.querySelectorAll('*')].filter(e => SOFT_LOOK.test(String(e.className?.baseVal ?? e.className ?? '')));

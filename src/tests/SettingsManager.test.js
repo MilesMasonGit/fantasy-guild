@@ -49,16 +49,16 @@ describe('SettingsManager — Typography scale & accessibility settings', () => 
         expect(SettingsManager.get('ui.fontSizes.--font-size-base')).toBe(20);
     });
 
-    it('defaults ui.zoomToCursor to true and allows toggling', () => {
-        expect(SettingsManager.get('ui.zoomToCursor')).toBe(true);
+    it('defaults ui.bubbleMenuRight to false, keeps a change across a load, and resets', () => {
+        expect(SettingsManager.get('ui.bubbleMenuRight')).toBe(false);
 
-        SettingsManager.set('ui.zoomToCursor', false);
-        expect(SettingsManager.get('ui.zoomToCursor')).toBe(false);
+        SettingsManager.set('ui.bubbleMenuRight', true);
+        expect(SettingsManager.get('ui.bubbleMenuRight')).toBe(true);
 
         SettingsManager.load();
-        expect(SettingsManager.get('ui.zoomToCursor')).toBe(false);
+        expect(SettingsManager.get('ui.bubbleMenuRight')).toBe(true);
 
         SettingsManager.resetOptions();
-        expect(SettingsManager.get('ui.zoomToCursor')).toBe(true);
+        expect(SettingsManager.get('ui.bubbleMenuRight')).toBe(false);
     });
 });

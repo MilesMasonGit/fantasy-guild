@@ -29,7 +29,9 @@ export function hasSlot(slotIndex) {
 }
 
 /**
- * Get info about a specific slot for UI display
+ * Get info about a specific slot for UI display: null for an empty slot, and
+ * `{ slotIndex, damaged: true }` for one whose save can't be read at all, so the
+ * slot screen shows it as damaged rather than empty (it can still be deleted).
  * @param {number} slotIndex 
  * @returns {Object|null}
  */
@@ -51,7 +53,7 @@ export function getSlotInfo(slotIndex) {
         };
     } catch (e) {
         console.error(`[SaveManager] Failed to read slot ${slotIndex}: `, e);
-        return null;
+        return { slotIndex, damaged: true, isLastActive: parseInt(localStorage.getItem(LAST_SLOT_KEY)) === slotIndex };
     }
 }
 

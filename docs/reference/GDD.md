@@ -1334,8 +1334,15 @@ One page with overlays (`src/ui/ReactRoot.jsx`), left to right: **bubble menu
 → notification column → playmat (top bar above, hero dock below) →
 drawers**. The menu can be flipped to the right.
 
-- **Slot select** (3 save slots) is the only screen before play. Its wording
-  is a leftover sci-fi theme ("SYSTEM BOOT").
+- **The title screen** is the only screen before play: the game's name in the
+  display size over a banner picture (`b_guild_hall`, framed), and the three
+  save slots beneath in the kit. A filled slot shows its heroes, playtime and
+  the time away it has built up (the away summary's words, `24 h (max)` past
+  the cap; its tip gives the last save) as Lucide marks, then Load and a delete
+  with a confirm; an empty one
+  New Game; one whose save can't be read says Damaged and can still be loaded
+  (for the message) or deleted. The owner's logo and title painting replace the
+  name and the banner when their files exist (`src/ui/components/title/titleArt.js`).
 - **Bubble menu**: Guild Hall, Item Bank, Shop, Settings.
 - **Top bar**: the Region's name over its banner (at 3×, running on under the middle and fading
   out), Tokens / cap and upkeep per minute (each opens its summary on hover, staying while the
@@ -1382,9 +1389,12 @@ drawers**. The menu can be flipped to the right.
   world can give: an entry nothing reaches, or only some worlds hold (a chest),
   joins its total once the run has one. Opened from an ingredient, closing the
   book brings the card back on its recipe list.
-- **Settings** (5 tabs): typography and fonts, all caps, autosave, background,
-  menu side, particles, volume (**master volume defaults to 0**: the game
-  starts silent), Debug Mode. Nine controls are "coming soon".
+- **Settings** (three tabs): **Display** (text size, font, all caps, menu
+  side, background, flying items, item stubs), **Game** (auto-save every 10
+  minutes, an hour or off, Save Game Now), **Audio** (master, music, SFX;
+  **master volume defaults to 0**: the game starts silent). Dev builds add a
+  Dev Tools tab (Debug Mode) and a 1-minute auto-save; a shipped build reads a
+  stored 1 minute as 10.
 - Keyboard: Escape closes one layer at a time; no gameplay hotkeys.
 
 ---
@@ -1419,7 +1429,8 @@ drawers**. The menu can be flipped to the right.
   as I left it (everything from the time away is lost); the banners come
   after Return is confirmed.
 - **Saves**: 3 slots in browser `localStorage` with a one-step backup;
-  autosave every 10 min by default. **Saves from another version are refused,
+  autosave every 10 min by default (10 min, 1 h or off; 1 min in dev builds only).
+  Each slot on the title screen shows the time away it has built up. **Saves from another version are refused,
   not migrated** (`GAME_VERSION = '0.8.1'`, moved by the Atlas's Regions), and
   that stays the policy **until 1.0** (owner 2026-10-06). A new game is saved
   immediately.
