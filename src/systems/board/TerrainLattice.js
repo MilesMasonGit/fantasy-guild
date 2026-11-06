@@ -153,10 +153,10 @@ export function edgeStrips(cx, cy, axis, here, there, seed = 0, cellPx = CELL_PX
 }
 
 /**
- * The ragged border between two grounds (brief 370, ground A): `amp` how far the noise may outscore
+ * The ragged border between two grounds: `amp` how far the noise may outscore
  * a cell's own share, `octaves` the noise's cells in plan pixels and their weights.
  *
- * ⚠️ `amp` under 1: a cell's middle scores 1 for its own ground and 0 for any other, so it always
+ * ⚠️ `amp` under 1: a cell's middle scores nearly 1 for its own ground and nearly 0 for any other, so it
  * keeps its own ground, and a border never leaves the cells beside a different one (which the
  * distance fields' cell scan relies on).
  */
@@ -196,15 +196,9 @@ function valueNoise(x, y, cell, salt) {
  */
 export function raggedBorders(at, width, height, cells, cols, rows, cellPx, border, seed) {
     const { amp, octaves } = RAGGED;
-    const saltCache = new Map();
-    const saltOf = (id) => {
-        let s = saltCache.get(id);
-        if (s === undefined) {
-            s = hash32(seed | 0, id + 11, 0x2545f491);
-            saltCache.set(id, s);
-        }
-        return s;
-    };
+    const [[cellA, weightA], [cellB, weightB], [cellC, weightC]] = octaves;
+    const salts = new Uint32Array(256);
+    for (let id = 0; id < 256; id++) salts[id] = hash32(seed | 0, id + 11, 0x2545f491);
     const ids = new Int32Array(4);
     const scores = new Float64Array(4);
     const lastCol = cols - 1;
@@ -228,25 +222,26 @@ export function raggedBorders(at, width, height, cells, cols, rows, cellPx, bord
                     const fx = smoothstep(u - gx);
                     const c0 = Math.min(lastCol, Math.max(0, gx));
                     const c1 = Math.min(lastCol, Math.max(0, gx + 1));
+                    // The four nearest cells' grounds and their summed shares.
+                    const corners = [cells[r0 + c0], cells[r0 + c1], cells[r1 + c0], cells[r1 + c1]];
+                    const weights = [(1 - fx) * (1 - fy), fx * (1 - fy), (1 - fx) * fy, fx * fy];
                     let m = 0;
-                    const add = (c, w) => {
-                        if (w <= 0) return;
-                        for (let q = 0; q < m; q++) if (ids[q] === c) { scores[q] += w; return; }
-                        ids[m] = c;
-                        scores[m] = w;
-                        m++;
-                    };
-                    add(cells[r0 + c0], (1 - fx) * (1 - fy));
-                    add(cells[r0 + c1], fx * (1 - fy));
-                    add(cells[r1 + c0], (1 - fx) * fy);
-                    add(cells[r1 + c1], fx * fy);
+                    for (let k = 0; k < 4; k++) {
+                        const w = weights[k];
+                        if (w <= 0) continue;
+                        const c = corners[k];
+                        let q = 0;
+                        while (q < m && ids[q] !== c) q++;
+                        if (q < m) scores[q] += w;
+                        else { ids[m] = c; scores[m] = w; m++; }
+                    }
                     let top = ids[0];
                     if (m > 1) {
                         let best = -Infinity;
                         for (let q = 0; q < m; q++) {
-                            const s = saltOf(ids[q]);
-                            let noise = 0;
-                            for (let o = 0; o < octaves.length; o++) noise += octaves[o][1] * valueNoise(x, y, octaves[o][0], s + o);
+                            const s = salts[ids[q]];
+                            const noise = weightA * valueNoise(x, y, cellA, s) + weightB * valueNoise(x, y, cellB, s + 1)
+                                + weightC * valueNoise(x, y, cellC, s + 2);
                             const score = scores[q] + (noise - 0.5) * amp;
                             if (score > best) { best = score; top = ids[q]; }
                         }

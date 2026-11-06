@@ -1538,9 +1538,9 @@ function drawEarthDetails(ctx, seed) {
 }
 
 /**
- * The settled dirt (brief 370, ground B): the earth's flat middle broken into mottles of its lighter
- * and darker tones, its colour showing through the grass for `SETTLE.out` pixels out from its edge
- * (thinner further out), and grass pixels reaching into its edge. Hard pixels, no washes.
+ * The settled dirt: the earth's flat middle broken into mottles of its lighter
+ * and darker tones, its colour showing through the grass one and two pixels out (`SETTLE.out`, the chance of each),
+ * thinner further out, and grass pixels reaching into its edge. Hard pixels, no washes.
  *
  * ⚠️ The mottles' noise is read on the plan's pixels, so it stays put on a resize; the rest are
  * one-pixel choices, hashed on the ground pixel like every other detail here.

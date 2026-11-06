@@ -124,6 +124,16 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
 - **Terrain** (the ground under the Tokens) is **Built** (brief 80): each Region's stored cell map
   drawn as pixel ground, one look per terrain per Region, meadow where a Region stores none (the
   Starter Camp). Static: nothing on the mat changes it. *(`TerrainCanvas.jsx`)*
+- **The ground's detail (brief 370 R2)** — **Built, waiting for the eye-check**: where two grounds
+  meet the border is **ragged**, each pixel near a cell line taking whichever of the nearest
+  cells' grounds wins on a little noise, so a cell's corners round off and its middle stays its
+  own; the blend band between two biomes is **44 u** wide (was 160). The **dirt is settled**: its
+  flat middle mottled in its lighter and darker tones, its colour showing through the grass a
+  pixel or two out, grass reaching into its edge, and its sunken edge softened. **Lakes and
+  rivers are drawn in depth bands** (light shallows to the deepest, edges wandering), no brighter
+  than before; the sea keeps its own drawing. Drawing only: placement, "Stands on" and the stored
+  map are untouched, and every picture is built once per Region, never per frame.
+  *(`TerrainLattice.js`, `TerrainGrass.js`, `terrainRegistry.js`)*
 - **Stone terrain** — **Built (brief 330 W3)**: a feature of the ground as water is. A Region
   written with Stone gets outcrops of bare rock (a wild chasm a ridge across the mat), made with
   its layout and stored with its cell map; the cells they cover are `stone`, never on the water or
