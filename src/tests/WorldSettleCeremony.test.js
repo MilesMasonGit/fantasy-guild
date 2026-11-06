@@ -135,9 +135,13 @@ describe('⭐ the arrival stands spread out across the mat', () => {
                     expect(p.y).toBeLessThanOrEqual(h - Arrival.SPREAD_MARGIN + 1);
                     expect(outOfClearing(p, centre)).toBeGreaterThan(1);
                 }
-                // One to a share: sorted round the Hall, no two closer than half a share.
+                // One to a share: sorted round the Hall, no two closer than half a share (of the
+                // circle less the way in), and none in the way in below the Hall.
                 const angles = spots.map(p => Math.atan2(p.y - centre.y, p.x - centre.x)).sort((a, b) => a - b);
-                for (let i = 1; i < angles.length; i++) expect(angles[i] - angles[i - 1]).toBeGreaterThan(Math.PI / n - 1e-6);
+                const half = (Math.PI / n) * (1 - Arrival.WALK_IN_LANE / Math.PI);
+                for (let i = 1; i < angles.length; i++) expect(angles[i] - angles[i - 1]).toBeGreaterThan(half - 1e-6);
+                for (const a of angles) expect(Math.abs(a - Math.PI / 2)).toBeGreaterThanOrEqual(Arrival.WALK_IN_LANE - 1e-6);
+                for (const p of spots) if (p.y > centre.y) expect(Math.abs(p.x - centre.x)).toBeGreaterThan(artRadius(1) + artRadius(1) / 2);
                 for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) closest = Math.min(closest, dist(spots[i], spots[j]));
             }
         }
@@ -179,6 +183,8 @@ describe('⭐ every enemy can be reached', () => {
             expect(enemy.x + r, `${where} ${id}`).toBeLessThanOrEqual(matW());
             expect(enemy.y + r, `${where} ${id}`).toBeLessThanOrEqual(matH());
             expect(outOfClearing(enemy, hall), `${where} ${id}`).toBeGreaterThan(0.9);
+            // Clear of the heroes' way in below the Hall: their figure and its art never meet.
+            if (enemy.y > hall.y) expect(Math.abs(enemy.x - hall.x), `${where} ${id} in the way in`).toBeGreaterThan(r + artRadius(1) / 2);
             expect(Occupation.isArrivalId(id)).toBe(true);
         }
     }

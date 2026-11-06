@@ -239,3 +239,9 @@ swapping a picture in for one is a small code change.
 | Construction skill icon | 16 x 16 | NEW | stand-in until then: `s_industry` if it suits (T-297) |
 | Stealth skill icon | 16 x 16 | NEW | a combat skill with no sprite; the shared placeholder until then. On the hero sheet the icon alone identifies a skill (brief 340) |
 | Specialist skill icons | 16 x 16 | NEW, later | with the specialist skill sessions; a shared plain placeholder until then |
+
+## 10. Sounds (brief 380 M5)
+
+| Piece | Status | Notes |
+|---|---|---|
+| A short fanfare for settling a place | **NEW** (when ready) | About two seconds, under the place's title. Save it as `public/assets/audio/sfx/settle_fanfare.ogg`; one line in `AudioSystem.js` (`settle_fanfare`) then points at it. Stand-in until then: Kenney's `doorOpen_1.ogg` |

@@ -1522,8 +1522,8 @@ drawers**. The menu can be flipped to the right.
   settled place arrives occupied by the enemies its cell lists (3 to 6, more
   further out, sometimes a boss), spread out across the mat, one to each even
   share of the circle round the Hall turned by the place's seed, out of the
-  Hall's clearing and short of the mat's margin, one use each and tied to no
-  camp. They stand still until a hero is sent at them: no fight starts by
+  Hall's clearing, clear of the heroes' way in below it and short of the mat's
+  margin, one use each and tied to no camp. They stand still until a hero is sent at them: no fight starts by
   itself. Settling runs, in the owner's order, the gold banner, the place's
   title (§9), then the heroes walking in one after another from the mat's foot
   below the Hall to stand idle in their places by it; they bring no orders

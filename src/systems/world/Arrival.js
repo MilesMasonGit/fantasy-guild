@@ -50,6 +50,13 @@ export const SPREAD_BAND = Object.freeze({ from: 0.15, to: 0.85 });
 /** How far an enemy's direction may stray from the middle of its even share of the circle, as a fraction of that share. */
 const SPREAD_JITTER = 0.25;
 
+/**
+ * The way in below the Hall, kept free of enemies: no enemy aims within this angle (radians) of
+ * straight down from it, where the heroes walk in from the mat's foot after a settle
+ * (`HeroMotion.walkIn`).
+ */
+export const WALK_IN_LANE = 0.42;
+
 /** An arrival enemy's instance id: named after its Region, as a settled node's is. */
 export function arrivalId(regionId, index) {
     return `tok_${regionId}_arrival_${index}`;
@@ -76,9 +83,10 @@ function clearingAt(a) {
 
 /**
  * Where each of `count` arrival enemies aims on a mat of `w` × `h`, the Hall at `centre`: one to
- * each even share of the circle round the Hall, turned by the place's seed and strayed a little
- * within its share, out past the Hall's clearing and short of the mat's margin. So they stand
- * spread across the mat, each alone, and the same place always stands them the same way.
+ * each even share of the circle round the Hall but its way in ({@link WALK_IN_LANE}), turned by
+ * the place's seed and strayed a little within its share, out past the Hall's clearing and short
+ * of the mat's margin. So they stand spread across the mat, each alone, and the same place always
+ * stands them the same way.
  *
  * @returns {{x: number, y: number}[]}
  */
@@ -86,11 +94,14 @@ export function spreadOf(seed, count, { w = matW(), h = matH(), centre = null } 
     const n = Math.max(0, Math.floor(Number(count) || 0));
     const random = mulberry32((Number(seed) >>> 0) ^ 0x5eed1a1);
     const mid = centre && Number.isFinite(centre.x) && Number.isFinite(centre.y) ? centre : { x: w / 2, y: h / 2 };
-    const share = (2 * Math.PI) / Math.max(1, n);
-    const turn = random() * 2 * Math.PI;
+    const circle = 2 * Math.PI;
+    const share = circle / Math.max(1, n);
+    const turn = random() * circle;
     const out = [];
     for (let k = 0; k < n; k++) {
-        const a = turn + k * share + (random() * 2 - 1) * SPREAD_JITTER * share;
+        // Round from the way in, squeezed into the rest of the circle.
+        const round = (((turn + k * share + (random() * 2 - 1) * SPREAD_JITTER * share) % circle) + circle) % circle;
+        const a = Math.PI / 2 + WALK_IN_LANE + round * (circle - 2 * WALK_IN_LANE) / circle;
         const inner = clearingAt(a);
         const outer = Math.max(inner, rayToBox(mid, a, w, h, SPREAD_MARGIN));
         const f = SPREAD_BAND.from + random() * (SPREAD_BAND.to - SPREAD_BAND.from);

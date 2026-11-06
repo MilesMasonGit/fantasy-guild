@@ -314,7 +314,7 @@ the player to **make nodes**.*
   Hall to their places by it, idle. Under three seconds of title, about four of walking; a click or
   any key skips the title, reduced motion keeps it still. **The enemies stand spread out**: one to
   each even share of the circle round the Hall (turned by the place's seed), out of the Hall's
-  clearing, short of the mat's margin; still until a hero is sent; no fight starts by itself.
+  clearing and the heroes' way in below it, short of the mat's margin; still until a hero is sent; no fight starts by itself.
   Heroes bring no orders: their orders stay in the place they were given. Travel to a place settled
   before is unchanged (the plain arrival card, no walk in); offline catch-up cannot settle. The
   ledger times no clearing (a settle's own time is nought, fights are untimed), so the spread
