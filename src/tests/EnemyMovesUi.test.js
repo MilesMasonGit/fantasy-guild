@@ -52,39 +52,22 @@ afterEach(() => {
     resetFightWatch();
 });
 
-describe('the float names the move', () => {
+describe('a move is said in a bubble over the enemy, not in the floats (owner\'s pick, 2026-11-05)', () => {
     const float = (m) => buildFloat({ heroId: 'h', instanceId: 'e', ...m });
 
-    it('over the hit on the hero: the move, then the number and its type', () => {
-        const el = float({ kind: MOMENT.HIT, on: 'hero', amount: 2, types: ['stab'], move: 'Peck' });
-        expect(el.getAttribute('data-fight-float-move')).toBe('Peck');
-        expect(el.className).toContain('gi-ff-red');
-        expect(text(q(el, '.gi-ff-words'))).toBe('Peck');
-        expect(text(q(el, '.gi-ff-row'))).toBe('2');
-        expect(q(el, '[data-fight-float-type="stab"]')).not.toBeNull();
+    it('a hit, a crit or a miss made by a move floats with no move word', () => {
+        const hit = float({ kind: MOMENT.HIT, on: 'hero', amount: 2, types: ['stab'], move: 'Peck' });
+        expect(hit.hasAttribute('data-fight-float-move')).toBe(false);
+        expect(hit.textContent).toBe('2');
+        const crit = float({ kind: MOMENT.CRIT, on: 'hero', amount: 3, types: ['slash'], verdict: 'resisted', move: 'Scratch' });
+        expect(crit.querySelector('.gi-ff-move-word')).toBeNull();
+        expect(crit.textContent).toBe(`${t('fight.float.crit')}3`);
+        const miss = float({ kind: MOMENT.MISS, on: 'hero', amount: null, move: 'Peck' });
+        expect(miss.textContent).toBe(t('fight.float.miss'));
     });
 
-    it('beside Crit! and Resisted, the move first', () => {
-        const el = float({ kind: MOMENT.CRIT, on: 'hero', amount: 3, types: ['slash'], verdict: 'resisted', move: 'Scratch' });
-        expect([...q(el, '.gi-ff-words').children].map(c => c.className)).toEqual(['gi-ff-move-word', 'gi-ff-crit-word', 'gi-ff-resisted-word']);
-    });
-
-    it('over a miss', () => {
-        const el = float({ kind: MOMENT.MISS, on: 'hero', amount: null, move: 'Peck' });
-        expect([...el.children].map(c => c.textContent)).toEqual(['Peck', t('fight.float.miss')]);
-    });
-
-    it('alone beside the enemy for a move that does not hit, white', () => {
-        const el = float({ kind: MOMENT.MOVE, on: 'enemy', move: 'Flutter' });
-        expect(el.className).toContain('gi-fight-float-move');
-        expect(el.className).toContain('gi-ff-white');
-        expect(el.textContent).toBe('Flutter');
-    });
-
-    it('a swing without moves floats as before: no move word', () => {
-        const el = float({ kind: MOMENT.HIT, on: 'hero', amount: 1, types: ['physical'] });
-        expect(el.hasAttribute('data-fight-float-move')).toBe(false);
-        expect(el.textContent).toBe('1');
+    it('a move that does not hit draws no float at all', () => {
+        expect(float({ kind: MOMENT.MOVE, on: 'enemy', move: 'Flutter' })).toBeNull();
     });
 });
 

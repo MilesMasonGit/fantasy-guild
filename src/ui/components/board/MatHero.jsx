@@ -26,7 +26,7 @@ import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { HealthBar } from './HealthBar.jsx';
-import { heroBarPlace } from './healthBar.js';
+import { heroBarPlace, fightBarShift } from './healthBar.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
 import { plateNameDrop, plateUnit } from './workPlate.js';
 import { PROBLEM_SPRITE, PROBLEM_MARK_ART_PX, SEVERITY } from './problemMark.js';
@@ -49,9 +49,10 @@ const HERO_HP_EVENTS = Object.freeze([
  * A hero's health bar, just over their figure's head, the number above it. Reads the hero's HP
  * as a flat projection of primitives (the engine mutates `hp` in place), so it redraws only when
  * the number moves. In a fight its number grows away from the enemy (`outward`). `at` (the hero
- * box's corner, in mat units) places it in the fight layer instead (`FightBarHost`).
+ * box's corner, in mat units) places it in the fight layer instead (`FightBarHost`), and `apart`
+ * (how far the hero stands from the enemy, mat units) moves it clear of the fight button.
  */
-function HeroHealthBar({ heroId, artPx, u, outward, at = null }) {
+function HeroHealthBar({ heroId, artPx, u, outward, at = null, apart = null }) {
     const hp = useGameState(
         (state) => {
             const h = (state.heroes || []).find(x => x.id === heroId);
@@ -62,7 +63,9 @@ function HeroHealthBar({ heroId, artPx, u, outward, at = null }) {
         { deps: [heroId] }
     );
     if (!hp || !(hp.max > 0)) return null;
-    const place = heroBarPlace(artPx, u);
+    const bar = heroBarPlace(artPx, u);
+    // Beside an enemy, out of the fight button's way.
+    const place = apart == null ? bar : { ...bar, left: bar.left + Math.sign(outward) * fightBarShift(apart, u) };
     return (
         <HealthBar
             who="hero"
@@ -202,6 +205,7 @@ const MatHeroBody = memo(function MatHeroBody({
     rested = false,
     plated = false,
     fightBarHost = null,
+    fightApart = null,
     heroCarried = false,
     needsJob = false,
     dragRef,
@@ -343,6 +347,7 @@ const MatHeroBody = memo(function MatHeroBody({
                     u={plateUnit(fit || 1)}
                     outward={facingLeft ? 1 : -1}
                     at={{ left: boxLeft, top: boxTop }}
+                    apart={fightApart}
                 />,
                 fightBarHost
             )}

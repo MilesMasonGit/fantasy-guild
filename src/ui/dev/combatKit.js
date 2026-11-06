@@ -5,7 +5,6 @@
 import { TONE, OUTCOME, MOMENT } from '../components/combat/fightWatch.js';
 import { healthText } from '../components/board/healthBar.js';
 import { kindView } from '../components/combat/fightView.js';
-import { CELL } from '../components/board/workPlate.js';
 
 const line = (n, icon, tone, key, vars, amount = null) => ({ n, icon, tone, key, vars, amount });
 const AV = { hero: 'Aela', enemy: 'Goblin Warlord' };
@@ -77,25 +76,13 @@ export const KIT_TABS = Object.freeze([
     { heroName: 'Aela', enemyName: 'Goblin Scout', typeId: 'token_goblin', hero: { cur: 28, max: 30 }, enemy: { cur: 0, max: 25 }, outcome: 'won' }
 ]);
 
-/** The fight plate's cells as the mat shows them, the hero on the enemy's right. */
-export const KIT_PLATE_CELLS = Object.freeze([
-    { kind: CELL.SKILL, id: 'melee', who: 'enemy' },
-    { kind: CELL.DIVIDER },
-    { kind: CELL.SKILL, id: 'melee', who: 'hero' },
-    { kind: CELL.ELIXIR, itemId: 'item_elixir_of_valor', count: 7 },
-    { kind: CELL.ELIXIR, itemId: 'item_elixir_of_ironskin', count: 3 }
-]);
-
 /** Every float a fight draws, with what it means. */
 export const KIT_FLOATS = Object.freeze([
-    { kind: MOMENT.HIT, on: 'enemy', amount: 4, types: ['slash'], caption: 'Hero hits' },
-    { kind: MOMENT.CRIT, on: 'enemy', amount: 8, types: ['slash'], caption: 'Hero crits' },
-    { kind: MOMENT.HIT, on: 'enemy', amount: 3, types: ['ice'], verdict: 'weak', caption: 'Weak to the type' },
-    { kind: MOMENT.HIT, on: 'enemy', amount: 0, types: ['fire'], verdict: 'resisted', caption: 'Resisted' },
-    { kind: MOMENT.HIT, on: 'enemy', amount: 2, types: ['electric', 'stab'], caption: 'A shot: bow and arrow' },
+    { kind: MOMENT.HIT, on: 'enemy', amount: 4, caption: 'Hero hits' },
+    { kind: MOMENT.CRIT, on: 'enemy', amount: 8, caption: 'Hero crits' },
     { kind: MOMENT.MISS, on: 'enemy', amount: null, caption: 'Hero misses' },
-    { kind: MOMENT.HIT, on: 'hero', amount: 1, types: ['physical'], caption: 'Enemy hits' },
-    { kind: MOMENT.CRIT, on: 'hero', amount: 4, types: ['physical'], caption: 'Enemy crits' },
+    { kind: MOMENT.HIT, on: 'hero', amount: 1, caption: 'Enemy hits' },
+    { kind: MOMENT.CRIT, on: 'hero', amount: 4, caption: 'Enemy crits' },
     { kind: MOMENT.MISS, on: 'hero', amount: null, caption: 'Enemy misses' },
     { kind: MOMENT.HEAL, on: 'hero', amount: 5, caption: 'Food heals' },
     { kind: MOMENT.TICK, on: 'hero', amount: 2, statusId: 'effect_venom', caption: 'Venom tick' },

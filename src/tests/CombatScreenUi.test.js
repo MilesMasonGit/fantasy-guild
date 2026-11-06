@@ -15,17 +15,16 @@ import { buildFloat } from '../ui/components/board/fx/fightFloats.js';
 import { MOMENT, statusIcon } from '../ui/components/combat/fightWatch.js';
 import { EnemyCardRows } from '../ui/components/combat/EnemyCard.jsx';
 import { enemyCardView } from '../ui/components/combat/fightView.js';
-import { fightChipPlace, CHIP, CHIP_PX } from '../ui/components/board/fightPlate.js';
 import { plateUnit } from '../ui/components/board/workPlate.js';
-import { HP_BAR } from '../ui/components/board/healthBar.js';
+import { MAT_BAR, CHIP, CHIP_PX, fightBarShift, fightButtonPlace } from '../ui/components/board/healthBar.js';
 import { panelPlace } from '../ui/components/combat/FightPanelPopup.jsx';
 import { t } from '../i18n/index.js';
 
 /**
  * The combat screen's pieces drawn (brief 220, C6b; owner's picks 2026-10-24/25): the floats' look,
  * the fight panel (the versus card, the log closed until asked for, This fight / Last fight), the
- * enemy card fought and never fought, the chip's place beside the enemy's number, the panel's place
- * beside the chip, and the style sheet's entry drawn by the real components.
+ * enemy card fought and never fought, the fight button's place between the two bars, the panel's
+ * place beside it, and the style sheet's entry drawn by the real components.
  */
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -77,22 +76,21 @@ describe('floats: what each says and its colour', () => {
         expect(statusIcon('effect_sunder')).toBe('sunder');
     });
 
-    it('a hit carries its type\'s glyph; a shot two; the target\'s weakness says Weak! in gold, a resistance Resisted', () => {
-        const plain = float({ kind: MOMENT.HIT, on: 'enemy', amount: 2, types: ['slash'] });
-        expect([...plain.querySelectorAll('[data-fight-float-type]')].map(e => e.getAttribute('data-fight-float-type'))).toEqual(['slash']);
-        expect(q(plain, '[data-glyph="dt_slash"]')).not.toBeNull();
+    it('⭐ fewer floats on the mat: a hit is its number alone, no type glyph, Weak! or Resisted; a move alone does not float', () => {
+        const plain = float({ kind: MOMENT.HIT, on: 'enemy', amount: 2, types: ['slash'], verdict: 'weak' });
+        expect(plain.querySelector('[data-fight-float-type], .gi-ff-weak-word, .gi-ff-resisted-word, img')).toBeNull();
         expect(plain.textContent).toBe('2');
-        const shot = float({ kind: MOMENT.HIT, on: 'enemy', amount: 2, types: ['electric', 'stab'] });
-        expect([...shot.querySelectorAll('[data-fight-float-type]')].map(e => e.getAttribute('data-fight-float-type'))).toEqual(['electric', 'stab']);
-        const weak = float({ kind: MOMENT.HIT, on: 'enemy', amount: 3, types: ['ice'], verdict: 'weak' });
-        expect(weak.getAttribute('data-fight-float-verdict')).toBe('weak');
-        expect(q(weak, '.gi-ff-weak-word').textContent).toBe(t('fight.float.weak'));
-        expect(q(weak, '.gi-ff-number').textContent).toBe('3');
-        const resisted = float({ kind: MOMENT.CRIT, on: 'hero', amount: 0, types: ['physical'], verdict: 'resisted' });
+        const resisted = float({ kind: MOMENT.CRIT, on: 'hero', amount: 0, types: ['physical'], verdict: 'resisted', move: 'Peck' });
         expect(q(resisted, '.gi-ff-crit-word').textContent).toBe(t('fight.float.crit'));
-        expect(q(resisted, '.gi-ff-resisted-word').textContent).toBe(t('fight.float.resisted'));
         expect(q(resisted, '.gi-ff-crit-number').textContent).toBe('0');
+        expect(resisted.querySelector('.gi-ff-resisted-word, .gi-ff-move-word')).toBeNull();
         expect(resisted.className).toContain('gi-ff-red');
+        expect(float({ kind: MOMENT.MOVE, on: 'enemy', amount: null, move: 'Flutter' })).toBeNull();
+    });
+
+    it('a miss is in its side\'s colour: white on the enemy, red on the hero', () => {
+        expect(float({ kind: MOMENT.MISS, on: 'enemy', amount: null }).className).toContain('gi-ff-white');
+        expect(float({ kind: MOMENT.MISS, on: 'hero', amount: null }).className).toContain('gi-ff-red');
     });
 
     it('starts hidden: it shows only while it rises', () => {
@@ -217,25 +215,36 @@ describe('the enemy card', () => {
     });
 });
 
-describe('where the chip and the panel stand', () => {
-    it('the chip stands beside the enemy\'s bar on its far side from the hero, past its number however wide', () => {
+describe('where the fight button and the panel stand', () => {
+    it('⭐ the button stands halfway between the fighters, its middle on the lower bar\'s middle', () => {
         const fit = 0.9;
         const u = plateUnit(fit);
-        const at = { x: 800, y: 500, typeId: 'cs_ui_brute', fit };
-        const right = fightChipPlace({ ...at, side: 1, labelW: 0 });
-        const wide = fightChipPlace({ ...at, side: 1, labelW: 120 });
-        const inner = at.x + (HP_BAR.W / 2) * u;
-        // The hero on the right: the chip on the left, its right edge a gap before the bar or the number.
-        expect(right.left + CHIP_PX * u).toBeCloseTo(inner - HP_BAR.W * u - CHIP.GAP * u, 0);
-        expect(wide.left + CHIP_PX * u).toBeCloseTo(inner - 120 - CHIP.GAP * u, 0);
-        // The hero on the left: mirrored.
-        const left = fightChipPlace({ ...at, side: -1, labelW: 0 });
-        expect(left.left).toBeCloseTo(at.x - (HP_BAR.W / 2) * u + HP_BAR.W * u + CHIP.GAP * u, 0);
-        // Its foot level with the bar's: above the art, under nothing.
-        expect(right.top).toBeLessThan(at.y);
+        const at = { heroX: 900, enemyX: 800, heroArtTop: 436, enemyBoxTop: 436, u, fit };
+        const p = fightButtonPlace(at);
+        expect(p.size).toBe(CHIP_PX * u);
+        expect(p.left + p.size / 2).toBeCloseTo(850, 0);
+        const barMid = 436 - (MAT_BAR.GAP + MAT_BAR.H / 2) * u;
+        expect(p.top + p.size / 2).toBeCloseTo(barMid, 0);
+        // A boss's bar rides higher: the button stays on the hero's line.
+        const boss = fightButtonPlace({ ...at, enemyBoxTop: 380 });
+        expect(boss.top).toBe(p.top);
+        // On whole screen pixels.
+        expect(Math.abs(p.left * fit - Math.round(p.left * fit))).toBeLessThan(1e-9);
     });
 
-    it('the panel opens beside the chip on the side away from the fight, inside the window', () => {
+    it('⭐ bars move outward only as far as the button needs, a gap clear of it', () => {
+        const u = 1;
+        const need = (MAT_BAR.W / 2 + CHIP.GAP + CHIP_PX / 2) * u;
+        expect(fightBarShift(2 * need + 40, u)).toBe(0);
+        expect(fightBarShift(-(2 * need + 40), u)).toBe(0);
+        expect(fightBarShift(96, u)).toBe(need - 48);
+        // At the shift, each bar's inner edge is exactly the gap from the button.
+        const apart = 96;
+        const barInner = apart / 2 + fightBarShift(apart, u) - MAT_BAR.W / 2;
+        expect(barInner).toBeCloseTo(CHIP_PX / 2 + CHIP.GAP, 9);
+    });
+
+    it('the panel opens beside the fight on the side away from it, inside the window', () => {
         const chip = { left: 500, top: 400, right: 532, bottom: 432 };
         expect(panelPlace(chip, -1, 316, 400, 1920, 1080).left).toBe(500 - 10 - 316);
         expect(panelPlace(chip, 1, 316, 400, 1920, 1080).left).toBe(532 + 10);
@@ -254,14 +263,14 @@ describe('the style sheet', () => {
         expect(existsSync(path.join(HERE, '..', 'ui', 'dev', 'CombatMockups.jsx'))).toBe(false);
         const root = render(React.createElement(CombatKit)).container;
         expect(root.querySelectorAll('[data-kit-combat="mat"] [data-health-bar]')).toHaveLength(2);
-        expect(root.querySelectorAll('[data-kit-float]')).toHaveLength(12);
+        expect(root.querySelectorAll('[data-kit-float]')).toHaveLength(9);
         expect(root.querySelectorAll('[data-fight-panel]')).toHaveLength(2);
         expect(root.querySelectorAll('[data-enemy-card]')).toHaveLength(2);
     });
 
     it('every line of the log and the screen has its words in the strings file', () => {
         const src = ['ui/components/combat/fightWatch.js', 'ui/components/combat/FightPanel.jsx', 'ui/components/combat/fightView.js',
-            'ui/components/combat/EnemyCard.jsx', 'ui/components/board/fightPlate.js', 'ui/components/board/FightLayer.jsx',
+            'ui/components/combat/EnemyCard.jsx', 'ui/components/board/callouts.js', 'ui/components/board/FightLayer.jsx',
             'ui/components/board/fx/fightFloats.js', 'ui/components/hud/CatchUpOverlay.jsx']
             .map(f => readFileSync(path.join(HERE, '..', f), 'utf8')).join('\n');
         const keys = new Set([...src.matchAll(/t\('((?:fight|catchUp)\.[\w.]+)'/g)].map(m => m[1]));

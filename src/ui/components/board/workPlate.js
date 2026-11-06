@@ -60,13 +60,12 @@ export const PLATE = Object.freeze({
 });
 
 /**
- * The cells a plate can show, in the order they stand. A fight's plate (`fightPlate.js`) uses the
- * skill cell for each fighter's style, a divider between them and an elixir with its fights left;
- * an idle Token's plate a quest's progress and a spawner's count.
+ * The cells a plate can show, in the order they stand. An idle Token's plate shows a quest's
+ * progress and a spawner's count.
  */
 export const CELL = Object.freeze({
     SKILL: 'skill', MISSING: 'missing', PROBLEM: 'problem', CHARGES: 'charges', TIMER: 'timer',
-    QUEST: 'quest', SPAWNER: 'spawner', DIVIDER: 'divider', ELIXIR: 'elixir'
+    QUEST: 'quest', SPAWNER: 'spawner'
 });
 
 /**

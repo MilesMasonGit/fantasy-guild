@@ -1,4 +1,4 @@
-// the QA panel's combat screen check: two fights with elixirs and a status, an enemy nobody has fought, and time away
+// the QA panel's combat screen check: two fights with elixirs and a status, an enemy nobody has fought, a crowd of fights, and time away
 // ⚠️ DEV BUILDS ONLY: reached from `CombatScreenDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
@@ -138,6 +138,49 @@ export function setUpCombatScreenScene() {
     }
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_combat_screen_scene' });
     return { ok: true };
+}
+
+/**
+ * The crowd: seven fights packed below the Guild Hall, as close as the mat lets them stand, so the
+ * motion of a busy mat can be judged: bars, the fight buttons, floats, every enemy's moves said in
+ * bubbles, and the Goblin Warlord's Venom landing on Cora ("Venom!"). The content's own enemies
+ * where it has them; heroes matched to their enemy, Shrimp to eat so the fights last, elixirs on
+ * some. ⚠️ Changes the game, like Spawn Party.
+ * @returns {{ok: boolean, fights?: number, error?: string}}
+ */
+export const CROWD = Object.freeze([
+    { name: 'Kira', typeId: 'token_goblin', dx: -210, dy: 170, level: 8, elixirs: true },
+    { name: 'Aela', typeId: 'token_wolf', dx: 90, dy: 150, level: 8 },
+    { name: 'Bram', typeId: 'token_goblin_chief', dx: -100, dy: 310, level: 20, elixirs: true },
+    { name: 'Neve', typeId: 'token_greater_slime', dx: 240, dy: 290, level: 16 },
+    { name: 'Tomas', typeId: 'token_cow', dx: -400, dy: 300, level: 4 },
+    { name: 'Cora', typeId: QA_ENEMIES.WARLORD, dx: 380, dy: 160, level: 26 },
+    { name: 'Ivo', typeId: 'token_wolf_alpha', dx: 70, dy: 450, level: 18 }
+]);
+
+export function setUpCombatCrowd() {
+    registerQaContent();
+    const ranks = GuildUpgradeManager.getRanks();
+    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + CROWD.length);
+    GuildUpgradeManager.recompute();
+    InventoryManager.addItem('item_elixir_of_valor', 30);
+    InventoryManager.addItem('item_elixir_of_ironskin', 30);
+    const food = getItem('item_shrimp') ? 'item_shrimp' : null;
+    if (food) InventoryManager.addItem(food, 40 * CROWD.length);
+    let fights = 0;
+    for (const f of CROWD) {
+        const typeId = getTokenType(f.typeId) ? f.typeId : QA_ENEMIES.SCOUT;
+        const enemy = placeBesideHall(typeId, f.dx, f.dy);
+        if (!enemy) continue;
+        const hero = fighterAt(f.level, f.name);
+        if (!HeroManager.addHero(hero)) break;
+        if (f.elixirs) for (const id of ['item_elixir_of_valor', 'item_elixir_of_ironskin']) EquipmentManager.equipItem(hero.id, id);
+        if (food) EquipmentManager.equipItem(hero.id, food);
+        qaOrder(hero.id, { x: enemy.x, y: enemy.y });
+        fights += 1;
+    }
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_combat_crowd' });
+    return fights ? { ok: true, fights } : { ok: false, error: 'No room below the Guild Hall for the crowd' };
 }
 
 /** How long "time away" plays. */

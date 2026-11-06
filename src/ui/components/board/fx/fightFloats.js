@@ -6,19 +6,18 @@ import { tokenSizeFor, TOKEN_SURFACE } from '../../base/TokenSprite.jsx';
 import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
 import { playAt, fxArtUnit } from './matFx.js';
 import { startFightWatch, subscribeMoments, MOMENT, statusIcon } from '../../combat/fightWatch.js';
-import { glyphSrc, GLYPH_COLOUR, damageTypeGlyph } from '../../combat/combatGlyphs.js';
+import { glyphSrc, GLYPH_COLOUR } from '../../combat/combatGlyphs.js';
 import { t } from '../../../../i18n/index.js';
 
 /**
- * A fight's floating numbers on the mat (owner, 2026-10-25): every hit both ways, "Miss", a big
- * "Crit!", green heals and the red poison and burn ticks with their drop or flame. A hit carries
- * its damage types' glyphs beside the number (two for a shot with an arrow), and "Weak!" or
- * "Resisted" over it when the target's weaknesses or resistances moved it, and an enemy's move names
- * itself over its hit or miss, or alone beside the enemy for a move that does not hit. Each rises at
- * its fighter's OUTER side (away from the other fighter, clear of the flag over the enemy), a
- * hero's blow on the strike frame of their swing, and is gone in half a second. White on the
- * enemy, red on the hero. Built from the fight watch's moments (`fightWatch.js`), drawn in the
- * mat's effect layer (`MatFxLayer`), sized in its `--fx-scale` (one screen pixel at the mat's 2×).
+ * A fight's floats on the mat (owner's pick, 2026-11-05, "fewer floats"): every hit both ways, a
+ * gold "Crit!" over a big number, "Miss", green heals and the red poison and burn ticks with their
+ * drop or flame. Each rises over its fighter, just under the health bar, a hero's blow on the strike
+ * frame of their swing, and is gone in half a second. White on the enemy, red on the hero. A
+ * hit's damage types, "Weak!" and "Resisted" are the fight window's and the log's; an enemy's move
+ * by name is said in a bubble over its bar (`CalloutLayer`). Built from the fight watch's moments
+ * (`fightWatch.js`), drawn in the mat's effect layer (`MatFxLayer`), sized in its `--fx-scale` (one
+ * screen pixel at the mat's 2×).
  */
 
 /** How a float rises: a quick pop of 6 art pixels in three steps, held, then gone. */
@@ -29,18 +28,22 @@ const RISE = Object.freeze([
 /** How long a float shows. */
 export const FLOAT_MS = RISE.reduce((sum, p) => sum + p.ms, 0);
 
-/** How far outside a fighter's art a float stands, and how far a second one at once stands above, in art pixels. */
-const OUTSIDE_ART_PX = 4;
+/** How far under the top of its fighter's art a float starts, and how far a second one at once stands below, in art pixels. */
+const UNDER_ART_TOP_PX = 9;
 const LANE_ART_PX = 12;
-/** Floats on one side less than this apart take the next lane up, so they never sit on each other. */
+/** Floats on one fighter less than this apart take the next lane down, so they never sit on each other. */
 const LANE_MS = 400;
 const LANES = 3;
 
-/** `instanceId|side` → `{ at, lane }`: the last float's start on that side of a fight. */
+/** The moments that float: an enemy's move alone (`MOVE`) is a bubble, not a float. */
+const FLOATS = new Set([MOMENT.HIT, MOMENT.CRIT, MOMENT.MISS, MOMENT.HEAL, MOMENT.TICK]);
+
+/** `instanceId|side` → `{ at, lane }`: the last float's start on that fighter. */
 const lanes = new Map();
 
-/** The element of one float: what it says and its colours, nothing placed yet. */
+/** The element of one float: what it says and its colours, nothing placed yet. Null for a moment that does not float. */
 export function buildFloat(m) {
+    if (!FLOATS.has(m?.kind)) return null;
     const el = document.createElement('div');
     el.setAttribute('aria-hidden', 'true');
     el.setAttribute('data-fight-float', m.kind);
@@ -53,57 +56,14 @@ export function buildFloat(m) {
         return s;
     };
     const tone = onHero ? 'gi-ff-red' : 'gi-ff-white';
-    const typeGlyphs = () => (Array.isArray(m.types) ? m.types : []).map(type => {
-        const icon = document.createElement('img');
-        const name = damageTypeGlyph(type);
-        icon.src = glyphSrc(name, onHero ? GLYPH_COLOUR.red : GLYPH_COLOUR.white, true);
-        icon.alt = '';
-        icon.draggable = false;
-        icon.className = 'gi-ff-icon';
-        icon.setAttribute('data-glyph', name);
-        icon.setAttribute('data-fight-float-type', type);
-        return icon;
-    });
-    const verdictWord = () => (m.verdict === 'weak'
-        ? span('gi-ff-weak-word', t('fight.float.weak'))
-        : m.verdict === 'resisted' ? span('gi-ff-resisted-word', t('fight.float.resisted')) : null);
-    const moveWord = () => (m.move ? span('gi-ff-move-word', m.move) : null);
-    if (m.move) el.setAttribute('data-fight-float-move', m.move);
     switch (m.kind) {
         case MOMENT.CRIT:
-        case MOMENT.HIT: {
-            const crit = m.kind === MOMENT.CRIT;
-            const verdict = verdictWord();
-            const move = moveWord();
-            const number = span(crit ? 'gi-ff-crit-number' : 'gi-ff-number', String(m.amount));
-            if (!crit && !verdict && !move) {
-                el.className = `gi-fight-float ${tone}`;
-                el.append(number, ...typeGlyphs());
-                break;
-            }
             el.className = `gi-fight-float gi-fight-float-crit ${tone}`;
-            if (verdict) el.setAttribute('data-fight-float-verdict', m.verdict);
-            const words = document.createElement('div');
-            words.className = 'gi-ff-words';
-            if (move) words.appendChild(move);
-            if (crit) words.appendChild(span('gi-ff-crit-word', t('fight.float.crit')));
-            if (verdict) words.appendChild(verdict);
-            const row = document.createElement('div');
-            row.className = 'gi-ff-row';
-            row.append(number, ...typeGlyphs());
-            el.append(words, row);
+            el.append(span('gi-ff-crit-word', t('fight.float.crit')), span('gi-ff-crit-number', String(m.amount)));
             break;
-        }
-        case MOMENT.MISS: {
-            el.className = `gi-fight-float gi-fight-float-miss gi-ff-white${m.move ? ' gi-fight-float-crit' : ''}`;
-            const move = moveWord();
-            if (move) el.appendChild(move);
+        case MOMENT.MISS:
+            el.className = `gi-fight-float gi-fight-float-miss ${tone}`;
             el.appendChild(span('gi-ff-word', t('fight.float.miss')));
-            break;
-        }
-        case MOMENT.MOVE:
-            el.className = 'gi-fight-float gi-fight-float-move gi-ff-white';
-            el.appendChild(span('gi-ff-move-word', m.move || ''));
             break;
         case MOMENT.HEAL:
             el.className = 'gi-fight-float gi-ff-green';
@@ -131,27 +91,25 @@ export function buildFloat(m) {
 }
 
 /**
- * Where a float about `m` rises, in mat units: beside its fighter on the side away from the other
- * one, at the middle of their art. Null when either fighter is not on the mat.
+ * Where a float about `m` starts, in mat units: over the middle of its fighter, its top just under
+ * the top of their art (under the health bar). Null when either fighter is not on the mat.
  */
 export function floatPoint(m, unit = fxArtUnit()) {
     const enemy = BoardState.getTokenById(m.instanceId);
     const body = HeroMotion.bodyView(m.heroId);
     if (!enemy || !body || ![enemy.x, enemy.y, body.x, body.y].every(Number.isFinite)) return null;
-    // Which side of the enemy the hero stands on.
-    const side = body.x >= enemy.x ? 1 : -1;
-    const gap = OUTSIDE_ART_PX * unit;
+    const drop = UNDER_ART_TOP_PX * unit;
     if (m.on === 'enemy') {
         const half = tokenSizeFor(TOKEN_SURFACE.BOARD, enemy.typeId, unit) / 2;
-        return { x: enemy.x - side * (half + gap), y: enemy.y };
+        return { x: enemy.x, y: enemy.y - half + drop };
     }
     const half = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, unit) / 2;
-    return { x: body.x + side * (half + gap), y: body.y };
+    return { x: body.x, y: body.y - half + drop };
 }
 
 /** Play one moment's float. @returns {Animation|null} */
 export function playFloat(m, now = performance.now()) {
-    if (!m || (m.amount == null && m.kind !== MOMENT.MISS && m.kind !== MOMENT.MOVE)) return null;
+    if (!m || !FLOATS.has(m.kind) || (m.amount == null && m.kind !== MOMENT.MISS)) return null;
     const unit = fxArtUnit();
     const at = floatPoint(m, unit);
     if (!at) return null;
@@ -163,11 +121,13 @@ export function playFloat(m, now = performance.now()) {
     const lane = prev && start - prev.at < LANE_MS ? (prev.lane + 1) % LANES : 0;
     lanes.set(key, { at: start, lane });
     const el = buildFloat(m);
+    // Hung by its top, so a two-line crit grows down, away from the bar.
+    el.style.translate = '-50% 0';
     const { keyframes, duration } = heldPoses(
         RISE.map(p => ({ ...p, visibility: 'visible' })),
         { unit, rest: { visibility: 'hidden' } }
     );
-    return playAt(el, at.x, at.y - lane * LANE_ART_PX * unit, keyframes, duration, delay);
+    return playAt(el, at.x, at.y + lane * LANE_ART_PX * unit, keyframes, duration, delay);
 }
 
 /**
