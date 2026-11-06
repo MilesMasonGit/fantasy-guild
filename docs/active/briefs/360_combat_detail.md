@@ -32,6 +32,8 @@ this brief): `src/ui/components/combat/` (`FightPanel.jsx`, `EnemyCard.jsx`,
 - **One change to F:** the combat icon (the detail view button) sits between the two health bars, not below the fight.
 - The HP bar and stat block in the pictures are stand-ins: they follow the picks at briefs 340 H2 and 350 T2.
 
+**After the built look (owner, 2026-11-05, from screenshots):** a new window opens beside its fight button; clicking off a window leaves it open; the window's stat block goes back to picture B's shared icon column; on the mat only **special** moves bubble (a move with an effect or one that does not hit), plain hits stay quiet there and show in the window and the log. The owner also wants every enemy to have a basic attack plus special attacks at a percentage chance: content and CMS work, T-314.
+
 ## Phases
 
 | Phase | What | Tier |
