@@ -47,7 +47,9 @@ function bankSide(counted, net, sign) {
 
 /**
  * The "While you were away" panel's content, from a catch-up's result (`CatchUp.run`). Every
- * list is empty when there is nothing to say, so the panel can leave that section out. The fights
+ * list is empty when there is nothing to say, so the panel can leave that section out. The news
+ * the banners and stubs also get once it closes (`summary.news`) are `recipes`, `finds` and
+ * `bankFull`; knock-outs are the fights block's. The fights
  * are one block (`combat`, owner 2026-10-25): fights won and lost, the enemies beaten, the heroes
  * knocked out, the food and elixirs used and what the kills dropped.
  */
@@ -72,6 +74,7 @@ export function summaryView(result) {
         used: [...rows(used.food, itemName, 'itemId'), ...rows(used.elixirs, itemName, 'itemId')],
         drops: rows(used.drops, itemName, 'itemId')
     };
+    const news = summary.news || {};
     combat.shown = combat.won > 0 || combat.lost > 0 || combat.used.length > 0 || combat.drops.length > 0;
     return {
         awayText: formatAway(result?.awayMs),
@@ -83,6 +86,14 @@ export function summaryView(result) {
         spent: rows(bankSide(items.spent, items.net, -1), itemName, 'itemId'),
         levelUps: [...levelUps.values()],
         depleted: rows(summary.depleted?.byType, tokenName, 'typeId'),
+        /** Recipes unlocked, one row each in the order unlocked: `{ key, heroId, heroName, recipeId, name, itemId }`. */
+        recipes: (news.recipes || []).flatMap(row => (row.recipes || []).map(r => ({
+            key: `${row.heroId}|${r.id}`, heroId: row.heroId, heroName: row.heroName, recipeId: r.id, name: r.name, itemId: r.itemId
+        }))),
+        /** Items found for the first time, in the order found, with how many came in. */
+        finds: (news.finds || []).map(f => ({ itemId: f.itemId, name: itemName(f.itemId), count: f.count })),
+        /** Items a full Bank refused: they wait on the mat. */
+        bankFull: (news.bankFull || []).map(itemId => ({ itemId, name: itemName(itemId) })),
         wounded,
         fightsWon: combat.won,
         fights: combat.beaten,

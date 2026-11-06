@@ -69,6 +69,15 @@ const fullResult = () => ({
             food: { fixture_cu_meal: 14 },
             elixirs: { fixture_cu_elixir: 2 },
             drops: { fixture_cu_pelt: 9 }
+        },
+        news: {
+            recipes: [{ heroId: 'h1', heroName: 'Aela', skillId: 'mining', recipes: [
+                { id: 'r_cu_bar', name: 'Fixture Bar', itemId: 'fixture_cu_ore' },
+                { id: 'r_cu_plank', name: 'Fixture Plank', itemId: 'fixture_cu_log' }
+            ] }],
+            finds: [{ itemId: 'fixture_cu_pelt', count: 9 }],
+            bankFull: ['fixture_cu_log'],
+            knockouts: [{ heroId: 'h2', heroName: 'Bram', times: 2, lost: [] }]
         }
     }
 });
@@ -199,6 +208,18 @@ describe('"While you were away"', () => {
         expect(used).toEqual(['fixture_cu_meal', 'fixture_cu_elixir']);
     });
 
+    it('what the banners and stubs also say after it closes: new recipes, first finds, the Bank refusing items', () => {
+        start();
+        finish(fullResult());
+        const recipe = (id) => barText(q(`[data-summary-section="recipes"] [data-recipe-id="${id}"]`));
+        expect(recipe('r_cu_bar')).toEqual({ name: 'Fixture Bar', short: 'Aela', exact: null });
+        expect(recipe('r_cu_plank')).toEqual({ name: 'Fixture Plank', short: 'Aela', exact: null });
+        expect(bar('finds', 'data-item-id', 'fixture_cu_pelt')).toEqual({ name: 'Fixture Pelt', short: '+9', exact: '+9' });
+        expect(bar('bankFull', 'data-item-id', 'fixture_cu_log')).toEqual({ name: 'Fixture Log', short: null, exact: null });
+        // A knock-out is the fights block's, as before.
+        expect(text('[data-summary-fight-row="knockedOut"] [data-hero-id="h2"]')).toBe('Bram×2');
+    });
+
     it('the fights block leaves out a line with nothing, and shows for a knockout alone', () => {
         start();
         const r = emptyResult();
@@ -218,6 +239,9 @@ describe('"While you were away"', () => {
             ['gained', 'Items banked'],
             ['spent', 'Items spent'],
             ['levels', 'Level-ups'],
+            ['recipes', 'New recipes'],
+            ['finds', 'First finds'],
+            ['bankFull', 'Bank full: waiting on the mat'],
             ['depleted', 'Tokens used up'],
             ['fights', 'Fights']
         ]);
@@ -279,7 +303,7 @@ describe('the summary\'s Item Bars', () => {
     it('every item, Token and level-up is an Item Bar, one per line; the fights are one compact block of pills', () => {
         start();
         finish(fullResult());
-        const sections = ['waiting', 'gained', 'spent', 'levels', 'depleted'];
+        const sections = ['waiting', 'gained', 'spent', 'levels', 'recipes', 'finds', 'bankFull', 'depleted'];
         for (const id of sections) {
             const list = q(`[data-summary-section="${id}"] [data-summary-list]`);
             expect(list, id).not.toBeNull();
@@ -288,8 +312,8 @@ describe('the summary\'s Item Bars', () => {
             expect(list.children.length, id).toBeGreaterThan(0);
             for (const child of list.children) expect(child.hasAttribute('data-item-bar'), id).toBe(true);
         }
-        // 1 waiting, 2 gained, 1 spent, 3 level-ups, 1 depleted.
-        expect(bars()).toHaveLength(8);
+        // 1 waiting, 2 gained, 1 spent, 3 level-ups, 2 recipes, 1 first find, 1 Bank full, 1 depleted.
+        expect(bars()).toHaveLength(12);
         // The fights block: a line per kind, each a row of pills (a sprite and a count), no Item Bars.
         const block = q('[data-summary-section="fights"]');
         expect(block.querySelectorAll('[data-item-bar]')).toHaveLength(0);
@@ -352,15 +376,15 @@ describe('the summary\'s Item Bars', () => {
         start();
         finish(fullResult());
         const animated = () => document.querySelectorAll('[data-catch-up-summary] .catch-up-row-in');
-        // The bars, the 5 headings, and the fights block's heading line and its 4 lines.
-        expect(animated().length).toBe(bars().length + 5 + 1 + 4);
+        // The bars, the 8 headings, and the fights block's heading line and its 4 lines.
+        expect(animated().length).toBe(bars().length + 8 + 1 + 4);
         const delays = bars().map(r => parseFloat(r.style.animationDelay));
         expect(delays[1]).toBeGreaterThan(delays[0]);
         expect(delays[2]).toBeGreaterThan(delays[1]);
         act(() => { vi.advanceTimersByTime(5000); });
         expect(animated().length).toBe(0);
         expect(bars().every(r => !r.style.animationDelay)).toBe(true);
-        expect(bars()).toHaveLength(8);
+        expect(bars()).toHaveLength(12);
     });
 });
 

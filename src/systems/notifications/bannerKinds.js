@@ -52,6 +52,14 @@ export const BANNER_KINDS = Object.freeze({
         }),
         merge: (a, b) => ({ upgrades: union(a.upgrades, b.upgrades), detail: b.detail })
     },
+    settled: {
+        tone: TONE.MILESTONE,
+        text: ({ places = [] }) => ({
+            title: 'New Place Settled!',
+            line: `The guild settled ${nameList(places)}`
+        }),
+        merge: (a, b) => ({ places: union(a.places, b.places) })
+    },
     knockout: {
         tone: TONE.PROBLEM,
         text: ({ heroes = [], lost = [] }) => ({

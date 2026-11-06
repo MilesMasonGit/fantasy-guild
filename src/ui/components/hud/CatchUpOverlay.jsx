@@ -320,6 +320,50 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
                         }))}
                     </Section>
                 )}
+                {view.recipes.length > 0 && (
+                    <Section id="recipes" title="New recipes" enter={enter}>
+                        {view.recipes.map(r => {
+                            const e = enter();
+                            return (
+                                <EntityRibbon
+                                    key={r.key}
+                                    data-recipe-id={r.recipeId}
+                                    kind="item"
+                                    id={r.itemId}
+                                    name={r.name}
+                                    countText={r.heroName}
+                                    size="sm"
+                                    className={e.className}
+                                    style={e.style}
+                                />
+                            );
+                        })}
+                    </Section>
+                )}
+                {view.finds.length > 0 && (
+                    <Section id="finds" title="First finds" enter={enter}>
+                        <CountBars rows={view.finds} idKey="itemId" idAttr="data-item-id" kind="item" sign="+" enter={enter} />
+                    </Section>
+                )}
+                {view.bankFull.length > 0 && (
+                    <Section id="bankFull" title="Bank full: waiting on the mat" enter={enter}>
+                        {view.bankFull.map(r => {
+                            const e = enter();
+                            return (
+                                <EntityRibbon
+                                    key={r.itemId}
+                                    data-item-id={r.itemId}
+                                    kind="item"
+                                    id={r.itemId}
+                                    name={r.name}
+                                    size="sm"
+                                    className={e.className}
+                                    style={e.style}
+                                />
+                            );
+                        })}
+                    </Section>
+                )}
                 {view.depleted.length > 0 && (
                     <Section id="depleted" title="Tokens used up" enter={enter}>
                         <CountBars rows={view.depleted} idKey="typeId" idAttr="data-type-id" kind="token" sign="×" enter={enter} />
