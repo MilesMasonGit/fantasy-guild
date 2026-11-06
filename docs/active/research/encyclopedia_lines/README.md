@@ -1,9 +1,13 @@
 # Encyclopedia: what a line means (brief 470 E1)
 
-Status: the owner picked **C** (2026-11-06); built in brief 470 E2. Pictures of the built chart, at 1366 and 1920
-wide, are in [`built/`](built/) (`<page>_<width>.png`; `_lit` the pointer resting on a box, `_tip` a word's hover),
-made by `_tools/built.mjs` on the server of `_tools/vite.e2.config.mjs`; `built/checks.json` holds each page's checks
-(no word over a box, mark, tab or another word; every word in capitals, no outline, its letters inside its room).
+Status: the owner picked **C** (2026-11-06); built in brief 470 E2. Pictures of the built chart are in
+[`built/`](built/) (`<page>_<width>.png`; `_lit` the pointer resting on a box, `_tip` a word's hover): the four pages
+above and a large chart (`large_left`, `large_right`) at 1366 and 1920 wide; the other kinds (forest: beside, built on;
+stump: leaves, grows; ironfurnace: makes; trout: catch; birdnest: bonus; wheatseed and guildhall: the Hall's gives;
+recipe: a recipe's makes; farmland: builds) at 1920. Made by `_tools/built.mjs` on the server of
+`_tools/vite.e2.config.mjs`; `built/checks.json` holds every page's checks at both widths (no word over a box, mark,
+tab or another word; every word in capitals with no outline; its letters inside the room the layout kept; the chart
+clear of the progress bars).
 
 The owner (2026-11-04): "the Iron Woodaxe chains into the trees, which is accurate but it's different than an Oak Tree
 producing Oak Wood." Today every line on the chart is the same solid ink line with an arrow, whatever it means.

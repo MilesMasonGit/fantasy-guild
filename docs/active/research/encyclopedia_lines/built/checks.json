@@ -1,0 +1,440 @@
+{
+ "woodaxe_1366": {
+  "chart": "1759x696 in 1198x510",
+  "words": 12,
+  "onLine": 11,
+  "kinds": {
+   "madeAt": 1,
+   "gives": 3,
+   "toolFor": 8
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 12,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "oakwood_1366": {
+  "chart": "1772x560 in 1198x510",
+  "words": 3,
+  "onLine": 0,
+  "kinds": {
+   "spawns": 1,
+   "gives": 1,
+   "opens": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 3,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "ingot_1366": {
+  "chart": "1292x560 in 1198x510",
+  "words": 3,
+  "onLine": 0,
+  "kinds": {
+   "madeAt": 1,
+   "drops": 1,
+   "opens": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 3,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "raredrop_1366": {
+  "chart": "1759x172 in 1198x510",
+  "words": 2,
+  "onLine": 0,
+  "kinds": {
+   "spawns": 1,
+   "drops": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 2,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "large_left_1366": {
+  "chart": "2719x1036 in 1198x510",
+  "words": 22,
+  "onLine": 8,
+  "kinds": {
+   "oneOf": 2,
+   "gives": 2,
+   "drops": 5,
+   "opens": 3,
+   "madeAt": 2,
+   "toolFor": 8
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 22,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "large_right_1366": {
+  "chart": "2719x1036 in 1198x510",
+  "words": 22,
+  "onLine": 8,
+  "kinds": {
+   "oneOf": 2,
+   "gives": 2,
+   "drops": 5,
+   "opens": 3,
+   "madeAt": 2,
+   "toolFor": 8
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 22,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "forest_1366": {
+  "chart": "1266x152 in 1198x510",
+  "words": 2,
+  "onLine": 1,
+  "kinds": {
+   "builtOn": 1,
+   "beside": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 2,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "stump_1366": {
+  "chart": "1266x84 in 1198x510",
+  "words": 2,
+  "onLine": 1,
+  "kinds": {
+   "leaves": 1,
+   "grows": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 2,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "ironfurnace_1366": {
+  "chart": "1279x492 in 1198x510",
+  "words": 8,
+  "onLine": 7,
+  "kinds": {
+   "builtOn": 1,
+   "makes": 7
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 8,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "trout_1366": {
+  "chart": "1248x332 in 1198x510",
+  "words": 4,
+  "onLine": 0,
+  "kinds": {
+   "catch": 3,
+   "drops": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 4,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "birdnest_1366": {
+  "chart": "1279x252 in 1198x510",
+  "words": 3,
+  "onLine": 0,
+  "kinds": {
+   "gives": 2,
+   "bonus": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 3,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "wheatseed_1366": {
+  "chart": "1279x468 in 1198x510",
+  "words": 4,
+  "onLine": 0,
+  "kinds": {
+   "gives": 2,
+   "madeAt": 2
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 4,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "recipe_1366": {
+  "chart": "1266x220 in 1198x510",
+  "words": 4,
+  "onLine": 3,
+  "kinds": {
+   "madeAt": 1,
+   "makes": 3
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 4,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "woodaxe_1920": {
+  "chart": "1759x696 in 1436x678",
+  "words": 12,
+  "onLine": 11,
+  "kinds": {
+   "madeAt": 1,
+   "gives": 3,
+   "toolFor": 8
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 12,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "oakwood_1920": {
+  "chart": "1772x560 in 1436x678",
+  "words": 3,
+  "onLine": 0,
+  "kinds": {
+   "spawns": 1,
+   "gives": 1,
+   "opens": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 3,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "ingot_1920": {
+  "chart": "1292x560 in 1436x678",
+  "words": 3,
+  "onLine": 0,
+  "kinds": {
+   "madeAt": 1,
+   "drops": 1,
+   "opens": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 3,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "raredrop_1920": {
+  "chart": "1759x172 in 1436x678",
+  "words": 2,
+  "onLine": 0,
+  "kinds": {
+   "spawns": 1,
+   "drops": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 2,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "large_left_1920": {
+  "chart": "2719x1036 in 1436x678",
+  "words": 22,
+  "onLine": 8,
+  "kinds": {
+   "oneOf": 2,
+   "gives": 2,
+   "drops": 5,
+   "opens": 3,
+   "madeAt": 2,
+   "toolFor": 8
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 22,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "large_right_1920": {
+  "chart": "2719x1036 in 1436x678",
+  "words": 22,
+  "onLine": 8,
+  "kinds": {
+   "oneOf": 2,
+   "gives": 2,
+   "drops": 5,
+   "opens": 3,
+   "madeAt": 2,
+   "toolFor": 8
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 22,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "forest_1920": {
+  "chart": "1266x152 in 1436x678",
+  "words": 2,
+  "onLine": 1,
+  "kinds": {
+   "builtOn": 1,
+   "beside": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 2,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "stump_1920": {
+  "chart": "1266x84 in 1436x678",
+  "words": 2,
+  "onLine": 1,
+  "kinds": {
+   "leaves": 1,
+   "grows": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 2,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "ironfurnace_1920": {
+  "chart": "1279x492 in 1436x678",
+  "words": 8,
+  "onLine": 7,
+  "kinds": {
+   "builtOn": 1,
+   "makes": 7
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 8,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "trout_1920": {
+  "chart": "1248x332 in 1436x678",
+  "words": 4,
+  "onLine": 0,
+  "kinds": {
+   "catch": 3,
+   "drops": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 4,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "birdnest_1920": {
+  "chart": "1279x252 in 1436x678",
+  "words": 3,
+  "onLine": 0,
+  "kinds": {
+   "gives": 2,
+   "bonus": 1
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 3,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "wheatseed_1920": {
+  "chart": "1279x468 in 1436x678",
+  "words": 4,
+  "onLine": 0,
+  "kinds": {
+   "gives": 2,
+   "madeAt": 2
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 4,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "recipe_1920": {
+  "chart": "1266x220 in 1436x678",
+  "words": 4,
+  "onLine": 3,
+  "kinds": {
+   "madeAt": 1,
+   "makes": 3
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 4,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "farmland_1366": {
+  "chart": "1266x560 in 1198x510",
+  "words": 8,
+  "onLine": 8,
+  "kinds": {
+   "builds": 8
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 8,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "guildhall_1366": {
+  "chart": "755x288 in 1198x510",
+  "words": 4,
+  "onLine": 4,
+  "kinds": {
+   "gives": 4
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 4,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "farmland_1920": {
+  "chart": "1266x560 in 1436x678",
+  "words": 8,
+  "onLine": 8,
+  "kinds": {
+   "builds": 8
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 8,
+  "outlined": 0,
+  "clearOfBars": true
+ },
+ "guildhall_1920": {
+  "chart": "755x288 in 1436x678",
+  "words": 4,
+  "onLine": 4,
+  "kinds": {
+   "gives": 4
+  },
+  "clashes": [],
+  "overflow": 0,
+  "caps": 4,
+  "outlined": 0,
+  "clearOfBars": true
+ }
+}
