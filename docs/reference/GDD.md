@@ -124,6 +124,16 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
 - **Terrain** (the ground under the Tokens) is **Built** (brief 80): each Region's stored cell map
   drawn as pixel ground, one look per terrain per Region, meadow where a Region stores none (the
   Starter Camp). Static: nothing on the mat changes it. *(`TerrainCanvas.jsx`)*
+- **Water** is shapes stored with the cell map (lakes, ponds, tarns, rivers, sulphur springs, the
+  edge sea), made with the layout and drawn where they lie. **Rivers (brief 370 R1, the owner's picks
+  A and C)**: a river swings side to side a bend at a time, wider in its bends' pools and narrower
+  between them, never doubling back and never narrower than a placing cell. **Each map draws its
+  own** from its seed (`RIVER_VARIETY`): how much its rivers wind, how wide their wider stretches
+  run, and how near the Hall they may pass (bent round its clearing). A split's side channel leaves
+  and rejoins the main arm where it runs, land all round the island. **The bank is one number**, the
+  lake look's `bank.width`: 2.5 draws the thin settled bank (pick A), 7 a ragged bank with pale sand
+  bars inside the bends (pick C, drawn now). A Region stored before keeps its rivers as they were.
+  *(`WaterShapes.js`, `TerrainGrass.js`, `terrainRegistry.js`)*
 - **Stone terrain** — **Built (brief 330 W3)**: a feature of the ground as water is. A Region
   written with Stone gets outcrops of bare rock (a wild chasm a ridge across the mat), made with
   its layout and stored with its cell map; the cells they cover are `stone`, never on the water or

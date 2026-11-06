@@ -271,15 +271,27 @@ describe('⭐ heroes sent at the arrival keep fighting', () => {
         const pins = [];
         const first = Occupation.standingEnemies()[0];
         expect(Flags.orderToken(hero.id, first).success).toBe(true);
+        // Where each enemy last stood, so the next one taken on can be checked against where the
+        // last fell (the order follows the place's ground: its water moves where the lair stands).
+        const stood = new Map();
+        const far = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
         for (let t = 0; t < 20 * 60_000 && Occupation.isOccupied(); t += 100) {
             BoardRunner.tick(100);
             SpriteLayer.tick(100);
             const pin = BoardState.flagOf(hero.id)?.pinnedTo;
-            if (pin && pins[pins.length - 1] !== pin) pins.push(pin);
+            if (pin && pins[pins.length - 1] !== pin) {
+                if (pins.length) {
+                    const fell = stood.get(pins[pins.length - 1]);
+                    const nearest = [...Occupation.standingEnemies()].sort((a, b) => far(a, fell) - far(b, fell))[0];
+                    expect(pin, 'the enemy still standing nearest where the last fell').toBe(nearest.id);
+                }
+                pins.push(pin);
+            }
+            for (const e of Occupation.standingEnemies()) stood.set(e.id, { x: e.x, y: e.y });
         }
         expect(Occupation.isOccupied()).toBe(false);
         expect(Occupation.standingEnemies()).toEqual([]);
-        expect(pins).toEqual(GameState.state.board.arrival.ids.filter(id => pins.includes(id)));
-        expect(pins.length).toBe(GameState.state.board.arrival.ids.length);
+        expect(pins[0]).toBe(first.id);
+        expect([...pins].sort()).toEqual([...GameState.state.board.arrival.ids].sort());
     }, 120_000);
 });

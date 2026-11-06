@@ -22,7 +22,11 @@
  * hashes, every random number from the layout's seeded generator, coordinates stored whole.
  */
 
-/** The stored form's version: a map whose water says another is drawn from its cells alone. */
+/**
+ * The stored form's version: a map whose water says another is drawn from its cells alone. A river
+ * made since brief 370 also stores a half-width at each point (`h`); one stored before has none and
+ * keeps its old banks, so a saved Region's water never changes.
+ */
 export const WATER_VERSION = 1;
 
 /** How a pixel of water is drawn, per pixel of the plan. */
@@ -69,15 +73,18 @@ const LAKE = Object.freeze({ warpCell: 140, warp: 140, noiseCell: 60, noise: 44,
 const RIVER = Object.freeze({ widthCell: 180, width: 0.6, fineCell: 24, fine: 6, bank: 10 });
 
 /**
- * A river's course (the owner's picks A and C, brief 370): its bends one half-wave at a time, each
- * swinging to the other side, a half-wave `wave` of the river's widths long (longer where it is
- * wider, as real rivers' are; between 0.75 and 1.25 of that, and within `half`), each bend's swing
- * the Region's `wind` of its half-wave (between `swing` of that); eased in over `ends` units from
- * each end and from the Hall's clearing, a small `jitter` on top. Wider in the bends' pools than
- * where it crosses from one bend to the next (`narrow` at a crossing, `narrow + pool` at a bend's
- * apex), wandering by `wander` besides. Worked out every `spacing` units along its line, then eased by
- * `smooth` passes. A course that folds back on itself is bent again `tries` times, its bends
- * `gentler` each time, and at last runs unbent.
+ * A river's course (the owner's picks A and C, brief 370), laid along its line ({@link Maker#path},
+ * keeping `under` of its old wiggle): its bends one half-wave at a time, each swinging to the other
+ * side, a half-wave `wave` of the river's widths long (longer where it is wider, as real rivers'
+ * are; between 0.75 and 1.25 of that, and within `half`), each bend's swing the Region's `wind` of
+ * its half-wave (between `swing` of that), turning evenly ({@link bendOffset}) and never tighter than
+ * `radius` half-widths: a half-wave too short for its swing is drawn out. The bends grow in over
+ * `ends` units from each end, the ends pinned within `pin`; a bend swinging toward the Hall is held
+ * short of its clearing; a small `jitter` on top. Wider in the bends' pools than where it crosses
+ * from one bend to the next (`narrow` at a crossing, `narrow + pool` at a bend's apex), wandering by
+ * `wander`, and wider still along the Region's wider stretches. Worked out every `spacing` units
+ * along its line, then eased by `smooth` passes. A course that folds back on itself is bent again
+ * `tries` times, its bends `gentler` each time, and at last runs unbent.
  */
 const MEANDER = Object.freeze({
     spacing: 8, wave: 5, half: Object.freeze([90, 460]), swing: Object.freeze([0.55, 1.15]),
@@ -99,15 +106,15 @@ const MEANDER = Object.freeze({
 
 /**
  * How one Region's rivers differ from another's, each drawn from the Region's seed between its two
- * numbers (the owner's additions to pick A, 2026-11-03), so no two maps' rivers run alike:
+ * numbers (the owner's additions to picks A and C, 2026-11-03), so no two maps' rivers run alike:
  *
- * - `wind`: how far each bend swings out, as a share of its half-wave. The owner's pick A swung
- *   0.27; more winds more tightly.
+ * - `wind`: how far each bend swings out, as a share of its half-wave. The comparison's pick swung
+ *   0.27 on a line wiggling twice as much; 0.35 here bends about as much, more winds more.
  * - `wide`: how much wider a river runs along its wider stretches: 0.5 is half as wide again at the
- *   widest. 0 has none.
+ *   widest, 0 none.
  * - `reach`: how far past the Hall's clearing the straight line between a river's ends must pass, in
- *   mat units: 140 keeps it to the mat's sides (every river before brief 370); less lets it cross
- *   nearer the middle, bending round the Hall.
+ *   mat units: 140 keeps it to the mat's sides (every river before brief 370); less lets it run
+ *   nearer the middle, below 0 through the clearing's edge, bent round the Hall.
  */
 export const RIVER_VARIETY = Object.freeze({
     wind: Object.freeze([0.35, 0.6]),

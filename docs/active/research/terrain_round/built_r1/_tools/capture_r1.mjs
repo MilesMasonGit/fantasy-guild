@@ -13,6 +13,8 @@ mkdirSync(out, { recursive: true });
 /** Each shot: a file name, the dev maps, a seed (the view's own when null). */
 const SHOTS = wanted.length ? wanted.map((w) => {
     const [name, maps, seed] = w.split(':');
+    // `name:@fixture:highland`: the QA panel's Atlas fixture place of that kit (its Stone with it).
+    if (maps === '@fixture') return { name, kit: seed };
     return { name, maps: maps.split('+'), seed: seed ? Number(seed) : null };
 }) : [];
 
@@ -22,6 +24,10 @@ try {
     await page.setViewport(W, H);
     // A fresh game for every shot: the water's shimmer keeps a travelled-from Region's boxes a while.
     const newGame = async () => {
+        // The throwaway profile's saves cleared, so the slot screen offers a new game again.
+        await page.navigate(url);
+        await page.waitFor('!!window.Game', { timeoutMs: 120000 });
+        await page.evaluate('localStorage.clear(); true');
         await page.navigate(url);
         await page.waitFor('!!window.Game', { timeoutMs: 120000 });
         await sleep(2000);
@@ -36,7 +42,15 @@ try {
     };
     for (const shot of SHOTS) {
         await newGame();
-        const result = await page.evaluate(`(async () => {
+        const result = await page.evaluate(shot.kit ? `(async () => {
+            const dev = await import('/src/ui/dev/worldDev.js');
+            const r = dev.settleFixture(${JSON.stringify(shot.kit)});
+            if (!r.success) return { ok: false, reason: r.reason };
+            // Its arrival beaten, so the mat is not darkened.
+            dev.beatArrival();
+            const w = r.region.terrain.water;
+            return { ok: true, seed: r.region.seed, shapes: (w?.shapes || []).map(s => s.k).join(',') + ' stone ' + (r.region.terrain.stone?.shapes?.length ?? 0) };
+        })()` : `(async () => {
             const dev = await import('/src/ui/dev/terrainDev.js');
             const r = dev.goToDevRegion(${JSON.stringify(shot.maps)}, ${shot.seed === null ? '{}' : `{ seed: ${shot.seed} }`});
             if (!r.success) return { ok: false, reason: r.reason };
