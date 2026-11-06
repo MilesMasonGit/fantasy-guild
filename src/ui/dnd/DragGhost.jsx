@@ -11,7 +11,7 @@ import { flagColourOf } from '../../systems/board/FlagColours.js';
 import { MARKER_ART_PX, MARKER_FOOT } from '../components/board/flagGeometry.js';
 import { HeroDragMarks } from '../components/board/DragMarks.jsx';
 
-/** The carried hero's drag hint marks over the flag: an item's 32 px art at 2x, as on the bar. */
+/** The carried hero's drag hint marks beside the flag: an item's 32 px art at 2x, as on the bar. */
 const GHOST_MARK_PX = 64;
 
 /**
@@ -86,7 +86,7 @@ const CarriedToken = ({ payload, bold, offBoard }) => (
  * pointer: the flag is shifted inside its box so its pole foot is the box's middle, where it
  * will stand. Over a Token the hero can work, `OrderDragLine` moves the box (`data-order-ghost`)
  * onto the Token's centre, straight on the element, every frame. Over a Token, the hero's drag hint
- * marks stand over the flag (`dragHints.js`).
+ * marks stand beside the flag (`dragHints.js`).
  */
 export const FlagGhost = ({ payload }) => {
     const size = MARKER_ART_PX * boardArtSteps(liveBoardFit());
@@ -99,7 +99,9 @@ export const FlagGhost = ({ payload }) => {
                     heroId={payload.heroId}
                     size={GHOST_MARK_PX}
                     className="absolute"
-                    style={{ left: size / 2, bottom: size - shift.y, transform: 'translateX(-50%)' }}
+                    // Below and right of the pole's foot (the pointer), like a cursor's badge: above
+                    // it they would cover the refusal said over the Token.
+                    style={{ left: size / 2 + GHOST_MARK_PX / 4, top: size / 2 + GHOST_MARK_PX / 8 }}
                 />
             )}
         </div>

@@ -660,6 +660,17 @@ less micromanagement than area flags).
   they cannot work is refused** with the reason ("Needs Pickaxe", "Mining level
   too low (needs 25)", "Nothing to work here" for a Token no hero works) and
   they keep the job they had.
+- **Drag hints** (brief 490): while the carried hero is over a Token, **every
+  hero** shows whether they could work it, over their figure on the mat, on
+  their hero bar card and beside the carried flag: the **tool** the Token needs
+  (their own fitting tool, else the lowest tier that will do) and the **skill**
+  with their level on it, each outlined green when they pass and red, drawn
+  darker, when not, by the same checks the game uses. A Token with no tool need
+  shows the skill only; one naming no skill shows nothing. Over an **enemy**
+  each hero shows the items in their hands instead (a two-handed weapon once,
+  bare hands nothing), with no outline. Each mark is a floating item's size.
+  Hero speech and the bar's bubbles step aside while the marks show; the marks
+  go when the pointer leaves the Token or the hero is dropped.
 - **One hero per Token.** A hero sent to a Token another hero works waits
   beside it and takes it the moment it is free.
 - **The job flag** (Lucide's triangle flag, in the hero's colour) peeks out from
