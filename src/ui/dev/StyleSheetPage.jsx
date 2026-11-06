@@ -24,6 +24,7 @@ import { SPEECH_TONE } from '../components/board/speechTone.js';
 import { ModeBannerView } from '../components/board/MatModeControls.jsx';
 import { MAT_TOP_BAR_PX } from '../components/board/MatTopBar.jsx';
 import { MatRegionName } from '../components/board/MatRegionName.jsx';
+import { SettleTitle } from '../components/atlas/SettleTitle.jsx';
 import { MAP_MODE } from '../hooks/useMapMode.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
@@ -354,6 +355,12 @@ const RegionBannerDemo = () => (
                 <MatRegionName readName={() => ({ name, practical: 'Starter Camp' })} readBanner={() => banner} />
             </PixelFrame>
         ))}
+    </div>
+);
+
+const SettleTitleDemo = () => (
+    <div className="relative w-full" style={{ height: 200 }}>
+        <SettleTitle title={{ id: 'demo', name: 'Elderfield', practical: 'Highland Ores', banner: 'b_golden_plains' }} still band={{ top: 0, height: '100%' }} />
     </div>
 );
 
@@ -1001,6 +1008,12 @@ export const KIT_SECTIONS = [
         source: 'MatRegionName (the top bar’s left end)',
         rule: 'The Region’s banner (the one the Atlas shows) lies behind its name at 3×, one picture (768 px) across but never past the bar’s far end, showing the band just below its middle; crisp for its first 40 % and fading to the bar’s fill by its right end, running on under the bar’s middle, whose badges keep their own dark fill. The name is the display size (ui-text-bar-name, the bar’s only one) with a 2 px black outline so it reads over any picture. Hover: a white outline round the whole banner; click opens the Atlas.',
         Demo: RegionBannerDemo
+    },
+    {
+        id: 'settle-title', title: 'Settling’s title (new)', status: 'unapproved',
+        source: 'SettleTitle (across the mat, a moment after a place’s gold banner)',
+        rule: 'A dark band across the mat above the Guild Hall, under the banners, opening from its middle line in four held frames, with a fanfare. The place’s banner at the top bar’s 3× fading out at both ends, a 2 px gold line at its top and foot; the name in the display size with the 2 px black outline, its land and line in the title size under it. Under three seconds; a click or any key skips it; reduced motion: no opening or closing. Then the heroes walk in from the mat’s foot to the Hall. Travel keeps the plain arrival card.',
+        Demo: SettleTitleDemo
     },
     {
         id: 'work-plate', title: 'Work plate (who is working what)', status: 'shared',

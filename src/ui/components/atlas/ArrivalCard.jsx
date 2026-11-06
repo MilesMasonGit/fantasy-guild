@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import * as Atlas from '../../../systems/atlas/Atlas.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
@@ -7,6 +7,7 @@ import { BannerArt } from '../base/BannerArt.jsx';
 import { PixelFrame } from '../base/PixelFrame.jsx';
 import { bannerForRegion } from './regionBanner.js';
 import { prefersReducedMotion } from './AtlasTome.jsx';
+import { SettleTitle, SETTLE_TITLE, playFanfare } from './SettleTitle.jsx';
 
 /** How long the card stays, and how long it takes to come and go (in held frames). */
 export const ARRIVAL_MS = 1800;
@@ -24,31 +25,68 @@ export function arrivalOf(id) {
 /**
  * The arrival card: on travel, the destination's area banner across the mat for a moment with its
  * name. A click skips it; under reduced motion it comes and goes without fading.
+ *
+ * On a place just settled (`ATLAS_CHANGED` `'arrived'`, which follows its `'travelled'`) the card
+ * gives way to the place's title ({@link SettleTitle}): after the gold banner, with a fanfare, for
+ * {@link SETTLE_TITLE}'s `holdMs`; a click or any key skips it. Never on travel to a place settled
+ * before.
  */
-export const ArrivalCard = ({ durationMs = ARRIVAL_MS }) => {
+export const ArrivalCard = ({ durationMs = ARRIVAL_MS, title = SETTLE_TITLE }) => {
     const [card, setCard] = useState(null);
-    const timer = useRef(null);
+    const timers = useRef([]);
+    const shown = useRef(0);
+    const clearTimers = useCallback(() => {
+        for (const id of timers.current) clearTimeout(id);
+        timers.current = [];
+    }, []);
+    const later = useCallback((fn, ms) => { timers.current.push(setTimeout(fn, ms)); }, []);
+    const skip = useCallback(() => {
+        clearTimers();
+        setCard(null);
+    }, [clearTimers]);
+
     useEffect(() => {
         const off = EventBus.subscribe(ENGINE_EVENTS.ATLAS_CHANGED, (payload) => {
-            if (payload?.reason !== 'travelled') return;
+            const reason = payload?.reason;
+            if (reason !== 'travelled' && reason !== 'arrived') return;
             const next = arrivalOf(payload.regionId);
             if (!next) return;
-            setCard({ ...next, key: Date.now() });
-            clearTimeout(timer.current);
-            timer.current = setTimeout(() => setCard(null), durationMs);
+            clearTimers();
+            if (reason === 'travelled') {
+                setCard({ ...next, kind: 'travel', key: ++shown.current });
+                later(() => setCard(null), durationMs);
+                return;
+            }
+            const key = ++shown.current;
+            setCard({ ...next, kind: 'settle', phase: 'waiting', key });
+            later(() => {
+                setCard(c => (c?.key === key ? { ...c, phase: 'open' } : c));
+                playFanfare();
+                later(() => setCard(c => (c?.key === key ? { ...c, phase: 'closing' } : c)), Math.max(0, title.holdMs - title.closeMs));
+                later(() => setCard(c => (c?.key === key ? null : c)), title.holdMs);
+            }, title.delayMs);
         }, UI_LISTENER);
         return () => {
             off?.();
-            clearTimeout(timer.current);
+            clearTimers();
         };
-    }, [durationMs]);
+    }, [durationMs, title, clearTimers, later]);
+
+    const settling = card?.kind === 'settle';
+    // Only once it shows: a key pressed to finish the glide back from the world map is not a skip.
+    const titleShown = settling && card.phase !== 'waiting';
+    useEffect(() => {
+        if (!titleShown || typeof window === 'undefined') return undefined;
+        window.addEventListener('keydown', skip, true);
+        return () => window.removeEventListener('keydown', skip, true);
+    }, [titleShown, skip]);
 
     if (!card) return null;
     const still = prefersReducedMotion();
-    const skip = () => {
-        clearTimeout(timer.current);
-        setCard(null);
-    };
+    if (settling) {
+        if (card.phase === 'waiting') return null;
+        return <SettleTitle key={card.key} title={card} closing={card.phase === 'closing'} still={still} onSkip={skip} />;
+    }
     return (
         <div className="absolute inset-0 z-[105] flex items-center pointer-events-none">
             <motion.div

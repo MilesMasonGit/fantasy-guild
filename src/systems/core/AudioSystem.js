@@ -346,7 +346,8 @@ class AudioSystemClass {
             'dock_unpin': CALCULATOR_BUTTON_SFX,
             'quest_claim': COINS_HAND_SFX,
             'hall_star_chime': { want: '/assets/audio/sfx/hall_star_chime.ogg', fallback: `${kenneyBase}metalPot1.ogg` },
-            'hall_constellation_chime': { want: '/assets/audio/sfx/hall_constellation_chime.ogg', fallback: `${kenneyBase}metalPot2.ogg` }
+            'hall_constellation_chime': { want: '/assets/audio/sfx/hall_constellation_chime.ogg', fallback: `${kenneyBase}metalPot2.ogg` },
+            'settle_fanfare': { want: '/assets/audio/sfx/settle_fanfare.ogg', fallback: `${kenneyBase}doorOpen_1.ogg` }
         };
 
         const target = map[clip];

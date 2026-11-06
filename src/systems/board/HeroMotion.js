@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { artRadius, artRadiusOf, clampToMat } from '../../config/matGeometry.js';
+import { artRadius, artRadiusOf, clampToMat, matH } from '../../config/matGeometry.js';
 import { matTuning } from '../../config/matTuning.js';
 import { GameState } from '../../state/GameState.js';
 import * as BoardState from './BoardState.js';
@@ -44,6 +44,12 @@ import * as FightRoom from './FightRoom.js';
  *
  * ⚠️ Pottering at home draws from each body's own seeded stream (`homeRandom`), never the game's
  * `Math.random`, so heroes waiting at the Hall change no roll anywhere else.
+ *
+ * Settling a place ({@link walkIn}): the heroes with no order there step onto the mat at its foot
+ * below the Hall one after another, the first a moment after the guild arrives, and walk up to
+ * their places by it. Until their turn they are not on the mat; one sent out before it sets off
+ * from the Hall, as any hero sent out. Only a settle does this: travel and a load stand them at
+ * home at once.
  *
  * Offline catch-up: one very long tick covers the whole walk in one step: the hero simply arrives,
  * rather than walking in fast-forward.
@@ -125,6 +131,71 @@ export const HOME_DROP = 40;
 
 /** How far a hero at home strolls from their place in the row, in mat units. */
 export const HOME_POTTER = 24;
+
+/**
+ * Settling's walk in, in game ms: the first hero steps onto the mat this long after the guild
+ * arrives (the gold banner and the place's title come first), each next one this much later.
+ */
+export const WALK_IN = Object.freeze({ firstMs: 1400, gapMs: 450 });
+
+/** Heroes waiting for their turn to walk in, by the flag runtime of the board they are walking onto: heroId → game ms left. */
+const walkIns = new WeakMap();
+
+function waitingOf() {
+    const rt = BoardState.flagRuntime();
+    return rt ? walkIns.get(rt) || null : null;
+}
+
+/** Whether `heroId` is waiting for their turn to walk onto the mat after a settle. */
+export function isWaitingToWalkIn(heroId) {
+    return !!waitingOf()?.has(heroId);
+}
+
+/**
+ * Where heroes walking in step onto the mat: its foot, straight below the Guild Hall, their whole
+ * art on the mat. Null with no Hall.
+ */
+export function walkInPoint() {
+    const hall = guildHallPoint();
+    if (!hall) return null;
+    return clampToMat({ x: hall.x, y: matH() - artRadius(1) }, artRadius(1));
+}
+
+/**
+ * The place just settled: every hero on the roster with no order here walks in from the mat's
+ * foot ({@link walkInPoint}), in roster order, {@link WALK_IN} apart, to their place by the Hall.
+ * Nothing with no Hall, or where heroes at home have no body (instant arrival, the tests' switch).
+ *
+ * @returns {string[]} the heroes who will walk in, in order
+ */
+export function walkIn() {
+    const rt = BoardState.flagRuntime();
+    if (!rt || !homesShown() || !walkInPoint()) return [];
+    const flags = BoardState.getFlags();
+    const queue = new Map();
+    let wait = WALK_IN.firstMs;
+    for (const hero of GameState.state?.heroes || []) {
+        if (!hero?.id || flags[hero.id]) continue;
+        const body = BoardState.heroBodyOf(hero.id);
+        if (body && !body.home) continue;
+        BoardState.setHeroBody(hero.id, null);
+        queue.set(hero.id, wait);
+        wait += WALK_IN.gapMs;
+    }
+    walkIns.set(rt, queue);
+    return [...queue.keys()];
+}
+
+/** A hero whose turn has come steps onto the mat at its foot, heading home. */
+function stepOnto(heroId) {
+    const at = walkInPoint();
+    if (!at || !onRoster(heroId)) return false;
+    BoardState.setHeroBody(heroId, {
+        x: at.x, y: at.y, targetId: null, side: -1, atWork: null, moving: true, facing: 1,
+        homeward: true, seed: seedOf(heroId), ...(isWounded(heroId) ? { limp: true } : {})
+    });
+    return true;
+}
 
 /** Whether heroes at home stand on the mat: not with instant arrival (the tests' switch). */
 function homesShown() {
@@ -388,6 +459,7 @@ function ensureBody(heroId) {
         return body;
     }
     if (!flag) return ensureHomeBody(heroId);
+    waitingOf()?.delete(heroId);
     const at = guildHallPoint() || idleSpot(flag);
     body = { x: at.x, y: at.y, targetId: null, side: -1, atWork: null, moving: false, facing: 1 };
     BoardState.setHeroBody(heroId, body);
@@ -402,7 +474,7 @@ function ensureBody(heroId) {
 function ensureHomeBody(heroId) {
     const existing = BoardState.heroBodyOf(heroId);
     if (existing) return existing;
-    if (!homesShown() || !onRoster(heroId)) return null;
+    if (!homesShown() || !onRoster(heroId) || isWaitingToWalkIn(heroId)) return null;
     const at = homeSpot(heroId);
     if (!at) return null;
     const body = {
@@ -513,10 +585,22 @@ export function tick(delta = 0) {
             anyMoved = true;
         }
     }
-    // Everyone else on the roster takes their place by the Hall.
+    // Everyone else on the roster takes their place by the Hall, or after a settle walks in to it
+    // when their turn comes.
     if (homesShown()) {
+        const waiting = waitingOf();
         for (const hero of GameState.state?.heroes || []) {
             if (!hero?.id || flags[hero.id] || BoardState.heroBodyOf(hero.id)) continue;
+            if (waiting?.has(hero.id)) {
+                const left = waiting.get(hero.id) - Math.max(0, delta);
+                if (left > 0) {
+                    waiting.set(hero.id, left);
+                    continue;
+                }
+                waiting.delete(hero.id);
+                if (stepOnto(hero.id)) anyMoved = true;
+                continue;
+            }
             if (ensureHomeBody(hero.id)) anyMoved = true;
         }
     }
