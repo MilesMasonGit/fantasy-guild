@@ -10,6 +10,7 @@ import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as SpawnerSystem from './SpawnerSystem.js';
 import * as Hand from './Hand.js';
+import * as FightRoom from './FightRoom.js';
 import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.js';
 
 /**
@@ -224,6 +225,8 @@ function step(instance, spawner, body, delta) {
     }
 
     const wasMoving = body.moving;
+    const aside = FightRoom.stepOf(instance.id);
+    if (aside) return stepAside(instance, body, aside, delta, wasMoving);
     if (BoardCombat.getFight(instance.id) || shared.claimed.has(instance.id) || Hand.isInHand(instance.id)) {
         body.moving = false;
         endWalk(instance, body);
@@ -282,6 +285,32 @@ function step(instance, spawner, body, delta) {
 }
 
 /**
+ * A claimed enemy stepping to open space for its fight (`FightRoom`): it walks there at full speed,
+ * its stroll left as it was, so once the fight is over a camp's enemy walks back to where it stood.
+ * @returns {boolean} whether anything the screen draws changed
+ */
+function stepAside(instance, body, aside, delta, wasMoving) {
+    const dest = shared.dest;
+    dest.x = aside.x;
+    dest.y = aside.y;
+    const walkMs = Math.min(Math.max(0, delta), MAX_STEP_MS);
+    const startX = instance.x;
+    const startY = instance.y;
+    const moved = stepToward(body, dest, shared.speed * walkMs / 1000);
+    if (moved) {
+        if (!body.from) body.from = { x: startX, y: startY };
+        const x = Math.round(body.x);
+        const y = Math.round(body.y);
+        if (x !== instance.x || y !== instance.y) BoardState.setTokenPoint(instance.id, x, y);
+    }
+    if (!body.moving) {
+        endWalk(instance, body);
+        FightRoom.finishStep(instance.id);
+    }
+    return moved || wasMoving !== body.moving;
+}
+
+/**
  * Walk every tethered enemy on the mat `delta` game ms. Run once per engine
  * tick, after `HeroMotion.tick` (so a hero's claim this tick already holds its
  * enemy still) and before any Token ticks.
@@ -297,6 +326,7 @@ export function tick(delta = 0) {
     shared.h = matH();
     shared.claimed = BoardState.claimedInstanceIds();
     const stamp = ++shared.stamp;
+    FightRoom.pruneSteps();
 
     let changed = false;
     for (const instance of BoardState.tokens()) {
@@ -311,6 +341,19 @@ export function tick(delta = 0) {
         }
         body.seen = stamp;
         if (step(instance, spawner, body, delta)) changed = true;
+    }
+    // An enemy with no camp stands still, except to step aside for its fight.
+    for (const id of FightRoom.steppingIds()) {
+        const instance = BoardState.getTokenById(id);
+        if (!instance) continue;
+        let body = map.get(id);
+        if (body?.seen === stamp) continue;
+        if (!body) {
+            body = newBody(instance);
+            map.set(id, body);
+        }
+        body.seen = stamp;
+        if (step(instance, null, body, delta)) changed = true;
     }
     // Gone from the mat, or no spawner left: no body.
     for (const [id, body] of map) {

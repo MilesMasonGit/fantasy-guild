@@ -2,12 +2,14 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { artRadius, artRadiusOf, matW, clampToMat } from '../../config/matGeometry.js';
+import { artRadius, artRadiusOf, clampToMat } from '../../config/matGeometry.js';
 import { matTuning } from '../../config/matTuning.js';
 import { GameState } from '../../state/GameState.js';
 import * as BoardState from './BoardState.js';
 import { isGuildHall } from './MatCap.js';
 import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.js';
+import { STAND_GAP, standingSpot } from './standing.js';
+import * as FightRoom from './FightRoom.js';
 
 /**
  * Heroes live on the mat. `Flags.js` decides what a hero works; this file decides where the hero
@@ -45,12 +47,7 @@ import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.j
  * rather than walking in fast-forward.
  */
 
-/**
- * Gap between a Token's art edge and the centre of the hero working it, in mat units. Wide enough
- * that a fighting hero's health bar, with a four-digit HP number on it, clears the enemy's bar
- * even where the art steps up to its largest (`FightBars.test.js`).
- */
-export const STAND_GAP = 32;
+export { STAND_GAP, standingSpot };
 
 /**
  * Where an idle hero stands relative to their flag's pole base, in mat units: just right of the
@@ -230,18 +227,6 @@ function pauseMs() {
     return randomPauseMs(POTTER_PAUSE_MS, random);
 }
 
-/**
- * The point beside a Token (or spot) at `centre` where a hero stands to work it,
- * on `side` (−1 left, 1 right). If that side would put the hero off the mat,
- * the other side is used.
- */
-export function standingSpot(typeId, centre, side) {
-    const offset = artRadiusOf(typeId) + STAND_GAP;
-    let x = centre.x + side * offset;
-    if (x < 0 || x > matW()) x = centre.x - side * offset;
-    return { x, y: centre.y };
-}
-
 /** The side a hero coming from `body` arrives on: the side they are already on. */
 function sideFor(body, centre) {
     return body.x > centre.x ? 1 : -1;
@@ -356,9 +341,12 @@ function step(heroId, body, delta) {
         }
     }
 
-    // Arrived at a claimed Token: from now on they are working it, and the save remembers it.
+    // Arrived at a claimed Token: from now on they are working it, and the save remembers it. A
+    // fight that would crowd another, or a hero, first steps to open space with them
+    // (`FightRoom`), and they arrive once it has.
     if (!body.moving && claim && body.atWork !== claim.instanceId
-        && body.targetId === claim.instanceId && BoardState.getTokenById(claim.instanceId)) {
+        && body.targetId === claim.instanceId && BoardState.getTokenById(claim.instanceId)
+        && !FightRoom.holdsArrival(heroId, BoardState.getTokenById(claim.instanceId), body.side)) {
         body.atWork = claim.instanceId;
         BoardState.recordWorkClaim(heroId, claim.instanceId, body.side);
         announceArrival(heroId);
