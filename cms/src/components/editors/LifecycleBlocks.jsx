@@ -22,7 +22,7 @@ const BLOCK_INFO = {
   turns: { title: 'Turns', what: 'Rolls a chance every cycle to turn into one of a list, and the same to turn back (Coast ↔ Shrimp Coast).' },
   foundation: { title: 'Foundation', what: 'Bought at the Shop and built on with a recipe.' },
   shop: { title: 'Shop', what: 'Sold at the Shop, priced in items.' },
-  trickle: { title: 'Passive Production', what: 'Drops these items beside the Token every 5 minutes, all on one timer, no hero needed (Guild Hall only, for now). The Wishing Well adds its Water to the Hall’s.' },
+  trickle: { title: 'Passive Production', what: 'Drops these items beside the Token once a lap (10 minutes, shortened by Guild Hall stars), all on one timer, no hero needed (Guild Hall only, for now). The Wishing Well adds its Water to the Hall’s.' },
   respawn: { title: 'Respawns', what: 'Comes back after it runs out instead of leaving the mat: refills where it stands after a rest, or regrows from another Token (Tree → Sapling → Tree).' },
   field: { title: 'Field', what: 'Grows its own crop: empty, growing, ripe. Its crops are the recipes it works (a Field or Herb Garden station); the player picks one on it.' },
   camp: { title: 'Camp', what: 'Heroes sent to it work the Tokens of its skill within its reach, one hero per Token (a Logging Camp, a Farmstead). Built on a Foundation like a station.' },

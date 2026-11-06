@@ -51,8 +51,9 @@ describe('the kinds of work the calculator now rates', () => {
     it('Passive Production: the Guild Hall pays the Wishing Well\'s Water by rank, no hero', () => {
         const b = book();
         const r = b.rateOf({ token: 'token_guild_hall' }, { hallRanks: { wishing_well: 2 } });
-        expect(r).toMatchObject({ ok: true, kind: WORK.PASSIVE, limitedBy: LIMIT.CLOCK, cyclesPerHour: 12 });
-        expect(r.items.item_water).toBeCloseTo(20 * 12);
+        // Six 10-minute laps an hour with no lap star (`DropLap.test.js` buys it).
+        expect(r).toMatchObject({ ok: true, kind: WORK.PASSIVE, limitedBy: LIMIT.CLOCK, cyclesPerHour: 6 });
+        expect(r.items.item_water).toBeCloseTo(20 * 6);
         expect(b.rateOf({ token: 'token_guild_hall' }).items.item_water).toBeUndefined();
     });
 });
