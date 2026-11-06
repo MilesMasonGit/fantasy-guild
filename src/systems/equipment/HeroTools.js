@@ -57,12 +57,21 @@ export function catchToolOf(heroId, kinds) {
 /** Whether hero `heroId` holds a backed tool that answers `need`. No need: true. */
 export function holdsToolFor(heroId, need) {
     if (!need) return true;
+    return fittingToolOf(heroId, need) !== null;
+}
+
+/**
+ * The item id of the first backed tool hero `heroId` holds, in grid order, that answers `need`, or
+ * null (also for no need). At water that is the first tool of any kind it takes.
+ */
+export function fittingToolOf(heroId, need) {
+    if (!need) return null;
     const hero = heroRecord(heroId);
-    if (!hero) return false;
+    if (!hero) return null;
     const grid = getGrid(hero);
     for (let slot = 0; slot < grid.length; slot++) {
         const itemId = grid[slot];
-        if (itemId && toolMeets(heldTool(itemId), need) && slotBacked(hero, slot)) return true;
+        if (itemId && toolMeets(heldTool(itemId), need) && slotBacked(hero, slot)) return itemId;
     }
-    return false;
+    return null;
 }

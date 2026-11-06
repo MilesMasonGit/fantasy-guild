@@ -14,6 +14,7 @@ import { SpeechFrame } from './SpeechFrame.jsx';
 import { SPEECH_TONE } from './speechTone.js';
 import { plateUnit } from './workPlate.js';
 import { calloutTopOf } from './CalloutLayer.jsx';
+import { setHintTarget } from './dragHints.js';
 
 /** The line: one art pixel of gold over a black copy one art pixel down-right, as the camp ring. */
 const LINE_GOLD = 'var(--color-gi-gold)';
@@ -132,6 +133,8 @@ function MarchingLine({ heroId, session, matRef }) {
             if (aimNow !== aimed) {
                 aimed = aimNow;
                 setBubble(aimed.reason ? { instance: aimed.instance, reason: aimed.reason } : null);
+                // Every hero's marks, worked out once per Token entered (`dragHints.js`).
+                setHintTarget(aimed.instance);
             }
             const to = aimed.snap ? { x: aimed.instance.x, y: aimed.instance.y } : at;
             if (aimed.snap && rect) {
@@ -155,6 +158,7 @@ function MarchingLine({ heroId, session, matRef }) {
             window.removeEventListener('pointermove', onMove);
             if (frame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
             ghost.stop();
+            setHintTarget(null);
         };
     }, [heroId, session, matRef, artScale]);
 

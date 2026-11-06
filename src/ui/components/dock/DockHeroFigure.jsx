@@ -25,6 +25,7 @@ import {
     dockArtOffset, rosterFlagPlace, rosterAlertPlace, rosterAlertPx, hpPercent, hpTone
 } from './dockHeroView.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { HeroDragMarks } from '../board/DragMarks.jsx';
 
 /**
  * One hero standing on the roster.
@@ -343,16 +344,23 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
              * The level-ups keep their place over the name; the hover's bubble takes the top of
              * the same column, so it stands above them and never moves or covers one.
              */}
-            {(lifted || bubbles.length > 0) && (
-                <div
-                    data-dock-speech={heroId}
-                    className="absolute inset-x-0 flex flex-col items-center gap-1.5 pointer-events-none"
-                    style={{ bottom: labelBottom + LABEL_PX }}
-                >
-                    {lifted && <StatusBubble heroId={heroId} alert={roster.alert} tail={bubbles.length === 0} />}
-                    {bubbles.length > 0 && <BarBubbles heroId={heroId} bubbles={bubbles} />}
-                </div>
-            )}
+            {/* While a hero is carried over a Token, this hero's marks stand where the bubbles do; the bubbles step aside until it leaves. */}
+            <HeroDragMarks
+                heroId={heroId}
+                size={DOCK_MARK_PX}
+                className="absolute left-1/2 -translate-x-1/2"
+                style={{ bottom: labelBottom + LABEL_PX }}
+                fallback={(lifted || bubbles.length > 0) ? (
+                    <div
+                        data-dock-speech={heroId}
+                        className="absolute inset-x-0 flex flex-col items-center gap-1.5 pointer-events-none"
+                        style={{ bottom: labelBottom + LABEL_PX }}
+                    >
+                        {lifted && <StatusBubble heroId={heroId} alert={roster.alert} tail={bubbles.length === 0} />}
+                        {bubbles.length > 0 && <BarBubbles heroId={heroId} bubbles={bubbles} />}
+                    </div>
+                ) : null}
+            />
         </div>
     );
 });
@@ -387,6 +395,9 @@ const StatusBubble = ({ heroId, alert, tail }) => {
 
 /** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of them. */
 const LABEL_PX = 46;
+
+/** A drag hint mark on the bar: an item's 32 px art at 2x, as an item floating on the mat. */
+const DOCK_MARK_PX = 64;
 
 /** A wheel turn this soon after the last one is the same flick: one page per flick. */
 const WHEEL_GAP_MS = 200;
