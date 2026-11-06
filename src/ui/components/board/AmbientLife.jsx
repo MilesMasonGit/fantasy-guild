@@ -118,6 +118,9 @@ function boardOf(tokens) {
 function attachCanvas(canvas, cols, rows) {
     const ctx = canvas?.getContext('2d', { willReadFrequently: true });
     if (!ctx) return null;
+    // ⚠️ The canvas outlives a Region (same size, same element) and steps only write the box they
+    // changed: without this the last Region's water stays drawn as broken pieces.
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     const image = ctx.createImageData(cols, rows);
     const out = new Uint32Array(image.data.buffer, image.data.byteOffset, cols * rows);
     return {
