@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>World hexes mock (brief 380 M1)</title>
+<style>
+  @font-face { font-family: 'SilkPixel'; src: url(/fonts/silkscreen-latin-400-normal.woff2) format('woff2'); }
+  html, body { margin: 0; background: #111; }
+  canvas { display: block; image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<script>window.addEventListener("error", e => { window.__err = String(e.message || e.error); }); window.addEventListener("unhandledrejection", e => { window.__err = String(e.reason && e.reason.stack || e.reason); });</script>
+<canvas id="screen" width="1920" height="1080"></canvas>
+<script type="module" src="./mock.js"></script>
+</body>
+</html>
