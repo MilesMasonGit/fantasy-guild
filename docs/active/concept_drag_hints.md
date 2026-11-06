@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed 2026-11-05 (approved 2026-11-05; brief 490)
 
 # Drag hints: who can work this Token
 
