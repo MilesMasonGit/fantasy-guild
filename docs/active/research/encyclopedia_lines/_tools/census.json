@@ -1,0 +1,323 @@
+{
+ "left | from | work": {
+  "n": 65,
+  "ex": [
+   "Wishing Well -> Water",
+   "Copper Ore Vein -> Copper Ore",
+   "Copper Chest -> Copper Ore",
+   "Copper Chest -> Copper Ingot"
+  ]
+ },
+ "left | from | upgrade": {
+  "n": 1,
+  "ex": [
+   "Guild Hall -> Water"
+  ]
+ },
+ "right | used | craft": {
+  "n": 175,
+  "ex": [
+   "Water -> Birdwatcher",
+   "Water -> Elixir of Ironskin",
+   "Water -> Dough",
+   "Water -> Beer"
+  ]
+ },
+ "left | from | drop": {
+  "n": 63,
+  "ex": [
+   "Goblin -> Copper Ore",
+   "Goblin Chief -> Copper Ingot",
+   "Water Elemental -> Raw Shrimp",
+   "Crab -> Raw Shrimp"
+  ]
+ },
+ "left | from | craft": {
+  "n": 241,
+  "ex": [
+   "smithing:token_furnace+token_iron_furnace -> Copper Ingot",
+   "crafting:token_ceramics_kiln+token_fir_workbench+token_tannery+token_workbench -> Charcoal",
+   "cooking:token_campfire+token_cooking_pot -> Shrimp",
+   "farming:token_wheat_field+token_wild_wheat_patch -> Wheat"
+  ]
+ },
+ "left | input | craft": {
+  "n": 365,
+  "ex": [
+   "Copper Ore -> Copper Ingot",
+   "Coal -> Copper Ingot",
+   "Oak Wood -> Charcoal",
+   "Raw Shrimp -> Shrimp"
+  ]
+ },
+ "right | used | shop": {
+  "n": 7,
+  "ex": [
+   "Oak Wood -> Farmland",
+   "Oak Wood -> Goblin Camp",
+   "Oak Wood -> Stone Foundation",
+   "Oak Wood -> Wood Foundation"
+  ]
+ },
+ "left | from | catch": {
+  "n": 11,
+  "ex": [
+   "Coast -> Raw Shrimp",
+   "Lake -> Trout",
+   "River -> Trout",
+   "Bog Pool -> Trout"
+  ]
+ },
+ "left | from | trickle": {
+  "n": 3,
+  "ex": [
+   "Guild Hall -> Oak Seedling",
+   "Guild Hall -> Wheat Seed",
+   "Guild Hall -> Apple Seed"
+  ]
+ },
+ "right | used | spawn": {
+  "n": 3,
+  "ex": [
+   "Oak Seedling -> Oak Forest",
+   "Apple Seed -> Apple Orchard",
+   "Fir Seedling -> Fir Forest"
+  ]
+ },
+ "right | used | grow": {
+  "n": 7,
+  "ex": [
+   "Oak Seedling -> Oak Tree",
+   "Birch Seedling -> Birch Tree",
+   "Fir Seedling -> Fir Tree",
+   "Maple Seedling -> Maple Tree"
+  ]
+ },
+ "right | used | hold": {
+  "n": 88,
+  "ex": [
+   "Copper Pickaxe -> Clay Deposit",
+   "Copper Pickaxe -> Coal Vein",
+   "Copper Pickaxe -> Copper Ore Vein",
+   "Copper Pickaxe -> Quartz Deposit"
+  ]
+ },
+ "right | gives | bonus": {
+  "n": 1,
+  "ex": [
+   "Birdwatcher -> Bird Nest"
+  ]
+ },
+ "left | from | bonus": {
+  "n": 1,
+  "ex": [
+   "Birdwatcher -> Bird Nest"
+  ]
+ },
+ "left | input | catch": {
+  "n": 1,
+  "ex": [
+   "Worm Bait -> Lobster"
+  ]
+ },
+ "right | used | catch": {
+  "n": 5,
+  "ex": [
+   "Worm Bait -> Coast",
+   "Worm Bait -> Lake",
+   "Worm Bait -> River",
+   "Worm Bait -> Bog Pool"
+  ]
+ },
+ "left | caption:worldLine | world": {
+  "n": 49,
+  "ex": [
+   "Copper Ore Vein -> Copper Ore Vein",
+   "Oak Tree -> Oak Tree",
+   "Coast -> Coast",
+   "Shrimp Coast -> Shrimp Coast"
+  ]
+ },
+ "right | gives | work": {
+  "n": 65,
+  "ex": [
+   "Copper Ore Vein -> Copper Ore",
+   "Oak Tree -> Oak Wood",
+   "Oak Tree -> Oak Seedling",
+   "Oak Tree -> Bird Nest"
+  ]
+ },
+ "right | used | growNearby": {
+  "n": 2,
+  "ex": [
+   "Oak Forest -> Oak Tree",
+   "Fir Forest -> Fir Tree"
+  ]
+ },
+ "right | gives | station": {
+  "n": 136,
+  "ex": [
+   "Ceramics Kiln -> Charcoal",
+   "Ceramics Kiln -> Fishing Rod",
+   "Ceramics Kiln -> Search a Bird Nest",
+   "Ceramics Kiln -> Shrimp Bait"
+  ]
+ },
+ "left | from | spawn": {
+  "n": 26,
+  "ex": [
+   "Oak Forest -> Oak Tree",
+   "Apple Orchard -> Apple Tree",
+   "Fir Forest -> Fir Tree",
+   "Thorn Thicket -> Thorn Elemental"
+  ]
+ },
+ "left | input | spawn": {
+  "n": 6,
+  "ex": [
+   "Oak Seedling -> Oak Tree",
+   "Apple Seed -> Apple Tree",
+   "Fir Seedling -> Fir Tree",
+   "Oak Seedling -> Oak Sapling"
+  ]
+ },
+ "left | folded-stage | spawn": {
+  "n": 3,
+  "ex": [
+   "Oak Sapling -> Oak Tree",
+   "Apple Sapling -> Apple Tree",
+   "Fir Sapling -> Fir Tree"
+  ]
+ },
+ "left | input | regrow": {
+  "n": 14,
+  "ex": [
+   "Oak Seedling -> Oak Tree",
+   "Fir Seedling -> Fir Tree",
+   "Birch Seedling -> Birch Tree",
+   "Maple Seedling -> Maple Tree"
+  ]
+ },
+ "left | folded-stage | regrow/regrow": {
+  "n": 7,
+  "ex": [
+   "Oak Stump -> Oak Tree",
+   "Fir Stump -> Fir Tree",
+   "Birch Stump -> Birch Tree",
+   "Maple Stump -> Maple Tree"
+  ]
+ },
+ "left | input | shop": {
+  "n": 7,
+  "ex": [
+   "Oak Wood -> Coast",
+   "Oak Wood -> Farmland",
+   "Oak Wood -> Wood Foundation",
+   "Stone -> Stone Foundation"
+  ]
+ },
+ "right | gives | catch": {
+  "n": 11,
+  "ex": [
+   "Coast -> Raw Shrimp",
+   "Coast -> Tropical Fish",
+   "Coast -> Lobster",
+   "Coast -> Salmon"
+  ]
+ },
+ "right | gives | upgrade": {
+  "n": 1,
+  "ex": [
+   "Guild Hall -> Water"
+  ]
+ },
+ "right | gives | trickle": {
+  "n": 3,
+  "ex": [
+   "Guild Hall -> Apple Seed",
+   "Guild Hall -> Oak Seedling",
+   "Guild Hall -> Wheat Seed"
+  ]
+ },
+ "left | caption:worldRing | world": {
+  "n": 18,
+  "ex": [
+   "Quartz Deposit -> Quartz Deposit",
+   "Wolf Den -> Wolf Den",
+   "Crab Rocks -> Crab Rocks",
+   "Wild Hive -> Wild Hive"
+  ]
+ },
+ "right | gives | spawn": {
+  "n": 21,
+  "ex": [
+   "Iron Ore Vein -> Fire Elemental",
+   "Quarry -> Stone Outcrop",
+   "Apple Orchard -> Apple Tree",
+   "Goblin Camp -> Goblin"
+  ]
+ },
+ "left | caption:someWorldsRing | world": {
+  "n": 21,
+  "ex": [
+   "Thorn Elemental -> Thorn Elemental",
+   "Cow -> Cow",
+   "Goblin -> Goblin",
+   "Goblin Chief -> Goblin Chief"
+  ]
+ },
+ "right | gives | drop": {
+  "n": 63,
+  "ex": [
+   "Thorn Elemental -> Blackberry",
+   "Thorn Elemental -> Thorn Thicket Map",
+   "Cow -> Bones",
+   "Cow -> Raw Beef"
+  ]
+ },
+ "left | from | regrow": {
+  "n": 14,
+  "ex": [
+   "Oak Tree -> Oak Sapling",
+   "Oak Tree -> Oak Stump",
+   "Fir Tree -> Fir Stump",
+   "Fir Tree -> Fir Sapling"
+  ]
+ },
+ "left | folded-stage | regrow": {
+  "n": 7,
+  "ex": [
+   "Oak Stump -> Oak Sapling",
+   "Fir Stump -> Fir Sapling",
+   "Birch Stump -> Birch Sapling",
+   "Maple Stump -> Maple Sapling"
+  ]
+ },
+ "right | gives | grow": {
+  "n": 16,
+  "ex": [
+   "Oak Sapling -> Oak Tree",
+   "Wheat Sprout -> Ripe Wheat",
+   "Apple Sapling -> Apple Tree",
+   "Oak Stump -> Oak Tree"
+  ]
+ },
+ "right | gives | build": {
+  "n": 51,
+  "ex": [
+   "Farmland -> Apple Orchard",
+   "Farmland -> Field",
+   "Farmland -> Oak Forest",
+   "Farmland -> Fir Forest"
+  ]
+ },
+ "right | gives | craft": {
+  "n": 124,
+  "ex": [
+   "Copper Ingot -> Copper Ingot",
+   "Copper Pickaxe -> Copper Pickaxe",
+   "Copper Woodaxe -> Copper Woodaxe",
+   "Iron Ingot -> Iron Ingot"
+  ]
+ }
+}
