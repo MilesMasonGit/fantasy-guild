@@ -154,6 +154,8 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 
 ## Notes between directors
 
+- **Fri 6 Nov ~05:00, worktree clean-up incident (director):** 11 merged worktrees removed (c1 c2 c3 r1 r2 ec h1 k1 g1 p1 s3, and ws). A bash junction unlink failed silently, so `git worktree remove` followed live junctions and deleted part of the real `cms/node_modules` (115 to 106 entries; the CMS build failed: no native binding). Repaired: `npm install` in `cms` (back to 115), the lock file restored with git checkout; CMS build ok, main suite 593 files green, game build ok. **Owner: restart your CMS dev server** before using it. Left: m1 and x1 worktrees (docs, merged; scratch files inside).
+
 - **Owner, 5 Nov late, going to sleep:** the director may pick new briefs from the queue and keep working once these finish. Merges that change the look or play still wait for the owner's eye-check.
 
 - **Bench coverage after brief 500 (owner 5 Nov: yes, after the merges):** with no ambushes, S2, S5, C240, C256, the S8 family and the draw bench `fights<N>` scenes no longer fight (their heroes only fought because they were ambushed), and S5 no longer storms. Next: an engineer sends heroes at the camps in those scenarios so fights are measured again, then a baseline retake.
