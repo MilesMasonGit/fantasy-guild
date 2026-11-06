@@ -108,7 +108,10 @@ dispatched on `document`.
 
 ## Save slots
 
-Saves live in `localStorage` under `fantasy_guild_slot_N`. Planting a
+In the browser and dev builds saves live in `localStorage` under
+`fantasy_guild_slot_N`; the built desktop game keeps them as files instead
+(`SaveFiles.js`; never test on the owner's own folder, build with another
+`identifier` so the test app has its own). Planting a
 hand-built save is a legitimate way to test loading. **Slot discipline:**
 capture every localStorage key before probing, stop the game loop before
 restoring, verify character for character. An autosave has clobbered a slot

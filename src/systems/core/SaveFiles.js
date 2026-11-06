@@ -128,11 +128,12 @@ export async function flush() {
  * by a new game.
  */
 export async function refresh(slot) {
-    if (!backend) return;
+    if (!backend) return false;
     await settled(slot);
-    await readCopy(slot);
+    return readCopy(slot);
 }
 
+/** @returns {Promise<boolean>} whether the copy changed */
 async function readCopy(slot) {
     const q = queueFor(slot);
     const version = q.version;
@@ -144,15 +145,18 @@ async function readCopy(slot) {
         entry = { text: null, unreadable: true };
     }
     // A write asked for while this read was out is newer than what it read.
-    if (q.version === version) copies.set(slot, entry);
+    if (q.version !== version) return false;
+    const before = copies.get(slot);
+    copies.set(slot, entry);
+    return before?.text !== entry.text || before?.unreadable !== entry.unreadable;
 }
 
-/** Re-read every slot (`refresh`), then tell the listeners. */
+/** Re-read every slot (`refresh`), and tell the listeners if any changed. */
 export async function refreshAll() {
     if (!backend) return;
     const slots = Array.from({ length: slotCount }, (_, i) => i);
-    await Promise.all(slots.map(refresh));
-    changed();
+    const changes = await Promise.all(slots.map(refresh));
+    if (changes.some(Boolean)) changed();
 }
 
 /** Whether the slot holds a save, as last read or written; an unreadable file counts. */

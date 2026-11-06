@@ -156,6 +156,21 @@ describe('the file layer', () => {
         expect(disk.writes().map(w => [w[3], w[2]]).slice(-2)).toEqual([['{"n":3}', true], ['{"n":5}', false]]);
     });
 
+    it('re-reading the folder tells the slot screen only when a file changed', async () => {
+        const heard = vi.fn();
+        const off = SaveFiles.onChange(heard);
+        try {
+            await SaveFiles.refreshAll();
+            expect(heard).not.toHaveBeenCalled();
+            disk.files.set('slot2.json', '{"copied":1}');
+            await SaveFiles.refreshAll();
+            expect(heard).toHaveBeenCalledTimes(1);
+            expect(SaveFiles.savedText(1)).toBe('{"copied":1}');
+        } finally {
+            off();
+        }
+    });
+
     it('a delete still waiting when a write comes is done first', async () => {
         await SaveFiles.writeSave(0, '{"n":1}');
         await SaveFiles.writeSave(0, '{"n":2}');
