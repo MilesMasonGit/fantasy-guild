@@ -81,7 +81,7 @@ export const GRASS_RULES = Object.freeze({
  * colour in shadow (a patch's soft shadow). `COUNT` is the table's length.
  */
 export const COLOUR = Object.freeze({
-    EARTH: 0, MIDDLE: 5, WET: 6, LINE: 7, RING: 8, BANK: 13, PEBBLE: 17, PEBBLE_DARK: 18, KIND: 19, STRIDE: 11,
+    EARTH: 0, MIDDLE: 5, WET: 6, LINE: 7, RING: 8, BANK: 13, PEBBLE: 20, PEBBLE_DARK: 21, KIND: 22, STRIDE: 11,
     GRASS: 0, SOFT: 5, STROKES: 6,
     SEA: 0, FOAM: 5, FOAM2: 6, TROUGH: 7, DEEP: 8, MID: 9,
     DIM: 128, COUNT: 256, NONE: 255
@@ -105,25 +105,39 @@ export const WATER_BIT = Object.freeze({ FOAM_LIGHT: 1, SHALLOW_LIGHT: 2, WAVES:
 
 /**
  * A land pixel's shore byte: where a look with a `shore` meets the sea, its wet sand and waterline;
- * by shaped water, `BANK + k` its bank's colour `BANK + k` (four of them).
+ * by shaped water, `BANK + k` its bank's colour `BANK + k` (seven of them).
  */
-export const SHORE = Object.freeze({ BANK: 249, LINE: 253, WET: 254 });
+export const SHORE = Object.freeze({ BANK: 246, LINE: 253, WET: 254 });
 
 /** How many bank colours a land look's table holds. */
-const BANK_COUNT = 4;
+const BANK_COUNT = 7;
 
 /**
  * Where each shaped water look's bank colours start in a land look's table, after `COLOUR.BANK`:
- * the lake's wet bank, then the sulphur springs' crust.
+ * the lake's wet bank (its two steps, then its sand bars' light, middle and dark), then the sulphur
+ * springs' crust.
  */
-export const BANK_SLOTS = Object.freeze({ lake: 0, sulphur: 2 });
+export const BANK_SLOTS = Object.freeze({ lake: 0, sulphur: 5 });
+
+/** Of the lake's bank colours, its sand bars' light, middle and dark (after its two steps). */
+const BAR_COLOUR = Object.freeze({ LIGHT: 2, MID: 3, DARK: 4 });
+
+/**
+ * A wide bank (a lake look's `bank.width` past its last step; brief 370, the owner's pick C): the
+ * bank ragged out to that width where a noise of `wideCell` pixels is high, and on the inside of a
+ * river's bends a bar of sand `bar[0] + bar[1] × noise` times the extra width out, broken by its
+ * darker specks (`speck`) and lighter patches (above `light`); on the outside of a bend the wet
+ * bank reaches `outer` times the extra width further. Prototype pixels, after `terrain_round`'s
+ * `bankCode`. A width no wider than the last step draws the thin bank alone (pick A).
+ */
+const WIDE_BANK = Object.freeze({ cell: 9, wideCell: 22, bar: Object.freeze([2.1, 3.3]), outer: 0.35, speck: 0.16, light: 0.52, mud: 0.45 });
 
 /** The share of the prototype's tint the shade pattern's slider stands for: the meadow's. */
 const SLIDER_TINT = 0.06;
 
 /** The colours that keep out of the shade pattern: drawn flat in the prototype. */
 const UNSHADED = Object.freeze([COLOUR.WET, COLOUR.LINE, COLOUR.RING, COLOUR.RING + 1, COLOUR.RING + 2, COLOUR.RING + 3, COLOUR.RING + 4,
-    COLOUR.BANK, COLOUR.BANK + 1, COLOUR.BANK + 2, COLOUR.BANK + 3]);
+    ...Array.from({ length: BANK_COUNT }, (_, k) => COLOUR.BANK + k)]);
 
 /** Hash channels for the noise layers. */
 const CH = Object.freeze({
@@ -132,7 +146,8 @@ const CH = Object.freeze({
     GAP: 0x6a30, OVERLAY: 0x6a31, OVERLAY_FINE: 0x6a32, OVERLAY_JAG: 0x6a33,
     SHORE: 0x6a40, FOAM: 0x6a41, WAVE_PATCH: 0x6a42,
     POOL: 0x6a50, POOL_FINE: 0x6a51,
-    SETTLE: 0x6a60, DEPTH: 0x6a61
+    BANK: 0x6a60, BANK_WIDE: 0x6a61, BANK_SPECK: 0x6a62,
+    SETTLE: 0x6a70, DEPTH: 0x6a71
 });
 
 /** The patches' channel for a noise cell: the meadow's own for its cell, so its patches stay put. */
@@ -537,6 +552,12 @@ function bankColours() {
         if (!bank) continue;
         const colours = bank.colours ? bank.colours.map(c => [...c]) : ramp(...bank.ramp, 5, 0.02, 0.06);
         bank.at.forEach(([, k], step) => { out[at + step] = colours[k]; });
+        if (bank.bar) {
+            const bar = ramp(...bank.bar, 5, 0.02, 0.05);
+            out[at + BAR_COLOUR.LIGHT] = bar[2];
+            out[at + BAR_COLOUR.MID] = bar[1];
+            out[at + BAR_COLOUR.DARK] = bar[0];
+        }
     }
     return out.map(c => c || [0, 0, 0]);
 }
@@ -971,17 +992,47 @@ export function depthBand(depths, f, wob) {
  * water's bank it lies in (the prototype's pixels out from the waterline).
  */
 function bankRow(ctx, py) {
-    const { width, at, slotOf, isLand, shore, waterField, waterStyle, banks, bankReach } = ctx;
+    const { width, at, slotOf, isLand, shore, waterField, waterStyle, banks, bankReach, wideBank } = ctx;
     for (let px = 0, i = py * width; px < width; px++, i++) {
         const f = waterField[i];
         if (f > 0 || f <= -bankReach || !isLand[slotOf[at[i]] + 1]) continue;
         const steps = banks[waterStyle[i]];
         if (!steps) continue;
         const out = -f / PLAN_PIXEL_U;
+        if (wideBank && waterStyle[i] === STYLE.LAKE) {
+            const code = wideBankAt(wideBank, i, px, py, out);
+            if (code) {
+                shore[i] = code;
+                continue;
+            }
+        }
         for (let k = 0; k < steps.length; k++) {
             if (out <= steps[k][0]) { shore[i] = SHORE.BANK + steps[k][1]; break; }
         }
     }
+}
+
+/**
+ * A land pixel's colour code by a wide bank ({@link WIDE_BANK}), `out` pixels from the waterline:
+ * a sand bar on a bend's inside, the ragged bank past the thin one; else 0, and the thin bank's
+ * steps say.
+ */
+function wideBankAt(bank, i, px, py, out) {
+    const { thin, extra, bar: bars, seed, at } = bank;
+    const W = WIDE_BANK;
+    const bar = bars ? bars[i] : 0;
+    // Past the widest a ragged bank reaches and off any bar: the thin bank's steps say (nothing).
+    if (!(bar > 0) && (out <= thin || out > thin + extra * (1 + W.outer))) return 0;
+    const wide = grassNoise(px, py, seed, W.wideCell, CH.BANK_WIDE);
+    if (bar > 0 && out < bar * extra * (W.bar[0] + W.bar[1] * wide)) {
+        if (out <= at) return SHORE.BANK + BANK_SLOTS.lake;
+        if (hash(px, py, saltOf(seed, CH.BANK_SPECK)) < cut32(W.speck)) return SHORE.BANK + BANK_SLOTS.lake + BAR_COLOUR.DARK;
+        return SHORE.BANK + BANK_SLOTS.lake + (grassNoise(px, py, seed, W.cell, CH.BANK) > W.light ? BAR_COLOUR.LIGHT : BAR_COLOUR.MID);
+    }
+    if (out <= thin) return 0;
+    const wet = thin + extra * 2 * Math.max(0, wide - 0.5) + (bar < 0 ? -bar * extra * W.outer : 0);
+    if (out > wet) return 0;
+    return SHORE.BANK + BANK_SLOTS.lake + (grassNoise(px, py, seed, W.cell, CH.BANK) > W.mud ? 1 : 0);
 }
 
 /** One plan row of a land look with a `shore`: its wet sand and waterline where it meets water. */
@@ -1209,7 +1260,8 @@ export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
         width, at, slotOf,
         bits: new Uint8Array(n), kinds: new Uint8Array(n), rowKind: new Int8Array(width),
         shore: null, ring: null, depth: null, waterDist: null, shoreDist: null, shoreN: null, foamN: null,
-        waterField: pixels.water?.f || null, waterStyle: pixels.water?.style || null, banks: null, bankReach: 0, isLand: null
+        waterField: pixels.water?.f || null, waterStyle: pixels.water?.style || null, banks: null, bankReach: 0, isLand: null,
+        wideBank: null
     };
 
     // The shore: each side's distance from the water, measured on the drawn coastline. Shaped
@@ -1242,6 +1294,13 @@ export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
             if (!bank || !(lookId in BANK_SLOTS)) continue;
             banks[style] = bank.at.map(([out], k) => [out, BANK_SLOTS[lookId] + k]);
             reach = Math.max(reach, ...bank.at.map(([out]) => out));
+            // The lake's (and so a river's) bank wider than its steps, by its `width`.
+            const thin = bank.at[bank.at.length - 1][0];
+            if (style === STYLE.LAKE && bank.width > thin) {
+                const extra = bank.width - thin;
+                ctx.wideBank = { thin, extra, at: bank.at[0][0], seed, bar: pixels.water?.bar || null };
+                reach = Math.max(reach, bank.width + (pixels.water?.bar ? extra * (WIDE_BANK.bar[0] + WIDE_BANK.bar[1]) : 0));
+            }
         }
         if (banks.some(Boolean)) {
             ctx.banks = banks;

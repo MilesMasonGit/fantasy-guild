@@ -376,7 +376,7 @@ export function resolveArtPixels(ground, withFringes = true, blend = null) {
     for (let i = 0; i < cells.length; i++) present[cells[i]] = 1;
     let water = null;
     if (shapes) {
-        water = rasterise(shapes, { x0: PLAN_PIXEL_U / 2, y0: PLAN_PIXEL_U / 2, step: PLAN_PIXEL_U, nx: width, ny: height });
+        water = rasterise(shapes, { x0: PLAN_PIXEL_U / 2, y0: PLAN_PIXEL_U / 2, step: PLAN_PIXEL_U, nx: width, ny: height }, { bends: true });
         const ids = STYLE_TERRAIN.map(() => -1);
         const { f, style } = water;
         for (let i = 0; i < at.length; i++) {

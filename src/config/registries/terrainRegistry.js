@@ -234,7 +234,10 @@ export const LOOKS = deepFreeze({
                 field: true, sea: [0.50, 0.44, 0.52], foam: 1.2, solidFoam: false, foamLight: 1.30, foam2Light: 1.1,
                 trough: 1, shallow: 5, deep: 14, flecks: 0, waves: 0.004, waveMask: 0, wavePatchCell: 30, waveGap: 3,
                 farThick: null, waveLengths: [[5, [2]], [9, [3, 4, 5]], [18, [5, 6, 7, 8]]],
-                bank: { ramp: [0.08, 0.34, 0.30], at: [[1, 0], [2.5, 1]] },
+                // `width`: how far the bank reaches at its widest, in pixels: no more than its last
+                // step (2.5) draws the thin settled bank of the owner's pick A, more the ragged bank
+                // with sand bars in the rivers' bends of pick C (7, brief 370). `bar`: the sand.
+                bank: { ramp: [0.08, 0.34, 0.30], at: [[1, 0], [2.5, 1]], width: 7, bar: [0.105, 0.50, 0.24] },
                 depths: { from: 1.2, at: [3, 6, 10, 16, 26], deep: 0.93, cell: 12, wobble: 11, taper: 6, light: 0.2, glint: 0.62, glintShare: 0.4 }
             }
         }
