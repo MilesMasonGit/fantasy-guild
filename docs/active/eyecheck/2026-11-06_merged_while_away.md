@@ -19,3 +19,6 @@ You approved merging these on the tests while away. Nothing here needs a branch 
 
 6. **Disallow is gone** (420 T2). The top bar has Demolish only; Shift-click on a Token does nothing special; heroes work as before.
    Verdict:
+
+7. **Hard pixel everywhere** (460 P2). Names under the pointer and numbers on the mat: no dark smudge, the 1 px outline only; badges cast a hard black copy; the Token Summary highlight is a hard gold outline; the drag refusal mark no longer bounces. Before/after: `docs/active/research/hard_pixel/built/sheet_built.png`.
+   Verdict:
