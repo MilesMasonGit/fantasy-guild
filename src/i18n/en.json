@@ -37,6 +37,25 @@
         "resetDefaults": "Reset Defaults",
         "done": "Done"
     },
+    "titleScreen": {
+        "gameName": "Fantasy Guild",
+        "chooseSave": "Choose a Save",
+        "slot": "Slot {n}",
+        "slotEmpty": "Slot {n} — Empty",
+        "slotDamaged": "Slot {n} — Damaged",
+        "noSave": "No save data",
+        "damagedHint": "This save can't be read",
+        "version": "ver {version}",
+        "newGame": "New Game",
+        "load": "Load",
+        "delete": "Delete Save File",
+        "deleteConfirm": "Delete Forever?",
+        "lastPlayed": "Last Played",
+        "heroes": "Heroes",
+        "playtime": "Total Playtime",
+        "lastSaved": "Last Saved",
+        "unknown": "Unknown"
+    },
     "equipment": {
         "allInUse": "Every {item} you own is already in use",
         "bankFull": "The Bank is full: {hero} keeps the {item}",

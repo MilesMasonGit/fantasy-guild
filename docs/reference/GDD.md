@@ -1325,8 +1325,13 @@ One page with overlays (`src/ui/ReactRoot.jsx`), left to right: **bubble menu
 → notification column → playmat (top bar above, hero dock below) →
 drawers**. The menu can be flipped to the right.
 
-- **Slot select** (3 save slots) is the only screen before play. Its wording
-  is a leftover sci-fi theme ("SYSTEM BOOT").
+- **The title screen** is the only screen before play: the game's name in the
+  display size over a banner picture (`b_guild_hall`, framed), and the three
+  save slots beneath in the kit. A filled slot shows its heroes, playtime and
+  last save as Lucide marks, then Load and a delete with a confirm; an empty one
+  New Game; one whose save can't be read says Damaged and can still be loaded
+  (for the message) or deleted. The owner's logo and title painting replace the
+  name and the banner when their files exist (`src/ui/components/title/titleArt.js`).
 - **Bubble menu**: Guild Hall, Item Bank, Shop, Settings.
 - **Top bar**: the Region's name over its banner (at 3×, running on under the middle and fading
   out), Tokens / cap and upkeep per minute (each opens its summary on hover, staying while the
