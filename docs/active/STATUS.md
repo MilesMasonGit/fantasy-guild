@@ -13,7 +13,7 @@ build green) · bench-queued · eye-check · merged.*
 |---|---|---|---|---|---|
 | 360 C2: the fight window B, minimized tabs D, several at once | builder | `crunch/combat-window` (`c2`) | ready a38e6467 with C3 merged in and the owner's rulings (B stat column, special-move bubbles, no shadow on the fight button); director: 7472 tests, cycles, build green, game checked; bench Fri 01:00 | Thu | |
 | 360 C3: the mat F, the combat icon between the bars, floats, move bubbles, QA crowd button | builder | `crunch/combat-mat` (`c3`) | merged into C2 at 8c1d1f88 | Thu | Thu |
-| 360 C4: crowded fights step to open space (expect WORK CHANGED) | engineer | `crunch/combat-step` (`c4`, from a38e6467) | building | Thu | |
+| 360 C4: crowded fights step to open space (expect WORK CHANGED) | engineer | `crunch/combat-step` (`c4`, from a38e6467) | ready b21c8b88, bench queued (expect WORK CHANGED on S3, C240, C256 and S8; a step up to 160 u, at most 1.8 s before the first swing); director: 595 files green, cycles, build | Thu | |
 | 370 R1: rivers with real bends, varying width, variety by world (expect WORK CHANGED) | engineer | `crunch/rivers` (`r1`, from main) | building | Thu | |
 | 370 R2: water depth bands, ragged ground borders, settled dirt | builder | | queued, next free slot | | |
 
@@ -146,6 +146,8 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 None open.
 
 ## Questions for the owner
+
+- **Crowded fights (C4), for the eye-check:** (1) how far may a crowded fight step: A. 160 u, one mat step (built, recommended); B. 240 u, more fights find room, walks up to 2.7 s. (2) the QA crowd steps only 24 to 32 u: A. keep it (built, shows a fight with no room too); B. pack it tighter for bigger steps.
 
 - **For combat planning (not a question):** hostile enemies notice a flag within `Flags.flagRadius()` of their spawner, so the hero reach going 164 → 240 (A3) widened what enemies notice too. Owner 2026-10-23: fine for now; combat planning decides what enemies should notice.
 
