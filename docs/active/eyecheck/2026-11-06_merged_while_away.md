@@ -31,3 +31,6 @@ You approved merging these on the tests while away. Nothing here needs a branch 
 
 10. **Small fixes** (T-320, T-328, T-330). At 1366 x 768 all six nav bubbles fit (they step down to 96 px on short screens); in the encyclopedia, press on an item picture inside a box and drag: the chart pans.
    Verdict:
+
+11. **A new game** (450 S4). Pick an empty slot: one screen with the Guild name, rings 1 to 3 of your world with Reroll, and your first hero (name, portrait, flag). Begin: you play with that hero, the tutorial starts at Equip a Tool. The slot shows the Guild name; rename it in Settings, Game.
+   Verdict:
