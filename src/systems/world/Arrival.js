@@ -43,7 +43,7 @@ export const ARRIVAL_TEXT = Object.freeze({
  */
 export const CLEARING = Object.freeze({ rx: 300, ry: 260 });
 
-/** How far in from the mat's edge an enemy aims, in mat units: clear of the item stubs and the fight tabs. */
+/** How far in from the mat's edge an enemy aims, in mat units: its art, and a hero beside it, well inside the mat. */
 export const SPREAD_MARGIN = 120;
 
 /** Where between the clearing (0) and the margin (1) an enemy aims: never right at either. */
