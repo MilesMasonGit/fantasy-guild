@@ -9,6 +9,8 @@ import { Monitor, Volume2, Wrench, Save, Type, Sliders } from 'lucide-react';
 import { TypographyScaleModal } from './TypographyScaleModal.jsx';
 import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
 import { t } from '../../i18n/index.js';
+import { GUILD_NAME_MAX, guildNameOf, renameGuild } from '../../systems/core/GuildName.js';
+import { GameState } from '../../state/GameState.js';
 
 const AUTO_SAVE_LABEL = { 1: 'settings.autoSave1', 10: 'settings.autoSave10', 60: 'settings.autoSave60', 0: 'settings.autoSaveOff' };
 
@@ -115,6 +117,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
                     {activeTab === 'game' && (
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
+                            {GameState.state?.meta && <GuildNameSetting />}
                             <SettingSelect
                                 label={t('settings.autoSave')}
                                 options={autoSaveChoices().map(min => ({ value: min, label: t(AUTO_SAVE_LABEL[min]) }))}
@@ -167,6 +170,30 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                 />
             )}
         </GIModal>
+    );
+};
+
+/** The Guild's name, renamed when the box is left or Enter is pressed; an empty box puts the name back. */
+const GuildNameSetting = () => {
+    const [draft, setDraft] = useState(() => guildNameOf() || '');
+    const commit = () => {
+        if (!renameGuild(draft)) setDraft(guildNameOf() || '');
+        else setDraft(guildNameOf());
+    };
+    return (
+        <label data-setting="guildName" className="flex items-center justify-between gap-3 py-1.5">
+            <span className="text-sm font-bold text-white tracking-wide">{t('settings.guildName')}</span>
+            <input
+                type="text"
+                value={draft}
+                maxLength={GUILD_NAME_MAX}
+                placeholder={t('newGame.defaultGuildName')}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commit}
+                onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                className="ui-pixel-edge bg-black/60 text-white px-3 py-1 outline-none font-bold w-64"
+            />
+        </label>
     );
 };
 

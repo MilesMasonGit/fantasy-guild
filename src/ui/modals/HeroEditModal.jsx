@@ -18,6 +18,76 @@ const SWATCH_CHOSEN = 'border-[var(--color-ui-white)] bg-white/15';
 export const SWATCH_FLAG_PX = 40;
 
 /**
+ * A hero's name, portrait and flag colour: the edit window's controls, and the new-game screen's
+ * for the first hero. Controlled: the caller keeps the values.
+ * The hero's recolouring, once designed, goes in `children` (under the flag colours), so both
+ * screens get it together.
+ */
+export const HeroLookFields = ({ name, onName, onEnter, spriteId, onSprite, flagColour, onFlagColour, children }) => (
+    <>
+        <label className="flex flex-col gap-1.5">
+            <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Name</span>
+            <input
+                type="text"
+                value={name}
+                maxLength={HERO_NAME_MAX}
+                onChange={(e) => onName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') onEnter?.(); }}
+                className="ui-pixel-edge px-3 py-2 bg-black/40 text-gi-text text-sm focus:outline-none transition-colors"
+            />
+            <span className="ui-text-body text-gi-muted/70 tabular-nums self-end">
+                {name.trim().length}/{HERO_NAME_MAX}
+            </span>
+        </label>
+
+        <div className="flex flex-col gap-1.5">
+            <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Portrait</span>
+            <div className="grid grid-cols-8 gap-1.5 max-h-56 overflow-y-auto custom-scrollbar p-1">
+                {HERO_PORTRAITS.map(id => (
+                    <button
+                        key={id}
+                        type="button"
+                        onClick={() => onSprite(id)}
+                        title={id}
+                        className={cn(
+                            'ui-slot-empty aspect-square flex items-center justify-center transition-colors cursor-pointer',
+                            spriteId === id && SWATCH_CHOSEN
+                        )}
+                        style={{ imageRendering: 'pixelated' }}
+                    >
+                        <ItemIcon item={{ sprite: id }} size={32} />
+                    </button>
+                ))}
+            </div>
+        </div>
+
+        {/* Flag colour: each swatch is the hero's job flag in that colour. */}
+        <div className="flex flex-col gap-1.5">
+            <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Flag colour</span>
+            <div className="grid grid-cols-8 gap-1.5 p-1">
+                {FLAG_COLOURS.map(colour => (
+                    <button
+                        key={colour}
+                        type="button"
+                        data-flag-swatch={colour}
+                        aria-pressed={flagColour === colour}
+                        onClick={() => onFlagColour(colour)}
+                        title={FLAG_COLOUR_LABELS[colour]}
+                        className={cn(
+                            'ui-slot-empty aspect-square flex items-center justify-center overflow-hidden transition-colors cursor-pointer',
+                            flagColour === colour && SWATCH_CHOSEN
+                        )}
+                    >
+                        <FlagMark size={SWATCH_FLAG_PX} colour={colour} alt={`${FLAG_COLOUR_LABELS[colour]} flag`} />
+                    </button>
+                ))}
+            </div>
+        </div>
+        {children}
+    </>
+);
+
+/**
  * HeroEditModal: everything about a hero that isn't drag-and-drop: rename, repick their
  * portrait, flag colour. Opened by the Edit button on the hero panel, which shows their skills;
  * this modal does not repeat them.
@@ -86,64 +156,15 @@ export const HeroEditModal = ({ heroId, isOpen, onClose }) => {
     return (
         <GIModal isOpen={isOpen} onClose={handleCancel} title={`Edit ${hero.name}`} maxWidth="max-w-lg">
             <div className="flex flex-col gap-4 p-4">
-                <label className="flex flex-col gap-1.5">
-                    <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Name</span>
-                    <input
-                        type="text"
-                        value={name}
-                        maxLength={HERO_NAME_MAX}
-                        onChange={(e) => setName(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' && canSave) handleSave(); }}
-                        className="ui-pixel-edge px-3 py-2 bg-black/40 text-gi-text text-sm focus:outline-none transition-colors"
-                    />
-                    <span className="ui-text-body text-gi-muted/70 tabular-nums self-end">
-                        {trimmed.length}/{HERO_NAME_MAX}
-                    </span>
-                </label>
-
-                <div className="flex flex-col gap-1.5">
-                    <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Portrait</span>
-                    <div className="grid grid-cols-8 gap-1.5 max-h-56 overflow-y-auto custom-scrollbar p-1">
-                        {HERO_PORTRAITS.map(id => (
-                            <button
-                                key={id}
-                                type="button"
-                                onClick={() => setSpriteId(id)}
-                                title={id}
-                                className={cn(
-                                    'ui-slot-empty aspect-square flex items-center justify-center transition-colors cursor-pointer',
-                                    spriteId === id && SWATCH_CHOSEN
-                                )}
-                                style={{ imageRendering: 'pixelated' }}
-                            >
-                                <ItemIcon item={{ sprite: id }} size={32} />
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Flag colour: each swatch is the hero's job flag in that colour. */}
-                <div className="flex flex-col gap-1.5">
-                    <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Flag colour</span>
-                    <div className="grid grid-cols-8 gap-1.5 p-1">
-                        {FLAG_COLOURS.map(colour => (
-                            <button
-                                key={colour}
-                                type="button"
-                                data-flag-swatch={colour}
-                                aria-pressed={flagColour === colour}
-                                onClick={() => pickColour(colour)}
-                                title={FLAG_COLOUR_LABELS[colour]}
-                                className={cn(
-                                    'ui-slot-empty aspect-square flex items-center justify-center overflow-hidden transition-colors cursor-pointer',
-                                    flagColour === colour && SWATCH_CHOSEN
-                                )}
-                            >
-                                <FlagMark size={SWATCH_FLAG_PX} colour={colour} alt={`${FLAG_COLOUR_LABELS[colour]} flag`} />
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                <HeroLookFields
+                    name={name}
+                    onName={setName}
+                    onEnter={() => { if (canSave) handleSave(); }}
+                    spriteId={spriteId}
+                    onSprite={setSpriteId}
+                    flagColour={flagColour}
+                    onFlagColour={pickColour}
+                />
 
                 <div className="flex justify-end gap-2">
                     <KitButton tone={KIT_BUTTON_TONE.PLAIN} onClick={handleCancel} buttonClassName="px-3 py-1 ui-text-body gi-caps tracking-wide">

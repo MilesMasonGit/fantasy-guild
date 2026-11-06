@@ -15,6 +15,13 @@ import {
 import { QUEST_TOKEN_TYPE, ENGINE_TOKEN_TYPES } from '../config/registries/engineTokens.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { MAT_TUNABLES, setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { registerItems } from '../config/registries/itemRegistry.js';
+
+/** A gathering tool, for the tutorial's first step (equip a tool). */
+const TOOL = 'fixture_quest_woodaxe';
+registerItems({
+    [TOOL]: { id: TOOL, name: 'Fixture Woodaxe', type: 'tool', equipSlot: 'hand', stackable: true, sprite: 'i_woodaxe_copper', tool: { kind: 'woodaxe', tier: 1 } }
+});
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -225,9 +232,9 @@ describe('the tutorial chain under its hidden cap (FB-42)', () => {
 
 describe('progress and claiming (FB-41)', () => {
     it('progress comes from the same events as before, and marks the quest done', () => {
-        const [t] = tutorials();   // Recruit a Hero
+        const [t] = tutorials();   // Equip a Tool
         expect(t.quest.done).toBe(false);
-        EventBus.publish('hero_recruited', { heroId: 'h1' });
+        EventBus.publish('hero_equipment_changed', { action: 'equip', heroId: 'h1', itemId: TOOL });
         expect(t.quest.currentCount).toBe(1);
         expect(t.quest.done).toBe(true);
     });
@@ -244,7 +251,7 @@ describe('progress and claiming (FB-41)', () => {
     it('claiming drops the reward as loot beside the Token and removes it — not a depletion', () => {
         const [t] = tutorials();
         const at = { x: t.x, y: t.y };
-        EventBus.publish('hero_recruited', { heroId: 'h1' });
+        EventBus.publish('hero_equipment_changed', { action: 'equip', heroId: 'h1', itemId: TOOL });
         const depleted = vi.fn();
         const off = EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, depleted);
         try {
@@ -313,7 +320,8 @@ describe('saves (B6.1)', () => {
         expect(hunt.quest).toMatchObject({ id: 'quest_old_1', tutorial: false, type: 'hunt', enemyId: 'token_goblin', currentCount: 1, done: false });
         expect(hunt.quest.rewardItems).toEqual([{ itemId: 'item_oak_wood', quantity: 10 }]);
         expect(hunt.quest.rewardMapId).toBeUndefined();
-        expect(GameState.state.quests.tutorialStep).toBe(1);
+        // Neither claimed id is a step the chain still has (the recruit step went with the new-game screen).
+        expect(GameState.state.quests.tutorialStep).toBe(0);
 
         // The chain settles back to one at a time: no new step until the last is claimed.
         const flag = tutorials().find(t => t.quest.id === 'cart_flag');

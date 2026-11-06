@@ -6,10 +6,10 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { SKILLS } from '../../config/registries/skillRegistry.js';
 import { worldTables, isPlaceholderTables } from '../../config/registries/worldTablesRegistry.js';
 import { lineById } from '../../config/worldTablesShape.js';
-import { seedFromText } from '../atlas/seededRandom.js';
+import { seedFromText, nextSeed } from '../atlas/seededRandom.js';
 import * as StarterCamp from '../atlas/StarterCamp.js';
 import { generateWorld } from './generate.js';
-import { worldFindings } from './checks.js';
+import { worldFindings, WORLD_CHECK } from './checks.js';
 import { worldText } from './describe.js';
 import { materialsFromTokens, hallOriginsOf } from './materials.js';
 import { logger } from '../../utils/Logger.js';
@@ -47,6 +47,42 @@ export function lookups() {
 /** A world for `seed` from the tables in force, without keeping it. */
 export function previewWorld(seed) {
     return generateWorld({ seed, tables: worldTables(), ...lookups() });
+}
+
+/**
+ * The world's own checks that are the ledger's checks F (`ledger/world.js`): a world rolled for a
+ * new game must have none of them. The rest are holes in the tables, the same in every world.
+ */
+export const ROLL_CHECKS = Object.freeze([WORLD_CHECK.PRICE_RING, WORLD_CHECK.KEY_REACH, WORLD_CHECK.COVERAGE, WORLD_CHECK.VALUE]);
+
+/** How many seeds a roll tries for a world with none of {@link ROLL_CHECKS}. */
+export const ROLL_TRIES = 20;
+
+/** A first seed for the new-game screen, from the moment it is asked for. */
+export function freshWorldSeed(now = Date.now()) {
+    return seedFromText(`world|${now}`);
+}
+
+/**
+ * A world for the new-game screen: the world for `seed`, or, while it fails one of
+ * {@link ROLL_CHECKS}, the next seed's (`nextSeed`), up to {@link ROLL_TRIES} seeds. Tables that no
+ * seed satisfies give the world with the fewest such findings, `clean` false, rather than none.
+ * Nothing is kept: the screen hands the chosen seed to the new game ({@link createWorld}).
+ *
+ * @returns {{seed: number, world: object, clean: boolean, tries: number}}
+ */
+export function rollWorld(seed) {
+    let best = null;
+    let s = seed >>> 0;
+    for (let tries = 1; tries <= ROLL_TRIES; tries++) {
+        const world = previewWorld(s);
+        const failed = findingsOf(world).filter(f => ROLL_CHECKS.includes(f.check)).length;
+        if (failed === 0) return { seed: world.seed, world, clean: true, tries };
+        if (!best || failed < best.failed) best = { seed: world.seed, world, failed };
+        s = nextSeed(s);
+    }
+    logger.warn('World', `No world in ${ROLL_TRIES} seeds passed the checks; keeping seed ${best.seed} (${best.failed} findings)`);
+    return { seed: best.seed, world: best.world, clean: false, tries: ROLL_TRIES };
 }
 
 /**

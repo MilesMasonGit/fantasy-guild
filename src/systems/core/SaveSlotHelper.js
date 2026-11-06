@@ -1,3 +1,5 @@
+import { cleanGuildName } from './GuildName.js';
+
 const SLOT_KEY_PREFIX = 'fantasy_guild_slot_';
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 
@@ -45,6 +47,7 @@ export function getSlotInfo(slotIndex) {
 
         return {
             slotIndex,
+            guildName: cleanGuildName(state.meta?.guildName),
             heroCount: state.heroes?.length || 0,
             playtime: state.meta?.totalPlaytime || 0,
             lastSavedAt: data.savedAt || state.meta?.lastSavedAt || null,

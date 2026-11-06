@@ -86,13 +86,16 @@ const TitleName = ({ logo, maxWidth }) => {
 
 /** The width of the slots' window, px: the title's other pieces line up with it. */
 export const TITLE_PANEL_PX = 672;
+/** The new-game screen's window, px: the world beside the Guild's name and first hero. */
+export const TITLE_WIDE_PANEL_PX = 1040;
 
 /**
  * The title screen: the game's name over a picture, and the slots (`children`) beneath. The
  * picture is the owner's painting once `TITLE_PAINTING_SRC` exists, else an area banner; the name
- * is the owner's logo once `TITLE_LOGO_SRC` exists, else written out (`titleArt.js`).
+ * is the owner's logo once `TITLE_LOGO_SRC` exists, else written out (`titleArt.js`). `panelPx` widens
+ * the window under the name (the new-game screen).
  */
-export const TitleScreen = ({ look = DEFAULT_TITLE_LOOK, children }) => {
+export const TitleScreen = ({ look = DEFAULT_TITLE_LOOK, panelPx = TITLE_PANEL_PX, children }) => {
     const viewport = useViewport();
     const painting = useOptionalImage(TITLE_PAINTING_SRC);
     const logo = useOptionalImage(TITLE_LOGO_SRC);
@@ -154,7 +157,7 @@ export const TitleScreen = ({ look = DEFAULT_TITLE_LOOK, children }) => {
             )}
             <div className="relative min-h-full flex flex-col items-center gap-6 pb-8 px-4">
                 {top}
-                <div className="w-full shrink-0" style={{ maxWidth: TITLE_PANEL_PX }}>{children}</div>
+                <div className="w-full shrink-0" style={{ maxWidth: panelPx }}>{children}</div>
             </div>
         </div>
     );

@@ -331,8 +331,10 @@ const HitAreas = ({ cells, onSelect, onHover, dropClick }) => (
  * @param {(id: string) => void} props.onSelect
  * @param {number} [props.reserveRight] the strip on the right under the panel, in px: the map
  *   centres in the room left of it
+ * @param {boolean} [props.readOnly] a look only (the new-game screen): no cell is picked or outlined
+ * @param {number} [props.scale] the size a parent's CSS scale draws the map at, so a drag keeps up with the pointer
  */
-export const WorldMap = ({ view, selectedId, onSelect, reserveRight = 0 }) => {
+export const WorldMap = ({ view, selectedId = null, onSelect, reserveRight = 0, readOnly = false, scale = 1 }) => {
     const shown = useMemo(
         () => view.cells.filter(c => c.shown).sort((a, b) => cellCentreArt(a).y - cellCentreArt(b).y || a.q - b.q),
         [view]
@@ -383,8 +385,8 @@ export const WorldMap = ({ view, selectedId, onSelect, reserveRight = 0 }) => {
         const start = { id: e.pointerId, x: e.clientX, y: e.clientY, from: atRef.current, moved: false };
         const move = (ev) => {
             if (ev.pointerId !== start.id) return;
-            const dx = ev.clientX - start.x;
-            const dy = ev.clientY - start.y;
+            const dx = (ev.clientX - start.x) / scale;
+            const dy = (ev.clientY - start.y) / scale;
             if (!start.moved && Math.hypot(dx, dy) < DRAG_START_PX) return;
             start.moved = true;
             setView(clampView({ x: start.from.x + dx, y: start.from.y + dy }, fitRef.current.sight, fitRef.current.bounds));
@@ -426,10 +428,10 @@ export const WorldMap = ({ view, selectedId, onSelect, reserveRight = 0 }) => {
                 <Tiles cells={shown} hoverId={hoverId} />
                 <PictureCanvas picture={picture} which="rope" data-world-rope />
                 {picture && <RopeArt edges={picture.edges} />}
-                <Outlines cells={shown} hoverId={hoverId} selectedId={selectedId} />
+                {!readOnly && <Outlines cells={shown} hoverId={hoverId} selectedId={selectedId} />}
                 <Contents cells={shown} hoverId={hoverId} />
                 <HereFlag cell={hereCell} />
-                <HitAreas cells={shown} onSelect={onSelect} onHover={setHoverId} dropClick={dropClick} />
+                {!readOnly && <HitAreas cells={shown} onSelect={onSelect} onHover={setHoverId} dropClick={dropClick} />}
             </div>
         </div>
     );

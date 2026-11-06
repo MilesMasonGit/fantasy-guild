@@ -14,6 +14,13 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import './fixtures/fixtureItems.js';
+import { registerItems } from '../config/registries/itemRegistry.js';
+
+/** A gathering tool, for the tutorial's first step (equip a tool). */
+const TOOL = 'fixture_quest_woodaxe';
+registerItems({
+    [TOOL]: { id: TOOL, name: 'Fixture Woodaxe', type: 'tool', equipSlot: 'hand', stackable: true, sprite: 'i_woodaxe_copper', tool: { kind: 'woodaxe', tier: 1 } }
+});
 
 /**
  * The quest machinery QuestManager keeps since B6.1: the event reports,
@@ -93,9 +100,9 @@ describe('Quest System (quest Tokens since B6.1)', () => {
     });
 
     it('claiming a done tutorial quest drops its reward as loot and brings the next step', () => {
-        EventBus.publish('hero_recruited', { heroId: 'hero_1' });
-        expect(find('cart_recruit').done).toBe(true);
-        const res = QuestManager.claimQuest('cart_recruit');
+        EventBus.publish('hero_equipment_changed', { action: 'equip', heroId: 'hero_1', itemId: TOOL });
+        expect(find('cart_tool').done).toBe(true);
+        const res = QuestManager.claimQuest('cart_tool');
         expect(res.success).toBe(true);
         expect(res.rewardItems.map(r => [r.itemId, r.quantity])).toEqual([['item_oak_wood', 10]]);
         // B6 rewards: on the floor, not in the Bank, until collected.
@@ -131,14 +138,14 @@ describe('Quest System (quest Tokens since B6.1)', () => {
     });
 
     it('a tutorial quest Token’s saved copy is re-read from its template on load', () => {
-        const recruit = find('cart_recruit');
-        recruit.targetType = 'token_exhausted';
-        recruit.title = 'stale';
-        recruit.requiredCount = 99;
+        const first = find('cart_tool');
+        first.targetType = 'token_exhausted';
+        first.title = 'stale';
+        first.requiredCount = 99;
         EventBus.publish('game_loaded', { slot: 0 });
-        const fresh = find('cart_recruit');
-        expect(fresh.targetType).toBe('hero_recruited');
-        expect(fresh.title).toBe('Recruit a Hero');
+        const fresh = find('cart_tool');
+        expect(fresh.targetType).toBe('hero_equipped');
+        expect(fresh.title).toBe('Equip a Tool');
         expect(fresh.requiredCount).toBe(1);
     });
 
@@ -176,7 +183,7 @@ describe('Quest System (quest Tokens since B6.1)', () => {
     });
 
     it('abandoning is retired: tutorials refuse as before, bounties point at Dismiss', () => {
-        const tutorialRes = QuestManager.abandonQuest('cart_recruit');
+        const tutorialRes = QuestManager.abandonQuest('cart_tool');
         expect(tutorialRes.success).toBe(false);
         expect(tutorialRes.reason).toBe('Tutorial quests cannot be abandoned');
 

@@ -135,8 +135,10 @@ describe('with no Starter Camp file, a new game opens on the built-in camp', () 
         expect(BoardState.tokens().map(t => t.typeId)).toEqual(['token_guild_hall', 'token_oak_forest', 'token_copper_mine']);
     });
 
-    it('still has no heroes', () => {
-        expect(GameState.state.heroes).toEqual([]);
+    it('has its first hero, in the free first rank of Bunk Beds', () => {
+        expect(GameState.state.heroes).toHaveLength(1);
+        expect(GameState.state.progress.guildUpgrades.roster_size).toBe(1);
+        expect(GameState.state.progress.rosterLimit).toBe(1);
     });
 });
 
