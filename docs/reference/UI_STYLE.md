@@ -146,7 +146,7 @@ normal text colour; a new meaning needs the owner's OK.
   Token at rest. Enemies get none (name and HP only). **No round rings on the mat**; the Token
   inspection keeps its own. No floating "-1": the plate counts down.
 - **A fight has no plate** (owner's pick F, 2026-11-05): its **fight button**, the crossed swords in the
-  chamfer frame with its hard shadow, stands **between the two fighters' health bars**, its middle on
+  chamfer frame with no shadow (owner), stands **between the two fighters' health bars**, its middle on
   theirs, and opens the fight's detail view. An enemy's special move (it lands an effect or does not
   hit; a plain hit, named or not, never bubbles on the mat) or a status landing is said in the
   speech frame over the bar of the fighter it is about; floats rise over the fighter, under the bar.

@@ -32,8 +32,8 @@ function fightBox(button, tokenId, heroId) {
 }
 
 /**
- * The fight button: the fight glyph in the chamfer frame with its hard shadow, between the two
- * fighters' health bars (owner's pick, 2026-11-05). A click opens (or closes) the fight's detail
+ * The fight button: the fight glyph in the chamfer frame, without the kit's shadow, between the
+ * two fighters' health bars. A click opens (or closes) the fight's detail
  * view; its hover names the fight. A press never reaches the mat (no drag starts from it).
  */
 const FightButton = memo(function FightButton({ tokenId, heroId, typeId, x, y, hx, hy, fit, open }) {
@@ -69,11 +69,6 @@ const FightButton = memo(function FightButton({ tokenId, heroId, typeId, x, y, h
                         toggleFightPanel(heroId, fightBox(e.currentTarget, tokenId, heroId), away);
                     }}
                 >
-                    <span
-                        aria-hidden="true"
-                        className="ui-frame-shadow-chamfer absolute inset-0 pointer-events-none"
-                        style={{ borderWidth: band, borderImageWidth: `${band}px`, transform: `translate(${4 * u}px, ${4 * u}px)` }}
-                    />
                     <span
                         aria-hidden="true"
                         className={`${open ? 'ui-frame-chamfer ui-frame-chamfer-gold' : 'ui-frame-chamfer'} absolute inset-0 pointer-events-none`}
