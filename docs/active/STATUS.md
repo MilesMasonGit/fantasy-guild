@@ -19,7 +19,8 @@ build green) · bench-queued · eye-check · merged.*
 | T-319: the last Region's water lingered after travel as broken pieces (the owner saw it in the R2 pictures) | director | `fix/water-shimmer-travel` | **merged** 15c38479, look-preserving fix, no eye-check; 592 files green, cycles, build; reproduced and checked in the game | Thu | Thu |
 | 500 E1 and E2: enemies stand still, no ambushes, no camp rings (expect WORK CHANGED) | builder | `crunch/enemies-still` (`e5`, from C4 b21c8b88) | ready f85643a1, bench queued (expect WORK CHANGED, cheaper: no strolls, so S2-family boards lose their random draws and their fights); director: 594 of 595 files green, the style-sheet test timed out under load (T-320), cycles, build. Owner CMS after merge: delete the Iron Ore Vein Fire Elemental Ambush rule, Sync on main. Eye-check: include dragging a camp | Thu | |
 | 490 H1: drag hints, tool and skill marks on every hero while dragging a hero over a Token | builder | `crunch/drag-hints` (`d4`, from main) | ready 80b8fd8d, bench queued (engine work expected same, drag bench); director: 593 files green but one style-sheet test timed out under load and passes alone, cycles, build; QA: Hero orders, Drag hints scene | Thu | |
-| 380 M1: world map mock-ups (hexes, cell states, ring lines, the world picture beneath) for the owner to pick | builder | `docs/world-hex-mockups` (`m1`, from main) | building (owner chose 5 Nov late: map mock-ups beside the Bank) | Thu | |
+| 380 M1: world map mock-ups (hexes, cell states, ring lines, the world picture beneath) for the owner to pick | builder | `docs/world-hex-mockups` (`m1`, from main) | **merged** 8501863c (docs only): pictures in `research/world_hexes/` (`contact_hexes.png`, `contact_world_picture.png`, README); waits for the owner's pick | Thu | Thu |
+| 390 G1: Guild Hall mock-ups (item outlines on stars, purple panel borders, a whole spaced-out sky) | builder | `docs/hall-look-mockups` (`g1`, from main) | building (director picked overnight, owner's leave) | Thu | |
 | 400 B1 to B3: coloured pixel backgrounds behind every panel, the item tooltip, the inspection window (B4 Use later) | builder | `crunch/bank-detail` (`b4`, from main) | building | Thu | |
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
@@ -155,6 +156,8 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 None open.
 
 ## Questions for the owner
+
+- **World map look (380 M1, pictures in `research/world_hexes/`):** hexes A clear glass (recommended, no new art), B framed tiles, C board tiles (needs art); the world picture beneath D painted map, E real ground (recommended), F miniature world with Tokens; cells you can settle now: steady gold or a pulse (recommended). Also: (1) the "you are here" flag: a. the hero job flag mark drawn larger (recommended, the icon rule), b. the pixel banner; (2) beyond ring 3: a. fades into fog (recommended), b. shows clearly; (3) if F: a. its Tokens only outside the hexes (recommended), b. under them too.
 
 
 
