@@ -6,7 +6,6 @@ import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { stationSkillOf } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
 import * as SpawnerSystem from './SpawnerSystem.js';
-import * as EnemyMotion from './EnemyMotion.js';
 import * as Demolition from './Demolition.js';
 import { isGuildHall } from './MatCap.js';
 import { centreOf, distanceSq } from './nearby.js';
@@ -28,7 +27,7 @@ import { campReachOf } from './TileModifiers.js';
  *
  * An **enemy camp** is any working spawner of enemies (the Goblin Camp, a boss's camp of one): no
  * block needed. A hero ordered onto one hunts what it spawned (the enemies tethered to it,
- * `EnemyMotion.tetherOf`) and waits for the next when it stands empty.
+ * `instance.tether`) and waits for the next when it stands empty.
  *
  * A camp marked for demolition is only that job (`Demolition`): it hands out nothing until the mark
  * comes off.
@@ -127,15 +126,14 @@ export function campWork(camp) {
 }
 
 /**
- * The ring a camp shows on hover, `{ x, y, r }` in mat units, or null for a Token that is not one:
- * a work camp's reach; an enemy camp's ground, where its enemies roam (`EnemyMotion.areaOf`).
+ * The ring a camp shows on hover, `{ x, y, r }` in mat units: a work camp's reach. Null for any
+ * other Token, an enemy camp included: its enemies stand where they spawned, so it has no ground.
  */
 export function reachRingOf(instance) {
     const centre = centreOf(instance);
     if (!centre) return null;
     const block = campOfInstance(instance);
     if (block) return { ...centre, r: block.reach };
-    if (isEnemyCamp(instance)) return { ...centre, r: EnemyMotion.areaOf(instance).outer };
     return null;
 }
 

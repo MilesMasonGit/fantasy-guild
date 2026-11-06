@@ -7,11 +7,11 @@
 // name, so adding or reordering tests never shifts another test's numbers.
 //
 // ⚠️ The generator is ONE function object that never changes, installed
-// before any game module loads. `EnemyMotion` and `HeroMotion` copy
-// `Math.random` when they load, so they hold this same function and the
-// rewind reaches them too. This file must not import game modules (a setup
+// before any game module loads. `HeroMotion` copies
+// `Math.random` when it loads, so it holds this same function and the
+// rewind reaches it too. This file must not import game modules (a setup
 // file that does so loads them before the test's `vi.mock` calls, which then
-// fail to apply), which is why it does not call their `setRandomForTests`.
+// fail to apply), which is why it does not call its `setRandomForTests`.
 //
 // A test that seeds by hand (assigning `Math.random`, `vi.spyOn(Math,
 // 'random')`, `setRandomForTests(fn)`) overrides this for its own run; its

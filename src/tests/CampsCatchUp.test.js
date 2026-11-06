@@ -11,7 +11,6 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
-import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as Growth from '../systems/board/Growth.js';
 import * as Orders from '../systems/board/Orders.js';
@@ -245,7 +244,6 @@ beforeAll(() => {
     vi.stubGlobal('Audio', SilentAudio);
     Math.random = seeded;
     HeroMotion.setRandomForTests(motionRandom);
-    EnemyMotion.setRandomForTests(motionRandom);
     SettingsManager.init();
     EngineBootstrap.init();
     AudioSystem.init();
@@ -263,7 +261,6 @@ afterEach(() => {
 afterAll(() => {
     Math.random = realRandom;
     HeroMotion.setRandomForTests();
-    EnemyMotion.setRandomForTests();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
     resetMatTuning();

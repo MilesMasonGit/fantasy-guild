@@ -3,10 +3,11 @@
 //
 // While any Token with a `board`-reach rule is on the mat, every neighbourhood
 // change rebuilds EVERY Token's modifiers, and each rebuild scans every Token
-// (TileModifiers.rebuildTokens / applicableStatements, CR3-004). S2's six
-// goblins already stroll about their camps and publish `ADJACENCY_DIRTY` at the
-// end of every stroll (EnemyMotion.endWalk), so the storm comes from the same
-// board with one extra Token on it.
+// (TileModifiers.rebuildTokens / applicableStatements, CR3-004). ⚠️ The storm
+// came from S2's six goblins strolling about their camps and publishing
+// `ADJACENCY_DIRTY` at the end of every stroll. Enemies stand still now (brief
+// 500), so only heroes' arrivals and spawns rebuild: S5 is much calmer and needs
+// a new source of neighbourhood changes to measure a storm again.
 
 import { buildBoard } from './realistic.mjs';
 

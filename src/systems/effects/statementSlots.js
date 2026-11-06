@@ -350,9 +350,10 @@ function payloadSlots(statement, ctx) {
                 {
                     id: 'typeId', kind: SLOT_KIND.VOCABULARY, label: 'which Token',
                     value: payload.typeId || '',
-                    // Never a boss: a boss comes from its own camp or a Summoning Circle, and never ambushes.
+                    // Never an enemy: enemies come only from camps and Summoning Circles, so no Token
+                    // ambushes (the game refuses one, and the audit names a rule that still asks).
                     options: Object.values(ctx?.tokens || {})
-                        .filter(t => t?.enemy?.boss !== true)
+                        .filter(t => t?.enemy?.level == null)
                         .map(t => option(t.id, t.name || t.id)),
                     patch: v => ({ payload: { ...payload, typeId: v } })
                 },
@@ -365,7 +366,7 @@ function payloadSlots(statement, ctx) {
                 {
                     id: 'chance', kind: SLOT_KIND.NUMBER, label: 'chance (%)', min: 1, max: 100, optional: true,
                     value: payload.chance ?? 100,
-                    hint: 'Rolled each time the rule could fire. A miss does nothing at all: no charge, no cooldown. An ambush (an enemy on a finished cycle): about 2%.',
+                    hint: 'Rolled each time the rule could fire. A miss does nothing at all: no charge, no cooldown.',
                     patch: v => ({ payload: { ...payload, chance: clampChance(v) } })
                 }
             ];

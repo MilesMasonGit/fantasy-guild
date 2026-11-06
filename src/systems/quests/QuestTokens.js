@@ -5,6 +5,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
 import * as BoardState from '../board/BoardState.js';
 import * as EffectActions from '../board/EffectActions.js';
+import * as MatPlacement from '../board/MatPlacement.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
 import { isGuildHall } from '../board/MatCap.js';
 import { PLACEMENT } from '../../config/registries/placementRegistry.js';
@@ -61,7 +62,8 @@ export { QUEST_TOKEN_TYPE };
  * `quest_manager` handler, so a catch-up and `DevTools.advanceTime` speed it
  * up. It **only runs below the cap**: at the cap it holds, and filling the cap
  * drops any leftover, so a freed place gets its next quest one full interval
- * later.
+ * later. A bounty with nowhere to land is missed, like a spawner's spawn: the
+ * next is tried one whole interval later.
  *
  * ## Claiming
  * {@link claimQuest}: only when done. The reward drops as floating loot beside
@@ -223,7 +225,7 @@ function bountyQuest(source) {
  * itself, through the same `EffectActions.spawn` (`nearest_free`) a spawner
  * uses, so it lands like any spawn, pushes only spawned Tokens, and is
  * `origin: 'spawned'`. Returns the new instance, or null when there is no Hall
- * or no room (the caller retries on a later tick).
+ * or no room (see {@link tick} for when it is tried again).
  */
 export function spawnQuest(quest, random = Math.random) {
     const hall = guildHall();
@@ -354,10 +356,25 @@ export function migrateSidebarQuests() {
 let pending = true;
 /** The state the last check ran against: a load or a new game swaps it. */
 let checkedState = null;
+/**
+ * The board as it stood (`MatPlacement.roomVersion`) when the last check left something owed, or
+ * null. A tutorial step has no clock to wait for, so it is tried again once the board has changed
+ * (a Token arrived, left or moved, or the mat was resized): the tick after the player makes room,
+ * and never on the ticks of a full, still mat, where every try would search and find nothing.
+ */
+let owedOn = null;
 
 /** Ask for a check on the next tick (a load, a new game, a claim). */
 export function requestCheck() {
     pending = true;
+    owedOn = null;
+}
+
+/** Whether nothing a search for room reads has changed since `at`. */
+function boardUnchangedSince(at) {
+    if (!at) return false;
+    const now = MatPlacement.roomVersion();
+    return now.tokens === at.tokens && now.stamp === at.stamp;
 }
 
 /**
@@ -380,16 +397,21 @@ export function ensure() {
 /**
  * **One tick** (`quest_manager`, with the loop's `delta`).
  *
- * 1. Anything owed (see {@link ensure}) is retried, only while something is.
+ * 1. Anything owed (see {@link ensure}) is retried while something is, once
+ *    the board has changed since the last try ({@link owedOn}).
  * 2. The bounty clock: below the cap it advances by `delta`, and each full
- *    interval brings one bounty (closed form, so one big tick equals many
- *    small ones). A bounty with nowhere to land holds the clock full and is
- *    retried next tick. At the cap the clock holds; reaching it drops the
- *    leftover.
+ *    interval brings one try at a bounty (closed form, so one big tick equals
+ *    many small ones). A bounty with nowhere to land is missed and the clock
+ *    starts its next lap (owner: a missed bus waits for the next one); with no
+ *    Hall the clock is held full and asked again next tick. At the cap the
+ *    clock holds; reaching it drops the leftover.
  */
 export function tick(delta, random = Math.random) {
-    if (GameState.state !== checkedState) pending = true;
-    if (pending) ensure();
+    if (GameState.state !== checkedState) requestCheck();
+    if (pending && !boardUnchangedSince(owedOn)) {
+        ensure();
+        owedOn = pending ? MatPlacement.roomVersion() : null;
+    }
     if (!(delta > 0)) return;
     if (!BOUNTIES_DURING_TUTORIAL && !tutorialChainDone()) return;
 
@@ -402,12 +424,15 @@ export function tick(delta, random = Math.random) {
     const every = questIntervalMs();
     q.clockMs += delta;
     while (q.clockMs >= every && count < cap) {
-        if (!spawnBounty(random)) {
+        // No Hall, so nothing can arrive: cheap to ask, so asked again every tick.
+        if (!guildHall()) {
             q.clockMs = every;
             return;
         }
+        // ⚠️ Landed or not, the next lap starts: a full mat is never searched again on the ticks
+        // between tries (each try is a push search, about a millisecond on a full mat).
+        if (spawnBounty(random)) count++;
         q.clockMs -= every;
-        count++;
     }
     if (count >= cap) q.clockMs = 0;
 }
@@ -544,4 +569,5 @@ export function dismissBounty(instanceId) {
 export function resetRuntime() {
     pending = true;
     checkedState = null;
+    owedOn = null;
 }

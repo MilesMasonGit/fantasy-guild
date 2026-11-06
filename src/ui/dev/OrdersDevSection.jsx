@@ -1,4 +1,4 @@
-// The QA panel's hero orders section (brief 260): an ambush scene, a knock-out, a heal, an
+// The QA panel's hero orders section: a work-beside-a-camp scene, a knock-out, a heal, an
 // old save with one pinned flag and one area flag, loaded, and the tutorial's two order steps.
 // ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
 
@@ -21,11 +21,11 @@ export function OrdersDevSection() {
                     onClick={() => {
                         const r = setUpOrdersScene();
                         setStatus(r.ok
-                            ? 'Left of the Hall: a Goblin Camp with a QA Old Oak beside it; away from the camps, a QA Berry Bush (3 charges). A QA Fighter waits at the Hall: drag them onto the Old Oak (the goblin attacks, they fight back and go back to chopping), or onto the Bush (it runs out: they need a job)'
+                            ? 'Left of the Hall: a Goblin Camp with a QA Old Oak beside it; away from the camps, a QA Berry Bush (3 charges). A QA Fighter waits at the Hall: drag them onto the Old Oak (they chop beside the camp and the goblin never attacks), onto the goblin (they fight it), or onto the Bush (it runs out: they need a job)'
                             : r.error);
                     }}
                 >
-                    Ambush and needs-a-job scene (test Tokens, gone on reload)
+                    Work beside a camp and needs-a-job scene (test Tokens, gone on reload)
                 </button>
                 <button
                     type="button"

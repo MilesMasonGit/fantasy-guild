@@ -9,16 +9,16 @@ import { asLoaded } from './fixtures/shippedAsLoaded.js';
 import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
-import { isBossEnemy, isHostileEnemy } from '../config/registries/enemyProfile.js';
+import { isBossEnemy } from '../config/registries/enemyProfile.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import { slotsOf } from '../systems/effects/statementSlots.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 
 /**
- * The CMS side of brief 220, C5: an enemy's Boss mark, carried through Recalculate and Sync exactly
- * as written and gone without a trace when unticked; the audit on a hostile boss; and a Spawns rule
- * that never offers a boss. Camps of one and Summoning Circles are ordinary spawners and Tokens, so
+ * The CMS side of the encounters: an enemy's Boss mark, carried through Recalculate and Sync exactly
+ * as written and gone without a trace when unticked; the audit naming a rule that spawns an enemy;
+ * and a Spawns rule that never offers one. Camps of one and Summoning Circles are ordinary spawners and Tokens, so
  * they need nothing new in the CMS.
  *
  * ⚠️ The store's persistence is pointed at a no-op for this file, so nothing here can reach the
@@ -77,28 +77,16 @@ afterEach(() => {
 });
 
 describe('⭐ the Boss mark', () => {
-    it('ticking Boss writes enemy.boss and clears Hostile; the Hostile box is then off and greyed', () => {
-        // A hostile enemy of its own, so the test does not hang on which shipped enemy is hostile.
-        const id = 'fx_ce_raider';
-        const files = shipped();
-        files['tokens.json'][id] = {
-            ...files['tokens.json'].token_goblin, id, name: 'Fixture Raider',
-            enemy: { level: 5, style: 'melee', hostile: true },
-        };
-        load(files);
+    it('ticking Boss writes enemy.boss and leaves the rest of the block as written; there is no Hostile box', () => {
+        const id = 'token_cow';
+        const before = { ...useEntityStore.getState().tokens[id].enemy };
         const { container } = openEditor(id);
-        expect(useEntityStore.getState().tokens[id].enemy.hostile).toBe(true);
+        expect(within(container).queryByLabelText('Hostile')).toBeNull();
         fireEvent.click(within(container).getByLabelText('Boss'));
-        const enemy = useEntityStore.getState().tokens[id].enemy;
-        expect(enemy.boss).toBe(true);
-        expect(enemy).not.toHaveProperty('hostile');
-        const hostile = within(container).getByLabelText('Hostile');
-        expect(hostile.disabled).toBe(true);
-        expect(hostile.checked).toBe(false);
+        expect(useEntityStore.getState().tokens[id].enemy).toEqual({ ...before, boss: true });
 
         const written = syncTwice()['tokens.json'][id];
         expect(isBossEnemy(written)).toBe(true);
-        expect(isHostileEnemy(written)).toBe(false);
     });
 
     it('unticking leaves no key behind, and the rest of the enemy block untouched', () => {
@@ -112,26 +100,36 @@ describe('⭐ the Boss mark', () => {
     });
 });
 
-describe('⭐ the content audit on a boss', () => {
-    it('warns of a boss marked hostile, and says nothing of one that is not', () => {
+describe('⭐ the content audit names a rule that spawns an enemy', () => {
+    const spawns = (typeId, sourceEffectId) => ({ ...makeStatement(KEYWORD.SPAWNS), payload: { typeId, placement: 'nearest_free', chance: 2 }, ...(sourceEffectId ? { sourceEffectId } : {}) });
+
+    it('an enemy or a boss, inline or from the library, says so; a plain Token says nothing', () => {
         const tokens = {
-            boss: { id: 'boss', name: 'Boss', enemy: { level: 1, boss: true, hostile: true } },
-            calm: { id: 'calm', name: 'Calm Boss', enemy: { level: 1, boss: true } }
+            imp: { id: 'imp', name: 'Imp', enemy: { level: 1 } },
+            boss: { id: 'boss', name: 'Boss', enemy: { level: 1, boss: true } },
+            rock: { id: 'rock', name: 'Rock' },
+            vein: { id: 'vein', name: 'Haunted Vein', statements: [spawns('imp', 'effect_imp_ambush')] },
+            den: { id: 'den', name: 'Odd Den', statements: [spawns('boss')] },
+            quarry: { id: 'quarry', name: 'Quarry', statements: [spawns('rock')] }
         };
-        const found = auditLifecycleBlocks({ tokens, items: {}, recipes: {}, skills: [] });
-        expect(found.filter((f) => f.entityId === 'boss')).toEqual([expect.objectContaining({ severity: 'warning', field: 'enemy.hostile' })]);
-        expect(found.filter((f) => f.entityId === 'calm')).toEqual([]);
+        const found = auditLifecycleBlocks({ tokens, items: {}, recipes: {}, skills: [] }).filter((f) => f.field === 'statements');
+        expect(found.map((f) => f.entityId).sort()).toEqual(['den', 'vein']);
+        const vein = found.find((f) => f.entityId === 'vein');
+        expect(vein.severity).toBe('warning');
+        expect(vein.message).toContain('effect_imp_ambush');
+        expect(vein.message).toContain('Imp (imp)');
+        expect(vein.message).toContain('Delete it');
     });
 });
 
-describe('⭐ ambushes in the editor', () => {
-    it('a Spawns rule never offers a boss', () => {
+describe('⭐ a Spawns rule in the editor', () => {
+    it('never offers an enemy, a boss or not', () => {
         const tokens = {
             imp: { id: 'imp', name: 'Imp', enemy: { level: 1 } },
             boss: { id: 'boss', name: 'Boss', enemy: { level: 1, boss: true } },
             rock: { id: 'rock', name: 'Rock' }
         };
         const slot = slotsOf(makeStatement(KEYWORD.SPAWNS), { tokens }).find((s) => s.id === 'typeId');
-        expect(slot.options.map((o) => o.id)).toEqual(['imp', 'rock']);
+        expect(slot.options.map((o) => o.id)).toEqual(['rock']);
     });
 });

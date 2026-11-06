@@ -23,7 +23,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
   can't reach; prefer the dev panel or a QA fixture save for anything the
   owner will look at.
 
-## The entries (31)
+## The entries (30)
 
 | Entry | What it is | Reached for most |
 |---|---|---|
@@ -50,8 +50,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
 | `Demolition` | taking Tokens down | `canDemolish`, `mark`, `unmark`, `markedTokens()` |
 | `QuestManager` | quests | `getActiveQuests()`, `claimQuest(...)`, `getTutorialStep()` |
 | `QuestTokens` | quests and bounties as Tokens on the mat | `questTokens()`, `spawnQuest`, `spawnBounty` |
-| `EnemyMotion` | enemies walking | `isWalking`, `bodyOf` |
-| `Hostiles` | enemies noticing heroes | `scan` |
+| `EnemyMotion` | enemies' camps (tethers) and their step to open space before a crowded fight | `isWalking`, `bodyOf`, `tetherOf` |
 | `Atlas` | Regions and travel | `list()`, `activeRegion()`, `travel(id)`, `devCreateEmptyRegion()`, `devPreview(names)`, `devSettle(names, seed)` |
 | `World` | the run's hex world, generated at a new game, and settling its places | `currentWorld()`, `cellStatesNow()`, `priceOf(cell)`, `settleCell(id)`, `writePlace(cell)`, `arriveAt(region, mat)`, `activeCellId()`, `previewWorld(seed)`, `describeWorld(world)`, `findingsOf(world)` |
 | `TimeManager` | the delta between ticks (no pause; the game's clock is `time.gameTimeMs` in the save) | `update()`, `consumeOverflow()` |

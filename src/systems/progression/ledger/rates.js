@@ -307,7 +307,7 @@ function hallRules(book, setup) {
 
 /**
  * Whether a triggered rule could fire on the worked Token's work: the Token's own self-scoped rules
- * (an ambush on its cycle), and a neighbour's rules on its neighbours' moments that name it. Errs on
+ * (a spawn on its cycle), and a neighbour's rules on its neighbours' moments that name it. Errs on
  * the side of reporting.
  */
 function triggerTouches(statement, relation, targetDef) {

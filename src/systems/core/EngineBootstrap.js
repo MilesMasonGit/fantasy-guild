@@ -39,10 +39,8 @@ import * as Demolition from '../board/Demolition.js';
 import { QuestManager } from '../quests/QuestManager.js';
 // Quest Tokens on the mat, exposed for console probes (`Game.QuestTokens`).
 import * as QuestTokens from '../quests/QuestTokens.js';
-// Enemies pottering by their spawner (`Game.EnemyMotion`).
+// Enemies' tethers and their step to open space before a crowded fight (`Game.EnemyMotion`).
 import * as EnemyMotion from '../board/EnemyMotion.js';
-// Hostile enemies attacking heroes near their spawner (`Game.Hostiles`).
-import * as Hostiles from '../board/Hostiles.js';
 import * as SpawnerSystem from '../board/SpawnerSystem.js';
 import * as TimedChanges from '../board/TimedChanges.js';
 // The guild's Regions and travel (`Game.Atlas`).
@@ -97,7 +95,6 @@ export const EngineBootstrap = {
             QuestManager,
             QuestTokens,
             EnemyMotion,
-            Hostiles,
             Atlas,
             World,
             TimeManager,

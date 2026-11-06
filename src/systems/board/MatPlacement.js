@@ -329,14 +329,24 @@ let tuningGeneration = 0;
 let tuningWatched = false;
 let failedSearches = { tokens: null, stamp: '', keys: new Set() };
 
-/** The failure memo for the board as it is now, emptied if anything changed. */
-function failureMemo() {
+/**
+ * Everything a search for room reads, as it is now: `{ tokens, stamp }`, the same while no Token has
+ * arrived, left or moved and the Mat Tuner (the mat's size included), the Token registry and the
+ * ground are as they were. A search that found no room finds none again until it changes: the
+ * failure memo below, and a quest Token still owed in `QuestTokens`, which waits for it to change.
+ */
+export function roomVersion() {
     if (!tuningWatched) {
         tuningWatched = true;
         onMatTuningChanged(() => { tuningGeneration++; });
     }
     const { tokens, version } = BoardState.membershipVersion();
-    const stamp = `${version}|${BoardState.moveCount()}|${tuningGeneration}|${registryVersion()}|${GroundRules.groundVersion()}`;
+    return { tokens, stamp: `${version}|${BoardState.moveCount()}|${tuningGeneration}|${registryVersion()}|${GroundRules.groundVersion()}` };
+}
+
+/** The failure memo for the board as it is now, emptied if anything changed. */
+function failureMemo() {
+    const { tokens, stamp } = roomVersion();
     if (failedSearches.tokens !== tokens || failedSearches.stamp !== stamp) {
         failedSearches = { tokens, stamp, keys: new Set() };
     }

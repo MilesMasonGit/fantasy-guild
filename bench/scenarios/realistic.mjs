@@ -5,9 +5,9 @@
 //   * 39 more PLACED Tokens: 20 producers,
 //     3 fed mills, 3 unfeedable smelters, 3 passives, 2 nearby buffs,
 //     3 Forests + 3 Quarries (10 spawned each, 60 in all) and 2 goblin camps
-//     (3 hostile goblins each, walking about their camp);
-//   * 8 heroes with flags, walking between their Tokens; two work a Token inside a camp's
-//     watch, so the goblins attack them (S2 measures fights);
+//     (3 goblins each, standing where they spawned);
+//   * 8 heroes with flags, walking between their Tokens; two work a Token beside a goblin
+//     camp (camps never attack, so S2 has no fights);
 //   * one hero PINNED to a smelter that runs dry after two cycles: the
 //     "stalled station with a hero standing on it" case (CR3-005);
 //   * quest Tokens from the Hall (the tutorial step and bounties);
@@ -19,7 +19,6 @@
 // every Bank-driven path (CR3-002, CR3-029) would be idle.
 
 import * as BoardState from '../../src/systems/board/BoardState.js';
-import { matTuning } from '../../src/config/matTuning.js';
 import { pinMat, REFERENCE_STEPS } from './referenceMat.mjs';
 
 /** S2's placed Tokens besides the Hall, in placement order. */
@@ -103,10 +102,11 @@ export function buildBoard({ fixtures, setMatTuning }, { placed = REALISTIC_PLAC
 
     // Hero 0: ordered onto a smelter that will run dry.
     orderAt(heroes[0].id, { x: smelter.x, y: smelter.y });
-    // Heroes 1–2: each ordered onto the nearest workable Token inside a camp's watch (a hero on a
-    // spot order is never attacked), so the camp's goblins notice them and fight. The camp's
-    // neighbours are mostly Forests and passives, so the spawned trees and rocks count too.
-    const watch = matTuning('watchRadius');
+    // Heroes 1–2: each ordered onto the nearest workable Token within 240 u of a goblin camp (the
+    // old camp watch, kept so the board is laid out as before). Camps no longer attack, so they
+    // work it in peace. The camp's neighbours are mostly Forests and passives, so the spawned
+    // trees and rocks count too.
+    const watch = 240;
     const hostile = new Set(['bench_goblin', 'bench_camp', 'bench_warcamp', 'bench_hall']);
     for (let i = 1; i <= 2; i++) {
         const camp = camps[i - 1];

@@ -33,7 +33,7 @@ export function CombatScreenDevSection() {
                     onClick={() => {
                         const r = setUpCombatCrowd();
                         setStatus(r.ok
-                            ? `${r.fights} fights crowded below the Hall: watch the bars, the buttons between them, the floats, and bubbles only for special moves (the Bee's Flutter), never a plain hit`
+                            ? `${r.fights} fights crowded below the Hall: as each hero reaches their enemy, a fight that would cover another (or a hero) first steps a short way to open space with them; then watch the bars, the buttons between them, the floats, and bubbles only for special moves (the Bee's Flutter), never a plain hit`
                             : r.error);
                     }}
                 >

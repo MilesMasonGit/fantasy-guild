@@ -5,7 +5,7 @@
 //
 // ⚠️ Import this before anything that loads engine modules. Several engine
 // modules capture `Math.random` when they load (`let random = Math.random` in
-// EnemyMotion and HeroMotion), so the seeded generator must already be in place.
+// HeroMotion), so the seeded generator must already be in place.
 
 // ---------------------------------------------------------------------------
 // Seeded randomness (CR3-044)

@@ -193,13 +193,12 @@ describe('a camp is a Token type', () => {
         expect(Camps.isCampLike(BoardState.getTokenById(c.id))).toBe(false);
     });
 
-    it('its ring: a camp shows its reach, an enemy camp the ground its enemies roam', () => {
+    it('its ring: a camp shows its reach; an enemy camp shows none, its enemies standing where they spawned', () => {
         newBoard();
         const c = fixtures.placeAt('hc_logging', 400, 300);
         const den = fixtures.placeAt('hc_den', 900, 300);
         expect(Camps.reachRingOf(c)).toEqual({ x: 400, y: 300, r: 300 });
-        expect(Camps.reachRingOf(den)).toMatchObject({ x: 900, y: 300 });
-        expect(Camps.reachRingOf(den).r).toBeGreaterThan(0);
+        expect(Camps.reachRingOf(den)).toBe(null);
         expect(Camps.reachRingOf(fixtures.placeAt('hc_tree', 1200, 300))).toBe(null);
     });
 });

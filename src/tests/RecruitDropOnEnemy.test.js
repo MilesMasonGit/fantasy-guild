@@ -5,7 +5,6 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Flags from '../systems/board/Flags.js';
-import * as Hostiles from '../systems/board/Hostiles.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -33,15 +32,15 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
 /**
  * A new hero sent at a Goblin by the player's drop: from the hero bar, or by moving their
  * pennant. Everyone fights, so dropped ON the Goblin they are ordered onto it and fight it. Dropped
- * NEAR it, they go to that spot and idle, and the Goblin's watch decides (`Hostiles.js`).
+ * NEAR it, they work or idle there, and the Goblin never attacks them.
  */
 
 registerTokenTypes({
-    /** The Goblin's shape: hostile, one kill and gone, level 1. */
+    /** The Goblin's shape: one kill and gone, level 1. */
     fixture_drop_goblin: {
         id: 'fixture_drop_goblin', name: 'Fixture Drop Goblin', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
-        enemy: { level: 1, style: 'melee', budgetScale: 0.3, hostile: true },
+        enemy: { level: 1, style: 'melee', budgetScale: 0.3 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 12000, xp: 0, inputs: [], outputs: [] }
     }
 });
@@ -94,7 +93,6 @@ beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
     setMatTuning('potterRadius', 0);
-    setMatTuning('enemyPotterRadius', 0);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -139,12 +137,7 @@ describe('a new hero dropped ON a Goblin fights it and wins', () => {
     });
 });
 
-describe('a new hero sent to work NEAR a hostile Goblin: it watches the ordered Token, the same on every side', () => {
-    /**
-     * A hostile enemy attacks a hero whose ORDER, a Token they work, stands inside its watch,
-     * wherever the hero's body is. A spot order on open ground is never attacked (owner,
-     * 2026-10-28), so only work near the Goblin draws it.
-     */
+describe('a new hero sent to work NEAR a Goblin: never attacked, on every side', () => {
     const SIDES = { right: [1, 0], left: [-1, 0], above: [0, -1], below: [0, 1] };
     const WHERE = { right: 'right of it', left: 'left of it', above: 'above it', below: 'below it' };
 
@@ -161,51 +154,15 @@ describe('a new hero sent to work NEAR a hostile Goblin: it watches the ordered 
         return goblin;
     }
 
-    /** The same, but sent to a spot on open ground beside the Goblin. */
-    function spotDrop(side, distance) {
-        expect(barDrop('r1', { x: 1500, y: 300 }).success).toBe(true);
-        for (let i = 0; i < 50; i++) BoardRunner.tick(100);
-        const goblin = placeAt('fixture_drop_goblin', GOBLIN.x, GOBLIN.y);
-        const [ux, uy] = SIDES[side];
-        const res = flagDrop('r1', { x: GOBLIN.x + ux * distance, y: GOBLIN.y + uy * distance });
-        expect(res).toMatchObject({ success: true, order: 'spot' });
-        return goblin;
-    }
-
     for (const side of Object.keys(SIDES)) {
-        it(`${WHERE[side]}, the Token inside its watch: the Goblin attacks and the hero wins`, () => {
+        it(`${WHERE[side]}, working a Token right beside it: the Goblin leaves the hero alone`, () => {
             const goblin = nearDrop(side, 160);
-            const { fought, gone } = play('r1', goblin);
-            expect(fought).toBe(true);
-            expect(gone).toBe(true);
-        });
-
-        it(`${WHERE[side]}, the Token outside its watch: the Goblin leaves the hero alone`, () => {
-            const goblin = nearDrop(side, 280);
             const { fought, gone } = play('r1', goblin, 30000);
             expect(fought).toBe(false);
             expect(gone).toBe(false);
-            expect(Flags.ambusherOf('r1')).toBeNull();
             expect(Flags.statusOf('r1').state).toBe('working');
         });
-
-        it(`${WHERE[side]}, a spot on open ground inside its watch: never attacked (owner, 2026-10-28)`, () => {
-            const goblin = spotDrop(side, 150);
-            const { fought, gone } = play('r1', goblin, 30000);
-            expect(fought).toBe(false);
-            expect(gone).toBe(false);
-            expect(Flags.ambusherOf('r1')).toBeNull();
-            expect(Flags.statusOf('r1').state).toBe('idle');
-        });
     }
-
-    it('attacked as soon as the ordered Token lands inside its watch, while the hero is still far away', () => {
-        const goblin = nearDrop('left', 160);
-        BoardRunner.tick(300);
-        expect(Flags.ambusherOf('r1')).toBe(goblin.id);
-        const body = HeroMotion.heroPointOf('r1');
-        expect(Math.hypot(body.x - GOBLIN.x, body.y - GOBLIN.y)).toBeGreaterThan(Hostiles.watchRadius());
-    });
 
     it('walking past it to a spot far beyond: not attacked on the way', () => {
         expect(barDrop('r1', { x: 200, y: GOBLIN.y }).success).toBe(true);
@@ -217,9 +174,9 @@ describe('a new hero sent to work NEAR a hostile Goblin: it watches the ordered 
             BoardRunner.tick(100);
             const body = HeroMotion.heroPointOf('r1');
             closest = Math.min(closest, Math.hypot(body.x - GOBLIN.x, body.y - GOBLIN.y));
-            expect(Flags.ambusherOf('r1')).toBeNull();
+            expect(BoardCombat.fightOfHero('r1')).toBeNull();
         }
-        expect(closest).toBeLessThan(Hostiles.watchRadius());
+        expect(closest).toBeLessThan(160);
         expect(BoardState.getTokenById(goblin.id)).not.toBeNull();
     });
 });

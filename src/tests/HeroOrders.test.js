@@ -13,7 +13,6 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
-import * as Hostiles from '../systems/board/Hostiles.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as Growth from '../systems/board/Growth.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
@@ -303,51 +302,20 @@ describe('⭐ defeat: heal, then wait at the Hall, the order cleared', () => {
     });
 });
 
-describe('⭐ hostile enemies ambush a hero working near their camp', () => {
-    it('the camp watch, measured to the ordered Token: the hero fights back, then goes back to their job', () => {
+describe('⭐ no enemy attacks a hero working near its camp', () => {
+    it('a hero working a Token beside a goblin camp keeps working it and never fights', () => {
         const [h] = newBoard();
-        const camp = fixtures.placeAt('bench_camp', 400, 300);
+        fixtures.placeAt('bench_camp', 400, 300);
         const tree = fixtures.placeAt('fixture_producer', 560, 300);
         fixtures.prefillSpawners();
+        expect(BoardState.tokens().some(t => t.typeId === 'bench_goblin')).toBe(true);
         Orders.orderAt(h.id, { x: tree.x, y: tree.y });
-        const goblins = BoardState.tokens().filter(t => t.typeId === 'bench_goblin');
-        expect(goblins.length).toBeGreaterThan(0);
-        expect(Hostiles.watchRadius()).toBe(240);
-        run(400);
-        const ambusher = Flags.ambusherOf(h.id);
-        expect(goblins.map(g => g.id)).toContain(ambusher);
+        for (let t = 0; t < 60_000; t += 100) {
+            run(100);
+            expect(BoardCombat.fightOfHero(h.id)).toBe(null);
+        }
         expect(Flags.pinnedIdOf(h.id)).toBe(tree.id);
-        run(60_000);
-        // Each goblin fought, then back at the tree.
-        expect(Flags.pinnedIdOf(h.id)).toBe(tree.id);
-        void camp;
-    });
-
-    it('a hero sent to a spot on open ground inside the watch is never attacked (owner, 2026-10-28)', () => {
-        const [h] = newBoard();
-        const camp = fixtures.placeAt('bench_camp', 400, 300);
-        fixtures.prefillSpawners();
-        // A bare point inside the watch (no goblin standing on it).
-        const spot = [0, 1, 2, 3, 4, 5, 6, 7].map(a => ({ x: camp.x + 180 * Math.cos(a * Math.PI / 4), y: camp.y + 180 * Math.sin(a * Math.PI / 4) }))
-            .find(p => !Flags.tokenAtPoint(p));
-        expect(Orders.orderAt(h.id, spot)).toMatchObject({ success: true, order: 'spot' });
-        run(5000);
-        expect(Flags.ambusherOf(h.id)).toBe(null);
-        expect(BoardCombat.fightOfHero(h.id)).toBe(null);
-        // The same hero sent to work a Token there is attacked.
-        const tree = fixtures.placeAt('fixture_producer', camp.x + 160, camp.y + 160);
-        Orders.orderAt(h.id, { x: tree.x, y: tree.y });
-        run(400);
-        expect(Flags.ambusherOf(h.id)).not.toBe(null);
-    });
-
-    it('a hero at home by the Hall is never attacked', () => {
-        const [h] = newBoard();
-        fixtures.placeAt('bench_camp', HALL.x - 300, HALL.y);
-        fixtures.prefillSpawners();
-        run(2000);
-        expect(Flags.ambusherOf(h.id)).toBe(null);
-        expect(BoardCombat.fightOfHero(h.id)).toBe(null);
+        expect(BoardState.workTokenOf(h.id)).toBe(tree.id);
     });
 });
 

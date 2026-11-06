@@ -68,28 +68,12 @@ export const MAT_TUNABLES = Object.freeze([
         format: (v) => (Math.round(v) === 0 ? 'off' : `${Math.round(v)} u`)
     },
     {
-        key: 'watchRadius',
-        group: 'Enemies',
-        label: 'Camp watch',
-        hint: 'How far round its camp a hostile enemy watches for a hero working there, centre to centre, measured to the Token the hero is ordered onto (a hero sent to a spot on open ground is never attacked). 240 reaches the camp’s eight neighbours: the four sides (160 u) and the diagonals (226 u).',
-        min: 100, max: 1000, step: 1, def: 240,
-        format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
-    },
-    {
         key: 'enemyWalkSpeed',
         group: 'Enemies',
         label: 'Enemy walk speed',
-        hint: 'How fast enemies walk, in mat units a second (B7.1, TL-16): back to their spawner when carried away, or after it when it is moved. They potter near it at half this. A bit slower than heroes (120) by default.',
+        hint: 'How fast an enemy steps to open space before a crowded fight starts, in mat units a second. Enemies otherwise stand still. A bit slower than heroes (120) by default.',
         min: 10, max: 600, step: 1, def: 90,
         format: (v) => `${Math.round(v)} u/s · ${(Math.round(matTuning('matSteps')) * STEP_U / v).toFixed(1)} s across`
-    },
-    {
-        key: 'enemyPotterRadius',
-        group: 'Enemies',
-        label: 'Enemy wander',
-        hint: 'How far past the edge of its spawner an enemy potters, in mat units (B7.1, owner’s "B7 range": about one Token’s width, 128). They pause 2-6 s between strolls. 0 stops the strolls; they still follow their spawner and walk back to its edge.',
-        min: 0, max: 400, step: 1, def: 128,
-        format: (v) => (Math.round(v) === 0 ? 'off' : `${Math.round(v)} u`)
     },
     {
         key: 'hitboxPct',

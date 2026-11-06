@@ -143,7 +143,7 @@ const BUILD = (scene, seed) => `(async () => {
         }
         return pub.apply(this, arguments);
     };
-    for (const m of ['/src/systems/board/HeroMotion.js', '/src/systems/board/EnemyMotion.js']) {
+    for (const m of ['/src/systems/board/HeroMotion.js']) {
         const mod = await import(m);
         mod.setRandomForTests(() => Math.random());
     }

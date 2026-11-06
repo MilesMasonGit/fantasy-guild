@@ -10,7 +10,7 @@ import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
-import { isHostileEnemy, enemyProfileOf } from '../config/registries/enemyProfile.js';
+import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { DAMAGE_GROUPS, DAMAGE_TYPES, damageTypeLabel } from '../config/registries/damageTypes.js';
 
@@ -26,8 +26,9 @@ const hitText = (p) => (p.moves?.length
     : `${p.hit} Physical`);
 
 /**
- * B7.2 — the CMS models **`enemy.hostile`** before any content uses it
- * (roadmap v1 §0.3: Sync destroys what the CMS does not carry).
+ * The CMS's enemy block: a control Sync changes nothing, the Style dropdown, the level preview. No
+ * enemy is hostile any more; an old `enemy.hostile` in the content is carried untouched (Sync
+ * destroys what the CMS does not carry) and read by nothing.
  */
 
 const DATA = path.resolve(__dirname, '../../data');
@@ -74,60 +75,9 @@ afterEach(() => {
 });
 
 describe('a control sync of today’s data changes nothing', () => {
-    it('B7.3: exactly the Goblin ships hostile; no boss (the Goblin Chief among them) is; Cow and Thorn Elemental are not', () => {
-        expect(enemyIds.length).toBeGreaterThan(0);
-        const hostile = enemyIds.filter((id) => shippedTokens[id].enemy.hostile === true).sort();
-        expect(hostile).toEqual(['token_goblin']);
-        const bosses = enemyIds.filter((id) => shippedTokens[id].enemy.boss === true);
-        expect(bosses).toContain('token_goblin_chief');
-        for (const id of bosses) {
-            expect(shippedTokens[id].enemy, id).not.toHaveProperty('hostile');
-            expect(isHostileEnemy(shippedTokens[id]), id).toBe(false);
-        }
-        for (const id of ['token_cow', 'token_thorn_elemental']) {
-            expect(shippedTokens[id].enemy).not.toHaveProperty('hostile');
-            expect(isHostileEnemy(shippedTokens[id])).toBe(false);
-        }
-        for (const id of hostile) expect(isHostileEnemy(shippedTokens[id])).toBe(true);
-    });
-
     it('load → Recalculate → Sync writes all four files byte-identical', () => {
         const files = syncPayload();
         for (const f of FILES) expect(JSON.stringify(files[f], null, 2)).toBe(raw[f].trimEnd());
-    });
-});
-
-describe('enemy.hostile survives load → edit → sync → reload', () => {
-    // A Token that ships peaceful (the goblins ship hostile since B7.3).
-    const target = () => enemyIds.find((id) => id === 'token_cow') || enemyIds.find((id) => !shippedTokens[id].enemy.hostile);
-
-    it('hostile: true reaches tokens.json, the rest of the enemy block untouched', () => {
-        const id = target();
-        const before = { ...useEntityStore.getState().tokens[id].enemy };
-        useEntityStore.getState().updateToken(id, { enemy: { ...before, hostile: true } });
-
-        const written = syncPayload()['tokens.json'][id];
-        expect(written.enemy).toEqual({ ...before, hostile: true });
-        expect(isHostileEnemy(written)).toBe(true);
-    });
-
-    it('a second load of the synced files and a second sync change nothing, and keep it', () => {
-        const id = target();
-        const enemy = useEntityStore.getState().tokens[id].enemy;
-        useEntityStore.getState().updateToken(id, { enemy: { ...enemy, hostile: true } });
-        const first = syncPayload();
-        const serialised = Object.fromEntries(FILES.map((f) => [f, JSON.stringify(first[f], null, 2)]));
-
-        load(Object.fromEntries(FILES.map((f) => [f, JSON.parse(serialised[f])])));
-        const second = syncPayload();
-        for (const f of FILES) expect(JSON.stringify(second[f], null, 2)).toBe(serialised[f]);
-        expect(second['tokens.json'][id].enemy.hostile).toBe(true);
-
-        // Only that one Token's file entry differs from the shipped data.
-        const now = second['tokens.json'];
-        for (const other of Object.keys(shippedTokens).filter((t) => t !== id)) {
-            expect(JSON.stringify(now[other])).toBe(JSON.stringify(shippedTokens[other]));
-        }
     });
 });
 
@@ -153,40 +103,19 @@ describe('the Token editor’s Style dropdown', () => {
     });
 });
 
-describe('the Token editor’s Hostile checkbox', () => {
-
-    it('ticking writes hostile: true; unticking removes the key (absent = peaceful)', () => {
-        const id = enemyIds.find((t) => t === 'token_cow') || enemyIds.find((t) => !shippedTokens[t].enemy.hostile);
-        const before = JSON.stringify(useEntityStore.getState().tokens[id].enemy);
-        const { container } = editor(id);
-        const box = within(container).getByLabelText('Hostile');
-        expect(box.checked).toBe(false);
-
-        fireEvent.click(box);
-        expect(useEntityStore.getState().tokens[id].enemy.hostile).toBe(true);
-        expect(box.checked).toBe(true);
-
-        fireEvent.click(box);
-        expect(useEntityStore.getState().tokens[id].enemy).not.toHaveProperty('hostile');
-        expect(JSON.stringify(useEntityStore.getState().tokens[id].enemy)).toBe(before);
-        const files = syncPayload();
-        expect(JSON.stringify(files['tokens.json'], null, 2)).toBe(raw['tokens.json'].trimEnd());
+describe('no Hostile box: an old hostile mark is carried, and read by nothing', () => {
+    it('an enemy’s editor shows no Hostile box', () => {
+        const { container } = editor(enemyIds[0]);
+        expect(within(container).queryByLabelText('Hostile')).toBeNull();
     });
 
-    it('editing the style keeps hostile', () => {
-        const id = enemyIds.find((t) => t === 'token_cow') || enemyIds.find((t) => !shippedTokens[t].enemy.hostile);
+    it('editing an enemy that still carries hostile keeps it, so a Sync moves nothing else', () => {
+        const id = enemyIds[0];
         const enemy = useEntityStore.getState().tokens[id].enemy;
         useEntityStore.getState().updateToken(id, { enemy: { ...enemy, hostile: true } });
         const { container } = editor(id);
-        const style = styleSelect(container);
-        fireEvent.change(style, { target: { value: 'ranged' } });
+        fireEvent.change(styleSelect(container), { target: { value: 'ranged' } });
         expect(useEntityStore.getState().tokens[id].enemy).toMatchObject({ style: 'ranged', hostile: true });
-    });
-
-    it('a Token that is not an enemy shows no Hostile box', () => {
-        const id = useEntityStore.getState().addToken({ name: 'Plain Fixture' });
-        const { container } = editor(id);
-        expect(within(container).queryByLabelText('Hostile')).toBeNull();
     });
 });
 

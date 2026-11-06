@@ -221,9 +221,9 @@ const BUILD = (scene, seed) => `(async () => {
         });
         return undefined;
     };
-    // Hero and enemy pottering keep their own copy of Math.random from load: point them at
+    // Hero pottering keeps its own copy of Math.random from load: point it at
     // whichever Math.random is current (the seeded one inside a tick).
-    for (const m of ['/src/systems/board/HeroMotion.js', '/src/systems/board/EnemyMotion.js']) {
+    for (const m of ['/src/systems/board/HeroMotion.js']) {
         const mod = await import(m);
         mod.setRandomForTests(() => Math.random());
     }
