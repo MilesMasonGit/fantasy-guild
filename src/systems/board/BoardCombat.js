@@ -12,6 +12,7 @@ import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import { statementsOf } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
+import * as FightRoom from './FightRoom.js';
 import { momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { ROLE, opponentSeekerOf } from '../../config/registries/roleRegistry.js';
 import { logger } from '../../utils/Logger.js';
@@ -310,6 +311,11 @@ export function clearAll() {
 export function tickToken(instance, delta, heroId) {
     const id = instance?.id;
 
+    // A fight that stepped to open space began as its enemy got there, part-way through the last
+    // tick (`FightRoom`), so its first tick runs that much longer. Taken whatever happens below, so
+    // a leftover never waits for a later fight.
+    const owed = id ? FightRoom.takeLeftover(id) : 0;
+
     // No hero: the fight is over before it began. Drop any in-flight state so the enemy is whole
     // again next time. Asked before the stat block is built: most enemies stand unfought, and a
     // block for each of them every tick was a measurable share of the tick (`enemyFor` is pure).
@@ -331,6 +337,7 @@ export function tickToken(instance, delta, heroId) {
     // Keyed by the enemy's instance id, so a Token that was moved finds its own fight here with
     // nothing carried across.
     let fight = fights.get(id);
+    let combatMs = delta;
 
     // ⚠️ Every fight is one-on-one, bosses and guardians included. A Token holds one claim, so a
     // second hero flagged at a busy enemy waits or works elsewhere (`Flags`) and never joins this
@@ -351,6 +358,7 @@ export function tickToken(instance, delta, heroId) {
         fight = createFight(id, heroId, enemy, enemyDropsOf(getTokenType(instance.typeId)));
         fights.set(id, fight);
         applyEnemyCombatModifiers(id, heroId);
+        combatMs += owed;
     }
 
     fight.assignedHeroId = heroId;
@@ -375,7 +383,7 @@ export function tickToken(instance, delta, heroId) {
     const wasActive = fight.status === 'active';
     const wasResting = resting();
 
-    processCombat(fight, { enemy }, delta);
+    processCombat(fight, { enemy }, combatMs);
 
     // A rule inside the fight (a boss's move, a status) may have knocked the hero out, and the
     // defeat has already been resolved and this fight ended: resolving it again here would roll

@@ -173,6 +173,8 @@ function stepAside(instance, body, aside, delta, speed) {
     const walkMs = Math.min(Math.max(0, delta), MAX_STEP_MS);
     const startX = instance.x;
     const startY = instance.y;
+    const fromX = body.x;
+    const fromY = body.y;
     const moved = stepToward(body, dest, speed * walkMs / 1000);
     if (moved) {
         if (!body.from) body.from = { x: startX, y: startY };
@@ -182,7 +184,9 @@ function stepAside(instance, body, aside, delta, speed) {
     }
     if (!body.moving) {
         endWalk(instance, body);
-        FightRoom.finishStep(instance.id);
+        // Arrived: the part of the tick the walk did not need is owed to its fight's first tick.
+        const walkedMs = speed > 0 ? Math.hypot(body.x - fromX, body.y - fromY) * 1000 / speed : 0;
+        FightRoom.finishStep(instance.id, walkMs - walkedMs);
     }
     return moved || wasMoving !== body.moving;
 }

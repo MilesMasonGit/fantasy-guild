@@ -29,6 +29,11 @@ import { STAND_GAP } from './standing.js';
  * under way; `EnemyMotion` walks the enemy there at its full walking speed. A step is runtime only,
  * never saved: a save taken during one loads with the hero walking up to the enemy again.
  *
+ * A step costs its fight the enemy's walk and no more, whatever the tick's length. The hero, who
+ * follows the enemy, arrives the tick after it gets there, so the part of the tick the enemy did not
+ * need is handed to the fight's first tick ({@link takeLeftover}). Without it a catch-up's 1 s steps
+ * would start the fight after a 96 u step 0.9 s later than 100 ms ticks do.
+ *
  * ⚠️ Deterministic, so a catch-up steps exactly as live play does: the spots tried are whole mat
  * units from a fixed table, nearest first, the boxes are sums and comparisons, and nothing here
  * draws a random number.
@@ -142,22 +147,27 @@ function crowdsAny(box, boxes) {
 const isEnemy = (instance) => isEnemyDef(getTokenType(instance?.typeId));
 
 /**
- * The steps under way on the current board: `enemyId → { heroId, x, y, side, done }`, the spot the
- * enemy walks to and the side its hero stands on. Kept per board object, like `EnemyMotion`'s
- * bodies; never saved.
+ * The steps under way on the current board: `enemyId → { heroId, x, y, side, done, leftoverMs }`,
+ * the spot the enemy walks to, the side its hero stands on, and once it is there the part of that
+ * tick it did not need. Kept per board object, like `EnemyMotion`'s bodies; never saved.
  */
 const stepsByBoard = new WeakMap();
 
-function steps() {
+/** `enemyId → ms`: a finished step's leftover, from its hero's arrival to its fight's first tick. */
+const leftoversByBoard = new WeakMap();
+
+function perBoard(byBoard) {
     const board = GameState.state?.board;
     if (!board) return null;
-    let map = stepsByBoard.get(board);
+    let map = byBoard.get(board);
     if (!map) {
         map = new Map();
-        stepsByBoard.set(board, map);
+        byBoard.set(board, map);
     }
     return map;
 }
+
+const steps = () => perBoard(stepsByBoard);
 
 /** What the searches have cost and what they found (tests and probes). */
 const counts = { searches: 0, candidates: 0, worst: 0, stepped: 0, walked: 0, farthest: 0 };
@@ -251,6 +261,7 @@ export function holdsArrival(heroId, enemy, side) {
         if (plan.heroId === heroId) {
             if (!plan.done) return true;
             plans.delete(enemy.id);
+            if (plan.leftoverMs > 0) perBoard(leftoversByBoard).set(enemy.id, plan.leftoverMs);
             return false;
         }
         // Left over from a hero who has let go of it.
@@ -258,7 +269,7 @@ export function holdsArrival(heroId, enemy, side) {
     }
     const { to } = planFor(heroId, enemy, side);
     if (!to) return false;
-    plans.set(enemy.id, { heroId, x: to.x, y: to.y, side, done: false });
+    plans.set(enemy.id, { heroId, x: to.x, y: to.y, side, done: false, leftoverMs: 0 });
     const far = Math.sqrt((to.x - enemy.x) ** 2 + (to.y - enemy.y) ** 2);
     counts.stepped++;
     counts.walked += far;
@@ -266,7 +277,7 @@ export function holdsArrival(heroId, enemy, side) {
     return true;
 }
 
-/** The step enemy `enemyId` is taking, `{ heroId, x, y, side, done }`, or null. */
+/** The step enemy `enemyId` is taking, `{ heroId, x, y, side, done, leftoverMs }`, or null. */
 export function stepOf(enemyId) {
     return steps()?.get(enemyId) || null;
 }
@@ -277,18 +288,42 @@ export function steppingIds() {
     return plans?.size ? [...plans.keys()] : [];
 }
 
-/** Enemy `enemyId` has reached its spot: its hero may now arrive. */
-export function finishStep(enemyId) {
+/**
+ * Enemy `enemyId` has reached its spot, with `leftoverMs` of the tick to spare: its hero may now
+ * arrive. Told again each tick the hero is still on their way, it keeps no leftover: a fight that
+ * waits for its hero starts when they arrive, as any fight does.
+ */
+export function finishStep(enemyId, leftoverMs = 0) {
     const plan = steps()?.get(enemyId);
-    if (plan) plan.done = true;
+    if (!plan) return;
+    plan.leftoverMs = plan.done ? 0 : Math.max(0, Math.round(leftoverMs));
+    plan.done = true;
+}
+
+/**
+ * What the first tick of enemy `enemyId`'s fight is owed by its step, in game ms, once. `BoardCombat`
+ * asks every tick it ticks the enemy, so a leftover whose fight did not begin that tick is dropped,
+ * as a cycle's leftover is when its station does not start again.
+ */
+export function takeLeftover(enemyId) {
+    const left = leftoversByBoard.get(GameState.state?.board);
+    if (!left?.size) return 0;
+    const ms = left.get(enemyId);
+    if (ms === undefined) return 0;
+    left.delete(enemyId);
+    return ms;
 }
 
 /**
  * Forget every step that no longer stands: its enemy gone or in the player's hand, or its hero
- * no longer after it (let go, sent elsewhere) or already fighting it. Run by `EnemyMotion` before
- * it walks anyone.
+ * no longer after it (let go, sent elsewhere) or already fighting it; and a leftover whose enemy is
+ * gone. Run by `EnemyMotion` before it walks anyone.
  */
 export function pruneSteps() {
+    const left = leftoversByBoard.get(GameState.state?.board);
+    if (left?.size) {
+        for (const enemyId of left.keys()) if (!BoardState.getTokenById(enemyId)) left.delete(enemyId);
+    }
     const plans = steps();
     if (!plans?.size) return;
     for (const [enemyId, plan] of plans) {
