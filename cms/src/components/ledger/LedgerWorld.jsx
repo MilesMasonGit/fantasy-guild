@@ -57,6 +57,8 @@ export default function LedgerWorld({ onOpen, baseTables = undefined }) {
   const effects = useEntityStore((s) => s.effects);
   const starterCamp = useEntityStore((s) => s.starterCamp);
   const worldRecord = useEntityStore((s) => s.world);
+  const hallStars = useEntityStore((s) => s.hallStars);
+  const hallConstellations = useEntityStore((s) => s.hallConstellations);
 
   const [seed, setSeed] = useState(1);
   const [seedText, setSeedText] = useState('1');
@@ -68,8 +70,8 @@ export default function LedgerWorld({ onOpen, baseTables = undefined }) {
   const [running, setRunning] = useState(false);
 
   const context = useMemo(
-    () => workspaceWorldContext({ items, tokens, recipePools, effects, starterCamp, world: worldRecord }, null, baseTables),
-    [items, tokens, recipePools, effects, starterCamp, worldRecord, baseTables],
+    () => workspaceWorldContext({ items, tokens, recipePools, effects, starterCamp, world: worldRecord, hallStars, hallConstellations }, null, baseTables),
+    [items, tokens, recipePools, effects, starterCamp, worldRecord, hallStars, hallConstellations, baseTables],
   );
   const plan = useMemo(() => worldForSeed(context, seed), [context, seed]);
   const cell = picked ? plan.world.cells.find((c) => c.id === picked) : null;

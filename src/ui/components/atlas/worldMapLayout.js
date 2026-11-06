@@ -54,7 +54,7 @@ export const LOOK_FILTER = Object.freeze({
  *
  * @param {{ state: string, price?: { met: boolean } }} cell
  * @param {{ ringOpen?: (cell: object) => boolean }} [options] whether the guild may settle the
- *   cell's ring at all (every ring is open until the Hall's ring stars)
+ *   cell's ring at all: its Guild Hall ring star held (open when left out)
  */
 export function cellLook(cell, { ringOpen = () => true } = {}) {
     if (cell.state === CELL_STATE.SETTLED) return CELL_LOOK.SETTLED;

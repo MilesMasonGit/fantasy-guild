@@ -3,7 +3,7 @@ import { Sparkles, Trash2, RefreshCw } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { Section } from '../shared/EditorLayout';
 import { rulesLinesOf } from '../../utils/constants';
-import { normaliseHallSky, TAG_SIDES } from '../../../../src/config/hallStars.js';
+import { normaliseHallSky, TAG_SIDES, FIRST_STAR_RING, opensRingOf } from '../../../../src/config/hallStars.js';
 import { BUILT_IN_CONSTELLATIONS } from '../../../../src/config/guildUpgrades.js';
 import { PLAN_TIERS, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import { workspacePace } from '../../engine/ledgerReport';
@@ -164,6 +164,20 @@ export default function HallStarsPage() {
                         className="text-[11px] w-32"
                       />
                     </label>
+                    <label className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--color-text-secondary)' }} title="A ring star: once its first rank is bought the guild may settle this ring of the world map (2 or more; ring 1 is always open). Empty: not a ring star.">
+                      opens ring
+                      <input
+                        type="number"
+                        min={FIRST_STAR_RING}
+                        step={1}
+                        value={raw.opensRing ?? ''}
+                        placeholder="none"
+                        data-hall-star-opens-ring
+                        onChange={(e) => setHallStar(star.id, { opensRing: opensRingOf(e.target.value) ?? undefined })}
+                        className="w-12"
+                        style={{ fontSize: 11, padding: '1px 4px' }}
+                      />
+                    </label>
                     <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>linked to {star.links.join(', ') || 'nothing'}</span>
                   </div>
                   {shown && (
@@ -204,6 +218,7 @@ export default function HallStarsPage() {
 /** One rank's payback at Typical and the ledger's proposed price, as last worked out. */
 function RankPricing({ row }) {
   if (!row) return <span className="text-gray-500">· not worked out (Refresh paybacks)</span>;
+  if (row.ring) return <RingPricing row={row} />;
   if (!row.rate) return <span className="text-gray-500" data-hall-rank-payback>· adds no rate: no payback</span>;
   return (
     <>
@@ -216,6 +231,24 @@ function RankPricing({ row }) {
       </span>
       <span data-hall-rank-proposed style={{ color: row.proposed && !row.proposed.why && !row.proposed.pays ? 'var(--color-error)' : 'var(--color-accent-hover)' }}>
         · proposed (preview): {row.proposed?.why ? row.proposed.why : `${row.proposed.priceText}, pays back in ${hoursText(row.proposed.payback)}${row.proposed.raised ? ', raised to the rank before' : ''}`}
+      </span>
+    </>
+  );
+}
+
+/**
+ * A ring star's first rank: when it is lit and its ring first settled at Typical, against the end of
+ * the stage the ring opens after, and the price the ledger proposes to land it there.
+ */
+function RingPricing({ row }) {
+  const p = row.proposed;
+  return (
+    <>
+      <span data-hall-rank-ring style={{ color: 'var(--color-text-muted)' }}>
+        · opens ring {row.ring}: lit {row.litText} in, ring {row.ring} first settled {row.opensText} in at Typical{row.budgetText ? `, the stage before it ends at ${row.budgetText}` : ''}
+      </span>
+      <span data-hall-rank-proposed style={{ color: 'var(--color-accent-hover)' }}>
+        · proposed (preview): {p?.why ? p.why : `${p.priceText}, lit ${hoursText(p.litAt)} in`}
       </span>
     </>
   );

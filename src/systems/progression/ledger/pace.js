@@ -4,11 +4,14 @@ import { buildRateBook, LIFECYCLE, WORK } from './rates.js';
 import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL } from './profiles.js';
 import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes } from './settings.js';
-import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, LEDGER_ENGINE_TEXT } from './engine.js';
+import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, LEDGER_ENGINE_TEXT } from './engine.js';
+import { ringOfStar } from '../../world/ringStars.js';
+import { HALL_NODE } from '../../../config/guildUpgrades.js';
 import { planOf, PLAN_STATUS, tierLabel } from './plan.js';
 import { xpForLevel, MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import { turnTiming } from '../../../config/registries/tokenConstants.js';
 import { SKILLS, SKILL_LAYERS } from '../../../config/registries/skillRegistry.js';
+import { STRICT_RINGS } from '../../../config/worldTablesShape.js';
 
 /**
  * How the game is paced for the target player, worked out statically from the content at the three
@@ -31,7 +34,8 @@ import { SKILLS, SKILL_LAYERS } from '../../../config/registries/skillRegistry.j
  * - **The Guild Hall**: every rank's payback at Typical (the hours to gather its price against the
  *   hours it saves an hour on the work it pays best on, at the tier the owner gave it), and a
  *   proposed price for it (a preview: brief 290's rule, until the calculator is seen to agree with
- *   real play).
+ *   real play). A ring star adds no rate: it is priced so its ring opens when the stage before the
+ *   ring ends ({@link ringBudgetTier}), and a ring that opens well before then is a finding.
  *
  * Average luck only. Hours are hero-work hours: heroes keep working through the player's check-ins
  * and the night, so a level grind runs around the clock; a step that waits on the player is not
@@ -59,11 +63,22 @@ export const PACE_TEXT = Object.freeze({
     /** Hours saved an hour, in words: "12 min an hour", "40 s an hour". */
     saves: (h) => (!(h > 0) ? 'nothing' : h * 60 >= 1 ? `${formatMinutes(h * 60)} an hour` : `${Math.max(1, Math.round(h * 3600))} s an hour`),
     times: (r) => `${r >= 10 ? Math.round(r) : Math.round(r * 10) / 10}×`,
+    opensRing: (ring) => `opens ring ${ring} of the world map`,
     skill: (s) => (s === COMBAT ? 'Combat' : s ? s.charAt(0).toUpperCase() + s.slice(1) : '—'),
     waits: Object.freeze({ need: 'waits for', level: 'levels', own: 'its own time' })
 });
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/**
+ * The stage a ring of the world map opens after: ring n opens when stage n − 1 ends, so its Guild
+ * Hall star is priced to be lit then.
+ * ⚠️ The ledger reads ring n as tier n (`world.js`); once the ladder puts several tiers in one ring
+ * (T-294), this is the one place that changes: a ring opens after the last tier of the ring before.
+ */
+export function ringBudgetTier(ring) {
+    return ring - 1;
+}
 const list = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
 
@@ -425,7 +440,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             if (!station) return done(Infinity, 'no station');
             return firstOf(ratedBy({ token: parseKey(station).id, recipe: recipeId }), give.key);
         }
-        case HOW.SHOP: {
+        case HOW.SHOP:
+        case HOW.STAR: {
             const g = gatherHours(rule.inputs, profile, cap);
             return done(g.hours, Number.isFinite(g.hours) ? null : 'its price is never made', { gather: g });
         }
@@ -533,6 +549,32 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
         return steps;
     }
+
+    // ── the rings ──────────────────────────────────────────────────────────────────────────────
+    const ringLines = ledger.world.worldTables?.lines || [];
+    const ringMemo = new Map();
+    /**
+     * When ring `ring` is first settled at a profile: the earliest of its wedges, `{ hours, key }`;
+     * Infinity with no wedge of that ring in the reach (a wild ring: the reach places the strict ones).
+     */
+    function ringOpensAt(ring, profile = PROFILE.TYPICAL) {
+        const memoKey = `${ring}|${profile}`;
+        if (ringMemo.has(memoKey)) return ringMemo.get(memoKey);
+        let best = { hours: Infinity, key: null };
+        for (const line of ringLines) {
+            const key = wedgeKey(line.id, ring);
+            if (!reach.has(key)) continue;
+            const r = readyOf(key, profile);
+            if (r.hours < best.hours || !best.key) best = { hours: r.hours, key };
+        }
+        ringMemo.set(memoKey, best);
+        return best;
+    }
+    /** Hours from a new game at which the stage ring `ring` opens after ends (its budget), or null with none set. */
+    const ringBudgetHours = (ring) => {
+        const stage = settings.stages.find(s => s.tier === ringBudgetTier(ring));
+        return stage ? stage.budgetMinutes / 60 : null;
+    };
 
     // ── stages ─────────────────────────────────────────────────────────────────────────────────
     const entryKeys = [...plans.keys()].filter(k => /^(item|token|recipe):/.test(k));
@@ -673,10 +715,26 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             });
         }
 
+        // A ring that can be settled well before the stage it opens after ends.
+        for (let ring = 2; ring <= STRICT_RINGS; ring++) {
+            const budget = ringBudgetHours(ring);
+            const opens = ringOpensAt(ring);
+            if (budget === null || !opens.key || !Number.isFinite(opens.hours)) continue;
+            const early = 1 - opens.hours / budget;
+            if (early * 100 <= settings.tolerancePct) continue;
+            const stars = ledger.world.ringStars?.get(ring) || [];
+            const star = stars.length
+                ? `its Guild Hall star (${stars.map(hallName).join(' or ')}) is lit ${PACE_TEXT.hours(readyOf(starKey(stars[0]), PROFILE.TYPICAL).hours)} in`
+                : 'no Guild Hall star opens it';
+            add('ring-open', `ring:${ring}`, `Ring ${ring} can first be settled ${PACE_TEXT.hours(opens.hours)} into a new game at Typical (${nameOf(opens.key)}), ${Math.round(early * 100)} % before ${tierLabel(ringBudgetTier(ring))} ends at ${formatMinutes(budget * 60)} (±${settings.tolerancePct} %): ${star}.`, {
+                name: `Ring ${ring}`
+            });
+        }
+
         // Guild Hall ranks: each must pay for itself, at Typical.
         for (const row of hallPaybacks()) {
             if (row.rate === false) {
-                if (row.rank === 1) add('unmodelled', `hall:${row.id}`, `${row.name}: what it gives (${row.what}) is not a rate, so its payback is not worked out.`, { name: row.name });
+                if (row.rank === 1 && !row.ring) add('unmodelled', `hall:${row.id}`, `${row.name}: what it gives (${row.what}) is not a rate, so its payback is not worked out.`, { name: row.name });
                 continue;
             }
             if (row.enabler || row.pays) continue;
@@ -825,6 +883,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                     id: track.id, name: track.name, rank, builtIn: track.builtIn, tier, cap, price,
                     priceText: priceWords(price), priceHours: profiles.hallPriceHours(price, cap)
                 };
+                const ring = !track.builtIn && rank === 1 ? ringOfStar(track.star) : null;
+                if (ring !== null) {
+                    rows.push({ ...base, rate: false, what: PACE_TEXT.opensRing(ring), ...ringRowOf(track, ring) });
+                    continue;
+                }
                 const addsRate = track.builtIn ? track.id !== 'bank_tabs' : starAddsRate(track.star);
                 if (!addsRate) {
                     rows.push({ ...base, rate: false, what: track.description || 'not a rate' });
@@ -992,6 +1055,62 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return { itemId: material.itemId, quantity, priceText: priceWords([{ itemId: material.itemId, quantity }]), priceHours, payback, pays: payback <= settings.hallPaybackHours, work: material.work };
     }
 
+    /** The stars a track opens from (a link counts from both ends), the Hall as `HALL_NODE`. */
+    const waysOf = (track) => new Set([...track.links, ...profiles.hallTracks.filter(t => t.links.includes(track.id)).map(t => t.id)]);
+
+    /**
+     * A ring star's first rank: when it is lit and its ring first settled at Typical (`litAt`,
+     * `opensAt`, hours from a new game), the stage end it is priced to (`budgetHours`) and the price
+     * the ledger proposes ({@link proposeRingPrice}).
+     */
+    function ringRowOf(track, ring) {
+        const opens = ringOpensAt(ring);
+        const budgetHours = ringBudgetHours(ring);
+        return {
+            ring, litAt: readyOf(starKey(track.id), PROFILE.TYPICAL).hours, opensAt: opens.hours, opensKey: opens.key,
+            budgetHours, proposed: proposeRingPrice(track, ring, budgetHours)
+        };
+    }
+
+    /**
+     * The price the ledger proposes for a ring star: its tier's material (as a Hall rank's,
+     * {@link materialFor}), as much as one hero gathers at Typical between when it can start (the
+     * material had and a star it is linked to lit) and the end of the stage its ring opens after,
+     * rounded down to two figures, so the ring opens when that stage ends. `{ itemId, quantity,
+     * priceText, priceHours, start, litAt, budgetHours }`, or `{ why }` when it cannot propose one.
+     */
+    function proposeRingPrice(track, ring, budgetHours) {
+        if (budgetHours === null) return { why: `no budget is set for ${tierLabel(ringBudgetTier(ring))}, the stage its ring opens after` };
+        const tier = track.tier(1) ?? ringBudgetTier(ring);
+        const cap = Math.min(maxTier, tier);
+        const material = materialFor(track.star, tier, cap);
+        if (!material) return { why: 'no gathered material at its tier' };
+        let openAt = Infinity;
+        let openTier = Infinity;
+        for (const way of waysOf(track)) {
+            if (way === HALL_NODE) { openAt = 0; openTier = 0; break; }
+            const r = readyOf(starKey(way), PROFILE.TYPICAL);
+            if (r.hours < openAt) { openAt = r.hours; openTier = tierOfKey(starKey(way)) ?? openTier; }
+        }
+        if (!Number.isFinite(openAt)) return { why: 'no star it is linked to can be lit' };
+        const had = readyOf(itemKey(material.itemId), PROFILE.TYPICAL).hours;
+        const start = Math.max(had, openAt);
+        const gather = budgetHours - start;
+        if (!(gather > 0)) {
+            return { why: `${nameOf(itemKey(material.itemId))}, its material, is first had ${PACE_TEXT.hours(start)} in, after ${tierLabel(ringBudgetTier(ring))} ends` };
+        }
+        // Gathered as its lighting gathers it: at the star's own stage once priced.
+        const at = Math.min(maxTier, Math.max(tierOfKey(itemKey(material.itemId)) ?? cap, Number.isFinite(openTier) ? openTier : 0));
+        const perHour = supplyOf(material.itemId, PROFILE.TYPICAL, at).perHour;
+        if (!(perHour > 0)) return { why: `${nameOf(itemKey(material.itemId))} is not gathered at Typical by then` };
+        const quantity = Math.max(1, roundDown(gather * perHour));
+        const priceHours = quantity / perHour;
+        return {
+            itemId: material.itemId, quantity, priceText: priceWords([{ itemId: material.itemId, quantity }]),
+            priceHours, start, litAt: start + priceHours, budgetHours, work: material.work
+        };
+    }
+
     // ── boosts by kind ─────────────────────────────────────────────────────────────────────────
     const kindGain = (work, profile, cap, kind, level = null) => {
         const { chosen, context } = profiles.profileOf(work.target, profile, cap, level);
@@ -1117,6 +1236,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         skills: () => [...new Set([...askedAt.keys(), ...skillsOfWork.keys()])].sort(),
         pathOf: (key, profile) => ({ ...readyOf(key, profile), steps: criticalPath(key, profile) }),
         stageOf,
+        ringOpensAt,
         hallPaybacks,
         hallName,
         effTier,

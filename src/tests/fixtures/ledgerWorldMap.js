@@ -3,7 +3,8 @@
 // Every line has an origin in every strict ring: the fixture's own veins, trees, hive and coast where
 // it has them, a plain node (`token_<line>_<ring>`, yielding `item_<line>_<ring>`) elsewhere. One kit
 // with a goblin camp and the Chief's Tent as its boss camp; iron the key of ring 2; every cell's
-// extras exactly its ring's value; prices dearer ring by ring. Generated from, every world keeps
+// extras exactly its ring's value; prices dearer ring by ring; a Guild Hall star opening each ring
+// past the first, paid with Copper Ore. Generated from, every world keeps
 // every rule of checks F, so a test breaks one rule at a time.
 
 import { ledgerWorkspace } from './ledgerWorld.js';
@@ -76,10 +77,32 @@ export function worldWorkspace() {
             };
         }
     }
+    Object.assign(ws, ringStarSky());
     return ws;
+}
+
+/**
+ * A Guild Hall star for each ring past the first (rings 2 to 4: the strict ones and the one wild),
+ * in a chain from the Hall, each paid with the Starter Camp's Copper Ore, so it opens its ring
+ * whatever tables the world is generated from.
+ */
+export function ringStarSky() {
+    const hallStars = {};
+    for (let ring = 2; ring <= 4; ring++) {
+        const id = `star_ring_${ring}`;
+        hallStars[id] = {
+            id, constellation: 'compass', name: `Ring ${ring} Star`, description: '', node: { x: -ring / 2, y: 0 },
+            links: [ring === 2 ? 'hall' : `star_ring_${ring - 1}`], opensRing: ring,
+            ranks: [{ tier: ring - 1, price: [{ itemId: 'item_copper_ore', quantity: 5 * ring }], rules: [], lines: [] }]
+        };
+    }
+    return { hallConstellations: { compass: { id: 'compass', name: 'The Compass', label: { x: -1, y: 0.3 } } }, hallStars };
 }
 
 /** The content as the ledger's engines take it. */
 export function contentOf(ws) {
-    return { items: ws.items, tokens: ws.tokens, recipePools: ws.recipePools, effects: ws.effects, starterCamp: ws.starterCamp };
+    return {
+        items: ws.items, tokens: ws.tokens, recipePools: ws.recipePools, effects: ws.effects, starterCamp: ws.starterCamp,
+        hallSky: { constellations: ws.hallConstellations || {}, stars: ws.hallStars || {} }
+    };
 }

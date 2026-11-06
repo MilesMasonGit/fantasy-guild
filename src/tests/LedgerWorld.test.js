@@ -105,7 +105,7 @@ describe('the planned tables: the plan lays its places on the tables', () => {
 
 describe('checks F on a world that keeps every rule', () => {
     it('every F check has its group, a severity and words', () => {
-        expect(F_CHECKS).toEqual([WORLD_F.PRICE_RING, WORLD_F.KEY_REACH, WORLD_F.COVERAGE, WORLD_F.NO_WEDGE, WORLD_F.VALUE]);
+        expect(F_CHECKS).toEqual([WORLD_F.PRICE_RING, WORLD_F.KEY_REACH, WORLD_F.COVERAGE, WORLD_F.NO_WEDGE, WORLD_F.VALUE, WORLD_F.RING_STAR]);
         for (const id of [...F_CHECKS, WORLD_F.RULE]) {
             expect(CHECKS[id]).toMatchObject({ group: 'F' });
             expect(CHECKS[id].label.length).toBeGreaterThan(5);

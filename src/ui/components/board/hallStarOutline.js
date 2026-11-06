@@ -12,6 +12,9 @@ const BUILT_IN = {
     wishing_well: 'i_water'
 };
 
+/** A ring star's outline (`hallStars.opensRing`): a map. */
+const RING_STAR_OUTLINE = 't_map_base';
+
 /** A skill's tool, for a work-speed star. */
 const SPEED_BY_SKILL = {
     forestry: 'i_woodaxe_copper',
@@ -61,6 +64,7 @@ export function outlineSpriteName(def) {
     if (!def) return null;
     if (def.star?.outline) return def.star.outline;
     if (BUILT_IN[def.id]) return BUILT_IN[def.id];
+    if (def.star?.opensRing) return RING_STAR_OUTLINE;
     const first = rankEffectOf(def, 1);
     if (!first) return null;
     if (first.lines.length) return first.lines[0].itemId;

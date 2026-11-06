@@ -9,11 +9,16 @@ import { nextSeed } from '../atlas/seededRandom.js';
 import { TEXT as REGION_TEXT, flavourName } from '../atlas/regionNames.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { worldTables } from '../../config/registries/worldTablesRegistry.js';
+// Loads the authored stars into the sky (`data/hallStars.json`) before a ring is read.
+import '../../config/registries/hallStarRegistry.js';
+import { authoredStars } from '../../config/guildUpgrades.js';
+import { GameState } from '../../state/GameState.js';
 import { lineById } from '../../config/worldTablesShape.js';
 import { materialsFromTokens } from './materials.js';
 import { currentWorld } from './worldState.js';
 import { HALL_CELL, CELL_STATE, settledIds, cellStates, priceRows, cellOutputs } from './frontier.js';
 import { recipesOfCell } from './cellRegion.js';
+import { ringLock } from './ringStars.js';
 import * as Arrival from './Arrival.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -35,6 +40,7 @@ export const SETTLE_TEXT = Object.freeze({
     SETTLED: 'The guild has settled there already',
     BEYOND: 'Settle a place beside it first',
     SHORT: 'The guild cannot pay for it yet',
+    RING_LOCKED: 'Light its Guild Hall star first',
     CATCHING_UP: 'Wait until the time away has played',
     NOT_WRITTEN: 'The place could not be written'
 });
@@ -79,6 +85,17 @@ export function cellStatesNow(world = currentWorld()) {
 /** A cell's price against the Bank and the heroes now (`frontier.priceRows`). */
 export function priceOf(cell) {
     return priceRows(cell, guild());
+}
+
+/** The guild's rank in a Guild Hall star now. */
+const hallRank = (id) => GameState.state?.progress?.guildUpgrades?.[id] || 0;
+
+/**
+ * Why the guild may not settle a cell's ring yet: `{ ring, stars: [{ id, name }] }`, the Guild Hall
+ * stars that would open it, or null when its ring is open (`ringStars.js`).
+ */
+export function ringLockOf(cell) {
+    return cell ? ringLock(cell.ring, authoredStars(), hallRank) : null;
 }
 
 /** The materials a cell shows on the map (`frontier.cellOutputs`). */
@@ -169,9 +186,10 @@ export function arriveAt(region, mat) {
 /**
  * Settle cell `id`: pay its whole price from the Bank, write its Region, take the guild there and
  * put the place's arrival on its mat. Refuses, taking nothing, with no world, a cell that is not on
- * the frontier, a price the guild cannot meet, or while the time away is still playing.
+ * the frontier, while the time away is still playing, a ring whose Guild Hall star the guild does
+ * not hold (with `lock`), or a price the guild cannot meet.
  *
- * @returns {{success: boolean, reason?: string, price?: object, region?: object, mat?: object,
+ * @returns {{success: boolean, reason?: string, lock?: object, price?: object, region?: object, mat?: object,
  *   travel?: object, arrival?: object}}
  */
 export function settleCell(id) {
@@ -183,6 +201,8 @@ export function settleCell(id) {
     if (state === CELL_STATE.SETTLED) return refuse(SETTLE_TEXT.SETTLED);
     if (state !== CELL_STATE.FRONTIER) return refuse(SETTLE_TEXT.BEYOND);
     if (CatchUp.isRunning()) return refuse(SETTLE_TEXT.CATCHING_UP);
+    const lock = ringLockOf(cell);
+    if (lock) return refuse(SETTLE_TEXT.RING_LOCKED, { lock });
     const price = priceOf(cell);
     if (!price.met) return refuse(SETTLE_TEXT.SHORT, { price });
 
