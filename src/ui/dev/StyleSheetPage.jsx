@@ -41,8 +41,7 @@ import { listSkillOf } from '../../systems/board/RecipeList.js';
 import { Stub } from '../components/notifications/ItemStubColumn.jsx';
 import { Banner } from '../components/notifications/BannerStack.jsx';
 import { bannerText } from '../../systems/notifications/bannerKinds.js';
-import { BookTab } from '../components/atlas/AtlasTome.jsx';
-import { HexCellDemo } from '../components/atlas/WorldPage.jsx';
+import { WorldCellDemo } from '../components/atlas/WorldMap.jsx';
 import { WorkPlateDemo } from './WorkPlateDemo.jsx';
 import { CombatKit } from './CombatKit.jsx';
 import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
@@ -241,24 +240,6 @@ const KitTabs = () => {
                     </button>
                 );
             })}
-        </div>
-    );
-};
-
-const KIT_BOOK_TABS = [
-    { id: 'world', label: 'World', colour: '#7a1f1f' },
-    { id: 'regions', label: 'Regions', colour: '#1f3f6e' }
-];
-
-/** The Atlas's page tabs, tucked under a strip of book cover as on the tome. */
-const BookTabDemo = () => {
-    const [open, setOpen] = useState(KIT_BOOK_TABS[0].id);
-    return (
-        <div className="relative inline-flex items-start py-2">
-            <div role="tablist" aria-orientation="vertical" className="flex flex-col items-end gap-2">
-                {KIT_BOOK_TABS.map(t => <BookTab key={t.id} {...t} selected={t.id === open} onSelect={setOpen} />)}
-            </div>
-            <div className="relative -ml-4 w-6 self-stretch" style={{ background: '#4a2a1a' }} />
         </div>
     );
 };
@@ -952,14 +933,9 @@ export const KIT_SECTIONS = [
         Demo: BannerDemo
     },
     {
-        id: 'atlas-tabs', title: 'Atlas page tabs', status: 'unapproved', source: 'AtlasTome (the Atlas only)',
-        rule: 'The Atlas’s own variant of the tabs: cloth page tabs stacked down the left edge of the book, coming out from under its cover. The open one stands further out with bright text and a 1-art-pixel gold edge along each long side; the others are muted. Code placeholders until the owner draws the tabs.',
-        Demo: BookTabDemo
-    },
-    {
-        id: 'world-cells', title: 'World map cells (new)', status: 'unapproved', source: 'WorldPage (the Atlas’s World page)',
-        rule: 'Flat-topped hexes in their kit’s ground colour (code stand-ins until the owner’s hex art), each with the first outputs it yields as 32 px item sprites at 1× and "+N" for the rest. Settled: lit, a gold edge; the guild’s place carries the pale job flag. Frontier: a little darker; a green edge once the guild can pay. Beyond: dark, sprites half faded. The chosen cell has a white edge, the hovered one a white inner line; the hover lists its outputs and its price as have/need, red when short.',
-        Demo: HexCellDemo
+        id: 'world-cells', title: 'World map cells (new)', status: 'unapproved', source: 'WorldMap (the world map screen)',
+        rule: 'Board tiles standing on the painted world: the top in the land’s colours, the side in its earth, a hard shadow (code stand-ins until the owner’s tiles), the Token the place holds most of standing on it, its first three outputs as 32 px item sprites in a dark plate and "+N" for the rest. Settled and settle-able: full colour. Can be settled now: a 2-art-pixel gold outline pulsing between two golds. On the frontier but too dear: darkened. Further out: black and white. Under the pointer: full colour with a 1-art-pixel white outline; the chosen cell keeps the white outline. The guild’s place carries the pale job flag, large. Ring lines are a rope with a knot at each corner.',
+        Demo: WorldCellDemo
     },
     {
         id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',

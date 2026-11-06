@@ -6,7 +6,7 @@ import { getSkillLevel } from '../hero/SkillSystem.js';
 import * as CatchUp from '../core/CatchUp.js';
 import * as Atlas from '../atlas/Atlas.js';
 import { nextSeed } from '../atlas/seededRandom.js';
-import { TEXT as REGION_TEXT } from '../atlas/regionNames.js';
+import { TEXT as REGION_TEXT, flavourName } from '../atlas/regionNames.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { worldTables } from '../../config/registries/worldTablesRegistry.js';
 import { lineById } from '../../config/worldTablesShape.js';
@@ -109,6 +109,15 @@ export function cellName(cell, tables = worldTables()) {
     return [kit, line].filter(Boolean).join(' ');
 }
 
+/**
+ * What a place is called before and after it is settled ("Elderfield"): a name from its own seed,
+ * so the world map can show it before the guild has been there. Its Region takes the same name.
+ */
+export function placeName(cell) {
+    if (!cell || cell.ring === 0) return REGION_TEXT.STARTER_CAMP;
+    return flavourName(cell.seed >>> 0);
+}
+
 /** The layout a place is written with: the first of a few seeds in which every Token fits, else the first. */
 function seedFor(cell, recipes) {
     let seed = cell.seed >>> 0;
@@ -139,6 +148,10 @@ export function writePlace(cell, { cellId = null } = {}) {
     const describe = () => ({ word: recipes[0].name });
     const written = Atlas.settle({ ingredients: recipes, seed: seedFor(cell, recipes), describe, cellId, allowUnplaced: true });
     if (!written.success) return refuse(SETTLE_TEXT.NOT_WRITTEN, { written });
+    // ⚠️ The Atlas names a Region from its layout's seed, which moves on when a layout does not
+    // fit: the place keeps the name the map showed.
+    const name = placeName(cell);
+    if (cellId && written.region.flavourName !== name) Atlas.rename(written.region.id, name);
     return { success: true, region: written.region, mat };
 }
 

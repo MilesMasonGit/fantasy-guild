@@ -1,5 +1,4 @@
 import React, { useCallback } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
@@ -19,7 +18,8 @@ import { useWorldMapRequests } from './hooks/useWorldMapRequests.js';
 import Board from './components/board/Board.jsx';
 import BankDrawer from './components/drawer/BankDrawer.jsx';
 import ShopDrawer from './components/drawer/ShopDrawer.jsx';
-import AtlasScreen from './components/atlas/AtlasScreen.jsx';
+import WorldScreen from './components/atlas/WorldScreen.jsx';
+import WorldCamera from './components/atlas/WorldCamera.jsx';
 import ArrivalCard from './components/atlas/ArrivalCard.jsx';
 import EncyclopediaScreen from './components/encyclopedia/EncyclopediaScreen.jsx';
 
@@ -285,7 +285,17 @@ export const ReactRoot = () => {
                             className="gi-bank-shift flex-1 min-h-0 flex flex-col relative"
                             style={BANK_SHIFT_STYLE}
                         >
-                        <div className="flex-1 flex min-h-0 relative">
+                        {/**
+                         * The mat's room, under the camera that pans down from the mat to the world
+                         * map (`WorldCamera`): the top bar goes with the mat, the hero bar below stays.
+                         */}
+                        <WorldCamera
+                            open={isAtlasOpen}
+                            away={!isAtlasOpen && (ui.fullscreen.view !== null || isBankOpen || ui.shop.isOpen || ui.settings.isOpen)}
+                            world={<ErrorBoundary label="WorldScreen"><WorldScreen onClose={ui.fullscreen.close} /></ErrorBoundary>}
+                            table={tableBackground}
+                            tableAnchor={tableRef}
+                        >
                         <div
                             data-dnd-surface="board"
                             data-dnd-region="board"
@@ -332,7 +342,7 @@ export const ReactRoot = () => {
                             <ErrorBoundary label="FightTabs"><FightTabStrip /></ErrorBoundary>
                             </div>
                         </div>
-                        </div>
+                        </WorldCamera>
 
                         {/**
                          * Bottom Hero Dock: horizontal sliding tabs. On the mat's side of the
@@ -352,14 +362,6 @@ export const ReactRoot = () => {
                         )}
                         </div>
                         </HallCamera>
-                        {/* The Atlas pops up over the mat column only: the nav beside it stays reachable to close it. */}
-                        <AnimatePresence>
-                            {isAtlasOpen && (
-                                <ErrorBoundary key="atlas" label="AtlasScreen">
-                                    <AtlasScreen onClose={ui.fullscreen.close} />
-                                </ErrorBoundary>
-                            )}
-                        </AnimatePresence>
                         <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                     </div>
                     {menuRight && <BubbleMenu ui={ui} side="right" />}
