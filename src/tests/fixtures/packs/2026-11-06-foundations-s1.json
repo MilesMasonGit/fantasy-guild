@@ -1,0 +1,1505 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-06-foundations-s1",
+  "createdAt": "2026-11-06T18:50:30.876Z",
+  "asked": "The Shop sells Foundations only, each type for its own kind of building: Wood first (the main support structure), then Stone, Farmland, a new Excavation for mines and quarries, and a new Battlefield for enemy spawners. Coast and Goblin Camp leave the Shop. Skill icons on each Foundation hint at what it is good for (owner, 2026-11-03; brief 410 S1).",
+  "entries": [
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_wood_foundation",
+      "value": {
+        "name": "Wood Foundation",
+        "description": "A token for the guild playmat.",
+        "sprite": "t_foundation_wood",
+        "tokenType": "station",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": true,
+        "config": null,
+        "autoSyncId": true,
+        "foundation": {
+          "kind": "wood",
+          "skill": "construction"
+        },
+        "shop": {
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 15
+            }
+          ],
+          "section": "construction",
+          "skills": [
+            "crafting",
+            "cooking",
+            "alchemy",
+            "fishing",
+            "forestry"
+          ],
+          "order": 1
+        },
+        "id": "token_wood_foundation",
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "note": "Wood Foundation: place 1 in the Shop list, with the skill icons crafting, cooking, alchemy, fishing, forestry.",
+      "fingerprint": "fp:e962862951888edb"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_stone_foundation",
+      "value": {
+        "name": "Stone Foundation",
+        "description": "A token for the guild playmat.",
+        "sprite": "t_foundation_stone",
+        "tokenType": "station",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": true,
+        "config": null,
+        "autoSyncId": true,
+        "foundation": {
+          "kind": "stone",
+          "skill": "construction"
+        },
+        "shop": {
+          "price": [
+            {
+              "itemId": "item_stone",
+              "quantity": 10
+            },
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 5
+            }
+          ],
+          "section": "construction",
+          "skills": [
+            "smithing",
+            "faith"
+          ],
+          "order": 2
+        },
+        "id": "token_stone_foundation",
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "note": "Stone Foundation: place 2 in the Shop list, with the skill icons smithing, faith.",
+      "fingerprint": "fp:cf0fe771f9594937"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_farmland",
+      "value": {
+        "name": "Farmland",
+        "description": "A token for the guild playmat.",
+        "sprite": "t_farmland",
+        "tokenType": "station",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": true,
+        "config": null,
+        "autoSyncId": true,
+        "foundation": {
+          "kind": "farmland",
+          "skill": "construction"
+        },
+        "shop": {
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 10
+            }
+          ],
+          "section": "farming",
+          "skills": [
+            "farming",
+            "forestry"
+          ],
+          "order": 3
+        },
+        "id": "token_farmland",
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "note": "Farmland: place 3 in the Shop list, with the skill icons farming, forestry.",
+      "fingerprint": "fp:c0882742065c8860"
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_excavation",
+      "value": {
+        "name": "Excavation",
+        "description": "Cleared ground to dig into. Build a mine or a quarry on it.",
+        "sprite": "t_foundation_granite",
+        "tokenType": "station",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": true,
+        "config": null,
+        "autoSyncId": true,
+        "foundation": {
+          "kind": "excavation",
+          "skill": "construction"
+        },
+        "shop": {
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 15
+            }
+          ],
+          "section": "mining",
+          "skills": [
+            "mining"
+          ],
+          "order": 4
+        },
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "note": "New Foundation for mines and quarries. Placeholder price, Oak Wood only: it cannot cost Stone, since the first Quarry built on it is what gets you Stone. Stand-in sprite (the granite Foundation) until the owner draws it.",
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_battlefield",
+      "value": {
+        "name": "Battlefield",
+        "description": "Open ground for a fight. Plant a banner on it to raise an enemy camp.",
+        "sprite": "t_foundation_basalt",
+        "tokenType": "station",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": true,
+        "config": null,
+        "autoSyncId": true,
+        "foundation": {
+          "kind": "battlefield",
+          "skill": "construction"
+        },
+        "shop": {
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 15
+            }
+          ],
+          "section": "melee",
+          "skills": [
+            "melee",
+            "ranged",
+            "magic"
+          ],
+          "order": 5
+        },
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "note": "New Foundation for the enemy spawners built from a banner. Placeholder price, Oak Wood only. Stand-in sprite (the basalt Foundation) until the owner draws it.",
+      "placeholderArt": true
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_coast",
+      "value": {
+        "name": "Coast",
+        "description": "Needs a Fishing Rod or Trap in hand. Cannot be nearby to more than 2 Coast Tokens.",
+        "sprite": "t_coast",
+        "tokenType": "resource",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Coast",
+          "Water"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": true,
+        "config": {
+          "skill": "fishing",
+          "skillRequired": 1,
+          "cycleTimeMs": 8000,
+          "xp": 1,
+          "inputs": [],
+          "outputs": []
+        },
+        "autoSyncId": true,
+        "id": "token_coast",
+        "effects": [
+          {
+            "effectId": "effect_placement_limit",
+            "scale": 1
+          }
+        ],
+        "sim": {
+          "tempo": "fast",
+          "purpose": "iph"
+        },
+        "catchPools": [
+          {
+            "tool": "fishing_rod",
+            "catches": [
+              {
+                "itemId": "item_tropical_fish",
+                "weight": 85
+              },
+              {
+                "itemId": "item_salmon",
+                "weight": 10
+              },
+              {
+                "itemId": "item_swordfish",
+                "weight": 5
+              }
+            ]
+          },
+          {
+            "tool": "fishing_rod",
+            "bait": "item_shrimp_bait",
+            "catches": [
+              {
+                "itemId": "item_tropical_fish",
+                "weight": 50
+              },
+              {
+                "itemId": "item_salmon",
+                "weight": 40
+              },
+              {
+                "itemId": "item_swordfish",
+                "weight": 10
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "catches": [
+              {
+                "itemId": "item_raw_shrimp",
+                "weight": 100
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": "item_worm_bait",
+            "catches": [
+              {
+                "itemId": "item_raw_shrimp",
+                "weight": 60
+              },
+              {
+                "itemId": "item_lobster",
+                "weight": 40
+              }
+            ]
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "note": "Coast is no longer sold: the Shop is Foundations only. It still comes in the Starter Camp and the world map's tables.",
+      "fingerprint": "fp:c88c18096bad6807"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_goblin_camp",
+      "value": {
+        "name": "Goblin Camp",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_campfire",
+        "tokenType": "spawner",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "spawner": {
+          "spawns": [
+            {
+              "typeId": "token_goblin",
+              "weight": 1
+            }
+          ],
+          "allowance": 3,
+          "intervalMs": 30000,
+          "upkeep": []
+        },
+        "id": "token_goblin_camp",
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "note": "Goblin Camp is no longer sold: the Shop is Foundations only. It still comes in the Starter Camp and the world map's tables, and a Goblin Banner builds one on a Battlefield.",
+      "fingerprint": "fp:bd1c269528ad45af"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_copper_mine",
+      "value": {
+        "id": "recipe_build_copper_mine",
+        "name": "Build Copper Mine",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 10
+          },
+          {
+            "itemId": "item_stone",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_copper_mine",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "excavation"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "note": "Build Copper Mine: built on excavation instead of wood. Mines and quarries go on an Excavation.",
+      "fingerprint": "fp:30783a468cd465e4"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_coal_mine",
+      "value": {
+        "id": "recipe_build_coal_mine",
+        "name": "Build Coal Mine",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 10
+          },
+          {
+            "itemId": "item_stone",
+            "quantity": 5
+          },
+          {
+            "itemId": "item_coal_prospecting_map",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_coal_mine",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "excavation"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_coal_mine, Starter Camp)."
+        }
+      },
+      "note": "Build Coal Mine: built on excavation instead of wood. Mines and quarries go on an Excavation.",
+      "fingerprint": "fp:fef320ca2d5c8cec"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_quarry",
+      "value": {
+        "id": "recipe_build_quarry",
+        "name": "Build Quarry",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 10
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_quarry",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "excavation"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_quarry, Starter Camp)."
+        }
+      },
+      "note": "Build Quarry: built on excavation instead of wood. Mines and quarries go on an Excavation.",
+      "fingerprint": "fp:ba9425f7f6942845"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_mining_camp",
+      "value": {
+        "id": "recipe_build_mining_camp",
+        "name": "Build Mining Camp",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_stone",
+            "quantity": 15
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 10
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_mining_camp",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 90000,
+        "stationChargeCost": 1,
+        "xp": 30,
+        "foundationKinds": [
+          "wood"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_mining_camp, Starter Camp)."
+        }
+      },
+      "note": "Build Mining Camp: built on wood instead of stone. The Wood Foundation is the main support structure; the Mining Camp moves off Stone.",
+      "fingerprint": "fp:a97ae997613e246d"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_wild_hive",
+      "value": {
+        "id": "recipe_build_wild_hive",
+        "name": "Build Wild Hive",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_bee_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_wild_hive",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Wild Hive: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:e40e937eee33bdb0"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_basking_stone",
+      "value": {
+        "id": "recipe_build_basking_stone",
+        "name": "Build Basking Stone",
+        "skill": "construction",
+        "levelRequirement": 5,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_big_lizard_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_basking_stone",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Basking Stone: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:d133ffa2f206bab8"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_cow_pasture",
+      "value": {
+        "id": "recipe_build_cow_pasture",
+        "name": "Build Cow Pasture",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_cow_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_cow_pasture",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Cow Pasture: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:5669392e236a8274"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_crab_rocks",
+      "value": {
+        "id": "recipe_build_crab_rocks",
+        "name": "Build Crab Rocks",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_crab_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_crab_rocks",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Crab Rocks: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:40c9551e72ccb430"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_ember_vents",
+      "value": {
+        "id": "recipe_build_ember_vents",
+        "name": "Build Ember Vents",
+        "skill": "construction",
+        "levelRequirement": 5,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_fire_elemental_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_ember_vents",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Ember Vents: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:64208126bf1e317c"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_smoking_crater",
+      "value": {
+        "id": "recipe_build_smoking_crater",
+        "name": "Build Smoking Crater",
+        "skill": "construction",
+        "levelRequirement": 5,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_fire_elemental_chief_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_smoking_crater",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Smoking Crater: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:ad9b91d28b9b71fc"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_frog_pond",
+      "value": {
+        "id": "recipe_build_frog_pond",
+        "name": "Build Frog Pond",
+        "skill": "construction",
+        "levelRequirement": 5,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_frog_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_frog_pond",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Frog Pond: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:2e270f14b426e016"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_goblin_camp",
+      "value": {
+        "id": "recipe_build_goblin_camp",
+        "name": "Build Goblin Camp",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_goblin_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_goblin_camp",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Goblin Camp: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:930336d1585bdbbf"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_chief_tent",
+      "value": {
+        "id": "recipe_build_chief_tent",
+        "name": "Build Chief's Tent",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_goblin_chief_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_chief_tent",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Chief's Tent: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:70758701c824fed7"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_slime_pit",
+      "value": {
+        "id": "recipe_build_slime_pit",
+        "name": "Build Slime Pit",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_greater_slime_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_slime_pit",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Slime Pit: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:f258082c4d15caca"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_queens_hive",
+      "value": {
+        "id": "recipe_build_queens_hive",
+        "name": "Build Queen's Hive",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_queen_bee_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_queens_hive",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Queen's Hive: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:8d92aa77c506dfd5"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_sulphur_rocks",
+      "value": {
+        "id": "recipe_build_sulphur_rocks",
+        "name": "Build Sulphur Rocks",
+        "skill": "construction",
+        "levelRequirement": 5,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_sulphur_lizard_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_sulphur_rocks",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Sulphur Rocks: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:f4915af65e4e2ed0"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_thorn_thicket",
+      "value": {
+        "id": "recipe_build_thorn_thicket",
+        "name": "Build Thorn Thicket",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_thorn_elemental_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_thorn_thicket",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Thorn Thicket: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:5c9117764e615d44"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_toxic_pool",
+      "value": {
+        "id": "recipe_build_toxic_pool",
+        "name": "Build Toxic Pool",
+        "skill": "construction",
+        "levelRequirement": 5,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_toxic_frog_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_toxic_pool",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Toxic Pool: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:46f9606e57db0618"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_tide_pool",
+      "value": {
+        "id": "recipe_build_tide_pool",
+        "name": "Build Tide Pool",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_water_elemental_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_tide_pool",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Tide Pool: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:bec466131402e761"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_wind_stones",
+      "value": {
+        "id": "recipe_build_wind_stones",
+        "name": "Build Wind Stones",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_wind_elemental_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_wind_stones",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Wind Stones: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:2772451af421b4a4"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_wolf_den",
+      "value": {
+        "id": "recipe_build_wolf_den",
+        "name": "Build Wolf Den",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_wolf_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_wolf_den",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Wolf Den: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:ebbe4cf733428f29"
+    },
+    {
+      "op": "edit",
+      "kind": "recipe",
+      "id": "recipe_build_alpha_den",
+      "value": {
+        "id": "recipe_build_alpha_den",
+        "name": "Build Alpha's Den",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_wolf_alpha_banner",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_alpha_den",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30000,
+        "stationChargeCost": 1,
+        "xp": 15,
+        "foundationKinds": [
+          "battlefield"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Builds a creature camp from its banner (brief 330 W6)."
+        }
+      },
+      "note": "Build Alpha's Den: built on battlefield instead of wood. Enemy spawners built from a banner go on a Battlefield.",
+      "fingerprint": "fp:8dba8fb6d8dfdf7c"
+    }
+  ]
+}

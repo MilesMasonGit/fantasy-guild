@@ -1,0 +1,9 @@
+PASS: Passes: 1 entry moves on the timeline, 2 newly reached, 0 problems added, 0 cleared.
+Against data/ and cms/plan/plan.json, since no CMS autosave was found (the owner may have unsynced work) (fp:a9bb438f59ad39f1).
+Moved entries (3, furthest first):
+- Battlefield: now first had at 1 min
+- Excavation: now first had at 1 min
+- Mining Camp: 3 min → 4 min (later)
+Checks added:
+- info: Battlefield: Only from the Shop, for 15 Oak Wood.
+- info: Excavation: Only from the Shop, for 15 Oak Wood.
