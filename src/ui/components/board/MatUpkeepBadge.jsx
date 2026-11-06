@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -9,6 +9,7 @@ import { placeUnder } from './tooltipPlacement.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { TOP_BAR_ICON, TopBarIcon } from './MatTopBar.jsx';
+import { useHoverOpen } from '../../hooks/useHoverOpen.js';
 
 /**
  * What changes the badge's total: the Upkeep Summary's own events, the Token cap badge's (a
@@ -26,9 +27,6 @@ export const UPKEEP_EVENTS = Object.freeze([...new Set([
 export const POPOVER_WIDTH = 300;
 /** The popover's tallest; past this the summary scrolls inside it. */
 export const POPOVER_MAX_HEIGHT = 'min(420px, 70vh)';
-/** How long the popover stays after the pointer leaves, so it can cross the gap into it to scroll. */
-const HIDE_DELAY_MS = 150;
-
 /** Every ongoing cost's items per minute, summed across items (idle spawners pay nothing, so add nothing). */
 export function totalPerMinute(summary) {
     return (summary?.items || []).reduce((sum, row) => sum + (Number(row.perMinute) || 0), 0);
@@ -82,9 +80,8 @@ export const MatUpkeepPopover = ({ anchor, onMouseEnter, onMouseLeave }) => {
  */
 export const MatUpkeepBadge = ({ readTotal = liveUpkeepTotal }) => {
     const [total, setTotal] = useState(() => readTotal());
-    const [open, setOpen] = useState(false);
+    const { open, show, hide } = useHoverOpen();
     const ref = useRef(null);
-    const hideTimer = useRef(null);
 
     useEffect(() => {
         const refresh = () => setTotal(readTotal());
@@ -93,14 +90,6 @@ export const MatUpkeepBadge = ({ readTotal = liveUpkeepTotal }) => {
         const timer = setInterval(refresh, POLL_MS);
         return () => { unsubs.forEach(u => u?.()); clearInterval(timer); };
     }, [readTotal]);
-
-    useEffect(() => () => clearTimeout(hideTimer.current), []);
-
-    const show = useCallback(() => { clearTimeout(hideTimer.current); setOpen(true); }, []);
-    const hide = useCallback(() => {
-        clearTimeout(hideTimer.current);
-        hideTimer.current = setTimeout(() => setOpen(false), HIDE_DELAY_MS);
-    }, []);
 
     return (
         <>

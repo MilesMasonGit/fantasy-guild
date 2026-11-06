@@ -1328,7 +1328,10 @@ drawers**. The menu can be flipped to the right.
 - **Slot select** (3 save slots) is the only screen before play. Its wording
   is a leftover sci-fi theme ("SYSTEM BOOT").
 - **Bubble menu**: Guild Hall, Item Bank, Shop, Settings.
-- **Top bar**: Tokens / cap, upkeep per minute, disallow mode.
+- **Top bar**: the Region's name over its banner (at 3×, running on under the middle and fading
+  out), Tokens / cap and upkeep per minute (each opens its summary on hover, staying while the
+  pointer moves into it; the Token Summary's rows light their Tokens on the mat), disallow mode,
+  and Demolish with its cursor's pixel X.
 - **Token card** (a click on a Token): the name as a header, then a stat block
   (level, XP, time, charges; an enemy's HP, level, XP) and sections: the recipe
   picked, **Requires** (tools and what is used up), **Makes** or a water's

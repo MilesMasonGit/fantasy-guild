@@ -9,6 +9,7 @@ import { Tooltip } from '../base/Tooltip.jsx';
 import { cn } from '../../utils/cn.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { mapModeIconSrc, mapModeIconPx } from './mapModeCursor.js';
 
 /** The bar's buttons: square, a 1-art-pixel line, white on hover. */
 const BUTTON_CLS = 'flex items-center gap-1.5 px-3 py-1.5 border-2 whitespace-nowrap cursor-pointer transition-colors';
@@ -32,15 +33,33 @@ export const MODE_BANNER_TEXT = Object.freeze({
 
 const TOGGLES = [
     { mode: MAP_MODE.DISALLOW, label: 'Disallow', icon: '⊘', tip: 'Click Tokens so heroes won’t work them. Shift-click for every Token of a type.' },
-    { mode: MAP_MODE.DEMOLISH, label: 'Demolish', icon: '✕', tip: 'Click Tokens to mark them for demolition.' }
+    { mode: MAP_MODE.DEMOLISH, label: 'Demolish', pixelIcon: true, tip: 'Click Tokens to mark them for demolition.' }
 ];
 
 const click = () => EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
 
+/** A mode's pixel glyph, the same picture as its cursor over a Token. */
+export const ModeIcon = ({ mode }) => {
+    const px = mapModeIconPx(mode);
+    return (
+        <img
+            data-map-mode-icon={mode}
+            src={mapModeIconSrc(mode)}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            width={px}
+            height={px}
+            className="shrink-0 select-none pointer-events-none"
+            style={{ imageRendering: 'pixelated' }}
+        />
+    );
+};
+
 /**
  * One mode's toggle: on turns the other mode off; a second press, or Esc, ends it.
  */
-const ModeToggle = ({ mode, label, icon, tip, on }) => (
+const ModeToggle = ({ mode, label, icon, pixelIcon, tip, on }) => (
     <Tooltip title={label} lines={[on ? 'Press again or Esc to finish.' : tip]}>
         <button
             type="button"
@@ -50,7 +69,7 @@ const ModeToggle = ({ mode, label, icon, tip, on }) => (
             onClick={() => { click(); toggleMapMode(mode); }}
             className={cn(BUTTON_CLS, on ? ON_CLS[mode] : OFF_CLS)}
         >
-            <span aria-hidden="true">{icon}</span>
+            {pixelIcon ? <ModeIcon mode={mode} /> : <span aria-hidden="true">{icon}</span>}
             <span>{label}</span>
         </button>
     </Tooltip>

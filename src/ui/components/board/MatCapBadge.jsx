@@ -15,10 +15,10 @@ import { tokenName, getTokenType } from '../../../config/registries/tokenRegistr
 import { isGearOnlyAlert } from './centreAlert.js';
 import { placeUnder } from './tooltipPlacement.js';
 import { highlightType } from './tokenHighlight.js';
-import { TopBarTip } from './TopBarTip.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { TOP_BAR_ICON, TopBarIcon } from './MatTopBar.jsx';
+import { useHoverOpen } from '../../hooks/useHoverOpen.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -170,9 +170,10 @@ const SummaryHeading = ({ children }) => (
 /**
  * The Token Summary: one frame, one row per Token type with its status counts, the ones missing
  * items pinned on top, the rest under their skill section. Hovering a row lights that type on the
- * mat. It takes the pointer (rows hover, a long list scrolls); `MatCapBadge` closes it.
+ * mat. It takes the pointer (rows hover, a long list scrolls); `MatCapBadge` opens and closes it,
+ * and hands it `onMouseEnter` / `onMouseLeave` so the pointer resting on it keeps it open.
  */
-export const TokenSummaryPanel = ({ anchor, summary, cap, panelRef }) => {
+export const TokenSummaryPanel = ({ anchor, summary, cap, panelRef, onMouseEnter, onMouseLeave }) => {
     useEffect(() => () => highlightType(null), []);
     if (typeof document === 'undefined') return null;
     const empty = !summary.pinned.length && !summary.sections.length;
@@ -182,6 +183,8 @@ export const TokenSummaryPanel = ({ anchor, summary, cap, panelRef }) => {
             role="dialog"
             aria-label="Token Summary"
             data-token-summary
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
             className="fixed z-(--z-mat-tip)"
             style={{ width: PANEL_WIDTH, ...placeUnder(anchor, PANEL_WIDTH, 360) }}
         >
@@ -191,6 +194,7 @@ export const TokenSummaryPanel = ({ anchor, summary, cap, panelRef }) => {
                 frameStyle={{ maxHeight: 'min(480px, 70vh)' }}
             >
                 <div className="font-bold text-gi-gold">Tokens {summary.total}/{cap}</div>
+                <div data-token-summary-note className="ui-text-small text-white/50">Placed and spawned Tokens count; the Guild Hall and quests don’t.</div>
                 {empty && <div className="mt-1 text-white/60">Nothing placed yet.</div>}
                 {summary.pinned.length > 0 && (
                     <div data-token-summary-pinned>
@@ -212,15 +216,15 @@ export const TokenSummaryPanel = ({ anchor, summary, cap, panelRef }) => {
 
 /**
  * The Token cap badge: `Tokens 62/80` in the item bar style, every Token counting toward the
- * mat's cap (`MatCap`); the count turns red at the cap. Click opens the Token Summary; Esc or a click anywhere else closes it. Hovering while it is
- * shut gives a short tooltip. The number is read on the events in {@link CAP_EVENTS}, never per
- * frame; the summary is only worked out while it is open.
+ * mat's cap (`MatCap`); the count turns red at the cap. Hover opens the Token Summary, as the
+ * Upkeep badge's does, and it stays while the pointer crosses into it; Esc or a click anywhere
+ * else closes it at once (Enter or Space opens it from the keyboard). The number is read on the
+ * events in {@link CAP_EVENTS}, never per frame; the summary is only worked out while it is open.
  * @param {{ readSummary?: () => object }} props  `readSummary` for tests
  */
 export const MatCapBadge = ({ readSummary = liveMatSummary }) => {
     useRefreshOn(CAP_EVENTS, true, capSignature);
-    const [open, setOpen] = useState(false);
-    const [hover, setHover] = useState(false);
+    const { open, show, hide, close } = useHoverOpen();
     useRefreshOn(POPOVER_EVENTS, open);
     const ref = useRef(null);
     const panelRef = useRef(null);
@@ -230,7 +234,7 @@ export const MatCapBadge = ({ readSummary = liveMatSummary }) => {
         if (!open) return undefined;
         const onDown = (e) => {
             if (panelRef.current?.contains(e.target) || ref.current?.contains(e.target)) return;
-            setOpen(false);
+            close();
         };
         const timer = setInterval(() => tickRefresh(n => n + 1), PANEL_REFRESH_MS);
         document.addEventListener('pointerdown', onDown, true);
@@ -238,8 +242,8 @@ export const MatCapBadge = ({ readSummary = liveMatSummary }) => {
             clearInterval(timer);
             document.removeEventListener('pointerdown', onDown, true);
         };
-    }, [open]);
-    useEscapeLayer(open, () => setOpen(false));
+    }, [open, close]);
+    useEscapeLayer(open, close);
 
     const count = MatCap.tokenCount();
     const cap = MatCap.matCap();
@@ -262,20 +266,21 @@ export const MatCapBadge = ({ readSummary = liveMatSummary }) => {
                 countText={(
                     <span data-mat-cap-count style={atCap ? { color: 'var(--color-ui-red)' } : undefined}>{count}/{cap}</span>
                 )}
-                onClick={() => { setHover(false); setOpen(o => !o); }}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setHover(false); setOpen(o => !o); } }}
-                onMouseEnter={() => setHover(true)}
-                onMouseLeave={() => setHover(false)}
-                className="whitespace-nowrap"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (open) close(); else show(); } }}
+                onMouseEnter={show}
+                onMouseLeave={hide}
+                className="whitespace-nowrap cursor-default"
             />
-            {hover && !open && (
-                <TopBarTip
+            {open && (
+                <TokenSummaryPanel
                     anchor={ref.current}
-                    title="Token cap"
-                    lines={['Placed and spawned Tokens all count.', 'The Guild Hall and quests do not.', 'Click for the list.']}
+                    summary={readSummary()}
+                    cap={cap}
+                    panelRef={panelRef}
+                    onMouseEnter={show}
+                    onMouseLeave={hide}
                 />
             )}
-            {open && <TokenSummaryPanel anchor={ref.current} summary={readSummary()} cap={cap} panelRef={panelRef} />}
         </>
     );
 };
