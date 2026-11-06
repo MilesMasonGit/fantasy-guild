@@ -22,6 +22,7 @@ import { SpeechFrame, tailInset, speechTailDrop } from './SpeechFrame.jsx';
 import { clearOfFight } from './healthBar.js';
 import { momentTone } from './speechTone.js';
 import { plateUnit } from './workPlate.js';
+import { subscribeHints, hintsShowing } from './dragHints.js';
 
 /** How often lines are re-read and expired ones cleared. */
 const REFRESH_MS = 500;
@@ -226,6 +227,12 @@ export const HeroBubbleLayer = ({ heroes }) => {
     // Measure what was drawn, so the next pass spaces real sizes, not guesses. Only when what
     // the stacks SAY changes: a stack's size is its lines, and this layer re-renders on every
     // walking step, where measuring forced a layout inside each commit.
+    // While the drag hints show over the heroes (`dragHints.js`) the speech steps aside, hidden
+    // straight on the element (no redraw), and comes back as they go. Hidden still measures.
+    useEffect(() => subscribeHints(() => {
+        if (layerRef.current) layerRef.current.style.visibility = hintsShowing() ? 'hidden' : '';
+    }), []);
+
     const measureKey = speechKeyOf(anchored);
     useLayoutEffect(() => {
         drawnKeyRef.current = measureKey;

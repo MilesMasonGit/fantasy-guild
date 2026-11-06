@@ -156,6 +156,47 @@ export function setUpHeroAlertsScene() {
     return { ok: true };
 }
 
+/** The scene for the drag hints: real Tokens, and heroes holding each kind of tool and weapon. */
+const HINT_TOKENS = Object.freeze([
+    ['token_silver_ore_vein', -420, -220], ['token_mythril_ore_vein', -220, -300], ['token_oak_tree', 0, -320],
+    ['token_redberry_bush', 220, -300], ['token_coast', 420, -220], ['token_goblin', 460, 120]
+]);
+const HINT_HEROES = Object.freeze([
+    { name: 'QA Copper Miner', skills: { mining: 40 }, gear: ['item_copper_pickaxe'] },
+    { name: 'QA Iron Miner', skills: { mining: 60 }, gear: ['item_iron_pickaxe', 'item_copper_sword'] },
+    { name: 'QA Forester', skills: { forestry: 30 }, gear: ['item_copper_woodaxe', 'item_fishing_rod'] },
+    { name: 'QA Greatsword', skills: { melee: 30 }, gear: ['item_copper_greatsword'] },
+    { name: 'QA Bare Hands', skills: {}, gear: [] }
+]);
+
+/**
+ * Drag hints (brief 490): above the Hall, a Silver Vein (an Iron Pickaxe or better, Mining 30), a
+ * Mythril Vein (Mining 60), an Oak Tree, a Redberry Bush (no tool) and the Coast (water); a Goblin to
+ * the right. Five QA heroes: a Copper Miner (Mining 40, copper pickaxe: the silver vein's tool is
+ * red), an Iron Miner (Mining 60, iron pickaxe and a sword), a Forester (woodaxe and fishing rod), a
+ * Greatsword (a two-handed weapon) and Bare Hands. Drag any of them over each Token.
+ * ⚠️ Changes the game, like Spawn Party.
+ * @returns {{ok: boolean, error?: string}}
+ */
+export function setUpDragHintsScene() {
+    const c = hallPoint();
+    for (const [typeId, dx, dy] of HINT_TOKENS) {
+        if (getTokenType(typeId)) put(typeId, { x: c.x + dx, y: c.y + dy });
+    }
+    for (const { name, skills, gear } of HINT_HEROES) {
+        const hero = qaHero(name, skills);
+        if (!hero) return { ok: false, error: 'The roster would not take the heroes' };
+        for (const itemId of gear) {
+            if (!getItem(itemId)) continue;
+            InventoryManager.addItem(itemId, 1);
+            EquipmentManager.equipItem(hero.id, itemId);
+        }
+    }
+    Flags.markDirty();
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_drag_hints_scene' });
+    return { ok: true };
+}
+
 /** A level-up bubble on the first hero the alerts scene would show working, else the first hero. */
 export function levelUpAHero() {
     const heroes = GameState.state?.heroes || [];

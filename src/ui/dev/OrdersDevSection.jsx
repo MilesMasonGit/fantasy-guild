@@ -3,7 +3,7 @@
 // ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
 
 import { useState } from 'react';
-import { setUpHeroAlertsScene, levelUpAHero, setUpOrdersScene, knockOutAHero, healEveryone, loadOldFlagsSave, jumpTutorialTo, TUTORIAL_JUMPS } from './ordersDev.js';
+import { setUpDragHintsScene, setUpHeroAlertsScene, levelUpAHero, setUpOrdersScene, knockOutAHero, healEveryone, loadOldFlagsSave, jumpTutorialTo, TUTORIAL_JUMPS } from './ordersDev.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
@@ -39,6 +39,19 @@ export function OrdersDevSection() {
                     }}
                 >
                     Hero bar alerts scene (test Tokens, gone on reload)
+                </button>
+                <button
+                    type="button"
+                    data-qa-drag-hints-scene
+                    className={buttonClass}
+                    onClick={() => {
+                        const r = setUpDragHintsScene();
+                        setStatus(r.ok
+                            ? 'Above the Hall: a Silver Vein, a Mythril Vein, an Oak Tree, a Redberry Bush and the Coast; a Goblin to the right. Five QA heroes with different tools and weapons: drag any hero over each Token and watch the marks over every hero, on the bar and on the carried flag'
+                            : r.error);
+                    }}
+                >
+                    Drag hints scene (changes the game)
                 </button>
                 <button
                     type="button"

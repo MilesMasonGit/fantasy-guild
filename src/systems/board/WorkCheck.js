@@ -61,18 +61,32 @@ export function heroReason(heroId, config, instance = null) {
     if (!config?.skill) return null;
     if (!heroId) return ALERT.UNSKILLED;
 
-    const failure = SkillSystem.requirementFailure(heroId, {
-        skill: config.skill,
-        level: config.skillRequired || 0
-    });
+    const failure = skillFailure(heroId, config);
 
     if (failure === 'POSSESSION') return ALERT.UNSKILLED;
     if (failure === 'LEVEL') return ALERT.ACCESS;
-    if (instance && !Demolition.isMarked(instance)
-        && !HeroTools.holdsToolFor(heroId, neededToolOf(getTokenType(instance.typeId)))) {
-        return ALERT.NO_TOOL;
-    }
+    if (!HeroTools.holdsToolFor(heroId, toolNeedOf(instance))) return ALERT.NO_TOOL;
     return null;
+}
+
+/**
+ * {@link heroReason}'s level gate on its own: `'POSSESSION'`, `'LEVEL'`, or null when the hero
+ * passes (and when `config` names no skill). The drag hints read each gate apart, through these.
+ */
+export function skillFailure(heroId, config) {
+    return SkillSystem.requirementFailure(heroId, {
+        skill: config?.skill,
+        level: config?.skillRequired || 0
+    });
+}
+
+/**
+ * {@link heroReason}'s tool gate: the tool `instance`'s work needs (`neededToolOf`), or null when
+ * none is asked for: no instance, or a Token marked for demolition.
+ */
+export function toolNeedOf(instance) {
+    if (!instance || Demolition.isMarked(instance)) return null;
+    return neededToolOf(getTokenType(instance.typeId));
 }
 
 /**
