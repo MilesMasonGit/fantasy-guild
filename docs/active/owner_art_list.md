@@ -229,7 +229,8 @@ swapping a picture in for one is a small code change.
 | Piece | Status | Notes |
 |---|---|---|
 | A picture per star kind (XP, yield, work speed, a vein's rest, regrowth, camp reach, a Well line, the Infirmary, a loadout slot) | **NEW** (when ready) | The details panel's 128 px picture of an authored star (32 art px at 4×). Placeholder: the gold star (`ui_star_gold.png`); a star may name its own `sprite` |
-| Each skill constellation's picture | **NEW** (when ready) | The finished-constellation glow draws its lines today; a drawn picture is for later |
+| Each constellation's picture | **NEW** (when ready) | Drop it in as `public/assets/playmat/screens/constellation_<id>.png` (ids: hearth, vault, well, forestry, mining, smithing, fishing, farming, cooking, crafting, construction, alchemy); it draws at 2×, centred on the constellation's stars, under the lines, once finished (brief 390 G4). No code change needed |
+| Upgrade chimes (sound) | **NEW** (when ready) | `public/assets/audio/sfx/hall_star_chime.ogg` (a star bought) and `hall_constellation_chime.ogg` (a constellation finished); a Kenney pot sound plays until they exist |
 
 ## 9. Skill icons (owner, 2026-11-02)
 

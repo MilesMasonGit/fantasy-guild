@@ -61,6 +61,10 @@ class AudioSystemClass {
         this.GLOBAL_MIXER_GAIN = 0.2;
 
         this._sfxCache = new Map();
+        /** Wanted files that failed to load, so their clip plays its fallback from then on. */
+        this._missingSfx = new Set();
+        /** A wanted file's fallback, by the wanted file's path. */
+        this._sfxFallbacks = new Map();
         /** While true (a catch-up), no sound effect plays. */
         this.silenced = false;
     }
@@ -258,6 +262,15 @@ class AudioSystemClass {
         if (!audio && pool.length < 4) {
             audio = new Audio(src);
             pool.push(audio);
+            if (this._sfxFallbacks.has(src)) {
+                // The wanted file is not there yet (new art or sound not dropped in): play the fallback.
+                audio.addEventListener('error', () => {
+                    if (this._missingSfx.has(src)) return;
+                    this._missingSfx.add(src);
+                    this._sfxCache.delete(src);
+                    this.playSfx(clipName, options);
+                }, { once: true });
+            }
         } else if (!audio) {
             audio = pool[0];
             audio.pause();
@@ -288,6 +301,7 @@ class AudioSystemClass {
         audio.play().then(() => {
             logger.debug('AudioSystem', `Started playing: ${clipName} (${src})`);
         }).catch(e => {
+            if (this._sfxFallbacks.has(src)) return;
             logger.error('AudioSystem', `SFX ${clipName} play failed: ${e.message}`);
         });
     }
@@ -330,11 +344,17 @@ class AudioSystemClass {
             'button_click': CALCULATOR_BUTTON_SFX,
             'dock_pin': CALCULATOR_BUTTON_SFX,
             'dock_unpin': CALCULATOR_BUTTON_SFX,
-            'quest_claim': COINS_HAND_SFX
+            'quest_claim': COINS_HAND_SFX,
+            'hall_star_chime': { want: '/assets/audio/sfx/hall_star_chime.ogg', fallback: `${kenneyBase}metalPot1.ogg` },
+            'hall_constellation_chime': { want: '/assets/audio/sfx/hall_constellation_chime.ogg', fallback: `${kenneyBase}metalPot2.ogg` }
         };
 
         const target = map[clip];
         if (!target) return null;
+        if (target.want) {
+            this._sfxFallbacks.set(target.want, target.fallback);
+            return this._missingSfx.has(target.want) ? target.fallback : target.want;
+        }
         if (Array.isArray(target)) {
             const idx = Number.isInteger(variant)
                 ? Math.abs(variant) % target.length

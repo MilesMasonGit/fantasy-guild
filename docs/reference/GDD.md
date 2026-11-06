@@ -1297,6 +1297,15 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   ribbons with have/need, and the Upgrade button. The Hall star's **Effects** list the outputs
   each lap and, as boosts, the lap itself and every rule held.
   *(`GuildHallBoard.jsx`, `hallStarOutline.js`, `GuildUpgradeInspection.jsx`, `hallStarText.js`)*
+- **The upgrade ceremony** (brief 390 G4): a rank bought while the sky is open plays once: the
+  star bursts in hard pixels with a chime; light hops along its lines to the stars that rank
+  opened; finishing a constellation (its every star lit) bursts bigger, sparkles its stars in
+  turn and flashes its lines, and its picture (owner art,
+  `public/assets/playmat/screens/constellation_<id>.png`, drawn at 2× centred on its stars; none
+  yet) arrives and stays. Nothing plays on load, in a catch-up, or for a rank bought while the
+  Hall was closed; reduced motion shows one still frame. Sounds: `hall_star_chime.ogg` and
+  `hall_constellation_chime.ogg` in `public/assets/audio/sfx/`, a Kenney pot sound until they exist.
+  *(`hallCeremony.js`, `HallCeremony.jsx`, `AudioSystem.js`)*
 
 | Upgrade | Ranks | Effect |
 |---|---|---|

@@ -1,0 +1,42 @@
+star that opens: roster_size -> ["Infirmary","Larder"]
+opens panel shows: BUNK BEDS
+opens ceremony animations held: 12 ceremony: {"star":"roster_size","opened":"star_infirmary,star_larder","finished":""}
+saved opens_0000ms.png
+saved opens_0070ms.png
+saved opens_0140ms.png
+saved opens_0210ms.png
+saved opens_0280ms.png
+saved opens_0420ms.png
+saved opens_0560ms.png
+saved opens_0700ms.png
+saved opens_0840ms.png
+saved opens_1000ms.png
+opens page changes while it played (after the purchase render): 0 ; ceremony gone after: true ; wall ms 3767
+constellation one short: The Well last star star_well_fir_wood
+constellation panel shows: FIR WOODPILE
+constellation ceremony animations held: 29 ceremony: {"star":"star_well_fir_wood","opened":"","finished":"well"}
+saved constellation_0000ms.png
+saved constellation_0070ms.png
+saved constellation_0140ms.png
+saved constellation_0210ms.png
+saved constellation_0280ms.png
+saved constellation_0350ms.png
+saved constellation_0420ms.png
+saved constellation_0600ms.png
+saved constellation_0800ms.png
+saved constellation_1000ms.png
+saved constellation_1300ms.png
+constellation page changes while it played (after the purchase render): 0 ; ceremony gone after: true ; wall ms 4558
+saved constellation_after_full.png
+reduced panel shows: BUNK BEDS
+reduced ceremony animations held: 0 ceremony: {"star":"roster_size","opened":"star_infirmary,star_larder","finished":""}
+saved reduced_0000ms.png
+saved reduced_0400ms.png
+reduced page changes while it played (after the purchase render): 0 ; ceremony gone after: true ; wall ms 2293
+on opening the Hall with a finished constellation: ceremony false glow false
+time away (20 min) with a rank bought inside it: {"bought":true,"sound":0} ceremony false glow false Hall still open true
+saved after_time_away.png
+a rank bought while the Hall was closed, then opened: ceremony false
+chime file status: 200 text/html
+picture slot status: 200 text/html
+picture slots drawn: []

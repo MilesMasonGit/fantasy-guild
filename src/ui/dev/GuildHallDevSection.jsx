@@ -8,6 +8,7 @@ import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManag
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
 import { totalPrice } from '../../config/guildUpgrades.js';
+import { planStarThatOpens, planConstellationOneShort } from './hallCeremonyDev.js';
 import { installQaSky, stockForQaSky, setUpHallScene, woundSceneHero, payLapNow, hallReadout } from './hallStarsDev.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
@@ -71,6 +72,39 @@ export function GuildHallDevSection() {
                 </button>
                 <button type="button" data-qa-sky-reset className={buttonClass} onClick={() => apply({}, 'Every upgrade at rank 0')}>
                     Reset the sky
+                </button>
+            </div>
+            <div className={labelClass}>Upgrade ceremony (dev only)</div>
+            <div className="flex flex-wrap gap-2">
+                <button
+                    type="button"
+                    data-qa-ceremony-opens
+                    className={buttonClass}
+                    title="Every rank to 0, and the price of a star that opens others in the Bank"
+                    onClick={() => {
+                        const r = planStarThatOpens();
+                        if (!r.ok) { setStatus(r.error); return; }
+                        devSetGuildRanks(r.ranks);
+                        devGiveNextPrice([r.id]);
+                        setStatus(`Every rank at 0, and ${r.name}'s price in the Bank. Open the Guild Hall, click ${r.name}, then Upgrade: it bursts and light runs to ${r.opens.join(', ')}.`);
+                    }}
+                >
+                    A star that opens others
+                </button>
+                <button
+                    type="button"
+                    data-qa-ceremony-constellation
+                    className={buttonClass}
+                    title="A constellation lit but for one star, and that star's price in the Bank"
+                    onClick={() => {
+                        const r = planConstellationOneShort();
+                        if (!r.ok) { setStatus(r.error); return; }
+                        devSetGuildRanks(r.ranks);
+                        devGiveNextPrice([r.id]);
+                        setStatus(`${r.constellation} is lit but for ${r.name}, whose price is in the Bank. Open the Guild Hall, click ${r.name}, then Upgrade: the constellation is finished.`);
+                    }}
+                >
+                    A constellation one star short
                 </button>
             </div>
             <div className={labelClass}>Hall stars: every kind (dev only)</div>
