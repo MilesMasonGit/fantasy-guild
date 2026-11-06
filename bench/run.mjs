@@ -76,8 +76,7 @@ const NOISE_FLOOR_MS = 0.02;
 
 /**
  * Catch-up fidelity: what the hour produced in 1000 ms steps (S8L) against 100 ms ticks (S8F)
- * may differ by this fraction, or by one unit for a count too small to judge in percent
- * (Tokens depleted: about 6 an hour on S2).
+ * may differ by this fraction, or by one unit for a count too small to judge in percent.
  */
 const FIDELITY_TOLERANCE = 0.01;
 const FIDELITY_FIELDS = ['bankItems', 'heroXp', 'cycles', 'depleted'];
