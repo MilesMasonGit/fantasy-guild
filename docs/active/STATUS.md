@@ -5,6 +5,8 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+**Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time.
+
 ## Director, combat look and rivers (brief 360 C2 to C4, brief 370 R1; owner chose rivers 2026-11-05 evening; owner's picks 2026-11-05: window B, tab D, mat F with the combat icon between the health bars)
 
 *Fri 6 Nov 06:00. Where we are: on main and pushed: the combat look (C2, C3) and rivers, water and ground (R1, R2), the water-leftover fix, and the mock-ups for the world map, Guild Hall, encyclopedia lines and hard pixel sheet. Waiting for the owner's eye-check, each gate-green on its branch: drag hints (`d4`), enemies stand still with crowded fights folded in (`e5` c1e16839), the Bank B1 to B3 (`b4`), the top bar T1 (`t1`), notifications N1 and N2 (`n1`), encyclopedia progress and links E3 (`x3`). Owner: pick four looks from pictures (world map, Guild Hall, encyclopedia lines, hard pixel), answer the parked questions, restart the CMS dev server (repaired overnight), and after 500 merges delete the Iron Ore Vein ambush rule in the CMS and Sync on main. Next: merges after the looks; then the bench fights back (owner yes), 420 T2 Disallow, 380 M2/M3, 390 G2/G3, 470 E2 per the picks. Blockers: none.*
@@ -27,9 +29,11 @@ build green) · bench-queued · eye-check · merged.*
 | 470 E1: mock-ups of what each encyclopedia line means | builder | `docs/encyclopedia-lines` (`x1`, from main) | **merged** (docs only): `research/encyclopedia_lines/contact_lines.png`, README; waits for the owner's pick | Fri | Fri |
 | 470 E3: progress bars per kind in the book's corner, recipe ingredients link to their pages | builder | `crunch/encyclopedia-progress` (`x3`, from main) | **merged** 411a6825 (owner all ok 2026-11-06, one look branch `look/2026-11-06`); ready 388596b4 for the eye-check (engine work expected same); director: 594 files green, cycles, build; note: a total can grow when something unreachable is found (owner may find it odd) | Fri | Fri |
 | 380 M2 and M3: the world map, board tiles over a painted map, cell states, ring lines; then the hover tip, a thinner panel, no tabs | builder | `crunch/world-map` (`m2`, from main) | building (owner's picks 2026-11-06) | Fri | |
-| 390 G2 and G3: the sky (bright item outlines over stars, 1.4x spacing, titles under, ranks on hover, full screen); the purple panel with now and next | builder | `crunch/hall-sky` (`g2`, from main) | building (owner's picks 2026-11-06) | Fri | |
-| 470 E2: a word on each encyclopedia line | engineer | from main | next, when a code slot frees | | |
+| 390 G2 and G3: the sky (bright item outlines over stars, 1.4x spacing, titles under, ranks on hover, full screen); the purple panel with now and next | builder | `crunch/hall-sky` (`g2`, from main) | built ebced272, director verifying; touches `ReactRoot.jsx` (the screen box clips, not hides) | Fri | |
+| 470 E2: a word on each encyclopedia line | engineer | `crunch/encyclopedia-words` (`x2`, from main 8142216f) | building | Fri | |
 | 460 P2: the last soft glows and shadows go hard, words with a 1 px outline | builder | from main | next, when a code slot frees | | |
+| 440 A1: the time-away panel in two columns, item changes as one net list, the news in order | builder | `crunch/away-summary` (`a1`, from main 8142216f) | building | Fri | |
+| 450 S1, S2 and 440 A2: a three-tab settings window; the title screen (banner picks); save slots show time away | builder | `crunch/settings-title` (`s1`, from main 8142216f) | building | Fri | |
 | 400 B1 to B3: coloured pixel backgrounds behind every panel, the item tooltip, the inspection window (B4 Use later) | builder | `crunch/bank-detail` (`b4`, from main) | **merged** 411a6825 (owner all ok 2026-11-06, one look branch `look/2026-11-06`); ready 09e6f15a for the eye-check (engine work expected same); director: 595 files green, cycles, build; screenshots in `research/bank_detail/built/`; the fight window's backdrop (rust) is one prop to add after the combat merge | Thu | Fri |
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
