@@ -24,7 +24,7 @@ build green) · bench-queued · eye-check · merged.*
 | 420 T1: the top bar, a larger banner, Token Summary on hover, a pixel X on Demolish (T2 Disallow waits for 500's merge: it touches Flags and Hostiles) | builder | `crunch/top-bar` (`t1`, from main) | ready a3dca65a for the eye-check (engine work expected same); banner 3x built, 4x in screenshots (`research/top_bar/built/`, the pick is one number); director: 592 files green, cycles, build | Thu | |
 | 430 N1 and N2: nothing goes missing after time away (summary sections and banners), a gold banner when a place is settled | builder | `crunch/notifications` (`n1`, from main) | ready 4ddeab9f for the eye-check (engine work expected same: read-only listeners, proved by a with/without test); director: 593 files green, cycles, build; QA Notifications: three time-away buttons; my calls: at most 6 New! stubs per catch-up, one banner per kind | Fri | |
 | 460 P1: every soft glow and shadow listed, a before/after sheet for the owner | builder | `docs/hard-pixel-sheet` (`p1`, from main) | building (director picked overnight) | Fri | |
-| 470 E1: mock-ups of what each encyclopedia line means | builder | `docs/encyclopedia-lines` (`x1`, from main) | building (director picked overnight) | Fri | |
+| 470 E1: mock-ups of what each encyclopedia line means | builder | `docs/encyclopedia-lines` (`x1`, from main) | **merged** (docs only): `research/encyclopedia_lines/contact_lines.png`, README; waits for the owner's pick | Fri | Fri |
 | 400 B1 to B3: coloured pixel backgrounds behind every panel, the item tooltip, the inspection window (B4 Use later) | builder | `crunch/bank-detail` (`b4`, from main) | ready 09e6f15a for the eye-check (engine work expected same); director: 595 files green, cycles, build; screenshots in `research/bank_detail/built/`; the fight window's backdrop (rust) is one prop to add after the combat merge | Thu | |
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
@@ -160,6 +160,8 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 None open.
 
 ## Questions for the owner
+
+- **Encyclopedia lines (470 E1):** A today (every line the same), B line styles (used up solid, needed and kept dashed, comes out of doubled, a small key; recommended), C a word on each line, D B in colour (blue kept, green comes out of; green already means ready). Also: keep used up as the plain unlabelled line (recommended), or give it a word too.
 
 - **Bounties on a full mat (brief 500 fix):** A. a due bounty with no room is skipped and the next comes 3 minutes later, the spawners' bus rule (built, recommended); B. it waits and lands as soon as room opens, as today (just as cheap).
 
