@@ -19,6 +19,8 @@ build green) · bench-queued · eye-check · merged.*
 | T-319: the last Region's water lingered after travel as broken pieces (the owner saw it in the R2 pictures) | director | `fix/water-shimmer-travel` | **merged** 15c38479, look-preserving fix, no eye-check; 592 files green, cycles, build; reproduced and checked in the game | Thu | Thu |
 | 500 E1 and E2: enemies stand still, no ambushes, no camp rings (expect WORK CHANGED) | builder | `crunch/enemies-still` (`e5`, from C4 b21c8b88) | ready f85643a1, bench queued (expect WORK CHANGED, cheaper: no strolls, so S2-family boards lose their random draws and their fights); director: 594 of 595 files green, the style-sheet test timed out under load (T-320), cycles, build. Owner CMS after merge: delete the Iron Ore Vein Fire Elemental Ambush rule, Sync on main. Eye-check: include dragging a camp | Thu | |
 | 490 H1: drag hints, tool and skill marks on every hero while dragging a hero over a Token | builder | `crunch/drag-hints` (`d4`, from main) | ready 80b8fd8d, bench queued (engine work expected same, drag bench); director: 593 files green but one style-sheet test timed out under load and passes alone, cycles, build; QA: Hero orders, Drag hints scene | Thu | |
+| 380 M1: world map mock-ups (hexes, cell states, ring lines, the world picture beneath) for the owner to pick | builder | `docs/world-hex-mockups` (`m1`, from main) | building (owner chose 5 Nov late: map mock-ups beside the Bank) | Thu | |
+| 400 B1 to B3: coloured pixel backgrounds behind every panel, the item tooltip, the inspection window (B4 Use later) | builder | `crunch/bank-detail` (`b4`, from main) | building | Thu | |
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
 
@@ -145,6 +147,8 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 | 290 L1b: the Ledger tab and settings (stages and budgets, tolerance, target player, pace curve) | builder | `cms/ledger-l1b` | **merged** 34985051 on the gate (director: 6749 tests, cycles 0, build, CMS build; read the Sync-path diff). CMS look with K1's batch; First reach reads Starter Camp everywhere until L4 sets map tiers; pace-curve points are placeholders for the owner | Thu | Thu |
 
 ## Notes between directors
+
+- **Owner, 5 Nov late, going to sleep:** the director may pick new briefs from the queue and keep working once these finish. Merges that change the look or play still wait for the owner's eye-check.
 
 - **Bench coverage after brief 500 (owner 5 Nov: yes, after the merges):** with no ambushes, S2, S5, C240, C256, the S8 family and the draw bench `fights<N>` scenes no longer fight (their heroes only fought because they were ambushed), and S5 no longer storms. Next: an engineer sends heroes at the camps in those scenarios so fights are measured again, then a baseline retake.
 
