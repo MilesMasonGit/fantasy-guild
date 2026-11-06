@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -20,14 +20,15 @@ import { ItemTipContent } from './ItemTip.jsx';
 import { itemTintName, itemTintStyle } from '../base/itemTint.js';
 import { bankSearchMatches, sortForBank } from './bankSort.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
+import { BankItemWindow } from './BankItemWindow.jsx';
 
 /**
  * Bank pane: the guild bank as user-sortable tabs of compact reorderable item lists. Tabs
  * start at 1 and unlock via Guild Hall; each holds 64 kinds; lists pack compact with no slot grid.
  * Tabs reuse the inventory group system (groupOrder/groupDefs/itemOverrides, persisted). An
  * item with no override lives in the FIRST tab. Drag a tile onto a tile to reorder, onto a tab
- * to file it there, onto a hero to equip (payload kind 'item'). Search matches ALL tabs. An
- * item's details are its tile's hover tooltip.
+ * to file it there, onto a hero to equip (payload kind 'item'). Search matches ALL tabs. A
+ * tile's hover tooltip names the item; a click opens its inspection window (`BankItemWindow`).
  */
 export const BankTab = () => {
     const [activeTabId, setActiveTabId] = useState(null);
@@ -35,6 +36,8 @@ export const BankTab = () => {
     // Select mode: multi-select stacks to drag-move between tabs.
     const [selectMode, setSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState(() => new Set());
+    // The item open in the inspection window at the Bank's foot, by id; null when it is shut.
+    const [inspectedId, setInspectedId] = useState(null);
 
     const bank = useGameState(
         state => {
@@ -151,13 +154,17 @@ export const BankTab = () => {
         }
     };
 
-    const toggleSelected = (itemId) => {
+    const toggleSelected = useCallback((itemId) => {
         setSelectedIds(prev => {
             const next = new Set(prev);
             if (next.has(itemId)) next.delete(itemId); else next.add(itemId);
             return next;
         });
-    };
+    }, []);
+
+    const toggleInspected = useCallback((itemId) => setInspectedId(prev => (prev === itemId ? null : itemId)), []);
+    // The window shows an item while the Bank holds it; one used up closes it.
+    const inspectedEntry = inspectedId ? stocked.find(e => e.id === inspectedId) || null : null;
 
     const exitSelectMode = () => {
         setSelectMode(false);
@@ -253,8 +260,9 @@ export const BankTab = () => {
                             <ItemTile
                                 key={entry.id}
                                 entry={entry}
-                                onSelect={selectMode ? () => toggleSelected(entry.id) : undefined}
+                                onPick={selectMode ? toggleSelected : toggleInspected}
                                 checked={selectMode && selectedIds.has(entry.id)}
+                                inspected={!selectMode && entry.id === inspectedId}
                                 selectMode={selectMode}
                                 selectionIds={selectedIds}
                                 canReorder={canReorder}
@@ -275,6 +283,7 @@ export const BankTab = () => {
                 )}
             </DropTarget>
 
+            {inspectedEntry && <BankItemWindow entry={inspectedEntry} onClose={() => setInspectedId(null)} />}
             </div>
         </div>
     );
@@ -295,8 +304,10 @@ function moveOrAnnounce(itemId, tabId, targetIndex = -1) {
 }
 
 /** One banked item — a native drag source (kind 'item') and a reorder drop target.
- *  In select mode a checked tile drags the WHOLE selection (payload.selection). */
-const ItemTile = ({ entry, onSelect, checked = false, selectMode = false, selectionIds = null, canReorder = false, onReorderDrop }) => {
+ *  In select mode a checked tile drags the WHOLE selection (payload.selection).
+ *  A click picks it (selects it, or opens the inspection window); a press that moves 8 px is a
+ *  drag instead, and dnd-kit swallows the click that ends it (`SENSOR_OPTIONS` in DndKit). */
+const ItemTile = ({ entry, onPick, checked = false, inspected = false, selectMode = false, selectionIds = null, canReorder = false, onReorderDrop }) => {
     const drag = useEntityDrag({
         id: `item-src-${entry.id}`,
         kind: DRAG_KIND.ITEM,
@@ -316,8 +327,9 @@ const ItemTile = ({ entry, onSelect, checked = false, selectMode = false, select
     return (
         <ItemTileBody
             entry={entry}
-            onSelect={onSelect}
+            onPick={onPick}
             checked={checked}
+            inspected={inspected}
             selectMode={selectMode}
             cue={drop.valid}
             held={drag.isDragging}
@@ -330,19 +342,20 @@ const ItemTile = ({ entry, onSelect, checked = false, selectMode = false, select
 
 // ⚠️ Apart from its drag hooks on purpose: dnd-kit redraws their holder at every drag start, end
 // and change of target; the tile is memoised on what it draws.
-const ItemTileBody = memo(function ItemTileBody({ entry, onSelect, checked, selectMode, cue, held, nodeRef, handleProps, droppableProps }) {
+const ItemTileBody = memo(function ItemTileBody({ entry, onPick, checked, inspected, selectMode, cue, held, nodeRef, handleProps, droppableProps }) {
     const { template, count } = entry;
-    const hint = selectMode ? t(checked ? 'itemTip.clickToDeselect' : 'itemTip.clickToSelect') : null;
+    const hint = selectMode ? t(checked ? 'itemTip.clickToDeselect' : 'itemTip.clickToSelect') : t('itemTip.clickToInspect');
     return (
         <Tooltip
             title={template.name}
             maxWidth={300}
-            content={<ItemTipContent item={template} count={count} hint={hint} />}
+            content={<ItemTipContent item={template} count={count} hint={hint} details={false} />}
         >
         <button
             ref={nodeRef}
             data-bank-item={template.id}
-            onClick={onSelect}
+            data-bank-item-inspected={inspected || undefined}
+            onClick={() => onPick?.(template.id)}
             {...handleProps}
             {...droppableProps}
             data-item-tint={itemTintName(template)}
@@ -350,6 +363,7 @@ const ItemTileBody = memo(function ItemTileBody({ entry, onSelect, checked, sele
             className={cn(
                 'ui-item-tile relative flex flex-col items-center justify-center p-3 transition-colors cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square',
                 checked && 'border-[var(--color-ui-white)] bg-gi-primary/15',
+                inspected && 'border-[var(--color-ui-white)]',
                 cue && 'ring-2 ring-gi-primary border-gi-primary',
                 held && 'opacity-40'
             )}

@@ -204,6 +204,16 @@ item held.
 [Upgrade  [oak]3/10 [stone]5/5]  <- pills inside a button
 ```
 
+## The item tooltip and the Bank's window (brief 400)
+
+- **The item tooltip**: the name as its header, the count right under it, then the type
+  lines (type, what it equips as, its tool) and the tags. Where there is no inspection window
+  (the Encyclopedia's card) the details follow; in the Bank they are the window's.
+- **The Bank's inspection window** sits along the Bank's foot under a divider (part of the
+  panel, not a frame inside it): the sprite at 4× on its kind's tile surface, name, count,
+  kind, details, collected this run, then the book and the X at its top right. The tile it
+  shows has the white selection line. *New, unapproved.*
+
 ## Panel headers
 
 - **Title on the left** (with an optional sprite), **the red pixel close X at
