@@ -10,6 +10,19 @@ const SETTINGS_STORAGE_KEY = 'fantasy_guild_settings';
 /** Marker for the one-time dev-mute migration — see `load()`. */
 const DEV_MUTE_MIGRATION_KEY = 'fantasy_guild_dev_mute_applied';
 
+/** Dev and perf builds: the only ones with the 1-minute auto-save and the Dev Tools tab. */
+export const IS_DEV_BUILD = !!(import.meta.env?.DEV || import.meta.env?.MODE === 'perf');
+
+/** The auto-save choices, in minutes (0 is off); 1 minute is for dev builds only. */
+export const AUTO_SAVE_DEV_MINUTES = 1;
+export const AUTO_SAVE_DEFAULT_MINUTES = 10;
+export function autoSaveChoices(devBuild = IS_DEV_BUILD) {
+    return devBuild ? [AUTO_SAVE_DEV_MINUTES, 10, 60, 0] : [10, 60, 0];
+}
+
+/** Settings whose controls were removed: dropped from a stored file on load, so they don't linger. */
+const RETIRED_KEYS = Object.freeze(['ui.tooltipsEnabled', 'ui.tooltipsItems', 'ui.zoomToCursor', 'gameplay.enableAnimations', 'gameplay.themeMode']);
+
 // Default settings configuration
 const defaultSettings = {
     notifications: {
@@ -18,12 +31,9 @@ const defaultSettings = {
         itemStubs: true
     },
     ui: {
-        tooltipsEnabled: true,
         tooltipsCardBadges: true,
         tooltipsBoostTiles: true,
-        tooltipsItems: true,
         compactMode: false,
-        zoomToCursor: true,
         fontFamily: 'silkpixel', // Default to SilkPixel composite font
         fontSizes: {
             '--font-size-xxs': 14,
@@ -52,8 +62,6 @@ const defaultSettings = {
     },
     gameplay: {
         autoSaveIntervalMinutes: 10,
-        enableAnimations: true,
-        themeMode: 'dark',
         // Loot sprites. Collection confers NO mechanical advantage — manual and
         // automatic pickup are identical in outcome — so this is purely about feel.
         // ⚠️ OFF by default: hovering is the verb that collects loot, and a 2.5s
@@ -115,12 +123,28 @@ class SettingsManagerClass {
                 // The table background is a sprite name; settings saved before the art was
                 // renamed hold the old one.
                 if (this.settings.ui) this.settings.ui.backgroundTile = currentSpriteName(this.settings.ui.backgroundTile);
+                this._tidyLoaded();
                 logger.debug('SettingsManager', 'Settings loaded from storage');
             }
         } catch (e) {
             logger.error('SettingsManager', 'Failed to load settings', e);
         }
         this.applyFontSizes();
+    }
+
+    /**
+     * A stored file from an older build: retired keys go, and a shipped build turns a dev-only
+     * 1-minute auto-save (or any choice it doesn't offer) into the default.
+     */
+    _tidyLoaded(devBuild = IS_DEV_BUILD) {
+        for (const path of RETIRED_KEYS) {
+            const [group, key] = path.split('.');
+            if (this.settings[group]) delete this.settings[group][key];
+        }
+        const gameplay = this.settings.gameplay;
+        if (gameplay && !autoSaveChoices(devBuild).includes(gameplay.autoSaveIntervalMinutes)) {
+            gameplay.autoSaveIntervalMinutes = AUTO_SAVE_DEFAULT_MINUTES;
+        }
     }
 
     /**

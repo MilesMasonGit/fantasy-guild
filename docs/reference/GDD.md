@@ -1373,9 +1373,12 @@ drawers**. The menu can be flipped to the right.
   world can give: an entry nothing reaches, or only some worlds hold (a chest),
   joins its total once the run has one. Opened from an ingredient, closing the
   book brings the card back on its recipe list.
-- **Settings** (5 tabs): typography and fonts, all caps, autosave, background,
-  menu side, particles, volume (**master volume defaults to 0**: the game
-  starts silent), Debug Mode. Nine controls are "coming soon".
+- **Settings** (three tabs): **Display** (text size, font, all caps, menu
+  side, background, flying items, item stubs), **Game** (auto-save every 10
+  minutes, an hour or off, Save Game Now), **Audio** (master, music, SFX;
+  **master volume defaults to 0**: the game starts silent). Dev builds add a
+  Dev Tools tab (Debug Mode) and a 1-minute auto-save; a shipped build reads a
+  stored 1 minute as 10.
 - Keyboard: Escape closes one layer at a time; no gameplay hotkeys.
 
 ---

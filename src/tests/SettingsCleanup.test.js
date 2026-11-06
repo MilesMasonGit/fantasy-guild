@@ -1,77 +1,86 @@
 // @vitest-environment jsdom
-// the Settings screen had 13 controls that did nothing. Four named retired
-// concepts (Tray, cards, boost tiles, packs) and are deleted outright. Four
-// were already ruled "disabled + coming soon" in round 2 (Theme Mode, Zoom to
-// Cursor, Animations, Notification Position). The remaining five are simply
-// unwired (the setting is read nowhere) and are now disabled the same way,
-// until a later wave wires them.
+// The settings window: three tabs (Display, Game, Audio) and Dev Tools in dev builds only. The
+// five "coming soon" controls are gone with the settings only they read; the 1-minute auto-save
+// is for dev builds; a stored settings file from an older build keeps working.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import { SettingsModal } from '../ui/modals/SettingsModal.jsx';
-import { SettingsManager } from '../systems/core/SettingsManager.js';
+import { SettingsManager, autoSaveChoices } from '../systems/core/SettingsManager.js';
 
 const h = React.createElement;
 
-function openTab(label) {
-    const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes(label));
-    fireEvent.click(btn);
-}
+const tabButton = (id) => document.querySelector(`[data-settings-tab="${id}"]`);
+const openTab = (id) => fireEvent.click(tabButton(id));
+const settingKeys = () => [...document.querySelectorAll('[data-setting]')].map(e => e.getAttribute('data-setting'));
 
-const mount = () => render(h(SettingsModal, { isOpen: true, onClose: () => {} }));
+const mount = (Modal = SettingsModal) => render(h(Modal, { isOpen: true, onClose: () => {} }));
+
+const RETIRED = ['ui.tooltipsEnabled', 'ui.tooltipsItems', 'ui.zoomToCursor', 'gameplay.enableAnimations', 'gameplay.themeMode'];
+
+/** A settings file as an older build stored it: the five retired keys, a 1-minute auto-save, the player's own choices. */
+const OLD_FILE = {
+    ui: {
+        tooltipsEnabled: false, tooltipsItems: false, zoomToCursor: false, largeTrayTokens: true,
+        fontFamily: 'dotgothic', allCaps: false, bubbleMenuRight: true, backgroundTile: 'u_table_forest', itemParticles: false
+    },
+    gameplay: { themeMode: 'light', enableAnimations: false, autoSaveIntervalMinutes: 1 },
+    notifications: { itemStubs: false },
+    audio: { masterVolume: 40, musicVolume: 20, sfxVolume: 70 }
+};
 
 beforeEach(() => {
     // Injected by Vite's `define` in the real build; vitest runs its own
     // config without it, so the modal's version footer needs a stand-in.
     vi.stubGlobal('__APP_VERSION__', '0.0.0-test');
     localStorage.clear();
-    SettingsManager.settings = SettingsManager._deepMerge({}, SettingsManager.getAll());
     SettingsManager.resetOptions();
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.resetModules(); });
 
-describe('CR3-033: the four retired controls are gone', () => {
-    it('never renders Large Tray Tokens, Card Badge Tooltips, Boost Tile Tooltips or Instant Pack Reveal', () => {
+describe('the settings window has three tabs, and Dev Tools in a dev build', () => {
+    it('Display, Game, Audio, then Dev Tools, in that order', () => {
         mount();
-        for (const tab of ['Accessibility', 'Notifications', 'Gameplay', 'Audio', 'Dev Tools']) {
+        const tabs = [...document.querySelectorAll('[data-settings-tab]')].map(b => b.textContent.trim());
+        expect(tabs).toEqual(['Display', 'Game', 'Audio', 'Dev Tools']);
+    });
+
+    it('each tab holds the controls the brief lists', () => {
+        mount();
+        expect(settingKeys()).toEqual([
+            'ui.fontFamily', 'ui.allCaps', 'ui.bubbleMenuRight', 'ui.backgroundTile', 'ui.itemParticles', 'notifications.itemStubs'
+        ]);
+        expect(document.body.textContent).toContain('Typography Scale');
+        openTab('game');
+        expect(settingKeys()).toEqual(['gameplay.autoSaveIntervalMinutes']);
+        expect(document.body.textContent).toContain('Save Game Now');
+        openTab('audio');
+        expect(settingKeys()).toEqual(['audio.masterVolume', 'audio.musicVolume', 'audio.sfxVolume']);
+        openTab('dev');
+        expect(settingKeys()).toEqual(['debugMode']);
+    });
+
+    it('the five coming-soon controls and the four retired ones are gone from every tab', () => {
+        mount();
+        for (const tab of ['display', 'game', 'audio', 'dev']) {
             openTab(tab);
-            expect(document.body.textContent).not.toContain('Large Tray Tokens');
-            expect(document.body.textContent).not.toContain('Card Badge Tooltips');
-            expect(document.body.textContent).not.toContain('Boost Tile Tooltips');
-            expect(document.body.textContent).not.toContain('Instant Pack Reveal');
+            const text = document.body.textContent;
+            for (const gone of ['Coming soon', 'Theme Mode', 'Zoom to Cursor', 'Animations', 'Master Tooltips', 'Item Tooltips',
+                'Large Tray Tokens', 'Card Badge Tooltips', 'Boost Tile Tooltips', 'Instant Pack Reveal']) {
+                expect(text, `${tab}: ${gone}`).not.toContain(gone);
+            }
+            expect(document.querySelector('[data-setting-disabled]')).toBeNull();
         }
+    });
+
+    it('the settings only those controls read are gone from the defaults', () => {
+        for (const key of RETIRED) expect(SettingsManager.get(key), key).toBeUndefined();
     });
 });
 
-describe('CR3-033: the previously-ruled controls are disabled with "Coming soon"', () => {
-    it('Theme Mode, Zoom to Cursor and Animations (Accessibility tab)', () => {
+describe('the controls still work', () => {
+    it('Item Stubs, now on Display, turns the stubs off and on', () => {
         mount();
-        for (const key of ['gameplay.themeMode', 'ui.zoomToCursor', 'gameplay.enableAnimations']) {
-            const row = document.querySelector(`[data-setting="${key}"]`);
-            expect(row).not.toBeNull();
-            expect(row.getAttribute('data-setting-disabled')).toBe('true');
-            expect(row.textContent).toContain('Coming soon');
-        }
-    });
-
-});
-
-describe('the Notifications tab is one switch, for the item stubs', () => {
-    it('shows only the item-stub switch: the position and message toggles are gone', () => {
-        mount();
-        openTab('Notifications');
-        for (const key of ['notifications.position', 'showSystemMessages', 'showLevelUpMessages', 'showLootMessages']) {
-            expect(document.querySelector(`[data-setting="${key}"]`)).toBeNull();
-        }
-        expect(document.body.textContent).not.toContain('Notification Position');
-        const row = document.querySelector('[data-setting="notifications.itemStubs"]');
-        expect(row).not.toBeNull();
-        expect(row.getAttribute('data-setting-disabled')).not.toBe('true');
-    });
-
-    it('the switch turns the item stubs off and on', () => {
-        mount();
-        openTab('Notifications');
         const toggle = document.querySelector('[data-setting="notifications.itemStubs"] button');
         expect(SettingsManager.get('notifications.itemStubs')).toBe(true);
         fireEvent.click(toggle);
@@ -79,71 +88,95 @@ describe('the Notifications tab is one switch, for the item stubs', () => {
         fireEvent.click(toggle);
         expect(SettingsManager.get('notifications.itemStubs')).toBe(true);
     });
-});
 
-describe('CR3-033: the unwired controls are disabled with "Coming soon"', () => {
-    it('Master Tooltips and Item Tooltips (Gameplay tab)', () => {
+    it('All Caps Text and Menu on Right Side flip their settings', () => {
         mount();
-        openTab('Gameplay');
-        for (const key of ['ui.tooltipsEnabled', 'ui.tooltipsItems']) {
-            const row = document.querySelector(`[data-setting="${key}"]`);
-            expect(row).not.toBeNull();
-            expect(row.getAttribute('data-setting-disabled')).toBe('true');
+        for (const key of ['ui.allCaps', 'ui.bubbleMenuRight']) {
+            const before = SettingsManager.get(key);
+            fireEvent.click(document.querySelector(`[data-setting="${key}"] button`));
+            expect(SettingsManager.get(key), key).toBe(!before);
         }
     });
-});
 
-describe('CR3-033: a disabled control cannot be flipped, and live ones still work', () => {
-    it('clicking a disabled toggle does not change the stored setting', () => {
-        const before = SettingsManager.get('ui.zoomToCursor');
+    it('the auto-save choice is stored as minutes', () => {
         mount();
-        const row = document.querySelector('[data-setting="ui.zoomToCursor"]');
-        const toggle = row.querySelector('button');
-        expect(toggle.disabled).toBe(true);
-        fireEvent.click(toggle);
-        expect(SettingsManager.get('ui.zoomToCursor')).toBe(before);
+        openTab('game');
+        fireEvent.change(document.querySelector('[data-setting="gameplay.autoSaveIntervalMinutes"] select'), { target: { value: '60' } });
+        expect(SettingsManager.get('gameplay.autoSaveIntervalMinutes')).toBe(60);
     });
 
-    it('changing a disabled select does not change the stored setting', () => {
-        const before = SettingsManager.get('gameplay.themeMode');
+    it('the flying-items switch names the mat and where items land, not cards and inventory', () => {
         mount();
-        const row = document.querySelector('[data-setting="gameplay.themeMode"]');
-        const select = row.querySelector('select');
-        expect(select.disabled).toBe(true);
-        fireEvent.change(select, { target: { value: 'light' } });
-        expect(SettingsManager.get('gameplay.themeMode')).toBe(before);
-    });
-
-    it('All Caps Text (a live, unrelated control) still works', () => {
-        mount();
-        const label = Array.from(document.querySelectorAll('span')).find(s => s.textContent === 'All Caps Text');
-        expect(label).toBeTruthy();
-        const row = label.closest('.justify-between');
-        const toggle = row.querySelector('button');
-        expect(toggle.disabled).toBe(false);
-        const before = SettingsManager.get('ui.allCaps');
-        fireEvent.click(toggle);
-        expect(SettingsManager.get('ui.allCaps')).toBe(!before);
-    });
-});
-
-describe('CR3-033: unknown/stale keys in saved settings stay harmless', () => {
-    it('loading a save with the retired keys still present does not throw, and ignores them', () => {
-        localStorage.setItem('fantasy_guild_settings', JSON.stringify({
-            ui: { largeTrayTokens: true, tooltipsCardBadges: false, tooltipsBoostTiles: false, instantPackReveal: true }
-        }));
-        expect(() => SettingsManager.load()).not.toThrow();
-        expect(() => mount()).not.toThrow();
-    });
-});
-
-describe('the flying-items switch says what it does today', () => {
-    it('names the mat and where items land, not cards and inventory', () => {
-        mount();
-        openTab('Gameplay');
         const row = document.querySelector('[data-setting="ui.itemParticles"]');
-        expect(row).not.toBeNull();
         expect(row.textContent).not.toMatch(/cards|inventory|Particles/i);
         expect(row.textContent).toContain('item stubs');
+    });
+});
+
+describe('the 1-minute auto-save is for dev builds', () => {
+    it('a dev build offers 1 minute; a shipped one offers 10 minutes, 1 hour and off', () => {
+        expect(autoSaveChoices(true)).toEqual([1, 10, 60, 0]);
+        expect(autoSaveChoices(false)).toEqual([10, 60, 0]);
+    });
+
+    it('a dev build shows the 1-minute choice', () => {
+        mount();
+        openTab('game');
+        const options = [...document.querySelectorAll('[data-setting="gameplay.autoSaveIntervalMinutes"] option')].map(o => o.value);
+        expect(options).toEqual(['1', '10', '60', '0']);
+    });
+
+    it('a shipped build shows neither the 1-minute choice nor the Dev Tools tab', async () => {
+        vi.stubEnv('DEV', false);
+        vi.resetModules();
+        const { SettingsModal: ShippedModal } = await import('../ui/modals/SettingsModal.jsx');
+        mount(ShippedModal);
+        expect(document.querySelector('[data-settings-tab="dev"]')).toBeNull();
+        expect([...document.querySelectorAll('[data-settings-tab]')].map(b => b.textContent.trim())).toEqual(['Display', 'Game', 'Audio']);
+        openTab('game');
+        const options = [...document.querySelectorAll('[data-setting="gameplay.autoSaveIntervalMinutes"] option')].map(o => o.value);
+        expect(options).toEqual(['10', '60', '0']);
+    });
+});
+
+describe('a settings file from an older build keeps working', () => {
+    it('in a dev build: the player\'s choices load, the retired keys are dropped, 1 minute stays', () => {
+        localStorage.setItem('fantasy_guild_settings', JSON.stringify(OLD_FILE));
+        expect(() => SettingsManager.load()).not.toThrow();
+        expect(SettingsManager.get('ui.fontFamily')).toBe('dotgothic');
+        expect(SettingsManager.get('ui.allCaps')).toBe(false);
+        expect(SettingsManager.get('ui.bubbleMenuRight')).toBe(true);
+        expect(SettingsManager.get('ui.backgroundTile')).toBe('u_table_forest');
+        expect(SettingsManager.get('ui.itemParticles')).toBe(false);
+        expect(SettingsManager.get('notifications.itemStubs')).toBe(false);
+        expect(SettingsManager.get('audio.musicVolume')).toBe(20);
+        expect(SettingsManager.get('gameplay.autoSaveIntervalMinutes')).toBe(1);
+        for (const key of RETIRED) expect(SettingsManager.get(key), key).toBeUndefined();
+        expect(() => mount()).not.toThrow();
+        // The window shows the loaded choices.
+        expect(document.querySelector('[data-setting="ui.fontFamily"] select').value).toBe('dotgothic');
+    });
+
+    it('in a shipped build: a 1-minute auto-save becomes the 10-minute default, the rest as stored', async () => {
+        localStorage.setItem('fantasy_guild_settings', JSON.stringify(OLD_FILE));
+        vi.stubEnv('DEV', false);
+        vi.resetModules();
+        const { SettingsManager: Shipped } = await import('../systems/core/SettingsManager.js');
+        Shipped.load();
+        expect(Shipped.get('gameplay.autoSaveIntervalMinutes')).toBe(10);
+        expect(Shipped.get('ui.fontFamily')).toBe('dotgothic');
+        expect(Shipped.get('audio.sfxVolume')).toBe(70);
+        for (const key of RETIRED) expect(Shipped.get(key), key).toBeUndefined();
+    });
+
+    it('a shipped build keeps a stored 10 minutes, 1 hour or off', async () => {
+        vi.stubEnv('DEV', false);
+        vi.resetModules();
+        const { SettingsManager: Shipped } = await import('../systems/core/SettingsManager.js');
+        for (const minutes of [10, 60, 0]) {
+            localStorage.setItem('fantasy_guild_settings', JSON.stringify({ gameplay: { autoSaveIntervalMinutes: minutes } }));
+            Shipped.load();
+            expect(Shipped.get('gameplay.autoSaveIntervalMinutes')).toBe(minutes);
+        }
     });
 });
