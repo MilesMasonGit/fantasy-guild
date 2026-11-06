@@ -13,9 +13,9 @@ build green) · bench-queued · eye-check · merged.*
 |---|---|---|---|---|---|
 | 360 C2: the fight window B, minimized tabs D, several at once | builder | `crunch/combat-window` (`c2`) | ready a38e6467 with C3 merged in and the owner's rulings (B stat column, special-move bubbles, no shadow on the fight button); director: 7472 tests, cycles, build green, game checked; bench Fri 01:00 | Thu | |
 | 360 C3: the mat F, the combat icon between the bars, floats, move bubbles, QA crowd button | builder | `crunch/combat-mat` (`c3`) | merged into C2 at 8c1d1f88 | Thu | Thu |
-| 360 C4: crowded fights step to open space (expect WORK CHANGED) | engineer | `crunch/combat-step` (`c4`, from a38e6467) | ready b21c8b88, bench queued (expect WORK CHANGED on S3, C240, C256 and S8; a step up to 160 u, at most 1.8 s before the first swing); director: 595 files green, cycles, build | Thu | |
+| 360 C4: crowded fights step to open space (expect WORK CHANGED) | engineer | `crunch/combat-step` (`c4`, from a38e6467) | owner approved 5 Nov (160 u step, crowd as built); ready b21c8b88, bench queued, then merge (expect WORK CHANGED on S3, C240, C256 and S8; a step up to 160 u, at most 1.8 s before the first swing); director: 595 files green, cycles, build | Thu | |
 | 370 R1: rivers with real bends, varying width, variety by world (expect WORK CHANGED) | engineer | `crunch/rivers` (`r1`, from main) | ready 17ca390f (engine work expected same: no scenario lays out a world; new river Regions lay out differently); director: 593 files green, cycles, build; merged into R2 at 5d793679 | Thu | |
-| 370 R2: water depth bands, ragged ground borders, settled dirt | builder | `crunch/ground-look` (`r2`, from main) | ready ad26dd99 with R1 merged in (5d793679; noise channels moved off R1's); director: 593 files green, cycles, build; combined pictures in `research/terrain_round/built_r2/combined_*.png`; bench queued | Thu | |
+| 370 R2: water depth bands, ragged ground borders, settled dirt | builder | `crunch/ground-look` (`r2`, from main) | owner approved 5 Nov (wide bank, all as built; Terrain QA buttons retired again); ready ad26dd99 with R1 merged in (5d793679; noise channels moved off R1's); director: 593 files green, cycles, build; combined pictures in `research/terrain_round/built_r2/combined_*.png`; bench queued | Thu | |
 | T-319: the last Region's water lingered after travel as broken pieces (the owner saw it in the R2 pictures) | director | `fix/water-shimmer-travel` | **merged** 15c38479, look-preserving fix, no eye-check; 592 files green, cycles, build; reproduced and checked in the game | Thu | Thu |
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
@@ -148,9 +148,7 @@ None open.
 
 ## Questions for the owner
 
-- **River bank (R1), for the eye-check:** A. wide bank with sand bars in the bends, width 7 (built, recommended); B. thin as today, 2.5; C. in between, about 5.
 
-- **Crowded fights (C4), for the eye-check:** (1) how far may a crowded fight step: A. 160 u, one mat step (built, recommended); B. 240 u, more fights find room, walks up to 2.7 s. (2) the QA crowd steps only 24 to 32 u: A. keep it (built, shows a fight with no room too); B. pack it tighter for bigger steps.
 
 - **For combat planning (not a question):** hostile enemies notice a flag within `Flags.flagRadius()` of their spawner, so the hero reach going 164 → 240 (A3) widened what enemies notice too. Owner 2026-10-23: fine for now; combat planning decides what enemies should notice.
 
