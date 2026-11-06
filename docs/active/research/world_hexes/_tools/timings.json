@@ -1,0 +1,59 @@
+{
+ "A_E.png": {
+  "loadGround": 785.6,
+  "worldPicture": 188.4,
+  "hexLayer": 41.4
+ },
+ "B_E.png": {
+  "loadGround": 788.4,
+  "worldPicture": 184.1,
+  "hexLayer": 74.7
+ },
+ "C_E.png": {
+  "loadGround": 821.7,
+  "worldPicture": 188.2,
+  "hexLayer": 92.2
+ },
+ "A_E_p1.png": {
+  "loadGround": 532.5,
+  "worldPicture": 184.8,
+  "hexLayer": 39
+ },
+ "B_E_p1.png": {
+  "loadGround": 659.3,
+  "worldPicture": 185.3,
+  "hexLayer": 78.5
+ },
+ "C_E_p1.png": {
+  "loadGround": 797.1,
+  "worldPicture": 186.8,
+  "hexLayer": 98.6
+ },
+ "none_D.png": {
+  "loadGround": 713,
+  "worldPicture": 375.7,
+  "hexLayer": 5.7
+ },
+ "none_E.png": {
+  "loadGround": 891.7,
+  "worldPicture": 215.7,
+  "hexLayer": 10
+ },
+ "none_F.png": {
+  "loadGround": 865.9,
+  "worldPicture": 184.3,
+  "hexLayer": 5.9,
+  "tokensF": 149.6
+ },
+ "A_D.png": {
+  "loadGround": 814.8,
+  "worldPicture": 375.3,
+  "hexLayer": 38.3
+ },
+ "A_F.png": {
+  "loadGround": 766.6,
+  "worldPicture": 188.6,
+  "hexLayer": 43.7,
+  "tokensF": 92.7
+ }
+}
