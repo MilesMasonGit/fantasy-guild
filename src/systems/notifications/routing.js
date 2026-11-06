@@ -1,5 +1,5 @@
 import { EventBus, UI_LISTENER } from '../core/EventBus.js';
-import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../core/engineEvents.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
 import { GameState } from '../../state/GameState.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
@@ -11,13 +11,18 @@ import * as ItemStubs from './itemStubs.js';
 import * as Banners from './banners.js';
 import { TONE } from './bannerKinds.js';
 import { recipesUnlockedBy, othersBestLevel } from './recipeUnlocks.js';
+import { hasNews } from './catchUpNews.js';
+import * as Atlas from '../atlas/Atlas.js';
+import { defaultBannerFor } from '../../config/areaBanners.js';
 
 /**
  * Where every game event goes (the owner's audit): items to the stubs, what must not be missed to
  * a banner. Level-ups stay on the hero (the level-up moment and speech), refusals are callouts on
  * the mat, and the rest says nothing; none of those is wired here.
  *
- * Every route is a `UI_LISTENER`: a catch-up's quiet bus skips them, and its summary reports.
+ * Every route is a `UI_LISTENER`: a catch-up's quiet bus skips them. The catch-up hears that news
+ * itself (`summary.news`, `catchUpNews.js`) and it is handed over here once its summary closes
+ * ({@link deliverCatchUpNews}).
  */
 
 const itemName = (itemId) => getItem(itemId)?.name || itemId;
@@ -137,6 +142,40 @@ export const ROUTES = [
         })
     },
     {
+        event: ENGINE_EVENTS.ATLAS_CHANGED, to: 'banner:settled',
+        handle: ({ reason, regionId } = {}) => {
+            if (reason !== 'created') return;
+            // The first camp of a new game is never announced as created; a settled place is.
+            const region = Atlas.getRegion(regionId);
+            if (!region || region.kind !== Atlas.REGION_KIND.SETTLED) return;
+            const banner = defaultBannerFor(region.ground?.main || null);
+            Banners.push({
+                kind: 'settled',
+                parts: { places: [region.flavourName || region.practicalName || 'A new place'] },
+                sprite: banner ? { kind: 'area', id: banner } : null
+            });
+        }
+    },
+    {
+        // A catch-up long enough for "While you were away" keeps its news until the summary closes;
+        // a short one, with no summary, hands it over at once.
+        event: ENGINE_EVENTS.CATCH_UP_FINISHED, to: 'catchUp:news',
+        handle: ({ show, summary } = {}) => {
+            const news = summary?.news;
+            if (!hasNews(news)) return;
+            if (show) heldNews.push(news);
+            else deliverCatchUpNews(news);
+        }
+    },
+    {
+        event: UI_EVENTS.CATCH_UP_SUMMARY_CLOSED, to: 'catchUp:news',
+        handle: () => {
+            const held = heldNews;
+            heldNews = [];
+            for (const news of held) deliverCatchUpNews(news);
+        }
+    },
+    {
         // Another save, or a new game: nothing carries over but the pins that save kept.
         event: ENGINE_EVENTS.GAME_LOADED, to: 'reset',
         handle: () => startFresh()
@@ -151,11 +190,59 @@ export const ROUTES = [
 
 /** Empty stubs and banners, then the pins of the game now running. */
 function startFresh() {
+    heldNews = [];
     stopFadeTimer();
     ItemStubs.reset();
     Banners.reset();
     ItemStubs.loadPins(GameState.state?.ui?.pinnedStubs);
 }
+
+// --- After time away -------------------------------------------------------------------------
+
+/** News from catch-ups whose summary is still open. A load forgets it; "Load as I left it" reloads the page. */
+let heldNews = [];
+
+/** The most first-find stubs one catch-up raises; the summary lists every find. */
+export const MAX_FIND_STUBS = 6;
+
+/**
+ * Hand a catch-up's news (`summary.news`) to the banners and stubs, merged as live play merges
+ * them: one banner each for its recipes, its knock-outs and the Bank refusing items, however
+ * long the absence, and a gold "New!" stub for each first find (at most {@link MAX_FIND_STUBS}).
+ * Milestones go first, so the problems drop in on top.
+ */
+export function deliverCatchUpNews(news) {
+    if (!hasNews(news)) return;
+    const batch = ++newsBatches;
+    for (const row of news.recipes || []) {
+        Banners.push({
+            kind: 'recipe',
+            groupKey: `catch_up_recipes:${batch}`,
+            parts: { heroes: [row.heroName], recipes: row.recipes.map(r => r.name) },
+            sprite: itemSprite(row.recipes[0]?.itemId),
+            subjects: row.heroId ? [{ type: 'hero', id: row.heroId }] : []
+        });
+    }
+    for (const row of news.knockouts || []) {
+        Banners.push({
+            kind: 'knockout',
+            groupKey: `catch_up_knockouts:${batch}`,
+            parts: { heroes: [row.heroName], lost: row.lost || [] },
+            sprite: heroSprite(row.heroId),
+            subjects: row.heroId ? [{ type: 'hero', id: row.heroId }] : []
+        });
+    }
+    for (const itemId of news.bankFull || []) {
+        Banners.push({ kind: 'bankFull', parts: { items: [itemName(itemId)] }, sprite: itemSprite(itemId) });
+    }
+    for (const { itemId, count } of (news.finds || []).slice(0, MAX_FIND_STUBS)) {
+        ItemStubs.markNew(itemId);
+        ItemStubs.recordFlow(itemId, { added: count });
+    }
+    if (news.finds?.length) ensureFadeTimer();
+}
+
+let newsBatches = 0;
 
 /** The sound a banner makes as it comes on screen: a chime, or a warning tone for a problem. */
 export const BANNER_SOUND = Object.freeze({ [TONE.MILESTONE]: 'quest_claim', [TONE.PROBLEM]: 'invasion' });

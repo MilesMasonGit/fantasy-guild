@@ -9,6 +9,7 @@ import { AudioSystem } from './AudioSystem.js';
 import { SaveManager } from './SaveManager.js';
 import { ENGINE_EVENTS, HEARD_WHILE_QUIET } from './engineEvents.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
+import { startNewsCollector } from '../notifications/catchUpNews.js';
 import { CATCH_UP } from '../../config/loopConstants.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -38,6 +39,9 @@ import { logger } from '../../utils/Logger.js';
  * - `fightsWon`: `{ total, byEnemy: { enemyId: count } }`.
  * - `combat`: `{ food, elixirs, drops }`, each `{ itemId: count }`: meals eaten in fights, elixirs
  *   drunk as fights started, and what kills dropped (fights lost are `wounded`).
+ * - `news`: what the quiet bus kept from the banners and stubs (`catchUpNews.js`): recipes
+ *   unlocked, first finds, items a full Bank refused, heroes knocked out. The notifications hand
+ *   it over once the summary closes (`routing.js`). Null when `news: false`.
  */
 
 let running = false;
@@ -162,7 +166,8 @@ function change(before, after) {
 const heroName = (heroId) => (GameState.state?.heroes || []).find(h => h.id === heroId)?.name || heroId;
 
 /** Listen to the engine's events for the summary. `stop()` unsubscribes and returns it. */
-function startSummary() {
+function startSummary({ news: withNews = true } = {}) {
+    const news = withNews ? startNewsCollector() : null;
     const bankBefore = bankSnapshot();
     const floorBefore = floorSnapshot();
     const gained = {};
@@ -214,17 +219,18 @@ function startSummary() {
     return {
         stop() {
             for (const off of offs) off();
+            const net = change(bankBefore, bankSnapshot());
             return {
                 items: {
-                    gained, spent,
-                    net: change(bankBefore, bankSnapshot()),
+                    gained, spent, net,
                     floor: change(floorBefore, floorSnapshot())
                 },
                 levelUps: [...levels.values()],
                 depleted,
                 wounded: [...wounded.entries()].map(([heroId, times]) => ({ heroId, heroName: heroName(heroId), times })),
                 fightsWon,
-                combat
+                combat,
+                news: news ? news.stop({ gained, net }) : null
             };
         }
     };
@@ -265,6 +271,8 @@ function enterQuiet(startMs) {
  *        it read). Without it, the game as it stands before playing. Kept only for a catch-up that
  *        shows and saves, in a game with a slot.
  * @param {() => Promise<void>} [options.yieldFn]
+ * @param {boolean} [options.news]  hear the news for the banners and stubs (`summary.news`); a test
+ *        turns it off to show the game plays the same either way
  * @returns {Promise<{awayMs: number, simulatedMs: number, droppedMs: number, steps: number,
  *          wallMs: number, show: boolean, summary: object|null}>}
  */
@@ -278,7 +286,8 @@ export async function run({
     save = true,
     reset = true,
     before = null,
-    yieldFn = yieldToEventLoop
+    yieldFn = yieldToEventLoop,
+    news = true
 } = {}) {
     const readNow = typeof now === 'function' ? now : () => now;
     const wallStart = performance.now();
@@ -300,7 +309,7 @@ export async function run({
     // The live loop is paused while the catch-up plays, and picks up from the real clock after.
     const wasLooping = GameLoop.getIsRunning();
     if (wasLooping) GameLoop.stop();
-    const summary = startSummary();
+    const summary = startSummary({ news });
     const leave = enterQuiet(savedAt);
     let played = 0;
     let steps = 0;

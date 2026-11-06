@@ -11,6 +11,9 @@ import { xpForLevel } from '../../utils/XPCurve.js';
 import { ROUTES } from '../../systems/notifications/routing.js';
 import * as Banners from '../../systems/notifications/banners.js';
 import { othersBestLevel } from '../../systems/notifications/recipeUnlocks.js';
+import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
+import * as CatchUp from '../../systems/core/CatchUp.js';
+import { SaveManager } from '../../systems/core/SaveManager.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 
@@ -135,4 +138,60 @@ export function bankFullNow() {
 export function clearBanners() {
     Banners.reset();
     return 'Banners cleared';
+}
+
+// --- Time away with news --------------------------------------------------------------------
+
+/**
+ * The news a time away can bring, made while it plays (the bus quiet, as in a real catch-up):
+ * recipes unlocked and first finds through the real paths; a knock-out and the Bank refusing
+ * items as their announcements only (display only: no gear lost, nothing put on the mat; the
+ * knocked-out hero's flag is taken down and they walk home, as after a real one).
+ */
+function makeNews({ levelUps = 1, finds = 2, refused = 1, knockouts = 1 } = {}) {
+    for (let i = 0; i < levelUps; i++) levelUpForRecipes();
+    for (let i = 0; i < finds; i++) findNewItem();
+    for (const { itemId } of heldItems().slice(0, refused)) EventBus.publish(ENGINE_EVENTS.BANK_FULL, { itemId });
+    for (const h of heroes().slice(0, knockouts)) {
+        EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId: h.id, heroName: h.name, lost: ['Copper Sword'] });
+    }
+}
+
+/**
+ * Play `minutes` of time away now, as a closed game coming back would, with `news` made inside
+ * it. Saved at the end when a slot is open, so "Load as I left it" is offered on the summary.
+ */
+async function awayWithNews(minutes, news) {
+    if (CatchUp.isRunning()) return 'A catch-up is already playing';
+    if (!GameState.state) return 'Start or load a game first';
+    // Heard through the quiet bus, which still delivers the catch-up's start.
+    const off = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_STARTED, () => {
+        off();
+        makeNews(news);
+    }, UI_LISTENER);
+    const now = Date.now();
+    try {
+        await CatchUp.run({ savedAt: now - minutes * 60_000, now, save: SaveManager.currentSlot != null });
+    } finally {
+        off();
+    }
+    return null;
+}
+
+/** 20 minutes away: the summary lists the news; closing it raises the banners and the gold stubs. */
+export async function timeAwayWithNews() {
+    return (await awayWithNews(20, {}))
+        || 'Played 20 minutes away: the summary lists the news; close it and the banners and gold New! stubs follow';
+}
+
+/** One minute away, under the two that bring up the summary: the banners come at once. */
+export async function shortTimeAwayWithNews() {
+    return (await awayWithNews(1, {}))
+        || 'Played 1 minute away: no summary, so the banners and stubs came at once';
+}
+
+/** Three hours away with a lot of news: still one banner per kind, and a handful of stubs. */
+export async function longTimeAwayWithNews() {
+    return (await awayWithNews(180, { levelUps: 4, finds: 10, refused: 3, knockouts: 4 }))
+        || 'Played 3 hours away with lots of news: close the summary, one banner per kind, at most 6 stubs';
 }

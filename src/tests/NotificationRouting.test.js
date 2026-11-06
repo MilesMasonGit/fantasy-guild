@@ -18,7 +18,8 @@ import * as ItemStubs from '../systems/notifications/itemStubs.js';
 import * as Banners from '../systems/notifications/banners.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
-import { ROUTES, wireNotifications, unwireNotifications, pins } from '../systems/notifications/routing.js';
+import { ROUTES, wireNotifications, unwireNotifications, pins, MAX_FIND_STUBS, BANNER_SOUND } from '../systems/notifications/routing.js';
+import * as Atlas from '../systems/atlas/Atlas.js';
 import { recipesUnlockedBy } from '../systems/notifications/recipeUnlocks.js';
 import { announce } from '../ui/components/board/dropOnMat.js';
 import { equipOrAnnounce } from '../ui/components/dock/dockEquip.js';
@@ -69,7 +70,10 @@ describe('the routing table', () => {
             [ENGINE_EVENTS.HERO_RECRUITED]: 'banner:hero',
             [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED]: 'banner:upgrade',
             [BOARD_EVENTS.HERO_DEFEATED]: 'banner:knockout',
-            [ENGINE_EVENTS.BANK_FULL]: 'banner:bankFull'
+            [ENGINE_EVENTS.BANK_FULL]: 'banner:bankFull',
+            [ENGINE_EVENTS.ATLAS_CHANGED]: 'banner:settled',
+            [ENGINE_EVENTS.CATCH_UP_FINISHED]: 'catchUp:news',
+            [UI_EVENTS.CATCH_UP_SUMMARY_CLOSED]: 'catchUp:news'
         });
     });
 });
@@ -254,5 +258,139 @@ describe('refusals are callouts, never notifications', () => {
         off();
         expect(said).toEqual(['No free slot in the loadout']);
         expect(toasts).toEqual([]);
+    });
+});
+
+describe('after time away: the catch-up\'s news, handed over', () => {
+    /** A catch-up's news as `CatchUp.run` hands it over (`summary.news`). */
+    const news = (extra = {}) => ({
+        recipes: [{ heroId: 'h1', heroName: 'Aela', skillId: 'cooking', recipes: [
+            { id: 'r_cider', name: 'Cider', itemId: 'item_cider' },
+            { id: 'r_pie', name: 'Apple Pie', itemId: 'item_pie' },
+            { id: 'r_stew', name: 'Stew', itemId: 'item_stew' }
+        ] }],
+        finds: [{ itemId: 'item_copper', count: 4 }],
+        bankFull: ['item_oak'],
+        knockouts: [{ heroId: 'h2', heroName: 'Bram', times: 1, lost: ['Copper Sword'] }],
+        ...extra
+    });
+    const finished = (n, show) => EventBus.publish(ENGINE_EVENTS.CATCH_UP_FINISHED, {
+        show, awayMs: show ? 3_600_000 : 60_000, summary: { news: n }
+    });
+    const closed = () => EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
+    const kinds = () => Banners.getAll().map(b => b.kind);
+
+    it('a summary on screen holds it; closing the summary raises the banners and the gold stubs', () => {
+        finished(news(), true);
+        expect(Banners.getAll()).toEqual([]);
+        expect(ItemStubs.getStub('item_copper')).toBeNull();
+
+        closed();
+        // Milestones first, so the problems drop in on top (newest on top).
+        expect(Banners.getView().shown.map(b => b.kind)).toEqual(['bankFull', 'knockout', 'recipe']);
+        const recipe = Banners.getAll().find(b => b.kind === 'recipe');
+        expect(recipe.line).toBe('Aela unlocked 3 recipes: Cider, Apple Pie, ...');
+        expect(Banners.getAll().find(b => b.kind === 'knockout').line).toBe('Bram was carried home, injured. Lost: Copper Sword.');
+        expect(Banners.getAll().find(b => b.kind === 'bankFull').line).toMatch(/waits on the mat/);
+        const stub = ItemStubs.getStub('item_copper');
+        expect(stub.isNew).toBe(true);
+        expect(ItemStubs.netOf(stub)).toBe(4);
+        expect(toasts).toEqual([]);
+
+        // Said once: closing again raises nothing more.
+        closed();
+        expect(Banners.getAll()).toHaveLength(3);
+    });
+
+    it('a short catch-up with no summary raises them at once', () => {
+        finished(news(), false);
+        expect(kinds().sort()).toEqual(['bankFull', 'knockout', 'recipe']);
+        expect(ItemStubs.getStub('item_copper').isNew).toBe(true);
+    });
+
+    it('each comes on screen with its sound, as a live banner does', () => {
+        const sounds = [];
+        const off = EventBus.subscribe(ENGINE_EVENTS.AUDIO_PLAY, (p) => sounds.push(p.clip));
+        try {
+            finished(news(), false);
+        } finally {
+            off();
+        }
+        expect(sounds).toEqual([BANNER_SOUND.milestone, BANNER_SOUND.problem, BANNER_SOUND.problem]);
+    });
+
+    it('a long absence stays merged: one banner per kind, and no wall of stubs', () => {
+        const heroes = ['Aela', 'Bram', 'Cara', 'Dov', 'Eli'];
+        const finds = Array.from({ length: 15 }, (_, i) => ({ itemId: `item_find_${i}`, count: i + 1 }));
+        finished(news({
+            recipes: heroes.map((name, i) => ({ heroId: `h${i}`, heroName: name, skillId: 'cooking', recipes: [{ id: `r${i}`, name: `Dish ${i}`, itemId: 'item_pie' }] })),
+            knockouts: heroes.map((name, i) => ({ heroId: `h${i}`, heroName: name, times: 3, lost: [] })),
+            bankFull: ['item_oak', 'item_stone', 'item_copper_ore'],
+            finds
+        }), true);
+        closed();
+        expect(kinds().sort()).toEqual(['bankFull', 'knockout', 'recipe']);
+        expect(Banners.getView().waiting).toBe(0);
+        expect(Banners.getAll().find(b => b.kind === 'recipe').line).toBe('Aela, Bram and 3 more unlocked 5 recipes: Dish 0, Dish 1, ...');
+        expect(Banners.getAll().find(b => b.kind === 'knockout').line).toBe('Aela, Bram and 3 more knocked out and carried home');
+        ItemStubs.flush();
+        expect(ItemStubs.getStubs()).toHaveLength(MAX_FIND_STUBS);
+        expect(ItemStubs.getStubs().every(s => s.isNew)).toBe(true);
+    });
+
+    it('two catch-ups before the summary closes: both handed over', () => {
+        finished(news({ bankFull: [], knockouts: [], finds: [] }), true);
+        finished(news({
+            recipes: [{ heroId: 'h2', heroName: 'Bram', skillId: 'smithing', recipes: [{ id: 'r_bar', name: 'Copper Bar', itemId: 'item_copper_bar' }] }],
+            bankFull: [], knockouts: [], finds: []
+        }), true);
+        closed();
+        expect(kinds()).toEqual(['recipe', 'recipe']);
+    });
+
+    it('a load before the summary closes forgets it (a new game too)', () => {
+        finished(news(), true);
+        EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0 });
+        closed();
+        expect(Banners.getAll()).toEqual([]);
+        expect(ItemStubs.getStub('item_copper')).toBeNull();
+
+        finished(news(), true);
+        EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'new_game' });
+        closed();
+        expect(Banners.getAll()).toEqual([]);
+    });
+
+    it('a catch-up with nothing to say raises nothing', () => {
+        finished({ recipes: [], finds: [], bankFull: [], knockouts: [] }, false);
+        finished(null, false);
+        EventBus.publish(ENGINE_EVENTS.CATCH_UP_FINISHED, { show: false, summary: null });
+        closed();
+        expect(Banners.getAll()).toEqual([]);
+        expect(ItemStubs.getStubs()).toEqual([]);
+    });
+});
+
+describe('a place settled is a gold banner', () => {
+    it('settling a new place raises it with the place\'s name; the first camp of a new game says nothing', () => {
+        Atlas.createStarterRegion();
+        expect(Banners.getAll()).toEqual([]);
+
+        const { region } = Atlas.createRegion({ seed: 7, ground: { main: 'forest' } });
+        const [banner] = Banners.getAll();
+        expect(banner.kind).toBe('settled');
+        expect(banner.tone).toBe('milestone');
+        expect(banner.title).toBe('New Place Settled!');
+        expect(banner.line).toBe(`The guild settled ${region.flavourName}`);
+        expect(banner.sprite).toEqual({ kind: 'area', id: expect.any(String) });
+        expect(Banners.getAll()).toHaveLength(1);
+    });
+
+    it('travel, renames and the rest of the Atlas\'s news say nothing', () => {
+        Atlas.createStarterRegion();
+        for (const reason of ['travelled', 'renamed', 'archived', 'restored', 'abandoned']) {
+            EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason, regionId: Atlas.activeRegion()?.id });
+        }
+        expect(Banners.getAll()).toEqual([]);
     });
 });

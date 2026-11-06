@@ -4,7 +4,8 @@
 import { useState } from 'react';
 import {
     startLootFlow, stopLootFlow, findNewItem, levelUpForRecipes,
-    fourBanners, knockoutWithWaiting, knockoutNow, bankFullNow, clearBanners
+    fourBanners, knockoutWithWaiting, knockoutNow, bankFullNow, clearBanners,
+    timeAwayWithNews, shortTimeAwayWithNews, longTimeAwayWithNews
 } from './notificationsDev.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
@@ -19,7 +20,10 @@ const ACTIONS = [
     { id: 'ko-waiting', label: 'Knock-out behind three banners', run: knockoutWithWaiting },
     { id: 'ko', label: 'Knock-out banner', run: knockoutNow },
     { id: 'bank', label: 'Bank full banner', run: bankFullNow },
-    { id: 'clear', label: 'Clear banners', run: clearBanners }
+    { id: 'clear', label: 'Clear banners', run: clearBanners },
+    { id: 'away', label: 'Time away with news (20 min)', run: timeAwayWithNews },
+    { id: 'away-short', label: 'Short time away with news (1 min)', run: shortTimeAwayWithNews },
+    { id: 'away-long', label: 'Long time away, lots of news (3 h)', run: longTimeAwayWithNews }
 ];
 
 export function NotificationsDevSection() {
@@ -29,7 +33,7 @@ export function NotificationsDevSection() {
             <div className={labelClass}>Notifications</div>
             <div className="grid grid-cols-2 gap-1">
                 {ACTIONS.map(a => (
-                    <button key={a.id} type="button" data-dev-notify={a.id} className={buttonClass} onClick={() => setStatus(a.run())}>
+                    <button key={a.id} type="button" data-dev-notify={a.id} className={buttonClass} onClick={async () => setStatus(await a.run())}>
                         {a.label}
                     </button>
                 ))}

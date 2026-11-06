@@ -3,6 +3,7 @@ import * as Banners from '../../../systems/notifications/banners.js';
 import { TONE } from '../../../systems/notifications/bannerKinds.js';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
+import { BannerArt } from '../base/BannerArt.jsx';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { cn } from '../../utils/cn.js';
 import { outlineSubjects } from './bannerHighlight.js';
@@ -28,6 +29,14 @@ const BannerSprite = ({ sprite }) => {
     if (!sprite) return <div style={{ width: SPRITE_PX, height: SPRITE_PX }} />;
     if (sprite.kind === 'item') {
         return <ItemIcon item={sprite.id} size={SPRITE_PX} title={null} className="shrink-0" />;
+    }
+    // A place: a square of its area banner at 1x, never shrunk.
+    if (sprite.kind === 'area') {
+        return (
+            <div data-banner-area={sprite.id} className="relative shrink-0 overflow-hidden" style={{ width: SPRITE_PX, height: SPRITE_PX }}>
+                <BannerArt banner={sprite.id} scale={1} />
+            </div>
+        );
     }
     return (
         <img

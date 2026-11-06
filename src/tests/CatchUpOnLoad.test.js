@@ -9,7 +9,9 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus, UI_LISTENER } from '../systems/core/EventBus.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
-import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
+import * as ItemStubs from '../systems/notifications/itemStubs.js';
+import { getAllItems } from '../config/registries/itemRegistry.js';
 import { CATCH_UP } from '../config/loopConstants.js';
 import { resetMatTuning } from '../config/matTuning.js';
 
@@ -91,6 +93,31 @@ describe('catching up on load', () => {
         } finally {
             saves.mockRestore();
         }
+    });
+
+    it('what the time away found survives the load and shows once the summary closes', async () => {
+        writeSlot(NOW - 30 * MIN);
+        const found = () => GameState.state.collection.discoveredItems;
+        let item = null;
+        GameLoop.onTick('test_find', () => {
+            item = Object.values(getAllItems()).find(i => i?.id && !found()[i.id] && i.stackable !== false)?.id;
+            InventoryManager.addItem(item, 2);
+            GameLoop.offTick('test_find');
+        }, 1);
+        try {
+            await SaveManager.loadSlot(0);
+            ItemStubs.reset();
+            await EngineBootstrap.onSlotSelected(0, false);
+        } finally {
+            GameLoop.offTick('test_find');
+        }
+        expect(item).toBeTruthy();
+        expect(CatchUp.lastResult().summary.news.finds).toEqual([{ itemId: item, count: 2 }]);
+        // The load's GAME_LOADED came first, so nothing it clears is lost; the summary is still up.
+        expect(ItemStubs.getStub(item)).toBeNull();
+        EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
+        expect(ItemStubs.getStub(item)).toMatchObject({ isNew: true, added: 2 });
+        ItemStubs.reset();
     });
 
     it('a save written 30 h ago plays 24 h', async () => {
