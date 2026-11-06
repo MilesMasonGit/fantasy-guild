@@ -5,6 +5,16 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Buying a Guild Hall star is a small moment** (brief 390 G4): the star bursts in hard
+  pixels with a chime, light hops along its lines to the stars it just opened, which pop as it
+  arrives; finishing a whole constellation bursts bigger, sparkles each of its stars in turn and
+  flashes its lines. It plays once, only while the sky is open: never on load, after time away,
+  or for a rank bought while the Hall was closed. Under reduced motion a still version shows
+  instead. The chime files and constellation pictures are slots for the owner's sound and art
+  (`hall_star_chime.ogg`, `hall_constellation_chime.ogg`, `constellation_<id>.png`); until they
+  exist a Kenney pot sound plays and no picture is drawn. QA panel: "A star that opens others"
+  and "A constellation one star short".
+
 - **"While you were away" in two columns** (brief 440 A1): the items on the left, each item once
   with its net change in green or red (gained and spent on hover, a small mark on loot still on
   the mat), the news on the right (knock-outs, the Bank refusing items, new recipes, first finds,

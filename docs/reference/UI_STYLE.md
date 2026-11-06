@@ -204,6 +204,16 @@ normal text colour; a new meaning needs the owner's OK.
   price as rows, and a large main **Settle** across the panel's width (greyed with what is short
   under it), or, once settled, its mat drawn small, its facts and a large **Travel**.
 
+## The Guild Hall's upgrade ceremony (brief 390 G4)
+
+- **Hard pixels, held frames**: a burst is rays of square art pixels (the sky's 2×) thrown out
+  past the star in four held frames of 70 ms, white, white, gold, dark gold; a finished
+  constellation's has six frames and sixteen rays. Light along a line is a six-art-pixel dash that
+  hops whole steps (`steps()`), never a glide. No glow, blur or scaling.
+- **Reduced motion**: one burst frame and the whole line lit, held still, then gone.
+- **Once, while the sky is open**: never on load, after time away or for a rank bought while the
+  Hall was closed.
+
 ## Sprites and icons
 
 - **Every sprite draws at a whole multiple of its art size** (1×, 2×, 3×),

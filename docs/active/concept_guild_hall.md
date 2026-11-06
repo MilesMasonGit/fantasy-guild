@@ -1,4 +1,4 @@
-Status: briefed 2026-10-14 for Transitions and The look of the sky (brief 160); the rest approved 2026-10-09; amendment **"upgrades as a main driver" approved 2026-10-30, briefed (brief 320)**; "The detail pass" built 2026-11-06 (brief 390 G2, G3)
+Status: briefed 2026-10-14 for Transitions and The look of the sky (brief 160); the rest approved 2026-10-09; amendment **"upgrades as a main driver" approved 2026-10-30, briefed (brief 320)**; "The detail pass" built 2026-11-06 (brief 390 G2, G3, G4)
 
 # The Guild Hall: constellation screen, upgrades, transitions
 
@@ -177,6 +177,11 @@ sky.*
   button** (greyed with "The Bank is short of the price" underneath when it cannot be bought).
   The panel is only as tall as what it shows. The rank-by-rank list is gone; the author's
   description shows on hover over the sentence.
+- **The upgrade ceremony** (G4, built 2026-11-06): the star bursts in hard pixels with a chime,
+  light hops along its lines to what it opened, and a finished constellation bursts bigger,
+  sparkles each star and flashes its lines. Owner art slot: `constellation_<id>.png` in
+  `public/assets/playmat/screens/` (drawn at 2× over its stars, then stays); sound slots
+  `hall_star_chime.ogg`, `hall_constellation_chime.ogg` in `public/assets/audio/sfx/`.
 - **Hall effects**: no time on each output; **the lap is listed as the first boost** ("Outputs
   arrive once a lap: every 5:00"); the section reads **Boosts** (it read "Boosts & Modifiers").
 
