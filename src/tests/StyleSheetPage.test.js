@@ -53,12 +53,17 @@ describe('Style sheet page', () => {
         }
     });
 
-    it('closes on its X and on Escape', () => {
+    // Two tests, one render each: the page is big, and one test that opened it twice ran near the 5 s limit under load.
+    it('closes on its X', () => {
         const view = openPage();
         const doc = view.container.ownerDocument;
         fireEvent.click(doc.querySelector('[data-style-sheet-close]'));
         expect(doc.querySelector('[data-style-sheet-page]')).toBeNull();
-        fireEvent.click(view.getByText(/Style Sheet/));
+    });
+
+    it('closes on Escape', () => {
+        const view = openPage();
+        const doc = view.container.ownerDocument;
         fireEvent.keyDown(doc, { key: 'Escape' });
         expect(doc.querySelector('[data-style-sheet-page]')).toBeNull();
     });
