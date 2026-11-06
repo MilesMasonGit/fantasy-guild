@@ -41,6 +41,15 @@ and grow on their own.
 mat), and progress continues between check-ins. Time away will be **simulated
 on return** (real offline progress, a crunch track; see §10).
 
+**Starting a game** (brief 450 S4). Picking an empty save slot opens the
+**new-game screen**: the player names the Guild (shown on its slot; renamed later
+in Settings, Game tab), looks at the world's first three rings and rolls another
+with **Reroll** as often as they like, for nothing (what lies past ring 3 stays a
+surprise), and makes the **first hero**: name, portrait and flag colour, with the
+hero edit window's own controls. **Begin** starts play with that Guild, that
+world and that hero.
+*(`NewGameScreen.jsx`, `World.rollWorld`, `GuildName.js`)*
+
 **Long-term pull.** Exploring new Regions through the Atlas (§13): set up a
 Region, exhaust it, move the guild to a better one. **The Atlas is not built.**
 Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
@@ -55,11 +64,11 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
    Camp page and synced into `data/starterCamp.json`. Until one is synced it is
    the built-in camp: the Guild Hall in the middle of the mat, an Oak Forest and
    a Copper Mine either side (320 u away), and 3 Oak Seed, 10 Oak Wood and
-   2 Wheat Seed in the Bank. There are **no heroes** (`ROSTER_BASE = 0`).
+   2 Wheat Seed in the Bank. The **first hero** stands in it, made on the
+   new-game screen (§1), in Bunk Beds' free first rank.
    *(`StarterCamp.js`, `EngineBootstrap.createDefaultGameData`)*
-2. **Recruit a hero** in the Guild Hall: the first Bunk Beds rank is free and
-   a new hero arrives at once, every skill at level 1. The tutorial's first
-   quest asks for this.
+2. **More heroes** come from the Guild Hall: each further Bunk Beds rank brings
+   one at once, auto-named, every skill at level 1, renamed with the quill.
 3. **Send a hero to a job**: drag a hero (their figure on the mat, or on the
    hero bar) onto a Token. They walk out of the Hall and work only that Token:
    a tree, a vein, a station, a Field, an enemy. Dragged onto a **camp** (a
@@ -477,7 +486,9 @@ Island**, does nothing and is the owner's to delete in the CMS.
 
 ### Roster — Built
 - Heroes come from the **Bunk Beds** Hall upgrade: each rank adds one hero,
-  **max 8** (`ROSTER_MAX`). Rank 1 is free. *(`guildUpgrades.js`)*
+  **max 8** (`ROSTER_MAX`). Rank 1 is free and held from the start: it is the
+  first hero, made on the new-game screen (§1). *(`guildUpgrades.js`,
+  `EngineBootstrap.createFirstHero`)*
 - Every new hero is identical: every skill at level 1 (below), 11 HP, a random
   name. Differences are earned. No retirement. (Classless heroes, brief 270
   K1; the "Recruit" title is gone.)
@@ -1325,14 +1336,15 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 
 | Upgrade | Ranks | Effect |
 |---|---|---|
-| Bunk Beds | 8 | +1 hero per rank (rank 1 free) |
+| Bunk Beds | 8 | +1 hero per rank (rank 1 free, held from the start for the first hero) |
 | Bank Tabs | 15 | +1 Bank tab (64 slots) per rank |
 | Wishing Well | 10 | 10 × *rank* Water every 5 min as Passive Production, no hero needed (rank 1 free) |
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*
-  - **Tutorial** (the cartographer's, `tutorialQuests.js`): 12 steps, one at
-    a time: recruit a hero, equip a Woodaxe, **send your hero to a tree**, gather,
+  - **Tutorial** (the cartographer's, `tutorialQuests.js`): 11 steps, one at
+    a time (the first hero exists from the start, so there is no recruit step):
+    equip a Woodaxe, **send your hero to a tree**, gather,
     collect loot, buy a Foundation, build a station, craft, **build a first
     camp** (a Logging Camp on a Wood Foundation; any camp counts); then the
     Starter Camp's end, **make a first tool** (copper, the camp's metal) and
@@ -1476,9 +1488,13 @@ drawers**. The menu can be flipped to the right.
   Travel button. Archive and abandon have no button since the Regions page
   left (brief 380 M3); the engine keeps them. *(`src/systems/atlas/`)*
 - **The world** — **Built: generated (brief 330 W1) and on screen (W2)**: a new
-  game generates its hex world from the run seed (the game's creation time)
-  and the world tables, and keeps it whole in the save (`state.world`): the
-  Hall's cell (the Starter Camp), three strict rings, wild rings beyond, six
+  game generates its hex world from the seed rolled on the new-game screen (a
+  game started with no screen: its creation time) and the world tables, and
+  keeps it whole in the save (`state.world`, the seed with it). A roll that
+  fails one of the ledger's checks F (a price of its own ring, a key material out
+  of reach, an origin the inner rings miss, chests off their ring's value) is
+  passed over for the next seed, up to 20 (`World.rollWorld`). A world holds
+  the Hall's cell (the Starter Camp), three strict rings, wild rings beyond, six
   wedges by origin line; each cell's origins, tier, kit, specialty, hidden
   extras and price. **The world map** (brief 380 M2, M3; the Atlas's bubble or
   the top bar's place name) is reached by the view **panning down** from the

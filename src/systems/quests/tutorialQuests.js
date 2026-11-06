@@ -36,12 +36,6 @@ export const TUTORIAL_GOBLIN = 'token_goblin';
 
 const STEPS = [
     {
-        id: 'cart_recruit',
-        targetType: 'hero_recruited',
-        requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
-    },
-    {
         id: 'cart_tool',
         targetType: 'hero_equipped',
         match: { tool: true },

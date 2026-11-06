@@ -78,9 +78,9 @@ export const PLACEHOLDER_PRICE_PER_RANK = 10;
 
 /**
  * Build a placeholder price list: rank n costs `perRank·n` of `itemId`.
- * `freeFirstRank` makes rank 1 cost nothing — used by Bunk Beds (the first
- * recruit is free; a new game has no heroes until it is bought) and the
- * Wishing Well (the tutorial's first upgrade).
+ * `freeFirstRank` makes rank 1 cost nothing — used by Bunk Beds (a new game
+ * holds rank 1 already, for the hero made on the new-game screen) and the
+ * Wishing Well.
  */
 export function placeholderPrices(maxRank, {
     itemId = PLACEHOLDER_PRICE_ITEM,

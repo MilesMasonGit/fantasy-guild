@@ -13,11 +13,6 @@ export const TUTORIAL_TEXT = Object.freeze({
     tag: 'Tutorial',
 
     steps: Object.freeze({
-        cart_recruit: Object.freeze({
-            title: 'Recruit a Hero',
-            says: 'Another guildmaster. Or the same one again? No matter. You will need hands.',
-            instruction: 'Open the Guild Hall (purple orb, top left) and buy Bunk Beds. The first Hero is free.'
-        }),
         cart_tool: Object.freeze({
             title: 'Equip a Tool',
             says: 'Bare hands move nothing. Give them an axe. The trees will not wait for ever.',

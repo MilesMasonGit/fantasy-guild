@@ -78,9 +78,9 @@ export const ReactRoot = () => {
     const { onInspectToken, onClearInspect } = useInspectTokenHandlers(ui.inspect);
 
     // A refused save (incompatible or corrupted) leaves the slot screen up; the notification
-    // says why.
-    const handleSlotSelect = (index, { catchUp = true } = {}) =>
-        EngineBootstrap.startSlot(index, { catchUp, onOpened: ui.slotSelection.close });
+    // says why. `setup` is the new-game screen's choices, for an empty slot.
+    const handleSlotSelect = (index, { catchUp = true, setup } = {}) =>
+        EngineBootstrap.startSlot(index, { catchUp, setup, onOpened: ui.slotSelection.close });
 
     // "Load as I left it" reloads the page into the slot it put back: open it at once, as it was.
     const resumeRef = React.useRef(handleSlotSelect);

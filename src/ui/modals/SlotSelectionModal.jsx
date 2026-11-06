@@ -10,6 +10,7 @@ import { Play, Plus, Trash2, AlertTriangle, Users, Clock, Save, Hourglass } from
 import { KitButton, KIT_BUTTON_TONE } from '../components/base/KitButton.jsx';
 import { PixelFrame, FRAME_KIND } from '../components/base/PixelFrame.jsx';
 import { TitleScreen } from '../components/title/TitleScreen.jsx';
+import { NewGameScreen } from '../components/title/NewGameScreen.jsx';
 import { slotAwayText } from '../components/title/slotAway.js';
 import { t } from '../../i18n/index.js';
 
@@ -68,11 +69,13 @@ const SlotStat = ({ icon: Icon, label, children, stat }) => (
 
 /**
  * The title screen with the three save slots: load, a new game, delete with its confirm, and the
- * last message (a slot deleted, a save refused). It blocks the game until a slot is picked.
+ * last message (a slot deleted, a save refused). It blocks the game until a slot is picked. An
+ * empty slot's New Game opens the new-game screen first; its Begin starts the slot with the choices.
  */
 export const SlotSelectionModal = ({ isOpen, onSelect }) => {
     const [slots, setSlots] = useState([]);
     const [deleteAttemptIndex, setDeleteAttemptIndex] = useState(null);
+    const [newGameSlot, setNewGameSlot] = useState(null);
     const message = useSlotMessage();
     const now = useMinuteClock(!!isOpen);
     // Nothing lies under the title screen for Escape to close.
@@ -86,6 +89,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
     useEffect(() => {
         if (isOpen) {
             refreshSlots();
+            setNewGameSlot(null);
         }
     }, [isOpen]);
 
@@ -99,6 +103,16 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
     };
 
     if (!isOpen) return null;
+
+    if (newGameSlot !== null) {
+        return (
+            <NewGameScreen
+                slotIndex={newGameSlot}
+                onBack={() => setNewGameSlot(null)}
+                onBegin={(setup) => onSelect?.(newGameSlot, { setup })}
+            />
+        );
+    }
 
     const slotButtons = (index, isPendingDelete) => (
         <div className="flex items-center gap-2 ml-auto shrink-0">
@@ -146,7 +160,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                         <span className="text-gray-500 font-bold uppercase tracking-widest text-sm">{t('titleScreen.slotEmpty', { n: slotNumber })}</span>
                         <span className="ui-text-body text-gray-600 uppercase tracking-widest">{t('titleScreen.noSave')}</span>
                     </div>
-                    <KitButton onClick={() => handleSelect(index)} className="mr-1" buttonClassName="gap-2 py-1.5 px-4 tracking-widest uppercase text-xs">
+                    <KitButton onClick={() => setNewGameSlot(index)} className="mr-1" buttonClassName="gap-2 py-1.5 px-4 tracking-widest uppercase text-xs" data-slot-new-game>
                         <Plus size={16} /> {t('titleScreen.newGame')}
                     </KitButton>
                 </div>
@@ -165,7 +179,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
             );
         }
 
-        const { heroCount, playtime, lastSavedAt, version, isLastActive } = slotInfo;
+        const { guildName, heroCount, playtime, lastSavedAt, version, isLastActive } = slotInfo;
         const timeAgo = lastSavedAt ? formatTimeAgo(lastSavedAt) : t('titleScreen.unknown');
         const away = slotAwayText(slotInfo, now);
 
@@ -184,7 +198,8 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
 
                 <div className="flex flex-col">
                     <span className="text-white font-bold tracking-widest mb-1 text-sm group-hover:text-gi-primary transition-colors">
-                        {t('titleScreen.slot', { n: slotNumber })}
+                        {guildName ? <span data-slot-guild-name>{guildName}</span> : t('titleScreen.slot', { n: slotNumber })}
+                        {guildName && <span className="ml-2 ui-text-body text-gray-500 font-normal uppercase tracking-tighter">{t('titleScreen.slot', { n: slotNumber })}</span>}
                         <span className="ml-2 ui-text-body text-gray-500 font-normal uppercase tracking-tighter">{t('titleScreen.version', { version })}</span>
                     </span>
                     <div className="flex items-center gap-4 text-xs text-gray-400">

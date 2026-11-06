@@ -53,6 +53,8 @@ import * as World from '../world/World.js';
 import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
 import { grantStarterTools } from '../equipment/StarterTools.js';
+import { cleanGuildName } from './GuildName.js';
+import { HERO_NAME_MAX } from '../../config/registries/heroPortraits.js';
 
 /**
  * The Tokens a new game opens with, at their points on the mat as it is now: the Starter Camp's
@@ -223,8 +225,13 @@ export const EngineBootstrap = {
         }
     },
 
-    /** Create the default game data for a new game. */
-    createDefaultGameData() {
+    /**
+     * Create the default game data for a new game.
+     *
+     * @param {{guildName?: string, worldSeed?: number, hero?: {name?: string, spriteId?: string, flagColour?: string}}} [setup]
+     *   what the new-game screen chose; anything left out is made up (a run with no screen)
+     */
+    createDefaultGameData(setup = {}) {
         logger.debug('Engine', 'Creating default game data...');
 
         const state = GameState.state;
@@ -240,20 +247,35 @@ export const EngineBootstrap = {
         // One of each starter tool: new heroes arrive empty-handed and take their first tools here.
         grantStarterTools();
 
-        // Start with no Heroes (first hero recruited via Guild Hall upgrade)
         if (state.heroes) {
             state.heroes = [];
         }
+        if (state.meta) state.meta.guildName = cleanGuildName(setup.guildName);
 
         // The Starter Camp's Tokens stand on the mat, and it becomes the guild's first Region.
         Atlas.createStarterRegion(camp);
         // The run's world around the Hall's cell, which is the Starter Camp.
-        World.createWorld();
+        World.createWorld({ seed: setup.worldSeed });
+        this.createFirstHero(setup.hero);
         // What a loaded save gets on `game_loaded`: the tile caches built for
         // the Tokens already standing on the mat.
         TileModifiers.rebuildAll();
 
-        logger.info('Engine', `New game: 0 heroes, the ${StarterCamp.isBuiltIn() ? 'built-in' : 'synced'} Starter Camp on the mat, its items in the Bank.`);
+        logger.info('Engine', `New game: ${state.heroes?.length || 0} hero, the ${StarterCamp.isBuiltIn() ? 'built-in' : 'synced'} Starter Camp on the mat, its items in the Bank.`);
+    },
+
+    /**
+     * The guild's first hero, there from the start: Bunk Beds' first rank (the free one) is held
+     * already, so the roster has room for them and the star's next rank is the second hero.
+     * Silent: no "hero joined" at the start of a game.
+     */
+    createFirstHero({ name, spriteId, flagColour } = {}) {
+        const ranks = GuildUpgradeManager.getRanks();
+        ranks.roster_size = Math.max(1, ranks.roster_size || 0);
+        GuildUpgradeManager.recompute();
+        const hero = HeroManager.createHero({}, true);
+        if (hero) HeroManager.updateHeroProfile(hero.id, { name: name?.slice(0, HERO_NAME_MAX), spriteId, flagColour });
+        return hero;
     },
 
     /**
@@ -262,11 +284,12 @@ export const EngineBootstrap = {
      * run with no React at all.
      *
      * @param {number} slotIndex
-     * @param {{ catchUp?: boolean, onOpened?: () => void }} [options] `catchUp: false` loads a save
-     * as it was left; `onOpened` runs once the slot is open, before a load's catch-up plays
+     * @param {{ catchUp?: boolean, onOpened?: () => void, setup?: object }} [options] `catchUp: false`
+     * loads a save as it was left; `onOpened` runs once the slot is open, before a load's catch-up
+     * plays; `setup` is the new-game screen's choices for an empty slot (`createDefaultGameData`)
      * @returns {Promise<boolean>} false when the save was refused (the reason is already said)
      */
-    async startSlot(slotIndex, { catchUp = true, onOpened } = {}) {
+    async startSlot(slotIndex, { catchUp = true, onOpened, setup } = {}) {
         const isNewGame = !SaveManager.hasSlot(slotIndex);
         if (isNewGame) {
             SaveManager.newGame(slotIndex);
@@ -276,7 +299,7 @@ export const EngineBootstrap = {
         onOpened?.();
         QuestManager.onSlotOpened();
         try {
-            await this.onSlotSelected(slotIndex, isNewGame);
+            await this.onSlotSelected(slotIndex, isNewGame, setup);
         } catch (err) {
             console.error('[Engine] Starting the chosen slot failed', err);
         }
@@ -289,7 +312,7 @@ export const EngineBootstrap = {
      *
      * ⚠️ Async only for a load: a new game runs to the end synchronously.
      */
-    async onSlotSelected(slotIndex, isNewGame) {
+    async onSlotSelected(slotIndex, isNewGame, setup) {
         logger.info('Engine', `Slot ${slotIndex + 1} finalized (New: ${isNewGame})`);
 
         // 1. Critical System Startups
@@ -299,7 +322,7 @@ export const EngineBootstrap = {
 
         // 2. Data Initialization
         if (isNewGame) {
-            this.createDefaultGameData();
+            this.createDefaultGameData(setup);
             // Save the finished opening now: the save that claimed the slot
             // (`SaveManager.newGame`) was written before the Hall and the opening
             // items existed, so a game that died before the next autosave loaded

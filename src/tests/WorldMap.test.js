@@ -263,7 +263,8 @@ describe('⭐ the world map screen', () => {
         expect(row.textContent).toMatch(/k\//);
         const skill = cell.requires.skills[0];
         const skillRow = q(tip, `[data-world-price-skill="${skill.skill}"]`);
-        expect(skillRow.textContent).toBe(`0/${skill.level}`);
+        // The new game's first hero, at level 1 in everything.
+        expect(skillRow.textContent).toBe(`1/${skill.level}`);
         expect(q(skillRow, 'span:last-child').className).toContain('color-ui-red');
     });
 
@@ -399,6 +400,8 @@ describe('⭐ the world map screen', () => {
 
 describe('the QA panel\'s frontier prices', () => {
     it('tops up what the frontier asks and raises the first hero, so every ring 1 cell can be paid', () => {
+        // A game with no hero (a dev roster) is refused: the price asks for skill levels.
+        GameState.state.heroes = [];
         expect(meetFrontierPrices()).toMatchObject({ success: false });
         HeroManager.addHero(generateHero());
         const result = meetFrontierPrices();

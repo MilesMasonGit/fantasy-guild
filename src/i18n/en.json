@@ -30,6 +30,7 @@
         "autoSave60": "1 Hour",
         "autoSaveOff": "Off",
         "saveNow": "Save Game Now",
+        "guildName": "Guild Name",
         "masterVolume": "Master Volume",
         "musicVolume": "Music Volume",
         "sfxVolume": "SFX Volume",
@@ -57,6 +58,17 @@
         "awayTip": "Time away, played when you load (last saved {ago})",
         "awayMax": "{time} (max)",
         "unknown": "Unknown"
+    },
+    "newGame": {
+        "title": "A New Guild — Slot {n}",
+        "back": "Back",
+        "world": "The world",
+        "reroll": "Reroll",
+        "worldHint": "Free, as often as you like. What lies past the third ring is found in play.",
+        "guildName": "Guild name",
+        "defaultGuildName": "The Guild",
+        "firstHero": "Your first hero",
+        "begin": "Begin"
     },
     "equipment": {
         "allInUse": "Every {item} you own is already in use",

@@ -141,7 +141,8 @@ export const INITIAL_STATE = {
         version: GAME_VERSION,
         createdAt: null,       // Set on new game
         lastSavedAt: null,
-        totalPlaytime: 0       // Milliseconds
+        totalPlaytime: 0,      // Milliseconds
+        guildName: null        // Named on the new-game screen (`GuildName.js`); null in an older save
     },
 
     // (No `settings` section: player settings are device-local and owned by
@@ -212,7 +213,7 @@ export const INITIAL_STATE = {
     // completedProjects/projects/chainProgress/modifiers; they load as
     // ignored extra fields.
     progress: {
-        rosterLimit: 0, // Active roster capacity (matches roster_size rank, starts at 0, max 8 — ROSTER_MAX)
+        rosterLimit: 0, // Active roster capacity (matches roster_size rank: 1 once a new game has made its first hero, max 8 — ROSTER_MAX)
         unlockedRarities: ['common', 'uncommon'],
         // Per-biome task discovery: { biomeId: ['task1', 'task2', ...] }
         discoveredTasksByBiome: {},

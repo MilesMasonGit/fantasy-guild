@@ -63,13 +63,29 @@ describe('the slots', () => {
         expect(document.body.textContent).not.toMatch(EMOJI);
     });
 
-    it('Load and New Game hand the slot to the game', () => {
+    it('Load hands the slot to the game; New Game opens the new-game screen, whose Begin hands it over', () => {
         plantSlots();
         const onSelect = vi.fn();
         render(h(SlotSelectionModal, { isOpen: true, onSelect }));
         fireEvent.click([...row(1).querySelectorAll('button')].find(b => b.textContent.includes('Load')));
         fireEvent.click([...row(2).querySelectorAll('button')].find(b => b.textContent.includes('New Game')));
+        expect(onSelect.mock.calls.map(c => c[0])).toEqual([0]);
+        expect(document.querySelector('[data-new-game-screen="2"]')).not.toBeNull();
+        fireEvent.click(document.querySelector('button[data-new-game-begin]'));
         expect(onSelect.mock.calls.map(c => c[0])).toEqual([0, 1]);
+        expect(onSelect.mock.calls[1][1].setup).toMatchObject({ guildName: 'The Guild', worldSeed: expect.any(Number) });
+    });
+
+    it('a slot shows the name of its Guild, with the slot number beside it; a save from before names shows the number', () => {
+        plantSlots();
+        const named = JSON.parse(slotSave(1, Date.now()));
+        named.state.meta.guildName = 'The Lantern Company';
+        localStorage.setItem('fantasy_guild_slot_1', JSON.stringify(named));
+        render(h(SlotSelectionModal, { isOpen: true, onSelect: () => {} }));
+        expect(row(2).querySelector('[data-slot-guild-name]').textContent).toBe('The Lantern Company');
+        expect(row(2).textContent).toContain('Slot 2');
+        expect(row(1).querySelector('[data-slot-guild-name]')).toBeNull();
+        expect(row(1).textContent).toContain('Slot 1');
     });
 
     it('delete asks first; Cancel keeps the save, Confirm removes it and says so', () => {

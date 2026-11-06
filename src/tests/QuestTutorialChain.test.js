@@ -9,6 +9,7 @@ import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { TUTORIAL_QUESTS, tutorialTemplate } from '../systems/quests/tutorialQuests.js';
 import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
+import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
@@ -152,12 +153,12 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
     it('every step completes from the event it listens to, from the first Hero to the first place settled', () => {
         withMaps();
 
-        // 1. Recruit a Hero: the Guild Hall board's first Bunk Beds rank is free.
-        expect(GuildUpgradeManager.purchase('roster_size').success).toBe(true);
+        // The first hero is made by the new game (its screen), in Bunk Beds' free first rank: no step asks for them.
+        expect(EngineBootstrap.createFirstHero()).toBeTruthy();
+        expect(GuildUpgradeManager.getRank('roster_size')).toBe(1);
         const heroId = GameState.heroes[0].id;
-        claim('cart_recruit');
 
-        // 2. Equip a tool: food does not count, a woodaxe does.
+        // 1. Equip a tool: food does not count, a woodaxe does.
         give('item_steak', 1);
         expect(EquipmentManager.equipItem(heroId, 'item_steak').success).toBe(true);
         expect(complete('cart_tool')).toBe(false);
@@ -165,7 +166,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(EquipmentManager.equipItem(heroId, AXE).success).toBe(true);
         claim('cart_tool');
 
-        // 3. Send the hero to a tree: the player's drop onto an Oak Tree. Bare ground does not
+        // 2. Send the hero to a tree: the player's drop onto an Oak Tree. Bare ground does not
         // count.
         expect(Orders.orderAt(heroId, { x: 600, y: 300 })).toMatchObject({ success: true, order: 'spot' });
         expect(complete('cart_flag')).toBe(false);
@@ -174,11 +175,11 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(Orders.orderAt(heroId, SPOT.tree)).toMatchObject({ success: true, order: 'token' });
         claim('cart_flag');
 
-        // 4. Gather three times.
+        // 3. Gather three times.
         expect(runUntil(() => complete('cart_gather'), 5 * 60_000)).toBe(true);
         claim('cart_gather');
 
-        // 5. Collect 10 items by hovering (the hover calls `collectSprite`).
+        // 4. Collect 10 items by hovering (the hover calls `collectSprite`).
         expect(runUntil(() => {
             collectAll();
             if (!onMat('token_oak_tree').length) {
@@ -192,7 +193,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         claim('cart_loot');
         Flags.furl(heroId);
 
-        // 6. Buy a Wood Foundation; another purchase does not count for it.
+        // 5. Buy a Wood Foundation; another purchase does not count for it.
         give('item_oak_wood', 15);
         const other = Shop.buy('token_farmland');
         expect(other.success, other.reason).toBe(true);
@@ -202,7 +203,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         const foundation = buyAt('token_wood_foundation', SPOT.build);
         claim('cart_foundation');
 
-        // 7. Build a station on it (a Workbench).
+        // 6. Build a station on it (a Workbench).
         StationRecipe.setSelectedRecipe(foundation, 'recipe_muily2pb');
         give('item_oak_wood', 5);
         Orders.orderAt(heroId, SPOT.build);
@@ -210,7 +211,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(onMat('token_workbench')).toHaveLength(1);
         claim('cart_station');
 
-        // 8. Craft a recipe there. A new Workbench has no recipe, so nothing is crafted until the
+        // 7. Craft a recipe there. A new Workbench has no recipe, so nothing is crafted until the
         // player picks one (Charcoal).
         give('item_oak_wood', 10);
         const workbench = onMat('token_workbench')[0];
@@ -223,7 +224,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         claim('cart_craft');
         Flags.furl(heroId);
 
-        // 9. Build a first camp: a Logging Camp on a second Wood Foundation, then the Hero sent to it
+        // 8. Build a first camp: a Logging Camp on a second Wood Foundation, then the Hero sent to it
         // chops a tree in its reach.
         give('item_oak_wood', 15);
         const second = buyAt('token_wood_foundation', SPOT.camp);
@@ -244,7 +245,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         claim('cart_camp');
         Flags.furl(heroId);
 
-        // 10. Make a first copper tool (a Copper Pickaxe at a Copper Smithy). The Charcoal made
+        // 9. Make a first copper tool (a Copper Pickaxe at a Copper Smithy). The Charcoal made
         // above did not count: it is not a tool. No maps yet.
         expect(complete('cart_copper_tool')).toBe(false);
         GameState.heroes[0].skills.smithing = { xp: 0, level: 5 };
@@ -257,7 +258,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(claim('cart_copper_tool').rewardItems.some(r => isMapItem(getAllItems()[r.itemId]))).toBe(false);
         Flags.furl(heroId);
 
-        // 11. Beat a goblin. A Cow (it never attacks first) does not count; a Goblin does. It pays
+        // 10. Beat a goblin. A Cow (it never attacks first) does not count; a Goblin does. It pays
         // its items and no map, even with maps ticked "given by the tutorial".
         // ⚠️ Fixture: a new hero fights at level 1 and is often knocked out before the
         // first kill, so the hero is lent a combat skill at level 40.
@@ -287,7 +288,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(bank('map_tut_hills')).toBe(0);
         Flags.furl(heroId);
 
-        // 12. The cartographer opens the world map: the last step arrives marked so, and is done
+        // 11. The cartographer opens the world map: the last step arrives marked so, and is done
         // by settling a place on it. A Region written off the world map does not count.
         expect(quest('cart_first_place')).toBeTruthy();
         expect(tutorialTemplate('cart_first_place').opensWorld).toBe(true);
@@ -388,7 +389,7 @@ describe('the chain\'s words come from one text module', () => {
 
     it('the chain is the cartographer\'s, in order, with new ids', () => {
         expect(TUTORIAL_QUESTS.map(t => t.id)).toEqual([
-            'cart_recruit', 'cart_tool', 'cart_flag', 'cart_gather', 'cart_loot', 'cart_foundation', 'cart_station',
+            'cart_tool', 'cart_flag', 'cart_gather', 'cart_loot', 'cart_foundation', 'cart_station',
             'cart_craft', 'cart_camp', 'cart_copper_tool', 'cart_goblin', 'cart_first_place'
         ]);
     });
@@ -410,6 +411,7 @@ describe('every step can be done on the shipped content', () => {
 });
 
 describe('a save from when the chain had the old-site step moves on to the next step (the first camp)', () => {
+    // `cart_recruit` was the chain's first step until the new-game screen made the first hero: it counts for nothing now.
     const BEFORE = ['cart_recruit', 'cart_tool', 'cart_flag', 'cart_gather', 'cart_loot', 'cart_foundation', 'cart_station', 'cart_craft'];
     const tutorialOnMat = () => QuestManager.getActiveQuests().filter(q => q.tutorial).map(q => q.id);
     const oldInspectQuest = () => ({
@@ -424,7 +426,7 @@ describe('a save from when the chain had the old-site step moves on to the next 
         expect(tutorialOnMat()).toEqual(['cart_inspect']);
         EventBus.publish(ENGINE_EVENTS.GAME_LOADED, {});
         expect(tutorialOnMat()).toEqual(['cart_camp']);
-        expect(GameState.state.quests.tutorialStep).toBe(BEFORE.length);
+        expect(GameState.state.quests.tutorialStep).toBe(BEFORE.length - 1);
     });
 
     it('the old step recorded as claimed, or waiting in the old sidebar list, counts for nothing', () => {
@@ -435,7 +437,7 @@ describe('a save from when the chain had the old-site step moves on to the next 
         EventBus.publish(ENGINE_EVENTS.GAME_LOADED, {});
         expect(tutorialOnMat()).toEqual(['cart_camp']);
         expect(q.active).toEqual([]);
-        expect(q.tutorialStep).toBe(BEFORE.length);
+        expect(q.tutorialStep).toBe(BEFORE.length - 1);
         expect(QuestTokens.tutorialChainDone()).toBe(false);
     });
 });

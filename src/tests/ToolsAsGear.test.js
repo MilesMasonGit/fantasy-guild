@@ -449,7 +449,9 @@ describe('a new game: the starter tools wait in the Bank', () => {
         expect(InventoryManager.getItemCount('fx_pick')).toBe(1);
         expect(InventoryManager.getItemCount('fx_iron_pick')).toBe(0);
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(4);
-        expect(GameState.state.heroes).toEqual([]);
+        // The first hero arrives empty-handed: the tools are the Bank's to give.
+        expect(GameState.state.heroes).toHaveLength(1);
+        expect(Object.values(GameState.state.heroes[0].equipment || {}).filter(Boolean)).toEqual([]);
     });
 
     it('a starter tool the camp\'s Bank already holds is not doubled', () => {
