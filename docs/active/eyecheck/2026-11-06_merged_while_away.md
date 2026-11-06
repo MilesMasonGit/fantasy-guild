@@ -22,3 +22,6 @@ You approved merging these on the tests while away. Nothing here needs a branch 
 
 7. **Hard pixel everywhere** (460 P2). Names under the pointer and numbers on the mat: no dark smudge, the 1 px outline only; badges cast a hard black copy; the Token Summary highlight is a hard gold outline; the drag refusal mark no longer bounces. Before/after: `docs/active/research/hard_pixel/built/sheet_built.png`.
    Verdict:
+
+8. **The Guild Hall upgrade ceremony** (390 G4). QA panel → Guild Hall → **A star that opens others**, then click Bunk Beds and Upgrade: a hard-pixel burst and a chime, light hopping along to Infirmary and Larder. Then **A constellation one star short** and buy the last star: a bigger burst, each star sparkling. Listen: the chimes are the metal pot sounds until your own files exist. Nothing plays on load or after time away.
+   Verdict:
