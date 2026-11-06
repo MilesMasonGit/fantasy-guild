@@ -127,6 +127,7 @@ export const BankHeroPanel = ({
                 >
                     <PixelFrame
                         kind={FRAME_KIND.STUDS}
+                        backdrop="hero"
                         className="h-full"
                         frameClassName={cn(
                             isLeft ? 'pl-20' : 'pr-20',

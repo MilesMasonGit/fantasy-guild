@@ -29,6 +29,14 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **Rows are never boxed.** Inside a panel, separate sections with spacing or a
   faint divider line, not borders.
 - No thick borders, no frames inside frames.
+- **Full panels have a coloured pixel backdrop** (owner, 2026-11-05; brief 400): the Bank,
+  Shop, the Hall's star panel, world panels, Settings, the hero sheet, fight windows and the
+  away summary. Hard bands from the panel's colour at the top down to the frame's dark fill,
+  each step dithered in whole art pixels, never a smooth gradient; text keeps its contrast on
+  every band. Each starts from its nav bubble's colour: Bank gold, Shop green, Atlas and world
+  blue, Settings red, Hall purple; the hero sheet teal, fight windows rust, the away summary
+  indigo. One shared piece: `PixelFrame`'s `backdrop` (colours in `panelBackdrop.js`).
+  Tooltips, the Token card, the top bar, bubbles and buttons have none.
 - **Pixel frames: nine-slice pictures** (owner, 2026-10-09; research in
   `docs/active/research/pixel_borders.md`, demo approach B). A tiny 7×7
   picture (3 px corners, 1 px edge, 1 px centre, 1 px = 1 art pixel) drawn
@@ -192,6 +200,9 @@ normal text colour; a new meaning needs the owner's OK.
   - **No emoji** anywhere a player can see.
   - Where a panel already has pixel art for the same idea (the close X, a lock),
     the pixel version wins.
+  - **An item not found yet** is the pixel "?" (`PixelGlyph` `unknown`) wherever its
+    sprite would be; **a locked Bank tab** shows the pixel lock (`lock`): both code
+    placeholders on the art list. The loadout's slot marks are Lucide (`slotIcons.js`).
   - **A skill with no icon yet** draws the one shared placeholder, a plain pixel
     stone (`SkillIcon`); a skill never falls back to its emoji.
 
@@ -211,6 +222,16 @@ item held.
 [oak] Oak Log          3/10    <- ribbon, short: 3/10 in red
 [Upgrade  [oak]3/10 [stone]5/5]  <- pills inside a button
 ```
+
+## The item tooltip and the Bank's window (brief 400)
+
+- **The item tooltip**: the name as its header, the count right under it, then the type
+  lines (type, what it equips as, its tool) and the tags. Where there is no inspection window
+  (the Encyclopedia's card) the details follow; in the Bank they are the window's.
+- **The Bank's inspection window** sits along the Bank's foot under a divider (part of the
+  panel, not a frame inside it): the sprite at 4× on its kind's tile surface, name, count,
+  kind, details, collected this run, then the book and the X at its top right. The tile it
+  shows has the white selection line. *New, unapproved.*
 
 ## Panel headers
 

@@ -759,6 +759,15 @@ less micromanagement than area flags).
   orders this tab or every tab in place by type, then the item's own tier
   (none last), then name; the dragged order holds until Sort is pressed.
   *(`bankSort.js`)*
+- **Looking at an item in the Bank** (brief 400): hovering a tile gives the
+  tooltip (name, count, type, tags). **Clicking it opens the inspection
+  window** along the Bank's foot: the sprite at 4×, the count, type and tags,
+  everything the tooltip leaves out (a weapon's stats, resists, what it
+  restores, the description), how many were collected this run, and a book to
+  its Encyclopedia page; its X, Escape or a second click closes it. A press
+  that moves 8 px is a drag instead, and the click that ends a drag opens
+  nothing; in Select mode a click selects. Nothing is discarded or sold there
+  (T-306). *(`BankItemWindow.jsx`)*
 - **Supply is automatic**: Tokens take inputs from the Bank, then from loot on
   the mat. A cycle is all-or-nothing; first come, first served.
 - **Recipes** (25, `data/tokenRecipes.json`): smithing 10 (copper → darkmetal

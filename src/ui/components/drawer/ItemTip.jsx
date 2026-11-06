@@ -86,50 +86,64 @@ export function itemTipFacts(item) {
 }
 
 /**
- * The body of an item's hover tooltip (the name is the tooltip's title): type and count, what it
- * equips as, its tool or what it restores, tags and description.
- * `hint` is one extra muted line (select mode's click hint).
+ * The body of an item's hover tooltip; the name is the tooltip's title, its header. Under it the
+ * count, then what kind of item it is (type, what it equips as, its tool) and its tags.
+ * `details` adds everything else (weapon stats, arrow, resists, what it restores, description):
+ * the Bank leaves them to its inspection window (`BankItemWindow`); the Encyclopedia, which has no
+ * window, keeps them. `hint` is one extra muted line (select mode's click hint).
  */
-export const ItemTipContent = ({ item, count = null, hint = null }) => {
+export const ItemTipContent = ({ item, count = null, hint = null, details = true }) => {
     const facts = itemTipFacts(item);
     return (
         <div data-item-tip className="flex flex-col gap-1">
-            <div className="flex items-baseline justify-between gap-4 text-white/70">
-                <span data-item-tip-type>{facts.type}</span>
-                {count != null && (
-                    <span className="tabular-nums text-white">{t('itemTip.count', { count: count.toLocaleString('en-US') })}</span>
-                )}
-            </div>
-            {facts.equippable && (
-                <div data-item-tip-equip className="text-white">{t('itemTip.equippable', { slot: facts.equippable })}</div>
+            {count != null && (
+                <div data-item-tip-count className="tabular-nums font-bold text-white">{t('itemTip.count', { count: count.toLocaleString('en-US') })}</div>
             )}
-            {facts.tool && <div className="text-white">{facts.tool}</div>}
-            {facts.stats && (
-                <div data-item-tip-stats className="grid grid-cols-[48px_1fr] gap-x-3 gap-y-0.5">
-                    {facts.stats.map(({ id, label, value }) => (
-                        <React.Fragment key={id}>
-                            <span className="text-gi-muted">{label}</span>
-                            <span className="text-white tabular-nums" data-item-tip-stat={id}>{value}</span>
-                        </React.Fragment>
-                    ))}
-                </div>
-            )}
-            {facts.arrow && <div data-item-tip-arrow className="text-white">{facts.arrow}</div>}
-            {facts.offHand && <div data-item-tip-offhand className="text-white/70">{facts.offHand}</div>}
-            {facts.resists.map(line => <div key={line} data-item-tip-resist className="text-white">{line}</div>)}
-            {facts.cuts.map(line => <div key={line} data-item-tip-cut className="text-gi-danger">{line}</div>)}
-            {facts.restores != null && (
-                <div className="text-white">{t('itemTip.restores', { amount: facts.restores })}</div>
-            )}
-            {facts.tags.length > 0 && (
-                <div className="ui-text-small text-white/55">{facts.tags.join(' · ')}</div>
-            )}
-            {facts.description && (
-                <p className="text-white/85 leading-snug">{facts.description}</p>
-            )}
+            <ItemKindLines facts={facts} />
+            {details && <ItemDetailLines facts={facts} />}
             {hint && <div className="ui-text-small text-white/55">{hint}</div>}
         </div>
     );
 };
+
+/** What kind of item it is: type, what it equips as, its tool, then its tags. */
+export const ItemKindLines = ({ facts }) => (
+    <>
+        <div data-item-tip-type className="text-white/70">{facts.type}</div>
+        {facts.equippable && (
+            <div data-item-tip-equip className="text-white">{t('itemTip.equippable', { slot: facts.equippable })}</div>
+        )}
+        {facts.tool && <div data-item-tip-tool className="text-white">{facts.tool}</div>}
+        {facts.tags.length > 0 && (
+            <div data-item-tip-tags className="ui-text-small text-white/55">{facts.tags.join(' · ')}</div>
+        )}
+    </>
+);
+
+/** Everything past the kind: a weapon's stats, an arrow's shot, resists and cuts, what it restores, its description. */
+export const ItemDetailLines = ({ facts }) => (
+    <>
+        {facts.stats && (
+            <div data-item-tip-stats className="grid grid-cols-[48px_1fr] gap-x-3 gap-y-0.5">
+                {facts.stats.map(({ id, label, value }) => (
+                    <React.Fragment key={id}>
+                        <span className="text-gi-muted">{label}</span>
+                        <span className="text-white tabular-nums" data-item-tip-stat={id}>{value}</span>
+                    </React.Fragment>
+                ))}
+            </div>
+        )}
+        {facts.arrow && <div data-item-tip-arrow className="text-white">{facts.arrow}</div>}
+        {facts.offHand && <div data-item-tip-offhand className="text-white/70">{facts.offHand}</div>}
+        {facts.resists.map(line => <div key={line} data-item-tip-resist className="text-white">{line}</div>)}
+        {facts.cuts.map(line => <div key={line} data-item-tip-cut className="text-gi-danger">{line}</div>)}
+        {facts.restores != null && (
+            <div data-item-tip-restores className="text-white">{t('itemTip.restores', { amount: facts.restores })}</div>
+        )}
+        {facts.description && (
+            <p data-item-tip-description className="text-white/85 leading-snug">{facts.description}</p>
+        )}
+    </>
+);
 
 export default ItemTipContent;

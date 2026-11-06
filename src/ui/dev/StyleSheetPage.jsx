@@ -29,7 +29,8 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ProblemMark } from '../components/board/ProblemMark.jsx';
 import { SEVERITY, PROBLEM_SPRITE } from '../components/board/problemMark.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
-import { PixelGlyph, GLYPHS, SLOT_GLYPHS } from '../components/base/PixelGlyph.jsx';
+import { PixelGlyph, GLYPHS } from '../components/base/PixelGlyph.jsx';
+import { SLOT_ICONS, SLOT_ICON_UNKNOWN } from '../components/base/slotIcons.js';
 import { SkillIcon } from '../components/base/SkillIcon.jsx';
 import { pixelRingPath } from '../components/board/pixelRing.js';
 import { itemTintStyle } from '../components/base/itemTint.js';
@@ -617,13 +618,13 @@ const ItemTilesDemo = () => (
     </div>
 );
 
-/** The loadout slots' kind marks, code-drawn placeholders at 2×. */
+/** The loadout slots' kind marks: Lucide, 16 px. */
 const SlotMarksDemo = () => (
     <div className="flex items-end gap-4 text-gi-text">
-        {Object.keys(SLOT_GLYPHS).map(name => (
+        {[...Object.entries(SLOT_ICONS), ['unknown', SLOT_ICON_UNKNOWN]].map(([name, Icon]) => (
             <figure key={name} className="flex flex-col items-center gap-1">
-                <PixelGlyph name={name} />
-                <figcaption className="text-xs text-gi-muted">{name.replace('slot_', '')}</figcaption>
+                <Icon size={16} strokeWidth={2.5} />
+                <figcaption className="text-xs text-gi-muted">{name}</figcaption>
             </figure>
         ))}
     </div>
@@ -937,8 +938,8 @@ export const KIT_SECTIONS = [
         Demo: KitControlsDemo
     },
     {
-        id: 'slot-marks', title: 'Loadout slot kind marks', status: 'unapproved', source: 'PixelGlyph slot_* (a hero’s loadout slots, bottom-right corner)',
-        rule: 'Placeholders drawn in code until the owner’s sprites: hand, hat, chest, trinket, food, drink, consumable, and a ? for a kind with no mark. 8×8 at 2× with a hard shadow, in the bottom-right corner of a filled slot.',
+        id: 'slot-marks', title: 'Loadout slot kind marks', status: 'unapproved', source: 'slotIcons.js (a hero’s loadout slots, bottom-right corner)',
+        rule: 'Lucide, as the icon rule names the gear slot icons: hand, hat, chest, trinket, food, drink, consumable, and a ? for a kind with no mark. 16 px with a hard shadow, in the bottom-right corner of a filled slot.',
         Demo: SlotMarksDemo
     },
     {

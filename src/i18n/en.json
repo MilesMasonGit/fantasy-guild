@@ -14,6 +14,10 @@
         "sharedGearLoss": "{hero} lost {item}"
     },
     "bank": {
+        "window": {
+            "collected": "Collected this run: {count}",
+            "close": "Close the item window"
+        },
         "searchPlaceholder": "Search items…",
         "clearSearch": "Clear search",
         "sort": "Sort",
@@ -61,6 +65,7 @@
         "styleCut": "{style} damage −{n}%",
         "clickToSelect": "Click to select",
         "clickToDeselect": "Click to deselect",
+        "clickToInspect": "Click for details",
         "type": {
             "item": "Item",
             "material": "Material",

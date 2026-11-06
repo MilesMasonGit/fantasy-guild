@@ -12,7 +12,7 @@ import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BankTab } from '../ui/components/drawer/BankTab.jsx';
 import { DockEquipmentGrid } from '../ui/components/dock/DockEquipmentGrid.jsx';
 import { itemTintName, itemTintStyle } from '../ui/components/base/itemTint.js';
-import { SLOT_GLYPHS, slotGlyphName } from '../ui/components/base/PixelGlyph.jsx';
+import { SLOT_ICONS, SLOT_ICON_UNKNOWN, slotIconOf } from '../ui/components/base/slotIcons.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
 
@@ -55,23 +55,28 @@ const tile = (view, id) => view.container.querySelector(`button[data-bank-item="
 const hover = (el) => act(() => { fireEvent.pointerEnter(el, { clientX: 10, clientY: 10, pointerType: 'mouse', buttons: 0 }); });
 const tipText = () => document.querySelector('[data-tooltip]')?.textContent || '';
 
-describe('the Bank tile tooltip carries everything', () => {
-    it('a tool: name, type, count, what it equips as, its tool and tier, tags and description', () => {
+describe('the Bank tile tooltip names the item; its window says the rest', () => {
+    it('a tool: name, count, type, what it equips as, its tool and tier, tags; the description is in the window', () => {
         InventoryManager.addItem('fixture_tile_pick', 1234);
         const view = mountBank();
         hover(tile(view, 'fixture_tile_pick'));
         const text = tipText();
-        for (const part of ['Tile Pickaxe', 'Tool', '×1,234', 'Equippable: Hand', 'Pickaxe, tier 2', 'metal', 'A sturdy pick.']) {
+        for (const part of ['Tile Pickaxe', 'Tool', '×1,234', 'Equippable: Hand', 'Pickaxe, tier 2', 'metal', 'Click for details']) {
             expect(text).toContain(part);
         }
+        expect(text).not.toContain('A sturdy pick.');
+        fireEvent.click(tile(view, 'fixture_tile_pick'));
+        expect(view.container.querySelector('[data-bank-item-window]').textContent).toContain('A sturdy pick.');
     });
 
-    it('food says what it restores and that it equips as Food', () => {
+    it('food says it equips as Food; what it restores is in the window', () => {
         InventoryManager.addItem('fixture_tile_bread', 3);
         const view = mountBank();
         hover(tile(view, 'fixture_tile_bread'));
-        expect(tipText()).toContain('Restores 7 HP');
         expect(tipText()).toContain('Equippable: Food');
+        expect(tipText()).not.toContain('Restores 7 HP');
+        fireEvent.click(tile(view, 'fixture_tile_bread'));
+        expect(view.container.querySelector('[data-bank-item-window]').textContent).toContain('Restores 7 HP');
     });
 
     it('a material equips as nothing, and no tile tells the player how to drag', () => {
@@ -116,14 +121,17 @@ describe('the Bank has no inspect column; its search is in its header', () => {
         expect(tile(view, 'fixture_tile_ore')).toBeNull();
     });
 
-    it('a plain click on a tile opens nothing: the Encyclopedia is reached from its own button and the Token card', () => {
+    it('a plain click on a tile opens its window, not the Encyclopedia: the book in the window opens that', () => {
         InventoryManager.addItem('fixture_tile_ore', 3);
         const view = mountBank();
         const heard = [];
         const off = EventBus.subscribe(UI_EVENTS.OPEN_ENCYCLOPEDIA, (d) => heard.push(d.key));
         fireEvent.click(tile(view, 'fixture_tile_ore'));
-        off();
         expect(heard).toEqual([]);
+        expect(view.container.querySelector('[data-bank-item-window="fixture_tile_ore"]')).not.toBeNull();
+        fireEvent.click(view.container.querySelector('[data-bank-item-window-look-up]'));
+        off();
+        expect(heard).toEqual(['item:fixture_tile_ore']);
         hover(tile(view, 'fixture_tile_ore'));
         expect(tipText()).not.toMatch(/Encyclopedia/i);
     });
@@ -164,13 +172,13 @@ describe('tiles sit on their type\'s surface', () => {
 });
 
 describe('a hero\'s loadout slot shows a mark of its kind', () => {
-    it('every equip category has its own mark; an unknown one gets the stand-in', () => {
-        for (const category of EQUIPMENT_CATEGORIES) expect(slotGlyphName(category)).toBe(`slot_${category}`);
-        expect(slotGlyphName('boots')).toBe('slot_unknown');
-        for (const rows of Object.values(SLOT_GLYPHS)) {
-            expect(rows).toHaveLength(8);
-            for (const row of rows) expect(row).toMatch(/^[.#]{8}$/);
+    it('every equip category has its own Lucide mark; an unknown one gets the stand-in', () => {
+        for (const category of EQUIPMENT_CATEGORIES) {
+            expect(SLOT_ICONS[category], category).toBeTruthy();
+            expect(slotIconOf(category)).toBe(SLOT_ICONS[category]);
         }
+        expect(new Set(Object.values(SLOT_ICONS)).size).toBe(Object.keys(SLOT_ICONS).length);
+        expect(slotIconOf('boots')).toBe(SLOT_ICON_UNKNOWN);
     });
 
     it('a filled slot shows its kind; an empty one shows none', () => {
@@ -182,6 +190,8 @@ describe('a hero\'s loadout slot shows a mark of its kind', () => {
         const view = render(h(DeckDndProvider, null, h(DockEquipmentGrid, { heroId: 'h1' })));
         const marks = [...view.container.querySelectorAll('[data-slot-kind]')].map(el => el.getAttribute('data-slot-kind'));
         expect(marks).toEqual(['hand', 'food']);
-        expect(view.container.querySelector('[data-glyph="slot_hand"]')).not.toBeNull();
+        // Lucide draws an svg with its own class; the old pixel glyphs are gone from the slots.
+        expect(view.container.querySelector('svg[data-slot-kind="hand"].lucide')).not.toBeNull();
+        expect(view.container.querySelector('[data-glyph^="slot_"]')).toBeNull();
     });
 });

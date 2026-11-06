@@ -270,6 +270,7 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
     return (
         <PixelFrame
             kind={FRAME_KIND.CHAMFER}
+            backdrop="away"
             data-catch-up-summary
             role="dialog"
             aria-label="While you were away"

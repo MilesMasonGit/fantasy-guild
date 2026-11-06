@@ -3,10 +3,11 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { PixelGlyph } from './PixelGlyph.jsx';
 
 /**
  * ItemIcon Component
- * Optimized renderer for Item Sprites with emoji fallback.
+ * Optimized renderer for Item Sprites; an undiscovered item is the pixel "?".
  * 
  * @param {Object} props
  * @param {string|Object} props.item - Item ID or Item object
@@ -22,13 +23,14 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className, titl
     if (!isDiscovered) {
         const validSize = [16, 32, 64, 128].includes(Number(size)) ? Number(size) : 32;
         const sizeClass = `gi-icon-${validSize}`;
+        // The pixel "?" at the largest whole scale that fits the icon's box.
         return (
             <div
-                className={cn("flex items-center justify-center select-none grayscale opacity-60", sizeClass, className)}
-                style={{ fontSize: validSize * 0.6 }}
+                data-item-unknown
+                className={cn("flex items-center justify-center select-none text-gi-muted/60", sizeClass, className)}
                 title={title === null ? undefined : '???'}
             >
-                ❓
+                <PixelGlyph name="unknown" scale={Math.max(1, Math.floor(validSize / 16))} />
             </div>
         );
     }

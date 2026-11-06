@@ -135,7 +135,7 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
                     : 'transform 250ms cubic-bezier(0.16,1,0.3,1), opacity 200ms'
             }}
         >
-            <PixelFrame kind={FRAME_KIND.STUDS} className="h-full" frameClassName="flex flex-col">
+            <PixelFrame kind={FRAME_KIND.STUDS} backdrop="shop" className="h-full" frameClassName="flex flex-col">
                 <ShopContents isOpen={isOpen} onClose={onClose} />
             </PixelFrame>
 
@@ -169,7 +169,7 @@ const ShopContents = memo(function ShopContents({ isOpen, onClose }) {
                 title="Shop"
                 onClose={onClose}
                 closeLabel="Close Shop"
-                className="gi-drawer-pad-x py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]"
+                className="gi-drawer-pad-x py-1.5 border-b border-gi-border/40 min-h-[44px]"
             >
                 <span data-shop-cap className="text-xs font-semibold text-gi-muted tabular-nums">
                     Tokens {cap.count} / {cap.cap}
