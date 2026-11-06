@@ -17,7 +17,7 @@ build green) · bench-queued · eye-check · merged.*
 | 370 R1: rivers with real bends, varying width, variety by world (expect WORK CHANGED) | engineer | `crunch/rivers` (`r1`, from main) | ready 17ca390f (engine work expected same: no scenario lays out a world; new river Regions lay out differently); director: 593 files green, cycles, build; merged into R2 at 5d793679 | Thu | |
 | 370 R2: water depth bands, ragged ground borders, settled dirt | builder | `crunch/ground-look` (`r2`, from main) | owner approved 5 Nov (wide bank, all as built; Terrain QA buttons retired again); ready ad26dd99 with R1 merged in (5d793679; noise channels moved off R1's); director: 593 files green, cycles, build; combined pictures in `research/terrain_round/built_r2/combined_*.png`; bench queued | Thu | |
 | T-319: the last Region's water lingered after travel as broken pieces (the owner saw it in the R2 pictures) | director | `fix/water-shimmer-travel` | **merged** 15c38479, look-preserving fix, no eye-check; 592 files green, cycles, build; reproduced and checked in the game | Thu | Thu |
-| 500 E1 and E2: enemies stand still, no ambushes, no camp rings (expect WORK CHANGED) | builder | `crunch/enemies-still` (`e5`, from C4 b21c8b88) | building (owner chose 5 Nov evening: 500 beside 490) | Thu | |
+| 500 E1 and E2: enemies stand still, no ambushes, no camp rings (expect WORK CHANGED) | builder | `crunch/enemies-still` (`e5`, from C4 b21c8b88) | ready f85643a1, bench queued (expect WORK CHANGED, cheaper: no strolls, so S2-family boards lose their random draws and their fights); director: 594 of 595 files green, the style-sheet test timed out under load (T-320), cycles, build. Owner CMS after merge: delete the Iron Ore Vein Fire Elemental Ambush rule, Sync on main. Eye-check: include dragging a camp | Thu | |
 | 490 H1: drag hints, tool and skill marks on every hero while dragging a hero over a Token | builder | `crunch/drag-hints` (`d4`, from main) | ready 80b8fd8d, bench queued (engine work expected same, drag bench); director: 593 files green but one style-sheet test timed out under load and passes alone, cycles, build; QA: Hero orders, Drag hints scene | Thu | |
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
@@ -146,6 +146,8 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 
 ## Notes between directors
 
+- **Bench coverage after brief 500 (director decision pending):** with no ambushes, S2, S5, C240, C256, the S8 family and the draw bench `fights<N>` scenes no longer fight (their heroes only fought because they were ambushed), and S5 no longer storms. Next: an engineer sends heroes at the camps in those scenarios so fights are measured again, then a baseline retake.
+
 None open.
 
 ## Questions for the owner
@@ -172,7 +174,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-**Fri 6 Nov, 01:00 (director timer, `p23b`):** engine work check and draw benches on `crunch/combat-window` a38e6467 (logs in the scratchpad). Then, by director timers one after another: C4 b21c8b88 (engine work check, fights40 and fights80 draw), `crunch/ground-look` with R1 merged in (engine work check, full draw), then drag hints 80b8fd8d (engine work check, drag bench). 
+**Fri 6 Nov, 01:00 (director timer, `p23b`):** engine work check and draw benches on `crunch/combat-window` a38e6467 (logs in the scratchpad). Then, by director timers one after another: C4 b21c8b88 (engine work check, fights40 and fights80 draw), `crunch/ground-look` with R1 merged in (engine work check, full draw), then drag hints 80b8fd8d (engine work check, drag bench). Then enemies stand still f85643a1 (engine work check, skipped if past 07:00). 
 
 **Thu 5 Nov, 13:00–17:00 (director):** drag bench on `crunch/hero-detail` (H1 is drag code); work check on 350 T1 when ready.
 
