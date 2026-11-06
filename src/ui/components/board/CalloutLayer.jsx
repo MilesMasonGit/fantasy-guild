@@ -110,10 +110,11 @@ export const CalloutLayer = memo(function CalloutLayer() {
                 if (BoardCombat.getFight(p.instanceId) && namesStatus(p.title)) return;
                 say({ anchorId: p.instanceId, text: calloutText.effect(p.title) });
             }, UI_LISTENER),
-            // A fight: an enemy's move by name over its bar, and a status landing on an enemy over its
-            // bar (one landing on a hero is the hero's to say, `HeroBubbleLayer`).
+            // A fight: an enemy's special move by name over its bar (a plain hit, named or not, is the
+            // fight window's and the log's to say), and a status landing on an enemy over its bar (one
+            // landing on a hero is the hero's to say, `HeroBubbleLayer`).
             subscribeMoments((m) => {
-                if (m?.move && m.by === 'enemy' && m.instanceId != null) say({ anchorId: m.instanceId, text: m.move });
+                if (m?.move && m.special && m.by === 'enemy' && m.instanceId != null) say({ anchorId: m.instanceId, text: m.move });
             }),
             EventBus.subscribe(ENGINE_EVENTS.STATUS_APPLIED, (p) => {
                 if (p?.targetType === 'enemy' && p.targetId != null && p.statusId) say({ anchorId: p.targetId, text: calloutText.statusLands(p.statusId) });

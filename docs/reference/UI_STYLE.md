@@ -147,7 +147,8 @@ normal text colour; a new meaning needs the owner's OK.
   inspection keeps its own. No floating "-1": the plate counts down.
 - **A fight has no plate** (owner's pick F, 2026-11-05): its **fight button**, the crossed swords in the
   chamfer frame with its hard shadow, stands **between the two fighters' health bars**, its middle on
-  theirs, and opens the fight's detail view. An enemy's named move or a status landing is said in the
+  theirs, and opens the fight's detail view. An enemy's special move (it lands an effect or does not
+  hit; a plain hit, named or not, never bubbles on the mat) or a status landing is said in the
   speech frame over the bar of the fighter it is about; floats rise over the fighter, under the bar.
 
 ## Fight windows (owner, 2026-11-05)
@@ -157,8 +158,10 @@ normal text colour; a new meaning needs the owner's OK.
   foot, drawn in code, the X's size) beside the red close X. Several open at once; the one pressed
   is on top; Escape closes the top one.
 - **One narrow column** (pick B): the battle with the fighters at 2×, the hero's `VitalBar` with
-  its numbers over each fighter; the two sides' stat blocks in the Token card's cells (caption over
-  value) side by side with a faint line between; the enemy's attacks in small type tiles, the last
+  its numbers over each fighter; the stat block as one shared column (owner, 2026-11-05): a row a
+  stat, its icon in a 20 px middle column (the hero's style, Hit, a clock, a shield), the hero's
+  value right-aligned to its left and the enemy's left-aligned to its right, body type, bold
+  numbers, no captions (the icon's tooltip names the row); the enemy's attacks in small type tiles, the last
   gold-edged and "just used"; effects in two columns; elixirs and the Log button at the foot.
 - **A minimized window is a tab** (pick D): faces at 1× cropped to 44 px, both names, two small
   `VitalBar`s. Tabs stand in a strip along the mat's foot above the hero bar, from the left.

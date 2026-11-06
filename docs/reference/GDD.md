@@ -790,8 +790,10 @@ Accuracy, a 5 % crit (the table and its worked duels: `concept_combat.md`,
   (until the next attack on its bearer is over, hit or miss), **the swing** (on
   itself only) or **the fight**; a status keeps its own lifetime. An enemy with
   no moves swings a plain **Physical** hit, as before. The moves show on the
-  enemy card from the start; a bubble over the enemy's bar, the log and the
-  fight panel name the move made. *(`enemyMoves.js`)*
+  enemy card from the start; the log and the fight window name the move
+  made, and a **special** move (one that lands an effect, or does not hit) is
+  also said in a bubble over the enemy's bar on the mat; a plain hit, named or
+  not, is not. *(`enemyMoves.js`, `isSpecialMove`)*
 - **Kinds** (none, one or two, CMS presets the player discovers by fighting):
   **Armoured** Physical resistance 50 % and slow (4 s, same hit; an author's
   own Physical line replaces it); **Nimble** +15 Dodge; **Swift** a swing every
@@ -1038,8 +1040,11 @@ Statuses are not drawn on the board.
   fighters stand close the bars move outward just enough to leave it a gap.
   The elixir counts are the fight window's. Speech, callouts and "used"
   bubbles over a fighter stand above its bar and the button, never on them.
-- **Bubbles over the bar**: an enemy's **named move** ("Shiv") and a status
-  landing on an enemy ("Burn!") in the speech frame over the enemy's bar; a
+- **Bubbles over the bar** (owner, 2026-11-05: special moves only): an
+  enemy's **special move** by name (one that lands an effect or does not hit:
+  "Venom Bite", "Flutter"; a plain hit such as "Shiv" is the window's and the
+  log's only) and a status landing on an enemy ("Burn!") in the speech frame
+  over the enemy's bar; a
   status landing on the hero ("Venom!") over the hero's, as the hero's own
   line; a boss's own rule by its name over the enemy. They stack in a column,
   never on a number or another bubble, and are gone in about two seconds.
@@ -1065,9 +1070,12 @@ Statuses are not drawn on the board.
   an animation sheet stands still: today every enemy but the Cow), the hero
   bar's HP bar with its numbers over each, and what just landed over each
   fighter (the number, Miss, Crit!, Weak! or Resisted and the hit's types,
-  heals) with the enemy's named move in a speech bubble over its bar; the two
-  sides' **stat blocks** side by side, as the Token card's (style and level,
-  hit with its types, before the other side's resistances and the matchup:
+  heals) with the enemy's named move in a speech bubble over its bar, any
+  move, plain hits too; the **stat block** (owner, 2026-11-05: picture B's
+  shared column), one row a stat with its icon in a shared middle column, the
+  hero's value on the left and the enemy's on the right so each pair reads
+  across (style and level, the hero's style icon in the middle and a side
+  fighting another style shows its own beside its level; hit with its types, before the other side's resistances and the matchup:
   the player does the sums; swing; resistances and weaknesses, the enemy's as
   they stand in the fight); the **enemy's attacks**, each with its type in a
   small tile, the last one marked "just used" in gold, and its kinds once

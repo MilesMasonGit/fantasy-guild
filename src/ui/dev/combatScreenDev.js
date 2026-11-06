@@ -142,15 +142,16 @@ export function setUpCombatScreenScene() {
 
 /**
  * The crowd: seven fights packed below the Guild Hall, as close as the mat lets them stand, so the
- * motion of a busy mat can be judged: bars, the fight buttons, floats, every enemy's moves said in
- * bubbles, and the Goblin Warlord's Venom landing on Cora ("Venom!"). The content's own enemies
+ * motion of a busy mat can be judged: bars, the fight buttons, floats, the Bee's Flutter said in a
+ * bubble while every plain hit is not (only special moves bubble), and the Goblin Warlord's Venom
+ * landing on Cora ("Venom!"). The content's own enemies
  * where it has them; heroes matched to their enemy, Shrimp to eat so the fights last, elixirs on
  * some. ⚠️ Changes the game, like Spawn Party.
  * @returns {{ok: boolean, fights?: number, error?: string}}
  */
 export const CROWD = Object.freeze([
     { name: 'Kira', typeId: 'token_goblin', dx: -210, dy: 170, level: 8, elixirs: true },
-    { name: 'Aela', typeId: 'token_wolf', dx: 90, dy: 150, level: 8 },
+    { name: 'Aela', typeId: 'token_bee', dx: 90, dy: 150, level: 8 },
     { name: 'Bram', typeId: 'token_goblin_chief', dx: -100, dy: 310, level: 20, elixirs: true },
     { name: 'Neve', typeId: 'token_greater_slime', dx: 240, dy: 290, level: 16 },
     { name: 'Tomas', typeId: 'token_cow', dx: -400, dy: 300, level: 4 },

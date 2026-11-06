@@ -83,7 +83,10 @@ const enemy = (id, name, enemyBlock) => ({
     enemy: { style: 'melee', ...enemyBlock },
     config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [{ itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 }] }
 });
-registerTokenTypes({ cs_venom: enemy('cs_venom', 'Screen Venomous', { level: 10, kinds: ['venomous'] }) });
+registerTokenTypes({
+    cs_venom: enemy('cs_venom', 'Screen Venomous', { level: 10, kinds: ['venomous'] }),
+    cs_rogue: enemy('cs_rogue', 'Screen Rogue', { level: 10, moves: [{ name: 'Shiv', damageType: 'stab' }, { name: 'Poison Shiv', damageType: 'stab', effectId: VENOM }] })
+});
 
 /** A seeded `Math.random` (mulberry32), as the catch-up tests use. */
 const stream = { state: 1 };
@@ -97,7 +100,7 @@ function seeded() {
 const realRandom = Math.random;
 
 /** One fed Melee 20 hero with a sword and an elixir, pinned on a Venomous enemy at (600, 400). */
-function buildFight() {
+function buildFight(foeType = 'cs_venom') {
     stream.state = 41;
     resetMatTuning();
     GameState.initNew();
@@ -113,7 +116,7 @@ function buildFight() {
     expect(EquipmentManager.equipItem(hero.id, 'cs_elixir').success).toBe(true);
     HeroManager.updateHeroFromSkills(hero);
     hero.hp.current = hero.hp.max;
-    const foe = fixtures.placeAt('cs_venom', 600, 400);
+    const foe = fixtures.placeAt(foeType, 600, 400);
     fixtures.orderAt(hero.id, { x: foe.x, y: foe.y });
     TileModifiers.rebuildAll();
     return { heroId: hero.id, enemyId: foe.id };
@@ -512,16 +515,17 @@ describe('nothing covers a fighter\'s health number (owner, 2026-10-25: everythi
         expect(yOf(group)).toBeLessThanOrEqual(enemy.y - 64 - reach());
     });
 
-    it('⭐ an enemy\'s named move is said in a bubble over its bar; a second bubble stacks over the first, never on it', async () => {
-        const { heroId, enemyId } = buildFight();
+    it('⭐ an enemy\'s special move is said in a bubble over its bar, a plain named hit is not; a second bubble stacks over the first, never on it', async () => {
+        const { heroId, enemyId } = buildFight('cs_rogue');
         runUntil(() => !!BoardCombat.getFight(enemyId), 10);
         const container = await calloutLayer();
         act(() => {
             EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { heroId, instanceId: enemyId, move: 'Shiv', hit: true, damage: 1, heroHpRemaining: 10 });
+            EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { heroId, instanceId: enemyId, move: 'Poison Shiv', hit: true, damage: 1, heroHpRemaining: 9 });
             EventBus.publish(ENGINE_EVENTS.STATUS_APPLIED, { targetType: 'enemy', targetId: enemyId, statusId: VENOM, stacks: 1 });
         });
         const said = [...container.querySelectorAll('[data-callout]')];
-        expect(said.map(el => el.getAttribute('data-callout'))).toEqual(['Shiv', 'Venom!']);
+        expect(said.map(el => el.getAttribute('data-callout'))).toEqual(['Poison Shiv', 'Venom!']);
         // One column over the enemy: each bubble in the flow of one stack, so none can sit on another.
         expect(said[0].parentElement).toBe(said[1].parentElement);
         expect(said[0].parentElement.className).toContain('flex-col-reverse');

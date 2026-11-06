@@ -6,6 +6,8 @@ import * as HeroManager from '../../../systems/hero/HeroManager.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
+import { getEnemyProfile } from '../../../config/registries/enemyProfile.js';
+import { isSpecialMove } from '../../../config/registries/enemyMoves.js';
 import { t } from '../../../i18n/index.js';
 
 /**
@@ -232,6 +234,16 @@ function onHeroSwing(p) {
 /** The move an enemy's swing names, as the screen calls it, or null for a swing without moves. */
 const moveNameOf = (p) => (p?.move == null ? null : (String(p.move).trim() || t('fight.moves.unnamed')));
 
+/**
+ * Whether the move an enemy's swing named is special (`isSpecialMove`): looked up by name among its
+ * moves, the live fight's first. The swing's event carries the name alone.
+ */
+function namedMoveIsSpecial(record, name) {
+    const moves = BoardCombat.getFight(record.instanceId)?.enemy?.moves || getEnemyProfile(record.typeId)?.moves || [];
+    const move = moves.find(m => (String(m?.name ?? '').trim() || t('fight.moves.unnamed')) === name);
+    return isSpecialMove(move);
+}
+
 function onEnemySwing(p) {
     const instanceId = p?.instanceId ?? BoardCombat.fightOfHero(p?.heroId)?.instanceId;
     const record = ensure(p?.heroId, instanceId);
@@ -239,9 +251,10 @@ function onEnemySwing(p) {
     const move = moveNameOf(p);
     const vars = { hero: record.heroName, enemy: record.enemyName, ...(move ? { move } : {}) };
     if (move) record.lastMove = move;
+    const special = move ? namedMoveIsSpecial(record, move) : false;
     if (move && p.effectOnly) {
         say(record, { icon: 'star', tone: TONE.NOTE, key: 'enemyUsesMove', vars });
-        moment({ heroId: record.heroId, instanceId: record.instanceId, by: 'enemy', on: 'enemy', kind: MOMENT.MOVE, move });
+        moment({ heroId: record.heroId, instanceId: record.instanceId, by: 'enemy', on: 'enemy', kind: MOMENT.MOVE, move, special });
         changed(record.heroId);
         return;
     }
@@ -256,7 +269,7 @@ function onEnemySwing(p) {
     if (Number.isFinite(p.heroHpRemaining)) record.hp.hero.cur = Math.max(0, p.heroHpRemaining);
     moment({
         heroId: record.heroId, instanceId: record.instanceId, by: 'enemy', on: 'hero',
-        kind: !p.hit ? MOMENT.MISS : p.crit ? MOMENT.CRIT : MOMENT.HIT, amount: damage, ...typed, ...(move ? { move } : {})
+        kind: !p.hit ? MOMENT.MISS : p.crit ? MOMENT.CRIT : MOMENT.HIT, amount: damage, ...typed, ...(move ? { move, special } : {})
     });
     changed(record.heroId);
 }

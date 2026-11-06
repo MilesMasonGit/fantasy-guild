@@ -6,7 +6,6 @@ import { ArrowScrollList, PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
-import { StatCell } from '../base/StatCell.jsx';
 import { VitalBar } from '../base/VitalBar.jsx';
 import { TokenSprite, TOKEN_SURFACE, tokenSizeFor } from '../base/TokenSprite.jsx';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
@@ -26,8 +25,9 @@ import { t } from '../../../i18n/index.js';
  * ("Kira vs Goblin", minimize, close) that drags the window; the battle, the owner's battlefield
  * with both fighters at twice their art, the hero on the left facing right, a health bar with its
  * numbers over each and what just landed (the number, Crit!, Miss, Weak! or Resisted with the
- * hit's types; an enemy's move in a speech bubble over its bar); the two sides' stat blocks side by
- * side (style and level, hit with its types, swing, resistances); the enemy's attacks, the last one
+ * hit's types; an enemy's move in a speech bubble over its bar); the stat block, one row a stat with
+ * its icon in a shared middle column between the hero's value and the enemy's (style and level,
+ * hit with its types, swing, resistances); the enemy's attacks, the last one
  * marked; what is on each fighter in two columns; the hero's elixirs with the fights each has
  * left; and the log, closed until asked for. Held by `FightPanelPopup`, one per hero.
  */
@@ -215,7 +215,7 @@ export const FightArena = ({ view }) => {
 };
 
 // ---------------------------------------------------------------------------------------------
-// The stat blocks
+// The stat block
 // ---------------------------------------------------------------------------------------------
 
 /** A hit's size with its type's glyph: `2 [fire]`, and for a shot `2 [fire] + 1 [stab]`. */
@@ -271,7 +271,7 @@ const resistTip = (lines) => lines.map(l => (l.value < 0
     ? `${t('fight.card.weakTo')}: ${t('fight.card.step', { type: damageTypeName(l.id), n: -l.value })}`
     : `${t('fight.card.resists')}: ${t('fight.card.step', { type: damageTypeName(l.id), n: l.value })}`));
 
-/** A value in a stat cell, bold, with its tooltip. */
+/** A value in the stat block, bold, with its tooltip. */
 const Value = ({ tip, lines, children, ...rest }) => (
     <Tooltip title={tip} lines={lines}>
         <span className="inline-flex items-center gap-1 font-bold tabular-nums text-white cursor-help" {...rest}>{children}</span>
@@ -279,59 +279,89 @@ const Value = ({ tip, lines, children, ...rest }) => (
 );
 
 /**
- * One side's stat block, as the Token card's (caption over value, two to a row): style and level,
- * hit with its types, swing, resistances. Both sides in the same order, so they read across.
+ * One row of the stat block: the hero's value on the left, the stat's icon in the shared middle
+ * column, the enemy's value on the right, so each pair reads across.
  */
-const SideStats = ({ side, who, hitTip, hitLines, hit }) => {
+const StatRow = ({ stat, icon, iconTip, hero, enemy }) => (
+    <div className="grid grid-cols-[1fr_20px_1fr] gap-2.5 items-center ui-text-body" style={{ minHeight: 21 }} data-fight-stat={stat}>
+        <span className="flex justify-end min-w-0" data-fight-side="hero">{hero}</span>
+        <Tooltip title={iconTip}>
+            <span className="flex justify-center cursor-help" data-fight-row-icon={stat}>{icon}</span>
+        </Tooltip>
+        <span className="flex justify-start min-w-0" data-fight-side="enemy">{enemy}</span>
+    </div>
+);
+
+/** A side's style and level; its own style's icon beside the level when it is not the one in the middle. */
+const StyleValue = ({ side, shown }) => {
     const style = styleName(side.style);
-    const swing = side.swingMs ? secondsText(side.swingMs) : '–';
     return (
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1 min-w-0" data-fight-stats={who}>
-            <StatCell caption={style || t('fight.panel.noStyle')} data-fight-stat="style">
-                <Value
-                    tip={style ? t('fight.tip.level', { name: side.name, style, level: levelText(side.level) }) : t(side.armed ? 'fight.tip.noStyleArmed' : 'fight.tip.noStyle', { name: side.name })}
-                    data-fight-style={side.style || 'none'}
-                >
-                    {side.style ? <SkillIcon skill={side.style} size={16} /> : null}
-                    {side.style ? levelText(side.level) : '–'}
-                </Value>
-            </StatCell>
-            <StatCell caption={t('fight.window.hit')} data-fight-stat="hit">
-                <Value tip={hitTip} lines={hitLines}>{hit}</Value>
-            </StatCell>
-            <StatCell caption={t('fight.window.swing')} data-fight-stat="swing">
-                <Value tip={t('fight.tip.swing', { time: swing })}>{swing}</Value>
-            </StatCell>
-            <StatCell caption={t('fight.window.resist')} data-fight-stat="resists">
-                <Value
-                    tip={who === 'hero' ? t('fight.tip.heroResists', { name: side.name }) : t('fight.tip.enemyResists', { name: side.name })}
-                    lines={resistTip(side.resists || [])}
-                >
-                    <ResistChips lines={side.resists || []} />
-                </Value>
-            </StatCell>
-        </div>
+        <Value
+            tip={style ? t('fight.tip.level', { name: side.name, style, level: levelText(side.level) }) : t(side.armed ? 'fight.tip.noStyleArmed' : 'fight.tip.noStyle', { name: side.name })}
+            data-fight-style={side.style || 'none'}
+        >
+            {side.style && side.style !== shown ? <SkillIcon skill={side.style} size={16} /> : null}
+            {side.style ? levelText(side.level) : '–'}
+        </Value>
     );
 };
 
+/** A side's resistances with their tooltip. */
+const ResistValue = ({ side, who }) => (
+    <Value
+        tip={who === 'hero' ? t('fight.tip.heroResists', { name: side.name }) : t('fight.tip.enemyResists', { name: side.name })}
+        lines={resistTip(side.resists || [])}
+    >
+        <ResistChips lines={side.resists || []} />
+    </Value>
+);
+
+/**
+ * The stat block (owner's pick B, "the slim card"): one row per stat, its icon in a shared middle
+ * column between the hero's value and the enemy's. The style row's icon is the hero's style (the
+ * enemy's when the hero has none).
+ */
 export const FightStats = ({ view }) => {
     const { hero, enemy } = view;
+    const shown = hero.style || enemy.style || null;
+    const swing = (side) => (side.swingMs ? secondsText(side.swingMs) : '–');
     return (
-        <div data-fight-card className="grid grid-cols-[1fr_2px_1fr] gap-2.5">
-            <SideStats
-                side={hero}
-                who="hero"
-                hit={hero.hitParts?.length ? <HitParts parts={hero.hitParts} /> : damageText(hero.hit)}
-                hitTip={t('fight.tip.heroHit', { hit: damageText(hero.hit) })}
-                hitLines={hero.hitLines}
+        <div data-fight-card className="flex flex-col gap-px">
+            <StatRow
+                stat="style"
+                icon={shown ? <SkillIcon skill={shown} size={16} /> : <span className="text-gi-muted">–</span>}
+                iconTip={styleName(shown) || t('fight.panel.noStyle')}
+                hero={<StyleValue side={hero} shown={shown} />}
+                enemy={<StyleValue side={enemy} shown={shown} />}
             />
-            <div aria-hidden="true" className="bg-white/10" />
-            <SideStats
-                side={enemy}
-                who="enemy"
-                hit={<EnemyHit enemy={enemy} />}
-                hitTip={t('fight.tip.enemyHit', { hit: damageText(enemy.hit) })}
-                hitLines={movesTip(enemy.moves)}
+            <StatRow
+                stat="hit"
+                icon={<CombatGlyph name="hit" colour={GLYPH_COLOUR.text} />}
+                iconTip={t('fight.window.hit')}
+                hero={(
+                    <Value tip={t('fight.tip.heroHit', { hit: damageText(hero.hit) })} lines={hero.hitLines}>
+                        {hero.hitParts?.length ? <HitParts parts={hero.hitParts} /> : damageText(hero.hit)}
+                    </Value>
+                )}
+                enemy={(
+                    <Value tip={t('fight.tip.enemyHit', { hit: damageText(enemy.hit) })} lines={movesTip(enemy.moves)}>
+                        <EnemyHit enemy={enemy} />
+                    </Value>
+                )}
+            />
+            <StatRow
+                stat="swing"
+                icon={<CombatGlyph name="clock" colour={GLYPH_COLOUR.text} />}
+                iconTip={t('fight.window.swing')}
+                hero={<Value tip={t('fight.tip.swing', { time: swing(hero) })}>{swing(hero)}</Value>}
+                enemy={<Value tip={t('fight.tip.swing', { time: swing(enemy) })}>{swing(enemy)}</Value>}
+            />
+            <StatRow
+                stat="resists"
+                icon={<CombatGlyph name="shield" colour={GLYPH_COLOUR.text} />}
+                iconTip={t('fight.window.resist')}
+                hero={<ResistValue side={hero} who="hero" />}
+                enemy={<ResistValue side={enemy} who="enemy" />}
             />
         </div>
     );

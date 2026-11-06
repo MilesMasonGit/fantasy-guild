@@ -33,7 +33,7 @@ export function CombatScreenDevSection() {
                     onClick={() => {
                         const r = setUpCombatCrowd();
                         setStatus(r.ok
-                            ? `${r.fights} fights crowded below the Hall: watch the bars, the buttons between them, the floats and the move bubbles`
+                            ? `${r.fights} fights crowded below the Hall: watch the bars, the buttons between them, the floats, and bubbles only for special moves (the Bee's Flutter), never a plain hit`
                             : r.error);
                     }}
                 >

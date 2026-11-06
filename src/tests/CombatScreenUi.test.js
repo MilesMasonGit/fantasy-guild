@@ -102,21 +102,55 @@ describe('the fight panel', () => {
     const kit = () => render(React.createElement(CombatKit)).container;
     const panels = (root) => root.querySelectorAll('[data-fight-panel]');
 
-    // Rewritten for the fight window (owner's pick B, 2026-11-05): each side's numbers are a stat
-    // block like the Token card's, side by side; health is the bar with its numbers over each fighter.
-    it('the stat blocks read across: style and level, hit with its type, swing, resistances; health over each fighter', () => {
+    // The fight window's stat block (owner, 2026-11-05: picture B's shared column): one row a stat,
+    // its icon in the middle, the hero's value on the left and the enemy's on the right.
+    it('⭐ the stat block reads across: one row a stat, its icon in a shared middle column, hero left, enemy right', () => {
         const panel = panels(kit())[0];
-        const stat = (who, id) => text(q(panel, `[data-fight-stats="${who}"] [data-fight-stat="${id}"]`));
-        expect(stat('hero', 'style')).toBe('Melee20/99');
-        expect(stat('enemy', 'style')).toBe('Melee20/99');
-        expect(stat('hero', 'hit')).toBe('Hit4');
-        expect(stat('enemy', 'hit')).toBe('Hit3');
+        const card = q(panel, '[data-fight-card]');
+        const rows = [...card.children];
+        expect(rows.map(r => r.getAttribute('data-fight-stat'))).toEqual(['style', 'hit', 'swing', 'resists']);
+        for (const row of rows) {
+            // Three cells in one grid row: the hero's value, the icon, the enemy's value.
+            expect(row.className).toContain('grid-cols-[1fr_20px_1fr]');
+            expect([...row.children].map(c => c.getAttribute('data-fight-side') || (c.hasAttribute('data-fight-row-icon') ? 'icon' : null)))
+                .toEqual(['hero', 'icon', 'enemy']);
+            expect(row.children[1].querySelector('img')).not.toBeNull();
+        }
+        expect(q(card, '[data-fight-row-icon="hit"] [data-glyph="hit"]')).not.toBeNull();
+        expect(q(card, '[data-fight-row-icon="swing"] [data-glyph="clock"]')).not.toBeNull();
+        expect(q(card, '[data-fight-row-icon="resists"] [data-glyph="shield"]')).not.toBeNull();
+        // No captions: the icon names the row.
+        expect(card.textContent).not.toMatch(/Hit|Swing|Resist|Melee/);
+    });
+
+    it('the style row: the hero’s style in the middle; a side fighting another style shows its own icon by its level', () => {
+        const draw = (view) => render(React.createElement(FightPanelView, {
+            view, fights: { current: KIT_CURRENT, last: null }, onClose: () => {},
+            logOpen: false, onToggleLog: () => {}, tab: 'current', onTab: () => {}
+        })).container;
+        const base = kitPanelView();
+        const same = draw(base);
+        expect(q(same, '[data-fight-row-icon="style"] img')).not.toBeNull();
+        expect(same.querySelectorAll('[data-fight-stat="style"] [data-fight-side] img')).toHaveLength(0);
+        cleanup();
+        const other = draw({ ...base, enemy: { ...base.enemy, style: 'ranged' } });
+        expect(other.querySelectorAll('[data-fight-stat="style"] [data-fight-side="hero"] img')).toHaveLength(0);
+        expect(other.querySelectorAll('[data-fight-stat="style"] [data-fight-side="enemy"] img')).toHaveLength(1);
+    });
+
+    it('the stat block values: style and level, hit with its type, swing, resistances; health over each fighter', () => {
+        const panel = panels(kit())[0];
+        const stat = (who, id) => text(q(panel, `[data-fight-stat="${id}"] [data-fight-side="${who}"]`));
+        expect(stat('hero', 'style')).toBe('20/99');
+        expect(stat('enemy', 'style')).toBe('20/99');
+        expect(stat('hero', 'hit')).toBe('4');
+        expect(stat('enemy', 'hit')).toBe('3');
         expect([...panel.querySelectorAll('[data-fight-stat="hit"] [data-fight-hit-type]')].map(e => e.getAttribute('data-fight-hit-type'))).toEqual(['slash', 'physical']);
-        expect(stat('hero', 'resists')).toBe('Resist25%');
-        expect(stat('enemy', 'resists')).toBe('Resist50%−25%');
-        expect([...panel.querySelectorAll('[data-fight-stats="enemy"] [data-fight-resist]')].map(e => e.getAttribute('data-fight-resist'))).toEqual(['fire', 'slash']);
-        expect(stat('hero', 'swing')).toBe('Swing3 s');
-        expect(stat('enemy', 'swing')).toBe('Swing4 s');
+        expect(stat('hero', 'resists')).toBe('25%');
+        expect(stat('enemy', 'resists')).toBe('50%−25%');
+        expect([...panel.querySelectorAll('[data-fight-side="enemy"] [data-fight-resist]')].map(e => e.getAttribute('data-fight-resist'))).toEqual(['fire', 'slash']);
+        expect(stat('hero', 'swing')).toBe('3 s');
+        expect(stat('enemy', 'swing')).toBe('4 s');
         expect(text(q(panel, '[data-fight-hp="hero"]'))).toBe('17/30');
         expect(text(q(panel, '[data-fight-hp="enemy"]'))).toBe('24/40');
         expect(text(q(panel, '[data-fight-title]'))).toBe('Aela vs Goblin Warlord');
