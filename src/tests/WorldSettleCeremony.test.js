@@ -68,7 +68,9 @@ function heroes(n, cell = null) {
 
 function settleRingOne(index = 0) {
     const cell = World.currentWorld().cells.filter(c => c.ring === 1)[index];
-    const crew = heroes(3, cell);
+    heroes(3, cell);
+    // A new game starts with its first hero: every hero on the roster walks in.
+    const crew = HeroManager.getAllHeroes();
     for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
     const result = World.settleCell(cell.id);
     expect(result.success, result.reason).toBe(true);
