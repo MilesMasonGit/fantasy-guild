@@ -25,3 +25,6 @@ You approved merging these on the tests while away. Nothing here needs a branch 
 
 8. **The Guild Hall upgrade ceremony** (390 G4). QA panel → Guild Hall → **A star that opens others**, then click Bunk Beds and Upgrade: a hard-pixel burst and a chime, light hopping along to Infirmary and Larder. Then **A constellation one star short** and buy the last star: a bigger burst, each star sparkling. Listen: the chimes are the metal pot sounds until your own files exist. Nothing plays on load or after time away.
    Verdict:
+
+9. **Ring stars** (380 M4; nothing changes until you Sync its pack). QA panel → Atlas → **Ring stars in the sky (until their pack is synced)**, then **Meet the frontier's prices**: a ring-2 cell stays darkened and says to light Charted Roads; buy the star in the Guild Hall (left of the Vault, The Compass); the ring-2 cells then pulse gold and settle.
+   Verdict:
