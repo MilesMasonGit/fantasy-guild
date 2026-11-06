@@ -554,19 +554,25 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const ringLines = ledger.world.worldTables?.lines || [];
     const ringMemo = new Map();
     /**
-     * When ring `ring` is first settled at a profile: the earliest of its wedges, `{ hours, key }`;
-     * Infinity with no wedge of that ring in the reach (a wild ring: the reach places the strict ones).
+     * When ring `ring` is first settled at a profile: the earliest of its wedges whose path is fully
+     * timed, else the earliest of any (a floor: a gate the pace cannot time, such as a fighting
+     * style's level), `{ hours, key, complete }`; Infinity with no wedge of that ring in the reach (a
+     * wild ring: the reach places the strict ones).
      */
     function ringOpensAt(ring, profile = PROFILE.TYPICAL) {
         const memoKey = `${ring}|${profile}`;
         if (ringMemo.has(memoKey)) return ringMemo.get(memoKey);
-        let best = { hours: Infinity, key: null };
+        let timed = null;
+        let any = null;
         for (const line of ringLines) {
             const key = wedgeKey(line.id, ring);
             if (!reach.has(key)) continue;
             const r = readyOf(key, profile);
-            if (r.hours < best.hours || !best.key) best = { hours: r.hours, key };
+            const at = { hours: r.hours, key, complete: r.complete };
+            if (!any || r.hours < any.hours) any = at;
+            if (r.complete && (!timed || r.hours < timed.hours)) timed = at;
         }
+        const best = timed || any || { hours: Infinity, key: null, complete: false };
         ringMemo.set(memoKey, best);
         return best;
     }
@@ -719,7 +725,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         for (let ring = 2; ring <= STRICT_RINGS; ring++) {
             const budget = ringBudgetHours(ring);
             const opens = ringOpensAt(ring);
-            if (budget === null || !opens.key || !Number.isFinite(opens.hours)) continue;
+            // A floor (an untimed gate) says nothing about how early the ring opens.
+            if (budget === null || !opens.complete || !Number.isFinite(opens.hours)) continue;
             const early = 1 - opens.hours / budget;
             if (early * 100 <= settings.tolerancePct) continue;
             const stars = ledger.world.ringStars?.get(ring) || [];
@@ -1068,19 +1075,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const budgetHours = ringBudgetHours(ring);
         return {
             ring, litAt: readyOf(starKey(track.id), PROFILE.TYPICAL).hours, opensAt: opens.hours, opensKey: opens.key,
-            budgetHours, proposed: proposeRingPrice(track, ring, budgetHours)
+            budgetHours, proposed: proposeRingPrice(track, ring)
         };
     }
 
-    /**
-     * The price the ledger proposes for a ring star: its tier's material (as a Hall rank's,
-     * {@link materialFor}), as much as one hero gathers at Typical between when it can start (the
-     * material had and a star it is linked to lit) and the end of the stage its ring opens after,
-     * rounded down to two figures, so the ring opens when that stage ends. `{ itemId, quantity,
-     * priceText, priceHours, start, litAt, budgetHours }`, or `{ why }` when it cannot propose one.
-     */
-    function proposeRingPrice(track, ring, budgetHours) {
-        if (budgetHours === null) return { why: `no budget is set for ${tierLabel(ringBudgetTier(ring))}, the stage its ring opens after` };
+    /** The material a ring star is priced in and when its gathering can start: `{ material, start, at }` or `{ why }`. */
+    function ringMaterial(track, ring) {
         const tier = track.tier(1) ?? ringBudgetTier(ring);
         const cap = Math.min(maxTier, tier);
         const material = materialFor(track.star, tier, cap);
@@ -1093,21 +1093,61 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             if (r.hours < openAt) { openAt = r.hours; openTier = tierOfKey(starKey(way)) ?? openTier; }
         }
         if (!Number.isFinite(openAt)) return { why: 'no star it is linked to can be lit' };
-        const had = readyOf(itemKey(material.itemId), PROFILE.TYPICAL).hours;
-        const start = Math.max(had, openAt);
-        const gather = budgetHours - start;
-        if (!(gather > 0)) {
-            return { why: `${nameOf(itemKey(material.itemId))}, its material, is first had ${PACE_TEXT.hours(start)} in, after ${tierLabel(ringBudgetTier(ring))} ends` };
-        }
+        const start = Math.max(readyOf(itemKey(material.itemId), PROFILE.TYPICAL).hours, openAt);
         // Gathered as its lighting gathers it: at the star's own stage once priced.
         const at = Math.min(maxTier, Math.max(tierOfKey(itemKey(material.itemId)) ?? cap, Number.isFinite(openTier) ? openTier : 0));
+        return { material, start, at };
+    }
+
+    const ringProposals = new Map();
+    /**
+     * The price the ledger proposes for a ring star: its tier's material (as a Hall rank's,
+     * {@link materialFor}), as much as one hero gathers at Typical between when it can start (the
+     * material had and a star it is linked to lit) and the end of the stage its ring opens after,
+     * rounded down to two figures, so the ring opens when that stage ends. A wild ring, whose stage
+     * has no budget, takes the tables' wild price growth (`wild.priceGrowth`, as its cells' prices do)
+     * times the hours of the ring before's star. `{ itemId, quantity, priceText, priceHours, start,
+     * litAt, budgetHours, grown }`, or `{ why }` when it cannot propose one.
+     */
+    function proposeRingPrice(track, ring) {
+        const memoKey = `${track.id}|${ring}`;
+        if (ringProposals.has(memoKey)) return ringProposals.get(memoKey);
+        ringProposals.set(memoKey, { why: 'a loop of ring stars' });
+        const out = ringProposal(track, ring);
+        ringProposals.set(memoKey, out);
+        return out;
+    }
+
+    function ringProposal(track, ring) {
+        const budgetHours = ringBudgetHours(ring);
+        let hours = null;
+        let grown = null;
+        if (budgetHours === null) {
+            const before = (ledger.world.ringStars?.get(ring - 1) || []).map(id => profiles.hallTrack(id)).find(Boolean);
+            const growth = Number(ledger.world.worldTables?.wild?.priceGrowth) || 0;
+            if (ring <= STRICT_RINGS || !before || !(growth > 0)) {
+                return { why: `no budget is set for ${tierLabel(ringBudgetTier(ring))}, the stage its ring opens after` };
+            }
+            const prev = proposeRingPrice(before, ring - 1);
+            if (!prev.itemId) return { why: `the star of the ring before has no proposal (${prev.why})` };
+            hours = prev.priceHours * growth;
+            grown = { from: before.id, growth };
+        }
+        const m = ringMaterial(track, ring);
+        if (m.why) return m;
+        const { material, start, at } = m;
+        const name = nameOf(itemKey(material.itemId));
+        if (hours === null) {
+            hours = budgetHours - start;
+            if (!(hours > 0)) return { why: `${name}, its material, is first had ${PACE_TEXT.hours(start)} in, after ${tierLabel(ringBudgetTier(ring))} ends` };
+        }
         const perHour = supplyOf(material.itemId, PROFILE.TYPICAL, at).perHour;
-        if (!(perHour > 0)) return { why: `${nameOf(itemKey(material.itemId))} is not gathered at Typical by then` };
-        const quantity = Math.max(1, roundDown(gather * perHour));
+        if (!(perHour > 0)) return { why: `${name} is not gathered at Typical by then` };
+        const quantity = Math.max(1, roundDown(hours * perHour));
         const priceHours = quantity / perHour;
         return {
             itemId: material.itemId, quantity, priceText: priceWords([{ itemId: material.itemId, quantity }]),
-            priceHours, start, litAt: start + priceHours, budgetHours, work: material.work
+            priceHours, start, litAt: start + priceHours, budgetHours, grown, work: material.work
         };
     }
 
