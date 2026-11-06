@@ -426,14 +426,16 @@ export const MatBoard = React.memo(function MatBoard({
             if (!h.tokenId || !h.combat || h.tokenId === carriedId) continue;
             const t = byId.get(h.tokenId);
             if (!t || t.x == null) continue;
-            out.push({ tokenId: h.tokenId, heroId: h.heroId, typeId: t.typeId, x: t.x, y: t.y });
+            out.push({ tokenId: h.tokenId, heroId: h.heroId, typeId: t.typeId, x: t.x, y: t.y, hx: h.x ?? null, hy: h.y ?? null });
         }
         return out;
     }, [heroes, tokens, carriedId]);
     /** Who is fighting: their health bars draw in the fight layer (`FightBarHost`). */
     const fighters = useMemo(() => ({
         tokens: new Set(fights.map(f => f.tokenId)),
-        heroes: new Set(fights.map(f => f.heroId))
+        heroes: new Set(fights.map(f => f.heroId)),
+        /** heroId → how far they stand from their enemy, for the bars around the fight button. */
+        apart: new Map(fights.filter(f => f.hx != null).map(f => [f.heroId, f.hx - f.x]))
     }), [fights]);
     // The Token the pointer rests on, when it is an enemy: its card shows (not while one is carried).
     const restType = rest.tokenId && !carriedId ? tokens.find(t => t.id === rest.tokenId)?.typeId : null;
@@ -616,6 +618,7 @@ export const MatBoard = React.memo(function MatBoard({
                         rested={rest.heroId === h.heroId}
                         plated={h.tokenId != null && plated.has(h.tokenId)}
                         fightBarHost={fighters.heroes.has(h.heroId) ? fightBarHost : null}
+                        fightApart={fighters.apart.get(h.heroId) ?? null}
                         needsJob={h.needsJob}
                     />
                 );
@@ -652,10 +655,8 @@ export const MatBoard = React.memo(function MatBoard({
             {/* `MAT_Z.WORK_PLATE`: the idle plate under the Token the pointer rests on, when nobody works it. */}
             {platesDrawn && <IdlePlateHost hostRef={setIdlePlateHost} />}
 
-            {/* `MAT_Z.FIGHT`: each fight's plate under the fighters' feet and its chip, which opens the fight panel. */}
-            {fights.length > 0 && (
-                <FightLayer fights={fights} onPress={handleTokenPress} platesDrawn={platesDrawn} yieldToTokens={flagsYield} />
-            )}
+            {/* `MAT_Z.FIGHT`: each fight's button between the fighters' bars, which opens the fight panel. */}
+            {fights.length > 0 && <FightLayer fights={fights} yieldToTokens={flagsYield} />}
             {/* `MAT_Z.FIGHT`: the fighters' health bars while they fight, over the loot. */}
             <FightBarHost hostRef={setFightBarHost} yieldToTokens={flagsYield} />
 

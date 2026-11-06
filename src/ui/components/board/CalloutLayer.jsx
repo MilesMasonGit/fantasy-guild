@@ -1,12 +1,14 @@
 import { memo, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
-import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { UI_EVENTS, ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import * as BoardCombat from '../../../systems/board/BoardCombat.js';
+import { startFightWatch, subscribeMoments } from '../combat/fightWatch.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { artRadiusOf } from '../../../config/matGeometry.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { MAT_Z } from './matLayers.js';
-import { CALLOUT_MS, INPUT_CALLOUT_GAP_MS, TOOL_CALLOUT_GAP_MS, addCallout, anchorKeyOf, calloutText, dueAgain } from './callouts.js';
+import { CALLOUT_MS, INPUT_CALLOUT_GAP_MS, TOOL_CALLOUT_GAP_MS, addCallout, anchorKeyOf, calloutText, dueAgain, namesStatus } from './callouts.js';
 import { getAllItems, getItem } from '../../../config/registries/itemRegistry.js';
 import { toolNeedPhrase } from '../../../config/registries/toolKinds.js';
 import { columnPlace, heroColumnAt, heroColumnsVersion, subscribeHeroColumns } from './speechColumns.js';
@@ -34,7 +36,7 @@ export function calloutTopOf({ x, y, typeId, anchorId = null }, { fit, matH, u }
     if (anchorId && BoardState.workerOf(anchorId)) {
         const plateTop = platePlace({ x, y, typeId, fit, matH }).top;
         if (plateTop < y) top = Math.min(top, plateTop - GAP_PX);
-        // An enemy in a fight: above its health number and its fight chip, never on them.
+        // An enemy in a fight: above its health bar and the fight button, never on them.
         if (getTokenType(typeId)?.enemy) {
             const art = tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, boardScaleAt(fit));
             const boxTop = y - Math.max(artRadiusOf(typeId) * 2, art) / 2;
@@ -45,6 +47,7 @@ export function calloutTopOf({ x, y, typeId, anchorId = null }, { fit, matH, u }
 }
 
 const NO_SUBSCRIPTION = () => () => {};
+
 
 /**
  * Quick popups over the mat, in the speech family's frame (`SpeechFrame`), red for a refusal: "! Spawned Oak Tree" over the spawner, an effect's name
@@ -103,7 +106,18 @@ export const CalloutLayer = memo(function CalloutLayer() {
                 }, SPAWN_MS));
             }, UI_LISTENER),
             EventBus.subscribe(BOARD_EVENTS.EFFECT_FIRED, (p) => {
-                if (p?.instanceId && p.title) say({ anchorId: p.instanceId, text: calloutText.effect(p.title) });
+                if (!p?.instanceId || !p.title) return;
+                if (BoardCombat.getFight(p.instanceId) && namesStatus(p.title)) return;
+                say({ anchorId: p.instanceId, text: calloutText.effect(p.title) });
+            }, UI_LISTENER),
+            // A fight: an enemy's special move by name over its bar (a plain hit, named or not, is the
+            // fight window's and the log's to say), and a status landing on an enemy over its bar (one
+            // landing on a hero is the hero's to say, `HeroBubbleLayer`).
+            subscribeMoments((m) => {
+                if (m?.move && m.special && m.by === 'enemy' && m.instanceId != null) say({ anchorId: m.instanceId, text: m.move });
+            }),
+            EventBus.subscribe(ENGINE_EVENTS.STATUS_APPLIED, (p) => {
+                if (p?.targetType === 'enemy' && p.targetId != null && p.statusId) say({ anchorId: p.targetId, text: calloutText.statusLands(p.statusId) });
             }, UI_LISTENER),
             // A flag passed this Token over for want of a tool: the Token says which, now and then.
             EventBus.subscribe(BOARD_EVENTS.TOOL_NEEDED, (p) => {
@@ -139,8 +153,10 @@ export const CalloutLayer = memo(function CalloutLayer() {
                 if (p) say({ anchorId: p.instanceId || null, x: p.x, y: p.y, text: p.title || p.message, tone: SPEECH_TONE.CANT });
             }, UI_LISTENER)
         ];
+        const stopWatch = startFightWatch();
         return () => {
             unsubs.forEach(u => u());
+            stopWatch();
             for (const t of pending.values()) clearTimeout(t);
             pending.clear();
         };

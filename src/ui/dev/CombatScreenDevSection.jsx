@@ -1,8 +1,8 @@
-// The QA panel's combat screen section: one click sets up two fights and an enemy nobody has fought; one plays time away.
+// The QA panel's combat screen section: one click sets up two fights and an enemy nobody has fought; one a crowd of fights; one plays time away.
 // ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
 
 import { useState } from 'react';
-import { setUpCombatScreenScene, playTimeAway } from './combatScreenDev.js';
+import { setUpCombatScreenScene, setUpCombatCrowd, playTimeAway } from './combatScreenDev.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
@@ -20,11 +20,24 @@ export function CombatScreenDevSection() {
                     onClick={() => {
                         const r = setUpCombatScreenScene();
                         setStatus(r.ok
-                            ? 'Below the Hall: Aela on a Goblin Warlord (left), Bram on a Cow (right), a Goblin Scout nobody has fought (middle). Click the crossed-swords chip by a fight to open its panel'
+                            ? 'Below the Hall: Aela on a Goblin Warlord (left), Bram on a Cow (right), a Goblin Scout nobody has fought (middle). Click the crossed-swords button between the two bars of a fight to open its panel'
                             : r.error);
                     }}
                 >
                     Two fights and a new enemy (test content, gone on reload)
+                </button>
+                <button
+                    type="button"
+                    data-qa-combat-crowd
+                    className={buttonClass}
+                    onClick={() => {
+                        const r = setUpCombatCrowd();
+                        setStatus(r.ok
+                            ? `${r.fights} fights crowded below the Hall: watch the bars, the buttons between them, the floats, and bubbles only for special moves (the Bee's Flutter), never a plain hit`
+                            : r.error);
+                    }}
+                >
+                    A crowd of fights (test content, gone on reload)
                 </button>
                 <button
                     type="button"

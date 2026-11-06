@@ -185,7 +185,8 @@
             "crit": "Crit!",
             "miss": "Miss",
             "weak": "Weak!",
-            "resisted": "Resisted"
+            "resisted": "Resisted",
+            "lands": "{status}!"
         },
         "moves": {
             "unnamed": "Attack",
@@ -234,6 +235,22 @@
             "noKinds": "None",
             "fightIcon": "Fight: {hero} vs {enemy}",
             "openHint": "Click to open the fight panel"
+        },
+        "window": {
+            "minimize": "Minimize",
+            "restore": "Open the window",
+            "attacks": "{enemy}'s attacks",
+            "justUsed": "just used",
+            "on": "On {name}",
+            "none": "None",
+            "fightsLeft": "fights left",
+            "noElixirs": "No elixirs",
+            "log": "Log",
+            "won": "Won",
+            "lost": "Lost",
+            "hit": "Hit",
+            "swing": "Swing",
+            "resist": "Resist"
         },
         "tip": {
             "level": "{name}: {style} {level}",

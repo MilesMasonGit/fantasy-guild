@@ -81,6 +81,7 @@ once; the oldest moment gives way.
 | 16a | I need a job. | Said instead of line 12 when the Token the hero was ordered onto is gone for good (used up with nothing coming back, removed or demolished): they idle at its last spot with the "needs a job" mark until given a new order (brief 260 O1). A hero sent to a spot says nothing on arriving. "Waiting for {Token}." (line 16) is also said by a hero ordered onto a Token another hero works. | Kept |
 | 16b | *(nothing)* | A gatherer whose node is resting (a vein refilling, a tree growing back) goes quiet instead of saying line 12: they wait silently and work it the moment it is back; the job flag's hover and the roster say "Waiting for Copper Vein" (brief 230 S1b, owner 2026-10-24). | **Silent by ruling** |
 | 17 | {enemy} Beaten | Line 15 said of an enemy: the hero who beat it says it (brief 220 C5). Shows for **3 seconds**, one line per kind. | Kept |
+| 18 | {status}! | A status lands on the hero in a fight ("Venom!"), over their health bar (brief 360 C3). Shows for about **2 seconds**, one line per status, so stacks landing hit after hit keep one bubble. | Kept |
 
 ## 3. Callouts (not speech bubbles)
 
@@ -91,10 +92,11 @@ switched off together with the `alerts` draw switch.
 | # | Line | When it appears |
 |---|---|---|
 | C1 | ! Spawned {token} | A spawner makes a Token, shown over the **spawner**. The Guild Hall says it for a new quest ("! Spawned quest" / "! Spawned tutorial quest"). Not shown during a catch-up. |
-| C2 | {effect name} | A named effect fires on a Token (a bonus drop, a status landing), shown over that Token. The wording is the effect's own title. |
+| C2 | {effect name} | A named effect fires on a Token (a bonus drop, a boss's rule), shown over that Token, above an enemy's health bar in a fight. The wording is the effect's own title. A status's own name fired in a fight is not said here: its landing is (C6, line 18). |
 | C3 | {reason} | A drop the mat refused: the rule's reason (or "Drop Rejected: {token}") at the spot you aimed at. The Guild Hall dragged off the mat says "Guild Hall cannot be removed from the playmat." over the Hall. A hero dropped on a Token they cannot work says why over that Token ("Needs Pickaxe", "Nothing to work here"). |
 | C4 | Needs {Pickaxe} | A hero sent to this Token (or to a camp it stands in) passed it over because they hold no tool of the kind it needs (or not a good enough one: "Needs Iron Pickaxe or better"), shown over the **Token**: at a camp only the one the hero would have worked (the nearest passed over for want of a tool), so a cluster of veins says it once. Said when the hero looks, then at most once every 8 seconds per Token while they keep passing it over (an idle hero looks every second). |
 | C5 | Needs {Coal} | A station its hero stands at is out of an input: the first item the Bank is short of, over the **station**, in C4's red look (brief 230 S1b). Said when the stuck hero looks again, then at most once every 8 seconds per station. |
+| C6 | {move} / {status}! | In a fight, over the **enemy's** health bar: the name of the move it just used ("Shiv"), or a status landing on it ("Burn!") (brief 360 C3). |
 
 The "-1" / "+50" charge number is not a callout: it is a small number rising from the Token's
 charges corner.

@@ -2,7 +2,7 @@ import { hpPercent, hpTone } from '../dock/dockHeroView.js';
 import { SPEECH_FILL } from '../board/speechTone.js';
 
 /** Each tone's fill and the one-art-pixel lighter and darker rows along its top and foot. */
-const TONE_FILL = Object.freeze({
+export const TONE_FILL = Object.freeze({
     green: { fill: '#3fa34d', light: '#7fd36b', dark: '#256b33' },
     amber: { fill: '#d9962b', light: '#f2c14e', dark: '#9a6618' },
     red: { fill: '#c8322b', light: '#ee6a55', dark: '#8a1f1b' }

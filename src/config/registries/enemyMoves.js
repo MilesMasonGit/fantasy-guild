@@ -95,6 +95,16 @@ export function pickMove(moves, random = Math.random) {
 }
 
 /**
+ * Whether a move is special: it does something beyond a plain hit (it lands an effect, or does not
+ * hit at all). Only a special move is said in a bubble over its enemy on the mat; a plain hit, named
+ * or not, shows in the fight window and the log only. Reads an authored or a normalised move.
+ */
+export function isSpecialMove(move) {
+    if (!isPlainObject(move)) return false;
+    return move.hits === false || hasText(move.effectId);
+}
+
+/**
  * What is wrong with an enemy's authored moves, one sentence each, for the audits.
  * @param {*} raw `enemy.moves`
  * @param {{hasEffect?: (id: string) => boolean, isStatus?: (id: string) => boolean}} [library] what the

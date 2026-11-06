@@ -790,8 +790,10 @@ Accuracy, a 5 % crit (the table and its worked duels: `concept_combat.md`,
   (until the next attack on its bearer is over, hit or miss), **the swing** (on
   itself only) or **the fight**; a status keeps its own lifetime. An enemy with
   no moves swings a plain **Physical** hit, as before. The moves show on the
-  enemy card from the start; the float, the log and the fight panel name the
-  move made. *(`enemyMoves.js`)*
+  enemy card from the start; the log and the fight window name the move
+  made, and a **special** move (one that lands an effect, or does not hit) is
+  also said in a bubble over the enemy's bar on the mat; a plain hit, named or
+  not, is not. *(`enemyMoves.js`, `isSpecialMove`)*
 - **Kinds** (none, one or two, CMS presets the player discovers by fighting):
   **Armoured** Physical resistance 50 % and slow (4 s, same hit; an author's
   own Physical line replaces it); **Nimble** +15 Dodge; **Swift** a swing every
@@ -931,7 +933,7 @@ Their resistances, weaknesses and moves come with the combat content pack
   40 %. Both sides roll the same way.
 - **Crits**: 5 % (gear adds Crit Chance), doubling the hit before the type
   factor. Enemies crit at 5 % unless authored.
-- **The floats and the log name the type**: "Weak!" when the target's
+- **The fight window and the log name the type**: "Weak!" when the target's
   weaknesses outweigh its resistances across the hit's parts, "Resisted" the
   other way; a shot shows both its types.
 - **Barehanded is a Melee punch**: 1 + the Melee level step, every 3 s, on the
@@ -1029,39 +1031,68 @@ burning imp and a four-move warlord, with a live readout of the statuses.
 ### The combat screen — Built (brief 220 C6)
 What a player sees of a fight (owner's picks from the mock-ups, 2026-10-24/25).
 Statuses are not drawn on the board.
-- **On the mat**: a thin health bar over each fighter with the number and the
-  percentage above it ("17 · 57%", halves up; the same bar over a hurt or
-  hovered hero and a hovered enemy); a wide number grows away from the other
-  fighter. The **fight plate** stands in the work plate's place under the two
-  fighters' feet: both styles with a divider, then the hero's working elixirs
-  with the fights each has left, the one under way counted (a fresh dose shows
-  10, its last fight 1; between fights, the fights still to come). Speech, callouts (a status landing, a boss move) and "used"
-  bubbles over a fighter stand above its number and the chip, never on them.
-  A small
-  **crossed-swords chip** beside the enemy's bar, on its far side from the
-  hero (the flag flies the other way), opens the fight panel.
-- **Floating numbers** rise at each fighter's outer side, beside the middle of
-  their art, and are gone in half a second: white on the enemy (on the strike
-  frame of the hero's swing), red on the hero, "Miss", a big number under a
-  gold "Crit!", "Weak!" or "Resisted" and the hit's types, the enemy's move
-  by name, green heals (a meal, or a rule's heal on either side), and Venom
-  and Burn ticks in red with a drop or a flame. Two at once on one side stack
-  upward.
-- **The fight panel** opens over the mat beside the chip, one at a time (the
-  X, Escape or a click off it closes it): the battlefield strip with both
-  fighters at 1×, the hero on the left facing right, moving as on the mat
-  (idle, one swing per real swing; an enemy without an animation sheet stands
-  still: today every enemy but the Cow); the **versus card**, one shared icon
-  column so each pair reads across: style and level, health, hit (before the
-  other side's resistances and the matchup: the player does the sums),
-  resistances and weaknesses (the enemy's as they stand in the fight, after
-  effects on it and Sunder), swing; the hero's elixirs and statuses (with
-  stacks) beside the enemy's kinds (once fought), its move list (the last one
-  made bright), statuses and lingering effects; and the **log**, closed
-  until asked for, holding the whole of this fight and the last one ("This
-  fight" / "Last fight", newest first, at most 400 lines a fight). A fight is
-  one enemy engaged: each kill starts the next. The log is kept in memory per
-  hero and never saved.
+- **On the mat** (owner's pick F, the reduced plate, 2026-11-05; brief 360
+  C3): **no plate** under a fight. Over each fighter a small edition of the
+  hero bar's health bar, its fill in the same green, amber and red on a
+  stepped black edge, the numbers written on it ("17/30"; the same bar over a
+  hurt or hovered hero and a hovered enemy). **Between the two bars** the
+  crossed-swords **fight button** opens the fight's detail view; when the
+  fighters stand close the bars move outward just enough to leave it a gap.
+  The elixir counts are the fight window's. Speech, callouts and "used"
+  bubbles over a fighter stand above its bar and the button, never on them.
+- **Bubbles over the bar** (owner, 2026-11-05: special moves only): an
+  enemy's **special move** by name (one that lands an effect or does not hit:
+  "Venom Bite", "Flutter"; a plain hit such as "Shiv" is the window's and the
+  log's only) and a status landing on an enemy ("Burn!") in the speech frame
+  over the enemy's bar; a
+  status landing on the hero ("Venom!") over the hero's, as the hero's own
+  line; a boss's own rule by its name over the enemy. They stack in a column,
+  never on a number or another bubble, and are gone in about two seconds.
+- **Floats** rise over the middle of each fighter, just under the bar, and
+  are gone in half a second: white on the enemy (on the strike frame of the
+  hero's swing), red on the hero, "Miss", a big number under a gold "Crit!",
+  green heals (a meal, or a rule's heal on either side), and Venom and Burn
+  ticks in red with a drop or a flame. The hit's types, "Weak!" and
+  "Resisted" are the fight window's and the log's. Two at once on one fighter
+  stack downward.
+- **The QA panel's Combat screen section** sets up a crowd of seven fights
+  below the Guild Hall, to judge the motion of a busy mat.
+- **The fight windows** (owner's picks, 2026-11-05: window B "the slim card",
+  tab D "faces and bars"): one window per hero, opened by the fight button
+  between the two bars, several open at once. A
+  window **belongs to its hero**: it shows whatever they fight next ("Kira vs
+  Goblin" becomes "Kira vs Wolf") and the last result between fights (Won or
+  Lost in its title bar), until its X or Escape closes it (Escape closes the
+  top window, one at a time). Its title bar drags it (it stays on the
+  screen); pressing a window brings it to the top. One narrow column: the
+  **battle**, the owner's battlefield with both fighters at twice their art,
+  the hero on the left facing right, moving as on the mat (an enemy without
+  an animation sheet stands still: today every enemy but the Cow), the hero
+  bar's HP bar with its numbers over each, and what just landed over each
+  fighter (the number, Miss, Crit!, Weak! or Resisted and the hit's types,
+  heals) with the enemy's named move in a speech bubble over its bar, any
+  move, plain hits too; the **stat block** (owner, 2026-11-05: picture B's
+  shared column), one row a stat with its icon in a shared middle column, the
+  hero's value on the left and the enemy's on the right so each pair reads
+  across (style and level, the hero's style icon in the middle and a side
+  fighting another style shows its own beside its level; hit with its types, before the other side's resistances and the matchup:
+  the player does the sums; swing; resistances and weaknesses, the enemy's as
+  they stand in the fight); the **enemy's attacks**, each with its type in a
+  small tile, the last one marked "just used" in gold, and its kinds once
+  fought; **what is on each fighter** in two columns (statuses with stacks,
+  lingering effects with a gold star); the hero's **elixirs** with the fights
+  each has left; and the **log**, closed until asked for, holding the whole of
+  this fight and the last one ("This fight" / "Last fight", newest first, at
+  most 400 lines a fight). **Minimize** puts a window away as a **tab** (only
+  a minimized window has one): the hero's face, both names (the enemy's gives
+  way to Won or Lost between fights), both health bars with their numbers,
+  the enemy's face, in a strip along the mat's foot above the hero bar from
+  its left; clicking it brings the window back where it was. ⚠️ Nothing
+  redraws faster than its fight changes (T-198): a window draws again only
+  when its fight's record changes, a minimized window draws nothing, and a
+  tab only when a name, a health or the result changes. A fight is one enemy
+  engaged: each kill starts the next. The log is kept in memory per hero and
+  never saved.
 - **The enemy card** shows by the pointer resting on an enemy: level, style,
   health, hit, swing, its resistances and weaknesses and its moves (from the
   start), and its kinds once the guild has fought one ("? fight one to learn"
@@ -1074,7 +1105,8 @@ Statuses are not drawn on the board.
   panel opens. Placeholder icons are drawn in code (`owner_art_list.md`). The
   QA panel's Combat screen section sets up two fights and an enemy nobody has
   fought, and plays 20 minutes away.
-  *(`ui/components/combat/`, `board/FightLayer.jsx`, `board/fx/fightFloats.js`,
+  *(`ui/components/combat/` (the windows: `FightPanelPopup.jsx`, `FightPanel.jsx`,
+  `FightTab.jsx`, `fightPanelStore.js`), `board/FightLayer.jsx`, `board/fx/fightFloats.js`,
   `board/HealthBar.jsx`, `hud/CatchUpOverlay.jsx`)*
 
 ---

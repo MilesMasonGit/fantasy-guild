@@ -8,7 +8,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
-import { enemyMovesOf } from '../config/registries/enemyMoves.js';
+import { enemyMovesOf, isSpecialMove } from '../config/registries/enemyMoves.js';
 import { buildFloat } from '../ui/components/board/fx/fightFloats.js';
 import { startFightWatch, resetFightWatch, fightsOf, subscribeMoments, MOMENT } from '../ui/components/combat/fightWatch.js';
 import { FightPanelView } from '../ui/components/combat/FightPanel.jsx';
@@ -39,6 +39,11 @@ const CHICKEN_MOVES = [
     { name: 'Flutter', hits: false, effectId: 'emu_flutter', target: 'self', lasts: 'attack' }
 ];
 registerTokenTypes({
+    emu_rat: {
+        id: 'emu_rat', name: 'Rat', tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 5, sprite: 'e_rat',
+        enemy: { level: 1, style: 'melee', moves: [{ name: 'Gnaw', damageType: 'stab' }, { name: 'Venom Bite', damageType: 'stab', effectId: 'emu_venom' }] },
+        config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0 }
+    },
     emu_chicken: {
         id: 'emu_chicken', name: 'Chicken', tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 5, sprite: 'e_chicken',
         enemy: { level: 2, style: 'melee', moves: CHICKEN_MOVES },
@@ -52,39 +57,54 @@ afterEach(() => {
     resetFightWatch();
 });
 
-describe('the float names the move', () => {
+describe('a move is said in a bubble over the enemy, not in the floats (owner\'s pick, 2026-11-05)', () => {
     const float = (m) => buildFloat({ heroId: 'h', instanceId: 'e', ...m });
 
-    it('over the hit on the hero: the move, then the number and its type', () => {
-        const el = float({ kind: MOMENT.HIT, on: 'hero', amount: 2, types: ['stab'], move: 'Peck' });
-        expect(el.getAttribute('data-fight-float-move')).toBe('Peck');
-        expect(el.className).toContain('gi-ff-red');
-        expect(text(q(el, '.gi-ff-words'))).toBe('Peck');
-        expect(text(q(el, '.gi-ff-row'))).toBe('2');
-        expect(q(el, '[data-fight-float-type="stab"]')).not.toBeNull();
+    it('a hit, a crit or a miss made by a move floats with no move word', () => {
+        const hit = float({ kind: MOMENT.HIT, on: 'hero', amount: 2, types: ['stab'], move: 'Peck' });
+        expect(hit.hasAttribute('data-fight-float-move')).toBe(false);
+        expect(hit.textContent).toBe('2');
+        const crit = float({ kind: MOMENT.CRIT, on: 'hero', amount: 3, types: ['slash'], verdict: 'resisted', move: 'Scratch' });
+        expect(crit.querySelector('.gi-ff-move-word')).toBeNull();
+        expect(crit.textContent).toBe(`${t('fight.float.crit')}3`);
+        const miss = float({ kind: MOMENT.MISS, on: 'hero', amount: null, move: 'Peck' });
+        expect(miss.textContent).toBe(t('fight.float.miss'));
     });
 
-    it('beside Crit! and Resisted, the move first', () => {
-        const el = float({ kind: MOMENT.CRIT, on: 'hero', amount: 3, types: ['slash'], verdict: 'resisted', move: 'Scratch' });
-        expect([...q(el, '.gi-ff-words').children].map(c => c.className)).toEqual(['gi-ff-move-word', 'gi-ff-crit-word', 'gi-ff-resisted-word']);
+    it('a move that does not hit draws no float at all', () => {
+        expect(float({ kind: MOMENT.MOVE, on: 'enemy', move: 'Flutter' })).toBeNull();
+    });
+});
+
+describe('a special move: only it is said in a bubble on the mat (owner, 2026-11-05)', () => {
+    it('⭐ special is a move that lands an effect or does not hit; a plain hit, named or not, is not', () => {
+        expect(isSpecialMove({ name: 'Shiv', damageType: 'stab' })).toBe(false);
+        expect(isSpecialMove({ name: 'Club' })).toBe(false);
+        expect(isSpecialMove({ name: 'Venom Bite', damageType: 'stab', effectId: 'emu_venom' })).toBe(true);
+        expect(isSpecialMove({ name: 'Flutter', hits: false })).toBe(true);
+        expect(isSpecialMove({ name: 'Blank', effectId: '  ' })).toBe(false);
+        // Normalised moves read the same.
+        expect(enemyMovesOf({ moves: CHICKEN_MOVES }).map(isSpecialMove)).toEqual([false, false, true]);
+        expect(isSpecialMove(null)).toBe(false);
+        expect(isSpecialMove(undefined)).toBe(false);
     });
 
-    it('over a miss', () => {
-        const el = float({ kind: MOMENT.MISS, on: 'hero', amount: null, move: 'Peck' });
-        expect([...el.children].map(c => c.textContent)).toEqual(['Peck', t('fight.float.miss')]);
-    });
-
-    it('alone beside the enemy for a move that does not hit, white', () => {
-        const el = float({ kind: MOMENT.MOVE, on: 'enemy', move: 'Flutter' });
-        expect(el.className).toContain('gi-fight-float-move');
-        expect(el.className).toContain('gi-ff-white');
-        expect(el.textContent).toBe('Flutter');
-    });
-
-    it('a swing without moves floats as before: no move word', () => {
-        const el = float({ kind: MOMENT.HIT, on: 'hero', amount: 1, types: ['physical'] });
-        expect(el.hasAttribute('data-fight-float-move')).toBe(false);
-        expect(el.textContent).toBe('1');
+    it('⭐ each moment names whether its move is special, looked up among its enemy moves', () => {
+        GameState.initNew();
+        const stop = startFightWatch();
+        const moments = [];
+        const off = subscribeMoments((m) => moments.push(m));
+        EventBus.publish(BOARD_EVENTS.COMBAT_ENGAGED, { heroId: 'h2', instanceId: 'r1', typeId: 'emu_rat' });
+        const swing = (p) => EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { instanceId: 'r1', heroId: 'h2', enemyId: 'emu_rat', heroHpRemaining: 20, ...p });
+        swing({ damage: 1, hit: true, crit: false, types: ['stab'], move: 'Gnaw' });
+        swing({ damage: 2, hit: true, crit: false, types: ['stab'], move: 'Venom Bite' });
+        swing({ damage: 0, hit: false, crit: false, move: 'Venom Bite' });
+        swing({ damage: 1, hit: true, crit: false, types: ['physical'] });
+        off();
+        stop();
+        expect(moments.map(m => [m.move ?? null, m.special ?? null])).toEqual([
+            ['Gnaw', false], ['Venom Bite', true], ['Venom Bite', true], [null, null]
+        ]);
     });
 });
 
@@ -112,9 +132,9 @@ describe('the log and the moments', () => {
         expect(lines[0][2]).toBe('−2');
         expect(lines[3][1]).toBe('Chicken uses Flutter');
         expect(record.lastMove).toBe('Flutter');
-        expect(moments.map(m => [m.kind, m.on, m.move ?? null])).toEqual([
-            [MOMENT.HIT, 'hero', 'Peck'], [MOMENT.CRIT, 'hero', 'Scratch'], [MOMENT.MISS, 'hero', 'Peck'],
-            [MOMENT.MOVE, 'enemy', 'Flutter'], [MOMENT.HIT, 'hero', null]
+        expect(moments.map(m => [m.kind, m.on, m.move ?? null, m.special ?? null])).toEqual([
+            [MOMENT.HIT, 'hero', 'Peck', false], [MOMENT.CRIT, 'hero', 'Scratch', false], [MOMENT.MISS, 'hero', 'Peck', false],
+            [MOMENT.MOVE, 'enemy', 'Flutter', true], [MOMENT.HIT, 'hero', null, null]
         ]);
     });
 
@@ -165,18 +185,19 @@ describe('what the screen lists', () => {
         expect(q(root, '[data-enemy-card-moves]')).toBeNull();
     });
 
-    it('the panel: the moves in the enemy\'s column, the last one bright; the hit row shows each type', () => {
+    it('the window: the enemy\'s attacks, the last one marked just used; its hit shows each type', () => {
         const view = kitPanelView();
         const moves = movesView(enemyMovesOf({ moves: CHICKEN_MOVES }));
         view.enemy = { ...view.enemy, name: 'Chicken', hitType: 'stab', hitTypes: ['stab', 'slash'], moves, lastMove: 'Scratch' };
         const root = render(React.createElement(FightPanelView, {
             view, fights: { current: KIT_CURRENT, last: null }, onClose: () => {}, logOpen: false, onToggleLog: () => {}, tab: 'this', onTab: () => {}
         })).container;
-        const listed = [...root.querySelectorAll('[data-fight-effects="enemy"] [data-fight-move]')];
+        const listed = [...root.querySelectorAll('[data-fight-moves] [data-fight-move]')];
         expect(listed.map(e => e.getAttribute('data-fight-move'))).toEqual(['Peck', 'Scratch', 'Flutter']);
         expect(listed.map(e => e.getAttribute('data-fight-move-last'))).toEqual(['false', 'true', 'false']);
-        expect(listed[1].className).toContain('text-white');
-        expect([...root.querySelectorAll('[data-fight-row="hit"] [data-fight-side="enemy"] [data-fight-hit-type]')].map(e => e.getAttribute('data-fight-hit-type'))).toEqual(['stab', 'slash']);
+        expect(listed[1].textContent).toContain(t('fight.window.justUsed'));
+        expect(listed[0].textContent).not.toContain(t('fight.window.justUsed'));
+        expect([...root.querySelectorAll('[data-fight-stat="hit"] [data-fight-side="enemy"] [data-fight-hit-type]')].map(e => e.getAttribute('data-fight-hit-type'))).toEqual(['stab', 'slash']);
     });
 
     it('every new line has its words in the strings file', () => {

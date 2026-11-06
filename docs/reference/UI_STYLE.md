@@ -18,8 +18,9 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **A hero's HP on the hero bar and sheet: the numbers over a stepped pixel bar**
   (`VitalBar`; owner, 2026-11-02): a smooth fill on a plain black edge, no ticks
   (owner's pick, 2026-11-05).
-- **HP elsewhere is a bar**; the exact number shows on hover, except on the mat, where a thin bar over a fighter has its number and
-  percentage written above it, `17 · 57%` (owner, combat screen, 2026-10-25).
+- **HP elsewhere is a bar**; the exact number shows on hover, except on the mat, where a fighter's bar is a small
+  edition of the hero bar's, the same tones on a stepped black edge, its numbers written on it, `17/30` (owner's pick F,
+  2026-11-05).
 - Times read `0:34` / `4:05`; thousands get separators (`1,154`).
 
 ## Frames
@@ -144,8 +145,26 @@ normal text colour; a new meaning needs the owner's OK.
   quest's progress, a spawner's count, as apply; nothing to say, no plate. Its "!" stays on the
   Token at rest. Enemies get none (name and HP only). **No round rings on the mat**; the Token
   inspection keeps its own. No floating "-1": the plate counts down.
-- A fight's link sits in the same place, the **fight plate**: both styles with a divider, then the
-  hero's elixirs with the fights each has left; HP bars stay above (combat screen, 2026-10-25).
+- **A fight has no plate** (owner's pick F, 2026-11-05): its **fight button**, the crossed swords in the
+  chamfer frame with no shadow (owner), stands **between the two fighters' health bars**, its middle on
+  theirs, and opens the fight's detail view. An enemy's special move (it lands an effect or does not
+  hit; a plain hit, named or not, never bubbles on the mat) or a status landing is said in the
+  speech frame over the bar of the fighter it is about; floats rise over the fighter, under the bar.
+
+## Fight windows (owner, 2026-11-05)
+
+- **A window, "like an operating system's"**: the chamfer frame and hard shadow, a title bar
+  ("Kira vs Goblin", "vs" muted) that drags it, then a **minimize** button (a gold bar at its
+  foot, drawn in code, the X's size) beside the red close X. Several open at once; the one pressed
+  is on top; Escape closes the top one.
+- **One narrow column** (pick B): the battle with the fighters at 2×, the hero's `VitalBar` with
+  its numbers over each fighter; the stat block as one shared column (owner, 2026-11-05): a row a
+  stat, its icon in a 20 px middle column (the hero's style, Hit, a clock, a shield), the hero's
+  value right-aligned to its left and the enemy's left-aligned to its right, body type, bold
+  numbers, no captions (the icon's tooltip names the row); the enemy's attacks in small type tiles, the last
+  gold-edged and "just used"; effects in two columns; elixirs and the Log button at the foot.
+- **A minimized window is a tab** (pick D): faces at 1× cropped to 44 px, both names, two small
+  `VitalBar`s. Tabs stand in a strip along the mat's foot above the hero bar, from the left.
 
 ## Sprites and icons
 

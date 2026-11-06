@@ -4,6 +4,9 @@
  * gone by itself. Pure, so the rules are tested without a screen.
  */
 
+import { EFFECTS } from '../../../config/registries/effectRegistry.js';
+import { t } from '../../../i18n/index.js';
+
 /** How long one callout lives, in ms. ⚠️ Must match `callout-pop`'s duration in `components.css`. */
 export const CALLOUT_MS = 2200;
 
@@ -21,8 +24,15 @@ export const calloutText = {
     // Over a Token a hero would work but holds no tool for: "Needs Pickaxe".
     needsTool: (tool) => `Needs ${tool}`,
     // Over a station its hero stands at, out of an input: "Needs Coal".
-    needsInput: (item) => `Needs ${item}`
+    needsInput: (item) => `Needs ${item}`,
+    // A status landing on a fighter, over their bar: "Venom!".
+    statusLands: (statusId) => t('fight.float.lands', { status: EFFECTS[statusId]?.name || statusId })
 };
+
+/** Whether a fired effect's title names a status: in a fight its landing is said over whoever it lands on instead. */
+export function namesStatus(title) {
+    return Object.values(EFFECTS).some(e => e?.status && e.name && (title === e.name || title.startsWith(`${e.name} `)));
+}
 
 /**
  * How long a Token waits before saying "Needs Pickaxe" again. A flag with nothing else to do looks

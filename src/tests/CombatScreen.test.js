@@ -40,15 +40,14 @@ import { fightPanelView, activeElixirsOf } from '../ui/components/combat/fightVi
 import * as MatFx from '../ui/components/board/fx/matFx.js';
 import { watchFightFloats } from '../ui/components/board/fx/fightFloats.js';
 import { STRIKE_DELAY_MS } from '../ui/components/board/hitAnimations.js';
-import { fightPlateOf, fightPlateCells, fightReach } from '../ui/components/board/fightPlate.js';
+import { fightReach, fightBarShift, CHIP, CHIP_PX, MAT_BAR } from '../ui/components/board/healthBar.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
-import { CELL } from '../ui/components/board/workPlate.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
 
 /**
  * The combat screen read from a real fight (brief 220, C6b): the fight watch keeps each fight's
- * whole log and the last one, the floats rise at each fighter's outer side, the panel and the
- * plate read the engine's numbers, the "While you were away" summary counts the fights' supplies
+ * whole log and the last one, the floats rise over each fighter, the panel reads the engine's
+ * numbers, the "While you were away" summary counts the fights' supplies
  * and drops, and a catch-up records and draws nothing. The harness is `CombatCatchUpStatuses`'s.
  */
 
@@ -84,7 +83,10 @@ const enemy = (id, name, enemyBlock) => ({
     enemy: { style: 'melee', ...enemyBlock },
     config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [{ itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 }] }
 });
-registerTokenTypes({ cs_venom: enemy('cs_venom', 'Screen Venomous', { level: 10, kinds: ['venomous'] }) });
+registerTokenTypes({
+    cs_venom: enemy('cs_venom', 'Screen Venomous', { level: 10, kinds: ['venomous'] }),
+    cs_rogue: enemy('cs_rogue', 'Screen Rogue', { level: 10, moves: [{ name: 'Shiv', damageType: 'stab' }, { name: 'Poison Shiv', damageType: 'stab', effectId: VENOM }] })
+});
 
 /** A seeded `Math.random` (mulberry32), as the catch-up tests use. */
 const stream = { state: 1 };
@@ -98,7 +100,7 @@ function seeded() {
 const realRandom = Math.random;
 
 /** One fed Melee 20 hero with a sword and an elixir, pinned on a Venomous enemy at (600, 400). */
-function buildFight() {
+function buildFight(foeType = 'cs_venom') {
     stream.state = 41;
     resetMatTuning();
     GameState.initNew();
@@ -114,7 +116,7 @@ function buildFight() {
     expect(EquipmentManager.equipItem(hero.id, 'cs_elixir').success).toBe(true);
     HeroManager.updateHeroFromSkills(hero);
     hero.hp.current = hero.hp.max;
-    const foe = fixtures.placeAt('cs_venom', 600, 400);
+    const foe = fixtures.placeAt(foeType, 600, 400);
     fixtures.orderAt(hero.id, { x: foe.x, y: foe.y });
     TileModifiers.rebuildAll();
     return { heroId: hero.id, enemyId: foe.id };
@@ -328,19 +330,6 @@ describe('the panel, the plate and the floats read the real fight', () => {
         stop();
     });
 
-    it('the fight plate: the enemy\'s style, a divider, the hero\'s style and elixir, mirrored on the left', () => {
-        const { heroId, enemyId } = buildFight();
-        runUntil(() => !!activeElixirsOf(HeroManager.getHero(heroId)).length, 10);
-        const plate = fightPlateOf(heroId, enemyId);
-        const kinds = (cells) => cells.map(c => (c.kind === CELL.SKILL ? `${c.who}:${c.id}` : c.kind));
-        expect(kinds(fightPlateCells({ ...plate, side: 1 }))).toEqual(['enemy:melee', CELL.DIVIDER, 'hero:melee', CELL.ELIXIR]);
-        expect(kinds(fightPlateCells({ ...plate, side: -1 }))).toEqual([CELL.ELIXIR, 'hero:melee', CELL.DIVIDER, 'enemy:melee']);
-        expect(fightPlateCells({ ...plate, side: 1 }).at(-1).count).toBe(10);
-        // A hero with no style: the enemy's alone, then the elixirs.
-        expect(kinds(fightPlateCells({ ...plate, heroStyle: null, side: 1 }))).toEqual(['enemy:melee', CELL.DIVIDER, CELL.ELIXIR]);
-        expect(kinds(fightPlateCells({ ...plate, heroStyle: null, elixirs: [], side: 1 }))).toEqual(['enemy:melee']);
-    });
-
     describe('floats', () => {
         let calls;
         let restore;
@@ -362,7 +351,7 @@ describe('the panel, the plate and the floats read the real fight', () => {
         });
         afterEach(() => { MatFx.attachFxHost(null); host.remove(); restore(); });
 
-        it('⭐ rise at each fighter\'s outer side: white on the enemy (on the strike frame), red on the hero', () => {
+        it('⭐ rise over each fighter, under its bar: white on the enemy (on the strike frame), red on the hero', () => {
             const { heroId, enemyId } = buildFight();
             const stop = watchFightFloats();
             runUntil(() => calls.some(c => c.el.getAttribute('data-fight-float-on') === 'hero')
@@ -370,18 +359,23 @@ describe('the panel, the plate and the floats read the real fight', () => {
             stop();
             const enemy = BoardState.getTokenById(enemyId);
             const body = HeroMotion.bodyView(heroId);
-            const side = body.x >= enemy.x ? 1 : -1;
             const onEnemy = calls.find(c => c.el.getAttribute('data-fight-float-on') === 'enemy');
             const onHero = calls.find(c => c.el.getAttribute('data-fight-float-on') === 'hero');
-            // Outside the pair: the enemy's float further from the hero than the enemy, the hero's further from the enemy.
-            expect(Math.sign(parseFloat(onEnemy.el.style.left) - enemy.x)).toBe(-side);
-            expect(Math.sign(parseFloat(onHero.el.style.left) - body.x)).toBe(side);
-            const enemyKind = onEnemy.el.getAttribute('data-fight-float');
-            if (enemyKind !== MOMENT.MISS) expect(onEnemy.el.className).toContain('gi-ff-white');
+            // Over the fighter's middle, hung by its top just under the top of its art (64 over its point here).
+            expect(parseFloat(onEnemy.el.style.left)).toBe(enemy.x);
+            expect(parseFloat(onHero.el.style.left)).toBe(body.x);
+            for (const [c, at] of [[onEnemy, enemy], [onHero, body]]) {
+                const top = parseFloat(c.el.style.top);
+                expect(top).toBeGreaterThan(at.y - 64);
+                expect(top).toBeLessThan(at.y);
+                expect(c.el.style.translate).toBe('-50% 0');
+            }
+            expect(onEnemy.el.className).toContain('gi-ff-white');
             expect(onEnemy.options.delay).toBe(STRIKE_DELAY_MS);
-            const heroKind = onHero.el.getAttribute('data-fight-float');
-            if (heroKind === MOMENT.HIT || heroKind === MOMENT.CRIT || heroKind === MOMENT.TICK) expect(onHero.el.className).toContain('gi-ff-red');
+            if (onHero.el.getAttribute('data-fight-float') !== MOMENT.HEAL) expect(onHero.el.className).toContain('gi-ff-red');
             expect(onHero.el.style.willChange).toBe('contents');
+            // No damage types, verdicts or move names on the mat: the fight window and the bubbles say those.
+            expect(calls.some(c => c.el.querySelector?.('[data-fight-float-type], .gi-ff-weak-word, .gi-ff-resisted-word, .gi-ff-move-word'))).toBe(false);
         });
 
         it('the matFx draw switch stops them', () => {
@@ -395,17 +389,18 @@ describe('the panel, the plate and the floats read the real fight', () => {
     });
 });
 
-describe('a fight\'s link on the mat', () => {
-    it('the chip opens the panel on its hero\'s fight', async () => {
+describe('a fight\'s button on the mat', () => {
+    it('the button opens the panel on its hero\'s fight, and there is no plate', async () => {
         const { heroId } = buildFight();
         runUntil(() => false, 3);
         const { FightLayer } = await import('../ui/components/board/FightLayer.jsx');
         const { fightPanelState, closeFightPanel } = await import('../ui/components/combat/fightPanelStore.js');
         const enemy = BoardState.tokens().find(t => t.typeId === 'cs_venom');
-        const { container } = render(React.createElement(FightLayer, { fights: [{ tokenId: enemy.id, heroId, typeId: 'cs_venom', x: enemy.x, y: enemy.y }] }));
+        const body = HeroMotion.bodyView(heroId);
+        const { container } = render(React.createElement(FightLayer, { fights: [{ tokenId: enemy.id, heroId, typeId: 'cs_venom', x: enemy.x, y: enemy.y, hx: body.x, hy: body.y }] }));
         const chip = container.querySelector(`[data-fight-chip="${heroId}"]`);
         expect(chip).not.toBeNull();
-        expect(container.querySelector(`[data-fight-plate="${enemy.id}"]`)).not.toBeNull();
+        expect(container.querySelector('[data-fight-plate], [data-fight-plate-slot], [data-plate-cell]')).toBeNull();
         act(() => { fireEvent.click(chip); });
         expect(fightPanelState().heroId).toBe(heroId);
         act(() => { fireEvent.click(chip); });
@@ -414,11 +409,60 @@ describe('a fight\'s link on the mat', () => {
     });
 });
 
+describe('the fight window belongs to its hero (owner, 2026-11-05)', () => {
+    registerTokenTypes({ cs_wolfish: enemy('cs_wolfish', 'Screen Wolf', { level: 5 }) });
+
+    it('⭐ shows the last result between fights, then turns to the next enemy: Kira vs Goblin becomes Kira vs Wolf', () => {
+        const { heroId } = buildFight();
+        const stop = startFightWatch();
+        const name = HeroManager.getHero(heroId).name;
+        runUntil(() => !!fightsOf(heroId).current, 20);
+        const { container } = render(React.createElement(LiveFightPanel, { heroId, onClose: () => {} }));
+        const title = () => container.querySelector('[data-fight-title]').textContent.replace(/\s+/g, ' ').trim();
+        expect(title()).toBe(`${name} vs Screen Venomous`);
+        expect(container.querySelector('[data-fight-result]')).toBeNull();
+
+        act(() => runUntil(() => fightsOf(heroId).last?.outcome === OUTCOME.WON));
+        expect(fightsOf(heroId).current).toBeNull();
+        expect(title()).toBe(`${name} vs Screen Venomous`);
+        expect(container.querySelector('[data-fight-result]').getAttribute('data-fight-result')).toBe(OUTCOME.WON);
+        expect(container.querySelector('[data-fight-hp="enemy"]').textContent).toBe('0/30');
+
+        const wolf = fixtures.placeAt('cs_wolfish', 900, 400);
+        act(() => { fixtures.orderAt(heroId, { x: wolf.x, y: wolf.y }); });
+        act(() => runUntil(() => fightsOf(heroId).current?.typeId === 'cs_wolfish', 60));
+        expect(title()).toBe(`${name} vs Screen Wolf`);
+        expect(container.querySelector('[data-fight-result]')).toBeNull();
+        expect(fightsOf(heroId).last.enemyName).toBe('Screen Venomous');
+        stop();
+    });
+
+    it('a minimized window tab shows both healths and draws again only when one of them changes', async () => {
+        const { FightTab, tabKey } = await import('../ui/components/combat/FightTab.jsx');
+        const { heroId } = buildFight();
+        const stop = startFightWatch();
+        runUntil(() => (fightsOf(heroId).current?.log.length || 0) > 2, 20);
+        const { container } = render(React.createElement(FightTab, { heroId }));
+        const record = fightsOf(heroId).current;
+        const hp = (who) => container.querySelector(`[data-fight-tab-hp="${who}"]`).textContent;
+        expect(hp('hero')).toBe(`${record.hp.hero.cur}/${record.hp.hero.max}`);
+        expect(hp('enemy')).toBe(`${record.hp.enemy.cur}/${record.hp.enemy.max}`);
+        expect(container.querySelector('[data-fight-tab-enemy]').textContent).toBe('Screen Venomous');
+        // A new log line with no change of health is the same tab.
+        const before = tabKey(fightsOf(heroId));
+        expect(tabKey({ current: { ...record, log: [...record.log, { n: 999 }] }, last: null })).toBe(before);
+        act(() => runUntil(() => fightsOf(heroId).current?.hp.enemy.cur !== record.hp.enemy.cur || !fightsOf(heroId).current, 20));
+        const now = fightsOf(heroId).current || fightsOf(heroId).last;
+        expect(hp('enemy')).toBe(`${now.hp.enemy.cur}/${now.hp.enemy.max}`);
+        stop();
+    });
+});
+
 describe('an elixir counts the fight it is working in (owner, 2026-10-25: 10 down to 1)', () => {
     it('a fresh one shows 10, one less as each fight ends, 1 in its last fight, then it is gone', () => {
         const { heroId, enemyId } = buildFight();
         const hero = () => HeroManager.getHero(heroId);
-        const shown = () => fightPlateOf(heroId, enemyId).elixirs.map(e => e.count);
+        const shown = () => activeElixirsOf(hero()).map(e => e.count);
         const engaged = () => {
             const fight = BoardCombat.fightOfHero(heroId);
             return !!fight && !((fight.combat?.state?.intermissionTimer ?? 0) > 0);
@@ -448,25 +492,67 @@ describe('nothing covers a fighter\'s health number (owner, 2026-10-25: everythi
     /** The y of the first `translate(x, y)` of an element's transform. */
     const yOf = (el) => Number(/translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(el.style.transform)[2]);
     /** How far over its art's top a fighter's bar, number and chip reach at a 1:1 mat (one screen pixel a plate pixel). */
-    const reach = () => fightReach(1, 14);
+    const reach = () => fightReach(1);
+    /** A fresh callout layer. */
+    async function calloutLayer() {
+        const { CalloutLayer } = await import('../ui/components/board/CalloutLayer.jsx');
+        return render(React.createElement(CalloutLayer)).container;
+    }
 
-    it('the reach is the number over the bar, or the chip beside it, whichever is higher', () => {
-        expect(fightReach(1, 14)).toBe(Math.max(3 + 6 + 4 + 2 + 14 + 2, 3 + 32));
-        expect(fightReach(2, 14)).toBe(2 * fightReach(1, 14));
-        // A bigger Text size raises the number.
-        expect(fightReach(1, 24)).toBeGreaterThan(fightReach(1, 14));
+    it('the reach is the bar, or the fight button whose middle is on it, whichever is higher', () => {
+        expect(fightReach(1)).toBe(MAT_BAR.GAP + Math.max(MAT_BAR.H, MAT_BAR.H / 2 + CHIP_PX / 2));
+        expect(fightReach(2)).toBe(2 * fightReach(1));
     });
 
-    it('⭐ a callout over an enemy in a fight (a status landing, a boss move) sits above its number and chip', async () => {
+    it('⭐ a boss rule over an enemy in a fight sits above its bar and the button', async () => {
         const { enemyId } = buildFight();
         runUntil(() => !!BoardCombat.getFight(enemyId), 10);
-        const { CalloutLayer } = await import('../ui/components/board/CalloutLayer.jsx');
-        const { container } = render(React.createElement(CalloutLayer));
-        act(() => { EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Venom' }); });
+        const container = await calloutLayer();
+        act(() => { EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Enrage' }); });
         const group = container.querySelector('[data-callout]').parentElement;
         const enemy = BoardState.getTokenById(enemyId);
         // The art's top at a 1:1 mat: the Token's 128 box over its centre.
         expect(yOf(group)).toBeLessThanOrEqual(enemy.y - 64 - reach());
+    });
+
+    it('⭐ an enemy\'s special move is said in a bubble over its bar, a plain named hit is not; a second bubble stacks over the first, never on it', async () => {
+        const { heroId, enemyId } = buildFight('cs_rogue');
+        runUntil(() => !!BoardCombat.getFight(enemyId), 10);
+        const container = await calloutLayer();
+        act(() => {
+            EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { heroId, instanceId: enemyId, move: 'Shiv', hit: true, damage: 1, heroHpRemaining: 10 });
+            EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { heroId, instanceId: enemyId, move: 'Poison Shiv', hit: true, damage: 1, heroHpRemaining: 9 });
+            EventBus.publish(ENGINE_EVENTS.STATUS_APPLIED, { targetType: 'enemy', targetId: enemyId, statusId: VENOM, stacks: 1 });
+        });
+        const said = [...container.querySelectorAll('[data-callout]')];
+        expect(said.map(el => el.getAttribute('data-callout'))).toEqual(['Poison Shiv', 'Venom!']);
+        // One column over the enemy: each bubble in the flow of one stack, so none can sit on another.
+        expect(said[0].parentElement).toBe(said[1].parentElement);
+        expect(said[0].parentElement.className).toContain('flex-col-reverse');
+        const enemy = BoardState.getTokenById(enemyId);
+        expect(yOf(said[0].parentElement)).toBeLessThanOrEqual(enemy.y - 64 - reach());
+    });
+
+    it('a status\'s own name fired over a fighting enemy is not said there: its landing is, over whoever it lands on', async () => {
+        const { enemyId } = buildFight();
+        runUntil(() => !!BoardCombat.getFight(enemyId), 10);
+        const container = await calloutLayer();
+        act(() => { EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Venom' }); });
+        expect(container.querySelector('[data-callout]')).toBeNull();
+    });
+
+    it('⭐ a status landing on a fighting hero is said over the hero\'s bar: "Venom!"', async () => {
+        const { heroId, enemyId } = buildFight();
+        runUntil(() => !!BoardCombat.getFight(enemyId), 10);
+        const { HeroBubbleLayer } = await import('../ui/components/board/HeroBubbleLayer.jsx');
+        const body = HeroMotion.bodyView(heroId);
+        const heroes = [{ heroId, state: 'working', x: body.x, y: body.y, moving: false, tokenId: enemyId, combat: true, hurt: false }];
+        const { container } = render(React.createElement(HeroBubbleLayer, { heroes }));
+        await new Promise(r => setTimeout(r, 2));
+        act(() => { EventBus.publish(ENGINE_EVENTS.STATUS_APPLIED, { targetType: 'hero', targetId: heroId, statusId: VENOM, stacks: 1 }); });
+        const stack = container.querySelector(`[data-hero-bubble-stack="${heroId}"]`);
+        expect(stack.textContent).toBe('Venom!');
+        expect(yOf(stack)).toBeLessThanOrEqual(body.y - 64 - reach());
     });
 
     it('⭐ a hero\'s speech over a fighter sits above the bar\'s number', async () => {
@@ -568,7 +654,11 @@ describe('⭐ a fight\'s health bars draw over the loot (owner, 2026-10-25: drop
         const box = heroBoxAt(HeroMotion.bodyView(heroId));
         const h = heroBarPlace(artPx, u);
         const hero = bars(container, 'hero', heroId)[0];
-        expect(parseFloat(hero.style.left)).toBeCloseTo(box.left + h.left, 6);
+        const enemyAt = BoardState.getTokenById(enemyId);
+        const apart = HeroMotion.bodyView(heroId).x - enemyAt.x;
+        // Out of the fight button's way: moved away from the enemy, if at all.
+        const out = Math.sign(apart) * fightBarShift(apart, u);
+        expect(parseFloat(hero.style.left)).toBeCloseTo(box.left + h.left + out, 6);
         expect(parseFloat(hero.style.top)).toBeCloseTo(box.top + h.top, 6);
         expect(parseFloat(hero.style.width)).toBeCloseTo(h.width, 6);
 
@@ -576,8 +666,33 @@ describe('⭐ a fight\'s health bars draw over the loot (owner, 2026-10-25: drop
         const boxPx = tokenBoxPx('cs_venom', tokenSizeFor(TOKEN_SURFACE.BOARD, 'cs_venom', boardScaleAt(1)));
         const e = enemyBarPlace(boxPx, u);
         const bar = bars(container, 'enemy', enemyId)[0];
-        expect(parseFloat(bar.style.left)).toBeCloseTo(enemy.x - boxPx / 2 + e.left, 6);
+        expect(parseFloat(bar.style.left)).toBeCloseTo(enemy.x - boxPx / 2 + e.left - out, 6);
         expect(parseFloat(bar.style.top)).toBeCloseTo(enemy.y - boxPx / 2 + e.top, 6);
+    });
+
+    it('⭐ the fight button stands between the two bars, clear of each, its middle on theirs; no plate under the fight', async () => {
+        const { container, heroId, enemyId } = await matInFight();
+        const box = (el) => {
+            const left = parseFloat(el.style.left);
+            const top = parseFloat(el.style.top);
+            const width = parseFloat(el.style.width);
+            const height = el.style.height ? parseFloat(el.style.height) : MAT_BAR.H;
+            return { left, top, right: left + width, bottom: top + height, mid: top + height / 2 };
+        };
+        const slot = container.querySelector(`[data-fight="${enemyId}"] [data-fight-button-slot]`);
+        expect(slot).not.toBeNull();
+        expect(slot.querySelector(`[data-fight-chip="${heroId}"]`)).not.toBeNull();
+        const b = box(slot);
+        expect(b.right - b.left).toBe(CHIP_PX);
+        const hero = box(bars(container, 'hero', heroId)[0]);
+        const enemy = box(bars(container, 'enemy', enemyId)[0]);
+        const [l, r] = hero.left < enemy.left ? [hero, enemy] : [enemy, hero];
+        expect(b.left - l.right).toBeGreaterThanOrEqual(CHIP.GAP - 0.5);
+        expect(r.left - b.right).toBeGreaterThanOrEqual(CHIP.GAP - 0.5);
+        expect(Math.abs(b.mid - Math.max(hero.mid, enemy.mid))).toBeLessThanOrEqual(0.5);
+        // The plate is gone: nothing of a work plate or the old fight plate under the fighters.
+        expect(container.querySelector('[data-fight-plate], [data-fight-plate-slot]')).toBeNull();
+        expect(container.querySelector(`[data-work-plate="${enemyId}"]`)).toBeNull();
     });
 
     it('a click on the hero\'s bar still opens the hero', async () => {

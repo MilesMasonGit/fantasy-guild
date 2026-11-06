@@ -15,17 +15,16 @@ import { buildFloat } from '../ui/components/board/fx/fightFloats.js';
 import { MOMENT, statusIcon } from '../ui/components/combat/fightWatch.js';
 import { EnemyCardRows } from '../ui/components/combat/EnemyCard.jsx';
 import { enemyCardView } from '../ui/components/combat/fightView.js';
-import { fightChipPlace, CHIP, CHIP_PX } from '../ui/components/board/fightPlate.js';
 import { plateUnit } from '../ui/components/board/workPlate.js';
-import { HP_BAR } from '../ui/components/board/healthBar.js';
+import { MAT_BAR, CHIP, CHIP_PX, fightBarShift, fightButtonPlace } from '../ui/components/board/healthBar.js';
 import { panelPlace } from '../ui/components/combat/FightPanelPopup.jsx';
 import { t } from '../i18n/index.js';
 
 /**
  * The combat screen's pieces drawn (brief 220, C6b; owner's picks 2026-10-24/25): the floats' look,
  * the fight panel (the versus card, the log closed until asked for, This fight / Last fight), the
- * enemy card fought and never fought, the chip's place beside the enemy's number, the panel's place
- * beside the chip, and the style sheet's entry drawn by the real components.
+ * enemy card fought and never fought, the fight button's place between the two bars, the panel's
+ * place beside it, and the style sheet's entry drawn by the real components.
  */
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -77,22 +76,21 @@ describe('floats: what each says and its colour', () => {
         expect(statusIcon('effect_sunder')).toBe('sunder');
     });
 
-    it('a hit carries its type\'s glyph; a shot two; the target\'s weakness says Weak! in gold, a resistance Resisted', () => {
-        const plain = float({ kind: MOMENT.HIT, on: 'enemy', amount: 2, types: ['slash'] });
-        expect([...plain.querySelectorAll('[data-fight-float-type]')].map(e => e.getAttribute('data-fight-float-type'))).toEqual(['slash']);
-        expect(q(plain, '[data-glyph="dt_slash"]')).not.toBeNull();
+    it('⭐ fewer floats on the mat: a hit is its number alone, no type glyph, Weak! or Resisted; a move alone does not float', () => {
+        const plain = float({ kind: MOMENT.HIT, on: 'enemy', amount: 2, types: ['slash'], verdict: 'weak' });
+        expect(plain.querySelector('[data-fight-float-type], .gi-ff-weak-word, .gi-ff-resisted-word, img')).toBeNull();
         expect(plain.textContent).toBe('2');
-        const shot = float({ kind: MOMENT.HIT, on: 'enemy', amount: 2, types: ['electric', 'stab'] });
-        expect([...shot.querySelectorAll('[data-fight-float-type]')].map(e => e.getAttribute('data-fight-float-type'))).toEqual(['electric', 'stab']);
-        const weak = float({ kind: MOMENT.HIT, on: 'enemy', amount: 3, types: ['ice'], verdict: 'weak' });
-        expect(weak.getAttribute('data-fight-float-verdict')).toBe('weak');
-        expect(q(weak, '.gi-ff-weak-word').textContent).toBe(t('fight.float.weak'));
-        expect(q(weak, '.gi-ff-number').textContent).toBe('3');
-        const resisted = float({ kind: MOMENT.CRIT, on: 'hero', amount: 0, types: ['physical'], verdict: 'resisted' });
+        const resisted = float({ kind: MOMENT.CRIT, on: 'hero', amount: 0, types: ['physical'], verdict: 'resisted', move: 'Peck' });
         expect(q(resisted, '.gi-ff-crit-word').textContent).toBe(t('fight.float.crit'));
-        expect(q(resisted, '.gi-ff-resisted-word').textContent).toBe(t('fight.float.resisted'));
         expect(q(resisted, '.gi-ff-crit-number').textContent).toBe('0');
+        expect(resisted.querySelector('.gi-ff-resisted-word, .gi-ff-move-word')).toBeNull();
         expect(resisted.className).toContain('gi-ff-red');
+        expect(float({ kind: MOMENT.MOVE, on: 'enemy', amount: null, move: 'Flutter' })).toBeNull();
+    });
+
+    it('a miss is in its side\'s colour: white on the enemy, red on the hero', () => {
+        expect(float({ kind: MOMENT.MISS, on: 'enemy', amount: null }).className).toContain('gi-ff-white');
+        expect(float({ kind: MOMENT.MISS, on: 'hero', amount: null }).className).toContain('gi-ff-red');
     });
 
     it('starts hidden: it shows only while it rises', () => {
@@ -104,33 +102,76 @@ describe('the fight panel', () => {
     const kit = () => render(React.createElement(CombatKit)).container;
     const panels = (root) => root.querySelectorAll('[data-fight-panel]');
 
-    // Rewritten for damage types: the hit row carries its type's glyph, and resistances stand where
-    // armour stood.
-    it('the versus card reads across: level and style, health as "number · %", hit with its type, resistances, swing', () => {
+    // The fight window's stat block (owner, 2026-11-05: picture B's shared column): one row a stat,
+    // its icon in the middle, the hero's value on the left and the enemy's on the right.
+    it('⭐ the stat block reads across: one row a stat, its icon in a shared middle column, hero left, enemy right', () => {
         const panel = panels(kit())[0];
-        const row = (id) => [...panel.querySelectorAll(`[data-fight-row="${id}"] [data-fight-side]`)].map(text);
-        expect(row('hit')).toEqual(['4', '3']);
-        expect([...panel.querySelectorAll('[data-fight-row="hit"] [data-fight-hit-type]')].map(e => e.getAttribute('data-fight-hit-type'))).toEqual(['slash', 'physical']);
-        expect(row('resists')).toEqual(['25%', '50%−25%']);
-        expect([...panel.querySelectorAll('[data-fight-side="enemy"] [data-fight-resist]')].map(e => e.getAttribute('data-fight-resist'))).toEqual(['fire', 'slash']);
-        expect(row('swing')).toEqual(['3 s', '4 s']);
-        expect(text(q(panel, '[data-fight-hp="hero"]'))).toBe('17 · 57%');
-        expect(text(q(panel, '[data-fight-hp="enemy"]'))).toBe('24 · 60%');
-        expect(words(q(panel, '[data-fight-row="style"]'))).toBe('20/99 vs 20/99');
-        // The hero's elixirs with the fights each has left, and statuses with stacks; the enemy's kinds.
-        expect(text(q(panel, '[data-fight-elixir="item_elixir_of_valor"]'))).toBe('7');
-        expect(text(q(panel, '[data-fight-elixir="item_elixir_of_ironskin"]'))).toBe('3');
-        expect(words(q(panel, '[data-fight-status="effect_venom"]'))).toBe('Venom ×2');
-        expect([...panel.querySelectorAll('[data-fight-kind]')].map(text)).toEqual(['Brute', 'Venomous']);
+        const card = q(panel, '[data-fight-card]');
+        const rows = [...card.children];
+        expect(rows.map(r => r.getAttribute('data-fight-stat'))).toEqual(['style', 'hit', 'swing', 'resists']);
+        for (const row of rows) {
+            // Three cells in one grid row: the hero's value, the icon, the enemy's value.
+            expect(row.className).toContain('grid-cols-[1fr_20px_1fr]');
+            expect([...row.children].map(c => c.getAttribute('data-fight-side') || (c.hasAttribute('data-fight-row-icon') ? 'icon' : null)))
+                .toEqual(['hero', 'icon', 'enemy']);
+            expect(row.children[1].querySelector('img')).not.toBeNull();
+        }
+        expect(q(card, '[data-fight-row-icon="hit"] [data-glyph="hit"]')).not.toBeNull();
+        expect(q(card, '[data-fight-row-icon="swing"] [data-glyph="clock"]')).not.toBeNull();
+        expect(q(card, '[data-fight-row-icon="resists"] [data-glyph="shield"]')).not.toBeNull();
+        // No captions: the icon names the row.
+        expect(card.textContent).not.toMatch(/Hit|Swing|Resist|Melee/);
     });
 
-    it('the strip: the hero at its left end, the enemy at its right, both at 1×', () => {
+    it('the style row: the hero’s style in the middle; a side fighting another style shows its own icon by its level', () => {
+        const draw = (view) => render(React.createElement(FightPanelView, {
+            view, fights: { current: KIT_CURRENT, last: null }, onClose: () => {},
+            logOpen: false, onToggleLog: () => {}, tab: 'current', onTab: () => {}
+        })).container;
+        const base = kitPanelView();
+        const same = draw(base);
+        expect(q(same, '[data-fight-row-icon="style"] img')).not.toBeNull();
+        expect(same.querySelectorAll('[data-fight-stat="style"] [data-fight-side] img')).toHaveLength(0);
+        cleanup();
+        const other = draw({ ...base, enemy: { ...base.enemy, style: 'ranged' } });
+        expect(other.querySelectorAll('[data-fight-stat="style"] [data-fight-side="hero"] img')).toHaveLength(0);
+        expect(other.querySelectorAll('[data-fight-stat="style"] [data-fight-side="enemy"] img')).toHaveLength(1);
+    });
+
+    it('the stat block values: style and level, hit with its type, swing, resistances; health over each fighter', () => {
         const panel = panels(kit())[0];
-        const hero = q(panel, '[data-fight-strip] [data-fight-fighter="hero"]');
-        const enemy = q(panel, '[data-fight-strip] [data-fight-fighter="enemy"]');
-        expect(hero.style.left).toBe('18px');
-        expect(enemy.style.right).toBe('18px');
-        expect(hero.style.width).toBe('64px');
+        const stat = (who, id) => text(q(panel, `[data-fight-stat="${id}"] [data-fight-side="${who}"]`));
+        expect(stat('hero', 'style')).toBe('20/99');
+        expect(stat('enemy', 'style')).toBe('20/99');
+        expect(stat('hero', 'hit')).toBe('4');
+        expect(stat('enemy', 'hit')).toBe('3');
+        expect([...panel.querySelectorAll('[data-fight-stat="hit"] [data-fight-hit-type]')].map(e => e.getAttribute('data-fight-hit-type'))).toEqual(['slash', 'physical']);
+        expect(stat('hero', 'resists')).toBe('25%');
+        expect(stat('enemy', 'resists')).toBe('50%−25%');
+        expect([...panel.querySelectorAll('[data-fight-side="enemy"] [data-fight-resist]')].map(e => e.getAttribute('data-fight-resist'))).toEqual(['fire', 'slash']);
+        expect(stat('hero', 'swing')).toBe('3 s');
+        expect(stat('enemy', 'swing')).toBe('4 s');
+        expect(text(q(panel, '[data-fight-hp="hero"]'))).toBe('17/30');
+        expect(text(q(panel, '[data-fight-hp="enemy"]'))).toBe('24/40');
+        expect(text(q(panel, '[data-fight-title]'))).toBe('Aela vs Goblin Warlord');
+        // The hero's elixirs with the fights each has left; statuses with stacks in two columns; the enemy's kinds.
+        expect(text(q(panel, '[data-fight-elixir="item_elixir_of_valor"]'))).toBe('7');
+        expect(text(q(panel, '[data-fight-elixir="item_elixir_of_ironskin"]'))).toBe('3');
+        expect(words(q(panel, '[data-fight-effects="hero"] [data-fight-status="effect_venom"]'))).toBe('Venom ×2');
+        expect(words(q(panel, '[data-fight-effects="enemy"]'))).toBe('On Goblin Warlord None');
+        expect([...panel.querySelectorAll('[data-fight-kind]')].map(text)).toEqual(['Brute', 'Venomous']);
+        // An enemy without moves has its one plain swing as its attack.
+        expect([...panel.querySelectorAll('[data-fight-move]')].map(e => e.getAttribute('data-fight-move'))).toEqual(['Attack']);
+    });
+
+    it('the battle: the hero on the left, the enemy on the right, both at twice their art, whole pixels', () => {
+        const panel = panels(kit())[0];
+        const arena = q(panel, '[data-fight-arena]');
+        const hero = q(arena, '[data-fight-fighter="hero"]');
+        const enemy = q(arena, '[data-fight-fighter="enemy"]');
+        expect(hero.style.width).toBe('128px');
+        expect(parseFloat(hero.style.left)).toBeLessThan(parseFloat(enemy.style.left));
+        for (const v of [hero.style.left, enemy.style.left, enemy.style.width]) expect(Number.isInteger(parseFloat(v))).toBe(true);
         // A Goblin has no animation sheet: it stands still.
         expect(enemy.getAttribute('data-fight-enemy-moves')).toBe('false');
     });
@@ -140,7 +181,7 @@ describe('the fight panel', () => {
         const panel = panels(root)[0];
         expect(q(panel, '[data-fight-log]').getAttribute('data-fight-log')).toBe('closed');
         expect(q(panel, '[data-fight-log-line]')).toBeNull();
-        expect(text(q(panel, '[data-fight-log-toggle]'))).toBe(t('fight.panel.showLog'));
+        expect(text(q(panel, '[data-fight-log-toggle]'))).toBe(t('fight.window.log'));
 
         act(() => { fireEvent.click(q(panel, '[data-fight-log-toggle]')); });
         expect(q(panel, '[data-fight-log]').getAttribute('data-fight-log')).toBe('open');
@@ -208,25 +249,36 @@ describe('the enemy card', () => {
     });
 });
 
-describe('where the chip and the panel stand', () => {
-    it('the chip stands beside the enemy\'s bar on its far side from the hero, past its number however wide', () => {
+describe('where the fight button and the panel stand', () => {
+    it('⭐ the button stands halfway between the fighters, its middle on the lower bar\'s middle', () => {
         const fit = 0.9;
         const u = plateUnit(fit);
-        const at = { x: 800, y: 500, typeId: 'cs_ui_brute', fit };
-        const right = fightChipPlace({ ...at, side: 1, labelW: 0 });
-        const wide = fightChipPlace({ ...at, side: 1, labelW: 120 });
-        const inner = at.x + (HP_BAR.W / 2) * u;
-        // The hero on the right: the chip on the left, its right edge a gap before the bar or the number.
-        expect(right.left + CHIP_PX * u).toBeCloseTo(inner - HP_BAR.W * u - CHIP.GAP * u, 0);
-        expect(wide.left + CHIP_PX * u).toBeCloseTo(inner - 120 - CHIP.GAP * u, 0);
-        // The hero on the left: mirrored.
-        const left = fightChipPlace({ ...at, side: -1, labelW: 0 });
-        expect(left.left).toBeCloseTo(at.x - (HP_BAR.W / 2) * u + HP_BAR.W * u + CHIP.GAP * u, 0);
-        // Its foot level with the bar's: above the art, under nothing.
-        expect(right.top).toBeLessThan(at.y);
+        const at = { heroX: 900, enemyX: 800, heroArtTop: 436, enemyBoxTop: 436, u, fit };
+        const p = fightButtonPlace(at);
+        expect(p.size).toBe(CHIP_PX * u);
+        expect(p.left + p.size / 2).toBeCloseTo(850, 0);
+        const barMid = 436 - (MAT_BAR.GAP + MAT_BAR.H / 2) * u;
+        expect(p.top + p.size / 2).toBeCloseTo(barMid, 0);
+        // A boss's bar rides higher: the button stays on the hero's line.
+        const boss = fightButtonPlace({ ...at, enemyBoxTop: 380 });
+        expect(boss.top).toBe(p.top);
+        // On whole screen pixels.
+        expect(Math.abs(p.left * fit - Math.round(p.left * fit))).toBeLessThan(1e-9);
     });
 
-    it('the panel opens beside the chip on the side away from the fight, inside the window', () => {
+    it('⭐ bars move outward only as far as the button needs, a gap clear of it', () => {
+        const u = 1;
+        const need = (MAT_BAR.W / 2 + CHIP.GAP + CHIP_PX / 2) * u;
+        expect(fightBarShift(2 * need + 40, u)).toBe(0);
+        expect(fightBarShift(-(2 * need + 40), u)).toBe(0);
+        expect(fightBarShift(96, u)).toBe(need - 48);
+        // At the shift, each bar's inner edge is exactly the gap from the button.
+        const apart = 96;
+        const barInner = apart / 2 + fightBarShift(apart, u) - MAT_BAR.W / 2;
+        expect(barInner).toBeCloseTo(CHIP_PX / 2 + CHIP.GAP, 9);
+    });
+
+    it('the panel opens beside the fight on the side away from it, inside the window', () => {
         const chip = { left: 500, top: 400, right: 532, bottom: 432 };
         expect(panelPlace(chip, -1, 316, 400, 1920, 1080).left).toBe(500 - 10 - 316);
         expect(panelPlace(chip, 1, 316, 400, 1920, 1080).left).toBe(532 + 10);
@@ -245,14 +297,14 @@ describe('the style sheet', () => {
         expect(existsSync(path.join(HERE, '..', 'ui', 'dev', 'CombatMockups.jsx'))).toBe(false);
         const root = render(React.createElement(CombatKit)).container;
         expect(root.querySelectorAll('[data-kit-combat="mat"] [data-health-bar]')).toHaveLength(2);
-        expect(root.querySelectorAll('[data-kit-float]')).toHaveLength(12);
+        expect(root.querySelectorAll('[data-kit-float]')).toHaveLength(9);
         expect(root.querySelectorAll('[data-fight-panel]')).toHaveLength(2);
         expect(root.querySelectorAll('[data-enemy-card]')).toHaveLength(2);
     });
 
     it('every line of the log and the screen has its words in the strings file', () => {
         const src = ['ui/components/combat/fightWatch.js', 'ui/components/combat/FightPanel.jsx', 'ui/components/combat/fightView.js',
-            'ui/components/combat/EnemyCard.jsx', 'ui/components/board/fightPlate.js', 'ui/components/board/FightLayer.jsx',
+            'ui/components/combat/EnemyCard.jsx', 'ui/components/board/callouts.js', 'ui/components/board/FightLayer.jsx',
             'ui/components/board/fx/fightFloats.js', 'ui/components/hud/CatchUpOverlay.jsx']
             .map(f => readFileSync(path.join(HERE, '..', f), 'utf8')).join('\n');
         const keys = new Set([...src.matchAll(/t\('((?:fight|catchUp)\.[\w.]+)'/g)].map(m => m[1]));

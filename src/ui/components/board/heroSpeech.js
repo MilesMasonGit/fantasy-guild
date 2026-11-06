@@ -7,6 +7,8 @@
  * screen.
  */
 
+import { calloutText } from './callouts.js';
+
 /** Bubbles above one head at once. */
 export const MAX_BUBBLES = 3;
 
@@ -57,7 +59,9 @@ export const momentText = {
     // Said by the hero whose work spent the Token's last charge.
     depleted: (token) => `${token} Depleted`,
     // The same moment for an enemy: the hero who beat it says so.
-    beaten: (enemy) => `${enemy} Beaten`
+    beaten: (enemy) => `${enemy} Beaten`,
+    // A status landing on the hero in a fight, said as a callout over an enemy is: "Venom!".
+    statusLands: (statusId) => calloutText.statusLands(statusId)
 };
 
 /**
@@ -95,6 +99,7 @@ export function idleMomentOf(waiting, name = null, { order = null, needsJob = fa
  * A gatherer whose node is resting says nothing at all ({@link idleMomentOf}).
  * * `depleted`: kept: the hero who used a Token up says so.
  * * `beaten`: kept: `depleted` said of an enemy, by the hero who beat it.
+ * * `statusLands`: kept: a status landing on a fighting hero ("Venom!"), over their health bar.
  */
 export const MOMENT_SPOKEN = Object.freeze({
     arrived: false,
@@ -102,7 +107,8 @@ export const MOMENT_SPOKEN = Object.freeze({
     waiting: true,
     depleted: true,
     beaten: true,
-    needsJob: true
+    needsJob: true,
+    statusLands: true
 });
 
 /** Whether a moment of this kind (`momentText`'s key) is spoken at all. */

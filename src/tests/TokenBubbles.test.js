@@ -302,9 +302,9 @@ describe('the work bar', () => {
         progress({ percent: 25, combat: true, enemyHp: 30, enemyMaxHp: 40 });
         expect(bar(container)).toBeNull();
         const hb = container.querySelector('[data-health-bar="enemy"]');
-        expect(hb.getAttribute('data-health-text')).toBe('30 · 75%');
+        expect(hb.getAttribute('data-health-text')).toBe('30/40');
         progress({ percent: 75, combat: true, enemyHp: 10, enemyMaxHp: 40 });
-        expect(container.querySelector('[data-health-bar="enemy"]').getAttribute('data-health-text')).toBe('10 · 25%');
+        expect(container.querySelector('[data-health-bar="enemy"]').getAttribute('data-health-text')).toBe('10/40');
     });
 
     it('the fill takes no pointer: a press goes through to the plate, which grabs the Token', () => {
