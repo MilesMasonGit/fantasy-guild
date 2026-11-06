@@ -27,24 +27,28 @@ glance which one is right.
   at the needed tier or better passes; no tool of that kind, or one too weak
   (a copper pickaxe on an iron vein), fails. Skill: the hero's level at or
   above the Token's passes.
-- **Tokens with no tool need** (a Redberry Bush, enemies): **the skill mark
-  only**. A Token that needs neither tool nor skill shows nothing.
+- **Tokens with no tool need** (a Redberry Bush): **the skill mark only**. A
+  Token that needs neither tool nor skill shows nothing.
+- **Enemies** (owner, 2026-11-05: combat has no skill checks): each hero
+  shows **what they hold in their hands** instead, as a quick reminder of how
+  they're armed: one sprite per hand item (a two-handed weapon once). No
+  green or red outline, since nothing is being checked. Bare hands show
+  nothing.
+- **Size** (owner, 2026-11-05): each mark is the size of an item floating on
+  the mat: a 32 px sprite drawn at 2×.
 
 ## Calls made without asking (routine)
 
 - **Water** (several tool kinds at any tier): a hero holding any kind the
   water takes passes and shows that tool; a hero holding none shows the
   water's first kind, red.
-- **Enemies**: the skill mark shows only if the fight checks a skill level
-  today; if it checks none, nothing shows. The builder reports which.
 - **Same rules as the game's**: pass and fail come from the checks the game
   already uses to decide whether a hero may work a Token (the yellow
   "no tool" and "level too low" alerts), never a second copy of them.
 - **Bubbles**: a hero's alert bubble steps aside while the marks show and
   returns after the drag.
-- **Many heroes**: the marks stay small enough that a full hero bar reads in
-  one glance; show the owner two sizes on screenshots (README: "Looks are
-  picked from screenshots").
+- **Hero bar cards**: the marks keep their mat size there too if a card has
+  room; if not, show the owner a screenshot before shrinking them.
 
 ## Not in this
 
