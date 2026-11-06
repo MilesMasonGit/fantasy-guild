@@ -1,0 +1,5 @@
+bought ring 2 {"success":true}
+after the drag {"star_ring_2":[985,383,"maxed"],"star_ring_3":[800,383,"buyable"],"star_ring_4":[615,383,"locked"],"star_ring_5":[430,383,"locked"],"star_ring_6":[246,383,"locked"],"label":[615,509,"The Compass"]}
+sky check {"boxes":105,"touching":[],"nearestToARingThing":[20,"star star_ring_4 / title Wild Lands"]}
+shot C:\Users\16048\Projects\fantasy_guild_v2\.claude\worktrees\m4\docs\active\research\world_map\built_m4\09_hall_compass.png
+console errors []

@@ -1290,6 +1290,13 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   Passive Production the Hall pays each lap beside the Wishing Well's Water. The sky grows to
   hold its constellations and is dragged when it does not fit.
   *(`guildUpgrades.js`, `hallStars.js`, `progression/HallRules.js`)*
+- **Ring stars** (brief 380 M4): a star whose `opensRing` names a ring of the world map lets the
+  guild settle that ring once its first rank is bought. Ring 1 is open from the start; a star per
+  ring from ring 2, the wild rings too, each linked to the one before so they light in order. A
+  ring no star opens is left open (the ledger's checks F say so). Its sentence says it opens the
+  lands past the next border (no ring numbers for the player) and it wears a map's outline. The
+  stars themselves are content, a change pack (`2026-11-06-ring-stars`: the Compass, five stars
+  left of the Hall past the Vault, priced by the ledger). *(`world/ringStars.js`, `Settling.js`)*
 - **The sky's look** (brief 390): stars spread 1.4 times their authored places apart, each with
   an item's outline over it (by the star's kind, or the star's own `outline`), its title under
   it and its rank only under the pointer; the web runs on under the nav and the details panel.
@@ -1467,15 +1474,19 @@ drawers**. The menu can be flipped to the right.
   settled or can be settled next. **Ring lines** are a rope with knots where
   rings meet, no numbers. **Cell looks**: settled and settle-able in full
   colour; a cell the guild can settle now pulses gold; a frontier cell too dear
-  (or, later, behind a ring star) darkened; a cell further out black and white;
+  or behind a ring star darkened; a cell further out black and white;
   the pointer over any cell shows it in full colour with a white outline. The
   map is dragged around (or scrolled with the wheel). **The hover** names the
   place ("Elderfield": a name from its cell's seed, which its Region takes on
   settling) over its land and line ("Highland Ores"), then its price as item
-  pills with have/need in the 9.9k shorthand, red when short; no ring.
+  pills with have/need in the 9.9k shorthand, red when short; no ring. A cell
+  whose ring waits for its Guild Hall ring star (§8) says so under its price
+  ("Light the Guild Hall's Charted Roads star to settle here"), in the hover and
+  the panel.
   **The inspection panel** (thin, on the right) shows the chosen place's name,
   the guild's flag drawn large where it is, what it yields and its price, and a
-  large **Settle** (frontier only, greyed with what is short), which pays the
+  large **Settle** (frontier only, greyed with what is short or the ring star it
+  waits for; settling refuses that ring until the star is bought), which pays the
   whole price at once, writes the cell's Region and takes the guild there; a
   settled place shows its mat drawn small, its facts, a rename, and **Travel**.
   A Region knows its
@@ -1516,7 +1527,9 @@ drawers**. The menu can be flipped to the right.
   `board/Occupation.js`)* The tables are placeholder
   until the CMS syncs `data/world.json` (W6). A save made before worlds has
   none: the world map says so. The QA panel's Atlas section meets the
-  frontier's prices at a click and shows a world in words. *(`src/systems/world/`,
+  frontier's prices at a click (with the price of a ring star a frontier cell
+  waits for, to buy in the Hall), puts the ring stars' pack in the sky until it
+  is synced, and shows a world in words. *(`src/systems/world/`,
   `worldTablesShape.js`, `ui/components/atlas/WorldScreen.jsx`, `WorldMap.jsx`,
   `WorldPanel.jsx`, `WorldCamera.jsx`, `worldPicture.js`; the art it reads,
   `config/worldMapArt.js`)*

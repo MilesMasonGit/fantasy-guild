@@ -383,6 +383,34 @@ CMS's own Accept, Recalculate and Sync against a scratch data folder: no pins, 0
 first round's 14 numbers pinned by hand on the old code, all 14 put back; on the new code the pack's 16
 all kept, and the real Sync differs from `data/` by those 16 numbers and their 16 pins and nothing else.
 
+## The ledger counts the ring stars (brief 380 M4, 2026-11-06)
+
+*Engineer's notes. Measured: the numbers on `main` afb79385's data with the ring stars' pack
+(`research/pending_packs/ring_stars/`). Reasoned: the rules, each a choice the owner can overrule.*
+
+**Reach and the pace.** A Guild Hall star that opens a ring (`opensRing`) is a rule: lit once its
+first rank's price is had and a star it is linked to is lit (or at once from the Hall); every
+settle of its ring needs it. So reach, path time and the stages wait for the star's price, gathered
+by one hero at Typical as a Shop price is. A ring no star opens stays open, as in the game.
+
+**Checks F** gain one: a ring past the first, wild rings too, with no star, or whose star can never
+be lit with what earlier rings give (asking its own ring's goods loops: the ring is never
+reached). **Checks D** gain one: a strict ring first settled (its earliest fully timed wedge) more
+than the tolerance before the stage before it ends.
+
+**The price.** A ring star adds no rate, so the payback rule cannot price it. The ledger proposes:
+its tier's material (as a Hall rank's), as much as one hero gathers at Typical between when it can
+start and the end of the stage its ring opens after, so **a ring opens when the stage before it
+ends** (`ringBudgetTier`, one line to move with T-294). A wild ring's stage has no budget yet, so
+its star takes the world tables' wild price growth (1.5) times the hours of the star before.
+
+**On today's data** (Typical): ring 2 first settled 1 h 22 min before and after (its Farming 15
+gate is later than the star, lit 54 min in, inside plane 1's 55 min; the Arcane wedge's untimed
+floor moves from 0 to 54 min); ring 3 from **7 h 27 min to 22 h 52 min** (its star, 12,000 Trout,
+lit then, inside plane 2's day); stages unchanged (34 min, 1 h 2 min, 23 h 29 min); 39 entries
+later on the timeline; checks F on 100 of 100 worlds before the pack fail only for the missing
+stars, and 1000 of 1000 pass with it.
+
 ## The system design (owner, 2026-10-29)
 
 *From the analyst's [system plan](research/ledger_system_plan_2026-10-29.md);

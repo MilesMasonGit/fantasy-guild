@@ -1,0 +1,188 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-06-ring-stars",
+  "createdAt": "2026-11-06T19:32:16.226Z",
+  "asked": "A Guild Hall star per ring: ring 1 open from the start; a star allows settling ring 2, another ring 3, then one per wild ring; prices follow the ledger's algorithm (owner, 2026-11-03; brief 380 M4).",
+  "entries": [
+    {
+      "op": "create",
+      "kind": "hallConstellation",
+      "id": "compass",
+      "value": {
+        "id": "compass",
+        "name": "The Compass",
+        "label": {
+          "x": -1.86,
+          "y": 0.12
+        }
+      },
+      "note": "The ring stars' constellation: the Compass, the name the owner once gave the sky's reach constellation (retired 2026-10-29 with Scouting Flags); world-map reach comes back to the Hall with the ring stars (brief 380 M4). It sits left of the Hall, past the Vault, between Crafting and Construction; its name under the third star."
+    },
+    {
+      "op": "create",
+      "kind": "hallStar",
+      "id": "star_ring_2",
+      "value": {
+        "id": "star_ring_2",
+        "constellation": "compass",
+        "name": "Charted Roads",
+        "description": "The guild charts the roads past its first borders: the next lands of the world map can be settled.",
+        "node": {
+          "x": -0.98,
+          "y": -0.2
+        },
+        "links": [
+          "hall"
+        ],
+        "opensRing": 2,
+        "ranks": [
+          {
+            "tier": 1,
+            "price": [
+              {
+                "itemId": "item_cherry",
+                "quantity": 1700
+              }
+            ],
+            "rules": [],
+            "lines": []
+          }
+        ]
+      },
+      "note": "Opens ring 2 of the world map (opensRing 2), linked to the Hall so it is buyable from the start. Tier 1 (the plane before its ring). Priced by the Ledger (Guild Hall page, proposed): Cherry, the most-gathered material first had in plane 1, as much as one hero picks at Typical from when Cherry is first had (14 min in) to the end of plane 1 (55 min), so the star is lit 54 min in. Ring 2 stays first settled at 1 h 22 min: its Farming 15 gate is later than the star. No ring number in its name or words (owner: no ring numbers for the player); the sky draws a map outline over it."
+    },
+    {
+      "op": "create",
+      "kind": "hallStar",
+      "id": "star_ring_3",
+      "value": {
+        "id": "star_ring_3",
+        "constellation": "compass",
+        "name": "Far Horizons",
+        "description": "The guild looks further out: the next lands of the world map can be settled.",
+        "node": {
+          "x": -1.42,
+          "y": -0.2
+        },
+        "links": [
+          "star_ring_2"
+        ],
+        "opensRing": 3,
+        "ranks": [
+          {
+            "tier": 2,
+            "price": [
+              {
+                "itemId": "item_trout",
+                "quantity": 12000
+              }
+            ],
+            "rules": [],
+            "lines": []
+          }
+        ]
+      },
+      "note": "Opens ring 3 of the world map (opensRing 3), linked to Charted Roads so the rings open in order. Tier 2 (the plane before its ring). Priced by the Ledger: Trout, the most-gathered material first had in plane 2, as much as one hero catches at Typical from 1 h 43 min in to the end of plane 2 (a day), so ring 3 opens about 22 h 52 min in, not 7 h 27 min as before. No ring number in its name or words (owner: no ring numbers for the player); the sky draws a map outline over it."
+    },
+    {
+      "op": "create",
+      "kind": "hallStar",
+      "id": "star_ring_4",
+      "value": {
+        "id": "star_ring_4",
+        "constellation": "compass",
+        "name": "Wild Lands",
+        "description": "Past the charted lands lie the wilds: the next lands of the world map can be settled.",
+        "node": {
+          "x": -1.86,
+          "y": -0.2
+        },
+        "links": [
+          "star_ring_3"
+        ],
+        "opensRing": 4,
+        "ranks": [
+          {
+            "tier": 3,
+            "price": [
+              {
+                "itemId": "item_watermelon",
+                "quantity": 110000
+              }
+            ],
+            "rules": [],
+            "lines": []
+          }
+        ]
+      },
+      "note": "Opens ring 4 of the world map (opensRing 4), linked to Far Horizons so the rings open in order. Tier 3 (the last plane the strict rings hold). A wild ring: plane 3 has no budget yet (T-294 sets the ladder's), so the Ledger takes the world tables' wild price growth (1.5, as wild cells' prices grow) times the hours of the star before, in plane 3's most-gathered material (Watermelon). A placeholder until the ladder's budgets come. No ring number in its name or words (owner: no ring numbers for the player); the sky draws a map outline over it."
+    },
+    {
+      "op": "create",
+      "kind": "hallStar",
+      "id": "star_ring_5",
+      "value": {
+        "id": "star_ring_5",
+        "constellation": "compass",
+        "name": "Untamed Reaches",
+        "description": "Deeper into the wilds: the next lands of the world map can be settled.",
+        "node": {
+          "x": -2.3,
+          "y": -0.2
+        },
+        "links": [
+          "star_ring_4"
+        ],
+        "opensRing": 5,
+        "ranks": [
+          {
+            "tier": 3,
+            "price": [
+              {
+                "itemId": "item_watermelon",
+                "quantity": 160000
+              }
+            ],
+            "rules": [],
+            "lines": []
+          }
+        ]
+      },
+      "note": "Opens ring 5 of the world map (opensRing 5), linked to Wild Lands so the rings open in order. Tier 3 (the last plane the strict rings hold). A wild ring: the star before's hours times the wild price growth (1.5), in plane 3's most-gathered material. A placeholder until the ladder's budgets come. No ring number in its name or words (owner: no ring numbers for the player); the sky draws a map outline over it."
+    },
+    {
+      "op": "create",
+      "kind": "hallStar",
+      "id": "star_ring_6",
+      "value": {
+        "id": "star_ring_6",
+        "constellation": "compass",
+        "name": "Edge of the World",
+        "description": "To the edge of the world: the last lands of the world map can be settled.",
+        "node": {
+          "x": -2.74,
+          "y": -0.2
+        },
+        "links": [
+          "star_ring_5"
+        ],
+        "opensRing": 6,
+        "ranks": [
+          {
+            "tier": 3,
+            "price": [
+              {
+                "itemId": "item_watermelon",
+                "quantity": 230000
+              }
+            ],
+            "rules": [],
+            "lines": []
+          }
+        ]
+      },
+      "note": "Opens ring 6 of the world map (opensRing 6), linked to Untamed Reaches so the rings open in order. Tier 3 (the last plane the strict rings hold). The last wild ring: the star before's hours times the wild price growth (1.5), in plane 3's most-gathered material. A placeholder until the ladder's budgets come. No ring number in its name or words (owner: no ring numbers for the player); the sky draws a map outline over it."
+    }
+  ]
+}

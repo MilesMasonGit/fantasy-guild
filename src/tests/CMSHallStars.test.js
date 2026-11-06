@@ -176,4 +176,21 @@ describe('the Guild Hall page', () => {
         fireEvent.change(star.querySelector('[data-hall-star-name]'), { target: { value: 'Deep Lore' } });
         expect(store().hallStars[STAR.id].name).toBe('Deep Lore');
     });
+
+    it('makes a star a ring star with its opens-ring box, and a pack may carry one (a whole ring from 2)', () => {
+        store().hydrate(workspace({ hallConstellations: { mining: MINING }, hallStars: { [STAR.id]: STAR } }));
+        const { container } = render(React.createElement(HallStarsPage));
+        const box = container.querySelector(`[data-hall-star="${STAR.id}"] [data-hall-star-opens-ring]`);
+        expect(box.value).toBe('');
+        fireEvent.change(box, { target: { value: '2' } });
+        expect(store().hallStars[STAR.id].opensRing).toBe(2);
+        expect(hallSkyFile(store()).stars[STAR.id].opensRing).toBe(2);
+        fireEvent.change(box, { target: { value: '1' } });
+        expect(hallSkyFile(store()).stars[STAR.id].opensRing).toBeUndefined();
+
+        const entry = (opensRing) => ({ op: 'create', kind: 'hallStar', id: STAR.id, value: { ...STAR, opensRing }, note: 'A ring star' });
+        expect(validatePack(pack([entry(3)]))).toEqual({ ok: true });
+        expect(validatePack(pack([entry(1)])).errors.join(' ')).toMatch(/"value.opensRing" must be a whole ring number from 2/);
+        expect(validatePack(pack([entry('2')])).errors.join(' ')).toMatch(/opensRing/);
+    });
 });

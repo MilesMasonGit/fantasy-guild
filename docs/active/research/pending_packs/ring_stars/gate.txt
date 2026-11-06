@@ -1,0 +1,21 @@
+PASS: Passes: 39 entries move on the timeline, 0 problems added, 1 cleared.
+Against data/ and cms/plan/plan.json, since no CMS autosave was found (the owner may have unsynced work) (fp:a9bb438f59ad39f1).
+Moved entries (39, furthest first):
+- Quartz Deposit: 0 min → 54 min (later)
+- Quartz: 0 min → 54 min (later)
+- Banana Tree: 7 h 27 min → 22 h 52 min (later)
+- Coconut Tree: 7 h 27 min → 22 h 52 min (later)
+- Lemon Tree: 7 h 27 min → 22 h 52 min (later)
+- Lime Tree: 7 h 27 min → 22 h 52 min (later)
+- Orange Tree: 7 h 27 min → 22 h 52 min (later)
+- Pineapple Bush: 7 h 27 min → 22 h 52 min (later)
+- Raspberry Bush: 7 h 27 min → 22 h 52 min (later)
+- Watermelon Patch: 7 h 27 min → 22 h 52 min (later)
+- Watermelon: 7 h 27 min → 22 h 52 min (later)
+- Banana: 7 h 27 min → 22 h 52 min (later)
+- Orange: 7 h 27 min → 22 h 52 min (later)
+- Raspberry: 7 h 27 min → 22 h 52 min (later)
+- Lemon: 7 h 27 min → 22 h 52 min (later)
+- and 24 more
+Checks cleared:
+- warn: Ring 3: Ring 3 can first be settled 7 h 27 min into a new game at Typical (Crops ring 3), 69 % before Plane 2 ends at 1 d (±25 %): no Guild Hall star opens it.

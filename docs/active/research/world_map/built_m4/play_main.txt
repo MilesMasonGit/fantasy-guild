@@ -1,0 +1,35 @@
+no hero at start; buying the first Bunk Beds rank (free) {"success":true}
+heroes 1 ring stars in the sky before QA null
+tutorial true The tutorial is at its last step: the world map opens with it
+ring stars true 5 ring stars in the sky until reload: open the Guild Hall or the world map to see them
+meet true 6 frontier cells: 6 items topped up, 6 skills raised on the first hero
+shot shots\01_qa_panel.png
+the tutorial step opened the world map itself
+note The CartographerSettle Your First PlaceNo maps, then. Never mind: I have drawn the country round the camp from memory. Pick a place, pay its way, and we go.The Atlas is open on the world map. Pick a place beside the camp, gather what it asks for, then press Settle. Its enemies hold it when you arrive: beat them all.
+cells drawn ["0,-3:grey","-1,-2:grey","1,-3:grey","-2,-1:grey","0,-2:grey","2,-3:grey","-3,0:grey","-1,-1:grey","1,-2:grey","3,-3:grey","-2,0:grey","0,-1:ready","2,-2:grey","-3,1:grey","-1,0:ready","1,-1:ready","3,-2:grey","-2,1:grey","0,0:settled","2,-1:grey"] ring1 ["1,0","1,-1","0,-1","-1,0","-1,1","0,1"]
+shot shots\01b_world_open.png
+ring-1 panel lock line null settle disabled false locked attr null
+shot C:\Users\16048\Projects\fantasy_guild_v2\.claude\worktrees\m4\docs\active\research\world_map\built_m4\02_ring1_ready.png
+after first settle: active cell 1,0 tutorial step 11 completed ["cart_recruit","cart_tool","cart_flag","cart_gather","cart_loot","cart_foundation","cart_station","cart_craft","cart_camp","cart_copper_tool","cart_goblin"]
+meet again true 8 frontier cells: 8 items topped up, 2 skills raised on the first hero, the price of 1 Guild Hall ring star in the Bank (buy it in the Hall)
+ring-2 frontier ["2,0","2,-1","1,1"]
+ring-2 look before the star dark price met true
+tip lock Light the Guild Hall's Charted Roads star to settle here
+shot C:\Users\16048\Projects\fantasy_guild_v2\.claude\worktrees\m4\docs\active\research\world_map\built_m4\03_ring2_locked_tip.png
+panel message Light the Guild Hall's Charted Roads star to settle here settle disabled true locked attr true
+shot C:\Users\16048\Projects\fantasy_guild_v2\.claude\worktrees\m4\docs\active\research\world_map\built_m4\04_ring2_locked_panel.png
+settle refused {"success":false,"reason":"Light its Guild Hall star first","lock":{"ring":2,"stars":[{"id":"star_ring_2","name":"Charted Roads"}]}}
+ring star states [["star_ring_2","buyable","true"],["star_ring_3","locked",null],["star_ring_4","locked",null],["star_ring_5","locked",null],["star_ring_6","locked",null]]
+sky boxes 105 touching []
+ring stars on screen {"star_ring_2":{"x":277,"y":389},"star_ring_3":{"x":92,"y":389},"star_ring_6":{"x":-462,"y":389}}
+shot C:\Users\16048\Projects\fantasy_guild_v2\.claude\worktrees\m4\docs\active\research\world_map\built_m4\05_hall_sky_full.png
+sheet sentence The guild may settle the lands past the next border of the world map. now Nothing yet next Lands past the next border
+shot C:\Users\16048\Projects\fantasy_guild_v2\.claude\worktrees\m4\docs\active\research\world_map\built_m4\06_hall_ring_star_sheet.png
+upgrade button {"x":1454,"y":480.5,"w":236,"h":40} disabled false
+rank after buying 1
+shot C:\Users\16048\Projects\fantasy_guild_v2\.claude\worktrees\m4\docs\active\research\world_map\built_m4\07_hall_ring_star_bought.png
+ring-2 look after the star ready
+panel message after null lock line null
+shot C:\Users\16048\Projects\fantasy_guild_v2\.claude\worktrees\m4\docs\active\research\world_map\built_m4\08_ring2_open_panel.png
+after ring-2 settle: active cell 2,0 wanted 2,0
+console errors []
