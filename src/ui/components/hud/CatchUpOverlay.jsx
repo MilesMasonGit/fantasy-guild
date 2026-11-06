@@ -7,10 +7,10 @@ import { cn } from '../../utils/cn.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
+import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
+import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import SkillIcon from '../base/SkillIcon.jsx';
-import { ItemIcon } from '../base/ItemIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
-import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { CombatGlyph } from '../combat/CombatGlyph.jsx';
 import { GLYPH_COLOUR } from '../combat/combatGlyphs.js';
 import { t } from '../../../i18n/index.js';
@@ -18,10 +18,10 @@ import { summaryView, catchUpTitle } from './catchUpSummary.js';
 
 /**
  * While a catch-up plays (`CatchUp.run`, a closed game's time away or a sleeping PC), a loading
- * bar covers the game; when it ends, "While you were away" says what happened. Only catch-ups
- * long enough to `show`; a silent one shows nothing. The summary closes with "Return to the
- * Guild" (or Esc), or, once the player confirms, turns the catch-up down with "Load as I left it"
- * (`CatchUp.undoLast`).
+ * bar covers the game; when it ends, "While you were away" says what happened, in two columns: the
+ * items on the left, the news on the right. Only catch-ups long enough to `show`; a silent one
+ * shows nothing. Each of its two buttons asks first: "Return to the Guild" (or Esc) keeps the
+ * catch-up, "Load as I left it" turns it down (`CatchUp.undoLast`).
  *
  * ⚠️ The bar is moved by its fill's `transform` with a CSS transition, and a sheen runs across it
  * as a CSS animation: both stay on the compositor, so the bar keeps moving through a slice of
@@ -30,13 +30,14 @@ import { summaryView, catchUpTitle } from './catchUpSummary.js';
 export function CatchUpOverlay() {
     const [run, setRun] = useState(null);
     const [result, setResult] = useState(null);
-    const [asking, setAsking] = useState(false);
+    /** Which button is being asked about: `'return'`, `'undo'` or null. */
+    const [asking, setAsking] = useState(null);
 
     useEffect(() => {
         const offStart = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_STARTED, ({ awayMs, show } = {}) => {
             if (!show) return;
             setResult(null);
-            setAsking(false);
+            setAsking(null);
             setRun({ awayMs, fraction: 0 });
         }, UI_LISTENER);
         const offProgress = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_PROGRESS, ({ fraction, show } = {}) => {
@@ -46,7 +47,7 @@ export function CatchUpOverlay() {
         const offFinish = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_FINISHED, (finished) => {
             if (!finished?.show) return;
             setRun(null);
-            setAsking(false);
+            setAsking(null);
             setResult(finished);
         }, UI_LISTENER);
         return () => { offStart(); offProgress(); offFinish(); };
@@ -54,22 +55,14 @@ export function CatchUpOverlay() {
 
     const close = () => {
         CatchUp.forgetUndo();
-        setAsking(false);
+        setAsking(null);
         setResult(null);
         EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
     };
 
-    // Esc closes this and nothing underneath it. While the undo is being asked about, Esc only
-    // cancels the question.
-    useEscapeLayer(!!result && !run, () => {
-        if (asking) {
-            setAsking(false);
-            return;
-        }
-        CatchUp.forgetUndo();
-        setResult(null);
-        EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
-    });
+    // Esc is Return to the Guild's key, so it asks the same question; while a question is asked,
+    // Esc only cancels it. Nothing underneath hears it.
+    useEscapeLayer(!!result && !run, () => setAsking(a => (a ? null : 'return')));
 
     if (!run && !result) return null;
 
@@ -85,8 +78,8 @@ export function CatchUpOverlay() {
                         result={result}
                         asking={asking}
                         onClose={close}
-                        onAsk={() => setAsking(true)}
-                        onCancel={() => setAsking(false)}
+                        onAsk={setAsking}
+                        onCancel={() => setAsking(null)}
                         onUndo={() => { if (!CatchUp.undoLast()) close(); }}
                     />
                 )}
@@ -117,6 +110,8 @@ const ROW_IN = Object.freeze({ STAGGER_MS: 35, STAGGER_CAP: 14, DURATION_MS: 220
 /**
  * The summary's bars fade and slide in one after another, then lose the entrance class, so a
  * later re-render never plays it again. `enter()` is called once per bar, in drawing order.
+ * Opacity and transform only, and the stagger stops at `STAGGER_CAP`, so a long summary costs
+ * no more than a short one.
  */
 function useRowEntrance() {
     const [entering, setEntering] = useState(true);
@@ -141,7 +136,7 @@ function useRowEntrance() {
 function Section({ id, title, enter, children }) {
     const e = enter();
     return (
-        <div data-summary-section={id} className="mt-2 pt-1.5 border-t border-white/10 first:mt-0">
+        <div data-summary-section={id} className="mt-2 pt-1.5 border-t border-white/10 first:mt-0 first:pt-0 first:border-t-0">
             <div
                 data-summary-heading
                 style={e.style}
@@ -155,7 +150,7 @@ function Section({ id, title, enter, children }) {
 }
 
 /** One Item Bar (the Token inspection's) per `{ [idKey]: id, name, count }`. */
-function CountBars({ rows, idKey, idAttr, kind, sign, enter }) {
+function CountBars({ rows, idKey, idAttr, kind, sign, enter, tip }) {
     return rows.map(row => {
         const e = enter();
         return (
@@ -168,6 +163,7 @@ function CountBars({ rows, idKey, idAttr, kind, sign, enter }) {
                 amount={row.count}
                 sign={sign}
                 size="sm"
+                title={tip?.(row)}
                 className={e.className}
                 style={e.style}
             />
@@ -175,229 +171,255 @@ function CountBars({ rows, idKey, idAttr, kind, sign, enter }) {
     });
 }
 
-/** One pill: a sprite and its count, its name on hover. */
-function Pill({ id, attr, tip, count, children }) {
-    return (
-        <Tooltip title={tip}>
-            <span data-summary-pill {...{ [attr]: id }} className="inline-flex items-center gap-0.5 cursor-help">
-                {children}
-                <span className="ui-text-body font-bold tabular-nums text-white">×{count.toLocaleString()}</span>
-            </span>
-        </Tooltip>
-    );
-}
-
-/** One line of the fights block: a muted word, then its pills wrapping. */
-function FightsRow({ id, label, enter, children }) {
-    const e = enter();
-    return (
-        <div data-summary-fight-row={id} style={e.style} className={cn('grid grid-cols-[6.5rem_1fr] items-center gap-2 px-1', e.className)}>
-            <span className="ui-text-body text-white/50">{label}</span>
-            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">{children}</span>
-        </div>
-    );
-}
+const netSign = (n) => (n > 0 ? '+' : n < 0 ? '−' : '±');
+const netColour = (n) => (n > 0 ? 'text-gi-success' : n < 0 ? 'text-gi-danger' : 'text-gi-muted');
 
 /**
- * The fights while away, one compact block (owner, 2026-10-25): fights won and lost, then a line
- * each for the enemies beaten, the heroes knocked out, the food and elixirs used and what the
- * kills dropped, as pills (a sprite and a count, the name on hover). A line with nothing is left out.
+ * The left column: each item once, its net change in green or red, gained and spent on hover.
+ * An item with more lying on the mat than before carries the mat mark, and its hover says how
+ * many (`itemChanges` says how the mat and the Bank add up).
  */
-function FightsBlock({ combat, enter }) {
-    const e = enter();
+function ItemRows({ rows, enter }) {
+    return rows.map(row => {
+        const e = enter();
+        const lines = [
+            row.gained > 0 && t('catchUp.items.gained', { count: row.gained.toLocaleString() }),
+            row.spent > 0 && t('catchUp.items.spent', { count: row.spent.toLocaleString() }),
+            row.onMat > 0 && t('catchUp.items.onMat', { count: row.onMat.toLocaleString() })
+        ];
+        return (
+            <Tooltip key={row.itemId} title={row.name} lines={lines}>
+                <EntityRibbon
+                    data-item-id={row.itemId}
+                    data-summary-net={row.net}
+                    data-summary-gained={row.gained}
+                    data-summary-spent={row.spent}
+                    kind="item"
+                    id={row.itemId}
+                    name={row.name}
+                    amount={Math.abs(row.net)}
+                    sign={netSign(row.net)}
+                    countClassName={netColour(row.net)}
+                    badge={row.onMat > 0 && (
+                        <PixelGlyph
+                            name="mat"
+                            data-summary-on-mat
+                            role="img"
+                            aria-label={t('catchUp.items.onMatMark')}
+                            className="text-gi-muted"
+                        />
+                    )}
+                    size="sm"
+                    title={null}
+                    className={e.className}
+                    style={e.style}
+                />
+            </Tooltip>
+        );
+    });
+}
+
+/** A column: our arrow bars when it runs past the panel's height, never a scroll bar. */
+function Column({ id, children }) {
+    // The side and bottom padding leave room for a hovered sprite's zoom, which the scrolling
+    // list would otherwise clip.
     return (
-        <div data-summary-section="fights" className="mt-2 pt-1.5 border-t border-white/10 first:mt-0">
-            <div style={e.style} className={cn('px-1 mb-1 flex items-baseline gap-2', e.className)}>
-                <span data-summary-heading className="ui-text-body uppercase tracking-wide text-white/50">{t('catchUp.combat.title')}</span>
-                <span className="flex-1" />
-                <span data-summary-fight-tally className="ui-text-body font-bold text-white">
-                    {t('catchUp.combat.tally', { won: combat.won.toLocaleString(), lost: combat.lost.toLocaleString() })}
-                </span>
-            </div>
-            <div data-summary-list className="flex flex-col gap-1">
-                {combat.beaten.length > 0 && (
-                    <FightsRow id="beaten" label={t('catchUp.combat.beaten')} enter={enter}>
-                        {combat.beaten.map(r => (
-                            <Pill key={r.enemyId} id={r.enemyId} attr="data-type-id" count={r.count} tip={t('catchUp.combat.beatenTip', { enemy: r.name, count: r.count })}>
-                                <TokenSprite typeId={r.enemyId} size={32} surface={TOKEN_SURFACE.INSPECT} />
-                            </Pill>
-                        ))}
-                    </FightsRow>
-                )}
-                {combat.knockouts.length > 0 && (
-                    <FightsRow id="knockedOut" label={t('catchUp.combat.knockedOut')} enter={enter}>
-                        {combat.knockouts.map(w => (
-                            <Tooltip key={w.heroId} title={t('catchUp.combat.knockout', { hero: w.heroName, count: w.times })}>
-                                <span data-summary-pill data-hero-id={w.heroId} className="inline-flex items-center gap-1 cursor-help">
-                                    <CombatGlyph name="down" colour={GLYPH_COLOUR.red} />
-                                    <span className="ui-text-body font-bold text-white">{w.heroName}</span>
-                                    <span className="ui-text-body font-bold tabular-nums text-white">×{w.times}</span>
-                                </span>
-                            </Tooltip>
-                        ))}
-                    </FightsRow>
-                )}
-                {combat.used.length > 0 && (
-                    <FightsRow id="used" label={t('catchUp.combat.used')} enter={enter}>
-                        {combat.used.map(r => (
-                            <Pill key={r.itemId} id={r.itemId} attr="data-item-id" count={r.count} tip={t('catchUp.combat.usedTip', { item: r.name, count: r.count })}>
-                                <ItemIcon item={r.itemId} size={32} title={null} />
-                            </Pill>
-                        ))}
-                    </FightsRow>
-                )}
-                {combat.drops.length > 0 && (
-                    <FightsRow id="drops" label={t('catchUp.combat.drops')} enter={enter}>
-                        {combat.drops.map(r => (
-                            <Pill key={r.itemId} id={r.itemId} attr="data-item-id" count={r.count} tip={t('catchUp.combat.dropTip', { item: r.name, count: r.count.toLocaleString() })}>
-                                <ItemIcon item={r.itemId} size={32} title={null} />
-                            </Pill>
-                        ))}
-                    </FightsRow>
-                )}
-            </div>
+        <div data-summary-column={id} className="min-h-0 min-w-0 flex flex-col">
+            <ArrowScrollList step={96} compact className="min-h-0 flex-1 px-3 pt-1 pb-3">
+                {children}
+            </ArrowScrollList>
         </div>
     );
 }
 
-/** The summary's buttons: the kit's, full width. */
-const BUTTON = { className: 'w-full', buttonClassName: 'py-1 ui-text-title' };
+/** A muted line where a column has nothing to list. */
+const Empty = ({ children }) => <div data-summary-empty className="px-1 ui-text-body text-white/50">{children}</div>;
+
+/** The summary's buttons: the kit's, one width, centred. */
+const BUTTON = { className: 'w-80 max-w-full', buttonClassName: 'py-1 ui-text-title' };
 
 function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
     const view = summaryView(result);
     const enter = useRowEntrance();
     const undoable = CatchUp.canUndo();
+    const undoing = asking === 'undo';
     return (
         <PixelFrame
             kind={FRAME_KIND.CHAMFER}
             backdrop="away"
             data-catch-up-summary
             role="dialog"
-            aria-label="While you were away"
-            className="w-[28rem] max-w-full"
+            aria-label={t('catchUp.title')}
+            className="w-[54rem] max-w-full"
             frameClassName="max-h-[85vh] flex flex-col ui-text-title leading-snug text-white"
         >
-            <div className="px-3 pt-2.5 pb-1 shrink-0">
-                <div role="heading" aria-level={2} className="ui-text-title font-bold text-gi-gold">While you were away</div>
-                <div data-summary-away>You were away {view.awayText}.</div>
+            <div data-summary-header className="px-3 pt-2.5 pb-1.5 shrink-0 text-center">
+                <div role="heading" aria-level={2} className="ui-text-title font-bold text-gi-gold">{t('catchUp.title')}</div>
+                <div data-summary-away>{t('catchUp.away', { time: view.awayText })}</div>
                 {view.droppedText && <div data-summary-dropped className="text-white/60">{view.droppedText}</div>}
             </div>
 
-            {/* The side and bottom padding leave room for a hovered sprite's zoom, which this
-                scrolling list would otherwise clip. */}
-            <div data-summary-body className="px-3 pt-1 pb-3 min-h-0 overflow-y-auto custom-scrollbar">
-                {view.waiting.length > 0 && (
-                    <Section id="waiting" title="Items produced" enter={enter}>
-                        <CountBars rows={view.waiting} idKey="itemId" idAttr="data-item-id" kind="item" sign="+" enter={enter} />
+            <div data-summary-body className="min-h-0 grid grid-cols-2 grid-rows-[minmax(0,1fr)] border-t border-white/10 pt-1.5">
+                <Column id="items">
+                    <Section id="items" title={t('catchUp.items.title')} enter={enter}>
+                        {view.items.length > 0
+                            ? <ItemRows rows={view.items} enter={enter} />
+                            : <Empty>{t('catchUp.items.empty')}</Empty>}
                     </Section>
-                )}
-                {view.gained.length > 0 && (
-                    <Section id="gained" title="Items banked" enter={enter}>
-                        <CountBars rows={view.gained} idKey="itemId" idAttr="data-item-id" kind="item" sign="+" enter={enter} />
-                    </Section>
-                )}
-                {view.spent.length > 0 && (
-                    <Section id="spent" title="Items spent" enter={enter}>
-                        <CountBars rows={view.spent} idKey="itemId" idAttr="data-item-id" kind="item" sign="−" enter={enter} />
-                    </Section>
-                )}
-                {view.levelUps.length > 0 && (
-                    <Section id="levels" title="Level-ups" enter={enter}>
-                        {view.levelUps.flatMap(hero => hero.skills.map(s => {
-                            const e = enter();
-                            return (
-                                <EntityRibbon
-                                    key={`${hero.heroId}|${s.skillId}`}
-                                    data-summary-hero={hero.heroId}
-                                    data-skill-id={s.skillId}
-                                    icon={<SkillIcon skill={s.skillId} size={32} alt="" />}
-                                    name={`${hero.heroName} ${s.skillName}`}
-                                    countText={`${s.from} → ${s.to}`}
-                                    size="sm"
-                                    className={e.className}
-                                    style={e.style}
-                                />
-                            );
-                        }))}
-                    </Section>
-                )}
-                {view.recipes.length > 0 && (
-                    <Section id="recipes" title="New recipes" enter={enter}>
-                        {view.recipes.map(r => {
-                            const e = enter();
-                            return (
-                                <EntityRibbon
-                                    key={r.key}
-                                    data-recipe-id={r.recipeId}
-                                    kind="item"
-                                    id={r.itemId}
-                                    name={r.name}
-                                    countText={r.heroName}
-                                    size="sm"
-                                    className={e.className}
-                                    style={e.style}
-                                />
-                            );
-                        })}
-                    </Section>
-                )}
-                {view.finds.length > 0 && (
-                    <Section id="finds" title="First finds" enter={enter}>
-                        <CountBars rows={view.finds} idKey="itemId" idAttr="data-item-id" kind="item" sign="+" enter={enter} />
-                    </Section>
-                )}
-                {view.bankFull.length > 0 && (
-                    <Section id="bankFull" title="Bank full: waiting on the mat" enter={enter}>
-                        {view.bankFull.map(r => {
-                            const e = enter();
-                            return (
-                                <EntityRibbon
-                                    key={r.itemId}
-                                    data-item-id={r.itemId}
-                                    kind="item"
-                                    id={r.itemId}
-                                    name={r.name}
-                                    size="sm"
-                                    className={e.className}
-                                    style={e.style}
-                                />
-                            );
-                        })}
-                    </Section>
-                )}
-                {view.depleted.length > 0 && (
-                    <Section id="depleted" title="Tokens used up" enter={enter}>
-                        <CountBars rows={view.depleted} idKey="typeId" idAttr="data-type-id" kind="token" sign="×" enter={enter} />
-                    </Section>
-                )}
-                {view.combat.shown && <FightsBlock combat={view.combat} enter={enter} />}
+                </Column>
+
+                <Column id="news">
+                    {!view.hasNews && (
+                        <Section id="news" title={t('catchUp.news.title')} enter={enter}>
+                            <Empty>{t('catchUp.news.empty')}</Empty>
+                        </Section>
+                    )}
+                    {view.knockouts.length > 0 && (
+                        <Section id="knockouts" title={t('catchUp.news.knockouts')} enter={enter}>
+                            {view.knockouts.map(k => {
+                                const e = enter();
+                                return (
+                                    <EntityRibbon
+                                        key={k.heroId}
+                                        data-hero-id={k.heroId}
+                                        icon={<CombatGlyph name="down" colour={GLYPH_COLOUR.red} />}
+                                        name={k.heroName}
+                                        subtitle={k.lost.length ? t('catchUp.news.lost', { items: k.lost.join(', ') }) : null}
+                                        countText={`×${k.times}`}
+                                        size="sm"
+                                        className={e.className}
+                                        style={e.style}
+                                    />
+                                );
+                            })}
+                        </Section>
+                    )}
+                    {view.bankFull.length > 0 && (
+                        <Section id="bankFull" title={t('catchUp.news.bankFull')} enter={enter}>
+                            {view.bankFull.map(r => {
+                                const e = enter();
+                                return (
+                                    <EntityRibbon
+                                        key={r.itemId}
+                                        data-item-id={r.itemId}
+                                        kind="item"
+                                        id={r.itemId}
+                                        name={r.name}
+                                        size="sm"
+                                        className={e.className}
+                                        style={e.style}
+                                    />
+                                );
+                            })}
+                        </Section>
+                    )}
+                    {view.recipes.length > 0 && (
+                        <Section id="recipes" title={t('catchUp.news.recipes')} enter={enter}>
+                            {view.recipes.map(r => {
+                                const e = enter();
+                                return (
+                                    <EntityRibbon
+                                        key={r.key}
+                                        data-recipe-id={r.recipeId}
+                                        kind="item"
+                                        id={r.itemId}
+                                        name={r.name}
+                                        countText={r.heroName}
+                                        size="sm"
+                                        className={e.className}
+                                        style={e.style}
+                                    />
+                                );
+                            })}
+                        </Section>
+                    )}
+                    {view.finds.length > 0 && (
+                        <Section id="finds" title={t('catchUp.news.finds')} enter={enter}>
+                            <CountBars rows={view.finds} idKey="itemId" idAttr="data-item-id" kind="item" sign="+" enter={enter} />
+                        </Section>
+                    )}
+                    {view.levelUps.length > 0 && (
+                        <Section id="levels" title={t('catchUp.news.levelUps')} enter={enter}>
+                            {view.levelUps.flatMap(hero => hero.skills.map(s => {
+                                const e = enter();
+                                return (
+                                    <EntityRibbon
+                                        key={`${hero.heroId}|${s.skillId}`}
+                                        data-summary-hero={hero.heroId}
+                                        data-skill-id={s.skillId}
+                                        icon={<SkillIcon skill={s.skillId} size={32} alt="" />}
+                                        name={`${hero.heroName} ${s.skillName}`}
+                                        countText={`${s.from} → ${s.to}`}
+                                        size="sm"
+                                        className={e.className}
+                                        style={e.style}
+                                    />
+                                );
+                            }))}
+                        </Section>
+                    )}
+                    {view.depleted.length > 0 && (
+                        <Section id="depleted" title={t('catchUp.news.depleted')} enter={enter}>
+                            <CountBars rows={view.depleted} idKey="typeId" idAttr="data-type-id" kind="token" sign="×" enter={enter} />
+                        </Section>
+                    )}
+                    {view.kills.length > 0 && (
+                        <Section id="kills" title={t('catchUp.news.kills')} enter={enter}>
+                            <CountBars
+                                rows={view.kills}
+                                idKey="enemyId"
+                                idAttr="data-type-id"
+                                kind="token"
+                                sign="×"
+                                enter={enter}
+                                tip={r => t('catchUp.news.killTip', { enemy: r.name, count: r.count })}
+                            />
+                        </Section>
+                    )}
+                </Column>
             </div>
 
             <div className="px-3 pt-2 pb-2.5 shrink-0 border-t border-white/10">
                 {asking ? (
-                    <div data-summary-confirm role="alertdialog" aria-label="Load as I left it?" className="flex flex-col gap-1.5">
-                        <div className="text-white/80">Load the game as you left it? Everything from your time away is lost.</div>
-                        <KitButton tone={KIT_BUTTON_TONE.DANGER} data-summary-confirm-yes onClick={onUndo} {...BUTTON}>
-                            Confirm
+                    <div
+                        key={asking}
+                        data-summary-confirm={asking}
+                        role="alertdialog"
+                        aria-label={t(undoing ? 'catchUp.confirmUndo.label' : 'catchUp.confirmReturn.label')}
+                        className="flex flex-col items-center gap-1.5"
+                    >
+                        <div className="text-center text-white/80">
+                            {t(undoing ? 'catchUp.confirmUndo.text' : 'catchUp.confirmReturn.text')}
+                        </div>
+                        {/* Going back throws the time away, so Cancel holds the focus there and a
+                            stray Enter cancels; going on loses nothing, so Return holds it. */}
+                        <KitButton
+                            tone={undoing ? KIT_BUTTON_TONE.DANGER : KIT_BUTTON_TONE.MAIN}
+                            data-summary-confirm-yes
+                            onClick={undoing ? onUndo : onClose}
+                            autoFocus={!undoing}
+                            {...BUTTON}
+                        >
+                            {t(undoing ? 'catchUp.buttons.confirm' : 'catchUp.buttons.return')}
                         </KitButton>
-                        <KitButton tone={KIT_BUTTON_TONE.PLAIN} data-summary-confirm-no onClick={onCancel} autoFocus {...BUTTON}>
-                            Cancel
+                        <KitButton tone={KIT_BUTTON_TONE.PLAIN} data-summary-confirm-no onClick={onCancel} autoFocus={undoing} {...BUTTON}>
+                            {t('catchUp.buttons.cancel')}
                         </KitButton>
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-1.5">
-                        <KitButton data-summary-close onClick={onClose} autoFocus {...BUTTON}>
-                            Return to the Guild
+                    <div key="buttons" className="flex flex-col items-center gap-1.5">
+                        <KitButton data-summary-close onClick={() => onAsk('return')} autoFocus {...BUTTON}>
+                            {t('catchUp.buttons.return')}
                         </KitButton>
                         {undoable && (
                             <KitButton
                                 tone={KIT_BUTTON_TONE.PLAIN}
                                 data-summary-undo
-                                onClick={onAsk}
-                                title="Throw away the time away and load the game exactly as you left it"
+                                onClick={() => onAsk('undo')}
+                                title={t('catchUp.buttons.undoTip')}
                                 {...BUTTON}
                             >
-                                Load as I left it
+                                {t('catchUp.buttons.undo')}
                             </KitButton>
                         )}
                     </div>

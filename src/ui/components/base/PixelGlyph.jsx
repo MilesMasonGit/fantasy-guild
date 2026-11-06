@@ -125,6 +125,17 @@ export const GLYPHS = Object.freeze({
         '########',
         '########'
     ],
+    // Loot lying on the mat (the away summary's item list).
+    mat: [
+        '........',
+        '###.###.',
+        '###.###.',
+        '###.###.',
+        '........',
+        '###.###.',
+        '###.###.',
+        '###.###.'
+    ],
     // An item not found yet, wherever its sprite would be.
     unknown: [
         '..####..',

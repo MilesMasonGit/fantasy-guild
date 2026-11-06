@@ -5,7 +5,7 @@ import { useState } from 'react';
 import {
     startLootFlow, stopLootFlow, findNewItem, levelUpForRecipes,
     fourBanners, knockoutWithWaiting, knockoutNow, bankFullNow, clearBanners,
-    timeAwayWithNews, shortTimeAwayWithNews, longTimeAwayWithNews
+    timeAwayWithNews, shortTimeAwayWithNews, longTimeAwayWithNews, previewAwayFull, previewAwayEmpty
 } from './notificationsDev.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
@@ -23,7 +23,9 @@ const ACTIONS = [
     { id: 'clear', label: 'Clear banners', run: clearBanners },
     { id: 'away', label: 'Time away with news (20 min)', run: timeAwayWithNews },
     { id: 'away-short', label: 'Short time away with news (1 min)', run: shortTimeAwayWithNews },
-    { id: 'away-long', label: 'Long time away, lots of news (3 h)', run: longTimeAwayWithNews }
+    { id: 'away-long', label: 'Long time away, lots of news (3 h)', run: longTimeAwayWithNews },
+    { id: 'away-preview', label: 'Away summary look: every section (display only)', run: previewAwayFull },
+    { id: 'away-preview-empty', label: 'Away summary look: nothing happened (display only)', run: previewAwayEmpty }
 ];
 
 export function NotificationsDevSection() {

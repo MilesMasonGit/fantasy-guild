@@ -357,26 +357,46 @@
         }
     },
     "catchUp": {
-        "combat": {
-            "title": "Fights",
-            "tally": "{won} won · {lost} lost",
-            "beaten": "Beaten",
-            "knockedOut": "Knocked out",
-            "used": "Used",
-            "drops": "Drops",
-            "knockout": {
-                "one": "{hero}: knocked out once",
-                "other": "{hero}: knocked out {count} times"
-            },
-            "beatenTip": {
+        "title": "While you were away",
+        "away": "You were away {time}",
+        "items": {
+            "title": "Items",
+            "empty": "No items gained or spent.",
+            "gained": "Gained {count}",
+            "spent": "Spent {count}",
+            "onMat": "{count} still waiting on the mat",
+            "onMatMark": "Waiting on the mat"
+        },
+        "news": {
+            "title": "News",
+            "empty": "No other news.",
+            "knockouts": "Knocked out",
+            "lost": "Lost: {items}",
+            "bankFull": "Bank full: waiting on the mat",
+            "recipes": "New recipes",
+            "finds": "First finds",
+            "levelUps": "Level-ups",
+            "depleted": "Tokens used up",
+            "kills": "Fights",
+            "killTip": {
                 "one": "{enemy}: beaten once",
                 "other": "{enemy}: beaten {count} times"
-            },
-            "usedTip": {
-                "one": "{item}: 1 used",
-                "other": "{item}: {count} used"
-            },
-            "dropTip": "{item}: {count} dropped"
+            }
+        },
+        "buttons": {
+            "return": "Return to the Guild",
+            "undo": "Load as I left it",
+            "undoTip": "Throw away the time away and load the game exactly as you left it",
+            "cancel": "Cancel",
+            "confirm": "Confirm"
+        },
+        "confirmReturn": {
+            "label": "Return to the Guild?",
+            "text": "Back to the Guild? Everything from your time away is kept."
+        },
+        "confirmUndo": {
+            "label": "Load as I left it?",
+            "text": "Load the game as you left it? Everything from your time away is lost."
         }
     },
     "orders": {

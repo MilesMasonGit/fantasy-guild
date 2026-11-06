@@ -32,74 +32,96 @@ function rows(amounts, nameOf, key) {
 }
 
 /**
- * What the Bank took in (or paid out), per item. `gained` / `spent` count the announced changes;
- * two Bank paths announce no amounts, so where the Bank's own before/after difference (`net`) is
- * larger, it is the floor.
+ * What the Bank paid out, per item: the announced amounts, raised to the Bank's own loss
+ * (`net`) where that is more, since two Bank paths announce no amounts.
  */
-function bankSide(counted, net, sign) {
+function bankSpent(counted, net) {
     const out = { ...(counted || {}) };
     for (const [id, diff] of Object.entries(net || {})) {
-        const n = sign * diff;
-        if (n > (out[id] || 0)) out[id] = n;
+        if (-diff > (out[id] || 0)) out[id] = -diff;
     }
     return out;
 }
 
 /**
- * The "While you were away" panel's content, from a catch-up's result (`CatchUp.run`). Every
- * list is empty when there is nothing to say, so the panel can leave that section out. The news
- * the banners and stubs also get once it closes (`summary.news`) are `recipes`, `finds` and
- * `bankFull`; knock-outs are the fights block's. The fights
- * are one block (`combat`, owner 2026-10-25): fights won and lost, the enemies beaten, the heroes
- * knocked out, the food and elixirs used and what the kills dropped.
+ * Every item that changed, once each: `{ itemId, name, net, gained, spent, onMat }`, from a
+ * catch-up's `summary.items` (`CatchUp.js`).
+ *
+ * `net` is how much more (or less) of it the player has, the Bank and the mat together: the
+ * Bank's own before/after difference (`items.net`) plus the loot lying on the mat's
+ * (`items.floor`). Loot that lay on the mat before and was carried to the Bank while away
+ * counts once: the Bank's gain and the mat's loss cancel.
+ *
+ * `gained` and `spent` are the hover's two halves, and always `gained − spent = net`: the
+ * announced gains (less what only moved from the mat to the Bank) or what the totals say came
+ * in, whichever is more; spent is the rest. `onMat` is how many more lie on the mat than before
+ * (with auto-collect off, most of a long absence's production).
+ *
+ * Gains first, biggest first; then losses, biggest first; an item gained and spent evenly last.
+ */
+export function itemChanges(items = {}) {
+    const net = items.net || {};
+    const floor = items.floor || {};
+    const counted = items.gained || {};
+    const paid = bankSpent(items.spent, net);
+    const ids = new Set([...Object.keys(net), ...Object.keys(floor), ...Object.keys(counted), ...Object.keys(paid)]);
+    const out = [];
+    for (const itemId of ids) {
+        const total = (net[itemId] || 0) + (floor[itemId] || 0);
+        const movedOff = Math.min(0, floor[itemId] || 0);
+        const gained = Math.max(0, (counted[itemId] || 0) + movedOff, total + Math.max(0, paid[itemId] || 0));
+        const spent = gained - total;
+        if (!gained && !spent) continue;
+        out.push({ itemId, name: itemName(itemId), net: total, gained, spent, onMat: Math.max(0, floor[itemId] || 0) });
+    }
+    const rank = (r) => (r.net > 0 ? 0 : r.net < 0 ? 1 : 2);
+    return out.sort((a, b) => rank(a) - rank(b) || Math.abs(b.net) - Math.abs(a.net) || a.name.localeCompare(b.name));
+}
+
+/**
+ * The "While you were away" panel's content, from a catch-up's result (`CatchUp.run`), in two
+ * columns. `items` is the left one (`itemChanges`). The right one is the news, in this order:
+ * `knockouts`, `bankFull`, `recipes`, `finds`, `levelUps`, `depleted`, `kills`. Every list is
+ * empty when there is nothing to say, so the panel can leave that section out; `hasNews` says
+ * whether the right column has anything at all. The news the banners and stubs also get once it
+ * closes (`summary.news`) are the knock-outs, `bankFull`, `recipes` and `finds`.
  */
 export function summaryView(result) {
     const summary = result?.summary || {};
-    const items = summary.items || {};
     const levelUps = new Map();
     for (const row of summary.levelUps || []) {
         if (!(row.to > row.from)) continue;
         if (!levelUps.has(row.heroId)) levelUps.set(row.heroId, { heroId: row.heroId, heroName: row.heroName, skills: [] });
         levelUps.get(row.heroId).skills.push({ skillId: row.skillId, skillName: row.skillName, from: row.from, to: row.to });
     }
-    const fights = summary.fightsWon || {};
-    const wounded = (summary.wounded || []).filter(w => w.times > 0);
-    const used = summary.combat || {};
-    const combat = {
-        won: Number(fights.total) || 0,
-        lost: wounded.reduce((n, w) => n + w.times, 0),
-        beaten: rows(fights.byEnemy, tokenName, 'enemyId'),
-        knockouts: wounded,
-        // Meals first, then elixirs: what the fights cost.
-        used: [...rows(used.food, itemName, 'itemId'), ...rows(used.elixirs, itemName, 'itemId')],
-        drops: rows(used.drops, itemName, 'itemId')
-    };
     const news = summary.news || {};
-    combat.shown = combat.won > 0 || combat.lost > 0 || combat.used.length > 0 || combat.drops.length > 0;
-    return {
+    // The news hears what each knock-out cost; a catch-up without it still counts them.
+    const knockouts = (news.knockouts?.length ? news.knockouts : summary.wounded || [])
+        .filter(w => w.times > 0)
+        .map(w => ({ heroId: w.heroId, heroName: w.heroName, times: w.times, lost: w.lost || [] }));
+    const view = {
         awayText: formatAway(result?.awayMs),
         droppedText: result?.droppedMs >= MINUTE
             ? `${formatAway(result.droppedMs)} past the ${formatAway(CATCH_UP.CAP_MS)} limit was skipped.`
             : null,
-        gained: rows(bankSide(items.gained, items.net, 1), itemName, 'itemId'),
-        waiting: rows(items.floor, itemName, 'itemId'),
-        spent: rows(bankSide(items.spent, items.net, -1), itemName, 'itemId'),
-        levelUps: [...levelUps.values()],
-        depleted: rows(summary.depleted?.byType, tokenName, 'typeId'),
+        items: itemChanges(summary.items),
+        /** Heroes knocked out: `{ heroId, heroName, times, lost }`, `lost` the gear it cost. */
+        knockouts,
+        /** Items a full Bank refused: they wait on the mat. */
+        bankFull: (news.bankFull || []).map(itemId => ({ itemId, name: itemName(itemId) })),
         /** Recipes unlocked, one row each in the order unlocked: `{ key, heroId, heroName, recipeId, name, itemId }`. */
         recipes: (news.recipes || []).flatMap(row => (row.recipes || []).map(r => ({
             key: `${row.heroId}|${r.id}`, heroId: row.heroId, heroName: row.heroName, recipeId: r.id, name: r.name, itemId: r.itemId
         }))),
         /** Items found for the first time, in the order found, with how many came in. */
         finds: (news.finds || []).map(f => ({ itemId: f.itemId, name: itemName(f.itemId), count: f.count })),
-        /** Items a full Bank refused: they wait on the mat. */
-        bankFull: (news.bankFull || []).map(itemId => ({ itemId, name: itemName(itemId) })),
-        wounded,
-        fightsWon: combat.won,
-        fights: combat.beaten,
-        /** The fights block: won and lost, who was beaten and knocked out, what was used and dropped. */
-        combat
+        levelUps: [...levelUps.values()],
+        depleted: rows(summary.depleted?.byType, tokenName, 'typeId'),
+        /** The fights: each enemy beaten, with how many times. */
+        kills: rows(summary.fightsWon?.byEnemy, tokenName, 'enemyId')
     };
+    view.hasNews = ['knockouts', 'bankFull', 'recipes', 'finds', 'levelUps', 'depleted', 'kills'].some(k => view[k].length > 0);
+    return view;
 }
 
 /** The loading bar's title: `Catching up on 3 h 12 min away`. */

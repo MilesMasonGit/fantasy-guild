@@ -16,8 +16,10 @@ import { PixelGlyph } from './PixelGlyph.jsx';
  * Layout: [ Sprite (32px, scales to 64px on hover overflowing) | Name + Subtitle | Quantity /
  * Chance (crossfades on hover) ]
  * `amount` shows a count abbreviated (`+5.9k`, after `sign`) that crossfades to the exact number
- * (`+5,900`) on hover; `countText` shows its text as given. `icon` replaces the sprite (a skill's
- * icon). `wrap` lets a long name run onto a second line instead of being cut off (a narrow card).
+ * (`+5,900`) on hover, coloured by `countClassName` when given; `countText` shows its text as
+ * given. `icon` replaces the sprite (a skill's icon). `badge` stands just before the count (a
+ * small mark). `wrap` lets a long name run onto a second line instead of being cut off (a narrow
+ * card).
  * Other props (data attributes, `style`) go on the bar.
  */
 export const EntityRibbon = ({
@@ -46,7 +48,9 @@ export const EntityRibbon = ({
     amount,
     sign = '×',
     countText,
+    countClassName,
     icon,
+    badge,
     wrap = false,
     className,
     ...rest
@@ -229,6 +233,8 @@ export const EntityRibbon = ({
                 )}
             </div>
 
+            {badge}
+
             {(!compact || hasCount) && (
             <div className={cn('relative flex flex-col items-end justify-center shrink-0 tabular-nums', !compact && 'min-w-[3.5rem]')}>
                 {hasAmount ? (
@@ -236,13 +242,13 @@ export const EntityRibbon = ({
                     <div className="grid justify-items-end">
                         <span
                             data-item-bar-count
-                            className={cn(sizeConfig.text, 'col-start-1 row-start-1 font-bold tracking-tight text-gi-text transition-all duration-200 group-hover:opacity-0 group-hover:-translate-y-1')}
+                            className={cn(sizeConfig.text, 'col-start-1 row-start-1 font-bold tracking-tight transition-all duration-200 group-hover:opacity-0 group-hover:-translate-y-1', countClassName || 'text-gi-text')}
                         >
                             {sign}{formatCompact(amount, 1)}
                         </span>
                         <span
                             data-item-bar-count-exact
-                            className={cn(sizeConfig.text, 'col-start-1 row-start-1 font-bold tracking-tight text-white opacity-0 translate-y-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-0')}
+                            className={cn(sizeConfig.text, 'col-start-1 row-start-1 font-bold tracking-tight opacity-0 translate-y-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-0', countClassName || 'text-white')}
                         >
                             {sign}{Math.round(amount).toLocaleString('en-US')}
                         </span>

@@ -5,6 +5,14 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **"While you were away" in two columns** (brief 440 A1): the items on the left, each item once
+  with its net change in green or red (gained and spent on hover, a small mark on loot still on
+  the mat), the news on the right (knock-outs, the Bank refusing items, new recipes, first finds,
+  level-ups, Tokens used up, then each enemy beaten with its kill count). Wider, still fitting a
+  1366 screen; the heading centred; each column scrolls with the arrow bars. Return to the Guild
+  and Load as I left it both ask first; Esc asks the same as Return. QA panel, Notifications: two
+  display-only buttons show the summary with every section, and with nothing to say.
+
 - **Dragging a hero over a Token shows who could work it** (brief 490). While the carried hero is over a Token, every hero shows two marks, over their figure on the mat, on their hero bar card and beside the carried flag: the tool the Token needs (their own fitting tool, else the lowest tier that will do) and the skill with their level on it, each outlined green when they pass and red, drawn darker, when they don't. Pass and fail are the game's own level and tool checks, read one by one (water takes any of its tool kinds). A Token with no tool need shows the skill alone; one naming no skill shows nothing. Over an enemy each hero shows what they hold in their hands, with no outline. Hero speech on the mat and the bar's bubbles step aside while the marks show and come back after. The marks are worked out once as the pointer enters a Token and nothing is drawn while no hero is carried. QA panel, Hero orders: **Drag hints scene** lays a Silver Vein, a Mythril Vein, an Oak Tree, a Redberry Bush, the Coast and a Goblin with five heroes holding different tools.
 
 - **Clicking an item in the Bank opens its window at the Bank's foot** (brief 400 B3): the item's sprite large (4×) so it can be examined closely, its count, type and tags, everything the tooltip no longer shows (a weapon's stats, resists, what it restores, the description), how many the guild has collected this run, and a book button to its Encyclopedia page. Its X, Escape or a second click closes it. A press that moves 8 px is still a drag, and the click that ends a drag opens nothing; Select mode still selects with a click. The Bank's tooltip now says "Click for details" and leaves the details to the window.

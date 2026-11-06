@@ -7,6 +7,7 @@ import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
 import * as SkillSystem from '../../systems/hero/SkillSystem.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
 import { getAllItems } from '../../config/registries/itemRegistry.js';
+import { getAllTokenTypes } from '../../config/registries/tokenRegistry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import { ROUTES } from '../../systems/notifications/routing.js';
 import * as Banners from '../../systems/notifications/banners.js';
@@ -195,3 +196,60 @@ export async function longTimeAwayWithNews() {
     return (await awayWithNews(180, { levelUps: 4, finds: 10, refused: 3, knockouts: 4 }))
         || 'Played 3 hours away with lots of news: close the summary, one banner per kind, at most 6 stubs';
 }
+
+// --- The away summary's look, every section at once ------------------------------------------
+
+const capitalise = (s) => String(s || '').replace(/^./, c => c.toUpperCase());
+
+/**
+ * A made-up time away, for the summary's look only: nothing in the game changes. Built from this
+ * save's own heroes, items and enemies, so every sprite is real. `full` fills every column with
+ * many rows (both columns overflow at 1366 x 768); otherwise only time passed. Closing it raises
+ * banners for its made-up news, as a real one would; "Load as I left it" is not offered.
+ */
+function previewAway({ full }) {
+    if (!GameState.state) return 'Start or load a game first';
+    if (CatchUp.isRunning()) return 'A catch-up is already playing';
+    const items = Object.values(getAllItems() || {}).filter(i => i?.id && !i.id.includes('coin')).slice(0, 26).map(i => i.id);
+    const enemies = Object.entries(getAllTokenTypes() || {}).filter(([, d]) => d?.tokenType === 'enemy').map(([id]) => id);
+    const others = Object.entries(getAllTokenTypes() || {}).filter(([, d]) => d?.tokenType === 'resource').map(([id]) => id);
+    // A new game has no heroes yet: two made-up ones then, so the hero rows show too.
+    const hs = heroes().length ? heroes() : [
+        { id: 'qa_away_aela', name: 'Aela', skills: { mining: { level: 12 }, forestry: { level: 4 } } },
+        { id: 'qa_away_bram', name: 'Bram', skills: { melee: { level: 7 } } }
+    ];
+    const summary = { items: { gained: {}, spent: {}, net: {}, floor: {} }, levelUps: [], depleted: { total: 0, byType: {} },
+        wounded: [], fightsWon: { total: 0, byEnemy: {} }, combat: { food: {}, elixirs: {}, drops: {} }, news: null };
+    if (full) {
+        const it = summary.items;
+        items.forEach((id, i) => {
+            const n = (i + 1) * 37 + (i % 3) * 900;
+            if (i % 5 === 0) { it.floor[id] = n; return; }                                // waiting on the mat
+            if (i % 5 === 1) { it.gained[id] = n; it.spent[id] = Math.round(n / 3); it.net[id] = n - Math.round(n / 3); return; }
+            if (i % 5 === 2) { it.spent[id] = n; it.net[id] = -n; return; }               // spent only
+            if (i % 5 === 3) { it.gained[id] = n; it.spent[id] = n; return; }             // even: ±0
+            it.gained[id] = n; it.net[id] = n;
+        });
+        summary.levelUps = hs.flatMap(h => Object.entries(h.skills || {}).slice(0, 3).map(([skillId, s]) => ({
+            heroId: h.id, heroName: h.name, skillId, skillName: capitalise(skillId), from: s.level, to: s.level + 2
+        })));
+        others.slice(0, 4).forEach((id, i) => { summary.depleted.byType[id] = i + 1; summary.depleted.total += i + 1; });
+        enemies.forEach((id, i) => { summary.fightsWon.byEnemy[id] = 3 + i * 4; summary.fightsWon.total += 3 + i * 4; });
+        const recipes = listRecipes().slice(0, 3);
+        summary.news = {
+            recipes: hs[0] ? [{ heroId: hs[0].id, heroName: hs[0].name, skillId: recipes[0]?.skill, recipes: recipes.map(r => ({ id: r.id, name: r.name || r.id, itemId: r.outputs?.[0]?.itemId || null })) }] : [],
+            finds: items.slice(-3).map((itemId, i) => ({ itemId, count: i + 1 })),
+            bankFull: items.slice(4, 6),
+            knockouts: hs.slice(0, 2).map((h, i) => ({ heroId: h.id, heroName: h.name, times: i + 1, lost: i ? [] : ['Copper Sword'] }))
+        };
+    }
+    const awayMs = full ? 9 * 3600_000 + 41 * 60_000 : 32 * 60_000;
+    EventBus.publish(ENGINE_EVENTS.CATCH_UP_FINISHED, { awayMs, simulatedMs: awayMs, droppedMs: 0, steps: 0, wallMs: 0, show: true, summary });
+    // The hero bar keeps a shown catch-up's level-ups for the next reset: a quiet, empty one after
+    // it makes sure these made-up ones never reach a hero.
+    EventBus.publish(ENGINE_EVENTS.CATCH_UP_FINISHED, { awayMs: 0, simulatedMs: 0, droppedMs: 0, steps: 0, wallMs: 0, show: false, summary: null });
+    return full ? 'Made-up time away, every section (display only)' : 'Made-up time away with nothing to say (display only)';
+}
+
+export const previewAwayFull = () => previewAway({ full: true });
+export const previewAwayEmpty = () => previewAway({ full: false });

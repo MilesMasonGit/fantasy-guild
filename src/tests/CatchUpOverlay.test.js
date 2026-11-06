@@ -3,11 +3,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { EventBus } from '../systems/core/EventBus.js';
-import { ENGINE_EVENTS, HEARD_WHILE_QUIET } from '../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS, HEARD_WHILE_QUIET } from '../systems/core/engineEvents.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { CatchUpOverlay } from '../ui/components/hud/CatchUpOverlay.jsx';
-import { formatAway, summaryView, catchUpTitle } from '../ui/components/hud/catchUpSummary.js';
+import { formatAway, summaryView, catchUpTitle, itemChanges } from '../ui/components/hud/catchUpSummary.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
 
 // The summary's undo button asks the catch-up driver; here it is a stand-in.
@@ -19,7 +19,8 @@ vi.mock('../systems/core/CatchUp.js', () => ({
 
 /**
  * The catch-up's loading bar and the "While you were away" summary: shown only for a catch-up
- * long enough to `show`, driven by the catch-up's own events, and closed only by the player.
+ * long enough to `show`, driven by the catch-up's own events, and closed only by the player, who
+ * is asked first either way.
  */
 
 const MIN = 60 * 1000;
@@ -52,9 +53,9 @@ const fullResult = () => ({
     summary: {
         items: {
             gained: { fixture_cu_ore: 5900, fixture_cu_log: 40 },
-            spent: { fixture_cu_seed: 12 },
+            spent: { fixture_cu_seed: 12, fixture_cu_ore: 400 },
             // The Bank's own difference: more logs than were announced (a silent Bank path).
-            net: { fixture_cu_ore: 5900, fixture_cu_log: 55, fixture_cu_seed: -12 },
+            net: { fixture_cu_ore: 5500, fixture_cu_log: 55, fixture_cu_seed: -12 },
             floor: { fixture_cu_pelt: 7, fixture_cu_log: -3 }
         },
         levelUps: [
@@ -64,7 +65,7 @@ const fullResult = () => ({
         ],
         depleted: { total: 3, byType: { fixture_cu_rock: 3 } },
         wounded: [{ heroId: 'h2', heroName: 'Bram', times: 2 }],
-        fightsWon: { total: 9, byEnemy: { fixture_cu_wolf: 9 } },
+        fightsWon: { total: 11, byEnemy: { fixture_cu_wolf: 9, fixture_cu_rock: 2 } },
         combat: {
             food: { fixture_cu_meal: 14 },
             elixirs: { fixture_cu_elixir: 2 },
@@ -77,7 +78,7 @@ const fullResult = () => ({
             ] }],
             finds: [{ itemId: 'fixture_cu_pelt', count: 9 }],
             bankFull: ['fixture_cu_log'],
-            knockouts: [{ heroId: 'h2', heroName: 'Bram', times: 2, lost: [] }]
+            knockouts: [{ heroId: 'h2', heroName: 'Bram', times: 2, lost: ['Copper Sword'] }]
         }
     }
 });
@@ -172,111 +173,154 @@ describe('the catch-up loading bar', () => {
 });
 
 describe('"While you were away"', () => {
-    it('renders every section from a full result', () => {
+    const column = (id) => q(`[data-summary-column="${id}"]`);
+    const sectionsIn = (id) => [...column(id).querySelectorAll('[data-summary-section]')].map(s => s.getAttribute('data-summary-section'));
+    const itemRow = (id) => q(`[data-summary-section="items"] [data-item-id="${id}"]`);
+
+    it('two columns: the items on the left, the news on the right', () => {
         start();
         finish(fullResult());
-        expect(text('[data-summary-away]')).toBe('You were away 3 h 12 min.');
-        expect(q('[data-summary-dropped]')).toBeNull();
-
-        // The Bank's gain: announced amounts, raised to the Bank's own difference where that is more.
-        expect(bar('gained', 'data-item-id', 'fixture_cu_ore')).toEqual({ name: 'Fixture Ore', short: '+5.9k', exact: '+5,900' });
-        expect(bar('gained', 'data-item-id', 'fixture_cu_log')).toEqual({ name: 'Fixture Log', short: '+55', exact: '+55' });
-        // Loot left on the mat; loot that left the mat is not a gain.
-        expect(bar('waiting', 'data-item-id', 'fixture_cu_pelt')).toEqual({ name: 'Fixture Pelt', short: '+7', exact: '+7' });
-        expect(q('[data-summary-section="waiting"] [data-item-id="fixture_cu_log"]')).toBeNull();
-
-        expect(bar('spent', 'data-item-id', 'fixture_cu_seed')).toEqual({ name: 'Fixture Seed', short: '−12', exact: '−12' });
-
-        // One bar per hero and skill.
-        const level = (hero, skill) => barText(q(`[data-summary-hero="${hero}"][data-skill-id="${skill}"]`));
-        expect(level('h1', 'mining')).toEqual({ name: 'Aela Mining', short: '50 → 51', exact: null });
-        expect(level('h1', 'logging')).toEqual({ name: 'Aela Logging', short: '12 → 15', exact: null });
-        expect(level('h2', 'melee')).toEqual({ name: 'Bram Melee', short: '3 → 4', exact: null });
-
-        expect(bar('depleted', 'data-type-id', 'fixture_cu_rock')).toEqual({ name: 'Fixture Rock', short: '×3', exact: '×3' });
-
-        // The fights: one compact block (owner, 2026-10-25): won and lost, then a line each.
-        expect(text('[data-summary-fight-tally]')).toBe('9 won · 2 lost');
-        const pill = (row, attr, id) => text(`[data-summary-fight-row="${row}"] [${attr}="${id}"]`);
-        expect(pill('beaten', 'data-type-id', 'fixture_cu_wolf')).toBe('×9');
-        expect(pill('knockedOut', 'data-hero-id', 'h2')).toBe('Bram×2');      // two spans: the name, then the count
-        expect(pill('used', 'data-item-id', 'fixture_cu_meal')).toBe('×14');
-        expect(pill('used', 'data-item-id', 'fixture_cu_elixir')).toBe('×2');
-        expect(pill('drops', 'data-item-id', 'fixture_cu_pelt')).toBe('×9');
-        // Meals before elixirs: what the fights cost.
-        const used = [...document.querySelectorAll('[data-summary-fight-row="used"] [data-summary-pill]')].map(p => p.getAttribute('data-item-id'));
-        expect(used).toEqual(['fixture_cu_meal', 'fixture_cu_elixir']);
+        const body = q('[data-summary-body]');
+        expect(body.className).toMatch(/\bgrid-cols-2\b/);
+        expect([...body.children].map(c => c.getAttribute('data-summary-column'))).toEqual(['items', 'news']);
+        expect(sectionsIn('items')).toEqual(['items']);
     });
 
-    it('what the banners and stubs also say after it closes: new recipes, first finds, the Bank refusing items', () => {
+    it('the news in the brief\'s order: knock-outs and items lost, recipes, finds, level-ups, Tokens used up, fights', () => {
         start();
         finish(fullResult());
+        expect(sectionsIn('news')).toEqual(['knockouts', 'bankFull', 'recipes', 'finds', 'levels', 'depleted', 'kills']);
+        const headings = [...column('news').querySelectorAll('[data-summary-heading]')].map(h => h.textContent);
+        expect(headings).toEqual(['Knocked out', 'Bank full: waiting on the mat', 'New recipes', 'First finds', 'Level-ups', 'Tokens used up', 'Fights']);
+    });
+
+    it('the heading is centred: While you were away, then how long', () => {
+        start();
+        finish(fullResult());
+        expect(q('[data-summary-header]').className).toMatch(/\btext-center\b/);
+        expect(text('[data-catch-up-summary] [role="heading"]')).toBe('While you were away');
+        expect(text('[data-summary-away]')).toBe('You were away 3 h 12 min');
+        expect(q('[data-summary-dropped]')).toBeNull();
+    });
+
+    it('each item once, its net in green or red: the Bank and the mat together', () => {
+        start();
+        finish(fullResult());
+        const ids = [...column('items').querySelectorAll('[data-item-bar]')].map(r => r.getAttribute('data-item-id'));
+        // Gains biggest first, then losses.
+        expect(ids).toEqual(['fixture_cu_ore', 'fixture_cu_log', 'fixture_cu_pelt', 'fixture_cu_seed']);
+        // Gained 5,900 and spent 400: one row, +5,500.
+        expect(barText(itemRow('fixture_cu_ore'))).toEqual({ name: 'Fixture Ore', short: '+5.5k', exact: '+5,500' });
+        // The Bank's 55 (more than announced) less the 3 that left the mat for it.
+        expect(barText(itemRow('fixture_cu_log'))).toEqual({ name: 'Fixture Log', short: '+52', exact: '+52' });
+        expect(barText(itemRow('fixture_cu_pelt'))).toEqual({ name: 'Fixture Pelt', short: '+7', exact: '+7' });
+        expect(barText(itemRow('fixture_cu_seed'))).toEqual({ name: 'Fixture Seed', short: '−12', exact: '−12' });
+        const colour = (id) => itemRow(id).querySelector('[data-item-bar-count]').className;
+        expect(colour('fixture_cu_ore')).toContain('text-gi-success');
+        expect(colour('fixture_cu_seed')).toContain('text-gi-danger');
+        expect(colour('fixture_cu_seed')).not.toContain('text-gi-text');
+    });
+
+    it('hovering an item says what was gained and spent, and how many wait on the mat', () => {
+        start();
+        finish(fullResult());
+        const tipOf = (id) => {
+            act(() => { fireEvent.pointerEnter(itemRow(id), { clientX: 10, clientY: 10 }); });
+            const tip = [...q('[data-tooltip]').querySelectorAll('.ui-text-title, .ui-text-body')].map(d => d.textContent);
+            act(() => { fireEvent.pointerLeave(itemRow(id)); });
+            return tip;
+        };
+        expect(tipOf('fixture_cu_ore')).toEqual(['Fixture Ore', 'Gained 5,900', 'Spent 400']);
+        expect(tipOf('fixture_cu_seed')).toEqual(['Fixture Seed', 'Spent 12']);
+        expect(tipOf('fixture_cu_pelt')).toEqual(['Fixture Pelt', 'Gained 7', '7 still waiting on the mat']);
+        // No browser tip on top of ours.
+        expect(itemRow('fixture_cu_ore').getAttribute('title')).toBeNull();
+    });
+
+    it('an item still waiting on the mat keeps a small mark; the others have none', () => {
+        start();
+        finish(fullResult());
+        expect(itemRow('fixture_cu_pelt').querySelector('[data-summary-on-mat]')).not.toBeNull();
+        expect(itemRow('fixture_cu_pelt').querySelector('[data-summary-on-mat]').getAttribute('aria-label')).toBe('Waiting on the mat');
+        for (const id of ['fixture_cu_ore', 'fixture_cu_log', 'fixture_cu_seed']) {
+            expect(itemRow(id).querySelector('[data-summary-on-mat]'), id).toBeNull();
+        }
+    });
+
+    it('knock-outs say how many times and what they cost; the Bank refusing items, recipes and first finds as before', () => {
+        start();
+        finish(fullResult());
+        const ko = q('[data-summary-section="knockouts"] [data-hero-id="h2"]');
+        expect(barText(ko)).toEqual({ name: 'Bram', short: '×2', exact: null });
+        expect(ko.textContent).toContain('Lost: Copper Sword');
+        expect(ko.querySelector('[data-glyph="down"]')).not.toBeNull();
         const recipe = (id) => barText(q(`[data-summary-section="recipes"] [data-recipe-id="${id}"]`));
         expect(recipe('r_cu_bar')).toEqual({ name: 'Fixture Bar', short: 'Aela', exact: null });
         expect(recipe('r_cu_plank')).toEqual({ name: 'Fixture Plank', short: 'Aela', exact: null });
         expect(bar('finds', 'data-item-id', 'fixture_cu_pelt')).toEqual({ name: 'Fixture Pelt', short: '+9', exact: '+9' });
         expect(bar('bankFull', 'data-item-id', 'fixture_cu_log')).toEqual({ name: 'Fixture Log', short: null, exact: null });
-        // A knock-out is the fights block's, as before.
-        expect(text('[data-summary-fight-row="knockedOut"] [data-hero-id="h2"]')).toBe('Bram×2');
     });
 
-    it('the fights block leaves out a line with nothing, and shows for a knockout alone', () => {
+    it('a knock-out the news did not hear still shows, from the fights\' own count', () => {
         start();
         const r = emptyResult();
         r.summary.wounded = [{ heroId: 'h1', heroName: 'Aela', times: 1 }];
         finish(r);
-        expect(text('[data-summary-fight-tally]')).toBe('0 won · 1 lost');
-        expect([...document.querySelectorAll('[data-summary-fight-row]')].map(e => e.getAttribute('data-summary-fight-row'))).toEqual(['knockedOut']);
+        expect(barText(q('[data-summary-section="knockouts"] [data-hero-id="h1"]'))).toEqual({ name: 'Aela', short: '×1', exact: null });
+        expect(sectionsIn('news')).toEqual(['knockouts']);
     });
 
-    it('headings in plain words', () => {
+    it('level-ups and Tokens used up', () => {
         start();
         finish(fullResult());
-        const headings = [...document.querySelectorAll('[data-summary-section]')]
-            .map(s => [s.getAttribute('data-summary-section'), s.querySelector('[data-summary-heading]')?.textContent]);
-        expect(headings).toEqual([
-            ['waiting', 'Items produced'],
-            ['gained', 'Items banked'],
-            ['spent', 'Items spent'],
-            ['levels', 'Level-ups'],
-            ['recipes', 'New recipes'],
-            ['finds', 'First finds'],
-            ['bankFull', 'Bank full: waiting on the mat'],
-            ['depleted', 'Tokens used up'],
-            ['fights', 'Fights']
-        ]);
-        expect(text('[data-catch-up-summary] [role="heading"]')).toBe('While you were away');
+        const level = (hero, skill) => barText(q(`[data-summary-hero="${hero}"][data-skill-id="${skill}"]`));
+        expect(level('h1', 'mining')).toEqual({ name: 'Aela Mining', short: '50 → 51', exact: null });
+        expect(level('h1', 'logging')).toEqual({ name: 'Aela Logging', short: '12 → 15', exact: null });
+        expect(level('h2', 'melee')).toEqual({ name: 'Bram Melee', short: '3 → 4', exact: null });
+        expect(bar('depleted', 'data-type-id', 'fixture_cu_rock')).toEqual({ name: 'Fixture Rock', short: '×3', exact: '×3' });
     });
 
-    it('leaves empty sections out instead of showing zeros', () => {
+    it('the fights are only each enemy and its kill count, most first; won, lost, used and drops are gone', () => {
+        start();
+        finish(fullResult());
+        const kills = [...q('[data-summary-section="kills"]').querySelectorAll('[data-item-bar]')];
+        expect(kills.map(barText)).toEqual([
+            { name: 'Fixture Wolf', short: '×9', exact: '×9' },
+            { name: 'Fixture Rock', short: '×2', exact: '×2' }
+        ]);
+        expect(kills[0].getAttribute('title')).toBe('Fixture Wolf: beaten 9 times');
+        expect(kills[0].querySelector('[data-item-bar-sprite] img')).not.toBeNull();
+        const panel = q('[data-catch-up-summary]').textContent;
+        for (const gone of ['won', 'lost ·', 'Used', 'Drops', 'Fixture Meal', 'Fixture Elixir']) expect(panel).not.toContain(gone);
+        expect(q('[data-summary-fight-tally]')).toBeNull();
+        expect(q('[data-summary-pill]')).toBeNull();
+    });
+
+    it('a return with nothing to say: both columns say so in one muted line, and no zeros', () => {
         start(45 * MIN);
         finish(emptyResult());
-        expect(text('[data-summary-away]')).toBe('You were away 45 min.');
-        expect(document.querySelectorAll('[data-summary-section]').length).toBe(0);
+        expect(text('[data-summary-away]')).toBe('You were away 45 min');
+        expect(sectionsIn('items')).toEqual(['items']);
+        expect(sectionsIn('news')).toEqual(['news']);
+        expect(text('[data-summary-column="items"] [data-summary-empty]')).toBe('No items gained or spent.');
+        expect(text('[data-summary-column="news"] [data-summary-empty]')).toBe('No other news.');
+        expect(q('[data-catch-up-summary] [data-item-bar]')).toBeNull();
         expect(q('[data-catch-up-summary]').textContent).not.toMatch(/\b0\b/);
+    });
+
+    it('a section with nothing is left out', () => {
+        start();
+        const r = emptyResult();
+        r.summary.levelUps = [{ heroId: 'h1', heroName: 'Aela', skillId: 'mining', skillName: 'Mining', from: 3, to: 4 }];
+        finish(r);
+        expect(sectionsIn('news')).toEqual(['levels']);
     });
 
     it('says how much past the 24 h cap was not played', () => {
         start(30 * HOUR);
         finish({ ...emptyResult(), awayMs: 30 * HOUR, simulatedMs: 24 * HOUR, droppedMs: 6 * HOUR });
-        expect(text('[data-summary-away]')).toBe('You were away 30 h.');
+        expect(text('[data-summary-away]')).toBe('You were away 30 h');
         expect(text('[data-summary-dropped]')).toBe('6 h past the 24 h limit was skipped.');
-    });
-
-    it('closes with its button', () => {
-        start();
-        finish(fullResult());
-        act(() => { fireEvent.click(q('[data-summary-close]')); });
-        expect(q('[data-catch-up-summary]')).toBeNull();
-    });
-
-    it('closes with Esc, which means Return to the Guild: nothing is undone', () => {
-        start();
-        finish(fullResult());
-        escape();
-        expect(q('[data-catch-up-summary]')).toBeNull();
-        expect(CatchUp.undoLast).not.toHaveBeenCalled();
-        expect(CatchUp.forgetUndo).toHaveBeenCalledTimes(1);
     });
 
     it('nothing else closes it: a click on the backdrop or the panel leaves it', () => {
@@ -293,82 +337,62 @@ describe('"While you were away"', () => {
         finish(fullResult());
         start(90 * 1000, false);
         finish({ ...emptyResult(), awayMs: 90 * 1000, show: false });
-        expect(text('[data-summary-away]')).toBe('You were away 3 h 12 min.');
+        expect(text('[data-summary-away]')).toBe('You were away 3 h 12 min');
     });
 });
 
-describe('the summary\'s Item Bars', () => {
+describe('the summary\'s Item Bars and columns', () => {
     const bars = () => [...document.querySelectorAll('[data-catch-up-summary] [data-item-bar]')];
 
-    it('every item, Token and level-up is an Item Bar, one per line; the fights are one compact block of pills', () => {
+    it('every item, knock-out, Token, level-up and enemy is an Item Bar, one per line', () => {
         start();
         finish(fullResult());
-        const sections = ['waiting', 'gained', 'spent', 'levels', 'recipes', 'finds', 'bankFull', 'depleted'];
-        for (const id of sections) {
-            const list = q(`[data-summary-section="${id}"] [data-summary-list]`);
-            expect(list, id).not.toBeNull();
-            // One column: no grid splitting the bars into two.
+        for (const section of document.querySelectorAll('[data-summary-section]')) {
+            const id = section.getAttribute('data-summary-section');
+            const list = section.querySelector('[data-summary-list]');
             expect(list.className, id).not.toMatch(/\bgrid\b/);
             expect(list.children.length, id).toBeGreaterThan(0);
             for (const child of list.children) expect(child.hasAttribute('data-item-bar'), id).toBe(true);
         }
-        // 1 waiting, 2 gained, 1 spent, 3 level-ups, 2 recipes, 1 first find, 1 Bank full, 1 depleted.
-        expect(bars()).toHaveLength(12);
-        // The fights block: a line per kind, each a row of pills (a sprite and a count), no Item Bars.
-        const block = q('[data-summary-section="fights"]');
-        expect(block.querySelectorAll('[data-item-bar]')).toHaveLength(0);
-        expect(block.querySelectorAll('[data-summary-fight-row]')).toHaveLength(4);
-        expect(block.querySelectorAll('[data-summary-pill]')).toHaveLength(5);
-        // The old bespoke row is gone.
-        expect(q('[data-catch-up-summary] [data-item-row]')).toBeNull();
+        // 4 items; 1 knock-out, 1 Bank full, 2 recipes, 1 first find, 3 level-ups, 1 used up, 2 enemies.
+        expect(bars()).toHaveLength(15);
     });
 
     it('an item\'s bar is the Token inspection\'s: its sprite zooms on hover, its count is short until hovered', () => {
         start();
         finish(fullResult());
-        const ore = q('[data-summary-section="gained"] [data-item-id="fixture_cu_ore"]');
-        expect(ore.hasAttribute('data-item-bar')).toBe(true);
-        // The hover is the bar's own (`group`): the sprite doubles, the counts swap.
+        const ore = q('[data-summary-section="items"] [data-item-id="fixture_cu_ore"]');
         expect(ore.className).toMatch(/(^|\s)group(\s|$)/);
         const sprite = ore.querySelector('[data-item-bar-sprite]');
         expect(sprite.className).toContain('group-hover:scale-[2]');
         expect(sprite.querySelector('img')).not.toBeNull();
-
+        const classes = (el) => el.className.split(/\s+/);
         const short = ore.querySelector('[data-item-bar-count]');
         const exact = ore.querySelector('[data-item-bar-count-exact]');
-        expect(short.textContent).toBe('+5.9k');
-        expect(exact.textContent).toBe('+5,900');
-        // At rest the short count shows and the exact one is hidden; hovered, the other way round.
-        const classes = (el) => el.className.split(/\s+/);
-        expect(classes(short)).not.toContain('opacity-0');
         expect(classes(short)).toContain('group-hover:opacity-0');
         expect(classes(exact)).toContain('opacity-0');
         expect(classes(exact)).toContain('group-hover:opacity-100');
     });
 
-    it('the bars are wider here than in the Token inspection, inside a list that scrolls', () => {
+    it('wider than before, each column its own arrow list with no scroll bar', () => {
         start();
         finish(fullResult());
         const panel = q('[data-catch-up-summary]');
-        expect(panel.className).toMatch(/w-\[2[6-9]rem\]|w-\[3\drem\]/);
-        const body = q('[data-summary-body]');
-        expect(body.className).toContain('overflow-y-auto');
-        expect(body.className).toContain('min-h-0');
-        // Room on every side for a hovered sprite's zoom, which the scrolling list would clip.
-        expect(body.className).toMatch(/\bpx-3\b/);
-    });
-
-    it('Tokens used up and the enemies beaten show the Token\'s sprite; level-ups the skill\'s icon', () => {
-        start();
-        finish(fullResult());
-        const rock = q('[data-summary-section="depleted"] [data-type-id="fixture_cu_rock"]');
-        expect(rock.querySelector('[data-item-bar-sprite] img')).not.toBeNull();
-        const wolf = q('[data-summary-section="fights"] [data-type-id="fixture_cu_wolf"]');
-        expect(wolf.querySelector('img')).not.toBeNull();
-        const mining = q('[data-summary-hero="h1"][data-skill-id="mining"]');
-        expect(mining.hasAttribute('data-item-bar')).toBe(true);
-        expect(mining.querySelector('[data-item-bar-sprite]')).not.toBeNull();
-        expect(q('[data-summary-section="fights"] [data-hero-id="h2"] [data-glyph="down"]')).not.toBeNull();
+        const width = Number(panel.className.match(/\bw-\[(\d+)rem\]/)?.[1]);
+        // Two columns of about the old one's width, and under 1366 px wide at 16 px a rem.
+        expect(width).toBeGreaterThanOrEqual(48);
+        expect(width * 16).toBeLessThan(1366 - 32);
+        expect(panel.className).toContain('max-w-full');
+        for (const id of ['items', 'news']) {
+            const list = q(`[data-summary-column="${id}"] [data-scroll-list]`);
+            expect(list, id).not.toBeNull();
+            expect(list.className, id).toContain('[scrollbar-width:none]');
+            expect(list.className, id).toContain('min-h-0');
+            // Room on every side for a hovered sprite's zoom, which the scrolling list would clip.
+            expect(list.className, id).toMatch(/\bpx-3\b/);
+            expect(list.className, id).toMatch(/\bpb-3\b/);
+        }
+        expect(q('[data-catch-up-summary] .custom-scrollbar')).toBeNull();
     });
 
     it('slide in one after another, and the entrance classes come off once it has played', () => {
@@ -376,15 +400,15 @@ describe('the summary\'s Item Bars', () => {
         start();
         finish(fullResult());
         const animated = () => document.querySelectorAll('[data-catch-up-summary] .catch-up-row-in');
-        // The bars, the 8 headings, and the fights block's heading line and its 4 lines.
-        expect(animated().length).toBe(bars().length + 8 + 1 + 4);
+        // The bars and the 8 headings.
+        expect(animated().length).toBe(bars().length + 8);
         const delays = bars().map(r => parseFloat(r.style.animationDelay));
         expect(delays[1]).toBeGreaterThan(delays[0]);
         expect(delays[2]).toBeGreaterThan(delays[1]);
         act(() => { vi.advanceTimersByTime(5000); });
         expect(animated().length).toBe(0);
         expect(bars().every(r => !r.style.animationDelay)).toBe(true);
-        expect(bars()).toHaveLength(12);
+        expect(bars()).toHaveLength(15);
     });
 });
 
@@ -396,26 +420,15 @@ describe('the buttons', () => {
         const undo = q('[data-summary-undo]');
         expect(close.textContent).toBe('Return to the Guild');
         expect(undo.textContent).toBe('Load as I left it');
-        // Each is the kit's button: a chamfer frame around the <button>.
         const closeFrame = close.closest('[data-kit-button]');
         const undoFrame = undo.closest('[data-kit-button]');
         const stack = closeFrame.parentElement;
         expect(undoFrame.parentElement).toBe(stack);
         expect(stack.className).toMatch(/\bflex-col\b/);
         expect([...stack.children]).toEqual([closeFrame, undoFrame]);
-        // The primary choice is the main action (gold words); the other is plain.
         expect(closeFrame.getAttribute('data-kit-button')).toBe('main');
         expect(undoFrame.getAttribute('data-kit-button')).toBe('plain');
         expect(document.activeElement).toBe(close);
-    });
-
-    it('Return to the Guild keeps the catch-up and lets the undo go', () => {
-        start();
-        finish(fullResult());
-        act(() => { fireEvent.click(q('[data-summary-close]')); });
-        expect(q('[data-catch-up-summary]')).toBeNull();
-        expect(CatchUp.undoLast).not.toHaveBeenCalled();
-        expect(CatchUp.forgetUndo).toHaveBeenCalledTimes(1);
     });
 
     it('Load as I left it is not offered when there is nothing to go back to', () => {
@@ -433,7 +446,71 @@ describe('the buttons', () => {
     });
 });
 
-describe('"Load as I left it" asks first', () => {
+describe('"Return to the Guild" asks first, in plain words', () => {
+    const askToReturn = () => {
+        start();
+        finish(fullResult());
+        act(() => { fireEvent.click(q('[data-summary-close]')); });
+    };
+
+    it('one click only asks: nothing closes, nothing is let go', () => {
+        askToReturn();
+        expect(q('[data-catch-up-summary]')).not.toBeNull();
+        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+        const ask = q('[data-summary-confirm="return"]');
+        expect(ask.getAttribute('role')).toBe('alertdialog');
+        expect(ask.textContent).toContain('Everything from your time away is kept.');
+        expect(ask.textContent).not.toMatch(/lost/i);
+        expect(q('[data-summary-confirm-yes]').textContent).toBe('Return to the Guild');
+        expect(q('[data-summary-confirm-yes]').closest('[data-kit-button]').getAttribute('data-kit-button')).toBe('main');
+        // Going on loses nothing, so Enter goes on.
+        expect(document.activeElement).toBe(q('[data-summary-confirm-yes]'));
+    });
+
+    it('Cancel puts the two buttons back', () => {
+        askToReturn();
+        act(() => { fireEvent.click(q('[data-summary-confirm-no]')); });
+        expect(q('[data-summary-confirm]')).toBeNull();
+        expect(q('[data-summary-close]')).not.toBeNull();
+        expect(q('[data-summary-undo]')).not.toBeNull();
+        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+    });
+
+    it('confirming closes it, keeps the catch-up and only then lets the banners come', () => {
+        const closed = vi.fn();
+        const off = EventBus.subscribe(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED, closed);
+        try {
+            askToReturn();
+            expect(closed).not.toHaveBeenCalled();
+            act(() => { fireEvent.click(q('[data-summary-confirm-yes]')); });
+            expect(q('[data-catch-up-summary]')).toBeNull();
+            expect(CatchUp.undoLast).not.toHaveBeenCalled();
+            expect(CatchUp.forgetUndo).toHaveBeenCalledTimes(1);
+            expect(closed).toHaveBeenCalledTimes(1);
+        } finally {
+            off();
+        }
+    });
+
+    it('Esc asks the same as Return; a second Esc cancels the question', () => {
+        start();
+        finish(fullResult());
+        escape();
+        expect(q('[data-catch-up-summary]')).not.toBeNull();
+        expect(q('[data-summary-confirm="return"]')).not.toBeNull();
+        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+        escape();
+        expect(q('[data-summary-confirm]')).toBeNull();
+        expect(q('[data-catch-up-summary]')).not.toBeNull();
+        // Esc, then Return confirms it.
+        escape();
+        act(() => { fireEvent.click(q('[data-summary-confirm-yes]')); });
+        expect(q('[data-catch-up-summary]')).toBeNull();
+        expect(CatchUp.undoLast).not.toHaveBeenCalled();
+    });
+});
+
+describe('"Load as I left it" asks first, keeping today\'s warning', () => {
     const askToUndo = () => {
         start();
         finish(fullResult());
@@ -444,15 +521,13 @@ describe('"Load as I left it" asks first', () => {
         askToUndo();
         expect(CatchUp.undoLast).not.toHaveBeenCalled();
         expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
-        const ask = q('[data-summary-confirm]');
-        expect(ask).not.toBeNull();
+        const ask = q('[data-summary-confirm="undo"]');
         expect(ask.getAttribute('role')).toBe('alertdialog');
+        expect(ask.textContent).toContain('Load the game as you left it? Everything from your time away is lost.');
         expect(ask.querySelectorAll('button')).toHaveLength(2);
-        expect(q('[data-summary-confirm-yes]')).not.toBeNull();
-        expect(q('[data-summary-confirm-no]')).not.toBeNull();
+        expect(q('[data-summary-confirm-yes]').closest('[data-kit-button]').getAttribute('data-kit-button')).toBe('danger');
         // The safe choice has the focus, so a stray Enter cancels.
         expect(document.activeElement).toBe(q('[data-summary-confirm-no]'));
-        // The summary stays open behind its question.
         expect(q('[data-catch-up-summary]')).not.toBeNull();
     });
 
@@ -460,7 +535,6 @@ describe('"Load as I left it" asks first', () => {
         askToUndo();
         act(() => { fireEvent.click(q('[data-summary-confirm-no]')); });
         expect(q('[data-summary-confirm]')).toBeNull();
-        expect(q('[data-catch-up-summary]')).not.toBeNull();
         expect(q('[data-summary-undo]')).not.toBeNull();
         expect(q('[data-summary-close]')).not.toBeNull();
         expect(CatchUp.undoLast).not.toHaveBeenCalled();
@@ -474,10 +548,6 @@ describe('"Load as I left it" asks first', () => {
         expect(q('[data-catch-up-summary]')).not.toBeNull();
         expect(CatchUp.undoLast).not.toHaveBeenCalled();
         expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
-        // A second Esc is Return to the Guild again.
-        escape();
-        expect(q('[data-catch-up-summary]')).toBeNull();
-        expect(CatchUp.forgetUndo).toHaveBeenCalledTimes(1);
     });
 
     it('confirming turns the catch-up down', () => {
@@ -485,6 +555,49 @@ describe('"Load as I left it" asks first', () => {
         act(() => { fireEvent.click(q('[data-summary-confirm-yes]')); });
         expect(CatchUp.undoLast).toHaveBeenCalledTimes(1);
         expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+    });
+});
+
+describe('how an item\'s net is reckoned (itemChanges)', () => {
+    it('the Bank and the mat add up; loot carried from the mat to the Bank counts once', () => {
+        // 10 lay on the mat before and were carried in; 4 more were made and banked.
+        expect(itemChanges({ gained: { fixture_cu_ore: 14 }, net: { fixture_cu_ore: 14 }, floor: { fixture_cu_ore: -10 } }))
+            .toEqual([{ itemId: 'fixture_cu_ore', name: 'Fixture Ore', net: 4, gained: 4, spent: 0, onMat: 0 }]);
+    });
+
+    it('loot left on the mat is a gain, marked as waiting there', () => {
+        expect(itemChanges({ floor: { fixture_cu_pelt: 30 } }))
+            .toEqual([{ itemId: 'fixture_cu_pelt', name: 'Fixture Pelt', net: 30, gained: 30, spent: 0, onMat: 30 }]);
+    });
+
+    it('a Bank path that announces nothing: the totals say what came in or went out', () => {
+        // Announced 40 in, but the Bank holds 55 more.
+        expect(itemChanges({ gained: { fixture_cu_log: 40 }, net: { fixture_cu_log: 55 } })[0])
+            .toMatchObject({ net: 55, gained: 55, spent: 0 });
+        // Announced 40 in, but the Bank holds only 25 more: 15 went out unannounced.
+        expect(itemChanges({ gained: { fixture_cu_log: 40 }, net: { fixture_cu_log: 25 } })[0])
+            .toMatchObject({ net: 25, gained: 40, spent: 15 });
+        // Nothing announced, the Bank 12 down.
+        expect(itemChanges({ net: { fixture_cu_seed: -12 } })[0]).toMatchObject({ net: -12, gained: 0, spent: 12 });
+    });
+
+    it('gained − spent is always the net; an item gained and spent evenly shows ±0, last', () => {
+        const rows = itemChanges({
+            gained: { fixture_cu_ore: 100, fixture_cu_log: 5 },
+            spent: { fixture_cu_ore: 100, fixture_cu_seed: 3 },
+            net: { fixture_cu_log: 5, fixture_cu_seed: -3 },
+            floor: { fixture_cu_pelt: 2 }
+        });
+        expect(rows.map(r => [r.itemId, r.net])).toEqual([
+            ['fixture_cu_log', 5], ['fixture_cu_pelt', 2], ['fixture_cu_seed', -3], ['fixture_cu_ore', 0]
+        ]);
+        for (const r of rows) expect(r.gained - r.spent, r.itemId).toBe(r.net);
+        expect(rows.at(-1)).toMatchObject({ gained: 100, spent: 100 });
+    });
+
+    it('nothing moved, nothing listed', () => {
+        expect(itemChanges({})).toEqual([]);
+        expect(itemChanges({ gained: {}, spent: {}, net: {}, floor: {} })).toEqual([]);
     });
 });
 
