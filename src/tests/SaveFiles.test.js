@@ -55,7 +55,8 @@ beforeEach(async () => {
     SaveManager.resumeSaving();
 });
 
-afterEach(() => {
+afterEach(async () => {
+    await SaveFiles.flush();
     if (SaveManager.autoSaveTimer) clearInterval(SaveManager.autoSaveTimer);
     SaveManager.autoSaveTimer = null;
     SaveManager.currentSlot = null;
