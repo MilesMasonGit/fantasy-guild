@@ -148,18 +148,38 @@ describe('⭐ settling a cell', () => {
         expect(world().cells.filter(c => c.ring === 2 && states.get(c.id) === CELL_STATE.FRONTIER).length).toBeGreaterThan(0);
     });
 
-    it('announces the Region written, the arrival there, and the enemies holding it', () => {
+    it('announces the Region written, the arrival there, the enemies holding it, and last the guild arrived (the ceremony's cue)', () => {
         const cell = ringOne()[1];
         heroFor(cell);
         stock(cell);
-        const reasons = [];
-        const off = EventBus.subscribe(ENGINE_EVENTS.ATLAS_CHANGED, (d) => reasons.push(d.reason));
+        const said = [];
+        const off = EventBus.subscribe(ENGINE_EVENTS.ATLAS_CHANGED, (d) => said.push(d));
+        let result;
         try {
-            expect(World.settleCell(cell.id).success).toBe(true);
+            result = World.settleCell(cell.id);
+            expect(result.success).toBe(true);
         } finally {
             off();
         }
-        expect(reasons).toEqual(['created', 'travelled', 'occupied']);
+        expect(said.map(d => d.reason)).toEqual(['created', 'travelled', 'occupied', 'arrived']);
+        expect(said[3]).toEqual({ reason: 'arrived', regionId: result.region.id, cellId: cell.id });
+    });
+
+    it('travel to a place settled before never says arrived', () => {
+        const cell = ringOne()[1];
+        heroFor(cell);
+        stock(cell);
+        const { region } = World.settleCell(cell.id);
+        const home = Atlas.list().find(r => r.kind === Atlas.REGION_KIND.STARTER).id;
+        const reasons = [];
+        const off = EventBus.subscribe(ENGINE_EVENTS.ATLAS_CHANGED, (d) => reasons.push(d.reason));
+        try {
+            expect(Atlas.travel(home).success).toBe(true);
+            expect(Atlas.travel(region.id).success).toBe(true);
+        } finally {
+            off();
+        }
+        expect(reasons).toEqual(['travelled', 'travelled']);
     });
 
     it('draws no random number', () => {

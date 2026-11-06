@@ -66,8 +66,10 @@ export const ENGINE_EVENTS = Object.freeze({
     /**
      * The Atlas's Regions changed. Payload: `{ reason, regionId }`, `reason` one of `'created'`,
      * `'renamed'`, `'archived'`, `'restored'`, `'abandoned'`, `'travelled'`, or a settled place's
-     * arrival: `'occupied'` (its enemies put on the mat) and `'cleared'` (the last one beaten).
-     * `'created'` also carries `cellId`, the world cell the Region is settled on (null for none).
+     * arrival: `'occupied'` (its enemies put on the mat) and `'cleared'` (the last one beaten);
+     * `'arrived'` once the guild stands on a place just settled (after its `'travelled'`), never on
+     * travel to one settled before: the screen's ceremony. `'created'` and `'arrived'` also carry
+     * `cellId`, the world cell the Region is settled on (null for none).
      */
     ATLAS_CHANGED: 'atlas_changed',
 

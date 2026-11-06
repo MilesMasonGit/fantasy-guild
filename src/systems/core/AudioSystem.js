@@ -330,7 +330,9 @@ class AudioSystemClass {
             'button_click': CALCULATOR_BUTTON_SFX,
             'dock_pin': CALCULATOR_BUTTON_SFX,
             'dock_unpin': CALCULATOR_BUTTON_SFX,
-            'quest_claim': COINS_HAND_SFX
+            'quest_claim': COINS_HAND_SFX,
+            // ⚠️ A stand-in until the owner's fanfare for settling a place.
+            'settle_fanfare': `${kenneyBase}doorOpen_1.ogg`
         };
 
         const target = map[clip];

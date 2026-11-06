@@ -9,6 +9,7 @@ import * as BoardState from '../board/BoardState.js';
 import * as Placement from '../board/Placement.js';
 import * as Occupation from '../board/Occupation.js';
 import { matW, matH } from '../../config/matGeometry.js';
+import { isGuildHall } from '../board/MatCap.js';
 import { mulberry32 } from '../atlas/seededRandom.js';
 import * as Atlas from '../atlas/Atlas.js';
 import { logger } from '../../utils/Logger.js';
@@ -16,14 +17,15 @@ import { logger } from '../../utils/Logger.js';
 /**
  * A newly settled place arrives occupied (owner): its mat darkened, with a small fixed
  * encounter on it, 3 to 6 enemies sized to the ring, sometimes a boss (the cell's `arrival`,
- * `generate.js` step 10). They stand together in a lair in the mat's outer band, belong to no camp
- * and never come back: each has one use. Until every one is beaten the mat is held
- * (`board/Occupation.js`): heroes may fight and nothing else, and the mat is drawn dark. The last
- * one beaten brightens it ({@link ARRIVAL_TEXT}).
+ * `generate.js` step 10). They stand spread out across the mat ({@link spreadOf}), each alone, out
+ * of the Guild Hall's clearing, belong to no camp and never come back: each has one use. They
+ * stand still until a hero is sent at them (no ambushes, brief 500). Until every one is beaten the
+ * mat is held (`board/Occupation.js`): heroes may fight and nothing else, and the mat is drawn
+ * dark. The last one beaten brightens it ({@link ARRIVAL_TEXT}).
  *
  * The enemies are put on the live mat once the guild has travelled there, through the same
  * placement as any arrival (`Placement.placeArrivalNear`), so they never stand where a Token could
- * not. Nothing here draws from `Math.random`: the lair comes from the place's seed, the ids from
+ * not. Nothing here draws from `Math.random`: the spots come from the place's seed, the ids from
  * the Region's.
  */
 
@@ -32,46 +34,83 @@ export const ARRIVAL_TEXT = Object.freeze({
     cleared: (name) => `The enemies are beaten: ${name} is the guild's to work`
 });
 
-/** How far out the lair stands (0 the Hall, 1 the mat's edge), and how far apart its enemies aim. */
-export const LAIR_BAND = 0.72;
-export const LAIR_SPREAD = 84;
+/**
+ * The Guild Hall's clearing, kept free of enemies: an ellipse round the Hall, its half-width and
+ * half-height in mat units. Tall enough below the Hall that no enemy stands among the heroes
+ * waiting in their row in front of it (`HeroMotion.homeSpot`).
+ */
+export const CLEARING = Object.freeze({ rx: 300, ry: 260 });
 
-/** Where each enemy of a lair aims, as steps of the spread from its middle. */
-const LAIR_OFFSETS = Object.freeze([[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]);
+/** How far in from the mat's edge an enemy aims, in mat units: clear of the item stubs and the fight tabs. */
+export const SPREAD_MARGIN = 120;
+
+/** Where between the clearing (0) and the margin (1) an enemy aims: never right at either. */
+export const SPREAD_BAND = Object.freeze({ from: 0.15, to: 0.85 });
+
+/** How far an enemy's direction may stray from the middle of its even share of the circle, as a fraction of that share. */
+const SPREAD_JITTER = 0.25;
 
 /** An arrival enemy's instance id: named after its Region, as a settled node's is. */
 export function arrivalId(regionId, index) {
     return `tok_${regionId}_arrival_${index}`;
 }
 
-/** The lair's middle on a mat of `w` × `h`: a seeded direction from the middle, out to the band. */
-export function lairOf(seed, w = matW(), h = matH()) {
+/** How far a ray from `centre` at angle `a` runs before it leaves the box `[m, w − m] × [m, h − m]`. */
+function rayToBox(centre, a, w, h, m) {
+    const cx = Math.cos(a);
+    const cy = Math.sin(a);
+    let t = Infinity;
+    if (cx > 1e-9) t = Math.min(t, (w - m - centre.x) / cx);
+    if (cx < -1e-9) t = Math.min(t, (m - centre.x) / cx);
+    if (cy > 1e-9) t = Math.min(t, (h - m - centre.y) / cy);
+    if (cy < -1e-9) t = Math.min(t, (m - centre.y) / cy);
+    return Math.max(0, t);
+}
+
+/** How far the clearing's edge is from its middle at angle `a`. */
+function clearingAt(a) {
+    const cx = Math.cos(a) / CLEARING.rx;
+    const cy = Math.sin(a) / CLEARING.ry;
+    return 1 / Math.sqrt(cx * cx + cy * cy);
+}
+
+/**
+ * Where each of `count` arrival enemies aims on a mat of `w` × `h`, the Hall at `centre`: one to
+ * each even share of the circle round the Hall, turned by the place's seed and strayed a little
+ * within its share, out past the Hall's clearing and short of the mat's margin. So they stand
+ * spread across the mat, each alone, and the same place always stands them the same way.
+ *
+ * @returns {{x: number, y: number}[]}
+ */
+export function spreadOf(seed, count, { w = matW(), h = matH(), centre = null } = {}) {
+    const n = Math.max(0, Math.floor(Number(count) || 0));
     const random = mulberry32((Number(seed) >>> 0) ^ 0x5eed1a1);
-    let ux = 1;
-    let uy = 0;
-    for (let k = 0; k < 32; k++) {
-        const x = random() * 2 - 1;
-        const y = random() * 2 - 1;
-        const d = x * x + y * y;
-        if (d > 0.04 && d <= 1) {
-            const l = Math.sqrt(d);
-            ux = x / l;
-            uy = y / l;
-            break;
-        }
+    const mid = centre && Number.isFinite(centre.x) && Number.isFinite(centre.y) ? centre : { x: w / 2, y: h / 2 };
+    const share = (2 * Math.PI) / Math.max(1, n);
+    const turn = random() * 2 * Math.PI;
+    const out = [];
+    for (let k = 0; k < n; k++) {
+        const a = turn + k * share + (random() * 2 - 1) * SPREAD_JITTER * share;
+        const inner = clearingAt(a);
+        const outer = Math.max(inner, rayToBox(mid, a, w, h, SPREAD_MARGIN));
+        const f = SPREAD_BAND.from + random() * (SPREAD_BAND.to - SPREAD_BAND.from);
+        const r = inner + f * (outer - inner);
+        out.push({ x: Math.round(mid.x + Math.cos(a) * r), y: Math.round(mid.y + Math.sin(a) * r) });
     }
-    const art = 64;
-    return {
-        x: Math.round(w / 2 + ux * LAIR_BAND * (w / 2 - art)),
-        y: Math.round(h / 2 + uy * LAIR_BAND * (h / 2 - art))
-    };
+    return out;
+}
+
+/** The Guild Hall's point on the live mat, or null. */
+function hallPoint() {
+    const hall = BoardState.tokens().find(isGuildHall);
+    return hall ? { x: hall.x, y: hall.y } : null;
 }
 
 /**
  * Put a place's arrival on the live mat and mark the mat held. Call once the guild is there.
  *
  * @param {{typeId: string, count: number, boss?: boolean}[]} arrival the cell's arrival
- * @param {{seed?: number}} [options] the place's seed, for the lair
+ * @param {{seed?: number}} [options] the place's seed, for where they stand
  * @returns {{ids: string[], unplaced: string[]}} the enemies written, and any that found no room
  */
 export function occupy(arrival, { seed = 0 } = {}) {
@@ -79,12 +118,13 @@ export function occupy(arrival, { seed = 0 } = {}) {
     const ids = [];
     const unplaced = [];
     if (!board || !Array.isArray(arrival) || !arrival.length) return { ids, unplaced };
-    const lair = lairOf(seed);
+    const total = arrival.reduce((n, row) => n + Math.max(0, row?.count || 0), 0);
+    const spots = spreadOf(seed, total, { centre: hallPoint() });
     const regionId = Atlas.activeRegionId() || 'mat';
     let k = 0;
     for (const row of arrival) {
         for (let n = 0; n < (row?.count || 0); n++) {
-            const [ox, oy] = LAIR_OFFSETS[k % LAIR_OFFSETS.length];
+            const aim = spots[k];
             k++;
             // Named after the Region, as its nodes are: no random id, so settling never moves
             // what the game rolls next.
@@ -93,7 +133,7 @@ export function occupy(arrival, { seed = 0 } = {}) {
             // of its kind on load (`EnemyMotion.attachUntethered`), and these belong to none.
             BoardState.setTether(instance, null);
             instance.arrival = true;
-            const res = Placement.placeArrivalNear(instance, { x: lair.x + ox * LAIR_SPREAD, y: lair.y + oy * LAIR_SPREAD });
+            const res = Placement.placeArrivalNear(instance, aim);
             if (res?.success) ids.push(instance.id);
             else unplaced.push(row.typeId);
         }

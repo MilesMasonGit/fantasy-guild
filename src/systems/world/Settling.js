@@ -20,6 +20,9 @@ import { HALL_CELL, CELL_STATE, settledIds, cellStates, priceRows, cellOutputs }
 import { recipesOfCell } from './cellRegion.js';
 import { ringLock } from './ringStars.js';
 import * as Arrival from './Arrival.js';
+import * as HeroMotion from '../board/HeroMotion.js';
+import { EventBus } from '../core/EventBus.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -29,8 +32,10 @@ import { logger } from '../../utils/Logger.js';
  *
  * {@link settleCell} pays a cell's whole price at once, writes its Region from the cell (its mat:
  * `cellMat.js`, through `cellRegion.js`), moves the guild there and puts the place's arrival on it
- * (`Arrival.js`): the mat is held until those enemies are beaten. Travel between settled places is
- * the Atlas's, free and instant, as before.
+ * (`Arrival.js`): the mat is held until those enemies are beaten. The heroes walk in from the mat's
+ * foot to stand idle by the Hall (`HeroMotion.walkIn`), and `ATLAS_CHANGED` says `'arrived'`, for
+ * the screen's ceremony; no fight starts until the player sends a hero. Travel between settled
+ * places is the Atlas's, free and instant, as before, with neither.
  */
 
 /** Player-facing refusals, kept together for translation. */
@@ -173,14 +178,18 @@ export function writePlace(cell, { cellId = null } = {}) {
 }
 
 /**
- * Take the guild to a place just written and put its arrival on the mat.
+ * Take the guild to a place just written, put its arrival on the mat, walk the heroes in and say
+ * `'arrived'`.
  *
- * @returns {{travel: object, arrival: {ids: string[], unplaced: string[]}}}
+ * @returns {{travel: object, arrival: {ids: string[], unplaced: string[]}, walkIn: string[]}}
  */
 export function arriveAt(region, mat) {
     const travel = Atlas.travel(region.id);
-    const arrival = travel.success ? Arrival.occupy(mat?.arrival, { seed: region.seed }) : { ids: [], unplaced: [] };
-    return { travel, arrival };
+    if (!travel.success) return { travel, arrival: { ids: [], unplaced: [] }, walkIn: [] };
+    const arrival = Arrival.occupy(mat?.arrival, { seed: region.seed });
+    const walkIn = HeroMotion.walkIn();
+    EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason: 'arrived', regionId: region.id, cellId: region.cellId ?? null });
+    return { travel, arrival, walkIn };
 }
 
 /**
@@ -190,7 +199,7 @@ export function arriveAt(region, mat) {
  * not hold (with `lock`), or a price the guild cannot meet.
  *
  * @returns {{success: boolean, reason?: string, lock?: object, price?: object, region?: object, mat?: object,
- *   travel?: object, arrival?: object}}
+ *   travel?: object, arrival?: object, walkIn?: string[]}}
  */
 export function settleCell(id) {
     const world = currentWorld();
@@ -210,7 +219,7 @@ export function settleCell(id) {
     if (!written.success) return written;
 
     for (const row of price.items) InventoryManager.removeItem(row.itemId, row.need);
-    const { travel, arrival } = arriveAt(written.region, written.mat);
+    const { travel, arrival, walkIn } = arriveAt(written.region, written.mat);
     logger.info('World', `Settled ${id} as ${written.region.id}${travel.success ? `, and the guild moved there to ${arrival.ids.length} enemies` : ''}`);
-    return { success: true, price, region: written.region, mat: written.mat, travel, arrival };
+    return { success: true, price, region: written.region, mat: written.mat, travel, arrival, walkIn };
 }
