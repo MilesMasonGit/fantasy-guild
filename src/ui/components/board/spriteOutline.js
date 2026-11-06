@@ -21,8 +21,8 @@ export function tokenOutline({ hovered = false, selected = false, lit = false, a
     return null;
 }
 
-/** A map mode's hover outline: muted grey for Disallow, red for Demolish (UI_STYLE colours). */
-export const MODE_OUTLINE = Object.freeze({ disallow: 'muted', demolish: 'danger' });
+/** A map mode's hover outline: red for Demolish (UI_STYLE colours). */
+export const MODE_OUTLINE = Object.freeze({ demolish: 'danger' });
 
 /** A hero on the mat: white hovered or inspected, green working (not stuck). */
 export function heroOutline({ hovered = false, selected = false, working = false, stuck = false } = {}) {

@@ -18,7 +18,8 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { matW, matH, artRadiusOf } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MAT_TOKEN_DRAG_ID } from '../ui/components/board/MatToken.jsx';
-import { setDisallowMode } from '../ui/hooks/useMapMode.js';
+import { setMapMode, MAP_MODE } from '../ui/hooks/useMapMode.js';
+import * as Demolition from '../systems/board/Demolition.js';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
 import { HERO_HIT_PX, HERO_BOX_PX } from '../ui/components/board/boardConstants.js';
 import { markerBox } from '../ui/components/board/flagGeometry.js';
@@ -189,15 +190,15 @@ describe('⭐ where two circles overlap, the press goes where hovering would', (
         expect(notCancelled).toBe(false);
     });
 
-    it('in disallow mode the click flips the nearest Token, not the one drawn on top', () => {
-        setDisallowMode(true);
+    it('in Demolish mode the click marks the nearest Token, not the one drawn on top', () => {
+        setMapMode(MAP_MODE.DEMOLISH);
         try {
             const { a, b, container } = pair();
             fireEvent.click(hitOf(container, a.id), { clientX: 640, clientY: 400 });
-            expect(Flags.isDisallowed(BoardState.getTokenById(b.id))).toBe(true);
-            expect(Flags.isDisallowed(BoardState.getTokenById(a.id))).toBe(false);
+            expect(Demolition.isMarked(BoardState.getTokenById(b.id))).toBe(true);
+            expect(Demolition.isMarked(BoardState.getTokenById(a.id))).toBe(false);
         } finally {
-            setDisallowMode(false);
+            setMapMode(null);
         }
     });
 });

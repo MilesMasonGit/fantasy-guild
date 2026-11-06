@@ -6,16 +6,14 @@ import { render, cleanup, fireEvent, act } from '@testing-library/react';
 /**
  * ⭐ owner ruling (Z §11, Q16): "one Escape, one layer." During a drag,
  * Escape must only cancel the drag — not also close the hero sheet or end
- * disallow mode, even though both of those ALSO listen for Escape on
+ * a map mode, even though both of those ALSO listen for Escape on
  * `document`.
  */
 
 const STATUS = new Map();
 vi.mock('../systems/board/Flags.js', () => ({
     statusOf: (heroId) => ({ state: STATUS.get(heroId) || 'docked', instanceId: null, typeId: null, limping: false }),
-    flagReaches: () => false,
-    allowAll: vi.fn(),
-    setDisallowed: vi.fn()
+    flagReaches: () => false
 }));
 vi.mock('../ui/components/drawer/HeroInspectionSheet.jsx', () => ({
     HeroInspectionSheet: () => React.createElement('div', { 'data-testid': 'hero-sheet' })
@@ -26,7 +24,7 @@ import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
-import { toggleMapMode, setDisallowMode, MAP_MODE } from '../ui/hooks/useMapMode.js';
+import { toggleMapMode, setMapMode, MAP_MODE } from '../ui/hooks/useMapMode.js';
 import { MapModeToggles } from '../ui/components/board/MatModeControls.jsx';
 
 const h = React.createElement;
@@ -41,13 +39,13 @@ beforeEach(() => {
     GameState.initNew();
     GameState.state.heroes = [hero('h1', 'Aldric'), hero('h2', 'Brenna')];
     setLiveMatFit(1);
-    setDisallowMode(false);
+    setMapMode(null);
 });
 afterEach(() => {
     cleanup();
     vi.clearAllMocks();
     document.body.classList.remove('gi-dnd-active');
-    setDisallowMode(false);
+    setMapMode(null);
 });
 
 /** Picks up `[data-dock-hero="h2"]` and drags it past the activation threshold. */
@@ -93,16 +91,16 @@ describe('Escape mid-drag only cancels the drag (CR3-409)', () => {
     });
 });
 
-describe('Escape mid-drag does not also end disallow mode (CR3-409)', () => {
-    it('leaves disallow mode on while a drag is live, then a second Escape ends it', () => {
+describe('Escape mid-drag does not also end a map mode (CR3-409)', () => {
+    it('leaves Demolish mode on while a drag is live, then a second Escape ends it', () => {
         const { container } = render(
             h(DeckDndProvider, null,
                     h(BottomHeroDock, { selectedHeroId: null }),
                     h(MapModeToggles))
         );
 
-        act(() => toggleMapMode(MAP_MODE.DISALLOW));
-        expect(container.querySelector('[data-map-mode-toggle="disallow"][data-on="true"]')).not.toBeNull();
+        act(() => toggleMapMode(MAP_MODE.DEMOLISH));
+        expect(container.querySelector('[data-map-mode-toggle="demolish"][data-on="true"]')).not.toBeNull();
 
         act(() => startRealDrag(container));
         expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
@@ -110,11 +108,11 @@ describe('Escape mid-drag does not also end disallow mode (CR3-409)', () => {
         act(() => fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }));
 
         expect(document.body.classList.contains('gi-dnd-active')).toBe(false);
-        // Disallow mode is still on: the drag's Escape did not also turn it off.
-        expect(container.querySelector('[data-map-mode-toggle="disallow"][data-on="true"]')).not.toBeNull();
+        // Demolish mode is still on: the drag's Escape did not also turn it off.
+        expect(container.querySelector('[data-map-mode-toggle="demolish"][data-on="true"]')).not.toBeNull();
 
         // A second Escape, with no drag live, does end it.
         act(() => fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }));
-        expect(container.querySelector('[data-map-mode-toggle="disallow"][data-on="false"]')).not.toBeNull();
+        expect(container.querySelector('[data-map-mode-toggle="demolish"][data-on="false"]')).not.toBeNull();
     });
 });

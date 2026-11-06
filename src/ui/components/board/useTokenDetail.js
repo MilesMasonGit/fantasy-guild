@@ -3,7 +3,6 @@ import { useTokenState } from './tokenEvents.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import * as Flags from '../../../systems/board/Flags.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
@@ -60,7 +59,6 @@ export function tokenDetailOf(id, def) {
     return {
         usesRemaining: instance.usesRemaining ?? null,
         alert: instance.alert || null,
-        disallowed: Flags.isDisallowed(instance),
         heroId: BoardState.workerOf(id),
         // The side the working hero stands on (-1 left, 1 right), for the ring row. `workerOf`
         // is null until they arrive.
@@ -97,7 +95,7 @@ export function tokenDetailOf(id, def) {
 
 /** Events that name this Token by `instanceId` and can change its details. */
 const BY_ID = Object.freeze([
-    BOARD_EVENTS.TILE_CHANGED,              // disallowed, marked, a recipe picked, moved, transformed
+    BOARD_EVENTS.TILE_CHANGED,              // marked, a recipe picked, moved, transformed
     BOARD_EVENTS.ALERT_CHANGED,             // alert
     BOARD_EVENTS.HERO_MOVED,                // a hero arrived here: heroId, heroSide
     BOARD_EVENTS.TOKEN_CHARGES_CHANGED,     // usesRemaining, and with it resting

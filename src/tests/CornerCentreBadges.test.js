@@ -25,7 +25,7 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import * as TokenBadges from '../ui/components/board/TokenBadges.jsx';
-import { StationGearBadge, DisallowBadge } from '../ui/components/board/TokenBadges.jsx';
+import { StationGearBadge } from '../ui/components/board/TokenBadges.jsx';
 import {
     spawnerCountText, gearStateOf, isGearOnlyAlert
 } from '../ui/components/board/centreAlert.js';
@@ -214,10 +214,7 @@ describe('the badges on their own', () => {
         expect(set.querySelectorAll('.gi-gear-alert').length).toBe(0);
     });
 
-    it('disallow badge renders, and hides while dragging; the corner count badges are gone (B1.3)', () => {
-        expect(mount(h(DisallowBadge, { isDragging: false })).container.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_disallow_red.png');
-        cleanup();
-        expect(mount(h(DisallowBadge, { isDragging: true })).container.querySelector('[data-tile-disallowed]')).toBeNull();
+    it('the corner count badges are gone (B1.3)', () => {
         expect(TokenBadges.SpawnerCountBadge).toBeUndefined();
         expect(TokenBadges.TurnCountdownBadge).toBeUndefined();
     });

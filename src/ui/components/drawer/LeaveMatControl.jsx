@@ -14,7 +14,7 @@ const ACTION_CLS = 'w-full px-3 py-2 border-2 text-xs font-bold transition-color
 /**
  * How a board Token leaves the mat at once. A bounty: Dismiss (no reward; a tutorial step never
  * leaves this way). While the dev layout tool is on, a placed Token (a landmark included) can be
- * removed. Disallowing and demolishing are the top bar's map modes, not the card's.
+ * removed. Demolishing is the top bar's map mode, not the card's.
  */
 export const LeaveMatControl = ({ instanceId }) => {
     const layoutEditing = useSyncExternalStore(Landmarks.onLayoutEditingChange, Landmarks.isLayoutEditing);

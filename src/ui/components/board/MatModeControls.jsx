@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
 import { EventBus } from '../../../systems/core/EventBus.js';
-import * as Flags from '../../../systems/board/Flags.js';
 import { CAP_EVENTS, useRefreshOn } from './MatCapBadge.jsx';
 import {
-    MAP_MODE, useMapMode, toggleMapMode, setMapMode, disallowedCount, markedCount, cancelAllMarks
+    MAP_MODE, useMapMode, toggleMapMode, setMapMode, markedCount, cancelAllMarks
 } from '../../hooks/useMapMode.js';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { cn } from '../../utils/cn.js';
@@ -14,25 +13,22 @@ import { mapModeIconSrc, mapModeIconPx } from './mapModeCursor.js';
 /** The bar's buttons: square, a 1-art-pixel line, white on hover. */
 const BUTTON_CLS = 'flex items-center gap-1.5 px-3 py-1.5 border-2 whitespace-nowrap cursor-pointer transition-colors';
 const OFF_CLS = 'bg-black/30 border-[#2a1d15] text-amber-100 hover:border-[var(--color-ui-white)] hover:text-white';
-/** A mode's toggle while it is on, in the mode's colour: muted grey, red. */
+/** A mode's toggle while it is on, in the mode's colour. */
 const ON_CLS = {
-    [MAP_MODE.DISALLOW]: 'bg-black/50 border-[var(--color-ui-muted)] text-white',
     [MAP_MODE.DEMOLISH]: 'bg-black/50 border-[var(--color-ui-red)] text-[var(--color-ui-red)]'
 };
 
 /**
- * What each mode's banner says while it is on (concept_map_tools.md, the owner's wording). The
+ * What the mode's banner says while it is on (concept_map_tools.md, the owner's wording). The
  * Demolish banner is the one warning that nothing comes back: it shows on entering, and the clicks
  * after it mark and unmark without asking, because a mark can be cancelled until the hero
  * finishes.
  */
 export const MODE_BANNER_TEXT = Object.freeze({
-    [MAP_MODE.DISALLOW]: 'Disallow mode: click a Token so heroes won’t work it. Click again to allow.',
     [MAP_MODE.DEMOLISH]: 'Demolish mode: click Tokens to mark them. A Construction hero takes them down. Nothing is refunded.'
 });
 
 const TOGGLES = [
-    { mode: MAP_MODE.DISALLOW, label: 'Disallow', icon: '⊘', tip: 'Click Tokens so heroes won’t work them. Shift-click for every Token of a type.' },
     { mode: MAP_MODE.DEMOLISH, label: 'Demolish', pixelIcon: true, tip: 'Click Tokens to mark them for demolition.' }
 ];
 
@@ -57,7 +53,7 @@ export const ModeIcon = ({ mode }) => {
 };
 
 /**
- * One mode's toggle: on turns the other mode off; a second press, or Esc, ends it.
+ * One mode's toggle: a second press, or Esc, ends it.
  */
 const ModeToggle = ({ mode, label, icon, pixelIcon, tip, on }) => (
     <Tooltip title={label} lines={[on ? 'Press again or Esc to finish.' : tip]}>
@@ -76,7 +72,7 @@ const ModeToggle = ({ mode, label, icon, pixelIcon, tip, on }) => (
 );
 
 /**
- * The bar's right end: the Disallow and Demolish toggles, side by side. While a mode is on, Esc
+ * The bar's right end: the Demolish toggle. While a mode is on, Esc
  * ends it, and so does this going away with the bar (leaving the playmat for the Guild Hall).
  */
 export const MapModeToggles = () => {
@@ -91,28 +87,6 @@ export const MapModeToggles = () => {
         <>
             {TOGGLES.map(t => <ModeToggle key={t.mode} {...t} on={mode === t.mode} />)}
         </>
-    );
-};
-
-/**
- * **Allow all**: every disallowed Token on the mat allowed again, at once, no confirm. With none
- * it stays and does nothing. The count is read on the cap badge's events (`Flags.setDisallowed`
- * publishes `TILE_CHANGED`), so it follows every click in the mode.
- */
-export const AllowAllButton = () => {
-    useRefreshOn(CAP_EVENTS, true, disallowedCount);
-    const count = disallowedCount();
-    return (
-        <Tooltip title={count ? 'Let heroes work every Token again' : 'No Token is disallowed'}>
-            <button
-                type="button"
-                data-allow-all={count}
-                onClick={() => { if (!count) return; click(); Flags.allowAll(); }}
-                className={cn(BUTTON_CLS, OFF_CLS)}
-            >
-                Allow all{count ? ` (${count})` : ''}
-            </button>
-        </Tooltip>
     );
 };
 
@@ -166,7 +140,7 @@ export const ModeBannerView = ({ mode }) => (
                 {MODE_BANNER_TEXT[mode]}
             </span>
         </Tooltip>
-        {mode === MAP_MODE.DISALLOW ? <AllowAllButton /> : <CancelAllMarksButton />}
+        <CancelAllMarksButton />
     </div>
 );
 

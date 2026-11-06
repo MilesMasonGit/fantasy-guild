@@ -45,14 +45,13 @@ import { KEYWORD, statementsWith } from '../effects/statements.js';
  *
  * Claiming (`assign`, once per tick, before any Token ticks): the ordered Token, or each of a
  * camp's, is checked in this order (cheap checks before `WorkCheck`):
- * 1. the player disallowed it: `disallowed`;
- * 2. a worked Token that names no skill: `no_skill`;
- * 3. the hero lacks that skill / cannot fight: `unskilled`;
- * 4. another hero already holds it: `claimed` (the newcomer waits beside it);
- * 5. the shared `WorkCheck` says it cannot run: skipped with that reason (level too low, no tool in
+ * 1. a worked Token that names no skill: `no_skill`;
+ * 2. the hero lacks that skill / cannot fight: `unskilled`;
+ * 3. another hero already holds it: `claimed` (the newcomer waits beside it);
+ * 4. the shared `WorkCheck` says it cannot run: skipped with that reason (level too low, no tool in
  * hand, missing inputs, no recipe, charges, resting until it respawns); a no-tool skip also says
  * "Needs Pickaxe" over the Token (`TOOL_NEEDED`);
- * 6. otherwise claimed.
+ * 5. otherwise claimed.
  * Nothing claimable: look again in a second of game time (or sooner, when the board changes).
  *
  * Keeping a claim is sticky: kept while its Token is workable, wherever it now is. Let go when the
@@ -81,21 +80,9 @@ export const SKIP = Object.freeze({
     NO_SKILL: 'no_skill',
     /** Another hero's flag already holds it. */
     CLAIMED: 'claimed',
-    /** The player marked it "heroes may not work this". */
-    DISALLOWED: 'disallowed',
     /** The mat is held by the enemies it arrived with (`Occupation`): only they may be fought. */
     OCCUPIED: 'occupied'
 });
-
-/**
- * Whether the player has marked this Token disallowed.
- *
- * ⚠️ Stops hero work and nothing else. The Token's own rules (Provides, triggers) never read this.
- * Saved on the instance, so it survives a reload and a move.
- */
-export function isDisallowed(instance) {
-    return instance?.disallowed === true;
-}
 
 /** Fixable reasons: the ones that keep a red badge and earn a notice. */
 export const FIXABLE = WorkCheck.FIXABLE;
@@ -391,7 +378,6 @@ function evaluate(heroId, flag, excludeInstanceId = null) {
     const skips = [];
     for (const c of candidates) {
         const instanceId = c.instance.id;
-        if (isDisallowed(c.instance)) { skips.push({ instanceId, reason: SKIP.DISALLOWED }); continue; }
         if (Occupation.holds(c.instance)) { skips.push({ instanceId, reason: SKIP.OCCUPIED }); continue; }
         if (c.kind === 'work' && !hasWorkSkill(c.def, c.instance)) { skips.push({ instanceId, reason: SKIP.NO_SKILL }); continue; }
         if (!canTake(heroId, c.kind, c.def, c.instance)) { skips.push({ instanceId, reason: ALERT.UNSKILLED }); continue; }
@@ -467,7 +453,7 @@ function keepOrRelease(r, heroId, dirty) {
         // A hero holds nothing but their ordered Token, or, sent to a camp, what the camp hands
         // out (in its reach: a Token the camp moved away from is let go). A spot order holds
         // nothing.
-        const eligible = !isSpot(flag) && !isDisallowed(instance) && !Occupation.holds(instance)
+        const eligible = !isSpot(flag) && !Occupation.holds(instance)
             && (flag.pinnedTo === instance.id || campHolds(heroId, instance)) && (
             (kind === 'enemy' && canFight(heroId))
             || (kind === 'work' && hasWorkSkill(def, instance) && canTake(heroId, kind, def, instance)
@@ -610,7 +596,7 @@ export function assignHero(heroId) {
 
 /**
  * Why `heroId` cannot be ordered onto `instance`, or null when they can: `{ reason }`, a skip reason
- * (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `ALERT.NO_TOOL`, `SKIP.DISALLOWED`) or {@link ORDER_NOTHING} for a Token no hero works (a spawner of no
+ * (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `ALERT.NO_TOOL`) or {@link ORDER_NOTHING} for a Token no hero works (a spawner of no
  * enemy, a support, a quest, unfinished content naming no skill). The Guild Hall is home, not a
  * job: the caller sends the hero there instead. A camp answers for what it hands out
  * ({@link campRefusal}, with `on`); an enemy camp takes anyone who can fight.
@@ -633,7 +619,6 @@ export function orderRefusal(heroId, instance) {
     const kind = kindOf(instance, def);
     if (!kind || kind === 'hall') return { reason: ORDER_NOTHING };
     if (kind === 'work' && !hasWorkSkill(def, instance)) return { reason: ORDER_NOTHING };
-    if (isDisallowed(instance)) return { reason: SKIP.DISALLOWED };
     if (kind === 'enemy') return canFight(heroId) ? null : { reason: ALERT.UNSKILLED };
     const reason = WorkCheck.heroReason(heroId, workConfigOf(def, instance), instance);
     return reason ? { reason } : null;
@@ -648,7 +633,7 @@ export function orderRefusal(heroId, instance) {
 function campRefusal(heroId, camp, block) {
     if (!holdsSkill(heroId, block.skill)) return { reason: ALERT.UNSKILLED };
     const centre = centreOf(camp);
-    const work = Camps.campWork(camp).filter(t => !isDisallowed(t))
+    const work = Camps.campWork(camp)
         .map(t => ({ t, d: distanceSq(centre, centreOf(t)) }))
         .sort((a, b) => a.d - b.d || (a.t.placedAt ?? 0) - (b.t.placedAt ?? 0));
     let first = null;
@@ -766,8 +751,8 @@ export function followTransform({ fromId, instanceId, cause } = {}) {
 
 
 /**
- * Whether a hero could ever work this board Token: the Tokens the Heroes-may-work-this toggle is
- * offered on: a work cycle that needs a hero and names a skill, an enemy, or the Guild Hall.
+ * Whether a hero could ever work this board Token: a work cycle that needs a hero and names a
+ * skill, an enemy, or the Guild Hall.
  */
 export function isHeroWorkable(instance) {
     if (!instance?.typeId) return false;
@@ -874,7 +859,7 @@ function growingFor(heroId) {
         const toward = Growth.growsTowardWork(instance.typeId);
         if (!toward) continue;
         const centre = centreOf(instance);
-        if (!centre || !inReach(centre, toward) || isDisallowed(instance)) continue;
+        if (!centre || !inReach(centre, toward)) continue;
         let can = canWork.get(toward.id);
         if (can === undefined) {
             can = holdsSkill(heroId, toward.config.skill)
@@ -896,7 +881,7 @@ function growingFor(heroId) {
  */
 function pinnedGrowing(heroId, instance) {
     const toward = instance ? Growth.growsTowardWork(instance.typeId) : null;
-    if (!toward || isDisallowed(instance) || !Growth.isGrowingBack(instance)) return null;
+    if (!toward || !Growth.isGrowingBack(instance)) return null;
     if (!holdsSkill(heroId, toward.config.skill) || WorkCheck.heroReason(heroId, toward.config, { typeId: toward.id })) return null;
     return { instanceId: instance.id, kind: 'node' };
 }
@@ -904,69 +889,6 @@ function pinnedGrowing(heroId, instance) {
 /** The instance id {@link waitingOf} names, or null. */
 export function waitingFor(heroId) {
     return waitingOf(heroId)?.instanceId ?? null;
-}
-
-/** Why a Token cannot be disallowed: no hero could ever work it. */
-export const NO_HERO_WORKS = 'No hero works this';
-
-/** Why `instance` cannot be disallowed, or null when it can (`isHeroWorkable`). */
-export function disallowRefusalOf(instance) {
-    return isHeroWorkable(instance) ? null : NO_HERO_WORKS;
-}
-
-/**
- * Mark a Token heroes may not work, or allow it again.
- *
- * Names the Token by instance id. Turning it on lets go of any hero working it (their progress
- * there is reset; a fight ends) and their flag chooses again on the next tick; from then on every
- * flag records `disallowed` against it and never claims it: work, combat and the Guild
- * Hall alike. Nothing else about the Token changes: its rules and triggers carry on (see
- * `isDisallowed`).
- *
- * Only a Token a hero could work can be disallowed ({@link disallowRefusalOf}); allowing is never
- * refused. Disallow mode calls this; from the console:
- * `Game.Flags.setDisallowed(instanceId, true)`.
- *
- * @returns {{ success: boolean, reason?: string, unchanged?: boolean }}
- */
-export function setDisallowed(instanceId, on = true) {
-    const instance = BoardState.getTokenById(instanceId);
-    if (!instance) return { success: false, reason: 'No Token there' };
-    const next = !!on;
-    if (isDisallowed(instance) === next) return { success: true, unchanged: true };
-    const refusal = next ? disallowRefusalOf(instance) : null;
-    if (refusal) return { success: false, reason: refusal };
-
-    if (next) instance.disallowed = true;
-    else delete instance.disallowed;
-
-    if (next) {
-        const heroId = BoardState.heroOfInstance(instance.id);
-        if (heroId) {
-            release(heroId);
-            rt()?.nextTryAt.delete(heroId);
-            announceMoved(heroId);
-        }
-    }
-
-    markDirty();
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
-    return { success: true };
-}
-
-/**
- * Allow every disallowed Token on the mat again, at once (no confirm). Each goes through {@link
- * setDisallowed}, so flags are marked to choose again on the next tick.
- *
- * @returns {number} how many Tokens were allowed
- */
-export function allowAll() {
-    let n = 0;
-    for (const instance of BoardState.tokens()) {
-        if (!isDisallowed(instance)) continue;
-        if (setDisallowed(instance.id, false).success) n++;
-    }
-    return n;
 }
 
 /**

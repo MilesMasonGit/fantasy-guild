@@ -1,25 +1,14 @@
 import { MAP_MODE } from '../../hooks/useMapMode.js';
 
 /**
- * The map modes' cursors over a Token, drawn in code as pixel art until the owner's art comes
- * (owner_art_list.md): a crossed circle in muted grey for Disallow, an X in red for Demolish.
+ * The map mode's cursor over a Token, drawn in code as pixel art until the owner's art comes
+ * (owner_art_list.md): an X in red for Demolish.
  * Each art pixel is drawn 2 × 2 with a 1-art-pixel black edge, so it reads on any ground.
  * `MatBoard` hands the cursor to the mat as `--map-mode-cursor`; `tailwind.css` puts it on the
  * Tokens' hit circles (`[data-map-mode] [data-token-hit]`).
  */
 
 const GLYPHS = {
-    [MAP_MODE.DISALLOW]: [
-        '..xxxxx..',
-        '.x.....x.',
-        'x.....x.x',
-        'x....x..x',
-        'x...x...x',
-        'x..x....x',
-        'x.x.....x',
-        '.x.....x.',
-        '..xxxxx..'
-    ],
     [MAP_MODE.DEMOLISH]: [
         'xx.....xx',
         'xxx...xxx',
@@ -33,9 +22,8 @@ const GLYPHS = {
     ]
 };
 
-/** The colour of each mode's glyph: UI_STYLE's muted grey and red. */
+/** The colour of each mode's glyph: UI_STYLE's red. */
 const COLOURS = {
-    [MAP_MODE.DISALLOW]: '#737373',
     [MAP_MODE.DEMOLISH]: '#ff2d55'
 };
 

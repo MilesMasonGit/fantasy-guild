@@ -30,8 +30,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ Free Playmat slice 1.5 — the flag UI as drawn: the idle mark, the reach
- * ring and the disallow mark. The engine hooks are in `FlagUI.test.js`. The
+ * ⭐ Free Playmat slice 1.5 — the flag UI as drawn: the idle mark and the reach
+ * ring. The engine hooks are in `FlagUI.test.js`. The
  * skill picker is gone since slice 1.5b: a flag has no skill.
  */
 
@@ -223,17 +223,15 @@ describe('the flag has no skill since slice 1.5b (FP-71)', () => {
     });
 });
 
-describe('the disallow mark on the mat (FP-35, FPP-8)', () => {
-    it('a disallowed Token shows the red disallow sprite in its middle row on the mat (FB-33)', () => {
+describe('Disallow is gone from the mat', () => {
+    it('a Token still carrying the retired mark draws no mark and no tooltip for it', () => {
         const forest = put(TOKEN,'fixture_producer');
-        Flags.setDisallowed(forest.id, true);
+        forest.disallowed = true;
 
         const { container } = mount(h(MatBoard));
-        const mark = container.querySelector('[data-tile-disallowed]');
-        expect(mark.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_disallow_red.png');
-        expect(mark.closest('[data-bubble-row="middle"]')).not.toBeNull();
-        expect(mark.closest('[data-bubble="disallow"]')).not.toBeNull();
-        expect(mark.textContent).not.toContain('⊘');
+        expect(container.querySelector('[data-token-id]')).not.toBeNull();
+        expect(container.querySelector('[data-tile-disallowed], [data-bubble="disallow"], img[src*="disallow"]')).toBeNull();
+        expect(container.innerHTML).not.toContain('Heroes may not work this');
     });
 });
 

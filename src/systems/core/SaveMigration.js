@@ -97,6 +97,10 @@ export function migrateState(state, savedVersion) {
         }
         if (changed) migrated.board = board;
     }
+    // Retired Disallow: a Token an older save marked "heroes may not work this" loses the mark,
+    // on the live board and every Region's, and heroes may work it again.
+    migrated = withoutDisallowMarks(migrated);
+
     const ranks = migrated.progress?.guildUpgrades;
     if (isPlainObject(ranks) && RETIRED_UPGRADES.some(id => id in ranks)) {
         const kept = { ...ranks };
@@ -171,6 +175,37 @@ export function migrateStateToOrders(state) {
     }
     if (Array.isArray(state.heroes) && state.heroes.some(h => isPlainObject(h) && 'flagRules' in h)) {
         out = { ...out, heroes: state.heroes.map(withoutFlagRules) };
+    }
+    return out;
+}
+
+/** A board whose Tokens carry no retired `disallowed` mark, or the same board when none does. */
+export function boardWithoutDisallowMarks(board) {
+    const tokens = board?.tokens;
+    if (!isPlainObject(tokens) || !Object.values(tokens).some(t => isPlainObject(t) && 'disallowed' in t)) return board;
+    const kept = {};
+    for (const [id, t] of Object.entries(tokens)) {
+        if (!isPlainObject(t) || !('disallowed' in t)) { kept[id] = t; continue; }
+        const { disallowed: _dropped, ...rest } = t;
+        kept[id] = rest;
+    }
+    return { ...board, tokens: kept };
+}
+
+/** A saved state with no `disallowed` mark on any Token: the live board and every Region's. */
+export function withoutDisallowMarks(state) {
+    let out = state;
+    const board = boardWithoutDisallowMarks(state.board);
+    if (board !== state.board) out = { ...out, board };
+    const regions = state.atlas?.regions;
+    if (isPlainObject(regions)) {
+        let changed = false;
+        const next = {};
+        for (const [id, r] of Object.entries(regions)) {
+            const b = isPlainObject(r?.board) ? boardWithoutDisallowMarks(r.board) : r?.board;
+            if (b !== r?.board) { changed = true; next[id] = { ...r, board: b }; } else next[id] = r;
+        }
+        if (changed) out = { ...out, atlas: { ...state.atlas, regions: next } };
     }
     return out;
 }

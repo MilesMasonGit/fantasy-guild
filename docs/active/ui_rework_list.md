@@ -26,7 +26,8 @@ dev build or with Debug Mode on; T-097 hides Debug Mode in shipped builds.
 ## Bubble design — locked (owner interview, 2026-10-07)
 
 "Bubbles" are the small round badges on a Token (the ring badges in code:
-`RingBadge`, `TokenBadgeRow`, `TurnRing`, `StationGearBadge`, `DisallowBadge`).
+`RingBadge`, `TokenBadgeRow`, `TurnRing`, `StationGearBadge`; the Disallow mark went with
+Disallow in brief 420 T2).
 
 **Positions, inside the Token's box:**
 
@@ -34,7 +35,7 @@ dev build or with Debug Mode on; T-097 hides Debug Mode in shipped builds.
  +---------------------+
  | (timer)             |   top-left: time until the Token changes (growth or turn)
  |                     |
- |   (gear)(3/5)(X)    |   middle row: gear, spawner count, disallow, side by side
+ |   (gear)(3/5)       |   middle row: gear, spawner count, side by side
  |                     |
  | (cycle) (quest) (12)|   bottom-left work cycle · bottom-centre quest · bottom-right charges
  +---------------------+
@@ -49,7 +50,6 @@ dev build or with Debug Mode on; T-097 hides Debug Mode in shipped builds.
 | **Growth timer (new)**: sapling, sprout, young tree | top-left | on hover, and in its last ~10 s |
 | Spawner count | middle row | ~2 s when it changes, and on hover |
 | Station / Foundation gear | middle row | always while a choice is needed; on hover otherwise |
-| Disallow mark | middle row | always while disallowed |
 | Stuck-spawner warning (yellow: needs an item, red: no room) | middle row | always while the spawner is stuck (owner, 2026-10-07) |
 
 - **Middle row**: when a Token has several centre bubbles they line up side by
@@ -181,7 +181,7 @@ gear-and-side-panel version and ruled it should work like Rimworld's work tab:
   stays while the pointer moves into it. It drops down over the mat; Esc or
   clicking elsewhere closes it.
 - **One row per Token type**, no individual Tokens: "Oak Tree ×5", with small
-  status counts (working / idle / blocked / disallowed).
+  status counts (working / idle / blocked).
 - **Hovering a row highlights every Token of that type** on the mat. Clicking a
   row does nothing more.
 - **Order**: Tokens **missing items** (waiting for inputs or upkeep they can't
@@ -279,9 +279,7 @@ I think spawners and spawned tokens should be subject to the same cap. Let's inc
 **Upkeep:**
 Should not display trickle income/passive production. This is meant to be a summary of what wants to consume resources, how much and how often.
 
-**Disallow:**
-Disallowed tokens should have the disallow icon in the center of the token.
-The "Heroes may work this" switch in the inspection should be a disallow function instead.
+**Disallow:** *(retired by brief 420 T2, owner 2026-11-03: Disallow is gone, the whole mechanic.)*
 
 **Token Inspection UI:**
 Skill icon sprites are fuzzy and not sharp in this view.

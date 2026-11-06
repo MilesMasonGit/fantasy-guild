@@ -121,7 +121,6 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
   under. *(`MatCap.js`)*
 - One Mythic of a type may be placed at a time (the only gameplay use of
   rarity). *(`Placement.js:84-93`)*
-- **Disallow mode** (top bar): click Tokens to forbid hero work on them.
 - **Terrain** (the ground under the Tokens) is **Built** (brief 80): each Region's stored cell map
   drawn as pixel ground, one look per terrain per Region, meadow where a Region stores none (the
   Starter Camp). Static: nothing on the mat changes it. *(`TerrainCanvas.jsx`)*
@@ -1338,8 +1337,8 @@ drawers**. The menu can be flipped to the right.
 - **Bubble menu**: Guild Hall, Item Bank, Shop, Settings.
 - **Top bar**: the Region's name over its banner (at 3×, running on under the middle and fading
   out), Tokens / cap and upkeep per minute (each opens its summary on hover, staying while the
-  pointer moves into it; the Token Summary's rows light their Tokens on the mat), disallow mode,
-  and Demolish with its cursor's pixel X.
+  pointer moves into it; the Token Summary's rows light their Tokens on the mat), and Demolish
+  with its cursor's pixel X.
 - **Token card** (a click on a Token): the name as a header, then a stat block
   (level, XP, time, charges; an enemy's HP, level, XP) and sections: the recipe
   picked, **Requires** (tools and what is used up), **Makes** or a water's

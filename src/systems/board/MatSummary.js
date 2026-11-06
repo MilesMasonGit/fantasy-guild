@@ -7,13 +7,12 @@ const GENERAL_SECTION = 'general';
 export const TOKEN_STATUS = Object.freeze({
     WORKING: 'working',
     IDLE: 'idle',
-    BLOCKED: 'blocked',
-    OFF: 'off'
+    BLOCKED: 'blocked'
 });
 
 /**
  * The Token Summary: every Token that counts toward the cap, placed or spawned, as one row per
- * type with how many copies are working, idle, blocked and disallowed.
+ * type with how many copies are working, idle and blocked.
  *
  * Rows with a Token missing items (`missing`) come first; the rest are grouped by skill section
  * the way the Shop is (sections by name, General last), a spawner placed right before the Tokens
@@ -35,7 +34,7 @@ export const TOKEN_STATUS = Object.freeze({
  *   total: number,
  *   pinned: Row[],
  *   sections: { section: string, name: string, rows: Row[] }[]
- * }} where Row is `{ typeId, name, count, working, idle, blocked, off, missing }`
+ * }} where Row is `{ typeId, name, count, working, idle, blocked, missing }`
  */
 export function summariseMat(tokens = [], {
     nameOf, isExcluded, statusOf = () => ({ status: TOKEN_STATUS.IDLE }),
@@ -47,14 +46,13 @@ export function summariseMat(tokens = [], {
         if (!t?.typeId || isExcluded?.(t)) continue;
         let row = byType.get(t.typeId);
         if (!row) {
-            row = { typeId: t.typeId, name: nameOf ? nameOf(t.typeId) : t.typeId, count: 0, working: 0, idle: 0, blocked: 0, off: 0, missing: 0 };
+            row = { typeId: t.typeId, name: nameOf ? nameOf(t.typeId) : t.typeId, count: 0, working: 0, idle: 0, blocked: 0, missing: 0 };
             byType.set(t.typeId, row);
         }
         row.count++;
         const { status, missing } = statusOf(t) || {};
         if (status === TOKEN_STATUS.WORKING) row.working++;
         else if (status === TOKEN_STATUS.BLOCKED) row.blocked++;
-        else if (status === TOKEN_STATUS.OFF) row.off++;
         else row.idle++;
         if (missing && status === TOKEN_STATUS.BLOCKED) row.missing++;
     }

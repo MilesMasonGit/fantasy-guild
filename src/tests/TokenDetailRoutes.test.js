@@ -13,6 +13,7 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Charges from '../systems/board/Charges.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Demolition from '../systems/board/Demolition.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
@@ -129,12 +130,12 @@ describe('each MatToken detail field updates on its own event (CR3-304)', () => 
         expect(read(station).alert).toBe(station.alert);
     });
 
-    it('disallowed — the player disallows it (TILE_CHANGED by id)', async () => {
+    it('marked — the player marks it for demolition (TILE_CHANGED by id)', async () => {
         const t = put(P(600, 600), 'fixture_producer');
         const read = await probe(t);
-        expect(read(t).disallowed).toBe(false);
-        await doing(() => Flags.setDisallowed(t.id, true));
-        expect(read(t).disallowed).toBe(true);
+        expect(read(t).marked).toBe(false);
+        await doing(() => Demolition.mark(t.id));
+        expect(read(t).marked).toBe(true);
     });
 
     it('heroId — a hero arrives to work it (HERO_MOVED by id)', async () => {

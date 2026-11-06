@@ -6,7 +6,7 @@
  * `ui.drawer.panes.includes('bank')`.
  * Two call sites enforce it:
  * - `AlphaPointerSensor`'s activator refuses a press inside `[data-board-origin]` while this
- * is on, the same way disallow mode does, so no Token, flag or hero drag can START from the
+ * is on, the same way a map mode does, so no Token, flag or hero drag can START from the
  * mat.
  * - `Board.jsx`'s `matAccepts` refuses every payload while this is on, so dnd-kit never calls
  * the mat's `onDrop`: nothing can land there either, including a Token or flag dragged from

@@ -17,7 +17,6 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as Banners from '../systems/notifications/banners.js';
 import { wireNotifications, unwireNotifications } from '../systems/notifications/routing.js';
-import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
@@ -36,7 +35,8 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
 }));
 
 /**
- * ⭐ Free Playmat slice 1.4c — combat flags and disallow (promotion offers retired with jobs).
+ * ⭐ Free Playmat slice 1.4c — combat flags (promotion offers retired with jobs), and an old save's
+ * retired Disallow mark.
  *
  * ⚠️ Laid out on the old reaches — flag radius 400 u, Near 272 u (a Token on a
  * diagonal) — so `beforeEach` sets both. The flag radius ships at 240 u, Near at 164 u.
@@ -139,15 +139,6 @@ describe('⭐ a hero sent to an enemy fights it (FP-32)', () => {
         run(1000);
         expect(workTileOf('h1')).toBeNull();
         expect(BoardCombat.fightOfHero('h1')).toBeNull();
-    });
-
-    it('a disallowed enemy is refused as disallowed (FP-35)', () => {
-        const near = put(15, 'fixture_enemy');
-        Flags.setDisallowed(idAt(15), true);
-
-        expect(fightAt('h1', 15).success).toBe(false);
-        expect(Flags.orderRefusal('h1', near)).toEqual({ reason: Flags.SKIP.DISALLOWED });
-        expect(workTileOf('h1')).toBeNull();
     });
 
     it('a second hero sent to an enemy another hero holds skips it as claimed (FP-25)', () => {
@@ -347,84 +338,46 @@ describe('⭐ defeat furls the flag, with one knock-out banner (FP-42)', () => {
     });
 });
 
-describe('⭐ disallow (FP-35)', () => {
+describe('⭐ a Promotion Token is nothing a hero works', () => {
     beforeEach(() => {
         GameState.state.heroes = [logger('h1')];
     });
 
-    it('releases the hero at once, resets progress, announces itself, and the hero waits by it', () => {
-        const forest = put(14, 'fixture_producer');
-        put(16, 'fixture_producer');
-        Orders.orderAt('h1', C(14));
-        run(5000);
-        expect(forest.cycleElapsedMs).toBeGreaterThan(0);
-
-        const changed = [];
-        const offs = [
-            EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, p => changed.push(p))
-        ];
-        let result;
-        try {
-            result = Flags.setDisallowed(idAt(14), true);
-        } finally {
-            offs.forEach(off => off?.());
-        }
-
-        expect(result.success).toBe(true);
-        expect(forest.disallowed).toBe(true);
-        expect(workTileOf('h1')).toBeNull();
-        expect(forest.cycleElapsedMs).toBe(0);
-        expect(changed).toContainEqual({ instanceId: idAt(14), typeId: 'fixture_producer' });
-
-        run(100);
-        expect(workTileOf('h1')).toBeNull();
-        expect(reasons(forest)).toEqual([Flags.SKIP.DISALLOWED]);
-
-        Flags.setDisallowed(idAt(14), false);
-        expect(forest.disallowed).toBeUndefined();
-        run(100);
-        expect(workTileOf('h1')).toBe(14);
-    });
-
     // Rewritten with classless heroes: a Promotion Token (a retired Promotes rule) is nothing a hero
-    // works: not offered the toggle, and an order onto it is refused as nothing to work.
-    it('is never claimed as a Promotion Token either', () => {
+    // works, and an order onto it is refused as nothing to work.
+    it('is never claimed', () => {
         const academy = put(14, 'fixture_promotion', 2);
         expect(Flags.isHeroWorkable(academy)).toBe(false);
-        Flags.setDisallowed(idAt(14), true);
 
         expect(Orders.orderAt('h1', C(14)).success).toBe(false);
 
         expect(workTileOf('h1')).toBeNull();
         expect(Flags.orderRefusal('h1', academy)).toEqual({ reason: Flags.ORDER_NOTHING });
     });
+});
 
-    it('does not stop the Token’s own Provides', () => {
-        put(14, 'fixture_producer');
-        put(15, 'fixture_buff_yield');
-        TileModifiers.rebuildAround([C(15)]);
-        const allowed = TileModifiers.resolveAxis(idAt(14), EFFECT_TYPES.YIELD, 100, 'forestry');
-        expect(allowed).toBeGreaterThan(100);
-
-        Flags.setDisallowed(idAt(15), true);
-        TileModifiers.rebuildAround([C(15)]);
-
-        expect(TileModifiers.resolveAxis(idAt(14), EFFECT_TYPES.YIELD, 100, 'forestry')).toBe(allowed);
+describe('⭐ an old save’s Disallow mark is dropped on load', () => {
+    beforeEach(() => {
+        GameState.state.heroes = [logger('h1')];
     });
 
-    it('survives a save and reload', async () => {
+    it('the Token loads without it, and a hero ordered there works it', async () => {
         put(14, 'fixture_producer');
-        Flags.setDisallowed(idAt(14), true);
+        put(15, 'fixture_enemy');
+        // What the retired Disallow mode wrote on a Token.
+        tokenAt(14).disallowed = true;
+        tokenAt(15).disallowed = true;
 
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
+        expect(saved.state.board.tokens[idAt(14)].disallowed).toBe(true);
         await GameState.initFromSave(migrateState(saved.state, saved.version));
 
         const reloaded = tokenAt(14);
-        expect(reloaded.disallowed).toBe(true);
-        expect(Orders.orderAt('h1', C(14)).success).toBe(false);
-        expect(workTileOf('h1')).toBeNull();
-        expect(Flags.orderRefusal('h1', reloaded)).toEqual({ reason: Flags.SKIP.DISALLOWED });
-        // (It also pinned that a trip through the Vault dropped the mark; the
-        // Vault went in Token Lifecycle 9.3.)
+        expect('disallowed' in reloaded).toBe(false);
+        expect('disallowed' in tokenAt(15)).toBe(false);
+        expect(Flags.orderRefusal('h1', reloaded)).toBeNull();
+        expect(Orders.orderAt('h1', C(14)).success).toBe(true);
+        run(100);
+        expect(workTileOf('h1')).toBe(14);
     });
 });
