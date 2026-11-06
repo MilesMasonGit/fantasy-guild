@@ -13,3 +13,9 @@ You approved merging these on the tests while away. Nothing here needs a branch 
 
 4. **Settings and the title screen** (450 S1, S2; 440 A2). Reload the game: the title, the Guild Hall picture in a frame with the name on a plate (A framed; B backdrop and C strip are in `docs/active/research/settings_title/built/`), the slots beneath with icons and the time away on each. Open Settings (red bubble): three tabs, Display, Game, Audio, no coming-soon controls, your choices kept.
    Verdict:
+
+5. **Words on the encyclopedia's lines** (470 E2). Open the encyclopedia on the Iron Woodaxe: "tool for" on each line to a tree, "made at" from its station, "gives" from the Oak Tree; an ingredient's line stays plain. Hover a word: a sentence. The columns are 60 px further apart.
+   Verdict:
+
+6. **Disallow is gone** (420 T2). The top bar has Demolish only; Shift-click on a Token does nothing special; heroes work as before.
+   Verdict:
