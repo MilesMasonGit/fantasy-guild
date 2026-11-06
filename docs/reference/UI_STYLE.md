@@ -206,6 +206,12 @@ normal text colour; a new meaning needs the owner's OK.
   price as rows, and a large main **Settle** across the panel's width (greyed with what is short
   under it, or with the ring star's line when its ring waits for one), or, once settled, its mat
   drawn small, its facts and a large **Travel**.
+- **Settling's title** (brief 380 M5; *new, unapproved*): after the gold banner, a dark band across
+  the mat above the Guild Hall, under the banners, opening from its middle line in four held
+  frames; the place's banner at the top bar's 3× fading out at both ends; a 2 px gold line at its
+  top and foot; the name in the display size with the hard 2 px outline, its land and line in the
+  title size under it. Under three seconds; a click or any key skips it; reduced motion: no
+  opening or closing. Travel keeps the plain arrival card.
 
 ## Sprites and icons
 

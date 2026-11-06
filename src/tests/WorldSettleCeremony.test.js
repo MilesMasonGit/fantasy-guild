@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import fs from 'fs';
 import { GameState } from '../state/GameState.js';
 import { validateSaveData } from '../state/StateSchema.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
@@ -21,6 +22,7 @@ import * as Arrival from '../systems/world/Arrival.js';
 import { fixtureCell } from '../ui/dev/worldDev.js';
 import { worldTables } from '../config/registries/worldTablesRegistry.js';
 import { MAX_ARRIVAL } from '../config/worldTablesShape.js';
+import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { matW, matH, artRadius, artRadiusOf } from '../config/matGeometry.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 
@@ -165,6 +167,50 @@ describe('⭐ the arrival stands spread out across the mat', () => {
 });
 
 describe('⭐ every enemy can be reached', () => {
+    /** Every enemy of the live mat's arrival: placed, its art whole on the mat, out of the Hall's clearing. */
+    function expectStandsWell(arrival, where) {
+        expect(arrival.unplaced, where).toEqual([]);
+        const hall = hallOf();
+        for (const id of arrival.ids) {
+            const enemy = BoardState.getTokenById(id);
+            const r = artRadiusOf(enemy.typeId);
+            expect(enemy.x - r, `${where} ${id}`).toBeGreaterThanOrEqual(0);
+            expect(enemy.y - r, `${where} ${id}`).toBeGreaterThanOrEqual(0);
+            expect(enemy.x + r, `${where} ${id}`).toBeLessThanOrEqual(matW());
+            expect(enemy.y + r, `${where} ${id}`).toBeLessThanOrEqual(matH());
+            expect(outOfClearing(enemy, hall), `${where} ${id}`).toBeGreaterThan(0.9);
+            expect(Occupation.isArrivalId(id)).toBe(true);
+        }
+    }
+
+    /**
+     * Send `runner` at each enemy in turn, walking: each order is taken, and the hero walks there
+     * and starts that fight. Then home again, healed. Returns the longest walk in game ms.
+     */
+    function reachEach(runner, arrival, where) {
+        let slowest = 0;
+        const hero = GameState.heroes.find(h => h.id === runner.id);
+        // Strong enough that no first blow out there knocks them down between two orders.
+        hero.skills[COMBAT_SKILL_IDS[0]] = { xp: 0, level: 99 };
+        for (const id of arrival.ids) {
+            hero.hp.max = Math.max(hero.hp.max, 100_000);
+            hero.hp.current = hero.hp.max;
+            const enemy = BoardState.getTokenById(id);
+            expect(Flags.orderRefusal(runner.id, enemy), `${where} ${id}`).toBeNull();
+            expect(Flags.orderToken(runner.id, enemy).success).toBe(true);
+            const start = clock;
+            while (BoardCombat.fightOfHero(runner.id)?.instanceId !== id && clock - start < 40_000) run(100);
+            expect(BoardCombat.fightOfHero(runner.id)?.instanceId, `${where}: the hero reaches ${id}`).toBe(id);
+            slowest = Math.max(slowest, clock - start);
+            Flags.sendHome(runner.id);
+            run(100);
+            expect(hero.status, `${where}: knocked down at ${id}`).not.toBe('wounded');
+        }
+        return slowest;
+    }
+
+    const travelHome = () => expect(Atlas.travel(Atlas.list().find(r => r.kind === Atlas.REGION_KIND.STARTER).id).success).toBe(true);
+
     /**
      * Over many places (every kit, the largest arrival there is, a new seed each): every enemy is
      * put on the mat, its art whole on it, out of the Hall's clearing, and a hero sent at it walks
@@ -179,65 +225,63 @@ describe('⭐ every enemy can be reached', () => {
         let slowest = 0;
         for (let i = 0; i < 60; i++) {
             const { arrival } = settleFixture(kits[i % kits.length], i);
-            expect(arrival.unplaced, `place ${i}`).toEqual([]);
             expect(arrival.ids).toHaveLength(MAX_ARRIVAL);
-            const hall = hallOf();
-            for (const id of arrival.ids) {
-                const enemy = BoardState.getTokenById(id);
-                const r = artRadiusOf(enemy.typeId);
-                expect(enemy.x - r, `place ${i} ${id}`).toBeGreaterThanOrEqual(0);
-                expect(enemy.y - r).toBeGreaterThanOrEqual(0);
-                expect(enemy.x + r).toBeLessThanOrEqual(matW());
-                expect(enemy.y + r).toBeLessThanOrEqual(matH());
-                expect(outOfClearing(enemy, hall), `place ${i} ${id}`).toBeGreaterThan(0.9);
-                expect(Flags.orderRefusal(runner.id, enemy)).toBeNull();
-                expect(Flags.orderToken(runner.id, enemy).success).toBe(true);
-                const start = clock;
-                while (BoardCombat.fightOfHero(runner.id)?.instanceId !== id && clock - start < 40_000) run(100);
-                expect(BoardCombat.fightOfHero(runner.id)?.instanceId, `place ${i}: the hero reaches ${id}`).toBe(id);
-                slowest = Math.max(slowest, clock - start);
-                enemiesSeen++;
-                Flags.sendHome(runner.id);
-                run(100);
-            }
-            const home = Atlas.list().find(r => r.kind === Atlas.REGION_KIND.STARTER).id;
-            expect(Atlas.travel(home).success).toBe(true);
+            expectStandsWell(arrival, `place ${i}`);
+            slowest = Math.max(slowest, reachEach(runner, arrival, `place ${i}`));
+            enemiesSeen += arrival.ids.length;
+            travelHome();
         }
         expect(enemiesSeen).toBe(60 * MAX_ARRIVAL);
         // Real walks: the longest a fair way across the mat, never longer than across the whole of it.
         expect(slowest).toBeGreaterThan(3000);
         expect(slowest).toBeLessThan(Math.hypot(matW(), matH()) / HeroMotion.walkSpeed() * 1000 + 1000);
-        if (process.env.FG_M5_STATS) console.log('M5 reach', JSON.stringify({ enemiesSeen, slowest, total: clock }));
     }, 240_000);
 
-    it('⭐ over 40 worlds, every ring-1 place settled: every enemy placed, on the mat and out of the clearing', () => {
-        let places = 0;
+    it('⭐ over 40 worlds: every ring-1 place settled, and a ring-2, a ring-3 and every odd-layout wild place written and arrived at; every enemy placed, on the mat and out of the clearing, and those further out each reached', () => {
+        const counts = { ring1: 0, ring2: 0, ring3: 0, wild: 0, enemies: 0, reached: 0 };
         for (let seed = 1; seed <= 40; seed++) {
+            BoardState.setInstantArrival(true);
             newGame(seed * 101);
-            const ring1 = World.currentWorld().cells.filter(c => c.ring === 1);
+            const world = World.currentWorld();
             const crew = heroes(1);
-            for (const cell of ring1) {
+            for (const cell of world.cells.filter(c => c.ring === 1)) {
                 for (const { skill, level } of cell.requires.skills) addXP(crew[0].id, skill, Math.max(0, xpForLevel(level) - (GameState.heroes[0].skills[skill]?.xp || 0)));
                 for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
                 const result = World.settleCell(cell.id);
                 expect(result.success, `${seed} ${cell.id}: ${result.reason}`).toBe(true);
-                expect(result.arrival.unplaced).toEqual([]);
                 expect(result.arrival.ids.length).toBe(cell.arrival.reduce((n, r) => n + r.count, 0));
-                const hall = hallOf();
-                for (const id of result.arrival.ids) {
-                    const enemy = BoardState.getTokenById(id);
-                    const r = artRadiusOf(enemy.typeId);
-                    expect(enemy.x - r).toBeGreaterThanOrEqual(0);
-                    expect(enemy.y - r).toBeGreaterThanOrEqual(0);
-                    expect(enemy.x + r).toBeLessThanOrEqual(matW());
-                    expect(enemy.y + r).toBeLessThanOrEqual(matH());
-                    expect(outOfClearing(enemy, hall), `${seed} ${cell.id} ${id}`).toBeGreaterThan(0.9);
-                }
-                places++;
+                expectStandsWell(result.arrival, `world ${seed} ${cell.id}`);
+                counts.ring1++;
+                counts.enemies += result.arrival.ids.length;
+            }
+            // Further out, past what this guild could pay for: written and arrived at directly.
+            const further = [
+                world.cells.find(c => c.ring === 2),
+                world.cells.find(c => c.ring === 3),
+                ...world.cells.filter(c => c.wild && c.extreme?.kind === 'layout')
+            ].filter(Boolean);
+            BoardState.setInstantArrival(false);
+            for (const cell of further) {
+                const written = World.writePlace(cell, { cellId: cell.id });
+                expect(written.success, `${seed} ${cell.id}`).toBe(true);
+                const { travel, arrival } = World.arriveAt(written.region, written.mat);
+                expect(travel.success).toBe(true);
+                expect(arrival.ids.length).toBe(cell.arrival.reduce((n, r) => n + r.count, 0));
+                const where = `world ${seed} ${cell.id} (${cell.wild ? cell.extreme.layout : `ring ${cell.ring}`})`;
+                expectStandsWell(arrival, where);
+                reachEach(crew[0], arrival, where);
+                counts[cell.wild ? 'wild' : `ring${cell.ring}`]++;
+                counts.enemies += arrival.ids.length;
+                counts.reached += arrival.ids.length;
+                travelHome();
             }
         }
-        expect(places).toBe(40 * 6);
-    }, 240_000);
+        expect(counts.ring1).toBe(40 * 6);
+        expect(counts.ring2).toBe(40);
+        expect(counts.ring3).toBe(40);
+        expect(counts.wild).toBeGreaterThan(0);
+        if (process.env.FG_M5_OUT) fs.writeFileSync(process.env.FG_M5_OUT, JSON.stringify(counts));
+    }, 600_000);
 });
 
 describe('⭐ no fight starts by itself', () => {

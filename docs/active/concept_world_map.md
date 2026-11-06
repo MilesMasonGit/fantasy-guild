@@ -297,7 +297,7 @@ the player to **make nodes**.*
   settling), its land and line under it, the price in pills; the thin panel holds yields, price,
   a large Settle, and for a settled place its mat drawn small, facts, rename and Travel. The
   Regions page's archive, restore and abandon have no button now (the engine keeps them). The
-  settling ceremony (M5) is not built.
+  settling ceremony is M5's (below).
 - **Built (brief 380 M4, 2026-11-06)**: a Guild Hall **ring star** per ring from ring 2 (a star's
   `opensRing`): until it is bought, that ring's cells read darkened on the map, the hover and the
   panel name the star, and Settle refuses; ring 1 is open from the start, so the tutorial's first
@@ -306,6 +306,19 @@ the player to **make nodes**.*
   the stage before it ends; wild rings by the tables' price growth). The ledger counts them: reach
   and path time wait for the star's price, checks F find a ring with no star or one asking its own
   ring's goods, and a pacing check finds a ring that opens well before the stage before it ends.
+- **Built (brief 380 M5, 2026-11-06)**: **the ceremony on settling**, in the owner's order. The gold
+  banner (brief 430 N2); a moment later the place's **title** across the mat above the Hall (the
+  arrival card's look writ large: a dark band opening from its middle line, the place's banner at
+  3×, the name in the display size, its land and line under it) with a fanfare (a stand-in until
+  the owner's sound); then the **heroes walk in** one after another from the mat's foot below the
+  Hall to their places by it, idle. Under three seconds of title, about four of walking; a click or
+  any key skips the title, reduced motion keeps it still. **The enemies stand spread out**: one to
+  each even share of the circle round the Hall (turned by the place's seed), out of the Hall's
+  clearing, short of the mat's margin; still until a hero is sent; no fight starts by itself.
+  Heroes bring no orders: their orders stay in the place they were given. Travel to a place settled
+  before is unchanged (the plain arrival card, no walk in); offline catch-up cannot settle. The
+  ledger times no clearing (a settle's own time is nought, fights are untimed), so the spread
+  changes nothing there; measured clearing times are in `research/world_map/built_m5/`.
 
 ## Amended by the detail pass (owner, 2026-11-03; brief 380)
 

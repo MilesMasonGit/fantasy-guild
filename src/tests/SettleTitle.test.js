@@ -118,10 +118,12 @@ describe('⭐ the title on settling a place', () => {
         expect(q(container, '[data-arrival-card]')).toBeNull();
     });
 
-    it('⭐ any key skips it, even before it has opened', () => {
+    it('⭐ any key skips it once it shows; a key before then (finishing the glide back from the map) does not', () => {
         const { container } = render(React.createElement(ArrivalCard));
         settleRingOne();
+        fireEvent.keyDown(window, { key: ' ' });
         act(() => { vi.advanceTimersByTime(SETTLE_TITLE.delayMs); });
+        expect(q(container, '[data-settle-title]')).toBeTruthy();
         fireEvent.keyDown(window, { key: 'Escape' });
         expect(q(container, '[data-arrival-card]')).toBeNull();
 
@@ -133,10 +135,12 @@ describe('⭐ the title on settling a place', () => {
         for (const { skill, level } of cell.requires.skills) addXP(hero.id, skill, Math.max(0, xpForLevel(level) - (hero.skills[skill]?.xp || 0)));
         for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
         act(() => { expect(World.settleCell(cell.id).success).toBe(true); });
-        fireEvent.keyDown(window, { key: ' ' });
         act(() => { vi.advanceTimersByTime(SETTLE_TITLE.delayMs + 10); });
+        fireEvent.keyDown(window, { key: 'Enter' });
         expect(q(container, '[data-arrival-card]')).toBeNull();
-        expect(fanfares()).toHaveLength(1);
+        act(() => { vi.advanceTimersByTime(SETTLE_TITLE.holdMs); });
+        expect(q(container, '[data-arrival-card]')).toBeNull();
+        expect(fanfares()).toHaveLength(2);
     });
 
     it('⭐ travel to a place settled before: the plain arrival card, no title, no fanfare', () => {

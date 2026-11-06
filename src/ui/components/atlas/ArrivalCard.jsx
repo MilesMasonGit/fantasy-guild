@@ -73,11 +73,13 @@ export const ArrivalCard = ({ durationMs = ARRIVAL_MS, title = SETTLE_TITLE }) =
     }, [durationMs, title, clearTimers, later]);
 
     const settling = card?.kind === 'settle';
+    // Only once it shows: a key pressed to finish the glide back from the world map is not a skip.
+    const titleShown = settling && card.phase !== 'waiting';
     useEffect(() => {
-        if (!settling || typeof window === 'undefined') return undefined;
+        if (!titleShown || typeof window === 'undefined') return undefined;
         window.addEventListener('keydown', skip, true);
         return () => window.removeEventListener('keydown', skip, true);
-    }, [settling, skip]);
+    }, [titleShown, skip]);
 
     if (!card) return null;
     const still = prefersReducedMotion();

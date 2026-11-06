@@ -1371,6 +1371,15 @@ drawers**. The menu can be flipped to the right.
   Atlas's `created` news; the first camp of a new game says nothing), red for
   a knock-out, the Bank refusing items or a save problem
   (`concept_notifications.md`, `systems/notifications/`).
+- **Settling's title** (brief 380 M5): a moment after a place's gold banner, its
+  title lies across the mat above the Guild Hall: a dark band opening from its
+  middle line in held frames, the place's banner at the top bar's 3× fading out
+  at both ends, gold lines at its edges, the place's name in the display size
+  with the hard outline and its land and line under it, and a fanfare (a
+  stand-in sound until the owner's). It stays under three seconds; a click or
+  any key skips it; under reduced motion it neither opens nor closes. Travel to
+  a place settled before shows the plain arrival card instead.
+  *(`atlas/SettleTitle.jsx`, `ArrivalCard.jsx`)*
 - **Hero bar** (bottom): the roster, heroes as standing figures with HP numbers
   over a smooth pixel bar, each with their job flag and an alert when wounded or the
   player must act; hover for what they are doing; drag a figure onto the mat
@@ -1450,8 +1459,8 @@ drawers**. The menu can be flipped to the right.
   the Guild Hall and the quest Tokens along (the Hall lands in the middle of a
   Region it has never stood in, and back in its old spot in one it has), and
   leaves each Region's flags behind: going back, every hero starts at the flag
-  they left there, with no work claimed and no fight on; a new Region starts
-  with everyone in the Dock. A settled place's panel on the world map shows
+  they left there, with no work claimed and no fight on; a place just settled
+  starts with no orders, its heroes walking in to the Hall (§10, the arrival). A settled place's panel on the world map shows
   its Region (its mat drawn small, its facts) and renames it; travel is its
   Travel button. Archive and abandon have no button since the Regions page
   left (brief 380 M3); the engine keeps them. *(`src/systems/atlas/`)*
@@ -1511,20 +1520,27 @@ drawers**. The menu can be flipped to the right.
   has one origin almost everywhere (three quarters of its nodes) or an odd
   layout (islands, mostly water, a chasm of Stone, cramped). **The arrival**: a
   settled place arrives occupied by the enemies its cell lists (3 to 6, more
-  further out, sometimes a boss), together in a lair in the mat's outer band,
-  one use each and tied to no camp. Until every one is beaten the mat is
+  further out, sometimes a boss), spread out across the mat, one to each even
+  share of the circle round the Hall turned by the place's seed, out of the
+  Hall's clearing and short of the mat's margin, one use each and tied to no
+  camp. They stand still until a hero is sent at them: no fight starts by
+  itself. Settling runs, in the owner's order, the gold banner, the place's
+  title (§9), then the heroes walking in one after another from the mat's foot
+  below the Hall to stand idle in their places by it; they bring no orders
+  (each hero's orders stay in the place they were given). Travel to a place
+  settled before does none of it. Until every one is beaten the mat is
   **held**: drawn dark (its ground shaded, its Tokens dimmed, the enemies
   bright), a hero may be sent at an enemy and at nothing else ("Beat the
   enemies here first"), and the place's own camps sleep (their clock stands
   at zero, the card says "asleep"), spawning an interval after it is cleared
   (owner); a hero whose enemy falls takes on the nearest one still
-  standing, so heroes sent at the lair keep fighting while the player is away;
+  standing, so heroes sent at them keep fighting while the player is away;
   the last one beaten brightens the mat ("The enemies are beaten: … is the
   guild's to work"). The board keeps it (`board.arrival`), so it travels and
   saves with the Region. The QA panel's Atlas section settles a fixture place
   of each kit for free, beats its arrival at once, and jumps the tutorial to
   its last step. *(`world/cellMat.js`, `world/cellRegion.js`, `world/Arrival.js`,
-  `board/Occupation.js`)* The tables are placeholder
+  `board/Occupation.js`, `HeroMotion.walkIn`)* The tables are placeholder
   until the CMS syncs `data/world.json` (W6). A save made before worlds has
   none: the world map says so. The QA panel's Atlas section meets the
   frontier's prices at a click (with the price of a ring star a frontier cell

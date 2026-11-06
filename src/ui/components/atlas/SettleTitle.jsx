@@ -5,11 +5,11 @@ import { BannerArt } from '../base/BannerArt.jsx';
 import { REGION_BANNER_SCALE } from '../board/MatRegionName.jsx';
 
 /**
- * Settling's timing, in ms: the title waits for the gold banner to drop first, stays, and opens and
- * closes in held frames. The heroes' walk in is the engine's (`HeroMotion.WALK_IN`), timed to start
- * while the title is up.
+ * Settling's timing, in ms: the title waits for the gold banner to drop and the view to glide back
+ * from the world map (`WorldCamera`), stays, and opens and closes in held frames. The heroes' walk
+ * in is the engine's (`HeroMotion.WALK_IN`), timed to start once the title is up.
  */
-export const SETTLE_TITLE = Object.freeze({ delayMs: 350, holdMs: 2600, openMs: 200, closeMs: 150 });
+export const SETTLE_TITLE = Object.freeze({ delayMs: 600, holdMs: 2600, openMs: 200, closeMs: 150 });
 
 /** The clip the title plays as it opens (`AudioSystem`). */
 export const SETTLE_FANFARE = 'settle_fanfare';
@@ -33,13 +33,14 @@ export function playFanfare() {
  * The title on settling a place: a dark band across the mat, opening from its middle line, the
  * place's banner at the top bar's 3× in it fading out at both ends, gold lines at its edges, and
  * over it the place's name in the display size with the hard outline, its land and line under it.
- * A press skips it (`onSkip`); under reduced motion (`still`) it neither opens nor closes.
+ * A press skips it (`onSkip`); under reduced motion (`still`) it neither opens nor closes. `band`
+ * places it (the style sheet page fills its own box).
  *
  * @param {{ title: {id: string, name: string, practical: string, banner: string|null},
- *   closing?: boolean, still?: boolean, onSkip?: () => void }} props
+ *   closing?: boolean, still?: boolean, onSkip?: () => void, band?: object }} props
  */
-export const SettleTitle = ({ title, closing = false, still = false, onSkip }) => (
-    <div className="absolute inset-x-0 z-[105] pointer-events-none" style={SETTLE_BAND}>
+export const SettleTitle = ({ title, closing = false, still = false, onSkip, band = SETTLE_BAND }) => (
+    <div className="absolute inset-x-0 z-[105] pointer-events-none" style={band}>
         <motion.div
             role="status"
             data-arrival-card={title.id}
