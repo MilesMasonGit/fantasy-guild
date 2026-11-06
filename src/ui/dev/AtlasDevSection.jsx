@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import * as World from '../../systems/world/World.js';
-import { meetFrontierPrices, settleFixture, beatArrival, jumpTutorialToWorld } from './worldDev.js';
+import { meetFrontierPrices, settleFixture, beatArrival, jumpTutorialToWorld, installRingStars } from './worldDev.js';
 import { setUpBuildingScene } from './buildingDev.js';
 
 /** The kits a fixture place can be settled as, with their buttons' words. */
@@ -19,7 +19,8 @@ const TEXT = Object.freeze({
     noWorld: 'This save has no world: it was made before worlds existed. Start a new game, or preview one.',
     thisWorld: (world) => `This game's world: seed ${world.seed}, ${world.cells.length} cells, ${world.problems.length} problems`,
     seedLabel: 'Seed',
-    met: (r) => `${r.cells} frontier cells: ${r.items} items topped up, ${r.skills} skills raised on the first hero`,
+    met: (r) => `${r.cells} frontier cells: ${r.items} items topped up, ${r.skills} skills raised on the first hero${r.stars ? `, the price of ${r.stars} Guild Hall ring ${r.stars === 1 ? 'star' : 'stars'} in the Bank (buy it in the Hall)` : ''}`,
+    ringStars: (r) => `${r.added} ring stars in the sky until reload: open the Guild Hall or the world map to see them`,
     settled: (r) => `Settled ${r.region.practicalName} (${r.region.flavourName}): ${r.enemies} enemies hold it`,
     beaten: (r) => `${r.beaten} enemies beaten: the mat is the guild's`,
     jumped: 'The tutorial is at its last step: the world map opens with it',
@@ -28,7 +29,9 @@ const TEXT = Object.freeze({
 
 /**
  * Meet the frontier's prices: every item the frontier cells ask for topped up in the Bank, and
- * their skills raised on the first hero, so Settle can be tried at once (`worldDev.js`). Settle a
+ * their skills raised on the first hero, so Settle can be tried at once (`worldDev.js`), with the
+ * price of a ring star a frontier cell waits for. Put the ring stars' pack in the sky until it is
+ * synced, so a locked ring can be seen in a dev build. Settle a
  * fixture place of each kit for free (its mat, its Stone and its darkened arrival), beat that
  * arrival at once, and skip the tutorial to its last step, which opens the world map.
  *
@@ -50,6 +53,10 @@ export function AtlasDevSection() {
         const result = beatArrival();
         setStatus(result.success ? TEXT.beaten(result) : result.reason);
     };
+    const ringStars = () => {
+        const result = installRingStars();
+        setStatus(result.success ? TEXT.ringStars(result) : result.reason);
+    };
     const jump = () => {
         const result = jumpTutorialToWorld();
         setStatus(result.success ? TEXT.jumped : result.reason);
@@ -68,7 +75,10 @@ export function AtlasDevSection() {
     return (
         <div className="mb-3 pb-3 border-b border-gi-border space-y-2" data-testid="qa-atlas">
             <div className={labelClass}>Atlas (dev only)</div>
-            <button type="button" data-qa-world-meet className={buttonClass} onClick={meet}>Meet the frontier&apos;s prices</button>
+            <div className="flex flex-wrap gap-2">
+                <button type="button" data-qa-world-meet className={buttonClass} onClick={meet}>Meet the frontier&apos;s prices</button>
+                <button type="button" data-qa-world-ring-stars className={buttonClass} onClick={ringStars}>Ring stars in the sky (until their pack is synced)</button>
+            </div>
             <div className="ui-text-body text-gi-muted">Settle a ring-1 place for free, written from its kit, and go there:</div>
             <div className="flex flex-wrap gap-2">
                 {FIXTURE_KITS.map(([kit, name]) => (

@@ -12,8 +12,9 @@ import { SETTLE_TEXT } from '../systems/world/Settling.js';
 import { CELL_STATE } from '../systems/world/frontier.js';
 import { ringLock, ringStarsOf, ringOfStar } from '../systems/world/ringStars.js';
 import { normaliseStar, normaliseHallSky } from '../config/hallStars.js';
-import { getUpgradeDef } from '../config/guildUpgrades.js';
-import { registerHallSky } from '../config/registries/hallStarRegistry.js';
+import { getUpgradeDef, authoredStars } from '../config/guildUpgrades.js';
+import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
+import { installRingStars, meetFrontierPrices } from '../ui/dev/worldDev.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { starSentence, starAmount, RING_STAR_TEXT } from '../systems/progression/hallStarText.js';
 import { outlineSpriteName } from '../ui/components/board/hallStarOutline.js';
@@ -190,6 +191,26 @@ describe('the world map reads a locked ring', () => {
         expect(cell.look).toBe(CELL_LOOK.READY);
         // A settled cell carries no lock; ring 1 never does.
         for (const c of worldView().cells.filter(x => x.ring <= 1)) expect(c.lock, c.id).toBeNull();
+    });
+});
+
+describe('the QA panel shows a locked ring before the pack is synced', () => {
+    it('puts the pack\'s ring stars beside the authored sky once, and the frontier\'s prices then hold a star\'s price', () => {
+        registerHallSky(null);
+        expect(ringStarsOf(authoredStars()).size).toBe(0);
+        expect(installRingStars()).toEqual({ success: true, added: 5 });
+        expect([...ringStarsOf(authoredStars()).keys()]).toEqual([2, 3, 4, 5, 6]);
+        expect(installRingStars().success).toBe(false);
+        // The authored stars are all still there.
+        expect(authoredStars().length).toBe(normaliseHallSky(authoredHallSky()).stars.length + 5);
+
+        const { next } = ringTwoFrontier();
+        expect(World.ringLockOf(next).stars[0].name).toBe('Charted Roads');
+        const cherries = InventoryManager.getItemCount('item_cherry');
+        expect(meetFrontierPrices()).toMatchObject({ success: true, stars: 1 });
+        expect(InventoryManager.getItemCount('item_cherry')).toBeGreaterThanOrEqual(cherries + 1700);
+        expect(GuildUpgradeManager.purchase('star_ring_2').success).toBe(true);
+        expect(World.ringLockOf(next)).toBeNull();
     });
 });
 

@@ -96,10 +96,9 @@ describe('checks F: the ring stars', () => {
         expect(ringStar(plan(wild, 2).findings)).toEqual([]);
     });
 
-    it('a star a ring past it gives the goods of (a wild star priced in the wild ring\'s own goods) is late', () => {
+    it('a star asking for a later ring\'s goods, beside earlier ones, is never lit either', () => {
         const ws = worldWorkspace();
-        // The ring-3 goods are had at ring 3; asking them of ring 3's own star loops, but of ring 2's
-        // star they are simply later than ring 2.
+        // Ring 3's goods wait on ring 3, which waits on ring 2, which waits on this star.
         priceOf(ws, 2, [{ itemId: 'item_copper_ore', quantity: 5 }, { itemId: 'item_trees_3', quantity: 1 }]);
         const hits = ringStar(plan(ws, 3).findings);
         expect(hits.map(f => f.subject)).toEqual(['ring 2: star never lit', 'ring 3: star never lit', 'ring 4: star never lit']);
