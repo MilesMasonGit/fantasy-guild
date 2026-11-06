@@ -146,7 +146,7 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 
 ## Notes between directors
 
-- **Bench coverage after brief 500 (director decision pending):** with no ambushes, S2, S5, C240, C256, the S8 family and the draw bench `fights<N>` scenes no longer fight (their heroes only fought because they were ambushed), and S5 no longer storms. Next: an engineer sends heroes at the camps in those scenarios so fights are measured again, then a baseline retake.
+- **Bench coverage after brief 500 (owner 5 Nov: yes, after the merges):** with no ambushes, S2, S5, C240, C256, the S8 family and the draw bench `fights<N>` scenes no longer fight (their heroes only fought because they were ambushed), and S5 no longer storms. Next: an engineer sends heroes at the camps in those scenarios so fights are measured again, then a baseline retake.
 
 None open.
 
