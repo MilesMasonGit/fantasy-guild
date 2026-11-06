@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import {
     ramp, lighten, toward, grassColours, grassTable, grassNoise, earthNoise, grassShapeAt, buildGrassPlan, drawGrass,
     drawsGenerated, grassCells, lookRules, shadeRatio, waterBands, poolCentres, poolRingAt,
-    GRASS_RULES, COLOUR, BIT, SHORE, KIND_MASK, SLOT_SHIFT, KIND_LIMIT, kindColour
+    GRASS_RULES, COLOUR, BIT, SHORE, KIND_MASK, SLOT_SHIFT, KIND_LIMIT, kindColour, BANK_SLOTS
 } from '../systems/board/TerrainGrass.js';
 import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
 import { resolveArtPixels } from '../systems/board/TerrainLattice.js';
@@ -784,21 +784,45 @@ describe('⭐ Shaped water: lakes, rivers and sulphur springs by their own field
         }
     }, 30000);
 
-    it('⭐ wets the land round a lake in a bank two and a half pixels wide, and nowhere else', () => {
+    it('⭐ wets the land round a lake and a river in a thin bank, ragged out wider and barred with sand in the bends by the bank\'s width, and nowhere else', () => {
         const { plan, f, d } = shaped('water_lake_river', 84);
+        const { bar } = rasterise(regionGround({ seed: 84, ground: budget([DEV_MAPS.water_lake_river], { cap: 128 }).ground,
+            terrain: layout(budget([DEV_MAPS.water_lake_river], { cap: 128 }), { seed: 84, mat: MAT, crowding: { hitboxPct: 80, overlapPct: 40 }, artRadius: () => 64 }).terrain }, MAT).water,
+        { x0: 1, y0: 1, step: 2, nx: plan.width, ny: plan.height }, { bends: true });
         const water = plan.grass.looks.map(id => Boolean(lookRules(id).water));
+        const { width, at } = lake.bank;
+        const thin = at[at.length - 1][0];
+        // The widest a bar of sand reaches, by `WIDE_BANK` in TerrainGrass: 5.4 times the extra width.
+        const reach = width + (width - thin) * 5.4;
+        const BAR = [COLOUR.BANK + 2, COLOUR.BANK + 3, COLOUR.BANK + 4];
         let bank = 0;
+        let ragged = 0;
+        let sand = 0;
         const wrong = [];
         for (let i = 0; i < d.colour.length; i++) {
             const k = d.colour[i];
             if (!d.kinds[i] || water[d.kinds[i] >> SLOT_SHIFT]) continue;
             const out = -f[d.planAt[i]] / 2;
-            const want = out >= 0 && out <= 1 ? COLOUR.BANK : out > 1 && out <= 2.5 ? COLOUR.BANK + 1 : null;
-            if (want !== null) bank++;
-            if (want !== null ? k !== want : k >= COLOUR.BANK && k < COLOUR.BANK + 4) wrong.push(`${i}: ${k} at ${out} px`);
+            const banked = k >= COLOUR.BANK && k < COLOUR.BANK + 5;
+            if (BAR.includes(k)) {
+                sand++;
+                // Sand only on the inside of a river's bend, past the dark waterline.
+                if (!(bar[d.planAt[i]] > 0) || out <= at[0][0]) wrong.push(`${i}: sand at ${out} px, bend ${bar[d.planAt[i]]}`);
+            } else if (out >= 0 && out <= at[0][0]) {
+                bank++;
+                if (k !== COLOUR.BANK) wrong.push(`${i}: ${k} at ${out} px`);
+            } else if (out > at[0][0] && out <= thin) {
+                bank++;
+                if (k !== COLOUR.BANK + 1) wrong.push(`${i}: ${k} at ${out} px`);
+            } else if (out > thin && out <= reach) {
+                if (banked) ragged++;
+            } else if (banked) wrong.push(`${i}: ${k} at ${out} px, past the bank`);
         }
         expect(wrong.slice(0, 5)).toEqual([]);
         expect(bank).toBeGreaterThan(500);
+        expect(width, 'the wide bank of pick C').toBeGreaterThan(thin);
+        expect(ragged, 'the bank ragged out past its thin steps').toBeGreaterThan(200);
+        expect(sand, 'sand in the bends').toBeGreaterThan(100);
     });
 
     it('⭐ rings a sulphur spring from its pale rim to its milky middle, crusts the land round it, and keeps it real water', () => {
@@ -815,7 +839,7 @@ describe('⭐ Shaped water: lakes, rivers and sulphur springs by their own field
                 expect(d.colour[i]).toBe(COLOUR.SEA + ring);
                 seen.add(ring);
             } else if (d.kinds[i] && px <= 0 && -px <= 7) {
-                expect(d.colour[i]).toBe(-px <= 4 ? COLOUR.BANK + 2 : COLOUR.BANK + 3);
+                expect(d.colour[i]).toBe(COLOUR.BANK + BANK_SLOTS.sulphur + (-px <= 4 ? 0 : 1));
                 crust++;
             }
         }

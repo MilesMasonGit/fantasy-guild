@@ -597,10 +597,8 @@ function riverInto(out, lattice, shape, L, scratch) {
 function courseInto(out, lattice, shape, L, scratch, bends) {
     const pts = shape.points;
     const hs = shape.h;
-    let widest = 0;
-    for (const v of hs) if (v > widest) widest = v;
-    const reach = widest + RIVER.bank / 2 + RIVER.fine / 2 + BANK_PAD;
-    const reach2 = reach * reach;
+    // How far past a stretch's banks the field is worked out: further for the drawing's bars of sand.
+    const pad = RIVER.bank / 2 + RIVER.fine / 2 + (bends ? BAR.pad : BANK_PAD);
     const { step, nx } = lattice;
     const { near, best, seen, touched } = scratch;
     const seg = bends ? (scratch.seg || (scratch.seg = new Int32Array(near.length))) : null;
@@ -611,6 +609,9 @@ function courseInto(out, lattice, shape, L, scratch, bends) {
         const [bx, by] = pts[k + 1];
         const wa = hs[k];
         const dw = hs[k + 1] - wa;
+        const top = dw > 0 ? wa + dw : wa;
+        const reach = top + pad;
+        const reach2 = reach * reach;
         const dx = bx - ax;
         const dy = by - ay;
         const L2 = dx * dx + dy * dy;
@@ -625,20 +626,23 @@ function courseInto(out, lattice, shape, L, scratch, bends) {
                 const ey = y - (ay + dy * t);
                 const d2 = ex * ex + ey * ey;
                 if (d2 >= reach2) continue;
-                const v = wa + dw * t - Math.sqrt(d2);
                 const p = j * nx + i;
                 if (seen[p] !== stamp) {
                     seen[p] = stamp;
                     near[p] = d2;
-                    best[p] = v;
+                    best[p] = wa + dw * t - Math.sqrt(d2);
                     if (seg) seg[p] = k;
                     touched.push(p);
-                } else {
-                    if (d2 < near[p]) near[p] = d2;
-                    if (v > best[p]) {
-                        best[p] = v;
-                        if (seg) seg[p] = k;
-                    }
+                    continue;
+                }
+                if (d2 < near[p]) near[p] = d2;
+                // No root where this stretch cannot beat the best so far: its widest less the distance.
+                const room = top - best[p];
+                if (room <= 0 || d2 >= room * room * (1 + 1e-9)) continue;
+                const v = wa + dw * t - Math.sqrt(d2);
+                if (v > best[p]) {
+                    best[p] = v;
+                    if (seg) seg[p] = k;
                 }
             }
         }
@@ -671,8 +675,12 @@ function courseInto(out, lattice, shape, L, scratch, bends) {
     }
 }
 
-/** How sharply a river turns, from which a bend's inside is known: the turn's sine at a point, from `BAR.reach` either side. */
-const BAR = Object.freeze({ reach: 70, from: 0.07, span: 0.3 });
+/**
+ * How sharply a river turns, from which a bend's inside is known: the turn's sine at a point, from
+ * `reach` either side, a bar from `from` and whole by `from + span`. On the drawing's lattice the
+ * field reaches `pad` past the banks, so a bar of sand has land to lie on.
+ */
+const BAR = Object.freeze({ reach: 70, from: 0.07, span: 0.3, pad: 32 });
 
 /** Each point's turn: the cross product of the headings `BAR.reach` before and after it. */
 function bendsOf(pts) {

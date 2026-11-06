@@ -129,6 +129,8 @@ export const DEV_MAPS = Object.freeze({
     water_split: withWater('meadow', WATER_KIND.SPLIT),
     water_spring: withWater('meadow', WATER_KIND.SPRING),
     water_mountain_river: withWater('mountain', WATER_KIND.MOUNTAIN_RIVER),
+    // A forest brings a pond; this view shows a river on its ground for the eye-check.
+    water_forest_river: Object.freeze({ ...withWater('forest', WATER_KIND.RIVER), id: 'dev_map_water_forest_river' }),
     water_tarn: withWater('mountain', WATER_KIND.TARN),
     water_pond: withWater('forest', WATER_KIND.POND),
     water_sulphur: withWater('yellowstone', WATER_KIND.SULPHUR),
