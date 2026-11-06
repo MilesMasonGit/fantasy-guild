@@ -15,7 +15,7 @@ build green) · bench-queued · eye-check · merged.*
 | 360 C3: the mat F, the combat icon between the bars, floats, move bubbles, QA crowd button | builder | `crunch/combat-mat` (`c3`) | merged into C2 at 8c1d1f88 | Thu | Thu |
 | 360 C4: crowded fights step to open space (expect WORK CHANGED) | engineer | `crunch/combat-step` (`c4`, from a38e6467) | ready b21c8b88, bench queued (expect WORK CHANGED on S3, C240, C256 and S8; a step up to 160 u, at most 1.8 s before the first swing); director: 595 files green, cycles, build | Thu | |
 | 370 R1: rivers with real bends, varying width, variety by world (expect WORK CHANGED) | engineer | `crunch/rivers` (`r1`, from main) | building | Thu | |
-| 370 R2: water depth bands, ragged ground borders, settled dirt | builder | `crunch/ground-look` (`r2`, from main) | building | Thu | |
+| 370 R2: water depth bands, ragged ground borders, settled dirt | builder | `crunch/ground-look` (`r2`, from main) | ready 753ee064, bench queued (engine work expected same; drawing only, fingerprints unchanged); director: 592 files green, cycles, build; 13 before/after pictures in `research/terrain_round/built_r2/`. The QA Terrain views were retired in T-238, so Coast and Stone show in those pictures; rivers in fresh games | Thu | |
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
 
@@ -169,7 +169,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-**Fri 6 Nov, 01:00 (director timer, `p23b`):** engine work check and draw benches on `crunch/combat-window` a38e6467 (logs in the scratchpad). C4 and R1 queue for the next window once ready.
+**Fri 6 Nov, 01:00 (director timer, `p23b`):** engine work check and draw benches on `crunch/combat-window` a38e6467 (logs in the scratchpad). Then, by director timers one after another: C4 b21c8b88 (engine work check, fights40 and fights80 draw), R2 753ee064 (engine work check, full draw). R1 queues for the next window once ready.
 
 **Thu 5 Nov, 13:00–17:00 (director):** drag bench on `crunch/hero-detail` (H1 is drag code); work check on 350 T1 when ready.
 
