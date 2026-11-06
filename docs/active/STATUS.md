@@ -16,6 +16,7 @@ build green) · bench-queued · eye-check · merged.*
 | 360 C4: crowded fights step to open space (expect WORK CHANGED) | engineer | `crunch/combat-step` (`c4`, from a38e6467) | ready b21c8b88, bench queued (expect WORK CHANGED on S3, C240, C256 and S8; a step up to 160 u, at most 1.8 s before the first swing); director: 595 files green, cycles, build | Thu | |
 | 370 R1: rivers with real bends, varying width, variety by world (expect WORK CHANGED) | engineer | `crunch/rivers` (`r1`, from main) | ready 17ca390f (engine work expected same: no scenario lays out a world; new river Regions lay out differently); director: 593 files green, cycles, build; merged into R2 at 5d793679 | Thu | |
 | 370 R2: water depth bands, ragged ground borders, settled dirt | builder | `crunch/ground-look` (`r2`, from main) | ready ad26dd99 with R1 merged in (5d793679; noise channels moved off R1's); director: 593 files green, cycles, build; combined pictures in `research/terrain_round/built_r2/combined_*.png`; bench queued | Thu | |
+| T-319: the last Region's water lingered after travel as broken pieces (the owner saw it in the R2 pictures) | director | `fix/water-shimmer-travel` | **merged** 15c38479, look-preserving fix, no eye-check; 592 files green, cycles, build; reproduced and checked in the game | Thu | Thu |
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
 
