@@ -1269,7 +1269,9 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
     settled (brief 330 W3).
   - **Bounties**: random "collect N items" or "defeat N Goblins", each paying
     10 Oak Wood (*placeholder*). Cap 2 (the Notice Board star retired with brief 320); a
-    new one every 3 min of game time.
+    new one every 3 min of game time. A bounty with no room to land beside the Hall is
+    missed, and the next comes 3 min later, as a spawner's missed spawn does. A tutorial
+    step with no room arrives as soon as something on the mat moves, leaves or arrives.
 - **No unlocks and no classes**: progression is skill levels (recipe, Token
   and gear level requirements), each skill's milestone perks (§4), Hall
   upgrades, and affording things. Every hero can grow into anything. The smithing ladder
