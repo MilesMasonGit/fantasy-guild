@@ -23,8 +23,8 @@ import { isStatementPaid } from './BlockUpkeep.js';
  * `BoardRunner.tick`), so it always counts; an unpaid statement is listed as waiting.
  *
  * Passive Production is never listed: this is what consumes. It only nets against a cost for the
- * rough "runs out" (`quantity × 60000 / PASSIVE_PRODUCTION_MS` an item, the Wishing Well
- * included): on hand ÷ (cost − that item's income) per minute; net income at or above the cost
+ * rough "runs out" (`quantity × 60000 / lap` an item at the live lap, `PassiveProduction.lapMs`, the
+ * Wishing Well included): on hand ÷ (cost − that item's income) per minute; net income at or above the cost
  * means it never runs out (`runsOutMs: null`).
  *
  * On hand: a spawner pays from the Bank and then from matching loot on the mat, so an item any
@@ -44,6 +44,7 @@ function liveSources() {
         floorCount: (itemId) => SpriteLayer.countOnBoard(itemId),
         isPaid: (instance, statementId) => isStatementPaid(instance, statementId),
         passiveLines: (instance, def) => PassiveProduction.linesOf(instance, def),
+        lapMs: () => PassiveProduction.lapMs(),
         itemName: (itemId) => getItem(itemId)?.name || itemId
     };
 }
@@ -86,6 +87,7 @@ export function computeUpkeepSummary(sources = {}) {
     const items = new Map();
     const idle = [];
     const incomeByItem = new Map();
+    let lap = null;
 
     const itemRow = (itemId) => {
         if (!items.has(itemId)) items.set(itemId, { itemId, perMinute: 0, consumers: [], waiting: [] });
@@ -140,7 +142,8 @@ export function computeUpkeepSummary(sources = {}) {
         for (const line of src.passiveLines(instance, def)) {
             const q = qty(line?.quantity);
             if (!line?.itemId || !q) continue;
-            const perMinute = q * MINUTE / PassiveProduction.PASSIVE_PRODUCTION_MS;
+            lap ??= src.lapMs();
+            const perMinute = q * MINUTE / lap;
             if (!incomeByItem.has(line.itemId)) incomeByItem.set(line.itemId, { itemId: line.itemId, perMinute: 0 });
             const row = incomeByItem.get(line.itemId);
             row.perMinute += perMinute;

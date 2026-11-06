@@ -1,0 +1,189 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-06-drop-lap",
+  "createdAt": "2026-11-06T19:37:29Z",
+  "asked": "Brief 390 G5 (owner, 2026-11-03, detail pass item 10): drops run on one lap, 10 minutes by default, reduced to 5 by Guild Hall upgrades. The star: ranks 10, 8, 6, 5 minutes, in the Hall's own constellation, priced by the algorithm.",
+  "entries": [
+    {
+      "op": "create",
+      "kind": "hallStar",
+      "id": "star_well_lap",
+      "value": {
+        "constellation": "well",
+        "name": "Swift Laps",
+        "description": "The Guild Hall's outputs come round sooner: its lap runs 8 minutes, then 6, then 5, from 10.",
+        "node": {
+          "x": 0.45,
+          "y": 0.62
+        },
+        "links": [
+          "wishing_well"
+        ],
+        "ranks": [
+          {
+            "tier": 0,
+            "price": [
+              {
+                "itemId": "item_redberry",
+                "quantity": 110000
+              }
+            ],
+            "rules": [
+              {
+                "id": "stm_star_well_lap_1",
+                "keyword": "provides",
+                "payload": {
+                  "type": "PASSIVE_LAP",
+                  "bucket": "percentage",
+                  "value": -0.2
+                },
+                "chargeDelta": 0,
+                "to": {
+                  "mode": "all",
+                  "value": ""
+                },
+                "reach": "board",
+                "target": null,
+                "when": null,
+                "upkeep": null
+              }
+            ],
+            "lines": []
+          },
+          {
+            "tier": 1,
+            "price": [
+              {
+                "itemId": "item_cherry",
+                "quantity": 140000
+              }
+            ],
+            "rules": [
+              {
+                "id": "stm_star_well_lap_2",
+                "keyword": "provides",
+                "payload": {
+                  "type": "PASSIVE_LAP",
+                  "bucket": "percentage",
+                  "value": -0.4
+                },
+                "chargeDelta": 0,
+                "to": {
+                  "mode": "all",
+                  "value": ""
+                },
+                "reach": "board",
+                "target": null,
+                "when": null,
+                "upkeep": null
+              }
+            ],
+            "lines": []
+          },
+          {
+            "tier": 2,
+            "price": [
+              {
+                "itemId": "item_trout",
+                "quantity": 30000
+              }
+            ],
+            "rules": [
+              {
+                "id": "stm_star_well_lap_3",
+                "keyword": "provides",
+                "payload": {
+                  "type": "PASSIVE_LAP",
+                  "bucket": "percentage",
+                  "value": -0.5
+                },
+                "chargeDelta": 0,
+                "to": {
+                  "mode": "all",
+                  "value": ""
+                },
+                "reach": "board",
+                "target": null,
+                "when": null,
+                "upkeep": null
+              }
+            ],
+            "lines": []
+          }
+        ]
+      },
+      "note": "Swift Laps, at the Well beside the Wishing Well: the Guild Hall's one lap (10 minutes, brief 390) runs 8 minutes at rank 1, 6 at rank 2 and 5 at rank 3, so every output of the Hall comes round sooner. Prices are the ledger's proposals (a preview): rank 1 (Starter Camp, 110000 Redberry) pays back in about a day on the Hall's outputs; ranks 2 (Plane 1, 140000 Cherry) and 3 (Plane 2, 30000 Trout) are raised to take no less gathering than rank 1, the never-cheaper rule, and then pay back in about 4 and 5 days, over the Hall's day, which the Ledger flags. The price is high because the Ledger values Water at the Wishing Well's own first rank."
+    }
+  ],
+  "gate": {
+    "workspaceFingerprint": "fp:a9bb438f59ad39f1",
+    "toolVersion": 2,
+    "at": "2026-11-06T19:40:27.699Z",
+    "verdict": "pass",
+    "summary": "Passes: 6 entries move on the timeline, 2 problems added, 0 cleared.",
+    "blocks": [],
+    "notes": [],
+    "deltas": {
+      "stages": [],
+      "moved": [
+        {
+          "key": "item:item_apple_seed",
+          "name": "Apple Seed",
+          "change": "earlier",
+          "from": 0.16666666666666666,
+          "to": 0.13333333333333333
+        },
+        {
+          "key": "token:token_apple_orchard",
+          "name": "Apple Orchard",
+          "change": "earlier",
+          "from": 0.2356060606060606,
+          "to": 0.20227272727272727
+        },
+        {
+          "key": "token:token_apple_sapling",
+          "name": "Apple Sapling",
+          "change": "earlier",
+          "from": 0.2683080808080808,
+          "to": 0.23497474747474748
+        },
+        {
+          "key": "token:token_apple_tree",
+          "name": "Apple Tree",
+          "change": "earlier",
+          "from": 0.2808080808080808,
+          "to": 0.2474747474747475
+        },
+        {
+          "key": "item:item_apple",
+          "name": "Apple",
+          "change": "earlier",
+          "from": 0.28484848484848485,
+          "to": 0.2515151515151515
+        },
+        {
+          "key": "item:item_apple_juice",
+          "name": "Apple Juice",
+          "change": "earlier",
+          "from": 0.30024050024050025,
+          "to": 0.2669071669071669
+        }
+      ],
+      "movedCount": 6,
+      "added": [
+        {
+          "check": "hall-payback",
+          "key": "hall:star_well_lap",
+          "severity": "warn"
+        },
+        {
+          "check": "hall-payback",
+          "key": "hall:star_well_lap",
+          "severity": "warn"
+        }
+      ],
+      "cleared": 0
+    }
+  }
+}

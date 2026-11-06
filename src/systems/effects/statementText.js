@@ -592,6 +592,7 @@ function bodySegments(statement, names) {
                     return segs(d('Provides', K), ' every hero ', d(`${Math.abs(n)} ${n < 0 ? 'fewer' : 'more'}`, 'value'), ' ',
                         d(payload.category ? kind : '…', categorySlot(statement)), ' ', d(Math.abs(n) === 1 ? 'slot' : 'slots', 'type'));
                 }
+                if (payload.type === EFFECT_TYPES.PASSIVE_LAP) return segs(d('Makes', K), ' the Guild Hall\'s lap ', effectSegments(statement, names));
                 if (entry.reads) return segs(d('Makes', K), ' every hero ', effectSegments(statement, names));
                 return segs(d('Provides', K), ' ', effectSegments(statement, names), ' to every hero');
             }

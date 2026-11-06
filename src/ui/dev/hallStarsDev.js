@@ -29,6 +29,9 @@ import { qaHallSky, QA_VEIN, QA_MINING_CAMP } from './qaHallSky.js';
 import { applyXpBonus } from '../../systems/hero/xpBonus.js';
 import { isGuildHall } from '../../systems/board/MatCap.js';
 import { qaOrder } from './qaOrders.js';
+import * as CatchUp from '../../systems/core/CatchUp.js';
+import { getUpgradeDef } from '../../config/guildUpgrades.js';
+import { qaLapStar, LAP_STAR_ID } from './qaLapStar.js';
 
 const VEIN = QA_VEIN;
 const MINING_CAMP = QA_MINING_CAMP;
@@ -124,8 +127,48 @@ export function payLapNow() {
     const hall = BoardState.tokens().find(t => isGuildHall(t));
     if (!hall) return { ok: false, error: 'No Guild Hall on the mat' };
     hall.clocks = hall.clocks && typeof hall.clocks === 'object' ? hall.clocks : {};
-    hall.clocks.passiveMs = PassiveProduction.PASSIVE_PRODUCTION_MS - 1000;
+    hall.clocks.passiveMs = PassiveProduction.lapMs() - 1000;
     return { ok: true, lines: PassiveProduction.linesOf(hall) };
+}
+
+/**
+ * The drop lap's star (`qaLapStar.js`, the pack's mirror) put in the sky beside the authored one,
+ * unless a synced one is there already, and the Bank stocked for its three ranks. Gone on reload.
+ * @returns {{ ok: boolean, synced: boolean, lapMs: number }}
+ */
+export function installLapStar() {
+    const authored = authoredHallSky();
+    const synced = !!authored.stars?.[LAP_STAR_ID];
+    if (!synced) {
+        registerHallSky({
+            constellations: { ...authored.constellations },
+            stars: { ...authored.stars, [LAP_STAR_ID]: { id: LAP_STAR_ID, ...qaLapStar() } }
+        });
+    }
+    const def = getUpgradeDef(LAP_STAR_ID);
+    for (const price of def?.prices || []) {
+        for (const { itemId, quantity } of price) InventoryManager.addItem(itemId, quantity);
+    }
+    GuildUpgradeManager.recompute();
+    EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, {});
+    return { ok: !!def, synced, lapMs: PassiveProduction.lapMs() };
+}
+
+/**
+ * Play some time away through the real catch-up (its summary shows as on a load), not saved, so the
+ * lap can be seen paying the same away as at the table.
+ */
+export async function playAway(minutes) {
+    if (CatchUp.isRunning()) return { ok: false, error: 'A catch-up is already playing' };
+    const now = Date.now();
+    await CatchUp.run({ savedAt: now - minutes * 60_000, now, save: false });
+    return { ok: true };
+}
+
+/** "8:00": the lap as the Hall's effects say it. */
+export function lapNowText() {
+    const ms = PassiveProduction.lapMs();
+    return `${Math.floor(ms / 60000)}:${String(Math.round((ms % 60000) / 1000)).padStart(2, '0')}`;
 }
 
 const secs = (ms) => `${Math.round(ms / 100) / 10} s`;
@@ -158,6 +201,7 @@ export function hallReadout() {
     if (hall) {
         const lines = PassiveProduction.linesOf(hall).map(l => `${l.quantity} ${getItem(l.itemId)?.name || l.itemId}`);
         out.push(`The Hall pays each lap: ${lines.join(', ') || 'nothing'}`);
+        out.push(`The lap: every ${lapNowText()}, next in ${Math.ceil(PassiveProduction.nextInMs(hall) / 1000)} s (Swift Laps ${ranks[LAP_STAR_ID] || 0})`);
     }
     return out;
 }

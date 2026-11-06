@@ -35,13 +35,17 @@ const TYPES = {
 
 const ITEMS = { item_oak_seed: 'Oak Seed', item_water: 'Water' };
 
-/** The Hall's Passive Production as `PassiveProduction` would report it; `well` adds the Wishing Well's Water. */
-const hallPassive = (well = 0) => (i) => (i.typeId !== 'hall' ? { lines: [], nextInMs: 300000 } : {
+/**
+ * The Hall's Passive Production as `PassiveProduction` would report it, on a lap a star has shortened to
+ * 5 minutes; `well` adds the Wishing Well's Water.
+ */
+const hallPassive = (well = 0) => (i) => (i.typeId !== 'hall' ? { lines: [], nextInMs: 300000, lapMs: 300000 } : {
     lines: [
         { itemId: 'item_oak_seed', quantity: 2, source: 'token' },
         ...(well ? [{ itemId: 'item_water', quantity: 10 * well, source: 'wishing_well' }] : [])
     ],
-    nextInMs: 300000 - (i.clocks?.passiveMs || 0)
+    nextInMs: 300000 - (i.clocks?.passiveMs || 0),
+    lapMs: 300000
 });
 const FURNACE_RECIPE = { id: 'build_furnace', durationMs: 30000, outputs: [{ tokenId: 'furnace', quantity: 1 }] };
 

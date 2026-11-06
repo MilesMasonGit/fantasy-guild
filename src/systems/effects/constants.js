@@ -62,6 +62,9 @@ export const EFFECT_TYPES = {
     // More of one loadout category (the category) every hero may carry, as a flat count. Guild-wide
     // only (a Guild Hall star) — loadoutCaps.js.
     LOADOUT_SLOTS: 'LOADOUT_SLOTS',
+    // How long Passive Production's one lap takes, as a percentage: negative is shorter. Guild-wide
+    // only (a Guild Hall star) — PassiveProduction.lapMs.
+    PASSIVE_LAP: 'PASSIVE_LAP',
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.

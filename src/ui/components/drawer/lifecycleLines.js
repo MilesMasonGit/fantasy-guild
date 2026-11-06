@@ -1,5 +1,5 @@
 
-import { turnTiming, PASSIVE_PRODUCTION_MS, fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
+import { turnTiming, PASSIVE_LAP_BASE_MS, fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
 
 /**
  * What a board Token's lifecycle blocks are doing right now, as plain rows for the inspection
@@ -180,7 +180,7 @@ function passiveRows(instance, src) {
     if (!pays.length) return [];
     return [{
         label: 'Passive Production',
-        value: `${pays.join(', ')} every ${formatDuration(PASSIVE_PRODUCTION_MS)} (next in ${formatDuration(passive.nextInMs)})`,
+        value: `${pays.join(', ')} every ${formatDuration(passive.lapMs ?? PASSIVE_LAP_BASE_MS)} (next in ${formatDuration(passive.nextInMs)})`,
         tone: TONE.GOOD
     }];
 }
@@ -291,7 +291,7 @@ function demolitionLine(instance, src) {
  *   selectedRecipe: (instance: object, def: object) => object|null,
  *   poolFor?: (def: object) => object[],
  *   originOf: (instance: object) => string,
- *   passive?: (instance: object) => { lines: object[], nextInMs: number }|null,
+ *   passive?: (instance: object) => { lines: object[], nextInMs: number, lapMs?: number }|null,
  *   respawn?: (instance: object) => { mode: string, into: string|null, afterMs: number, resting: boolean, inMs: number|null, restingSprite?: string|null, paused?: boolean, needsNearby?: string[] }|null,
  *   demolishMs?: number,
  *   field?: (instance: object) => object|null,

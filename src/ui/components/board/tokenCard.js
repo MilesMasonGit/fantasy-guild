@@ -126,7 +126,7 @@ export function liveCardSources() {
         recipeName: (id) => getRecipe(id)?.name || id,
         recipeOf: getRecipe,
         nextTurn: TimedChanges.nextTurnRoll,
-        passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance) }),
+        passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance), lapMs: PassiveProduction.lapMs() }),
         fightOf: BoardCombat.getFight,
         supports: (instanceId) => ({
             boostedBy: SupportLinks.boostedBy(instanceId),

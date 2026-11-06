@@ -351,7 +351,7 @@ describe('the Well: a Passive Production line per star, ranked', () => {
         buy('w_ore', 1);
         const before = InventoryManager.getItemCount('fixture_copper_ore');
         const h = place({ x: 600, y: 600 }, 'token_guild_hall');
-        PassiveProduction.advance(h, PassiveProduction.PASSIVE_PRODUCTION_MS);
+        PassiveProduction.advance(h, PassiveProduction.PASSIVE_LAP_BASE_MS);
         expect(SpriteLayer.countOnBoard('fixture_copper_ore')).toBe(10);
         expect(InventoryManager.getItemCount('fixture_copper_ore')).toBe(before);
     });
@@ -465,7 +465,7 @@ describe('a star in words, and the audit', () => {
         const star = (id) => authoredStars().find(s => s.id === id);
         expect(describeStarRank(star('m_xp'), 1)).toBe('Makes every Token on the board award 100% more XP, but only for Mining work.');
         expect(describeStarRank(star('m_rest'), 1)).toBe('Makes every H1 Vein on the board grow and refill 50% faster.');
-        expect(describeStarRank(star('w_ore'), 2)).toBe('25 Fixture Copper Ore / 5 min');
+        expect(describeStarRank(star('w_ore'), 2)).toBe('25 Fixture Copper Ore a lap');
         expect(describeStarRank(star('h_infirmary'), 1)).toBe('Makes every hero recover from a wound 40% faster.');
         expect(describeStarRank(star('h_food'), 1)).toBe('Provides every hero 1 more Food slot.');
         expect(getUpgradeDef('m_xp').statLabel(0)).toBe('Not yet bought');

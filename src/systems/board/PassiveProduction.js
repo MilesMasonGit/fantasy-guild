@@ -1,18 +1,22 @@
 // Passive Production: the Guild Hall's free income, on one timer
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { PASSIVE_PRODUCTION_MS } from '../../config/registries/tokenConstants.js';
+import { PASSIVE_LAP_BASE_MS } from '../../config/registries/tokenConstants.js';
 import { WISHING_WELL_ITEM, wishingWellRank, wishingWellWater, authoredStars } from '../../config/guildUpgrades.js';
 import { hallLinesOf } from '../progression/hallModifiers.js';
+import { getGlobalAggregator } from '../effects/GuildModifiers.js';
+import { EFFECT_TYPES } from '../effects/constants.js';
 import { GameState } from '../../state/GameState.js';
 import { isGuildHall } from './MatCap.js';
+import { passiveLapMs } from './workTime.js';
 import * as SpriteLayer from './SpriteLayer.js';
 
-export { PASSIVE_PRODUCTION_MS };
+export { PASSIVE_LAP_BASE_MS };
 
 /**
- * Passive Production: items a Token pays on its own, no hero needed, all on ONE clock of {@link
- * PASSIVE_PRODUCTION_MS}. Each lap pays every line at once.
+ * Passive Production: items a Token pays on its own, no hero needed, all on ONE lap ({@link lapMs}:
+ * 10 minutes, shortened by the guild's Lap Time rules, a Guild Hall star). Each lap pays every line
+ * at once, and every Token that pays shares the one lap length.
  *
  * The lines: the type's `trickle` block (`[{ itemId, quantity }]`, authored in the CMS; a line's old
  * `everyMs` is ignored), plus, on the Guild Hall, the Wishing Well's Water (`wishingWellWater` of
@@ -25,12 +29,22 @@ export { PASSIVE_PRODUCTION_MS };
  *
  * Rides `TimedChanges.tick`, advanced by the tick's `delta` only, in closed form (whole laps), so one
  * big tick pays exactly what many small ones do; in bulk each item drops ONE sprite holding every lap.
+ * The lap is read live: a star bought mid-lap keeps the time already run, and a lap already past the
+ * new length pays on the next tick.
  *
  * State (saved, on the instance): `clocks.passiveMs`, elapsed ms in the current lap. A save from
  * before the shared timer has `clocks.trickle`, one clock per line; it is migrated on the first tick
  * (and read the same way before then): the lap starts from the furthest-along old clock, wrapped to
- * the 5-minute lap, so the first payout comes no later than any old line's would have.
+ * the lap, so the first payout comes no later than any old line's would have.
  */
+
+/**
+ * The lap now, in ms: the base, moved by the guild's Lap Time rules (a Guild Hall star, or a
+ * Region's rule) and floored like any speed-up (`workTime.passiveLapMs`).
+ */
+export function lapMs() {
+    return passiveLapMs(getGlobalAggregator().resolveAxis(EFFECT_TYPES.PASSIVE_LAP, PASSIVE_LAP_BASE_MS));
+}
 
 /** A positive whole quantity, or 0. */
 function qty(n) {
@@ -78,10 +92,11 @@ export function elapsedOf(instance) {
     const own = Number(clocks?.passiveMs);
     if (Number.isFinite(own) && own >= 0) return own;
     if (Array.isArray(clocks?.trickle)) {
+        const lap = lapMs();
         let furthest = 0;
         for (const v of clocks.trickle) {
             const n = Number(v);
-            if (Number.isFinite(n) && n > 0) furthest = Math.max(furthest, n % PASSIVE_PRODUCTION_MS);
+            if (Number.isFinite(n) && n > 0) furthest = Math.max(furthest, n % lap);
         }
         return furthest;
     }
@@ -90,7 +105,7 @@ export function elapsedOf(instance) {
 
 /** Ms until the next payout. */
 export function nextInMs(instance) {
-    return Math.max(0, PASSIVE_PRODUCTION_MS - elapsedOf(instance));
+    return Math.max(0, lapMs() - elapsedOf(instance));
 }
 
 /**
@@ -107,10 +122,11 @@ export function advance(instance, delta) {
     if (!lines.length) return 0;
 
     const clocks = instance.clocks && typeof instance.clocks === 'object' ? instance.clocks : (instance.clocks = {});
+    const lap = lapMs();
     const clock = elapsedOf(instance) + delta;
     delete clocks.trickle;
-    const laps = Math.floor(clock / PASSIVE_PRODUCTION_MS);
-    clocks.passiveMs = clock - laps * PASSIVE_PRODUCTION_MS;
+    const laps = Math.floor(clock / lap);
+    clocks.passiveMs = clock - laps * lap;
     if (laps <= 0) return 0;
 
     let paid = 0;

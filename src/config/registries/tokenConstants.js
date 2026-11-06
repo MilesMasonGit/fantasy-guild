@@ -419,11 +419,12 @@ const cropTermsMemo = new WeakMap();
 const DEFAULT_CROP_TERMS = Object.freeze({ ...CROP_DEFAULTS, ripeSprite: null, seeds: Object.freeze([]) });
 
 /**
- * Passive Production's one timer: every line of a Token's `trickle` block (and the Wishing Well's
- * water on the Guild Hall) pays its quantity once per lap. A line's own `everyMs`, from before the
- * shared timer, is ignored.
+ * Passive Production's one timer, before any Guild Hall star shortens it: every line of a Token's
+ * `trickle` block (and the Wishing Well's water on the Guild Hall) pays its quantity once per lap.
+ * A line's own `everyMs`, from before the shared timer, is ignored. ⚠️ The live lap is
+ * `PassiveProduction.lapMs()`; this is only its starting length.
  */
-export const PASSIVE_PRODUCTION_MS = 5 * 60 * 1000;
+export const PASSIVE_LAP_BASE_MS = 10 * 60 * 1000;
 
 /**
  * The roll cycle and chance of a `turns` block, defaults filled in:
