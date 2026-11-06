@@ -8,6 +8,7 @@ import { lifetimeOf } from '../../../systems/progression/collectionLog.js';
 import { itemKey } from '../../../systems/progression/ledger/engine.js';
 import { lookUpItem } from '../encyclopedia/encyclopediaLink.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
+import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 
 /** Item art is 32 px; the window shows it at 4×, a whole multiple, so it can be examined closely. */
 export const WINDOW_SPRITE_PX = 128;
@@ -39,7 +40,10 @@ export const BankItemWindow = ({ entry, onClose }) => {
             >
                 <ItemIcon item={template} size={WINDOW_SPRITE_PX} title={null} />
             </div>
-            <div className="flex-1 min-w-0 min-h-0 self-stretch overflow-y-auto custom-scrollbar ui-text-body leading-snug flex flex-col gap-1">
+            {/* The arrow bars are siblings of the list: this column holds all three. */}
+            <div className="flex-1 min-w-0 min-h-0 self-stretch flex flex-col">
+            <ArrowScrollList step={60} compact className="flex-1 min-h-0">
+            <div className="ui-text-body leading-snug flex flex-col gap-1">
                 <h3 className="ui-text-title font-bold text-gi-gold break-words">{template.name}</h3>
                 <div data-bank-item-window-count className="tabular-nums font-bold text-white">
                     {t('itemTip.count', { count: count.toLocaleString('en-US') })}
@@ -49,6 +53,8 @@ export const BankItemWindow = ({ entry, onClose }) => {
                 <div data-bank-item-window-collected className="text-white tabular-nums">
                     {t('bank.window.collected', { count: collected.toLocaleString('en-US') })}
                 </div>
+            </div>
+            </ArrowScrollList>
             </div>
             <div className="shrink-0 flex items-center gap-1">
                 <button
