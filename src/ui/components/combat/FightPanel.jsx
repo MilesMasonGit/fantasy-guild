@@ -610,7 +610,7 @@ const BREAK = <div aria-hidden="true" className="h-0.5 bg-white/10" />;
 export const FightPanelView = ({ view, fights, onClose, onMinimize = null, onDragStart = null, logOpen, onToggleLog, tab, onTab }) => {
     const result = view.ended ? resultWord(view.ended.outcome) : null;
     return (
-        <PixelFrame kind={FRAME_KIND.CHAMFER} data-fight-panel={view.heroId} data-fight-live={view.live ? 'true' : 'false'} style={{ width: PANEL_W + 12 }}>
+        <PixelFrame kind={FRAME_KIND.CHAMFER} backdrop="fight" data-fight-panel={view.heroId} data-fight-live={view.live ? 'true' : 'false'} style={{ width: PANEL_W + 12 }}>
             <div className="relative flex flex-col" style={{ width: PANEL_W }}>
                 <div
                     data-fight-titlebar
