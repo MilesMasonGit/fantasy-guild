@@ -85,9 +85,29 @@ export function cellCentreArt(cell) {
 }
 
 /** A cell's middle from the Hall's, in screen px. */
-export function cellCentre(cell) {
+export function cellMiddle(cell) {
     const { x, y } = cellCentreArt(cell);
     return { x: x * ART_SCALE, y: y * ART_SCALE };
+}
+
+// ⚠️ The CMS's Ledger draws its own world plan with these three (`LedgerWorld.jsx`): any radius.
+
+/** A cell's centre from the Hall's for a cell of `radius`, in whole px. */
+export function cellCentre(cell, radius) {
+    return { x: Math.round(1.5 * cell.q * radius), y: Math.round(SQRT3 * (cell.r + cell.q / 2) * radius) };
+}
+
+/** The size `rings` rings cover at `radius`. */
+export function mapSize(rings, radius) {
+    return { width: Math.ceil((3 * rings + 2) * radius), height: Math.ceil(SQRT3 * (2 * rings + 1) * radius) };
+}
+
+/** A flat-topped hex of `radius` round `(0, 0)`, as SVG points. */
+export function hexPoints(radius) {
+    const h = (SQRT3 / 2) * radius;
+    return [
+        [radius, 0], [radius / 2, h], [-radius / 2, h], [-radius, 0], [-radius / 2, -h], [radius / 2, -h]
+    ].map(([x, y]) => `${Math.round(x * 2) / 2},${Math.round(y * 2) / 2}`).join(' ');
 }
 
 /**
@@ -113,7 +133,7 @@ export function mapBounds(cells) {
     let minY = 0;
     let maxY = 0;
     for (const cell of cells) {
-        const { x, y } = cellCentre(cell);
+        const { x, y } = cellMiddle(cell);
         minX = Math.min(minX, x - HEX_R * s);
         maxX = Math.max(maxX, x + HEX_R * s);
         minY = Math.min(minY, y - TILE_MID.y * s - TILE_LIFT * s);
@@ -142,6 +162,6 @@ export function clampView(view, sight, bounds) {
 
 /** The view with cell `cell`'s middle in the middle of the sight. */
 export function viewOn(cell, sight) {
-    const { x, y } = cell ? cellCentre(cell) : { x: 0, y: 0 };
+    const { x, y } = cell ? cellMiddle(cell) : { x: 0, y: 0 };
     return { x: Math.round(sight.w / 2 - x), y: Math.round(sight.h / 2 - y) };
 }

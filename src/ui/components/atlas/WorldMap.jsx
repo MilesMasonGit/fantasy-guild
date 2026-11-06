@@ -9,7 +9,7 @@ import { tileArt, ropeArt, symbolArt, SYMBOL_LANDS } from '../../../config/world
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import {
     ART_SCALE, HEX_R, TILE_LIFT, TILE_W, TILE_H, TILE_MID, ICON_PX, MAX_ICONS, CELL_LOOK, LOOK_FILTER,
-    cellCentre, cellCentreArt, tilePoints, mapBounds, clampView, viewOn
+    cellMiddle, cellCentreArt, tilePoints, mapBounds, clampView, viewOn
 } from './worldMapLayout.js';
 import { paintWorld, paintRope, ringEdges, tileStandIn, pictureFrame, landOf, FOG_CSS } from './worldPicture.js';
 import { CellTip } from './WorldPanel.jsx';
@@ -225,7 +225,7 @@ const Outlines = ({ cells, hoverId, selectedId }) => {
     return (
         <svg aria-hidden="true" width="1" height="1" className="absolute left-0 top-0 overflow-visible pointer-events-none">
             {cells.map(cell => {
-                const { x, y } = cellCentre(cell);
+                const { x, y } = cellMiddle(cell);
                 const ready = cell.look === CELL_LOOK.READY;
                 const white = cell.id === hoverId || cell.id === selectedId;
                 if (!ready && !white) return null;
@@ -255,7 +255,7 @@ const tokenScale = (typeId) => ((getTokenType(typeId)?.size || 1) >= 2 ? 0.5 : 1
 /** What stands on each tile: its Token, and a plate of what it yields. */
 const Contents = memo(function Contents({ cells, hoverId }) {
     return cells.map(cell => {
-        const { x, y } = cellCentre(cell);
+        const { x, y } = cellMiddle(cell);
         const top = y - LIFT_PX;
         const icons = cell.outputs.slice(0, MAX_ICONS);
         const more = cell.outputs.length - icons.length;
@@ -280,7 +280,7 @@ const Contents = memo(function Contents({ cells, hoverId }) {
 /** The guild's flag on the place it is in: the hero job flag, drawn large. */
 const HereFlag = ({ cell }) => {
     if (!cell) return null;
-    const { x, y } = cellCentre(cell);
+    const { x, y } = cellMiddle(cell);
     return (
         <span data-world-here className="absolute pointer-events-none" style={{ left: x - HEX_R * ART_SCALE + 10, top: y - LIFT_PX - 64 - HERE_FLAG_PX / 2 }}>
             <FlagMark size={HERE_FLAG_PX} alt={t('worldMap.here')} />
@@ -292,7 +292,7 @@ const HereFlag = ({ cell }) => {
 const HitAreas = ({ cells, onSelect, onHover, dropClick }) => (
     <svg width="1" height="1" className="absolute left-0 top-0 overflow-visible">
         {cells.map(cell => {
-            const { x, y } = cellCentre(cell);
+            const { x, y } = cellMiddle(cell);
             return (
                 <Tooltip key={cell.id} title={cell.name} content={<CellTip cell={cell} />} maxWidth={320}>
                     <polygon

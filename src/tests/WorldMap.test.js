@@ -26,7 +26,7 @@ import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { WorldScreen } from '../ui/components/atlas/WorldScreen.jsx';
 import { shortWords } from '../ui/components/atlas/WorldPanel.jsx';
 import {
-    shownRings, cellLook, CELL_LOOK, cellCentre, cellCentreArt, clampView, viewOn, mapBounds, PAN_KEEP_PX,
+    shownRings, cellLook, CELL_LOOK, cellMiddle, cellCentre, mapSize, hexPoints, cellCentreArt, clampView, viewOn, mapBounds, PAN_KEEP_PX,
     HEX_R, TILE_W, TILE_H, ART_SCALE
 } from '../ui/components/atlas/worldMapLayout.js';
 import { paintWorld, paintRope, ringEdges, pictureFrame, tileStandIn, FOG_RGB } from '../ui/components/atlas/worldPicture.js';
@@ -120,8 +120,15 @@ describe('the map\'s geometry and looks (pure)', () => {
         expect(cellCentreArt({ q: 0, r: 0 })).toEqual({ x: 0, y: 0 });
         expect(cellCentreArt({ q: 1, r: 0 })).toEqual({ x: 63, y: 36 });
         expect(cellCentreArt({ q: 0, r: 1 })).toEqual({ x: 0, y: 73 });
-        expect(cellCentre({ q: 1, r: 0 })).toEqual({ x: 63 * ART_SCALE, y: 36 * ART_SCALE });
+        expect(cellMiddle({ q: 1, r: 0 })).toEqual({ x: 63 * ART_SCALE, y: 36 * ART_SCALE });
         expect([TILE_W, TILE_H]).toEqual([84, 78]);
+    });
+
+    it('keeps the plan helpers the Ledger in the CMS draws its world with, at any radius', () => {
+        expect(cellCentre({ q: 1, r: 0 }, 40)).toEqual({ x: 60, y: 35 });
+        expect(cellCentre({ q: 0, r: 1 }, 40)).toEqual({ x: 0, y: 69 });
+        expect(mapSize(3, 40)).toEqual({ width: 440, height: 485 });
+        expect(hexPoints(10).split(' ')).toHaveLength(6);
     });
 
     it('keeps some of the map in sight however far it is dragged, and centres on a cell', () => {
