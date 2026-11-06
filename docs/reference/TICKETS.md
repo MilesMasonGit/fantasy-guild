@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-323**
+**Next free number: T-324**
 
 ---
 
@@ -91,6 +91,7 @@ here.
 | T-305 | P2 | open, needs a brief | **Put the approved content roadmap in the CMS as Planned entries** (owner 2026-11-02, [concept_content_roadmap.md](../active/concept_content_roadmap.md)): a pack per chain page, so the ledger can check the whole plan. Needs T-294 first (tiers, the 20-level ladder). Planned entries never reach the game. |
 | T-318 | P3 | open | **The Token name on hover is larger** (owner, 2026-11-05). Show the owner two or three sizes on one screenshot page, then build only the pick (briefs README: looks are picked from screenshots). Check it on small and large Tokens and at mat zoom. Eye-check: no, the screenshot pick is the look. |
 | T-317 | P3 | open | **Hero bar HP bars are light red** (owner, 2026-11-05): every hero HP bar on the hero bar uses the mat's light red (`HP_COLOUR` in `src/ui/components/board/healthBar.js`) whatever the health, replacing the green, amber and red tones (`hpTone` in `dockHeroView.js`). Check any other hero HP bar (hero sheet, fight window) and say which already match. Look-only, merges on the gate with a line in STATUS. |
+| T-323 | P2 | open | **Drag bench on main: hero drops without a flag, and covered flags** (6 Nov 03:00, `bench:drag --kinds=dockHero,flag` on main 6513255e): 4 and 2 of 50 dock-hero drops (plain, overlays) end with the hero holding no flag (drop sound hero_assign); 47 and 34 of 50 flag drags skipped because every flag is drawn under something (heroes on top since 350, 30 % spacing); one flag pickup took the wrong hero's flag. Diagnose whether the drop fault is the game or the bench | director 2026-11-06 |
 | T-322 | P2 | open | **The draw bench's fights40 scene never finishes building** (timed out after 180 s waiting for the F40 board, twice, on main 23168751 and on the combat branch, 6 Nov): so `bench:draw` fails before its 4x pass. Likely since the 30 % spacing or the bus rule; brief 500 also stops those heroes fighting (no ambushes). Fix with the bench fights work (heroes sent at camps) | director 2026-11-06 |
 | T-321 | P3 | open | **React duplicate key: Goblin Camp (its own)** in SpawnerSystem's dev rows when two goblin camps stand on the mat (seen by the brief 500 builder; there before it) | director 2026-11-05 |
 | T-320 | P3 | open | **StyleSheetPage.test.js times out in the full suite** (closes on its X and on Escape; 5 s): it renders the whole QA dashboard and runs slow under load. Failed in three full runs on 5 Nov, passes alone in about 2 s. Raise its timeout or render less | director 2026-11-05 |
