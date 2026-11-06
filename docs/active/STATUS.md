@@ -15,7 +15,7 @@ build green) · bench-queued · eye-check · merged.*
 | 360 C3: the mat F, the combat icon between the bars, floats, move bubbles, QA crowd button | builder | `crunch/combat-mat` (`c3`) | merged into C2 at 8c1d1f88 | Thu | Thu |
 | 360 C4: crowded fights step to open space (expect WORK CHANGED) | engineer | `crunch/combat-step` (`c4`, from a38e6467) | ready b21c8b88, bench queued (expect WORK CHANGED on S3, C240, C256 and S8; a step up to 160 u, at most 1.8 s before the first swing); director: 595 files green, cycles, build | Thu | |
 | 370 R1: rivers with real bends, varying width, variety by world (expect WORK CHANGED) | engineer | `crunch/rivers` (`r1`, from main) | building | Thu | |
-| 370 R2: water depth bands, ragged ground borders, settled dirt | builder | | queued, next free slot | | |
+| 370 R2: water depth bands, ragged ground borders, settled dirt | builder | `crunch/ground-look` (`r2`, from main) | building | Thu | |
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
 
