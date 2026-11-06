@@ -47,6 +47,9 @@ clunky labels like "LVL 03" where "3/99" says it better.
   under every panel**: a solid black copy 2 art pixels down-right, like a
   carried Token's. The demo's chamfer and stud pictures are the shipping art,
   not placeholders (owner). The drawn line stays 1 pixel (no thick borders).
+  **One exception**: the Guild Hall's own panel and its Return button wear the same two shapes
+  **drawn in purple** (`ui-frame-studs-purple`, `ui-frame-chamfer-purple`; owner's pick F,
+  2026-11-06), so the night sky's screen reads as its own place.
 
 ```
 +--------------------------+

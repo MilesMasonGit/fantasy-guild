@@ -121,12 +121,37 @@ describe('the Hall sky: stars by state', () => {
         expect(container.querySelector(`[data-hall-node="${OUTER}"]`).getAttribute('data-node-state')).toBe('buyable');
     });
 
-    it('sets each tag on the side its upgrade names, below when it names none', () => {
+    it('sets every title under its star, whatever side the star names', () => {
         const { container } = renderWeb();
         for (const def of GUILD_UPGRADES) {
-            const tag = container.querySelector(`[data-hall-node="${def.id}"]`).parentElement.querySelector('[data-star-tag]');
-            expect(tag.getAttribute('data-star-tag'), def.id).toBe(def.tag || 'below');
+            const node = container.querySelector(`[data-hall-node="${def.id}"]`);
+            const tag = node.parentElement.querySelector('[data-star-tag]');
+            expect(tag.getAttribute('data-star-tag'), def.id).toBe('below');
+            const box = parseFloat(node.style.width);
+            expect(parseFloat(tag.style.top), def.id).toBeGreaterThan(box / 2);
+            expect(tag.style.bottom, def.id).toBe('');
         }
+    });
+
+    it('shows a star\'s rank only under the pointer or keyboard focus', () => {
+        // jsdom cannot apply :hover, so the stylesheet is the proof: the rank is hidden at rest, and
+        // the one rule that shows it names :hover and :focus-visible on the star.
+        const css = src('../tailwind.css').replace(/\/\*[\s\S]*?\*\//g, '');
+        const rules = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].filter(([, sel]) => sel.includes('.gi-star-rank'));
+        const rest = rules.find(([, sel]) => sel.trim() === '.gi-star-rank');
+        expect(rest[2]).toMatch(/display:\s*none/);
+        const shown = rules.filter(([, , body]) => /display:\s*inline/.test(body));
+        expect(shown).toHaveLength(1);
+        expect(shown[0][1]).toMatch(/\.gi-star-btn:is\(:hover, :focus-visible\) \+ \[data-star-tag\] \.gi-star-rank/);
+        const { container } = renderWeb();
+        for (const rank of container.querySelectorAll('[data-node-rank]')) expect(rank.classList.contains('gi-star-rank')).toBe(true);
+    });
+
+    it('draws an item\'s outline over every star of a kind with a pick, and none on the Hall', () => {
+        const { container } = renderWeb();
+        expect(container.querySelector('[data-hall-node="roster_size"] [data-star-outline]').getAttribute('data-star-outline')).toContain('t_bunk_bed');
+        expect(container.querySelector('[data-hall-node="wishing_well"] [data-star-outline]').getAttribute('data-star-outline')).toContain('i_water');
+        expect(container.querySelector(`[data-hall-node="${HALL_NODE}"] [data-star-outline]`)).toBeNull();
     });
 
     it('makes the Hall a labelled pole star with no Hall sprite', () => {
@@ -305,17 +330,17 @@ describe('the Hall sky: the drifting backdrop', () => {
 });
 
 describe('⭐ the upgrade web cannot be scrolled (T-128)', () => {
-    it('clips with overflow: clip, never a hidden box (a scroll container focus can scroll)', () => {
+    it('never sits in a hidden box (a scroll container focus can scroll); the screen clips it', () => {
         const { container } = renderWeb();
         const web = container.querySelector('[data-guild-hall-board]');
         let el = web;
-        let clipper = null;
         while (el && el !== container) {
             const classes = el.className.split?.(/\s+/) || [];
             expect(classes, 'a box around the web hides its overflow').not.toContain('overflow-hidden');
-            if (classes.includes('overflow-clip')) clipper = el;
+            // The web runs on under the nav and the details panel: nothing of the screen's own clips it.
+            expect(classes, 'a box around the web clips it short of the screen').not.toContain('overflow-clip');
             el = el.parentElement;
         }
-        expect(clipper).toBeTruthy();
+        // The clip is the screen's (`ReactRoot`'s table, an `overflow-clip` box): HallCamera.test.js.
     });
 });

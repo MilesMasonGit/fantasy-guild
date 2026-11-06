@@ -9,17 +9,25 @@ import { useBoardScale } from '../../hooks/useBoardScale.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { GuildHallEffectsPopover } from './GuildHallEffectsPopover.jsx';
+import { StarOutline } from './StarOutline.jsx';
+import { outlineSrc, OUTLINE_PX } from './hallStarOutline.js';
 
 /**
  * The web's natural space, in pixels. Upgrade node positions are unit coordinates centred on
- * the Hall (`guildUpgrades.js`); one unit is `WEB_UNIT_PX`, so the first ring (0.5 out) sits
- * 200px from the Hall. The space is fitted to the window (`useBoardScale`), but only the
- * positions scale: stars, lines and tags are drawn at fixed whole-pixel sizes, so the art stays
- * crisp at any fit.
+ * the Hall (`guildUpgrades.js`); one unit is `WEB_UNIT_PX` spread by `SKY_SPACING`, so the first
+ * ring (0.5 out) sits 280px from the Hall. The space is fitted to the window (`useBoardScale`), but
+ * only the positions scale: stars, lines and tags are drawn at fixed whole-pixel sizes, so the art
+ * stays crisp at any fit.
  */
 export const WEB_W = 1000;
 export const WEB_H = 760;
 export const WEB_UNIT_PX = 400;
+/**
+ * How far the authored places are spread apart on screen. Star places stay as authored; at 1.4 no
+ * star's title touches another title, a star or a constellation name.
+ */
+export const SKY_SPACING = 1.4;
+const UNIT_PX = WEB_UNIT_PX * SKY_SPACING;
 
 /**
  * Room past the outermost star for its tag (a tag runs sideways or hangs below), and past the
@@ -45,8 +53,8 @@ export function webSize() {
     let halfW = 0;
     let halfH = 0;
     const reach = (p, pad) => {
-        halfW = Math.max(halfW, Math.abs(p?.x || 0) * WEB_UNIT_PX + pad.x);
-        halfH = Math.max(halfH, Math.abs(p?.y || 0) * WEB_UNIT_PX + pad.y);
+        halfW = Math.max(halfW, Math.abs(p?.x || 0) * UNIT_PX + pad.x);
+        halfH = Math.max(halfH, Math.abs(p?.y || 0) * UNIT_PX + pad.y);
     };
     for (const def of GUILD_UPGRADES) reach(def.node, STAR_PAD);
     for (const c of CONSTELLATIONS) reach(c.label, NAME_PAD);
@@ -103,7 +111,7 @@ const OUTLINE = '0 1px 0 #000, 1px 0 0 #000, 0 -1px 0 #000, -1px 0 0 #000, 1px 1
 export function webPoint(nodeId, size = { w: WEB_W, h: WEB_H }) {
     if (nodeId === HALL_NODE) return { x: size.w / 2, y: size.h / 2 };
     const node = getUpgradeDef(nodeId)?.node || { x: 0, y: 0 };
-    return { x: size.w / 2 + node.x * WEB_UNIT_PX, y: size.h / 2 + node.y * WEB_UNIT_PX };
+    return { x: size.w / 2 + node.x * UNIT_PX, y: size.h / 2 + node.y * UNIT_PX };
 }
 
 /**
@@ -146,28 +154,23 @@ export function linkConstellation(from, to) {
 }
 
 /**
- * Where a star's tag sits in the star's box (`box` square, the star `starPx` in its middle): a
- * zero-size anchor just off the star's edge, with the text centred on it or running away from
- * it, so the tag never covers its own star whatever its length.
+ * Where a star's title sits in the star's box (`box` square, the star or its outline `starPx` in
+ * its middle): always under it, centred on a zero-width anchor just off its edge, so the title
+ * never covers its own star whatever its length. A star's authored `tag` side is not read.
  */
-function tagPlacement(side, box, starPx) {
+export function tagPlacement(box, starPx) {
     const mid = box / 2;
-    const gap = starPx / 2 + 2;
-    switch (side) {
-        case 'above': return { left: mid, bottom: mid + gap, width: 0, justifyContent: 'center' };
-        case 'left': return { right: mid + gap + 2, top: mid, height: 0, alignItems: 'center' };
-        case 'right': return { left: mid + gap + 2, top: mid, height: 0, alignItems: 'center' };
-        default: return { left: mid, top: mid + gap, width: 0, justifyContent: 'center' };
-    }
+    return { left: mid, top: mid + starPx / 2 + 2, width: 0, justifyContent: 'center' };
 }
 
 /**
  * GuildHallBoard: the Guild Hall upgrades as a night sky.
  *
- * Every upgrade is a pixel star whose sprite and size say its state, tagged with its name and
- * rank; the Hall is the pole star in the middle that every constellation starts from. Lines are
- * faint until both ends are lit. The sky behind is `HallSky` and the details panel sits to the
- * right, both in `ReactRoot`.
+ * Every upgrade is a pixel star whose sprite and size say its state, with its item's outline over
+ * it (`hallStarOutline.js`) and its title under it; its rank shows only under the pointer. The Hall
+ * is the pole star in the middle that every constellation starts from. Lines are faint until both
+ * ends are lit. The sky behind is `HallSky` and the details panel sits over the right of it, both
+ * in `ReactRoot`; the web runs on under the panel and the nav.
  * Hovering a star reports it (`onHoverUpgrade`) so the details panel can show it; a click pins
  * it (`onSelectUpgrade`).
  * The Hall star shows the Hall's Effects ({@link GuildHallEffectsPopover}): while hovered, or
@@ -279,9 +282,10 @@ export const GuildHallBoard = ({
     }, [effectsPinned]);
 
     return (
-        // ⚠️ `overflow-clip`, not `overflow-hidden`: a hidden box is still a scroll container,
-        // and focus moving to a star near the edge could scroll the whole web out of place.
-        <div className="w-full h-full min-w-0 min-h-0 flex py-8 px-8 overflow-clip select-none">
+        // ⚠️ Nothing here clips: the web runs on under the nav and the details panel to the screen's
+        // edge, where the screen clips it (`ReactRoot`, an `overflow-clip` box, so focus moving to a
+        // star past the edge cannot scroll anything). This box only centres the sky and limits its pan.
+        <div className="w-full h-full min-w-0 min-h-0 flex select-none">
             <div
                 ref={setViewRef}
                 data-hall-sky-view
@@ -290,7 +294,7 @@ export const GuildHallBoard = ({
                 onPointerMove={onPanMove}
                 onPointerUp={onPanUp}
                 onPointerCancel={onPanUp}
-                className={cn('flex-1 min-w-0 min-h-0 flex items-center justify-center overflow-clip', pannable && 'cursor-grab')}
+                className={cn('flex-1 min-w-0 min-h-0 flex items-center justify-center', pannable && 'cursor-grab')}
             >
                 <div
                     data-board-origin
@@ -342,8 +346,8 @@ export const GuildHallBoard = ({
 
                     {/* Constellation names: faint, bright once the constellation is finished. */}
                     {CONSTELLATIONS.map(c => {
-                        const x = Math.round((size.w / 2 + c.label.x * WEB_UNIT_PX) * scale);
-                        const y = Math.round((size.h / 2 + c.label.y * WEB_UNIT_PX) * scale);
+                        const x = Math.round((size.w / 2 + c.label.x * UNIT_PX) * scale);
+                        const y = Math.round((size.h / 2 + c.label.y * UNIT_PX) * scale);
                         const done = finished.has(c.id);
                         return (
                             <div
@@ -408,6 +412,8 @@ export const GuildHallBoard = ({
                         const scale = STAR_SCALE[state];
                         const starPx = STAR_ART_PX * scale;
                         const box = Math.max(starPx, HIT_PX);
+                        const outline = outlineSrc(def);
+                        const drawnPx = outline ? Math.max(starPx, OUTLINE_PX) : starPx;
                         return (
                             <div
                                 key={def.id}
@@ -430,7 +436,7 @@ export const GuildHallBoard = ({
                                     onFocus={() => hover(def.id)}
                                     onBlur={() => hover(null)}
                                     onClick={() => onSelectUpgrade?.(def)}
-                                    className="gi-star-btn flex items-center justify-center cursor-pointer"
+                                    className="gi-star-btn relative flex items-center justify-center cursor-pointer"
                                     style={{ width: box, height: box, '--star-px': `${scale}px` }}
                                 >
                                     <img
@@ -439,22 +445,23 @@ export const GuildHallBoard = ({
                                         className={cn('gi-star-img', state === 'locked' && 'opacity-60')}
                                         style={{ width: starPx, height: starPx, imageRendering: 'pixelated' }}
                                     />
+                                    {outline && <StarOutline src={outline} look={look} state={state} />}
                                 </button>
-                                {/* The tag: name and rank, on the side the upgrade names. */}
+                                {/* The title, under the star; its rank shows only while the star is hovered or focused (`.gi-star-rank`). */}
                                 <div
-                                    data-star-tag={def.tag || 'below'}
+                                    data-star-tag="below"
                                     className="absolute flex pointer-events-none"
-                                    style={tagPlacement(def.tag, box, starPx)}
+                                    style={tagPlacement(box, drawnPx)}
                                 >
                                     <span
                                         className={cn(
-                                            'whitespace-nowrap ui-text-title leading-tight',
+                                            'relative whitespace-nowrap ui-text-title leading-tight',
                                             state === 'locked' ? 'text-stone-400' : state === 'maxed' ? 'text-[#ffd84a]' : 'text-white'
                                         )}
                                         style={{ textShadow: OUTLINE }}
                                     >
-                                        {def.name}{' '}
-                                        <span data-node-rank>{`${rank}/${def.maxRank}`}</span>
+                                        {def.name}
+                                        <span data-node-rank className="gi-star-rank absolute left-full top-0 pl-[0.4em]">{` ${rank}/${def.maxRank}`}</span>
                                     </span>
                                 </div>
                             </div>

@@ -226,6 +226,22 @@ function effectSegments(statement, names, onHero = false) {
 }
 
 /**
+ * An effect's phrase in three parts, "work", "6%", "faster": the words before its size, the size and
+ * the words after, so a reader can say what the effect does without its number, or the number
+ * alone. Null for an effect with no size (no change, or an axis worded another way).
+ */
+export function effectParts(statement, names = {}) {
+    const list = tidy(effectSegments(statement, { ...DEFAULT_NAMES, ...names }));
+    const at = list.findIndex(s => s.slot === 'value');
+    if (at < 0) return null;
+    return {
+        before: textOf(list.slice(0, at)).trim(),
+        size: list[at].text.trim(),
+        after: textOf(list.slice(at + 1)).trim()
+    };
+}
+
+/**
  * "Coast Tokens" / "Forges" / "Tokens": the filter as a plural noun, with no preposition.
  * `Cannot` and `Applies` need the same set as the object of different prepositions, so the
  * noun is built once rather than by string surgery on another phrase.

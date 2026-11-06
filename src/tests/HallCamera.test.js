@@ -468,7 +468,18 @@ describe('the camera in the game\'s layout', () => {
     it('clips the column rather than hiding it, so focus on a moved side scrolls nothing', () => {
         const { code } = hallCameraSides();
         const column = code.slice(code.lastIndexOf('<div', code.indexOf('<HallCamera')), code.indexOf('<HallCamera'));
-        expect(column).toContain('overflow-clip');
+        // Up and down always; sideways only off the Hall, whose web runs on under the nav.
+        expect(column).toContain('overflow-y-clip');
+        expect(column).toMatch(/isGuildView \? 'overflow-x-visible' : 'overflow-x-clip'/);
         expect(column).not.toContain('overflow-hidden');
+    });
+
+    it('clips the whole screen rather than hiding it, so focus on a star past its edge scrolls nothing', () => {
+        const { code } = hallCameraSides();
+        const table = code.slice(code.lastIndexOf('<div', code.indexOf('ref={tableRef}')), code.indexOf('style={tableBackground}'));
+        expect(table).toContain('overflow-clip');
+        expect(table).not.toContain('overflow-hidden');
+        // A clipped box is no scroll container, so without this it grows to the nav's height past a short screen.
+        expect(table).toContain('min-h-0');
     });
 });

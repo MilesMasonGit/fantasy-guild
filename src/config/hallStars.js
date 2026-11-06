@@ -13,7 +13,7 @@
  *   constellations: { mining: { id, name, label: { x, y }, skill? } },
  *   stars: {
  *     star_mining_xp: {
- *       id, constellation, name, description, node: { x, y }, tag?, links: ['hall'], sprite?,
+ *       id, constellation, name, description, node: { x, y }, tag?, links: ['hall'], sprite?, outline?,
  *       ranks: [{ tier, price: [{ itemId, quantity }], rules: [statement], lines: [{ itemId, quantity }] }]
  *     }
  *   }
@@ -27,6 +27,8 @@
  *   XP star lists +30 %. `rules` are statements in the Rules grammar (GDD §7), held guild-wide while
  *   the rank is held (`hallModifiers.js`); `lines` are Passive Production lines the Guild Hall pays
  *   every lap, beside the Wishing Well's Water.
+ * - `outline` picks the item whose outline the sky draws over the star: an item id or a sprite name.
+ *   Left out, the sky picks one by the star's kind (`hallStarOutline.js`).
  * - `tier` is the tier the owner gives the rank (the ledger prices by it); `price` is what the rank
  *   costs, paid from the Bank.
  */
@@ -92,6 +94,7 @@ export function normaliseStar(raw, key) {
     if (!ranks.length) return null;
     const tag = TAG_SIDES.includes(raw.tag) ? raw.tag : 'below';
     const sprite = text(raw.sprite);
+    const outline = text(raw.outline);
     return {
         id,
         constellation: text(raw.constellation),
@@ -101,6 +104,7 @@ export function normaliseStar(raw, key) {
         tag,
         links: [...new Set((Array.isArray(raw.links) ? raw.links : []).map(text).filter(Boolean))],
         ...(sprite ? { sprite } : {}),
+        ...(outline ? { outline } : {}),
         ranks
     };
 }

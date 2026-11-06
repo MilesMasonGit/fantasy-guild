@@ -90,7 +90,8 @@ describe('GuildUpgradeInspection', () => {
             }))
         );
         // It says the upgrade is locked, but does not spell out the link rule.
-        expect(container.textContent).toContain('Upgrade Locked');
+        expect(container.textContent).toContain('Locked');
+        expect(container.querySelector('#guild-upgrade-button')).toBeNull();
         expect(container.textContent).not.toContain('Requires a linked upgrade');
         expect(container.textContent).not.toContain('Path to this upgrade is locked');
     });

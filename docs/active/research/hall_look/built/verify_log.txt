@@ -1,0 +1,34 @@
+board 2951 2791 0.75 -248 -506 2213 2093
+ranks shown at rest: 0 of 47
+titles not below their star: []
+overlaps: []
+hovered Heartwood, ranks shown: ["star_forestry_yield 1/2"]
+under nav and panel: {"nav":[0,152],"panel":[1564,1920],"board":[-248,1965,-506,1587],"sky":[0,0,1920,1080],"underPanel":["star_forestry_regrowth","star_forestry_camp_reach","star_mining_vein_rest","star_mining_camp_reach","star_fishing_camp_reach"],"underNav":[],"pointerOverPanelStar":"panel"}
+frames: {"studsPurple":true,"chamferPurple":true}
+outlines drawn: 47 of 47 (stars 47)
+panel star_forestry_xp: Woodsman’s Lore | Every Forestry Token awards more XP. | rank 1/1 | now 15% more XP | next Top rank |  | price  | button none  Top rank reached
+panel bank_tabs: Bank Tabs | Every rank opens another Bank tab, room for 64 more kinds of items. | rank 2/15 | now 3 tabs | next 4 tabs | At rank 15, the top: 16 tabs | price Oak Wood410/30 | button enabled  
+panel roster_size: Bunk Beds | Every rank makes room for one more hero. | rank 3/8 | now 3 heroes | next 4 heroes | At rank 8, the top: 8 heroes | price Oak Wood410/40 | button enabled  
+panel wishing_well: Wishing Well | The Guild Hall draws Water every lap, no hero needed. | rank 3/10 | now 30 Water | next 40 Water | At rank 10, the top: 100 Water | price Oak Wood410/40 | button enabled  
+panel star_forestry_speed: Keen Axes | Every Forestry Token works faster. | rank 2/2 | now 12.6% faster | next Top rank |  | price  | button none  Top rank reached
+panel star_forestry_yield: Heartwood | Every Forestry Token gives more yield. | rank 1/2 | now 7% more yield | next 15.2% more yield |  | price Fir Wood0/130 | button disabled The Bank is short of the price 
+panel star_forestry_regrowth: Green Thumb | Every Oak and Fir Token grows and refills faster. | rank 0/1 | now Nothing yet | next 10% faster |  | price Oak Wood410/2000 | button disabled The Bank is short of the price 
+panel star_forestry_camp_reach: Logging Roads | Every Logging Camp hands out work further away. | rank 0/2 | now Nothing yet | next 15% further away | At rank 2, the top: 30% further away | price Oak Wood410/61 | button enabled  
+panel star_mining_vein_rest: Deep Veins | Every Ore Token grows and refills faster. | rank 0/2 | now Nothing yet | next 10% faster | At rank 2, the top: 20% faster | price  | button none  
+panel star_infirmary: Infirmary | Every hero recovers from a wound faster. | rank 1/3 | now 10% faster | next 20% faster | At rank 3, the top: 30% faster | price Cherry0/4000 | button disabled The Bank is short of the price 
+panel star_larder: Larder | Every hero gets more Food slots. | rank 1/1 | now 1 more Food slot | next Top rank |  | price  | button none  Top rank reached
+panel star_trinket_case: Trinket Case | Every hero gets more Trinket slots. | rank 0/1 | now Nothing yet | next 1 more Trinket slot |  | price Trout0/820 | button disabled The Bank is short of the price 
+panel star_well_oak_wood: Woodpile | The Guild Hall draws Oak Wood every lap, no hero needed. | rank 1/3 | now 2 Oak Wood | next 5 Oak Wood | At rank 3, the top: 8 Oak Wood | price Cherry0/3400 | button disabled The Bank is short of the price 
+panel star_farming_refill: Orchard Care | Every Redberry Bush, Blackberry Bush, Blueberry Bush, Strawberry Bush, Apple Tree, Cherry Tree, Peach Tree, Grapevine and Beehive grows and refills faster. | rank 0/3 | now Nothing yet | next 10% faster | At rank 3, the top: 30% faster | price  | button none  
+panel star_alchemy_herb_refill: Wild Herbs | Every Wild Lavender grows and refills faster. | rank 0/1 | now Nothing yet | next 10% faster |  | price  | button none  
+panel star_well_iron_ore: Iron Spring | The Guild Hall draws Iron Ore every lap, no hero needed. | rank 0/1 | now Nothing yet | next 3 Iron Ore |  | price  | button none  
+after buying Bunk Beds: 4/8 now 4 heroes
+effects: Guild Hall EffectsOutputsOak Seedling×1Wheat Seed×1Apple Seed×1Water×30Oak Wood×2Copper Ore×17Stone×9BoostsOutputs arrive once a lap: every 5:00Makes every Token on the board work 12.6% faster, but only for Forestry work.Provides 7% more yield to every Token on the board, but only for Forestry work.Makes every Token on the board award 15% more XP, but only for Forestry work.Makes every Token on the board work 6% faster, but only for Mining work.Makes every Token on the board award 15% more XP, but only for Mining work.Makes every Token on the board work 6% faster, but only for Fishing work.Makes every hero recover from a wound 10% faster.Provides every hero 1 more Food slot.
+saved hall_1920_panel.png
+saved hall_1920_hover.png
+saved hall_1920_effects.png
+saved hall_1366_panel.png
+saved hall_1366_hover.png
+saved hall_1366_effects.png
+idle Hall, web shown, 6 s: {"Paint":0,"Layout":0,"UpdateLayoutTree":991,"PrePaint":991,"Commit":0,"DrawFrame":991,"paintMs":0,"layoutMs":134}
+idle Hall, web hidden, 6 s: {"Paint":4,"Layout":2,"UpdateLayoutTree":991,"PrePaint":993,"Commit":4,"DrawFrame":991,"paintMs":0,"layoutMs":131}

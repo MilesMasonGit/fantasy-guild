@@ -1239,6 +1239,18 @@ body *:not(input):not(textarea):not(code) {
   outline: none;
 }
 
+/* A star's rank number shows only while the star is under the pointer or keyboard focus. */
+.gi-star-rank {
+  display: none;
+}
+.gi-star-btn:is(:hover, :focus-visible) + [data-star-tag] .gi-star-rank {
+  display: inline;
+}
+
+/* The Guild Hall's own frames: the kit's studs and chamfer shapes drawn in purple (the owner's pick F). */
+.ui-frame-studs-purple { border-image-source: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'><path fill='%237c3aed' d='M0 0h7v1h-7zM0 1h1v1h-1zM2 1h1v1h-1zM4 1h1v1h-1zM6 1h1v1h-1zM0 2h2v1h-2zM5 2h2v1h-2zM0 3h1v1h-1zM6 3h1v1h-1zM0 4h2v1h-2zM5 4h2v1h-2zM0 5h1v1h-1zM2 5h1v1h-1zM4 5h1v1h-1zM6 5h1v1h-1zM0 6h7v1h-7z'/><path fill='%23ddd6fe' d='M1 1h1v1h-1zM5 1h1v1h-1zM1 5h1v1h-1zM5 5h1v1h-1z'/><path fill='%230d0a08' d='M3 1h1v1h-1zM2 2h3v1h-3zM1 3h5v1h-5zM2 4h3v1h-3zM3 5h1v1h-1z'/></svg>"); }
+.ui-frame-chamfer-purple { border-image-source: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'><path fill='%237c3aed' d='M2 0h3v1h-3zM1 1h1v1h-1zM5 1h1v1h-1zM0 2h1v3h-1zM6 2h1v3h-1zM1 5h1v1h-1zM5 5h1v1h-1zM2 6h3v1h-3z'/><path fill='%230d0a08' d='M2 1h3v1h-3zM1 2h5v3h-5zM2 5h3v1h-3z'/></svg>"); }
+
 /* A constellation just finished: its picture flashes bright in two steps, then settles. */
 @keyframes gi-constellation-glow {
   0%   { opacity: 1; }

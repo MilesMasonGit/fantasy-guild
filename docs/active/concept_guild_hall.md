@@ -1,4 +1,4 @@
-Status: briefed 2026-10-14 for Transitions and The look of the sky (brief 160); the rest approved 2026-10-09; amendment **"upgrades as a main driver" approved 2026-10-30, briefed (brief 320)**
+Status: briefed 2026-10-14 for Transitions and The look of the sky (brief 160); the rest approved 2026-10-09; amendment **"upgrades as a main driver" approved 2026-10-30, briefed (brief 320)**; "The detail pass" built 2026-11-06 (brief 390 G2, G3)
 
 # The Guild Hall: constellation screen, upgrades, transitions
 
@@ -118,7 +118,8 @@ sky.*
   **The owner draws the star sprites** for each state so they read apart
   from the backdrop's painted stars (owner, 2026-10-15); the steps above are
   the brief for that art, and code-drawn stars stand in until it exists.
-- **Every star carries a tag** beside it: `Bank Slots 3/10` (name and rank),
+- ~~**Every star carries a tag** beside it~~ *Replaced by "The detail pass" below (brief 390): the
+  title sits under every star, the rank only under the pointer.* Was: `Bank Slots 3/10` (name and rank),
   locked ones included.
 - **Lines**: 1 art pixel; **faint between unlit stars, bright white-gold once
   both ends are lit**. A finished constellation's picture glows briefly and
@@ -144,4 +145,38 @@ sky.*
   hovered star (the upgrade's sprite icon, description, prerequisites, price
   as pills with have/need, the Upgrade button) and **a click pins it** so the
   button can be reached. The sprite icon appears only there.
+  *(Replaced by "The detail pass" below: the Effects list is a pop-over on the Hall star.)*
+
+## The detail pass (owner's picks, 2026-11-06; brief 390 G2, G3; built)
+
+*From the owner's walkthrough ("overall it looks cluttered") and the G1 mock-ups in
+`research/hall_look/` (picks: stars **C**, panel **F**, sky **I**). Built pictures:
+`research/hall_look/built/`.*
+
+- **Spacing**: the authored places are spread **1.4 times** apart on screen (`SKY_SPACING`, a
+  scale in code; star places in `hallStars.json` are unchanged). At 1.4 no title touches another
+  title, a star or a constellation name. The sky is bigger, so more of it is reached by dragging.
+- **Titles under every star**, always; a star's authored `tag` side is no longer read. **No rank
+  numbers until the pointer** (or keyboard focus) is on a star; then `1/2` shows beside its title.
+- **Each star wears an item's outline** (pick C): the item's silhouette edge drawn bright over
+  the star in the star's colour (grey, blue, gold; fainter while locked), with a one-art-pixel
+  dark edge, at the sky's 2×. The item comes from a table in code by the star's kind
+  (`hallStarOutline.js`): the skill's tool for a speed star, its product for yield, a feather for
+  every XP star, a torch for every camp-reach star, what grows back for regrowth, a red potion for
+  the Infirmary, bread and a ring for the loadout stars, a Well star's own item, a key, a bunk bed
+  and water for the built-ins. A star may name its own in an optional **`outline`** field (an item
+  id or a sprite name; the CMS's Guild Hall page has the box), which wins.
+- **The sky runs full screen under everything**: the web of stars goes on under the nav bubbles
+  and the details panel to the screen's edge, with no clip at the panel or the nav.
+- **The panel** (pick F): the Return button and the Inspect panel in the kit's chamfer and studs
+  shapes **drawn in purple**. The star's sheet reads like the Token card: its **name on a header
+  band** (with its item and the close X), **one sentence saying what it does** with no number
+  (built from its first rank's rules, e.g. "Every Forestry Token works faster."), a **stat block**
+  (Rank `1/2`, Now, Next) and **a line for the top rank** when the next rank is not already the
+  top, the **price as item ribbons** with have/need (red when short), and the kit's **Upgrade
+  button** (greyed with "The Bank is short of the price" underneath when it cannot be bought).
+  The panel is only as tall as what it shows. The rank-by-rank list is gone; the author's
+  description shows on hover over the sentence.
+- **Hall effects**: no time on each output; **the lap is listed as the first boost** ("Outputs
+  arrive once a lap: every 5:00"); the section reads **Boosts** (it read "Boosts & Modifiers").
 
