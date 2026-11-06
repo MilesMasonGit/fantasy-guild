@@ -25,7 +25,9 @@ import * as FightRoom from './FightRoom.js';
  * Walking costs work time: a hero claims a Token when they set off (so no two heroes race for it),
  * but counts as working it only once they arrive. `BoardState`'s seam (`workerOf`, `workTokenOf`)
  * answers null until then, so the Token's cycle does not run. Arriving publishes one `HERO_MOVED`,
- * which switches on anything that cares who works a Token (buffs, statuses).
+ * which switches on anything that cares who works a Token (buffs, statuses). A hero reaching an
+ * enemy whose fight would crowd another fight or a hero waits while it steps to open space
+ * (`FightRoom`), walking beside it, and arrives once it has.
  *
  * Straight lines, over Tokens: no pathfinding. The screen draws a walking hero above the Tokens.
  *

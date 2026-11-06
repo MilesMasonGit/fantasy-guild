@@ -951,6 +951,25 @@ Their resistances, weaknesses and moves come with the combat content pack
   (section 4).
 - **Fleeing**: dragging a hero to another job ends their fight, as it ends any
   job (owner).
+- **Crowded fights step to open space** (brief 360 C4): when a hero reaches
+  an enemy and the fight about to start would cover another fight or a hero
+  standing there, the enemy walks to the nearest clear spot within 160 u (one
+  mat step) and the hero walks beside it; the fight starts there. A lone
+  fight, or one with no clear spot that close, starts where it stands. What a
+  fight covers is what is drawn over it at the mat's natural size: both
+  fighters' art and, above them, the two health bars and the fight button; a
+  hero covers their art and their bar; two closer than 8 u crowd. Fights
+  count (a fight stepping aside, at the spot it is going to) and heroes
+  standing still; Tokens do not, nor a hero walking past, nor one waiting for
+  the same enemy. It is decided once, as the hero arrives: a fight never moves
+  once begun, and the next kill of the same enemy fights where it stands. The
+  enemy walks at its full speed (90 u/s), so a step delays the first swing by
+  its length at that speed, at most about 1.8 s; the QA crowd's steps are
+  8 to 48 u. Afterwards a camp's enemy walks back to where it stood, and an
+  attacked hero goes back to their job, as before. A catch-up steps the same
+  fights to the same spots (whole mat units, no random draw). Never saved: a
+  save taken mid-step loads with the hero walking up again.
+  *(`board/FightRoom.js`)*
 - **Random draws, in a fixed order** so a catch-up replays the same fights as
   live play: an enemy with two moves or more draws its move first in its
   swing; then each swing draws one number for the miss, on a hit one for the
@@ -1056,7 +1075,8 @@ Statuses are not drawn on the board.
   "Resisted" are the fight window's and the log's. Two at once on one fighter
   stack downward.
 - **The QA panel's Combat screen section** sets up a crowd of seven fights
-  below the Guild Hall, to judge the motion of a busy mat.
+  below the Guild Hall, to judge the motion of a busy mat and see the fights
+  that would cover one another step apart as their heroes arrive.
 - **The fight windows** (owner's picks, 2026-11-05: window B "the slim card",
   tab D "faces and bars"): one window per hero, opened by the fight button
   between the two bars, several open at once. A

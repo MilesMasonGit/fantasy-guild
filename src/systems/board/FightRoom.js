@@ -159,18 +159,20 @@ function steps() {
     return map;
 }
 
-/** What the searches have cost (tests and probes). */
-const counts = { searches: 0, candidates: 0, worst: 0 };
+/** What the searches have cost and what they found (tests and probes). */
+const counts = { searches: 0, candidates: 0, worst: 0, stepped: 0, walked: 0, farthest: 0 };
 
-/** `{ searches, candidates, worst }`: crowded fights that looked for room, the spots they tried, the most one tried. */
+/**
+ * `{ searches, candidates, worst, stepped, walked, farthest }`: crowded fights that looked for
+ * room, the spots they tried in all and at most in one search, the fights that found some, and how
+ * far those stepped in all and at most, in mat units.
+ */
 export function stats() {
     return { ...counts };
 }
 
 export function resetStats() {
-    counts.searches = 0;
-    counts.candidates = 0;
-    counts.worst = 0;
+    for (const key of Object.keys(counts)) counts[key] = 0;
 }
 
 /** Everything a fight starting at `enemyId` for `heroId` must keep clear of, as boxes. */
@@ -257,6 +259,10 @@ export function holdsArrival(heroId, enemy, side) {
     const { to } = planFor(heroId, enemy, side);
     if (!to) return false;
     plans.set(enemy.id, { heroId, x: to.x, y: to.y, side, done: false });
+    const far = Math.sqrt((to.x - enemy.x) ** 2 + (to.y - enemy.y) ** 2);
+    counts.stepped++;
+    counts.walked += far;
+    if (far > counts.farthest) counts.farthest = far;
     return true;
 }
 

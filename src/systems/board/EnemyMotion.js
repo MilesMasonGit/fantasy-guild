@@ -23,10 +23,12 @@ import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.j
  * offset from the spawner's live centre, so a moved spawner is walked after, never jumped to. Walks
  * back when the player drops it outside that ring, at full Enemy walk speed; strolls inside it go
  * at half, as a hero's do. Holds still while fought (a live fight via `BoardCombat.getFight`, or a
- * hero's claim on it) and while it is in the player's hand. A dragged enemy keeps its fight through
- * the move; nothing here touches fights.
+ * hero's claim on it) and while it is in the player's hand, except to step to open space before its
+ * fight starts (`FightRoom`), at full speed, whatever its camp. A dragged enemy keeps its fight
+ * through the move; nothing here touches fights.
  *
- * An enemy with no live spawner (placed by hand, or its spawner gone) stands still.
+ * An enemy with no live spawner (placed by hand, or its spawner gone) stands still but for that
+ * step.
  *
  * The tether: `instance.tether` is the spawner's instance id, written by
  * `SpawnerSystem` when it spawns an enemy, and saved with the Token. An enemy with no

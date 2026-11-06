@@ -379,7 +379,6 @@ describe('⭐ a full mat does not stall', () => {
         // Each search is bounded by the candidate table, however full the mat.
         expect(worst).toBeLessThanOrEqual(FightRoom.CANDIDATES);
         expect(candidates).toBeLessThanOrEqual(8 * FightRoom.CANDIDATES);
-        // eslint-disable-next-line no-console
         console.info(`full mat: 600 ticks in ${ms.toFixed(0)} ms, ${searches} searches, ${candidates} candidates (worst ${worst})`);
     });
 });
