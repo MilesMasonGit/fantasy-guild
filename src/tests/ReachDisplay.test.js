@@ -21,6 +21,15 @@ registerTokenTypes({
         id: 'rd_trigger', name: 'Watcher',
         statements: [{ keyword: KEYWORD.SPAWNS, when: { event: 'CYCLE_COMPLETE', scope: 'nearby' }, payload: {} }]
     },
+    // A camp of enemies with a neighbour rule, and a Forest-like spawner of plain Tokens with one.
+    rd_enemy_camp: {
+        id: 'rd_enemy_camp', name: 'Camp', statements: [provides('nearby')],
+        spawner: { spawns: [{ typeId: 'fixture_enemy', weight: 1 }], allowance: 2, intervalMs: 1000, upkeep: [] }
+    },
+    rd_grove: {
+        id: 'rd_grove', name: 'Grove', statements: [provides('nearby')],
+        spawner: { spawns: [{ typeId: 'fixture_producer', weight: 1 }], allowance: 2, intervalMs: 1000, upkeep: [] }
+    },
     rd_applies_role: {
         id: 'rd_applies_role', name: 'Role applier',
         statements: [{ keyword: KEYWORD.APPLIES, reach: 'nearby', target: { role: 'worker' }, payload: {} }]
@@ -56,6 +65,11 @@ describe('showsNearRing — which Tokens show their reach', () => {
 
     it('an Applies aimed at a role does not — the role replaces the reach', () => {
         expect(showsNearRing('rd_applies_role')).toBe(false);
+    });
+
+    it('an enemy camp never does, whatever its rules; a spawner of anything else still may', () => {
+        expect(showsNearRing('rd_enemy_camp')).toBe(false);
+        expect(showsNearRing('rd_grove')).toBe(true);
     });
 
     it('an unknown Token does not', () => {

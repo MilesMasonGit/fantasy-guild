@@ -240,7 +240,7 @@ export const KEYWORDS = Object.freeze([
         blurb: 'Puts a Token on the board, where this one stands or on a free spot.',
         /**
          * ⚠️ Its chance is rolled BEFORE the rule fires, unlike a `Grants` proc, which rolls after
-         * the charge is spent. An ambush is a risk of working the node, not a service the node
+         * the charge is spent. A chance spawn is a risk of the moment, not a service the Token
          * performs, so a miss is no firing at all: no charge, no cooldown.
          */
         firingChance: true,

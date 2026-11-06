@@ -6,10 +6,11 @@
 //               them go to producers instead)
 //   heroes<N>   cap128 with N heroes instead of 8 (the roster's top is 8; more is headroom)
 //   enemies<N>  cap128 with Forests and Quarries, then producers, swapped for war camps until N
-//               goblins have room under the cap (they wander their camps; no hero is near the new
-//               camps, so they do not fight)
-//   fights<N>   cap128 with N of the 8 heroes each beside a camp of one tough, hostile brute that
-//               never runs out: N fights going on at once, the rest as S2
+//               goblins have room under the cap (they stand where they spawn; no hero is near
+//               the new camps, so they do not fight)
+//   fights<N>   cap128 with N of the 8 heroes each beside a camp of one tough brute that never
+//               runs out. ⚠️ Enemies no longer attack (brief 500), so these heroes do not fight
+//               until the scene sends them at the brutes; the rest as S2
 //
 // Loot piles and notifications are the same cap128 board with something done from a page timer
 // (`bench/browser/scenes.mjs`: floor<N>, notify<N>).
@@ -29,9 +30,9 @@ const MARGIN = 80;
 // Registered here, not in `fixtures.mjs`, so no other scenario's work changes.
 registerTokenTypes({
     /**
-     * A hostile brute that never runs out (a kill costs one of 1000 uses; it is back at full HP
-     * after the 2 s pause and ambushes again): a fight that keeps going for as long as a hero
-     * stands by its camp. Tougher than a goblin, so a fight lasts several blows.
+     * A brute that never runs out (a kill costs one of 1000 uses; it is back at full HP after the
+     * 2 s pause). Its `hostile` mark is read by nothing since enemies stopped attacking. Tougher
+     * than a goblin, so a fight lasts several blows.
      */
     env_brute: {
         id: 'env_brute', name: 'Envelope Brute', tokenType: 'enemy',

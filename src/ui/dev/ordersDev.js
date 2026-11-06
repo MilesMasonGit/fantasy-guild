@@ -75,11 +75,11 @@ function qaHero(name, skills) {
 }
 
 /**
- * Left of the Hall: a Goblin Camp with a goblin standing, a QA Old Oak beside it (inside the camp's
- * watch, never used up); clear of every camp, a QA Berry Bush (three charges, nothing comes back). A
- * QA Fighter (Forestry and Melee 30, Steak to eat) waits at the Hall. Drag them onto the Old Oak:
- * the goblin attacks, they fight back and go back to chopping. Onto the Bush: three cycles, then it
- * is gone and they need a job.
+ * Left of the Hall: a Goblin Camp with a goblin standing, a QA Old Oak beside it (never used up);
+ * away from the camps, a QA Berry Bush (three charges, nothing comes back). A QA Fighter (Forestry
+ * and Melee 30, Steak to eat) waits at the Hall. Drag them onto the Old Oak: they chop beside the
+ * camp and the goblin never attacks them; drag them onto the goblin and they fight it. Onto the
+ * Bush: three cycles, then it is gone and they need a job.
  * ⚠️ Changes the game, like Spawn Party.
  * @returns {{ok: boolean, error?: string}}
  */
@@ -89,7 +89,7 @@ export function setUpOrdersScene() {
     const c = hallPoint();
     const camp = put(GOBLIN_CAMP, { x: c.x - 520, y: c.y - 200 });
     const oak = camp ? put(QA_ORDER_TYPES.OAK, { x: camp.x + 160, y: camp.y }) : null;
-    // The Bush well clear of every goblin camp, so nothing ambushes whoever is sent to it.
+    // The Bush well clear of every goblin camp, so it reads as a job on its own.
     const camps = BoardState.tokens().filter(t => t.typeId === GOBLIN_CAMP);
     const clear = [{ x: c.x + 360, y: c.y + 260 }, { x: c.x, y: c.y - 300 }, { x: c.x + 420, y: c.y - 260 }, { x: c.x - 360, y: c.y + 220 }]
         .find(p => camps.every(k => Math.hypot(k.x - p.x, k.y - p.y) > 420));

@@ -304,8 +304,8 @@ export function clearAll() {
  * Advance combat on one enemy Token. Called from the board runner's tick for every enemy Token on
  * the mat.
  *
- * An enemy never starts a fight by itself here: with no hero on it, it does nothing at all. A
- * hostile enemy gets a hero onto it through `Hostiles` and `Flags.ambush`, not in this function.
+ * An enemy never starts a fight by itself: with no hero on it, it does nothing at all. Only the
+ * player sends a hero at an enemy.
  */
 export function tickToken(instance, delta, heroId) {
     const id = instance?.id;

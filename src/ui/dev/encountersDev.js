@@ -1,4 +1,4 @@
-// the QA panel's encounters check: a guardian's camp by a rich vein, an ambush node, a boss's den and a Summoning Circle, heroes flagged
+// the QA panel's encounters check: a guardian's camp by a rich vein, a boss's den and a Summoning Circle, heroes flagged
 // ⚠️ DEV BUILDS ONLY: reached from `EncountersDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
@@ -15,23 +15,19 @@ import { getTokenType, registerTokenTypes, tokenStartingUses } from '../../confi
 import { registerItems } from '../../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../../config/registries/recipePoolRegistry.js';
 import * as StationRecipe from '../../systems/board/StationRecipe.js';
-import { PLACEMENT } from '../../config/registries/placementRegistry.js';
-import { makeStatement, KEYWORD } from '../../systems/effects/statements.js';
 import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 
 /**
  * Test content for the encounters, made in memory for this check only (never written to `data/`,
  * gone on reload: press the button again after a reload, on an empty slot). Existing sprites only.
- * Bosses and guardians come from camps of one (ordinary spawners), a boss can also be called by a
- * Summoning Circle, and a node can carry an ambush rule.
+ * Bosses and guardians come from camps of one (ordinary spawners), and a boss can also be called by
+ * a Summoning Circle.
  */
 export const QA_ENCOUNTER_TYPES = Object.freeze({
     guardian: 'qa_enc_vein_guardian',
     guardianCamp: 'qa_enc_guardian_camp',
     vein: 'qa_enc_rich_vein',
-    ambusher: 'qa_enc_ambusher',
-    ambushNode: 'qa_enc_ambush_vein',
     boss: 'qa_enc_warlord',
     den: 'qa_enc_den',
     called: 'qa_enc_called_chief',
@@ -51,10 +47,10 @@ function registerQaEncounters() {
     });
     const T = QA_ENCOUNTER_TYPES;
     registerTokenTypes({
-        // A guardian: a tough, hostile enemy whose camp of one stands by a rich vein.
+        // A guardian: a tough enemy whose camp of one stands by a rich vein.
         [T.guardian]: {
             id: T.guardian, name: 'Vein Guardian', tokenType: 'enemy', rarity: 'common', theme: 'qa', uses: 1,
-            sprite: 'e_elemental_thorn', enemy: { level: 3, style: 'melee', hostile: true }, config: enemyConfig('item_copper_ore')
+            sprite: 'e_elemental_thorn', enemy: { level: 3, style: 'melee' }, config: enemyConfig('item_copper_ore')
         },
         [T.guardianCamp]: {
             id: T.guardianCamp, name: 'Guardian’s Hollow', tokenType: 'spawner', rarity: 'common', theme: 'qa', uses: null,
@@ -63,22 +59,6 @@ function registerQaEncounters() {
         [T.vein]: {
             id: T.vein, name: 'Rich Copper Vein', tokenType: 'resource', rarity: 'common', theme: 'qa', uses: null,
             sprite: 't_ore_vein_copper', config: mining
-        },
-        [T.ambusher]: {
-            id: T.ambusher, name: 'Vein Goblin', tokenType: 'enemy', rarity: 'common', theme: 'qa', uses: 1,
-            sprite: 'e_goblin', enemy: { level: 1, style: 'melee' }, config: enemyConfig('item_bones')
-        },
-        // An ambush rule at 10% a cycle so it shows within a minute or two (content: about 2%).
-        [T.ambushNode]: {
-            id: T.ambushNode, name: 'Goblin-haunted Vein', tokenType: 'resource', rarity: 'common', theme: 'qa', uses: null,
-            sprite: 't_ore_vein_iron', config: mining,
-            statements: [{
-                ...makeStatement(KEYWORD.SPAWNS),
-                id: 'stm_qa_enc_ambush',
-                payload: { typeId: T.ambusher, placement: PLACEMENT.NEAREST_FREE, chance: 10 },
-                when: { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 },
-                chargeDelta: 0
-            }]
         },
         [T.boss]: {
             id: T.boss, name: 'Goblin Warlord', tokenType: 'enemy', rarity: 'rare', theme: 'qa', uses: 1,
@@ -124,12 +104,11 @@ function fighterAt(level, name) {
 
 /**
  * Around the Guild Hall: below it, left to right, the Guardian's Hollow beside a Rich Copper Vein,
- * a Goblin-haunted Vein and the Warlord's Den; above it, a Summoning Circle. Six new Fighters
- * (level 30), flagged:
- * - "Guard-breaker", flag by the vein: the Vein Guardian is hostile and attacks them; they beat it
- *   and mine; its Hollow sends another every 30 s;
- * - "Miner", pinned to the haunted vein: about one cycle in ten a Vein Goblin jumps out and attacks
- *   them; they fight it and go back to mining;
+ * and the Warlord's Den; above it, a Summoning Circle. Six new Fighters (level 30), flagged:
+ * - "Guard-breaker", sent at the Vein Guardian: they beat it; its Hollow sends another every 30 s,
+ *   and they fight that one too;
+ * - "Miner", pinned to the rich vein beside the Hollow: they mine, and the guardian never attacks
+ *   them (no enemy attacks first);
  * - "Boss-hunter", pinned to the Warlord: fights it; the Den sends another (every 60 s);
  * - "Second in line", pinned to the Warlord too: every fight is one-on-one, so they wait beside it
  *   ("Waiting for Goblin Warlord") until the first lets go;
@@ -150,10 +129,9 @@ export function setUpEncountersScene() {
     };
     const hollow = put(T.guardianCamp, -560, 260);
     const vein = put(T.vein, -380, 260);
-    const haunted = put(T.ambushNode, 0, 300);
     const den = put(T.den, 360, 300);
     const circle = put(T.circle, 420, -260);
-    if (!hollow || !vein || !haunted || !den || !circle) return { ok: false, error: 'No room around the Guild Hall for five Tokens' };
+    if (!hollow || !vein || !den || !circle) return { ok: false, error: 'No room around the Guild Hall for four Tokens' };
 
     // The Hollow's guardian and the Den's boss stand at once (a camp's first comes after its
     // interval), so the flags below find them.
@@ -161,6 +139,7 @@ export function setUpEncountersScene() {
         return { ok: false, error: 'No room beside the Hollow or the Den' };
     }
     const boss = BoardState.tokens().find(t => t.typeId === T.boss);
+    const guardian = BoardState.tokens().find(t => t.typeId === T.guardian);
     // The circle's one recipe, chosen (a station waits for the player to pick one).
     StationRecipe.setSelectedRecipe(circle, QA_SUMMON_RECIPE);
 
@@ -170,8 +149,8 @@ export function setUpEncountersScene() {
     InventoryManager.addItem(QA_SUMMON_ITEM, 2);
 
     const flagged = [
-        { name: 'Guard-breaker', at: { x: vein.x, y: vein.y + 60 } },
-        { name: 'Miner', at: { x: haunted.x, y: haunted.y }, pin: true },
+        { name: 'Guard-breaker', at: { x: guardian.x, y: guardian.y }, pin: true },
+        { name: 'Miner', at: { x: vein.x, y: vein.y }, pin: true },
         { name: 'Boss-hunter', at: { x: boss.x, y: boss.y }, pin: true },
         { name: 'Second in line', at: { x: boss.x, y: boss.y }, pin: true },
         { name: 'Summoner', at: { x: circle.x, y: circle.y }, pin: true },

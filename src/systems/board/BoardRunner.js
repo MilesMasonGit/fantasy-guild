@@ -20,7 +20,6 @@ import * as BoardCombat from './BoardCombat.js';
 import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
 import * as EnemyMotion from './EnemyMotion.js';
-import * as Hostiles from './Hostiles.js';
 import * as TimedChanges from './TimedChanges.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Foundations from './Foundations.js';
@@ -495,14 +494,9 @@ export function tick(delta) {
     // starts now.
     HeroMotion.tick(delta);
 
-    // Enemies potter by their spawner: after the heroes, so an enemy a hero claimed this tick
-    // already holds still for them.
+    // Enemies stand still but for a step to open space before a crowded fight: after the heroes,
+    // so a hero arriving this tick has already asked for it.
     EnemyMotion.tick(delta);
-
-    // Hostile enemies attack heroes whose flag is inside the radius of their spawner: after the enemies'
-    // steps, and before any Token ticks, so an attacked hero standing beside the enemy fights this
-    // same tick.
-    Hostiles.tick(delta);
 
     const onMat = BoardState.tokens();
     if (!onMat.length) return;
@@ -539,9 +533,8 @@ export function tick(delta) {
         }
 
         // Enemy Tokens run on the combat engine rather than a work cycle. A tile with no hero on it
-        // does nothing here and raises no alert, for the same reason an unstaffed Forest doesn't; a
-        // hostile enemy gets a hero onto it through `Hostiles` and `Flags.ambush`, not through this
-        // function.
+        // does nothing here and raises no alert, for the same reason an unstaffed Forest doesn't. A
+        // hero is on an enemy only because the player sent them.
         if (BoardCombat.isEnemyToken(instance)) {
             // A hero who cannot fight never claims an enemy under flags: the flag records
             // `unskilled` against it, shown on hover only, so an enemy Token never carries a red mark.

@@ -41,9 +41,6 @@ export const PROBES = {
     'src/systems/board/EnemyMotion.js': [
         { fn: 'tick', name: 'stage:EnemyMotion.tick', timed: true }
     ],
-    'src/systems/board/Hostiles.js': [
-        { fn: 'tick', name: 'stage:Hostiles.tick', timed: true }
-    ],
     'src/systems/board/BoardRunner.js': [
         { fn: 'tick', name: 'BoardRunner.tick', timed: true }
     ],

@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { isEnemyDef, isBossEnemy } from '../../config/registries/enemyProfile.js';
+import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { PLACEMENT, placementOf } from '../../config/registries/placementRegistry.js';
 import { statementsOf, stationSkillOf, firingChanceOf } from '../effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
@@ -17,7 +17,6 @@ import * as FightMoments from './FightMoments.js';
 import * as DealDamage from './DealDamage.js';
 import * as EffectActions from './EffectActions.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
-import { BOARD_EVENTS } from './boardEvents.js';
 import { resolveRoles } from '../../config/registries/roleRegistry.js';
 import * as Charges from './Charges.js';
 import * as BoardState from './BoardState.js';
@@ -41,8 +40,8 @@ import { logger } from '../../utils/Logger.js';
  * something actually happened, and reacting to a stuck neighbour reads as a bug.
  * - The charge burns on service, not on luck: a Triggered Token that fires spends its charge
  * whether or not its proc rolled a hit, so a Token serving 100 events wears out in 100 events
- * regardless of luck. ⚠️ Except a `Spawns` chance (`firingChance`), the ambush: it is rolled before
- * the rule fires, so a miss is no firing and costs nothing.
+ * regardless of luck. ⚠️ Except a `Spawns` chance (`firingChance`): it is rolled before the rule
+ * fires, so a miss is no firing and costs nothing.
  * - How much it burns is per statement: each statement carries its own `chargeDelta` (negative
  * spends and gates the effect, zero is free, positive restores up to the Token's starting charges).
  * The arithmetic is `Charges.applyDelta`; an unauthored delta spends 1.
@@ -162,9 +161,9 @@ function isReady(instance, statementId) {
 /**
  * Whether a rule-fired spawn may happen now; true for every other statement. A held spawn waits for
  * the next moment, as a spawner waits for its next attempt. Held:
- * - **a boss**, always: a boss comes from its own camp or a Summoning Circle, and never ambushes;
- * - **a second ambusher**: while an enemy this Token's rules spawned is still on the mat, its rules
- *   spawn no other, so a node holds one ambusher at a time however long it is worked;
+ * - **an enemy**, always: enemies come only from camps (spawners) and Summoning Circles, never
+ *   from a Token's rule, so no Token ambushes the hero working it. The content
+ *   audit names such a rule so it can be deleted;
  * - **a full mat**: no room under the Token cap. A spawn that takes its bearer's place (`here`)
  *   adds nothing to the count, so the cap never holds it.
  *
@@ -174,18 +173,9 @@ function isReady(instance, statementId) {
  */
 function spawnHasRoom(instance, statement) {
     if (statement.keyword !== KEYWORD.SPAWNS) return true;
-    const def = getTokenType(statement.payload?.typeId);
-    if (isBossEnemy(def)) return false;
-    if (isEnemyDef(def) && hasAmbusherOut(instance)) return false;
+    if (isEnemyDef(getTokenType(statement.payload?.typeId))) return false;
     if (placementOf(statement.payload) === PLACEMENT.HERE && MatCap.countsTowardCap(instance)) return true;
     return MatCap.canPlaceMore(1);
-}
-
-/** Whether an enemy `bearer`'s rules spawned is still on the mat (`tetherToBearer`). */
-function hasAmbusherOut(bearer) {
-    if (!bearer?.id) return false;
-    for (const t of BoardState.tokens()) if (t.ambushedFrom === bearer.id) return true;
-    return false;
 }
 
 /**
@@ -196,30 +186,6 @@ function hasAmbusherOut(bearer) {
 function rolledToFire(statement) {
     const chance = firingChanceOf(statement);
     return chance == null || Math.random() * 100 < chance;
-}
-
-/**
- * An enemy a rule spawns beside its bearer is an **ambusher**: it belongs to the Token that made
- * it, as a spawner's enemies belong to their spawner, and watches for heroes around that Token
- * (`Hostiles.watchCentreOf`) if its type is hostile. Saved with the enemy (`tether`,
- * `ambushedFrom`). A bearer that has already left the mat holds nothing.
- *
- * - It attacks the hero the moment names (`workerId`: the hero who finished the cycle that fired
- *   it), hostile or not, through `BOARD_EVENTS.AMBUSHED`; `Flags` sets them fighting on its next
- *   pass.
- * - It is one fight: beaten once, it is gone, whatever its type's uses.
- * - Until then its bearer's rules spawn no other enemy ({@link hasAmbusherOut}).
- */
-function tetherToBearer(spawnedId, bearer, workerId = null) {
-    const spawned = BoardState.getTokenById(spawnedId);
-    if (!spawned || !isEnemyDef(getTokenType(spawned.typeId))) return;
-    if (!BoardState.getTokenById(bearer?.id)) return;
-    BoardState.setTether(spawned, bearer.id);
-    spawned.ambushedFrom = bearer.id;
-    spawned.usesRemaining = 1;
-    if (workerId) {
-        EventBus.publish(BOARD_EVENTS.AMBUSHED, { instanceId: spawned.id, heroId: workerId, nodeId: bearer.id });
-    }
 }
 
 /**
@@ -319,10 +285,8 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
         EffectActions.remove(statement, roles());
     }
     if (statement.keyword === KEYWORD.SPAWNS) {
-        const spawnRoles = roles();
-        const landed = EffectActions.spawn(statement, spawnRoles);
+        const landed = EffectActions.spawn(statement, roles());
         bearerReplaced = !!landed?.replacedBearer;
-        if (landed && !bearerReplaced) tetherToBearer(landed.instanceId, instance, spawnRoles.actor);
     }
     if (statement.keyword === KEYWORD.TRANSFORMS) {
         bearerReplaced = EffectActions.transform(statement, roles());

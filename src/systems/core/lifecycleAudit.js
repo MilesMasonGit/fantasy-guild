@@ -4,7 +4,7 @@ import {
     FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets,
     STATION_KINDS, stationKindOffers
 } from '../../config/registries/tokenConstants.js';
-import { stationSkillOf, stationKindOf, getProvidedTagsWithTiers } from '../effects/statements.js';
+import { stationSkillOf, stationKindOf, getProvidedTagsWithTiers, statementsOf, KEYWORD } from '../effects/statements.js';
 import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
 
 /**
@@ -60,6 +60,8 @@ function skillIdSet(skills) {
     return ids;
 }
 
+/** `enemyProfile.isEnemyDef`, repeated so this file pulls no registry into the CMS. */
+const isEnemyDef = (def) => def?.enemy?.level != null;
 const isPositiveInteger = (v) => Number.isInteger(v) && v > 0;
 const isTime = (v) => typeof v === 'number' && Number.isFinite(v) && v >= MIN_MS;
 const hasValue = (v) => v !== undefined && v !== null && v !== '';
@@ -444,9 +446,13 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             }
         }
 
-        // ── a boss: never hostile ──
-        if (def.enemy?.boss === true && def.enemy?.hostile === true) {
-            warn('enemy.hostile', 'is a boss marked hostile; a boss never attacks first, so the mark does nothing.');
+        // ── a rule that spawns an enemy: refused, enemies come only from camps (`TriggerSystem`) ──
+        for (const statement of statementsOf(def)) {
+            if (statement?.keyword !== KEYWORD.SPAWNS) continue;
+            const typeId = statement.payload?.typeId;
+            if (!isEnemyDef(tokens[typeId])) continue;
+            const rule = statement.sourceEffectId ? `its rule ${statement.sourceEffectId}` : 'one of its rules';
+            warn('statements', `${rule} spawns ${tokenLabel(typeId)}, an enemy. No Token's rule spawns an enemy any more (no ambushes: enemies come only from camps and Summoning Circles), so the rule does nothing. Delete it from the Token's rules.`);
         }
     }
 

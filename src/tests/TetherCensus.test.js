@@ -49,7 +49,7 @@ const ruleSpawn = {
 
 registerTokenTypes({
     fixture_tc_hall: { ...fixtures.BENCH_TOKENS.bench_hall, id: 'fixture_tc_hall', name: 'Census Hall' },
-    /** Hostile enough to fight, one kill and gone: the Goblin's shape. */
+    /** One kill and gone: the Goblin's shape. */
     fixture_tc_enemy: {
         id: 'fixture_tc_enemy', name: 'Census Enemy', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
         uses: 1, sprite: 's_occult', requiresHero: true,
@@ -88,7 +88,7 @@ registerTokenTypes({
         enemy: { level: 1, style: 'melee', budgetScale: 0.1 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
     },
-    /** A camp that also spawns its enemy by rule: an ambusher tied to it counts as what it spawned. */
+    /** A camp whose rule also names its enemy: the game refuses a rule that spawns an enemy. */
     fixture_tc_rule_den: {
         id: 'fixture_tc_rule_den', name: 'Census Rule Den', tokenType: 'spawner', rarity: 'common', theme: 'fixture',
         uses: null, sprite: 's_crime',
@@ -297,18 +297,11 @@ describe('⭐ every way a tether changes keeps the camp\'s count right', () => {
         expect(count(den)).toBe(1);
     });
 
-    it('⚠️ a rule-spawned enemy tied to the camp that bore it, tied after it landed', () => {
+    it('a camp whose rule names its enemy spawns none by rule (no ambushes): nothing to count', () => {
         const den = place('fixture_tc_rule_den', 500, 500);
-        expect(count(den)).toBe(0);
-        const during = [];
-        const off = EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, () => during.push(count(den)));
         EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: den.id, typeId: den.typeId, heroId: null, failed: false, produced: [] });
-        off();
-        expect(during[0]).toBe(0);                     // on the mat, not tied to the camp yet
-        const [ambusher] = BoardState.tokens().filter(t => t.typeId === 'fixture_tc_ambusher');
-        expect(ambusher.ambushedFrom).toBe(den.id);
-        expect(ambusher.tether).toBe(den.id);
-        expect(count(den)).toBe(1);
+        expect(BoardState.tokens().filter(t => t.typeId === 'fixture_tc_ambusher')).toHaveLength(0);
+        expect(count(den)).toBe(0);
     });
 
     it('lifted and put down: the same Token, the same count', () => {
@@ -417,13 +410,13 @@ describe('⭐ a long seeded run: the count equals the walk after every tick and 
     const TICKS = Number(process.env.FG_TETHER_TICKS) || 4000;
     const BY_HAND_LIMIT_MS = 150_000;
 
-    it('through fights, spawns, deaths, growth, rule spawns, loads, older saves, catch-ups and travel', async () => {
+    it('through fights, spawns, deaths, growth, refused rule spawns, loads, older saves, catch-ups and travel', async () => {
         const pick = seeded(20261103);
         const within = (n) => Math.floor(pick() * n);
         const choice = (list) => list[within(list.length)];
         const seen = {
             ticks: 0, comparisons: 0, spawned: 0, killed: 0, beaten: 0, campsSwapped: 0, grown: 0, leftFamily: 0,
-            ruleSpawns: 0, lifted: 0, loads: 0, olderSaves: 0, attached: 0, bigSteps: 0, catchUps: 0, travels: 0
+            ruleRefusals: 0, lifted: 0, loads: 0, olderSaves: 0, attached: 0, bigSteps: 0, catchUps: 0, travels: 0
         };
         const offs = [
             EventBus.subscribe(BOARD_EVENTS.TOKEN_SPAWNED, () => { seen.spawned++; }),
@@ -487,7 +480,9 @@ describe('⭐ a long seeded run: the count equals the walk after every tick and 
                 if (!den) return;
                 const before = BoardState.tokens().length;
                 EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: den.id, typeId: den.typeId, heroId: null, failed: false, produced: [] });
-                if (BoardState.tokens().length > before) seen.ruleSpawns++;
+                // A rule never spawns an enemy: the camp's rule is refused, and nothing joins the mat.
+                expect(BoardState.tokens().length).toBe(before);
+                seen.ruleRefusals++;
             },
             lift() {
                 const list = tied();

@@ -70,15 +70,15 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'fs_dummy', weight: 1 }], allowance: 4, intervalMs: DAY, upkeep: [] }
     },
-    /** Hostile, one kill and gone: the Goblin's shape. */
+    /** One kill and gone: the Goblin's shape. */
     fs_goblin: {
         id: 'fs_goblin', name: 'FS Goblin', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
-        enemy: { level: 1, style: 'melee', budgetScale: 0.3, hostile: true },
+        enemy: { level: 1, style: 'melee', budgetScale: 0.3 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
     },
-    fs_hostile_camp: {
-        id: 'fs_hostile_camp', name: 'FS Hostile Camp', tokenType: 'resource',
+    fs_goblin_camp: {
+        id: 'fs_goblin_camp', name: 'FS Goblin Camp', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'fs_goblin', weight: 1 }], allowance: 4, intervalMs: DAY, upkeep: [] }
     }
@@ -134,7 +134,6 @@ beforeEach(() => {
     setMatTuning('walkSpeed', SPEED);
     setMatTuning('enemyWalkSpeed', ENEMY_SPEED);
     setMatTuning('potterRadius', 0);
-    setMatTuning('watchRadius', 300);
     GameState.initNew();
     GameState.state.progress.rosterLimit = 40;
     InventoryManager.init();
@@ -316,34 +315,33 @@ describe('⭐ after a stepped fight', () => {
         expect(EnemyMotion.isWalking(enemy.id)).toBe(false);
     });
 
-    it('an ambushed hero goes back to their job once the stepped fight is won', () => {
-        const camp = placeAt('fs_hostile_camp', 800, 500);
+    it('a hero sent to a goblin camp keeps that order through a stepped fight and after the kill', () => {
+        const camp = placeAt('fs_goblin_camp', 800, 500);
         const goblin = placeAt('fs_goblin', 900, 500);
         goblin.tether = camp.id;
-        // h2 idles on open ground at (1000, 520), just right of where the fight will be; a hero
-        // on a spot is never attacked.
+        // h2 idles on open ground at (1000, 520), just right of where the fight will be.
         Orders.orderAt('h2', { x: 928, y: 592 });
         run(1500);
         expect(body('h2')).toMatchObject({ x: 1000, y: 520, moving: false });
 
-        // h1 works a Producer inside the camp's watch, and is attacked.
-        const producer = placeAt('fixture_producer', 800, 750);
-        sendFrom('h1', { x: 600, y: 750 }, producer);
+        // h1 is sent to the camp, which hands them its goblin.
+        sendFrom('h1', { x: 600, y: 750 }, camp);
         let foughtAt = null;
         runUntil(() => {
             const fight = fightOf('h1');
             if (fight && !foughtAt) foughtAt = { x: goblin.x, y: goblin.y };
             return !!foughtAt;
         });
-        expect(Flags.ambusherOf('h1')).toBe(goblin.id);
         // It stepped left, clear of h2.
         expect(foughtAt.x).toBeLessThan(900);
         expect(foughtAt.y).toBe(500);
 
-        // The kill, then back to the Producer.
+        // The kill; the hero's order is still the camp, waiting for the next.
         runUntil(() => !BoardState.getTokenById(goblin.id), 60000);
-        runUntil(() => BoardState.workTokenOf('h1') === producer.id, 10000);
-        expect(Flags.ambusherOf('h1')).toBeNull();
+        run(1000);
+        expect(Flags.pinnedIdOf('h1')).toBe(camp.id);
+        expect(body('h2')).toMatchObject({ x: 1000, y: 520 });
+        expect(fightOf('h2')).toBeNull();
     });
 });
 

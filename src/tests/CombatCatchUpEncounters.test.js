@@ -27,8 +27,8 @@ import { resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 
 /**
- * The encounters (brief 220, C5) during a catch-up: a guardian's camp of one beside a rich vein, a
- * node's ambush roll, a boss's den with a hero fighting it and another waiting, and a Summoning
+ * The encounters during a catch-up: a guardian's camp of one beside a rich vein, a node whose rule
+ * names an enemy (refused: no ambushes), a boss's den with a hero fighting it and another waiting, and a Summoning
  * Circle calling a boss all run on the tick's `delta` and draw from `Math.random` in a fixed order,
  * so time away ends exactly where the same time played live ends. The same harness as
  * `CombatCatchUp.test.js`, in a file of its own.
@@ -58,7 +58,7 @@ registerItems({
 registerTokenTypes({
     cu_enc_guardian: {
         id: 'cu_enc_guardian', name: 'Catch-up Guardian', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
-        uses: 1, sprite: 's_occult', enemy: { level: 2, style: 'melee', hostile: true }, config: enemyConfig
+        uses: 1, sprite: 's_occult', enemy: { level: 2, style: 'melee' }, config: enemyConfig
     },
     cu_enc_guardian_camp: {
         id: 'cu_enc_guardian_camp', name: 'Catch-up Guardian Camp', tokenType: 'spawner', rarity: 'common', theme: 'fixture',
@@ -123,7 +123,7 @@ function seeded() {
 const realRandom = Math.random;
 
 /**
- * A guardian's camp beside a rich vein with a fighter flagged there; a haunted vein with a miner
+ * A guardian's camp beside a rich vein with a fighter sent to the camp; a haunted vein with a miner
  * pinned to it; a den whose boss a fighter fights while a second waits pinned beside it; a
  * Summoning Circle with a hero on it and two Horns in the Bank, and a fighter beside it.
  */
@@ -148,7 +148,7 @@ function buildBoard() {
     SpawnerSystem.attemptSpawn(camp, getTokenType(camp.typeId));
     SpawnerSystem.attemptSpawn(den, getTokenType(den.typeId));
     const boss = BoardState.tokens().find(t => t.typeId === 'cu_enc_boss');
-    fixtures.orderAt(heroes[0].id, { x: vein.x, y: vein.y + 40 });
+    fixtures.orderAt(heroes[0].id, { x: camp.x, y: camp.y });
     fixtures.orderAt(heroes[1].id, { x: haunted.x, y: haunted.y });
     fixtures.orderAt(heroes[2].id, { x: boss.x, y: boss.y });
     fixtures.orderAt(heroes[3].id, { x: boss.x, y: boss.y });
@@ -176,10 +176,9 @@ function playerResends(heroIds) {
 }
 
 function listen() {
-    const seen = { kills: [], ambushes: 0, defeats: 0, spawned: [] };
+    const seen = { kills: [], defeats: 0, spawned: [] };
     const offs = [
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, (p) => { seen.kills.push(p.enemyId); }),
-        EventBus.subscribe(BOARD_EVENTS.AMBUSHED, () => { seen.ambushes++; }),
         EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, () => { seen.defeats++; }),
         EventBus.subscribe(BOARD_EVENTS.TOKEN_SPAWNED, (p) => { seen.spawned.push(p.typeId); })
     ];
@@ -228,7 +227,7 @@ afterAll(() => {
 });
 
 describe('encounters during a catch-up', () => {
-    it('a guardian camp, an ambush node, a boss den and a Summoning Circle end exactly where the same 1000 ms steps through the plain loop end', async () => {
+    it('a guardian camp, a haunted node, a boss den and a Summoning Circle end exactly where the same 1000 ms steps through the plain loop end', async () => {
         let board = buildBoard();
         let seen = listen();
         for (let i = 0; i < AWAY_MS / 1000; i++) GameLoop.runHandlers(1000);
@@ -242,11 +241,11 @@ describe('encounters during a catch-up', () => {
         expect(caughtUp).toEqual(plain);
 
         // It all really happened: the guardian and the den's boss beaten and back more than once,
-        // ambushes sprung and beaten, both Horns used, and never two heroes on one enemy.
+        // the haunted vein mined with no ambusher ever on the mat, and both Horns used.
         expect(plain.seen.kills.filter(k => k === 'cu_enc_guardian').length).toBeGreaterThanOrEqual(2);
         expect(plain.seen.kills.filter(k => k === 'cu_enc_boss').length).toBeGreaterThanOrEqual(3);
-        expect(plain.seen.ambushes).toBeGreaterThan(0);
-        expect(plain.seen.kills.filter(k => k === 'cu_enc_ambusher').length).toBeGreaterThan(0);
+        expect(plain.seen.spawned).not.toContain('cu_enc_ambusher');
+        expect(plain.heroes[1].mining).toBeGreaterThan(0);
         expect(plain.horns).toBe(0);
     }, 60_000);
 

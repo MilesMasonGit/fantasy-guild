@@ -5,11 +5,8 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as EffectActions from '../systems/board/EffectActions.js';
-import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as Orders from '../systems/board/Orders.js';
-import * as Hostiles from '../systems/board/Hostiles.js';
-import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as MatCap from '../systems/board/MatCap.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
@@ -39,29 +36,23 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
 }));
 
 /**
- * Ambushes: a node's `Spawns` rule with a chance. The roll comes before the rule fires,
- * so a miss is no firing at all; a rule-fired spawn waits while the mat is at its Token cap; an
- * enemy a rule spawns belongs to the node that made it, watches for heroes around it and attacks
- * whoever is working it.
+ * A Token's `Spawns` rule with a chance. The roll comes before the rule fires, so a miss is no
+ * firing at all; a rule-fired spawn waits while the mat is at its Token cap. A rule never spawns an
+ * enemy: no Token ambushes the hero working it, and nothing pulls a hero off their job.
  */
 
 registerTokenTypes({
-    /** Hostile, one kill and gone: the Goblin's shape. */
+    /** One kill and gone: the Goblin's shape. */
     fixture_ambusher: {
         id: 'fixture_ambusher', name: 'Fixture Ambusher', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
-        enemy: { level: 1, style: 'melee', budgetScale: 0.3, hostile: true },
+        enemy: { level: 1, style: 'melee', budgetScale: 0.3 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
     },
-    /** Not an enemy: something to count. */
+    /** Not an enemy: what the rules here spawn. */
     fixture_pebble: {
         id: 'fixture_pebble', name: 'Fixture Pebble', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature'
-    },
-    fixture_ambush_camp: {
-        id: 'fixture_ambush_camp', name: 'Fixture Ambush Camp', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
-        spawner: { spawns: [{ typeId: 'fixture_ambusher', weight: 1 }], allowance: 4, intervalMs: 24 * 3600 * 1000, upkeep: [] }
     }
 });
 
@@ -72,20 +63,20 @@ let nodeCount = 0;
  *
  * @returns {{ typeId: string, statementId: string }}
  */
-function ambushNode(payload, { cooldownMs = 0, uses = 50, chargeDelta } = {}) {
+function spawnNode(payload, { cooldownMs = 0, uses = 50, chargeDelta } = {}) {
     nodeCount += 1;
-    const typeId = `fixture_ambush_node_${nodeCount}`;
-    const statementId = `stm_ambush_${nodeCount}`;
+    const typeId = `fixture_spawn_node_${nodeCount}`;
+    const statementId = `stm_spawn_${nodeCount}`;
     const statement = {
         ...makeStatement(KEYWORD.SPAWNS),
         id: statementId,
-        payload: { typeId: 'fixture_ambusher', placement: PLACEMENT.NEAREST_FREE, ...payload },
+        payload: { typeId: 'fixture_pebble', placement: PLACEMENT.NEAREST_FREE, ...payload },
         when: { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs }
     };
     if (chargeDelta !== undefined) statement.chargeDelta = chargeDelta;
     registerTokenTypes({
         [typeId]: {
-            id: typeId, name: 'Fixture Ambush Node', tokenType: 'resource', rarity: 'common',
+            id: typeId, name: 'Fixture Spawn Node', tokenType: 'resource', rarity: 'common',
             theme: 'fixture', uses, sprite: 's_nature',
             config: {
                 skill: 'forestry', skillRequired: 1, cycleTimeMs: 1000, xp: 1,
@@ -98,7 +89,6 @@ function ambushNode(payload, { cooldownMs = 0, uses = 50, chargeDelta } = {}) {
 }
 
 const NODE = { x: 800, y: 500 };
-const FAR = { x: 1500, y: 900 };
 
 /** A hero who holds a combat skill (and forestry, for the node). */
 function fighter(id) {
@@ -121,7 +111,7 @@ function cycle(node, heroId = null) {
     });
 }
 
-const enemiesOn = (typeId = 'fixture_ambusher') => BoardState.tokens().filter(t => t.typeId === typeId);
+const spawnedOn = (typeId = 'fixture_pebble') => BoardState.tokens().filter(t => t.typeId === typeId);
 
 /** A seeded generator (mulberry32), the bench's own. */
 function seeded(seed) {
@@ -211,56 +201,56 @@ describe('the chance is authored on the Spawns rule', () => {
 
 describe('⭐ the roll comes before the rule fires', () => {
     it('a miss neither spawns, costs a charge, nor starts the cooldown', () => {
-        const { typeId, statementId } = ambushNode({ chance: 50 }, { cooldownMs: 60000 });
+        const { typeId, statementId } = spawnNode({ chance: 50 }, { cooldownMs: 60000 });
         const node = placeAt(typeId, NODE.x, NODE.y);
         const before = node.usesRemaining;
 
         vi.spyOn(Math, 'random').mockReturnValue(0.99);
         cycle(node);
 
-        expect(enemiesOn()).toHaveLength(0);
+        expect(spawnedOn()).toHaveLength(0);
         expect(node.usesRemaining).toBe(before);
         expect(node.blockCooldowns?.[statementId] ?? 0).toBe(0);
 
         // The very next cycle may fire: nothing put it on cooldown.
         Math.random.mockReturnValue(0);
         cycle(node);
-        expect(enemiesOn()).toHaveLength(1);
+        expect(spawnedOn()).toHaveLength(1);
         expect(node.usesRemaining).toBe(before - 1);
         expect(node.blockCooldowns[statementId]).toBe(60000);
     });
 
     it('a hit fires as any rule does: one charge by default, and the cooldown starts', () => {
-        const { typeId, statementId } = ambushNode({ chance: 50 }, { cooldownMs: 5000 });
+        const { typeId, statementId } = spawnNode({ chance: 50 }, { cooldownMs: 5000 });
         const node = placeAt(typeId, NODE.x, NODE.y);
         vi.spyOn(Math, 'random').mockReturnValue(0.2);
         cycle(node);
-        expect(enemiesOn()).toHaveLength(1);
+        expect(spawnedOn()).toHaveLength(1);
         expect(node.usesRemaining).toBe(49);
         expect(node.blockCooldowns[statementId]).toBe(5000);
         // On cooldown: no roll, no firing.
         Math.random.mockClear();
         cycle(node);
         expect(Math.random).not.toHaveBeenCalled();
-        expect(enemiesOn()).toHaveLength(1);
+        expect(spawnedOn()).toHaveLength(1);
     });
 
     it('an authored free rule stays free on a hit', () => {
-        const { typeId } = ambushNode({ chance: 50 }, { chargeDelta: 0 });
+        const { typeId } = spawnNode({ chance: 50 }, { chargeDelta: 0 });
         const node = placeAt(typeId, NODE.x, NODE.y);
         vi.spyOn(Math, 'random').mockReturnValue(0);
         cycle(node);
-        expect(enemiesOn()).toHaveLength(1);
+        expect(spawnedOn()).toHaveLength(1);
         expect(node.usesRemaining).toBe(50);
     });
 
     it('a node that cannot pay the rule does not roll', () => {
-        const { typeId } = ambushNode({ chance: 50 }, { uses: 1, chargeDelta: -2 });
+        const { typeId } = spawnNode({ chance: 50 }, { uses: 1, chargeDelta: -2 });
         const node = placeAt(typeId, NODE.x, NODE.y);
         const random = vi.spyOn(Math, 'random');
         cycle(node);
         expect(random).not.toHaveBeenCalled();
-        expect(enemiesOn()).toHaveLength(0);
+        expect(spawnedOn()).toHaveLength(0);
     });
 });
 
@@ -268,22 +258,22 @@ describe('⭐ a Spawns rule with no chance draws no random number', () => {
     /** Draws made by one firing of a fresh node's rule. */
     function drawsFor(payload, roll = 0) {
         clearMat();
-        const { typeId } = ambushNode(payload);
+        const { typeId } = spawnNode(payload);
         const node = placeAt(typeId, NODE.x, NODE.y);
         const random = vi.spyOn(Math, 'random').mockReturnValue(roll);
         cycle(node);
         const draws = random.mock.calls.length;
         random.mockRestore();
-        return { draws, spawned: enemiesOn().length };
+        return { draws, spawned: spawnedOn().length };
     }
 
     /** Draws the spawn itself makes, with no rule around it (a new Token's id). */
     function spawnOnlyDraws() {
         clearMat();
-        const { typeId } = ambushNode({});
+        const { typeId } = spawnNode({});
         const node = placeAt(typeId, NODE.x, NODE.y);
         const random = vi.spyOn(Math, 'random').mockReturnValue(0);
-        EffectActions.spawn({ payload: { typeId: 'fixture_ambusher', placement: PLACEMENT.NEAREST_FREE } }, { self: node.id });
+        EffectActions.spawn({ payload: { typeId: 'fixture_pebble', placement: PLACEMENT.NEAREST_FREE } }, { self: node.id });
         const draws = random.mock.calls.length;
         random.mockRestore();
         return draws;
@@ -304,40 +294,40 @@ describe('⭐ a Spawns rule with no chance draws no random number', () => {
 
 describe('⭐ a rule-fired spawn waits while the mat is at its Token cap', () => {
     it('at the cap: no roll, no spawn, no charge, no cooldown; under it again: fires', () => {
-        const { typeId, statementId } = ambushNode({ chance: 50 }, { cooldownMs: 5000 });
+        const { typeId, statementId } = spawnNode({ chance: 50 }, { cooldownMs: 5000 });
         const node = placeAt(typeId, NODE.x, NODE.y);
-        placeAt('fixture_pebble', 200, 200);
+        placeAt('fixture_producer', 200, 200);
         setMatTuning('tokenCap', MatCap.tokenCount());
         expect(MatCap.canPlaceMore(1)).toBe(false);
 
         const random = vi.spyOn(Math, 'random').mockReturnValue(0);
         cycle(node);
         expect(random).not.toHaveBeenCalled();
-        expect(enemiesOn()).toHaveLength(0);
+        expect(spawnedOn()).toHaveLength(0);
         expect(node.usesRemaining).toBe(50);
         expect(node.blockCooldowns?.[statementId] ?? 0).toBe(0);
 
         setMatTuning('tokenCap', MatCap.tokenCount() + 1);
         cycle(node);
-        expect(enemiesOn()).toHaveLength(1);
+        expect(spawnedOn()).toHaveLength(1);
     });
 
     it('holds a rule with no chance too', () => {
-        const { typeId } = ambushNode({});
+        const { typeId } = spawnNode({});
         const node = placeAt(typeId, NODE.x, NODE.y);
         setMatTuning('tokenCap', MatCap.tokenCount());
         cycle(node);
-        expect(enemiesOn()).toHaveLength(0);
+        expect(spawnedOn()).toHaveLength(0);
         expect(node.usesRemaining).toBe(50);
     });
 
     it('a spawn that takes its bearer\'s place adds nothing, so it is not held', () => {
-        const { typeId } = ambushNode({ typeId: 'fixture_pebble', placement: PLACEMENT.HERE });
+        const { typeId } = spawnNode({ typeId: 'fixture_pebble', placement: PLACEMENT.HERE });
         const node = placeAt(typeId, NODE.x, NODE.y);
         setMatTuning('tokenCap', MatCap.tokenCount());
         cycle(node);
         expect(BoardState.getTokenById(node.id)).toBeNull();
-        expect(enemiesOn('fixture_pebble')).toHaveLength(1);
+        expect(spawnedOn('fixture_pebble')).toHaveLength(1);
         expect(MatCap.tokenCount()).toBe(1);
     });
 
@@ -352,110 +342,74 @@ describe('⭐ a rule-fired spawn waits while the mat is at its Token cap', () =>
     });
 });
 
-describe('⭐ the ambusher belongs to its node and attacks its gatherer', () => {
-    it('is tethered to the node, watches around it and stands still', () => {
-        const { typeId } = ambushNode({ chance: 50 });
+describe('⭐ no rule spawns an enemy: no Token ambushes the hero working it', () => {
+    it('a rule naming an enemy never fires: no roll, no spawn, no charge, no cooldown', () => {
+        for (const chance of [undefined, 100, 50]) {
+            clearMat();
+            const { typeId, statementId } = spawnNode({ typeId: 'fixture_ambusher', chance }, { cooldownMs: 5000 });
+            const node = placeAt(typeId, NODE.x, NODE.y);
+            const random = vi.spyOn(Math, 'random').mockReturnValue(0);
+            cycle(node, 'h1');
+            expect(random).not.toHaveBeenCalled();
+            random.mockRestore();
+            expect(spawnedOn('fixture_ambusher')).toHaveLength(0);
+            expect(node.usesRemaining).toBe(50);
+            expect(node.blockCooldowns?.[statementId] ?? 0).toBe(0);
+        }
+    });
+
+    it('a boss is refused the same way', () => {
+        registerTokenTypes({
+            fixture_rule_boss: {
+                id: 'fixture_rule_boss', name: 'Fixture Rule Boss', tokenType: 'enemy', rarity: 'rare', theme: 'fixture',
+                uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', boss: true },
+                config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
+            }
+        });
+        const { typeId } = spawnNode({ typeId: 'fixture_rule_boss' });
+        cycle(placeAt(typeId, NODE.x, NODE.y), 'h1');
+        expect(spawnedOn('fixture_rule_boss')).toHaveLength(0);
+    });
+
+    it('the hero working such a node works on, live and through catch-up steps, and never fights', () => {
+        const { typeId } = spawnNode({ typeId: 'fixture_ambusher', chance: 50 }, { uses: null });
         const node = placeAt(typeId, NODE.x, NODE.y);
-        placeAt('fixture_ambush_camp', FAR.x, FAR.y);
-        vi.spyOn(Math, 'random').mockReturnValue(0);
-        cycle(node);
-        Math.random.mockRestore();
-
-        const [ambusher] = enemiesOn();
-        expect(ambusher.tether).toBe(node.id);
-        expect(Hostiles.watchCentreOf(ambusher)).toEqual({ x: node.x, y: node.y });
-        // A node is no spawner: nothing walks it, and no camp of its kind adopts it.
-        const at = { x: ambusher.x, y: ambusher.y };
-        run(5000);
-        expect({ x: ambusher.x, y: ambusher.y }).toEqual(at);
-        expect(ambusher.tether).toBe(node.id);
-    });
-
-    it('with its node gone it watches around itself', () => {
-        const { typeId } = ambushNode({ chance: 50 });
-        const node = placeAt(typeId, NODE.x, NODE.y);
-        vi.spyOn(Math, 'random').mockReturnValue(0);
-        cycle(node);
-        Math.random.mockRestore();
-        const [ambusher] = enemiesOn();
-        BoardState.removeToken(node.id);
-        expect(Hostiles.watchCentreOf(ambusher)).toEqual({ x: ambusher.x, y: ambusher.y });
-    });
-
-    it('something that is not an enemy gets no tether, nor does a spawn that replaced its bearer', () => {
-        const pebbles = ambushNode({ typeId: 'fixture_pebble' });
-        const node = placeAt(pebbles.typeId, NODE.x, NODE.y);
-        cycle(node);
-        expect('tether' in enemiesOn('fixture_pebble')[0]).toBe(false);
-
-        clearMat();
-        const here = ambushNode({ placement: PLACEMENT.HERE });
-        placeAt(here.typeId, NODE.x, NODE.y);
-        cycle(BoardState.tokens()[0]);
-        expect('tether' in enemiesOn()[0]).toBe(false);
-    });
-
-    it('attacks the hero gathering the node, who fights back', () => {
-        const { typeId } = ambushNode({ chance: 50 });
-        const node = placeAt(typeId, NODE.x, NODE.y);
-        Orders.orderAt('h1', NODE);
-        expect(BoardState.workTokenOf('h1')).toBe(node.id);
-
-        vi.spyOn(Math, 'random').mockReturnValue(0);
-        run(1100);
-        Math.random.mockRestore();
-
-        const [ambusher] = enemiesOn();
-        expect(ambusher).toBeTruthy();
-        run(300);
-        expect(Flags.ambusherOf('h1')).toBe(ambusher.id);
-        BoardRunner.tick(1);
-        expect(BoardCombat.fightOfHero('h1')?.instanceId).toBe(ambusher.id);
-    });
-
-    it('⚠️ watches around the NODE: a gatherer out of its own reach is still attacked', () => {
-        const { typeId } = ambushNode({ chance: 50 });
-        const node = placeAt(typeId, NODE.x, NODE.y);
-        Orders.orderAt('h1', NODE);
-        vi.spyOn(Math, 'random').mockReturnValue(0);
-        cycle(node, 'h1');
-        Math.random.mockRestore();
-        const [ambusher] = enemiesOn();
-        // It landed on the far side of the node from the hero, as it does when the hero's side is
-        // taken.
-        BoardState.setTokenPoint(ambusher.id, 2 * node.x - ambusher.x, 2 * node.y - ambusher.y);
-
-        // The watch is measured round the node, against the hero's order (the node itself), never
-        // round the ambusher: at the smallest watch the gatherer is still attacked.
-        const hero = HeroMotion.heroPointOf('h1') || BoardState.displayPointOf('h1');
-        expect(Math.hypot(hero.x - node.x, hero.y - node.y)).toBeLessThan(Math.hypot(hero.x - ambusher.x, hero.y - ambusher.y));
-        setMatTuning('watchRadius', 100);
-
-        expect(Hostiles.scan()).toEqual([{ enemyId: ambusher.id, heroId: 'h1' }]);
-    });
-
-    it('happens offline too: through catch-up steps the gatherer is ambushed and fights', () => {
-        const { typeId } = ambushNode({ chance: 50 });
-        placeAt(typeId, NODE.x, NODE.y);
         Orders.orderAt('h1', NODE);
         const engaged = [];
         const off = EventBus.subscribe(BOARD_EVENTS.COMBAT_ENGAGED, (p) => engaged.push(p));
         vi.spyOn(Math, 'random').mockImplementation(seeded(7));
         try {
-            // One second a step, as the catch-up plays time away.
-            run(60000, 1000);
+            run(30000);             // live, 100 ms a tick
+            run(60000, 1000);       // one second a step, as the catch-up plays time away
         } finally {
             off();
         }
-        const fights = engaged.filter(p => p?.heroId === 'h1');
-        expect(fights.length).toBeGreaterThan(0);
-        expect(fights.every(p => p.typeId === 'fixture_ambusher')).toBe(true);
+        expect(engaged).toHaveLength(0);
+        expect(spawnedOn('fixture_ambusher')).toHaveLength(0);
+        expect(BoardState.workTokenOf('h1')).toBe(node.id);
+        expect(BoardCombat.fightOfHero('h1')).toBeNull();
+    });
+
+    it('a spawned Token that is not an enemy gets no tether', () => {
+        const { typeId } = spawnNode({});
+        cycle(placeAt(typeId, NODE.x, NODE.y), 'h1');
+        expect('tether' in spawnedOn()[0]).toBe(false);
+    });
+
+    it('the editor offers no enemy to a Spawns rule', () => {
+        const tokens = {
+            imp: { id: 'imp', name: 'Imp', enemy: { level: 1 } },
+            boss: { id: 'boss', name: 'Boss', enemy: { level: 1, boss: true } },
+            rock: { id: 'rock', name: 'Rock' }
+        };
+        const slot = slotsOf(makeStatement(KEYWORD.SPAWNS), { tokens }).find((s) => s.id === 'typeId');
+        expect(slot.options.map((o) => o.id)).toEqual(['rock']);
     });
 });
 
 describe('⭐ with a seeded roll, a 5% rule fires about 5% of cycles', () => {
     it('worked for 2000 one-second cycles at the catch-up step', () => {
-        const { typeId } = ambushNode({ typeId: 'fixture_pebble', chance: 5 }, { uses: null });
+        const { typeId } = spawnNode({ typeId: 'fixture_pebble', chance: 5 }, { uses: null });
         const node = placeAt(typeId, NODE.x, NODE.y);
         Orders.orderAt('h1', NODE);
         let cycles = 0;
@@ -465,7 +419,7 @@ describe('⭐ with a seeded roll, a 5% rule fires about 5% of cycles', () => {
         try {
             while (cycles < 2000) {
                 BoardRunner.tick(1000);
-                for (const pebble of enemiesOn('fixture_pebble')) {
+                for (const pebble of spawnedOn('fixture_pebble')) {
                     spawned++;
                     BoardState.removeToken(pebble.id);
                 }

@@ -690,7 +690,7 @@ less micromanagement than area flags).
   Logging Camp". **Any number of heroes** may work from one camp, one hero per
   Token. A drop on a camp whose Tokens the hero can work none of says why; an
   empty camp takes the order. Hovering a camp, or a hero working from one,
-  shows its **reach ring**.
+  shows its **reach ring** (an enemy camp shows none).
 - **Enemy camps** (a Goblin Camp, a boss's den) take the same order: the hero
   hunts what the camp spawns, one at a time, and waits beside it for the next.
 - **Walking costs time**: heroes walk at 120 u/s (≈15 s across the mat) in
@@ -767,7 +767,7 @@ less micromanagement than area flags).
 ## 6. Combat and enemies
 
 ### Enemies — Built
-Enemies are Tokens with `enemy: { level, style, kinds?, hostile?, boss?,
+Enemies are Tokens with `enemy: { level, style, kinds?, boss?,
 resistances?, moves? }`. **The level fills every number from the level
 table**: HP 20 + level, plus 4 HP per 30 levels (the old armour step), a hit of
 1 + 1 per 20 levels, a swing every 3 s, XP 10 × 1.065^(level − 1), no Dodge or
@@ -822,7 +822,7 @@ Sulphur Lizard, Frog and their bosses):
 | Cow | 1 | melee | — | |
 | Crab | 3 | melee | Armoured | |
 | Wolf | 4 | melee | Swift | |
-| Goblin | 5 (hostile) | melee | — | |
+| Goblin | 5 | melee | — | |
 | Bee | 6 | stealth | Nimble | |
 | Greater Slime | 8 | melee | Armoured | yes |
 | Wolf Alpha | 10 | melee | Brute | yes |
@@ -847,14 +847,14 @@ Their resistances, weaknesses and moves come with the combat content pack
   where they stood. The only time one moves is a short step to open space
   before a crowded fight (§6, Fights), and it stays where it stepped. No walk
   animation is needed; the step slides in the idle pose.
-- **Hostile** enemies ambush a hero **sent to work a Token** inside the camp's
-  watch (240 u round their spawner, a Mat Tuner row); the hero fights back,
-  barehanded if their hands are empty, then goes back to their job. A hero
-  sent to a spot on open ground is never ambushed, however near a camp (owner,
-  2026-10-28).
+- **No ambushes: combat is always started by the player** (owner,
+  2026-11-05). No enemy attacks first: a hero fights only an enemy they are
+  sent at (or one their enemy camp hands them), and nothing pulls a hero off
+  their job. A hero working right beside a goblin camp is never attacked. The
+  old Hostile mark is gone from the CMS; one left in `data/` is read by
+  nothing.
 - **Boss** (`enemy.boss: true`, a CMS tick): fights only the heroes sent at
-  it. Never hostile (the Hostile box greys out), never made by a rule, so it
-  never ambushes. Comes from a camp of its own or a Summoning Circle
+  it, like every enemy. Never made by a rule. Comes from a camp of its own or a Summoning Circle
   (Encounters, below). Boss moves will hang on this mark.
 - Each kill uses one of the enemy's uses; at 0 it's gone. Otherwise it
   respawns at full HP after a 2 s pause.
@@ -874,8 +874,8 @@ Their resistances, weaknesses and moves come with the combat content pack
   while the camp is full, so a beaten boss or guardian comes back one whole
   interval after it falls (§3, Spawners).
 - **A guardian** is simply a tough enemy whose camp stands by a rich node. It
-  blocks nothing; if its type is hostile it attacks whoever is sent to work
-  nearby (the watch around its camp, as any hostile enemy).
+  blocks nothing and attacks no one: a hero works the node in peace, and
+  another may be sent at the guardian.
 - **A Summoning Circle** is an ordinary station whose recipe uses up a
   summon item (its input) and makes its boss beside it (a Token output). It
   works as a Starting skill, so any hero may work it (it becomes the
@@ -883,16 +883,15 @@ Their resistances, weaknesses and moves come with the combat content pack
   recipe is picked once, as any station's. Without the item it waits ("needs"
   the item, the usual yellow mark); with several in the Bank it calls one per
   cycle while a hero works it. A boss it called is gone once beaten.
-- **Node ambushes**: a Token's `Spawns` rule that puts an enemy beside it is an
-  ambush (a chance on a finished cycle, about **2 %**, is the usual shape; set
-  per Token in the Rules line). The enemy attacks the hero the moment names (the
-  one who finished the cycle) on the next tick, hostile or not; that hero
-  fights back whatever their order says, then goes back to work. An
-  ambusher is beaten in one kill, and while it stands its node springs no
-  other (its rules roll nothing). With no hero named it waits by its node
-  (hostile ones watch around it). Never a boss.
+- **No node ambushes** (owner, 2026-11-05): a Token's rule never spawns an
+  enemy. Enemies come only from camps and Summoning Circles. A `Spawns` rule
+  that names an enemy (the Iron Ore Vein's old Fire Elemental Ambush) is
+  refused, rolls nothing and costs nothing; the editor offers no enemy to a
+  Spawns rule, and the content audit names such a rule so it can be deleted.
 - **Enemy camps** are spawners; a hero sent to one hunts what it spawns (§4,
-  Orders). Lure buildings are parked.
+  Orders). Hovering or dragging one shows no ring (its enemies stand where
+  they spawned, and nothing it does reaches its neighbours). Lure buildings
+  are parked.
 - **A beaten enemy**: the hero who beat it says "{enemy} Beaten" (a Token used
   up says "{token} Depleted").
 
@@ -1194,11 +1193,9 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   Resistance % rule on gear still counts beside them.
 - **An arrow's rules** count only on the shot that spends it: carried, it lends
   nothing; its On Swing and On Hit rules join the hero's for that swing.
-- **Spawns and enemies**: an enemy a `Spawns` rule puts beside its bearer is an
-  ambusher (§6, Encounters): it attacks the hero the moment names, is beaten in
-  one kill, and holds the bearer's enemy spawns until it falls. A `Spawns` rule
-  never makes a boss (the editor does not offer one; the content audit names
-  one that does).
+- **Spawns and enemies**: a `Spawns` rule never makes an enemy, a boss or not
+  (§6, Encounters: no node ambushes). The editor does not offer one; the
+  game refuses one and the content audit names it.
 - **What ships**: tool tiers (`acts_as`), station skills, two neighbour buffs
   (Coast −5 % work time; Windmill +5 double loot on Fields), a placement limit
   (≤ 2 Coasts nearby), bonus drops, Minecart restocking, the two (retired) promotions,
@@ -1548,7 +1545,6 @@ the Token count.
 | **Bank** | The guild's item store; one slot per kind. |
 | **Loot** | Items lying on the mat, collected by hovering. |
 | **Perk** | A skill's milestone reward at a set level (10, 25, 50…), held by every hero at or above it, read off their levels. |
-| **Hostile / ambush** | An enemy that attacks heroes sent to work near its spawner (the camp's watch). |
 | **Damage type / group** | What a hit is made of: nine types (Slash, Crush, Stab; Fire, Ice, Electric; Poison, Light, Dark) in three groups (Physical, Elemental, Special). A weapon has one; a bow shot has two (bow and arrow). |
 | **Resistance / weakness** | Percent off (or onto, when negative) hits of a type or group. An enemy's come in fixed steps (25/50/100, weak 25/50), a type's line replacing its group's; gear's are free small numbers that add. |
 | **Damage cut** | Percent off a hero's own hits in a named style while wearing a piece (metal cuts Magic and Stealth): every gear piece's trade-off, shown red. |

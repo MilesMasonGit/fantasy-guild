@@ -8,7 +8,6 @@ import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
-import * as Hostiles from '../systems/board/Hostiles.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -23,7 +22,7 @@ import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegi
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
-import { isHostileEnemy, isBossEnemy } from '../config/registries/enemyProfile.js';
+import { isBossEnemy } from '../config/registries/enemyProfile.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
@@ -41,10 +40,9 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
 }));
 
 /**
- * Encounters (brief 220, C5, as the owner simplified it on 2026-10-24): every fight one-on-one;
- * bosses and guardians from camps of one, ordinary spawners; node ambushes that attack the worker;
- * bosses that never attack first and meet each hero whole; a Summoning Circle whose work uses up a
- * summon item and puts its boss on the mat.
+ * Encounters: every fight one-on-one; bosses and guardians from camps of one, ordinary spawners;
+ * no node ambushes (a rule never spawns an enemy); enemies that never attack first, bosses meeting
+ * each hero whole; a Summoning Circle whose work uses up a summon item and puts its boss on the mat.
  */
 
 const drops = [{ itemId: 'item_blackberry', chance: 100, minQty: 1, maxQty: 1 }];
@@ -65,16 +63,16 @@ registerTokenTypes({
         id: 'enc_imp', name: 'Encounter Imp', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
         uses: 100, sprite: 's_occult', enemy: { level: 1, style: 'melee', budgetScale: 0.3 }, config: enemyConfig
     },
-    /** A boss, authored hostile on purpose: a boss never attacks first all the same. */
+    /** A boss. */
     enc_boss: {
         id: 'enc_boss', name: 'Encounter Boss', tokenType: 'enemy', rarity: 'rare', theme: 'fixture',
-        uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', budgetScale: 0.3, boss: true, hostile: true },
+        uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', budgetScale: 0.3, boss: true },
         config: enemyConfig
     },
-    /** A hostile guardian: a tough enemy whose camp stands by a rich node. */
+    /** A guardian: a tough enemy whose camp stands by a rich node. */
     enc_guardian: {
         id: 'enc_guardian', name: 'Encounter Guardian', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
-        uses: 1, sprite: 's_occult', enemy: { level: 2, style: 'melee', hostile: true }, config: enemyConfig
+        uses: 1, sprite: 's_occult', enemy: { level: 2, style: 'melee' }, config: enemyConfig
     },
     /** A boss's den: an ordinary camp that keeps one, every 60 s. */
     enc_den: {
@@ -117,7 +115,7 @@ registerRecipePools({
 
 let nodeCount = 0;
 
-/** A node gathered in 1 s cycles whose own cycle may spawn `typeId` (an ambush rule). */
+/** A node gathered in 1 s cycles whose own cycle asks to spawn `typeId` (an ambush rule, refused). */
 function ambushNode(typeId, chance = 100) {
     nodeCount += 1;
     const id = `enc_ambush_node_${nodeCount}`;
@@ -138,7 +136,6 @@ function ambushNode(typeId, chance = 100) {
 }
 
 const A = { x: 600, y: 500 };
-const FAR = { x: 1600, y: 900 };
 
 /** A hero who fights and gathers at level 50, with plenty of HP. */
 function fighter(id, { level = 50, hp = 100 } = {}) {
@@ -254,23 +251,6 @@ describe('⭐ every fight is one-on-one', () => {
         expect(BoardState.heroOfInstance(brute.id)).toBe('h1');
         expect(Flags.waitingFor('h2')).toBe(brute.id);
     });
-
-    it('a hostile enemy attacks one hero only, however many work beside it', () => {
-        registerTokenTypes({
-            enc_hostile: {
-                id: 'enc_hostile', name: 'Encounter Raider', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
-                uses: 20, sprite: 's_occult', enemy: { level: 2, style: 'melee', hostile: true }, config: enemyConfig
-            }
-        });
-        const raider = placeAt('enc_hostile', A.x, A.y);
-        const east = placeAt('enc_node', A.x + 160, A.y);
-        const west = placeAt('enc_node', A.x - 160, A.y);
-        Orders.orderAt('h1', east);
-        Orders.orderAt('h2', west);
-        run(1000);
-        const fighting = ['h1', 'h2'].filter(id => BoardCombat.fightOfHero(id)?.instanceId === raider.id);
-        expect(fighting).toHaveLength(1);
-    });
 });
 
 describe('⭐ camps of one: bosses and guardians from ordinary spawners', () => {
@@ -324,7 +304,7 @@ describe('⭐ camps of one: bosses and guardians from ordinary spawners', () => 
         expect(enemiesOf('enc_node')).toHaveLength(1);
     });
 
-    it('a guardian is a hostile enemy whose camp stands by a rich node: it attacks whoever works there, and blocks nothing', () => {
+    it('a guardian is a tough enemy whose camp stands by a rich node: it blocks nothing and never attacks the worker', () => {
         const camp = placeAt('enc_guardian_camp', A.x, A.y);
         const node = placeAt('enc_node', A.x + 160, A.y);
         SpawnerSystem.attemptSpawn(camp, getTokenType(camp.typeId));
@@ -333,23 +313,21 @@ describe('⭐ camps of one: bosses and guardians from ordinary spawners', () => 
         // Nothing blocks the node: the work check has no word for a guardian.
         expect(WorkCheck.fixableReason(node.id, node).reason).toBeNull();
         Orders.orderAt('h1', node);
-        run(500);
-        // Sent to gather, not to fight, the gatherer is still attacked: a hostile guardian attacks.
-        expect(Flags.ambusherOf('h1')).toBe(guardian.id);
+        run(30000);
+        expect(BoardCombat.fightOfHero('h1')).toBeNull();
+        expect(BoardState.workTokenOf('h1')).toBe(node.id);
+        // Sent at it, a hero fights it.
+        Orders.orderAt('h2', { x: guardian.x, y: guardian.y });
         expect(until(() => !BoardState.getTokenById(guardian.id))).toBe(true);
-        expect(until(() => BoardState.workTokenOf('h1') === node.id, 5000)).toBe(true);
     });
 });
 
 describe('⭐ bosses: never first to attack, whole for every hero, called by a Summoning Circle', () => {
-    it('a boss is never hostile, whatever it says, and no flag watch sets it on anyone', () => {
+    it('a boss, like every enemy, never attacks a hero working beside it', () => {
         expect(isBossEnemy({ enemy: { level: 1, boss: true } })).toBe(true);
-        expect(isHostileEnemy({ enemy: { level: 1, boss: true, hostile: true } })).toBe(false);
         const boss = placeAt('enc_boss', A.x, A.y);
         // A hero working right beside it.
         Orders.orderAt('h1', placeAt('enc_node', boss.x + 160, boss.y));
-        expect(Hostiles.scan()).toEqual([]);
-        expect(Flags.ambush('h1', boss.id)).toBe(false);
         run(2000);
         expect(BoardCombat.fightOfHero('h1')).toBeNull();
     });
@@ -407,80 +385,30 @@ describe('⭐ bosses: never first to attack, whole for every hero, called by a S
     });
 });
 
-describe('⭐ node ambushes: the enemy attacks the worker', () => {
-    it('a peaceful enemy sprung by the node attacks the hero working it, who goes back to work after', () => {
+describe('⭐ no node ambushes: a rule never spawns an enemy', () => {
+    it('a rule naming a peaceful enemy or a boss rolls nothing and spawns nothing; the worker works on; the audit says so', () => {
+        for (const typeId of ['enc_imp', 'enc_boss']) {
+            const nodeType = ambushNode(typeId, 50);
+            const node = placeAt(nodeType, A.x, A.y);
+            const random = vi.spyOn(Math, 'random').mockReturnValue(0);
+            EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: node.id, typeId: node.typeId, heroId: 'h1', failed: false, produced: [] });
+            expect(enemiesOf(typeId)).toHaveLength(0);
+            expect(random).not.toHaveBeenCalled();
+            random.mockRestore();
+            const said = auditContent().filter(f => f.where === `Token "${nodeType}"`).map(f => f.what);
+            expect(said.some(w => w.includes('an enemy') && w.includes('Delete it'))).toBe(true);
+            BoardState.removeToken(node.id);
+        }
+    });
+
+    it('a hero working such a node for a while is never pulled off it', () => {
         const nodeType = ambushNode('enc_imp', 100);
         const node = placeAt(nodeType, A.x, A.y);
-        const sprung = [];
-        const off = EventBus.subscribe(BOARD_EVENTS.AMBUSHED, (p) => sprung.push(p));
         Orders.orderAt('h1', A);
         expect(BoardState.workTokenOf('h1')).toBe(node.id);
-        run(1000);
-        off();
-        expect(sprung).toHaveLength(1);
-        const [imp] = enemiesOf('enc_imp');
-        expect(sprung[0]).toEqual({ instanceId: imp.id, heroId: 'h1', nodeId: node.id });
-        expect(imp.usesRemaining).toBe(1);
-        expect(imp.ambushedFrom).toBe(node.id);
-
-        run(100);
-        expect(Flags.ambusherOf('h1')).toBe(imp.id);
-        expect(BoardCombat.fightOfHero('h1')?.instanceId).toBe(imp.id);
-        // One kill and it is gone; the pinned hero is back on the node.
-        expect(until(() => !BoardState.getTokenById(imp.id))).toBe(true);
-        expect(until(() => BoardState.workTokenOf('h1') === node.id, 5000)).toBe(true);
-    });
-
-    it('holds one ambusher at a time: while it stands, the rule rolls nothing and spawns nothing', () => {
-        const nodeType = ambushNode('enc_imp', 50);
-        const node = placeAt(nodeType, A.x, A.y);
-        // No hero is sent: nobody fights it, so the ambusher stays.
-        const cycle = () => EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: node.id, typeId: node.typeId, heroId: null, failed: false, produced: [] });
-        const random = vi.spyOn(Math, 'random').mockReturnValue(0);
-        cycle();
-        expect(enemiesOf('enc_imp')).toHaveLength(1);
-        const draws = random.mock.calls.length;
-        for (let i = 0; i < 10; i++) cycle();
-        expect(enemiesOf('enc_imp')).toHaveLength(1);
-        expect(random.mock.calls.length).toBe(draws);
-        random.mockRestore();
-
-        // Beaten (here: removed), the node may spring another.
-        BoardState.removeToken(enemiesOf('enc_imp')[0].id);
-        vi.spyOn(Math, 'random').mockReturnValue(0);
-        cycle();
-        expect(enemiesOf('enc_imp')).toHaveLength(1);
-    });
-
-    it('bosses never ambush: a rule naming one rolls nothing and spawns nothing, and the audit says so', () => {
-        const nodeType = ambushNode('enc_boss', 50);
-        const node = placeAt(nodeType, A.x, A.y);
-        const random = vi.spyOn(Math, 'random').mockReturnValue(0);
-        EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: node.id, typeId: node.typeId, heroId: 'h1', failed: false, produced: [] });
-        expect(enemiesOf('enc_boss')).toHaveLength(0);
-        expect(random).not.toHaveBeenCalled();
-        random.mockRestore();
-        const said = auditContent().filter(f => f.where === `Token "${nodeType}"`).map(f => f.what);
-        expect(said.some(w => w.includes('a boss'))).toBe(true);
-    });
-
-    it('with no worker named it stays by its node, as before: hostile ones watch it, peaceful ones wait', () => {
-        const nodeType = ambushNode('enc_imp', 100);
-        const node = placeAt(nodeType, A.x, A.y);
-        EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: node.id, typeId: node.typeId, heroId: null, failed: false, produced: [] });
-        const [imp] = enemiesOf('enc_imp');
-        expect(imp.tether).toBe(node.id);
-        Orders.orderAt('h2', FAR);
-        run(1000);
-        expect(BoardCombat.fightOfHero('h2')).toBeNull();
-        expect(EnemyMotion.spawnerOf(imp.id)).toBeNull();
-    });
-
-    it('an ambusher standing by its node blocks nothing: the node stays workable', () => {
-        const nodeType = ambushNode('enc_imp', 100);
-        const node = placeAt(nodeType, A.x, A.y);
-        EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: node.id, typeId: node.typeId, heroId: null, failed: false, produced: [] });
-        expect(enemiesOf('enc_imp')).toHaveLength(1);
-        expect(WorkCheck.fixableReason(node.id, node).reason).toBeNull();
+        run(20000);
+        expect(enemiesOf('enc_imp')).toHaveLength(0);
+        expect(BoardCombat.fightOfHero('h1')).toBeNull();
+        expect(BoardState.workTokenOf('h1')).toBe(node.id);
     });
 });

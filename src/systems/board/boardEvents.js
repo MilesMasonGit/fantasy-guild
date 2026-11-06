@@ -73,7 +73,7 @@ export const BOARD_EVENTS = {
     HEROES_WALKED: 'board:heroes_walked',
 
     /**
-     * Enemies took a step by their spawner. No payload: read positions off the Tokens, or
+     * An enemy took a step to open space before a crowded fight. No payload: read positions off the Tokens, or
      * `EnemyMotion.bodyOf`. Published at most once per engine tick, and only when an enemy moved,
      * set off or stopped.
      *
@@ -184,13 +184,6 @@ export const BOARD_EVENTS = {
      * spawner.
      */
     TOKEN_SPAWNED: 'board:token_spawned',
-
-    /**
-     * A rule put an enemy beside the Token whose work fired it, and that enemy attacks the hero who
-     * did the work: an ambush. Payload: `{ instanceId, heroId, nodeId }`, the enemy, the worker and
-     * the Token. Published by `TriggerSystem`; `Flags` sets the hero fighting on its next pass.
-     */
-    AMBUSHED: 'board:ambushed',
 
     /**
      * Loot just dropped from a line rolled at a low chance (`RareDrops.RARE_DROP_CHANCE`). Payload:

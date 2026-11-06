@@ -54,21 +54,10 @@ export function isEnemyDef(def) {
 }
 
 /**
- * Whether an enemy Token type is **hostile**: it attacks
- * a hero sent to work a Token inside the watch around its spawner (or itself)
- * (`board/Hostiles.js`). Authored in the CMS as `enemy.hostile`; only a literal
- * `true` counts, and a missing field is peaceful — such an enemy fights only
- * when a hero attacks it.
- */
-export function isHostileEnemy(def) {
-    return isEnemyDef(def) && def.enemy.hostile === true && !isBossEnemy(def);
-}
-
-/**
  * Whether an enemy Token type is a **boss**: `enemy.boss: true` (only a literal `true`). A boss
- * fights only when the player sends a hero: it is never hostile, whatever `hostile` says, and no
- * `Spawns` rule makes one, so it never ambushes. It comes from a camp of its own (a spawner that
- * keeps one) or a Summoning Circle (a Token whose work makes it). Boss moves hang on this mark.
+ * comes from a camp of its own (a spawner that keeps one) or a Summoning Circle (a Token whose work
+ * makes it). Boss moves hang on this mark. Like every enemy, it fights only a hero the player sends
+ * at it. An old `enemy.hostile` field on any enemy is ignored.
  */
 export function isBossEnemy(def) {
     return isEnemyDef(def) && def.enemy.boss === true;

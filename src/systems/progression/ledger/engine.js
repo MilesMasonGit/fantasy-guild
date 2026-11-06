@@ -39,7 +39,7 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
  * the Wishing Well), the Shop, spawners, growth and turning and regrowth, the world's cells,
  * Foundations and the
  * buildings built on them, stations and their kinds, Fields and their crops, tool kinds and tiers,
- * catch pools and bait, drops, bonus drops and ambushes from rules. A new way
+ * catch pools and bait, drops, bonus drops and spawns from rules. A new way
  * content appears belongs in `buildWorld`, as a rule.
  * ⚠️ A Planned entry is not in the world: it never reaches the game, so it makes nothing and nothing
  * makes it; its reach is null.
@@ -460,7 +460,8 @@ export function buildWorld(content = {}) {
     if (tables) worldRules(tables, { add, names, placeable: (id) => !!text(id) && !planned.has(tokenKey(id)) });
 
     // Things made on the side by rules: a bonus drop granted to the work in reach (or carried by a
-    // hero, or lent for a cycle by a status an item applies), a Token spawned by an ambush.
+    // hero, or lent for a cycle by a status an item applies), a Token a rule spawns. ⚠️ A rule that
+    // names an enemy is counted though the game refuses it; the content audit names it.
     const grantsOf = (statement) => {
         const payload = isObject(statement?.payload) ? statement.payload : {};
         if (statement?.keyword === KEYWORD.GRANTS && text(payload.itemId)) return [payload];

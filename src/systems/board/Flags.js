@@ -3,7 +3,6 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { isBossEnemy } from '../../config/registries/enemyProfile.js';
 import { neededToolOf } from '../../config/registries/toolKinds.js';
 import { artRadiusOf } from '../../config/matGeometry.js';
 import { GameState } from '../../state/GameState.js';
@@ -69,9 +68,8 @@ import { KEYWORD, statementsWith } from '../effects/statements.js';
  * published only when a claim actually changes (and once per order, furl or lapsed pin). A stable
  * board publishes none (`Flags.test.js` runs 100 ticks).
  *
- * Attacked heroes fight back: a hostile enemy (`Hostiles.js`) attacks a hero through {@link
- * ambush}: the hero drops their work and claims that enemy, and keeps it whatever their order says
- * until the kill or the enemy is gone, then goes back to their order.
+ * A hero fights only an enemy the player sent them at (or one their enemy camp hands them): no
+ * enemy attacks first, and nothing pulls a hero off their job.
  */
 
 /** How long a flag with nothing to do waits before looking again, in game ms. */
@@ -260,10 +258,6 @@ function resetProgress(instance) {
  * ordered back onto it.
  */
 function release(heroId) {
-    // A cycle-end mark belongs to the claim it was earned on, and so does an ambush: letting go of
-    // the enemy ends the fight-back.
-    rt()?.cycleEnded.delete(heroId);
-    rt()?.ambushes.delete(heroId);
     const claim = BoardState.claimOfHero(heroId);
     if (!claim) return null;
     resetProgress(BoardState.getTokenById(claim.instanceId));
@@ -274,8 +268,6 @@ function release(heroId) {
 }
 
 function claimToken(heroId, instance) {
-    // ⚠️ A new claim starts with no cycle-end mark, or an ambush on it would end one tick in.
-    rt()?.cycleEnded.delete(heroId);
     BoardState.setClaim(heroId, { instanceId: instance.id, typeId: instance.typeId, x: instance.x, y: instance.y });
     // ⚠️ A Token a flag skipped carries that skip's red badge. It passed the check to be claimed,
     // so the badge is stale, and phase 1 reads the badge to decide whether a claimed Token is
@@ -466,21 +458,6 @@ function keepOrRelease(r, heroId, dirty) {
     const claim = BoardState.claimOfHero(heroId);
     const instance = BoardState.getTokenById(claim.instanceId);
 
-    // ⚠️ Fighting back: a hero a hostile enemy attacked holds that enemy whatever their order says,
-    // until a kill (its `CYCLE_COMPLETE`) or the enemy leaves the mat. Then the ambush is over and
-    // this same pass treats the claim like any other: kept if their order would keep it, else let
-    // go, and their order claims again.
-    const ambushId = r.ambushes.get(heroId);
-    if (ambushId) {
-        const over = ambushId !== claim.instanceId || !instance || r.cycleEnded.has(heroId);
-        if (over) r.ambushes.delete(heroId);
-        else if (!isDisallowed(instance) && canFight(heroId)) {
-            claim.x = instance.x;
-            claim.y = instance.y;
-            return;
-        }
-    }
-
     if (instance) {
         claim.x = instance.x;
         claim.y = instance.y;
@@ -489,7 +466,7 @@ function keepOrRelease(r, heroId, dirty) {
 
         // A hero holds nothing but their ordered Token, or, sent to a camp, what the camp hands
         // out (in its reach: a Token the camp moved away from is let go). A spot order holds
-        // nothing (an ambush it fought back is over by now).
+        // nothing.
         const eligible = !isSpot(flag) && !isDisallowed(instance) && !Occupation.holds(instance)
             && (flag.pinnedTo === instance.id || campHolds(heroId, instance)) && (
             (kind === 'enemy' && canFight(heroId))
@@ -501,15 +478,11 @@ function keepOrRelease(r, heroId, dirty) {
         );
 
         if (!eligible) {
-            r.cycleEnded.delete(heroId);
             release(heroId);
             r.nextTryAt.delete(heroId);
             announceMoved(heroId);
             return;
         }
-
-        // The cycle-end mark has done its work (ending an ambush, above).
-        r.cycleEnded.delete(heroId);
 
         if (kind !== 'work') return;
 
@@ -612,13 +585,9 @@ export function assign(delta = 0) {
     r.dirty = false;
 
     const order = plantingOrder();
-    if (!order.length) {
-        pendingAmbushes.length = 0;
-        return;
-    }
+    if (!order.length) return;
 
     lapsePins(r, order);
-    springAmbushes();
 
     for (const heroId of order) {
         if (BoardState.claimOfHero(heroId)) keepOrRelease(r, heroId, dirty);
@@ -718,7 +687,6 @@ function setOrder(heroId, shape, target = null) {
         release(heroId);
         clearSkips(r, heroId);
         r.nextTryAt.delete(heroId);
-        r.cycleEnded.delete(heroId);
         BoardState.setFlag(heroId, { ...shape, plantedAt: BoardState.takeFlagOrder() });
         r.dirty = true;
         HeroMotion.enter(heroId);
@@ -834,67 +802,6 @@ export function furl(heroId, reason = 'recall') {
     }
     EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, instanceId: null, reason });
     return true;
-}
-
-/**
- * A hostile enemy attacks `heroId` (called by `Hostiles.js`). The hero drops whatever they were
- * doing (let go exactly as any hero leaving work is, so that Token's cycle resets) and claims the
- * enemy, which starts the fight through the normal route: they walk up to it (the enemy holds still
- * for them) and `BoardCombat.tickToken` begins the fight on arrival.
- *
- * Until the kill, or the enemy leaving the mat, `keepOrRelease` keeps the claim whatever their
- * order says. Then their order claims again as normal, so they go back to their job. A new order,
- * a recall or a defeat ends it early, as any claim.
- *
- * Refused (false): no flag, no such enemy on the mat, a hero who cannot fight, or an enemy
- * another hero already holds.
- *
- * @returns {boolean} whether the hero is now fighting back
- */
-export function ambush(heroId, instanceId) {
-    const r = rt();
-    const enemy = BoardState.getTokenById(instanceId);
-    if (!r || !BoardState.flagOf(heroId) || !enemy || !BoardCombat.isEnemyToken(enemy)) return false;
-    // A boss fights only when the player sends a hero: it never attacks first.
-    if (isBossEnemy(getTokenType(enemy.typeId))) return false;
-    if (!canFight(heroId)) return false;
-    const holder = BoardState.heroOfInstance(instanceId);
-    if (holder && holder !== heroId) return false;
-
-    quiet++;
-    try {
-        if (BoardState.claimOfHero(heroId)?.instanceId !== instanceId) release(heroId);
-        r.nextTryAt.delete(heroId);
-        claimToken(heroId, enemy);
-        r.ambushes.set(heroId, instanceId);
-    } finally {
-        quiet--;
-    }
-    announceMoved(heroId);
-    return true;
-}
-
-/** The enemy that attacked `heroId` and that they are fighting back, or null. */
-export function ambusherOf(heroId) {
-    return rt()?.ambushes.get(heroId) ?? null;
-}
-
-/**
- * Ambushes a rule sprang this tick (`BOARD_EVENTS.AMBUSHED`, from `TriggerSystem`): the enemy a
- * node's work just spawned, and the hero who did the work, in the order they were sprung.
- *
- * ⚠️ Queued, not acted on: the rule fires inside the runner's cycle completion, which carries on
- * after publishing, so taking the hero off the Token there would pull it out from under that code
- * (the same reason as {@link cycleCompleted}). The next `assign` springs them first, before any
- * claim is kept or changed, so the worker meets the ambusher before looking for other work.
- * Runtime only: a load or a journey drops it, and the enemy, if hostile, still watches its node.
- */
-const pendingAmbushes = [];
-
-function springAmbushes() {
-    if (!pendingAmbushes.length) return;
-    const sprung = pendingAmbushes.splice(0);
-    for (const { heroId, instanceId } of sprung) ambush(heroId, instanceId);
 }
 
 /**
@@ -1100,21 +1007,6 @@ export function statusOf(heroId) {
     return { state: 'idle', instanceId: null, point: BoardState.displayPointOf(heroId), typeId: null, flag, ...extra };
 }
 
-/**
- * A hero finished a cycle (or a kill): a fight-back ends with its kill (`keepOrRelease`).
- *
- * ⚠️ Only noted here, not acted on. This runs inside the runner's (or the fight's) completion,
- * which carries on after publishing; letting go of the Token from in here would pull it out from
- * under that code. The next `assign` runs before any Token ticks, so the hero goes back to their
- * order between cycles.
- */
-function cycleCompleted(heroId) {
-    const r = rt();
-    const claim = heroId ? BoardState.claimOfHero(heroId) : null;
-    if (!r || !claim) return;
-    r.cycleEnded.add(heroId);
-}
-
 /** Drop every runtime record (claims, skips) for the current board. */
 export function reset() {
     const r = rt();
@@ -1123,11 +1015,8 @@ export function reset() {
     r.skips.clear();
     r.skipsByHero.clear();
     r.nextTryAt.clear();
-    r.cycleEnded.clear();
-    r.ambushes.clear();
     r.bodies.clear();
     r.dirty = true;
-    pendingAmbushes.length = 0;
 }
 
 /**
@@ -1188,10 +1077,6 @@ export function init() {
     for (const event of [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_PLACED, ENGINE_EVENTS.INVENTORY_UPDATED, BOARD_EVENTS.TOKEN_RESPAWNED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED]) {
         unsubscribers.push(EventBus.subscribe(event, dirty));
     }
-    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (payload = {}) => cycleCompleted(payload.heroId)));
-    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.AMBUSHED, ({ heroId, instanceId } = {}) => {
-        if (heroId && instanceId) pendingAmbushes.push({ heroId, instanceId });
-    }));
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.TOKEN_TRANSFORMED, followTransform));
     unsubscribers.push(EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
         reset();
