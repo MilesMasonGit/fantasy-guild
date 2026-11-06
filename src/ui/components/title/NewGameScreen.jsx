@@ -17,9 +17,6 @@ import { FLAG_COLOURS } from '../../../systems/board/FlagColours.js';
 
 /** The preview draws the world map at half its size: one screen pixel per art pixel, still crisp. */
 const PREVIEW_SCALE = 0.5;
-/** The preview's window, in screen px: most of the three rings; a drag shows the rest. */
-const PREVIEW_W = 480;
-const PREVIEW_H = 440;
 
 const LABEL = 'ui-text-body font-bold gi-caps tracking-widest text-gi-muted';
 
@@ -30,18 +27,20 @@ function roll(seed) {
     return { ...rolled, view: previewView(rolled.world), ms: performance.now() - started };
 }
 
-/** The world map, small and read-only: the painted world, its tiles and what stands on them. */
+/**
+ * The world map, small and read-only: the painted world, its tiles and what stands on them. It
+ * fills the room its column leaves; the map centres on the Hall and a drag shows the rest.
+ */
 const WorldPreview = ({ view }) => (
     <div
         data-new-game-world={view.seed}
-        className="relative overflow-hidden ui-pixel-edge"
-        style={{ width: PREVIEW_W, height: PREVIEW_H, maxWidth: '100%' }}
+        className="relative overflow-hidden ui-pixel-edge flex-1 min-h-0 w-full"
     >
         <div
             className="absolute left-0 top-0"
             style={{
-                width: PREVIEW_W / PREVIEW_SCALE,
-                height: PREVIEW_H / PREVIEW_SCALE,
+                width: `${100 / PREVIEW_SCALE}%`,
+                height: `${100 / PREVIEW_SCALE}%`,
                 transform: `scale(${PREVIEW_SCALE})`,
                 transformOrigin: '0 0'
             }}
@@ -83,20 +82,19 @@ export const NewGameScreen = ({ slotIndex, onBegin, onBack }) => {
     const view = useMemo(() => world.view, [world]);
 
     return (
-        <TitleScreen panelPx={TITLE_WIDE_PANEL_PX}>
-            <PixelFrame kind={FRAME_KIND.CHAMFER} frameClassName="flex flex-col" data-new-game-screen={slotIndex + 1}>
-                <div className="px-6 pt-5 pb-3 border-b border-gi-border/50 flex items-center gap-3">
-                    <KitButton tone={KIT_BUTTON_TONE.PLAIN} onClick={onBack} buttonClassName="gap-1 py-1 px-3 text-xs uppercase tracking-widest" data-new-game-back>
-                        <ArrowLeft size={14} /> {t('newGame.back')}
-                    </KitButton>
+        <TitleScreen panelPx={TITLE_WIDE_PANEL_PX} showName={false}>
+            {/* One screen, whole on a 1366 x 768 screen: the header and the footer (Back, Begin)
+                stay put, the world and the portraits take the height left between them. */}
+            <PixelFrame kind={FRAME_KIND.CHAMFER} className="h-full" frameClassName="flex flex-col" data-new-game-screen={slotIndex + 1}>
+                <div className="shrink-0 px-6 pt-4 pb-3 border-b border-gi-border/50">
                     <h2 className="m-0 ui-text-title font-bold text-gi-primary tracking-wide uppercase">{t('newGame.title', { n: slotIndex + 1 })}</h2>
                 </div>
 
-                <div className="px-6 py-4 flex flex-wrap gap-6">
-                    <section className="flex flex-col gap-2" style={{ width: PREVIEW_W, maxWidth: '100%' }}>
+                <div className="flex-1 min-h-0 px-6 py-3 flex gap-6">
+                    <section className="flex-[1.1] min-w-0 flex flex-col gap-2">
                         <span className={LABEL}>{t('newGame.world')}</span>
                         <WorldPreview view={view} />
-                        <div className="flex items-center gap-3">
+                        <div className="shrink-0 flex items-center gap-3">
                             <KitButton onClick={reroll} buttonClassName="gap-2 py-1.5 px-4 text-xs uppercase tracking-widest" data-new-game-reroll data-roll-ms={Math.round(world.ms)}>
                                 <Dices size={16} /> {t('newGame.reroll')}
                             </KitButton>
@@ -104,8 +102,8 @@ export const NewGameScreen = ({ slotIndex, onBegin, onBack }) => {
                         </div>
                     </section>
 
-                    <section className="flex flex-col gap-4 flex-1 min-w-[300px]">
-                        <label className="flex flex-col gap-1.5">
+                    <section className="flex-1 min-w-0 flex flex-col gap-3">
+                        <label className="shrink-0 flex flex-col gap-1.5">
                             <span className={LABEL}>{t('newGame.guildName')}</span>
                             <input
                                 type="text"
@@ -117,8 +115,8 @@ export const NewGameScreen = ({ slotIndex, onBegin, onBack }) => {
                                 className="ui-pixel-edge px-3 py-2 bg-black/40 text-gi-text text-sm focus:outline-none transition-colors"
                             />
                         </label>
-                        <div className="flex flex-col gap-3" data-new-game-hero>
-                            <span className="ui-text-title font-bold text-gi-primary tracking-wide uppercase">{t('newGame.firstHero')}</span>
+                        <div className="flex-1 min-h-0 flex flex-col gap-2" data-new-game-hero>
+                            <span className="shrink-0 ui-text-title font-bold text-gi-primary tracking-wide uppercase">{t('newGame.firstHero')}</span>
                             <HeroLookFields
                                 name={heroName}
                                 onName={setHeroName}
@@ -127,12 +125,16 @@ export const NewGameScreen = ({ slotIndex, onBegin, onBack }) => {
                                 onSprite={setSpriteId}
                                 flagColour={flagColour}
                                 onFlagColour={setFlagColour}
+                                fill
                             />
                         </div>
                     </section>
                 </div>
 
-                <div className="px-6 pb-5 flex justify-end">
+                <div className="shrink-0 px-6 py-3 border-t border-gi-border/50 flex items-center justify-between" data-new-game-footer>
+                    <KitButton tone={KIT_BUTTON_TONE.PLAIN} onClick={onBack} buttonClassName="gap-1 py-2 px-4 text-xs uppercase tracking-widest" data-new-game-back>
+                        <ArrowLeft size={14} /> {t('newGame.back')}
+                    </KitButton>
                     <KitButton onClick={begin} disabled={!canBegin} className="mr-1 mb-1" buttonClassName="gap-2 py-2 px-8 uppercase tracking-widest" data-new-game-begin>
                         <Play size={16} /> {t('newGame.begin')}
                     </KitButton>

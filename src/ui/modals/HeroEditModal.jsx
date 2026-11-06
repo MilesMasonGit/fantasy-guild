@@ -9,6 +9,7 @@ import { HERO_PORTRAITS, HERO_NAME_MAX } from '../../config/registries/heroPortr
 import { Check } from 'lucide-react';
 import { FLAG_COLOURS, FLAG_COLOUR_LABELS, isFlagColour } from '../../systems/board/FlagColours.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
+import { ArrowScrollList } from '../components/base/ArrowScrollList.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /** A chosen portrait or flag: the white line and a little white over the well. */
@@ -21,9 +22,11 @@ export const SWATCH_FLAG_PX = 40;
  * A hero's name, portrait and flag colour: the edit window's controls, and the new-game screen's
  * for the first hero. Controlled: the caller keeps the values.
  * The hero's recolouring, once designed, goes in `children` (under the flag colours), so both
- * screens get it together.
+ * screens get it together. `fill`: the portraits take the room their flex-column parent has left
+ * (the new-game screen); otherwise they stop at a fixed height. Either way they scroll with the
+ * arrow bars, never a scroll bar.
  */
-export const HeroLookFields = ({ name, onName, onEnter, spriteId, onSprite, flagColour, onFlagColour, children }) => (
+export const HeroLookFields = ({ name, onName, onEnter, spriteId, onSprite, flagColour, onFlagColour, fill = false, children }) => (
     <>
         <label className="flex flex-col gap-1.5">
             <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Name</span>
@@ -40,9 +43,9 @@ export const HeroLookFields = ({ name, onName, onEnter, spriteId, onSprite, flag
             </span>
         </label>
 
-        <div className="flex flex-col gap-1.5">
+        <div className={cn('flex flex-col gap-1.5', fill && 'flex-1 min-h-0')} data-hero-portraits>
             <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Portrait</span>
-            <div className="grid grid-cols-8 gap-1.5 max-h-56 overflow-y-auto custom-scrollbar p-1">
+            <ArrowScrollList compact step={104} className={cn('grid grid-cols-8 gap-1.5 p-1 content-start', fill ? 'flex-1 min-h-0' : 'max-h-56')}>
                 {HERO_PORTRAITS.map(id => (
                     <button
                         key={id}
@@ -58,7 +61,7 @@ export const HeroLookFields = ({ name, onName, onEnter, spriteId, onSprite, flag
                         <ItemIcon item={{ sprite: id }} size={32} />
                     </button>
                 ))}
-            </div>
+            </ArrowScrollList>
         </div>
 
         {/* Flag colour: each swatch is the hero's job flag in that colour. */}
