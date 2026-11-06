@@ -57,11 +57,13 @@ export const MatTopBar = ({ left = null, middle = null, right = null, width }) =
             style={{ height: MAT_TOP_BAR_PX, width: width ?? matWidth, maxWidth: '100%' }}
             className="shrink-0 self-center select-none pointer-events-auto z-20"
             // ⚠️ Equal side columns keep the middle on the mat's centre line whatever the two ends hold.
-            frameClassName="w-full grid grid-cols-[1fr_auto_1fr] items-center gap-3 pr-1 ui-text-title text-amber-100"
+            // The frame is a size container so the Region's banner can reach across it (`100cqw`).
+            frameClassName="w-full grid grid-cols-[1fr_auto_1fr] items-center gap-3 pr-1 ui-text-title text-amber-100 [container-type:inline-size]"
         >
             <div data-mat-top-bar-left className="flex items-center gap-2 h-full">{left}</div>
-            <div data-mat-top-bar-middle className="flex items-center justify-center gap-2 min-w-0 h-full">{middle}</div>
-            <div data-mat-top-bar-right className="flex items-center gap-2 h-full justify-self-end">{right}</div>
+            {/* ⚠️ Positioned so they paint over the left end's banner, which runs on under them. */}
+            <div data-mat-top-bar-middle className="relative flex items-center justify-center gap-2 min-w-0 h-full">{middle}</div>
+            <div data-mat-top-bar-right className="relative flex items-center gap-2 h-full justify-self-end">{right}</div>
         </PixelFrame>
     );
 };

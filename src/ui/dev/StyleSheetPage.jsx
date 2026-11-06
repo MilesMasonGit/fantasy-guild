@@ -351,7 +351,7 @@ const MapModesDemo = () => {
 const RegionBannerDemo = () => (
     <div className="flex flex-col gap-3">
         {[['Elderfield', 'b_golden_plains'], ['Rockblight Valley', 'b_lush_forest']].map(([name, banner]) => (
-            <PixelFrame key={banner} kind="studs" style={{ height: MAT_TOP_BAR_PX, width: 520 }} frameClassName="flex items-center">
+            <PixelFrame key={banner} kind="studs" style={{ height: MAT_TOP_BAR_PX, width: 900, maxWidth: '100%' }} frameClassName="flex items-center [container-type:inline-size]">
                 <MatRegionName readName={() => ({ name, practical: 'Starter Camp' })} readBanner={() => banner} />
             </PixelFrame>
         ))}
@@ -970,7 +970,7 @@ export const KIT_SECTIONS = [
     {
         id: 'region-banner', title: 'Region name on its banner', status: 'unapproved',
         source: 'MatRegionName (the top bar’s left end)',
-        rule: 'The Region’s banner (the one the Atlas shows) lies behind its name at 2×, up to one picture (512 px) across, showing the band just below its middle; crisp on the left and fading to the bar’s fill by the end of the bar’s left part. The name is the display size (ui-text-bar-name, the bar’s only one) with a 2 px black outline so it reads over any picture. Hover: a white outline round the whole banner; click opens the Atlas.',
+        rule: 'The Region’s banner (the one the Atlas shows) lies behind its name at 3×, one picture (768 px) across but never past the bar’s far end, showing the band just below its middle; crisp for its first 40 % and fading to the bar’s fill by its right end, running on under the bar’s middle, whose badges keep their own dark fill. The name is the display size (ui-text-bar-name, the bar’s only one) with a 2 px black outline so it reads over any picture. Hover: a white outline round the whole banner; click opens the Atlas.',
         Demo: RegionBannerDemo
     },
     {

@@ -22,6 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { MatRegionName, liveRegionName } from '../ui/components/board/MatRegionName.jsx';
 import { MatUpkeepBadge } from '../ui/components/board/MatUpkeepBadge.jsx';
+import { HOVER_HIDE_DELAY_MS } from '../ui/hooks/useHoverOpen.js';
 import { MapModeToggles, MapModeBanner } from '../ui/components/board/MatModeControls.jsx';
 import { MAP_MODE, setMapMode } from '../ui/hooks/useMapMode.js';
 import { REGION_BANNER_PX, REGION_BANNER_SCALE } from '../ui/components/board/MatRegionName.jsx';
@@ -185,38 +186,60 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         expect(badgeText(container)).toBe('Tokens 0/20');
     });
 
-    it('hover shows a short tooltip and does not open the summary', () => {
-        const { container } = render(React.createElement(MatCapBadge));
-        fireEvent.mouseEnter(badgeOf(container));
-        const tip = document.body.querySelector('[data-top-bar-tip]').textContent;
-        expect(tip).toContain('Click for the list.');
-        expect(tip).toContain('The Guild Hall and quests do not.');
-        // Endgame sites count toward the cap like any placed Token.
-        expect(tip).not.toMatch(/endgame/i);
-        expect(panel()).toBeNull();
-    });
-
-    it('click opens the summary; a second click, Esc and a click elsewhere close it', () => {
+    it('⭐ hover opens the summary, as Upkeep does; no tooltip in its place', () => {
         placeAt('fixture_mb_oak', 160, 160);
         const { container } = render(React.createElement(MatCapBadge));
         expect(panel()).toBeNull();
-        fireEvent.click(badgeOf(container));
+        fireEvent.mouseEnter(badgeOf(container));
         expect(panel()).not.toBeNull();
         expect(panel().textContent).toContain('Tokens 1/12');
-        fireEvent.click(badgeOf(container));
-        expect(panel()).toBeNull();
+        expect(document.body.querySelector('[data-top-bar-tip]')).toBeNull();
+        expect(document.body.textContent).not.toMatch(/Click for/);
+        // What counts toward the cap, once the tooltip that said it is gone; endgame sites count like any Token.
+        expect(panel().querySelector('[data-token-summary-note]').textContent).toContain('the Guild Hall and quests don’t');
+        expect(panel().textContent).not.toMatch(/endgame/i);
+    });
 
-        fireEvent.click(badgeOf(container));
+    it('⭐ it stays while the pointer crosses into it, and closes once the pointer has left both', () => {
+        vi.useFakeTimers();
+        try {
+            const { container } = render(React.createElement(MatCapBadge));
+            fireEvent.mouseEnter(badgeOf(container));
+            fireEvent.mouseLeave(badgeOf(container));
+            act(() => { vi.advanceTimersByTime(HOVER_HIDE_DELAY_MS - 50); });
+            expect(panel()).not.toBeNull();
+            fireEvent.mouseEnter(panel());
+            act(() => { vi.advanceTimersByTime(HOVER_HIDE_DELAY_MS * 4); });
+            expect(panel()).not.toBeNull();
+            fireEvent.mouseLeave(panel());
+            act(() => { vi.advanceTimersByTime(HOVER_HIDE_DELAY_MS - 50); });
+            expect(panel()).not.toBeNull();
+            act(() => { vi.advanceTimersByTime(100); });
+            expect(panel()).toBeNull();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('Esc and a click elsewhere close it at once; a click on it does not; Enter opens it from the keyboard', () => {
+        const { container } = render(React.createElement(MatCapBadge));
+        fireEvent.mouseEnter(badgeOf(container));
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(panel()).toBeNull();
 
-        fireEvent.click(badgeOf(container));
+        fireEvent.mouseEnter(badgeOf(container));
         fireEvent.pointerDown(document.body);
         expect(panel()).toBeNull();
 
-        fireEvent.click(badgeOf(container));
+        fireEvent.mouseEnter(badgeOf(container));
         fireEvent.pointerDown(panel());
         expect(panel()).not.toBeNull();
+        fireEvent.keyDown(document, { key: 'Escape' });
+
+        fireEvent.keyDown(badgeOf(container), { key: 'Enter' });
+        expect(panel()).not.toBeNull();
+        fireEvent.keyDown(badgeOf(container), { key: 'Enter' });
+        expect(panel()).toBeNull();
     });
 
     it('lists one row per type with status counts, missing items first, then sections', () => {
@@ -232,7 +255,7 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         gear.alert = ALERT.CHOOSE_RECIPE;
 
         const { container } = render(React.createElement(MatCapBadge));
-        fireEvent.click(badgeOf(container));
+        fireEvent.mouseEnter(badgeOf(container));
         expect(rows()[0]).toBe('fixture_mb_bench');
         expect(rows().sort()).toEqual(['fixture_mb_bench', 'fixture_mb_gear', 'fixture_mb_oak', 'fixture_mb_tree', 'fixture_mb_vein']);
         const row = (id) => panel().querySelector(`[data-token-summary-row="${id}"]`);
@@ -249,7 +272,7 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         const sp = placeAt('fixture_mb_forest', 160, 160);
         const { container } = render(React.createElement(MatCapBadge));
         vi.spyOn(SpawnerSystem, 'spawnerAlertOf').mockImplementation((id) => (id === sp.id ? { alert: ALERT.SPAWN_MAT_FULL } : null));
-        fireEvent.click(badgeOf(container));
+        fireEvent.mouseEnter(badgeOf(container));
         const row = panel().querySelector('[data-token-summary-row="fixture_mb_forest"]');
         expect(row.querySelector('[data-status-count="blocked"]')).not.toBeNull();
         expect(panel().querySelector('[data-token-summary-pinned]')).toBeNull();
@@ -269,7 +292,7 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         const b = art('fixture_mb_oak');
         const c = art('fixture_mb_tree');
         const { container } = render(React.createElement(MatCapBadge));
-        fireEvent.click(badgeOf(container));
+        fireEvent.mouseEnter(badgeOf(container));
         const rowEl = panel().querySelector('[data-token-summary-row="fixture_mb_oak"]');
         fireEvent.mouseEnter(rowEl);
         expect([a, b, c].map(e => e.hasAttribute('data-summary-highlight'))).toEqual([true, true, false]);
@@ -285,7 +308,7 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         const bench = placeAt('fixture_mb_bench', 160, 160);
         bench.alert = ALERT.INPUTS;
         const { container } = render(React.createElement(MatCapBadge));
-        fireEvent.click(badgeOf(container));
+        fireEvent.mouseEnter(badgeOf(container));
         expect(panel().querySelector('[data-token-summary-pinned]')).not.toBeNull();
         bench.alert = null;
         act(() => { EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { instanceId: bench.id, alert: null }); });
@@ -336,6 +359,18 @@ describe('⭐ the restyled bar (T-170)', () => {
         expect(container.querySelector('.ui-frame-studs').className).toContain('grid-cols-[1fr_auto_1fr]');
     });
 
+    it('⭐ the banner may run on under the middle and right: the frame is its size container, and they paint over it', () => {
+        const { container } = mountWholeBar();
+        expect(container.querySelector('.ui-frame-studs').className).toContain('[container-type:inline-size]');
+        for (const end of ['middle', 'right']) {
+            expect(container.querySelector(`[data-mat-top-bar-${end}]`).className.split(' ')).toContain('relative');
+        }
+        // Each badge keeps its own dark fill over the picture.
+        for (const badge of container.querySelectorAll('[data-mat-top-bar-middle] [data-item-bar]')) {
+            expect(badge.className).toMatch(/bg-\[#181412\]/);
+        }
+    });
+
     it('⭐ while a mode is on its banner takes the centre in place of Tokens and Upkeep, and they come back after', () => {
         const { container } = mountWholeBar();
         const middle = container.querySelector('[data-mat-top-bar-middle]');
@@ -365,16 +400,17 @@ describe('⭐ the restyled bar (T-170)', () => {
         }
     });
 
-    it('⭐ the Region banner: the Atlas banner at 2x, at most one picture wide, fading out to the right; a big name; no badge, no icon', () => {
+    it('⭐ the Region banner: the Atlas banner at 3x, one picture wide but never past the bar, fading out to the right; a big name; no badge, no icon', () => {
         const { container } = render(React.createElement(MatRegionName, {
             readName: () => ({ name: 'Elderfield', practical: 'Starter Camp' }), readBanner: () => 'b_village'
         }));
         const slice = container.querySelector('[data-mat-region-banner]');
         const art = slice.querySelector('[data-banner-art="b_village"]');
-        expect(REGION_BANNER_SCALE).toBe(2);
-        expect(art.style.width).toBe('100%');
-        expect(art.style.maxWidth).toBe(`${REGION_BANNER_PX}px`);
-        expect(slice.querySelector('img').getAttribute('data-banner-scale')).toBe('2');
+        expect(REGION_BANNER_SCALE).toBe(3);
+        expect(REGION_BANNER_PX).toBe(768);
+        expect(art.style.width).toBe('768px');
+        // The cap at the bar's far end (`max-width: 100cqw`) is checked in the browser: jsdom drops container units.
+        expect(slice.querySelector('img').getAttribute('data-banner-scale')).toBe('3');
         expect(slice.querySelector('[data-mat-region-name-text]').className).toContain('ui-text-bar-name');
         expect(art.style.maskImage || art.style.webkitMaskImage).toMatch(/linear-gradient\(to right/);
         expect(slice.querySelector('img').style.imageRendering).toBe('pixelated');

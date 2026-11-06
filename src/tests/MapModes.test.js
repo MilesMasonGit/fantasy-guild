@@ -24,7 +24,7 @@ import {
     MapModeToggles, MapModeBanner, MODE_BANNER_TEXT
 } from '../ui/components/board/MatModeControls.jsx';
 import { tokenOutline } from '../ui/components/board/spriteOutline.js';
-import { mapModeCursor, cursorPixels } from '../ui/components/board/mapModeCursor.js';
+import { mapModeCursor, cursorPixels, mapModeIconSrc } from '../ui/components/board/mapModeCursor.js';
 import { OUTLINE_COLOURS } from '../config/spriteFx.js';
 import { matW } from '../config/matGeometry.js';
 import { AlphaPointerSensor } from '../ui/dnd/DndKit.jsx';
@@ -135,7 +135,20 @@ describe('⭐ one mode at a time', () => {
         const { container } = mountBar();
         const right = container.querySelector('[data-mat-top-bar-right]');
         expect([...right.querySelectorAll('[data-map-mode-toggle]')].map(b => b.textContent))
-            .toEqual(['⊘Disallow', '✕Demolish']);
+            .toEqual(['⊘Disallow', 'Demolish']);
+    });
+
+    it('⭐ Demolish wears its cursor’s pixel X beside its word, not a text mark', () => {
+        const { container } = mountBar();
+        const button = toggle(container, MAP_MODE.DEMOLISH);
+        const icon = button.querySelector('img[data-map-mode-icon="demolish"]');
+        expect(icon).not.toBeNull();
+        expect(icon.getAttribute('src')).toBe(mapModeIconSrc(MAP_MODE.DEMOLISH));
+        expect(mapModeCursor(MAP_MODE.DEMOLISH)).toContain(mapModeIconSrc(MAP_MODE.DEMOLISH));
+        expect(icon.getAttribute('width')).toBe('22');
+        expect(icon.style.imageRendering).toBe('pixelated');
+        expect(button.textContent).toBe('Demolish');
+        expect(button.textContent).not.toContain('✕');
     });
 
     it('Esc ends either mode', () => {

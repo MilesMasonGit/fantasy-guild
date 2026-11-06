@@ -65,15 +65,29 @@ function svgOf(rows, colour) {
 }
 
 const cache = new Map();
+const iconCache = new Map();
+
+/** A mode's glyph as an image URL (the cursor's own picture), or null with no mode. */
+export function mapModeIconSrc(mode) {
+    const rows = GLYPHS[mode];
+    if (!rows) return null;
+    if (!iconCache.has(mode)) iconCache.set(mode, `data:image/svg+xml,${encodeURIComponent(svgOf(rows, COLOURS[mode]))}`);
+    return iconCache.get(mode);
+}
+
+/** The glyph's drawn size in px, edge included (22 for the 9 × 9 glyphs). */
+export function mapModeIconPx(mode) {
+    const rows = GLYPHS[mode];
+    return rows ? (rows.length + 2) * SCALE : 0;
+}
 
 /** The CSS `cursor` value for a mode (hot spot in the glyph's centre), or null with no mode. */
 export function mapModeCursor(mode) {
-    const rows = GLYPHS[mode];
-    if (!rows) return null;
+    const src = mapModeIconSrc(mode);
+    if (!src) return null;
     if (!cache.has(mode)) {
-        const svg = svgOf(rows, COLOURS[mode]);
-        const half = ((rows.length + 2) * SCALE) / 2;
-        cache.set(mode, `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${half} ${half}, pointer`);
+        const half = mapModeIconPx(mode) / 2;
+        cache.set(mode, `url("${src}") ${half} ${half}, pointer`);
     }
     return cache.get(mode);
 }
