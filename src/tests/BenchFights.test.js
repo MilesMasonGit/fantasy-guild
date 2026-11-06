@@ -14,8 +14,8 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 import { buildRealistic } from '../../bench/scenarios/realistic.mjs';
-import { capPlaced, spawnRoom } from '../../bench/scenarios/cap.mjs';
-import { envelopeScenario, fightPlaced, MAX_FIGHTS } from '../../bench/scenarios/envelope.mjs';
+import { capPlaced } from '../../bench/scenarios/cap.mjs';
+import { envelopeScenario, fightPlaced, spawnedBeforeBrutes, MAX_FIGHTS } from '../../bench/scenarios/envelope.mjs';
 import { sceneFor } from '../../bench/browser/scenes.mjs';
 
 /**
@@ -86,14 +86,18 @@ describe("S2's board", () => {
 describe('the fights<N> boards', () => {
     it('leave every brute its room under the cap, from Forests and Quarries first', () => {
         const base = capPlaced(128);
-        for (const n of [8, 40, MAX_FIGHTS]) {
+        const count = (list, ...types) => list.filter(t => types.includes(t)).length;
+        for (const n of [3, 8, 40, MAX_FIGHTS]) {
             const list = fightPlaced(n);
-            const camps = list.filter(t => t === 'env_brute_camp').length;
+            const camps = count(list, 'env_brute_camp');
             expect(list).toHaveLength(base.length);
             expect(camps).toBe(Math.ceil(n / 4));
-            expect(list.length + spawnRoom(list) + camps * 4).toBeLessThanOrEqual(128);
+            expect(list.length + spawnedBeforeBrutes(list) + camps * 4).toBeLessThanOrEqual(128);
         }
-        expect(fightPlaced(8).filter(t => t === 'bench_camp')).toHaveLength(3);
+        // Few brutes: only producers give way, and the board is cap128's otherwise.
+        expect(count(fightPlaced(8), 'bench_forest', 'bench_quarry', 'bench_camp')).toBe(count(base, 'bench_forest', 'bench_quarry', 'bench_camp'));
+        expect(count(fightPlaced(40), 'bench_forest', 'bench_quarry')).toBe(count(base, 'bench_forest', 'bench_quarry') - 1);
+        expect(count(fightPlaced(MAX_FIGHTS), 'bench_forest', 'bench_quarry', 'bench_camp')).toBe(0);
         expect(fightPlaced(0)).toEqual(base);
         expect(MAX_FIGHTS).toBe(128 - base.length);
     });

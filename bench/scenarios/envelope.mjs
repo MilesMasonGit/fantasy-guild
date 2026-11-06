@@ -20,7 +20,7 @@
 // S2's (`realistic.mjs`'s `buildBoard`), copied and parameterised here rather than changed there,
 // so the engine bench's boards and their recorded work cannot move.
 
-import { capPlaced, spawnRoom } from './cap.mjs';
+import { capPlaced, SPAWNS } from './cap.mjs';
 import { pinMat, REFERENCE_STEPS } from './referenceMat.mjs';
 import { registerTokenTypes } from '../../src/config/registries/tokenRegistry.js';
 
@@ -82,11 +82,18 @@ export function enemyPlaced(n) {
 export const MAX_FIGHTS = BASE_CAP - capPlaced(BASE_CAP).length;
 
 /**
- * cap128's placed list with brute camps for `n` brutes. The brutes need their room under the cap,
- * and a Forest refilling every 5 s would take a place a camp waiting 30 s could use, so Forests and
- * Quarries, then goblin camps, from the end of the list give way first (to brute camps while more
- * are wanted, then to producers) until what they spawn leaves the brutes their room; then
- * producers become brute camps until there are enough.
+ * What the other spawners of a placed list put down while a brute camp fills: the prefill
+ * (`fixtures.prefillSpawners`) lands one Token per spawner a round, so a camp's brutes are all down
+ * after its fourth round, and every brute has its place if the cap is not reached before then.
+ */
+export const spawnedBeforeBrutes = (list) => list.reduce((n, t) => n + Math.min(SPAWNS[t] || 0, BRUTES_PER_CAMP), 0);
+
+/**
+ * cap128's placed list with brute camps for `n` brutes. A brute never leaves the mat, so it needs
+ * its place only once, in the prefill: Forests and Quarries, then goblin camps, from the end of the
+ * list give way (to brute camps while more are wanted, then to producers) until what they put down
+ * meanwhile leaves the brutes room under the cap; then producers become brute camps until there
+ * are enough. The spawners left then fill the board to the cap.
  */
 export function fightPlaced(n) {
     const list = capPlaced(BASE_CAP);
@@ -95,7 +102,7 @@ export function fightPlaced(n) {
     if (othersRoom < 0) throw new Error(`fights${n}: cap ${BASE_CAP} has room for ${MAX_FIGHTS} brutes at most`);
     let made = 0;
     const giveWay = (kinds) => {
-        for (let i = list.length - 1; i >= 0 && camps > 0 && spawnRoom(list) > othersRoom; i--) {
+        for (let i = list.length - 1; i >= 0 && camps > 0 && spawnedBeforeBrutes(list) > othersRoom; i--) {
             if (!kinds.includes(list[i])) continue;
             list[i] = made < camps ? 'env_brute_camp' : 'fixture_producer';
             if (list[i] === 'env_brute_camp') made++;
