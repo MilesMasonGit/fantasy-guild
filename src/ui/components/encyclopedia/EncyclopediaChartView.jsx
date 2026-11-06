@@ -206,6 +206,33 @@ const LineMark = memo(function LineMark({ label, book, heroes }) {
 });
 
 /**
+ * What a line means, in a small ink word: above a way in's line by the box it comes from; on a use's
+ * line before the arrow, the line broken round it like a mark. Hover says it in a sentence.
+ */
+const LineWord = memo(function LineWord({ word, book }) {
+    const name = (key) => entryOfKey(book, key)?.name ?? book.nameOf(key);
+    const sentence = t(`encyclopedia.lineTip.${word.tip}`, { from: name(word.from), to: name(word.to) });
+    return (
+        <span
+            className={cn('absolute flex items-center pointer-events-none', word.side === 'out' ? 'justify-end' : 'justify-start')}
+            style={{ left: word.x, top: word.y, width: word.w, height: word.h }}
+        >
+            <Tooltip lines={[sentence]}>
+                <span
+                    data-codex-line-word={word.id}
+                    data-codex-word={word.word}
+                    data-on-line={word.onLine ? 'true' : undefined}
+                    className="pointer-events-auto whitespace-nowrap ui-text-ink ui-text-small font-bold"
+                    style={{ lineHeight: `${word.h}px`, padding: '0 2px', ...(word.onLine ? { background: PARCHMENT } : {}) }}
+                >
+                    {t(`encyclopedia.line.${word.word}`)}
+                </span>
+            </Tooltip>
+        </span>
+    );
+});
+
+/**
  * One entry on the chart: its sprite and name; under them how many one of the start needs (red
  * when you have fewer) and a drop's odds; the collected tick. Resting the pointer on it shows its card.
  */
@@ -424,6 +451,7 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
                     </span>
                 ))}
                 {layout.labels.map(l => <LineMark key={l.id} label={l} book={book} heroes={heroes} />)}
+                {layout.words.map(w => <LineWord key={w.id} word={w} book={book} />)}
                 {layout.nodes.map(box => {
                     const entry = entryOfKey(book, box.node.key);
                     if (!entry) return null;
