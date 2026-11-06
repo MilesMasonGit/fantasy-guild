@@ -11,7 +11,7 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 360 C2: the fight window B, minimized tabs D, several at once | builder | `crunch/combat-window` (`c2`) | building | Thu | |
+| 360 C2: the fight window B, minimized tabs D, several at once | builder | `crunch/combat-window` (`c2`) | ready dab61f41 (director: 7468 tests, cycles, build green; screenshots match B and D); bench queued with C3 | Thu | |
 | 360 C3: the mat F, the combat icon between the bars, floats, move bubbles, QA crowd button | builder | `crunch/combat-mat` (`c3`) | building | Thu | |
 | 360 C4: crowded fights step to open space (expect WORK CHANGED) | engineer | | queued after C3 | | |
 
