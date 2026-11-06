@@ -23,6 +23,17 @@ project's first tagged baseline — everything before it was untagged developmen
   placeholder Oak Wood prices), moves the mines, the Quarry, the 18 banner camps and the Mining
   Camp to their Foundations, sets the list order and icons, and takes Coast and Goblin Camp out
   of the Shop. Nothing changes in play until the owner accepts it and Syncs.
+- **The benches fight again, started as a player starts a fight** (bench tooling only; T-322). With
+  no ambushes (brief 500) the engine bench's S2 board (S2, S3, S5, S6, the S8 hour, C240, C256) had no
+  fights and S5 no rebuild storm, and the drawing bench's fights40 and fights80 never built. S2's
+  heroes 1 and 2 are now sent at the goblin camps and hunt them: S2 kills about 240 goblins a
+  game-hour with 0.6 fighting at once (0.69 before brief 500), the S8 hour 240 (53 before brief 500,
+  2 after), and S5 is back to 0.025 whole-mat rebuilds a tick (0.034 before). `fights<N>` sends N
+  heroes (at least 8) at camps of four brutes, up to 80 fights; fights40 had never built because the
+  scene stopped at 8 heroes (the page refused the name and the bench waited 180 s), and a larger N
+  is now refused before Chrome starts. The engine bench prints the fights a game-hour under each
+  profile and the kills in the S8 hour. Work changes on S2, S3, S5, S6, S8, S8L, S8F, C240 and C256;
+  S1, S4 and S7 are unchanged.
 - **"While you were away" in two columns** (brief 440 A1): the items on the left, each item once
   with its net change in green or red (gained and spent on hover, a small mark on loot still on
   the mat), the news on the right (knock-outs, the Bank refusing items, new recipes, first finds,

@@ -76,8 +76,7 @@ const NOISE_FLOOR_MS = 0.02;
 
 /**
  * Catch-up fidelity: what the hour produced in 1000 ms steps (S8L) against 100 ms ticks (S8F)
- * may differ by this fraction, or by one unit for a count too small to judge in percent
- * (Tokens depleted: about 6 an hour on S2).
+ * may differ by this fraction, or by one unit for a count too small to judge in percent.
  */
 const FIDELITY_TOLERANCE = 0.01;
 const FIDELITY_FIELDS = ['bankItems', 'heroXp', 'cycles', 'depleted'];
@@ -222,7 +221,7 @@ function printTable(rows) {
         if (r.catchUp) {
             const c = r.custom;
             const g = c.gains;
-            console.log(`\n${r.id} ${r.name}: ${c.steps} steps in ${f(c.runMs / 1000, 2)} s · Bank +${g.bankItems} items, hero XP +${g.heroXp}, ${g.cycles} cycles, ${g.depleted} Tokens depleted`);
+            console.log(`\n${r.id} ${r.name}: ${c.steps} steps in ${f(c.runMs / 1000, 2)} s · Bank +${g.bankItems} items, hero XP +${g.heroXp}, ${g.cycles} cycles, ${g.depleted} Tokens depleted, ${g.kills ?? '?'} of them kills`);
         } else if (r.custom) {
             const c = r.custom;
             const l = c.landing;
@@ -241,6 +240,8 @@ function printTable(rows) {
         if (r.profile && !r.custom) {
             const top = r.profile.handlers.slice(0, 4).map(h => `${h.name} ${f(h.msPerTick)}`).join(', ');
             console.log(`\n${r.id} profile (probes on; slower than the timing runs): handlers ms/tick — ${top}`);
+            const perHour = (name) => Math.round((r.profile.eventsByName.find(e => e.name === name)?.perTick || 0) * 36000);
+            console.log(`  fights a game-hour at this rate: ${perHour('board:combat_engaged')} engaged, ${perHour('combat_victory')} won, ${perHour('board:hero_defeated')} heroes knocked out`);
         }
         if (r.errors?.length) console.log(`\n⚠ ${r.id} logged errors:\n  ${r.errors.join('\n  ')}`);
     }

@@ -216,6 +216,9 @@ const STRESS_IDS = { quiet: 'S1', realistic: 'S2', torture: 'S3', cap128: 'C128'
 
 const ENVELOPE_BOARD = /^(cap|heroes|enemies|fights)(\d+)$/;
 const ENVELOPE_ID = { cap: 'C', heroes: 'H', enemies: 'E', fights: 'F' };
+// ⚠️ Kept equal to `MAX_FIGHTS` in `bench/scenarios/envelope.mjs` by hand: that module loads game
+// code, which plain Node cannot import.
+const MAX_FIGHTS = 80;
 const ENVELOPE_LABEL = {
     cap: (n) => `S2 mix at cap ${n}`,
     heroes: (n) => `cap128, ${n} heroes`,
@@ -341,6 +344,8 @@ export function sceneFor(id) {
     let m = ENVELOPE_BOARD.exec(key);
     if (m) {
         const n = Number(m[2]);
+        // ⚠️ A board the page cannot build is only seen as a 180 s wait for it, so refuse it here.
+        if (m[1] === 'fights' && n > MAX_FIGHTS) throw new Error(`${key}: the fights boards hold up to ${MAX_FIGHTS} fights (MAX_FIGHTS in bench/scenarios/envelope.mjs)`);
         return {
             id: `${m[1]}${n}`, name: ENVELOPE_LABEL[m[1]](n), stress: `${m[1]}${n}`, stressId: `${ENVELOPE_ID[m[1]]}${n}`,
             ui: async (page) => { await startSampler(page); return null; }, probe: ENVELOPE_PROBE

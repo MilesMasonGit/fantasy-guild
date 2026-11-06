@@ -34,7 +34,7 @@ const PLACED_POOL = [...REALISTIC_PLACED, ...REALISTIC_PLACED, ...REALISTIC_PLAC
 export const SHIPPED_MAT_CELLS = 72;
 
 /** How many Tokens a placed list's spawners fill to, at most. */
-const SPAWNS = { bench_forest: 10, bench_quarry: 10, bench_camp: 3, bench_warcamp: 5 };
+export const SPAWNS = { bench_forest: 10, bench_quarry: 10, bench_camp: 3, bench_warcamp: 5 };
 export const spawnRoom = (list) => list.reduce((n, t) => n + (SPAWNS[t] || 0), 0);
 
 /**

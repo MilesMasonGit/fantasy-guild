@@ -67,9 +67,11 @@ export async function hourAfterLoad(ctx, play) {
 
     let cycles = 0;
     let depleted = 0;
+    let kills = 0;
     const offs = [
         EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, () => { cycles++; }),
-        EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, () => { depleted++; })
+        EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, () => { depleted++; }),
+        EventBus.subscribe(BOARD_EVENTS.COMBAT_RESOLVED, (p) => { if (p?.outcome === 'victory') kills++; })
     ];
     const before = totals();
     const t0 = ctx.now();
@@ -85,7 +87,8 @@ export async function hourAfterLoad(ctx, play) {
             bankItems: after.bankItems - before.bankItems,
             heroXp: Math.round(after.heroXp - before.heroXp),
             cycles,
-            depleted
+            depleted,
+            kills
         },
         identity: { cycles, depleted, steps, gameTimeMs: GameState.state.time.gameTimeMs }
     };

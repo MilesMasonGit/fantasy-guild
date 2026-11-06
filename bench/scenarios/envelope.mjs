@@ -2,15 +2,16 @@
 // one thing turned up at a time, so each design limit is measured on its own.
 //
 //   cap<N>      S2's mix filled to a Token cap of N (as `cap.mjs`, any N: cap64, cap160, cap192…;
-//               below ~96 S2's list holds fewer than two goblin camps, so the heroes S2 puts by
+//               below ~96 S2's list holds fewer than two goblin camps, so the heroes S2 sends at
 //               them go to producers instead)
 //   heroes<N>   cap128 with N heroes instead of 8 (the roster's top is 8; more is headroom)
 //   enemies<N>  cap128 with Forests and Quarries, then producers, swapped for war camps until N
-//               goblins have room under the cap (they stand where they spawn; no hero is near
+//               goblins have room under the cap (they stand where they spawn; no hero is sent at
 //               the new camps, so they do not fight)
-//   fights<N>   cap128 with N of the 8 heroes each beside a camp of one tough brute that never
-//               runs out. ⚠️ Enemies no longer attack (brief 500), so these heroes do not fight
-//               until the scene sends them at the brutes; the rest as S2
+//   fights<N>   cap128 with camps of four tough brutes that never run out, room under the cap for
+//               N brutes, and N heroes (at least 8) sent at those camps, four to a camp: N fights
+//               going on at once, up to 80 (the cap's room for spawned Tokens); heroes left over
+//               as S2
 //
 // Loot piles and notifications are the same cap128 board with something done from a page timer
 // (`bench/browser/scenes.mjs`: floor<N>, notify<N>).
@@ -19,36 +20,37 @@
 // S2's (`realistic.mjs`'s `buildBoard`), copied and parameterised here rather than changed there,
 // so the engine bench's boards and their recorded work cannot move.
 
-import { capPlaced } from './cap.mjs';
+import { capPlaced, SPAWNS } from './cap.mjs';
 import { pinMat, REFERENCE_STEPS } from './referenceMat.mjs';
 import { registerTokenTypes } from '../../src/config/registries/tokenRegistry.js';
 
 const BASE_CAP = 128;
 const STEP = 160;
 const MARGIN = 80;
+const BRUTES_PER_CAMP = 4;
 
 // Registered here, not in `fixtures.mjs`, so no other scenario's work changes.
 registerTokenTypes({
     /**
      * A brute that never runs out (a kill costs one of 1000 uses; it is back at full HP after the
-     * 2 s pause). Its `hostile` mark is read by nothing since enemies stopped attacking. Tougher
-     * than a goblin, so a fight lasts several blows.
+     * 2 s pause), so a hero sent at it fights on. Tougher than a goblin, so a fight lasts several
+     * blows; it swings slowly, so its hero is still standing minutes later.
      */
     env_brute: {
         id: 'env_brute', name: 'Envelope Brute', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 1000, sprite: 's_crime', requiresHero: true,
-        enemy: { level: 1, style: 'melee', budgetScale: 0.4, hostile: true },
+        enemy: { level: 1, style: 'melee', budgetScale: 0.4, speed: 'slow' },
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0,
             inputs: [],
             outputs: [{ itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 }]
         }
     },
-    /** Its camp: one brute. */
+    /** Its camp: four brutes. */
     env_brute_camp: {
         id: 'env_brute_camp', name: 'Envelope Brute Camp', tokenType: 'spawner',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 's_crime',
-        spawner: { spawns: [{ typeId: 'env_brute', weight: 1 }], allowance: 1, intervalMs: 30000, upkeep: [] }
+        spawner: { spawns: [{ typeId: 'env_brute', weight: 1 }], allowance: BRUTES_PER_CAMP, intervalMs: 30000, upkeep: [] }
     }
 });
 
@@ -76,20 +78,49 @@ export function enemyPlaced(n) {
     return list;
 }
 
-/** cap128's placed list with producers swapped for brute camps, `n` of them. */
+/** The most brutes, so fights, a cap128 board has room for: every spawned place under its cap. */
+export const MAX_FIGHTS = BASE_CAP - capPlaced(BASE_CAP).length;
+
+/**
+ * What the other spawners of a placed list put down while a brute camp fills: the prefill
+ * (`fixtures.prefillSpawners`) lands one Token per spawner a round, so a camp's brutes are all down
+ * after its fourth round, and every brute has its place if the cap is not reached before then.
+ */
+export const spawnedBeforeBrutes = (list) => list.reduce((n, t) => n + Math.min(SPAWNS[t] || 0, BRUTES_PER_CAMP), 0);
+
+/**
+ * cap128's placed list with brute camps for `n` brutes. A brute never leaves the mat, so it needs
+ * its place only once, in the prefill: Forests and Quarries, then goblin camps, from the end of the
+ * list give way (to brute camps while more are wanted, then to producers) until what they put down
+ * meanwhile leaves the brutes room under the cap; then producers become brute camps until there
+ * are enough. The spawners left then fill the board to the cap.
+ */
 export function fightPlaced(n) {
     const list = capPlaced(BASE_CAP);
+    const camps = Math.ceil(n / BRUTES_PER_CAMP);
+    const othersRoom = MAX_FIGHTS - camps * BRUTES_PER_CAMP;
+    if (othersRoom < 0) throw new Error(`fights${n}: cap ${BASE_CAP} has room for ${MAX_FIGHTS} brutes at most`);
     let made = 0;
-    for (let i = list.length - 1; i >= 0 && made < n; i--) {
+    const giveWay = (kinds) => {
+        for (let i = list.length - 1; i >= 0 && camps > 0 && spawnedBeforeBrutes(list) > othersRoom; i--) {
+            if (!kinds.includes(list[i])) continue;
+            list[i] = made < camps ? 'env_brute_camp' : 'fixture_producer';
+            if (list[i] === 'env_brute_camp') made++;
+        }
+    };
+    giveWay(['bench_forest', 'bench_quarry']);
+    giveWay(['bench_camp', 'bench_warcamp']);
+    for (let i = list.length - 1; i >= 0 && made < camps; i--) {
         if (isProducer(list[i])) { list[i] = 'env_brute_camp'; made++; }
     }
+    if (made < camps) throw new Error(`fights${n}: ${camps} brute camps wanted, only ${made} places to put them`);
     return list;
 }
 
 /**
- * S2's layout (`realistic.mjs`) with a hero count and fighters: `fighters` heroes beside brute
- * camps first, then (as S2) one pinned to a smelter and two beside goblin camps while heroes are
- * left, the rest on producers spread across the list.
+ * S2's layout (`realistic.mjs`) with a hero count and fighters: `fighters` heroes sent at the brute
+ * camps first, four to a camp, then (as S2) one pinned to a smelter and two sent at goblin camps
+ * while heroes are left, the rest on producers spread across the list.
  */
 function buildEnvelope({ fixtures, setMatTuning }, { placed, cap = BASE_CAP, heroes: heroCount = 8, fighters = 0 }) {
     const { placeAt, makeHeroes, orderAt, lattice } = fixtures;
@@ -116,12 +147,17 @@ function buildEnvelope({ fixtures, setMatTuning }, { placed, cap = BASE_CAP, her
     const camps = tokens.filter(t => t.typeId === 'bench_camp' || t.typeId === 'bench_warcamp');
     const bruteCamps = tokens.filter(t => t.typeId === 'env_brute_camp');
     const smelter = tokens.find(t => t.typeId === 'bench_smelter');
-    if (bruteCamps.length < fighters) throw new Error(`envelope board: ${fighters} fighters but ${bruteCamps.length} brute camps`);
+    if (bruteCamps.length * BRUTES_PER_CAMP < fighters) throw new Error(`envelope board: ${fighters} fighters but ${bruteCamps.length} brute camps`);
 
+    // Sent as the player's drop on a camp sends them: each hunts the nearest brute no one else has.
+    const sendAt = (hero, camp) => {
+        const sent = orderAt(hero.id, { x: camp.x, y: camp.y });
+        if (!sent.success || sent.instanceId !== camp.id) throw new Error(`envelope board: ${hero.id} could not be sent at ${camp.typeId}`);
+    };
     const queue = [...heroes];
-    for (let i = 0; i < fighters && queue.length; i++) orderAt(queue.shift().id, { x: bruteCamps[i].x + STEP, y: bruteCamps[i].y });
+    for (let i = 0; i < fighters && queue.length; i++) sendAt(queue.shift(), bruteCamps[Math.floor(i / BRUTES_PER_CAMP)]);
     if (queue.length && smelter) orderAt(queue.shift().id, { x: smelter.x, y: smelter.y });
-    for (let i = 0; i < 2 && queue.length && camps[i]; i++) orderAt(queue.shift().id, { x: camps[i].x + (i ? -STEP : STEP), y: camps[i].y });
+    for (let i = 0; i < 2 && queue.length && camps[i]; i++) sendAt(queue.shift(), camps[i]);
     const rest = queue.length;
     const spots = producers.length ? producers : tokens;
     queue.forEach((hero, i) => {
@@ -152,8 +188,8 @@ export function envelopeScenario(name) {
         case 'enemies':
             return { id, name: `cap128 with room for ${n} goblins`, ticks, build(ctx) { buildEnvelope(ctx, { placed: enemyPlaced(n) }); } };
         case 'fights':
-            if (n > 8) return null;
-            return { id, name: `cap128 with ${n} heroes fighting`, ticks, build(ctx) { buildEnvelope(ctx, { placed: fightPlaced(n), fighters: n }); } };
+            if (n > MAX_FIGHTS) return null;
+            return { id, name: `cap128 with ${n} heroes fighting`, ticks, build(ctx) { buildEnvelope(ctx, { placed: fightPlaced(n), heroes: Math.max(8, n), fighters: n }); } };
         default:
             return null;
     }
