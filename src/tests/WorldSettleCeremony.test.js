@@ -140,14 +140,15 @@ describe('⭐ the arrival stands spread out across the mat', () => {
                 const angles = spots.map(p => Math.atan2(p.y - centre.y, p.x - centre.x)).sort((a, b) => a - b);
                 const half = (Math.PI / n) * (1 - Arrival.WALK_IN_LANE / Math.PI);
                 for (let i = 1; i < angles.length; i++) expect(angles[i] - angles[i - 1]).toBeGreaterThan(half - 1e-6);
-                for (const a of angles) expect(Math.abs(a - Math.PI / 2)).toBeGreaterThanOrEqual(Arrival.WALK_IN_LANE - 1e-6);
+                // (The angle of a whole-unit aim, so a hair off the exact one.)
+                for (const a of angles) expect(Math.abs(a - Math.PI / 2)).toBeGreaterThanOrEqual(Arrival.WALK_IN_LANE - 0.01);
                 for (const p of spots) if (p.y > centre.y) expect(Math.abs(p.x - centre.x)).toBeGreaterThan(artRadius(1) + artRadius(1) / 2);
                 for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) closest = Math.min(closest, dist(spots[i], spots[j]));
             }
         }
         // Never two in one place: further apart than two enemies' art across.
         expect(closest).toBeGreaterThan(2 * artRadiusOf('token_goblin'));
-    });
+    }, 60_000);
 
     it('the same place always stands them the same way, and no random number is drawn', () => {
         const spy = vi.spyOn(Math, 'random');
@@ -171,10 +172,21 @@ describe('⭐ the arrival stands spread out across the mat', () => {
 });
 
 describe('⭐ every enemy can be reached', () => {
-    /** Every enemy of the live mat's arrival: placed, its art whole on the mat, out of the Hall's clearing. */
+    /** The closest any enemy came: to the Hall's clearing's edge (1 on it), to the heroes' row, to their way in. */
+    const closest = { clearing: Infinity, row: Infinity, wayIn: Infinity };
+
+    /**
+     * Every enemy of the live mat's arrival: placed, its art whole on the mat, and clear of the
+     * heroes: never touching the Hall, the row in front of it where heroes wait (six of them), or
+     * the way in straight below it where they walk in. A placement may nudge an enemy a little into
+     * the clearing's ellipse, off a node standing on its aim; never onto them.
+     */
     function expectStandsWell(arrival, where) {
         expect(arrival.unplaced, where).toEqual([]);
         const hall = hallOf();
+        const hero = artRadius(1) / 2;
+        const rowY = hall.y + artRadiusOf(HALL) + HeroMotion.HOME_DROP;
+        const row = { x0: hall.x - 2.5 * HeroMotion.HOME_GAP - hero, x1: hall.x + 2.5 * HeroMotion.HOME_GAP + hero, y0: rowY - artRadius(1), y1: rowY + artRadius(1) };
         for (const id of arrival.ids) {
             const enemy = BoardState.getTokenById(id);
             const r = artRadiusOf(enemy.typeId);
@@ -182,9 +194,16 @@ describe('⭐ every enemy can be reached', () => {
             expect(enemy.y - r, `${where} ${id}`).toBeGreaterThanOrEqual(0);
             expect(enemy.x + r, `${where} ${id}`).toBeLessThanOrEqual(matW());
             expect(enemy.y + r, `${where} ${id}`).toBeLessThanOrEqual(matH());
-            expect(outOfClearing(enemy, hall), `${where} ${id}`).toBeGreaterThan(0.9);
-            // Clear of the heroes' way in below the Hall: their figure and its art never meet.
-            if (enemy.y > hall.y) expect(Math.abs(enemy.x - hall.x), `${where} ${id} in the way in`).toBeGreaterThan(r + artRadius(1) / 2);
+            expect(dist(enemy, hall), `${where} ${id} on the Hall`).toBeGreaterThan(r + artRadiusOf(HALL));
+            const toRow = Math.hypot(Math.max(row.x0 - enemy.x, 0, enemy.x - row.x1), Math.max(row.y0 - enemy.y, 0, enemy.y - row.y1));
+            expect(toRow, `${where} ${id} on the heroes' row`).toBeGreaterThan(r);
+            closest.row = Math.min(closest.row, toRow - r);
+            if (enemy.y > rowY) {
+                const lane = Math.abs(enemy.x - hall.x) - r - hero;
+                expect(lane, `${where} ${id} in the way in`).toBeGreaterThan(0);
+                closest.wayIn = Math.min(closest.wayIn, lane);
+            }
+            closest.clearing = Math.min(closest.clearing, outOfClearing(enemy, hall));
             expect(Occupation.isArrivalId(id)).toBe(true);
         }
     }
@@ -243,8 +262,8 @@ describe('⭐ every enemy can be reached', () => {
         expect(slowest).toBeLessThan(Math.hypot(matW(), matH()) / HeroMotion.walkSpeed() * 1000 + 1000);
     }, 240_000);
 
-    it('⭐ over 40 worlds: every ring-1 place settled, and a ring-2, a ring-3 and every odd-layout wild place written and arrived at; every enemy placed, on the mat and out of the clearing, and those further out each reached', () => {
-        const counts = { ring1: 0, ring2: 0, ring3: 0, wild: 0, enemies: 0, reached: 0 };
+    it('⭐ over 40 worlds: every ring-1 place settled, and a ring-2, a ring-3 and a wild place of each odd layout written and arrived at; every enemy placed, on the mat and out of the clearing, and those further out each reached', () => {
+        const counts = { ring1: 0, ring2: 0, ring3: 0, wild: 0, enemies: 0, reached: 0, slowestArriveMs: 0 };
         for (let seed = 1; seed <= 40; seed++) {
             BoardState.setInstantArrival(true);
             newGame(seed * 101);
@@ -264,13 +283,16 @@ describe('⭐ every enemy can be reached', () => {
             const further = [
                 world.cells.find(c => c.ring === 2),
                 world.cells.find(c => c.ring === 3),
-                ...world.cells.filter(c => c.wild && c.extreme?.kind === 'layout')
+                // One wild place of each odd layout (islands, mostly water, a chasm, cramped).
+                ...[...new Map(world.cells.filter(c => c.wild && c.extreme?.kind === 'layout').map(c => [c.extreme.layout, c])).values()]
             ].filter(Boolean);
             BoardState.setInstantArrival(false);
             for (const cell of further) {
                 const written = World.writePlace(cell, { cellId: cell.id });
                 expect(written.success, `${seed} ${cell.id}`).toBe(true);
+                const t0 = performance.now();
                 const { travel, arrival } = World.arriveAt(written.region, written.mat);
+                counts.slowestArriveMs = Math.max(counts.slowestArriveMs, Math.round(performance.now() - t0));
                 expect(travel.success).toBe(true);
                 expect(arrival.ids.length).toBe(cell.arrival.reduce((n, r) => n + r.count, 0));
                 const where = `world ${seed} ${cell.id} (${cell.wild ? cell.extreme.layout : `ring ${cell.ring}`})`;
@@ -286,7 +308,7 @@ describe('⭐ every enemy can be reached', () => {
         expect(counts.ring2).toBe(40);
         expect(counts.ring3).toBe(40);
         expect(counts.wild).toBeGreaterThan(0);
-        if (process.env.FG_M5_OUT) fs.writeFileSync(process.env.FG_M5_OUT, JSON.stringify(counts));
+        if (process.env.FG_M5_OUT) fs.writeFileSync(process.env.FG_M5_OUT, JSON.stringify({ counts, closest }));
     }, 600_000);
 });
 

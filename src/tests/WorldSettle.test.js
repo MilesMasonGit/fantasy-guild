@@ -148,7 +148,7 @@ describe('⭐ settling a cell', () => {
         expect(world().cells.filter(c => c.ring === 2 && states.get(c.id) === CELL_STATE.FRONTIER).length).toBeGreaterThan(0);
     });
 
-    it('announces the Region written, the arrival there, the enemies holding it, and last the guild arrived (the ceremony's cue)', () => {
+    it('announces the Region written, the arrival there, the enemies holding it, and last the guild arrived, the ceremony cue', () => {
         const cell = ringOne()[1];
         heroFor(cell);
         stock(cell);
