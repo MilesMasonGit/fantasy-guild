@@ -1242,7 +1242,13 @@ drawers**. The menu can be flipped to the right.
   scales, 2× or more. A card taller than three quarters of the screen scrolls,
   its arrows inside the card over the art. A station's recipe list keeps the
   header and the art.
-- **Notification column**: toasts (collapse / clear all).
+- **Notifications**: item stubs at the right under the top bar (one per item,
+  its net flow; gold "New!" for a first find) and banners at the top centre for
+  what must not be missed, each staying until clicked: gold for a new recipe,
+  hero, guild upgrade or **a place settled** (the place's name, from the
+  Atlas's `created` news; the first camp of a new game says nothing), red for
+  a knock-out, the Bank refusing items or a save problem
+  (`concept_notifications.md`, `systems/notifications/`).
 - **Hero bar** (bottom): the roster, heroes as standing figures with HP numbers
   over a smooth pixel bar, each with their job flag and an alert when wounded or the
   player must act; hover for what they are doing; drag a figure onto the mat
@@ -1275,7 +1281,14 @@ drawers**. The menu can be flipped to the right.
   a sleeping PC (up to 24 h; the rest is dropped) is played by the real engine,
   sped up, behind a loading bar, then a "While you were away" summary. Gaps
   under 2 minutes (a background browser tab) are played quietly. It replaced
-  the Time Bank, which is gone.
+  the Time Bank, which is gone. **Nothing goes missing (brief 430)**: the
+  catch-up keeps its bus quiet, so it hears the news itself (recipes unlocked,
+  first finds, the Bank refusing items, knock-outs; `catchUpNews.js`, only
+  reading, so the game plays the same) and the summary lists them in sections
+  of their own (a section with nothing is left out); when it closes they
+  arrive as live play would show them, merged: one banner per kind and at
+  most six gold "New!" stubs, with their sounds. A gap with no summary shows
+  them at once; "Load as I left it" shows none.
 - **Saves**: 3 slots in browser `localStorage` with a one-step backup;
   autosave every 10 min by default. **Saves from another version are refused,
   not migrated** (`GAME_VERSION = '0.8.1'`, moved by the Atlas's Regions), and

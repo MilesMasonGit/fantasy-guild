@@ -32,6 +32,7 @@ The look follows [UI_STYLE.md](../reference/UI_STYLE.md). Build ticket:
 | Skill or combat level-up | The hero: the level-up moment and speech |
 | New recipe unlocked | Banner (gold) |
 | New hero, promotion, guild upgrade | Banner (gold) |
+| A place settled (brief 430) | Banner (gold), with the place's name; not the first camp of a new game |
 | Hero knocked out, bank full and items lost | Banner (red) |
 | Damaged save restored, a load failed | Banner (red) once the game is up; on the slot screen a plain message there |
 | Refused drop, can't equip, can't resize | Callout on the mat |
@@ -120,6 +121,23 @@ level-up.
   and Bram knocked out").
 - **Hovering a banner about a hero or a Token** gives it the attention
   outline on the mat (gold; red for a problem).
+
+**After time away (brief 430, built).** A catch-up's quiet bus skips every
+route, so the catch-up hears the news itself and hands it over afterwards.
+"While you were away" lists **New recipes** (one row each, the hero who
+unlocked it), **First finds** (how many came in) and **Bank full: waiting on
+the mat**, each left out when empty; knock-outs stay in the fights block. When
+the summary closes they arrive merged as live play merges them: one recipe
+banner ("Aela and Bram unlocked 3 recipes: ..."), one knock-out banner, one
+Bank-full banner, milestones first so the problems drop in on top, each with
+its sound and staying until clicked; first finds as gold "New!" stubs, at most
+six (the summary lists every one). A gap too short for the summary shows them
+at once; "Load as I left it" shows none; a load forgets any still held.
+
+**A place settled (brief 430).** "New Place Settled!", "The guild settled
+*name*", with a square of the place's area banner at 1x. It drops in at the
+top centre as the guild travels there; the arrival card with the name is
+centred on the mat and drawn above the banners, so the banner never covers it.
 
 ## Later: the log (T-193, low priority)
 
