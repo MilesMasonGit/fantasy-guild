@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import {
     ramp, lighten, toward, grassColours, grassTable, grassNoise, earthNoise, grassShapeAt, buildGrassPlan, drawGrass,
-    drawsGenerated, grassCells, lookRules, shadeRatio, waterBands, poolCentres, poolRingAt,
-    GRASS_RULES, COLOUR, BIT, SHORE, KIND_MASK, SLOT_SHIFT, KIND_LIMIT, kindColour
+    drawsGenerated, grassCells, lookRules, shadeRatio, waterBands, poolCentres, poolRingAt, depthBand,
+    GRASS_RULES, COLOUR, BIT, SHORE, KIND_MASK, SLOT_SHIFT, KIND_LIMIT, kindColour, BANK_SLOTS
 } from '../systems/board/TerrainGrass.js';
 import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
 import { resolveArtPixels } from '../systems/board/TerrainLattice.js';
@@ -269,6 +269,60 @@ describe('⭐ The earth, and the grass reaching into it', () => {
         // Just inside the edge, mostly grass: fingers and islands.
         const rim = points.filter(p => p.depth > 0 && p.depth < 0.05);
         expect(rim.filter(p => p.earth).length / rim.length).toBeLessThan(0.3);
+    });
+
+    it('⭐ settles the dirt: its colour shows through the grass a pixel or two out, its middle mottled, its edge soft', () => {
+        const plan = buildGroundPlan(meadow(25, 40, 24));
+        const d = detailsOf(plan);
+        const { cols, rows, colour, shape } = d;
+        const isEarth = (i) => (shape[i] & BIT.EARTH) !== 0;
+        const earthColour = (k) => k <= COLOUR.EARTH + 4;
+        // Each grass pixel's steps (four ways) from the nearest earth, up to three.
+        const steps = new Uint8Array(cols * rows).fill(9);
+        let ring = [];
+        for (let i = 0; i < cols * rows; i++) if (isEarth(i)) { steps[i] = 0; ring.push(i); }
+        for (let s = 1; s <= 3; s++) {
+            const next = [];
+            for (const i of ring) {
+                const c = i % cols;
+                for (const j of [c > 0 ? i - 1 : -1, c < cols - 1 ? i + 1 : -1, i - cols, i + cols]) {
+                    if (j < 0 || j >= cols * rows || steps[j] !== 9) continue;
+                    steps[j] = s;
+                    next.push(j);
+                }
+            }
+            ring = next;
+        }
+        const seen = [0, 0, 0, 0];
+        const shown = [0, 0, 0, 0];
+        let middles = 0;
+        let lightOrDark = 0;
+        for (let i = 0; i < cols * rows; i++) {
+            if (isEarth(i)) {
+                if (colour[i] === COLOUR.MIDDLE) middles++;
+                if (colour[i] === COLOUR.EARTH + 1 || colour[i] === COLOUR.EARTH + 3) lightOrDark++;
+                continue;
+            }
+            const s = Math.min(3, steps[i]);
+            if (s === 0) continue;
+            seen[s]++;
+            if (earthColour(colour[i])) shown[s]++;
+        }
+        // A third of the grass a pixel out shows the earth, an eighth two out, none further.
+        expect(shown[1] / seen[1]).toBeGreaterThan(0.25);
+        expect(shown[1] / seen[1]).toBeLessThan(0.4);
+        expect(shown[2] / seen[2]).toBeGreaterThan(0.07);
+        expect(shown[2] / seen[2]).toBeLessThan(0.17);
+        expect(shown[3]).toBe(0);
+        // The flat lighter middle broken up, and mottles of the lighter and darker tones.
+        expect(middles).toBeGreaterThan(0);
+        expect(lightOrDark).toBeGreaterThan(middles);
+        // The sunken edge softened: its darkest tone only under a clod or a tuft, never along the edge.
+        let edgeDarkest = 0;
+        for (let i = cols; i < cols * rows; i++) {
+            if (isEarth(i) && !isEarth(i - cols) && colour[i] === COLOUR.EARTH && !(shape[i - cols] & BIT.CLOD)) edgeDarkest++;
+        }
+        expect(edgeDarkest).toBe(0);
     });
 
     it('follows the Earth amount slider, from none to more', () => {
@@ -751,32 +805,44 @@ describe('⭐ Shaped water: lakes, rivers and sulphur springs by their own field
         return 1 + c;
     };
 
-    it('⭐ draws a lake by its depth: foam at the waterline, shallows, water, deep water, waves only out from the shallows', () => {
+    it('⭐ draws a lake and a river in bands by their depth: foam at the waterline, then shallows to the deepest, waves only out from the shallows', () => {
+        const depths = lake.depths;
+        // Bands 2 and 3 are the same depth (the shallows with and without glints).
+        const level = (band) => (band === 2 ? 3 : band);
+        const allowed = {
+            1: [COLOUR.SEA + 3, COLOUR.SEA + 4], 2: [COLOUR.SEA + 2, COLOUR.SEA + 3], 3: [COLOUR.SEA + 2],
+            4: [COLOUR.SEA + 1], 5: [COLOUR.MID], 6: [COLOUR.SEA], 7: [COLOUR.DEEP]
+        };
+        const waveColours = [COLOUR.SEA, COLOUR.SEA + 2, COLOUR.SEA + 3, COLOUR.TROUGH];
         for (const [map, seed] of [['water_lake_river', 81], ['water_split', 82], ['water_mountain_river', 83]]) {
             const { plan, f, d } = shaped(map, seed);
             const slot = plan.grass.looks.indexOf('lake');
             expect(slot, map).toBeGreaterThanOrEqual(0);
             const bands = plan.grass.bands[slot];
             let foam = 0;
-            let deep = 0;
+            const seen = new Array(8).fill(0);
             for (let i = 0; i < d.colour.length; i++) {
                 if ((d.kinds[i] >> SLOT_SHIFT) !== slot || !(d.kinds[i] & KIND_MASK)) continue;
-                const px = f[d.planAt[i]] / 2;
-                if (plan.grass.shore[d.planAt[i]] !== bandAt(bands, px)) throw new Error(`${map}: class at ${px}`);
+                const p = d.planAt[i];
+                const px = f[p] / 2;
+                if (plan.grass.shore[p] !== bandAt(bands, px)) throw new Error(`${map}: class at ${px}`);
                 const k = d.colour[i];
-                if (px < lake.foam) {
+                const band = plan.grass.depth[p];
+                if (px < depths.from) {
+                    if (band !== 0) throw new Error(`${map}: a depth band in the foam at ${px}`);
                     if (k !== COLOUR.FOAM && k !== COLOUR.FOAM2) throw new Error(`${map}: ${k} in the foam at ${px}`);
                     foam++;
-                } else if (px < lake.shallow) {
-                    if (k !== COLOUR.SEA + 2 && k !== COLOUR.SEA + 3) throw new Error(`${map}: ${k} in the shallows at ${px}`);
-                } else if (px >= lake.deep) {
-                    // Deep water, or a wave over it (its crest lighter where it started nearer the shore).
-                    if (![COLOUR.SEA, COLOUR.SEA + 2, COLOUR.SEA + 3, COLOUR.TROUGH].includes(k)) throw new Error(`${map}: ${k} deep at ${px}`);
-                    if (k === COLOUR.SEA) deep++;
+                    continue;
                 }
+                // The band's edges wander by at most half the wobble, less near the shore.
+                const lo = level(depthBand(depths, px, 0));
+                const hi = level(depthBand(depths, px, 0.999999));
+                if (level(band) < lo || level(band) > hi) throw new Error(`${map}: band ${band} at ${px}`);
+                seen[band]++;
+                if (!allowed[band].includes(k) && !(px >= lake.shallow && waveColours.includes(k))) throw new Error(`${map}: ${k} in band ${band} at ${px}`);
             }
             expect(foam, map).toBeGreaterThan(100);
-            if (map === 'water_lake_river') expect(deep).toBeGreaterThan(500);
+            if (map === 'water_lake_river') for (let band = 1; band <= 7; band++) expect(seen[band], `band ${band}`).toBeGreaterThan(50);
             for (const wv of d.waves) {
                 if ((d.kinds[wv.y * d.cols + wv.x] >> SLOT_SHIFT) !== slot) continue;
                 expect(f[d.planAt[wv.y * d.cols + wv.x]] / 2).toBeGreaterThanOrEqual(lake.shallow);
@@ -784,21 +850,55 @@ describe('⭐ Shaped water: lakes, rivers and sulphur springs by their own field
         }
     }, 30000);
 
-    it('⭐ wets the land round a lake in a bank two and a half pixels wide, and nowhere else', () => {
+    it('gives the depth bands a deeper colour than the water\'s darkest, and a step between it and the next', () => {
+        const table = grassColours(generatedOf('lake'), { look: 'lake' });
+        const light = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        expect(light(table[COLOUR.DEEP])).toBeLessThan(light(table[COLOUR.SEA]));
+        expect(light(table[COLOUR.MID])).toBeGreaterThan(light(table[COLOUR.SEA]));
+        expect(light(table[COLOUR.MID])).toBeLessThan(light(table[COLOUR.SEA + 1]));
+        // The sea has no bands, and its table stops at the trough.
+        expect(grassColours(generatedOf('sea'), { look: 'sea' })).toHaveLength(COLOUR.TROUGH + 1);
+    });
+
+    it('⭐ wets the land round a lake and a river in a thin bank, ragged out wider and barred with sand in the bends by the bank\'s width, and nowhere else', () => {
         const { plan, f, d } = shaped('water_lake_river', 84);
+        const { bar } = rasterise(regionGround({ seed: 84, ground: budget([DEV_MAPS.water_lake_river], { cap: 128 }).ground,
+            terrain: layout(budget([DEV_MAPS.water_lake_river], { cap: 128 }), { seed: 84, mat: MAT, crowding: { hitboxPct: 80, overlapPct: 40 }, artRadius: () => 64 }).terrain }, MAT).water,
+        { x0: 1, y0: 1, step: 2, nx: plan.width, ny: plan.height }, { bends: true });
         const water = plan.grass.looks.map(id => Boolean(lookRules(id).water));
+        const { width, at } = lake.bank;
+        const thin = at[at.length - 1][0];
+        // The widest a bar of sand reaches, by `WIDE_BANK` in TerrainGrass: 5.4 times the extra width.
+        const reach = width + (width - thin) * 5.4;
+        const BAR = [COLOUR.BANK + 2, COLOUR.BANK + 3, COLOUR.BANK + 4];
         let bank = 0;
+        let ragged = 0;
+        let sand = 0;
         const wrong = [];
         for (let i = 0; i < d.colour.length; i++) {
             const k = d.colour[i];
             if (!d.kinds[i] || water[d.kinds[i] >> SLOT_SHIFT]) continue;
             const out = -f[d.planAt[i]] / 2;
-            const want = out >= 0 && out <= 1 ? COLOUR.BANK : out > 1 && out <= 2.5 ? COLOUR.BANK + 1 : null;
-            if (want !== null) bank++;
-            if (want !== null ? k !== want : k >= COLOUR.BANK && k < COLOUR.BANK + 4) wrong.push(`${i}: ${k} at ${out} px`);
+            const banked = k >= COLOUR.BANK && k < COLOUR.BANK + 5;
+            if (BAR.includes(k)) {
+                sand++;
+                // Sand only on the inside of a river's bend, past the dark waterline.
+                if (!(bar[d.planAt[i]] > 0) || out <= at[0][0]) wrong.push(`${i}: sand at ${out} px, bend ${bar[d.planAt[i]]}`);
+            } else if (out >= 0 && out <= at[0][0]) {
+                bank++;
+                if (k !== COLOUR.BANK) wrong.push(`${i}: ${k} at ${out} px`);
+            } else if (out > at[0][0] && out <= thin) {
+                bank++;
+                if (k !== COLOUR.BANK + 1) wrong.push(`${i}: ${k} at ${out} px`);
+            } else if (out > thin && out <= reach) {
+                if (banked) ragged++;
+            } else if (banked) wrong.push(`${i}: ${k} at ${out} px, past the bank`);
         }
         expect(wrong.slice(0, 5)).toEqual([]);
         expect(bank).toBeGreaterThan(500);
+        expect(width, 'the wide bank of pick C').toBeGreaterThan(thin);
+        expect(ragged, 'the bank ragged out past its thin steps').toBeGreaterThan(200);
+        expect(sand, 'sand in the bends').toBeGreaterThan(100);
     });
 
     it('⭐ rings a sulphur spring from its pale rim to its milky middle, crusts the land round it, and keeps it real water', () => {
@@ -815,7 +915,7 @@ describe('⭐ Shaped water: lakes, rivers and sulphur springs by their own field
                 expect(d.colour[i]).toBe(COLOUR.SEA + ring);
                 seen.add(ring);
             } else if (d.kinds[i] && px <= 0 && -px <= 7) {
-                expect(d.colour[i]).toBe(-px <= 4 ? COLOUR.BANK + 2 : COLOUR.BANK + 3);
+                expect(d.colour[i]).toBe(COLOUR.BANK + BANK_SLOTS.sulphur + (-px <= 4 ? 0 : 1));
                 crust++;
             }
         }

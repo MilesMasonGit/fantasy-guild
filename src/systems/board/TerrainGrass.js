@@ -81,9 +81,9 @@ export const GRASS_RULES = Object.freeze({
  * colour in shadow (a patch's soft shadow). `COUNT` is the table's length.
  */
 export const COLOUR = Object.freeze({
-    EARTH: 0, MIDDLE: 5, WET: 6, LINE: 7, RING: 8, BANK: 13, PEBBLE: 17, PEBBLE_DARK: 18, KIND: 19, STRIDE: 11,
+    EARTH: 0, MIDDLE: 5, WET: 6, LINE: 7, RING: 8, BANK: 13, PEBBLE: 20, PEBBLE_DARK: 21, KIND: 22, STRIDE: 11,
     GRASS: 0, SOFT: 5, STROKES: 6,
-    SEA: 0, FOAM: 5, FOAM2: 6, TROUGH: 7,
+    SEA: 0, FOAM: 5, FOAM2: 6, TROUGH: 7, DEEP: 8, MID: 9,
     DIM: 128, COUNT: 256, NONE: 255
 });
 
@@ -105,25 +105,39 @@ export const WATER_BIT = Object.freeze({ FOAM_LIGHT: 1, SHALLOW_LIGHT: 2, WAVES:
 
 /**
  * A land pixel's shore byte: where a look with a `shore` meets the sea, its wet sand and waterline;
- * by shaped water, `BANK + k` its bank's colour `BANK + k` (four of them).
+ * by shaped water, `BANK + k` its bank's colour `BANK + k` (seven of them).
  */
-export const SHORE = Object.freeze({ BANK: 249, LINE: 253, WET: 254 });
+export const SHORE = Object.freeze({ BANK: 246, LINE: 253, WET: 254 });
 
 /** How many bank colours a land look's table holds. */
-const BANK_COUNT = 4;
+const BANK_COUNT = 7;
 
 /**
  * Where each shaped water look's bank colours start in a land look's table, after `COLOUR.BANK`:
- * the lake's wet bank, then the sulphur springs' crust.
+ * the lake's wet bank (its two steps, then its sand bars' light, middle and dark), then the sulphur
+ * springs' crust.
  */
-export const BANK_SLOTS = Object.freeze({ lake: 0, sulphur: 2 });
+export const BANK_SLOTS = Object.freeze({ lake: 0, sulphur: 5 });
+
+/** Of the lake's bank colours, its sand bars' light, middle and dark (after its two steps). */
+const BAR_COLOUR = Object.freeze({ LIGHT: 2, MID: 3, DARK: 4 });
+
+/**
+ * A wide bank (a lake look's `bank.width` past its last step; brief 370, the owner's pick C): the
+ * bank ragged out to that width where a noise of `wideCell` pixels is high, and on the inside of a
+ * river's bends a bar of sand `bar[0] + bar[1] × noise` times the extra width out, broken by its
+ * darker specks (`speck`) and lighter patches (above `light`); on the outside of a bend the wet
+ * bank reaches `outer` times the extra width further. Prototype pixels, after `terrain_round`'s
+ * `bankCode`. A width no wider than the last step draws the thin bank alone (pick A).
+ */
+const WIDE_BANK = Object.freeze({ cell: 9, wideCell: 22, bar: Object.freeze([2.1, 3.3]), outer: 0.35, speck: 0.16, light: 0.52, mud: 0.45 });
 
 /** The share of the prototype's tint the shade pattern's slider stands for: the meadow's. */
 const SLIDER_TINT = 0.06;
 
 /** The colours that keep out of the shade pattern: drawn flat in the prototype. */
 const UNSHADED = Object.freeze([COLOUR.WET, COLOUR.LINE, COLOUR.RING, COLOUR.RING + 1, COLOUR.RING + 2, COLOUR.RING + 3, COLOUR.RING + 4,
-    COLOUR.BANK, COLOUR.BANK + 1, COLOUR.BANK + 2, COLOUR.BANK + 3]);
+    ...Array.from({ length: BANK_COUNT }, (_, k) => COLOUR.BANK + k)]);
 
 /** Hash channels for the noise layers. */
 const CH = Object.freeze({
@@ -131,7 +145,9 @@ const CH = Object.freeze({
     ZONE: 0x6a06, JAG: 0x6a07, PATCH: 0x6a08, CLOD: 0x6a09, MOUND: 0x6a10, MOUND_FINE: 0x6a20,
     GAP: 0x6a30, OVERLAY: 0x6a31, OVERLAY_FINE: 0x6a32, OVERLAY_JAG: 0x6a33,
     SHORE: 0x6a40, FOAM: 0x6a41, WAVE_PATCH: 0x6a42,
-    POOL: 0x6a50, POOL_FINE: 0x6a51
+    POOL: 0x6a50, POOL_FINE: 0x6a51,
+    BANK: 0x6a60, BANK_WIDE: 0x6a61, BANK_SPECK: 0x6a62,
+    SETTLE: 0x6a70, DEPTH: 0x6a71
 });
 
 /** The patches' channel for a noise cell: the meadow's own for its cell, so its patches stay put. */
@@ -143,7 +159,7 @@ const SALT = Object.freeze({
     STROKE: 0x100, STROKE_MORE: 0x200,
     SMALL: 0x56, TUFT_SIZE: 0x5b, TUFT_BLADE: 0x300, EDGE: 0x58, SIDE: 0x59,
     FLECK: 0x60, WAVE_GAP: 0x61, WAVE: 0x62, OVER_EDGE: 0x63, OVER_HEIGHT: 0x64, OVER_DIM: 0x65,
-    POOL_PLACE: 0x66
+    POOL_PLACE: 0x66, SETTLE: 0x67, SETTLE_TONE: 0x68, SETTLE_REACH: 0x69, SETTLE_OUT: 0x6a, DEPTH: 0x70
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -501,6 +517,8 @@ export function grassColours(spec, { soft, strength, look } = {}) {
         const w = rules.water;
         const sea = ramp(...w.sea, 5, 0.02, 0.06);
         table = [...sea, lighten(sea[4], w.foamLight), lighten(sea[4], w.foam2Light), lighten(sea[0], w.trough ?? 0.85)];
+        // The depth bands' two more: the darkest a little darker, and halfway between the two darkest.
+        if (w.depths) table.push(lighten(sea[0], w.depths.deep), meanOf(sea[0], sea[1]).map(Math.round));
         middle = sea[2];
     } else {
         const s = soft ?? clamp01(rules.soft + offset('grassBodySoft'));
@@ -534,6 +552,12 @@ function bankColours() {
         if (!bank) continue;
         const colours = bank.colours ? bank.colours.map(c => [...c]) : ramp(...bank.ramp, 5, 0.02, 0.06);
         bank.at.forEach(([, k], step) => { out[at + step] = colours[k]; });
+        if (bank.bar) {
+            const bar = ramp(...bank.bar, 5, 0.02, 0.05);
+            out[at + BAR_COLOUR.LIGHT] = bar[2];
+            out[at + BAR_COLOUR.MID] = bar[1];
+            out[at + BAR_COLOUR.DARK] = bar[0];
+        }
     }
     return out.map(c => c || [0, 0, 0]);
 }
@@ -917,14 +941,15 @@ function waterRow(ctx, look, py) {
  */
 function fieldRow(ctx, look, py) {
     const { width, at, slotOf, bits, kinds, shore, waterField } = ctx;
-    const { slot, bands, mask } = look;
+    const { slot, bands, mask, depths } = look;
     const R = GRASS_RULES;
-    const { shoreN, foamN } = ctx;
+    const { shoreN, foamN, depth } = ctx;
     const { patchN } = look;
     const code = (slot << SLOT_SHIFT) | 1;
     const sT = shoreN.top, sB = shoreN.bottom, sY = shoreN.fy;
     const fT = foamN.top, fB = foamN.bottom, fY = foamN.fy;
     const pT = patchN.top, pB = patchN.bottom, pY = patchN.fy;
+    const dT = look.depthN?.top, dB = look.depthN?.bottom, dY = look.depthN?.fy;
     const nb = bands.length;
     for (let px = 0, i = py * width; px < width; px++, i++) {
         if (slotOf[at[i]] !== slot) continue;
@@ -941,7 +966,25 @@ function fieldRow(ctx, look, py) {
         let c = 0;
         while (c < nb && f >= bands[c]) c++;
         shore[i] = 1 + c;
+        if (depths && f >= depths.from) depth[i] = depthBand(depths, f, dT[px] + (dB[px] - dT[px]) * dY);
     }
+}
+
+/**
+ * Which of the depth bands a lake or river pixel `f` prototype pixels in from its waterline lies in,
+ * the bands' edges bent by `wob` (a noise in [0, 1)), less so near the shore: 1 the shallows' light
+ * tone, 2 the shallows with glints, 3 the shallows, 4 the water, 5 a step deeper, 6 deep, 7 the
+ * deepest.
+ */
+export function depthBand(depths, f, wob) {
+    const e = f + (wob - 0.5) * depths.wobble * Math.min(1, f / depths.taper);
+    const at = depths.at;
+    if (e < at[0]) return 1;
+    if (e < at[1]) return wob > depths.glint ? 2 : 3;
+    if (e < at[2]) return 4;
+    if (e < at[3]) return 5;
+    if (e < at[4]) return 6;
+    return 7;
 }
 
 /**
@@ -949,17 +992,47 @@ function fieldRow(ctx, look, py) {
  * water's bank it lies in (the prototype's pixels out from the waterline).
  */
 function bankRow(ctx, py) {
-    const { width, at, slotOf, isLand, shore, waterField, waterStyle, banks, bankReach } = ctx;
+    const { width, at, slotOf, isLand, shore, waterField, waterStyle, banks, bankReach, wideBank } = ctx;
     for (let px = 0, i = py * width; px < width; px++, i++) {
         const f = waterField[i];
         if (f > 0 || f <= -bankReach || !isLand[slotOf[at[i]] + 1]) continue;
         const steps = banks[waterStyle[i]];
         if (!steps) continue;
         const out = -f / PLAN_PIXEL_U;
+        if (wideBank && waterStyle[i] === STYLE.LAKE) {
+            const code = wideBankAt(wideBank, i, px, py, out);
+            if (code) {
+                shore[i] = code;
+                continue;
+            }
+        }
         for (let k = 0; k < steps.length; k++) {
             if (out <= steps[k][0]) { shore[i] = SHORE.BANK + steps[k][1]; break; }
         }
     }
+}
+
+/**
+ * A land pixel's colour code by a wide bank ({@link WIDE_BANK}), `out` pixels from the waterline:
+ * a sand bar on a bend's inside, the ragged bank past the thin one; else 0, and the thin bank's
+ * steps say.
+ */
+function wideBankAt(bank, i, px, py, out) {
+    const { thin, extra, bar: bars, seed, at } = bank;
+    const W = WIDE_BANK;
+    const bar = bars ? bars[i] : 0;
+    // Past the widest a ragged bank reaches and off any bar: the thin bank's steps say (nothing).
+    if (!(bar > 0) && (out <= thin || out > thin + extra * (1 + W.outer))) return 0;
+    const wide = grassNoise(px, py, seed, W.wideCell, CH.BANK_WIDE);
+    if (bar > 0 && out < bar * extra * (W.bar[0] + W.bar[1] * wide)) {
+        if (out <= at) return SHORE.BANK + BANK_SLOTS.lake;
+        if (hash(px, py, saltOf(seed, CH.BANK_SPECK)) < cut32(W.speck)) return SHORE.BANK + BANK_SLOTS.lake + BAR_COLOUR.DARK;
+        return SHORE.BANK + BANK_SLOTS.lake + (grassNoise(px, py, seed, W.cell, CH.BANK) > W.light ? BAR_COLOUR.LIGHT : BAR_COLOUR.MID);
+    }
+    if (out <= thin) return 0;
+    const wet = thin + extra * 2 * Math.max(0, wide - 0.5) + (bar < 0 ? -bar * extra * W.outer : 0);
+    if (out > wet) return 0;
+    return SHORE.BANK + BANK_SLOTS.lake + (grassNoise(px, py, seed, W.cell, CH.BANK) > W.mud ? 1 : 0);
 }
 
 /** One plan row of a land look with a `shore`: its wet sand and waterline where it meets water. */
@@ -1151,7 +1224,9 @@ export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
         if (r.water) {
             water.push({
                 slot, rules: r, field: Boolean(r.water.field), bands: waterBands(r.water), mask: r.water.waveMask ?? 0,
-                patchN: walker(r.water.wavePatchCell ?? GRASS_RULES.patchCell, CH.WAVE_PATCH)
+                patchN: walker(r.water.wavePatchCell ?? GRASS_RULES.patchCell, CH.WAVE_PATCH),
+                depths: r.water.field && r.water.depths ? r.water.depths : null,
+                depthN: r.water.field && r.water.depths ? walker(r.water.depths.cell, CH.DEPTH) : null
             });
             return;
         }
@@ -1184,8 +1259,9 @@ export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
         ...shared,
         width, at, slotOf,
         bits: new Uint8Array(n), kinds: new Uint8Array(n), rowKind: new Int8Array(width),
-        shore: null, ring: null, waterDist: null, shoreDist: null, shoreN: null, foamN: null,
-        waterField: pixels.water?.f || null, waterStyle: pixels.water?.style || null, banks: null, bankReach: 0, isLand: null
+        shore: null, ring: null, depth: null, waterDist: null, shoreDist: null, shoreN: null, foamN: null,
+        waterField: pixels.water?.f || null, waterStyle: pixels.water?.style || null, banks: null, bankReach: 0, isLand: null,
+        wideBank: null
     };
 
     // The shore: each side's distance from the water, measured on the drawn coastline. Shaped
@@ -1218,6 +1294,13 @@ export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
             if (!bank || !(lookId in BANK_SLOTS)) continue;
             banks[style] = bank.at.map(([out], k) => [out, BANK_SLOTS[lookId] + k]);
             reach = Math.max(reach, ...bank.at.map(([out]) => out));
+            // The lake's (and so a river's) bank wider than its steps, by its `width`.
+            const thin = bank.at[bank.at.length - 1][0];
+            if (style === STYLE.LAKE && bank.width > thin) {
+                const extra = bank.width - thin;
+                ctx.wideBank = { thin, extra, at: bank.at[0][0], seed, bar: pixels.water?.bar || null };
+                reach = Math.max(reach, bank.width + (pixels.water?.bar ? extra * (WIDE_BANK.bar[0] + WIDE_BANK.bar[1]) : 0));
+            }
         }
         if (banks.some(Boolean)) {
             ctx.banks = banks;
@@ -1227,6 +1310,7 @@ export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
             if (!ctx.shore) ctx.shore = new Uint8Array(n);
         }
     }
+    if (water.some(w => w.depths)) ctx.depth = new Uint8Array(n);
     if (pooled) {
         ctx.ring = new Uint8Array(n);
         ctx.rowBest = new Float64Array(width);
@@ -1253,6 +1337,7 @@ export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
         }
         for (const look of water) {
             look.patchN.walk(py);
+            if (look.depthN) look.depthN.walk(py);
             if (look.field) fieldRow(ctx, look, py);
             else waterRow(ctx, look, py);
         }
@@ -1260,7 +1345,10 @@ export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
     }
     const thresholds = slots.map((id, slot) => land.find(l => l.slot === slot)?.levels || null);
     const bands = slots.map((id, slot) => water.find(w => w.slot === slot)?.bands || null);
-    return { looks: slots, slotOf, bits: ctx.bits, kinds: ctx.kinds, thresholds, shore: ctx.shore, ring: ctx.ring, bands, banked: Boolean(ctx.banks) };
+    return {
+        width, looks: slots, slotOf, bits: ctx.bits, kinds: ctx.kinds, thresholds, shore: ctx.shore, ring: ctx.ring, depth: ctx.depth,
+        bands, banked: Boolean(ctx.banks)
+    };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1277,7 +1365,10 @@ const E0 = COLOUR.EARTH;
 const E1 = E0 + 1;
 const E2 = E0 + 2;
 const E3 = E0 + 3;
-const E4 = E0 + 4;
+
+/** The earth's sunken edge, softened by the settled dirt: its shadowed top and left, its lit bottom and right. */
+const RIM_SHADOW = E1;
+const RIM_LIT = E3;
 
 /** The plan's shapes read at each ground pixel of row `r`; the earth's and the water's pixels are listed. */
 function resampleRow(ctx, r) {
@@ -1332,8 +1423,8 @@ function bodyRow(ctx, r) {
             if (up && (u & ON_EARTH) === ON_EARTH && (u & CLOD) && !(s & CLOD)) col = E0;
             if (s & MIDDLE) col = LIGHT_MIDDLE;
             if (s & CLOD) col = E3;
-            if ((u & ON_EARTH) === ON || (shape[i + up2] & ON_EARTH) === ON || (shape[i + left] & ON_EARTH) === ON) col = E0;
-            else if ((shape[i + down] & ON_EARTH) === ON || (shape[i + right] & ON_EARTH) === ON) col = E4;
+            if ((u & ON_EARTH) === ON || (shape[i + up2] & ON_EARTH) === ON || (shape[i + left] & ON_EARTH) === ON) col = RIM_SHADOW;
+            else if ((shape[i + down] & ON_EARTH) === ON || (shape[i + right] & ON_EARTH) === ON) col = RIM_LIT;
             colour[i] = col;
             continue;
         }
@@ -1497,9 +1588,99 @@ function drawEarthDetails(ctx, seed) {
                     colour[i + cols] = base[kinds[i + cols]] + 2;
                     pieceAt[i + cols] = 0;
                 }
-            } else colour[i] = E0;
+            } else colour[i] = RIM_SHADOW;
         } else if (((c > 0 && isGrass(i - 1)) || (c < cols - 1 && isGrass(i + 1))) && hash(c, r, sSide) < sideCut) {
             colour[i] = g + 2;
+            pieceAt[i] = 0;
+        }
+    }
+}
+
+/**
+ * The settled dirt: the earth's flat middle broken into mottles of its lighter
+ * and darker tones, its colour showing through the grass one and two pixels out (`SETTLE.out`, the chance of each),
+ * thinner further out, and grass pixels reaching into its edge. Hard pixels, no washes.
+ *
+ * ⚠️ The mottles' noise is read on the plan's pixels, so it stays put on a resize; the rest are
+ * one-pixel choices, hashed on the ground pixel like every other detail here.
+ */
+export const SETTLE = Object.freeze({
+    cell: 7, light: 0.6, dark: 0.42, mottle: 0.5, fleck: 0.08,
+    out: Object.freeze([0.34, 0.12]), reach: 0.26
+});
+
+function settleEarth(ctx, seed) {
+    const { shape, kinds, colour, pieceAt, earth, cols, rows, count, base, planCol, planRow, near, nearMark } = ctx;
+    const isGrass = (j) => (shape[j] & ON_EARTH) === ON;
+    const sMottle = saltOf(seed, SALT.SETTLE);
+    const sOut = saltOf(seed, SALT.SETTLE_OUT);
+    const sTone = saltOf(seed, SALT.SETTLE_TONE);
+    const sReach = saltOf(seed, SALT.SETTLE_REACH);
+    const mottleCut = cut32(SETTLE.mottle);
+    const fleckCut = cut32(SETTLE.fleck);
+    const reachCut = cut32(SETTLE.reach);
+    const planW = ctx.planWidth;
+
+    // Inside: the flat middle broken up.
+    for (let e = 0; e < count; e++) {
+        const i = earth[e];
+        const col = colour[i];
+        if (col !== COLOUR.MIDDLE && col !== E1 && col !== E2) continue;
+        const r = (i / cols) | 0;
+        const c = i - r * cols;
+        const h = hash(c, r, sMottle);
+        const p = planRow[r] + planCol[c];
+        const px = p % planW;
+        const big = grassNoise(px, (p - px) / planW, seed, SETTLE.cell, CH.SETTLE);
+        if (big > SETTLE.light && h < mottleCut) colour[i] = E3;
+        else if (big < SETTLE.dark && h < mottleCut) colour[i] = E1;
+        else if (h < fleckCut) colour[i] = E2;
+    }
+
+    // Out from the edge: the earth's colour showing through thinning grass, ring by ring.
+    nearMark.fill(0, 0, cols * rows);
+    let from = 0;
+    let to = 0;
+    for (let d = 0; d < SETTLE.out.length; d++) {
+        const start = to;
+        const visit = (j) => {
+            if (nearMark[j] || !isGrass(j)) return;
+            nearMark[j] = 1;
+            near[to++] = j;
+        };
+        const ring = d === 0 ? count : start - from;
+        for (let k = 0; k < ring; k++) {
+            const i = d === 0 ? earth[k] : near[from + k];
+            const r = (i / cols) | 0;
+            const c = i - r * cols;
+            if (c > 0) visit(i - 1);
+            if (c < cols - 1) visit(i + 1);
+            if (r > 0) visit(i - cols);
+            if (r < rows - 1) visit(i + cols);
+        }
+        const cut = cut32(SETTLE.out[d]);
+        const salt = sOut + d;
+        for (let k = start; k < to; k++) {
+            const i = near[k];
+            const r = (i / cols) | 0;
+            const c = i - r * cols;
+            if (hash(c, r, salt) < cut) {
+                colour[i] = hash(c, r, sTone) & 1 ? E2 : E1;
+                pieceAt[i] = 0;
+            }
+        }
+        from = start;
+    }
+
+    // In from the edge: grass reaching into the earth.
+    for (let e = 0; e < count; e++) {
+        const i = earth[e];
+        const r = (i / cols) | 0;
+        const c = i - r * cols;
+        const edge = (c > 0 && isGrass(i - 1)) || (c < cols - 1 && isGrass(i + 1))
+            || (r > 0 && isGrass(i - cols)) || (r < rows - 1 && isGrass(i + cols));
+        if (edge && hash(c, r, sReach) < reachCut) {
+            colour[i] = base[kinds[i]] + 2;
             pieceAt[i] = 0;
         }
     }
@@ -1600,7 +1781,7 @@ function waterClasses(water, bands) {
  * out, none within `waveGap` pixels of another's crest, far out with a second, shorter crest above.
  */
 function drawWater(ctx, grass, seed) {
-    const { colour, kinds, cols, rows, water, wet, planCol, planRow, planBits, planShore, occ, isWater, size, perSea } = ctx;
+    const { colour, kinds, cols, rows, water, wet, planCol, planRow, planBits, planShore, planDepth, occ, isWater, size, perSea } = ctx;
     const classesBySlot = grass.looks.map((id, slot) => (grass.bands[slot]
         ? waterClasses(lookRules(id).water, grass.bands[slot]).map(cls => (cls?.lengths ? { ...cls, lengths: cls.lengths.map(size) } : cls))
         : null));
@@ -1615,6 +1796,12 @@ function drawWater(ctx, grass, seed) {
     };
     const sFleck = saltOf(seed, SALT.FLECK);
     const fleckCuts = specBySlot.map(w => (w ? cut32(w.flecks) : 0));
+    // The depth bands' colours, and their dithers' shares, by slot (null for a water without them).
+    const depthBySlot = grass.looks.map((id) => {
+        const d = lookRules(id).water?.depths;
+        return d ? { light: cut32(d.light), glint: cut32(d.glintShare) } : null;
+    });
+    const sDepth = saltOf(seed, SALT.DEPTH);
     for (let e = 0; e < wet; e++) {
         const i = water[e];
         const r = (i / cols) | 0;
@@ -1626,6 +1813,8 @@ function drawWater(ctx, grass, seed) {
         if (cls.mix === 1) col = planBits[p] & WATER_BIT.FOAM_LIGHT ? COLOUR.FOAM : COLOUR.FOAM2;
         else if (cls.mix === 2) col = planBits[p] & WATER_BIT.SHALLOW_LIGHT ? COLOUR.SEA + 3 : COLOUR.SEA + 2;
         if (cls.fleck && hash(c, r, sFleck) < fleckCuts[slot]) col = COLOUR.FOAM2;
+        const band = planDepth ? planDepth[p] : 0;
+        if (band && depthBySlot[slot]) col = depthColour(band, hash(c, r, sDepth), depthBySlot[slot]);
         colour[i] = col;
     }
 
@@ -1676,6 +1865,19 @@ function drawWater(ctx, grass, seed) {
         }
     }
     return waves;
+}
+
+/** A depth band's colour ({@link depthBand}), dithered by the pixel's hash `h`. */
+function depthColour(band, h, cuts) {
+    switch (band) {
+    case 1: return h < cuts.light ? COLOUR.SEA + 4 : COLOUR.SEA + 3;
+    case 2: return h < cuts.glint ? COLOUR.SEA + 3 : COLOUR.SEA + 2;
+    case 3: return COLOUR.SEA + 2;
+    case 4: return COLOUR.SEA + 1;
+    case 5: return COLOUR.MID;
+    case 6: return COLOUR.SEA;
+    default: return COLOUR.DEEP;
+    }
 }
 
 /** The banks round shaped water over everything else on the land. */
@@ -1803,7 +2005,8 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
             total,
             shape: new Uint8Array(total), kinds: new Uint8Array(total),
             colour: new Uint8Array(total), earth: new Int32Array(total), water: null, occ: null,
-            pieceAt: new Uint8Array(total), under: new Uint8Array(total), body: new Uint8Array(total)
+            pieceAt: new Uint8Array(total), under: new Uint8Array(total), body: new Uint8Array(total),
+            near: new Int32Array(total), nearMark: new Uint8Array(total)
         };
         if (scratch) Object.assign(scratch, buffers);
     }
@@ -1841,7 +2044,8 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
         shape: buffers.shape, kinds: buffers.kinds, colour: buffers.colour, earth: buffers.earth,
         water: buffers.water, occ: buffers.occ, pieceAt: buffers.pieceAt, isWater, base, high, lightCuts, sways,
         cols, rows, planCol, planRow, planKinds: grass.kinds, planBits: grass.bits,
-        planShore: grass.shore, planRing: grass.ring, count: 0, wet: 0,
+        planShore: grass.shore, planRing: grass.ring, planDepth: grass.depth || null, planWidth: grass.width, count: 0, wet: 0,
+        near: buffers.near, nearMark: buffers.nearMark,
         size: detail.size, perSea: detail.count, sunken: detail.sunken, small: detail.small
     };
     for (let r = 0; r < rows; r++) resampleRow(ctx, r);
@@ -1886,6 +2090,7 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
     }
 
     drawEarthDetails(ctx, seed);
+    settleEarth(ctx, seed);
     grass.looks.forEach((id, slot) => {
         const ov = lookRules(id).overlay;
         if (ov) drawOverlayEdges(ctx, seed, slot, ov);

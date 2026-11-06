@@ -121,6 +121,10 @@ const FLOWERS = { blades: 0.06, cluster: 4, heights: [1, 2], tips: 0.25, shadow:
  * prototype's `water_field` drew it, and the land round it takes a `bank` (`at`: up to how many
  * pixels out from the waterline each step reaches, and its colour); a `rings` water is coloured
  * by its depth alone, ring `k` from `ringAt[k - 1]` pixels in.
+ * `depths` draws a shaped water in bands by its field (`TerrainGrass.depthBand`): from `from`
+ * pixels in, a band ending at each of `at`, their edges bent by up to `wobble` on a noise of `cell`
+ * (less within `taper` of the shore); `light` and `glintShare` the shallows' dithers (glints where the
+ * noise is over `glint`), `deep` how much darker the deepest band is than the water's darkest tone.
  *
  * ⚠️ First values, retuned at the eye-check with the Playmat Tuner. The shoreline widths (the
  * tuning sliders) carry over from the 8-pixel ground set, where an art pixel was 4 units; the
@@ -230,7 +234,11 @@ export const LOOKS = deepFreeze({
                 field: true, sea: [0.50, 0.44, 0.52], foam: 1.2, solidFoam: false, foamLight: 1.30, foam2Light: 1.1,
                 trough: 1, shallow: 5, deep: 14, flecks: 0, waves: 0.004, waveMask: 0, wavePatchCell: 30, waveGap: 3,
                 farThick: null, waveLengths: [[5, [2]], [9, [3, 4, 5]], [18, [5, 6, 7, 8]]],
-                bank: { ramp: [0.08, 0.34, 0.30], at: [[1, 0], [2.5, 1]] }
+                // `width`: how far the bank reaches at its widest, in pixels: no more than its last
+                // step (2.5) draws the thin settled bank of the owner's pick A, more the ragged bank
+                // with sand bars in the rivers' bends of pick C (7, brief 370). `bar`: the sand.
+                bank: { ramp: [0.08, 0.34, 0.30], at: [[1, 0], [2.5, 1]], width: 7, bar: [0.105, 0.50, 0.24] },
+                depths: { from: 1.2, at: [3, 6, 10, 16, 26], deep: 0.93, cell: 12, wobble: 11, taper: 6, light: 0.2, glint: 0.62, glintShare: 0.4 }
             }
         }
     },

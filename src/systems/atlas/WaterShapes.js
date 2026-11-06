@@ -22,7 +22,11 @@
  * hashes, every random number from the layout's seeded generator, coordinates stored whole.
  */
 
-/** The stored form's version: a map whose water says another is drawn from its cells alone. */
+/**
+ * The stored form's version: a map whose water says another is drawn from its cells alone. A river
+ * made since brief 370 also stores a half-width at each point (`h`); one stored before has none and
+ * keeps its old banks, so a saved Region's water never changes.
+ */
 export const WATER_VERSION = 1;
 
 /** How a pixel of water is drawn, per pixel of the plan. */
@@ -61,8 +65,62 @@ export const BANK_PAD = 16;
 /** A lake's shore: warped twice (`big_lake`), its lobes squashed a little, holes for islands and bays. */
 const LAKE = Object.freeze({ warpCell: 140, warp: 140, noiseCell: 60, noise: 44, fineCell: 24, fine: 14, squash: 1.1, holeFine: 12 });
 
-/** A river's banks: its width wandering by a share of its upstream half-width, a little fine noise. */
-const RIVER = Object.freeze({ widthCell: 180, width: 0.6, fineCell: 24, fine: 6 });
+/**
+ * A river's banks: its width wandering by a share of its upstream half-width, a little fine noise.
+ * A river stored with a width at each point (`h`) has its banks ragged by `bank` units instead, never
+ * nearer its middle than {@link CHANNEL_HW}.
+ */
+const RIVER = Object.freeze({ widthCell: 180, width: 0.6, fineCell: 24, fine: 6, bank: 10 });
+
+/**
+ * A river's course (the owner's picks A and C, brief 370), laid along its line ({@link Maker#path},
+ * keeping `under` of its old wiggle): its bends one half-wave at a time, each swinging to the other
+ * side, a half-wave `wave` of the river's widths long (longer where it is wider, as real rivers'
+ * are; between 0.75 and 1.25 of that, and within `half`), each bend's swing the Region's `wind` of
+ * its half-wave (between `swing` of that), turning evenly ({@link bendOffset}) and never tighter than
+ * `radius` half-widths: a half-wave too short for its swing is drawn out. The bends grow in over
+ * `ends` units from each end, the ends pinned within `pin`; a bend swinging toward the Hall is held
+ * short of its clearing; a small `jitter` on top. Wider in the bends' pools than where it crosses
+ * from one bend to the next (`narrow` at a crossing, `narrow + pool` at a bend's apex), wandering by
+ * `wander`, and wider still along the Region's wider stretches. Worked out every `spacing` units
+ * along its line, then eased by `smooth` passes. A course that folds back on itself is bent again
+ * `tries` times, its bends `gentler` each time, and at last runs unbent.
+ */
+const MEANDER = Object.freeze({
+    spacing: 8, wave: 5, half: Object.freeze([90, 460]), swing: Object.freeze([0.55, 1.15]),
+    ends: 160, pin: 48, jitterCell: 70, jitter: 10,
+    narrow: 0.72, pool: 0.56, wanderCell: 170, wander: 0.5,
+    smooth: 6, tries: 6, gentler: 0.75,
+    /** How much of its old wiggle a river's line keeps under its bends. */
+    under: 0.5,
+    /** No bend turns tighter than this many of the river's (downstream) half-widths. */
+    radius: 2.5,
+    /**
+     * A wider stretch: `wideLen` units long, rising and falling over `wideRamp` each end, one to a
+     * river, or two on a river longer than `wideTwo` half the time.
+     */
+    wideLen: Object.freeze([240, 480]), wideRamp: 120, wideTwo: 1200,
+    /** A split river's main arm bends this much of its usual where it parts round the island. */
+    calm: 0.3
+});
+
+/**
+ * How one Region's rivers differ from another's, each drawn from the Region's seed between its two
+ * numbers (the owner's additions to picks A and C, 2026-11-03), so no two maps' rivers run alike:
+ *
+ * - `wind`: how far each bend swings out, as a share of its half-wave. The comparison's pick swung
+ *   0.27 on a line wiggling twice as much; 0.35 here bends about as much, more winds more.
+ * - `wide`: how much wider a river runs along its wider stretches: 0.5 is half as wide again at the
+ *   widest, 0 none.
+ * - `reach`: how far past the Hall's clearing the straight line between a river's ends must pass, in
+ *   mat units: 140 keeps it to the mat's sides (every river before brief 370); less lets it run
+ *   nearer the middle, below 0 through the clearing's edge, bent round the Hall.
+ */
+export const RIVER_VARIETY = Object.freeze({
+    wind: Object.freeze([0.35, 0.6]),
+    wide: Object.freeze([0, 0.6]),
+    reach: Object.freeze([-120, 140])
+});
 
 /**
  * A sulphur spring (`pools`): a squashed ring by distance from its middle with noise, water inside
@@ -94,7 +152,7 @@ const FOLD_WIDTHS = 3;
 /** Noise channels, each layer of a record its own. */
 const CH = Object.freeze({
     WARP_X: 1, WARP_Y: 2, LAKE: 3, LAKE_FINE: 4, WIDTH: 5, RIVER_FINE: 6, POOL: 7, POOL_FINE: 8,
-    SEA: 9, SEA_FINE: 10, CLEAR: 11, WIGGLE: 12
+    SEA: 9, SEA_FINE: 10, CLEAR: 11, WIGGLE: 12, VARIETY: 13, MEANDER: 14
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -536,6 +594,125 @@ function riverInto(out, lattice, shape, L, scratch) {
     }
 }
 
+/**
+ * A river stored with a width at each point: each stretch's width eased from one point's to the
+ * next, the field the most any stretch gives, ragged by the bank's noise but never narrower than
+ * {@link CHANNEL_HW} either side of its middle. With `bends` (the drawing's lattice), `out.bar` says
+ * of each land point by the river how far round a bend it lies, above 0 on the bend's inside (where a
+ * real river leaves a bar of sand), below on its outside.
+ */
+function courseInto(out, lattice, shape, L, scratch, bends) {
+    const pts = shape.points;
+    const hs = shape.h;
+    // How far past a stretch's banks the field is worked out: further for the drawing's bars of sand.
+    const pad = RIVER.bank / 2 + RIVER.fine / 2 + (bends ? BAR.pad : BANK_PAD);
+    const { step, nx } = lattice;
+    const { near, best, seen, touched } = scratch;
+    const seg = bends ? (scratch.seg || (scratch.seg = new Int32Array(near.length))) : null;
+    const stamp = ++scratch.stamp;
+    touched.length = 0;
+    for (let k = 0; k + 1 < pts.length; k++) {
+        const [ax, ay] = pts[k];
+        const [bx, by] = pts[k + 1];
+        const wa = hs[k];
+        const dw = hs[k + 1] - wa;
+        const top = dw > 0 ? wa + dw : wa;
+        const reach = top + pad;
+        const reach2 = reach * reach;
+        const dx = bx - ax;
+        const dy = by - ay;
+        const L2 = dx * dx + dy * dy;
+        const { i0, i1, j0, j1 } = span(lattice, Math.min(ax, bx) - reach, Math.min(ay, by) - reach, Math.max(ax, bx) + reach, Math.max(ay, by) + reach);
+        for (let j = j0; j <= j1; j++) {
+            const y = lattice.y0 + j * step;
+            for (let i = i0; i <= i1; i++) {
+                const x = lattice.x0 + i * step;
+                let t = L2 > 0 ? ((x - ax) * dx + (y - ay) * dy) / L2 : 0;
+                t = t < 0 ? 0 : t > 1 ? 1 : t;
+                const ex = x - (ax + dx * t);
+                const ey = y - (ay + dy * t);
+                const d2 = ex * ex + ey * ey;
+                if (d2 >= reach2) continue;
+                const p = j * nx + i;
+                if (seen[p] !== stamp) {
+                    seen[p] = stamp;
+                    near[p] = d2;
+                    best[p] = wa + dw * t - Math.sqrt(d2);
+                    if (seg) seg[p] = k;
+                    touched.push(p);
+                    continue;
+                }
+                if (d2 < near[p]) near[p] = d2;
+                // No root where this stretch cannot beat the best so far: its widest less the distance.
+                const room = top - best[p];
+                if (room <= 0 || d2 >= room * room * (1 + 1e-9)) continue;
+                const v = wa + dw * t - Math.sqrt(d2);
+                if (v > best[p]) {
+                    best[p] = v;
+                    if (seg) seg[p] = k;
+                }
+            }
+        }
+    }
+    const turn = bends ? bendsOf(pts) : null;
+    if (bends && !out.bar) out.bar = new Float32Array(out.f.length);
+    const { f, style } = out;
+    for (const p of touched) {
+        const i = p % nx;
+        const j = (p - i) / nx;
+        const x = lattice.x0 + i * step;
+        const y = lattice.y0 + j * step;
+        const ragged = best[p] + (L.width(x, y) - 0.5) * RIVER.bank + (L.riverFine(x, y) - 0.5) * RIVER.fine;
+        const least = CHANNEL_HW - Math.sqrt(near[p]);
+        const val = ragged > least ? ragged : least;
+        if (val > f[p]) {
+            f[p] = val;
+            style[p] = STYLE.LAKE;
+            if (turn) {
+                const k = seg[p];
+                const [ax, ay] = pts[k];
+                const [bx, by] = pts[k + 1];
+                const side = (bx - ax) * (y - ay) - (by - ay) * (x - ax);
+                const c = (turn[k] + turn[k + 1]) / 2;
+                const a = c < 0 ? -c : c;
+                const strength = a <= BAR.from ? 0 : a >= BAR.from + BAR.span ? 1 : (a - BAR.from) / BAR.span;
+                out.bar[p] = side * c > 0 ? strength : -strength;
+            }
+        }
+    }
+}
+
+/**
+ * How sharply a river turns, from which a bend's inside is known: the turn's sine at a point, from
+ * `reach` either side, a bar from `from` and whole by `from + span`. On the drawing's lattice the
+ * field reaches `pad` past the banks, so a bar of sand has land to lie on.
+ */
+const BAR = Object.freeze({ reach: 70, from: 0.07, span: 0.3, pad: 32 });
+
+/** Each point's turn: the cross product of the headings `BAR.reach` before and after it. */
+function bendsOf(pts) {
+    const m = pts.length;
+    const turn = new Float64Array(m);
+    const heading = (k, dir) => {
+        let j = k;
+        let s = 0;
+        while (j + dir >= 0 && j + dir < m && s < BAR.reach) {
+            s += dist(pts[j][0], pts[j][1], pts[j + dir][0], pts[j + dir][1]);
+            j += dir;
+        }
+        const [ax, ay] = dir < 0 ? pts[j] : pts[k];
+        const [bx, by] = dir < 0 ? pts[k] : pts[j];
+        const l = dist(ax, ay, bx, by) || 1;
+        return [(bx - ax) / l, (by - ay) / l];
+    };
+    for (let k = 0; k < m; k++) {
+        const [hx0, hy0] = heading(k, -1);
+        const [hx1, hy1] = heading(k, 1);
+        turn[k] = hx0 * hy1 - hy0 * hx1;
+    }
+    return turn;
+}
+
 function poolInto(out, lattice, shape, L) {
     const { x: cx, y: cy, r } = shape;
     const rx = r * POOL.reach;
@@ -673,6 +850,29 @@ export function waterFieldAt(water, x, y) {
                 val = Math.min(val, Math.sqrt(dx * dx + dy * dy) - r + (fine - 0.5) * LAKE.holeFine);
             }
             put(val, STYLE.LAKE);
+        } else if (shape.k === SHAPE.RIVER && shape.h) {
+            const pts = shape.points;
+            const hs = shape.h;
+            let near = Infinity;
+            let best = -Infinity;
+            for (let k = 0; k + 1 < pts.length; k++) {
+                const [ax, ay] = pts[k];
+                const [bx, by] = pts[k + 1];
+                const dx = bx - ax;
+                const dy = by - ay;
+                const L2 = dx * dx + dy * dy;
+                let t = L2 > 0 ? ((x - ax) * dx + (y - ay) * dy) / L2 : 0;
+                t = t < 0 ? 0 : t > 1 ? 1 : t;
+                const ex = x - (ax + dx * t);
+                const ey = y - (ay + dy * t);
+                const d2 = ex * ex + ey * ey;
+                if (d2 < near) near = d2;
+                const v = hs[k] + (hs[k + 1] - hs[k]) * t - Math.sqrt(d2);
+                if (v > best) best = v;
+            }
+            const ragged = best + (n(CH.WIDTH, RIVER.widthCell) - 0.5) * RIVER.bank + (n(CH.RIVER_FINE, RIVER.fineCell) - 0.5) * RIVER.fine;
+            const least = CHANNEL_HW - Math.sqrt(near);
+            put(ragged > least ? ragged : least, STYLE.LAKE);
         } else if (shape.k === SHAPE.RIVER) {
             const pts = shape.points;
             let near = Infinity;
@@ -726,7 +926,9 @@ export function readWater(record) {
             && Array.isArray(s.w) && s.w.length === 2 && s.w.every(num)) {
             const points = [];
             for (let i = 0; i < s.p.length; i += 2) points.push([s.p[i], s.p[i + 1]]);
-            shapes.push({ k: s.k, points, w: s.w });
+            // A width at each point (rivers since brief 370); a river stored before keeps its old banks.
+            const widths = Array.isArray(s.h) && s.h.length === points.length && s.h.every(v => num(v) && v > 0);
+            shapes.push(widths ? { k: s.k, points, w: s.w, h: s.h } : { k: s.k, points, w: s.w });
         } else if (s?.k === SHAPE.POOL && num(s.x) && num(s.y) && num(s.r) && s.r > 0) {
             shapes.push({ k: s.k, x: s.x, y: s.y, r: s.r });
         } else if (s?.k === SHAPE.SEA && [0, 1, 2, 3].includes(s.side) && num(s.step) && s.step > 0
@@ -744,9 +946,12 @@ export function readWater(record) {
  *
  * @param {object} water  {@link readWater}'s result
  * @param {{x0: number, y0: number, step: number, nx: number, ny: number}} lattice
- * @returns {{f: Float64Array, style: Uint8Array, lattice: object}}
+ * @param {{bends?: boolean}} [options]  `bends`: also say where the land by a river lies round its
+ *   bends (`bar`), for the drawing's banks
+ * @returns {{f: Float64Array, style: Uint8Array, lattice: object, bar?: Float32Array}} `bar` only
+ *   with `bends` and a river stored with its widths: above 0 on a bend's inside, below on its outside
  */
-export function rasterise(water, lattice) {
+export function rasterise(water, lattice, { bends = false } = {}) {
     const n = lattice.nx * lattice.ny;
     const out = { f: new Float64Array(n).fill(FAR), style: new Uint8Array(n), lattice };
     if (!water?.shapes.length) return out;
@@ -762,8 +967,11 @@ export function rasterise(water, lattice) {
         else if (shape.k === SHAPE.POOL) poolInto(out, lattice, shape, L);
         else if (shape.k === SHAPE.SEA) seaInto(out, lattice, shape, L, water.mat);
         else if (shape.k === SHAPE.RIVER) {
-            if (!scratch) scratch = { near: new Float64Array(n), seen: new Int32Array(n), touched: [], stamp: 0 };
-            riverInto(out, lattice, shape, L, scratch);
+            if (!scratch) scratch = { near: new Float64Array(n), seen: new Int32Array(n), touched: [], stamp: 0, best: null };
+            if (shape.h) {
+                if (!scratch.best) scratch.best = new Float64Array(n);
+                courseInto(out, lattice, shape, L, scratch, bends);
+            } else riverInto(out, lattice, shape, L, scratch);
         }
     }
     clearInto(out, lattice, water, L);
@@ -880,8 +1088,12 @@ const CHANNEL_HW = 16;
  */
 const MARSH = Object.freeze({ perArea: 1, least: 4, r: [40, 60], twoLobes: 0.6 });
 
-/** How far past the Hall's clearing a river's straight line should pass, so it needs no bend round it. */
-const CROSSING_CLEAR = 140;
+/**
+ * A split's side channel keeps `clear` from its middle to the main arm's banks round the island,
+ * past `ends` units from where it leaves and rejoins the main: its own half-width, both banks'
+ * raggedness and land between.
+ */
+const SPLIT = Object.freeze({ clear: 40, ends: 150 });
 
 /** How much more than its first lobe a lake covers, about, with the others merged in. */
 const LOBE_GAIN = 1.35;
@@ -927,6 +1139,84 @@ function seaShape(random, mat, share) {
 
 const round = (v) => Math.round(v);
 const flat = (pts) => pts.flatMap(([x, y]) => [round(x), round(y)]);
+const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+
+/**
+ * One Region's {@link RIVER_VARIETY}, from its water's salt: hashed, so it takes nothing from the
+ * layout's generator and every other water comes out as it always did.
+ *
+ * @returns {{wind: number, wide: number, reach: number}}
+ */
+export function riverVariety(salt) {
+    const s = layerSalt(salt >>> 0, CH.VARIETY);
+    const at = (k, [lo, hi]) => lo + (hi - lo) * (hash(k, 0, s) / 4294967296);
+    return { wind: at(1, RIVER_VARIETY.wind), wide: at(2, RIVER_VARIETY.wide), reach: at(3, RIVER_VARIETY.reach) };
+}
+
+/**
+ * How far from one knot's swing to the next a river has come, `t` of the way between them: turning
+ * evenly one way to the half, then evenly back, so no stretch of a bend turns sharper than the rest.
+ */
+const bendOffset = (t) => (t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t));
+
+/** A path's points every `spacing` units along it, its ends kept. */
+function resample(points, spacing) {
+    const out = [[points[0][0], points[0][1]]];
+    let carry = 0;
+    for (let k = 0; k + 1 < points.length; k++) {
+        const [ax, ay] = points[k];
+        const [bx, by] = points[k + 1];
+        const L = dist(ax, ay, bx, by);
+        let s = spacing - carry;
+        for (; s <= L; s += spacing) out.push([ax + (bx - ax) * s / L, ay + (by - ay) * s / L]);
+        carry = L - (s - spacing);
+    }
+    const [ex, ey] = points[points.length - 1];
+    const [lx, ly] = out[out.length - 1];
+    if (dist(ex, ey, lx, ly) > spacing / 4) out.push([ex, ey]);
+    else out[out.length - 1] = [ex, ey];
+    return out;
+}
+
+/**
+ * {@link simplify} with a width at each point: a point is also kept where the widths either side,
+ * eased between, would miss its own by more than `tol`.
+ */
+function simplifyCourse(pts, hws, tol) {
+    const last = pts.length - 1;
+    if (last < 2) return { pts: pts.slice(), hws: hws.slice() };
+    const keep = new Uint8Array(pts.length);
+    keep[0] = 1;
+    keep[last] = 1;
+    const stack = [[0, last]];
+    while (stack.length) {
+        const [a, b] = stack.pop();
+        let best = -1;
+        let far = tol;
+        const [ax, ay] = pts[a];
+        const [bx, by] = pts[b];
+        const dx = bx - ax;
+        const dy = by - ay;
+        const L2 = dx * dx + dy * dy;
+        for (let k = a + 1; k < b; k++) {
+            const [px, py] = pts[k];
+            let t = L2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / L2 : 0;
+            t = clamp(t, 0, 1);
+            const off = dist(px, py, ax + dx * t, ay + dy * t);
+            const dw = Math.abs(hws[k] - (hws[a] + (hws[b] - hws[a]) * t));
+            const d = off > dw ? off : dw;
+            if (d > far) {
+                far = d;
+                best = k;
+            }
+        }
+        if (best >= 0) {
+            keep[best] = 1;
+            stack.push([a, best], [best, b]);
+        }
+    }
+    return { pts: pts.filter((_, i) => keep[i]), hws: hws.filter((_, i) => keep[i]) };
+}
 
 /** The variety makers: each keeps its water out of the Hall's clearing. */
 class Maker {
@@ -935,6 +1225,9 @@ class Maker {
         this.mat = mat;
         this.clear = clear;
         this.rows = 0;
+        this.salt = salt >>> 0;
+        this.courses = 0;
+        this.variety = riverVariety(salt);
         const box = { x0: -400, y0: -400, x1: mat.w + 400, y1: mat.h + 400 };
         this.wig = noiseLayer(layerSalt(salt, CH.WIGGLE), WIGGLE.cell, box);
     }
@@ -1067,8 +1360,171 @@ class Maker {
         return out;
     }
 
-    river(points, hw0, hw1) {
-        return { k: SHAPE.RIVER, p: flat(simplify(points, 1)), w: [round(hw0), round(hw1)] };
+    /**
+     * A river's course along its line `points` ({@link path}'s): bent and widened as {@link MEANDER}
+     * says, by this Region's {@link RIVER_VARIETY}, its width easing from `hw0` to `hw1` along it. Its
+     * ends stay where they are, so it still leaves its lake or meets its river; it bends less near the
+     * Hall's clearing, and `calm` (shares of its length, `[from, to]`) bends it less there too. A
+     * course that folds back on itself, or comes near `avoid` away from `meets`, is bent more gently.
+     *
+     * @returns {{pts: number[][], hws: number[]}} a point every few units and its half-width
+     */
+    course(points, hw0, hw1, { avoid = null, meets = [], calm = null } = {}) {
+        const M = MEANDER;
+        const salt = hash(this.salt | 0, CH.MEANDER * 64 + this.courses++, 0x2545f491);
+        const roll = (a, b) => hash(a, b, salt) / 4294967296;
+        const along = (s, row, cell) => noiseAt(s, row, cell, salt);
+        const { wind, wide } = this.variety;
+        const line = resample(points, M.spacing);
+        const n = line.length;
+        const at = new Float64Array(n);
+        for (let i = 1; i < n; i++) at[i] = at[i - 1] + dist(line[i][0], line[i][1], line[i - 1][0], line[i - 1][1]);
+        const len = at[n - 1] || 1;
+        const baseAt = (s) => hw0 + (hw1 - hw0) * clamp(s / len, 0, 1);
+        // How far each bend may swing: none at the ends, less along a calm stretch; set at its knot,
+        // so the bends ease in as gently as they turn. Each point besides is pinned at the very ends.
+        const keep = this.clear.r + hw1 * 1.3 + 24;
+        const room = new Float64Array(n);
+        const pinned = new Float64Array(n);
+        for (let i = 0; i < n; i++) {
+            const s = at[i];
+            let e = clamp(Math.min(s, len - s) / M.ends, 0, 1);
+            if (calm) {
+                const into = Math.min(s - calm[0] * len, calm[1] * len - s) / M.ends + 1;
+                e *= 1 - (1 - M.calm) * clamp(into, 0, 1);
+            }
+            room[i] = e;
+            pinned[i] = smooth(clamp(Math.min(s, len - s) / M.pin, 0, 1));
+        }
+        const roomAt = (s) => room[clamp(Math.round(s / M.spacing), 0, n - 1)];
+        // Each point's normal, and how far it may move toward the Hall before it nears the clearing:
+        // a bend swinging toward the Hall is held short of it, one swinging away is not.
+        const normals = new Float64Array(2 * n);
+        const toHall = new Float64Array(n);
+        const hallRoom = new Float64Array(n);
+        for (let i = 0; i < n; i++) {
+            const a = line[Math.max(0, i - 3)];
+            const b = line[Math.min(n - 1, i + 3)];
+            const L = dist(a[0], a[1], b[0], b[1]) || 1;
+            const nx = -(b[1] - a[1]) / L;
+            const ny = (b[0] - a[0]) / L;
+            normals[2 * i] = nx;
+            normals[2 * i + 1] = ny;
+            const hx = this.clear.x - line[i][0];
+            const hy = this.clear.y - line[i][1];
+            const d = Math.sqrt(hx * hx + hy * hy) || 1;
+            toHall[i] = (nx * hx + ny * hy) / d;
+            hallRoom[i] = d > keep ? d - keep : 0;
+        }
+        // One knot a half-wave, each to the other side. A half-wave too short for its two bends to
+        // turn no tighter than `radius` river widths is drawn out: a windier river makes longer loops
+        // rather than kinks.
+        const tightest = M.radius * hw1;
+        const halfAt = (k, s) => clamp(M.wave * 2 * baseAt(clamp(s, 0, len)) * (0.75 + 0.5 * roll(k, 4)), M.half[0], M.half[1]);
+        const swingAt = (k, swing, half, s) => swing * half * (M.swing[0] + (M.swing[1] - M.swing[0]) * roll(k, 5)) * roomAt(s);
+        const knotsOf = (swing) => {
+            const out = [];
+            let s = -40 * roll(2, 0);
+            let side = roll(3, 0) < 0.5 ? 1 : -1;
+            let half = halfAt(0, s);
+            let a = swingAt(0, swing, half, s);
+            for (let k = 0; s < len + 200; k++) {
+                out.push([s, side * a]);
+                const nextHalf = halfAt(k + 1, s + half);
+                // A bend turns evenly from one knot's swing to the next's ({@link bendOffset}): 4 × (a + b) / L².
+                // The next knot's swing is the room where it lands once drawn out, so worked out twice.
+                let step = half;
+                let next = swingAt(k + 1, swing, nextHalf, s + step);
+                for (let again = 0; again < 2; again++) {
+                    const least = Math.sqrt(4 * tightest * (a + next));
+                    if (least <= step) break;
+                    step = least;
+                    next = swingAt(k + 1, swing, nextHalf, s + step);
+                }
+                // Still too sharp (more room where it landed): the next bend swings less.
+                const most = step * step / (4 * tightest) - a;
+                if (next > most) next = most > 0 ? most : 0;
+                s += step;
+                half = nextHalf;
+                a = next;
+                side = -side;
+            }
+            return out;
+        };
+        // The wider stretches: one, or on a long river maybe two, each rising and falling over `wideRamp`.
+        const stretches = [];
+        for (let b = 0; b < (len > M.wideTwo && roll(9, 0) < 0.5 ? 2 : 1); b++) {
+            const reachOf = (M.wideLen[0] + (M.wideLen[1] - M.wideLen[0]) * roll(12 + b, 0)) / 2;
+            stretches.push([len * (0.2 + 0.6 * roll(10 + b, 0)), reachOf]);
+        }
+        const widerAt = (s) => {
+            let most = 0;
+            for (const [c, r] of stretches) {
+                const d = s < c ? c - s : s - c;
+                const v = smooth(clamp((r - d) / M.wideRamp, 0, 1));
+                if (v > most) most = v;
+            }
+            return 1 + wide * most;
+        };
+        const build = (swing) => {
+            const K = knotsOf(swing);
+            let most = 1;
+            for (const [, a] of K) if ((a < 0 ? -a : a) > most) most = a < 0 ? -a : a;
+            let pts = [];
+            const hws = [];
+            let j = 0;
+            for (let i = 0; i < n; i++) {
+                const s = at[i];
+                while (j + 2 < K.length && K[j + 1][0] < s) j++;
+                const [sa, a] = K[j];
+                const [sb, b] = K[j + 1] || K[j];
+                const t = sb > sa ? clamp((s - sa) / (sb - sa), 0, 1) : 0;
+                const o = a + (b - a) * bendOffset(t);
+                let off = (o + (along(s, 7.5, M.jitterCell) - 0.5) * M.jitter) * pinned[i];
+                const c = off > 0 ? toHall[i] : -toHall[i];
+                if (c > 0) {
+                    // Eased toward the room there is: never past it.
+                    const R = hallRoom[i] / c;
+                    off = off * R / Math.sqrt(off * off + R * R || 1);
+                }
+                pts.push([line[i][0] + normals[2 * i] * off, line[i][1] + normals[2 * i + 1] * off]);
+                // Pools in the bends, narrower where it crosses from one bend to the next.
+                const apex = (o < 0 ? -o : o) / most;
+                const wander = 1 + M.wander * (along(s, 19.5, M.wanderCell) - 0.5);
+                hws.push(clamp(baseAt(s) * (M.narrow + M.pool * apex) * wander * widerAt(s), CHANNEL_HW, hw1 * (1.5 + wide)));
+            }
+            // A few gentle passes, the ends kept, so no join between bends shows as a corner.
+            for (let pass = 0; pass < M.smooth; pass++) {
+                const next = pts.map(p => [p[0], p[1]]);
+                for (let i = 1; i + 1 < n; i++) {
+                    next[i][0] = (pts[i - 1][0] + 2 * pts[i][0] + pts[i + 1][0]) / 4;
+                    next[i][1] = (pts[i - 1][1] + 2 * pts[i][1] + pts[i + 1][1]) / 4;
+                }
+                pts = next;
+            }
+            return { pts: this.repel(pts, keep), hws };
+        };
+        // Judged as it will be stored: thinned, every number whole.
+        const gap = FOLD_WIDTHS * 2 * hw1;
+        const folds = (made) => foldsBack(simplifyCourse(made.pts, made.hws, 1).pts.map(([x, y]) => [round(x), round(y)]), gap);
+        let swing = wind;
+        for (let k = 0; k < M.tries; k++) {
+            const made = build(swing);
+            if (!folds(made) && !(avoid && nearOther(made.pts, avoid, gap, meets))) return made;
+            swing *= M.gentler;
+        }
+        return build(0);
+    }
+
+    /** A river as stored: its course thinned to the points that shape it, every number whole. */
+    river({ pts, hws }, hw0, hw1) {
+        const kept = simplifyCourse(pts, hws, 1);
+        return { k: SHAPE.RIVER, p: flat(kept.pts), w: [round(hw0), round(hw1)], h: kept.hws.map(v => Math.max(CHANNEL_HW, round(v))) };
+    }
+
+    /** A river of one width all along `points`, unbent: a split's side channel, a delta's mouth. */
+    channel(points, hw) {
+        return { pts: points, hws: points.map(() => hw) };
     }
 
     /** A lake of about `share` of the mat: lobes merged round a first one, maybe an island and a bay. */
@@ -1137,10 +1593,11 @@ class Maker {
             const t = this.between(0.45, 0.85);
             return meets(side, other) ? 1 - t : t;
         };
-        // A few draws, the first whose straight line passes well clear of the Hall kept, so the
-        // river need not bend round the clearing; else the clearest. While every line so far runs
-        // through the clearing, more: bent round the Hall, such a line hooks along the mat's edge.
+        // A few draws, the first whose straight line passes the Hall no nearer than this Region's
+        // reach lets it (bent round the clearing when it must), else the clearest. While every line
+        // so far runs through the clearing, more.
         // ⚠️ Moving the −1 or the twelve changes other seeds' rivers.
+        const wanted = this.variety.reach;
         let best = null;
         let bestClear = -Infinity;
         for (let k = 0; k < 12 || (bestClear <= -1 && k < 48); k++) {
@@ -1153,7 +1610,7 @@ class Maker {
                 pair = [this.edgePoint(from, away(from, to)), this.edgePoint(to, away(to, from))];
             }
             const clear = toSegment(this.clear.x, this.clear.y, pair[0][0], pair[0][1], pair[1][0], pair[1][1]).d - this.clear.r;
-            if (clear >= CROSSING_CLEAR) return pair;
+            if (clear >= wanted) return pair;
             if (clear > bestClear) {
                 best = pair;
                 bestClear = clear;
@@ -1211,7 +1668,7 @@ class Maker {
         const exit = this.toEdge(lake.x, lake.y, 0.15, lake.r * 1.5 + 220);
         const toward = dist(lake.x, lake.y, exit[0], exit[1]) || 1;
         const start = [lake.x + (exit[0] - lake.x) / toward * lake.r * 0.5, lake.y + (exit[1] - lake.y) / toward * lake.r * 0.5];
-        const outflow = this.path(this.through(start, exit, 3), 44, 27);
+        const outflow = this.course(this.path(this.through(start, exit, 3), 44 * MEANDER.under, 27), 18, 27);
         out.push(this.river(outflow, 18, 27));
         if (this.random() < 0.5) {
             // And in from another side: the river runs into the lake and on out of it, the two
@@ -1219,8 +1676,9 @@ class Maker {
             const side = (this.nearestSide(exit[0], exit[1]) + 1 + Math.floor(this.random() * 3)) % 4;
             const from = this.edgePoint(side, this.between(0.15, 0.85));
             const meets = [[lake.x, lake.y, lake.r * 1.3]];
-            const inflow = this.path(this.through(from, [lake.x, lake.y], 3), 40, 24, { avoid: outflow, meets });
-            if (!nearOther(inflow, outflow, FOLD_WIDTHS * 2 * 24, meets)) out.push(this.river(inflow, 18, 24));
+            const line = this.path(this.through(from, [lake.x, lake.y], 3), 40 * MEANDER.under, 24, { avoid: outflow.pts, meets });
+            const inflow = this.course(line, 18, 24, { avoid: outflow.pts, meets });
+            if (!nearOther(inflow.pts, outflow.pts, FOLD_WIDTHS * 2 * 24, meets)) out.push(this.river(inflow, 18, 24));
         }
         return out;
     }
@@ -1231,8 +1689,9 @@ class Maker {
      */
     riverAcross(pools = true) {
         const [a, b] = this.crossing();
-        const points = this.path(this.through(a, b, 4), this.between(36, 50), 39);
-        const out = [this.river(points, 24, 39)];
+        const course = this.course(this.path(this.through(a, b, 4), this.between(36, 50) * MEANDER.under, 39), 24, 39);
+        const points = course.pts;
+        const out = [this.river(course, 24, 39)];
         if (pools && this.random() < 0.4) {
             const k = vertexAt(points, this.between(0.35, 0.65));
             const [x, y] = points[k];
@@ -1251,11 +1710,17 @@ class Maker {
      */
     splitRiver() {
         const [a, b] = this.crossing();
-        let main = this.path(this.through(a, b, 4), this.between(30, 40), 33);
+        const line = this.path(this.through(a, b, 4), this.between(30, 40) * MEANDER.under, 33);
         const out = [];
         const s = this.between(0.18, 0.28);
+        const e = s + this.between(0.28, 0.36);
+        // The main arm bends less where it parts round the island, and the side channel is laid off
+        // its course as bent, so the channel leaves it and joins it again where it truly runs.
+        const course = this.course(line, 24, 33, { calm: [s, e] });
+        let main = course.pts;
+        let mainHws = course.hws;
         const iS = vertexAt(main, s);
-        const iJ = Math.max(iS + 4, vertexAt(main, s + this.between(0.28, 0.36)));
+        const iJ = Math.max(iS + 4, vertexAt(main, e));
         const S = main[iS];
         const J = main[Math.min(main.length - 1, iJ)];
         // The side channel follows the main arm a teardrop's width off, widest in its first half.
@@ -1263,16 +1728,45 @@ class Maker {
         const off = (share, wide) => {
             const k = Math.min(main.length - 2, iS + Math.round((iJ - iS) * share));
             const [x, y] = main[k];
-            const [x2, y2] = main[k + 1];
-            const L = dist(x, y, x2, y2) || 1;
-            return [x - (y2 - y) / L * wide, y + (x2 - x) / L * wide];
+            const [x1, y1] = main[Math.max(0, k - 3)];
+            const [x2, y2] = main[Math.min(main.length - 1, k + 3)];
+            const L = dist(x1, y1, x2, y2) || 1;
+            return [x - (y2 - y1) / L * wide, y + (x2 - x1) / L * wide];
         };
-        const channel = this.path([S, off(0.18, swing * 0.55), off(0.42, swing), off(0.7, swing * 0.75), off(0.9, swing * 0.3), J], 12, CHANNEL_HW);
+        // Land between the arms all round the island: away from where it leaves and rejoins the
+        // main arm, the channel keeps `SPLIT.clear` past the main's banks, swinging further, then
+        // to the other side, until it does (else the clearest of the tries).
+        const banks = (pts) => {
+            const total = lengthOf(pts);
+            let least = Infinity;
+            let s = 0;
+            for (let i = 0; i < pts.length; i++) {
+                if (i) s += dist(pts[i][0], pts[i][1], pts[i - 1][0], pts[i - 1][1]);
+                if (s < SPLIT.ends || total - s < SPLIT.ends) continue;
+                for (let k = iS; k <= iJ && k < main.length; k++) {
+                    const room = dist(pts[i][0], pts[i][1], main[k][0], main[k][1]) - mainHws[k];
+                    if (room < least) least = room;
+                }
+            }
+            return least;
+        };
+        let channel = null;
+        let clearest = -Infinity;
+        for (const sw of [swing, swing * 1.3, swing * 1.6, -swing, -swing * 1.3, -swing * 1.6]) {
+            const tried = this.path([S, off(0.18, sw * 0.55), off(0.42, sw), off(0.7, sw * 0.75), off(0.9, sw * 0.3), J], 12, CHANNEL_HW);
+            const room = banks(tried);
+            if (room > clearest) {
+                channel = tried;
+                clearest = room;
+            }
+            if (room >= SPLIT.clear) break;
+        }
         if (this.random() < 0.7) {
             // The delta: the main stops short of the edge and forks into two mouths.
             const F = vertexAt(main, this.between(0.84, 0.9));
             const fork = main[F];
             main = main.slice(0, F + 1);
+            mainHws = mainHws.slice(0, F + 1);
             const sideOut = this.nearestSide(b[0], b[1]);
             const t = this.alongOf(sideOut, fork[0], fork[1]);
             const spread = this.between(150, 200) / (sideOut % 2 === 0 ? this.mat.w : this.mat.h);
@@ -1280,10 +1774,10 @@ class Maker {
             const m2 = this.edgePoint(sideOut, Math.min(0.98, t + spread * 0.8));
             const wideFirst = this.random() < 0.5;
             const [w1, w2] = wideFirst ? [21, CHANNEL_HW] : [CHANNEL_HW, 21];
-            out.push(this.river(this.path([fork, m1], 16, w1), w1, w1));
-            out.push(this.river(this.path([fork, m2], 14, w2), w2, w2));
+            out.push(this.river(this.channel(this.path([fork, m1], 16, w1), w1), w1, w1));
+            out.push(this.river(this.channel(this.path([fork, m2], 14, w2), w2), w2, w2));
         }
-        out.unshift(this.river(main, 24, 33), this.river(channel, CHANNEL_HW, CHANNEL_HW));
+        out.unshift(this.river({ pts: main, hws: mainHws }, 24, 33), this.river(this.channel(channel, CHANNEL_HW), CHANNEL_HW, CHANNEL_HW));
         return out;
     }
 
@@ -1292,7 +1786,7 @@ class Maker {
         const pool = this.small(40, false);
         if (!pool) return this.riverAcross();
         const exit = this.toEdge(pool.x, pool.y, 0.2, 500);
-        return [pool.shape, this.river(this.path(this.through([pool.x, pool.y], exit, 3), 32, 24), CHANNEL_HW, 24)];
+        return [pool.shape, this.river(this.course(this.path(this.through([pool.x, pool.y], exit, 3), 32 * MEANDER.under, 24), CHANNEL_HW, 24), CHANNEL_HW, 24)];
     }
 
     /** Yellowstone's sulphur springs: as many as the prototype's per piece of the mat its size. */

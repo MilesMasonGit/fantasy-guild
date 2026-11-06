@@ -98,6 +98,7 @@ describe('⭐ each view is one click', () => {
         const want = {
             water_lake_river: [SHAPE.LAKE, SHAPE.RIVER], water_lake: [SHAPE.LAKE], water_river: [SHAPE.RIVER],
             water_split: [SHAPE.RIVER], water_spring: [SHAPE.LAKE, SHAPE.RIVER], water_mountain_river: [SHAPE.RIVER],
+            water_forest_river: [SHAPE.RIVER],
             water_pond: [SHAPE.LAKE], water_tarn: [SHAPE.LAKE], water_sulphur: [SHAPE.POOL], water_sea: [SHAPE.SEA]
         };
         expect(TERRAIN_DEV_WATER.map(v => v.id).sort()).toEqual(Object.keys(want).sort());

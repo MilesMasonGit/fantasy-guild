@@ -181,7 +181,11 @@ describe('⭐ Shapes as fields', () => {
 describe('⭐ Cells from shapes', () => {
     it('⭐ makes a cell water when the water covers at least half its sample points, or a quarter where a river\'s middle runs, unless kept dry', () => {
         const grid = terrainGrid(MAT);
-        const water = readWater(recordOf(WATER_KIND.SPLIT, 3));
+        // A split stored before brief 370: its side channel, ragged by its old banks, is narrower
+        // than a cell here and there, which the quarter rule is for (a river since is never).
+        const record = recordOf(WATER_KIND.SPLIT, 3);
+        const water = readWater({ ...record, shapes: record.shapes.map(({ h: _h, ...s }) => s) });
+        expect(water.shapes.every(s => !s.h)).toBe(true);
         const keepDry = (i) => i % 7 === 0;
         const { water: cells, sample } = sampleWater(water, grid, TERRAIN_CELL, keepDry);
         // The cells the rivers' middle lines run through, walked a quarter of a cell at a time.
@@ -352,7 +356,7 @@ describe('⭐ Stored with the cells', () => {
             const result = settle([coast], seed);
             const sea = result.terrain.water.shapes[0];
             /** How often the shore moves half a cell or more from one line of pixels along the sea's edge to the next. */
-            const jumps = (terrain) => {
+            const jumps = (terrain, step = (TERRAIN_CELL / PLAN_PIXEL_U) / 2) => {
                 const plan = buildGroundPlan(regionGround({ seed, ground: { main: 'coast', terrains: { coast: 'sand' } }, terrain }, MAT));
                 const wet = (x, y) => plan.palette[plan.terrainAt[y * plan.width + x]].startsWith('water');
                 const byRow = sea.side % 2 === 1;
@@ -368,15 +372,16 @@ describe('⭐ Stored with the cells', () => {
                         if (!(byRow ? wet(k, a) : wet(a, k))) break;
                         d++;
                     }
-                    if (last !== null && Math.abs(d - last) >= (TERRAIN_CELL / PLAN_PIXEL_U) / 2) big++;
+                    if (last !== null && Math.abs(d - last) >= step) big++;
                     last = d;
                 }
                 return big;
             };
             const { water: _shapes, ...cellsOnly } = result.terrain;
             expect(jumps(result.terrain), `seed ${seed}`).toBeLessThanOrEqual(2);
-            // The same cells drawn the old way step at every line of cells the coast moves across.
-            expect(jumps(cellsOnly), `seed ${seed}`).toBeGreaterThan(4);
+            // The same cells drawn the old way step at every line of cells the coast moves across:
+            // three eighths of a cell, the ragged borders soften a whole cell's step that much.
+            expect(jumps(cellsOnly, (TERRAIN_CELL / PLAN_PIXEL_U) * 3 / 8), `seed ${seed}`).toBeGreaterThan(4);
         }
     });
 });
@@ -468,9 +473,11 @@ describe('⭐ Rivers: wide, and bending gently', () => {
         expect(dry / points).toBeLessThan(0.002);
     });
 
-    it('⭐ still crosses the mat when the first lines it tries all run through the Hall\'s clearing, drawing on till one misses it', () => {
+    it('⭐ still crosses the mat when the first lines it tries all run through the Hall\'s clearing, never hooking along an edge round the Hall', () => {
         // The shipped mat: with seed 291 all twelve edge-to-edge lines a river tries first pass
-        // inside the clearing.
+        // inside the clearing. Since brief 370 some maps' rivers may run nearer the Hall than a
+        // straight line can pass it (`RIVER_VARIETY.reach`): bent round the clearing, a river still
+        // passes the Hall well inside the mat, never hooking along its edge.
         const mat = { w: 1920, h: 1040 };
         const clear = { ...hallSpot(mat), r: HALL_CLEARING + 2 * TERRAIN_CELL };
         /** How far the straight line between a river's two ends passes from the Hall. */
@@ -479,20 +486,35 @@ describe('⭐ Rivers: wide, and bending gently', () => {
             const t = Math.max(0, Math.min(1, ((clear.x - ax) * (bx - ax) + (clear.y - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2)));
             return Math.sqrt((clear.x - ax - (bx - ax) * t) ** 2 + (clear.y - ay - (by - ay) * t) ** 2);
         };
-        for (const kind of [WATER_KIND.RIVER, WATER_KIND.MOUNTAIN_RIVER, WATER_KIND.SPLIT]) {
-            const { record } = planWater({ sea: 0, kinds: [kind] }, mulberry32(291), mat, clear);
+        /** How far from the mat's nearest edge the river passes the Hall. */
+        const passing = (points) => {
+            const p = points.reduce((best, q) => {
+                const d = (q[0] - clear.x) ** 2 + (q[1] - clear.y) ** 2;
+                return d < best.d ? { d, q } : best;
+            }, { d: Infinity, q: null }).q;
+            return Math.min(p[0], p[1], mat.w - p[0], mat.h - p[1]);
+        };
+        let bent = 0;
+        const check = (kind, seed) => {
+            const { record } = planWater({ sea: 0, kinds: [kind] }, mulberry32(seed), mat, clear);
             const water = readWater(record);
             const runs = water.shapes.filter(s => s.k === SHAPE.RIVER);
             expect(runs.length, kind).toBeGreaterThan(0);
-            // A river across runs between the ends of the line it kept (a split's main arm may stop at its delta).
-            if (kind !== WATER_KIND.SPLIT) expect(chordFromHall(runs[0].points), kind).toBeGreaterThan(clear.r - 2);
+            // A river across keeps the ends of the line it drew (a split's main arm may stop at its delta).
+            if (kind !== WATER_KIND.SPLIT && chordFromHall(runs[0].points) < clear.r + 140) {
+                bent++;
+                expect(passing(runs[0].points), `${kind} ${seed}: hooks along the edge`).toBeGreaterThan(100);
+            }
             for (let y = clear.y - clear.r; y <= clear.y + clear.r; y += 16) {
                 for (let x = clear.x - clear.r; x <= clear.x + clear.r; x += 16) {
                     if ((x - clear.x) ** 2 + (y - clear.y) ** 2 >= clear.r ** 2) continue;
                     expect(waterFieldAt(water, x, y).f, `${kind} at ${x},${y}`).toBeLessThanOrEqual(0);
                 }
             }
-        }
+        };
+        for (const kind of [WATER_KIND.RIVER, WATER_KIND.MOUNTAIN_RIVER, WATER_KIND.SPLIT]) check(kind, 291);
+        for (let seed = 1; seed <= 40; seed++) check(WATER_KIND.RIVER, seed);
+        expect(bent, 'rivers bent round the Hall').toBeGreaterThan(5);
     });
 });
 

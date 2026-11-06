@@ -172,18 +172,18 @@ describe('⭐ The pixel map', () => {
         expect([pixels.width, pixels.height]).toEqual([880, 563]);
     });
 
-    it('⭐ every cell\'s pixels are its terrain except within the edge swing of a boundary', () => {
-        // Without the beach, the only thing that moves ground across a cell line is the wiggled
-        // edge: a pixel that is not its cell's terrain is within the swing of a side whose
-        // neighbour has that terrain.
-        const swing = edgeAmplitude();
+    it('⭐ every cell\'s middle is its own terrain: another reaches in only from a neighbouring cell, and only near the side', () => {
+        // Without the beach, the only thing that moves ground across a cell line is the ragged
+        // border: a pixel that is not its cell's terrain has a neighbouring cell's, within
+        // `REACH` pixels of its cell's side, so it never reaches a cell's middle.
+        const REACH = 7;
+        let deepest = 0;
         for (const seed of [1, 2, 3]) {
             const cols = 20;
             const rows = 12;
             const fill = patchwork(seed);
             const ground = groundWith(cols, rows, fill, { seed });
             const { width, palette, at } = resolveArtPixels(ground, false);
-            const cellAt = (c, r) => (c < 0 || r < 0 || c >= cols || r >= rows ? null : fill(c, r));
             let moved = 0;
             for (let i = 0; i < at.length; i++) {
                 const x = i % width;
@@ -195,43 +195,66 @@ describe('⭐ The pixel map', () => {
                 moved++;
                 const lx = x - cx * CELL_PX;
                 const ly = y - cy * CELL_PX;
-                const fromSide = (lx < swing && cellAt(cx - 1, cy) === got)
-                    || (CELL_PX - 1 - lx < swing && cellAt(cx + 1, cy) === got)
-                    || (ly < swing && cellAt(cx, cy - 1) === got)
-                    || (CELL_PX - 1 - ly < swing && cellAt(cx, cy + 1) === got);
-                expect(fromSide, `pixel ${x},${y} is ${got} in a ${fill(cx, cy)} cell`).toBe(true);
+                const depth = Math.min(lx, ly, CELL_PX - 1 - lx, CELL_PX - 1 - ly);
+                deepest = Math.max(deepest, depth);
+                expect(depth, `pixel ${x},${y} is ${got} ${depth} pixels into a ${fill(cx, cy)} cell`).toBeLessThan(REACH);
+                expect(cornerTerrains(fill, cx, cy, cols, rows), `pixel ${x},${y}`).toContain(got);
             }
-            expect(moved, 'the edges never wiggled').toBeGreaterThan(100);
+            expect(moved, 'the borders never moved').toBeGreaterThan(100);
         }
+        expect(REACH).toBeLessThan(CELL_PX / 2);
+        expect(deepest).toBeGreaterThan(2);
     });
 
-    it('agrees with the strips, which are the edge geometry', () => {
-        const fill = patchwork(9);
-        const ground = groundWith(20, 12, fill, { seed: 9 });
-        const { width, height, palette, at } = resolveArtPixels(ground, false);
-        let checked = 0;
-        for (let cy = 0; cy < 12; cy++) {
-            for (let cx = 0; cx < 20; cx++) {
-                for (const axis of ['v', 'h']) {
-                    const nx = axis === 'v' ? cx + 1 : cx;
-                    const ny = axis === 'v' ? cy : cy + 1;
-                    if (nx >= 20 || ny >= 12) continue;
-                    for (const s of edgeStrips(cx, cy, axis, fill(cx, cy), fill(nx, ny), 9)) {
-                        for (let y = s.y; y < s.y + s.h; y++) {
-                            for (let x = s.x; x < s.x + s.w; x++) {
-                                if (x >= width || y >= height) continue;
-                                // A later strip at a corner may paint over an earlier one; the
-                                // pixel is then one of the two terrains meeting there.
-                                expect([fill(cx, cy), fill(nx, ny), ...cornerTerrains(fill, cx, cy, 20, 12)])
-                                    .toContain(palette[at[y * width + x]]);
-                                checked++;
-                            }
-                        }
+    it('⭐ draws a border that wanders off the cell line without a step', () => {
+        // Two grounds side by side, the line between them three cells in: each row of pixels
+        // changes ground once, a few pixels either side of the line, never jumping from one row
+        // to the next.
+        const half = (c) => (c < 3 ? 'grass' : 'rock');
+        let wandered = 0;
+        for (const seed of [9, 10, 11, 12]) {
+            const { width, height, palette, at } = resolveArtPixels(groundWith(6, 8, half, { seed }), false);
+            const line = 3 * CELL_PX;
+            const columns = new Set();
+            let last = null;
+            for (let y = 0; y < height; y++) {
+                const row = Array.from({ length: width }, (_, x) => palette[at[y * width + x]]);
+                const at0 = row.indexOf('rock');
+                expect(row.slice(at0).every(t => t === 'rock'), `row ${y} changes ground once`).toBe(true);
+                expect(row.slice(0, at0).every(t => t === 'grass')).toBe(true);
+                expect(Math.abs(at0 - line)).toBeLessThan(7);
+                if (last !== null) expect(Math.abs(at0 - last), `seed ${seed} row ${y}`).toBeLessThanOrEqual(2);
+                columns.add(at0);
+                last = at0;
+            }
+            if (columns.size >= 3) wandered++;
+        }
+        expect(wandered).toBeGreaterThanOrEqual(3);
+    });
+
+    it('⭐ rounds a lone cell\'s corners: the ground round it takes them, its middle stays', () => {
+        // The straight strips drew a lone cell as a square with its corners on; the ragged border
+        // eases each cell's share from its middle to its neighbours', so a corner, where the lone
+        // cell has the least share, goes to the ground round it.
+        const lone = (c, r) => (c % 3 === 1 && r % 3 === 1 ? 'rock' : 'grass');
+        let corners = 0;
+        let taken = 0;
+        for (const seed of [21, 22, 23]) {
+            const { width, palette, at } = resolveArtPixels(groundWith(9, 9, lone, { seed }), false);
+            const terrain = (x, y) => palette[at[y * width + x]];
+            for (const c of [1, 4, 7]) {
+                for (const r of [1, 4, 7]) {
+                    const x0 = c * CELL_PX;
+                    const y0 = r * CELL_PX;
+                    expect(terrain(x0 + CELL_PX / 2, y0 + CELL_PX / 2)).toBe('rock');
+                    for (const [x, y] of [[x0, y0], [x0 + CELL_PX - 1, y0], [x0, y0 + CELL_PX - 1], [x0 + CELL_PX - 1, y0 + CELL_PX - 1]]) {
+                        corners++;
+                        if (terrain(x, y) === 'grass') taken++;
                     }
                 }
             }
         }
-        expect(checked).toBeGreaterThan(100);
+        expect(taken / corners).toBeGreaterThan(0.9);
     });
 
     it('is one terrain everywhere on a ground of one terrain', () => {
