@@ -80,13 +80,14 @@ describe('summariseMat (Token Summary)', () => {
         statusOf: (i) => ({ status: i.status || 'idle', missing: !!i.missing })
     };
 
-    it('one row per type with working, idle, blocked and disallowed counts', () => {
+    it('one row per type with working, idle and blocked counts', () => {
         const s = summariseMat([
             t('oak', { status: 'working' }), t('oak', { status: 'working' }), t('oak', { status: 'idle' }),
-            t('oak', { status: 'blocked' }), t('oak', { status: 'off' }), t('bench')
+            t('oak', { status: 'blocked' }), t('oak', { status: 'idle' }), t('bench')
         ], withLayout);
         const oak = s.sections.flatMap(x => x.rows).find(r => r.typeId === 'oak');
-        expect(oak).toMatchObject({ count: 5, working: 2, idle: 1, blocked: 1, off: 1 });
+        expect(oak).toMatchObject({ count: 5, working: 2, idle: 2, blocked: 1 });
+        expect('off' in oak).toBe(false);
         expect(rowLabel(oak)).toBe('Oak Forest ×5');
         expect(s.total).toBe(6);
     });
@@ -249,8 +250,9 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         placeAt(BoardState.createTokenInstance('fixture_mb_tree', null, null, BoardState.ORIGIN.SPAWNED), 480, 160);
         const bench = placeAt('fixture_mb_bench', 640, 160);
         bench.alert = ALERT.INPUTS;
-        const off = placeAt('fixture_mb_vein', 160, 480);
-        off.disallowed = true;
+        // A Token an old save marked with the retired Disallow reads as any other.
+        const vein = placeAt('fixture_mb_vein', 160, 480);
+        vein.disallowed = true;
         const gear = placeAt('fixture_mb_gear', 320, 480);
         gear.alert = ALERT.CHOOSE_RECIPE;
 
@@ -261,7 +263,8 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         const row = (id) => panel().querySelector(`[data-token-summary-row="${id}"]`);
         expect(row('fixture_mb_tree').textContent).toContain('Bar Tree ×2');
         expect(row('fixture_mb_bench').querySelector('[data-status-count="blocked"]').textContent).toBe('1 blocked');
-        expect(row('fixture_mb_vein').querySelector('[data-status-count="off"]').textContent).toBe('1 disallowed');
+        expect(row('fixture_mb_vein').querySelector('[data-status-count="off"]')).toBeNull();
+        expect(row('fixture_mb_vein').textContent).not.toContain('disallowed');
         expect(row('fixture_mb_gear').querySelector('[data-status-count="idle"]')).not.toBeNull();
         expect(panel().querySelector('[data-token-summary-pinned]').textContent).toContain('Bar Workbench');
         expect(panel().textContent).toContain('Tokens 6/12');
@@ -354,7 +357,8 @@ describe('⭐ the restyled bar (T-170)', () => {
         expect(bars.map(e => e.getAttribute('data-mat-cap-badge') !== null ? 'tokens'
             : e.getAttribute('data-mat-upkeep-badge') !== null ? 'upkeep' : '?')).toEqual(['tokens', 'upkeep']);
         expect(bars.every(e => e.hasAttribute('data-item-bar'))).toBe(true);
-        expect(container.querySelectorAll('[data-mat-top-bar-right] [data-map-mode-toggle]').length).toBe(2);
+        expect([...container.querySelectorAll('[data-mat-top-bar-right] [data-map-mode-toggle]')]
+            .map(b => b.getAttribute('data-map-mode-toggle'))).toEqual(['demolish']);
         // The side columns are equal, so the centre sits on the mat's centre line.
         expect(container.querySelector('.ui-frame-studs').className).toContain('grid-cols-[1fr_auto_1fr]');
     });

@@ -32,7 +32,7 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 import {
-    MAP_MODE, useMapMode, getMapMode, flipDisallowed, flipDisallowedType, flipDemolishMark
+    MAP_MODE, useMapMode, getMapMode, flipDemolishMark
 } from '../../hooks/useMapMode.js';
 import { mapModeCursor } from './mapModeCursor.js';
 import { useMatFit } from './MatFitContext.jsx';
@@ -122,7 +122,7 @@ export const MatBoard = React.memo(function MatBoard({
         grab.listeners?.onPointerDown?.(e);
     }, []);
 
-    // The map mode (Disallow or Demolish). Read once here and handed to each Token as a prop, so
+    // The map mode (Demolish). Read once here and handed to each Token as a prop, so
     // a Token holds no subscription of its own for it, and a hover redraws only the two Tokens
     // whose hover changed.
     const mapMode = useMapMode();
@@ -374,20 +374,17 @@ export const MatBoard = React.memo(function MatBoard({
         lightHeroJob(litHeroId || inspectedHeroId || null);
     }, [litHeroId, inspectedHeroId]);
 
-    // A click on a Token in a map mode. Disallow: flip it, or with shift its whole type.
-    // Demolish: mark or unmark it. Either way an engine refusal is said over the Token.
-    const handleModeClick = useCallback((instanceId, shift) => {
-        const mapMode = getMapMode();
-        let result;
-        if (mapMode === MAP_MODE.DISALLOW) result = shift ? flipDisallowedType(instanceId) : flipDisallowed(instanceId);
-        else if (mapMode === MAP_MODE.DEMOLISH) result = flipDemolishMark(instanceId);
-        else return;
+    // A click on a Token in Demolish mode marks or unmarks it; an engine refusal is said over the
+    // Token.
+    const handleModeClick = useCallback((instanceId) => {
+        if (getMapMode() !== MAP_MODE.DEMOLISH) return;
+        const result = flipDemolishMark(instanceId);
         if (result.success || !result.reason) return;
         const instance = BoardState.getTokenById(instanceId);
         EventBus.publish(UI_EVENTS.UI_TOKEN_ALERT, {
             instanceId,
             severity: 'disallow',
-            type: mapMode === MAP_MODE.DISALLOW ? 'disallow_refused' : 'demolish_refused',
+            type: 'demolish_refused',
             name: instance ? tokenName(instance.typeId) : null,
             title: result.reason,
             rulesText: null,
@@ -711,9 +708,8 @@ const FLAG_BEHIND = 0.5;
 /** A map mode's edge: above the speech bubbles. */
 const MODE_EDGE_Z = MAT_Z.HERO_BUBBLE + 40;
 
-/** The edge's colour per mode: muted grey for Disallow, red for Demolish. */
+/** The edge's colour per mode: red for Demolish. */
 const MODE_EDGE_COLOUR = Object.freeze({
-    [MAP_MODE.DISALLOW]: 'var(--color-ui-muted)',
     [MAP_MODE.DEMOLISH]: 'var(--color-ui-red)'
 });
 

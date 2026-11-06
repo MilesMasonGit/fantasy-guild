@@ -11,7 +11,7 @@ import { HealthBar } from './HealthBar.jsx';
 import { enemyBarPlace, fightBarShift } from './healthBar.js';
 import { IdlePlate } from './IdlePlate.jsx';
 import { idlePlateCells } from './idlePlate.js';
-import { TokenChargeDeltaFloater, CHARGE_FLOATERS, StationGearBadge, DisallowBadge, MarkedBadge } from './TokenBadges.jsx';
+import { TokenChargeDeltaFloater, CHARGE_FLOATERS, StationGearBadge, MarkedBadge } from './TokenBadges.jsx';
 import { ProblemMark } from './ProblemMark.jsx';
 import { problemOf, problemText, PROBLEM_MARK_ART_PX, tokenGearPx } from './problemMark.js';
 import { createWorkBar, shareWorkBar } from './workBar.js';
@@ -22,13 +22,12 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 
 /** What each player mark's tooltip says. */
 export const BUBBLE_TIPS = Object.freeze({
-    disallow: 'Heroes may not work this',
     marked: 'Marked for demolition: a hero with Construction will take it away'
 });
 
 const CHOOSE_KINDS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD]);
 
-/** The disallow and demolition badges' size (`w-7 h-7`), and the gap in a row, in mat units. */
+/** The demolition badge's size (`w-7 h-7`), and the gap in a row, in mat units. */
 const BADGE_U = 28;
 const ROW_GAP_U = 4;
 /** A bar in the fight layer takes the pointer as the fight's plate does (`FightBarHost`). */
@@ -48,7 +47,7 @@ const PLATE_POINTER = 'var(--plate-pointer, auto)';
  * work); its hover says exactly what (`problemMark.js`). From the engine's alert, a spawner's
  * stuck alert (`SPAWNER_ALERT_CHANGED`, read once on mount), a growing Token's (a Stump that needs
  * its Forest or a seedling: `GROWTH_ALERT_CHANGED`, likewise), or nothing chosen on a station.
- * - **Disallow and demolition marks** (the middle row): the whole time they apply.
+ * - **Demolition mark** (the middle row): the whole time it applies.
  * - **The -1 / +50 floater**: switched off (`CHARGE_FLOATERS`); a worked Token's plate counts down.
  * - **Enemy health bar** (above the box): in a fight, and while an enemy is hovered. In a fight
  * the mat hands it `fightBar` (`{ host, left, top }`: the fight layer's node and this box's
@@ -84,7 +83,6 @@ export const TokenBubbles = ({
     readTimer = null,
     plateHost = null,
     gear = null,
-    disallowed = false,
     marked = false,
     fightBar = null,
     dragProps = null
@@ -228,7 +226,7 @@ export const TokenBubbles = ({
     // the hover away; and the gear is the mark's size, so nothing beside it moves.
     const gearInMark = showProblem && (pointerOn || isHovered) && !!gear?.show && !marked && CHOOSE_KINDS.has(problem.kind);
     const showGear = !!gear?.show && !marked && isHovered && !gearInMark;
-    const showRest = showProblem || disallowed || marked;
+    const showRest = showProblem || marked;
     // ⚠️ The hover row never shares the marks' row: inserted beside them it would slide the mark
     // out from under the pointer the moment the pointer reached it. With marks showing it sits
     // just above them; alone, at the centre.
@@ -321,11 +319,6 @@ export const TokenBubbles = ({
                     {marked && (
                         <Bubble of={instanceId} kind="marked" inline tip={BUBBLE_TIPS.marked} dragProps={dragProps}>
                             <MarkedBadge title={BUBBLE_TIPS.marked} />
-                        </Bubble>
-                    )}
-                    {disallowed && (
-                        <Bubble of={instanceId} kind="disallow" inline tip={BUBBLE_TIPS.disallow} dragProps={dragProps}>
-                            <DisallowBadge />
                         </Bubble>
                     )}
                 </div>

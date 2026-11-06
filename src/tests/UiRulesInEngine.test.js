@@ -18,9 +18,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * Three small rules the UI used to work out for itself now come from the engine, so a future
- * rule change (a discount, a new kind of permanent Token) cannot disagree with what the screen
- * shows. The disallow rule's own tests are in `FlagUI.test.js` and `MapModes.test.js`.
+ * Small rules the UI used to work out for itself now come from the engine, so a future rule
+ * change (a discount, a new kind of permanent Token) cannot disagree with what the screen shows.
  */
 
 describe('permanence: the UI asks Placement.isPermanentToken', () => {

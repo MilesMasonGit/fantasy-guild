@@ -27,7 +27,8 @@ export const SPRITE_FX_VERSION = 4;
 /**
  * The outline colours, as RGB. `work` is `--color-gi-success` (#09b554);
  * `alert` is Tailwind red-500, the alert badges' red. `muted` (`--color-gi-muted`, #737373) and
- * `danger` (`--color-gi-danger`, #ff2d55) are the map modes' hover outlines, Disallow and Demolish.
+ * `danger` (`--color-gi-danger`, #ff2d55) are Demolish mode's hover outlines, a Token it cannot
+ * mark and one it can.
  */
 export const OUTLINE_COLOURS = Object.freeze({
     work: [9, 181, 84],

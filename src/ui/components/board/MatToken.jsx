@@ -12,7 +12,6 @@ import { useMatFit } from './MatFitContext.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import * as Flags from '../../../systems/board/Flags.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
@@ -323,10 +322,7 @@ export const MatToken = React.memo(function MatToken({
     // Resting on a quest Token reads it (`QuestTooltip`).
     const showQuestTip = isRested && !!quest;
 
-    const hoverTitle = [
-        detail?.disallowed ? 'Heroes may not work this' : null,
-        ...(isRested ? skipLines : [])
-    ].filter(Boolean).join('\n') || undefined;
+    const hoverTitle = (isRested ? skipLines : []).filter(Boolean).join('\n') || undefined;
 
     // The Token stays exactly where it is: its hero walks up and stands beside it
     // (`HeroMotion.standingSpot`). An enemy walking by its spawner steps once a tick, so it
@@ -476,9 +472,7 @@ export const MatToken = React.memo(function MatToken({
     // (`spriteOutline.js`). It is a generated picture under the art, not a filter.
     // In a map mode the hovered Token takes the mode's colour, or muted grey where the mode cannot
     // act on it.
-    const modeUnavailable = isHovered && mapMode
-        ? (mapMode === MAP_MODE.DEMOLISH ? demolishProtected : Flags.disallowRefusalOf(BoardState.getTokenById(id)) !== null)
-        : false;
+    const modeUnavailable = isHovered && mapMode ? demolishProtected : false;
     const lit = useSupportLit(id);
     // A carried hero could be ordered here (green), or the hovered hero's job is this (white).
     const orderLit = useOrderLit(id);
@@ -494,7 +488,7 @@ export const MatToken = React.memo(function MatToken({
             isFoundation: !!detail?.isFoundation,
             isField: !!detail?.isField,
             // The gear covers the middle of the Token, so in a map mode it is the Token's click.
-            onClick: (e) => (mapMode ? onModeClick?.(id, !!e?.shiftKey) : onOpenRecipes?.(id))
+            onClick: () => (mapMode ? onModeClick?.(id) : onOpenRecipes?.(id))
         } : null),
         [gearState.show, gearState.pulsing, detail?.recipe, detail?.isFoundation, detail?.isField, mapMode, onModeClick, onOpenRecipes, id]
     );
@@ -564,9 +558,9 @@ export const MatToken = React.memo(function MatToken({
                 onContextMenu={handleContextMenu}
                 onClick={(e) => {
                     if (dragging) return;
-                    // In a map mode a click acts on the Token (shift: on its whole type) and does
-                    // nothing else; it never claims a quest.
-                    if (mapMode) { onModeClick?.(id, e.shiftKey); return; }
+                    // In a map mode a click acts on the Token and does nothing else; it never
+                    // claims a quest.
+                    if (mapMode) { onModeClick?.(id); return; }
                     // Click a done quest to claim it. The engine drops the reward as loot and
                     // removes the Token. `skipSlide` is still on just after a drop, so the
                     // drop's own click never claims. A quest not yet done inspects.
@@ -637,9 +631,9 @@ export const MatToken = React.memo(function MatToken({
                 data-token-overlay={id}
                 data-quest-token={quest ? id : undefined}
                 data-quest-done={quest ? String(questDone) : undefined}
-                // In a map mode a click on any bubble over the Token (the demolition mark, the
-                // disallow mark) is a click on the Token: the bubbles take the pointer for their tips.
-                onClick={mapMode ? (e) => { if (!dragging) onModeClick?.(id, e.shiftKey); } : undefined}
+                // In a map mode a click on any bubble over the Token (the demolition mark) is a
+                // click on the Token: the bubbles take the pointer for their tips.
+                onClick={mapMode ? () => { if (!dragging) onModeClick?.(id); } : undefined}
                 className="absolute pointer-events-none"
                 style={{ ...boxStyle, visibility: hidden ? 'hidden' : 'visible' }}
             >
@@ -671,7 +665,6 @@ export const MatToken = React.memo(function MatToken({
                     readTimer={timed ? readTimer : null}
                     plateHost={idlePlate ? plateHost : null}
                     gear={gear}
-                    disallowed={!!detail?.disallowed}
                     marked={!!detail?.marked}
                     fightBar={fightBar}
                     dragProps={dragProps}

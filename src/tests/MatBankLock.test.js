@@ -8,7 +8,7 @@ import {
 } from '../ui/hooks/useMatBankLock.js';
 
 
-/** The pointer-down activator every drag source goes through (mirrors DisallowMode.test.js). */
+/** The pointer-down activator every drag source goes through (mirrors MapModes.test.js). */
 const activates = (target = null) => AlphaPointerSensor.activators[0].handler({
     nativeEvent: { isPrimary: true, button: 0, target, clientX: 0, clientY: 0 }
 });

@@ -54,7 +54,6 @@ export function refusalText(heroId, instance, reason) {
     const skillId = def ? (Camps.campOf(def)?.skill || workConfigOf(def, instance)?.skill) : null;
     const skill = skillId ? (getSkill(skillId)?.name || skillId) : null;
     switch (reason) {
-        case Flags.SKIP.DISALLOWED: return t('orders.disallowed');
         case Flags.SKIP.OCCUPIED: return t('orders.occupied');
         case ALERT.NO_TOOL: {
             const need = neededToolOf(def);

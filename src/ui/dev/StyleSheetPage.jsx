@@ -322,14 +322,14 @@ const TextSizesDemo = () => (
     </div>
 );
 
-/** The map modes' hover outlines and their banners, as the top bar shows them. */
+/** The map mode's hover outlines and its banner, as the top bar shows them. */
 const MapModesDemo = () => {
     const known = !!getTokenType(SAMPLE_TOKEN);
     return (
         <div className="flex flex-col gap-3">
             {known && (
                 <div className="flex items-end gap-6">
-                    {[['muted', 'Disallow'], ['danger', 'Demolish']].map(([outline, label]) => (
+                    {[['danger', 'Demolish'], ['muted', 'Cannot mark']].map(([outline, label]) => (
                         <figure key={outline} className="flex flex-col items-center gap-1">
                             <TokenSprite typeId={SAMPLE_TOKEN} surface={TOKEN_SURFACE.INSPECT} scale={2} outline={outline} />
                             <figcaption className="text-xs text-gi-muted">{label}: outline=&quot;{outline}&quot;</figcaption>
@@ -337,7 +337,7 @@ const MapModesDemo = () => {
                     ))}
                 </div>
             )}
-            {[MAP_MODE.DISALLOW, MAP_MODE.DEMOLISH].map(mode => (
+            {[MAP_MODE.DEMOLISH].map(mode => (
                 <PixelFrame key={mode} kind="studs" style={{ height: MAT_TOP_BAR_PX }} frameClassName="px-2 ui-text-title text-amber-100">
                     <ModeBannerView mode={mode} />
                 </PixelFrame>
@@ -993,7 +993,7 @@ export const KIT_SECTIONS = [
     {
         id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',
         source: 'MatModeControls (the top bar), outline="muted" / "danger"',
-        rule: 'While a map mode is on, the hovered Token’s outline takes the mode’s colour: muted grey for Disallow, red for Demolish (muted grey on a Token the mode cannot act on). The bar’s centre says what a click does; Demolish’s in red.',
+        rule: 'While a map mode is on, the hovered Token’s outline takes the mode’s colour: red for Demolish (muted grey on a Token the mode cannot act on). The bar’s centre says what a click does; Demolish’s in red.',
         Demo: MapModesDemo
     },
     {

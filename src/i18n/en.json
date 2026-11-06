@@ -492,7 +492,6 @@
         "needs": "Needs {what}",
         "levelLow": "{skill} level too low (needs {level})",
         "nothing": "Nothing to work here",
-        "disallowed": "Heroes may not work this",
         "occupied": "Beat the enemies here first",
         "healing": "{hero} is healing: {time}",
         "noHero": "No hero",

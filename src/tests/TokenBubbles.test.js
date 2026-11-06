@@ -210,7 +210,7 @@ describe('⭐ at rest: the bar and the marks, nothing else', () => {
 
     it('nothing while the Token is dragged', () => {
         const { container } = mount(bub({
-            token: worked({ heroId: null, alert: ALERT.NO_ROOM, usesRemaining: 4 }), isDragging: true, isHovered: true, disallowed: true,
+            token: worked({ heroId: null, alert: ALERT.NO_ROOM, usesRemaining: 4 }), isDragging: true, isHovered: true, marked: true,
             spawner: { count: 3, cap: 5 }, plateHost, x: 400, y: 300,
             gear: { show: true, pulsing: true, recipe: null }
         }));
@@ -459,9 +459,9 @@ describe('⭐ hover: the idle plate under the Token, and the gear', () => {
 });
 
 describe('the middle row', () => {
-    it('⭐ the marks sit centred on the box: problem mark, demolition mark, disallow mark, in that order', () => {
+    it('⭐ the marks sit centred on the box: problem mark, then demolition mark', () => {
         const { container } = mount(bub({
-            token: worked({ heroId: null, alert: ALERT.INPUTS }), isHovered: true, disallowed: true, marked: true,
+            token: worked({ heroId: null, alert: ALERT.INPUTS }), isHovered: true, marked: true,
             spawner: { count: 3, cap: 5 },
             gear: { show: true, pulsing: false, recipe: null }
         }));
@@ -470,7 +470,7 @@ describe('the middle row', () => {
         expect(parseFloat(row.style.top)).toBe(64);
         expect(row.style.transform).toContain('translateY(-50%)');
         const kinds = [...row.children].map(c => c.getAttribute('data-bubble') || (c.hasAttribute('data-problem-mark') ? 'problem' : '?'));
-        expect(kinds).toEqual(['problem', 'marked', 'disallow']);
+        expect(kinds).toEqual(['problem', 'marked']);
     });
 
     it('⭐ hovering never moves a mark: the gear comes up in a row of its own, above the marks', () => {
@@ -506,12 +506,12 @@ describe('the middle row', () => {
         expect(container.querySelector('[data-bubble-row="middle"]')).toBeNull();
     });
 
-    it('⭐ the disallow and demolition marks show the whole time, hovered or not', () => {
-        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), disallowed: true, marked: true }));
-        expect(container.querySelector('[data-tile-disallowed]')).not.toBeNull();
+    it('⭐ the demolition mark shows the whole time, hovered or not', () => {
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), marked: true }));
+        expect(container.querySelector('[data-demolish-badge]')).not.toBeNull();
+        rerender(tree(bub({ token: worked({ heroId: null }), marked: true, isHovered: true })));
         expect(container.querySelector('[data-demolish-badge]')).not.toBeNull();
         rerender(tree(bub({ token: worked({ heroId: null }) })));
-        expect(container.querySelector('[data-tile-disallowed]')).toBeNull();
         expect(container.querySelector('[data-demolish-badge]')).toBeNull();
     });
 });
@@ -594,15 +594,6 @@ describe('⭐ a choice waiting: the pointer on the Token, its mark becomes the g
         r = mount(bub({ token: worked(), gear: unset(), isHovered: true }));
         expect(gearIn(r.container)).toBeNull();
         expect(mark(r.container)).toBeNull();
-    });
-
-    it('beside the disallow mark the gear keeps the mark’s centre', () => {
-        // The first item's centre in a centred row is fixed by what follows it, not by its own width.
-        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), gear: unset(), disallowed: true }));
-        const kinds = (c) => [...middle(c).children].map(el => (el.hasAttribute('data-gear-in-mark') ? 'gear' : el.hasAttribute('data-problem-mark') ? 'problem' : el.getAttribute('data-bubble')));
-        expect(kinds(container)).toEqual(['problem', 'disallow']);
-        rerender(tree(bub({ token: worked({ heroId: null }), gear: unset(), disallowed: true, isHovered: true })));
-        expect(kinds(container)).toEqual(['gear', 'disallow']);
     });
 
     it('pressing the gear grabs the Token, as pressing the mark did', () => {
@@ -752,7 +743,7 @@ describe.skipIf(!CHARGE_FLOATERS)('the floater, switched on', () => {
 
 describe('tooltips and grabbing', () => {
     const everything = () => idleBub({
-        token: worked({ heroId: null, usesRemaining: 4 }), disallowed: true,
+        token: worked({ heroId: null, usesRemaining: 4 }), marked: true,
         spawner: { count: 3, cap: 5 },
         quest: { currentCount: 1, requiredCount: 4 },
         readTimer: () => ({ kind: 'grow', inMs: 30000, everyMs: 60000, into: 'fixture_b13_sapling' })
@@ -771,13 +762,13 @@ describe('tooltips and grabbing', () => {
         expect(tipOf(idleCell(CELL.QUEST))).toBe(IDLE_TIPS.quest('1/4'));
         expect(tipOf(idleCell(CELL.SPAWNER))).toBe(IDLE_TIPS.spawner('3/5'));
         expect(tipOf(idleCell(CELL.TIMER))).toMatch(/^Grows into .* in 0:30$/);
-        expect(tipOf(bubble(container, 'disallow'))).toBe(BUBBLE_TIPS.disallow);
+        expect(tipOf(bubble(container, 'marked'))).toBe(BUBBLE_TIPS.marked);
     });
 
     it('⭐ pressing the plate or a mark reaches the Token’s drag handle', () => {
         const onPointerDown = vi.fn();
         const { container } = mount(idleBub({
-            token: worked({ heroId: null, usesRemaining: 4, alert: ALERT.INPUTS }), disallowed: true,
+            token: worked({ heroId: null, usesRemaining: 4, alert: ALERT.INPUTS }), marked: true,
             spawner: { count: 3, cap: 5 },
             quest: { currentCount: 1, requiredCount: 4 },
             dragProps: { onPointerDown }
@@ -788,7 +779,7 @@ describe('tooltips and grabbing', () => {
             expect(onPointerDown, kind).toHaveBeenCalledTimes(1);
         }
         onPointerDown.mockClear();
-        fireEvent.pointerDown(bubble(container, 'disallow'));
+        fireEvent.pointerDown(bubble(container, 'marked'));
         expect(onPointerDown).toHaveBeenCalledTimes(1);
         onPointerDown.mockClear();
         fireEvent.pointerDown(mark(container));

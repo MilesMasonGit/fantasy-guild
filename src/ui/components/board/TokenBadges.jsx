@@ -10,8 +10,8 @@ import { Tooltip } from '../base/Tooltip.jsx';
 
 /**
  * The small things drawn on a Token besides its ring bubbles: its name above the box, the -1
- * floater, and the recipe gear, the disallow mark and the demolition mark, which sit in the
- * middle row (`TokenBubbles` places them).
+ * floater, and the recipe gear and the demolition mark, which sit in the middle row
+ * (`TokenBubbles` places them).
  * A Token is a circle at a point, so what these badges are about is its **instance id**, and
  * everything they need to draw arrives as a prop from `MatToken`, which already reads the
  * Token's details by id. Only the charge floater still listens for itself, because a `-1` is a
@@ -248,29 +248,6 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
                 </button>
             </div>
         </Tooltip>
-    );
-};
-
-/**
- * DisallowBadge: the red disallow sprite, in the middle row of a Token heroes may not work.
- * Shown the whole time it is disallowed. It takes pointer events so its tooltip and a press
- * (which grabs the Token) work; `TokenBubbles` puts it in the row.
- */
-export const DisallowBadge = ({ isDragging }) => {
-    if (isDragging) return null;
-    return (
-        <div
-            data-tile-disallowed="true"
-            aria-label="Heroes may not work this"
-            className="shrink-0 select-none w-7 h-7 flex items-center justify-center filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
-        >
-            <img
-                src="/assets/ui/u_disallow_red.png"
-                alt="Heroes may not work this"
-                className="w-6 h-6 object-contain"
-                style={{ imageRendering: 'pixelated' }}
-            />
-        </div>
     );
 };
 

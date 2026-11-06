@@ -31,7 +31,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * ⭐ B6.2 — the quest Token UI ("noticeboard, click to claim"). A quest Token
  * stands a parchment `3/10` ring under itself, reads on hover
  * (`QuestTooltip`), glows when done and is claimed by a click — never in
- * disallow mode. The notification column lost its Quests section, and the
+ * a map mode. The notification column lost its Quests section, and the
  * tutorial aide finds its step from the tutorial quest Token.
  */
 
@@ -247,9 +247,9 @@ describe('click to claim (B6.2, FB-41)', () => {
     it('a map mode never claims: the click only goes to the mode', () => {
         const q = spawn(hunt({ currentCount: 3 }));
         const onModeClick = vi.fn();
-        const { container } = mount(tokenEl(q, { mapMode: 'disallow', onModeClick }));
+        const { container } = mount(tokenEl(q, { mapMode: 'demolish', onModeClick }));
         act(() => { fireEvent.click(art(container, q)); });
-        expect(onModeClick).toHaveBeenCalledWith(q.id, false);
+        expect(onModeClick).toHaveBeenCalledWith(q.id);
         expect(BoardState.getTokenById(q.id)).toBeTruthy();
     });
 });

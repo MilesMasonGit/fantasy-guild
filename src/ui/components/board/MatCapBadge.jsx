@@ -5,7 +5,6 @@ import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as MatCap from '../../../systems/board/MatCap.js';
-import * as Flags from '../../../systems/board/Flags.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as Growth from '../../../systems/board/Growth.js';
 import * as Shop from '../../../systems/board/Shop.js';
@@ -82,11 +81,10 @@ export function useRefreshOn(events, on = true, signatureOf = null) {
 const capSignature = () => `${MatCap.tokenCount()}|${MatCap.matCap()}`;
 
 /**
- * A Token's status for the summary, read live. Disallowed beats blocked; blocked beats working.
+ * A Token's status for the summary, read live. Blocked beats working.
  * `missing` marks a block that is a lack of items (inputs, a spawner's upkeep, unpaid rule upkeep).
  */
 export function liveStatusOf(instance) {
-    if (Flags.isDisallowed(instance)) return { status: TOKEN_STATUS.OFF };
     const spawnerAlert = SpawnerSystem.spawnerAlertOf(instance.id);
     if (spawnerAlert) return { status: TOKEN_STATUS.BLOCKED, missing: spawnerAlert.alert === ALERT.SPAWN_NEEDS_ITEM };
     const growthAlert = Growth.growthAlertOf(instance.id);
@@ -143,8 +141,7 @@ export function liveMatSummary() {
 const STATUS_PARTS = [
     ['working', 'working', 'text-emerald-300'],
     ['idle', 'idle', 'text-white/50'],
-    ['blocked', 'blocked', 'text-red-400'],
-    ['off', 'disallowed', 'text-white/40']
+    ['blocked', 'blocked', 'text-red-400']
 ];
 
 const SummaryRow = ({ row }) => (

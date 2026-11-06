@@ -404,13 +404,6 @@ describe('⭐ flags claim by instance id and wait by spot id', () => {
         expect(BoardState.displayPointOf('h1')).toEqual(spot);   // the flag's point
         expect(BoardState.tokensAtPoint(spot.x, spot.y)).toEqual([]);
     });
-
-    it('setDisallowed takes an instance id', () => {
-        const forest = at('fixture_producer', P(2, 2));
-        expect(Flags.setDisallowed(forest.id, true).success).toBe(true);
-        expect(forest.disallowed).toBe(true);
-        expect(Flags.setDisallowed('tok_nope', true).success).toBe(false);
-    });
 });
 
 describe('⭐ the Token under a point: inside its art circle, nearest centre wins where circles overlap', () => {
