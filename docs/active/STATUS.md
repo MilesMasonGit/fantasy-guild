@@ -5,15 +5,17 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
-## Director, combat look (brief 360 C2 and C3; owner's picks 2026-11-05: window B, tab D, mat F with the combat icon between the health bars)
+## Director, combat look and rivers (brief 360 C2 to C4, brief 370 R1; owner chose rivers 2026-11-05 evening; owner's picks 2026-11-05: window B, tab D, mat F with the combat icon between the health bars)
 
-*Thu 5 Nov 20:30. Where we are: C2 and C3 built and combined on crunch/combat-window (b2adcdb7); the owner looked at screenshots and ruled: windows open beside their button and stay open on a click off, the stat block back to B's shared column, only special moves bubble on the mat (built). Next: engine work check and draw benches Fri 01:00 (director timer in p23b), then merge; then C4. Owner: T-314 (basic attack and specials at a chance) when ready. Blockers: none.*
+*Thu 5 Nov 21:30. Where we are: C2 and C3 built and combined on crunch/combat-window (a38e6467, the fight button now has no shadow, owner); the owner chose rivers and ground (brief 370) as the next brief. Building now: C4 (crowded fights step apart) branched from crunch/combat-window, and R1 (rivers) from main, two engineers. Next: engine work check and draw benches Fri 01:00 on a38e6467 (director timer in p23b), then merge C2; R2 (water and ground drawing) after R1 or C4 frees a slot. Owner: T-314 (basic attack and specials at a chance) when ready. Blockers: none.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 360 C2: the fight window B, minimized tabs D, several at once | builder | `crunch/combat-window` (`c2`) | ready b2adcdb7 with C3 merged in and the owner's rulings (B stat column, special-move bubbles); director: 7472 tests, cycles, build green, game checked; bench Fri 01:00 | Thu | |
+| 360 C2: the fight window B, minimized tabs D, several at once | builder | `crunch/combat-window` (`c2`) | ready a38e6467 with C3 merged in and the owner's rulings (B stat column, special-move bubbles, no shadow on the fight button); director: 7472 tests, cycles, build green, game checked; bench Fri 01:00 | Thu | |
 | 360 C3: the mat F, the combat icon between the bars, floats, move bubbles, QA crowd button | builder | `crunch/combat-mat` (`c3`) | merged into C2 at 8c1d1f88 | Thu | Thu |
-| 360 C4: crowded fights step to open space (expect WORK CHANGED) | engineer | | queued after C3 | | |
+| 360 C4: crowded fights step to open space (expect WORK CHANGED) | engineer | `crunch/combat-step` (`c4`, from a38e6467) | building | Thu | |
+| 370 R1: rivers with real bends, varying width, variety by world (expect WORK CHANGED) | engineer | `crunch/rivers` (`r1`, from main) | building | Thu | |
+| 370 R2: water depth bands, ragged ground borders, settled dirt | builder | | queued, next free slot | | |
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
 
@@ -164,6 +166,8 @@ None open. (Ruled 2026-10-19: Token outlines red for problems, gold for attentio
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
+
+**Fri 6 Nov, 01:00 (director timer, `p23b`):** engine work check and draw benches on `crunch/combat-window` a38e6467 (logs in the scratchpad). C4 and R1 queue for the next window once ready.
 
 **Thu 5 Nov, 13:00–17:00 (director):** drag bench on `crunch/hero-detail` (H1 is drag code); work check on 350 T1 when ready.
 
