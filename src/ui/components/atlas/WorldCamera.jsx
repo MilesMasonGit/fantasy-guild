@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
 import { GLIDE_MS, SETTLE, FIRST_FRAME_WAIT_MS, translateYOf } from '../board/HallCamera.jsx';
 
@@ -7,6 +7,13 @@ export const WORLD_CAMERA = Object.freeze({ MAT: 'mat', TO_WORLD: 'to-world', WO
 
 const GLIDE_EASING = 'cubic-bezier(0.65, 0, 0.35, 1)';
 const GLIDE_SPARE_MS = 250;
+
+/**
+ * Whether the camera rests on the world map (true off any camera, as in a test): heavy drawing on
+ * the map (a place's mat preview) waits for it, so it does not stall the glide's frames.
+ */
+const ArrivedContext = createContext(true);
+export const useWorldArrived = () => useContext(ArrivedContext);
 
 const isGliding = (phase) => phase === WORLD_CAMERA.TO_WORLD || phase === WORLD_CAMERA.TO_MAT;
 
@@ -171,7 +178,7 @@ export const WorldCamera = ({ open, away = false, world, table, tableAnchor, chi
                 {matSide && children}
                 {worldSide && (
                     <div data-world-stage className="absolute inset-x-0 z-10" style={{ top: gliding ? '100%' : 0, height: '100%' }}>
-                        {world}
+                        <ArrivedContext.Provider value={phase === WORLD_CAMERA.WORLD}>{world}</ArrivedContext.Provider>
                     </div>
                 )}
             </div>

@@ -415,6 +415,7 @@ export const WorldMap = ({ view, selectedId, onSelect, reserveRight = 0 }) => {
             data-world-map
             data-world-rings={view.rings}
             data-world-view={`${at.x},${at.y}`}
+            data-world-picture-ms={picture ? Math.round(picture.ms.world) : undefined}
             className="absolute inset-0 overflow-hidden select-none cursor-grab active:cursor-grabbing"
             style={{ background: FOG_CSS }}
             onPointerDown={onPointerDown}

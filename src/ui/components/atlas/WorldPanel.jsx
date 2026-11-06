@@ -23,6 +23,7 @@ import { MapPreview } from './MapPreview.jsx';
 import { previewFit } from './mapPreview.js';
 import { regionPlan, regionFacts } from './regionPreview.js';
 import { SCREEN_TEXT } from './atlasScreenText.js';
+import { useWorldArrived } from './WorldCamera.jsx';
 
 /** The panel's width in px: thinner than the book's page, so the map has the room. */
 export const PANEL_W = 336;
@@ -173,10 +174,12 @@ const PlaceFacts = ({ region, version }) => {
     const mat = useMemo(() => ({ w: wide, h: high }), [wide, high]);
     const boxW = PANEL_W - 40;
     const fit = useMemo(() => previewFit(mat, boxW - 2 * PREVIEW_MARGIN_PX, PREVIEW_MAX_H), [mat, boxW]);
+    // Drawn once the camera has arrived: drawing it mid-glide would stall the glide.
+    const arrived = useWorldArrived();
     return (
         <div data-world-facts={region.id} className="flex flex-col gap-2">
             <div data-world-preview className="relative shrink-0 flex items-center justify-center overflow-hidden bg-black/40" style={{ width: boxW, height: fit.height + 2 * PREVIEW_MARGIN_PX }}>
-                {plan && <MapPreview plan={plan} mat={mat} fit={fit} />}
+                {plan && arrived && <MapPreview plan={plan} mat={mat} fit={fit} />}
             </div>
             <dl className="flex flex-col gap-0.5">
                 <Fact id="ground" label={SCREEN_TEXT.FACT_GROUND}>{facts.biomes.join(', ')}</Fact>
