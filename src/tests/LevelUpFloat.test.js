@@ -188,6 +188,8 @@ describe('after time away', () => {
         const closed = vi.fn();
         const off = EventBus.subscribe(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED, closed);
         fireEvent.click(overlay.container.querySelector('[data-summary-close]'));
+        expect(closed).not.toHaveBeenCalled();
+        fireEvent.click(overlay.container.querySelector('[data-summary-confirm-yes]'));
         off();
         expect(closed).toHaveBeenCalledTimes(1);
         expect(floatsIn(container, 'h1').map(values)).toEqual([[10, 11, 12, 13, 14], [3, 4]]);
