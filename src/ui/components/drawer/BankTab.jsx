@@ -172,7 +172,7 @@ export const BankTab = () => {
     return (
         <div className="h-full min-h-0 flex flex-row">
             <div className="flex-1 flex flex-col min-w-0">
-            <div className="shrink-0 flex items-center gap-2 gi-drawer-pad-x py-2 border-b border-gi-border/40 bg-gi-base/30 flex-wrap">
+            <div className="shrink-0 flex items-center gap-2 gi-drawer-pad-x py-2 border-b border-gi-border/40 flex-wrap">
                 <BankTabStrip
                     tabs={tabs}
                     activeId={currentTabId}

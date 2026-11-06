@@ -25,7 +25,7 @@ export const GuildHallDetails = ({ selection, onClear, onReturn }) => (
                 {t('guildHall.returnToPlaymat')}
             </button>
         </PixelFrame>
-        <PixelFrame kind={FRAME_KIND.STUDS} className="w-full flex-1 min-h-0" frameClassName="flex flex-col p-1">
+        <PixelFrame kind={FRAME_KIND.STUDS} backdrop="hall" className="w-full flex-1 min-h-0" frameClassName="flex flex-col p-1">
             <InspectionPanel className="w-full h-full flex-1" selection={selection} onClear={onClear} />
         </PixelFrame>
     </div>

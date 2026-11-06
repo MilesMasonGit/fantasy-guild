@@ -259,7 +259,7 @@ const HexMap = ({ view, selectedId, onSelect }) => {
 /** The cartographer's words over the right page, while the tutorial's last step asks for a place. */
 const CartographerNote = ({ note }) => (
     <div data-world-note className="shrink-0 mb-2">
-        <PixelFrame kind="studs" className="flex flex-col" frameClassName="px-2 py-1.5 bg-gi-surface/95 flex flex-col gap-0.5">
+        <PixelFrame kind="studs" backdrop="world" className="flex flex-col" frameClassName="px-2 py-1.5 bg-gi-surface/95 flex flex-col gap-0.5">
             <div className={headingCls}>{note.speaker}</div>
             <div className="font-pixel ui-text-title font-bold text-white">{note.title}</div>
             <div className="font-pixel ui-text-body text-white/85 italic">{note.says}</div>
@@ -277,7 +277,7 @@ const CellPage = ({ cell, onSettle, onTravel, message }) => {
     const short = frontier ? shortWords(cell.price) : null;
     return (
         <section data-world-detail={cell.id} className="flex-1 min-h-0 flex flex-col">
-            <PixelFrame kind="studs" className="shrink-0 flex flex-col" frameClassName="px-2 py-1.5 bg-gi-surface/95 flex flex-col gap-0.5">
+            <PixelFrame kind="studs" backdrop="world" className="shrink-0 flex flex-col" frameClassName="px-2 py-1.5 bg-gi-surface/95 flex flex-col gap-0.5">
                 <div className="flex items-center gap-2">
                     <div className="font-pixel ui-text-title font-bold text-white">{cell.name}</div>
                     <div className="flex-1" />
@@ -294,7 +294,7 @@ const CellPage = ({ cell, onSettle, onTravel, message }) => {
                         : frontier ? t('worldMap.frontier') : t('worldMap.beyond')}
                 </div>
             </PixelFrame>
-            <PixelFrame kind="studs" className="mt-2 flex-1 min-h-0 flex flex-col" frameClassName="flex-1 min-h-0 flex flex-col p-2 bg-gi-surface/95">
+            <PixelFrame kind="studs" backdrop="world" className="mt-2 flex-1 min-h-0 flex flex-col" frameClassName="flex-1 min-h-0 flex flex-col p-2 bg-gi-surface/95">
                 <ArrowScrollList step={80} compact className="flex-1 min-h-0">
                     <div className="flex flex-col gap-2">
                         {cell.outputs.length > 0 && (

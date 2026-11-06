@@ -205,7 +205,7 @@ const RegionPage = ({ region, version, open, onTravel, message, onMessage }) => 
                     {region.active && <HereFlag />}
                 </div>
             </PixelFrame>
-            <PixelFrame kind="studs" className="mt-2 shrink min-h-0 flex flex-col" frameClassName="min-h-0 flex flex-col items-center gap-2 p-2 bg-gi-surface/95">
+            <PixelFrame kind="studs" backdrop="world" className="mt-2 shrink min-h-0 flex flex-col" frameClassName="min-h-0 flex flex-col items-center gap-2 p-2 bg-gi-surface/95">
                 <div
                     data-region-preview
                     className="relative shrink-0 flex items-center justify-center overflow-hidden bg-black/40"

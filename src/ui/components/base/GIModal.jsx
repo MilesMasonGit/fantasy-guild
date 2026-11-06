@@ -11,6 +11,7 @@ import { PixelFrame, FRAME_KIND } from './PixelFrame.jsx';
  * ⚠️ A window closes on its X, its own buttons and Escape, never on a click outside it (only
  * light pop-ups do that). So Headless UI's own close is switched off and Escape comes from the
  * shared layers (`escapeLayers.js`), one layer per press.
+ * `backdrop`: a full panel's colour (`PixelFrame`), e.g. Settings'.
  */
 const NOOP = () => { };
 
@@ -22,7 +23,8 @@ export const GIModal = ({
     className,
     maxWidth = "max-w-2xl",
     hideClose = false,
-    layer = 'modal'
+    layer = 'modal',
+    backdrop = null
 }) => {
     // Headless UI always needs a function here, but 'can this be dismissed?' is decided
     // explicitly: a caller that supplies no `onClose`, or passes `hideClose`, gets no dismiss
@@ -63,7 +65,7 @@ export const GIModal = ({
                                     className
                                 )}
                             >
-                                <PixelFrame kind={FRAME_KIND.CHAMFER} frameClassName="flex flex-col overflow-hidden">
+                                <PixelFrame kind={FRAME_KIND.CHAMFER} backdrop={backdrop} frameClassName="flex flex-col overflow-hidden">
                                     {(title || canClose) && (
                                         <div className="flex items-center justify-between p-6 border-b border-gi-border/50 bg-gi-surface/30 shrink-0">
                                             {title && (

@@ -28,6 +28,14 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **Rows are never boxed.** Inside a panel, separate sections with spacing or a
   faint divider line, not borders.
 - No thick borders, no frames inside frames.
+- **Full panels have a coloured pixel backdrop** (owner, 2026-11-05; brief 400): the Bank,
+  Shop, the Hall's star panel, world panels, Settings, the hero sheet, fight windows and the
+  away summary. Hard bands from the panel's colour at the top down to the frame's dark fill,
+  each step dithered in whole art pixels, never a smooth gradient; text keeps its contrast on
+  every band. Each starts from its nav bubble's colour: Bank gold, Shop green, Atlas and world
+  blue, Settings red, Hall purple; the hero sheet teal, fight windows rust, the away summary
+  indigo. One shared piece: `PixelFrame`'s `backdrop` (colours in `panelBackdrop.js`).
+  Tooltips, the Token card, the top bar, bubbles and buttons have none.
 - **Pixel frames: nine-slice pictures** (owner, 2026-10-09; research in
   `docs/active/research/pixel_borders.md`, demo approach B). A tiny 7×7
   picture (3 px corners, 1 px edge, 1 px centre, 1 px = 1 art pixel) drawn

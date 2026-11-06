@@ -52,7 +52,7 @@ export const BankDrawer = ({ drawer, menuRight = false }) => {
                         ...(menuRight ? { left: columnWidthCss(NOTIFICATION_COLUMN) } : { right: columnWidthCss(NOTIFICATION_COLUMN) })
                     }}
                 >
-                    <PixelFrame kind={FRAME_KIND.STUDS} className="h-full" frameClassName="flex overflow-hidden">
+                    <PixelFrame kind={FRAME_KIND.STUDS} backdrop="bank" className="h-full" frameClassName="flex overflow-hidden">
                         {shownPanes.map(({ key, label, icon: Icon, Component }) => {
                             return (
                                 <section key={key} className="flex-1 min-w-0 flex flex-col border-r border-gi-border/50 last:border-r-0">
@@ -61,7 +61,7 @@ export const BankDrawer = ({ drawer, menuRight = false }) => {
                                         sprite={<Icon size={18} className="text-gi-primary" />}
                                         onClose={() => drawer.closePane(key)}
                                         closeLabel={`Close ${label}`}
-                                        className="gi-drawer-pad-x py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]"
+                                        className="gi-drawer-pad-x py-1.5 border-b border-gi-border/40 min-h-[44px]"
                                     />
 
                                     <div className="flex-1 min-h-0">
