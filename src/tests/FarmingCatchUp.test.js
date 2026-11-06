@@ -10,7 +10,6 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
-import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as Fields from '../systems/board/Fields.js';
 import * as Growth from '../systems/board/Growth.js';
@@ -189,7 +188,6 @@ beforeAll(() => {
     vi.stubGlobal('Audio', SilentAudio);
     Math.random = seeded;
     HeroMotion.setRandomForTests(motionRandom);
-    EnemyMotion.setRandomForTests(motionRandom);
     SettingsManager.init();
     EngineBootstrap.init();
     AudioSystem.init();
@@ -207,7 +205,6 @@ afterEach(() => {
 afterAll(() => {
     Math.random = realRandom;
     HeroMotion.setRandomForTests();
-    EnemyMotion.setRandomForTests();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
     resetMatTuning();

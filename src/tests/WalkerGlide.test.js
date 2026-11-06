@@ -27,6 +27,19 @@ vi.mock('../ui/dev/perf/PerfProfiler.jsx', async (orig) => ({
     ...(await orig()),
     usePerfRenderCount: (id) => { renders[id] = (renders[id] || 0) + 1; }
 }));
+// An enemy walks only to step aside for a crowded fight (`FightRoom`): here one steps back and
+// forth across the mat for as long as the test runs, at full Enemy walk speed.
+const pacing = vi.hoisted(() => ({ id: null, leg: 0, ends: [], plan: null }));
+vi.mock('../systems/board/FightRoom.js', async (orig) => ({
+    ...(await orig()),
+    pruneSteps: () => {},
+    steppingIds: () => (pacing.id ? [pacing.id] : []),
+    stepOf: (id) => (id === pacing.id ? pacing.plan : null),
+    finishStep: () => {
+        pacing.leg = 1 - pacing.leg;
+        pacing.plan = { ...pacing.ends[pacing.leg] };
+    }
+}));
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
     getQueue: vi.fn(() => [])
@@ -88,15 +101,10 @@ registerTokenTypes({
 
 const h = React.createElement;
 
-function seeded(seed = 11) {
-    let s = seed;
-    return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
-}
-
 describe('⭐ on the mat: a walking enemy’s boxes glide in whole screen pixels', () => {
     beforeAll(() => Flags.init());
     afterAll(() => { Flags.teardown(); resetMatTuning(); });
-    afterEach(() => { cleanup(); EnemyMotion.setRandomForTests(); setDrawn('walkDraw', true); });
+    afterEach(() => { cleanup(); pacing.id = null; setDrawn('walkDraw', true); });
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -109,8 +117,6 @@ describe('⭐ on the mat: a walking enemy’s boxes glide in whole screen pixels
         clearMat();
         GameState.state.heroes = [];
         setMatTuning('enemyWalkSpeed', 100);
-        setMatTuning('enemyPotterRadius', 160);
-        EnemyMotion.setRandomForTests(seeded());
     });
 
     /** Walks the enemy 300 ticks, calling `check` after each step it takes while still walking. */
@@ -118,6 +124,10 @@ describe('⭐ on the mat: a walking enemy’s boxes glide in whole screen pixels
         const camp = placeAt('fixture_wg_camp', 800, 500);
         const enemy = placeAt('fixture_enemy', 920, 500);
         enemy.tether = camp.id;
+        pacing.id = enemy.id;
+        pacing.leg = 0;
+        pacing.ends = [{ x: 1180, y: 640 }, { x: 620, y: 400 }];
+        pacing.plan = { ...pacing.ends[0] };
         const { container } = render(h(DndContext, null, h(MatFitProvider, { value: fit }, h(MatBoard))));
         const art = () => container.querySelector(`[data-token-id="${enemy.id}"][data-token-art]`);
         const overlay = () => container.querySelector(`[data-token-overlay="${enemy.id}"]`);
@@ -145,8 +155,8 @@ describe('⭐ on the mat: a walking enemy’s boxes glide in whole screen pixels
             }
         });
         expect(steps).toBeGreaterThan(50);
-        // Strolls at half of 100 u/s: 5 u a tick, so five jumps of a pixel at a fit of 1.
-        expect([...seen].some(t => /steps\(5, start\)/.test(t))).toBe(true);
+        // 100 u/s: 10 u a tick, so ten jumps of a pixel at a fit of 1.
+        expect([...seen].some(t => /steps\(10, start\)/.test(t))).toBe(true);
     });
 
     it('at the mat’s fit: a smaller mat takes fewer jumps', async () => {
@@ -159,8 +169,8 @@ describe('⭐ on the mat: a walking enemy’s boxes glide in whole screen pixels
             }
         });
         expect(steps).toBeGreaterThan(50);
-        // 5 u at 0.3 is 1.5 screen pixels: two jumps.
-        expect(seen.has(`transform ${TICK_INTERVAL_MS}ms steps(2, start)`)).toBe(true);
+        // 10 u at 0.3 is 3 screen pixels: three jumps.
+        expect(seen.has(`transform ${TICK_INTERVAL_MS}ms steps(3, start)`)).toBe(true);
     });
 
     it('the boxes still stand where the engine says', async () => {
@@ -192,7 +202,7 @@ describe('⭐ on the mat: a walking enemy’s boxes glide in whole screen pixels
         expect(renderedSteps).toBeGreaterThan(2);
     });
 
-    it('a step writes only what changed: a steady stroll keeps its glide without writing it again', async () => {
+    it('a step writes only what changed: a steady walk keeps its glide without writing it again', async () => {
         // Each write is a CSS parse and a restyle inside the engine tick (T-200).
         const transitionSet = vi.spyOn(CSSStyleDeclaration.prototype, 'transition', 'set');
         const transformSet = vi.spyOn(CSSStyleDeclaration.prototype, 'transform', 'set');

@@ -28,6 +28,19 @@ vi.mock('../ui/dev/perf/PerfProfiler.jsx', async (orig) => ({
     ...(await orig()),
     usePerfRenderCount: (id) => { renders[id] = (renders[id] || 0) + 1; }
 }));
+// An enemy walks only to step aside for a crowded fight (`FightRoom`): here one steps back and
+// forth across the mat for as long as the test runs, at full Enemy walk speed.
+const pacing = vi.hoisted(() => ({ id: null, leg: 0, ends: [], plan: null }));
+vi.mock('../systems/board/FightRoom.js', async (orig) => ({
+    ...(await orig()),
+    pruneSteps: () => {},
+    steppingIds: () => (pacing.id ? [pacing.id] : []),
+    stepOf: (id) => (id === pacing.id ? pacing.plan : null),
+    finishStep: () => {
+        pacing.leg = 1 - pacing.leg;
+        pacing.plan = { ...pacing.ends[pacing.leg] };
+    }
+}));
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
     getQueue: vi.fn(() => [])
@@ -56,11 +69,6 @@ registerTokenTypes({
 const h = React.createElement;
 const mount = () => render(h(DndContext, null, h(MatBoard)));
 
-function seeded(seed = 11) {
-    let s = seed;
-    return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
-}
-
 describe('walkerSortY — a stand-in y that sorts like the real one', () => {
     it('sits between its neighbours, and holds still until it crosses one', () => {
         expect(walkerSortY(150, [100, 200])).toBe(150);
@@ -82,7 +90,7 @@ describe('walkerSortY — a stand-in y that sorts like the real one', () => {
 describe('⭐ on the mat (CR3-008)', () => {
     beforeAll(() => Flags.init());
     afterAll(() => { Flags.teardown(); resetMatTuning(); });
-    afterEach(() => { cleanup(); EnemyMotion.setRandomForTests(); HeroMotion.setRandomForTests(); BoardState.setInstantArrival(true); });
+    afterEach(() => { cleanup(); pacing.id = null; HeroMotion.setRandomForTests(); BoardState.setInstantArrival(true); });
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -98,11 +106,13 @@ describe('⭐ on the mat (CR3-008)', () => {
 
     it('an enemy’s steps move its boxes without re-rendering MatBoard, except when it crosses something', async () => {
         setMatTuning('enemyWalkSpeed', 100);
-        setMatTuning('enemyPotterRadius', 160);
-        EnemyMotion.setRandomForTests(seeded());
         const camp = placeAt('fixture_wnr_camp', 800, 500);
         const enemy = placeAt('fixture_enemy', 920, 500);
         enemy.tether = camp.id;
+        pacing.id = enemy.id;
+        pacing.leg = 0;
+        pacing.ends = [{ x: 1180, y: 640 }, { x: 620, y: 400 }];
+        pacing.plan = { ...pacing.ends[0] };
 
         const { container } = mount();
         const art = () => container.querySelector(`[data-token-id="${enemy.id}"][data-token-art]`);

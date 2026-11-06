@@ -8,18 +8,28 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as EnemyMotion from '../systems/board/EnemyMotion.js';
-import * as TimedChanges from '../systems/board/TimedChanges.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning, MAT_TUNABLES } from '../config/matTuning.js';
-import { artRadiusOf, matW, matH } from '../config/matGeometry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
+// The step to open space a crowded fight asks for (`FightRoom`, tested for real in
+// `FightStep.test.js`), set by hand here: `aside.plans` maps an enemy to the spot it steps to.
+const aside = vi.hoisted(() => ({ plans: new Map() }));
+vi.mock('../systems/board/FightRoom.js', async (orig) => ({
+    ...(await orig()),
+    pruneSteps: () => {},
+    steppingIds: () => [...aside.plans.keys()],
+    stepOf: (id) => aside.plans.get(id) || null,
+    finishStep: (id) => {
+        const plan = aside.plans.get(id);
+        if (plan) plan.done = true;
+    }
+}));
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
     getQueue: vi.fn(() => [])
@@ -29,9 +39,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * B7.1 — **enemies move, tethered to their spawner** (owner's "B7 range"). A
- * small camp's art radius is 64 u, so with the default wander of 128 u an
- * enemy potters between 64 u and 192 u from the camp's centre.
+ * Enemies stand still: where they spawn, are placed or are dropped, whatever their camp does. The
+ * only walk left is the step to open space before a crowded fight (`FightRoom`).
  */
 
 registerTokenTypes({
@@ -48,10 +57,8 @@ registerTokenTypes({
 });
 
 const SPEED = 100;
-const R = 128;
-const INNER = 64;
 
-/** Seeded random, so strolls are repeatable. */
+/** Seeded random, for the spawner's rolls. */
 function seeded(seed = 7) {
     let s = seed;
     return () => {
@@ -62,6 +69,7 @@ function seeded(seed = 7) {
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const tick = (ms, step = 100) => { for (let t = 0; t < ms; t += step) EnemyMotion.tick(step); };
+const pointOf = (t) => ({ x: t.x, y: t.y });
 
 /** A camp at `(x, y)` and one enemy it spawned at `(ex, ey)`. */
 function campWithEnemy(x = 800, y = 500, ex = x + 120, ey = y) {
@@ -74,28 +82,26 @@ function campWithEnemy(x = 800, y = 500, ex = x + 120, ey = y) {
 beforeEach(() => {
     resetMatTuning();
     setMatTuning('enemyWalkSpeed', SPEED);
-    setMatTuning('enemyPotterRadius', R);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
     BoardCombat.clearAll();
     TileModifiers.clearAll();
     clearMat();
-    EnemyMotion.setRandomForTests(seeded());
+    aside.plans.clear();
 });
 
 afterEach(() => {
-    EnemyMotion.setRandomForTests();
+    aside.plans.clear();
     resetMatTuning();
 });
 
 describe('the Mat Tuner rows', () => {
-    it('ships enemy walk speed a bit slower than heroes, and wander of about one Token width', () => {
+    it('ships enemy walk speed a bit slower than heroes, and no enemy wander', () => {
         const speed = MAT_TUNABLES.find(t => t.key === 'enemyWalkSpeed');
-        const wander = MAT_TUNABLES.find(t => t.key === 'enemyPotterRadius');
         const heroes = MAT_TUNABLES.find(t => t.key === 'walkSpeed');
         expect(speed.def).toBeLessThan(heroes.def);
-        expect(wander.def).toBe(128);
+        expect(MAT_TUNABLES.find(t => t.key === 'enemyPotterRadius')).toBeUndefined();
     });
 });
 
@@ -142,7 +148,7 @@ describe('the tether (saved on the enemy)', () => {
         delete GameState.state.board.enemyTethers;
         tick(20000);
         expect('tether' in enemy).toBe(false);
-        expect({ x: enemy.x, y: enemy.y }).toEqual({ x: 900, y: 500 });
+        expect(pointOf(enemy)).toEqual({ x: 900, y: 500 });
         expect(EnemyMotion.bodyOf(enemy.id)).toBeNull();
     });
 
@@ -150,186 +156,101 @@ describe('the tether (saved on the enemy)', () => {
         const { camp, enemy } = campWithEnemy();
         BoardState.removeToken(camp.id);
         tick(20000);
-        expect({ x: enemy.x, y: enemy.y }).toEqual({ x: 920, y: 500 });
+        expect(pointOf(enemy)).toEqual({ x: 920, y: 500 });
     });
 });
 
-describe('pottering (HM-1, for enemies)', () => {
-    it('strolls about but stays within the ring round its spawner, over many ticks', () => {
-        const { camp, enemy } = campWithEnemy();
-        const seen = new Set();
-        let farthest = 0;
-        for (let i = 0; i < 1200; i++) {        // two minutes
-            EnemyMotion.tick(100);
-            farthest = Math.max(farthest, dist(enemy, camp));
-            seen.add(`${enemy.x},${enemy.y}`);
-        }
-        expect(seen.size).toBeGreaterThan(20);                    // it really moved
-        expect(farthest).toBeLessThanOrEqual(INNER + R + 1);       // rounding
-    });
-
-    it('keeps a walking enemy’s centre whole: the Token’s point is its body’s rounded copy', () => {
+describe('⭐ an enemy stands still', () => {
+    it('a camp\'s enemy stays on its spot for minutes, with no body and no walk', () => {
         const { enemy } = campWithEnemy();
-        tick(15000);
-        expect(Number.isInteger(enemy.x)).toBe(true);
-        expect(Number.isInteger(enemy.y)).toBe(true);
-    });
-
-    it('an enemy standing at a non-whole point strolls after its pause and draws one pause, not one per tick', () => {
-        const inner = seeded();
-        let draws = 0;
-        EnemyMotion.setRandomForTests(() => { draws++; return inner(); });
-        const { enemy } = campWithEnemy(800, 500, 874.268, 500.322);   // inside the ring, off the whole grid
-        const start = { x: enemy.x, y: enemy.y };
-        tick(20000);
-        expect(Math.hypot(enemy.x - start.x, enemy.y - start.y)).toBeGreaterThan(1);   // it strolled
-        expect(draws).toBeLessThan(40);                                // 200 ticks: not one draw each
-    });
-
-    it('⭐ strolls keep its whole art on the mat, by an edge and in a corner', () => {
-        const r = artRadiusOf('fixture_enemy');
-        const [w, h] = [matW(), matH()];
-        for (const [cx, cy, ey] of [[800, 70, 170], [70, 70, 170], [w - 70, h - 70, h - 170]]) {
-            clearMat();
-            const { enemy } = campWithEnemy(cx, cy, cx, ey);
-            let nearest = Infinity;
-            for (let i = 0; i < 1800; i++) {      // three minutes
-                EnemyMotion.tick(100);
-                nearest = Math.min(nearest, enemy.x, enemy.y, matW() - enemy.x, matH() - enemy.y);
-            }
-            expect(nearest).toBeGreaterThanOrEqual(r);
-            expect(nearest).toBeLessThan(r + 16);     // it did stroll up to the edge
+        let walked = 0;
+        const unsub = EventBus.subscribe(BOARD_EVENTS.ENEMIES_WALKED, () => walked++);
+        try {
+            tick(5 * 60 * 1000);
+        } finally {
+            unsub?.();
         }
+        expect(pointOf(enemy)).toEqual({ x: 920, y: 500 });
+        expect(EnemyMotion.bodyOf(enemy.id)).toBeNull();
+        expect(EnemyMotion.isWalking(enemy.id)).toBe(false);
+        expect(walked).toBe(0);
     });
 
-    it('an enemy saved with its art over the edge walks back onto the mat', () => {
-        const r = artRadiusOf('fixture_enemy');
-        const { enemy } = campWithEnemy(800, 70, 860, 20);       // inside the ring, half off the top
-        tick(1500);
-        expect(enemy.y).toBeGreaterThanOrEqual(r);
+    it('a new spawn stays where it appeared', () => {
+        const camp = placeAt('fixture_em_camp', 800, 500);
+        SpawnerSystem.attemptSpawn(camp, getTokenType('fixture_em_camp'), seeded());
+        const enemy = BoardState.tokens().find(t => t.typeId === 'fixture_enemy');
+        const spawnedAt = pointOf(enemy);
+        tick(3 * 60 * 1000);
+        expect(pointOf(enemy)).toEqual(spawnedAt);
     });
 
-    it('with wander 0 it never strolls', () => {
-        setMatTuning('enemyPotterRadius', 0);
-        const { enemy } = campWithEnemy(800, 500, 850, 500);        // 50 u out: inside the edge
-        tick(30000);
-        expect({ x: enemy.x, y: enemy.y }).toEqual({ x: 850, y: 500 });
-    });
-});
-
-describe('following and walking back (TL-16)', () => {
-    it('walks over to a moved spawner rather than jumping', () => {
+    it('a moved camp leaves its enemies where they stood', () => {
         const { camp, enemy } = campWithEnemy();
-        tick(100);
-        const before = { x: enemy.x, y: enemy.y };
+        tick(1000);
         BoardState.setTokenPoint(camp.id, 1300, 500);
-        tick(100);
-        // One tick at full speed (it is outside the ring now): ≤ 10 u.
-        expect(dist(enemy, before)).toBeLessThanOrEqual(SPEED * 0.1 + 1);
-        expect(EnemyMotion.isWalking(enemy.id)).toBe(true);
-        tick(12000);
-        expect(dist(enemy, camp)).toBeLessThanOrEqual(INNER + R + 1);
+        tick(60000);
+        expect(pointOf(enemy)).toEqual({ x: 920, y: 500 });
+        expect(enemy.tether).toBe(camp.id);
     });
 
-    it('walks back after the player drops it far away', () => {
+    it('an enemy dropped far from its camp stays where it is dropped', () => {
         const { camp, enemy } = campWithEnemy();
         tick(500);
         Placement.moveTokenTo(enemy.id, { x: 200, y: 900 });
-        const dropped = { x: enemy.x, y: enemy.y };
-        expect(dist(dropped, camp)).toBeGreaterThan(INNER + R);
-
-        tick(1000);
-        expect(dist(enemy, camp)).toBeLessThan(dist(dropped, camp));
-        expect(dist(enemy, dropped)).toBeCloseTo(SPEED, -1);        // 1 s at full speed
-        tick(15000);
-        expect(dist(enemy, camp)).toBeLessThanOrEqual(INNER + R + 1);
-    });
-
-    it('a drop inside the ring is kept: it stays there, then potters on', () => {
-        const { camp, enemy } = campWithEnemy();
-        Placement.moveTokenTo(enemy.id, { x: camp.x, y: camp.y + 170 });
-        const dropped = { x: enemy.x, y: enemy.y };
-        expect(dist(dropped, camp)).toBeLessThanOrEqual(INNER + R);
-        EnemyMotion.tick(100);
-        expect({ x: enemy.x, y: enemy.y }).toEqual(dropped);
-    });
-
-    it('does not move while it is in the player’s hand', () => {
-        const { camp, enemy } = campWithEnemy();
-        BoardState.setTokenPoint(camp.id, 1300, 500);
-        TimedChanges.setInHand(enemy.id, true);
-        try {
-            tick(3000);
-            expect({ x: enemy.x, y: enemy.y }).toEqual({ x: 920, y: 500 });
-        } finally {
-            TimedChanges.setInHand(enemy.id, false);
-        }
+        const dropped = pointOf(enemy);
+        expect(dist(dropped, camp)).toBeGreaterThan(400);
+        tick(60000);
+        expect(pointOf(enemy)).toEqual(dropped);
     });
 });
 
-describe('not while fighting', () => {
-    function fighter(id) {
-        const hero = generateHero({ name: id });
-        hero.id = id;
-        hero.status = 'idle';
-        hero.hp = { current: 100, max: 100 };
-        hero.skills.melee = { level: 50, xp: 0 };
-        return hero;
-    }
-
-    it('holds still in a fight, and moves again when it ends', () => {
-        GameState.state.heroes = [fighter('h1')];
-        const { camp, enemy } = campWithEnemy();
-        BoardCombat.tickToken(enemy, 100, 'h1');
-        expect(BoardCombat.getFight(enemy.id)).toBeTruthy();
-
-        BoardState.setTokenPoint(camp.id, 1300, 500);           // its spawner walks off
-        tick(5000);
-        expect({ x: enemy.x, y: enemy.y }).toEqual({ x: 920, y: 500 });
+describe('the step to open space for a crowded fight', () => {
+    it('walks there at Enemy walk speed, then stays, after the step is let go too', () => {
+        const { enemy } = campWithEnemy();
+        aside.plans.set(enemy.id, { heroId: 'h1', x: 1020, y: 500, side: -1, done: false });
+        tick(500);
+        expect(enemy.x).toBe(970);                          // 0.5 s at 100 u/s
+        expect(EnemyMotion.isWalking(enemy.id)).toBe(true);
+        expect(EnemyMotion.walkFacingOf(enemy.id)).toBe(1);
+        tick(1000);
+        expect(pointOf(enemy)).toEqual({ x: 1020, y: 500 });
+        expect(aside.plans.get(enemy.id).done).toBe(true);
         expect(EnemyMotion.isWalking(enemy.id)).toBe(false);
 
-        BoardCombat.endFight(enemy.id);
-        tick(1000);
-        expect(enemy.x).toBeGreaterThan(920);
+        aside.plans.delete(enemy.id);                       // the fight starts, or is let go
+        tick(30000);
+        expect(pointOf(enemy)).toEqual({ x: 1020, y: 500 });
+        expect(EnemyMotion.bodyOf(enemy.id)).toBeNull();
     });
 
-    it('holds still while a hero has claimed it and is walking up', () => {
-        const { camp, enemy } = campWithEnemy();
-        BoardState.setClaim('h1', { instanceId: enemy.id, typeId: enemy.typeId, x: enemy.x, y: enemy.y });
-        BoardState.setTokenPoint(camp.id, 1300, 500);
-        tick(3000);
-        expect({ x: enemy.x, y: enemy.y }).toEqual({ x: 920, y: 500 });
-        BoardState.setClaim('h1', null);
+    it('an enemy with no camp steps the same way', () => {
+        const enemy = placeAt('fixture_enemy', 600, 400);
+        aside.plans.set(enemy.id, { heroId: 'h1', x: 600, y: 300, side: -1, done: false });
+        tick(2000);
+        expect(pointOf(enemy)).toEqual({ x: 600, y: 300 });
     });
-});
 
-describe('engine rules', () => {
-    it('one huge tick walks at most MAX_STEP_MS worth — no teleport', () => {
-        const { camp, enemy } = campWithEnemy();
-        EnemyMotion.tick(100);
-        BoardState.setTokenPoint(camp.id, 1500, 500);
-        const before = { x: enemy.x, y: enemy.y };
-        EnemyMotion.tick(10 * 60 * 1000);                    // ten minutes in one tick
+    it('one huge tick walks at most MAX_STEP_MS worth: no teleport', () => {
+        const { enemy } = campWithEnemy();
+        aside.plans.set(enemy.id, { heroId: 'h1', x: 1500, y: 500, side: -1, done: false });
+        const before = pointOf(enemy);
+        EnemyMotion.tick(10 * 60 * 1000);
         expect(dist(enemy, before)).toBeLessThanOrEqual(SPEED * EnemyMotion.MAX_STEP_MS / 1000 + 1);
-        expect(dist(enemy, camp)).toBeGreaterThan(INNER + R);
     });
 
     it('a walking tick publishes one ENEMIES_WALKED and never TILE_CHANGED or ADJACENCY_DIRTY', () => {
-        const { camp } = campWithEnemy();
-        const c2 = placeAt('fixture_em_camp', 300, 300);
+        const { enemy } = campWithEnemy();
         const e2 = placeAt('fixture_enemy', 420, 300);
-        e2.tether = c2.id;
-        EnemyMotion.tick(100);
-        BoardState.setTokenPoint(camp.id, 1500, 500);
-        BoardState.setTokenPoint(c2.id, 300, 1000);
+        aside.plans.set(enemy.id, { heroId: 'h1', x: 920, y: 900, side: -1, done: false });
+        aside.plans.set(e2.id, { heroId: 'h2', x: 420, y: 700, side: -1, done: false });
 
         const counts = {};
         const unsubs = [BOARD_EVENTS.ENEMIES_WALKED, BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.ADJACENCY_DIRTY,
             BOARD_EVENTS.HERO_MOVED, 'state_changed']
             .map(e => EventBus.subscribe(e, () => { counts[e] = (counts[e] || 0) + 1; }));
         try {
-            // Two enemies walking for 2 s, both far from home: 20 ticks.
-            tick(2000);
+            tick(2000);                                     // 20 ticks, both walking all the way
         } finally {
             unsubs.forEach(u => u?.());
         }
@@ -340,37 +261,51 @@ describe('engine rules', () => {
         expect(counts.state_changed || 0).toBe(0);
     });
 
-    it('rebuilds the neighbourhood once when a walk ends, naming both ends', () => {
-        const { camp, enemy } = campWithEnemy();
-        EnemyMotion.tick(100);
-        BoardState.setTokenPoint(camp.id, 1100, 500);
-        const start = { x: enemy.x, y: enemy.y };
+    it('rebuilds the neighbourhood once when a step ends, naming both ends', () => {
+        const { enemy } = campWithEnemy();
+        const start = pointOf(enemy);
+        aside.plans.set(enemy.id, { heroId: 'h1', x: 1100, y: 500, side: -1, done: false });
         const dirty = [];
         const unsub = EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, (p) => dirty.push(p.points));
         try {
-            while (!dirty.length) EnemyMotion.tick(100);
+            tick(5000);
         } finally {
             unsub?.();
         }
         expect(dirty).toHaveLength(1);
         expect(dirty[0][0]).toEqual(start);
-        expect(dirty[0][1]).toEqual({ x: enemy.x, y: enemy.y });
+        expect(dirty[0][1]).toEqual({ x: 1100, y: 500 });
+    });
+
+    it('a step let go halfway stands where it got to, and rebuilds the neighbourhood there', () => {
+        const { enemy } = campWithEnemy();
+        aside.plans.set(enemy.id, { heroId: 'h1', x: 1200, y: 500, side: -1, done: false });
+        tick(1000);
+        const dirty = [];
+        const unsub = EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, (p) => dirty.push(p.points));
+        aside.plans.delete(enemy.id);
+        try {
+            tick(5000);
+        } finally {
+            unsub?.();
+        }
+        expect(pointOf(enemy)).toEqual({ x: 1020, y: 500 });
+        expect(dirty).toEqual([[{ x: 920, y: 500 }, { x: 1020, y: 500 }]]);
     });
 
     it('runs on the board tick (BoardRunner.tick)', () => {
-        const { camp, enemy } = campWithEnemy();
-        BoardState.setTokenPoint(camp.id, 1300, 500);
+        const { enemy } = campWithEnemy();
+        aside.plans.set(enemy.id, { heroId: 'h1', x: 1100, y: 500, side: -1, done: false });
         for (let i = 0; i < 20; i++) BoardRunner.tick(100);
         expect(enemy.x).toBeGreaterThan(920);
     });
 });
 
 describe('save and load', () => {
-    it('keeps the tether and the point, and walks on after the load', async () => {
+    it('keeps the tether and the point, and stands on after the load', async () => {
         const { camp, enemy } = campWithEnemy();
         BoardState.setTokenPoint(camp.id, 1300, 500);
         tick(1500);
-        const at = { x: enemy.x, y: enemy.y };
 
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
         await GameState.initFromSave(migrateState(saved.state, saved.version));
@@ -378,10 +313,10 @@ describe('save and load', () => {
 
         const loaded = BoardState.getTokenById(enemy.id);
         expect(loaded.tether).toBe(camp.id);
-        expect({ x: loaded.x, y: loaded.y }).toEqual(at);
+        expect(pointOf(loaded)).toEqual({ x: 920, y: 500 });
         expect(GameState.state.board.enemyTethers).toBe(1);
 
         tick(15000);
-        expect(dist(loaded, BoardState.getTokenById(camp.id))).toBeLessThanOrEqual(INNER + R + 1);
+        expect(pointOf(loaded)).toEqual({ x: 920, y: 500 });
     });
 });

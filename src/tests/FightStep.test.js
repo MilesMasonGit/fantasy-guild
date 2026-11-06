@@ -134,7 +134,6 @@ beforeEach(() => {
     setMatTuning('walkSpeed', SPEED);
     setMatTuning('enemyWalkSpeed', ENEMY_SPEED);
     setMatTuning('potterRadius', 0);
-    setMatTuning('enemyPotterRadius', 0);
     setMatTuning('watchRadius', 300);
     GameState.initNew();
     GameState.state.progress.rosterLimit = 40;
@@ -152,7 +151,6 @@ beforeEach(() => {
 
 afterEach(() => {
     BoardState.setInstantArrival(true);
-    EnemyMotion.setRandomForTests();
     HeroMotion.setRandomForTests();
 });
 
@@ -293,9 +291,7 @@ describe('who counts', () => {
 });
 
 describe('⭐ after a stepped fight', () => {
-    it('a camp\'s enemy walks back home to where it stood', () => {
-        // Its ground: 64 u of camp and 20 u of wander, so 84 u round the camp's centre.
-        setMatTuning('enemyPotterRadius', 20);
+    it('a camp\'s enemy stays where it stepped: it never walks back', () => {
         const camp = placeAt('fs_camp', 800, 700);
         const enemy = placeAt('fs_dummy', 880, 700);
         enemy.tether = camp.id;
@@ -307,22 +303,20 @@ describe('⭐ after a stepped fight', () => {
 
         sendFrom('h1', { x: 1200, y: 700 }, enemy);
         runUntil(() => !!fightOf('h1'));
-        // It stepped right, out of its camp's ground.
+        // It stepped right, away from its camp.
         expect(enemy.x).toBeGreaterThan(880);
-        expect(Math.hypot(enemy.x - 800, enemy.y - 700)).toBeGreaterThan(84);
+        const stepped = { x: enemy.x, y: enemy.y };
         run(3000);
 
-        // The hero is called home: the fight is over, and the enemy walks back.
+        // The hero is called home: the fight is over, and the enemy stands where it fought.
         Orders.sendHome('h1');
-        run(3000);
+        run(10000);
         expect(fightOf('h1')).toBeNull();
-        expect({ x: enemy.x, y: enemy.y }).toEqual({ x: 880, y: 700 });
+        expect({ x: enemy.x, y: enemy.y }).toEqual(stepped);
         expect(EnemyMotion.isWalking(enemy.id)).toBe(false);
     });
 
     it('an ambushed hero goes back to their job once the stepped fight is won', () => {
-        // The camp's ground reaches the goblin's spot, so it stands there until it attacks.
-        setMatTuning('enemyPotterRadius', 128);
         const camp = placeAt('fs_hostile_camp', 800, 500);
         const goblin = placeAt('fs_goblin', 900, 500);
         goblin.tether = camp.id;

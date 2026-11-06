@@ -145,7 +145,6 @@ beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
     setMatTuning('potterRadius', 0);
-    setMatTuning('enemyPotterRadius', 0);
     GameState.initNew();
     GameState.state.progress.rosterLimit = 20;
     InventoryManager.init();
@@ -162,7 +161,6 @@ beforeEach(() => {
 afterEach(() => {
     vi.restoreAllMocks();
     TriggerSystem.teardown();
-    EnemyMotion.setRandomForTests();
 });
 
 // ---------------------------------------------------------------------------

@@ -24,7 +24,8 @@ and grow on their own.
 
 **Design pillars.** Check every new feature against all four.
 
-1. **The mat is a living place.** Things grow, spawn, transform and wander.
+1. **The mat is a living place.** Things grow, spawn and transform; heroes
+   walk about their work (enemies stand where they appear: owner, 2026-11-05).
    The ideal is an ecosystem that mostly feeds itself, which the player steers
    ("nothing arrives, everything transforms").
 2. **Set up, don't micromanage.** The player arranges the operation: where
@@ -840,8 +841,12 @@ Their resistances, weaknesses and moves come with the combat content pack
 (brief 280 V5, in the owner's CMS review; the analyst's starter table in
 `concept_combat_v2.md`), which also brings the Goblin Chief to level 12 with a hit of 3.
 
-- Goblins come from the Goblin Camp; enemies potter within 128 u of their
-  spawner at half of 90 u/s and walk back if moved.
+- Goblins come from the Goblin Camp. **Enemies stand still** (owner,
+  2026-11-05): an enemy stays where it spawned (a spot round its camp), where
+  it is placed, or where the player drops it; a moved camp leaves its enemies
+  where they stood. The only time one moves is a short step to open space
+  before a crowded fight (§6, Fights), and it stays where it stepped. No walk
+  animation is needed; the step slides in the idle pose.
 - **Hostile** enemies ambush a hero **sent to work a Token** inside the camp's
   watch (240 u round their spawner, a Mat Tuner row); the hero fights back,
   barehanded if their hands are empty, then goes back to their job. A hero
@@ -864,7 +869,7 @@ Their resistances, weaknesses and moves come with the combat content pack
 - **Bosses and guardians come from camps of one**: an ordinary spawner (a
   "Warlord's Den", a "Guardian's Hollow") whose spawn list names the one enemy,
   allowance 1, on its own interval: the same machinery and CMS fields as any
-  camp. The boss or guardian potters by its camp; a place brings one through
+  camp. The boss or guardian stands by its camp; a place brings one through
   the world tables' camps. The camp's clock stands at zero
   while the camp is full, so a beaten boss or guardian comes back one whole
   interval after it falls (§3, Spawners).
@@ -965,8 +970,8 @@ Their resistances, weaknesses and moves come with the combat content pack
   once begun, and the next kill of the same enemy fights where it stands. The
   enemy walks at its full speed (90 u/s), so a step delays the first swing by
   its length at that speed, at most about 1.8 s; the QA crowd's steps are
-  8 to 48 u. Afterwards a camp's enemy walks back to where it stood, and an
-  attacked hero goes back to their job, as before. A catch-up steps the same
+  8 to 48 u. Afterwards the enemy stays where it stepped (enemies stand
+  still), and a hero whose job is elsewhere goes back to it, as before. A catch-up steps the same
   fights to the same spots (whole mat units, no random draw). Never saved: a
   save taken mid-step loads with the hero walking up again.
   *(`board/FightRoom.js`)*

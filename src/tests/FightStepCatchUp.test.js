@@ -9,7 +9,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
-import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as FightRoom from '../systems/board/FightRoom.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -124,7 +123,6 @@ beforeAll(() => {
     vi.stubGlobal('Audio', SilentAudio);
     Math.random = seeded;
     HeroMotion.setRandomForTests(seeded);
-    EnemyMotion.setRandomForTests(seeded);
     SettingsManager.init();
     EngineBootstrap.init();
     AudioSystem.init();
@@ -142,7 +140,6 @@ afterEach(() => {
 afterAll(() => {
     Math.random = realRandom;
     HeroMotion.setRandomForTests();
-    EnemyMotion.setRandomForTests();
     BoardState.setInstantArrival(true);
     vi.unstubAllGlobals();
     vi.restoreAllMocks();

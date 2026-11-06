@@ -751,7 +751,7 @@ did not is that commit's **origin** (its own state, a context or a store woke it
 
 **The same work every run.** The tool stops the game loop and drives the ticks itself, 100 ms
 of game time each, paced on the wall clock as the loop paces them. Inside a tick `Math.random`
-is a seeded stream and `Date.now` moves 100 ms a tick (hero and enemy pottering are pointed at
+is a seeded stream and `Date.now` moves 100 ms a tick (hero pottering is pointed at
 it; a loot sprite's wall-clock absorption timer, which races the tick due at the same moment, is
 dropped so absorption happens on the tick's own game-clock path). The engine events of the
 measured ticks are counted and fingerprinted, and runs that did not do the same work say

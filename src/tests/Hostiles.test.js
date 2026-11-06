@@ -115,7 +115,6 @@ beforeEach(() => {
     resetMatTuning();
     setMatTuning('watchRadius', 300);
     setMatTuning('potterRadius', 0);
-    setMatTuning('enemyPotterRadius', 0);
     GameState.initNew();
     GameState.state.progress.rosterLimit = 20;
     InventoryManager.init();
@@ -127,7 +126,6 @@ beforeEach(() => {
     GameState.state.heroes = [fighter('h1'), fighter('h2')];
     GameState.state.inventory.maxSlots = 50;
 });
-afterEach(() => EnemyMotion.setRandomForTests());
 
 // ---------------------------------------------------------------------------
 
@@ -264,7 +262,6 @@ describe('with walking (no instant arrival)', () => {
         const at = { x: enemy.x, y: enemy.y };
         BoardRunner.tick(100);
         expect(BoardCombat.fightOfHero('h1')).toBeNull();          // still walking
-        expect(EnemyMotion.isHeld(enemy.id)).toBe(true);
         for (let i = 0; i < 100 && !BoardCombat.fightOfHero('h1') && BoardState.getTokenById(enemy.id); i++) BoardRunner.tick(100);
         expect(BoardCombat.fightOfHero('h1')?.instanceId ?? (BoardState.getTokenById(enemy.id) ? null : enemy.id)).toBe(enemy.id);
         expect({ x: enemy.x, y: enemy.y }).toEqual(at);

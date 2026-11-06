@@ -5,7 +5,8 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
-import { ALERT } from '../systems/board/boardEvents.js';
+import { ALERT, BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { EventBus } from '../systems/core/EventBus.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -18,7 +19,7 @@ import { REACH, REACHES, getReach, reachOf } from '../config/registries/reachReg
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
- * Wandering enemies cost the tick less (T-200), with the game doing exactly what it did: each block
+ * Enemies cost the tick little, with the game doing exactly what it did: each block
  * counts the work a saving removes, beside the outcome it must keep.
  */
 
@@ -76,15 +77,6 @@ function campWithEnemies(n, x = 800, y = 500) {
     return { camp, enemies };
 }
 
-/** Seeded random, so strolls are repeatable. */
-function seeded(seed = 7) {
-    let s = seed;
-    return () => {
-        s = (s * 16807) % 2147483647;
-        return (s - 1) / 2147483646;
-    };
-}
-
 function makeHero(id) {
     const hero = generateHero({ name: id });
     hero.id = id;
@@ -110,12 +102,9 @@ beforeEach(() => {
     SpawnerSystem.resetAlerts();
     resetMatTuning();
     setMatTuning('enemyWalkSpeed', 100);
-    setMatTuning('enemyPotterRadius', 128);
-    EnemyMotion.setRandomForTests(seeded());
 });
 
 afterEach(() => {
-    EnemyMotion.setRandomForTests();
     resetMatTuning();
 });
 
@@ -143,37 +132,23 @@ describe('an enemy nobody fights builds no stat block', () => {
     });
 });
 
-describe('a tick of pottering reads what every step shares once', () => {
-    it('asks for the claimed Tokens once a tick, never once an enemy', () => {
-        campWithEnemies(10);
-        for (let i = 0; i < 20; i++) EnemyMotion.tick(100);
-        expect(BoardState.claimedInstanceIds).toHaveBeenCalledTimes(20);
-        expect(BoardState.heroOfInstance).not.toHaveBeenCalled();
-    });
-
-    it('a claimed enemy still holds still, and walks on once let go', () => {
-        const { camp, enemies } = campWithEnemies(1);
-        const [enemy] = enemies;
-        EnemyMotion.tick(100);
+describe('standing enemies cost the enemy tick nothing each', () => {
+    it('reads no claims and keeps no body for an enemy that is not stepping aside', () => {
+        const { camp, enemies } = campWithEnemies(10);
+        const before = enemies.map(e => ({ x: e.x, y: e.y }));
         BoardState.setTokenPoint(camp.id, 1300, 500);
-        BoardState.setClaim('hero_1', { instanceId: enemy.id, typeId: enemy.typeId, x: enemy.x, y: enemy.y });
-        const held = { x: enemy.x, y: enemy.y };
-        for (let i = 0; i < 10; i++) EnemyMotion.tick(100);
-        expect({ x: enemy.x, y: enemy.y }).toEqual(held);
-        expect(EnemyMotion.isWalking(enemy.id)).toBe(false);
-        BoardState.setClaim('hero_1', null);
-        for (let i = 0; i < 10; i++) EnemyMotion.tick(100);
-        expect(enemy.x).toBeGreaterThan(held.x);
-    });
-
-    it('an enemy taken off the mat loses its body the next tick', () => {
-        const { enemies } = campWithEnemies(3);
-        EnemyMotion.tick(100);
-        expect(EnemyMotion.bodyOf(enemies[1].id)).not.toBeNull();
-        BoardState.removeToken(enemies[1].id);
-        EnemyMotion.tick(100);
-        expect(EnemyMotion.bodyOf(enemies[1].id)).toBeNull();
-        expect(EnemyMotion.bodyOf(enemies[0].id)).not.toBeNull();
+        let walked = 0;
+        const unsub = EventBus.subscribe(BOARD_EVENTS.ENEMIES_WALKED, () => walked++);
+        try {
+            for (let i = 0; i < 20; i++) EnemyMotion.tick(100);
+        } finally {
+            unsub?.();
+        }
+        expect(BoardState.claimedInstanceIds).not.toHaveBeenCalled();
+        expect(BoardState.heroOfInstance).not.toHaveBeenCalled();
+        expect(enemies.map(e => ({ x: e.x, y: e.y }))).toEqual(before);
+        expect(enemies.every(e => EnemyMotion.bodyOf(e.id) === null)).toBe(true);
+        expect(walked).toBe(0);
     });
 });
 

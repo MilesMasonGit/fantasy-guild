@@ -94,7 +94,6 @@ beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
     setMatTuning('potterRadius', 0);
-    setMatTuning('enemyPotterRadius', 0);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();

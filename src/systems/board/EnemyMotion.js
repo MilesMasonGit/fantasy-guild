@@ -1,84 +1,52 @@
-// enemies potter by their spawner
+// enemies stand still, but for a step to open space before a crowded fight
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
 import { matTuning } from '../../config/matTuning.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as SpawnerSystem from './SpawnerSystem.js';
-import * as Hand from './Hand.js';
 import * as FightRoom from './FightRoom.js';
-import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.js';
+import { stepToward } from './walking.js';
 
 /**
- * Each enemy is tethered to the spawner that made it, as a hero is to a flag, and this file walks
- * it.
+ * Enemies stand still. An enemy stays where it was spawned, placed or dropped: it never strolls,
+ * never walks back to its camp, and stays put when its camp is moved. It moves only to step to open
+ * space before a crowded fight starts (`FightRoom`), at Enemy walk speed (Mat Tuner), and then stays
+ * where it stepped.
  *
- * Potters near its spawner: a pause, a stroll to a random spot in the ring between the spawner's
- * art edge and Enemy wander beyond it (Mat Tuner), another pause. This is the heroes' idle potter,
- * with the step itself shared (`walking.js`). Follows its spawner: where it stands is kept as an
- * offset from the spawner's live centre, so a moved spawner is walked after, never jumped to. Walks
- * back when the player drops it outside that ring, at full Enemy walk speed; strolls inside it go
- * at half, as a hero's do. Holds still while fought (a live fight via `BoardCombat.getFight`, or a
- * hero's claim on it) and while it is in the player's hand, except to step to open space before its
- * fight starts (`FightRoom`), at full speed, whatever its camp. A dragged enemy keeps its fight
- * through the move; nothing here touches fights.
+ * The tether: `instance.tether` is the spawner's instance id, written by `SpawnerSystem` when it
+ * spawns an enemy, and saved with the Token. It says which camp an enemy belongs to (a hero sent to
+ * an enemy camp hunts its enemies, `Camps`, and a camp counts its own toward its allowance); it no
+ * longer moves anything. An enemy with no `tether` (an older save) is attached once, on its first
+ * tick, to the nearest live spawner whose family (`SpawnerSystem.familyOf`) holds its type;
+ * `board.enemyTethers` records that it has been done, so an enemy the player later places by hand
+ * is never attached by a reload.
  *
- * An enemy with no live spawner (placed by hand, or its spawner gone) stands still but for that
- * step.
- *
- * The tether: `instance.tether` is the spawner's instance id, written by
- * `SpawnerSystem` when it spawns an enemy, and saved with the Token. An enemy with no
- * `tether` (an older save) is attached once, on its first tick, to the nearest live spawner whose
- * family (`SpawnerSystem.familyOf`) holds its type; `board.enemyTethers` records that it has been
- * done, so an enemy the player later places by hand is never attached by a reload.
- *
- * Everything advances on the tick's `delta`, so a catch-up speeds it up. A step moves at most
+ * A step advances on the tick's `delta`, so a catch-up speeds it up, and moves at most
  * {@link MAX_STEP_MS} worth of walking, so one very long tick cannot fling an enemy across the mat.
  *
  * ⚠️ A step publishes no Token events. The point is written with `BoardState.setTokenPoint`, which
  * publishes nothing (it journals the move, so `nearby.neighbourIds` drops only the cached entries
  * within Near of either end). The screen hears one `ENEMIES_WALKED` per tick at most. The Near
- * neighbourhood is rebuilt (`ADJACENCY_DIRTY`, both ends) once per walk, when the enemy stops,
- * never per step.
+ * neighbourhood is rebuilt (`ADJACENCY_DIRTY`, both ends) once per step, when the enemy stops,
+ * never per tick.
  */
 
 /** A step walks at most this much game time, however long the tick. */
 export const MAX_STEP_MS = 1000;
-
-/** An enemy pauses between strolls for this long, in game ms. */
-export const POTTER_PAUSE_MS = Object.freeze({ min: 2000, max: 6000 });
-
-/** Strolls inside the ring go at this fraction of walking speed, as heroes' do. */
-export const STROLL_FACTOR = 0.5;
 
 /** Walking speed, mat units a second (Mat Tuner "Enemy walk speed"). */
 export function enemyWalkSpeed() {
     return matTuning('enemyWalkSpeed');
 }
 
-/** How far past its spawner's edge an enemy potters (Mat Tuner "Enemy wander"; 0 = no strolls). */
-export function enemyPotterRadius() {
-    return matTuning('enemyPotterRadius');
-}
-
-let random = Math.random;
-
-/** Tests only: make pottering predictable. Pass nothing to restore `Math.random`. */
-export function setRandomForTests(fn = Math.random) {
-    random = fn;
-}
-
 /**
- * `instanceId → { x, y, potter: {dx, dy}, pauseLeft, moving, facing, from }`.
- * `x`, `y` are exact; the Token's own point is the rounded copy, so `step`
- * compares rounded points to tell its own walking from a move by something else.
- * ⚠️ Only a walking enemy's point is whole: a spawn, a nudged drop and a push
- * land at fractional points, and a spawn must keep its gap, which rounding it
- * could break. Never saved: a load starts every enemy standing where it was saved.
+ * `instanceId → { x, y, moving, facing, from }`, for an enemy stepping aside only.
+ * `x`, `y` are exact; the Token's own point is the rounded copy, so a step compares rounded points
+ * to tell its own walking from a move by something else. Never saved.
  */
 const bodiesByBoard = new WeakMap();
 
@@ -149,18 +117,13 @@ export function attachUntethered() {
 }
 
 /**
- * What enemy `instanceId`'s body is doing, for the screen and probes:
- * `{ x, y, moving, facing, strolling }`, or null when it has none (not a
- * tethered enemy, or not ticked yet).
+ * What a stepping enemy's body is doing, for the screen and probes: `{ x, y, moving, facing }`, or
+ * null when it has none (it is not stepping aside).
  */
 export function bodyOf(instanceId) {
     const body = bodies()?.get(instanceId);
     if (!body) return null;
-    return {
-        x: body.x, y: body.y, moving: !!body.moving, facing: body.facing || -1,
-        potter: body.potter ? { ...body.potter } : null,
-        pauseLeft: body.pauseLeft
-    };
+    return { x: body.x, y: body.y, moving: !!body.moving, facing: body.facing || -1 };
 }
 
 /** Whether enemy `instanceId` is walking right now. */
@@ -174,25 +137,12 @@ export function walkFacingOf(instanceId) {
     return body?.moving ? (body.facing || -1) : null;
 }
 
-/** Whether an enemy holds still this tick: fought, walked up to, or in the player's hand. */
-export function isHeld(instanceId) {
-    return !!BoardCombat.getFight(instanceId)
-        || !!BoardState.heroOfInstance(instanceId)
-        || Hand.isInHand(instanceId);
-}
-
-/** The ring an enemy potters in around `spawner`: `{ centre, inner, outer }`. */
-export function areaOf(spawner) {
-    const inner = artRadiusOf(spawner.typeId);
-    return { centre: { x: spawner.x, y: spawner.y }, inner, outer: inner + Math.max(0, enemyPotterRadius()) };
-}
-
-/** `seen`: the last tick that found it on the mat (`tick`'s stamp). */
+/** `seen`: the last tick that found it stepping (`tick`'s stamp). */
 function newBody(instance) {
-    return { x: instance.x, y: instance.y, potter: null, pauseLeft: null, moving: false, facing: -1, from: null, seen: 0 };
+    return { x: instance.x, y: instance.y, moving: false, facing: -1, from: null, seen: 0 };
 }
 
-/** The walk has ended (arrived, or held): rebuild the Near neighbourhood at both ends, once. */
+/** The walk has ended (arrived, or let go): rebuild the Near neighbourhood at both ends, once. */
 function endWalk(instance, body) {
     if (!body.from) return;
     const from = body.from;
@@ -200,105 +150,30 @@ function endWalk(instance, body) {
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [from, { x: instance.x, y: instance.y }] });
 }
 
-/**
- * What every step of one tick shares, read once a tick: nothing a step does changes the Mat Tuner,
- * the mat's size, a claim or a fight. Its `dest` is one scratch point the steps take turns with
- * (`stepToward` copies it, never keeps it).
- */
-const shared = {
-    potter: 0, speed: 0, w: 0, h: 0, claimed: null, stamp: 0,
-    dest: { x: 0, y: 0 }
-};
+/** One scratch destination the steps take turns with (`stepToward` copies it, never keeps it). */
+const dest = { x: 0, y: 0 };
+
+let tickStamp = 0;
 
 /**
- * Move one tethered enemy `delta` game ms. The same walk as {@link areaOf}, {@link isHeld} and
- * `clampToMat` describe, with the tick's shared reads (`shared`) in their place.
+ * Walk enemy `instance` `delta` game ms toward the open space its fight steps to (`FightRoom`), at
+ * full speed. Once there it stands, and stays there after the fight.
  * @returns {boolean} whether anything the screen draws changed
  */
-function step(instance, spawner, body, delta) {
-    // Moved by something else since the last step — the player's drop, a push:
-    // start again from where it now stands.
+function stepAside(instance, body, aside, delta, speed) {
+    // Moved by something else since the last step (a push): walk on from where it now stands.
     if (Math.round(body.x) !== Math.round(instance.x) || Math.round(body.y) !== Math.round(instance.y)) {
         body.x = instance.x;
         body.y = instance.y;
-        body.potter = null;
-        body.pauseLeft = null;
         body.from = null;
     }
-
     const wasMoving = body.moving;
-    const aside = FightRoom.stepOf(instance.id);
-    if (aside) return stepAside(instance, body, aside, delta, wasMoving);
-    if (BoardCombat.getFight(instance.id) || shared.claimed.has(instance.id) || Hand.isInHand(instance.id)) {
-        body.moving = false;
-        endWalk(instance, body);
-        return wasMoving;
-    }
-
-    const cx = spawner.x;
-    const cy = spawner.y;
-    const inner = artRadiusOf(spawner.typeId);
-    const outer = inner + Math.max(0, shared.potter);
-    const outside = Math.hypot(body.x - cx, body.y - cy) > outer + ARRIVE_EPS;
-
-    // Where it stands, as an offset from the spawner, so it follows the spawner.
-    // Standing inside the ring, it keeps its spot; outside, it heads back in.
-    if (!body.potter) {
-        body.potter = outside
-            ? randomOffset(outer, random, inner)
-            : { dx: body.x - cx, dy: body.y - cy };
-    }
-    // `clampToMat`, on the tick's mat size.
-    const inset = artRadiusOf(instance.typeId);
-    const px = cx + body.potter.dx;
-    const py = cy + body.potter.dy;
-    const dest = shared.dest;
-    dest.x = shared.w >= 2 * inset ? Math.max(inset, Math.min(shared.w - inset, px)) : shared.w / 2;
-    dest.y = shared.h >= 2 * inset ? Math.max(inset, Math.min(shared.h - inset, py)) : shared.h / 2;
-
-    const walkMs = Math.min(Math.max(0, delta), MAX_STEP_MS);
-    const speed = shared.speed * (outside ? 1 : STROLL_FACTOR);
-    const startX = instance.x;
-    const startY = instance.y;
-    const moved = stepToward(body, dest, speed * walkMs / 1000);
-
-    let changed = moved || wasMoving !== body.moving;
-    if (moved) {
-        if (!body.from) body.from = { x: startX, y: startY };
-        const x = Math.round(body.x);
-        const y = Math.round(body.y);
-        if (x !== instance.x || y !== instance.y) BoardState.setTokenPoint(instance.id, x, y);
-    }
-
-    if (!body.moving) {
-        endWalk(instance, body);
-        // Standing: count the pause down, then set off on a stroll.
-        if (shared.potter > 0) {
-            if (body.pauseLeft == null) body.pauseLeft = randomPauseMs(POTTER_PAUSE_MS, random);
-            body.pauseLeft -= Math.max(0, delta);
-            if (body.pauseLeft <= 0) {
-                body.potter = randomOffset(outer, random, inner);
-                body.pauseLeft = null;
-                changed = true;
-            }
-        }
-    }
-    return changed;
-}
-
-/**
- * A claimed enemy stepping to open space for its fight (`FightRoom`): it walks there at full speed,
- * its stroll left as it was, so once the fight is over a camp's enemy walks back to where it stood.
- * @returns {boolean} whether anything the screen draws changed
- */
-function stepAside(instance, body, aside, delta, wasMoving) {
-    const dest = shared.dest;
     dest.x = aside.x;
     dest.y = aside.y;
     const walkMs = Math.min(Math.max(0, delta), MAX_STEP_MS);
     const startX = instance.x;
     const startY = instance.y;
-    const moved = stepToward(body, dest, shared.speed * walkMs / 1000);
+    const moved = stepToward(body, dest, speed * walkMs / 1000);
     if (moved) {
         if (!body.from) body.from = { x: startX, y: startY };
         const x = Math.round(body.x);
@@ -313,57 +188,44 @@ function stepAside(instance, body, aside, delta, wasMoving) {
 }
 
 /**
- * Walk every tethered enemy on the mat `delta` game ms. Run once per engine
- * tick, after `HeroMotion.tick` (so a hero's claim this tick already holds its
- * enemy still) and before any Token ticks.
+ * Walk every enemy stepping aside for its fight `delta` game ms; every other enemy stands. Run once
+ * per engine tick, after `HeroMotion.tick` (so a hero arriving this tick has already asked for its
+ * step) and before any Token ticks.
  */
 export function tick(delta = 0) {
     const map = bodies();
     if (!map) return;
     attachUntethered();
-
-    shared.potter = enemyPotterRadius();
-    shared.speed = enemyWalkSpeed();
-    shared.w = matW();
-    shared.h = matH();
-    shared.claimed = BoardState.claimedInstanceIds();
-    const stamp = ++shared.stamp;
     FightRoom.pruneSteps();
 
     let changed = false;
-    for (const instance of BoardState.tokens()) {
-        if (typeof instance.tether !== 'string') continue;
-        // `spawnerOf`, from the instance in hand: the list holds the mat's own instances.
-        const spawner = BoardState.getTokenById(instance.tether);
-        if (!isLiveSpawner(spawner) || !BoardCombat.isEnemyToken(instance)) continue;
-        let body = map.get(instance.id);
-        if (!body) {
-            body = newBody(instance);
-            map.set(instance.id, body);
+    const stamp = ++tickStamp;
+    const ids = FightRoom.steppingIds();
+    if (ids.length) {
+        const speed = enemyWalkSpeed();
+        for (const id of ids) {
+            const instance = BoardState.getTokenById(id);
+            const aside = FightRoom.stepOf(id);
+            if (!instance || !aside) continue;
+            let body = map.get(id);
+            if (!body) {
+                body = newBody(instance);
+                map.set(id, body);
+            }
+            body.seen = stamp;
+            if (stepAside(instance, body, aside, delta, speed)) changed = true;
         }
-        body.seen = stamp;
-        if (step(instance, spawner, body, delta)) changed = true;
     }
-    // An enemy with no camp stands still, except to step aside for its fight.
-    for (const id of FightRoom.steppingIds()) {
-        const instance = BoardState.getTokenById(id);
-        if (!instance) continue;
-        let body = map.get(id);
-        if (body?.seen === stamp) continue;
-        if (!body) {
-            body = newBody(instance);
-            map.set(id, body);
-        }
-        body.seen = stamp;
-        if (step(instance, null, body, delta)) changed = true;
-    }
-    // Gone from the mat, or no spawner left: no body.
+    // Its step over or let go: no body. One let go mid-walk stands where it got to.
     for (const [id, body] of map) {
         if (body.seen === stamp) continue;
-        if (body.moving) changed = true;
+        if (body.moving) {
+            changed = true;
+            const instance = BoardState.getTokenById(id);
+            if (instance) endWalk(instance, body);
+        }
         map.delete(id);
     }
-    shared.claimed = null;
 
     if (changed) EventBus.publish(BOARD_EVENTS.ENEMIES_WALKED);
 }

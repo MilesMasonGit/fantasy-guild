@@ -11,7 +11,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
-import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
@@ -132,7 +131,6 @@ beforeAll(() => {
     vi.stubGlobal('Audio', SilentAudio);
     Math.random = seeded;
     HeroMotion.setRandomForTests(seeded);
-    EnemyMotion.setRandomForTests(seeded);
     SettingsManager.init();
     EngineBootstrap.init();
     AudioSystem.init();
@@ -157,7 +155,6 @@ afterEach(() => {
 afterAll(() => {
     Math.random = realRandom;
     HeroMotion.setRandomForTests();
-    EnemyMotion.setRandomForTests();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
     resetMatTuning();
