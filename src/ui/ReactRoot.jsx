@@ -218,10 +218,11 @@ export const ReactRoot = () => {
             <ScreenCalloutLayer />
             <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                 {/* ⚠️ `overflow-clip`: the Hall's web runs past the column to the screen's edge, and a
-                    hidden box would scroll to a focused star out there. */}
+                    hidden box would scroll to a focused star out there. `min-h-0`: a clipped box, unlike a
+                    hidden one, would otherwise grow to its tallest content (the nav) past the screen. */}
                 <div
                     ref={tableRef}
-                    className="flex-1 relative flex overflow-clip bg-black"
+                    className="flex-1 min-h-0 relative flex overflow-clip bg-black"
                     style={tableBackground}
                 >
                     <div

@@ -1247,6 +1247,14 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   Passive Production the Hall pays each lap beside the Wishing Well's Water. The sky grows to
   hold its constellations and is dragged when it does not fit.
   *(`guildUpgrades.js`, `hallStars.js`, `progression/HallRules.js`)*
+- **The sky's look** (brief 390): stars spread 1.4 times their authored places apart, each with
+  an item's outline over it (by the star's kind, or the star's own `outline`), its title under
+  it and its rank only under the pointer; the web runs on under the nav and the details panel.
+  The **details panel** (purple frames) gives a star's name, one sentence of what it does (built
+  from its rules), its rank, what it gives now and next and at its top rank, its price as item
+  ribbons with have/need, and the Upgrade button. The Hall star's **Effects** list the outputs
+  each lap and, as boosts, the lap itself and every rule held.
+  *(`GuildHallBoard.jsx`, `hallStarOutline.js`, `GuildUpgradeInspection.jsx`, `hallStarText.js`)*
 
 | Upgrade | Ranks | Effect |
 |---|---|---|

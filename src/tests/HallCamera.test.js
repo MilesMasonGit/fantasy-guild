@@ -479,5 +479,7 @@ describe('the camera in the game\'s layout', () => {
         const table = code.slice(code.lastIndexOf('<div', code.indexOf('ref={tableRef}')), code.indexOf('style={tableBackground}'));
         expect(table).toContain('overflow-clip');
         expect(table).not.toContain('overflow-hidden');
+        // A clipped box is no scroll container, so without this it grows to the nav's height past a short screen.
+        expect(table).toContain('min-h-0');
     });
 });

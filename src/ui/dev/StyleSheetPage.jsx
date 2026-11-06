@@ -837,6 +837,12 @@ export const KIT_SECTIONS = [
                 <PixelFrame kind="chamfer" className="w-48">
                     <div className="p-2 text-xs">Chamfer: tooltips, pop-ups, toasts</div>
                 </PixelFrame>
+                <PixelFrame kind="studs" className="w-56" frameClassName="ui-frame-studs-purple" data-kit-purple-frame>
+                    <div className="p-2 text-sm">Purple studs: the Guild Hall’s panel (new, unapproved)</div>
+                </PixelFrame>
+                <PixelFrame kind="chamfer" className="w-48" frameClassName="ui-frame-chamfer-purple">
+                    <div className="p-2 text-xs">Purple chamfer: the Hall’s Return button (new, unapproved)</div>
+                </PixelFrame>
             </div>
         )
     },
