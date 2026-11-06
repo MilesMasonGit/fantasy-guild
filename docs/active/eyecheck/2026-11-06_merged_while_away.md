@@ -34,3 +34,6 @@ You approved merging these on the tests while away. Nothing here needs a branch 
 
 11. **A new game** (450 S4). Pick an empty slot: one screen with the Guild name, rings 1 to 3 of your world with Reroll, and your first hero (name, portrait, flag). Begin: you play with that hero, the tutorial starts at Equip a Tool. The slot shows the Guild name; rename it in Settings, Game.
    Verdict:
+
+12. **The settle ceremony** (380 M5). Settle a place from the world map: the gold banner, then the name and land across the mat with a fanfare (a door sound until your file), then the heroes walk in from the bottom to the Hall; the enemies stand spread round it and wait. Click or press a key to skip. Travel back: no ceremony. Choices: title size A as built or B twice; reduced motion A heroes still walk or B appear at once.
+   Verdict:
