@@ -177,6 +177,39 @@ export function buildEncyclopedia(content = gameContent()) {
     };
 }
 
+/**
+ * Whether an entry belongs in its kind's total: something this world can give. A Planned stub is no
+ * entry at all (the ledger's world leaves it out). An entry nothing reaches (half-authored content,
+ * an item no rule makes yet) and one only some worlds hold (a chest) stay out of the total, so a
+ * bar can always fill; once this run has one it counts all the same.
+ */
+export function countsTowardTotal(book, entry, got) {
+    if (isCollected(got, entry)) return true;
+    const at = book.reachOf(entry.key);
+    return Number.isInteger(at?.tier) && at.maybe !== true;
+}
+
+function isCollected(got, entry) {
+    return !!got?.[entry.kind]?.has(entry.id);
+}
+
+/**
+ * This run's progress per kind, in tab order: `{ kind, found, total }`, `found` never above `total`.
+ * `got` is `collectedOf()`'s sets. Reads only; the screen calls it once when the book opens.
+ */
+export function progressOf(book, got) {
+    return KINDS.map(kind => {
+        let found = 0;
+        let total = 0;
+        for (const entry of book.byKind[kind]) {
+            if (!countsTowardTotal(book, entry, got)) continue;
+            total += 1;
+            if (isCollected(got, entry)) found += 1;
+        }
+        return { kind, found, total };
+    });
+}
+
 let cached = null;
 
 /** The game's encyclopedia, built on first use. */

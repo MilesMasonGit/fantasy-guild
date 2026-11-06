@@ -1365,6 +1365,14 @@ drawers**. The menu can be flipped to the right.
   recipe picker; a job flag is only dragged, to give its hero a new job (hover
   shows its hero and what they are doing);
   alerts sit on Tokens until fixed; loot is collected by hovering.
+- **Encyclopedia** (its bubble, a Token card's book button, an ingredient in a
+  station's recipe list): a book, search first, whose chart shows what an entry
+  comes from on the left and what it goes into on the right; ticks mark what this
+  run has. Along the foot of the left page, a count and a small bar per kind
+  (Items, Tokens, Enemies, Recipes), read as the book opens, out of what this
+  world can give: an entry nothing reaches, or only some worlds hold (a chest),
+  joins its total once the run has one. Opened from an ingredient, closing the
+  book brings the card back on its recipe list.
 - **Settings** (5 tabs): typography and fonts, all caps, autosave, background,
   menu side, particles, volume (**master volume defaults to 0**: the game
   starts silent), Debug Mode. Nine controls are "coming soon".

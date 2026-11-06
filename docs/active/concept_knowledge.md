@@ -46,6 +46,19 @@ its source. Brief 300.*
 
 *Amended by brief 470 (owner, 2026-11-04): the chart tells requirements from products; counts and progress bars in the corner; links from a recipe's ingredients. The Atlas leaves the book, so the encyclopedia keeps it.*
 
+*Built (brief 470 E3): **the counts** stand along the foot of the left page, one per kind
+(Items, Tokens, Enemies, Recipes), each `found/total` over a hard-pixel gold bar, read once as
+the book opens. A total holds what this world can give: an entry the ledger's reach engine
+reaches. Planned stubs are not in the game at all; an entry nothing reaches (half-authored
+content) or only some worlds hold (a chest) stays out of the total until the run has one, then
+counts in both, so no bar is left unable to fill. Found means ticked: an item that reached the
+Bank, a Token that stood on the mat or a Region, an enemy beaten, a recipe whose craft finished.
+**The ingredient links**: in a station's recipe list each ingredient is its own target (its own
+white outline, the row's goes out; its hover says so); a click opens its page and does not choose
+the recipe, the rest of the row still chooses. Closing the book (X, Escape, a press beside it)
+brings the card back on its recipe list, unless another view took the book's place or the Token
+is gone.*
+
 E1 and E2 work and are merged; the owner judged the screen's lists too long to
 be useful. The encyclopedia becomes **search-first with a flowchart**. The
 player's main use: find an item they want (or a new rare drop), then follow

@@ -10,6 +10,7 @@ import { useEscapeLayer } from '../utils/escapeLayers.js';
 import { EntityRibbon } from '../components/base/EntityRibbon.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { VitalBar } from '../components/base/VitalBar.jsx';
+import { ProgressBar } from '../components/base/ProgressBar.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../components/base/TokenSprite.jsx';
 import { StationGearBadge } from '../components/board/TokenBadges.jsx';
 import { Tooltip } from '../components/base/Tooltip.jsx';
@@ -747,6 +748,22 @@ export const KIT_SECTIONS = [
             <div className="w-48 flex flex-col gap-1">
                 {[[62, 100], [30, 100], [12, 100]].map(([value, max]) => (
                     <VitalBar key={value} value={value} max={max} />
+                ))}
+            </div>
+        )
+    },
+    {
+        id: 'progress-bar', title: 'Progress bar', status: 'unapproved', source: 'ProgressBar (the Encyclopedia’s counts at the foot of its left page)',
+        rule: 'New, unapproved (brief 470 E3). How much of something is done: the hero bar’s stepped black edge and dark trough, a gold fill in whole art pixels with a lighter top row and a darker foot; full only when all of it is done. No numbers on the bar: the count stands above it in ink on the book’s page, the kind’s name on the left, found/total on the right; hover says what counts.',
+        Demo: () => (
+            <div className="flex gap-4 p-2" style={{ background: '#e8d3a3' }}>
+                {[['Items', 0, 145], ['Tokens', 9, 111], ['Enemies', 1, 18], ['Recipes', 117, 117]].map(([name, found, total]) => (
+                    <div key={name} className="flex flex-col gap-1" style={{ width: 132 }}>
+                        <div className="flex items-baseline justify-between ui-text-ink ui-text-small font-bold leading-none">
+                            <span>{name}</span><span className="tabular-nums">{found}/{total}</span>
+                        </div>
+                        <ProgressBar value={found} max={total} width={132} />
+                    </div>
                 ))}
             </div>
         )

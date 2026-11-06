@@ -125,6 +125,17 @@
         "regrows": "Worked out, it leaves {stage}; given what is on the left{near}, it grows back in {time}",
         "beside": " beside {name}",
         "alsoFrom": "Also: {ways}",
+        "progress": "{found}/{total}",
+        "progressTip": "{found} of {total} found this run",
+        "progressWhat": {
+            "items": "An item counts once it reaches the Bank",
+            "tokens": "A Token counts once one stands on your mat or a Region",
+            "enemies": "An enemy counts once beaten",
+            "recipes": "A recipe counts once a craft of it finishes"
+        },
+        "progressScope": "Counts what this world can give",
+        "ingredientTip": "Click to open its page in the Encyclopedia",
+        "ingredientBack": "Close the book to come back here",
         "kind": {
             "items": "Items",
             "tokens": "Tokens",
