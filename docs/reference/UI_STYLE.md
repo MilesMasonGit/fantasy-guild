@@ -166,6 +166,31 @@ normal text colour; a new meaning needs the owner's OK.
 - **A minimized window is a tab** (pick D): faces at 1× cropped to 44 px, both names, two small
   `VitalBar`s. Tabs stand in a strip along the mat's foot above the hero bar, from the left.
 
+## The world map (owner's picks C and D, 2026-11-06; brief 380)
+
+- **The view pans down from the mat** to the map, as the Guild Hall's glides up; no book. The
+  top bar leaves with the mat; the hero bar and the nav stay.
+- **A painted world beneath** (pick D): a colour field per kind of land, wobbly borders, a
+  darker ink line where lands meet, sand on shores, tiny pixel symbols; past the rings shown it
+  fades into fog. **No hexes past the third ring** unless the guild can reach into a wild ring.
+- **Cells are board tiles** (pick C) at 2x: the top in the land's colours, the side in its
+  earth, a hard shadow on the world; the place's commonest Token stands on it at 1x (a big one
+  at half), its first three outputs in a dark plate below the middle, "+N" for the rest.
+- **Ring lines** are a rope with a knot at each corner, along every edge where rings meet; no
+  numbers anywhere.
+- **Cell looks**: settled and settle-able in full colour; **can be settled now**: a 2-art-pixel
+  gold outline pulsing between two golds (steady under reduced motion); on the frontier but too
+  dear, or behind a ring star: darkened; further out: black and white. The pointer over any cell
+  shows it in full colour with the 1-art-pixel white outline; the chosen cell keeps it.
+- **The guild's place** carries the hero job flag (`FlagMark`), drawn at 48 px, on the map and
+  in the panel's header; no "the guild is here" words.
+- **The hover tip**: the place's name as its title, its land and line under it, then the price
+  as pills (sprite, have/need in the 9.9k shorthand, red when short). No ring, no yields.
+- **The inspection panel**: one studs frame, thin (336 px), over the map's right edge: the name
+  (a rename once settled), the land and line, the close X; then what it yields as ribbons, its
+  price as rows, and a large main **Settle** across the panel's width (greyed with what is short
+  under it), or, once settled, its mat drawn small, its facts and a large **Travel**.
+
 ## Sprites and icons
 
 - **Every sprite draws at a whole multiple of its art size** (1×, 2×, 3×),

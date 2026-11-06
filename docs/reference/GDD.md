@@ -1262,8 +1262,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
     camp** (a Logging Camp on a Wood Foundation; any camp counts); then the
     Starter Camp's end, **make a first tool** (copper, the camp's metal) and
     **beat a Goblin**; then the last step, **settle your first place**: it
-    arrives with the cartographer opening the Atlas on the world map, his words
-    heading its right page, and is done when a place of the world map is
+    arrives with the cartographer opening the world map, his words heading
+    its inspection panel, and is done when a place of the world map is
     settled (brief 330 W3).
   - **Bounties**: random "collect N items" or "defeat N Goblins", each paying
     10 Oak Wood (*placeholder*). Cap 2 (the Notice Board star retired with brief 320); a
@@ -1343,22 +1343,41 @@ drawers**. The menu can be flipped to the right.
   Region it has never stood in, and back in its old spot in one it has), and
   leaves each Region's flags behind: going back, every hero starts at the flag
   they left there, with no work claimed and no fight on; a new Region starts
-  with everyone in the Dock. The Atlas's Regions page lists them (travel,
-  rename, archive, abandon). *(`src/systems/atlas/`)*
+  with everyone in the Dock. A settled place's panel on the world map shows
+  its Region (its mat drawn small, its facts) and renames it; travel is its
+  Travel button. Archive and abandon have no button since the Regions page
+  left (brief 380 M3); the engine keeps them. *(`src/systems/atlas/`)*
 - **The world** — **Built: generated (brief 330 W1) and on screen (W2)**: a new
   game generates its hex world from the run seed (the game's creation time)
   and the world tables, and keeps it whole in the save (`state.world`): the
   Hall's cell (the Starter Camp), three strict rings, wild rings beyond, six
   wedges by origin line; each cell's origins, tier, kit, specialty, hidden
-  extras and price. The Atlas opens on its **World** page: flat-topped hexes in
-  their kit's colour with the first outputs they yield; the strict rings show
-  from the start and the wild rings two past the guild's furthest place.
-  Settled cells are lit (the guild's carries its flag), the cells beside them
-  are the **frontier**, the rest lie beyond. The hover over a cell lists what it
-  yields and its price as have/need (an item against the Bank, a skill against
-  the best level any hero has reached). **Settle** (frontier only) pays the
+  extras and price. **The world map** (brief 380 M2, M3; the Atlas's bubble or
+  the top bar's place name) is reached by the view **panning down** from the
+  mat, as the Guild Hall's glides up; the top bar goes with the mat, the hero
+  bar and the nav stay, and the two moves never run together. Beneath it lies a
+  **painted world**: a colour field per kind of land from each cell's kit,
+  wobbly borders, an ink line where lands meet, sand on shores, tiny pixel
+  symbols, fading into fog past the rings shown; it is painted once per world
+  and rings shown (about 0.1 to 0.2 s) and kept. Over it the shown cells stand
+  as **board tiles** (code stand-ins until the owner's tiles), each with the
+  Token its place holds most of and a plate of its first three outputs. The
+  three strict rings show from the start; a wild ring once any of its cells is
+  settled or can be settled next. **Ring lines** are a rope with knots where
+  rings meet, no numbers. **Cell looks**: settled and settle-able in full
+  colour; a cell the guild can settle now pulses gold; a frontier cell too dear
+  (or, later, behind a ring star) darkened; a cell further out black and white;
+  the pointer over any cell shows it in full colour with a white outline. The
+  map is dragged around (or scrolled with the wheel). **The hover** names the
+  place ("Elderfield": a name from its cell's seed, which its Region takes on
+  settling) over its land and line ("Highland Ores"), then its price as item
+  pills with have/need in the 9.9k shorthand, red when short; no ring.
+  **The inspection panel** (thin, on the right) shows the chosen place's name,
+  the guild's flag drawn large where it is, what it yields and its price, and a
+  large **Settle** (frontier only, greyed with what is short), which pays the
   whole price at once, writes the cell's Region and takes the guild there; a
-  settled place offers **Travel**, as the Regions page does. A Region knows its
+  settled place shows its mat drawn small, its facts, a rename, and **Travel**.
+  A Region knows its
   cell (`region.cellId`); abandoning it returns the cell to the frontier.
 - **A place's mat** — **Built (brief 330 W3)**: settling writes the Region from
   its cell (`world/cellMat.js`). **The kit** (Highland, Woodland, Plains,
@@ -1395,9 +1414,11 @@ drawers**. The menu can be flipped to the right.
   its last step. *(`world/cellMat.js`, `world/cellRegion.js`, `world/Arrival.js`,
   `board/Occupation.js`)* The tables are placeholder
   until the CMS syncs `data/world.json` (W6). A save made before worlds has
-  none: the World page says so, and its Regions still travel. The QA panel's
-  Atlas section meets the frontier's prices at a click and shows a world in
-  words. *(`src/systems/world/`, `worldTablesShape.js`, `ui/components/atlas/WorldPage.jsx`)*
+  none: the world map says so. The QA panel's Atlas section meets the
+  frontier's prices at a click and shows a world in words. *(`src/systems/world/`,
+  `worldTablesShape.js`, `ui/components/atlas/WorldScreen.jsx`, `WorldMap.jsx`,
+  `WorldPanel.jsx`, `WorldCamera.jsx`, `worldPicture.js`; the art it reads,
+  `config/worldMapArt.js`)*
 - **Desktop**: packaged with Tauri (Windows installers); the game runs in the
   webview and saves stay in its storage.
 
