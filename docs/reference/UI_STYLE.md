@@ -78,7 +78,9 @@ clunky labels like "LVL 03" where "3/99" says it better.
   one extra **display** size, and only there.
 - **The Region name in the mat's top bar** uses the display size too
   (`ui-text-bar-name`, owner 2026-10-23), over its banner with a hard 2 px
-  black outline; nothing else in the bar does.
+  black outline; nothing else in the bar does. The banner is drawn at 3× and
+  runs on under the bar's middle, fading out; the badges there keep their own
+  dark fill.
 
 ## Colours
 

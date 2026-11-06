@@ -176,8 +176,9 @@ gear-and-side-panel version and ruled it should work like Rimworld's work tab:
 ## Token Summary — locked (owner interview, 2026-10-07)
 
 - *Amended by brief 420 (owner, 2026-11-03): it opens on hover, like Upkeep; Disallow and its status count go.*
-- **Opens by clicking the Token counter** ("Tokens 62 / 80") in the top bar
-  above the mat (today it opens on hover). It drops down over the mat; Esc or
+- **Opens on hovering the Token counter** ("Tokens 62 / 80") in the top bar
+  above the mat, as Upkeep's does (brief 420 T1; it was a click before), and
+  stays while the pointer moves into it. It drops down over the mat; Esc or
   clicking elsewhere closes it.
 - **One row per Token type**, no individual Tokens: "Oak Tree ×5", with small
   status counts (working / idle / blocked / disallowed).
