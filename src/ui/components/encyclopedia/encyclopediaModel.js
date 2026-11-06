@@ -7,6 +7,7 @@ import { listRecipes } from '../../../config/registries/recipePoolRegistry.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
 import { starterCamp } from '../../../systems/atlas/StarterCamp.js';
 import { worldTables } from '../../../config/registries/worldTablesRegistry.js';
+import { EXTRA_KIND } from '../../../config/worldTablesShape.js';
 import { wordStartsMatch } from '../drawer/bankSort.js';
 
 /**
@@ -66,6 +67,7 @@ function sortByName(list) {
  *   usesOf(key): {how, by, quantity?, nearby?}[],
  *   givesOf(key): {how, key, chance, perCycle, gates}[],
  *   placeOf(key): {key, line, lineName, ring, gates}|null,
+ *   isTreasure(key): boolean,
  *   search(term): object[]
  * }}
  */
@@ -97,6 +99,11 @@ export function buildEncyclopedia(content = gameContent()) {
         const line = key.slice('wedge:'.length, cut);
         return { key, line, lineName: lineNames.get(line) ?? line, ring: Number(key.slice(cut + 1)), gates: settleGates.get(key) || [] };
     };
+
+    // The chests: Tokens the world tables place as a treasure. Worked like a vein, but opened.
+    const treasures = new Set((world.worldTables?.extras || [])
+        .filter(extra => extra?.kind === EXTRA_KIND.TREASURE && typeof extra.id === 'string')
+        .map(extra => tokenKey(extra.id)));
 
     // Built once: who gives each key, who spends it, and what each record does.
     const sources = new Map();
@@ -172,6 +179,8 @@ export function buildEncyclopedia(content = gameContent()) {
         givesOf: (key) => gives.get(key) || [],
         /** A world cell's place (`wedge:` keys only): its line, ring and the levels settling it asks. */
         placeOf,
+        /** Whether a Token is a chest the world places (a treasure): it is opened, not worked. */
+        isTreasure: (key) => treasures.has(key),
         /** Entries whose name has words starting with the typed words, in kind order then by name. */
         search: (term) => KINDS.flatMap(k => byKind[k].filter(e => wordStartsMatch(e.name, term)))
     };

@@ -1384,7 +1384,10 @@ drawers**. The menu can be flipped to the right.
 - **Encyclopedia** (its bubble, a Token card's book button, an ingredient in a
   station's recipe list): a book, search first, whose chart shows what an entry
   comes from on the left and what it goes into on the right; ticks mark what this
-  run has. Along the foot of the left page, a count and a small bar per kind
+  run has. Every line that is not used up carries a small ink word saying what it
+  means (made at, built on, tool for, beside, gives, opens, drops, spawns, and the
+  rest); an ingredient, a seed planted, bait or a price stays the plain line, and
+  hovering a word says it in a sentence. Along the foot of the left page, a count and a small bar per kind
   (Items, Tokens, Enemies, Recipes), read as the book opens, out of what this
   world can give: an entry nothing reaches, or only some worlds hold (a chest),
   joins its total once the run has one. Opened from an ingredient, closing the

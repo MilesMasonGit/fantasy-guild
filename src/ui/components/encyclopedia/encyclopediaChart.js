@@ -34,6 +34,9 @@ export const STATIONS = 'stations';
 /** A way in from a station type to one of its stations. */
 const MEMBER = 'member';
 
+/** A use of a Token that another one's growing needs standing beside it. */
+const NEARBY = 'growNearby';
+
 /** Ways in that a guild repeats (a station, a vein, a place's Tokens): the usual ones, before chance and finds. */
 const REPEATED = new Set([
     HOW.CRAFT, HOW.STATION, HOW.BUILD, HOW.WORK, HOW.CATCH, HOW.TRICKLE, HOW.UPGRADE,
@@ -309,7 +312,7 @@ export function waysOut(book, key) {
             }
         }
         for (const u of book.usesOf(key)) {
-            const way = { ...blankWay(), how: u.nearby ? 'growNearby' : u.how };
+            const way = { ...blankWay(), how: u.nearby ? NEARBY : u.how };
             if (u.how === HOW.CRAFT) {
                 way.recipe = u.by;
                 way.to = madeBy(book, u.by);
@@ -418,6 +421,55 @@ export function wayOutRequirement(book, key, way) {
     return [HOW.WORK, HOW.CATCH, HOW.HOLD].includes(way.how) ? requirementOf(book, way.to) : null;
 }
 
+/**
+ * What a line means when nothing along it is used up: `word` the small word written on it
+ * (`encyclopedia.line.*`), `tip` the sentence its hover says (`encyclopedia.lineTip.*`, naming
+ * `from` and `to`). A line that is used up (an ingredient, a seed planted, bait, a price) has none.
+ */
+const lineWord = (word, tip = word) => ({ word, tip });
+
+/** Whether a recipe is built on a Foundation rather than made at a station. */
+const isBuilt = (book, recipe) => stationsOf(book, recipe).some(r => r.how === HOW.BUILD);
+
+/** The word for what comes out of a box (`key`) by `how`: a vein gives, a chest opens, an enemy drops. */
+function givesWord(book, key, how) {
+    switch (how) {
+        case HOW.WORK: return book.isTreasure(key) ? lineWord('opens') : lineWord('gives');
+        case HOW.TRICKLE:
+        case HOW.UPGRADE: return lineWord('gives', 'givesPassive');
+        case HOW.CATCH: return lineWord('catch');
+        case HOW.DROP: return lineWord('drops');
+        case HOW.BONUS: return lineWord('bonus');
+        case HOW.SPAWN: return lineWord('spawns');
+        case HOW.GROW: return lineWord('grows');
+        case HOW.TURN: return lineWord('turns');
+        case HOW.REGROW: return lineWord('leaves');
+        default: return null;
+    }
+}
+
+/** The word on a way in's line from its box (`way.from`): "made at" a station, "drops" from an enemy; null without a box. */
+export function wayInWord(book, way) {
+    if (!way?.from) return null;
+    if (way.how === HOW.CRAFT) return isBuilt(book, way.recipe) ? lineWord('builtOn') : lineWord('madeAt');
+    if (way.how === MEMBER) return lineWord('oneOf');
+    return givesWord(book, way.from, way.how);
+}
+
+/** The word on the line from `key` to one of its uses: "tool for", "makes", "gives"; null when the use spends it. */
+export function wayOutWord(book, key, way) {
+    if (!way) return null;
+    if (!way.gives) {
+        if (way.how === HOW.HOLD) return lineWord('toolFor');
+        if (way.how === NEARBY) return lineWord('beside');
+        return null;
+    }
+    if (way.how === HOW.STATION) return lineWord('makes', 'madeAt');
+    if (way.how === HOW.BUILD) return lineWord('builds', 'builtOn');
+    if (way.how === HOW.CRAFT) return lineWord('makes', 'recipeMakes');
+    return givesWord(book, key, way.how);
+}
+
 /** How many lines a way draws into the box it feeds: its things, or its words alone. */
 const linksOfWay = (way) => (way.from ? 1 : 0) + way.inputs.length + (way.from || way.inputs.length ? 0 : 1);
 
@@ -435,7 +487,8 @@ export const farSideOf = (node) => (node.side === 'in' ? 'out' : node.side === '
  * ingot); `need` how many one of the start takes, down that path (one of the box whose far side
  * opened, inside it). `recipe` is the recipe a use is made by; `chance` the odds of the line that
  * reaches it. A node `repeat`s an entry already on its path and never grows. `ins` are branches
- * `{ id, way, from, inputs, req, through }`, `outs` uses `{ id, way, node, req, through }`; each
+ * `{ id, way, from, inputs, req, through, word }`, `outs` uses `{ id, way, node, req, through, word }`
+ * (`word`: what the line from `from`, or to the use, means, when it is not used up); each
  * shows `SHOWN_AT_FIRST` until opened. On an opened far side the neighbour is a pass, `{ id, key,
  * pass: true }`, where it would stand: the line it already has runs through; when the neighbour is
  * no way in or use there (a tool and the vein it works), `passBand` carries its line above the rest.
@@ -500,7 +553,7 @@ export function chartOf(book, start, { grown = new Set(), far = new Set(), opene
             const inputs = way.inputs.map((input, j) => child(`${id}.${j}`, input.key, {
                 amount: input.quantity, need: per * input.quantity / makes
             }));
-            return { id, way, from, inputs, req: wayInRequirement(book, way), through: way.through };
+            return { id, way, from, inputs, req: wayInRequirement(book, way), through: way.through, word: wayInWord(book, way) };
         });
         if (passKey && !passed) node.passBand = { id: `${node.id}<p`, key: passKey, side: 'in' };
     };
@@ -512,15 +565,16 @@ export function chartOf(book, start, { grown = new Set(), far = new Set(), opene
         node.outs = shownOf(all, opened.has(`${node.id}>`), passKey ? (w) => w.to === passKey : null).map(({ way, i }) => {
             const id = `${node.id}>${i}`;
             const req = wayOutRequirement(book, node.key, way);
+            const word = wayOutWord(book, node.key, way);
             if (passKey && !passed && way.to === passKey) {
                 passed = true;
-                return { id, way, node: { id: `${id}n`, key: way.to, pass: true }, req, through: way.through };
+                return { id, way, node: { id: `${id}n`, key: way.to, pass: true }, req, through: way.through, word };
             }
             const n = make(`${id}n`, way.to, 'out', here, {
                 recipe: way.recipe, chance: way.chance, neighbour: node.key
             });
             visit(n, here);
-            return { id, way, node: n, req, through: way.through };
+            return { id, way, node: n, req, through: way.through, word };
         });
         if (passKey && !passed) node.passBand = { id: `${node.id}>p`, key: passKey, side: 'out' };
     };
@@ -609,10 +663,12 @@ export const CHART_METRICS = Object.freeze({
     nodeW: 220,
     nodeH: 60,
     /**
-     * Between two columns: an arrow tab each side, the join and trunk, and between them a mark as
-     * wide as the widest one (a grow mark and its time, "2:30").
+     * Between two columns: an arrow tab each side, the join and trunk, and between them a mark and
+     * a line's word side by side, never one over the other. The widest pair in the content needs
+     * 242 (a grow mark and its time with "beside" or "spawns"; a two-figure skill mark with "tool
+     * for"), in the widest of the game's fonts; 260 holds a grow time up to 99:59.
      */
-    gapX: 200,
+    gapX: 260,
     /** From a box's side to the line that joins or splits there: room for its arrow tab ("›30"). */
     reach: 48,
     stemH: 20,
@@ -622,6 +678,12 @@ export const CHART_METRICS = Object.freeze({
     markText: 18,
     /** The tabs' ink words' size. */
     ink: 16,
+    /** A line's word: the small size; how far a word on the left rides above its line, and its room from what it sits beside. */
+    word: 14,
+    wordLift: 4,
+    wordPad: 6,
+    /** A use's word ends this far before the box: the arrowhead, a little thicker on the lit path, and a stretch of line. */
+    wordStop: 16,
     rowGap: 8,
     /** Between two ways in: the plain page between their bands. */
     orGap: 20,
@@ -662,6 +724,15 @@ export function tabWidth(count, m = CHART_METRICS) {
     return Math.round(0.5 * u + 0.5 * u + wordsWidth(count, u) + 2);
 }
 
+/**
+ * How much room a line's word takes, with 2 px of page each side: a letter 0.8 of the size, a space
+ * 0.4. ⚠️ Set by the widest of the game's fonts in capitals (Silkscreen's "spawns", 66.5 px at 14):
+ * the default font leaves room to spare.
+ */
+export function wordWidth(words, m = CHART_METRICS) {
+    return Math.ceil([...String(words)].reduce((w, c) => w + (c === ' ' ? 0.4 : 0.8), 0) * m.word + 4);
+}
+
 /** A node id and the ids above it, to the start: `s<0.1<0f` → [`s<0.1<0f`, `s<0.1`, `s`]. */
 export function pathIds(id) {
     const out = [id];
@@ -686,12 +757,16 @@ export const litLinks = (layout, id) => onPath(layout.links, id);
 /** The marks on those lines. */
 export const litLabels = (layout, id) => onPath(layout.labels, id);
 
+/** The words on those lines. */
+export const litWords = (layout, id) => onPath(layout.words, id);
+
 /**
  * Where every box of a chart sits, in pixels around the start (its box centred on 0, 0):
  * `{ nodes: [{ id, node, x, y, w, h }], captions, links: [{ id, points: [[x, y], …], into, pairs }],
  * bands: [{ id, x, y, w, h }], stems: [{ id, node, side, count, x, y, w, h }], labels: [{ id, side,
- * x, y, w, h, req, through, regrow, pairs }], box }`. A line's or mark's `pairs` are the boxes it
- * joins, `[child, parent]` ids: on the path from a box to the start when both are.
+ * x, y, w, h, req, through, regrow, pairs }], words: [{ id, side, word, tip, from, to, onLine,
+ * overMark, x, y, w, h, pairs }], box }`. A line's, mark's or word's `pairs` are the boxes it joins, `[child,
+ * parent]` ids: on the path from a box to the start when both are.
  *
  * Columns are `nodeW + gapX` apart. Each node stands in the middle of the row band its sides take;
  * ways in stack top to bottom in order, each on a faint band of its own when there are several. A
@@ -701,8 +776,15 @@ export const litLabels = (layout, id) => onPath(layout.labels, id);
  * row to the branch it joins. Lines are square-cornered; a mark sits on its own line (a branch's
  * between its join and the trunk, a use's just past the trunk); `growText(mark)` gives a grow mark's
  * words, for its width.
+ *
+ * A line that is not used up carries its word once, on the stretch only it draws: a way in's from
+ * its box, just above it by the box; a use's on the line itself (`onLine`, breaking it like a mark),
+ * right-aligned before the arrow, or before the far side's bands when the line runs on through a
+ * pass. A line running through a pass carries none: its word is on the stretch it continues. A word
+ * with no room on its line beside the mark rides above the mark instead. `wordText(key)` gives a
+ * word's text, for its width.
  */
-export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
+export function layoutChart(chart, m = CHART_METRICS, growText = () => null, wordText = (key) => t(`encyclopedia.line.${key}`)) {
     const pitch = m.nodeW + m.gapX;
     const slot = m.nodeH;
     const half = m.nodeW / 2;
@@ -713,6 +795,7 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
     const bands = [];
     const stems = [];
     const labels = [];
+    const words = [];
     const r = (v) => Math.round(v);
 
     const itemsOf = (b) => (b.from ? [b.from, ...b.inputs] : b.inputs);
@@ -760,11 +843,19 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
     const exit = new Map();
 
     const mark = (id, side, x, y, req, through, regrow, pairs, anchor, onBand = false) => {
-        if (!req && !through) return;
+        if (!req && !through) return null;
         const label = { id, side, req: req ?? null, through: through ?? null, regrow: !!regrow };
         label.growText = through ? growText(label) : null;
         const w = markWidth(label, m);
-        labels.push({ ...label, pairs, onBand, x: r(anchor === 'start' ? x : x - w / 2), y: r(y - m.markH / 2), w, h: m.markH });
+        const placed = { ...label, pairs, onBand, x: r(anchor === 'start' ? x : x - w / 2), y: r(y - m.markH / 2), w, h: m.markH };
+        labels.push(placed);
+        return placed;
+    };
+
+    const word = (id, side, line, from, to, pairs, at) => {
+        const w = wordWidth(wordText(line.word), m);
+        const { onLine, overMark = false, x, y } = at(w);
+        words.push({ id, side, word: line.word, tip: line.tip, from, to, pairs, onLine, overMark, x: r(x), y: r(y), w, h: m.word });
     };
 
     const place = (node, col, cy) => {
@@ -809,6 +900,7 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
             const items = itemsOf(b);
             const pairOf = (it) => (isPass(it) ? passPair : [it.id, node.id]);
             let wayY;
+            let fromEnd = null;
             let leftmost = col - 1;
             if (!items.length) {
                 wayY = r(bc);
@@ -837,11 +929,21 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
                 items.forEach((it, j) => {
                     links.push({ id: `${it.id}>`, into: b.id, pairs: [pairOf(it)], points: [ends[j], [joinX, ends[j][1]], [joinX, wayY]] });
                 });
+                // The box is the branch's first thing: its join only ever runs down from its line.
+                if (b.from && !isPass(b.from)) fromEnd = ends[0];
                 if (b.way.caption) captions.push({ id: `${b.id}~`, words: b.way.caption, args: b.way.captionArgs, label: true, x: r((joinX + trunkX) / 2), y: wayY - 10, w: 0, h: 0 });
             }
             const pairs = items.map(pairOf);
             links.push({ id: `${b.id}>`, into: node.id, pairs, points: [[joinX, wayY], [trunkX, wayY], [trunkX, a], [intoX, a]] });
-            mark(`${b.id}@`, 'in', (joinX + trunkX) / 2, wayY, b.req, b.through, b.way.regrow, pairs, 'centre', several);
+            const placed = mark(`${b.id}@`, 'in', (joinX + trunkX) / 2, wayY, b.req, b.through, b.way.regrow, pairs, 'centre', several);
+            if (b.word && fromEnd) {
+                const [x, y] = fromEnd;
+                word(`${b.id}^`, 'in', b.word, b.from.key, node.key, [pairOf(b.from)], (w) => {
+                    const at = { onLine: false, x: x + m.wordPad, y: y - m.wordLift - m.word };
+                    const clash = placed && at.x + w + m.wordPad > placed.x && at.y < placed.y + placed.h && at.y + m.word > placed.y;
+                    return clash ? { ...at, overMark: true, y: placed.y - m.wordLift - m.word } : at;
+                });
+            }
             if (several) {
                 // Each way on its own faint band: its boxes, their tabs, its line and mark; the trunk stays bare.
                 const x0 = r(leftEdge(leftmost) - reach + m.bandPad);
@@ -884,7 +986,15 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
                 links.push({ id: `${u.id}>`, into: into?.into ?? u.node.id, pairs, points: [[fromX, a], [trunkX, a], [trunkX, y], [usesLeft, y]] });
                 // An opened far side carries this step's mark on its own branch.
                 const onBranch = !!into && !u.node.passBand;
-                if (!onBranch) mark(`${u.id}@`, 'out', trunkX + 6, y, u.req, u.through, false, pairs, 'start');
+                const placed = onBranch ? null : mark(`${u.id}@`, 'out', trunkX + 6, y, u.req, u.through, false, pairs, 'start');
+                if (u.word) {
+                    // Before the arrow; or, running on through a pass, before the bands its ways lie on.
+                    const stop = !into ? usesLeft - m.wordStop : onBranch ? usesLeft - reach : usesLeft - m.wordPad;
+                    const after = (placed ? placed.x + placed.w : trunkX) + m.wordPad;
+                    word(`${u.id}^`, 'out', u.word, node.key, u.node.key, pairs, (w) => (stop - w >= after
+                        ? { onLine: true, x: stop - w, y: y - m.word / 2 }
+                        : { onLine: false, overMark: !!placed, x: Math.max(stop - w, trunkX + m.wordPad), y: (placed ? placed.y : y) - m.wordLift - m.word }));
+                }
             }
             top += h + m.rowGap;
         }
@@ -901,9 +1011,10 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null) {
     for (const c of captions) if (!c.label) grow(c.x, c.y, c.x + c.w, c.y + c.h);
     for (const s of stems) grow(s.x, s.y, s.x + s.w, s.y + s.h);
     for (const l of labels) grow(l.x, l.y, l.x + l.w, l.y + l.h);
+    for (const w of words) grow(w.x, w.y, w.x + w.w, w.y + w.h);
     for (const b of bands) grow(b.x, b.y, b.x + b.w, b.y + b.h);
     for (const l of links) for (const [x, y] of l.points) grow(x, y, x, y);
-    return { nodes, captions, links, bands, stems, labels, box };
+    return { nodes, captions, links, bands, stems, labels, words, box };
 }
 
 /** The box a node and everything grown from it take, from a layout. */

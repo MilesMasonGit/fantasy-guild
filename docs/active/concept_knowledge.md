@@ -59,6 +59,18 @@ the recipe, the rest of the row still chooses. Closing the book (X, Escape, a pr
 brings the card back on its recipe list, unless another view took the book's place or the Token
 is gone.*
 
+*Built (brief 470 E2, the owner's pick C of 6 November): **a word on each line**. Every line that
+is not used up carries a small ink word (the small size, bold, no outline) saying what it means:
+made at, built on, one of (a station type's stations), tool for, beside, gives, opens (a chest),
+catch, drops, bonus, spawns, grows, leaves (a stump), turns, makes, builds. Used up (an ingredient,
+a seed planted, bait, a price) stays the plain line. A way in's word rides just above its line by
+the box it comes from; a use's sits on its line before the arrow, the line broken round it; a
+line running on through an opened far side carries its word once, clear of the bands it runs
+onto. Hovering a word says it in a sentence ("Iron Ingot is made at Smithing Station"). The
+columns stand 60 px further apart (260), measured: the widest pair in the content, a grow mark
+and its time with "beside" or "spawns", or a two-figure skill mark with "tool for", fits side by
+side in the widest of the game's fonts, so no word sits over a mark, a box or a band.*
+
 E1 and E2 work and are merged; the owner judged the screen's lists too long to
 be useful. The encyclopedia becomes **search-first with a flowchart**. The
 player's main use: find an item they want (or a new rare drop), then follow

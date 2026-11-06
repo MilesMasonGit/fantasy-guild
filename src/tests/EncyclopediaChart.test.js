@@ -3,9 +3,10 @@ import { buildEncyclopedia, encyclopedia, KIND } from '../ui/components/encyclop
 import {
     waysIn, waysOut, madeBy, chartOf, nodesOf, findNode, needText, layoutChart, grownBox, keepInSight, centreOn, clampPan,
     requirementOf, wayInRequirement, wayOutRequirement, entryOfKey, isGrowingStage, oneOffWays, within, CHART_METRICS,
-    pathIds, litLinks, litLabels, tabWidth,
+    pathIds, litLinks, litLabels, litWords, tabWidth, wayInWord, wayOutWord, wordWidth, markWidth,
     chartMetrics, SHOWN_AT_FIRST, ROOT, STATIONS
 } from '../ui/components/encyclopedia/encyclopediaChart.js';
+import { formatClock } from '../ui/components/drawer/lifecycleLines.js';
 import { HOW, COMBAT, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
 import { ledgerContent, withIronChest } from './fixtures/ledgerWorld.js';
 import en from '../i18n/en.json';
@@ -409,7 +410,7 @@ describe('where the boxes sit', () => {
     }
 
     const noOverlaps = (lay) => {
-        const boxes = [...lay.nodes, ...lay.stems, ...lay.labels, ...lay.captions.filter(c => !c.label)];
+        const boxes = [...lay.nodes, ...lay.stems, ...lay.labels, ...lay.words, ...lay.captions.filter(c => !c.label)];
         for (let i = 0; i < boxes.length; i++) {
             for (let j = i + 1; j < boxes.length; j++) {
                 expect(overlap(boxes[i], boxes[j]), `${boxes[i].id} / ${boxes[j].id}`).toBe(false);
@@ -606,6 +607,266 @@ describe('where the boxes sit', () => {
         expect(chartMetrics(16)).toEqual({ ...CHART_METRICS });
         expect(chartMetrics(20).nodeW).toBe(275);
         expect(chartMetrics(10).nodeW).toBe(CHART_METRICS.nodeW);
+    });
+});
+
+describe('a word on every line that is not used up (the owner\'s pick C, 6 November)', () => {
+    const word = (w) => w?.word ?? null;
+    const tip = (w) => w?.tip ?? null;
+    const inWord = (book, key, from) => wayInWord(book, waysIn(book, key).find(w => w.from === from));
+    const outWord = (book, key, to) => wayOutWord(book, key, waysOut(book, key).find(w => w.to === to));
+
+    it('ways in: made at a station, built on a Foundation, one of a station type; what comes out of a box says how', () => {
+        const book = buildEncyclopedia(threeWaysToIronOre());
+        expect(word(inWord(book, I('item_iron_ingot'), T('token_furnace')))).toBe('madeAt');
+        expect(word(inWord(book, T('token_smithy'), T('token_wood_foundation')))).toBe('builtOn');
+        expect(word(inWord(book, I('item_iron_ore'), T('token_iron_vein')))).toBe('gives');
+        expect(word(inWord(book, I('item_iron_ore'), T('token_iron_chest')))).toBe('opens');
+        expect(word(inWord(book, I('item_iron_ore'), T('token_fire_elemental')))).toBe('drops');
+        expect(word(inWord(book, I('item_shrimp'), T('token_coast')))).toBe('catch');
+        expect(word(inWord(book, I('item_bird_nest'), T('token_birdwatcher')))).toBe('bonus');
+        expect(word(inWord(book, T('token_goblin'), T('token_goblin_camp')))).toBe('spawns');
+        expect(word(inWord(book, T('token_oak_stump'), T('token_oak_tree')))).toBe('leaves');
+        const hall = inWord(book, I('item_seed'), T('token_guild_hall'));
+        expect([word(hall), tip(hall)]).toEqual(['gives', 'givesPassive']);
+        const two = buildEncyclopedia(twoOfEach());
+        const type = waysIn(two, I('item_iron_ingot'))[0].from;
+        expect(word(inWord(two, type, T('token_furnace')))).toBe('oneOf');
+        expect(word(inWord(two, I('item_iron_ingot'), type))).toBe('madeAt');
+    });
+
+    it('uses: a tool, a station that makes it, a Foundation that builds it, a recipe that makes it, a Token it grows beside', () => {
+        const book = buildEncyclopedia(threeWaysToIronOre());
+        expect(word(outWord(book, I('item_copper_pickaxe'), T('token_copper_vein')))).toBe('toolFor');
+        expect([word, tip].map(f => f(outWord(book, T('token_furnace'), I('item_iron_ingot'))))).toEqual(['makes', 'madeAt']);
+        expect([word, tip].map(f => f(outWord(book, T('token_wood_foundation'), T('token_smithy'))))).toEqual(['builds', 'builtOn']);
+        expect([word, tip].map(f => f(outWord(book, R('recipe_wheat'), I('item_wheat'))))).toEqual(['makes', 'recipeMakes']);
+        expect(word(outWord(book, T('token_iron_vein'), I('item_iron_ore')))).toBe('gives');
+        expect(word(outWord(book, T('token_iron_vein'), T('token_fire_elemental')))).toBe('spawns');
+        expect(word(outWord(book, T('token_iron_chest'), I('item_iron_ore')))).toBe('opens');
+        expect(word(outWord(book, T('token_goblin'), I('item_bones')))).toBe('drops');
+        expect(word(outWord(book, T('token_coast'), I('item_trout')))).toBe('catch');
+        expect(word(outWord(book, T('token_oak_sapling'), T('token_oak_tree')))).toBe('grows');
+        const ws = withForest();
+        ws.tokens.token_oak_sapling.grows.needsNearby = ['token_oak_forest'];
+        expect(word(outWord(buildEncyclopedia(ws), T('token_oak_forest'), T('token_oak_tree')))).toBe('beside');
+    });
+
+    it('a Token that turns into another says so, both ways', () => {
+        const ws = threeWaysToIronOre();
+        ws.tokens.token_egg = { id: 'token_egg', name: 'Egg', turns: { chance: 10, into: [{ typeId: 'token_goblin', weight: 1 }] } };
+        const book = buildEncyclopedia(ws);
+        expect(word(inWord(book, T('token_goblin'), T('token_egg')))).toBe('turns');
+        expect(word(outWord(book, T('token_egg'), T('token_goblin')))).toBe('turns');
+    });
+
+    it('used up stays the plain line: an ingredient, a seed planted, bait, a price', () => {
+        const book = buildEncyclopedia(withForest());
+        expect(outWord(book, I('item_iron_ingot'), I('item_iron_pickaxe'))).toBeNull();
+        expect(outWord(book, I('item_seed'), T('token_oak_tree'))).toBeNull();
+        expect(outWord(book, I('item_seed'), T('token_oak_forest'))).toBeNull();
+        expect(outWord(book, I('item_worm'), T('token_coast'))).toBeNull();
+        expect(outWord(book, I('item_oak_wood'), T('token_wood_foundation'))).toBeNull();
+        // A way with no box of its own (the Shop, a regrow from its stump) has no line to name.
+        expect(waysIn(book, T('token_wood_foundation')).map(w => wayInWord(book, w))).toEqual([null]);
+        expect(wayInWord(book, waysIn(book, T('token_oak_tree')).find(w => w.regrow))).toBeNull();
+    });
+
+    // ── where the words sit ──
+    const m = CHART_METRICS;
+    const overlap = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+    /** Whether a 2 px line, square-cornered, crosses a box: its strokes as thin boxes. */
+    const crosses = (link, box, lit = 0) => link.points.slice(1).some(([x1, y1], k) => {
+        const [x0, y0] = link.points[k];
+        const half = 1 + lit;
+        const seg = { x: Math.min(x0, x1) - half, y: Math.min(y0, y1) - half, w: Math.abs(x1 - x0) + 2 * half, h: Math.abs(y1 - y0) + 2 * half };
+        return overlap(seg, box);
+    });
+
+    /** Every word on its own: clear of every box, mark, tab, caption and other word, of every line but its own, of every band not its way's. */
+    function wordsSitClear(lay) {
+        const nodeIds = new Set(lay.nodes.map(n => n.id));
+        const others = [...lay.nodes, ...lay.stems, ...lay.labels, ...lay.captions.filter(c => !c.label)];
+        for (const w of lay.words) {
+            for (const o of [...others, ...lay.words.filter(x => x !== w)]) expect(overlap(w, o), `${w.id} / ${o.id}`).toBe(false);
+            const own = w.side === 'out' ? `${w.id.slice(0, -1)}>` : null;
+            for (const link of lay.links) {
+                // Its own line runs under it (broken by it), at twice the ink when lit, never over it.
+                if (link.id === own) continue;
+                expect(crosses(link, w, 1), `${link.id} through ${w.id}`).toBe(false);
+                // An arrowhead, at its lit size, stays clear too.
+                if (nodeIds.has(link.into)) {
+                    const [x, y] = link.points.at(-1);
+                    expect(overlap({ x: x - 10, y: y - 7, w: 10, h: 14 }, w), `arrow of ${link.id} / ${w.id}`).toBe(false);
+                }
+            }
+            const mine = w.side === 'in' ? `${w.id.slice(0, -1)}#` : null;
+            for (const band of lay.bands) {
+                if (band.id === mine) {
+                    expect(w.x >= band.x && w.y >= band.y && w.x + w.w <= band.x + band.w && w.y + w.h <= band.y + band.h, `${w.id} inside ${band.id}`).toBe(true);
+                } else {
+                    expect(overlap(w, band), `${w.id} over ${band.id}`).toBe(false);
+                }
+            }
+        }
+    }
+
+    /** Where a word belongs: a way in's above its box's line, by the box; a use's on its line, past its mark, before the arrow. */
+    function wordsWhereTheyBelong(lay) {
+        for (const w of lay.words) {
+            if (w.side === 'in') {
+                const link = lay.links.find(l => l.pairs.length === 1 && l.pairs[0][0] === w.pairs[0][0] && l.pairs[0][1] === w.pairs[0][1] && l.into === w.id.slice(0, -1));
+                const [x, y] = link.points[0];
+                expect(w.onLine).toBe(false);
+                expect(w.x).toBe(x + m.wordPad);
+                if (!w.overMark) expect(w.y + w.h + m.wordLift).toBe(y);
+            } else {
+                const link = lay.links.find(l => l.id === `${w.id.slice(0, -1)}>`);
+                const [x, y] = link.points.at(-1);
+                const mark = lay.labels.find(l => l.id === `${w.id.slice(0, -1)}@`);
+                if (w.onLine) {
+                    expect(w.y + w.h / 2).toBe(y);
+                    expect(w.x + w.w).toBeLessThanOrEqual(x - (lay.nodes.some(n => n.id === link.into) ? m.wordStop : m.wordPad));
+                    if (mark) expect(w.x).toBeGreaterThanOrEqual(mark.x + mark.w + m.wordPad);
+                } else {
+                    expect(w.overMark).toBe(true);
+                    expect(w.y + w.h).toBeLessThanOrEqual(mark.y - m.wordLift);
+                }
+            }
+        }
+    }
+
+    const book = buildEncyclopedia(threeWaysToIronOre());
+
+    it('a chart\'s words: on the lines that are not used up, each once, clear of everything else', () => {
+        let chart = chartOf(book, I('item_iron_ingot'));
+        const ore = chart.ins[0].inputs[0].id;
+        chart = chartOf(book, I('item_iron_ingot'), { grown: new Set([ore]) });
+        const lay = layoutChart(chart);
+        expect(lay.words.map(w => w.word).sort()).toEqual(['drops', 'gives', 'madeAt', 'opens']);
+        // Iron Ore's three ways each on their band, the Furnace's "made at" on the start's one way.
+        expect(new Set(lay.words.map(w => w.pairs[0].join('|'))).size).toBe(lay.words.length);
+        wordsSitClear(lay);
+        wordsWhereTheyBelong(lay);
+        expect(lay.words.every(w => w.x >= lay.box.left && w.x + w.w <= lay.box.right)).toBe(true);
+    });
+
+    it('uses: a tool\'s words on its lines to the veins, past the skill marks', () => {
+        const lay = layoutChart(chartOf(book, I('item_copper_pickaxe')));
+        expect(lay.words.length).toBeGreaterThan(1);
+        expect(lay.words.every(w => w.word === 'toolFor' && w.onLine)).toBe(true);
+        wordsSitClear(lay);
+        wordsWhereTheyBelong(lay);
+    });
+
+    it('far sides opened: a line running through a pass carries no word, its word stays clear of the bands it runs onto', () => {
+        // A station whose use, the ingot (also a Goblin Chief's drop), opens its other ways in: the Furnace runs through as a pass.
+        const ws = threeWaysToIronOre();
+        ws.tokens.token_goblin_chief.config.outputs.push({ itemId: 'item_iron_ingot', chance: 10, minQty: 1, maxQty: 1 });
+        const book = buildEncyclopedia(ws);
+        const start = chartOf(book, T('token_furnace'));
+        const ingot = start.outs.find(u => u.node.key === I('item_iron_ingot'));
+        const chart = chartOf(book, T('token_furnace'), { far: new Set([ingot.node.id]) });
+        const lay = layoutChart(chart);
+        const open = findNode(chart, ingot.node.id);
+        expect(open.ins.length).toBeGreaterThan(1);
+        const pass = open.ins.find(b => b.from?.pass);
+        expect(lay.words.find(w => w.id === `${pass.id}^`)).toBeUndefined();
+        const makes = lay.words.find(w => w.id === `${ingot.id}^`);
+        expect([makes.word, makes.onLine]).toEqual(['makes', true]);
+        expect(makes.x + makes.w).toBeLessThanOrEqual(lay.bands.find(b => b.id === `${pass.id}#`).x);
+        wordsSitClear(lay);
+        wordsWhereTheyBelong(lay);
+    });
+
+    it('a tool\'s vein opened: "tool for" on the line that runs above its sources', () => {
+        const start = chartOf(book, I('item_copper_pickaxe'));
+        const use = start.outs.find(u => u.node.key === T('token_copper_vein'));
+        const lay = layoutChart(chartOf(book, I('item_copper_pickaxe'), { far: new Set([use.node.id]) }));
+        expect(lay.words.find(w => w.id === `${use.id}^`)).toMatchObject({ word: 'toolFor', onLine: true });
+        wordsSitClear(lay);
+        wordsWhereTheyBelong(lay);
+    });
+
+    it('resting on a box lights the words on its path too', () => {
+        let chart = chartOf(book, I('item_iron_ingot'));
+        const ore = chart.ins[0].inputs[0].id;
+        chart = chartOf(book, I('item_iron_ingot'), { grown: new Set([ore]) });
+        const lay = layoutChart(chart);
+        const vein = findNode(chart, ore).ins[0];
+        expect(litWords(lay, vein.from.id)).toEqual(new Set([`${vein.id}^`]));
+        expect(litWords(lay, ore).size).toBe(0);
+    });
+
+    it('with no room beside the mark a word rides above it, still clear of everything', () => {
+        // Today's old gap: "tool for" and a two-figure mark did not fit side by side.
+        const tight = { ...m, gapX: 200 };
+        const lay = layoutChart(chartOf(book, I('item_iron_pickaxe')), tight);
+        expect(lay.words.some(w => w.overMark)).toBe(true);
+        wordsSitClear(lay);
+        wordsWhereTheyBelong(lay);
+    });
+
+    it('a way in with only its box, its word beside a grow mark with no room: above the mark, inside its band', () => {
+        // A forest with no upkeep: "spawns" and the sapling's grow mark share the one line into the tree.
+        const ws = withForest();
+        ws.tokens.token_oak_forest.spawner.upkeep = [];
+        const forest = buildEncyclopedia(ws);
+        const lay = layoutChart(chartOf(forest, T('token_oak_tree')), m, () => '0:01');
+        const spawns = lay.words.find(w => w.word === 'spawns');
+        expect(spawns.overMark).toBe(true);
+        expect(lay.bands.length).toBeGreaterThan(1);
+        wordsSitClear(lay);
+        wordsWhereTheyBelong(lay);
+    });
+
+    describe('the shipped content, every entry with all its lines shown', () => {
+        const shipped = encyclopedia();
+        const growText = (label) => formatClock((label.through || []).reduce((s, k) => s + (Number(shipped.entryOf(k)?.def?.grows?.afterMs) || 0), 0));
+        const charts = () => [...shipped.entries.keys()].map(key => [key, chartOf(shipped, key, { opened: new Set([`${ROOT}<`, `${ROOT}>`]) })]);
+
+        it('every word fits beside its mark at the chart\'s gap, in the widest font: none rides above', () => {
+            let count = 0;
+            for (const [key, chart] of charts()) {
+                const lay = layoutChart(chart, m, growText);
+                count += lay.words.length;
+                expect(lay.words.filter(w => w.overMark).map(w => `${key}: ${w.word}`)).toEqual([]);
+                wordsSitClear(lay);
+            }
+            expect(count).toBeGreaterThan(500);
+        });
+
+        it('at the old gap (200 px) they did not: the words that would ride above their marks', () => {
+            const old = { ...m, gapX: 200 };
+            const riding = charts().flatMap(([, chart]) => layoutChart(chart, old, growText).words.filter(w => w.overMark));
+            expect(riding.length).toBeGreaterThan(0);
+            expect(new Set(riding.map(w => w.word))).toEqual(expect.objectContaining(new Set(['toolFor'])));
+        });
+
+        it('every word and its hover sentence is in the strings file, and reads the same in All caps', () => {
+            const used = new Map();
+            for (const key of shipped.entries.keys()) {
+                for (const w of waysIn(shipped, key)) { const x = wayInWord(shipped, w); if (x) used.set(`${x.word}|${x.tip}`, x); }
+                for (const w of waysOut(shipped, key)) { const x = wayOutWord(shipped, key, w); if (x) used.set(`${x.word}|${x.tip}`, x); }
+            }
+            expect(used.size).toBeGreaterThan(10);
+            for (const { word: w, tip: s } of used.values()) {
+                expect(typeof en.encyclopedia.line[w], w).toBe('string');
+                expect(en.encyclopedia.lineTip[s], s).toMatch(/\{from\}.*\{to\}|\{to\}.*\{from\}/);
+            }
+            // Lower-case words and spaces only: capitals change nothing but the case.
+            for (const text of Object.values(en.encyclopedia.line)) expect(text).toMatch(/^[a-z]+( [a-z]+)*$/);
+            // The width kept for a word covers the widest font's capitals (Silkscreen: "tool for" 75 px, "spawns" 67 px at 14).
+            expect(wordWidth(en.encyclopedia.line.toolFor)).toBeGreaterThanOrEqual(76 + 4);
+            expect(wordWidth(en.encyclopedia.line.spawns)).toBeGreaterThanOrEqual(67 + 4);
+        });
+    });
+
+    it('the mark and the word both fit at a larger text size too', () => {
+        const big = chartMetrics(20);
+        const lay = layoutChart(chartOf(book, I('item_copper_pickaxe')), big);
+        expect(lay.words.every(w => w.onLine && !w.overMark)).toBe(true);
+        expect(markWidth({ req: { level: 15 } }, big) + wordWidth('tool for', big)).toBeLessThan(big.gapX);
     });
 });
 
