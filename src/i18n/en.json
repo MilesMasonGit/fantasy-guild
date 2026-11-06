@@ -54,6 +54,8 @@
         "heroes": "Heroes",
         "playtime": "Total Playtime",
         "lastSaved": "Last Saved",
+        "awayTip": "Time away, played when you load (last saved {ago})",
+        "awayMax": "{time} (max)",
         "unknown": "Unknown"
     },
     "equipment": {

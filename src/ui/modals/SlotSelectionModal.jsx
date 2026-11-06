@@ -6,10 +6,11 @@ import * as NotificationSystem from '../../systems/core/NotificationSystem.js';
 import { formatTimeAgo } from '../../utils/Formatters.js';
 import { cn } from '../utils/cn.js';
 import { useEscapeLayer } from '../utils/escapeLayers.js';
-import { Play, Plus, Trash2, AlertTriangle, Users, Clock, Save } from 'lucide-react';
+import { Play, Plus, Trash2, AlertTriangle, Users, Clock, Save, Hourglass } from 'lucide-react';
 import { KitButton, KIT_BUTTON_TONE } from '../components/base/KitButton.jsx';
 import { PixelFrame, FRAME_KIND } from '../components/base/PixelFrame.jsx';
 import { TitleScreen } from '../components/title/TitleScreen.jsx';
+import { slotAwayText } from '../components/title/slotAway.js';
 import { t } from '../../i18n/index.js';
 
 /** A save slot's row: no box (UI_STYLE "rows are never boxed"); the list draws faint lines between. */
@@ -40,6 +41,24 @@ function useSlotMessage() {
     return message;
 }
 
+/**
+ * Whether a slot's time away replaces its last-saved stat (true) or stands beside it (false). The
+ * two say the same span in different words; replaced, the away stat's tip keeps the last save.
+ */
+export const AWAY_REPLACES_LAST_SAVED = true;
+
+/** Re-reads the clock while the screen is up, so a slot's time away keeps counting. */
+function useMinuteClock(active) {
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+        if (!active) return undefined;
+        setNow(Date.now());
+        const id = setInterval(() => setNow(Date.now()), 30000);
+        return () => clearInterval(id);
+    }, [active]);
+    return now;
+}
+
 /** One stat on a slot: a Lucide mark (UI_STYLE "the icon rule": the start screen is Lucide) and its value. */
 const SlotStat = ({ icon: Icon, label, children, stat }) => (
     <span data-slot-stat={stat} className="flex items-center gap-1" title={label}>
@@ -55,6 +74,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
     const [slots, setSlots] = useState([]);
     const [deleteAttemptIndex, setDeleteAttemptIndex] = useState(null);
     const message = useSlotMessage();
+    const now = useMinuteClock(!!isOpen);
     // Nothing lies under the title screen for Escape to close.
     useEscapeLayer(!!isOpen, null);
 
@@ -147,6 +167,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
 
         const { heroCount, playtime, lastSavedAt, version, isLastActive } = slotInfo;
         const timeAgo = lastSavedAt ? formatTimeAgo(lastSavedAt) : t('titleScreen.unknown');
+        const away = slotAwayText(slotInfo, now);
 
         return (
             <div key={index} data-save-slot={slotNumber} data-slot-state="filled" className={cn(
@@ -169,7 +190,12 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                     <div className="flex items-center gap-4 text-xs text-gray-400">
                         <SlotStat stat="heroes" icon={Users} label={t('titleScreen.heroes')}>{heroCount || 0}</SlotStat>
                         <SlotStat stat="playtime" icon={Clock} label={t('titleScreen.playtime')}>{formatPlaytime(playtime)}</SlotStat>
-                        <SlotStat stat="saved" icon={Save} label={t('titleScreen.lastSaved')}>{timeAgo}</SlotStat>
+                        {(!AWAY_REPLACES_LAST_SAVED || !away) && (
+                            <SlotStat stat="saved" icon={Save} label={t('titleScreen.lastSaved')}>{timeAgo}</SlotStat>
+                        )}
+                        {away && (
+                            <SlotStat stat="away" icon={Hourglass} label={t('titleScreen.awayTip', { ago: timeAgo })}>{away}</SlotStat>
+                        )}
                     </div>
                 </div>
 

@@ -12,6 +12,9 @@ import {
     TITLE_LOGO_SRC, TITLE_PAINTING_SRC, TITLE_BANNER, coverScale, fitScale
 } from '../ui/components/title/titleArt.js';
 import { areaBannerSrc } from '../config/areaBanners.js';
+import { slotAwayText } from '../ui/components/title/slotAway.js';
+import { AWAY_REPLACES_LAST_SAVED } from '../ui/modals/SlotSelectionModal.jsx';
+import { CATCH_UP } from '../config/loopConstants.js';
 
 const h = React.createElement;
 const HOUR = 60 * 60 * 1000;
@@ -53,8 +56,8 @@ describe('the slots', () => {
         const stat = (name) => row(1).querySelector(`[data-slot-stat="${name}"]`);
         expect(stat('heroes').textContent.trim()).toBe('3');
         expect(stat('playtime').textContent.trim()).toBe('2h 5m');
-        expect(stat('saved').textContent.trim()).toBe('3 hours ago');
-        for (const name of ['heroes', 'playtime', 'saved']) {
+        expect(stat('away').textContent.trim()).toBe('3 h');
+        for (const name of ['heroes', 'playtime', 'away']) {
             expect(stat(name).querySelector('svg.lucide'), name).not.toBeNull();
         }
         expect(document.body.textContent).not.toMatch(EMOJI);
@@ -167,5 +170,52 @@ describe('whole-pixel scales', () => {
     it('fit is the largest whole multiple inside the box, at least 1', () => {
         expect(fitScale({ width: 200, height: 60 }, { width: 672, height: 240 })).toBe(3);
         expect(fitScale({ width: 900, height: 60 }, { width: 672, height: 240 })).toBe(1);
+    });
+});
+
+describe('each slot shows the time away it has built up', () => {
+    const MIN = 60 * 1000;
+    const now = 1_800_000_000_000;
+    const info = (ago) => ({ slotIndex: 0, lastSavedAt: now - ago });
+
+    it('in the away summary wording', () => {
+        expect(slotAwayText(info(20 * 1000), now)).toBe('less than a minute');
+        expect(slotAwayText(info(45 * MIN), now)).toBe('45 min');
+        expect(slotAwayText(info(3 * HOUR + 12 * MIN), now)).toBe('3 h 12 min');
+        expect(slotAwayText(info(24 * HOUR), now)).toBe('24 h');
+    });
+
+    it('past the 24 hours a load plays, it reads 24 h (max)', () => {
+        expect(CATCH_UP.CAP_MS).toBe(24 * HOUR);
+        expect(slotAwayText(info(24 * HOUR + MIN), now)).toBe('24 h (max)');
+        expect(slotAwayText(info(30 * HOUR), now)).toBe('24 h (max)');
+        expect(slotAwayText(info(40 * 24 * HOUR), now)).toBe('24 h (max)');
+    });
+
+    it('nothing for an empty or damaged slot, or one with no save time', () => {
+        expect(slotAwayText(null, now)).toBeNull();
+        expect(slotAwayText({ slotIndex: 2, damaged: true }, now)).toBeNull();
+        expect(slotAwayText({ slotIndex: 0, lastSavedAt: null }, now)).toBeNull();
+    });
+
+    it('a save time a little ahead of the clock reads less than a minute', () => {
+        expect(slotAwayText(info(-5 * MIN), now)).toBe('less than a minute');
+    });
+
+    it('on the screen: the away stat replaces last saved, whose time moves to its tip; none on empty or damaged slots', () => {
+        expect(AWAY_REPLACES_LAST_SAVED).toBe(true);
+        plantSlots();
+        localStorage.setItem('fantasy_guild_slot_1', slotSave(1, Date.now() - 30 * HOUR));
+        render(h(SlotSelectionModal, { isOpen: true, onSelect: () => {} }));
+        const away = row(1).querySelector('[data-slot-stat="away"]');
+        expect(away.textContent.trim()).toBe('3 h');
+        expect(away.getAttribute('title')).toContain('last saved 3 hours ago');
+        expect(row(1).querySelector('[data-slot-stat="saved"]')).toBeNull();
+        expect(row(2).querySelector('[data-slot-stat="away"]').textContent.trim()).toBe('24 h (max)');
+        localStorage.removeItem('fantasy_guild_slot_1');
+        cleanup();
+        render(h(SlotSelectionModal, { isOpen: true, onSelect: () => {} }));
+        expect(row(2).querySelector('[data-slot-stat]')).toBeNull();
+        expect(row(3).querySelector('[data-slot-stat]')).toBeNull();
     });
 });

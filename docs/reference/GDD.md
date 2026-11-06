@@ -1328,7 +1328,9 @@ drawers**. The menu can be flipped to the right.
 - **The title screen** is the only screen before play: the game's name in the
   display size over a banner picture (`b_guild_hall`, framed), and the three
   save slots beneath in the kit. A filled slot shows its heroes, playtime and
-  last save as Lucide marks, then Load and a delete with a confirm; an empty one
+  the time away it has built up (the away summary's words, `24 h (max)` past
+  the cap; its tip gives the last save) as Lucide marks, then Load and a delete
+  with a confirm; an empty one
   New Game; one whose save can't be read says Damaged and can still be loaded
   (for the message) or deleted. The owner's logo and title painting replace the
   name and the banner when their files exist (`src/ui/components/title/titleArt.js`).

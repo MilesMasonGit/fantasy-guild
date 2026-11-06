@@ -247,7 +247,8 @@ item held.
   picture in a studs frame the slots' width, the name on a plate at its foot; the default
   until the owner picks), **backdrop** (the picture fills the screen) and **strip** (a band at
   3× fading at its sides). *New, unapproved.*
-- A slot's stats are Lucide: heroes, playtime, last saved. A slot whose save can't be read
+- A slot's stats are Lucide: heroes, playtime, and the time away (an hourglass; `24 h (max)` past
+  the cap), whose tip gives the last save (`AWAY_REPLACES_LAST_SAVED`; false shows both). A slot whose save can't be read
   says **Damaged** in red, and keeps Load and delete.
 
 ## Panel headers
