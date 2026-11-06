@@ -5,7 +5,7 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
-**Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time.
+**Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
 ## Director, combat look and rivers (brief 360 C2 to C4, brief 370 R1; owner chose rivers 2026-11-05 evening; owner's picks 2026-11-05: window B, tab D, mat F with the combat icon between the health bars)
 
@@ -29,7 +29,7 @@ build green) · bench-queued · eye-check · merged.*
 | 470 E1: mock-ups of what each encyclopedia line means | builder | `docs/encyclopedia-lines` (`x1`, from main) | **merged** (docs only): `research/encyclopedia_lines/contact_lines.png`, README; waits for the owner's pick | Fri | Fri |
 | 470 E3: progress bars per kind in the book's corner, recipe ingredients link to their pages | builder | `crunch/encyclopedia-progress` (`x3`, from main) | **merged** 411a6825 (owner all ok 2026-11-06, one look branch `look/2026-11-06`); ready 388596b4 for the eye-check (engine work expected same); director: 594 files green, cycles, build; note: a total can grow when something unreachable is found (owner may find it odd) | Fri | Fri |
 | 380 M2 and M3: the world map, board tiles over a painted map, cell states, ring lines; then the hover tip, a thinner panel, no tabs | builder | `crunch/world-map` (`m2`, from main) | building (owner's picks 2026-11-06) | Fri | |
-| 390 G2 and G3: the sky (bright item outlines over stars, 1.4x spacing, titles under, ranks on hover, full screen); the purple panel with now and next | builder | `crunch/hall-sky` (`g2`, from main) | built ebced272, director verifying; touches `ReactRoot.jsx` (the screen box clips, not hides) | Fri | |
+| 390 G2 and G3: the sky (bright item outlines over stars, 1.4x spacing, titles under, ranks on hover, full screen); the purple panel with now and next | builder | `crunch/hall-sky` (`g2`, from main) | **merged** 6b8368d0 (owner: the stars look good, from the screenshots); director: 605 files green on the merge, cycles, build; one conflict with the Bank's backdrop kept both (purple frame and `backdrop="hall"`); touches `ReactRoot.jsx` (the screen box clips, not hides). Sentences to polish later: Orchard Care lists nine Tokens, skill boosts say Forestry Token, Larder plural at rank 1 | Fri | Fri |
 | 470 E2: a word on each encyclopedia line | engineer | `crunch/encyclopedia-words` (`x2`, from main 8142216f) | building | Fri | |
 | 460 P2: the last soft glows and shadows go hard, words with a 1 px outline | builder | from main | next, when a code slot frees | | |
 | 440 A1: the time-away panel in two columns, item changes as one net list, the news in order | builder | `crunch/away-summary` (`a1`, from main 8142216f) | building | Fri | |
@@ -204,7 +204,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-**Fri 6 Nov, 13:00 (director):** engine bench `--compare` on main 411a6825 (the six merged together; WORK CHANGED expected from 500, identity and fidelity must pass); then one `bench:draw --compare` for the batch.
+**Fri 6 Nov, 13:00 (director):** engine bench `--compare` on main (the six merged together, then the Hall sky 6b8368d0; WORK CHANGED expected from 500, identity and fidelity must pass); then one `bench:draw --compare` for the batch.
 
 **Fri 6 Nov, 01:00 (director timer, `p23b`):** engine work check and draw benches on `crunch/combat-window` a38e6467 (logs in the scratchpad). Then, by director timers one after another: C4 b21c8b88 (engine work check, fights40 and fights80 draw), `crunch/ground-look` with R1 merged in (engine work check, full draw), then drag hints 80b8fd8d (engine work check, drag bench). Then enemies stand still f85643a1 (engine work check, skipped if past 07:00). 
 
