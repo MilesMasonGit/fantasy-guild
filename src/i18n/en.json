@@ -415,16 +415,9 @@
         "perkAt": "{level} {perk}"
     },
     "worldMap": {
-        "tab": "World",
         "label": "The world map",
         "noWorld": "This guild began before the world was drawn. Start a new game to explore one.",
-        "hall": "The Guild Hall",
-        "ring": "Ring {ring}",
-        "wildRing": "Ring {ring}, wild",
-        "kitSpecialty": "{kit} · specialty {specialty}",
-        "settled": "Settled: {name}",
         "here": "The guild is here",
-        "frontier": "Can be settled",
         "beyond": "Out of reach: settle a place beside it first",
         "yields": "Yields",
         "price": "Price",

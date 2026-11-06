@@ -288,6 +288,16 @@ the player to **make nodes**.*
 - **The Atlas tome becomes the world map screen.**
 - Travel between settled places stays free and instant; one place, one
   Region (above).
+- **Built (brief 380 M2, M3, 2026-11-06)**: the view pans down from the mat to the world map
+  (`WorldCamera.jsx`); the book and its tabs are gone from it. A painted world beneath (the
+  owner's pick D, from each cell's kit, fog past the rings shown), the cells as board tiles over
+  it (pick C, code stand-ins until the owner's tiles, `worldMapArt.js`), a rope along the ring
+  lines, the cell looks of item 3, no hexes past ring 3 until a wild ring can be reached, the map
+  dragged around. The hover names the place from its cell's seed (its Region takes that name on
+  settling), its land and line under it, the price in pills; the thin panel holds yields, price,
+  a large Settle, and for a settled place its mat drawn small, facts, rename and Travel. The
+  Regions page's archive, restore and abandon have no button now (the engine keeps them). Ring
+  stars (M4) and the settling ceremony (M5) are not built.
 
 ## Amended by the detail pass (owner, 2026-11-03; brief 380)
 

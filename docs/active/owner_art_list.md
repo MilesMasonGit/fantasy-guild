@@ -136,12 +136,11 @@ player for these is T-138 (built when the first strips exist).
   biome's.
 - **Stone terrain pieces** (NEW when ready, brief 330 W3): the ground of a Stone outcrop (bare rock where mines and quarries stand), on any biome's ground and on the mountain's too, so it must read apart from the mountain's own rock. Code draws pale grey slabs and scree from rules until then (the `stone` look in `terrainRegistry.js`).
 - **The darkened mat** (NEW when ready, brief 330 W3): how a place held by its arrival looks. Code shades the ground with a dark wash and dims every Token but the enemies and the Hall until then; a mood (dusk, smoke, fog) or a frame would replace it.
-- **World map board tiles** (NEW, owner picked C on 2026-11-06, brief 380 M2): a thick tile base per kind of land, its top in that land's ground and a side in its earth colour: Highland, Woodland, Plains, Wetland, Riverside, and the Guild Hall (6 sprites, about 84 x 78 art px); and rope pieces for the ring lines (a straight piece at each of the three hex angles, and a knot). Code-drawn stand-ins until then. Optional for the painted map beneath (D): 8 x 8 symbols for trees, peaks, reeds, field rows and waves.
-- **World map cells** (NEW when ready, brief 330 W2): a hex cell frame (flat
-  top, settled, frontier and beyond looks, or one frame the code tints) and a
-  ground fill per kit (Highland, Woodland, Plains, Wetland, Riverside). Code
-  draws flat hexes in a colour per kit until then; the cells show the item
-  sprites of what they yield, so no new output icons are needed.
+- **World map board tiles** (NEW, owner picked C on 2026-11-06, built with code stand-ins in brief 380 M2): a thick tile base per kind of land, its top in that land's ground and a side in its earth colour. Files in `public/assets/ui/world/`, drawn at 2x:
+  - `world_tile_highland.png`, `world_tile_woodland.png`, `world_tile_plains.png`, `world_tile_wetland.png`, `world_tile_riverside.png`, `world_tile_hall.png`: 84 x 78 art px each, the top face a flat-topped hex 84 wide and 73 high in the top 73 rows, the side showing in the 5 rows under it; the map stands the place's Token on it and the item plate below its middle.
+  - Rope for the ring lines: `world_rope_flat.png` (a horizontal hex edge), `world_rope_rise.png` (/), `world_rope_fall.png` (\), each one hex edge long (42 art px), centred on the edge's middle; `world_rope_knot.png` on each corner.
+  - Optional, for the painted world beneath: `world_symbol_highland.png`, `world_symbol_woodland.png`, `world_symbol_plains.png`, `world_symbol_wetland.png`, `world_symbol_riverside.png` (8 x 8: peaks, trees, field rows, reeds, waves).
+  - Swapping one in: drop the file in and add its name to the `DRAWN` list in `src/config/worldMapArt.js` (one line).
 - **Loadout slot kind marks** (NEW, 8 × 8, drawn at 2× in the bottom-right
   corner of a hero's filled loadout slot; code-drawn placeholders in
   `PixelGlyph` until drawn, shown on the style sheet page under "Loadout slot

@@ -26,7 +26,8 @@ import {
 } from '../ui/components/atlas/mapPreview.js';
 import { PREVIEW_SETTLE_MS } from '../ui/components/atlas/MapPreview.jsx';
 import { regionPlan } from '../ui/components/atlas/regionPreview.js';
-import { AtlasScreen, ATLAS_TAB } from '../ui/components/atlas/AtlasScreen.jsx';
+import { WorldScreen } from '../ui/components/atlas/WorldScreen.jsx';
+import * as World from '../systems/world/World.js';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { placeAt } from './fixtures/mat.js';
 import './fixtures/testTokens.js';
@@ -290,23 +291,24 @@ describe('⭐ the preview is drawn once per Region', () => {
         });
     };
 
-    it('the Regions page draws its Region once per Region chosen: not on a rename, the Bank or the live board changing', async () => {
-        const one = Atlas.devSettle(['forest'], 5).region;
-        const two = Atlas.devSettle(['coast'], 6).region;
+    it('the panel of a settled place on the world map draws its Region once per place chosen: not on a rename, the Bank or the live board changing', async () => {
+        World.createWorld({ seed: 3 });
+        const one = Atlas.settle({ ingredients: [DEV_MAPS.forest], seed: 5, cellId: '1,0' }).region;
+        const two = Atlas.settle({ ingredients: [DEV_MAPS.coast], seed: 6, cellId: '0,1' }).region;
         const view = render(React.createElement(
             DeckDndContext.Provider, { value: { activePayload: null, isDragging: false } },
-            React.createElement(AtlasScreen, { onClose: vi.fn(), initialTab: ATLAS_TAB.REGIONS })
+            React.createElement(WorldScreen, { onClose: vi.fn() })
         ));
         const { container } = view;
-        const canvas = () => q(container, '[data-region-preview] canvas[data-map-preview]');
+        const canvas = () => q(container, '[data-world-preview] canvas[data-map-preview]');
         await settle();
         expect(plans).toHaveBeenCalledTimes(1);
         expect(canvas().getAttribute('data-preview-seed')).toBe(String(Atlas.activeRegion().seed));
 
-        fireEvent.click(q(container, `[data-region-select="${one.id}"]`));
+        fireEvent.click(q(container, '[data-world-cell="1,0"]'));
         await settle();
         expect(plans).toHaveBeenCalledTimes(2);
-        expect(canvas().getAttribute('data-preview-drawn')).toBe('5');
+        expect(canvas().getAttribute('data-preview-drawn')).toBe(String(one.seed));
 
         act(() => { Atlas.rename(one.id, 'Elsewhere'); });
         act(() => { InventoryManager.addItem('item_oak_wood', 3); });
@@ -314,10 +316,10 @@ describe('⭐ the preview is drawn once per Region', () => {
         await settle(1000);
         expect(plans).toHaveBeenCalledTimes(2);
 
-        fireEvent.click(q(container, `[data-region-select="${two.id}"]`));
+        fireEvent.click(q(container, '[data-world-cell="0,1"]'));
         await settle();
         expect(plans).toHaveBeenCalledTimes(3);
-        expect(canvas().getAttribute('data-preview-drawn')).toBe('6');
+        expect(canvas().getAttribute('data-preview-drawn')).toBe(String(two.seed));
         view.unmount();
     });
 });

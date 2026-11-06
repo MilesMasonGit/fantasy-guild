@@ -454,8 +454,12 @@ describe('the camera in the game\'s layout', () => {
             expect(count(code, tag), tag).toBe(1);
         }
         // Drawn as on the mat while the camera glides away and back: nothing on the table side
-        // follows the open view, or the mat would change size and be drawn again mid-glide.
-        expect(mat).not.toMatch(/isGuildView|fullscreen\.view|isAtlasOpen/);
+        // follows the open view, or the mat would change size and be drawn again mid-glide. The
+        // one exception is the world map's own camera (`WorldCamera`), whose job is to follow the
+        // map's view; on the mat it lays the mat out the same whatever is open.
+        const worldCamera = mat.slice(mat.indexOf('<WorldCamera'), mat.indexOf('>', mat.indexOf('tableAnchor=', mat.indexOf('<WorldCamera'))) + 1);
+        expect(worldCamera).toMatch(/^<WorldCamera\s+open=\{isAtlasOpen\}/);
+        expect(mat.replace(worldCamera, '')).not.toMatch(/isGuildView|fullscreen\.view|isAtlasOpen/);
     });
 
     it('opens on the Guild view, and another view taking over lands it at once', () => {

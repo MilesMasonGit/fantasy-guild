@@ -80,11 +80,10 @@ describe('Main-action button shine', () => {
         const upgrade = read('ui/components/drawer/GuildUpgradeInspection.jsx');
         // The Upgrade button is the kit's main button, which wears the shine.
         expect(upgrade).toMatch(/<KitButton\s+id="guild-upgrade-button"/);
+        const settle = read('ui/components/atlas/WorldPanel.jsx');
+        // Settle is the world map's main button: the kit's main tone, which wears the shine.
+        expect(settle).toMatch(/tone=\{KIT_BUTTON_TONE\.MAIN\}\s+data-world-settle/);
         expect(read('ui/components/base/KitButton.jsx')).toMatch(/main: 'ui-shine /);
-        const settle = read('ui/components/atlas/WorldPage.jsx');
-        // Settle is the World page's main button, and the main button wears the shine.
-        expect(settle).toMatch(/<AtlasButton main data-world-settle/);
-        expect(read('ui/components/atlas/AtlasButton.jsx')).toMatch(/main && 'ui-shine'/);
         expect(read('ui/dev/StyleSheetPage.jsx')).toMatch(/data-kit-main-button\s+className=\{cn\('ui-shine /);
     });
 
