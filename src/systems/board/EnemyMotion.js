@@ -289,6 +289,8 @@ function step(instance, spawner, body, delta) {
 /**
  * A claimed enemy stepping to open space for its fight (`FightRoom`): it walks there at full speed,
  * its stroll left as it was, so once the fight is over a camp's enemy walks back to where it stood.
+ * Arriving, it hands `FightRoom` the part of the tick it did not need to walk, which its fight is
+ * owed.
  * @returns {boolean} whether anything the screen draws changed
  */
 function stepAside(instance, body, aside, delta, wasMoving) {
@@ -298,6 +300,8 @@ function stepAside(instance, body, aside, delta, wasMoving) {
     const walkMs = Math.min(Math.max(0, delta), MAX_STEP_MS);
     const startX = instance.x;
     const startY = instance.y;
+    const fromX = body.x;
+    const fromY = body.y;
     const moved = stepToward(body, dest, shared.speed * walkMs / 1000);
     if (moved) {
         if (!body.from) body.from = { x: startX, y: startY };
@@ -307,7 +311,8 @@ function stepAside(instance, body, aside, delta, wasMoving) {
     }
     if (!body.moving) {
         endWalk(instance, body);
-        FightRoom.finishStep(instance.id);
+        const walkedMs = shared.speed > 0 ? Math.hypot(body.x - fromX, body.y - fromY) * 1000 / shared.speed : 0;
+        FightRoom.finishStep(instance.id, walkMs - walkedMs);
     }
     return moved || wasMoving !== body.moving;
 }

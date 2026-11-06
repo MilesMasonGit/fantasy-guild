@@ -129,6 +129,11 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 
 beforeEach(() => {
     vi.clearAllMocks();
+    freshBoard();
+});
+
+/** A new game: four fighters, no Tokens, heroes and enemies walking at the speeds above. */
+function freshBoard() {
     BoardState.setInstantArrival(false);
     resetMatTuning();
     setMatTuning('walkSpeed', SPEED);
@@ -148,7 +153,7 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
     clock = 0;
     FightRoom.resetStats();
-});
+}
 
 afterEach(() => {
     BoardState.setInstantArrival(true);
@@ -351,6 +356,51 @@ describe('⭐ after a stepped fight', () => {
         runUntil(() => BoardState.workTokenOf('h1') === producer.id, 10000);
         expect(Flags.ambusherOf('h1')).toBeNull();
     });
+});
+
+describe('⭐ a step costs its fight the same game time at any tick length', () => {
+    /**
+     * h1 already stands beside `enemyAt` when ordered onto it, so the step is planned before the
+     * first tick, whatever its length; h3 stands at `standing`, crowding the fight. Played to
+     * `untilMs` in ticks of `stepMs`: how far it stepped, and how much fighting h1's swing clock has
+     * counted by then.
+     */
+    function stepAndFight(enemyAt, standing, stepMs, untilMs) {
+        freshBoard();
+        // h3 idles on open ground (an idle hero stands 72 u right of and 72 u above the flag).
+        Orders.orderAt('h3', { x: standing.x - 72, y: standing.y + 72 });
+        run(100);
+        expect(body('h3')).toMatchObject({ ...standing, moving: false });
+        // h1 stands on the enemy's left already: the order itself finds them there (`settle`).
+        const enemy = placeAt('fs_dummy', enemyAt.x, enemyAt.y);
+        const spot = HeroMotion.standingSpot('fs_dummy', enemy, -1);
+        BoardState.setHeroBody('h1', { ...spot, targetId: null, side: -1, atWork: null, moving: false, facing: 1 });
+        Orders.orderAt('h1', { x: enemy.x, y: enemy.y });
+        expect(FightRoom.stepOf(enemy.id)).toMatchObject({ heroId: 'h1', side: -1 });
+        run(untilMs, stepMs);
+        const fight = fightOf('h1');
+        expect(fight?.instanceId).toBe(enemy.id);
+        return { stepped: FightRoom.stats().walked, foughtMs: fight.combat.heroTickProcesses.h1 };
+    }
+
+    const cases = [
+        // A hero standing to the right: 32 u left, inside one 1 s step.
+        { name: '32 u', enemyAt: { x: 800, y: 500 }, standing: { x: 904, y: 450 }, untilMs: 2000, walked: 32 },
+        // At the mat's top edge, a hero below: 136 u left, across two 1 s steps.
+        { name: '136 u', enemyAt: { x: 800, y: 90 }, standing: { x: 800, y: 240 }, untilMs: 3000, walked: 136 }
+    ];
+
+    for (const { name, enemyAt, standing, untilMs, walked } of cases) {
+        it(`${name}: in 1000 ms steps as in 100 ms ticks, the fight counts from when the enemy got there`, () => {
+            const coarse = stepAndFight(enemyAt, standing, 1000, untilMs);
+            const fine = stepAndFight(enemyAt, standing, 100, untilMs);
+            expect(coarse.stepped).toBe(walked);
+            expect(fine.stepped).toBe(walked);
+            // The enemy's walk at 90 u/s, to the whole ms: everything after it is fighting.
+            const want = untilMs - Math.round(walked * 1000 / ENEMY_SPEED);
+            expect({ coarse: coarse.foughtMs, fine: fine.foughtMs }).toEqual({ coarse: want, fine: want });
+        });
+    }
 });
 
 describe('⭐ a full mat does not stall', () => {
