@@ -427,6 +427,8 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
             className="absolute overflow-hidden select-none cursor-grab active:cursor-grabbing"
             style={{ left: rect.left, top: rect.top, width: viewport.w, height: viewport.h, touchAction: 'none' }}
             onPointerDown={onPointerDown}
+            // ⚠️ The browser starts dragging a pressed picture and the pan dies after one step.
+            onDragStart={(e) => e.preventDefault()}
             onClickCapture={onClickCapture}
             onWheel={onWheel}
             onScroll={unscroll}

@@ -150,6 +150,14 @@ describe('the chart', () => {
         expect(focused(container)).toBe(itemKey('item_iron_ore'));
     });
 
+    it('a picture pressed in a box cannot be dragged off by the browser, so the pan carries on', () => {
+        lookUp(itemKey('item_iron_ingot'));
+        const { container } = open();
+        const pic = q(nodeOf(container, itemKey('item_iron_ore'), 'in'), 'img');
+        expect(pic).not.toBeNull();
+        expect(fireEvent.dragStart(pic)).toBe(false);
+    });
+
     it('a link pressed while open starts a chart there, and announces itself', () => {
         const heard = [];
         const off = EventBus.subscribe(UI_EVENTS.OPEN_ENCYCLOPEDIA, (d) => heard.push(d.key));

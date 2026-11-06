@@ -5,6 +5,8 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Small fixes**: pressing on a picture inside an Encyclopedia chart box and dragging now pans smoothly; on screens 900 px tall or less (1366 x 768) the navigation bubbles step down a size so Settings stays on screen; the style sheet page test runs faster.
+
 - **Buying a Guild Hall star is a small moment** (brief 390 G4): the star bursts in hard
   pixels with a chime, light hops along its lines to the stars it just opened, which pop as it
   arrives; finishing a whole constellation bursts bigger, sparkles each of its stars in turn and

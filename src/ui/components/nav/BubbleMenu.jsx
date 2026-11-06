@@ -50,7 +50,7 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
                 disabled={disabled}
                 data-alpha-circle="true"
                 className={cn(
-                    'w-16 h-16 md:w-32 md:h-32 rounded-full flex items-center justify-center bg-center bg-no-repeat bg-contain outline-none',
+                    'w-16 h-16 md:w-32 md:h-32 md:[@media(max-height:900px)]:w-24 md:[@media(max-height:900px)]:h-24 rounded-full flex items-center justify-center bg-center bg-no-repeat bg-contain outline-none',
                     'transition-all duration-200',
                     'peer',
                     !disabled && 'cursor-pointer',
@@ -62,7 +62,7 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
                 }}
             >
                 <Icon
-                    className="w-6 h-6 md:w-12 md:h-12 text-yellow-50 drop-shadow-[0_2px_0_rgba(0,0,0,0.75)] md:drop-shadow-[0_4px_0_rgba(0,0,0,0.75)]"
+                    className="w-6 h-6 md:w-12 md:h-12 md:[@media(max-height:900px)]:w-9 md:[@media(max-height:900px)]:h-9 text-yellow-50 drop-shadow-[0_2px_0_rgba(0,0,0,0.75)] md:drop-shadow-[0_4px_0_rgba(0,0,0,0.75)]"
                 />
             </button>
             {!disabled && ORB_OUTLINE_OFFSETS.map(([dx, dy]) => (
@@ -70,7 +70,7 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
                     key={`${dx}${dy}`}
                     data-orb-outline=""
                     aria-hidden="true"
-                    className={cn('absolute top-0 left-1/2 -z-10 w-16 h-16 md:w-32 md:h-32 pointer-events-none [--px:2px] md:[--px:4px]', active ? 'block bg-gi-gold' : 'hidden peer-hover:block bg-white')}
+                    className={cn('absolute top-0 left-1/2 -z-10 w-16 h-16 md:w-32 md:h-32 md:[@media(max-height:900px)]:w-24 md:[@media(max-height:900px)]:h-24 pointer-events-none [--px:2px] md:[--px:4px] md:[@media(max-height:900px)]:[--px:3px]', active ? 'block bg-gi-gold' : 'hidden peer-hover:block bg-white')}
                     style={{
                         translate: `calc(-50% + ${dx} * var(--px)) calc(${dy} * var(--px))`,
                         maskImage: `url("${orbSrc}")`,
@@ -99,9 +99,9 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
             className={cn(
                 // `relative` so the z-index below actually applies: it is what keeps the nav
                 // ABOVE the bank drawer.
-                'pointer-events-auto relative shrink-0 flex flex-col items-center gap-4 py-6 px-3 min-w-[80px] md:min-w-[150px]',
+                'pointer-events-auto relative shrink-0 flex flex-col items-center gap-4 py-6 px-3 min-w-[80px] md:min-w-[150px] md:[@media(max-height:900px)]:gap-3 md:[@media(max-height:900px)]:py-4 md:[@media(max-height:900px)]:min-w-[116px]',
                 // The 32 px strip at a whole scale, never stretched to the menu's width: 2×, 4× from md.
-                'bg-[length:64px_64px] md:bg-[length:128px_128px]',
+                'bg-[length:64px_64px] md:bg-[length:128px_128px] md:[@media(max-height:900px)]:bg-[length:96px_96px]',
                 'z-(--z-nav)'
             )}
             data-bubble-menu-side={side}
