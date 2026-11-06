@@ -17,6 +17,8 @@ build green) · bench-queued · eye-check · merged.*
 | 370 R1: rivers with real bends, varying width, variety by world (expect WORK CHANGED) | engineer | `crunch/rivers` (`r1`, from main) | ready 17ca390f (engine work expected same: no scenario lays out a world; new river Regions lay out differently); director: 593 files green, cycles, build; merged into R2 at 5d793679 | Thu | |
 | 370 R2: water depth bands, ragged ground borders, settled dirt | builder | `crunch/ground-look` (`r2`, from main) | owner approved 5 Nov (wide bank, all as built; Terrain QA buttons retired again); ready ad26dd99 with R1 merged in (5d793679; noise channels moved off R1's); director: 593 files green, cycles, build; combined pictures in `research/terrain_round/built_r2/combined_*.png`; bench queued | Thu | |
 | T-319: the last Region's water lingered after travel as broken pieces (the owner saw it in the R2 pictures) | director | `fix/water-shimmer-travel` | **merged** 15c38479, look-preserving fix, no eye-check; 592 files green, cycles, build; reproduced and checked in the game | Thu | Thu |
+| 500 E1 and E2: enemies stand still, no ambushes, no camp rings (expect WORK CHANGED) | builder | `crunch/enemies-still` (`e5`, from C4 b21c8b88) | building (owner chose 5 Nov evening: 500 beside 490) | Thu | |
+| 490 H1: drag hints, tool and skill marks on every hero while dragging a hero over a Token | builder | `crunch/drag-hints` (`d4`, from main) | building | Thu | |
 
 ## Director, heroes and Tokens (briefs 340 and 350; combat mock-ups 360 C1; owner chose 2026-11-05 10:05)
 
