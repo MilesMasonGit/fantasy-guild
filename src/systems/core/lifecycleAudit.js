@@ -315,6 +315,20 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 checkItemRef(err, `shop.price[${i}].itemId`, 'shop price names', entry?.itemId);
                 checkPositive(err, `shop.price[${i}].quantity`, `shop price quantity of ${show(entry?.itemId ?? '?')}`, entry?.quantity);
             });
+            if (def.shop.skills !== undefined) {
+                if (!Array.isArray(def.shop.skills)) {
+                    err('shop.skills', 'shop skill icons must be a list of skills.');
+                } else {
+                    def.shop.skills.forEach((skill, i) => {
+                        if (!hasValue(skill) || !skillIds.has(skill)) {
+                            err(`shop.skills[${i}]`, `shop skill icon ${show(skill ?? 'blank')} is not a real skill, so the Shop shows no icon for it.`);
+                        }
+                    });
+                }
+            }
+            if (def.shop.order !== undefined && !isPositiveInteger(def.shop.order)) {
+                err('shop.order', `shop place in the list is ${show(def.shop.order)}; it must be a whole number of 1 or more.`);
+            }
 
             // A sold Foundation kind needs something to build on it. Skipped
             // when the kind or skill is itself broken: that is already reported.

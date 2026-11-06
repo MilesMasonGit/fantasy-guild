@@ -113,7 +113,7 @@ export function isTokenRarity(value) {
  * import it across the boundary (see the header note), and the engine and the
  * content audit read the same list.
  */
-export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'bench', 'farmland']);
+export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'bench', 'farmland', 'excavation', 'battlefield']);
 
 /**
  * The kinds of station, which narrow a skill's recipes to the stations that make them: a

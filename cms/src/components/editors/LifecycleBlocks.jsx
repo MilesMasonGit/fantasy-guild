@@ -306,7 +306,59 @@ function ShopBlock({ block, items, groupNames = [], onChange }) {
           {groupNames.map((g) => <option key={g} value={g} />)}
         </datalist>
       </Field>
+      <ShopSkillIcons skills={block.skills} onChange={(skills) => {
+        const { skills: _drop, ...rest } = block;
+        onChange(skills.length ? { ...rest, skills } : rest);
+      }} />
+      <Field label="Place in the list (optional)">
+        <input
+          type="number" min={1} step={1} data-field="shop-order" aria-label="Place in the list"
+          value={block.order ?? ''} placeholder="Lowest first; blank goes after the numbered ones"
+          onChange={(e) => {
+            const { order: _drop, ...rest } = block;
+            const order = Math.round(Number(e.target.value));
+            onChange(e.target.value !== '' && order >= 1 ? { ...rest, order } : rest);
+          }}
+          className="w-full" style={{ fontSize: 11 }}
+        />
+      </Field>
     </div>
+  );
+}
+
+/** The skill icons a sold Token shows in the Shop, in order. Authored, not worked out from recipes. */
+function ShopSkillIcons({ skills, onChange }) {
+  const list = Array.isArray(skills) ? skills : [];
+  const nameOf = (id) => SKILLS.find((s) => s.id === id)?.name || `${id} (not a skill)`;
+  const groups = skillsByLayer();
+  return (
+    <Field label="Skill icons (optional)">
+      <div className="flex flex-wrap items-center gap-1.5" data-field="shop-skills">
+        {list.map((id, i) => (
+          <span key={`${id}-${i}`} data-skill={id} className="flex items-center gap-1 text-[11px] text-gray-300 px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)' }}>
+            {nameOf(id)}
+            <RemoveButton onClick={() => onChange(list.filter((_, idx) => idx !== i))} />
+          </span>
+        ))}
+        <select
+          value="" aria-label="Add a skill icon" data-field="shop-skill-add"
+          onChange={(e) => { if (e.target.value) onChange([...list, e.target.value]); }}
+          style={{ fontSize: 11 }}
+        >
+          <option value="">+ add icon</option>
+          {groups.map(([label, group]) => (
+            <optgroup key={label} label={label}>
+              {group.filter((s) => !list.includes(s.id)).map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </div>
+      <p className="text-[10px] text-gray-600 mt-1">
+        Hints what it is good for; they need not match what it builds.
+      </p>
+    </Field>
   );
 }
 
