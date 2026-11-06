@@ -1272,6 +1272,65 @@ body *:not(input):not(textarea):not(code) {
   }
 }
 
+/* The Guild Hall's upgrade ceremony (`HallCeremony.jsx`), in hard pixels: every burst frame is
+   drawn once, hidden, and shown for one held frame in turn; the light hops along a line in whole
+   steps (its step count set inline). `.gi-ceremony-still` is the reduced-motion version: one burst
+   frame and the whole line lit, held still until the ceremony is taken down. */
+@keyframes gi-burst-show {
+  from, to { visibility: visible; }
+}
+.gi-burst-f {
+  visibility: hidden;
+  animation: gi-burst-show var(--gi-burst-frame, 70ms) steps(1, end) none;
+}
+
+@keyframes gi-run-light {
+  from { visibility: visible; stroke-dashoffset: var(--gi-run-from); }
+  to   { visibility: visible; stroke-dashoffset: var(--gi-run-to); }
+}
+.gi-run-light {
+  visibility: hidden;
+  animation-name: gi-run-light;
+  animation-fill-mode: none;
+}
+.gi-run-still {
+  visibility: hidden;
+}
+
+.gi-ceremony-still .gi-burst-f,
+.gi-ceremony-still .gi-run-light {
+  animation: none;
+}
+.gi-ceremony-still .gi-burst-still,
+.gi-ceremony-still .gi-run-still {
+  visibility: visible;
+}
+
+/* A finished constellation's picture arrives in two hard steps, then stays. */
+@keyframes gi-constellation-picture-in {
+  0%   { opacity: 0; }
+  33%  { opacity: 0.5; }
+  66%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+.gi-constellation-picture-in {
+  animation: gi-constellation-picture-in 360ms steps(1, end) both;
+}
+
+/* Under reduced motion a finished constellation's lines hold bright, still, then go. */
+@keyframes gi-constellation-glow-still {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gi-constellation-glow {
+    animation: gi-constellation-glow-still 900ms steps(1, end) forwards;
+  }
+  .gi-constellation-picture-in {
+    animation: none;
+  }
+}
+
 /* The kit's boxes for typing and choosing, and its slider. ⚠️ Unlayered, as the input reset in
    `styles/main.css` is: an unlayered rule beats every layered one, so `.ui-pixel-edge` alone would
    lose its square corners and line on an <input> or <select>. */

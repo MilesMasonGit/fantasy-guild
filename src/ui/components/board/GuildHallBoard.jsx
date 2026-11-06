@@ -11,6 +11,9 @@ import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { GuildHallEffectsPopover } from './GuildHallEffectsPopover.jsx';
 import { StarOutline } from './StarOutline.jsx';
 import { outlineSrc, OUTLINE_PX } from './hallStarOutline.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
+import { HallCeremony, ConstellationPicture } from './HallCeremony.jsx';
+import { ceremonyFor, constellationStars, STAR_CHIME, CONSTELLATION_CHIME } from './hallCeremony.js';
 
 /**
  * The web's natural space, in pixels. Upgrade node positions are unit coordinates centred on
@@ -198,20 +201,26 @@ export const GuildHallBoard = ({
     );
     const affordable = new Set((affordableSignature || '').split(',').filter(Boolean));
 
-    // A constellation finished while the screen is open flashes once; one already finished when
-    // the screen opens does not.
-    const finishedKey = finishedConstellations(ranks).join(',');
-    const finished = new Set(finishedKey.split(',').filter(Boolean));
-    const seenFinished = useRef(null);
+    const finished = new Set(finishedConstellations(ranks));
+
+    // The upgrade ceremony plays for a purchase heard while this sky is mounted (the Hall open),
+    // once. A load, a catch-up (the quiet bus skips UI listeners) or a dev write names no star,
+    // and a rank bought while the Hall is closed is never heard here.
+    const [ceremony, setCeremony] = useState(null);
     const [glowing, setGlowing] = useState([]);
-    useEffect(() => {
-        const now = finishedKey.split(',').filter(Boolean);
-        const before = seenFinished.current;
-        seenFinished.current = new Set(now);
-        if (!before) return;
-        const fresh = now.filter(id => !before.has(id));
-        if (fresh.length) setGlowing(g => [...g.filter(id => !fresh.includes(id)), ...fresh]);
-    }, [finishedKey]);
+    const ceremonySeq = useRef(0);
+    useEffect(() => EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, (data) => {
+        const c = ceremonyFor(data?.upgradeId, data?.rank, GuildUpgradeManager.getRanks());
+        if (!c) return;
+        ceremonySeq.current += 1;
+        setCeremony({ ...c, seq: ceremonySeq.current });
+        if (c.finished.length) setGlowing(g => [...g.filter(id => !c.finished.includes(id)), ...c.finished]);
+        // No pitch spread: it would draw from the game's shared random stream.
+        EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, {
+            clip: c.finished.length ? CONSTELLATION_CHIME : STAR_CHIME,
+            options: { pitchVariance: 0 }
+        });
+    }, UI_LISTENER), []);
 
     const size = webSize();
     const fit = useBoardScale(size.w, size.h);
@@ -344,6 +353,16 @@ export const GuildHallBoard = ({
                         ))}
                     </svg>
 
+                    {/* The owner's picture of each finished constellation, under the stars (none drawn yet). */}
+                    {[...finished].map(cid => (
+                        <ConstellationPicture
+                            key={`picture-${cid}`}
+                            cid={cid}
+                            centre={centreOf(constellationStars(cid).map(at))}
+                            flash={glowing.includes(cid)}
+                        />
+                    ))}
+
                     {/* Constellation names: faint, bright once the constellation is finished. */}
                     {CONSTELLATIONS.map(c => {
                         const x = Math.round((size.w / 2 + c.label.x * UNIT_PX) * scale);
@@ -467,10 +486,34 @@ export const GuildHallBoard = ({
                             </div>
                         );
                     })}
+
+                    {ceremony && (
+                        <HallCeremony
+                            key={ceremony.seq}
+                            ceremony={ceremony}
+                            at={at}
+                            radius={starRadius}
+                            onDone={() => setCeremony(c => (c?.seq === ceremony.seq ? null : c))}
+                        />
+                    )}
                 </div>
             </div>
         </div>
     );
 };
+
+/** The middle of a list of points, in whole pixels. */
+function centreOf(points) {
+    if (!points.length) return { x: 0, y: 0 };
+    const sum = points.reduce((s, p) => ({ x: s.x + p.x, y: s.y + p.y }), { x: 0, y: 0 });
+    return { x: Math.round(sum.x / points.length), y: Math.round(sum.y / points.length) };
+}
+
+/** A star's drawn half-size, bought or not: where the ceremony's light leaves it or reaches it. */
+function starRadius(id, bought) {
+    const def = getUpgradeDef(id);
+    const starPx = STAR_ART_PX * STAR_SCALE[bought ? 'bought' : 'buyable'];
+    return Math.round((def && outlineSrc(def) ? Math.max(starPx, OUTLINE_PX) : starPx) / 2);
+}
 
 export default GuildHallBoard;

@@ -93,4 +93,39 @@ describe('AudioSystem Soundtrack & Playlist Engine', () => {
         const cardPlacePath = AudioSystem._getSfxPath('card_place');
         expect(cardPlacePath).toMatch(/(bookPlace[1-3]|dropLeather)\.ogg$/);
     });
+
+    it('plays a wanted sound that is not there yet as its fallback, from then on', () => {
+        const made = [];
+        class FakeAudio {
+            constructor(src) {
+                this.src = src;
+                this.paused = true;
+                this.listeners = {};
+                made.push(this);
+            }
+            addEventListener(type, fn) { this.listeners[type] = fn; }
+            play() { this.paused = false; return Promise.resolve(); }
+            pause() { this.paused = true; }
+        }
+        const real = globalThis.Audio;
+        globalThis.Audio = FakeAudio;
+        const vol = SettingsManager.get('audio.masterVolume');
+        SettingsManager.set('audio.masterVolume', 80);
+        try {
+            expect(AudioSystem._getSfxPath('hall_star_chime')).toBe('/assets/audio/sfx/hall_star_chime.ogg');
+            AudioSystem.playSfx('hall_star_chime', { pitchVariance: 0 });
+            expect(made.map(a => a.src)).toEqual(['/assets/audio/sfx/hall_star_chime.ogg']);
+            // The file is missing: the element errors, and the fallback plays at once.
+            made[0].listeners.error();
+            expect(made[1].src).toMatch(/kenney_rpg-audio\/Audio\/metalPot1\.ogg$/);
+            expect(made[1].paused).toBe(false);
+            expect(AudioSystem._getSfxPath('hall_star_chime')).toBe(made[1].src);
+            expect(AudioSystem._getSfxPath('hall_constellation_chime')).toBe('/assets/audio/sfx/hall_constellation_chime.ogg');
+        } finally {
+            globalThis.Audio = real;
+            SettingsManager.set('audio.masterVolume', vol);
+            AudioSystem._missingSfx.clear();
+            AudioSystem._sfxCache.clear();
+        }
+    });
 });
