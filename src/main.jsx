@@ -57,6 +57,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // autosave interval from it (CR-004).
     SettingsManager.init();
     SaveManager.init();
+    // The desktop build's save files, read before the slot screen shows them.
+    const savesReady = SaveManager.loadSaveFiles();
 
     // 3. The engine as one object, for the console (`window.Game`, dev builds). The UI imports
     //    the engine's modules itself.
@@ -92,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     installDrawingPause();
 
     // 7. Mount the React UI Engine (gated on critical art being warm)
-    await Promise.all([artReady, fxReady]);
+    await Promise.all([artReady, fxReady, savesReady]);
     const reactRootEl = document.getElementById('react-root');
     if (reactRootEl) {
         const root = createRoot(reactRootEl);

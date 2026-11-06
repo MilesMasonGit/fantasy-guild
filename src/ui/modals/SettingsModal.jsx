@@ -7,6 +7,7 @@ import { SaveManager } from '../../systems/core/SaveManager.js';
 import { cn } from '../utils/cn.js';
 import { Monitor, Volume2, Wrench, Save, Type, Sliders } from 'lucide-react';
 import { TypographyScaleModal } from './TypographyScaleModal.jsx';
+import { SaveFolderButton } from '../components/title/SaveFolderButton.jsx';
 import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
 import { t } from '../../i18n/index.js';
 
@@ -128,6 +129,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                 >
                                     <Save className="w-4 h-4" /> {t('settings.saveNow')}
                                 </KitButton>
+                                <SaveFolderButton className="w-full mt-3" buttonClassName="py-2 text-sm tracking-widest" />
                             </div>
                         </div>
                     )}

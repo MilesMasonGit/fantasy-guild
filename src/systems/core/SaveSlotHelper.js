@@ -1,5 +1,10 @@
+import * as SaveFiles from './SaveFiles.js';
+
 const SLOT_KEY_PREFIX = 'fantasy_guild_slot_';
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
+
+/** How many save slots the title screen offers. */
+export const SLOT_COUNT = 3;
 
 /**
  * Get localStorage key for a slot.
@@ -25,6 +30,7 @@ export function getBackupKey(slotIndex) {
  * @returns {boolean}
  */
 export function hasSlot(slotIndex) {
+    if (SaveFiles.isActive()) return SaveFiles.hasSave(slotIndex);
     return !!localStorage.getItem(getSlotKey(slotIndex));
 }
 
@@ -37,7 +43,7 @@ export function hasSlot(slotIndex) {
  */
 export function getSlotInfo(slotIndex) {
     try {
-        const json = localStorage.getItem(getSlotKey(slotIndex));
+        const json = SaveFiles.isActive() ? SaveFiles.savedText(slotIndex) : localStorage.getItem(getSlotKey(slotIndex));
         if (!json) return null;
 
         const data = JSON.parse(json);

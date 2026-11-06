@@ -11,6 +11,7 @@ import { KitButton, KIT_BUTTON_TONE } from '../components/base/KitButton.jsx';
 import { PixelFrame, FRAME_KIND } from '../components/base/PixelFrame.jsx';
 import { TitleScreen } from '../components/title/TitleScreen.jsx';
 import { slotAwayText } from '../components/title/slotAway.js';
+import { SaveFolderButton, useSaveFilesWatch } from '../components/title/SaveFolderButton.jsx';
 import { t } from '../../i18n/index.js';
 
 /** A save slot's row: no box (UI_STYLE "rows are never boxed"); the list draws faint lines between. */
@@ -88,6 +89,8 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
             refreshSlots();
         }
     }, [isOpen]);
+    // The desktop build's save files, read again as they change.
+    useSaveFilesWatch(!!isOpen, refreshSlots);
 
     const handleSelect = (index) => {
         if (onSelect) onSelect(index);
@@ -223,6 +226,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                             {message.message}
                         </p>
                     )}
+                    <SaveFolderButton className="self-end" />
                 </div>
             </PixelFrame>
         </TitleScreen>
