@@ -66,7 +66,8 @@ works every Token of that skill within the camp's reach.
 ## Fighting
 
 - Heroes fight only when sent, or when attacked. **The Fight permission goes.**
-- **Hostile enemies still ambush** a hero working near their camp (the camp's
+- **Amended (owner, 2026-11-05): no ambushes.** Combat is always started by the player: camps no longer attack heroes working near them, and no Token spawns an enemy while worked (brief 500).
+- *Was:* **Hostile enemies still ambush** a hero working near their camp (the camp's
   watch area); the hero fights back, then returns to their job. Node ambushes
   are unchanged.
 - **After a defeat** the hero limps home, heals for the wound time, then

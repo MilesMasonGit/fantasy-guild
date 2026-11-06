@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-308**
+**Next free number: T-310**
 
 ---
 
@@ -98,6 +98,8 @@ here.
 | T-309 | P3 | open | **A hero kind no drag starts any more**: since dragging a hero off the bar carries their flag, `DRAG_KIND.HERO` has no source. `MatHero.jsx`, the readers in `OrderDragLine`, `OrderLighting`, `Board`, `dropOnMat`, `FlagLayer` and `BankHeroPanel`, and about 8 test files still name it. Clear out once brief 340 has merged. |
 | T-308 | P3 | open, owner choosing | **A very crowded Forest replants without end** (brief 350 T1, 2026-11-05): with 7 or more other Tokens around it at 30 % overlap, no spot has the grown tree's room, so a Sapling takes the small gap, shifts out of reach on growing and the Forest replants: 12 to 20 seedlings in 10 minutes instead of 5, stray trees and stumps that never regrow. Today's 40 % has a mild form (21 of 40 runs at 9 neighbours). Probe sets were the engineer's own; how often real play crowds a Forest like this is not measured. A player dropping a Token beside a small Stump can also shift a tree on growing (not measured). Owner's choice in the eye-check. |
 | T-306 | P3 | open, needs an interview | **Discard, or selling, in the Bank's inspection window** (owner 2026-11-05, moved out of brief 400 B3): amounts 1, 50 %, All, All −1 or a slider, and **Discard always confirms**. The owner hopes to find a way to sell items instead ([ideas.md](../active/ideas.md)); gold left the game, so a sale needs designing first. |
+| T-309 | P3 | open | **The Token name on hover is larger** (owner, 2026-11-05). Show the owner two or three sizes on one screenshot page, then build only the pick (briefs README: looks are picked from screenshots). Check it on small and large Tokens and at mat zoom. Eye-check: no, the screenshot pick is the look. |
+| T-308 | P3 | open | **Hero bar HP bars are light red** (owner, 2026-11-05): every hero HP bar on the hero bar uses the mat's light red (`HP_COLOUR` in `src/ui/components/board/healthBar.js`) whatever the health, replacing the green, amber and red tones (`hpTone` in `dockHeroView.js`). Check any other hero HP bar (hero sheet, fight window) and say which already match. Look-only, merges on the gate with a line in STATUS. |
 | T-307 | P2 | open, needs a brief | **One clear building per skill** ([content_construction.md](../active/content_construction.md); owner 2026-11-05): a spread of buildings, so the different building effects can be tested. **Waits until the owner has polished content planning.** Today's rules split recipes by station kind, and the tutorial, ledger and Starter Camp name today's stations. Brief 480's L2 to L4 wait for this; brief 410 doesn't. |
 | T-300 | P3 | open | **Leftovers from the map retirement, for a decision**: Region rules (`RegionRules.js`, recipe `rules`, the ledger's region factor) are tested but no shipped recipe carries one, leave until brief 380 settles; `data/maps.json` is `{}` and read by nothing; `src/ui/dev/terrainDev.js` is imported only by tests; a saved stack of a deleted item stays hidden and still takes a Bank slot (no fix recommended: old saves are abandoned) | T-292 engineer 2026-11-03 |
 | T-299 | P3 | open | **Forced layouts bigger than the loot flight's** (20 s trace on enemies80, busy machine, one run): `HeroBubbleLayer.jsx:168` 24 style and 25 layout, 82.5 ms; `healthTextWidth` in `FightLayer.jsx` 3, 15.6 ms. Measure on a quiet machine first | T-287 engineer 2026-11-03 |
