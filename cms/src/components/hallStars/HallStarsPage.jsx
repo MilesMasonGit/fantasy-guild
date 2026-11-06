@@ -154,6 +154,16 @@ export default function HallStarsPage() {
                         {TAG_SIDES.map((t) => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </label>
+                    <label className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--color-text-secondary)' }} title="The item drawn as an outline over this star in the sky: an item id (item_oak_wood) or a sprite name (i_feather). Empty: the game picks one by the star's kind.">
+                      outline
+                      <input
+                        value={raw.outline || ''}
+                        placeholder="by kind"
+                        data-hall-star-outline
+                        onChange={(e) => setHallStar(star.id, { outline: e.target.value })}
+                        className="text-[11px] w-32"
+                      />
+                    </label>
                     <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>linked to {star.links.join(', ') || 'nothing'}</span>
                   </div>
                   {shown && (

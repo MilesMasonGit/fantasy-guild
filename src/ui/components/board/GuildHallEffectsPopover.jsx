@@ -63,12 +63,15 @@ const SectionLabel = ({ children }) => (
 
 const Empty = ({ children }) => <span className="ui-text-body text-gi-muted">{children}</span>;
 
-/** The list itself: outputs as ribbons, boosts as one sentence each. Rows are never boxed. */
+/**
+ * The list itself: outputs as ribbons, boosts as one sentence each, the lap first among them (it
+ * is what every output's count is per). Rows are never boxed.
+ */
 export const GuildHallEffectsList = () => {
     const data = useHallEffects();
     const outputs = data?.outputs || [];
     const boosts = data?.boosts || [];
-    const every = t('guildHall.everyLap', { time: formatClock(PASSIVE_PRODUCTION_MS) });
+    const lap = t('guildHall.lapBoost', { time: formatClock(PASSIVE_PRODUCTION_MS) });
     return (
         <div className="flex flex-col gap-3 text-gi-text">
             <div className="flex flex-col gap-1.5">
@@ -79,7 +82,6 @@ export const GuildHallEffectsList = () => {
                         kind="item"
                         id={output.itemId}
                         quantity={output.quantity}
-                        interval={every}
                         size="md"
                         data-hall-effect-output={output.itemId}
                     />
@@ -87,11 +89,12 @@ export const GuildHallEffectsList = () => {
             </div>
             <div className="flex flex-col gap-1.5">
                 <SectionLabel>{t('guildHall.boosts')}</SectionLabel>
-                {boosts.length > 0 ? boosts.map((sentence, idx) => (
+                <div data-hall-effect-lap className="ui-text-body leading-snug">{lap}</div>
+                {boosts.map((sentence, idx) => (
                     <div key={`boost-${idx}`} data-hall-effect-statement className="ui-text-body leading-snug">
                         {sentence}
                     </div>
-                )) : <Empty>{t('guildHall.noBoosts')}</Empty>}
+                ))}
             </div>
         </div>
     );

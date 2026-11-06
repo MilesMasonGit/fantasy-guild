@@ -217,9 +217,11 @@ export const ReactRoot = () => {
             <DeckDndProvider>
             <ScreenCalloutLayer />
             <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
+                {/* ⚠️ `overflow-clip`: the Hall's web runs past the column to the screen's edge, and a
+                    hidden box would scroll to a focused star out there. */}
                 <div
                     ref={tableRef}
-                    className="flex-1 relative flex overflow-hidden bg-black"
+                    className="flex-1 relative flex overflow-clip bg-black"
                     style={tableBackground}
                 >
                     <div
@@ -235,9 +237,11 @@ export const ReactRoot = () => {
                      * sky (`HallCamera`). `min-w-0`: the column takes the room it is given, not its
                      * widest content's. ⚠️ `overflow-clip`, not `overflow-hidden`: mid-glide the
                      * mat or the Hall sits outside the column's box, and focus landing there would
-                     * scroll a hidden box to it; a clipped box is no scroll container.
+                     * scroll a hidden box to it; a clipped box is no scroll container. While the Hall
+                     * is open it clips only up and down: its sky's web runs on sideways under the
+                     * nav (which is over this column) to the screen's edge.
                      */}
-                    <div className="flex-1 min-w-0 relative flex flex-col overflow-clip z-10">
+                    <div className={cn('flex-1 min-w-0 relative flex flex-col overflow-y-clip z-10', isGuildView ? 'overflow-x-visible' : 'overflow-x-clip')}>
                         <HallCamera
                             open={isGuildView}
                             away={!isGuildView && (ui.fullscreen.view !== null || isBankOpen || ui.shop.isOpen || ui.settings.isOpen)}

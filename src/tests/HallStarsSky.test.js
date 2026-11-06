@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, act, cleanup } from '@testing-library/react';
 import {
-    GuildHallBoard, webSize, panLimit, clampPan, MIN_SKY_SCALE, WEB_W, WEB_H, WEB_UNIT_PX
+    GuildHallBoard, webSize, panLimit, clampPan, MIN_SKY_SCALE, WEB_W, WEB_H, WEB_UNIT_PX, SKY_SPACING
 } from '../ui/components/board/GuildHallBoard.jsx';
 import { GuildUpgradeInspection } from '../ui/components/drawer/GuildUpgradeInspection.jsx';
 import { GuildHallEffectsList, hallEffectsNow } from '../ui/components/board/GuildHallEffectsPopover.jsx';
@@ -74,11 +74,13 @@ describe('the sky draws the authored constellations', () => {
 });
 
 describe('the sky grows to hold its stars, and drags when too big', () => {
-    it('keeps today\'s size for a small sky and grows past it for far stars', () => {
+    it('holds the built-in sky at its spacing and grows past it for far stars', () => {
+        const unit = WEB_UNIT_PX * SKY_SPACING;
         registerHallSky({});
-        expect(webSize()).toEqual({ w: WEB_W, h: WEB_H });
+        // The built-in sky's reach is its names: the Vault's 0.72 out sideways, the Hearth's and the Well's 0.8 up and down.
+        expect(webSize()).toEqual({ w: Math.max(WEB_W, Math.ceil(2 * (0.72 * unit + 120))), h: Math.max(WEB_H, Math.ceil(2 * (0.8 * unit + 40))) });
         registerHallSky({ stars: { far: { id: 'far', constellation: 'well', links: ['hall'], node: { x: 2, y: -1.5 }, ranks: [{ price: [] }] } } });
-        expect(webSize()).toEqual({ w: Math.ceil(2 * (2 * WEB_UNIT_PX + 170)), h: Math.ceil(2 * (1.5 * WEB_UNIT_PX + 70)) });
+        expect(webSize()).toEqual({ w: Math.ceil(2 * (2 * unit + 170)), h: Math.ceil(2 * (1.5 * unit + 70)) });
     });
 
     it('drags no further than either edge, and not at all when the sky fits', () => {
@@ -97,21 +99,47 @@ describe('the sky grows to hold its stars, and drags when too big', () => {
     });
 });
 
-describe('the details panel reads a star\'s ranks', () => {
-    it('lists each rank as what it gives, the Mining scope said', () => {
-        const { container } = render(React.createElement(GuildUpgradeInspection, { upgradeDef: getUpgradeDef('qa_mining_xp') }));
-        const rows = [...container.querySelectorAll('[data-rank-row]')].map(r => r.textContent);
-        expect(rows).toHaveLength(3);
-        expect(rows[0]).toContain('50% more XP, but only for Mining work');
-        expect(rows[2]).toContain('200% more XP');
-        expect(container.textContent).toContain('Mining teaches more.');
+describe('the details panel reads a star', () => {
+    const sheet = (id) => render(React.createElement(GuildUpgradeInspection, { upgradeDef: getUpgradeDef(id) })).container;
+    const text = (c, sel) => c.querySelector(sel)?.textContent;
+
+    it('says what the star does in one sentence, then now, next and its top rank, the Mining scope said', () => {
+        const c = sheet('qa_mining_xp');
+        expect(text(c, '[data-star-sentence]')).toBe('Every Mining Token awards more XP.');
+        expect(text(c, '[data-star-rank]')).toBe('0/3');
+        expect(text(c, '[data-star-now]')).toBe('Nothing yet');
+        expect(text(c, '[data-star-next]')).toBe('50% more XP');
+        expect(text(c, '[data-star-top]')).toBe('At rank 3, the top: 200% more XP');
+        expect(c.querySelector('[data-rank-row]')).toBeNull();
     });
 
-    it('reads a Well star\'s line and a Hearth star\'s rule', () => {
-        const well = render(React.createElement(GuildUpgradeInspection, { upgradeDef: getUpgradeDef('qa_well_copper') }));
-        expect(well.container.querySelector('[data-rank-row="2"]').textContent).toContain('20 Copper Ore / 5 min');
-        const infirmary = render(React.createElement(GuildUpgradeInspection, { upgradeDef: getUpgradeDef('qa_infirmary') }));
-        expect(infirmary.container.querySelector('[data-rank-row="1"]').textContent).toContain('recover from a wound 20% faster');
+    it('reads a Well star\'s line and a Hearth star\'s rule, with no time on the line', () => {
+        GameState.state.progress.guildUpgrades = { qa_well_copper: 1, qa_infirmary: 1 };
+        const well = sheet('qa_well_copper');
+        expect(text(well, '[data-star-sentence]')).toBe('The Guild Hall draws Copper Ore every lap, no hero needed.');
+        expect(text(well, '[data-star-next]')).toBe('20 Copper Ore');
+        const infirmary = sheet('qa_infirmary');
+        expect(text(infirmary, '[data-star-sentence]')).toBe('Every hero recovers from a wound faster.');
+        expect(text(infirmary, '[data-star-now]')).toBe('20% faster');
+    });
+
+    it('drops the top-rank line when the next rank is the top, and says so at the top', () => {
+        GameState.state.progress.guildUpgrades = { qa_mining_xp: 2 };
+        expect(sheet('qa_mining_xp').querySelector('[data-star-top]')).toBeNull();
+        GameState.state.progress.guildUpgrades = { qa_mining_xp: 3 };
+        const top = sheet('qa_mining_xp');
+        expect(text(top, '[data-star-now]')).toBe('200% more XP');
+        expect(text(top, '[data-star-next]')).toBe('Top rank');
+        expect(top.querySelector('#guild-upgrade-button')).toBeNull();
+    });
+
+    it('lists the price as ribbons with what the Bank holds, short in red, and greys the button', () => {
+        const c = sheet('qa_mining_xp');
+        const ribbons = c.querySelectorAll('[data-upgrade-price-item]');
+        expect(ribbons.length).toBeGreaterThan(0);
+        expect(ribbons[0].textContent).toMatch(/0\/\d/);
+        expect(c.querySelector('#guild-upgrade-button').disabled).toBe(true);
+        expect(c.querySelector('[data-upgrade-short]')).toBeTruthy();
     });
 });
 

@@ -78,7 +78,9 @@ describe('Main-action button shine', () => {
 
     it('is on the Upgrade and Settle buttons and the style sheet demo', () => {
         const upgrade = read('ui/components/drawer/GuildUpgradeInspection.jsx');
-        expect(upgrade).toMatch(/id="guild-upgrade-button"[\s\S]*?"ui-shine /);
+        // The Upgrade button is the kit's main button, which wears the shine.
+        expect(upgrade).toMatch(/<KitButton\s+id="guild-upgrade-button"/);
+        expect(read('ui/components/base/KitButton.jsx')).toMatch(/main: 'ui-shine /);
         const settle = read('ui/components/atlas/WorldPage.jsx');
         // Settle is the World page's main button, and the main button wears the shine.
         expect(settle).toMatch(/<AtlasButton main data-world-settle/);

@@ -148,12 +148,24 @@
     "guildHall": {
         "effectsTitle": "Guild Hall Effects",
         "outputs": "Outputs",
-        "boosts": "Boosts & Modifiers",
+        "boosts": "Boosts",
         "noOutputs": "No active outputs",
-        "noBoosts": "No active boosts",
-        "everyLap": "every {time}",
+        "lapBoost": "Outputs arrive once a lap: every {time}",
         "returnToPlaymat": "Return to Playmat",
-        "inspect": "Inspect"
+        "inspect": "Inspect",
+        "rank": "Rank",
+        "now": "Now",
+        "next": "Next",
+        "nothingYet": "Nothing yet",
+        "topRank": "Top rank",
+        "atTopRank": "At rank {rank}, the top: {amount}",
+        "price": "Price",
+        "free": "Free",
+        "upgrade": "Upgrade",
+        "shortOfPrice": "The Bank is short of the price",
+        "topRankReached": "Top rank reached",
+        "locked": "Locked",
+        "couldNotBuy": "Could not buy that upgrade"
     },
     "fight": {
         "seconds": "{n} s",
