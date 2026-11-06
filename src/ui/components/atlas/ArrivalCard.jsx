@@ -34,6 +34,7 @@ export function arrivalOf(id) {
 export const ArrivalCard = ({ durationMs = ARRIVAL_MS, title = SETTLE_TITLE }) => {
     const [card, setCard] = useState(null);
     const timers = useRef([]);
+    const shown = useRef(0);
     const clearTimers = useCallback(() => {
         for (const id of timers.current) clearTimeout(id);
         timers.current = [];
@@ -52,11 +53,11 @@ export const ArrivalCard = ({ durationMs = ARRIVAL_MS, title = SETTLE_TITLE }) =
             if (!next) return;
             clearTimers();
             if (reason === 'travelled') {
-                setCard({ ...next, kind: 'travel', key: Date.now() });
+                setCard({ ...next, kind: 'travel', key: ++shown.current });
                 later(() => setCard(null), durationMs);
                 return;
             }
-            const key = Date.now();
+            const key = ++shown.current;
             setCard({ ...next, kind: 'settle', phase: 'waiting', key });
             later(() => {
                 setCard(c => (c?.key === key ? { ...c, phase: 'open' } : c));

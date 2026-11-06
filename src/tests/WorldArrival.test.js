@@ -29,7 +29,6 @@ import * as TimedChanges from '../systems/board/TimedChanges.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../config/registries/enemyProfile.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
-import { matW, matH } from '../config/matGeometry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -41,7 +40,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ A settled place arrives occupied: its enemies stand in a lair on the mat, one
+ * ⭐ A settled place arrives occupied: its enemies stand spread out across the mat, one
  * use each and no camp; until every one is beaten the mat is held (heroes may fight and nothing
  * else) and drawn dark; a hero whose enemy falls takes on the next; the last one beaten clears it.
  */
@@ -105,7 +104,7 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('⭐ the arrival on a settled place', () => {
-    it('⭐ its enemies stand on the mat, together, one use each and tied to no camp', () => {
+    it('⭐ its enemies stand on the mat, spread out round the Hall, one use each and tied to no camp', () => {
         const { cell, result } = settleFirst();
         const ids = result.arrival.ids;
         expect(ids).toHaveLength(arrivalCount(cell));
@@ -121,10 +120,12 @@ describe('⭐ the arrival on a settled place', () => {
         const kinds = {};
         for (const e of enemies) kinds[e.typeId] = (kinds[e.typeId] || 0) + 1;
         expect(kinds).toEqual(Object.fromEntries(cell.arrival.map(r => [r.typeId, r.count])));
-        // In one lair, out from the Hall.
-        const lair = Arrival.lairOf(result.region.seed);
-        for (const e of enemies) expect(Math.hypot(e.x - lair.x, e.y - lair.y)).toBeLessThan(400);
-        expect(Math.hypot(lair.x - matW() / 2, lair.y - matH() / 2)).toBeGreaterThan(250);
+        // Spread out, each near its own aim round the Hall, out of the Hall's clearing (the
+        // reachability over many seeds is `WorldSettleCeremony.test.js`).
+        const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall');
+        const aims = Arrival.spreadOf(result.region.seed, ids.length, { centre: hall });
+        enemies.forEach((e, i) => expect(Math.hypot(e.x - aims[i].x, e.y - aims[i].y)).toBeLessThan(160));
+        for (const e of enemies) expect(Math.hypot(e.x - hall.x, e.y - hall.y)).toBeGreaterThan(Arrival.CLEARING.ry * 0.9);
         expect(GameState.state.board.arrival).toEqual({ ids, cleared: false });
     });
 
@@ -265,14 +266,14 @@ describe('⭐ heroes sent at the arrival keep fighting', () => {
         expect(Flags.needsJob(hero.id)).toBe(true);
     });
 
-    it('⭐ through real fights: one hero sent at one enemy beats the whole lair and the mat clears', () => {
+    it('⭐ through real fights: one hero sent at one enemy beats them all and the mat clears', () => {
         const { hero } = settleFirst();
         fitToFight(hero);
         const pins = [];
         const first = Occupation.standingEnemies()[0];
         expect(Flags.orderToken(hero.id, first).success).toBe(true);
         // Where each enemy last stood, so the next one taken on can be checked against where the
-        // last fell (the order follows the place's ground: its water moves where the lair stands).
+        // last fell (the order follows the place's ground: its water moves where the enemies stand).
         const stood = new Map();
         const far = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
         for (let t = 0; t < 20 * 60_000 && Occupation.isOccupied(); t += 100) {
