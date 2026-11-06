@@ -28,3 +28,6 @@ You approved merging these on the tests while away. Nothing here needs a branch 
 
 9. **Ring stars** (380 M4; nothing changes until you Sync its pack). QA panel → Atlas → **Ring stars in the sky (until their pack is synced)**, then **Meet the frontier's prices**: a ring-2 cell stays darkened and says to light Charted Roads; buy the star in the Guild Hall (left of the Vault, The Compass); the ring-2 cells then pulse gold and settle.
    Verdict:
+
+10. **Small fixes** (T-320, T-328, T-330). At 1366 x 768 all six nav bubbles fit (they step down to 96 px on short screens); in the encyclopedia, press on an item picture inside a box and drag: the chart pans.
+   Verdict:
