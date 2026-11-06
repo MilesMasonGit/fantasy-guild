@@ -804,6 +804,20 @@ describe('a word on every line that is not used up (the owner\'s pick C, 6 Novem
         const lay = layoutChart(chartOf(book, I('item_iron_pickaxe')), tight);
         expect(lay.words.some(w => w.overMark)).toBe(true);
         wordsSitClear(lay);
+        wordsWhereTheyBelong(lay);
+    });
+
+    it('a way in with only its box, its word beside a grow mark with no room: above the mark, inside its band', () => {
+        // A forest with no upkeep: "spawns" and the sapling's grow mark share the one line into the tree.
+        const ws = withForest();
+        ws.tokens.token_oak_forest.spawner.upkeep = [];
+        const forest = buildEncyclopedia(ws);
+        const lay = layoutChart(chartOf(forest, T('token_oak_tree')), m, () => '0:01');
+        const spawns = lay.words.find(w => w.word === 'spawns');
+        expect(spawns.overMark).toBe(true);
+        expect(lay.bands.length).toBeGreaterThan(1);
+        wordsSitClear(lay);
+        wordsWhereTheyBelong(lay);
     });
 
     describe('the shipped content, every entry with all its lines shown', () => {
