@@ -230,7 +230,9 @@ export const LOOKS = deepFreeze({
                 field: true, sea: [0.50, 0.44, 0.52], foam: 1.2, solidFoam: false, foamLight: 1.30, foam2Light: 1.1,
                 trough: 1, shallow: 5, deep: 14, flecks: 0, waves: 0.004, waveMask: 0, wavePatchCell: 30, waveGap: 3,
                 farThick: null, waveLengths: [[5, [2]], [9, [3, 4, 5]], [18, [5, 6, 7, 8]]],
-                bank: { ramp: [0.08, 0.34, 0.30], at: [[1, 0], [2.5, 1]] }
+                bank: { ramp: [0.08, 0.34, 0.30], at: [[1, 0], [2.5, 1]] },
+                // Brief 370 water A: bands by depth, from the foam line in.
+                depths: { from: 1.2, at: [3, 6, 10, 16, 26], deep: 0.93, cell: 12, wobble: 11, taper: 6, light: 0.2, glint: 0.62, glintShare: 0.4 }
             }
         }
     },

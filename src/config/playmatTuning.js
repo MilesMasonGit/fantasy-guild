@@ -171,7 +171,7 @@ export const TUNABLES = Object.freeze([
         group: 'Biome borders',
         label: 'Blend width (u)',
         hint: 'How wide the band across a border is, in mat units (a Token is 128). Islands and fingers reach half as far again.',
-        min: 16, max: 256, step: 8, def: 160
+        min: 16, max: 256, step: 4, def: 44
     },
     {
         key: 'blendStyle',

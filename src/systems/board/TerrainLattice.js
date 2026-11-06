@@ -62,6 +62,8 @@ const edgeRoughness = () => tuning('edgeRoughness');
  * more than half could cross; and `resolveArtPixels` looks for edges only in the cells beside a
  * different cell, which is exact only while a strip stops short of a cell's middle.
  */
+// ⚠️ The drawing no longer uses the strips: its borders are `raggedBorders`. The swing and
+// roughness sliders move only `edgeProfile` and `edgeStrips` below.
 export function edgeAmplitude(cellPx = CELL_PX) {
     return Math.max(1, Math.min(Math.ceil(cellPx / 2) - 1, Math.round(cellPx * edgeSwing())));
 }
@@ -148,6 +150,112 @@ export function edgeStrips(cx, cy, axis, here, there, seed = 0, cellPx = CELL_PX
         });
     }
     return out;
+}
+
+/**
+ * The ragged border between two grounds (brief 370, ground A): `amp` how far the noise may outscore
+ * a cell's own share, `octaves` the noise's cells in plan pixels and their weights.
+ *
+ * ⚠️ `amp` under 1: a cell's middle scores 1 for its own ground and 0 for any other, so it always
+ * keeps its own ground, and a border never leaves the cells beside a different one (which the
+ * distance fields' cell scan relies on).
+ */
+export const RAGGED = Object.freeze({ amp: 0.85, octaves: Object.freeze([[19, 0.6], [8, 0.28], [3, 0.12]]) });
+
+/** A 32-bit hash of two integers and a salt (lowbias32's finaliser). */
+function hash32(x, y, salt) {
+    let h = Math.imul(x + 0x632be5ab, 0x9e3779b1) ^ Math.imul(y + 0x85157af5, 0x85ebca77) ^ salt;
+    h = Math.imul(h ^ (h >>> 16), 0x7feb352d);
+    h = Math.imul(h ^ (h >>> 15), 0x846ca68b);
+    return (h ^ (h >>> 16)) >>> 0;
+}
+
+const smoothstep = (t) => t * t * (3 - 2 * t);
+
+/** Smooth value noise in [0, 1) at a plan pixel, on square cells of `cell` pixels. */
+function valueNoise(x, y, cell, salt) {
+    const tx = x / cell;
+    const ty = y / cell;
+    const gx = Math.floor(tx);
+    const gy = Math.floor(ty);
+    const fx = smoothstep(tx - gx);
+    const fy = smoothstep(ty - gy);
+    const c00 = (hash32(gx, gy, salt) >>> 8) / 16777216;
+    const c10 = (hash32(gx + 1, gy, salt) >>> 8) / 16777216;
+    const c01 = (hash32(gx, gy + 1, salt) >>> 8) / 16777216;
+    const c11 = (hash32(gx + 1, gy + 1, salt) >>> 8) / 16777216;
+    const top = c00 + (c10 - c00) * fx;
+    return top + (c01 + (c11 - c01) * fx - top) * fy;
+}
+
+/**
+ * The borders drawn ragged: every pixel of a cell beside a different one takes whichever ground of
+ * the four nearest cells scores most, each cell's score easing from 1 at its middle to 0 at the next
+ * one's, plus that ground's own noise. Replaces the straight strips (`edgeStrips`) for the drawing.
+ * Mutates `at`; reads `cells` (one palette index per cell).
+ */
+export function raggedBorders(at, width, height, cells, cols, rows, cellPx, border, seed) {
+    const { amp, octaves } = RAGGED;
+    const saltCache = new Map();
+    const saltOf = (id) => {
+        let s = saltCache.get(id);
+        if (s === undefined) {
+            s = hash32(seed | 0, id + 11, 0x2545f491);
+            saltCache.set(id, s);
+        }
+        return s;
+    };
+    const ids = new Int32Array(4);
+    const scores = new Float64Array(4);
+    const lastCol = cols - 1;
+    const lastRow = rows - 1;
+    for (let cy = 0; cy < rows; cy++) {
+        for (let cx = 0; cx < cols; cx++) {
+            if (!border[cy * cols + cx]) continue;
+            const y0 = cy * cellPx;
+            const y1 = Math.min(height, y0 + cellPx);
+            const x0 = cx * cellPx;
+            const x1 = Math.min(width, x0 + cellPx);
+            for (let y = y0; y < y1; y++) {
+                const v = (y + 0.5) / cellPx - 0.5;
+                const gy = Math.floor(v);
+                const fy = smoothstep(v - gy);
+                const r0 = Math.min(lastRow, Math.max(0, gy)) * cols;
+                const r1 = Math.min(lastRow, Math.max(0, gy + 1)) * cols;
+                for (let x = x0; x < x1; x++) {
+                    const u = (x + 0.5) / cellPx - 0.5;
+                    const gx = Math.floor(u);
+                    const fx = smoothstep(u - gx);
+                    const c0 = Math.min(lastCol, Math.max(0, gx));
+                    const c1 = Math.min(lastCol, Math.max(0, gx + 1));
+                    let m = 0;
+                    const add = (c, w) => {
+                        if (w <= 0) return;
+                        for (let q = 0; q < m; q++) if (ids[q] === c) { scores[q] += w; return; }
+                        ids[m] = c;
+                        scores[m] = w;
+                        m++;
+                    };
+                    add(cells[r0 + c0], (1 - fx) * (1 - fy));
+                    add(cells[r0 + c1], fx * (1 - fy));
+                    add(cells[r1 + c0], (1 - fx) * fy);
+                    add(cells[r1 + c1], fx * fy);
+                    let top = ids[0];
+                    if (m > 1) {
+                        let best = -Infinity;
+                        for (let q = 0; q < m; q++) {
+                            const s = saltOf(ids[q]);
+                            let noise = 0;
+                            for (let o = 0; o < octaves.length; o++) noise += octaves[o][1] * valueNoise(x, y, octaves[o][0], s + o);
+                            const score = scores[q] + (noise - 0.5) * amp;
+                            if (score > best) { best = score; top = ids[q]; }
+                        }
+                    }
+                    at[y * width + x] = top;
+                }
+            }
+        }
+    }
 }
 
 /** Plan pixels in one of the ground's cells. */
@@ -264,26 +372,8 @@ export function resolveArtPixels(ground, withFringes = true, blend = null) {
         }
     }
 
-    // Then the strips where two terrains meet.
-    for (let cy = 0; cy < rows; cy++) {
-        for (let cx = 0; cx < cols; cx++) {
-            if (!border[cy * cols + cx]) continue;
-            const here = cells[cy * cols + cx];
-            for (const axis of ['v', 'h']) {
-                const nx = axis === 'v' ? cx + 1 : cx;
-                const ny = axis === 'v' ? cy : cy + 1;
-                if (nx >= cols || ny >= rows) continue;
-                const there = cells[ny * cols + nx];
-                if (there === here) continue;
-                for (const strip of edgeStrips(cx, cy, axis, terrains[here], terrains[there], seed, cellPx)) {
-                    const id = idFor(strip.terrainId);
-                    const yEnd = Math.min(height, strip.y + strip.h);
-                    const xEnd = Math.min(width, strip.x + strip.w);
-                    for (let y = strip.y; y < yEnd; y++) at.fill(id, y * width + strip.x, y * width + Math.max(strip.x, xEnd));
-                }
-            }
-        }
-    }
+    // Then the borders where two terrains meet, drawn ragged.
+    raggedBorders(at, width, height, cells, cols, rows, cellPx, border, seed);
 
     // Which palette entries some pixel shows: the cells' terrains (a strip only carries a
     // neighbouring cell's), the water's, and whatever a fringe writes.
