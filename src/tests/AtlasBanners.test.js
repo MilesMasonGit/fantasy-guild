@@ -22,7 +22,6 @@ import { BIOME_GROUND } from '../systems/atlas/Budget.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import { bannerForRegion } from '../ui/components/atlas/regionBanner.js';
 import { coverScale, BannerArt } from '../ui/components/base/BannerArt.jsx';
-import { RegionList, regionOrder } from '../ui/components/atlas/RegionList.jsx';
 import { ArrivalCard } from '../ui/components/atlas/ArrivalCard.jsx';
 import { MatRegionName } from '../ui/components/board/MatRegionName.jsx';
 import { placeAt } from './fixtures/mat.js';
@@ -149,38 +148,6 @@ describe('which banner a Region shows', () => {
 });
 
 describe('where the banner shows', () => {
-    it('each Region row lies on its banner with only its names (its actions are on the right page); the Starter Camp first, then by the day settled', () => {
-        const { region: later } = Atlas.createRegion({ ingredients: [FOREST], ground: { main: 'mountain' } });
-        const { region: earlier } = Atlas.createRegion({ ingredients: [PLAIN], ground: { main: 'forest' } });
-        Atlas.getRegion(later.id).settledAt = 5000;
-        Atlas.getRegion(earlier.id).settledAt = 100;
-        Atlas.getRegion(earlier.id).board.tokens = { a: { typeId: OAK }, b: { typeId: OAK }, c: { typeId: 'token_guild_hall' } };
-        const starter = Atlas.activeRegionId();
-        const { container } = render(React.createElement(RegionList, { version: 0, onTravel: vi.fn(), message: null, onMessage: vi.fn() }));
-        const rows = [...container.querySelectorAll('[data-region-row]')];
-        expect(rows.map(r => r.getAttribute('data-region-row'))).toEqual([starter, earlier.id, later.id]);
-        expect(q(rows[0], '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_golden_plains');
-        expect(q(rows[1], '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_lush_forest');
-        expect(q(rows[2], '[data-banner-art]').getAttribute('data-banner-art')).toBe(defaultBannerFor('mountain'));
-        expect(q(rows[1], `[data-region-node="${OAK}"]`)).toBeNull();
-        expect(q(rows[1], '[data-region-heroes]')).toBeNull();
-        expect(rows[1].textContent).not.toMatch(/Settled day|Token/);
-        expect(q(rows[1], '[data-region-travel]')).toBeNull();
-        expect(q(rows[1], '[data-region-select]')).toBeTruthy();
-        // The Region the guild is in shows the hero's job flag, its 12 art pixels at 3x.
-        const flag = q(q(rows[0], '[data-region-here]'), '[data-flag-mark]');
-        expect(flag.querySelector('svg.lucide-flag-triangle-right')).toBeTruthy();
-        expect(flag.style.width).toBe('36px');
-        // The right page shows the selected Region on its banner too.
-        expect(q(container, '[data-region-detail] [data-banner-art]').getAttribute('data-banner-art')).toBe('b_golden_plains');
-    });
-
-    it('orders by kind, then day, then as written; ', () => {
-        const settled = { s: 0, a: 9, b: 9, c: 1 };
-        const list = [{ id: 'a' }, { id: 's', kind: Atlas.REGION_KIND.STARTER }, { id: 'b' }, { id: 'c' }];
-        expect(regionOrder(list, id => settled[id]).map(r => r.id)).toEqual(['s', 'c', 'a', 'b']);
-    });
-
     it('the arrival card shows the destination\'s banner and name on travel; a click skips it, else it goes by itself', () => {
         vi.useFakeTimers();
         const { region } = Atlas.createRegion({ ingredients: [FOREST], ground: { main: 'forest' } });

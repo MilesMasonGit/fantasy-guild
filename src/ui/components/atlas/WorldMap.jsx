@@ -6,6 +6,7 @@ import { Tooltip } from '../base/Tooltip.jsx';
 import { FlagMark } from '../board/FlagMark.jsx';
 import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
 import { tileArt, ropeArt, symbolArt, SYMBOL_LANDS } from '../../../config/worldMapArt.js';
+import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import {
     ART_SCALE, HEX_R, TILE_LIFT, TILE_W, TILE_H, TILE_MID, ICON_PX, MAX_ICONS, CELL_LOOK, LOOK_FILTER,
     cellCentre, cellCentreArt, tilePoints, mapBounds, clampView, viewOn
@@ -49,12 +50,15 @@ function loadArt(path) {
     return artImages.get(path);
 }
 
+/** Whether this page can draw on a canvas at all (a test page cannot): asked once. */
+let canDraw = null;
 const canvasOf = (width, height) => {
-    if (typeof document === 'undefined') return null;
+    if (typeof document === 'undefined' || canDraw === false) return null;
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    return canvas.getContext('2d') ? canvas : null;
+    canDraw = typeof ImageData !== 'undefined' && !!canvas.getContext('2d');
+    return canDraw ? canvas : null;
 };
 
 const putPixels = (canvas, { width, height, data }) => {
@@ -245,6 +249,9 @@ const Outlines = ({ cells, hoverId, selectedId }) => {
     );
 };
 
+/** A big Token (a tree two cells wide) stands at half size, so every Token fits its tile. */
+const tokenScale = (typeId) => ((getTokenType(typeId)?.size || 1) >= 2 ? 0.5 : 1);
+
 /** What stands on each tile: its Token, and a plate of what it yields. */
 const Contents = memo(function Contents({ cells, hoverId }) {
     return cells.map(cell => {
@@ -256,7 +263,7 @@ const Contents = memo(function Contents({ cells, hoverId }) {
             <div key={cell.id} data-world-contents={cell.id} className="absolute pointer-events-none" style={{ left: x, top, width: 0, height: 0, filter: lookFilter(cell, hoverId) }}>
                 {cell.token && (
                     <div className="absolute flex items-end justify-center" style={{ left: -64, width: 128, bottom: -6 }}>
-                        <TokenSprite typeId={cell.token} surface={TOKEN_SURFACE.INSPECT} alt="" />
+                        <TokenSprite typeId={cell.token} surface={TOKEN_SURFACE.INSPECT} scale={tokenScale(cell.token)} alt="" />
                     </div>
                 )}
                 {icons.length > 0 && (
