@@ -11,7 +11,6 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
-import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as SkillSystem from '../systems/hero/SkillSystem.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -153,7 +152,6 @@ beforeAll(() => {
     GameLoop.stop();
     Math.random = seeded;
     HeroMotion.setRandomForTests(motionRandom);
-    EnemyMotion.setRandomForTests(motionRandom);
 });
 
 beforeEach(() => {
@@ -176,7 +174,6 @@ afterEach(() => {
 afterAll(() => {
     Math.random = realRandom;
     HeroMotion.setRandomForTests();
-    EnemyMotion.setRandomForTests();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
     resetMatTuning();
