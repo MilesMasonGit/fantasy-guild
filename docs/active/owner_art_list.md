@@ -97,6 +97,9 @@ player for these is T-138 (built when the first strips exist).
     (`u_lock.png` is 64 px and a tab is 40, so it cannot draw there at a whole scale)
     and the **unknown item "?"** (in the Bank, recipe and drop lists), 8 × 8 at 2×,
     placeholders in `PixelGlyph` (`lock`, `unknown`) until drawn.
+  - **Away summary** (NEW 2026-11-06, brief 440 A1): a small **on the mat** mark beside an
+    item's count in "While you were away" when some of it still lies on the mat, 8 × 8 at
+    2×, a placeholder in `PixelGlyph` (`mat`, a little 2 × 2 tile grid) until drawn.
   - **The problem mark is on the mat now** (brief 120 C1), 16 × 16, drawn at
     the Token's own pixel size at a Token's centre with a hard black shadow.
     The placeholder is today's `ui/u_alert_yellow.png` and `ui/u_alert_red.png`;

@@ -742,6 +742,19 @@ export const KIT_SECTIONS = [
         )
     },
     {
+        id: 'net-ribbon', title: 'Net change row', status: 'unapproved', source: 'EntityRibbon countClassName and badge (the away summary’s items)',
+        rule: 'New, unapproved (brief 440 A1). An item once with its net change: green + for more, red − for less, muted ± for even; gained and spent on hover. Loot still lying on the mat carries the small mat mark (a code placeholder, PixelGlyph mat) before the count.',
+        Demo: () => (
+            <div className="flex flex-col gap-1.5 w-80">
+                <EntityRibbon kind="item" id={SAMPLE_ITEMS[0]} amount={5500} sign="+" countClassName="text-gi-success" size="sm" />
+                <EntityRibbon kind="item" id={SAMPLE_ITEMS[1]} amount={36} sign="+" countClassName="text-gi-success" size="sm"
+                    badge={<PixelGlyph name="mat" className="text-gi-muted" />} />
+                <EntityRibbon kind="item" id={SAMPLE_ITEMS[2]} amount={12} sign="−" countClassName="text-gi-danger" size="sm" />
+                <EntityRibbon kind="item" id={SAMPLE_ITEMS[0]} amount={0} sign="±" countClassName="text-gi-muted" size="sm" />
+            </div>
+        )
+    },
+    {
         id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar (the hero bar and the hero panel)',
         rule: 'A hero’s HP: the numbers over a stepped pixel bar.',
         Demo: () => (

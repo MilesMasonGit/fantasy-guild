@@ -192,6 +192,8 @@ function ItemRows({ rows, enter }) {
                 <EntityRibbon
                     data-item-id={row.itemId}
                     data-summary-net={row.net}
+                    data-summary-gained={row.gained}
+                    data-summary-spent={row.spent}
                     kind="item"
                     id={row.itemId}
                     name={row.name}
@@ -233,8 +235,8 @@ function Column({ id, children }) {
 /** A muted line where a column has nothing to list. */
 const Empty = ({ children }) => <div data-summary-empty className="px-1 ui-text-body text-white/50">{children}</div>;
 
-/** The summary's buttons: the kit's, full width of their stack. */
-const BUTTON = { className: 'w-full', buttonClassName: 'py-1 ui-text-title' };
+/** The summary's buttons: the kit's, one width, centred. */
+const BUTTON = { className: 'w-80 max-w-full', buttonClassName: 'py-1 ui-text-title' };
 
 function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
     const view = summaryView(result);
@@ -384,7 +386,7 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
                         data-summary-confirm={asking}
                         role="alertdialog"
                         aria-label={t(undoing ? 'catchUp.confirmUndo.label' : 'catchUp.confirmReturn.label')}
-                        className="flex flex-col gap-1.5 w-80 max-w-full mx-auto"
+                        className="flex flex-col items-center gap-1.5"
                     >
                         <div className="text-center text-white/80">
                             {t(undoing ? 'catchUp.confirmUndo.text' : 'catchUp.confirmReturn.text')}
@@ -405,7 +407,7 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
                         </KitButton>
                     </div>
                 ) : (
-                    <div key="buttons" className="flex flex-col gap-1.5 w-80 max-w-full mx-auto">
+                    <div key="buttons" className="flex flex-col items-center gap-1.5">
                         <KitButton data-summary-close onClick={() => onAsk('return')} autoFocus {...BUTTON}>
                             {t('catchUp.buttons.return')}
                         </KitButton>

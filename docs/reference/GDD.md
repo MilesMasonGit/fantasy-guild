@@ -1161,9 +1161,10 @@ Statuses are not drawn on the board.
   health, hit, swing, its resistances and weaknesses and its moves (from the
   start), and its kinds once the guild has fought one ("? fight one to learn"
   before).
-- **"While you were away"** says the fights in one block: won and lost, the
-  enemies beaten, the heroes knocked out, the food and elixirs used and what
-  the kills dropped.
+- **"While you were away"** says the fights as news, only each enemy beaten
+  with its kill count (brief 440); knock-outs lead the news column. Fights won
+  and lost, food and elixirs used and drops are not listed (what was used and
+  dropped is in the item list).
 - A catch-up records and draws none of it (every listener is a UI listener);
   a fight still running after one is picked up at its next event, or when its
   panel opens. Placeholder icons are drawn in code (`owner_art_list.md`). The
@@ -1396,6 +1397,19 @@ drawers**. The menu can be flipped to the right.
   arrive as live play would show them, merged: one banner per kind and at
   most six gold "New!" stubs, with their sounds. A gap with no summary shows
   them at once; "Load as I left it" shows none.
+- **The summary** (brief 440): the heading centred ("While you were away",
+  "You were away 32 min"), then **two columns**, each scrolling with our arrow
+  bars. **Left, the items**: each item once with its **net** change, green +
+  or red −, gained and spent on hover. The net is the Bank and the mat
+  together (loot carried from the mat to the Bank while away counts once), and
+  an item with more lying on the mat than before carries a small mat mark,
+  its hover saying how many. **Right, the news**, in this order: knock-outs
+  (with the gear lost), the Bank refusing items, new recipes, first finds,
+  level-ups, Tokens used up, the fights (each enemy and its kill count). An
+  empty column says so in one muted line. **Both buttons ask first**: Return
+  to the Guild (plain wording, nothing is lost; Esc asks the same) and Load
+  as I left it (everything from the time away is lost); the banners come
+  after Return is confirmed.
 - **Saves**: 3 slots in browser `localStorage` with a one-step backup;
   autosave every 10 min by default. **Saves from another version are refused,
   not migrated** (`GAME_VERSION = '0.8.1'`, moved by the Atlas's Regions), and
