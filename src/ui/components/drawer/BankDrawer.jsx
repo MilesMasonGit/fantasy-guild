@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
-import { Landmark } from 'lucide-react';
 import BankTab from './BankTab.jsx';
 import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js';
 import { PanelHeader } from '../base/CloseX.jsx';
@@ -17,7 +16,7 @@ import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
 
 // Heroes live in the always-visible Hero Dock, not a drawer pane.
 const PANES = [
-    { key: 'bank', label: 'Item Bank', icon: Landmark, Component: BankTab }
+    { key: 'bank', label: 'Item Bank', Component: BankTab }
 ];
 
 export const BankDrawer = ({ drawer, menuRight = false }) => {
@@ -53,12 +52,11 @@ export const BankDrawer = ({ drawer, menuRight = false }) => {
                     }}
                 >
                     <PixelFrame kind={FRAME_KIND.STUDS} backdrop="bank" className="h-full" frameClassName="flex overflow-hidden">
-                        {shownPanes.map(({ key, label, icon: Icon, Component }) => {
+                        {shownPanes.map(({ key, label, Component }) => {
                             return (
                                 <section key={key} className="flex-1 min-w-0 flex flex-col border-r border-gi-border/50 last:border-r-0">
                                     <PanelHeader
                                         title={label}
-                                        sprite={<Icon size={18} className="text-gi-primary" />}
                                         onClose={() => drawer.closePane(key)}
                                         closeLabel={`Close ${label}`}
                                         className="gi-drawer-pad-x py-1.5 border-b border-gi-border/40 min-h-[44px]"

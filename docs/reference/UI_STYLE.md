@@ -181,6 +181,9 @@ normal text colour; a new meaning needs the owner's OK.
   - **No emoji** anywhere a player can see.
   - Where a panel already has pixel art for the same idea (the close X, a lock),
     the pixel version wins.
+  - **An item not found yet** is the pixel "?" (`PixelGlyph` `unknown`) wherever its
+    sprite would be; **a locked Bank tab** shows the pixel lock (`lock`): both code
+    placeholders on the art list. The loadout's slot marks are Lucide (`slotIcons.js`).
   - **A skill with no icon yet** draws the one shared placeholder, a plain pixel
     stone (`SkillIcon`); a skill never falls back to its emoji.
 

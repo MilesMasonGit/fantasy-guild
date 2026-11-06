@@ -11,7 +11,7 @@ import { formatCompact } from '../../../utils/Formatters.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { equipOrAnnounce, unequipOrAnnounce } from './dockEquip.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
-import { PixelGlyph, slotGlyphName } from '../base/PixelGlyph.jsx';
+import { slotIconOf } from '../base/slotIcons.js';
 import { itemTintStyle } from '../base/itemTint.js';
 
 /** How long a slot keeps its shine layer after an item lands: the sweep plus a little slack. */
@@ -185,12 +185,7 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
             {/* An item just landed: the button shine passes over the slot once. */}
             {shineKey != null && <span key={shineKey} data-equip-shine className="ui-shine ui-shine-once" />}
             {category && (
-                <PixelGlyph
-                    name={slotGlyphName(category)}
-                    data-slot-kind={category}
-                    className="absolute bottom-0.5 right-0.5 pointer-events-none text-white/75"
-                    style={{ filter: 'drop-shadow(2px 2px 0 #000)' }}
-                />
+                <SlotMark category={category} />
             )}
             {showQuantity && (
                 <span className={cn(
@@ -205,5 +200,20 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
         </div>
     );
 });
+
+/** A filled slot's kind mark in its corner (Lucide, the icon rule's gear slot icons). */
+function SlotMark({ category }) {
+    const Icon = slotIconOf(category);
+    return (
+        <Icon
+            size={16}
+            strokeWidth={2.5}
+            data-slot-kind={category}
+            aria-hidden="true"
+            className="absolute bottom-0.5 right-0.5 pointer-events-none text-white/80"
+            style={{ filter: 'drop-shadow(2px 2px 0 #000)' }}
+        />
+    );
+}
 
 export default DockEquipmentGrid;

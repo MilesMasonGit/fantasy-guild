@@ -10,7 +10,8 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
-import { Landmark, Lock, Check, BoxSelect, X, ArrowDownUp } from 'lucide-react';
+import { Landmark, Check, BoxSelect, X, ArrowDownUp } from 'lucide-react';
+import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BANK_TAB_SLOTS, BANK_TAB_CAP, homeTabOf, bankTabLayout } from '../../../systems/inventory/bankTabs.js';
@@ -389,8 +390,8 @@ const BankTabStrip = ({ tabs, activeId, onSelect, firstItemByTab, onDropToTab })
             ))}
             {Array.from({ length: Math.max(0, BANK_TAB_CAP - tabs.length) }, (_, i) => (
                 <Tooltip key={`locked-${i}`} lines={['Locked — unlock more tabs via Guild Hall upgrades']}>
-                    <div className="ui-slot-empty w-10 h-10 flex items-center justify-center text-gi-muted/30 shrink-0">
-                        <Lock size={12} />
+                    <div data-bank-tab-locked className="ui-slot-empty w-10 h-10 flex items-center justify-center text-gi-muted/40 shrink-0">
+                        <PixelGlyph name="lock" />
                     </div>
                 </Tooltip>
             ))}

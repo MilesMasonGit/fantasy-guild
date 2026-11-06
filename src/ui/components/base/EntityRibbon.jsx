@@ -5,7 +5,8 @@ import { getTokenType, tokenName } from '../../../config/registries/tokenRegistr
 import { ItemIcon } from './ItemIcon.jsx';
 import { TokenSprite, TOKEN_SURFACE } from './TokenSprite.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
-import { Sparkles, HelpCircle } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import { PixelGlyph } from './PixelGlyph.jsx';
 
 /**
  * EntityRibbon: standard minimalist ribbon row for items, tokens and loot.
@@ -190,7 +191,7 @@ export const EntityRibbon = ({
             >
                 <div data-item-bar-sprite className={cn(sizeConfig.box, 'relative flex items-center justify-center transition-transform duration-200 ease-out group-hover:scale-[2] group-hover:z-50 group-hover:drop-shadow-[0_6px_14px_rgba(0,0,0,0.95)] pointer-events-none origin-center')}>
                     {icon ?? (!isDiscovered ? (
-                        <HelpCircle size={18} className="text-gi-muted/50" />
+                        <PixelGlyph name="unknown" data-item-unknown className="text-gi-muted/60" />
                     ) : resolvedKind === 'xp' ? (
                         <Sparkles size={20} className="text-amber-400" />
                     ) : resolvedKind === 'token' ? (

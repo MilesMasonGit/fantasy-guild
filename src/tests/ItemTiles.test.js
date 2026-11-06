@@ -12,7 +12,7 @@ import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BankTab } from '../ui/components/drawer/BankTab.jsx';
 import { DockEquipmentGrid } from '../ui/components/dock/DockEquipmentGrid.jsx';
 import { itemTintName, itemTintStyle } from '../ui/components/base/itemTint.js';
-import { SLOT_GLYPHS, slotGlyphName } from '../ui/components/base/PixelGlyph.jsx';
+import { SLOT_ICONS, SLOT_ICON_UNKNOWN, slotIconOf } from '../ui/components/base/slotIcons.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
 
@@ -164,13 +164,13 @@ describe('tiles sit on their type\'s surface', () => {
 });
 
 describe('a hero\'s loadout slot shows a mark of its kind', () => {
-    it('every equip category has its own mark; an unknown one gets the stand-in', () => {
-        for (const category of EQUIPMENT_CATEGORIES) expect(slotGlyphName(category)).toBe(`slot_${category}`);
-        expect(slotGlyphName('boots')).toBe('slot_unknown');
-        for (const rows of Object.values(SLOT_GLYPHS)) {
-            expect(rows).toHaveLength(8);
-            for (const row of rows) expect(row).toMatch(/^[.#]{8}$/);
+    it('every equip category has its own Lucide mark; an unknown one gets the stand-in', () => {
+        for (const category of EQUIPMENT_CATEGORIES) {
+            expect(SLOT_ICONS[category], category).toBeTruthy();
+            expect(slotIconOf(category)).toBe(SLOT_ICONS[category]);
         }
+        expect(new Set(Object.values(SLOT_ICONS)).size).toBe(Object.keys(SLOT_ICONS).length);
+        expect(slotIconOf('boots')).toBe(SLOT_ICON_UNKNOWN);
     });
 
     it('a filled slot shows its kind; an empty one shows none', () => {
@@ -182,6 +182,8 @@ describe('a hero\'s loadout slot shows a mark of its kind', () => {
         const view = render(h(DeckDndProvider, null, h(DockEquipmentGrid, { heroId: 'h1' })));
         const marks = [...view.container.querySelectorAll('[data-slot-kind]')].map(el => el.getAttribute('data-slot-kind'));
         expect(marks).toEqual(['hand', 'food']);
-        expect(view.container.querySelector('[data-glyph="slot_hand"]')).not.toBeNull();
+        // Lucide draws an svg with its own class; the old pixel glyphs are gone from the slots.
+        expect(view.container.querySelector('svg[data-slot-kind="hand"].lucide')).not.toBeNull();
+        expect(view.container.querySelector('[data-glyph^="slot_"]')).toBeNull();
     });
 });
