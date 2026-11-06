@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-327**
+**Next free number: T-328**
 
 ---
 
@@ -91,6 +91,7 @@ here.
 | T-305 | P2 | open, needs a brief | **Put the approved content roadmap in the CMS as Planned entries** (owner 2026-11-02, [concept_content_roadmap.md](../active/concept_content_roadmap.md)): a pack per chain page, so the ledger can check the whole plan. Needs T-294 first (tiers, the 20-level ladder). Planned entries never reach the game. |
 | T-318 | P3 | open | **The Token name on hover is larger** (owner, 2026-11-05). Show the owner two or three sizes on one screenshot page, then build only the pick (briefs README: looks are picked from screenshots). Check it on small and large Tokens and at mat zoom. Eye-check: no, the screenshot pick is the look. |
 | T-317 | P3 | open | **Hero bar HP bars are light red** (owner, 2026-11-05): every hero HP bar on the hero bar uses the mat's light red (`HP_COLOUR` in `src/ui/components/board/healthBar.js`) whatever the health, replacing the green, amber and red tones (`hpTone` in `dockHeroView.js`). Check any other hero HP bar (hero sheet, fight window) and say which already match. Look-only, merges on the gate with a line in STATUS. |
+| T-327 | P3 | open | **Inline text outlines never show** (460 P1, 6 Nov): `tailwind.css` gives every element the hard 1 px text outline with `!important`, so inline `textShadow` loses: four soft ones are dead code, and seven hard outlines written on purpose never show (work plate numbers, fighters' HP numbers, the fight window's words, VitalBar, three Guild Hall OUTLINEs, the dock pager). Decide per case whether the thicker outline was wanted; table 3 of `research/hard_pixel/list.md` | director 2026-11-06 |
 | T-326 | P3 | open | **Spawners that missed search again although the board is unchanged** (brief 500 engineer, 6 Nov): on C240 the 16 Forests and Quarries below their cap all miss in the same tick every 5 s (about 0.65 ms each), C240 p99 4.8 to 9.8 ms. A missed spawner could skip its next search while `MatPlacement.roomVersion()` is unchanged; needs care, since which Tokens can be pushed may change without the stamp. Real play staggers the clocks; accepted for now | director 2026-11-06 |
 | T-325 | P2 | open | **Catch-up bias: a hero arriving part-way through a 1 s step gets the whole step** (found by the C4 engineer, 6 Nov, measured): in a crowded hunt, 1000 ms steps kill 1736 an hour against 1579 at 100 ms ticks (+9.9 %) on main; walking time 302 s vs 1187 s. Offline time away plays a little richer than live. An engineer brief: carry the arrival's leftover into work and fights as the work-cycle carry does; expect WORK CHANGED nearly everywhere | director 2026-11-06 |
 | T-324 | P2 | open | **The bench's fidelity gate flakes on one seed** (C4 engineer, 6 Nov): S8L vs S8F `depleted` is now about 55 an hour, nearly all goblin kills, and jumps at thresholds, so main fails the ±1 % gate on 6 of 15 seeds (seed 2: 53 vs 57). Judge it on the median per-seed gap over about 5 seeds (main median 0, C4 -1; about 70 s more per compare), and update bench/README's about 6 depletions an hour | director 2026-11-06 |
