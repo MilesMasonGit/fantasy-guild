@@ -7,6 +7,8 @@ import { useMatFit } from './MatFitContext.jsx';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { CALLOUT_MS } from './callouts.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as Flags from '../../../systems/board/Flags.js';
@@ -109,6 +111,11 @@ export const HeroBubbleLayer = ({ heroes }) => {
                 if (!token) return;
                 const name = getTokenType(token.typeId)?.name || tokenName(token.typeId) || token.typeId;
                 sayRef.current(p.heroId, 'arrived', { key: 'arrived', text: momentText.arrived(name) });
+            }, UI_LISTENER),
+            // A status landing on a fighting hero ("Venom!"), over their bar, as briefly as a callout.
+            EventBus.subscribe(ENGINE_EVENTS.STATUS_APPLIED, (p) => {
+                if (p?.targetType !== 'hero' || !p.targetId || !p.statusId) return;
+                sayRef.current(p.targetId, 'statusLands', { key: `status:${p.statusId}`, text: momentText.statusLands(p.statusId) }, CALLOUT_MS);
             }, UI_LISTENER)
         ];
         return () => unsubs.forEach(u => u());

@@ -8,7 +8,7 @@ import { enemyProfileOf, isEnemyDef } from '../../../config/registries/enemyProf
 import { subscribeToken } from './tokenEvents.js';
 import { Bubble } from './Bubble.jsx';
 import { HealthBar } from './HealthBar.jsx';
-import { enemyBarPlace } from './healthBar.js';
+import { enemyBarPlace, fightBarShift } from './healthBar.js';
 import { IdlePlate } from './IdlePlate.jsx';
 import { idlePlateCells } from './idlePlate.js';
 import { TokenChargeDeltaFloater, CHARGE_FLOATERS, StationGearBadge, DisallowBadge, MarkedBadge } from './TokenBadges.jsx';
@@ -255,7 +255,13 @@ export const TokenBubbles = ({
                 />
             )}
             {showHp && (() => {
-                const place = enemyBarPlace(boxPx, barUnit);
+                const bar = enemyBarPlace(boxPx, barUnit);
+                const body = fight ? BoardState.heroBodyOf(token.heroId) : null;
+                const away = body?.side === -1 ? 1 : -1;
+                // Beside its hero, out of the fight button's way.
+                const place = body && Number.isFinite(body.x) && Number.isFinite(x)
+                    ? { ...bar, left: bar.left + away * fightBarShift(body.x - x, barUnit) }
+                    : bar;
                 const el = (
                     <HealthBar
                         who="enemy"
@@ -263,7 +269,7 @@ export const TokenBubbles = ({
                         cur={barHp.cur}
                         max={barHp.max}
                         u={barUnit}
-                        outward={fight ? -(BoardState.heroBodyOf(token.heroId)?.side === -1 ? -1 : 1) : 0}
+                        outward={body ? away : 0}
                         style={fightBar
                             ? { ...place, left: fightBar.left + place.left, top: fightBar.top + place.top, pointerEvents: PLATE_POINTER }
                             : place}

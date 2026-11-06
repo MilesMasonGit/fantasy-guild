@@ -1,16 +1,17 @@
 // The combat screen on the style sheet page, drawn by the real components fed a fixture fight
-// (`combatKit.js`): the fight's pieces on the mat (bars, chip, plate, every float), the fight panel
+// (`combatKit.js`): the fight's pieces on the mat (bars, button, a move's bubble, every float), the fight panel
 // with its log closed and open, and the enemy card fought and never fought.
 
 import { useLayoutEffect, useRef, useState } from 'react';
 import { HealthBar } from '../components/board/HealthBar.jsx';
-import { WorkPlateView } from '../components/board/WorkPlateLayer.jsx';
+import { SpeechFrame } from '../components/board/SpeechFrame.jsx';
+import { CHIP, CHIP_PX, MAT_BAR } from '../components/board/healthBar.js';
 import { buildFloat } from '../components/board/fx/fightFloats.js';
 import { FightPanelView } from '../components/combat/FightPanel.jsx';
 import { EnemyCardRows } from '../components/combat/EnemyCard.jsx';
 import { PixelFrame, FRAME_KIND } from '../components/base/PixelFrame.jsx';
 import { glyphSrc, GLYPH_COLOUR } from '../components/combat/combatGlyphs.js';
-import { KIT_FIGHTS, KIT_PLATE_CELLS, KIT_FLOATS, KIT_CARDS, kitPanelView } from './combatKit.js';
+import { KIT_FIGHTS, KIT_FLOATS, KIT_CARDS, kitPanelView } from './combatKit.js';
 
 /** The grass under the mat pieces: the mat's own mean green (the real mat is textured). */
 const GROUND = '#5d9440';
@@ -29,18 +30,21 @@ const StillFloat = ({ m }) => {
     return <span ref={ref} className="flex items-end justify-center" style={{ height: 52, '--fx-scale': 1 }} />;
 };
 
-/** The fight's pieces on the mat at the 1920 × 1080 size: the two bars, the chip, the plate, the floats. */
+/** The fight's pieces on the mat at the 1920 × 1080 size: the two bars with the button between them, a move's bubble, the floats. */
+const BAR_TOP = 64;
+const BTN_LEFT = 30 + MAT_BAR.W + CHIP.GAP;
 const MatPieces = () => (
     <div className="flex flex-wrap items-start gap-4">
-        <div className="relative" style={{ width: 300, height: 140, background: GROUND }} data-kit-combat="mat">
-            <HealthBar who="enemy" cur={24} max={40} outward={-1} style={{ left: 60, top: 40, width: 64 }} />
-            <HealthBar who="hero" cur={17} max={30} outward={1} style={{ left: 150, top: 40, width: 64 }} />
-            <span className="absolute" style={{ left: 14, top: 14, width: 32, height: 32 }}>
-                <span aria-hidden="true" className="ui-frame-chamfer absolute inset-0" style={{ borderWidth: 6, borderImageWidth: '6px' }} />
+        <div className="relative" style={{ width: 2 * (30 + MAT_BAR.W + CHIP.GAP) + CHIP_PX, height: 120, background: GROUND }} data-kit-combat="mat">
+            <HealthBar who="hero" cur={17} max={30} outward={-1} style={{ left: 30, top: BAR_TOP, width: MAT_BAR.W }} />
+            <span className="absolute" style={{ left: BTN_LEFT, top: BAR_TOP + MAT_BAR.H / 2 - CHIP_PX / 2, width: CHIP_PX, height: CHIP_PX }}>
+                <span aria-hidden="true" className="ui-frame-shadow-chamfer absolute inset-0" style={{ borderWidth: CHIP.BAND, borderImageWidth: `${CHIP.BAND}px`, transform: 'translate(4px, 4px)' }} />
+                <span aria-hidden="true" className="ui-frame-chamfer absolute inset-0" style={{ borderWidth: CHIP.BAND, borderImageWidth: `${CHIP.BAND}px` }} />
                 <img src={glyphSrc('fight', GLYPH_COLOUR.gold)} alt="" className="absolute" style={{ left: 8, top: 8, width: 16, height: 16, maxWidth: 'none', imageRendering: 'pixelated' }} />
             </span>
-            <div className="absolute flex justify-center" style={{ left: 0, right: 0, top: 70 }}>
-                <WorkPlateView cells={KIT_PLATE_CELLS} u={1} />
+            <HealthBar who="enemy" cur={24} max={40} outward={1} style={{ left: BTN_LEFT + CHIP_PX + CHIP.GAP, top: BAR_TOP, width: MAT_BAR.W }} />
+            <div className="absolute" style={{ left: BTN_LEFT + CHIP_PX + CHIP.GAP + MAT_BAR.W / 2, top: BAR_TOP - 10, transform: 'translate(-50%, -100%)' }}>
+                <SpeechFrame tone="plain" u={1} tail className="whitespace-nowrap ui-text-title font-bold">Shiv</SpeechFrame>
             </div>
         </div>
         <div className="grid grid-cols-3 gap-x-6 gap-y-1 p-2" style={{ background: GROUND }} data-kit-combat="floats">

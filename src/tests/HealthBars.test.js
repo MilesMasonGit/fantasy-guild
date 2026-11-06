@@ -11,7 +11,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { MatHero, HERO_BAR_LINGER_MS } from '../ui/components/board/MatHero.jsx';
-import { healthFraction, healthText, healthPercent, healthFillPx, enemyBarPlace, heroBarPlace, HP_BAR } from '../ui/components/board/healthBar.js';
+import { healthFraction, healthText, healthPercent, healthFillPx, enemyBarPlace, heroBarPlace, HP_BAR, MAT_BAR, matHealthText } from '../ui/components/board/healthBar.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import * as Flags from '../systems/board/Flags.js';
@@ -32,8 +32,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * Health bars show only when they say something (brief 120): over a hero who is hurt, fighting
  * or hovered; over an enemy in a fight (the only time it is hurt: a fight that ends heals it) or
- * hovered. Full health and nothing going on: no bar. The number and the percentage are written
- * above the bar, `17 · 57%` (owner, 2026-10-25, the combat screen's option B).
+ * hovered. Full health and nothing going on: no bar. The numbers are written on the bar, `17/30`,
+ * a small edition of the hero bar (owner's pick F, 2026-11-05).
  */
 
 registerTokenTypes({
@@ -63,7 +63,14 @@ describe('the rules, pure', () => {
         expect(healthFraction(1, 0)).toBe(0);
     });
 
-    it('the number reads "health · percent", whole, never below 0, with separators; percent rounds halves up', () => {
+    it('a mat bar reads "health/max", whole, never below 0, with separators', () => {
+        expect(matHealthText(34, 50)).toBe('34/50');
+        expect(matHealthText(-3, 50)).toBe('0/50');
+        expect(matHealthText(33.6, 50)).toBe('34/50');
+        expect(matHealthText(1500, 2000)).toBe('1,500/2,000');
+    });
+
+    it("the fight panel's number reads 'health · percent', whole, never below 0, with separators; percent rounds halves up", () => {
         expect(healthText(34, 50)).toBe('34 · 68%');
         expect(healthText(-3, 50)).toBe('0 · 0%');
         expect(healthText(33.6, 50)).toBe('34 · 67%');
@@ -82,12 +89,12 @@ describe('the rules, pure', () => {
     it('an enemy bar sits centred over the box, wholly above it, sized in plate pixels', () => {
         const p = enemyBarPlace(128);
         expect(p.left * 2 + p.width).toBe(128);
-        expect(p.top + HP_BAR.H).toBeLessThan(0);
+        expect(p.top + MAT_BAR.H).toBeLessThan(0);
         const big = enemyBarPlace(142, 1.25);
-        expect(big.width).toBe(HP_BAR.W * 1.25);
-        expect(big.top).toBe(-(HP_BAR.H + HP_BAR.GAP) * 1.25);
+        expect(big.width).toBe(MAT_BAR.W * 1.25);
+        expect(big.top).toBe(-(MAT_BAR.H + MAT_BAR.GAP) * 1.25);
         const hero = heroBarPlace(128, 1.25);
-        expect(hero.width).toBe(HP_BAR.W * 1.25);
+        expect(hero.width).toBe(MAT_BAR.W * 1.25);
     });
 });
 
@@ -99,10 +106,10 @@ describe('the enemy bar', () => {
     it('shows when a fight starts, tracks the enemy HP, and no HP bubble exists', () => {
         const { container } = mount(h(TokenBubbles, props()));
         fightProgress(50);
-        expect(bar(container, 'enemy').getAttribute('data-health-text')).toBe('50 · 100%');
+        expect(bar(container, 'enemy').getAttribute('data-health-text')).toBe('50/50');
         fightProgress(20);
         const b = bar(container, 'enemy');
-        expect(b.getAttribute('data-health-text')).toBe('20 · 40%');
+        expect(b.getAttribute('data-health-text')).toBe('20/50');
         expect(Number(b.getAttribute('data-health-fraction'))).toBeCloseTo(0.4, 2);
         expect(container.querySelector('[data-bubble="hp"]')).toBeNull();
         expect(container.querySelector('[data-ring="hp"]')).toBeNull();
@@ -135,13 +142,15 @@ describe('the enemy bar', () => {
         expect(bar(container, 'enemy')).toBeNull();
     });
 
-    it('the number and percentage are written above the bar, with no tooltip', () => {
+    it('the numbers are written on the bar, inside its box, with no tooltip', () => {
         const { container } = mount(h(TokenBubbles, props()));
         fightProgress(34);
-        expect(bar(container, 'enemy').querySelector('[data-health-label]').textContent).toBe('34 · 68%');
-        // Written above the bar, not on it: the label is not inside the bar's track.
-        const track = bar(container, 'enemy').querySelector('[data-health-fill]').parentElement;
-        expect(track.contains(bar(container, 'enemy').querySelector('[data-health-label]'))).toBe(false);
+        const label = bar(container, 'enemy').querySelector('[data-health-label]');
+        expect(label.textContent).toBe('34/50');
+        // On the bar: the label fills the bar's own box, top to bottom.
+        expect(label.parentElement).toBe(bar(container, 'enemy'));
+        expect(label.className).toContain('top-0');
+        expect(label.className).toContain('bottom-0');
         fireEvent.pointerEnter(bar(container, 'enemy'));
         expect(tip()).toBeNull();
     });
@@ -156,7 +165,7 @@ describe('the enemy bar', () => {
             expect(bar(container, 'enemy')).toBeNull();
             const away = host.querySelectorAll('[data-health-bar="enemy"]');
             expect(away).toHaveLength(1);
-            expect(away[0].getAttribute('data-health-text')).toBe('34 · 68%');
+            expect(away[0].getAttribute('data-health-text')).toBe('34/50');
             const p = enemyBarPlace(128, 1);
             expect(parseFloat(away[0].style.left)).toBeCloseTo(636 + p.left, 6);
             expect(parseFloat(away[0].style.top)).toBeCloseTo(336 + p.top, 6);
@@ -191,14 +200,14 @@ describe('the hero bar', () => {
         const { container, rerender } = mount(hero());
         expect(bar(container, 'hero')).toBeNull();
         rerender(tree(hero({ fighting: true })));
-        expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('80 · 80%');
+        expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('80/100');
     });
 
     it('⭐ shows while hurt, or rested on; not at full health with nothing going on', () => {
         const { container, rerender } = mount(hero());
         expect(bar(container, 'hero')).toBeNull();
         rerender(tree(hero({ hurt: true })));
-        expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('80 · 80%');
+        expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('80/100');
         rerender(tree(hero({ hurt: false })));
         expect(bar(container, 'hero')).toBeNull();
         rerender(tree(hero({ rested: true })));
@@ -231,8 +240,8 @@ describe('the hero bar', () => {
             GameState.state.heroes[0].hp.current = 35;
             EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'test' });
         });
-        expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('35 · 35%');
-        expect(bar(container, 'hero').querySelector('[data-health-label]').textContent).toBe('35 · 35%');
+        expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('35/100');
+        expect(bar(container, 'hero').querySelector('[data-health-label]').textContent).toBe('35/100');
     });
 
     it('the bubbles draw switch turns it off', () => {
@@ -307,7 +316,7 @@ describe('⭐ on the mat: the hero bar follows the hero’s health and the point
             GameState.state.heroes[0].hp.current = 60;
             EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'test' });
         });
-        expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('60 · 60%');
+        expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('60/100');
 
         await act(async () => {
             GameState.state.heroes[0].hp.current = 100;

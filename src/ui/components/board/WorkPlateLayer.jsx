@@ -90,17 +90,6 @@ function PlateCell({ cell, u, tip }) {
                 </>
             );
             break;
-        case CELL.DIVIDER:
-            body = <span aria-hidden="true" style={{ width: 2 * u, height: 28 * u, background: 'var(--color-ui-frame)' }} />;
-            break;
-        case CELL.ELIXIR:
-            body = (
-                <>
-                    <img src={spriteOf(cell.itemId)} alt="" draggable={false} style={icon} />
-                    <span className="font-bold tabular-nums leading-none text-white" style={num}>{cell.count}</span>
-                </>
-            );
-            break;
         case CELL.TIMER:
         case CELL.SPAWNER:
             body = (
@@ -126,7 +115,7 @@ function PlateCell({ cell, u, tip }) {
             ref={ref}
             data-plate-cell={cell.kind}
             className="relative shrink-0 flex items-center justify-center"
-            style={{ gap: 2 * u, minWidth: cell.kind === CELL.DIVIDER ? undefined : PLATE.ICON * u }}
+            style={{ gap: 2 * u, minWidth: PLATE.ICON * u }}
             onPointerEnter={() => setText(tip ? tip(cell) || null : null)}
             onPointerLeave={() => setText(null)}
             onPointerDown={() => setText(null)}
@@ -265,7 +254,7 @@ const WorkPlate = memo(function WorkPlate({ tokenId, heroId, x, y, typeId, open,
  * lets it through, and a press that lands on a plate there is sent to that Token
  * (`pressRouting.js`). Off every circle a plate keeps the pointer: its tooltips, and a press picks
  * up its own Token.
- * A fight has no plate yet: its place is kept for the fight's own link (both styles, the elixirs).
+ * A fight has no plate: its button stands between the two fighters' health bars (`FightLayer`).
  */
 export const WorkPlateLayer = memo(function WorkPlateLayer({ plates, restTokenId = null, restHeroId = null, onPress, yieldToTokens = false }) {
     const fit = useMatFit() || 1;

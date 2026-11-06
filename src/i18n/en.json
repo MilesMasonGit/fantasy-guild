@@ -185,7 +185,8 @@
             "crit": "Crit!",
             "miss": "Miss",
             "weak": "Weak!",
-            "resisted": "Resisted"
+            "resisted": "Resisted",
+            "lands": "{status}!"
         },
         "moves": {
             "unnamed": "Attack",

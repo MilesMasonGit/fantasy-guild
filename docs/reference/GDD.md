@@ -790,8 +790,8 @@ Accuracy, a 5 % crit (the table and its worked duels: `concept_combat.md`,
   (until the next attack on its bearer is over, hit or miss), **the swing** (on
   itself only) or **the fight**; a status keeps its own lifetime. An enemy with
   no moves swings a plain **Physical** hit, as before. The moves show on the
-  enemy card from the start; the float, the log and the fight panel name the
-  move made. *(`enemyMoves.js`)*
+  enemy card from the start; a bubble over the enemy's bar, the log and the
+  fight panel name the move made. *(`enemyMoves.js`)*
 - **Kinds** (none, one or two, CMS presets the player discovers by fighting):
   **Armoured** Physical resistance 50 % and slow (4 s, same hit; an author's
   own Physical line replaces it); **Nimble** +15 Dodge; **Swift** a swing every
@@ -931,7 +931,7 @@ Their resistances, weaknesses and moves come with the combat content pack
   40 %. Both sides roll the same way.
 - **Crits**: 5 % (gear adds Crit Chance), doubling the hit before the type
   factor. Enemies crit at 5 % unless authored.
-- **The floats and the log name the type**: "Weak!" when the target's
+- **The fight window and the log name the type**: "Weak!" when the target's
   weaknesses outweigh its resistances across the hit's parts, "Resisted" the
   other way; a shot shows both its types.
 - **Barehanded is a Melee punch**: 1 + the Melee level step, every 3 s, on the
@@ -1029,24 +1029,29 @@ burning imp and a four-move warlord, with a live readout of the statuses.
 ### The combat screen — Built (brief 220 C6)
 What a player sees of a fight (owner's picks from the mock-ups, 2026-10-24/25).
 Statuses are not drawn on the board.
-- **On the mat**: a thin health bar over each fighter with the number and the
-  percentage above it ("17 · 57%", halves up; the same bar over a hurt or
-  hovered hero and a hovered enemy); a wide number grows away from the other
-  fighter. The **fight plate** stands in the work plate's place under the two
-  fighters' feet: both styles with a divider, then the hero's working elixirs
-  with the fights each has left, the one under way counted (a fresh dose shows
-  10, its last fight 1; between fights, the fights still to come). Speech, callouts (a status landing, a boss move) and "used"
-  bubbles over a fighter stand above its number and the chip, never on them.
-  A small
-  **crossed-swords chip** beside the enemy's bar, on its far side from the
-  hero (the flag flies the other way), opens the fight panel.
-- **Floating numbers** rise at each fighter's outer side, beside the middle of
-  their art, and are gone in half a second: white on the enemy (on the strike
-  frame of the hero's swing), red on the hero, "Miss", a big number under a
-  gold "Crit!", "Weak!" or "Resisted" and the hit's types, the enemy's move
-  by name, green heals (a meal, or a rule's heal on either side), and Venom
-  and Burn ticks in red with a drop or a flame. Two at once on one side stack
-  upward.
+- **On the mat** (owner's pick F, the reduced plate, 2026-11-05; brief 360
+  C3): **no plate** under a fight. Over each fighter a small edition of the
+  hero bar's health bar, its fill in the same green, amber and red on a
+  stepped black edge, the numbers written on it ("17/30"; the same bar over a
+  hurt or hovered hero and a hovered enemy). **Between the two bars** the
+  crossed-swords **fight button** opens the fight's detail view; when the
+  fighters stand close the bars move outward just enough to leave it a gap.
+  The elixir counts are the fight window's. Speech, callouts and "used"
+  bubbles over a fighter stand above its bar and the button, never on them.
+- **Bubbles over the bar**: an enemy's **named move** ("Shiv") and a status
+  landing on an enemy ("Burn!") in the speech frame over the enemy's bar; a
+  status landing on the hero ("Venom!") over the hero's, as the hero's own
+  line; a boss's own rule by its name over the enemy. They stack in a column,
+  never on a number or another bubble, and are gone in about two seconds.
+- **Floats** rise over the middle of each fighter, just under the bar, and
+  are gone in half a second: white on the enemy (on the strike frame of the
+  hero's swing), red on the hero, "Miss", a big number under a gold "Crit!",
+  green heals (a meal, or a rule's heal on either side), and Venom and Burn
+  ticks in red with a drop or a flame. The hit's types, "Weak!" and
+  "Resisted" are the fight window's and the log's. Two at once on one fighter
+  stack downward.
+- **The QA panel's Combat screen section** sets up a crowd of seven fights
+  below the Guild Hall, to judge the motion of a busy mat.
 - **The fight panel** opens over the mat beside the chip, one at a time (the
   X, Escape or a click off it closes it): the battlefield strip with both
   fighters at 1×, the hero on the left facing right, moving as on the mat
