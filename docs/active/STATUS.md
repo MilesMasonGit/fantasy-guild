@@ -181,6 +181,10 @@ None open.
 
 ## Questions for the owner
 
+- **Ring star pricing (380 M4 pack):** A. a ring opens when the stage before it ends (built; ring 3 7 h 27 min to 22 h 52 min, ring 2 unchanged); B. priced like a Hall rank of its tier (ring 2 later too); C. hours by hand. Also: wild prices placeholders until T-294; names kept for the pack review.
+- **Title screen look:** A framed (built), B backdrop, C strip.
+- **Save files (450 S3):** today's saves do not carry over; merge only on the owner's OK.
+
 - ~~Hard pixel finish~~ **Answered 2026-11-06 (owner): B, the hard versions as listed, but words keep a 1 px hard outline primarily** (2 px only where it already is, the Region name). Director, taking the recommendations not answered: the mat's soft edge while the ground is off is dropped; the drag refusal mark stops bouncing. P2 runs after the waiting merges (it touches the Bank, Hall and fight files).
 
 - ~~Encyclopedia lines~~ **Answered 2026-11-06 (owner): C, a word on each line** that is not used up (made at, tool for, gives, drops, spawns, opens, beside). Used up stays the plain unlabelled line (recommended, not answered). E2 (engineer) after x3 merges; the columns need about 60 px more gap.
@@ -213,7 +217,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-**Fri 6 Nov, 13:00 (director):** engine bench `--compare` on main (the six merged together, then the Hall sky 6b8368d0; WORK CHANGED expected from 500, identity and fidelity must pass); then one `bench:draw --compare` for the batch.
+**Fri 6 Nov, 13:01 (director): done** on main 32c65b47 (everything merged today). Engine: S1, S4, S7 same work; S2, S3, S5, S6, S8, S8L, S8F, C240, C256 WORK CHANGED as predicted (bench fights, brief 500), accepted; identity same, fidelity ok. Draw: no drawing regression (the timer exited 3, read the log: `draw-2026-11-06T20-04-30`). **Next quiet window (01:00): retake both baselines on main, then `npm run bench:calibrate` (hallStars.js changed).**
 
 **Fri 6 Nov, 01:00 (director timer, `p23b`):** engine work check and draw benches on `crunch/combat-window` a38e6467 (logs in the scratchpad). Then, by director timers one after another: C4 b21c8b88 (engine work check, fights40 and fights80 draw), `crunch/ground-look` with R1 merged in (engine work check, full draw), then drag hints 80b8fd8d (engine work check, drag bench). Then enemies stand still f85643a1 (engine work check, skipped if past 07:00). 
 
@@ -232,6 +236,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 **Sat 31 Oct, 01:00–02:15 (director):** engine tickets WORK CHANGED exactly as predicted (S1/S4/S7 same; identity and fidelity hold), acceptance run queued, then merge after `main` is green. Hall H1 same work, calibration ok. World W1 same, W2 same. **Draw regression is real**: alternating runs, `a4a124be` S2 4× workP50 6.2–7.3 ms, `main` 11.5–12.4 ms (bank 6.3–6.7 vs 11.8–13.7): an engineer bisects in `p23b` until 06:45 (`diag/draw-regression`).
 
 ## Summaries
+
+*Fri 6 Nov 13:45. Director stopped at its usage limit. On main and pushed today: the six overnight pieces, Guild Hall sky and panel, world map, time-away summary, settings and title screen, encyclopedia words, Disallow removed, hard pixel, Hall ceremony, bench fights, Foundations (pack in cms/incoming), ring stars (pack in cms/incoming). Look list: docs/active/eyecheck/2026-11-06_merged_while_away.md. Builders told to commit WIP and stop: new-game (ng, fit to 1366 pending), drop lap (g5, merge waits for the owner's budgets), save files (s3, merge waits for the owner's OK), settle ceremony (m5, on ring-stars), small fixes (sb). Next: verify and merge each from its worktree STATUS.md; baselines at 01:00.*
 
 **Tue 2026-11-03, 03:30: night bench done.** Draw baseline saved b4aa17f2; performance round 2 about half the work on 40 piles, a quarter elsewhere, same work; waits for the owner's look.
 
