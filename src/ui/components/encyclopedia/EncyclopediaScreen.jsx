@@ -7,9 +7,11 @@ import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { CloseX } from '../base/CloseX.jsx';
 import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
+import { ProgressBar } from '../base/ProgressBar.jsx';
+import { Tooltip } from '../base/Tooltip.jsx';
 import { TOME_ART, TOME_SCALE, COVER_ART, spreadSize, pageRects } from '../atlas/tomeArt.js';
 import { POP_UP_S, prefersReducedMotion } from '../atlas/AtlasTome.jsx';
-import { encyclopedia, KINDS } from './encyclopediaModel.js';
+import { encyclopedia, KINDS, progressOf } from './encyclopediaModel.js';
 import { chartOf, chartMetrics, within, farSideOf, ROOT } from './encyclopediaChart.js';
 import { takeLookUp, onLookUp } from './encyclopediaLink.js';
 import { noteViewed, recentlyViewed } from './encyclopediaRecent.js';
@@ -39,6 +41,11 @@ export const PAGE = Object.freeze({ OPENING: 'opening', CHART: 'chart' });
 const TOOLBAR_H = 44;
 const PANEL_W = 288;
 const GAP = 12;
+
+/** The progress bars' strip along the foot of the pages, at the default text size, and its bars' height. */
+const PROGRESS_H = 34;
+const PROGRESS_BAR_H = 10;
+const PROGRESS_GAP = 16;
 
 /** The item toasts' column at the mat's right edge, which lies over the book: the close X keeps left of it. */
 const TOASTS_PX = 136;
@@ -114,27 +121,35 @@ function placeSpread(roomW, roomH) {
 /**
  * Where the opening page's two panels, and the chart page's bar, chart window and panel, lie on the
  * spread. The chart runs across both pages; the panel floats over its right end, and the view
- * keeps the focus clear of it (`chart.reserveRight`).
+ * keeps the focus clear of it (`chart.reserveRight`). The progress bars stand in a strip along the
+ * pages' foot, under the left page's panel and under the chart, which ends above it on both
+ * pages, so no box is ever drawn beneath them.
  */
 export function bookLayout(visible, k = 1) {
-    const { left, right } = pageRects(TOME_SCALE, visible, 8);
-    const top = Math.max(left.top, right.top);
-    const bottom = Math.min(left.top + left.height, right.top + right.height);
-    const leftEdge = left.width > 0 ? left.left : right.left;
+    const pages = pageRects(TOME_SCALE, visible, 8);
+    const { right } = pages;
+    const top = Math.max(pages.left.top, right.top);
+    const bottom = Math.min(pages.left.top + pages.left.height, right.top + right.height);
+    const leftEdge = pages.left.width > 0 ? pages.left.left : right.left;
     const panelW = Math.round(PANEL_W * k);
     const toolbarH = Math.round(TOOLBAR_H * k);
+    const progressH = Math.round(PROGRESS_H * k);
+    const foot = bottom - progressH;
     const panelLeft = right.left + right.width - panelW;
+    // The left page's own width, or the right page's when the screen crops the left one away.
+    const progressPage = pages.left.width > 0 ? pages.left : right;
     return {
-        left,
+        left: { ...pages.left, height: Math.max(0, Math.min(pages.left.height, foot - GAP - pages.left.top)) },
         right,
         toolbar: { left: leftEdge, top, width: Math.max(0, panelLeft - GAP - leftEdge), height: toolbarH },
         chart: {
             left: leftEdge,
             top: top + toolbarH + GAP,
             width: Math.max(0, right.left + right.width - leftEdge),
-            height: Math.max(0, bottom - top - toolbarH - GAP),
+            height: Math.max(0, foot - GAP - (top + toolbarH + GAP)),
             reserveRight: SHOW_PANEL ? panelW + GAP : 0
         },
+        progress: { left: progressPage.left, top: foot, width: progressPage.width, height: progressH },
         panel: { left: panelLeft, top, width: panelW, maxHeight: Math.max(0, bottom - top) }
     };
 }
@@ -152,6 +167,31 @@ const PageArt = ({ side }) => {
             // ⚠️ Inline: a global img rule would cap the width and squash the art.
             style={{ left: side === 'right' ? size : 0, width: size, height: size, maxWidth: 'none', imageRendering: 'pixelated' }}
         />
+    );
+};
+
+/**
+ * This run's progress, one count and bar per kind, along the foot of the left page: ink on the
+ * parchment, the counts over hard-pixel bars. Hover says what counts.
+ */
+const ProgressStrip = ({ progress, rect, k }) => {
+    const gap = Math.round(PROGRESS_GAP * k);
+    const cell = Math.max(0, Math.floor((rect.width - gap * (progress.length - 1)) / progress.length));
+    const barW = cell - (cell % 2);
+    return (
+        <div data-codex-progress className="absolute flex items-end" style={{ ...rect, gap }}>
+            {progress.map(({ kind, found, total }) => (
+                <Tooltip key={kind} title={t(`encyclopedia.kind.${kind}`)} lines={[t('encyclopedia.progressTip', { found, total }), t(`encyclopedia.progressWhat.${kind}`), t('encyclopedia.progressScope')]}>
+                    <div data-codex-progress-kind={kind} data-found={found} data-total={total} className="flex flex-col gap-1" style={{ width: barW }}>
+                        <div className="flex items-baseline justify-between gap-1 ui-text-ink ui-text-small font-bold leading-none whitespace-nowrap">
+                            <span>{t(`encyclopedia.kind.${kind}`)}</span>
+                            <span className="tabular-nums">{t('encyclopedia.progress', { found: found.toLocaleString('en-US'), total: total.toLocaleString('en-US') })}</span>
+                        </div>
+                        <ProgressBar value={found} max={total} width={barW} height={Math.round(PROGRESS_BAR_H * k / 2) * 2} />
+                    </div>
+                </Tooltip>
+            ))}
+        </div>
     );
 };
 
@@ -233,6 +273,8 @@ export const EncyclopediaScreen = ({ onClose }) => {
     // Read when the page changes: the run moves on behind an open screen, and nothing here listens.
     const got = useMemo(() => collectedOf(), [page, focusKey, term]); // eslint-disable-line react-hooks/exhaustive-deps
     const heroes = GameState.heroes;
+    // Read once as the book opens: a count moves when the book is opened again.
+    const progress = useMemo(() => progressOf(book, collectedOf()), [book]);
 
     const tree = useMemo(
         () => (chart ? chartOf(book, chart.start, { grown: chart.grown, far: chart.far, opened: chart.opened }) : null),
@@ -357,6 +399,7 @@ export const EncyclopediaScreen = ({ onClose }) => {
                         )}
                     </>
                 )}
+                <ProgressStrip progress={progress} rect={at.progress} k={k} />
                 <CloseX onClick={() => onClose?.()} label={t('common.close')} data-codex-close className="absolute z-30" style={{ left: closeLeft, top: closeTop }} />
             </motion.section>
         </div>

@@ -5,15 +5,21 @@ import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { itemKey, tokenKey, recipeKey } from '../../../systems/progression/ledger/engine.js';
 
 let pending = null;
+let back = null;
 const listeners = new Set();
 
 /**
  * Open the Encyclopedia at `key` (a ledger key: `item:<id>`, `token:<id>`, `recipe:<id>`). The
  * screen takes the entry when it opens ({@link takeLookUp}); one already open moves to it.
+ *
+ * `back`, when the book is opened from somewhere the player should return to (a Token's recipe
+ * list: `{ recipesOf: instanceId }`), is kept until the book closes ({@link takeBack}). A link
+ * followed while the book is open keeps the way back it was opened with.
  */
-export function lookUp(key) {
+export function lookUp(key, { back: backTo = null } = {}) {
     if (typeof key !== 'string' || !key) return;
     pending = key;
+    if (!isEncyclopediaOpen()) back = backTo;
     for (const fn of [...listeners]) fn(key);
     EventBus.publish(UI_EVENTS.OPEN_ENCYCLOPEDIA, { key });
 }
@@ -24,7 +30,7 @@ export function lookUpRibbon(kind, id) {
     lookUp(kind === 'token' ? tokenKey(id) : itemKey(id));
 }
 
-export const lookUpItem = (id) => lookUp(itemKey(id));
+export const lookUpItem = (id, options) => lookUp(itemKey(id), options);
 export const lookUpToken = (id) => lookUp(tokenKey(id));
 export const lookUpRecipe = (id) => lookUp(recipeKey(id));
 
@@ -33,6 +39,13 @@ export function takeLookUp() {
     const key = pending;
     pending = null;
     return key;
+}
+
+/** Where to go back to as the book closes, once: null when it was opened from nowhere to return to. */
+export function takeBack() {
+    const to = back;
+    back = null;
+    return to;
 }
 
 /** Whether the Encyclopedia is open: only the open screen listens for look-ups. */

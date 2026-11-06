@@ -244,6 +244,38 @@ describe('RecipeList', () => {
         expect(onChoose).toHaveBeenCalledWith('r_roast');
     });
 
+    it('an ingredient is its own link: a click on it opens its page and does not choose the recipe; the rest of the row still chooses', () => {
+        const onChoose = vi.fn();
+        const onLookUp = vi.fn();
+        open({ onChoose, onLookUp });
+        const row = document.querySelector('[data-recipe-id="r_pie"]');
+        const pill = row.querySelector('[data-recipe-input="item_blueberry"]');
+        expect(pill.dataset.recipeInputLink).toBe('true');
+        // Hovering the ingredient outlines it, not the row.
+        fireEvent.pointerEnter(row);
+        expect(row.style.outline).toContain('2px solid');
+        fireEvent.pointerEnter(pill);
+        expect(pill.style.outline).toContain('2px solid');
+        expect(row.style.outline).toBe('none');
+        fireEvent.pointerLeave(pill);
+        expect(pill.style.outline).toBe('');
+        fireEvent.click(pill);
+        expect(onLookUp).toHaveBeenCalledWith('item_blueberry');
+        expect(onChoose).not.toHaveBeenCalled();
+        fireEvent.click(row.querySelector('[data-recipe-xp]'));
+        expect(onChoose).toHaveBeenCalledWith('r_pie');
+        expect(onLookUp).toHaveBeenCalledTimes(1);
+    });
+
+    it('without a link (no card to come back to) an ingredient is part of the row and chooses it', () => {
+        const onChoose = vi.fn();
+        open({ onChoose });
+        const pill = document.querySelector('[data-recipe-id="r_pie"] [data-recipe-input="item_blueberry"]');
+        expect(pill.dataset.recipeInputLink).toBeUndefined();
+        fireEvent.click(pill);
+        expect(onChoose).toHaveBeenCalledWith('r_pie');
+    });
+
     it('silhouettes are not buttons', () => {
         open();
         for (const el of document.querySelectorAll('[data-recipe-locked]')) expect(el.tagName).not.toBe('BUTTON');

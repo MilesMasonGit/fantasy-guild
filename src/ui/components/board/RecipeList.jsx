@@ -13,12 +13,15 @@ import { skillLevelText } from '../dock/heroPanelSkills.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
 import { formatClock } from '../drawer/lifecycleLines.js';
+import { t } from '../../../i18n/index.js';
 
 /**
  * The recipe list a station's or Foundation's card flips to: one row per recipe, level first,
  * a hero-face divider at each permitted hero's level, the next locked recipes as "???", and a
- * search over inputs and outputs. One click on a row chooses it. Rows never wrap or cut off: the
- * card grows to the widest row, and the card's scroller takes the height.
+ * search over inputs and outputs. One click on a row chooses it, except on an ingredient: that is
+ * its own target (its own white outline, the row's goes out) and opens the ingredient's page in the
+ * Encyclopedia, when the card gives `onLookUp`. Rows never wrap or cut off: the card grows to the
+ * widest row, and the card's scroller takes the height.
  */
 
 const WHITE = 'var(--color-ui-white)';
@@ -41,15 +44,35 @@ const OutputIcon = ({ out, dim = false }) => (
         : <ItemIcon item={out.itemId} size={32} title={null} className={dim ? 'opacity-60' : undefined} />
 );
 
-/** An input: sprite and have/need, red when short; its hover names it. */
-const InputPill = ({ input }) => (
-    <Tooltip title={input.name} lines={[`Have ${input.have.toLocaleString('en-US')}, need ${input.need.toLocaleString('en-US')}`]}>
-        <span data-recipe-input={input.itemId} data-short={input.short ? 'true' : undefined} className="inline-flex items-center gap-0.5 tabular-nums">
-            <ItemIcon item={input.itemId} size={32} title={null} />
-            <span style={{ color: input.short ? RED : undefined }}>{input.have.toLocaleString('en-US')}/{input.need.toLocaleString('en-US')}</span>
-        </span>
-    </Tooltip>
-);
+/**
+ * An input: sprite and have/need, red when short; its hover names it. With `onLookUp` it is a link
+ * of its own inside the row: hovering it outlines it and not the row, and a click opens its page
+ * without choosing the recipe.
+ */
+const InputPill = ({ input, onLookUp, onHover }) => {
+    const [hover, setHover] = useState(false);
+    const lit = (on) => { setHover(on); onHover?.(on); };
+    const have = `Have ${input.have.toLocaleString('en-US')}, need ${input.need.toLocaleString('en-US')}`;
+    return (
+        <Tooltip title={input.name} lines={onLookUp ? [have, t('encyclopedia.ingredientTip'), t('encyclopedia.ingredientBack')] : [have]}>
+            <span
+                data-recipe-input={input.itemId}
+                data-short={input.short ? 'true' : undefined}
+                data-recipe-input-link={onLookUp ? 'true' : undefined}
+                role={onLookUp ? 'link' : undefined}
+                aria-label={onLookUp ? `${input.name}: ${t('encyclopedia.ingredientTip')}` : undefined}
+                onClick={onLookUp ? (e) => { e.stopPropagation(); onLookUp(input.itemId); } : undefined}
+                onPointerEnter={onLookUp ? () => lit(true) : undefined}
+                onPointerLeave={onLookUp ? () => lit(false) : undefined}
+                className="inline-flex items-center gap-0.5 tabular-nums"
+                style={onLookUp && hover ? { outline: `2px solid ${WHITE}`, outlineOffset: 0 } : undefined}
+            >
+                <ItemIcon item={input.itemId} size={32} title={null} />
+                <span style={{ color: input.short ? RED : undefined }}>{input.have.toLocaleString('en-US')}/{input.need.toLocaleString('en-US')}</span>
+            </span>
+        </Tooltip>
+    );
+};
 
 /** A tool, beside-it Token, Foundation rung or the ground a build needs: the card's hollow bar, red when unmet. */
 const RequirementBar = ({ req }) => {
@@ -102,8 +125,11 @@ const CropTerms = ({ crop }) => {
     );
 };
 
-const RecipeRow = ({ row, crop = null, selected, onChoose }) => {
+const RecipeRow = ({ row, crop = null, selected, onChoose, onLookUp }) => {
     const [hover, setHover] = useState(false);
+    // The pointer on an ingredient link: the link is outlined, not the row.
+    const [onLink, setOnLink] = useState(false);
+    const rowLit = hover && !onLink;
     return (
         <button
             type="button"
@@ -111,15 +137,15 @@ const RecipeRow = ({ row, crop = null, selected, onChoose }) => {
             data-recipe-selected={selected ? 'true' : undefined}
             onClick={(e) => { e.stopPropagation(); onChoose(row.id); }}
             onPointerEnter={() => setHover(true)}
-            onPointerLeave={() => setHover(false)}
+            onPointerLeave={() => { setHover(false); setOnLink(false); }}
             className={cn('flex items-center gap-2 px-1.5 py-0.5 text-left whitespace-nowrap cursor-pointer ui-text-body text-gi-text', selected && 'bg-gi-gold/15')}
             style={{
-                outline: hover ? `2px solid ${WHITE}` : (selected ? `2px solid ${GOLD}` : 'none'),
+                outline: rowLit ? `2px solid ${WHITE}` : (selected ? `2px solid ${GOLD}` : 'none'),
                 outlineOffset: -2
             }}
         >
             <span data-recipe-level className="w-6 shrink-0 text-right tabular-nums font-bold" style={selected ? { color: GOLD } : undefined}>{row.level}</span>
-            {row.inputs.map(i => <InputPill key={i.itemId} input={i} />)}
+            {row.inputs.map(i => <InputPill key={i.itemId} input={i} onLookUp={onLookUp} onHover={setOnLink} />)}
             {row.requirements.map(r => <RequirementBar key={r.key} req={r} />)}
             {(row.inputs.length > 0 || row.requirements.length > 0) && <span className="text-gi-muted">→</span>}
             {row.main && <OutputHeadline out={row.main} />}
@@ -190,9 +216,9 @@ const HeroDivider = ({ entry, heroesById, skill }) => (
 /**
  * @param {{ def: object, instanceId?: string|null, selectedRecipeId?: string|null,
  *   workerId?: string|null, heroes?: object[], onChoose: (id: string) => void,
- *   onBack?: () => void }} props
+ *   onBack?: () => void, onLookUp?: (itemId: string) => void }} props
  */
-export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, workerId = null, heroes = [], onChoose, onBack }) => {
+export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, workerId = null, heroes = [], onChoose, onBack, onLookUp }) => {
     const [query, setQuery] = useState('');
     const rootRef = useRef(null);
     const { skill, entries } = recipeListFor(def, { workerId, heroes, query });
@@ -253,7 +279,7 @@ export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, wo
                     }
                     if (entry.kind === ENTRY.LOCKED) return <LockedRow key={`l${entry.key}`} entry={entry} />;
                     const row = recipeRowOf(entry.recipe, entry.level, instanceId);
-                    return <RecipeRow key={row.id} row={row} crop={isField ? cropTermsOf(entry.recipe) : null} selected={row.id === selectedRecipeId} onChoose={onChoose} />;
+                    return <RecipeRow key={row.id} row={row} crop={isField ? cropTermsOf(entry.recipe) : null} selected={row.id === selectedRecipeId} onChoose={onChoose} onLookUp={onLookUp} />;
                 })}
             </div>
         </div>

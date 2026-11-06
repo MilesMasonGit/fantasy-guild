@@ -24,7 +24,7 @@ import { takeRecipeListRequest, onRecipeListRequest } from './recipeFlip.js';
 import { CloseX } from '../base/CloseX.jsx';
 import { StatCell } from '../base/StatCell.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
-import { lookUpRibbon, lookUpToken, lookUpRecipe } from '../encyclopedia/encyclopediaLink.js';
+import { lookUpRibbon, lookUpToken, lookUpRecipe, lookUpItem } from '../encyclopedia/encyclopediaLink.js';
 import { t } from '../../../i18n/index.js';
 
 /** The activity scenes are 256 px square; they only ever draw at whole multiples of it. */
@@ -620,6 +620,7 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
                 heroes={GameState.state?.heroes || []}
                 onChoose={choose}
                 onBack={() => setView('card')}
+                onLookUp={onClose ? (itemId) => lookUpItem(itemId, { back: { recipesOf: instanceId } }) : undefined}
             />
         </div>
     ) : (

@@ -46,14 +46,14 @@ const search = (c, term) => fireEvent.change(q(c, '[data-codex-search]'), { targ
 const rowKeys = (c, sel) => qa(c, `${sel} [data-codex-row]`).map(r => r.getAttribute('data-codex-row'));
 
 describe('the opening page', () => {
-    it('opens on a search and the entries looked at lately, with no kind tabs, counts or collected list', () => {
+    it('opens on a search and the entries looked at lately, with no kind tabs or collected list; the counts stand at the page foot', () => {
         const { container } = open();
         expect(page(container)).toBe(PAGE.OPENING);
         expect(q(container, '[data-codex-search]')).not.toBeNull();
         expect(q(container, '[data-codex-recent="viewed"]')).not.toBeNull();
         expect(q(container, '[data-codex-recent="collected"]')).toBeNull();
         expect(q(container, '[role="tab"]')).toBeNull();
-        expect(q(container, '[data-codex-progress]')).toBeNull();
+        expect(qa(container, '[data-codex-progress] [data-codex-progress-kind]')).toHaveLength(4);
         // The Atlas's book.
         expect(qa(container, '[data-codex-page-art]').map(i => i.getAttribute('src'))).toEqual(['/assets/playmat/atlas_book_left.png', '/assets/playmat/atlas_book_right.png']);
     });

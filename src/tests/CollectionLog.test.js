@@ -112,14 +112,14 @@ describe('lifetime totals', () => {
 });
 
 describe('the screen', () => {
-    it('ticks what is collected on the chart and in the search, with no per-kind counts', () => {
+    it('ticks what is collected on the chart and in the search, and counts it at the page foot', () => {
         RegistryManager.recordItemGain('item_iron_ore', 1);
         lookUp('item:item_iron_ingot');
         const { container } = render(React.createElement(EncyclopediaScreen, { onClose: () => {} }));
         const node = (key) => [...container.querySelectorAll(`[data-codex-key="${key}"]`)].find(n => n.getAttribute('data-codex-side') === 'in');
         expect(node('item:item_iron_ore').querySelector('[data-codex-tick]')).not.toBeNull();
         expect(node('item:item_coal').querySelector('[data-codex-tick]')).toBeNull();
-        expect(container.querySelector('[data-codex-progress]')).toBeNull();
+        expect(Number(container.querySelector('[data-codex-progress-kind="items"]').dataset.found)).toBeGreaterThanOrEqual(1);
         fireEvent.change(container.querySelector('[data-codex-search]'), { target: { value: 'iron ore' } });
         expect(container.querySelector('[data-codex-row="item:item_iron_ore"] [data-codex-tick]')).not.toBeNull();
         expect(encyclopedia().byKind[KIND.ITEM].length).toBeGreaterThan(0);

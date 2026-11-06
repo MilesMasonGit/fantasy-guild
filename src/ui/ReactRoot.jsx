@@ -13,6 +13,7 @@ import { setMatBankLocked } from './hooks/useMatBankLock.js';
 import { useUIModals } from './hooks/useUIModals.js';
 import { useEscapeLayer } from './utils/escapeLayers.js';
 import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
+import { useEncyclopediaBack } from './hooks/useEncyclopediaBack.js';
 import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
 import { useWorldMapRequests } from './hooks/useWorldMapRequests.js';
 
@@ -183,6 +184,9 @@ export const ReactRoot = () => {
         if (openView === 'guild') handleCloseGuildHall();
         else if (openView) navToggle(openView);
     }, openView);
+
+    // A book opened from a Token's recipe list brings that card back as it closes.
+    useEncyclopediaBack(isEncyclopediaOpen, !!openView && openView !== 'encyclopedia', onInspectToken);
 
     const [inspectHeroId, setInspectHeroId] = React.useState(null);
     const toggleInspectHero = React.useCallback((id) => setInspectHeroId(prev => (prev === id ? null : id)), []);
