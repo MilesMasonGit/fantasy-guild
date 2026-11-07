@@ -1,34 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { slugify, generateId } from '../utils/idGenerator';
-import { runSim } from '../engine/sim/simRunner';
-import { buildChurnReport } from '../engine/sim/churn';
-import { buildSimAnswers } from '../engine/sim/answers';
-import { buildChainTrails } from '../engine/sim/chain';
-import {
-    migrateLegacyIntent,
-    applyItemResults,
-    applyTokenResults,
-    applyRecipePoolResults,
-} from '../engine/sim/writeBack';
-import { auditConnectivity } from '../engine/connectivityAuditor';
 import { useSimulationStore } from './useSimulationStore';
-import { composeTokenDescription } from '../engine/descriptionDictionary';
 import {
-    deriveTokenType, statementsOf, makeStatement, KEYWORD,
-    migrateBearers, migrateAppliesTargetsIn, migrateSkillIdsIn, migrateRecipePools,
-    migrateEffectLibrary, migrateEffectIdsIn, migratePerkEffectIds,
-    expandBearer, expandAll, effectRefsOf, provisionalName,
+    statementsOf, makeStatement, KEYWORD,
+    effectRefsOf, provisionalName,
     normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_DEFAULTS, CAMP_REACH_DEFAULT,
 } from '../utils/constants';
-import { seedSimIntent } from './simIntentNormaliser';
 import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
-import { normaliseWorkspacePerks, withPerkRow, withoutPerkRow } from '../engine/skillPerks';
-import { workspaceSkyFrom } from '../engine/hallSky';
-import { workspaceWorldFrom } from '../engine/worldTables';
+import { withPerkRow, withoutPerkRow } from '../engine/skillPerks';
 import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRenames';
-import { splitPlanned, rejoinPlanned } from '../engine/planFile';
 import { workspaceStorage } from '../engine/diskWorkspace';
+import { seedStoredWorkspace, workspaceFromImport } from '../engine/workspaceSeeds';
+import { recalculateWorkspace, balancedForSync } from '../engine/recalculate';
 
 /** The CMS's authored content, in one store: the keyed collections `items` and `tokens`, the named effect library, and the per-skill recipe pools. Enemy is a filtered view of the Token list. */
 
@@ -39,34 +23,6 @@ import { workspaceStorage } from '../engine/diskWorkspace';
  * ⚠️ A field-name list rather than a list of paths, on purpose: a path-based walker missed every place an item id was later added (pooled recipes, upkeep costs, trigger watch-items, CONVERT lists); matching the name covers a new site the day it is added.
  */
 const ITEM_ID_FIELDS = new Set(['itemId', 'watchItemId', 'bait']);
-
-const SEVERITY_WORD = { critical: 'Critical', warning: 'Warning', info: 'Info' };
-
-/**
- * One simulator row, as an audit-panel row.
- * ⚠️ It keeps the row's severity rather than flattening every row to a string badged Warning, which made a Critical (an item nothing produces) read exactly like an Info note.
- */
-function byId(collection) {
-    const out = {};
-    for (const [key, record] of Object.entries(collection || {})) {
-        if (!record) continue;
-        out[record.id ?? key] = record;
-    }
-    return out;
-}
-
-function describeRow(row) {
-    const remedies = (row.remedies || []).length > 0 ? `  → ${row.remedies.join('  → ')}` : '';
-    return {
-        severity: SEVERITY_WORD[row.severity] || 'Warning',
-        entityName: row.entityId || row.itemId || 'Balance Solver',
-        details: `[${row.code}] ${row.message}${remedies}`,
-        // Carried so the auditor can recognise a problem it would otherwise
-        // report a second time in its own words — see `auditConnectivity`.
-        code: row.code,
-        itemId: row.itemId,
-    };
-}
 
 /**
  * Deep-rewrite every item reference inside an arbitrary structure.
@@ -560,84 +516,6 @@ function makeEffect(data = {}) {
     };
 }
 
-/**
- * Move a workspace's inline statements into the named library.
- * ⚠️ This must run on EVERY load path (`merge`, `migrate` and `hydrate`): zustand skips `migrate` for a versionless blob and `hydrate` never touches localStorage, so a normaliser on one path silently skips workspaces. The CMS's own workspace lives in the author's browser, so it must move at the same time as `data/`.
- */
-function seedEffectLibrary(state = {}) {
-    const tokens = state.tokens || {};
-    const existing = state.effects || {};
-
-    const needsMigration = Object.values(tokens).some((t) => statementsOf(t).length > 0);
-    if (!needsMigration) return { ...state, effects: existing };
-
-    const items = state.items || {};
-    const nameOf = (id) => items[id]?.name || tokens[id]?.name || id;
-
-    const { effects, bearers } = migrateBearers(tokens, { existing, nameOf });
-    return { ...state, tokens: bearers, effects };
-}
-
-/**
- * The retired `target: 'enemy'` flag on `Applies` becomes the enemy role.
- * ⚠️ Runs on the same three load paths and calls the same pure function the game's registries call on load: Sync to Game writes this workspace wholesale, so a workspace still holding the flag would write it back into `data/`. Idempotent.
- */
-function seedAppliesTargets(state = {}) {
-    if (!state) return state;
-    const effects = migrateAppliesTargetsIn(state.effects || {});
-    const tokens = migrateAppliesTargetsIn(state.tokens || {});
-    const items = migrateAppliesTargetsIn(state.items || {});
-    if (effects === (state.effects || {}) && tokens === (state.tokens || {}) && items === (state.items || {})) {
-        return state;
-    }
-    return { ...state, effects, tokens, items };
-}
-
-/**
- * A renamed skill id (Logging → Forestry) is rewritten wherever the workspace names a skill, and a recipe pool under the old key moves to the new one.
- * ⚠️ Runs first on the same three load paths and calls the same pure function the game's loaders call: Sync to Game writes this workspace wholesale, so a workspace still naming the old id would write it back into `data/`. Idempotent.
- */
-function seedSkillIds(state) {
-    if (!state || typeof state !== 'object') return state;
-    let next = state;
-    const replace = (key, value) => {
-        if (value === state[key]) return;
-        if (next === state) next = { ...state };
-        next[key] = value;
-    };
-    replace('tokens', migrateSkillIdsIn(state.tokens));
-    replace('effects', migrateSkillIdsIn(state.effects));
-    replace('items', migrateSkillIdsIn(state.items));
-    replace('recipePools', migrateRecipePools(state.recipePools));
-    return next;
-}
-
-/**
- * A renamed library effect (the Poison status became Venom) moves to its new id, keeping its place, and every Token, item, effect and perk naming it follows.
- * ⚠️ Runs on the same three load paths and calls the same pure functions the game's loaders call: Sync to Game writes this workspace wholesale, so a workspace still naming the old id would write it back into `data/`. Idempotent.
- */
-function seedEffectIds(state) {
-    if (!state || typeof state !== 'object') return state;
-    let next = state;
-    const replace = (key, value) => {
-        if (value === state[key]) return;
-        if (next === state) next = { ...state };
-        next[key] = value;
-    };
-    replace('effects', migrateEffectLibrary(state.effects));
-    replace('tokens', migrateEffectIdsIn(state.tokens));
-    replace('items', migrateEffectIdsIn(state.items));
-    replace('skillPerks', migratePerkEffectIds(state.skillPerks));
-    return next;
-}
-
-/** A workspace saved before maps were items carries the retired `maps` collection; it is dropped on load, never read. */
-function dropRetiredCollections(state) {
-    if (!state || typeof state !== 'object' || !('maps' in state)) return state;
-    const rest = { ...state };
-    delete rest.maps;
-    return rest;
-}
 
 const FACTORIES = {
     items: { make: makeItem, prefix: 'item', type: 'item' },
@@ -955,147 +833,42 @@ export const useEntityStore = create(
              * ⚠️ This path bypasses the persist `migrate` hook entirely: an imported workspace never touches localStorage on the way in, so `seedSimIntent` runs here as well as on the persist config's `merge`; the two together are the whole coverage.
              */
             hydrate: (data = {}) => {
-                const seeded = seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent({
-                    items: data.items || {},
-                    tokens: data.tokens || {},
-                    effects: data.effects || {},
-                    recipePools: data.recipePools || {},
-                    skillPerks: data.skillPerks,
-                })))));
                 set({
-                    items: seeded.items,
-                    tokens: seeded.tokens,
-                    effects: seeded.effects,
-                    recipePools: seeded.recipePools,
-                    starterCamp: normaliseStarterCamp(data.starterCamp),
-                    skillPerks: normaliseWorkspacePerks(seeded.skillPerks),
-                    ...workspaceSkyFrom(data),
-                    world: workspaceWorldFrom(data.world),
-                    planSettings: data.planSettings && typeof data.planSettings === 'object' ? data.planSettings : null,
+                    ...workspaceFromImport(data),
                     activeEntityId: null,
                     activeEntityType: null,
                 });
             },
 
             /**
-             * Recalculate Economy on demand: runs the economic simulator's whole line (TIME → ANCHOR → PRICE → TUNE → MAP + XP) and writes the result back into the fields the game reads (see `sim/writeBack.js`).
-             * ⚠️ The write-back also strips retired fields: Sync writes from this store, so a stale workspace heals on its first Recalculate.
+             * Recalculate Economy on demand (`engine/recalculate.js`, which the command line runs too): the simulator's results land in the simulation store and the workspace takes the recalculated collections. Returns what Sync builds its files from.
              */
             recalculateEconomy: (globals = {}) => {
                 const workspace = useEntityStore.getState();
-                // ⚠️ Planned stubs never reach the game, so the line never sees them: no price, no audit row, no description naming one. They are set aside here and put back unchanged at the end.
-                const { live, planned } = splitPlanned(workspace);
-                const state = { ...workspace, ...live };
-
-                // The legacy `isPrimarySource` flag becomes the `anchor` intent flag BEFORE the passes run, because the anchor election reads `anchor`.
-                const migrated = migrateLegacyIntent(state);
-
-                /** ⚠️ Migrate to the library FIRST, then expand; the order is not cosmetic. `finalTokens` below strips `statements` on the way to the file, which is correct once the rules are in the library and silent data loss before it. Expanding matters because several passes read a Token's rules (`writeBack`'s `deriveTokenType` decides whether a Token is a station); unexpanded, every station reprices as an ordinary resource. */
-                const seeded = seedEffectLibrary({
-                    items: state.items,
-                    tokens: migrated.tokens,
-                    effects: state.effects,
+                const { workspace: next, report } = recalculateWorkspace(workspace, globals?.simDials || {}, {
+                    previousChurn: useSimulationStore.getState().churnReport,
                 });
-                const library = seeded.effects;
-                migrated.tokens = expandAll(seeded.tokens, library);
-
-                const flatten = (pools) => {
-                    const recipes = {};
-                    // Every recipe the simulator sees: the skill pools.
-                    for (const [skillId, pool] of Object.entries(pools || {})) {
-                        (pool || []).forEach((r, idx) => {
-                            // A recipe's synthetic `pooled_<skill>_<idx>` key is only a fallback for older workspaces that predate `id`.
-                            const id = r.id || `pooled_${skillId}_${idx}`;
-                            recipes[id] = { ...r, id, skill: r.skill || skillId };
-                        });
-                    }
-                    return recipes;
-                };
-
-                const sim = runSim(
-                    {
-                        items: state.items,
-                        tokens: migrated.tokens,
-                        recipes: flatten(migrated.recipePools),
-                    },
-                    globals?.simDials || {}
-                );
-
-                const items = applyItemResults(state.items, sim);
-                const tokens = applyTokenResults(migrated.tokens, sim);
-                const recipePools = applyRecipePoolResults(migrated.recipePools, sim);
-                const recipes = flatten(recipePools);
-
-                // Every Token's type and description are DERIVED here, on the way to the file: a description is its rules, rendered, so the two cannot drift.
-                // ⚠️ The description says nothing about Tempo or Purpose: those are authoring tags, not something a player is told.
-                // ⚠️ Each is expanded against the library on the way through and the expansion is deliberately NOT kept: writing resolved statements into `data/tokens.json` would put a second copy of every rule beside the library. The file keeps the references.
-                const finalTokens = {};
-                // Every Token expanded, so a description can name the tool a requirement asks for.
-                const expandedTokens = Object.fromEntries(
-                    Object.entries(tokens).map(([tokenId, token]) => [tokenId, expandBearer(token, library)])
-                );
-                for (const [tokenId, token] of Object.entries(tokens)) {
-                    const expanded = expandedTokens[tokenId];
-                    const next = { ...token, tokenType: deriveTokenType(expanded).type };
-                    next.description = composeTokenDescription(expanded, items, recipePools, expandedTokens);
-                    delete next.descriptionOverride;
-                    delete next.statements;
-                    // An empty "Stands on" means anywhere dry, which is what no list says too.
-                    if (Array.isArray(next.standsOn) && next.standsOn.length === 0) delete next.standsOn;
-                    // A "Stands near" row left blank names nothing; none left means no such rule.
-                    if (Array.isArray(next.standsNear)) {
-                        const near = next.standsNear.filter((id) => typeof id === 'string' && id);
-                        if (near.length) next.standsNear = near; else delete next.standsNear;
-                    }
-                    finalTokens[tokenId] = next;
-                }
-
-                // The simulator's rows reach the graph audit through its refusal channel, one line of prose per row.
-                const auditIssues = auditConnectivity({
-                    items,
-                    tokens: finalTokens,
-                    recipes,
-                    // For the skill check, which must expand a Token to recognise a Promotion Token. Read-only; nothing is written.
-                    effects: library,
-                    skillPerks: state.skillPerks,
-                }, sim.rows.map(describeRow));
 
                 useSimulationStore.getState().setAuditResults(
-                    auditIssues,
+                    report.auditIssues,
                     {},
                     null,
-                    items,
-                    finalTokens,
-                    recipes,
+                    report.items,
+                    report.tokens,
+                    report.recipes,
                     {}
                 );
-
-                // The churn report diffs against the previous report's refusal keys, and `state.items` is the only record of every value before this run wrote over it, so both are read here, before `set`.
-                const ranAt = Date.now();
-                const churnReport = buildChurnReport(sim, {
-                    itemsBefore: state.items,
-                    previous: useSimulationStore.getState().churnReport,
-                    ranAt,
-                });
                 useSimulationStore.getState().setSimResults({
-                    // Fingerprinted against the records as written, so any later edit shows the panel's stale badge.
-                    simAnswers: buildSimAnswers(sim, {
-                        tokens: byId(finalTokens),
-                        // ⚠️ The pool records, not the flattened copies: flattening injects `id` and `skill`, and a fingerprint over an injected field would read as an edit the author never made.
-                        recipes: byId(Object.values(recipePools).flat().filter(Boolean)),
-                    }, ranAt),
-                    churnReport,
+                    simAnswers: report.simAnswers,
+                    churnReport: report.churnReport,
                     // The rows with their structure intact, for the anchor re-elect card; the audit channel flattens them.
-                    simRows: sim.rows,
-                    simChains: Object.fromEntries(buildChainTrails(sim)),
+                    simRows: report.sim.rows,
+                    simChains: report.simChains,
                 });
 
-                set({ ...rejoinPlanned(workspace, { items, tokens: finalTokens, recipePools }), effects: library });
+                set({ items: next.items, tokens: next.tokens, recipePools: next.recipePools, effects: next.effects });
 
-                return {
-                    items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp, skillPerks: state.skillPerks ?? null,
-                    hallConstellations: state.hallConstellations ?? null, hallStars: state.hallStars ?? null, world: state.world ?? null, planned, planSettings: state.planSettings ?? null
-                };
+                return balancedForSync(workspace, report);
             },
 
             /**
@@ -1146,10 +919,10 @@ export const useEntityStore = create(
             /** The default merge plus the seeding. The spread order is zustand's own default (persisted wins over the fresh store, so actions survive and data is replaced); only `seedSimIntent` is added. */
             merge: (persistedState, currentState) => ({
                 ...currentState,
-                ...seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState)))))),
+                ...seedStoredWorkspace(persistedState),
             }),
             /** Reached only by a numbered version that is not 1. Seeds anyway: the normaliser is idempotent, and a future migration should never be the reason intent went missing. */
-            migrate: (persistedState) => seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState)))))),
+            migrate: (persistedState) => seedStoredWorkspace(persistedState),
             /**
              * What survives a reload.
              * ⚠️ `activeEntityId` is in here deliberately: without it, anything that re-created this module (registering a sprite writes `sprite-manifest.js`, which the editors import, so Vite reloaded them) dropped the selection and closed the editor.
