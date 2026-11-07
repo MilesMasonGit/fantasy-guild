@@ -28,8 +28,9 @@ import { qaOrder } from './qaOrders.js';
  * reload), stand-in art from the content:
  * - a QA Brittle Woodaxe (a Woodaxe tool) and a QA Brittle Sword (a Melee weapon), each with a
  *   25 % chance to break, so a break comes within a minute or so;
- * - a QA Endless Oak (needs a Woodaxe, never runs out, a 2 s cycle) and a QA Training Slime (level
- *   1, never runs out: it rests and stands up again after each kill).
+ * - a QA Endless Oak (needs a Woodaxe, never runs out, a 2 s cycle) and a QA Training Slime (6 HP,
+ *   hits for 1, never runs out: it rests and stands up again after each kill), so the Melee 30
+ *   QA Duelist outlasts many kills.
  */
 export const QA_BREAK = Object.freeze({
     AXE: 'qa_l1_brittle_axe',
@@ -67,7 +68,7 @@ function registerQa() {
         [QA_BREAK.SLIME]: {
             id: QA_BREAK.SLIME, name: 'QA Training Slime', tokenType: 'enemy', rarity: 'common', theme: 'qa', uses: null,
             sprite: getTokenType('token_greater_slime')?.sprite || 'e_slime_green_greater', requiresHero: true,
-            enemy: { style: 'melee', level: 1 },
+            enemy: { style: 'melee', level: 1, hp: 6, hit: 1 },
             config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
         }
     });
@@ -115,7 +116,7 @@ export function setUpBreakScene() {
     TileModifiers.rebuildAll();
 
     const cutter = qaHero('QA Woodcutter', 10, QA_BREAK.AXE);
-    const duelist = qaHero('QA Duelist', 10, QA_BREAK.SWORD);
+    const duelist = qaHero('QA Duelist', 30, QA_BREAK.SWORD);
     if (!cutter || !duelist) return { ok: false, error: 'The roster would not take two more heroes' };
     InventoryManager.addItem(QA_BREAK.AXE, 1);
     qaOrder(cutter.id, { x: oak.x, y: oak.y });

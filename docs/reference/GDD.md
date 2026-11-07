@@ -623,6 +623,9 @@ the Bank, one per catch or per shot (§3 Fishing, §6 The fight).
   stays. Past a category's cap or a full pair of hands, what the receiver puts
   down goes to the Bank, as with any equip. A hero handed away from their work
   tool stops, keeps their flag and shows the yellow alert.
+- **Tools and weapons that break** (brief 480 L1): a tool or a weapon may carry
+  a **break chance** (§5). Nothing equips a spare from the Bank when one breaks:
+  no order, camp or rule equips anything by itself; only the player does.
 - **A weapon** is anything held in the hands that is not a gathering tool or an
   off-hand item. It names **one style** (`styles: ['melee']`; an older list of
   two fights in its first and the audits say so), its **damage**, its **speed**
@@ -794,6 +797,27 @@ less micromanagement than area flags).
   (T-306). *(`BankItemWindow.jsx`)*
 - **Supply is automatic**: Tokens take inputs from the Bank, then from loot on
   the mat. A cycle is all-or-nothing; first come, first served.
+- **Tools and weapons that break** — **Built (brief 480 L1); no content uses
+  it yet.** An item's `breakChance` (CMS: Break chance %, on a tool or a weapon
+  only; a percent above 0 and up to 100) is rolled **only as a cycle it was
+  used for completes**, never part-way (owner 2026-11-05: the swing is just
+  art): a **tool** at the end of each work cycle on a Token that needs it (the
+  first fitting tool in the hands, the one the cycle used; a failed cycle
+  counts), a **weapon** at each **kill** (a fight's cycle), the weapon swung.
+  A broken item is gone from the hero's hands for good, and nothing takes its
+  place. The hero says "Rusty Woodaxe broke!" (gold) and stops with the yellow
+  alert: with a broken **tool** they keep their order and wait by the Token
+  ("Oak: Needs Woodaxe"; a second fitting tool in the other hand keeps them
+  working), working again once handed a new one; with a broken **weapon**
+  their order ends where they stand ("Needs a job"), since anyone may fight
+  barehanded and a kept order would punch on. **One random draw per such
+  cycle**, after everything else that cycle drew, and **none** for an item
+  with no chance, so time away breaks the same item on the same cycle as live
+  play, and content without the field plays exactly as before. Time away's
+  summary lists what broke (§10). The item's tooltip and Encyclopedia card say
+  the chance ("1% chance to break each cycle", "… each kill"). Both audits name
+  a chance on an item that is neither tool nor weapon, or out of range.
+  *(`itemBreak.js`, `equipment/Breakage.js`)*
 - **Recipes** (25, `data/tokenRecipes.json`): smithing 10 (copper → darkmetal
   ingots at levels 1–90, tools, nails), cooking 7, crafting 2 (Charcoal,
   Torch), farming 2, construction 4. Each costs the station 1 charge. A new
@@ -1043,7 +1067,8 @@ Their resistances, weaknesses and moves come with the combat content pack
 - **Random draws, in a fixed order** so a catch-up replays the same fights as
   live play: an enemy with two moves or more draws its move first in its
   swing; then each swing draws one number for the miss, on a hit one for the
-  crit, and one for the fraction only when the hit has one.
+  crit, and one for the fraction only when the hit has one. At a kill, a weapon
+  with a break chance draws one last (§5); without one, nothing.
 - Kills give XP to the style fought in (the weapon's) and count as a work cycle for
   neighbour rules. Loot drops on the mat, through the same yield, double-loot,
   double-item (a Cleaver's) and bonus-drop rules as a station's output (T-017).
@@ -1257,7 +1282,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   the number. Gear's own resistances and damage cuts are fields of the item
   (§4 Equipment), not rules, so each piece reads as the owner's example does
   ("Iron Chestplate: Physical resist 20 %; Magic damage −30 %"); a Type
-  Resistance % rule on gear still counts beside them.
+  Resistance % rule on gear still counts beside them. A tool's or weapon's
+  **break chance** is a field of the item too (§5), not a rule.
 - **An arrow's rules** count only on the shot that spends it: carried, it lends
   nothing; its On Swing and On Hit rules join the hero's for that swing.
 - **Spawns and enemies**: a `Spawns` rule never makes an enemy, a boss or not
@@ -1488,7 +1514,8 @@ drawers**. The menu can be flipped to the right.
   together (loot carried from the mat to the Bank while away counts once), and
   an item with more lying on the mat than before carries a small mat mark,
   its hover saying how many. **Right, the news**, in this order: knock-outs
-  (with the gear lost), the Bank refusing items, new recipes, first finds,
+  (with the gear lost), tools and weapons that broke (each with the hero who
+  stopped, §5), the Bank refusing items, new recipes, first finds,
   level-ups, Tokens used up, the fights (each enemy and its kill count). An
   empty column says so in one muted line. **Both buttons ask first**: Return
   to the Guild (plain wording, nothing is lost; Esc asks the same) and Load
