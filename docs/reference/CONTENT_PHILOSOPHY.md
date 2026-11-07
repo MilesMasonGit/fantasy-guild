@@ -97,4 +97,4 @@ The owner draws. Plans say exactly what to draw: H have, A adapt, N new. Using e
 - **Big questions, then a full list.** A few multiple-choice questions on the shape, then a complete list to edit. Later, more reviews: "adjusting all the recipes in a skill".
 - **No item-by-item questions.** Take the simplest choice and say so in a line.
 - **When a new idea conflicts with an old rule: flag it once, follow the owner.** Say in a line what it changes and what's affected, do it, and record the amendment. Never argue, and never quietly keep the old rule.
-- **Numbers are the ledger's.** Names, ingredients and rough levels are decided in a session; quantities, times, damage and prices come from balancing.
+- **Numbers are the ledger's.** Names, ingredients and rough levels are decided in a session; quantities, times, damage and prices come from balancing, by the formulas in [BALANCE_RULES.md](BALANCE_RULES.md).

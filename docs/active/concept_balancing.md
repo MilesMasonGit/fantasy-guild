@@ -1,4 +1,4 @@
-Status: draft
+Status: draft (the rules: [BALANCE_RULES.md](../reference/BALANCE_RULES.md), draft)
 
 # Balancing the game's numbers
 
@@ -28,7 +28,7 @@ Status: draft
 - **Combat gets the same kind of balancing, as a separate segment**: "combat is a more self-contained system". Gear, food and enemy strength follow a power curve, planned on its own after this.
 - **The rules live on a rules page, and a script turns them into numbers**: CMS change packs the owner reviews and Syncs, as content arrives now. No code is needed to start.
 - **Ingredient counts double every two tiers.** For example, ore per ingot goes 2, 3, 4, 6, 8, and gear made from ingots multiplies it again, so miners stay busy and late items need stockpiling. This sits within the owner's first ruling: more ore late, never hundreds per ingot.
-- **An old task is about 4x slower one tier later**, and about 15x two tiers on. Usable to top up a skill, clearly not worth it, and 99 on copper is out of reach.
+- **An old task is about 2x slower one tier later**, 4x two tiers on, and about 30x at 99 (owner, 2026-11-07, amending "about 4x" from the same day). The maths showed that today's XP table and the pace curve give every tier's work about the same XP an hour up to level 45. The owner picked a new XP table at 2x a tier over 4x (bigger numbers) or keeping today's (T-337).
 - **Crafting and gathering earn about the same XP an hour at the same level**, "however we should consider that the player is consuming resources (paying a cost) when crafting, but also getting multiple payouts (XP from crafting an item in each link of the chain)."
 - **Actions take a little longer each tier**: "I want players to be motivated to build work-speed increasing buildings." So Faster Work buildings must stay clearly worth building late, and the boost targets (buildings up to +30 % today) are checked against that.
 
@@ -60,7 +60,7 @@ Three layers, each with one job:
 1. **The pace curve** (exists): how long a level should take at each level. The single dial for "quick early, slow late".
 2. **The rules page** (new, `docs/reference/BALANCE_RULES.md` once approved): per tier, in plain words with a table:
    - **XP per action, from the curve**: an action's XP is set so that, at the level it unlocks, a Typical hero levels at the curve's pace.
-   - **XP falls behind with level**: the same action stays the same while levels need far more, so an old task is about 4x slower one tier later. That's the "can't reach 99 on copper" rule.
+   - **XP falls behind with level**: the same action stays the same while levels need far more, so an old task is about 2x slower one tier later. That's the "can't reach 99 on copper" rule.
    - **Crafting and gathering earn the same per hour.** A chain pays at every link, so a whole guild earns several skills' XP from one late item, and it pays for that in materials.
    - **Ingredient counts double every two tiers**, and stay well short of hundreds per ingot.
    - **Cycle times** grow a little each tier, so work-speed buildings pay off.
@@ -73,8 +73,8 @@ Three layers, each with one job:
 | Step | What | Who |
 |---|---|---|
 | 1 | Settle the rules with the owner (this page, multiple choice) | `/content` |
-| 2 | Write `BALANCE_RULES.md`, with worked examples per chain (copper to darkmetal ingots, a potion, a meal) | `/content` |
-| 3 | Put the ladder's pace curve and stage budgets in the ledger's settings (T-294) | director |
+| 2 | ~~Write `BALANCE_RULES.md`~~, done 2026-11-07 as a draft, with its script `.claude/skills/content/balance_rules.py` | `/content` |
+| 3 | Put the ladder's pace curve and stage budgets in the ledger's settings (T-294); the new XP table (T-337); rare finds by the day (T-336) | director |
 | 4 | A script turns the rules into numbers on the Planned entries (needs T-305's packs) | brief for the director |
 | 5 | The ledger times the whole planned game at each player; the owner sees walls and stage times | director, owner |
 | 6 | Nudge, re-check, and prove a few milestones in real play before any number is final | director, owner |
