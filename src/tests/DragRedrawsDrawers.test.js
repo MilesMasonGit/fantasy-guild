@@ -15,7 +15,7 @@ import { ItemStubColumn } from '../ui/components/notifications/ItemStubColumn.js
 import { BannerStack } from '../ui/components/notifications/BannerStack.jsx';
 import * as ItemStubs from '../systems/notifications/itemStubs.js';
 import * as Banners from '../systems/notifications/banners.js';
-import { ShopDrawer } from '../ui/components/drawer/ShopDrawer.jsx';
+import { ShopPanel } from '../ui/components/drawer/ShopPanel.jsx';
 import { BankTab } from '../ui/components/drawer/BankTab.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
@@ -119,17 +119,17 @@ describe('⭐ the drawers', () => {
         GameState.state.inventory.items = {};
         InventoryManager.addItem(WOOD, 30);
         const view = render(
-            h(DeckDndProvider, null, h(Item), h(ShopDrawer, { isOpen: true, onClose: () => {} }))
+            h(DeckDndProvider, null, h(Item), h(ShopPanel, { isOpen: true, onClose: () => {} }))
         );
         view.getByTestId('item').getBoundingClientRect = () => box(2000, 2000, 50, 50);
         expect(view.container.querySelector('[data-shop-row="fixture_dr_grove"]')).not.toBeNull();
         renders.start();
         dragAbout(view.getByTestId);
-        expect(renders.of('ShopDrawer')).toBeGreaterThan(0);
+        expect(renders.of('ShopPanel')).toBeGreaterThan(0);
         expect(renders.of('ShopContents')).toBe(0);
-        expect(renders.of('ShopRowBody')).toBe(0);
+        expect(renders.of('ShopCardBody')).toBe(0);
         expect(renders.of('ArrowScrollList')).toBe(0);
-        expect(renders.of('EntityRibbon')).toBe(0);
+        expect(renders.of('PricePill')).toBe(0);
     });
 
     it('the Bank: a drag elsewhere redraws no item tile and no tab', () => {

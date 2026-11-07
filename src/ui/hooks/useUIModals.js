@@ -40,7 +40,7 @@ import { UI_EVENTS } from '../../systems/core/engineEvents.js';
 const DRAWER_TARGETS = new Set(['bank']);
 
 /**
- * The Shop's nav target. The Shop is its own drawer (`ShopDrawer`) with its own open flag
+ * The Shop's nav target. The Shop is its own panel (`ShopPanel`) with its own open flag
  * (`ui.shop`), not a pane of the Bank's drawer. The quest wiring and the tutorial read
  * this string.
  */
@@ -68,7 +68,7 @@ export const useUIModals = () => {
 
     const [fullscreenView, setFullscreenView] = useState(null);
 
-    // The Bank and Shop drawers are one at a time: opening one closes the other.
+    // The Bank and the Shop are one at a time: opening one closes the other.
     const closeBankPane = useCallback(() => setDrawerState({ panes: [] }), []);
     const openShop = useCallback(() => {
         closeBankPane();

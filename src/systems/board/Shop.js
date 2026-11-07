@@ -7,6 +7,7 @@ import {
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { foundationTierOf } from '../../config/registries/tokenConstants.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
+import { recipesForFoundation } from '../../config/registries/recipePoolRegistry.js';
 import { totalPrice } from '../../config/guildUpgrades.js';
 import * as BoardState from './BoardState.js';
 import * as InputAllocator from './InputAllocator.js';
@@ -19,7 +20,8 @@ import { BOARD_EVENTS } from './boardEvents.js';
 
 /**
  * Sells every Token type that carries a `shop` block: `shop: { price: [{ itemId, quantity }],
- * section: '<skill id>' | 'general', group?: '<label>', skills?: ['<skill id>'], order?: n }`.
+ * section?: '<skill id>' | 'general', group?: '<label>', skills?: ['<skill id>'], order?: n }`.
+ * The Shop itself no longer reads `section`; the Token Summary still sorts by it ({@link sectionName}).
  * `skills` are the skill icons the Shop shows on the Token, authored rather than worked out from
  * its recipes (several buildings have no skill of their own); `order` is its place in the list,
  * lowest first, with unordered Tokens after the ordered ones.
@@ -33,7 +35,7 @@ import { BOARD_EVENTS } from './boardEvents.js';
  * lands on the nearest legal free spot on the mat; only a mat with no legal spot refuses.
  */
 
-/** The section every Token without a skill section falls under. */
+/** The section every Token without a skill section falls under (the Token Summary's headings). */
 export const GENERAL_SECTION = 'general';
 
 const refuse = (reason) => ({ success: false, reason });
@@ -100,7 +102,7 @@ function shortfallText(typeId) {
 export function canBuy(typeId) {
     if (!shopBlockOf(typeId)) return refuse('Not sold at the Shop');
     if (!MatCap.canPlaceMore(1)) {
-        return refuse(`Token cap full (${MatCap.tokenCount()}/${MatCap.matCap()})`);
+        return { ...refuse(`Token cap full (${MatCap.tokenCount()}/${MatCap.matCap()})`), capFull: true };
     }
     const missing = shortfallText(typeId);
     if (missing) return refuse(`Need ${missing}`);
@@ -113,7 +115,7 @@ export function canBuy(typeId) {
  * purchase without taking anything; nothing runs between the check and the payment, so the payment
  * cannot then fall short.
  *
- * The Shop drawer does not call this: a row is dragged onto the mat and bought there ({@link
+ * The Shop panel does not call this: a card is dragged onto the mat and bought there ({@link
  * buyAt}). Only tests call it.
  *
  * @returns {{success: boolean, reason?: string, instance?: object}}
@@ -123,7 +125,7 @@ export function buy(typeId) {
 }
 
 /**
- * Buy one Token where the player let it go: a Shop row dragged onto the mat pays on drop. The same
+ * Buy one Token where the player let it go: a Shop card dragged onto the mat pays on drop. The same
  * checks as {@link buy}, but the Token goes through `Placement.placeTokenAt` at `point` (exactly
  * there, or nudged to the nearest legal spot) rather than beside the Hall.
  *
@@ -184,21 +186,35 @@ const tierWeight = (typeId) => {
 };
 
 /**
- * The catalogue for the panel: every sold Token, grouped by section. Entries within a section go by
- * `shop.order`, then name; sections by their first entry's order, then name, with General last.
- * With no `order` authored anywhere this is plain name order. Each entry carries its `skills`
- * (icons) and `order`; a group takes its first option's skills and its lowest option's order.
+ * The Tokens a Foundation can be built into, by name, each once, in its pool's order. Empty for a
+ * Token that is not a Foundation.
+ */
+export function buildsOf(typeId) {
+    const def = getTokenType(typeId);
+    if (!def?.foundation) return [];
+    const names = [];
+    for (const recipe of recipesForFoundation(def)) {
+        const built = (recipe.outputs || []).find(o => o?.tokenId)?.tokenId;
+        const name = built ? (tokenName(built) || built) : null;
+        if (name && !names.includes(name)) names.push(name);
+    }
+    return names;
+}
+
+/**
+ * The catalogue for the panel: every sold Token, one list in `shop.order`, then name, unordered
+ * Tokens last. Each entry carries its `skills` (icons) and `order`.
  *
  * Tokens whose `shop.group` is the same label are one entry: `{ group, name: <label>, options,
- * typeId, price, affordability }`, where `options` lists the members lowest Foundation tier first,
- * then cheapest first, and the top-level `typeId`, `price` and `affordability` are the first
- * option's. The entry sits in the section of its first member. Every option is selectable; each is
- * gated only by its own price.
+ * typeId, price, affordability, skills, order }`, where `options` lists the members lowest
+ * Foundation tier first, then cheapest first; the top-level `typeId`, `price`, `affordability` and
+ * `skills` are the first option's and `order` is the lowest of them. Every option is selectable;
+ * each is gated only by its own price.
  *
- * @returns {Array<{section, name, order, items: Array<{typeId, name, price, affordability, skills, order, group?, options?}>}>}
+ * @returns {Array<{typeId, name, price, affordability, skills, order, group?, options?}>}
  */
 export function catalogue() {
-    const bySection = new Map();
+    const entries = [];
     const groups = new Map();
     const entryOf = (typeId) => ({
         typeId,
@@ -211,19 +227,17 @@ export function catalogue() {
     for (const typeId of Object.keys(getAllTokenTypes())) {
         const shop = shopBlockOf(typeId);
         if (!shop) continue;
-        const section = shop.section || GENERAL_SECTION;
-        if (!bySection.has(section)) bySection.set(section, []);
         const label = typeof shop.group === 'string' ? shop.group.trim() : '';
         if (label) {
             if (!groups.has(label)) {
                 const entry = { group: label, name: label, options: [] };
                 groups.set(label, entry);
-                bySection.get(section).push(entry);
+                entries.push(entry);
             }
             groups.get(label).options.push(entryOf(typeId));
             continue;
         }
-        bySection.get(section).push(entryOf(typeId));
+        entries.push(entryOf(typeId));
     }
     for (const entry of groups.values()) {
         entry.options.sort((a, b) => tierWeight(a.typeId) - tierWeight(b.typeId)
@@ -238,16 +252,7 @@ export function catalogue() {
     }
     // Infinity - Infinity is NaN, so unordered entries compare by hand.
     const byOrder = (a, b) => (a.order === b.order ? 0 : a.order < b.order ? -1 : 1);
-    return [...bySection.entries()]
-        .map(([section, items]) => {
-            items.sort((a, b) => byOrder(a, b) || a.name.localeCompare(b.name));
-            return { section, name: sectionName(section), order: items[0]?.order ?? Infinity, items };
-        })
-        .sort((a, b) => {
-            if (a.section === GENERAL_SECTION) return 1;
-            if (b.section === GENERAL_SECTION) return -1;
-            return byOrder(a, b) || a.name.localeCompare(b.name);
-        });
+    return entries.sort((a, b) => byOrder(a, b) || a.name.localeCompare(b.name));
 }
 
 /** The header figure: Tokens counting toward the cap, against it. */

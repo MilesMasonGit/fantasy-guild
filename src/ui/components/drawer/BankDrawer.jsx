@@ -8,7 +8,7 @@ import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
 
 /**
  * BankDrawer: slides in from the side and holds the item Bank.
- * One pane: the item Bank (the Shop has its own drawer from the left edge, `ShopDrawer`).
+ * One pane: the item Bank (the Shop has its own panel from the bottom, `ShopPanel`).
  * Per-pane header: title + Close. Opening/closing is driven by the BubbleMenu (via `ui.nav`);
  * state lives in useUIModals (`ui.drawer.panes`). An item's details open in the Bank's own
  * window at its foot (`BankItemWindow`), so the drawer has no inspect column.

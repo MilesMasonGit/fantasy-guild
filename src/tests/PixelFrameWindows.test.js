@@ -38,7 +38,7 @@ describe('every window wears a pixel frame (UI_STYLE "Pixel frames")', () => {
 
     it('the docked panels (Bank, Shop, hero panel) wear studs, and the catch-up wears chamfer', () => {
         const src = (p) => readFileSync(`src/ui/components/${p}`, 'utf8');
-        for (const p of ['drawer/BankDrawer.jsx', 'drawer/ShopDrawer.jsx', 'dock/BankHeroPanel.jsx']) {
+        for (const p of ['drawer/BankDrawer.jsx', 'drawer/ShopPanel.jsx', 'dock/BankHeroPanel.jsx']) {
             expect(src(p), p).toContain('kind={FRAME_KIND.STUDS}');
             expect(src(p), p).not.toMatch(/shadow-\[/);
         }

@@ -11,7 +11,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { requestRecipeList } from './recipeFlip.js';
-import { isShopPayload, pointerOverShopDrawer } from '../drawer/ShopDrawer.jsx';
+import { isShopPayload, pointerOverShopPanel } from '../drawer/ShopPanel.jsx';
 import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
 
 /**
@@ -54,9 +54,9 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
         surface: DND_SURFACE.BOARD,
         accepts: matAccepts,
         onDrop: (p, info) => {
-            // A Shop Token let go over the Shop drawer's lip, which covers the mat's left
-            // edge, is a plain cancel, not a purchase.
-            if (isShopPayload(p) && pointerOverShopDrawer(info?.pointer)) return false;
+            // A Shop Token let go over the Shop panel or its lip, which cover the mat's foot,
+            // is a plain cancel, not a purchase.
+            if (isShopPayload(p) && pointerOverShopPanel(info?.pointer)) return false;
             const el = matRef.current;
             const point = el ? pointerToMat(info?.pointer, el.getBoundingClientRect()) : null;
             const result = dropOnMat(p, point);

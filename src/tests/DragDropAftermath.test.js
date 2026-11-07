@@ -16,7 +16,7 @@ import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { Board } from '../ui/components/board/Board.jsx';
-import { ShopDrawer } from '../ui/components/drawer/ShopDrawer.jsx';
+import { ShopPanel } from '../ui/components/drawer/ShopPanel.jsx';
 import { ItemStubColumn } from '../ui/components/notifications/ItemStubColumn.jsx';
 import * as ItemStubs from '../systems/notifications/itemStubs.js';
 
@@ -66,7 +66,7 @@ describe('⭐ a purchase drop: the Shop\'s prices and the item stubs follow the 
         const view = render(
             h(DeckDndProvider, null,
                     h(Board, { onInspectToken: () => {}, onClearInspect: () => {} }),
-                    h(ShopDrawer, { isOpen: true, onClose: () => {} }),
+                    h(ShopPanel, { isOpen: true, onClose: () => {} }),
                     h(ItemStubColumn))
         );
         view.container.querySelector('[data-board-origin]').getBoundingClientRect = () => box(0, 0, matW(), matH());
@@ -88,7 +88,8 @@ describe('⭐ a purchase drop: the Shop\'s prices and the item stubs follow the 
         renders.stop();
 
         expect(BoardState.tokens().some(t => t.typeId === 'fixture_da_grove')).toBe(true);
-        expect(view.container.textContent).toContain('Oak');
+        // The Shop has redrawn its prices: 30 Oak Wood less the 5 paid.
+        expect(view.container.querySelector('[data-shop-row="fixture_da_grove"] [data-shop-pill="item_oak_wood"]').textContent).toBe('25/5');
         const commits = renders.commits();
         const drop = commits.findIndex(c => c.has('DeckDndProvider'));
         expect(drop).toBeGreaterThanOrEqual(0);

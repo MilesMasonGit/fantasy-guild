@@ -18,7 +18,7 @@ import { useWorldMapRequests } from './hooks/useWorldMapRequests.js';
 
 import Board from './components/board/Board.jsx';
 import BankDrawer from './components/drawer/BankDrawer.jsx';
-import ShopDrawer from './components/drawer/ShopDrawer.jsx';
+import ShopPanel from './components/drawer/ShopPanel.jsx';
 import WorldScreen from './components/atlas/WorldScreen.jsx';
 import WorldCamera from './components/atlas/WorldCamera.jsx';
 import ArrivalCard from './components/atlas/ArrivalCard.jsx';
@@ -414,11 +414,11 @@ export const ReactRoot = () => {
                         </PerfProfiler>
                     </ErrorBoundary>}
                     {/**
-                     * The Shop drawer, from the left edge. A crash here stays local to it
-                     * too.
+                     * The Shop, rising from the bottom beside the nav. A crash here stays local
+                     * to it too.
                      */}
-                    {drawersDrawn && <ErrorBoundary label="ShopDrawer">
-                        <ShopDrawer isOpen={ui.shop.isOpen} onClose={ui.shop.close} menuRight={menuRight} />
+                    {drawersDrawn && <ErrorBoundary label="ShopPanel">
+                        <ShopPanel isOpen={ui.shop.isOpen} onClose={ui.shop.close} menuRight={menuRight} />
                     </ErrorBoundary>}
                 </div>
             </div>

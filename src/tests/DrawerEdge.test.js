@@ -16,7 +16,7 @@ vi.mock('../ui/components/drawer/BankTab.jsx', () => ({
 }));
 
 import { BankDrawer } from '../ui/components/drawer/BankDrawer.jsx';
-import { ShopDrawer, shopDrawerTransform } from '../ui/components/drawer/ShopDrawer.jsx';
+import { ShopPanel, shopPanelTransform } from '../ui/components/drawer/ShopPanel.jsx';
 
 const h = React.createElement;
 const css = fs.readFileSync(`${SRC}/tailwind.css`, 'utf8');
@@ -24,7 +24,7 @@ const bankDrawer = (menuRight) => render(h(BankDrawer, {
     drawer: { isOpen: true, panes: ['bank'], filters: {}, closePane: () => {} },
     menuRight
 })).container.querySelector('[data-dnd-surface="drawer"]');
-const shopDrawer = (menuRight) => render(h(DeckDndProvider, null, h(ShopDrawer, { isOpen: true, onClose: () => {}, menuRight })))
+const shopPanel = (menuRight) => render(h(DeckDndProvider, null, h(ShopPanel, { isOpen: true, onClose: () => {}, menuRight })))
     .container.querySelector('[data-shop-drawer]');
 const classes = (el) => el.className.split(/\s+/);
 /** Every rule in the stylesheet whose selector mentions `needle`, as { selector, body }. */
@@ -50,23 +50,21 @@ describe('the drawers reach the screen edge under the nav, as one panel', () => 
         expect(el.className).not.toMatch(/(^| )(md:)?p[lrx]-/);
     });
 
-    it('the Shop, nav on the left: from the left edge, a third of the screen beside the nav', () => {
-        const el = shopDrawer(false);
-        expect(classes(el)).toEqual(expect.arrayContaining([
-            'left-0', '[--nav-inset-l:84px]', 'md:[--nav-inset-l:152px]', 'w-[calc(33.333vw+var(--nav-inset-l,0px))]'
-        ]));
-        expect(el.className).not.toMatch(/left-\[/);
+    it('the Shop, nav on the left: at the foot, from the left edge under the nav, its rows padded for it', () => {
+        const el = shopPanel(false);
+        expect(classes(el)).toEqual(expect.arrayContaining(['bottom-0', 'left-0', '[--nav-inset-l:84px]', 'md:[--nav-inset-l:152px]']));
+        expect(el.className).not.toMatch(/(^| )(md:)?p[lrx]-/);
         expect(el.querySelector('[data-panel-header]').className).toContain('gi-drawer-pad-x');
     });
 
-    it('the Shop, nav on the right: at the left edge with no nav to clear', () => {
-        const el = shopDrawer(true);
-        expect(classes(el)).toContain('left-0');
+    it('the Shop, nav on the right: the same, mirrored', () => {
+        const el = shopPanel(true);
+        expect(classes(el)).toEqual(expect.arrayContaining(['bottom-0', 'right-0', '[--nav-inset-r:84px]', 'md:[--nav-inset-r:152px]']));
         expect(el.className).not.toContain('[--nav-inset-l:');
     });
 
-    it("the Shop's lip, while a Shop Token is carried, stays beside the nav rather than under it", () => {
-        expect(shopDrawerTransform('lip')).toContain('var(--nav-inset-l, 0px)');
+    it("the Shop's lip, while a Shop Token is carried, drops straight down at either side", () => {
+        expect(shopPanelTransform('lip')).toMatch(/^translateY\(/);
     });
 
     it("the rows' padding is the nav's reach on each side plus the usual gap", () => {
