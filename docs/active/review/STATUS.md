@@ -1,6 +1,6 @@
 # Review round 4: status
 
-*Kept by the reviewer. Next free finding number: **CR4-087**.*
+*Kept by the reviewer. Next free finding number: **CR4-092**.*
 
 ## Sessions
 
@@ -16,7 +16,7 @@
 | R7 | World, atlas, quests | ready for triage | 2026-11-07 | 18fd3e7f | `R7_world_atlas_quests.md`: 6 findings (2 cleanup, 2 perf reasoned, 1 bug, 1 docs; 0 owner-decision). Good: all seeded, nothing per tick but the quest clock, the map's counts exact. Top: migration code for saves the version check already refuses (CR4-072); settling lays the mat out up to nine times with a whole-field rasterise per candidate pond (CR4-073); the open world map recomputing every cell on every Bank change (CR4-074). Measure first: time `Atlas.settle` and `worldView()`. |
 | R8 | Content boundary and CMS layer | ready for triage | 2026-11-07 | 18fd3e7f | `R8_content_boundary_and_cms.md`: 4 findings (2 bug, 1 cleanup, 1 docs; 0 owner-decision). Good: small startup work, one shared copy of nearly every rule, the map exact. Top: the Sync's stale-workspace guard compares ids only and the write is not atomic (CR4-078, P2, the owner's content); a recipe's items are checked nowhere but the CMS page (CR4-079); the Sync's words still promise maps (CR4-081). |
 | R9 | Dead code, duplicates, cycles, lint | ready for triage | 2026-11-07 | 1410f15e | `R9_dead_code_duplicates_cycles_lint.md`: 5 findings (4 cleanup, 1 docs; 0 owner-decision). The tools' lists read item by item: about fifty dead exports and 127 stray `export default` lines (CR4-082), nine groups of logic written twice or three times (CR4-083), five lint errors that are lost logic among 74 (CR4-084); the cycle and dependency reports add nothing to R0. Nothing to measure. |
-| R10 | Tests | reading | 2026-11-07 | 1410f15e | |
+| R10 | Tests | ready for triage | 2026-11-07 | 1410f15e | `R10_tests.md`: 5 findings (1 test P2, 2 perf measured, 1 cleanup, 1 docs; 0 owner-decision). Strong: 7,875 of 7,880 pass at the default seed and all but one under a second seed. Top: one test relies on luck, the farming harvest (CR4-087); half the suite's time is thirty files, mostly seed sweeps and spawned processes (CR4-088); 57 files boot a browser environment for `localStorage` alone (CR4-089). Measured in two full runs. |
 | R11 | Memory and idle | not started (soak baseline taken 2026-11-07: T-333, T-335 are its leads) | | | |
 | R12 | Shell, build, startup | not started | | | |
 
@@ -27,7 +27,7 @@ States: `not started`, `reading`, `verifying`, `ready for triage`, `triaged`,
 
 | open | verified | ticket | moot | owner-no |
 |---|---|---|---|---|
-| 0 | 86 | 0 | 0 | 0 |
+| 0 | 91 | 0 | 0 | 0 |
 
 ## Baselines (phase 1, director)
 
