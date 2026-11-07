@@ -163,3 +163,4 @@ roadmap pair for whichever feature you are working on.
 - add-card.md
 - card_retirement_plan.md
 - CARD_SCHEMA.md
+- `HANDOFF_backlog.md`, `HANDOFF_features.md`, `HANDOFF_systems.md` (archived 2026-11-06): the three parallel directors of October 2026, all their briefs merged; one director since.
