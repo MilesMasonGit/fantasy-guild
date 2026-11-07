@@ -1,6 +1,6 @@
 # Review round 4: status
 
-*Kept by the reviewer. Next free finding number: **CR4-033**.*
+*Kept by the reviewer. Next free finding number: **CR4-046**.*
 
 ## Sessions
 
@@ -9,7 +9,7 @@
 | R0 | The map | ready for triage | 2026-11-07 | ea6b9f92 | `R0_the_map.md`: 12 findings (10 cleanup, 1 test, 1 docs; 0 owner-decision). The architecture doc holds; tools at ea6b9f92 match the baselines; the production bundle has no dev code. Top: the GameState rehydration cycle (CR4-001), terrain painters under systems (CR4-003), CMS-only ledger in src (CR4-010). |
 | R1 | Tick and time | ready for triage | 2026-11-07 | 08d86ba1 | `R1_tick_and_time.md`: 5 findings (2 bug, 1 owner-decision, 1 perf reasoned P3, 1 cleanup). The best-kept corner of the code; nothing to bench. Top: playtime counts time away (CR4-013), dead sound hooks (CR4-014), live rules on the wall clock (CR4-015). |
 | R2 | Board and mat engine | ready for triage | 2026-11-07 | 9d03ffb1 | `R2_board_and_mat_engine.md`: 15 findings (7 perf reasoned, 1 memory, 2 bug, 4 cleanup, 1 docs; 0 owner-decision). Sound engine; the costs are on the tick path. Top: room searches on the tick and a memo wiped by enemy steps (CR4-018), a move onto a copy leaves a zero-charge ghost (CR4-027), per-worked-Token recomputation that the catch-up multiplies (CR4-019/020). Measure first: a CPU profile of the catch-up and of C240 at p99. |
-| R3 | Heroes, combat, equipment, progression | not started | | | |
+| R3 | Heroes, combat, equipment, progression | ready for triage | 2026-11-07 | b7559216 | `R3_heroes_combat_equipment_progression.md`: 13 findings (3 perf reasoned, 3 bug, 6 cleanup, 1 docs; 0 owner-decision, 1 owner question). Good, with one hot spot and card-era residue. Top: the loadout rebuilt on every per-tick work-time read, so T-078 is hot not latent (CR4-033); the bucket maths written four times with drift (CR4-036); two save fields written on every item gain and read by nothing (CR4-040). |
 | R4 | Drawing | not started | | | |
 | R5 | React plumbing | not started | | | |
 | R6 | State and saves | not started | | | |
@@ -27,7 +27,7 @@ States: `not started`, `reading`, `verifying`, `ready for triage`, `triaged`,
 
 | open | verified | ticket | moot | owner-no |
 |---|---|---|---|---|
-| 0 | 32 | 0 | 0 | 0 |
+| 0 | 45 | 0 | 0 | 0 |
 
 ## Baselines (phase 1, director)
 
@@ -44,3 +44,4 @@ States: `not started`, `reading`, `verifying`, `ready for triage`, `triaged`,
 
 - **"Playtime" on the slot screen** (CR4-013): today it grows while the catch-up plays the time you were away. Should it mean (a) time the game was open, so the catch-up stops adding to it (recommended: that is what the label and the field's comment say), or (b) the guild's whole life including time away, so the label changes and nothing else does?
 - **Sounds that never play** (CR4-014): a defeat sound and an "invasion" sound are wired to moments the engine never announces. (a) Wire the defeat sound to a hero's defeat on the mat and decide what "invasion" means now (a settled place's enemies arriving?), or (b) drop both sounds and the dead hooks (recommended if no moment comes to mind: the knockout banner already plays a warning tone).
+- **XP bonuses on kills** (CR4-037): a Guild Hall star or an item that adds XP applies to work cycles but never to the XP a kill awards; the hero-side multiplier that was meant to carry it reads a value nothing writes. (a) Kills get the same XP bonuses as work (changes the bench's XP totals), or (b) XP bonuses are for work only, by design, and the dead multiplier is deleted (recommended if that was the intent: the palette's own hint says "XP awarded to the working hero per cycle").
