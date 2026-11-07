@@ -16,7 +16,7 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { matW } from '../config/matGeometry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
-import { ShopDrawer } from '../ui/components/drawer/ShopDrawer.jsx';
+import { ShopPanel } from '../ui/components/drawer/ShopPanel.jsx';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { LeaveMatControl } from '../ui/components/drawer/LeaveMatControl.jsx';
 import { sourceCode, setScanTimeout } from './fixtures/sourceScan.js';
@@ -87,7 +87,7 @@ describe('the routes that used to need the catch-all', () => {
             }
         });
         SpriteLayer.addSprite('item', 'fixture_glowcap', 2, null);
-        const { container } = render(h(DeckDndProvider, null, h(ShopDrawer, { isOpen: true, onClose: () => {} })));
+        const { container } = render(h(DeckDndProvider, null, h(ShopPanel, { isOpen: true, onClose: () => {} })));
         const affordable = () => container.querySelector('[data-shop-row="sc_shop"]').getAttribute('data-shop-affordable');
         expect(affordable()).toBe('true');
         await act(async () => { SpriteLayer.consumeFromSprites('fixture_glowcap', 2); await Promise.resolve(); });

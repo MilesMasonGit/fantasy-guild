@@ -55,7 +55,7 @@ function appliedWorkspace() {
     return ws;
 }
 
-const flatCatalogue = () => Shop.catalogue().flatMap(g => g.items.map(i => i.typeId));
+const flatCatalogue = () => Shop.catalogue().map(i => i.typeId);
 const builds = (typeId) => recipesForFoundation(getTokenType(typeId)).map(r => r.outputs.find(o => o.tokenId).tokenId);
 
 function newGame() {
@@ -109,7 +109,7 @@ describe('the Foundations pack, applied to a copy of the shipped content', () =>
     });
 
     it('the Shop sells the five Foundations only, in the authored order, with their icons', () => {
-        const entries = Shop.catalogue().flatMap(g => g.items);
+        const entries = Shop.catalogue();
         expect(entries.map(e => e.typeId)).toEqual([
             'token_wood_foundation', 'token_stone_foundation', 'token_farmland', 'token_excavation', 'token_battlefield'
         ]);

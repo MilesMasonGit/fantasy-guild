@@ -102,29 +102,22 @@ const hall = () => BoardState.tokens().find(t => t.typeId === 'token_guild_hall'
 const onMat = (typeId) => BoardState.tokens().filter(t => t.typeId === typeId);
 
 describe('the catalogue', () => {
-    it('lists only Tokens with a shop block, grouped by section, General last', () => {
-        const groups = Shop.catalogue();
-        const all = groups.flatMap(g => g.items.map(i => i.typeId));
+    it('lists only Tokens with a shop block, as one list with no sections', () => {
+        const all = Shop.catalogue().map(i => i.typeId);
         expect(all).toContain('fixture_shop_forest');
         expect(all).toContain('fixture_shop_bench');
         expect(all).not.toContain('fixture_not_sold');
-
-        const forestry = groups.find(g => g.section === 'forestry');
-        expect(forestry.items.map(i => i.typeId)).toContain('fixture_shop_forest');
-        expect(groups[groups.length - 1].section).toBe('general');
-        expect(groups[groups.length - 1].name).toBe('General');
+        expect(Shop.catalogue().some(i => 'section' in i || 'items' in i)).toBe(false);
     });
 
     it('shows a group as one entry, options cheapest first, and leaves ungrouped Tokens alone', () => {
-        const forestry = Shop.catalogue().find(g => g.section === 'forestry');
-        const groupEntries = forestry.items.filter(i => i.group);
+        const groupEntries = Shop.catalogue().filter(i => i.group === 'Fixture Group');
         expect(groupEntries).toHaveLength(1);
         const [entry] = groupEntries;
-        expect(entry.group).toBe('Fixture Group');
         expect(entry.name).toBe('Fixture Group');
         expect(entry.options.map(o => o.typeId)).toEqual(['fixture_grp_small', 'fixture_grp_big']);
         expect(entry.typeId).toBe('fixture_grp_small');
-        const all = Shop.catalogue().flatMap(g => g.items);
+        const all = Shop.catalogue();
         // The members are not also listed on their own.
         expect(all.filter(i => i.typeId === 'fixture_grp_big' && !i.options)).toHaveLength(0);
         const forest = all.find(i => i.typeId === 'fixture_shop_forest');
@@ -133,35 +126,28 @@ describe('the catalogue', () => {
     });
 
     it('a group of Foundations lists its options by Foundation tier, not by price', () => {
-        const entry = Shop.catalogue().flatMap(g => g.items).find(i => i.group === 'Fixture Tier Group');
+        const entry = Shop.catalogue().find(i => i.group === 'Fixture Tier Group');
         expect(entry.options.map(o => o.typeId)).toEqual(['fixture_tgrp_t1', 'fixture_tgrp_t2', 'fixture_tgrp_t3']);
         expect(entry.typeId).toBe('fixture_tgrp_t1');
     });
 
-    it('orders entries by their place in the list, then name, with unordered ones last', () => {
-        const ranged = Shop.catalogue().find(g => g.section === 'ranged');
-        expect(ranged.items.map(i => i.group || i.typeId)).toEqual(['fixture_ord_z', 'Fixture Ord Group', 'fixture_ord_a', 'fixture_ord_b']);
-        expect(ranged.items.map(i => i.order)).toEqual([1, 2, 3, Infinity]);
-    });
-
-    it('orders sections by their first place in the list, then name, General still last', () => {
-        const groups = Shop.catalogue();
-        const sections = groups.map(g => g.section);
-        const ranged = groups.find(g => g.section === 'ranged');
-        expect(ranged.order).toBe(1);
-        const placed = groups.filter(g => g.section !== 'general');
-        for (let i = 1; i < placed.length; i++) {
-            const [a, b] = [placed[i - 1], placed[i]];
-            expect(a.order < b.order || (a.order === b.order && a.name.localeCompare(b.name) <= 0), `${a.section} before ${b.section}`).toBe(true);
-        }
-        expect(sections.indexOf('ranged')).toBeLessThan(sections.indexOf('forestry'));
-        // Sections with no place at all keep name order.
-        expect(sections.indexOf('forestry')).toBeLessThan(sections.indexOf('smithing'));
-        expect(sections[sections.length - 1]).toBe('general');
+    it('orders entries by their place in the list, then name, with unordered ones last, whatever their section', () => {
+        const all = Shop.catalogue();
+        const ordered = all.filter(i => Number.isFinite(i.order));
+        // The fixtures' own places, among whatever the game's data sells too.
+        const mine = new Set(['fixture_ord_z', 'Fixture Ord Group', 'fixture_ord_a']);
+        expect(ordered.filter(i => mine.has(i.group || i.typeId)).map(i => i.group || i.typeId))
+            .toEqual(['fixture_ord_z', 'Fixture Ord Group', 'fixture_ord_a']);
+        const firstUnordered = all.findIndex(i => !Number.isFinite(i.order));
+        expect(all.slice(firstUnordered).every(i => i.order === Infinity)).toBe(true);
+        // Unordered entries keep name order, across what were sections ('general', 'forestry').
+        const names = all.slice(firstUnordered).map(i => i.name);
+        expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+        expect(all.find(i => i.typeId === 'fixture_ord_b').order).toBe(Infinity);
     });
 
     it('carries the authored skill icons: real skills only, each once, in order', () => {
-        const all = Shop.catalogue().flatMap(g => g.items);
+        const all = Shop.catalogue();
         expect(all.find(i => i.typeId === 'fixture_ord_z').skills).toEqual(['mining', 'faith']);
         expect(all.find(i => i.typeId === 'fixture_ord_a').skills).toEqual([]);
         // A group shows its first option's icons.
@@ -172,9 +158,28 @@ describe('the catalogue', () => {
         expect(Shop.shopOrderOf('fixture_not_sold')).toBe(Infinity);
     });
 
+    it('names what a Foundation builds, each once; a Token that is not one builds nothing', () => {
+        const wood = Shop.buildsOf('token_wood_foundation');
+        expect(wood).toContain('Workbench');
+        expect(new Set(wood).size).toBe(wood.length);
+        expect(Shop.buildsOf('fixture_shop_forest')).toEqual([]);
+        expect(Shop.buildsOf('not_a_token')).toEqual([]);
+    });
+
+    it('a full Token cap is flagged apart from a short price', () => {
+        InventoryManager.addItem(WOOD, 1);
+        expect(Shop.canBuy('fixture_shop_forest').capFull).toBeUndefined();
+        placeAt('fixture_shop_bench', 1200, 900);
+        setMatTuning('tokenCap', MatCap.tokenCount());
+        const refusal = Shop.canBuy('fixture_shop_forest');
+        expect(refusal.success).toBe(false);
+        expect(refusal.capFull).toBe(true);
+        expect(refusal.reason).toMatch(/Token cap full/);
+    });
+
     it('each option is gated by its own price only', () => {
         InventoryManager.addItem(WOOD, 5);
-        const entry = Shop.catalogue().flatMap(g => g.items).find(i => i.group === 'Fixture Group');
+        const entry = Shop.catalogue().find(i => i.group === 'Fixture Group');
         expect(entry.options.find(o => o.typeId === 'fixture_grp_small').affordability.success).toBe(true);
         expect(entry.options.find(o => o.typeId === 'fixture_grp_big').affordability.success).toBe(false);
     });

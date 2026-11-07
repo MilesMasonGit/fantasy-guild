@@ -103,7 +103,7 @@ describe('which panels wear one', () => {
     it('the full panels name their colour', () => {
         const wears = {
             'ui/components/drawer/BankDrawer.jsx': 'bank',
-            'ui/components/drawer/ShopDrawer.jsx': 'shop',
+            'ui/components/drawer/ShopPanel.jsx': 'shop',
             'ui/components/board/GuildHallDetails.jsx': 'hall',
             'ui/components/atlas/WorldPanel.jsx': 'world',
             'ui/modals/SettingsModal.jsx': 'settings',
