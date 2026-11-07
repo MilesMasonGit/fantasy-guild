@@ -210,6 +210,7 @@ describe('the page and the disk', () => {
         const status = await connectDiskWorkspace({ store: useEntityStore, globalStore: useGlobalStore, fetchFn, win: null });
         expect(status.mode).toBe('disk');
         expect(status.notice).toMatch(/moved from this browser to disk/);
+        expect(status.savedAt).toBeTruthy();
         const disk = readWorkspaceFile(wsFile(dir));
         expect(disk).toMatchObject({ revision: 1, simDials: { cycleScale: 7 } });
         expect(disk.workspace.items.item_log.name).toBe('Birch Log');
@@ -292,6 +293,8 @@ describe('the page and the disk', () => {
         const { conflict } = useDiskWorkspace.getState();
         expect(conflict.refusedBackup).toMatch(/^refused_/);
         expect(readBackup(dir, `${conflict.refusedBackup}.json`).items.item_log.value).toBe(42);
+        // The refused backup holds the edit, so the reload the banner asks for does not keep it a second time.
+        expect(JSON.parse(localStorage.getItem(DISK_META_KEY)).dirty).toBe(false);
 
         const view = render(React.createElement(React.Fragment, null, React.createElement(WorkspaceStatus), React.createElement(WorkspaceBanner)));
         expect(view.getByTestId('workspace-banner').textContent).toMatch(/The workspace on disk changed elsewhere; reload to see it/);
@@ -391,6 +394,8 @@ describe('the page and the disk', () => {
         vi.stubGlobal('fetch', server.fetchFn);
         try {
             const view = render(React.createElement(FileManagerModal, { isOpen: true, onClose: () => {} }));
+            // The File Manager says where the workspace lives.
+            expect(view.getByTestId('workspace-status').textContent).toMatch(/Workspace: on disk, saved \d/);
             fireEvent.click(await view.findByText('New Workspace'));
             await act(async () => { fireEvent.click(view.getByText('Confirm')); });
             await waitFor(() => expect(readWorkspaceFile(wsFile(dir)).revision).toBe(2));

@@ -8,7 +8,7 @@ project's first tagged baseline — everything before it was untagged developmen
 - **The CMS keeps its workspace on disk, and has a command line** (agent tooling): the owner's
   authored content between Syncs now lives in `cms/workspace/workspace.json` instead of the
   browser, where clearing site data once lost work. The CMS writes it a second after each change
-  and says so in the top bar ("Workspace: on disk, saved 14:05"); the first start moves the
+  and says so in the Backups window ("Workspace: on disk, saved 14:05"); the first start moves the
   browser's copy there and keeps a backup. If another tab or an agent changed the file meanwhile,
   the CMS shows "The workspace on disk changed elsewhere; reload to see it" instead of writing over
   it, and keeps its own edits in Backups. New workspace now backs up first and no longer wipes the

@@ -15,7 +15,8 @@ pokes around in the page.
 - The page reads it on start and writes it about a second after each change
   (`src/engine/diskWorkspace.js`; server side `workspaceFile.js`, route
   `/api/workspace`). The browser's localStorage is only a cache.
-- The top bar says **Workspace: on disk, saved HH:MM**. Every write bumps the
+- The File Manager (Backups) says **Workspace: on disk, saved HH:MM**, and so
+  does the Backups button's tooltip (the top bar is full). Every write bumps the
   file's `revision`; a write made from an older revision (another tab, or the
   command line wrote since) is refused, and the page shows **"The workspace on
   disk changed elsewhere; reload to see it"**, keeping that tab's edits in

@@ -3,6 +3,7 @@ import { DatabaseBackup, Upload, Trash2, X, Plus, Clock, FileJson, DownloadCloud
 import { useEntityStore } from '../../stores/useEntityStore';
 import { restoreFromGame, snapshot } from '../../engine/fileUtils';
 import { saveWorkspaceNow } from '../../engine/diskWorkspace';
+import { WorkspaceStatus } from '../layout/WorkspaceStatus';
 
 export default function FileManagerModal({ isOpen, onClose }) {
   const [backups, setBackups] = useState([]);
@@ -148,6 +149,7 @@ export default function FileManagerModal({ isOpen, onClose }) {
           <div className="flex items-center gap-2">
             <DatabaseBackup size={18} style={{ color: 'var(--color-accent)' }} />
             <h2 className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>File Manager</h2>
+            <span className="ml-2"><WorkspaceStatus /></span>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}><X size={18} /></button>
         </div>

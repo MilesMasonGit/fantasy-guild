@@ -5,7 +5,7 @@ import SyncGuardPanel from '../shared/SyncGuardPanel';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 import { useReviewStore } from '../../stores/useReviewStore';
-import { WorkspaceStatus } from './WorkspaceStatus';
+import { useDiskWorkspace, workspaceStatusText } from '../../engine/diskWorkspace';
 
 const VIEWS = [
   { key: 'editor', label: 'Editor' },
@@ -27,6 +27,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
   const recalculateEconomy = useEntityStore((s) => s.recalculateEconomy);
   const globals = useGlobalStore();
   const waiting = useReviewStore((s) => s.listing?.inbox?.length ?? 0);
+  const workspaceWord = workspaceStatusText(useDiskWorkspace()).text;
 
   const handleRecalculate = () => {
     recalculateEconomy(globals);
@@ -115,7 +116,6 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
         >
           v2 · phase 10
         </span>
-        <WorkspaceStatus />
       </div>
 
       <div className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: 'var(--color-bg-base)' }}>
@@ -206,7 +206,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
           onClick={onOpenFileManager}
           className="btn-ghost flex items-center gap-1.5"
           style={{ padding: '6px 10px' }}
-          title="Backups — save and restore the whole workspace"
+          title={`Backups — save and restore the whole workspace. ${workspaceWord}.`}
         >
           <DatabaseBackup size={14} />
           <span className="text-xs">Backups</span>

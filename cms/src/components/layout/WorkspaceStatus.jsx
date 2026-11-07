@@ -1,35 +1,15 @@
 import { useState } from 'react';
 import { HardDrive, AlertTriangle, RefreshCw, X } from 'lucide-react';
-import { useDiskWorkspace } from '../../engine/diskWorkspace';
+import { useDiskWorkspace, workspaceStatusText } from '../../engine/diskWorkspace';
 
-const clock = (iso) => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
-
-/** The top bar's word on where the workspace lives: on disk and when it was last saved, or in this browser only. */
+/**
+ * The File Manager's word on where the workspace lives: on disk and when it was last saved, or in this browser only.
+ * ⚠️ Not in the top bar: it is full, and one more line there wrapped its title onto four lines.
+ */
 export function WorkspaceStatus() {
-  const { mode, savedAt, saving, revision, conflict, error } = useDiskWorkspace();
-  let text;
-  let color = 'var(--color-text-muted)';
-  if (mode === 'starting') text = 'Workspace: loading';
-  else if (mode === 'browser') {
-    text = 'Workspace: this browser only';
-    color = 'var(--color-warning)';
-  } else if (conflict) {
-    text = 'Workspace: changed elsewhere';
-    color = 'var(--color-warning)';
-  } else if (saving) text = 'Workspace: on disk, saving…';
-  else if (error) {
-    text = 'Workspace: on disk, not saved yet';
-    color = 'var(--color-warning)';
-  } else text = savedAt ? `Workspace: on disk, saved ${clock(savedAt)}` : 'Workspace: on disk';
-  const title = mode === 'disk'
-    ? `cms/workspace/workspace.json, revision ${revision ?? 0}. Every change is written there about a second after you make it.${error ? ' ' + error : ''}`
-    : error || 'The workspace is read from cms/workspace/workspace.json.';
+  const { text, warn, title } = workspaceStatusText(useDiskWorkspace());
   return (
-    <span className="text-xs flex items-center gap-1" style={{ color, whiteSpace: 'nowrap' }} title={title} data-testid="workspace-status">
+    <span className="text-xs flex items-center gap-1" style={{ color: warn ? 'var(--color-warning)' : 'var(--color-text-muted)', whiteSpace: 'nowrap' }} title={title} data-testid="workspace-status">
       <HardDrive size={12} /> {text}
     </span>
   );

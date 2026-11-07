@@ -41,6 +41,34 @@ export const useDiskWorkspace = create(() => ({
 }));
 const setStatus = (patch) => useDiskWorkspace.setState(patch);
 
+const clock = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
+/** Where the workspace lives, in words: `{ text, warn, title }`. */
+export function workspaceStatusText({ mode, savedAt, saving, revision, conflict, error }) {
+    let text;
+    let warn = false;
+    if (mode === 'starting') text = 'Workspace: loading';
+    else if (mode === 'browser') {
+        text = 'Workspace: this browser only';
+        warn = true;
+    } else if (conflict) {
+        text = 'Workspace: changed elsewhere';
+        warn = true;
+    } else if (saving) text = 'Workspace: on disk, saving…';
+    else if (error) {
+        text = 'Workspace: on disk, not saved yet';
+        warn = true;
+    } else text = savedAt ? `Workspace: on disk, saved ${clock(savedAt)}` : 'Workspace: on disk';
+    const title = mode === 'disk'
+        ? `cms/workspace/workspace.json, revision ${revision ?? 0}. Every change is written there about a second after you make it.${error ? ' ' + error : ''}`
+        : error || 'The workspace is read from cms/workspace/workspace.json.';
+    return { text, warn, title };
+}
+
 const local = {
     read(name) {
         try {
@@ -154,6 +182,8 @@ async function flush() {
             if (res.status === 409) {
                 // Never written over: the banner asks for a reload, and each refusal refreshes this tab's backup.
                 setStatus({ conflict: { refusedBackup: out.refusedBackup || null }, error: null });
+                // The refused backup holds these edits, so a reload need not keep them a second time as unsent.
+                if (out.refusedBackup && s.changes === mark) writeMeta(false);
                 return;
             }
             if (!res.ok) throw new Error(out.error || 'HTTP ' + res.status);
@@ -280,6 +310,7 @@ async function connect({ store, globalStore, fetchFn = (...a) => fetch(...a), no
             s.revision = out.revision;
             s.current = cached.state;
             s.lastSent = JSON.stringify({ workspace: diskContent(cached.state), simDials: cachedDials });
+            s.savedAt = out.savedAt;
             notice =`Your workspace moved from this browser to disk (cms/workspace/workspace.json). A copy is in Backups as ${out.backup}.`;
         } else if (res.status === 409) {
             disk = await getDisk();
@@ -342,7 +373,7 @@ async function connect({ store, globalStore, fetchFn = (...a) => fetch(...a), no
         win.document?.addEventListener?.('visibilitychange', () => { if (win.document.visibilityState === 'hidden' && s.timer) flush(); });
     }
 
-    setStatus({ mode: 'disk', revision: s.revision, savedAt: disk.exists ? disk.savedAt : null, notice, error: null });
+    setStatus({ mode: 'disk', revision: s.revision, savedAt: disk.exists ? disk.savedAt : s.savedAt ?? null, notice, error: null });
     if (s.changes > 0) await flush();
     return useDiskWorkspace.getState();
 }
