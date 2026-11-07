@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { DatabaseBackup, Upload, Trash2, X, Plus, Clock, FileJson, DownloadCloud } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { restoreFromGame } from '../../engine/fileUtils';
+import { restoreFromGame, snapshot } from '../../engine/fileUtils';
+import { saveWorkspaceNow } from '../../engine/diskWorkspace';
 
 export default function FileManagerModal({ isOpen, onClose }) {
   const [backups, setBackups] = useState([]);
@@ -74,7 +75,7 @@ export default function FileManagerModal({ isOpen, onClose }) {
   };
 
   const requestNewWorkspace = () => {
-    setConfirmState({ type: 'new', data: null, message: 'Create a new empty workspace? Make sure you have saved your current work.' });
+    setConfirmState({ type: 'new', data: null, message: 'Start a new empty workspace? The current one is kept in Backups first, as before-new_ and the time.' });
   };
 
   const requestRestoreFromGame = () => {
@@ -101,8 +102,18 @@ export default function FileManagerModal({ isOpen, onClose }) {
         if (!res.ok) throw new Error('Failed to delete');
         fetchBackups();
       } else if (type === 'new') {
-        localStorage.clear();
-        window.location.reload();
+        // ⚠️ Only the workspace is emptied, and only once a backup of it is on disk: the dials, the API key and the change-pack reviews live in their own keys and stay.
+        const name = `before-new_${new Date().toISOString().replace(/[:.]/g, '-')}`;
+        const res = await fetch('/api/backups', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, data: snapshot(useEntityStore.getState()), isAutoSave: false }),
+        });
+        if (!res.ok) throw new Error('The current workspace could not be backed up, so it was kept');
+        useEntityStore.getState().hydrate({});
+        await saveWorkspaceNow();
+        fetchBackups();
+        onClose();
       }
     } catch (err) {
       setError(err.message);

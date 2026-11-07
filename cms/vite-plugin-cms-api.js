@@ -9,6 +9,7 @@ import { studioAssetPath } from './assetNaming.js';
 import { compareSync } from './src/engine/syncGuard.js';
 import { mergePlanFile, plannedKeysOf, PLAN_FILE, PLAN_DIR, PLAN_SYNC_KEY } from './src/engine/planFile.js';
 import { listPacks, getPack, archivePack, restorePack } from './changePackInbox.js';
+import { getWorkspace, putWorkspace, WORKSPACE_FILE } from './workspaceFile.js';
 
 
 /**
@@ -199,6 +200,32 @@ function changePackRoute(req, res, url, incoming) {
   send({ status: 404, body: { error: 'No such change-pack route' } });
 }
 
+/**
+ * `/api/workspace`: the workspace on disk (`workspaceFile.js`).
+ * - `GET`: `{ exists, revision, savedAt, savedBy, simDials, workspace }`; `?meta=1` leaves out the workspace and dials
+ * - `PUT` `{ baseRevision, workspace, simDials, clientId }` or `{ seed: true, workspace, simDials }`: 409 when the disk moved on
+ */
+function workspaceRoute(req, res, file, backupsDir) {
+  const send = ({ status, body }) => {
+    res.statusCode = status;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-store');
+    res.end(JSON.stringify(body));
+  };
+  if (req.method === 'GET') return send(getWorkspace(file, { meta: /[?&]meta=1(&|$)/.test(req.url) }));
+  if (req.method === 'PUT') {
+    readJson(req, (body) => {
+      try {
+        send(putWorkspace(file, body, { backupsDir }));
+      } catch (err) {
+        send({ status: 500, body: { error: 'Failed to write the workspace: ' + err.message } });
+      }
+    }, (err) => send({ status: 400, body: { error: 'Invalid JSON: ' + err.message } }));
+    return;
+  }
+  send({ status: 405, body: { error: 'Method not allowed' } });
+}
+
 /** The only API routes the Studio's server answers: palettes, sprites and animation runs, never game data. */
 const STUDIO_ROUTES = ['/api/custom-palettes', '/api/palette-groups', '/api/palette-inbox', '/api/save-recolored-asset', '/api/animation-runs'];
 
@@ -213,17 +240,28 @@ const STUDIO_ROUTES = ['/api/custom-palettes', '/api/palette-groups', '/api/pale
  * @param {string} [options.planDir] the ledger's plan, kept out of `data/` (default `cms/plan/`); written and read beside `data/`
  * @param {boolean} [options.studio] the Studio's server: refuses every API route outside `STUDIO_ROUTES`
  * @param {string} [options.incomingDir] the change-pack inbox (default `cms/incoming/`; archive in its `applied/`)
- * @param {string} [options.backupsDir] workspace backups and autosaves (default `backups/` under the server's folder)
+ * @param {string} [options.backupsDir] workspace backups and autosaves (default `cms/backups/`)
+ * @param {string} [options.workspaceDir] the workspace on disk, `workspace.json` (default `cms/workspace/`)
+ * @param {string} [options.sandboxDir] a throwaway folder that stands in for every place this server
+ *        writes: `<dir>/data`, `<dir>/plan`, `<dir>/workspace`, `<dir>/backups`, `<dir>/incoming`,
+ *        `<dir>/inbox`. A Sync there never commits. Options named on their own still win.
  */
-export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dataDir, planDir, incomingDir, backupsDir: backupsDirOption, studio = false } = {}) {
+export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dataDir, planDir, incomingDir, backupsDir: backupsDirOption, workspaceDir, sandboxDir, studio = false } = {}) {
   const projectRoot = process.cwd().endsWith('cms') ? path.resolve(process.cwd(), '..') : process.cwd();
-  const inbox = inboxDir || path.resolve(projectRoot, 'cms', 'inbox');
+  const sandbox = sandboxDir ? path.resolve(sandboxDir) : null;
+  const inSandbox = (name) => (sandbox ? path.join(sandbox, name) : null);
+  dataDir = dataDir || inSandbox('data');
+  planDir = planDir || inSandbox('plan');
+  const inbox = inboxDir || inSandbox('inbox') || path.resolve(projectRoot, 'cms', 'inbox');
   const paletteInbox = paletteInboxDir || path.resolve(projectRoot, 'cms', 'palettes-inbox');
   const palettesRoot = palettesDir || path.resolve(projectRoot, 'data', 'palettes');
   const dataRoot = dataDir || path.resolve(projectRoot, 'data');
   const planRoot = planDir || path.resolve(projectRoot, ...PLAN_DIR.split('/'));
   const readPlan = () => (fs.existsSync(path.join(planRoot, PLAN_FILE)) ? JSON.parse(fs.readFileSync(path.join(planRoot, PLAN_FILE), 'utf8')) : null);
-  const incoming = incomingDir || path.resolve(projectRoot, 'cms', 'incoming');
+  const incoming = incomingDir || inSandbox('incoming') || path.resolve(projectRoot, 'cms', 'incoming');
+  // ⚠️ From the project root, like every other folder here: it once followed the server's working folder, so a server started from the repo root kept its backups in a second `backups/` there.
+  const backupsDir = backupsDirOption || inSandbox('backups') || path.resolve(projectRoot, 'cms', 'backups');
+  const workspaceFile = path.join(workspaceDir || inSandbox('workspace') || path.resolve(projectRoot, 'cms', 'workspace'), WORKSPACE_FILE);
   const library = libraryFiles(palettesRoot);
   return {
     name: 'cms-file-api',
@@ -238,6 +276,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
           return;
         }
 
+        if (url === '/api/workspace') return workspaceRoute(req, res, workspaceFile, backupsDir);
         if (url === '/api/starter-camp') return starterCampRoute(req, res, inbox);
         if (url === '/api/change-packs' || url.startsWith('/api/change-packs/')) return changePackRoute(req, res, url, incoming);
 
@@ -387,7 +426,6 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
           return next();
         }
 
-        const backupsDir = backupsDirOption || path.resolve(process.cwd(), 'backups');
         if (!fs.existsSync(backupsDir) && url.startsWith('/api/backups')) {
           fs.mkdirSync(backupsDir, { recursive: true });
         }

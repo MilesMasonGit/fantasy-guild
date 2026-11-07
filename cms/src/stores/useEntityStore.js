@@ -28,6 +28,7 @@ import { workspaceSkyFrom } from '../engine/hallSky';
 import { workspaceWorldFrom } from '../engine/worldTables';
 import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRenames';
 import { splitPlanned, rejoinPlanned } from '../engine/planFile';
+import { workspaceStorage } from '../engine/diskWorkspace';
 
 /** The CMS's authored content, in one store: the keyed collections `items` and `tokens`, the named effect library, and the per-skill recipe pools. Enemy is a filtered view of the Token list. */
 
@@ -1135,6 +1136,8 @@ export const useEntityStore = create(
         {
             // ⚠️ Renamed from `fantasy-guild-cms-entities`: the old key holds a retired collection shape, and rehydrating it into this store would silently repopulate deleted entity types.
             name: 'fantasy-guild-cms-v2',
+            /** The workspace on disk, with this browser's localStorage as its cache (`engine/diskWorkspace.js`); plain localStorage until the page connects to the disk. */
+            storage: workspaceStorage,
             /**
              * ⚠️ This store persisted without a version, and zustand does not call `migrate` for a versionless blob (it checks `typeof version === 'number'`), so a normaliser hung on `migrate` alone would silently skip every older workspace. Seeding therefore hangs on `merge`, which zustand calls on every rehydration; `migrate` is kept for a future numbered version, because without it a real mismatch would discard the workspace.
              * ⚠️ Do not simplify this by deleting `merge`.

@@ -13,12 +13,15 @@ Design: `docs/active/concept_cms_agent_authoring.md`. Code: `cms/src/engine/chan
 
 ## What to read first
 
-The owner's unsynced work is in the newest **`cms/backups/autosave_*.json`** (the CMS
-writes one every few minutes while they edit, keeping the last five). Read your
-"before" values from there, not from `data/`, so you see what the owner sees, **unless
-`data/` is newer** (a file in it changed after that autosave: the owner has Synced since and
-the autosave is stale); then read `data/`. The helper below makes the same choice. Its shape:
-`{ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, world }`; recipes sit in `recipePools[skill]`, each with an `id`.
+The owner's unsynced work is in **`cms/workspace/workspace.json`**, the CMS workspace on disk
+(the CMS writes it a second after every edit; `cms/workspace/README.md`). Read your "before"
+values from there, not from `data/`, so you see what the owner sees. Its collections sit under
+`workspace`: `{ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations,
+hallStars, world, planSettings }`; recipes sit in `recipePools[skill]`, each with an `id`. Run
+`npm run cms -- validate` on it, and `npm run cms -- validate --data` on `data/`, before writing a
+pack: both use the schemas in `cms/schemas/` (`cms/README.md`). In a checkout whose CMS has not
+started since the move to disk there is no such file yet; the helper then falls back to the newest
+`cms/backups/autosave_*.json`, or `data/` when that is newer.
 
 ## The file
 
@@ -187,13 +190,12 @@ node cms/changePackTool.mjs check cms/incoming/<id>.json   # will the CMS accept
 node cms/changePackTool.mjs gate cms/incoming/<id>.json    # the gate: may the pack go to the owner?
 ```
 
-Without `--from`, `stamp`, `gate`, `world` and `balance` read the newest autosave while it is
-newer than every file in `data/`; otherwise (`data/` is newer, or there is no autosave) they read
-`data/` with `cms/plan/plan.json`, which may flag conflicts the owner then judges. Each prints
-which it used and why (`Stamped ... against ...`, `Against ...`). `--from <workspace.json>`
-names another. `check` reads no workspace. The choice goes by file times, and switching branch
-rewrites `data/`'s, so after one an autosave with the owner's unsynced work can read as older: when
-the printed reason looks wrong, name the autosave with `--from`. The CMS lists a
+Without `--from`, `stamp`, `gate`, `world` and `balance` read `cms/workspace/workspace.json`
+when it exists. Without it they read the newest autosave while it is newer than every file in
+`data/`; otherwise (`data/` is newer, or there is no autosave) `data/` with `cms/plan/plan.json`,
+which may flag conflicts the owner then judges. Each prints which it used and why
+(`Stamped ... against ...`, `Against ...`). `--from <workspace.json>` names another (a workspace
+file or a bare backup). `check` reads no workspace. The CMS lists a
 malformed pack with the same reasons and will not open it for review.
 
 ### The gate

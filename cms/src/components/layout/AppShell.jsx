@@ -8,6 +8,7 @@ import { useReviewStore } from '../../stores/useReviewStore';
 const INBOX_POLL_MS = 20000;
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
+import { WorkspaceBanner } from './WorkspaceStatus';
 import GenerateModal from '../shared/GenerateModal';
 import SettingsModal from '../shared/SettingsModal';
 import FileManagerModal from '../shared/FileManagerModal';
@@ -48,6 +49,7 @@ export default function AppShell({ children }) {
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenFileManager={() => setFileManagerOpen(true)}
       />
+      <WorkspaceBanner />
       <div className="flex flex-1 overflow-hidden">
         {VIEWS_WITH_SIDEBAR.has(currentView) && <Sidebar />}
         <main className="flex-1 overflow-auto p-4">

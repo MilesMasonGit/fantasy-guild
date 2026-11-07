@@ -5,6 +5,7 @@ import SyncGuardPanel from '../shared/SyncGuardPanel';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 import { useReviewStore } from '../../stores/useReviewStore';
+import { WorkspaceStatus } from './WorkspaceStatus';
 
 const VIEWS = [
   { key: 'editor', label: 'Editor' },
@@ -114,6 +115,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
         >
           v2 · phase 10
         </span>
+        <WorkspaceStatus />
       </div>
 
       <div className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: 'var(--color-bg-base)' }}>

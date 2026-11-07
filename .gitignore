@@ -51,6 +51,10 @@ cms/palettes-inbox/*
 cms/incoming/*
 !cms/incoming/README.md
 cms/dist-studio/
+# The CMS workspace on disk (cms/workspace/README.md): the owner's authored content between Syncs.
+# Local, like the browser copy it replaced; Sync writes data/, which is what git keeps.
+cms/workspace/*
+!cms/workspace/README.md
 
 # Game assets
 public/assets/archive/
