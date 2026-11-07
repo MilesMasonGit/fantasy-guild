@@ -1,0 +1,8 @@
+Bundle size baseline, 2026-11-07, main 44b75a7a (+ T-334 test fix, no effect on the bundle). npm run build, 44.5 s.
+
+One script, no code splitting:
+  dist/assets/index-*.js            2,128,288 bytes   gzip 663,452
+  dist/assets/index-*.css             133,524 bytes   gzip  22,714
+  dist/assets/worldPicture.worker.js    6,395 bytes   gzip   3,078
+JS total 2,134,683 bytes; CSS 133,524.
+dist/ total 35,511,797 bytes in 8,841 files (the rest is public/assets art copied as is).

@@ -9,7 +9,7 @@ changelog and `docs/archive/`.*
 ## Where the project is
 
 - **Version** 0.8.x on `main`. **Tests:** about 7,880 in 632 files, green
-  except T-334 (one test pinned content the owner has since Synced).
+  (T-334 fixed 2026-11-07).
 - **The crunch's feature briefs are merged** (combat look, rivers and ground,
   world map, Guild Hall sky, notifications, settings, save files, new game,
   Shop, Foundations, tools that break). The engine is feature-complete for
@@ -24,9 +24,9 @@ changelog and `docs/archive/`.*
 
 ## Next
 
-1. **Owner**: approve the project MCP server when the app asks.
-2. **Director**, first quiet window: the 30-minute `bench:soak --save-baseline`
-   on `main` (engine and draw baselines retaken 7 Nov); T-334.
-3. **Reviewer** (`/reviewer`): session R0 (the map), then R1 onward; the
+1. **Reviewer** (`/reviewer`): session R0 (the map), then R1 onward; the
    planning agent triages each area's findings with the owner and writes the
-   fix briefs; the director fixes.
+   fix briefs; the director fixes. Every baseline is taken (7 Nov: engine,
+   draw, soak, bundle, suite; `review/STATUS.md`); the soak's leads are
+   T-333 and T-335.
+2. **Owner**: approve the project MCP server when the app asks.

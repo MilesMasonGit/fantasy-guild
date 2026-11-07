@@ -36,8 +36,13 @@ Merged today, all docs or tooling, no eye-check needed:
   over a long idle in headless Chrome, a hidden phase, slopes and verdicts,
   `--snapshot` for a class-by-class heap diff). One 3-line dev-only getter in
   `src/ui/dev/perf/perfHarness.js`. No baseline yet.
-- Tickets filed: T-333 (a hidden page piles up detached nodes and listeners,
-  seen in the soak smoke), T-334 (DropLap test pinned pre-Sync content).
+- Tickets: T-333 (a hidden page piles up detached nodes and listeners,
+  confirmed by the soak baseline 2026-11-07), T-335 (visible heap grows 52
+  KB a minute, steady; closures and contexts lead the snapshot diff). T-334
+  is merged (d5a5fa9e): the suite is fully green, 632 files, 7,876 tests.
+- Lesson: a worktree needs both junctions, `node_modules` and
+  `cms/node_modules`, or every CMS test file fails to resolve `zustand`
+  (63 files "failed" with 0 failing tests). Check before trusting a count.
 
 ## Branches and worktrees (verified at writing)
 
@@ -52,6 +57,11 @@ Merged today, all docs or tooling, no eye-check needed:
 - `.claude/worktrees/cm`: detached, no longer needed; its `cms/node_modules`
   is a real folder, its root `node_modules` a junction (rmdir the junction
   before `git worktree remove`).
+- `.claude/worktrees/t334` (`fix/droplap-test`, merged d5a5fa9e): no longer
+  needed; both `node_modules` are junctions (rmdir both, then
+  `git worktree remove`, `git branch -d fix/droplap-test`). The app's
+  classifier refuses worktree removals by the director; the owner or a
+  terminal does it.
 - `.claude/worktrees/p23b`: detached, the bench scratch folder.
 - `pcm`, `pco`, `pp`, `psk`: the planning agents' branches, left as they are.
 - `eyecheck/fights-rivers`: unmerged on purpose (retired Terrain QA buttons).
@@ -62,11 +72,14 @@ Merged today, all docs or tooling, no eye-check needed:
   85cefe1f in the 01:00 window on 7 Nov (3f336e14; work changed only on the
   S2 family and C240/C256 against the old baseline, as expected from the bench
   fights and still enemies).
-- **Next quiet window (01:00 or 13:00), on `main` in `p23b`:**
-  `npm run bench:soak -- --save-baseline` (30 min visible, 5 hidden; expect
-  the hidden phase to FAIL on T-333, record it) and the bundle size and suite
-  time into `review/baseline/`; commit the baselines with the date and fill
-  `review/STATUS.md`'s baseline table.
+- Soak baseline taken 2026-11-07 10:34 on `main` 44b75a7a
+  (`bench/soak-baseline.json`, full report `review/baseline/soak.txt`):
+  hidden phase FAIL as expected (T-333 confirmed, 294 nodes and 136
+  listeners a minute); new WARN, the visible heap grows 52 KB a minute,
+  steady (T-335). Bundle size in `review/baseline/bundle.txt`, suite time in
+  `review/baseline/suite.txt`. `review/STATUS.md`'s baseline table is full.
+- **Nothing queued for the next window.** Later soaks compare against the
+  baseline with `npm run bench:soak -- --compare`.
 
 ## For the reviewer and the planning agent
 

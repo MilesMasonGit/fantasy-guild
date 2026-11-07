@@ -17,7 +17,7 @@
 | R8 | Content boundary and CMS layer | not started | | | |
 | R9 | Dead code, duplicates, cycles, lint | not started | | | |
 | R10 | Tests | not started | | | |
-| R11 | Memory and idle | not started (needs the soak baseline) | | | |
+| R11 | Memory and idle | not started (soak baseline taken 2026-11-07: T-333, T-335 are its leads) | | | |
 | R12 | Shell, build, startup | not started | | | |
 
 States: `not started`, `reading`, `verifying`, `ready for triage`, `triaged`,
@@ -33,10 +33,10 @@ States: `not started`, `reading`, `verifying`, `ready for triage`, `triaged`,
 
 | Measure | Taken | Commit | File |
 |---|---|---|---|
-| engine bench | pending (next 01:00 window) | | `bench/baseline.json` |
-| draw bench | pending | | `bench/draw-baseline.json` |
-| memory soak, 30 min visible, 5 hidden | pending | | `bench/soak-baseline.json` |
-| bundle size (`npm run build`, dist/) | pending | | `baseline/bundle.txt` |
+| engine bench | 2026-11-07 01:00 window | 85cefe1f (3f336e14) | `bench/baseline.json` |
+| draw bench and calibration | 2026-11-07 01:00 window | 85cefe1f (3f336e14) | `bench/draw-baseline.json`, `bench/calibration/stamp.json` |
+| memory soak, 30 min visible, 5 hidden | 2026-11-07 10:34; heap WARN 52 KB/min visible (T-335), hidden phase FAIL (T-333 confirmed: 294 nodes, 136 listeners a minute) | 44b75a7a | `bench/soak-baseline.json`, `baseline/soak.txt` |
+| bundle size (`npm run build`, dist/) | 2026-11-07: one 2.13 MB script, 663 KB gzipped, no code splitting | 44b75a7a | `baseline/bundle.txt` |
 | test suite wall time | pending | | `baseline/suite.txt` |
 | knip, depcruise, cycles, jscpd, lint | 2026-11-06 (prep) | 93338609 | `baseline/*.txt` |
 

@@ -5,6 +5,9 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Dev panel: the "Lap star in the sky" button is gone** (dev only). It installed a hand-copied
+  Swift Laps star for testing before the owner synced the real one; the tests now read the synced
+  star from the data, and the copy is deleted.
 - **The CMS keeps its workspace on disk, and has a command line** (agent tooling): the owner's
   authored content between Syncs now lives in `cms/workspace/workspace.json` instead of the
   browser, where clearing site data once lost work. The CMS writes it a second after each change

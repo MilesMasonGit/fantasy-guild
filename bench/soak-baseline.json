@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "commit": "44b75a7a",
+    "date": "2026-11-07T17:02:47.786Z",
+    "machine": "DESKTOP-IEM8MOS",
+    "chrome": "Chrome/156.0.8078.80",
+    "note": "Slopes per minute and levels (median of the fitted samples). Machine-specific: re-take on the owner's PC, quiet: npm run bench:soak -- --save-baseline"
+  },
+  "settings": {
+    "scene": "cap128",
+    "minutes": 30,
+    "every": 60,
+    "hidden": 5,
+    "warmup": 3
+  },
+  "metrics": {
+    "heapUsed": {
+      "slope": 51.832,
+      "level": 17860.5,
+      "n": 23,
+      "spanMin": 27
+    },
+    "nodes": {
+      "slope": -0.6747,
+      "level": 1884,
+      "n": 23,
+      "spanMin": 27
+    },
+    "listeners": {
+      "slope": -0.0791,
+      "level": 833,
+      "n": 23,
+      "spanMin": 27
+    },
+    "busSubscribers": {
+      "slope": -0.1153,
+      "level": 484,
+      "n": 23,
+      "spanMin": 27
+    },
+    "documents": {
+      "slope": 0,
+      "level": 11,
+      "n": 23,
+      "spanMin": 27
+    },
+    "frames": {
+      "slope": 0,
+      "level": 11,
+      "n": 23,
+      "spanMin": 27
+    }
+  }
+}

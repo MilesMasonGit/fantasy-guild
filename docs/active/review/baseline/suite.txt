@@ -1,0 +1,4 @@
+Test suite wall time baseline, 2026-11-07, main 44b75a7a + T-334 (fix/droplap-test d5a5fa9e), quiet machine, worktree with node_modules junctions.
+npx vitest run: 632 files, 7,876 tests passed, 4 skipped. Duration 203.45 s (vitest), 206 s wall.
+Breakdown reported by vitest: transform 39.8 s, setup 25.5 s, import 538 s, tests 500 s, environment 842 s (summed across workers).
+For comparison the CMS-only files (63) take 48 s alone.

@@ -1,0 +1,113 @@
+Memory soak baseline, 2026-11-07 10:34, main 44b75a7a, cap128, 30 min visible + 5 hidden, a sample a minute, headless Chrome.
+Command: npm run bench:soak -- --save-baseline --snapshot   (exit 1: the hidden phase misbehaved, T-333)
+Baseline written to bench/soak-baseline.json. Heap snapshots (git-ignored) in bench/results/soak-2026-11-07T17-02-47-786Z-44b75a7a-*.heapsnapshot.
+
+
+> fantasy-guild@0.8.0 bench:soak
+> node bench/soak.mjs --save-baseline --snapshot
+
+Fantasy Guild memory soak — 44b75a7a on HEAD · DESKTOP-IEM8MOS · Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz
+S2 mix at cap 128 · 30 min, a sample every 60 s (31 samples) · hidden 12.0–17.0 min · fit from 3.0 min · settle 60 s · heap snapshots
+Building the perf build (vite build --mode perf)…
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Chrome Chrome/156.0.8078.80 headless · GPU NVIDIA GeForce RTX 3060 · 1600×1000 at DPR 1
+Settling 60 s…
+
+t min     phase   heap MB  total MB   nodes   elems  listnr  docs   bus  Tokens  piles  toasts    fps  tick/s  task ms/s  rend MB
+0.0     warm-up     16.31      17.3    1964    1690     840    11   523     130      3       0      —       —          —      117
+1.0     warm-up     16.57      17.8    1981    1705     846    11   522     130      5       0    165    10.0        149      116
+2.0     warm-up     16.77      18.1    1980    1705     850    11   523     131      4       0    165    10.0        141      115
+3.0     visible     16.46      18.1    1945    1676     843    11   494     131      3       0    164    10.0        129      117
+  heap snapshot (start)… 44 MB in 1.9 s
+4.0     visible     16.52      18.1    1929    1660     837    11   489     131      1       0    161     9.8        148      158
+5.0     visible     16.61      18.1    1877    1617     828    11   484     131      1       0    165    10.0        124      160
+6.0     visible     16.67      18.6    1892    1631     836    11   485     132      2       0    165    10.0        126      159
+7.0     visible     16.70      18.3    1876    1617     830    11   485     132      0       0    165    10.0        121      157
+8.0     visible     16.74      18.3    1875    1616     830    11   485     132      0       0    165    10.0        121      158
+9.0     visible     16.77      18.3    1884    1624     833    11   484     132      1       0    165    10.0        120      158
+10.0    visible     16.99      18.6    1877    1618     830    11   484     132      0       0    165    10.0        122      160
+11.0    visible     17.10      18.6    1893    1632     836    11   484     132      2       0    165    10.0        121      162
+12.0    visible     17.08      18.6    1876    1617     830    11   485     132      0       0    165    10.0        120      163
+  — window minimised: the page is hidden —
+13.0     hidden     17.15      18.6    2169    1640     963    11   484     132      0       0      0    10.0          8      162
+14.0     hidden     17.25      18.6    2462    1663    1096    11   484     132      0       0      0    10.0          8      161
+15.0     hidden     17.45      19.1    2757    1695    1234    11   485     132      1       0      0    10.0          8      163
+16.0     hidden     17.50      19.1    3048    1733    1372    11   485     132      3       0      0    10.0          8      163
+17.0     hidden     17.65      19.1    3347    1734    1505    11   486     132      0       0      0    10.0          8      165
+  — window restored: the page is visible —
+18.0    visible     17.45      19.1    1875    1616     830    11   484     132      0       0    165    10.0        121      165
+19.0    visible     17.44      19.1    1885    1625     833    11   485     132      1       0    165    10.0        121      166
+20.0    visible     17.43      19.1    1885    1625     833    11   484     132      1       0    165    10.0        122      168
+21.0    visible     17.46      19.1    1886    1626     833    11   484     132      1       0    165    10.0        119      169
+22.0    visible     17.51      19.1    1875    1616     830    11   484     132      0       0    165    10.0        122      168
+23.0    visible     17.67      19.6    1876    1617     830    11   485     132      0       0    165    10.0        119      171
+24.0    visible     17.67      19.6    1876    1617     830    11   485     132      0       0    165    10.0        122      173
+25.0    visible     17.67      19.6    1900    1638     836    11   484     132      2       0    165    10.0        121      173
+26.0    visible     17.71      19.6    1885    1625     830    11   484     132      0       0    165    10.0        122      175
+27.0    visible     17.75      19.6    1875    1616     830    11   484     132      0       0    165    10.0        124      175
+28.0    visible     17.72      19.6    1884    1624     833    11   484     132      1       0    165    10.0        119      175
+29.0    visible     17.76      19.6    1885    1625     833    11   484     132      1       0    165    10.0        120      175
+30.0    visible     17.77      19.6    1892    1631     836    11   485     132      2       0    165    10.0        118      178
+  heap snapshot (end)… 44 MB in 1.8 s
+
+Slopes over the visible samples from 3.0 min (judged from 5 samples over 10 min; "hidden slope" is the hidden phase's own, not judged):
+metric                           fit n / min    slope per min    net     level    r²  hidden slope                                           verdict
+-------------------------------  -----------  ---------------  -----  --------  ----  ------------  ------------------------------------------------
+JS heap used                       23 / 27.0         51.83 KB   1338   17.4 MB  0.97        129.25  WARN: grows 51.83 KB/min, over 50 (fails at 200)
+DOM nodes (live and detached)      23 / 27.0      -0.67 nodes    -53      1884  0.12        294.20                                                ok
+JS event listeners                 23 / 27.0  -0.08 listeners     -7       833  0.04        136.00                                                ok
+EventBus subscribers               23 / 27.0       -0.12 subs     -9       484  0.22          0.50                                                ok
+Documents (page + SVG pictures)    23 / 27.0        0.00 docs      0        11  1.00          0.00                                                ok
+Frames (page + SVG pictures)       23 / 27.0      0.00 frames      0        11  1.00          0.00                                                ok
+JS heap total                      23 / 27.0         63.14 KB   1536   19.1 MB  0.95        153.60                                              info
+elements in the document           23 / 27.0   -0.55 elements    -45      1624  0.11         25.80                                              info
+layout objects                     23 / 27.0    -0.73 objects    -57      1821  0.13         24.10                                              info
+Tokens on the mat                  23 / 27.0      0.02 Tokens      1       132  0.31          0.00                                              info
+renderer private memory            23 / 27.0       1102.71 KB  63056  165.6 MB  0.61        812.40                                              info
+GPU process private memory         23 / 27.0        174.60 KB  -8824  166.6 MB  0.04         -8.00                                              info
+
+Hidden phase: document hidden at every hidden sample; drawing clocks paused; afterwards visible, clocks running.
+phase    intervals    fps  engine ticks/s  page task ms/s  script ms/s  style passes/s  layouts/s
+-------  ---------  -----  --------------  --------------  -----------  --------------  ---------
+visible         25  164.7            10.0           124.5         14.7           121.7        5.6
+hidden           5    0.0            10.0             8.1          5.3             0.3        0.2
+Page task time hidden / visible: 6 %; engine ticks hidden / visible: 100 %.
+held while hidden              before  hidden max  after  hidden slope /min
+-----------------------------  ------  ----------  -----  -----------------
+JS heap used (MB)               17.08       17.65  17.45             129.25
+DOM nodes (live and detached)    1876        3347   1875             294.20
+JS event listeners                830        1505    830             136.00
+EventBus subscribers              485         486    484               0.50
+elements in the document         1617        1734   1616                  —
+✗ DOM nodes (live and detached) grew 294.2 nodes/min while hidden (limit 20)
+✗ JS event listeners grew 136.0 listeners/min while hidden (limit 10)
+
+EventBus subscribers at the end: 485 on 82 events (engine 85); most: game_reset 172, board:tile_changed 27, heroes_updated 21, board:token_depleted 19, board:hero_moved 16, token_placed 16
+
+Reading the heap snapshots… 1.4 s. Reachable objects 521733 → 526904, 33.88 → 34.95 MB.
+Top 15 classes by retained-size growth, sample 3 → 30:
+class                                                               count  Δ count  Δ self KB  Δ retained KB  retained KB at end
+----------------------------------------------------------  -------------  -------  ---------  -------------  ------------------
+(compiled code)                                             76408 → 78514     2106     1156.7         1174.9             14434.0
+(closure)                                                   31368 → 31455       87        2.3         1035.1              4852.2
+system / Context / scope                                    10740 → 10743        3        0.8          582.6              7420.6
+Object                                                      77325 → 79009     1684       70.9          190.6             10618.8
+blink::ComputedStyle                                          3412 → 2873     -539      -37.9          167.3              1240.7
+blink::DisallowNewWrapper<blink::BasicHeapHashMap<blink::…          1 → 1        0        0.0          124.3               150.6
+blink::HeapHashTableBacking<blink::HashTable<unsigned int…          1 → 1        0        6.0          124.3               150.6
+blink::PresentationAttributeCacheEntry                           79 → 425      346       29.7          118.3               142.6
+blink::ImmutableCSSPropertyValueSet                           1198 → 1546      348       16.4           89.9               289.7
+system / WeakArrayList                                        1523 → 2280      757       81.2           81.2               234.1
+(object shape)                                              16037 → 16170      133        8.7           70.5               986.2
+blink::CSSValueList                                           2192 → 2895      703       33.0           68.7               286.0
+blink::cssvalue::CSSRatioValue                                  154 → 846      692       16.2           39.6                47.9
+system / Cell                                                     98 → 98        0        0.0           29.3                63.1
+Array                                                       18532 → 18590       58        0.9           28.0              1832.0
+Snapshots (open in DevTools → Memory): bench\results\soak-2026-11-07T17-02-47-786Z-44b75a7a-start.heapsnapshot, bench\results\soak-2026-11-07T17-02-47-786Z-44b75a7a-end.heapsnapshot
+
+✗ the hidden phase misbehaved.
+Wrote bench\results\soak-2026-11-07T17-02-47-786Z-44b75a7a.json (1890 s).
+Wrote bench/soak-baseline.json ({"scene":"cap128","minutes":30,"every":60,"hidden":5,"warmup":3}).
+EXIT 1
