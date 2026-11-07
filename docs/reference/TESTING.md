@@ -119,11 +119,18 @@ mid-probe three times. Prefer an empty slot. The owner's test save is slot 3.
 
 ## The CMS
 
-Never verify on the real CMS workspace: a test effect left there is written
-into `data/` by the next Sync to Game. Mount the component on a throwaway
+Never verify on the real CMS workspace (`cms/workspace/workspace.json`, the
+owner's content between Syncs): a test effect left there is written into
+`data/` by the next Sync to Game. A running CMS for a check starts with
+`CMS_SANDBOX_DIR=<dir>` (and its own `PORT` and `CMS_CACHE_DIR`), which moves
+its data, plan, workspace and backups into `<dir>` (copy `data/` into
+`<dir>/data` first; a Sync there never commits); the command line takes
+`--sandbox=<dir>` the same way. In a test, mount the component on a throwaway
 `?flag` route, either handing it its own `content`, or calling
 `useEntityStore.persist.setOptions({ storage: <no-op> })` before seeding and
-checking `localStorage['fantasy-guild-cms-v2']` is unchanged afterwards.
+checking `localStorage['fantasy-guild-cms-v2']` is unchanged afterwards (the
+store reaches the disk only once the page calls `connectDiskWorkspace`, which no
+test does against the real server).
 
 **A click can beat React's effects.** When something drawn by a late update (a fetch's answer) is found by `findBy`/`waitFor`, its effects have usually run, but if the machine stalls for a millisecond the test's next line comes first. The component is not yet listening to its stores, so a click that changes a store redraws nothing, and a second click in the same step runs the old drawing's handler. A handler should read a store at click time (`getState()`), not the value from its render; a test can force the moment with a `MutationObserver` (`CMSChangePackReview`, "clicks that come before").
 

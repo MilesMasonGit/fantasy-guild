@@ -5,6 +5,17 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The CMS keeps its workspace on disk, and has a command line** (agent tooling): the owner's
+  authored content between Syncs now lives in `cms/workspace/workspace.json` instead of the
+  browser, where clearing site data once lost work. The CMS writes it a second after each change
+  and says so in the top bar ("Workspace: on disk, saved 14:05"); the first start moves the
+  browser's copy there and keeps a backup. If another tab or an agent changed the file meanwhile,
+  the CMS shows "The workspace on disk changed elsewhere; reload to see it" instead of writing over
+  it, and keeps its own edits in Backups. New workspace now backs up first and no longer wipes the
+  dials and change-pack reviews. Agents can validate content against new schemas, apply a change
+  pack, Recalculate, Sync and restore without a browser (`npm run cms -- <command>`,
+  `cms/README.md`). Sync to Game now commits only the files it wrote, so a Studio palette edit is
+  never swept into a content commit. The Studio is unchanged.
 - **The Shop spans the screen and the world map runs under everything** (owner's notes after the 2026-11-06 eye-check): the Shop panel now reaches from the screen's edge under the nav to the far edge, its cards from the nav's side; the world map is laid under the whole screen like the Guild Hall's sky, running on under the nav, the hero bar and the place panel, centred in the mat's room, and the pan down moves the whole screen as one.
 - **Tools and weapons can break** (brief 480 L1): an item may carry a **Break chance** (a percent,
   set in the CMS on a tool or a weapon; no content has one yet, so nothing in today's game breaks).
