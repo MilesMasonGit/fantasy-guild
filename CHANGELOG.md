@@ -6,6 +6,18 @@ project's first tagged baseline — everything before it was untagged developmen
 ## [Unreleased]
 
 - **Small fixes**: pressing on a picture inside an Encyclopedia chart box and dragging now pans smoothly; on screens 900 px tall or less (1366 x 768) the navigation bubbles step down a size so Settings stays on screen; the style sheet page test runs faster.
+- **Saves are files in the desktop game** (brief 450 S3): each slot's save is a file in a saves
+  folder (`%APPDATA%\com.fantasyguild.game\saves`, `slot1.json` to `slot3.json`, each with its
+  `.backup.json`), read when the slot is opened, so a save can be copied, kept or edited, and a
+  copy put back loads. An "Open Saves Folder" button on the title screen and in Game settings
+  shows the folder (desktop only). A save is written to a temp file, flushed to the disk and
+  renamed over the old one, so a crash part-way never loses the last good save; the save it
+  replaces becomes the backup, and a broken file never replaces a good backup. Closing the window
+  now waits for the save to reach the disk (up to 5 s if the game does not answer). A damaged or
+  hand-edited file loads its backup with the Save Restored banner, or says it is damaged; a file
+  from another version is refused as before; a save that is not even readable JSON now tries the
+  backup too, in the browser as well. Browser and dev builds keep their saves in the browser.
+  ⚠️ Saves from the desktop game's browser storage do not carry over: everyone starts fresh.
 
 - **Buying a Guild Hall star is a small moment** (brief 390 G4): the star bursts in hard
   pixels with a chime, light hops along its lines to the stars it just opened, which pop as it

@@ -1379,6 +1379,8 @@ drawers**. The menu can be flipped to the right.
   New Game; one whose save can't be read says Damaged and can still be loaded
   (for the message) or deleted. The owner's logo and title painting replace the
   name and the banner when their files exist (`src/ui/components/title/titleArt.js`).
+  In the desktop game an **Open Saves Folder** button under the slots (and in
+  Game settings) shows the folder the saves are files in.
 - **Bubble menu**: Guild Hall, Item Bank, Shop, Settings.
 - **Top bar**: the Region's name over its banner (at 3×, running on under the middle and fading
   out), Tokens / cap and upkeep per minute (each opens its summary on hover, staying while the
@@ -1476,8 +1478,18 @@ drawers**. The menu can be flipped to the right.
   to the Guild (plain wording, nothing is lost; Esc asks the same) and Load
   as I left it (everything from the time away is lost); the banners come
   after Return is confirmed.
-- **Saves**: 3 slots in browser `localStorage` with a one-step backup;
-  autosave every 10 min by default (10 min, 1 h or off; 1 min in dev builds only).
+- **Saves**: 3 slots with a one-step backup; autosave every 10 min by default
+  (10 min, 1 h or off; 1 min in dev builds only). **In the desktop game each
+  save is a file** (brief 450 S3): `slot1.json` to `slot3.json` and their
+  `.backup.json` in `%APPDATA%\com.fantasyguild.game\saves`, read when the slot
+  is opened, so a save can be copied, kept, edited or put back. A save is
+  written whole or not at all (a temp file, flushed, renamed over the old one;
+  `src-tauri/src/saves.rs`); the save it replaces becomes the backup unless
+  it is not even JSON. Closing the window waits for the save to be on the
+  disk (5 s at most). A damaged save (broken, hand-edited, unreadable) loads
+  its backup with a Save Restored banner, and the next save keeps that backup;
+  with none it says the save is damaged and changes nothing. The browser and
+  dev builds keep saves in browser `localStorage` (`SaveFiles.js` decides).
   Each slot on the title screen shows the time away it has built up. **Saves from another version are refused,
   not migrated** (`GAME_VERSION = '0.8.1'`, moved by the Atlas's Regions), and
   that stays the policy **until 1.0** (owner 2026-10-06). A new game is saved
@@ -1586,7 +1598,8 @@ drawers**. The menu can be flipped to the right.
   `WorldPanel.jsx`, `WorldCamera.jsx`, `worldPicture.js`; the art it reads,
   `config/worldMapArt.js`)*
 - **Desktop**: packaged with Tauri (Windows installers); the game runs in the
-  webview and saves stay in its storage.
+  webview, its settings stay in the webview's storage and its saves are files
+  (above).
 
 ---
 

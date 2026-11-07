@@ -306,6 +306,9 @@ item held.
 - A slot's stats are Lucide: heroes, playtime, and the time away (an hourglass; `24 h (max)` past
   the cap), whose tip gives the last save (`AWAY_REPLACES_LAST_SAVED`; false shows both). A slot whose save can't be read
   says **Damaged** in red, and keeps Load and delete.
+- **Open Saves Folder** (desktop game only): a plain kit button with a Lucide folder, under the
+  slots at the right, and full width under Save Now in Game settings; its tip gives the folder's
+  path. It draws nothing in a browser or a dev build (`SaveFolderButton.jsx`).
 
 ## Panel headers
 

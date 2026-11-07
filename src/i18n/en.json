@@ -57,7 +57,9 @@
         "lastSaved": "Last Saved",
         "awayTip": "Time away, played when you load (last saved {ago})",
         "awayMax": "{time} (max)",
-        "unknown": "Unknown"
+        "unknown": "Unknown",
+        "openSavesFolder": "Open Saves Folder",
+        "savesFolderTip": "Each save is a file here: {path}"
     },
     "newGame": {
         "title": "A New Guild — Slot {n}",

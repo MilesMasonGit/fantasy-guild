@@ -5,6 +5,7 @@ import { TimeManager } from './TimeManager.js';
 import * as CatchUp from './CatchUp.js';
 import { GuildUpgradeManager } from '../progression/GuildUpgradeManager.js';
 import { SaveManager } from './SaveManager.js';
+import * as SaveFiles from './SaveFiles.js';
 import { GameState } from '../../state/GameState.js';
 import * as NotificationSystem from './NotificationSystem.js';
 import './NotificationSubscriptions.js';
@@ -290,6 +291,9 @@ export const EngineBootstrap = {
      * @returns {Promise<boolean>} false when the save was refused (the reason is already said)
      */
     async startSlot(slotIndex, { catchUp = true, onOpened, setup } = {}) {
+        // The desktop build looks at the slot's file again first: one copied in since the slot
+        // screen read the folder is loaded, never overwritten by a new game.
+        if (SaveFiles.isActive()) await SaveFiles.refresh(slotIndex);
         const isNewGame = !SaveManager.hasSlot(slotIndex);
         if (isNewGame) {
             SaveManager.newGame(slotIndex);
