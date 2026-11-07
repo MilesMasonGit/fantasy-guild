@@ -537,7 +537,7 @@ names or comments only.
 | Reachability | `node tools/reachability.mjs` | Files unreachable from `main.jsx` | `docs/reference/TESTING.md:130-137` |
 | Lint | `npm run lint` | ESLint | `eslint.config.js` |
 
-**Lint count.** The brief records **581 errors** for `npm run lint` in the main checkout. In a
+**Lint count.** The director noted **581 errors** for `npm run lint` in the main checkout (2026-11-06). In a
 clean worktree of the same commit it reports **79 problems (74 errors, 5 warnings)**: 64
 `no-unused-vars`, 5 `react-hooks/rules-of-hooks`, 5 `react-hooks/exhaustive-deps`, 4
 `no-useless-assignment`, 1 `no-constant-condition`, spread over `src/`, `src/tests/`,
@@ -574,4 +574,4 @@ For the doc audit; nothing below was edited.
 11. Commits per tick (§3.4) were last measured 2026-10-13; `PERFORMANCE.md` itself was flagged
     out of date by the round-3 review (§2.E there), not re-checked here.
 12. `src/ui/components/board/frameClock.js`: `onFrame` and `isDrawingPaused` have no game
-    callers; their own comments describe them as in use.
+    callers (tests only), though the header presents `onFrame` as one of the mat's three clocks.
