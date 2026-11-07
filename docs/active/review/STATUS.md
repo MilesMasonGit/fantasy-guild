@@ -1,6 +1,6 @@
 # Review round 4: status
 
-*Kept by the reviewer. Next free finding number: **CR4-078**.*
+*Kept by the reviewer. Next free finding number: **CR4-082**.*
 
 ## Sessions
 
@@ -14,7 +14,7 @@
 | R5 | React plumbing | ready for triage | 2026-11-07 | 01830b61 | `R5_react_plumbing.md`: 6 findings (2 perf reasoned, 1 a11y owner-decision, 2 cleanup, 1 docs). Good: every subscription unsubscribes, no store hands React a fresh object, selectors keep the contract. Top: a hero's status recomputed by four stores per walk tick (CR4-061); the root redrawing the whole screen for a hover or a click (CR4-062); drag sources announcing a keyboard drag that cannot happen (CR4-063, owner). Measure first: re-run `bench/tick-commits.mjs`. |
 | R6 | State and saves | ready for triage | 2026-11-07 | e16338be | `R6_state_and_saves.md`: 5 findings (1 cleanup, 2 perf reasoned, 1 bug, 1 docs; 0 owner-decision). Good and careful: whole-file writes, a rolling backup, a retry, an undo; the architecture map is exact here. Top: seventeen saved fields nothing reads and a required key for a dead system (CR4-067); the title screen parsing whole saves for five numbers (CR4-068); a save that grows per Region and has never been measured (CR4-069). Measure first: save size and stringify time on the owner's slot. |
 | R7 | World, atlas, quests | ready for triage | 2026-11-07 | 18fd3e7f | `R7_world_atlas_quests.md`: 6 findings (2 cleanup, 2 perf reasoned, 1 bug, 1 docs; 0 owner-decision). Good: all seeded, nothing per tick but the quest clock, the map's counts exact. Top: migration code for saves the version check already refuses (CR4-072); settling lays the mat out up to nine times with a whole-field rasterise per candidate pond (CR4-073); the open world map recomputing every cell on every Bank change (CR4-074). Measure first: time `Atlas.settle` and `worldView()`. |
-| R8 | Content boundary and CMS layer | not started | | | |
+| R8 | Content boundary and CMS layer | ready for triage | 2026-11-07 | 18fd3e7f | `R8_content_boundary_and_cms.md`: 4 findings (2 bug, 1 cleanup, 1 docs; 0 owner-decision). Good: small startup work, one shared copy of nearly every rule, the map exact. Top: the Sync's stale-workspace guard compares ids only and the write is not atomic (CR4-078, P2, the owner's content); a recipe's items are checked nowhere but the CMS page (CR4-079); the Sync's words still promise maps (CR4-081). |
 | R9 | Dead code, duplicates, cycles, lint | not started | | | |
 | R10 | Tests | not started | | | |
 | R11 | Memory and idle | not started (soak baseline taken 2026-11-07: T-333, T-335 are its leads) | | | |
@@ -27,7 +27,7 @@ States: `not started`, `reading`, `verifying`, `ready for triage`, `triaged`,
 
 | open | verified | ticket | moot | owner-no |
 |---|---|---|---|---|
-| 0 | 77 | 0 | 0 | 0 |
+| 0 | 81 | 0 | 0 | 0 |
 
 ## Baselines (phase 1, director)
 
