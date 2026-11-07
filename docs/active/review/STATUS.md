@@ -1,13 +1,13 @@
 # Review round 4: status
 
-*Kept by the reviewer. Next free finding number: **CR4-013**.*
+*Kept by the reviewer. Next free finding number: **CR4-018**.*
 
 ## Sessions
 
 | Session | Area | State | Date | Commit | Summary |
 |---|---|---|---|---|---|
 | R0 | The map | ready for triage | 2026-11-07 | ea6b9f92 | `R0_the_map.md`: 12 findings (10 cleanup, 1 test, 1 docs; 0 owner-decision). The architecture doc holds; tools at ea6b9f92 match the baselines; the production bundle has no dev code. Top: the GameState rehydration cycle (CR4-001), terrain painters under systems (CR4-003), CMS-only ledger in src (CR4-010). |
-| R1 | Tick and time | not started | | | |
+| R1 | Tick and time | ready for triage | 2026-11-07 | 08d86ba1 | `R1_tick_and_time.md`: 5 findings (2 bug, 1 owner-decision, 1 perf reasoned P3, 1 cleanup). The best-kept corner of the code; nothing to bench. Top: playtime counts time away (CR4-013), dead sound hooks (CR4-014), live rules on the wall clock (CR4-015). |
 | R2 | Board and mat engine | not started | | | |
 | R3 | Heroes, combat, equipment, progression | not started | | | |
 | R4 | Drawing | not started | | | |
@@ -27,7 +27,7 @@ States: `not started`, `reading`, `verifying`, `ready for triage`, `triaged`,
 
 | open | verified | ticket | moot | owner-no |
 |---|---|---|---|---|
-| 0 | 12 | 0 | 0 | 0 |
+| 0 | 17 | 0 | 0 | 0 |
 
 ## Baselines (phase 1, director)
 
@@ -42,4 +42,5 @@ States: `not started`, `reading`, `verifying`, `ready for triage`, `triaged`,
 
 ## Questions for the owner
 
-(none yet)
+- **"Playtime" on the slot screen** (CR4-013): today it grows while the catch-up plays the time you were away. Should it mean (a) time the game was open, so the catch-up stops adding to it (recommended: that is what the label and the field's comment say), or (b) the guild's whole life including time away, so the label changes and nothing else does?
+- **Sounds that never play** (CR4-014): a defeat sound and an "invasion" sound are wired to moments the engine never announces. (a) Wire the defeat sound to a hero's defeat on the mat and decide what "invasion" means now (a settled place's enemies arriving?), or (b) drop both sounds and the dead hooks (recommended if no moment comes to mind: the knockout banner already plays a warning tone).
