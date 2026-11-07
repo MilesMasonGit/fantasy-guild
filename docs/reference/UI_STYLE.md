@@ -291,6 +291,20 @@ item held.
   kind, details, collected this run, then the book and the X at its top right. The tile it
   shows has the white selection line. *New, unapproved.*
 
+## The Shop (brief 410)
+
+- **A panel from the bottom** beside the nav, on whichever side the nav is, over the hero bar;
+  studs frame, the green backdrop. As wide as its cards, up to the screen. The header: title,
+  one muted hint line, Tokens / cap, the X.
+- **Cards side by side, all one size** (`SHOP_CARD_W` x `SHOP_CARD_H` in `ShopPanel.jsx`):
+  the name (a dropdown for a group), the Token at 128 px, its skill icons (32 px), then the
+  price as **pills**, two by two at most, have / need in the shorthand counts. No skill
+  headings; rows of cards are never boxed (the white hover outline only).
+- **Can't afford**: the Token dims and the short counts are red; nothing else changes and no
+  "Need" line. A full Token cap writes its reason in red where the price stands.
+- Hover a skill icon for the skill's name; hover the card's name or Token for what it builds.
+- *New, unapproved*: the panel's height and the card's size are the owner's to tune.
+
 ## The title screen (brief 450)
 
 - **The game's name in the display size over a picture, the slots beneath** in one chamfer
@@ -345,6 +359,8 @@ Two kinds, nothing else:
     so the list does not jump while it is scrolled.
   - **A click scrolls about two rows**, smoothly; **holding** keeps scrolling;
     the **mouse wheel** works as normal.
+  - **A row of cards** (the Shop) is the same piece on its side: the arrows stand
+    left and right (`ArrowScrollList axis="x"`). *New, unapproved.*
 
 ## Helper text
 

@@ -669,12 +669,24 @@ const RecipeListDemo = () => (
 );
 
 const ArrowBarDemo = () => (
-    <div className="flex flex-col w-64 h-48 bg-gi-base/60">
-        <ArrowScrollList step={100} className="flex-1 min-h-0 p-2 flex flex-col gap-1">
-            {Array.from({ length: 12 }, (_, i) => (
-                <EntityRibbon key={i} kind="item" id={SAMPLE_ITEMS[i % SAMPLE_ITEMS.length]} quantity={i + 1} size="sm" />
-            ))}
-        </ArrowScrollList>
+    <div className="flex flex-wrap gap-6 items-start">
+        <div className="flex flex-col w-64 h-48 bg-gi-base/60">
+            <ArrowScrollList step={100} className="flex-1 min-h-0 p-2 flex flex-col gap-1">
+                {Array.from({ length: 12 }, (_, i) => (
+                    <EntityRibbon key={i} kind="item" id={SAMPLE_ITEMS[i % SAMPLE_ITEMS.length]} quantity={i + 1} size="sm" />
+                ))}
+            </ArrowScrollList>
+        </div>
+        {/* On its side, as the Shop's row of cards (new, unapproved). */}
+        <div className="flex w-80 h-24 bg-gi-base/60">
+            <ArrowScrollList axis="x" step={120} className="flex-1 min-w-0 p-2 flex gap-2">
+                {Array.from({ length: 10 }, (_, i) => (
+                    <div key={i} className="shrink-0 w-16 flex items-center justify-center bg-gi-surface">
+                        <ItemIcon item={SAMPLE_ITEMS[i % SAMPLE_ITEMS.length]} size={32} />
+                    </div>
+                ))}
+            </ArrowScrollList>
+        </div>
     </div>
 );
 
@@ -858,7 +870,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'arrow-bars', title: 'Arrow bars', status: 'shared', source: 'ArrowScrollList',
-        rule: 'No scrollbars: while the list has more to scroll to, an arrow bar above and below that dims at the end but keeps its space; a list that fits has no bars. A click scrolls about two rows, holding repeats, the wheel works.',
+        rule: 'No scrollbars: while the list has more to scroll to, an arrow bar above and below that dims at the end but keeps its space; a list that fits has no bars. A click scrolls about two rows, holding repeats, the wheel works. A row of cards (the Shop) has them left and right: new, unapproved.',
         Demo: ArrowBarDemo
     },
     {

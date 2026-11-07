@@ -1421,8 +1421,15 @@ drawers**. The menu can be flipped to the right.
 - **Bank drawer**: tabbed item lists, search, reorder; drag an item onto a hero
   to equip. While open, the mat is locked and a vertical hero panel appears: large
   portraits with the name on a dark plate over them and the hero bar's alerts; hover for what they are doing.
-- **Shop drawer**: drag a row onto the mat to buy; it slides aside while you
-  carry an item over the mat.
+- **Shop**: a panel that rises from the bottom beside the nav (on either side), over
+  the hero bar, with a row of same-size cards (name, the Token large, its skill
+  icons, the price as up to four have / need pills; arrows left and right when the
+  row is longer than the screen). Drag a card onto the mat to buy; the panel drops
+  to a lip while you carry it over the mat, rises again over the panel (a drop
+  there is a cancel), and stays open after a purchase. A card you can't afford
+  dims its Token and shows the short counts in red; a full Token cap says so on
+  the card. Hover a skill icon for its name, a card for what it builds.
+  *(`ShopPanel.jsx`)*
 - **Guild Hall view**: the upgrade web, Hall effects panel, upgrade inspector.
 - **On the mat**: click a Token to inspect it; a station's gear badge opens the
   recipe picker; a job flag is only dragged, to give its hero a new job (hover
@@ -1635,7 +1642,7 @@ drawers**. The menu can be flipped to the right.
 | Items | 64 | no gear |
 | Recipes | 25 | 5 skills have recipes |
 | Effects | 22 | most of the grammar unused |
-| Shop entries | 10 | |
+| Shop entries | 10 | five Foundations since brief 410 |
 | Skills with content | 10 of 25 | 8 Starting (not Alchemy) + melee + commerce |
 | Jobs reachable | Fighter (+ Wizard, no source) of 13 | |
 
@@ -1786,7 +1793,7 @@ crunch plan):
 
 | Terrain | Returns for the Atlas after a major rework, later in the crunch once the Atlas works. |
 | Atlas timing | Moves into the crunch, after deep optimization. |
-| Drops over a drawer | A mat Token or flag dropped over the Shop drawer or the hero sheet lands on the mat underneath; intended (owner, certification 2026-10-07). |
+| Drops over a drawer | A mat Token or flag dropped over the Shop panel or the hero sheet lands on the mat underneath; intended (owner, certification 2026-10-07). |
 | Token cap | 128, fixed (the Guild Hall's Token Cap star retired, brief 320); spawned Tokens and endgame sites count (D-1); the discard bin is gone (Atlas A3b), so nothing off the mat counts. |
 | Trickle | Renamed **Passive Production**, one 5-minute timer; the Wishing Well joins it, about 10 Water per 5 min (T-099). |
 | Markets | **Cut for now**: items stay the only currency, no exchange rates; revisit if a real need appears (owner 2026-10-09, T-127). |
