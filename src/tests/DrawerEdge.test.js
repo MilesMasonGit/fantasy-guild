@@ -50,17 +50,33 @@ describe('the drawers reach the screen edge under the nav, as one panel', () => 
         expect(el.className).not.toMatch(/(^| )(md:)?p[lrx]-/);
     });
 
-    it('the Shop, nav on the left: at the foot, from the left edge under the nav, its rows padded for it', () => {
+    it('the Shop, nav on the left: at the foot, across the whole screen under the nav, its rows padded for it', () => {
         const el = shopPanel(false);
-        expect(classes(el)).toEqual(expect.arrayContaining(['bottom-0', 'left-0', '[--nav-inset-l:84px]', 'md:[--nav-inset-l:152px]']));
+        expect(classes(el)).toEqual(expect.arrayContaining(['bottom-0', 'inset-x-0', '[--nav-inset-l:84px]', 'md:[--nav-inset-l:152px]']));
+        // Never as wide as its cards: the panel spans the screen, whatever it holds.
+        expect(classes(el)).not.toEqual(expect.arrayContaining(['w-max']));
+        expect(el.className).not.toMatch(/(^| )max-w-/);
         expect(el.className).not.toMatch(/(^| )(md:)?p[lrx]-/);
         expect(el.querySelector('[data-panel-header]').className).toContain('gi-drawer-pad-x');
     });
 
     it('the Shop, nav on the right: the same, mirrored', () => {
         const el = shopPanel(true);
-        expect(classes(el)).toEqual(expect.arrayContaining(['bottom-0', 'right-0', '[--nav-inset-r:84px]', 'md:[--nav-inset-r:152px]']));
+        expect(classes(el)).toEqual(expect.arrayContaining(['bottom-0', 'inset-x-0', '[--nav-inset-r:84px]', 'md:[--nav-inset-r:152px]']));
+        expect(classes(el)).not.toEqual(expect.arrayContaining(['w-max']));
         expect(el.className).not.toContain('[--nav-inset-l:');
+    });
+
+    it("the Shop's cards sit from the nav's side: from the left beside a left nav, against a right one by an auto margin", () => {
+        const left = shopPanel(false).querySelector('[data-shop-cards]');
+        expect(left.getAttribute('data-shop-cards')).toBe('left');
+        expect(left.className).not.toContain('ms-auto');
+        cleanup();
+        const right = shopPanel(true).querySelector('[data-shop-cards]');
+        expect(right.getAttribute('data-shop-cards')).toBe('right');
+        expect(classes(right)).toContain('[&>:first-child]:ms-auto');
+        // ⚠️ Never justify-end: an overflowing row would lose its first cards off the left.
+        expect(right.className).not.toMatch(/justify-end/);
     });
 
     it("the Shop's lip, while a Shop Token is carried, drops straight down at either side", () => {

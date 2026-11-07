@@ -24,6 +24,8 @@ import { formatCompact } from '../utils/Formatters.js';
 import { t } from '../i18n/index.js';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { WorldScreen } from '../ui/components/atlas/WorldScreen.jsx';
+import { WorldCamera } from '../ui/components/atlas/WorldCamera.jsx';
+import { PANEL_W, PANEL_GAP } from '../ui/components/atlas/WorldPanel.jsx';
 import { shortWords } from '../ui/components/atlas/WorldPanel.jsx';
 import {
     shownRings, cellLook, CELL_LOOK, cellMiddle, cellCentre, mapSize, hexPoints, cellCentreArt, clampView, viewOn, mapBounds, PAN_KEEP_PX,
@@ -278,6 +280,78 @@ describe('⭐ the world map screen', () => {
         expect(q(container, `[data-world-outline="${far}"]`)).toBeTruthy();
         fireEvent.pointerLeave(q(container, `[data-world-cell="${far}"]`));
         expect(q(container, `[data-world-outline="${far}"]`)).toBeNull();
+    });
+
+    it('runs under the whole screen, centred in the mat\'s room, with the panel in the room over its right edge', () => {
+        // A 1366 x 768 screen, the nav 152 px on the left, the hero bar 100 px at the foot.
+        const SCREEN = { left: 0, top: 0, right: 1366, bottom: 768, width: 1366, height: 768 };
+        const ROOM = { left: 152, top: 0, right: 1366, bottom: 668, width: 1214, height: 668 };
+        const anchor = document.body.appendChild(document.createElement('div'));
+        const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function () {
+            if (this === anchor) return SCREEN;
+            if (this.hasAttribute('data-world-camera-room')) return ROOM;
+            return { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+        });
+        const inMap = (el) => !!el.closest?.('[data-world-backdrop]');
+        const cw = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function () { return inMap(this) ? SCREEN.width : 0; });
+        const ch = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function () { return inMap(this) ? SCREEN.height : 0; });
+        try {
+            const { container } = render(React.createElement(
+                DeckDndContext.Provider, { value: { activePayload: null, isDragging: false } },
+                React.createElement(WorldCamera, {
+                    open: true,
+                    tableAnchor: { current: anchor },
+                    world: React.createElement(WorldScreen, { onClose: vi.fn() })
+                }, React.createElement('div'))
+            ));
+            // Laid in the screen's box, not the column's room: nothing at the column's edge clips it.
+            const map = q(anchor, '[data-world-map]');
+            expect(map).toBeTruthy();
+            expect(container.querySelector('[data-world-map]')).toBeNull();
+            expect(map.className).toContain('inset-0');
+            // The Hall's place in the middle of the room left clear between the nav, the hero bar and the panel.
+            const sight = { w: ROOM.width - (PANEL_W + 2 * PANEL_GAP), h: ROOM.height };
+            const at = viewOn(World.currentWorld().cells.find(c => c.ring === 0), sight);
+            expect(map.getAttribute('data-world-view')).toBe(`${at.x},${at.y}`);
+            const drawn = map.firstElementChild.style.transform;
+            expect(drawn).toBe(`translate3d(${at.x + ROOM.left}px, ${at.y + ROOM.top}px, 0)`);
+            // The panel stays in the room: at its right edge, and never down behind the hero bar.
+            const panel = q(anchor, '[data-world-panel]');
+            expect([panel.style.right, panel.style.top]).toEqual([`${PANEL_GAP}px`, `${PANEL_GAP}px`]);
+            expect(panel.style.maxHeight).toBe(`calc(100% - ${SCREEN.bottom - ROOM.bottom + 2 * PANEL_GAP}px)`);
+        } finally {
+            rect.mockRestore();
+            cw.mockRestore();
+            ch.mockRestore();
+            cleanup();
+            anchor.remove();
+        }
+    });
+
+    it('with the nav on the right, the room and so the panel sit left of it', () => {
+        const SCREEN = { left: 0, top: 0, right: 1366, bottom: 768, width: 1366, height: 768 };
+        const ROOM = { left: 0, top: 0, right: 1214, bottom: 668, width: 1214, height: 668 };
+        const anchor = document.body.appendChild(document.createElement('div'));
+        const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function () {
+            if (this === anchor) return SCREEN;
+            if (this.hasAttribute('data-world-camera-room')) return ROOM;
+            return { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+        });
+        try {
+            render(React.createElement(
+                DeckDndContext.Provider, { value: { activePayload: null, isDragging: false } },
+                React.createElement(WorldCamera, {
+                    open: true,
+                    tableAnchor: { current: anchor },
+                    world: React.createElement(WorldScreen, { onClose: vi.fn() })
+                }, React.createElement('div'))
+            ));
+            expect(q(anchor, '[data-world-panel]').style.right).toBe(`${SCREEN.right - ROOM.right + PANEL_GAP}px`);
+        } finally {
+            rect.mockRestore();
+            cleanup();
+            anchor.remove();
+        }
     });
 
     it('a drag moves the map and the click that ends it chooses nothing', () => {

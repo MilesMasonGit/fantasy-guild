@@ -11,10 +11,12 @@ import { WorldPanel, PANEL_W, PANEL_GAP } from './WorldPanel.jsx';
 import { CloseX } from '../base/CloseX.jsx';
 import { FOG_CSS } from './worldPicture.js';
 import { SCREEN_TEXT } from './atlasScreenText.js';
+import { useWorldInsets } from './WorldCamera.jsx';
 
 /**
- * The world map screen, below the mat (`WorldCamera` pans down to it): the map fills the mat's
- * room and the chosen place's panel lies over its right edge. Settle pays a place and takes the
+ * The world map screen, below the mat (`WorldCamera` pans down to it): the map fills the whole
+ * screen under the nav and the hero bar, centred in the mat's room ({@link useWorldInsets}), and
+ * the chosen place's panel lies over the room's right edge. Settle pays a place and takes the
  * guild there; Travel goes to a place settled; either closes the screen. Escape or the panel's
  * close X close it too. A save from before the world shows one line.
  *
@@ -27,6 +29,7 @@ export const WorldScreen = ({ onClose }) => {
     const view = useMemo(() => worldView(), [version]); // eslint-disable-line react-hooks/exhaustive-deps
     const [chosen, setChosen] = useState(null);
     const [message, setMessage] = useState(null);
+    const insets = useWorldInsets();
 
     useEffect(() => {
         const onKey = (e) => {
@@ -61,7 +64,7 @@ export const WorldScreen = ({ onClose }) => {
         return (
             <div data-world-page="none" className="absolute inset-0 flex items-center justify-center pointer-events-auto" style={{ background: FOG_CSS }}>
                 <p data-world-none className="font-pixel ui-text-body text-white bg-black/70 px-2 py-1">{t('worldMap.noWorld')}</p>
-                <CloseX data-world-close className="absolute" style={{ right: PANEL_GAP, top: PANEL_GAP }} onClick={() => onClose?.()} label={SCREEN_TEXT.CLOSE} />
+                <CloseX data-world-close className="absolute" style={{ right: insets.right + PANEL_GAP, top: insets.top + PANEL_GAP }} onClick={() => onClose?.()} label={SCREEN_TEXT.CLOSE} />
             </div>
         );
     }
@@ -73,8 +76,14 @@ export const WorldScreen = ({ onClose }) => {
     };
     return (
         <section role="dialog" aria-label={t('worldMap.label')} data-world-page data-atlas-screen className="absolute inset-0 pointer-events-auto text-[12px] leading-snug">
-            <WorldMap view={view} selectedId={selectedId} onSelect={select} reserveRight={PANEL_W + 2 * PANEL_GAP} />
+            <WorldMap
+                view={view}
+                selectedId={selectedId}
+                onSelect={select}
+                reserve={{ ...insets, right: insets.right + PANEL_W + 2 * PANEL_GAP }}
+            />
             <WorldPanel
+                insets={insets}
                 cell={cell}
                 note={view.note}
                 version={version}

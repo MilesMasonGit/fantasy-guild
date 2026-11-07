@@ -184,17 +184,16 @@ describe('the Shop panel', () => {
         const el = view.container.querySelector('[data-shop-drawer]');
         expect(el.getAttribute('data-shop-drawer-state')).toBe('open');
         expect(el.className).toMatch(/(^| )bottom-0( |$)/);
-        expect(el.className).toMatch(/(^| )left-0( |$)/);
+        expect(el.className).toMatch(/(^| )inset-x-0( |$)/);
         expect(el.className).toContain('[--nav-inset-l:84px]');
         expect(el.style.transform).toBe('translateY(0)');
     });
 
-    it('with the nav on the right, it rises beside the nav at the right edge', () => {
+    it('with the nav on the right, it spans the screen the same way, its rows padded for the nav at the right', () => {
         const el = mountDrawer({ menuRight: true }).container.querySelector('[data-shop-drawer]');
-        expect(el.className).toMatch(/(^| )right-0( |$)/);
+        expect(el.className).toMatch(/(^| )inset-x-0( |$)/);
         expect(el.className).toContain('[--nav-inset-r:84px]');
         expect(el.className).not.toContain('--nav-inset-l');
-        expect(el.className).not.toMatch(/(^| )left-0( |$)/);
     });
 
     it('stays a drop target for the mat\'s cancel check: a pointer over the open panel is over it', () => {

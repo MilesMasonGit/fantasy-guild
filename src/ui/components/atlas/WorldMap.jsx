@@ -31,6 +31,7 @@ const PULSE_S = 1;
 /** How far the pointer moves before a press becomes a drag (and the click is dropped). */
 const DRAG_START_PX = 5;
 const HERE_FLAG_PX = 48;
+const NO_RESERVE = Object.freeze({});
 const LIFT_PX = TILE_LIFT * ART_SCALE;
 
 // ------------------------------------------------------------------ pictures, kept once built
@@ -366,12 +367,13 @@ const HitAreas = ({ cells, onSelect, onHover, dropClick }) => (
  * @param {object} props.view `worldView()`
  * @param {string|null} props.selectedId
  * @param {(id: string) => void} props.onSelect
- * @param {number} [props.reserveRight] the strip on the right under the panel, in px: the map
- *   centres in the room left of it
+ * @param {{left?: number, top?: number, right?: number, bottom?: number}} [props.reserve] the strips
+ *   along each edge under something else (the nav, the hero bar, the panel), in px: the map is drawn
+ *   under them too, but centres and keeps itself in sight in the room between them
  * @param {boolean} [props.readOnly] a look only (the new-game screen): no cell is picked or outlined
  * @param {number} [props.scale] the size a parent's CSS scale draws the map at, so a drag keeps up with the pointer
  */
-export const WorldMap = ({ view, selectedId = null, onSelect, reserveRight = 0, readOnly = false, scale = 1 }) => {
+export const WorldMap = ({ view, selectedId = null, onSelect, reserve = NO_RESERVE, readOnly = false, scale = 1 }) => {
     const shown = useMemo(
         () => view.cells.filter(c => c.shown).sort((a, b) => cellCentreArt(a).y - cellCentreArt(b).y || a.q - b.q),
         [view]
@@ -403,7 +405,8 @@ export const WorldMap = ({ view, selectedId = null, onSelect, reserveRight = 0, 
             ro?.disconnect();
         };
     }, []);
-    const sight = { w: Math.max(0, room.w - reserveRight), h: room.h };
+    const edge = { left: reserve.left || 0, top: reserve.top || 0, right: reserve.right || 0, bottom: reserve.bottom || 0 };
+    const sight = { w: Math.max(0, room.w - edge.left - edge.right), h: Math.max(0, room.h - edge.top - edge.bottom) };
 
     // Where the Hall's middle stands in the window: on the guild's place at first, then dragged.
     const [view0, setView] = useState(null);
@@ -462,7 +465,7 @@ export const WorldMap = ({ view, selectedId = null, onSelect, reserveRight = 0, 
             onPointerDown={onPointerDown}
             onWheel={onWheel}
         >
-            <div className="absolute left-0 top-0" style={{ transform: `translate3d(${at.x}px, ${at.y}px, 0)` }}>
+            <div className="absolute left-0 top-0" style={{ transform: `translate3d(${at.x + edge.left}px, ${at.y + edge.top}px, 0)` }}>
                 <PictureCanvas picture={picture} which="world" data-world-picture />
                 <Tiles cells={shown} hoverId={hoverId} />
                 <PictureCanvas picture={picture} which="rope" data-world-rope />

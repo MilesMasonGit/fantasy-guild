@@ -2,18 +2,22 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, fireEvent, act, cleanup } from '@testing-library/react';
-import { WorldCamera, WORLD_CAMERA, worldCameraAfter } from '../ui/components/atlas/WorldCamera.jsx';
+import { WorldCamera, WORLD_CAMERA, worldCameraAfter, useWorldInsets, insetsOf } from '../ui/components/atlas/WorldCamera.jsx';
 import { HallCamera, CAMERA, GLIDE_MS, SETTLE } from '../ui/components/board/HallCamera.jsx';
+import { hallCameraSides } from './fixtures/hallCameraSides.js';
 
 /**
  * The pan down from the mat to the world map: the map lies one room height below the mat, and
  * opening it glides the mat up and away and the map up into place, the wood table round the mat
  * moving with it; closing glides back. A click or a key finishes a glide; reduced motion swaps at
  * once. At rest on the mat nothing of the map is mounted, and on the map the mat is gone. It
- * never glides together with the Hall's camera.
+ * never glides together with the Hall's camera. The map is laid under the whole screen (the table
+ * anchor), not in the room, and the two glide together by a screen height.
  */
 
 const ROOM_H = 700;
+/** The screen (the table anchor) is taller than the mat's room by the hero bar. */
+const SCREEN_H = 820;
 const h = React.createElement;
 const q = (c, sel) => c.querySelector(sel);
 
@@ -57,8 +61,8 @@ beforeEach(() => {
     reduced = false;
     HTMLElement.prototype.animate = fakeAnimate;
     window.matchMedia = vi.fn(() => ({ matches: reduced, addEventListener() {}, removeEventListener() {} }));
-    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(() => ROOM_H);
     anchor = document.body.appendChild(document.createElement('div'));
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function () { return this === anchor ? SCREEN_H : ROOM_H; });
 });
 
 afterEach(() => {
@@ -73,8 +77,8 @@ afterEach(() => {
 
 const WOOD = { backgroundColor: 'rgb(1, 2, 3)', backgroundSize: '512px' };
 
-function setup({ open = false, away = false } = {}) {
-    const tableAnchor = { current: anchor };
+function setup({ open = false, away = false, screen = true } = {}) {
+    const tableAnchor = screen ? { current: anchor } : undefined;
     const element = (props) => h(WorldCamera, {
         open, away, table: WOOD, tableAnchor, world: h('div', { 'data-test-world': '' }), ...props
     }, h('div', { 'data-test-mat': '' }));
@@ -83,13 +87,15 @@ function setup({ open = false, away = false } = {}) {
         ...view,
         camera: () => q(view.container, '[data-world-camera]'),
         phase: () => q(view.container, '[data-world-camera]').getAttribute('data-world-camera'),
-        stage: () => q(view.container, '[data-world-stage]'),
-        has: (name) => !!q(view.container, `[data-test-${name}]`),
+        stage: () => q(document, '[data-world-stage]'),
+        layer: () => q(anchor, '[data-world-table]'),
+        has: (name) => !!q(document, `[data-test-${name}]`),
         set: (props) => view.rerender(element(props)),
         go: (props) => { view.rerender(element(props)); frames(); }
     };
 }
-const camAnim = () => anims.at(-1);
+const camAnim = () => anims.filter(a => a.el.hasAttribute('data-world-camera')).at(-1);
+const layerAnim = () => anims.filter(a => a.el.hasAttribute('data-world-table')).at(-1);
 const fromTo = (anim) => anim.keyframes.map(k => k.transform);
 
 describe('the camera between the mat and the world map', () => {
@@ -101,19 +107,40 @@ describe('the camera between the mat and the world map', () => {
         expect(anims).toHaveLength(0);
     });
 
-    it('opening pans down: the mat and the wood glide up and away, the map one room height below comes up into place', () => {
+    it('opening pans down: the mat and the wood glide up and away, the map one screen height below comes up into place', () => {
         const s = setup();
         s.go({ open: true });
         expect(s.phase()).toBe(WORLD_CAMERA.TO_WORLD);
         expect([s.has('mat'), s.has('world')]).toEqual([true, true]);
-        expect([s.stage().style.top, s.stage().style.height]).toEqual(['100%', '100%']);
+        // The map lies under the whole screen, below a copy of the wood: the lower half of a layer
+        // two screens tall, in the table anchor, not in the mat's room.
+        expect(s.layer().contains(s.stage())).toBe(true);
+        expect(s.container.contains(s.stage())).toBe(false);
+        expect([s.layer().style.top, s.layer().style.height]).toEqual(['0px', '200%']);
+        expect([s.stage().style.top, s.stage().style.height]).toEqual(['50%', '50%']);
+        const wood = q(anchor, '[data-world-wood]');
+        expect([wood.style.top, wood.style.height, wood.style.backgroundColor]).toEqual(['0px', '50%', 'rgb(1, 2, 3)']);
         // The wood round the mat moves with it: a copy of the table on the moving camera.
         expect(s.camera().style.backgroundColor).toBe('rgb(1, 2, 3)');
-        expect(anims).toHaveLength(1);
+        // Both glide a screen height by the same keyframes, from the same frame.
+        expect(anims).toHaveLength(2);
         expect(camAnim().el).toBe(s.camera());
-        expect(fromTo(camAnim())).toEqual(['translateY(0px)', `translateY(${-ROOM_H}px)`]);
+        expect(layerAnim().el).toBe(s.layer());
+        expect(fromTo(camAnim())).toEqual(['translateY(0px)', `translateY(${-SCREEN_H}px)`]);
+        expect(fromTo(layerAnim())).toEqual(fromTo(camAnim()));
+        expect(layerAnim().options).toEqual(camAnim().options);
         expect(camAnim().options.duration).toBe(GLIDE_MS);
         expect(q(s.container, '[data-world-skip]')).toBeTruthy();
+        expect(q(anchor, '[data-world-skip-screen]')).toBeTruthy();
+    });
+
+    it('without a screen box to lay it in, the map comes up into the room, one room height below', () => {
+        const s = setup({ screen: false });
+        s.go({ open: true });
+        expect(s.container.contains(s.stage())).toBe(true);
+        expect([s.stage().style.top, s.stage().style.height]).toEqual(['100%', '100%']);
+        expect(anims).toHaveLength(1);
+        expect(fromTo(camAnim())).toEqual(['translateY(0px)', `translateY(${-ROOM_H}px)`]);
     });
 
     it('waits for frames to flow before it starts, so the first picture of the map does not eat the glide', () => {
@@ -121,7 +148,7 @@ describe('the camera between the mat and the world map', () => {
         s.set({ open: true });
         expect(anims).toHaveLength(0);
         frames();
-        expect(anims).toHaveLength(1);
+        expect(anims).toHaveLength(2);
     });
 
     it('arrives on the map with the mat gone and nothing moved; closing glides back up to the mat', () => {
@@ -131,14 +158,23 @@ describe('the camera between the mat and the world map', () => {
         expect(s.phase()).toBe(WORLD_CAMERA.WORLD);
         expect([s.camera().style.transform, s.camera().style.willChange, s.camera().style.backgroundColor]).toEqual(['', '', '']);
         expect([s.has('mat'), s.has('world')]).toEqual([false, true]);
-        expect(s.stage().style.top).toBe('0px');
+        // At rest the map covers the screen, nothing moved, the wood copy and the catchers gone.
+        expect([s.stage().style.top, s.stage().style.height]).toEqual(['0px', '100%']);
+        expect([s.layer().style.top, s.layer().style.height, s.layer().style.transform]).toEqual(['0px', '100%', '']);
+        expect(q(anchor, '[data-world-wood]')).toBeNull();
+        expect(q(anchor, '[data-world-skip-screen]')).toBeNull();
+        // Behind the nav and the column: no layer of its own, and it lets presses through but for the map.
+        expect(q(anchor, '[data-world-backdrop]').className).toContain('pointer-events-none');
+        expect(q(anchor, '[data-world-backdrop]').className).not.toMatch(/(^| )z-/);
 
         s.go({ open: false });
         expect(s.phase()).toBe(WORLD_CAMERA.TO_MAT);
-        expect(fromTo(camAnim())).toEqual([`translateY(${-ROOM_H}px)`, 'translateY(0px)']);
+        expect(fromTo(camAnim())).toEqual([`translateY(${-SCREEN_H}px)`, 'translateY(0px)']);
+        expect(fromTo(layerAnim())).toEqual(fromTo(camAnim()));
         act(() => camAnim().finish());
         expect(s.phase()).toBe(WORLD_CAMERA.MAT);
         expect([s.has('mat'), s.has('world')]).toEqual([true, false]);
+        expect(anchor.childElementCount).toBe(0);
     });
 
     it('a click or a key finishes a glide; Escape on the way down is left to the map', () => {
@@ -151,6 +187,10 @@ describe('the camera between the mat and the world map', () => {
         s.go({ open: false });
         fireEvent.pointerDown(q(s.container, '[data-world-skip]'));
         expect(s.phase()).toBe(WORLD_CAMERA.MAT);
+        // A press on the moving screen outside the room lands it too.
+        s.go({ open: true });
+        fireEvent.pointerDown(q(anchor, '[data-world-skip-screen]'));
+        expect(s.phase()).toBe(WORLD_CAMERA.WORLD);
     });
 
     it('reduced motion swaps at once', () => {
@@ -217,5 +257,36 @@ describe('the camera between the mat and the world map', () => {
         expect(hallPhase()).toBe(CAMERA.MAT);
         expect(worldPhase()).toBe(WORLD_CAMERA.WORLD);
         expect(live().filter(a => !a.finished)).toHaveLength(0);
+    });
+});
+
+describe('the map under the whole screen', () => {
+    it('measures the mat\'s room inside the screen, and hands it to the map', () => {
+        expect(insetsOf({ left: 152, top: 0, right: 1366, bottom: 668.4 }, { left: 0, top: 0, right: 1366, bottom: 768 }))
+            .toEqual({ left: 152, top: 0, right: 0, bottom: 100 });
+        const room = { left: 0, top: 0, right: 1768, bottom: 960 };
+        const shown = [];
+        const Probe = () => { shown.push(useWorldInsets()); return null; };
+        vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function () {
+            if (this === anchor) return { left: 0, top: 0, right: 1920, bottom: 1080 };
+            return this.hasAttribute('data-world-camera-room') ? room : { left: 0, top: 0, right: 0, bottom: 0 };
+        });
+        render(h(WorldCamera, { open: true, table: WOOD, tableAnchor: { current: anchor }, world: h(Probe) }, h('div')));
+        expect(shown.at(-1)).toEqual({ left: 0, top: 0, right: 152, bottom: 120 });
+        // Laid in the room (no screen box), the map has nothing round it.
+        cleanup();
+        shown.length = 0;
+        render(h(WorldCamera, { open: true, table: WOOD, world: h(Probe) }, h('div')));
+        expect(shown.at(-1)).toEqual({ left: 0, top: 0, right: 0, bottom: 0 });
+    });
+
+    it('in the game, the map is laid in the screen box that holds the nav and the column, as the Hall\'s sky', () => {
+        const { code, mat } = hallCameraSides();
+        const camera = mat.slice(mat.indexOf('<WorldCamera'), mat.indexOf('>', mat.indexOf('tableAnchor=', mat.indexOf('<WorldCamera'))) + 1);
+        expect(camera).toContain('tableAnchor={tableRef}');
+        const box = code.slice(code.indexOf('ref={tableRef}'), code.indexOf('</ViewportProvider>'));
+        expect(box.indexOf('<BubbleMenu')).toBeGreaterThan(0);
+        expect(box.indexOf('<WorldCamera')).toBeGreaterThan(0);
+        expect(box.indexOf('<BottomHeroDock')).toBeGreaterThan(0);
     });
 });

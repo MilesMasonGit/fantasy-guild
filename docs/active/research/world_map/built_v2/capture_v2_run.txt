@@ -1,0 +1,94 @@
+dev server http://localhost:64708
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+1920 left: shop {"x":960,"y":904,"left":0,"right":1920,"top":727,"bottom":1080,"w":1920,"h":353} nav {"x":76,"y":540,"left":0,"right":152,"top":0,"bottom":1080,"w":152,"h":1080} cards [{"l":170,"r":354,"w":184},{"l":362,"r":546,"w":184},{"l":554,"r":738,"w":184},{"l":746,"r":930,"w":184},{"l":938,"r":1122,"w":184}] arrows 0
+PASS 1920 left: the Shop spans the screen, edge to edge at the foot ({"x":960,"y":904,"left":0,"right":1920,"top":727,"bottom":1080,"w":1920,"h":353})
+PASS 1920 left: the cards keep their size (184)
+PASS 1920 left: no card is under the nav
+PASS 1920 left: the cards sit from the nav's side (gap 18)
+PASS 1920 left: no arrows while the row fits
+PASS 1920 left: a long row gets its arrows (left:dim,right)
+PASS 1920 left: a long row starts at its first card, reachable (list 198, first 198)
+1920 left: map {"x":960,"y":540,"left":0,"right":1920,"top":0,"bottom":1080,"w":1920,"h":1080} room {"x":1036,"y":508,"left":152,"right":1920,"top":0,"bottom":1016,"w":1768,"h":1016} panel {"x":1736,"y":246,"left":1568,"right":1904,"top":16,"bottom":476,"w":336,"h":460} dock {"x":1036,"y":1048,"left":152,"right":1920,"top":1016,"bottom":1080,"w":1768,"h":64}
+PASS 1920 left: the map covers the whole screen ({"x":960,"y":540,"left":0,"right":1920,"top":0,"bottom":1080,"w":1920,"h":1080})
+PASS 1920 left: the map is laid in the screen box, not the column
+PASS 1920 left: the panel stays in the room over its right edge ({"x":1736,"y":246,"left":1568,"right":1904,"top":16,"bottom":476,"w":336,"h":460})
+PASS 1920 left: the nav is over the map (nav)
+PASS 1920 left: the map runs on under the nav to the screen's edge
+1920 left: under the hero bar the pointer lands on: dock
+PASS 1920 left: the map runs on under the hero bar (room bottom 1016)
+PASS 1920 left: the panel is over the map (panel)
+PASS 1920 left: the map drags (700,508 -> 790,556)
+PASS 1920 left: a drag on the panel does not move the map
+PASS 1920 left: the chosen place is unchanged by presses on the panel
+1920 right: shop {"x":960,"y":904,"left":0,"right":1920,"top":727,"bottom":1080,"w":1920,"h":353} nav {"x":1844,"y":540,"left":1768,"right":1920,"top":0,"bottom":1080,"w":152,"h":1080} cards [{"l":798,"r":982,"w":184},{"l":990,"r":1174,"w":184},{"l":1182,"r":1366,"w":184},{"l":1374,"r":1558,"w":184},{"l":1566,"r":1750,"w":184}] arrows 0
+PASS 1920 right: the Shop spans the screen, edge to edge at the foot ({"x":960,"y":904,"left":0,"right":1920,"top":727,"bottom":1080,"w":1920,"h":353})
+PASS 1920 right: the cards keep their size (184)
+PASS 1920 right: no card is under the nav
+PASS 1920 right: the cards sit from the nav's side (gap 18)
+PASS 1920 right: no arrows while the row fits
+PASS 1920 right: a long row gets its arrows (left:dim,right)
+PASS 1920 right: a long row starts at its first card, reachable (list 46, first 46)
+1920 right: map {"x":960,"y":540,"left":0,"right":1920,"top":0,"bottom":1080,"w":1920,"h":1080} room {"x":884,"y":508,"left":0,"right":1768,"top":0,"bottom":1016,"w":1768,"h":1016} panel {"x":1584,"y":246,"left":1416,"right":1752,"top":16,"bottom":476,"w":336,"h":460} dock {"x":884,"y":1048,"left":0,"right":1768,"top":1016,"bottom":1080,"w":1768,"h":64}
+PASS 1920 right: the map covers the whole screen ({"x":960,"y":540,"left":0,"right":1920,"top":0,"bottom":1080,"w":1920,"h":1080})
+PASS 1920 right: the map is laid in the screen box, not the column
+PASS 1920 right: the panel stays in the room over its right edge ({"x":1584,"y":246,"left":1416,"right":1752,"top":16,"bottom":476,"w":336,"h":460})
+PASS 1920 right: the nav is over the map (nav)
+PASS 1920 right: the map runs on under the nav to the screen's edge
+1920 right: under the hero bar the pointer lands on: dock
+PASS 1920 right: the map runs on under the hero bar (room bottom 1016)
+PASS 1920 right: the panel is over the map (panel)
+PASS 1920 right: the map drags (700,508 -> 790,556)
+PASS 1920 right: a drag on the panel does not move the map
+PASS 1920 right: the chosen place is unchanged by presses on the panel
+1366 left: shop {"x":683,"y":592,"left":0,"right":1366,"top":415,"bottom":768,"w":1366,"h":353} nav {"x":60,"y":384,"left":0,"right":120,"top":0,"bottom":768,"w":120,"h":768} cards [{"l":170,"r":354,"w":184},{"l":362,"r":546,"w":184},{"l":554,"r":738,"w":184},{"l":746,"r":930,"w":184},{"l":938,"r":1122,"w":184}] arrows 0
+PASS 1366 left: the Shop spans the screen, edge to edge at the foot ({"x":683,"y":592,"left":0,"right":1366,"top":415,"bottom":768,"w":1366,"h":353})
+PASS 1366 left: the cards keep their size (184)
+PASS 1366 left: no card is under the nav
+PASS 1366 left: the cards sit from the nav's side (gap 50)
+PASS 1366 left: no arrows while the row fits
+PASS 1366 left: a long row gets its arrows (left:dim,right)
+PASS 1366 left: a long row starts at its first card, reachable (list 198, first 198)
+PASS 1366 left: the pan down moves the camera and the screen layer together (camera,layer)
+1366 left: map {"x":683,"y":384,"left":0,"right":1366,"top":0,"bottom":768,"w":1366,"h":768} room {"x":743,"y":352,"left":120,"right":1366,"top":0,"bottom":704,"w":1246,"h":704} panel {"x":1182,"y":246,"left":1014,"right":1350,"top":16,"bottom":476,"w":336,"h":460} dock {"x":743,"y":736,"left":120,"right":1366,"top":704,"bottom":768,"w":1246,"h":64}
+PASS 1366 left: the map covers the whole screen ({"x":683,"y":384,"left":0,"right":1366,"top":0,"bottom":768,"w":1366,"h":768})
+PASS 1366 left: the map is laid in the screen box, not the column
+PASS 1366 left: the panel stays in the room over its right edge ({"x":1182,"y":246,"left":1014,"right":1350,"top":16,"bottom":476,"w":336,"h":460})
+PASS 1366 left: the nav is over the map (nav)
+PASS 1366 left: the map runs on under the nav to the screen's edge
+1366 left: under the hero bar the pointer lands on: dock
+PASS 1366 left: the map runs on under the hero bar (room bottom 704)
+PASS 1366 left: the panel is over the map (panel)
+PASS 1366 left: the map drags (439,352 -> 529,400)
+PASS 1366 left: a drag on the panel does not move the map
+PASS 1366 left: the chosen place is unchanged by presses on the panel
+PASS 1366 left: back on the mat, nothing of the map is left in the screen box
+PASS map to Hall: the map is set down at once and does not glide ({"hall":"to-sky","world":"mat","backdrop":false,"worldAnims":0})
+PASS Hall to map: the Hall is set down at once, and the two never glide together ({"hall":"mat","world":"to-world","hallAnims":0})
+PASS Hall to map: the map is open, under the whole screen
+1366 right: shop {"x":683,"y":592,"left":0,"right":1366,"top":415,"bottom":768,"w":1366,"h":353} nav {"x":1306,"y":384,"left":1246,"right":1366,"top":0,"bottom":768,"w":120,"h":768} cards [{"l":244,"r":428,"w":184},{"l":436,"r":620,"w":184},{"l":628,"r":812,"w":184},{"l":820,"r":1004,"w":184},{"l":1012,"r":1196,"w":184}] arrows 0
+PASS 1366 right: the Shop spans the screen, edge to edge at the foot ({"x":683,"y":592,"left":0,"right":1366,"top":415,"bottom":768,"w":1366,"h":353})
+PASS 1366 right: the cards keep their size (184)
+PASS 1366 right: no card is under the nav
+PASS 1366 right: the cards sit from the nav's side (gap 50)
+PASS 1366 right: no arrows while the row fits
+PASS 1366 right: a long row gets its arrows (left:dim,right)
+PASS 1366 right: a long row starts at its first card, reachable (list 46, first 46)
+1366 right: map {"x":683,"y":384,"left":0,"right":1366,"top":0,"bottom":768,"w":1366,"h":768} room {"x":623,"y":352,"left":0,"right":1246,"top":0,"bottom":704,"w":1246,"h":704} panel {"x":1062,"y":246,"left":894,"right":1230,"top":16,"bottom":476,"w":336,"h":460} dock {"x":623,"y":736,"left":0,"right":1246,"top":704,"bottom":768,"w":1246,"h":64}
+PASS 1366 right: the map covers the whole screen ({"x":683,"y":384,"left":0,"right":1366,"top":0,"bottom":768,"w":1366,"h":768})
+PASS 1366 right: the map is laid in the screen box, not the column
+PASS 1366 right: the panel stays in the room over its right edge ({"x":1062,"y":246,"left":894,"right":1230,"top":16,"bottom":476,"w":336,"h":460})
+PASS 1366 right: the nav is over the map (nav)
+PASS 1366 right: the map runs on under the nav to the screen's edge
+1366 right: under the hero bar the pointer lands on: dock
+PASS 1366 right: the map runs on under the hero bar (room bottom 704)
+PASS 1366 right: the panel is over the map (panel)
+PASS 1366 right: the map drags (439,352 -> 529,400)
+PASS 1366 right: a drag on the panel does not move the map
+PASS 1366 right: the chosen place is unchanged by presses on the panel
+console errors: []
+
+73/73 checks passed
+chrome closed: {"exited":true,"profileRemoved":true,"profileDir":"C:\\Users\\16048\\AppData\\Local\\Temp\\fg-bench-chrome-jjbHtJ"}
+dev server closed

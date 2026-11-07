@@ -5,6 +5,7 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The Shop spans the screen and the world map runs under everything** (owner's notes after the 2026-11-06 eye-check): the Shop panel now reaches from the screen's edge under the nav to the far edge, its cards from the nav's side; the world map is laid under the whole screen like the Guild Hall's sky, running on under the nav, the hero bar and the place panel, centred in the mat's room, and the pan down moves the whole screen as one.
 - **Tests follow the Foundations and ring stars Sync**: the content tests now pin the synced content (Coast and Goblin Camp no longer sold, mines and the Quarry on an Excavation, banner camps on a Battlefield, the Shop's list order and icons, the five ring stars in the sky); the Foundations pack test now checks the shipped data still holds the pack.
 - **Drag hint look** (owner's notes on brief 490): the carried hero's marks stand centred just above the Token's sprite, under any refusal, instead of beside the flag; over an enemy only weapons and shields show, never a tool; the skill mark is its icon with the level under it; marks draw at 1x; a failing mark is darker (brightness 0.3, was 0.5).
 - **The Shop pops up from the bottom** (brief 410 S2): in place of the drawer from the left, the
