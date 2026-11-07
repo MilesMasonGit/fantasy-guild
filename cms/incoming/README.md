@@ -125,7 +125,8 @@ are standing `provides` statements: narrowed to a skill by `payload.category` (X
 Double Loot, Grow Time, Camp Reach), or aimed at Tokens by `to` (`{ "mode": "id" | "tag" | "tokenType", "value" }`:
 a vein's rest is Grow Time to its Token, a camp's reach Camp Reach to its camp); Wound Time and Loadout
 Slots (category a loadout kind, `food`, `trinket`) reach every hero. `lines` are Passive Production
-the Guild Hall pays each lap. The built-in ids are taken. Shape: `src/config/hallStars.js`.
+the Guild Hall pays each lap; Lap Time (`PASSIVE_LAP`, a percentage, negative is shorter) shortens that one
+lap from its 10 minutes, for every Token that pays. The built-in ids are taken. Shape: `src/config/hallStars.js`.
 
 ### The plan (the ledger)
 

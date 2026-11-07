@@ -313,9 +313,9 @@ describe('frozen Regions stand still', () => {
         const result = await CatchUp.run({ savedAt: NOW - HOUR, now: NOW, save: false, reset: false, yieldFn: () => Promise.resolve() });
         expect(result.simulatedMs).toBe(HOUR);
         expect(JSON.stringify(Atlas.getRegion(a).board)).toBe(frozen);
-        // The Hall, which came along, kept running: twelve 5-minute laps of Passive Production.
+        // The Hall, which came along, kept running: six 10-minute laps of Passive Production.
         expect(hall.clocks.passiveMs).toBe(lap);
-        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(12);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(6);
     });
 });
 

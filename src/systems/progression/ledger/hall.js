@@ -28,6 +28,11 @@ export const RATE_AXES = Object.freeze(new Set([
     EFFECT_TYPES.CROP_LOAD, EFFECT_TYPES.CATCH_WEIGHT
 ]));
 
+/** Whether a star's rules move Passive Production's lap: a rate at the Guild Hall only, never on a hero's work. */
+export function starMovesLap(star) {
+    return starRulesOf(star).some(r => r.type === EFFECT_TYPES.PASSIVE_LAP);
+}
+
 /** Every Hall track, built-ins first. */
 export function hallTracksOf(book) {
     const tracks = [];
@@ -72,9 +77,9 @@ export function starRulesOf(star) {
     return out;
 }
 
-/** Whether a star's ranks add a rate the calculator reads: a rule on a work axis, or a Passive Production line. */
+/** Whether a star's ranks add a rate the calculator reads: a rule on a work axis, a Passive Production line, or the lap. */
 export function starAddsRate(star) {
-    return star.ranks.some(r => r.lines.length > 0) || starRulesOf(star).some(r => RATE_AXES.has(r.type));
+    return star.ranks.some(r => r.lines.length > 0) || starMovesLap(star) || starRulesOf(star).some(r => RATE_AXES.has(r.type));
 }
 
 /** Each track's neighbours (a link counts from both ends), the Hall as `HALL_NODE`. */

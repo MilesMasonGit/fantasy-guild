@@ -12,14 +12,14 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
-import { PASSIVE_PRODUCTION_MS } from '../config/registries/tokenConstants.js';
+import { PASSIVE_LAP_BASE_MS } from '../config/registries/tokenConstants.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
  * T-099 — **Passive Production**: every line a Token pays on its own, no hero
- * needed, on ONE 5-minute timer; the Wishing Well's Water joins the Guild
- * Hall's.
+ * needed, on ONE lap (10 minutes with no lap star, brief 390 G5; the star's
+ * ranks are `DropLap.test.js`); the Wishing Well's Water joins the Guild Hall's.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -30,7 +30,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
 
-const LAP = PASSIVE_PRODUCTION_MS;
+const LAP = PASSIVE_LAP_BASE_MS;
 
 const item = (id, name) => ({
     id, name, type: 'material', sprite: 'i_wood_oak', description: '', tags: [],
@@ -103,18 +103,18 @@ afterEach(() => {
     resetMatTuning();
 });
 
-describe('⭐ one 5-minute timer pays every line at once, no hero', () => {
+describe('⭐ one lap pays every line at once, no hero', () => {
     it('every line pays on the same lap, whatever its old everyMs said', () => {
         const hall = placeAt('fixture_pp_hall', 800, 500);
 
         run(LAP - 1000);
-        expect(seeds() + wood()).toBe(0);            // the 90 s line no longer pays early
+        expect(seeds() + wood()).toBe(0);            // the 90 s and 5-minute lines no longer pay early
         run(1000);
         expect(seeds()).toBe(2);                      // both seed lines, merged
         expect(wood()).toBe(2);
         expect(hall.clocks).toEqual({ passiveMs: 0 });
 
-        run(LAP);                                     // the old 10-minute line pays every lap now
+        run(LAP);                                     // every line pays every lap
         expect(seeds()).toBe(4);
         expect(wood()).toBe(4);
     });
@@ -133,7 +133,7 @@ describe('⭐ one 5-minute timer pays every line at once, no hero', () => {
         TimedChanges.tick(30 * 60000);
 
         expect({ seeds: seeds(), wood: wood() }).toEqual(small);
-        expect(small).toEqual({ seeds: 12, wood: 12 });   // 6 laps × (1 + 1) seeds, 6 × 2 wood
+        expect(small).toEqual({ seeds: 6, wood: 6 });     // 3 laps × (1 + 1) seeds, 3 × 2 wood
         expect(hall.clocks.passiveMs).toBe(0);
     });
 
@@ -227,18 +227,18 @@ describe('⭐ the Wishing Well joins the Guild Hall\'s timer (T-099)', () => {
 });
 
 describe('⭐ an old save mid-timer loads sensibly (T-099)', () => {
-    it('per-line clocks become one: the lap resumes from the furthest-along line, wrapped to 5 minutes', () => {
+    it('per-line clocks become one: the lap resumes from the furthest-along line, wrapped to the lap', () => {
         const hall = placeAt('fixture_pp_hall', 800, 500);
         // Saved under the old per-line clocks: 4 min into the seed line, 30 s into the 90 s line,
-        // 7 min into the 10-minute line (2 min into a 5-minute lap).
-        hall.clocks = { trickle: [240000, 30000, 420000] };
+        // 9 min into a 20-minute line (wrapped to the 10-minute lap, still 9 min in).
+        hall.clocks = { trickle: [240000, 30000, 540000] };
 
         const revived = JSON.parse(JSON.stringify(GameState.serialize()));
         GameState.state = migrateState(revived.state, revived.version);
         InventoryManager.init();
         const loaded = BoardState.getTokenById(hall.id);
 
-        expect(PassiveProduction.elapsedOf(loaded)).toBe(240000);
+        expect(PassiveProduction.elapsedOf(loaded)).toBe(540000);
         expect(PassiveProduction.nextInMs(loaded)).toBe(60000);
         run(59000);
         expect(seeds() + wood()).toBe(0);
@@ -249,8 +249,8 @@ describe('⭐ an old save mid-timer loads sensibly (T-099)', () => {
 
     it('an old clock past a whole lap does not pay a lap it never earned', () => {
         const hall = placeAt('fixture_pp_hall', 800, 500);
-        hall.clocks = { trickle: [0, 0, 590000] };          // 9 min 50 s of a 10-minute line
-        expect(PassiveProduction.elapsedOf(hall)).toBe(290000);
+        hall.clocks = { trickle: [0, 0, 1190000] };         // 19 min 50 s of a 20-minute line
+        expect(PassiveProduction.elapsedOf(hall)).toBe(590000);
         run(10000);
         expect(seeds()).toBe(2);
         run(LAP - 1000);
@@ -289,8 +289,8 @@ describe('⭐ the pay drops as loot beside the Token', () => {
         TimedChanges.tick(10 * 60 * 60000);   // ten hours in one tick
 
         expect(SpriteLayer.getSprites()).toHaveLength(3);
-        expect(seeds()).toBe(240);            // 120 laps × 2
-        expect(wood()).toBe(240);
-        expect(water()).toBe(1200);
+        expect(seeds()).toBe(120);            // 60 laps × 2
+        expect(wood()).toBe(120);
+        expect(water()).toBe(600);
     });
 });

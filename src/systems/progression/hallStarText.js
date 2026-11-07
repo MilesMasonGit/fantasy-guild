@@ -8,7 +8,9 @@ import { toolNamer } from '../effects/toolNames.js';
 import { REACH } from '../../config/registries/reachRegistry.js';
 import { getAllTokenTypes, tokenName } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { PASSIVE_PRODUCTION_MS } from '../../config/registries/tokenConstants.js';
+import { PASSIVE_LAP_BASE_MS } from '../../config/registries/tokenConstants.js';
+import { ModifierAggregator } from '../effects/ModifierAggregator.js';
+import { passiveLapMs } from '../board/workTime.js';
 import { rankOf } from '../../config/hallStars.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
@@ -49,11 +51,25 @@ export function hallRuleSentence(statement, names = hallNames()) {
     return text.endsWith('.') ? `${text.slice(0, -1)}, but only for ${skill} work.` : `${text}, but only for ${skill} work`;
 }
 
-const LAP_MINUTES = Math.round(PASSIVE_PRODUCTION_MS / 60000);
-
-/** One Passive Production line, in words: "10 Copper Ore / 5 min". */
+/**
+ * One Passive Production line, in words: "10 Copper Ore a lap". The lap's length is said once, by
+ * the Hall's effects, since a star can change it.
+ */
 export function hallLineText(line, names = hallNames()) {
-    return `${line.quantity} ${names.item(line.itemId)} / ${LAP_MINUTES} min`;
+    return `${line.quantity} ${names.item(line.itemId)} a lap`;
+}
+
+/** "8:00", "10:00": a lap's length as the Hall's effects say it. */
+export function lapClock(ms) {
+    const total = Math.max(0, Math.round((Number(ms) || 0) / 1000));
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/** The lap one Lap Time rule gives on its own, from the base lap: what a lap star's rank says. */
+export function lapOfRule(statement) {
+    const agg = new ModifierAggregator('hall:lap');
+    agg.addModifier({ ...statement.payload, value: Number(statement.payload?.value) || 0, source: 'lap' });
+    return passiveLapMs(agg.resolveAxis(EFFECT_TYPES.PASSIVE_LAP, PASSIVE_LAP_BASE_MS));
 }
 
 /** What a star gives at a rank, in words: its rules, then its lines; empty at rank 0. */
@@ -129,6 +145,14 @@ function subjectsText(subjects) {
  */
 function ruleEffect(statement, names) {
     const payload = statement?.payload || {};
+    if (payload.type === EFFECT_TYPES.PASSIVE_LAP) {
+        // The Guild Hall is the subject, and the amount is the lap itself, not its percentage.
+        return {
+            phrase: 'lap',
+            amount: `outputs every ${lapClock(lapOfRule(statement))}`,
+            sentence: 'The Guild Hall\'s outputs arrive more often: its lap is shorter.'
+        };
+    }
     if (payload.type === EFFECT_TYPES.LOADOUT_SLOTS) {
         const n = Number(payload.value) || 0;
         const kind = getCategoryInfo(payload.category)?.label || payload.category || 'item';
@@ -171,7 +195,7 @@ export function starSentence(def, names = hallNames()) {
     if (!def.authored) return BUILT_IN_SENTENCE[def.id] || def.description || '';
     const first = rankOf(def.star, 1);
     if (!first) return def.description || '';
-    const parts = effectGroups(first, names).map(g => `Every ${subjectsText(g.subjects)} ${singular(g.phrase)}.`);
+    const parts = effectGroups(first, names).map(g => g.sentence || `Every ${subjectsText(g.subjects)} ${singular(g.phrase)}.`);
     if (first.lines.length) {
         parts.push(`The Guild Hall draws ${andList(first.lines.map(l => names.item(l.itemId)))} every lap, no hero needed.`);
     }

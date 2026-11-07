@@ -1,4 +1,4 @@
-Status: briefed 2026-10-14 for Transitions and The look of the sky (brief 160); the rest approved 2026-10-09; amendment **"upgrades as a main driver" approved 2026-10-30, briefed (brief 320)**; "The detail pass" built 2026-11-06 (brief 390 G2, G3, G4)
+Status: briefed 2026-10-14 for Transitions and The look of the sky (brief 160); the rest approved 2026-10-09; amendment **"upgrades as a main driver" approved 2026-10-30, briefed (brief 320)**; "The detail pass" built 2026-11-06 (brief 390 G2, G3, G4; G5, the drop lap, built 2026-11-06, its star pack waiting on the owner)
 
 # The Guild Hall: constellation screen, upgrades, transitions
 
@@ -183,5 +183,20 @@ sky.*
   `public/assets/playmat/screens/` (drawn at 2× over its stars, then stays); sound slots
   `hall_star_chime.ogg`, `hall_constellation_chime.ogg` in `public/assets/audio/sfx/`.
 - **Hall effects**: no time on each output; **the lap is listed as the first boost** ("Outputs
-  arrive once a lap: every 5:00"); the section reads **Boosts** (it read "Boosts & Modifiers").
+  arrive once a lap: every 10:00", the live lap); the section reads **Boosts** (it read "Boosts &
+  Modifiers").
+- **The drop lap** (G5, built 2026-11-06): Passive Production's one lap is **10 minutes**, for every
+  Token that pays. A guild-only rule, **Lap Time** (a percentage, negative is shorter), shortens it,
+  floored like any speed-up (at most 80 %) and held to the whole second, so the catch-up's steps land
+  on a payout as live ticks do; a star bought mid-lap keeps the time already run. The star is content:
+  the pack `2026-11-06-drop-lap` (`research/pending_packs/drop_lap/`) proposes **Swift Laps** at the
+  Well beside the Wishing Well, 8, 6 and 5 minutes at ranks 1 to 3 (Starter Camp, Plane 1, Plane 2),
+  priced by the ledger; the owner reviews it in the CMS. Its outline is a candle. A Lap Time rule is
+  not listed again among the Hall's boosts: the lap's own line says it. Per-lap amounts read "a lap"
+  (the Wishing Well's "20 Water a lap", a Well star's "10 Copper Ore a lap"), never minutes.
+  **Pacing** (the ledger, measured): no stage moves (Starter Camp 34 min, Plane 1 1 h 2 min, Plane 2
+  23 h 29 min, before and after); the first Water and Apple Seed come at 10 minutes, not 5, and the
+  apple chain about 5 minutes later; Typical's Water at the Starter Camp is 600 an hour, not 1,200,
+  until the star (750 with rank 1). Why the star is dear: the ledger values Water at the Hall's own
+  first Wishing Well rank (60 an hour), the only Water a new guild has before the Hall.
 

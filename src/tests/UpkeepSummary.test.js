@@ -64,11 +64,11 @@ registerTokenTypes({
             upkeep: { items: [{ itemId: INCENSE, quantity: 2 }], cadenceMs: 30000 }
         }]
     },
-    /** A Hall stand-in: 10 seeds per 5-minute Passive Production lap = 2 a minute. */
+    /** A Hall stand-in: 20 seeds per 10-minute Passive Production lap = 2 a minute. */
     fixture_us_hall: {
         id: 'fixture_us_hall', name: 'Fixture Us Hall', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
-        trickle: [{ itemId: SEED, quantity: 10 }]
+        trickle: [{ itemId: SEED, quantity: 20 }]
     }
 });
 

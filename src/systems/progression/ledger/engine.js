@@ -8,7 +8,7 @@ import { ringStarsOf, ringOfStar } from '../../world/ringStars.js';
 import { expandBearer } from '../../effects/effectLibrary.js';
 import { stationSkillOf, stationKindOf, KEYWORD } from '../../effects/statements.js';
 import {
-    stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, cropTermsOf, fieldOf, PASSIVE_PRODUCTION_MS
+    stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, cropTermsOf, fieldOf, PASSIVE_LAP_BASE_MS
 } from '../../../config/registries/tokenConstants.js';
 import { catchPoolsOf, hasCatchPools } from '../../../config/registries/catchPools.js';
 import { toolOf, neededToolOf, toolMeets, starterToolIds } from '../../../config/registries/toolKinds.js';
@@ -301,7 +301,7 @@ export function buildWorld(content = {}) {
             const price = inputsOf(well.prices?.[0]);
             add({
                 id: 'upgrade:wishing_well', how: HOW.UPGRADE, via: hall, needs: [hall, ...needKeys(price)], passive: true,
-                cycleMs: PASSIVE_PRODUCTION_MS, gives: [{ key: itemKey(WISHING_WELL_ITEM), chance: 1, perCycle: wishingWellWater(1) }]
+                cycleMs: PASSIVE_LAP_BASE_MS, gives: [{ key: itemKey(WISHING_WELL_ITEM), chance: 1, perCycle: wishingWellWater(1) }]
             });
         }
     }
@@ -360,11 +360,12 @@ export function buildWorld(content = {}) {
             add({ id: `regrow:${id}`, how: HOW.REGROW, via: self, needs: [self], tool: heroToolOf(def), gates: gate(def.config?.skill, def.config?.skillRequired), gives: [{ key: tokenKey(respawn.into), chance: 1 }] });
         }
 
-        // Passive Production: paid every lap of the shared timer, no hero needed.
+        // Passive Production: paid every lap of the shared timer, no hero needed; the first comes after a
+        // whole base lap (a new game holds no lap star), and the pace reads later laps off the rates.
         const trickle = list(def.trickle).filter(l => text(l.itemId));
         if (trickle.length) {
             add({
-                id: `trickle:${id}`, how: HOW.TRICKLE, via: self, needs: [self], passive: true, cycleMs: PASSIVE_PRODUCTION_MS,
+                id: `trickle:${id}`, how: HOW.TRICKLE, via: self, needs: [self], passive: true, cycleMs: PASSIVE_LAP_BASE_MS,
                 gives: trickle.map(l => ({ key: itemKey(l.itemId), chance: 1, perCycle: Math.max(0, finite(Number(l.quantity), 1)) }))
             });
         }

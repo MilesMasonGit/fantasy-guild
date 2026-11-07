@@ -10,7 +10,7 @@ import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { openingMat } from '../systems/core/EngineBootstrap.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import { PASSIVE_PRODUCTION_MS } from '../config/registries/tokenConstants.js';
+import { PASSIVE_LAP_BASE_MS } from '../config/registries/tokenConstants.js';
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles,
@@ -131,25 +131,25 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
             expect({ config: ghDef.config, tokenType: ghDef.tokenType, requiresHero: ghDef.requiresHero }).toEqual(before);
         });
 
-        it('pays 10 Water per rank every 5 minutes as Passive Production, no hero on the Hall', () => {
+        it('pays 10 Water per rank every lap as Passive Production, no hero on the Hall', () => {
             SpriteLayer.init();
             const gh = BoardState.createTokenInstance('token_guild_hall');
             put(24, gh);
 
-            BoardRunner.tick(PASSIVE_PRODUCTION_MS);
+            BoardRunner.tick(PASSIVE_LAP_BASE_MS);
             expect(water()).toBe(0);                                // rank 0: no Water
 
             GuildUpgradeManager.purchase('wishing_well');            // rank 1
-            BoardRunner.tick(PASSIVE_PRODUCTION_MS - 1);
+            BoardRunner.tick(PASSIVE_LAP_BASE_MS - 1);
             expect(water()).toBe(0);
             BoardRunner.tick(1);
             expect(water()).toBe(10);
 
             GuildUpgradeManager.getNextCost('wishing_well').forEach(p => InventoryManager.addItem(p.itemId, p.quantity));
             GuildUpgradeManager.purchase('wishing_well');            // rank 2
-            BoardRunner.tick(PASSIVE_PRODUCTION_MS);
+            BoardRunner.tick(PASSIVE_LAP_BASE_MS);
             expect(water()).toBe(30);
-            expect(GuildUpgradeManager.getDisplayList().find(u => u.id === 'wishing_well').statLabel).toBe('20 Water / 5 min');
+            expect(GuildUpgradeManager.getDisplayList().find(u => u.id === 'wishing_well').statLabel).toBe('20 Water a lap');
         });
 
         it("a hero dropped on the Hall changes nothing: no work cycle, the same timer", () => {
@@ -161,7 +161,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
 
             BoardRunner.tick(10000);
             expect(gh.cycleElapsedMs || 0).toBe(0);
-            BoardRunner.tick(PASSIVE_PRODUCTION_MS - 10000);
+            BoardRunner.tick(PASSIVE_LAP_BASE_MS - 10000);
             expect(water()).toBe(10);
         });
     });

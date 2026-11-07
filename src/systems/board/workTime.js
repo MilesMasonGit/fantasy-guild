@@ -1,6 +1,7 @@
 // how long work and growth take once rules have moved them: the floors every reader shares
 
 import { MAX_SPEED_UP_CUT } from '../../config/loopConstants.js';
+import { PASSIVE_LAP_BASE_MS } from '../../config/registries/tokenConstants.js';
 
 /**
  * Pure: no board, no registry. The board's readers (`TileModifiers.workTimeOf`, `growTimeOf`) and
@@ -35,4 +36,15 @@ export const MIN_WORK_CYCLE_MS = 1000;
  */
 export function flooredWorkTime(baseMs, resolvedMs) {
     return Math.max(MIN_WORK_CYCLE_MS, floorSpeedUp(baseMs, resolvedMs));
+}
+
+/**
+ * Passive Production's lap from the length every Lap Time rule resolved it to: floored like any
+ * speed-up, then held to the whole second, so the catch-up's 1 s steps land on a payout exactly as
+ * live ticks do and the lap reads "8:00", never "7:59". The game (`PassiveProduction.lapMs`) and the
+ * ledger's rate calculator both take the lap from here.
+ */
+export function passiveLapMs(resolvedMs) {
+    const ms = floorSpeedUp(PASSIVE_LAP_BASE_MS, Number.isFinite(resolvedMs) ? resolvedMs : PASSIVE_LAP_BASE_MS);
+    return Math.max(1000, Math.round(ms / 1000) * 1000);
 }

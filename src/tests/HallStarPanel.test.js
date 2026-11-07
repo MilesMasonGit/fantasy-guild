@@ -132,7 +132,7 @@ describe('the Hall\'s Effects', () => {
             GuildUpgradeManager.recompute();
             EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, {});
         });
-        expect(container.querySelector('[data-hall-effect-lap]').textContent).toBe('Outputs arrive once a lap: every 5:00');
+        expect(container.querySelector('[data-hall-effect-lap]').textContent).toBe('Outputs arrive once a lap: every 10:00');
         for (const output of container.querySelectorAll('[data-hall-effect-output]')) {
             expect(output.textContent).not.toMatch(/every|\d:\d\d/);
         }

@@ -813,10 +813,14 @@ less micromanagement than area flags).
   spawner waits; nothing goes into debt. **Rule upkeep** (a rule that costs
   items on its own clock) is **Latent**.
 - **Passive Production** (the Guild Hall's free income, no hero needed): one
-  5-minute timer pays every line at once, dropped as loot beside the Hall:
+  lap pays every line at once, dropped as loot beside the Hall:
   1 Oak Seed, 1 Wheat Seed and 1 Apple Seed (*placeholder*; the CMS block is
-  still called `trickle` in the data), plus the Wishing Well's Water.
-  *(`PassiveProduction.js`)*
+  still called `trickle` in the data), plus the Wishing Well's Water and the Well
+  stars' lines. **The lap is 10 minutes**, shortened by the guild-only **Lap Time**
+  rule of a Guild Hall star (brief 390 G5; the pack's Swift Laps, at the Well, gives 8, 6,
+  then 5 minutes, priced by the ledger (owner, 2026-11-06)), floored
+  like any speed-up and held to the whole second; one lap for every Token that pays.
+  A star bought mid-lap keeps the time already run. *(`PassiveProduction.js`)*
 - **The Shop** sells the Foundations only (see §3, Foundations), all available
   from the start; price is the only gate (*placeholder* prices). Coast and Goblin
   Camp come from the Starter Camp and the world map's tables instead. *(`Shop.js`)*
@@ -1305,7 +1309,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   the rank is held, in every Region and wherever the Hall stands (a skill's XP, Yield or
   Double Loot and Work Time narrowed to that skill; Token upgrades aimed at a Token or tag:
   Grow Time for a vein's rest or a tree's regrowth, Camp Reach; the guild-only Wound Time
-  for the Infirmary and Loadout Slots for one more of a loadout kind), and **lines** of
+  for the Infirmary, Loadout Slots for one more of a loadout kind, and Lap Time for the
+  Passive Production lap), and **lines** of
   Passive Production the Hall pays each lap beside the Wishing Well's Water. The sky grows to
   hold its constellations and is dragged when it does not fit.
   *(`guildUpgrades.js`, `hallStars.js`, `progression/HallRules.js`)*
@@ -1322,7 +1327,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   The **details panel** (purple frames) gives a star's name, one sentence of what it does (built
   from its rules), its rank, what it gives now and next and at its top rank, its price as item
   ribbons with have/need, and the Upgrade button. The Hall star's **Effects** list the outputs
-  each lap and, as boosts, the lap itself and every rule held.
+  each lap and, as boosts, the lap itself ("Outputs arrive once a lap: every 10:00", the live
+  lap) and every other rule held (a Lap Time rule is said by the lap's line).
   *(`GuildHallBoard.jsx`, `hallStarOutline.js`, `GuildUpgradeInspection.jsx`, `hallStarText.js`)*
 - **The upgrade ceremony** (brief 390 G4): a rank bought while the sky is open plays once: the
   star bursts in hard pixels with a chime; light hops along its lines to the stars that rank
@@ -1338,7 +1344,7 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 |---|---|---|
 | Bunk Beds | 8 | +1 hero per rank (rank 1 free, held from the start for the first hero) |
 | Bank Tabs | 15 | +1 Bank tab (64 slots) per rank |
-| Wishing Well | 10 | 10 × *rank* Water every 5 min as Passive Production, no hero needed (rank 1 free) |
+| Wishing Well | 10 | 10 × *rank* Water a lap as Passive Production, no hero needed (rank 1 free) |
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*
@@ -1731,7 +1737,7 @@ the Token count.
 | **Near / reach** | 164 u centre to centre; how far a rule carries. |
 | **Spawner, family, allowance** | A Token that makes Tokens; the types it makes and what they grow into; how many it allows alive. |
 | **Upkeep** | Items a spawner (or rule) pays to keep running. Unpaid = it waits. |
-| **Passive Production** | Free items the Hall drops on one 5-minute timer (formerly "trickle"). |
+| **Passive Production** | Free items the Hall drops once a lap, 10 minutes shortened to 5 by a Guild Hall star (formerly "trickle"). |
 | **Foundation** | A placed Token built into a station by choosing a build recipe. |
 | **Station** | A Token whose work is a recipe the player picks. |
 | **Context Token** | A tool or support Token used by nearby work. |
@@ -1788,5 +1794,5 @@ crunch plan):
 | Atlas timing | Moves into the crunch, after deep optimization. |
 | Drops over a drawer | A mat Token or flag dropped over the Shop drawer or the hero sheet lands on the mat underneath; intended (owner, certification 2026-10-07). |
 | Token cap | 128, fixed (the Guild Hall's Token Cap star retired, brief 320); spawned Tokens and endgame sites count (D-1); the discard bin is gone (Atlas A3b), so nothing off the mat counts. |
-| Trickle | Renamed **Passive Production**, one 5-minute timer; the Wishing Well joins it, about 10 Water per 5 min (T-099). |
+| Trickle | Renamed **Passive Production**, one timer; the Wishing Well joins it, 10 Water a lap per rank (T-099). The lap is 10 minutes, shortened to 5 by Guild Hall stars (owner 2026-11-03, brief 390 G5). |
 | Markets | **Cut for now**: items stay the only currency, no exchange rates; revisit if a real need appears (owner 2026-10-09, T-127). |

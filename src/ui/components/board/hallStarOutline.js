@@ -78,6 +78,7 @@ export function outlineSpriteName(def) {
         case EFFECT_TYPES.GROW_TIME: return GROW_BY_SKILL[payload.category || skill] || null;
         case EFFECT_TYPES.WOUND_TIME: return 'i_potion_round_red';
         case EFFECT_TYPES.LOADOUT_SLOTS: return SLOT_BY_KIND[payload.category] || null;
+        case EFFECT_TYPES.PASSIVE_LAP: return 'i_candle_white';
         default: return null;
     }
 }

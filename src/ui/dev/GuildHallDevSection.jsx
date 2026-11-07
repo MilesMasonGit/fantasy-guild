@@ -9,7 +9,8 @@ import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
 import { totalPrice } from '../../config/guildUpgrades.js';
 import { planStarThatOpens, planConstellationOneShort } from './hallCeremonyDev.js';
-import { installQaSky, stockForQaSky, setUpHallScene, woundSceneHero, payLapNow, hallReadout } from './hallStarsDev.js';
+import { installQaSky, stockForQaSky, setUpHallScene, woundSceneHero, payLapNow, hallReadout, installLapStar, playAway, lapNowText } from './hallStarsDev.js';
+import * as PassiveProduction from '../../systems/board/PassiveProduction.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
@@ -166,6 +167,38 @@ export function GuildHallDevSection() {
                     onClick={() => setStatus(hallReadout().join(' · '))}
                 >
                     What the stars do now
+                </button>
+            </div>
+            <div className={labelClass}>The drop lap (dev only)</div>
+            <div className="flex flex-wrap gap-2">
+                <button
+                    type="button"
+                    data-qa-lap-star
+                    className={buttonClass}
+                    title="Swift Laps, the drop lap pack's star, beside the Wishing Well, and the Bank stocked for its three ranks"
+                    onClick={() => {
+                        const r = installLapStar();
+                        setStatus(r.ok
+                            ? `${r.synced ? 'Swift Laps is synced already: the Bank is stocked for it.' : 'Swift Laps is in the sky beside the Wishing Well (gone on reload), the Bank stocked for its three ranks.'} The lap is every ${lapNowText()}. Open the Guild Hall: hover the Hall star for its effects, buy Swift Laps for 8:00, 6:00, 5:00.`
+                            : 'No Swift Laps in the sky');
+                    }}
+                >
+                    Lap star in the sky
+                </button>
+                <button
+                    type="button"
+                    data-qa-lap-away
+                    className={buttonClass}
+                    title="The real catch-up, as on a load, for 30 minutes; not saved"
+                    onClick={async () => {
+                        setStatus('Playing 30 minutes away…');
+                        const r = await playAway(30);
+                        setStatus(r.ok
+                            ? `Played 30 minutes away at a lap of ${lapNowText()}: the summary lists what the Hall paid (Water and seeds at ${Math.floor(30 * 60000 / PassiveProduction.lapMs())} laps, give or take the lap already run). Not saved.`
+                            : r.error);
+                    }}
+                >
+                    Play 30 minutes away
                 </button>
             </div>
             {status && <div className="ui-text-body text-gi-muted" data-qa-hall-status>{status}</div>}

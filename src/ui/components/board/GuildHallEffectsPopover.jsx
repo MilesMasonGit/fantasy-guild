@@ -4,7 +4,8 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { authoredStars } from '../../../config/guildUpgrades.js';
-import { linesOf, PASSIVE_PRODUCTION_MS } from '../../../systems/board/PassiveProduction.js';
+import { linesOf, lapMs } from '../../../systems/board/PassiveProduction.js';
+import { EFFECT_TYPES } from '../../../systems/effects/constants.js';
 import { hallRulesOf } from '../../../systems/progression/hallModifiers.js';
 import { hallRuleSentence } from '../../../systems/progression/hallStarText.js';
 import { formatClock } from '../drawer/lifecycleLines.js';
@@ -39,14 +40,17 @@ const HALL_TYPE = 'token_guild_hall';
 
 /**
  * What the Hall gives now: its Passive Production lines each lap (its own, the Wishing Well's
- * Water, the Well's stars'), and every rule its stars' ranks hold, in words.
+ * Water, the Well's stars'), the lap itself (the live one, `PassiveProduction.lapMs`), and every
+ * other rule its stars' ranks hold, in words. A Lap Time rule is said by the lap's own line.
  */
 export function hallEffectsNow(state) {
     const ranks = state?.progress?.guildUpgrades || {};
     const outputs = linesOf({ typeId: HALL_TYPE }, getTokenType(HALL_TYPE), ranks)
         .map(({ itemId, quantity }) => ({ itemId, quantity }));
-    const boosts = hallRulesOf(authoredStars(), ranks).held.map(({ statement }) => hallRuleSentence(statement));
-    return { outputs, boosts };
+    const boosts = hallRulesOf(authoredStars(), ranks).held
+        .filter(({ statement }) => statement.payload?.type !== EFFECT_TYPES.PASSIVE_LAP)
+        .map(({ statement }) => hallRuleSentence(statement));
+    return { outputs, boosts, lapMs: lapMs() };
 }
 
 /** The Hall's live outputs and boosts: an upgrade, a load or a new sky changes them. */
@@ -71,7 +75,7 @@ export const GuildHallEffectsList = () => {
     const data = useHallEffects();
     const outputs = data?.outputs || [];
     const boosts = data?.boosts || [];
-    const lap = t('guildHall.lapBoost', { time: formatClock(PASSIVE_PRODUCTION_MS) });
+    const lap = t('guildHall.lapBoost', { time: formatClock(data?.lapMs ?? lapMs()) });
     return (
         <div className="flex flex-col gap-3 text-gi-text">
             <div className="flex flex-col gap-1.5">

@@ -66,8 +66,9 @@ describe('the rate calculator reads a star the setup holds', () => {
     it('the Well\'s line pays at the Hall each lap, and a wider camp is named as taken, not read', () => {
         const b = book();
         const hall = b.rateOf({ token: 'token_guild_hall' }, { hallRanks: { wishing_well: 1, ph_spring: 2 } });
-        expect(hall.items.item_copper_ore).toBeCloseTo(20 * 12);
-        expect(hall.items.item_water).toBeCloseTo(10 * 12);
+        // Six 10-minute laps an hour with no lap star (`DropLap.test.js` buys it).
+        expect(hall.items.item_copper_ore).toBeCloseTo(20 * 6);
+        expect(hall.items.item_water).toBeCloseTo(10 * 6);
         expect(hall.factors.map(f => f.id)).toEqual(['self:token_guild_hall', 'hall:wishing_well', 'hall:ph_spring']);
         expect(b.rateOf({ token: 'token_guild_hall' }, { hallRanks: { ph_spring: 2 }, off: ['hall:ph_spring'] }).items.item_copper_ore).toBeUndefined();
 

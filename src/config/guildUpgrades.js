@@ -162,13 +162,13 @@ export const GUILD_UPGRADES = [
         id: 'wishing_well',
         constellation: 'well',
         name: 'Wishing Well',
-        description: 'The Guild Hall draws fresh Water as Passive Production every 5 minutes. No hero needed.',
+        description: 'The Guild Hall draws fresh Water as Passive Production every lap. No hero needed.',
         node: { x: 0, y: 0.5 },
         links: [HALL_NODE],
         maxRank: 10,
         prices: placeholderPrices(10, { freeFirstRank: true }),
-        statLabel: rank => rank === 0 ? 'No water generated' : `${wishingWellWater(rank)} Water / 5 min`,
-        nextStatLabel: rank => `${wishingWellWater(rank + 1)} Water / 5 min`,
+        statLabel: rank => rank === 0 ? 'No water generated' : `${wishingWellWater(rank)} Water a lap`,
+        nextStatLabel: rank => `${wishingWellWater(rank + 1)} Water a lap`,
         sprite: UPGRADE_SPRITES.wishing_well
     }
 ];

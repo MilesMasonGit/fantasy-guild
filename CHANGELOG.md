@@ -18,6 +18,16 @@ project's first tagged baseline — everything before it was untagged developmen
   from another version is refused as before; a save that is not even readable JSON now tries the
   backup too, in the browser as well. Browser and dev builds keep their saves in the browser.
   ⚠️ Saves from the desktop game's browser storage do not carry over: everyone starts fresh.
+- **The Guild Hall's drops come once every 10 minutes, and a star shortens the wait to 5**
+  (brief 390 G5): Passive Production (the Wishing Well's Water, the Hall's seeds, the Well stars'
+  lines) pays on one lap of 10 minutes, where it was 5, so a new guild's free Water and seeds come
+  half as fast. A new kind of Guild Hall rule, Lap Time, shortens that one lap for every Token that
+  pays; the Hall's effects say the lap as it is now ("every 10:00"), and the Token card, its hover
+  countdown and the Upkeep Summary's "runs out" follow it. Time away pays exactly what the same time
+  at the table does. The star itself, **Swift Laps** at the Well (8, 6, then 5 minutes, priced by the
+  ledger), waits in a change pack for the owner's review in the CMS. Per-lap amounts now read "a lap"
+  ("20 Water a lap"). The ledger rates the Hall at the lap a setup holds; no stage's time moves. QA
+  panel: "Lap star in the sky" and "Play 30 minutes away".
 
 - **Buying a Guild Hall star is a small moment** (brief 390 G4): the star bursts in hard
   pixels with a chime, light hops along its lines to the stars it just opened, which pop as it

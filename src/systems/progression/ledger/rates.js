@@ -8,14 +8,14 @@ import { reachOf, reachCovers, RELATION } from '../../../config/registries/reach
 import { FILTER_NEEDS, matchesFilters, filtersOf, getFilterKind, targetModeMatches } from '../../../config/registries/filterRegistry.js';
 import {
     outputRange, respawnOf, growsTermsOf, RESPAWN_MIN_MS, stationKindOffers, fieldOf, cropTermsOf,
-    PASSIVE_PRODUCTION_MS, foundationTierMeets, campOf
+    PASSIVE_LAP_BASE_MS, foundationTierMeets, campOf
 } from '../../../config/registries/tokenConstants.js';
 import { neededToolOf, toolOf, toolMeets, toolItemFor } from '../../../config/registries/toolKinds.js';
 import { hasCatchPools, catchPoolsOf } from '../../../config/registries/catchPools.js';
 import { wishingWellWater, WISHING_WELL_ITEM, BUILT_IN_UPGRADE_IDS } from '../../../config/guildUpgrades.js';
 import { normaliseHallSky, rankOf } from '../../../config/hallStars.js';
 import { hallRulesOf } from '../hallModifiers.js';
-import { flooredWorkTime, floorSpeedUp } from '../../board/workTime.js';
+import { flooredWorkTime, floorSpeedUp, passiveLapMs } from '../../board/workTime.js';
 import { ownCycleCost } from '../../board/cycleCharges.js';
 import { applyXpBonus } from '../../hero/xpBonus.js';
 import { perkRowsOf, perksEarnedAt } from '../../hero/perkTable.js';
@@ -891,7 +891,9 @@ function isPassive(def) {
 /**
  * Passive Production (`PassiveProduction.linesOf`): every line once a lap, no hero; the Guild Hall
  * adds the Wishing Well's Water at the setup's rank (`hallRanks.wishing_well`) and the lines of the
- * stars it holds (the Well's basic outputs).
+ * stars it holds (the Well's basic outputs). The lap is `PassiveProduction.lapMs`'s: the base, moved
+ * by every guild-wide Lap Time rule the setup holds (a star, a Region's or a guild rule), through the
+ * same floor (`workTime.passiveLapMs`). The lap is one for every Token that pays.
  */
 function passiveRate(book, def, setup) {
     const perLap = {};
@@ -900,26 +902,35 @@ function passiveRate(book, def, setup) {
         if (text(line?.itemId) && q > 0) perLap[line.itemId] = (perLap[line.itemId] || 0) + q;
     }
     const factors = [{ id: `${FACTOR.SELF}:${def.id}`, kind: FACTOR.SELF, name: def.name || def.id, on: true, axes: [] }];
+    const notes = { unmodelled: [], assumptions: [] };
+    const guild = guildScope(book, setup, notes);
+    const lapBy = new Set();
+    matchedFactors(guild, EFFECT_TYPES.PASSIVE_LAP, TARGET_CATEGORIES.ALL, lapBy);
+    const lapMs = passiveLapMs(guild.agg.resolveAxis(EFFECT_TYPES.PASSIVE_LAP, PASSIVE_LAP_BASE_MS));
     if (def.id === 'token_guild_hall' || def.isGuildHall === true) {
         const rank = Math.floor(Number(setup.hallRanks?.wishing_well) || 0);
         const id = `${FACTOR.HALL}:wishing_well`;
         const water = isOff(setup, id, FACTOR.HALL) ? 0 : wishingWellWater(rank);
         if (water > 0) perLap[WISHING_WELL_ITEM] = (perLap[WISHING_WELL_ITEM] || 0) + water;
         if (rank > 0) factors.push({ id, kind: FACTOR.HALL, name: `Wishing Well rank ${rank}`, on: water > 0, axes: water > 0 ? ['passive'] : [] });
-        for (const { star, rank: held, factorId } of hallRules(book, setup).held) {
-            const lines = rankOf(star, held)?.lines || [];
-            if (!lines.length) continue;
-            const on = !isOff(setup, factorId, FACTOR.HALL);
-            if (on) for (const line of lines) perLap[line.itemId] = (perLap[line.itemId] || 0) + line.quantity;
-            factors.push({ id: factorId, kind: FACTOR.HALL, name: `${star.name} rank ${held}`, on, axes: on ? ['passive'] : [] });
-        }
     }
-    const laps = HOUR_MS / PASSIVE_PRODUCTION_MS;
+    for (const { star, rank: held, factorId } of hallRules(book, setup).held) {
+        const lines = def.id === 'token_guild_hall' || def.isGuildHall === true ? rankOf(star, held)?.lines || [] : [];
+        const lap = lapBy.has(factorId);
+        if (!lines.length && !lap) continue;
+        const on = !isOff(setup, factorId, FACTOR.HALL);
+        if (on) for (const line of lines) perLap[line.itemId] = (perLap[line.itemId] || 0) + line.quantity;
+        factors.push({ id: factorId, kind: FACTOR.HALL, name: `${star.name} rank ${held}`, on, axes: on ? [...(lines.length ? ['passive'] : []), ...(lap ? ['lap'] : [])] : [] });
+    }
+    for (const id of lapBy) {
+        if (id === FACTOR.REGION || id === FACTOR.GUILD) factors.push({ id, kind: id, name: id === FACTOR.REGION ? 'Region rules' : 'guild-wide rules', on: true, axes: ['lap'] });
+    }
+    const laps = HOUR_MS / lapMs;
     return {
         ok: true, reason: null, kind: WORK.PASSIVE,
         target: { token: def.id, recipe: null }, skill: null,
         gates: { level: 0, needed: 0, tool: null, need: null },
-        baseCycleMs: PASSIVE_PRODUCTION_MS, cycleMs: PASSIVE_PRODUCTION_MS, failChance: 0,
+        baseCycleMs: PASSIVE_LAP_BASE_MS, cycleMs: lapMs, failChance: 0,
         lifecycle: { kind: LIFECYCLE.UNLIMITED, cycles: null, restMs: null, growMs: null, steps: null, members: null, why: null },
         heroCyclesPerHour: 0, supplyCyclesPerHour: laps, cyclesPerHour: laps, limitedBy: LIMIT.CLOCK,
         perCycle: perLap, items: Object.fromEntries(Object.entries(perLap).map(([k, v]) => [k, v * laps])),

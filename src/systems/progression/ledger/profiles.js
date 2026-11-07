@@ -10,7 +10,7 @@ import { toolOf, toolMeets, toolItemFor } from '../../../config/registries/toolK
 import { getCategoryDef } from '../../../config/registries/equipmentCategories.js';
 import { isSpentCategory, isWorkMoment, workSkillMatches } from '../../core/consumableRule.js';
 import { FACTOR, WORK } from './rates.js';
-import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, RATE_AXES } from './hall.js';
+import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMovesLap, RATE_AXES } from './hall.js';
 
 /**
  * Three players the pace is read for, each a choice of boosts on every piece of work (owner,
@@ -192,8 +192,8 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         const ctx = { key, target, kind, def, skill: null, required: [], family: null, camps: [], supports: [], consumables: [], gear: [], tools: [], hall: [] };
         contexts.set(key, ctx);
         if (kind === WORK.PASSIVE) {
-            // The Guild Hall's Passive Production grows with the Wishing Well's ranks and the Well's other lines.
-            ctx.hall = [wishingWell, ...tracks.filter(t => t.star && t.star.ranks.some(r => r.lines.length))].filter(Boolean);
+            // The Guild Hall's Passive Production grows with the Wishing Well's ranks, the Well's other lines and a shorter lap.
+            ctx.hall = [wishingWell, ...tracks.filter(t => t.star && (t.star.ranks.some(r => r.lines.length) || starMovesLap(t.star)))].filter(Boolean);
             return ctx;
         }
         if (!def || !kind) return ctx;

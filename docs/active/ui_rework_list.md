@@ -18,6 +18,8 @@ Its locked sections are the source of truth for briefs 10 and 30 (written
     Seed now comes every 5 min, not 10 (director, from "one timer"); the Guild
     Hall and quest Tokens don't count toward the Token cap, so a full mat never
     blocks a quest (director).
+  - Amended 2026-11-06 (owner 2026-11-03, brief 390 G5): still one timer for all, but the
+    lap is **10 minutes**, shortened to 5 by a Guild Hall star (Lap Time).
 - The **"Hero went elsewhere"** notification should not be a notification.
 
 Checked 2026-10-06: the inspection panel's "Origin (dev)" line shows only in a

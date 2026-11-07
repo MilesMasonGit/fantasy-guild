@@ -267,6 +267,23 @@ export const MODIFIER_PALETTE = [
         group: 'Guild',
         hint: 'How many more items of one kind (a Trinket, a Food) every hero may carry. Pick the kind.'
     },
+    {
+        /**
+         * Read by `PassiveProduction.lapMs` every lap: how long Passive Production's one lap takes,
+         * floored like any speed-up (`workTime.passiveLapMs`). One lap for every Token that pays.
+         */
+        type: EFFECT_TYPES.PASSIVE_LAP,
+        reads: { up: (n) => `${n} longer`, down: (n) => `${n} shorter` },
+        label: 'Lap Time',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage'],
+        guildOnly: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Guild',
+        inverted: true,
+        hint: 'How long the Guild Hall\'s lap takes: its outputs (Passive Production) arrive once a lap. A negative value is a shorter lap. Speed-ups stack, but together cut at most 80% of the time.'
+    },
 
     // --- Support ------------------------------------------------------------
     {
