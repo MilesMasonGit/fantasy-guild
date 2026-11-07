@@ -113,10 +113,26 @@ const PAGE_PROBE = `(() => {
 async function processIds(cdp) {
     try {
         const { processInfo } = await cdp.send('SystemInfo.getProcessInfo', {}, undefined, 15000);
-        return processInfo.map((p) => ({ type: p.type, pid: p.id }));
+        return processInfo.map((p) => ({ type: p.type, pid: p.id, cpuS: p.cpuTime }));
     } catch {
         return [];
     }
+}
+
+/**
+ * The page's renderer and the GPU process, read after the settle. ⚠️ Not "the renderer that
+ * appeared with the page": Chrome keeps spare renderers, so the page can load into one that was
+ * already there while the one that appears is the next spare. The game's renderer is the one
+ * that has used by far the most CPU time; every renderer's is kept in the results.
+ */
+async function pageProcesses(cdp) {
+    const all = await processIds(cdp);
+    const renderers = all.filter((p) => p.type === 'renderer').sort((a, b) => b.cpuS - a.cpuS);
+    return {
+        renderer: renderers.length ? [renderers[0].pid] : [],
+        gpu: all.filter((p) => /gpu/i.test(p.type)).map((p) => p.pid),
+        renderersCpuS: renderers.map((p) => [p.pid, Math.round(p.cpuS * 10) / 10])
+    };
 }
 
 /** Private and working-set memory of `pids`, in KB, by pid. Null where it cannot be read. */
@@ -226,15 +242,7 @@ async function main() {
         meta.chrome = { product: chrome.info.product, gpu: chrome.info.gpu };
         console.log(`Chrome ${chrome.info.product} headless · GPU ${chrome.info.gpu?.device ?? '?'} · 1600×1000 at DPR 1`);
 
-        // The page's renderer is the one that appears with it.
-        const before = new Set((await processIds(chrome.cdp)).filter((p) => p.type === 'renderer').map((p) => p.pid));
         const page = await openBoard(chrome, sceneUrl(server.url, scene), { cpu: 1, stress: scene.stress, stressId: scene.stressId });
-        const after = await processIds(chrome.cdp);
-        const procs = {
-            renderer: after.filter((p) => p.type === 'renderer' && !before.has(p.pid)).map((p) => p.pid),
-            gpu: after.filter((p) => /gpu/i.test(p.type)).map((p) => p.pid)
-        };
-        meta.processes = procs;
         const how = scene.ui ? await scene.ui(page) : null;
         if (how) console.log(`  ${how}`);
         await page.send('Performance.enable', { timeDomain: 'timeTicks' });
@@ -242,6 +250,8 @@ async function main() {
         const { windowId } = await chrome.cdp.send('Browser.getWindowForTarget', { targetId: page.targetId });
         process.stdout.write(`Settling ${args.settle} s…\n`);
         await sleep(args.settle * 1000);
+        const procs = await pageProcesses(chrome.cdp);
+        meta.processes = procs;
         const hasPauseGetter = await page.evaluate(`'drawingPaused' in (window.__perf || {})`);
         if (!hasPauseGetter) console.log('⚠ This build has no __perf.drawingPaused: the hidden phase cannot read the drawing clocks.');
 
@@ -349,7 +359,7 @@ async function main() {
     const exit = failed ? EXIT.BENCH_FAILED : metricFailed || regressed || hiddenBad ? EXIT.REGRESSED : EXIT.OK;
     console.log(failed ? `\n✗ The soak failed: ${failed}`
         : exit === EXIT.REGRESSED ? `\n✗ ${[metricFailed && 'a metric FAILED', regressed && 'REGRESSED against the baseline', hiddenBad && 'the hidden phase misbehaved'].filter(Boolean).join('; ')}.`
-            : '\n✓ No growth over the limits, and the hidden phase behaved.');
+            : `\n✓ No growth over the limits${hidden.ran ? ', and the hidden phase behaved' : ' (no hidden phase)'}.`);
 
     const elapsedS = (Date.now() - started) / 1000;
     fs.writeFileSync(file, JSON.stringify({

@@ -279,7 +279,8 @@ describe('the hidden phase', () => {
         });
         expect(analyse(s).nodes.verdict).toBe('ok');
         const h = hiddenCheck(s, intervalsOf(s));
-        expect(h.growth.nodes).toBeCloseTo(250);
+        expect(h.growth.nodes.slope).toBeCloseTo(250);
+        expect(h.growth.nodes.judged).toBe(true);
         expect(h.levels.nodes).toMatchObject({ before: 2000, hiddenMax: 3250, after: 2000 });
         expect(h.problems.join(' | ')).toMatch(/DOM nodes \(live and detached\) grew 250\.0 nodes\/min while hidden \(limit 20\)/);
         expect(h.problems.join(' | ')).toMatch(/JS event listeners grew 110\.0/);
@@ -292,6 +293,14 @@ describe('the hidden phase', () => {
         expect(h.growth).toEqual({});
         expect(h.levels.nodes).toMatchObject({ before: 2000, hiddenMax: 2250, after: 2000 });
         expect(h.problems).toEqual([]);
+        // Six hidden samples over 1.7 minutes: the slope is shown, not judged.
+        const t = makeSamples({ minutes: 4, every: 20, hidden: 2, warmup: 0.4, nodes: (m, ph) => (ph === 'hidden' ? 2000 + 300 * (m - 1) : 2000) });
+        const ht = hiddenCheck(t, intervalsOf(t));
+        expect(ht.growth.nodes).toMatchObject({ n: 6, judged: false });
+        expect(ht.growth.nodes.slope).toBeCloseTo(300);
+        expect(ht.problems).toEqual([]);
+        expect(hiddenText(ht)).toMatch(/300\.00 \(not judged\)/);
+        expect(hiddenText(ht)).toMatch(/judged from 3 samples over 2 min; this hidden phase had 6 over 1\.7 min/);
     });
 
     it('no hidden phase: not run', () => {

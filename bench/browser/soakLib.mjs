@@ -18,7 +18,7 @@ import { SCENE_IDS, EXTRA_SCENE_IDS, ENVELOPE_SCENE, ENVELOPE_SCENE_NAMES, EXIT 
  * 16–17 MB, ~2,000 DOM nodes, ~850 listeners, ~520 EventBus subscribers, 11 documents and 11
  * frames. The rule of thumb: a growth that would reach about five times the page in an 8-hour
  * session left running beside other programs fails.
- * - **Heap over 200 KB a minute fails** (over 50 warns): 96 MB in 8 h, six times the heap, and GC
+ * - **Heap over 200 KB a minute fails** (over 50 warns): about 94 MB in 8 h, six times the heap, and GC
  *   pauses grow with it. 50 KB/min is what a cache still warming up can show (decoded art, JIT
  *   code: the smoke runs' compiled code grew ~130 KB a minute in their first minutes), so it is
  *   only flagged.
@@ -384,9 +384,10 @@ export function hiddenCheck(samples, intervals, cfg = CONFIG) {
         out.levels[key] = { label: def.label, unit: def.unit, before: before ? def.read(before) : null, hiddenMax: hv.length ? Math.max(...hv) : null, after: after ? def.read(after) : null };
         if (def.info || !Number.isFinite(def.failSlope)) continue;
         const fit = fitLine(seriesOf(samples, def, (s) => s.phase === 'hidden'));
-        if (!fit || fit.n < cfg.minHiddenSamples || fit.spanMin < cfg.minHiddenMinutes) continue;
-        out.growth[key] = round(fit.slope, 3);
-        if (fit.slope > def.failSlope) out.problems.push(`${def.label} grew ${fmt(fit.slope, 1)} ${def.unit}/min while hidden (limit ${def.failSlope})`);
+        if (!fit) continue;
+        const judged = fit.n >= cfg.minHiddenSamples && fit.spanMin >= cfg.minHiddenMinutes;
+        out.growth[key] = { slope: round(fit.slope, 3), n: fit.n, spanMin: round(fit.spanMin, 2), judged };
+        if (judged && fit.slope > def.failSlope) out.problems.push(`${def.label} grew ${fmt(fit.slope, 1)} ${def.unit}/min while hidden (limit ${def.failSlope})`);
     }
     return out;
 }
@@ -539,9 +540,16 @@ export function hiddenText(h) {
     const lv = Object.entries(h.levels || {});
     if (lv.length) {
         const v = (l, x) => (l.unit === 'KB' ? fmt(x / 1024, 2) : fmt(x, 0));
+        const g = (key) => {
+            const x = h.growth?.[key];
+            if (!x) return '—';
+            return `${fmt(x.slope, 2)}${x.judged ? '' : ' (not judged)'}`;
+        };
         lines.push(table(['held while hidden', 'before', 'hidden max', 'after', 'hidden slope /min'], lv.map(([key, l]) => [
-            `${l.label}${l.unit === 'KB' ? ' (MB)' : ''}`, v(l, l.before), v(l, l.hiddenMax), v(l, l.after), key in (h.growth || {}) ? fmt(h.growth[key], 2) : '—'
+            `${l.label}${l.unit === 'KB' ? ' (MB)' : ''}`, v(l, l.before), v(l, l.hiddenMax), v(l, l.after), g(key)
         ])));
+        const short = Object.values(h.growth || {}).find((x) => !x.judged);
+        if (short) lines.push(`Hidden slopes are judged from ${CONFIG.minHiddenSamples} samples over ${CONFIG.minHiddenMinutes} min; this hidden phase had ${short.n} over ${fmt(short.spanMin, 1)} min.`);
     }
     if (h.failed) lines.push(`✗ ${h.failed}`);
     for (const p of h.problems) lines.push(`✗ ${p}`);
