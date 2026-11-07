@@ -80,6 +80,14 @@
         "y": -2.37
       },
       "skill": "alchemy"
+    },
+    "compass": {
+      "id": "compass",
+      "name": "The Compass",
+      "label": {
+        "x": -1.86,
+        "y": 0.12
+      }
     }
   },
   "stars": {
@@ -3627,6 +3635,146 @@
               "quantity": 1
             }
           ]
+        }
+      ]
+    },
+    "star_ring_2": {
+      "id": "star_ring_2",
+      "constellation": "compass",
+      "name": "Charted Roads",
+      "description": "The guild charts the roads past its first borders: the next lands of the world map can be settled.",
+      "node": {
+        "x": -0.98,
+        "y": -0.2
+      },
+      "tag": "below",
+      "links": [
+        "hall"
+      ],
+      "opensRing": 2,
+      "ranks": [
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 1700
+            }
+          ],
+          "rules": [],
+          "lines": []
+        }
+      ]
+    },
+    "star_ring_3": {
+      "id": "star_ring_3",
+      "constellation": "compass",
+      "name": "Far Horizons",
+      "description": "The guild looks further out: the next lands of the world map can be settled.",
+      "node": {
+        "x": -1.42,
+        "y": -0.2
+      },
+      "tag": "below",
+      "links": [
+        "star_ring_2"
+      ],
+      "opensRing": 3,
+      "ranks": [
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 12000
+            }
+          ],
+          "rules": [],
+          "lines": []
+        }
+      ]
+    },
+    "star_ring_4": {
+      "id": "star_ring_4",
+      "constellation": "compass",
+      "name": "Wild Lands",
+      "description": "Past the charted lands lie the wilds: the next lands of the world map can be settled.",
+      "node": {
+        "x": -1.86,
+        "y": -0.2
+      },
+      "tag": "below",
+      "links": [
+        "star_ring_3"
+      ],
+      "opensRing": 4,
+      "ranks": [
+        {
+          "tier": 3,
+          "price": [
+            {
+              "itemId": "item_watermelon",
+              "quantity": 110000
+            }
+          ],
+          "rules": [],
+          "lines": []
+        }
+      ]
+    },
+    "star_ring_5": {
+      "id": "star_ring_5",
+      "constellation": "compass",
+      "name": "Untamed Reaches",
+      "description": "Deeper into the wilds: the next lands of the world map can be settled.",
+      "node": {
+        "x": -2.3,
+        "y": -0.2
+      },
+      "tag": "below",
+      "links": [
+        "star_ring_4"
+      ],
+      "opensRing": 5,
+      "ranks": [
+        {
+          "tier": 3,
+          "price": [
+            {
+              "itemId": "item_watermelon",
+              "quantity": 160000
+            }
+          ],
+          "rules": [],
+          "lines": []
+        }
+      ]
+    },
+    "star_ring_6": {
+      "id": "star_ring_6",
+      "constellation": "compass",
+      "name": "Edge of the World",
+      "description": "To the edge of the world: the last lands of the world map can be settled.",
+      "node": {
+        "x": -2.74,
+        "y": -0.2
+      },
+      "tag": "below",
+      "links": [
+        "star_ring_5"
+      ],
+      "opensRing": 6,
+      "ranks": [
+        {
+          "tier": 3,
+          "price": [
+            {
+              "itemId": "item_watermelon",
+              "quantity": 230000
+            }
+          ],
+          "rules": [],
+          "lines": []
         }
       ]
     }
