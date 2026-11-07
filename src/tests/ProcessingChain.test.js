@@ -39,40 +39,57 @@ describe('The Processing chain in shipped data (7.5)', () => {
     });
 
     describe('Foundations', () => {
-        it('the Wood Foundation is a wood Foundation built with Construction, sold for 15 Oak Wood', () => {
+        it('the Wood Foundation is a wood Foundation built with Construction, sold for 15 Oak Wood, first in the list', () => {
             const def = tokens.token_wood_foundation;
             expect(def.name).toBe('Wood Foundation');
             expect(def.foundation).toEqual({ kind: 'wood', skill: 'construction' });
-            expect(def.shop).toEqual({ price: [{ itemId: 'item_oak_wood', quantity: 15 }], section: 'construction' });
+            expect(def.shop).toEqual({
+                price: [{ itemId: 'item_oak_wood', quantity: 15 }],
+                section: 'construction',
+                skills: ['crafting', 'cooking', 'alchemy', 'fishing', 'forestry'],
+                order: 1,
+            });
             expect(def.config).toBeNull();
         });
 
-        it('the Stone Foundation is a stone Foundation, sold for 10 Stone and 5 Oak Wood', () => {
+        it('the Stone Foundation is a stone Foundation, sold for 10 Stone and 5 Oak Wood, second in the list', () => {
             const def = tokens.token_stone_foundation;
             expect(def.name).toBe('Stone Foundation');
             expect(def.foundation).toEqual({ kind: 'stone', skill: 'construction' });
             expect(def.shop).toEqual({
                 price: [{ itemId: 'item_stone', quantity: 10 }, { itemId: 'item_oak_wood', quantity: 5 }],
                 section: 'construction',
+                skills: ['smithing', 'faith'],
+                order: 2,
             });
             expect(def.config).toBeNull();
         });
 
-        it('a Wood Foundation offers the wooden buildings: the Workbench, the Cooking Pot and the rest, and every creature camp from its banner', () => {
+        it('a Wood Foundation offers the wooden buildings: the Workbench, the Cooking Pot, the Mining Camp and the rest', () => {
             expect(poolNames('token_wood_foundation')).toEqual([
-                'Build Alchemy Table', "Build Alpha's Den", 'Build Basking Stone', 'Build Beehive', 'Build Brewery', "Build Chief's Tent",
-                'Build Coal Mine', 'Build Composter', 'Build Cooking Pot', 'Build Copper Mine', 'Build Cow Pasture', 'Build Crab Rocks',
-                'Build Dock', 'Build Ember Vents', 'Build Farmstead', 'Build Fir Workbench', 'Build Fishing Hut', 'Build Frog Pond',
-                'Build Goblin Camp', 'Build Logging Camp', 'Build Minecart', 'Build Quarry', "Build Queen's Hive", 'Build Slime Pit',
-                'Build Smoking Crater', 'Build Sulphur Rocks', 'Build Tannery', 'Build Thorn Thicket', 'Build Tide Pool',
-                'Build Toxic Pool', 'Build Wild Hive', 'Build Wind Stones', 'Build Windmill', 'Build Wolf Den', 'Build Workbench',
+                'Build Alchemy Table', 'Build Beehive', 'Build Brewery', 'Build Composter', 'Build Cooking Pot', 'Build Dock',
+                'Build Farmstead', 'Build Fir Workbench', 'Build Fishing Hut', 'Build Logging Camp', 'Build Minecart',
+                'Build Mining Camp', 'Build Tannery', 'Build Windmill', 'Build Workbench',
             ]);
         });
 
         it("a Stone Foundation offers the Furnace, the Copper Smithy, the Well, the Fighter's Academy and the iron stations (SP-62)", () => {
             expect(poolNames('token_stone_foundation')).toEqual([
                 'Build Copper Smithy', "Build Fighter's Academy", 'Build Furnace', 'Build Iron Furnace',
-                'Build Iron Smithy', 'Build Mining Camp', 'Build Well',
+                'Build Iron Smithy', 'Build Well',
+            ]);
+        });
+
+        it('an Excavation offers the mines and the Quarry', () => {
+            expect(poolNames('token_excavation')).toEqual(['Build Coal Mine', 'Build Copper Mine', 'Build Quarry']);
+        });
+
+        it('a Battlefield offers every creature camp from its banner', () => {
+            expect(poolNames('token_battlefield')).toEqual([
+                "Build Alpha's Den", 'Build Basking Stone', "Build Chief's Tent", 'Build Cow Pasture', 'Build Crab Rocks',
+                'Build Ember Vents', 'Build Frog Pond', 'Build Goblin Camp', "Build Queen's Hive", 'Build Slime Pit',
+                'Build Smoking Crater', 'Build Sulphur Rocks', 'Build Thorn Thicket', 'Build Tide Pool', 'Build Toxic Pool',
+                'Build Wild Hive', 'Build Wind Stones', 'Build Wolf Den',
             ]);
         });
 

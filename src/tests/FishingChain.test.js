@@ -32,8 +32,11 @@ describe('The Fishing chain in shipped data (7.3)', () => {
         expect(coast.tags).toContain('Water');
     });
 
-    it('the Coast is sold at the Shop for 10 Oak Wood, in the Fishing section', () => {
-        expect(coast.shop).toEqual({ price: [{ itemId: 'item_oak_wood', quantity: 10 }], section: 'fishing' });
+    it('the Coast is not sold at the Shop: the Starter Camp places one, and new maps find more', () => {
+        expect(coast.shop).toBeUndefined();
+        expect(read('starterCamp.json').tokens.filter((t) => t.typeId === 'token_coast')).toHaveLength(1);
+        const waters = read('world.json').lines.find((l) => l.id === 'waters');
+        expect(waters.origins['1'].map((o) => o.id)).toContain('token_coast');
     });
 
     it('the Coast is worked with Fishing, keeps its placement limit, and its catch replaces its Outputs', () => {

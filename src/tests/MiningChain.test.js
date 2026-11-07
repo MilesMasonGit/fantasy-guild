@@ -74,11 +74,11 @@ describe('The Mining chain in shipped data (7.2)', () => {
                 expect(def.requiresHero).toBe(false);
             });
 
-            it('is not sold: it is built on a Wood Foundation', () => {
+            it('is not sold: it is built on an Excavation', () => {
                 expect(def.shop).toBeUndefined();
                 const build = recipes.find((r) => r.outputs?.some((o) => o.tokenId === mine));
                 expect(build.skill).toBe('construction');
-                expect(build.foundationKinds).toEqual(['wood']);
+                expect(build.foundationKinds).toEqual(['excavation']);
             });
 
             it(spawns ? 'its family is just the Token it spawns (no growth stage)' : 'has no family: it spawns nothing', () => {

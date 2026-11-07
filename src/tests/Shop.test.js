@@ -145,8 +145,16 @@ describe('the catalogue', () => {
     });
 
     it('orders sections by their first place in the list, then name, General still last', () => {
-        const sections = Shop.catalogue().map(g => g.section);
-        expect(sections[0]).toBe('ranged');
+        const groups = Shop.catalogue();
+        const sections = groups.map(g => g.section);
+        const ranged = groups.find(g => g.section === 'ranged');
+        expect(ranged.order).toBe(1);
+        const placed = groups.filter(g => g.section !== 'general');
+        for (let i = 1; i < placed.length; i++) {
+            const [a, b] = [placed[i - 1], placed[i]];
+            expect(a.order < b.order || (a.order === b.order && a.name.localeCompare(b.name) <= 0), `${a.section} before ${b.section}`).toBe(true);
+        }
+        expect(sections.indexOf('ranged')).toBeLessThan(sections.indexOf('forestry'));
         // Sections with no place at all keep name order.
         expect(sections.indexOf('forestry')).toBeLessThan(sections.indexOf('smithing'));
         expect(sections[sections.length - 1]).toBe('general');

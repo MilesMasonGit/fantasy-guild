@@ -17,15 +17,14 @@ import { recipesForFoundation, listRecipes } from '../config/registries/recipePo
 import { ITEMS } from '../config/registries/itemRegistry.js';
 import { SKILLS } from '../config/registries/skillRegistry.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
-import { workspaceFromDataFiles, setValue, proposedValue, validatePack } from '../../cms/src/engine/changePacks.js';
+import { workspaceFromDataFiles, setValue, proposedValue, validatePack, currentValue, canonicalJson } from '../../cms/src/engine/changePacks.js';
 
 /**
- * The Foundations pack (brief 410 S1) applied to a copy of today's content, as the owner's CMS will
- * apply it and Sync: the game must work before the Sync (the Shop's new fields are optional) and
- * after it. `data/` is never written; the pack is the copy in `fixtures/packs/`, the same file
- * the owner reviews. Once the owner has Synced it, the "today" half describes the past and goes.
+ * The Foundations pack (brief 410 S1), which the owner has Synced: the shipped data must still be the
+ * pack applied, and the game must play by it. `data/` is never written; the pack is the copy in
+ * `fixtures/packs/`, the same file the owner reviewed.
  *
- * ⚠️ The "today" tests run first, before `beforeAll` below swaps the pack's content into the
+ * ⚠️ The shipped-data tests run first, before `beforeAll` below swaps the pack's content into the
  * registries (Vitest runs a file's describes in order).
  */
 
@@ -44,12 +43,14 @@ const BANNER_SPAWNERS = [
     'token_wind_stones', 'token_wolf_den', 'token_alpha_den'
 ];
 
-/** Today's content with every entry of the pack applied, as the CMS's Finish review does. */
+const shippedWorkspace = () => workspaceFromDataFiles({
+    items: readJson('data/items.json'), tokens: readJson('data/tokens.json'),
+    tokenRecipes: readJson('data/tokenRecipes.json'), plan: readJson('cms/plan/plan.json'),
+});
+
+/** The shipped content with every entry of the pack applied, as the CMS's Finish review does. */
 function appliedWorkspace() {
-    let ws = workspaceFromDataFiles({
-        items: readJson('data/items.json'), tokens: readJson('data/tokens.json'),
-        tokenRecipes: readJson('data/tokenRecipes.json'), plan: readJson('cms/plan/plan.json'),
-    });
+    let ws = shippedWorkspace();
     for (const entry of PACK.entries) ws = { ...ws, ...setValue(ws, entry.kind, entry.id, proposedValue(entry)) };
     return ws;
 }
@@ -68,28 +69,27 @@ function newGame() {
 /** The content audit's findings over what the registries hold, as comparable lines. */
 const contentFindings = () => auditLifecycleBlocks({ tokens: TOKENS, items: ITEMS, recipes: listRecipes(), skills: SKILLS })
     .map(f => `${f.severity} ${f.entityId} ${f.field}`).sort();
-let todayFindings = [];
+let shippedFindings = [];
 
-describe('today, before the Sync: content without the new fields', () => {
-    it('the content audit finds what it finds today', () => {
-        todayFindings = contentFindings();
-        expect(todayFindings.filter(f => f.startsWith('error'))).toEqual([]);
+describe('the shipped data, after the Sync', () => {
+    it('the content audit finds no error', () => {
+        shippedFindings = contentFindings();
+        expect(shippedFindings.filter(f => f.startsWith('error'))).toEqual([]);
     });
 
-    it('the Shop sells the five it sells today, in name order within each section', () => {
-        expect(flatCatalogue()).toEqual(expect.arrayContaining([
-            'token_wood_foundation', 'token_stone_foundation', 'token_farmland', 'token_coast', 'token_goblin_camp'
-        ]));
-        expect(flatCatalogue()).not.toContain('token_excavation');
-        expect(Shop.catalogue().flatMap(g => g.items).every(i => i.order === Infinity)).toBe(true);
-    });
-
-    it('the Wood Foundation still builds the Quarry, the mines and the banner camps', () => {
-        expect(builds('token_wood_foundation')).toEqual(expect.arrayContaining(['token_quarry', 'token_copper_mine', 'token_goblin_camp']));
+    // The CMS writes a Token's description from its rules on Sync, so the pack's hand-written
+    // descriptions for the two new Foundations never ship; everything else must.
+    it('holds every entry of the pack as the pack sets it, the description aside', () => {
+        const shipped = shippedWorkspace();
+        const withoutDescription = (value) => canonicalJson({ ...value, description: undefined });
+        for (const entry of PACK.entries) {
+            expect(withoutDescription(currentValue(shipped, entry.kind, entry.id)), `${entry.kind} ${entry.id}`)
+                .toBe(withoutDescription(proposedValue(entry)));
+        }
     });
 });
 
-describe('the Foundations pack, applied to a copy of today\'s content', () => {
+describe('the Foundations pack, applied to a copy of the shipped content', () => {
     let ws;
     beforeAll(() => {
         ws = appliedWorkspace();
@@ -161,8 +161,8 @@ describe('the Foundations pack, applied to a copy of today\'s content', () => {
         expect(builds('token_wood_foundation')).toContain('token_workbench');
     });
 
-    it('adds no content-audit finding to those of today', () => {
-        expect(todayFindings.length).toBeGreaterThan(0);
-        expect(contentFindings()).toEqual(todayFindings);
+    it('adds no content-audit finding to those of the shipped data', () => {
+        expect(shippedFindings.length).toBeGreaterThan(0);
+        expect(contentFindings()).toEqual(shippedFindings);
     });
 });
