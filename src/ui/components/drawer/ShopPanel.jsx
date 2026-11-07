@@ -24,7 +24,7 @@ import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
  * (`ui.nav.toggle('shop')`) or its own Close.
  * - **A row of cards**, each the same size: the name (a dropdown for a group), the Token large,
  * its skill icons, and the price as up to four pills under them. Arrow bars left and right, no
- * scroll bar. As wide as its cards, up to the screen.
+ * scroll bar. Across the whole screen, the cards from the nav's side.
  * - **Drag a card onto the mat to buy.** The card's payload is a `TOKEN` with `from.shop`;
  * `dropOnMat` hands it to `Shop.buyAt`, which pays on drop and places the Token at the drop
  * point. The panel stays open after a purchase.
@@ -123,12 +123,12 @@ export const ShopPanel = ({ isOpen, onClose, menuRight = false }) => {
             data-shop-side={menuRight ? 'right' : 'left'}
             aria-hidden={state === 'closed'}
             className={cn(
-                'absolute bottom-0 z-(--z-drawer) w-max max-w-full',
-                // From the screen's edge under the nav, as one panel: its rows pad for the nav
-                // (`.gi-drawer-pad-x`, 84 / 152 px as the Bank drawer).
+                // Edge to edge, under the nav as one panel: its rows pad for the nav
+                // (`.gi-drawer-pad-x`, 84 / 152 px as the Bank drawer), the cards from the nav's side.
+                'absolute bottom-0 inset-x-0 z-(--z-drawer)',
                 menuRight
-                    ? 'right-0 [--nav-inset-r:84px] md:[--nav-inset-r:152px]'
-                    : 'left-0 [--nav-inset-l:84px] md:[--nav-inset-l:152px]',
+                    ? '[--nav-inset-r:84px] md:[--nav-inset-r:152px]'
+                    : '[--nav-inset-l:84px] md:[--nav-inset-l:152px]',
                 state === 'closed' ? 'pointer-events-none' : 'pointer-events-auto'
             )}
             style={{
@@ -141,7 +141,7 @@ export const ShopPanel = ({ isOpen, onClose, menuRight = false }) => {
             }}
         >
             <PixelFrame kind={FRAME_KIND.STUDS} backdrop="shop" frameClassName="flex flex-col">
-                <ShopContents isOpen={isOpen} onClose={onClose} />
+                <ShopContents isOpen={isOpen} onClose={onClose} menuRight={menuRight} />
             </PixelFrame>
 
             {/* The lip: the strip left showing while a Shop Token is carried. */}
@@ -164,7 +164,7 @@ export const ShopPanel = ({ isOpen, onClose, menuRight = false }) => {
  * between the mat and a drawer (it drops to a lip for a Shop card), and the catalogue is worked
  * out afresh each time this draws.
  */
-const ShopContents = memo(function ShopContents({ isOpen, onClose }) {
+const ShopContents = memo(function ShopContents({ isOpen, onClose, menuRight }) {
     useShopRefresh(isOpen);
     const shop = isOpen ? Shop.catalogue() : [];
     const cap = Shop.capStatus();
@@ -187,7 +187,11 @@ const ShopContents = memo(function ShopContents({ isOpen, onClose }) {
                 <ArrowScrollList
                     axis="x"
                     step={SHOP_SCROLL_STEP_PX}
-                    className="flex-1 min-w-0 py-2 flex gap-2"
+                    // ⚠️ The nav's side on the right by the first card's auto margin, not `justify-end`:
+                    // an auto margin drops to nothing once the row overflows, so its start stays
+                    // reachable by scrolling.
+                    className={cn('flex-1 min-w-0 py-2 flex gap-2', menuRight && '[&>:first-child]:ms-auto')}
+                    listProps={{ 'data-shop-cards': menuRight ? 'right' : 'left' }}
                 >
                     {shop.length === 0 && (
                         <p className="ui-text-small text-gi-muted py-2">{t('shop.empty')}</p>
