@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fantasy-guild.local/cms/schemas/effects.schema.json",
+  "title": "Effects",
+  "description": "data/effects.json, and the workspace's effects collection: the named effect library, keyed by id. Items, Tokens, perks and enemy moves hold references into it (effects: [{ effectId, scale }]). Loaded by src/config/registries/effectRegistry.js; authored in cms/src/components/editors/EffectEditor.jsx. Keys not listed here are reported as warnings (unknown keys), not errors.",
+  "type": "object",
+  "additionalProperties": { "$ref": "#/$defs/effect" },
+  "$defs": {
+    "effect": {
+      "type": "object",
+      "required": ["statements"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id", "description": "effect_ followed by the slugged name while autoSyncId holds; renaming repoints every bearer." },
+        "name": { "type": "string", "description": "Shown as the effect's title, with a numeral for the bearer's scale (effectLibrary.js effectTitle)." },
+        "autoSyncId": { "type": "boolean", "description": "CMS only: true makes the id follow the name." },
+        "status": {
+          "description": "It is a status effect that lands in a fight (src/systems/effects/effectLibrary.js statusBlockOf; LiveEffects.js applyStatus).",
+          "type": "object",
+          "properties": {
+            "stacks": { "type": "number", "minimum": 1, "maximum": 5, "description": "How many copies stack (MAX_STATUS_STACKS 5); 1 does not stack." },
+            "ticks": { "type": "number", "minimum": 0, "description": "How long it lasts in ticks; 0 is the whole fight." }
+          }
+        },
+        "statements": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "common.schema.json#/$defs/statement" },
+          "description": "What it does, in the Rules grammar; ContentAudit refuses an entry with none."
+        }
+      }
+    }
+  }
+}

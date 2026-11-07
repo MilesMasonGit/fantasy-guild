@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fantasy-guild.local/cms/schemas/starterCamp.schema.json",
+  "title": "Starter Camp",
+  "description": "data/starterCamp.json, and the workspace's starterCamp: the layout a new game starts with. Its one reader is normaliseStarterCamp (src/config/starterCampShape.js), which drops malformed lines rather than refusing them; the game's loader is src/config/registries/starterCampRegistry.js. Authored on the CMS's Starter Camp page (cms/src/components/starterCamp/StarterCampPage.jsx) from the game's Save this mat button. Keys not listed here are reported as warnings.",
+  "type": "object",
+  "properties": {
+    "version": { "type": "number", "const": 1, "description": "STARTER_CAMP_VERSION." },
+    "savedAt": { "type": ["string", "null"], "description": "When the game saved the layout." },
+    "mat": {
+      "description": "The mat it was saved from, in mat units; the game recentres the layout on the mat it opens on.",
+      "type": ["object", "null"],
+      "properties": {
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "h": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "hall": { "$ref": "#/$defs/point", "description": "Where the Guild Hall stands." },
+    "tokens": {
+      "type": "array",
+      "description": "Every placed Token but the Guild Hall and quest Tokens.",
+      "items": {
+        "type": "object",
+        "required": ["typeId", "x", "y"],
+        "properties": {
+          "typeId": { "type": "string", "minLength": 1, "description": "A Token type id." },
+          "x": { "type": "number" },
+          "y": { "type": "number" }
+        }
+      }
+    },
+    "bank": {
+      "type": "object",
+      "description": "The Bank it starts with: item id to a whole number above zero.",
+      "additionalProperties": { "type": "number", "exclusiveMinimum": 0 }
+    },
+    "banner": { "type": "string", "description": "The area banner it shows (src/config/areaBanners.js); without one the game picks by biome." }
+  },
+  "$defs": {
+    "point": {
+      "type": ["object", "null"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    }
+  }
+}

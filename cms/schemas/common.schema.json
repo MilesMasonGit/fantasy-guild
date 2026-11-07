@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fantasy-guild.local/cms/schemas/common.schema.json",
+  "title": "Shared shapes",
+  "description": "Pieces the other schemas share: an effect reference, an item and quantity line, a production output, the plan block, the simulator's intent, and a Rules statement. Word lists (enums) are copies of the game's own lists, named in each description; src/tests/CMSSchemas.test.js fails when the game's list and the copy here part ways.",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "idList": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "effectRef": {
+      "description": "A reference into the effect library (data/effects.json). Read by effectRefsOf (src/systems/effects/effectLibrary.js); written by the CMS's Rules list (cms/src/components/editors/Statements.jsx). A bare effect id string is accepted too.",
+      "anyOf": [
+        { "$ref": "#/$defs/id" },
+        {
+          "type": "object",
+          "required": ["effectId"],
+          "properties": {
+            "effectId": { "$ref": "#/$defs/id", "description": "The library entry's id." },
+            "scale": { "type": "number", "description": "How strong this bearer's copy is: a whole number 1 to 5 (normaliseScale, MAX_SCALE in src/systems/effects/effectLibrary.js). Stored on the reference, never on the entry." }
+          }
+        }
+      ]
+    },
+    "itemQuantity": {
+      "description": "An item and how many: a cost, an input, an upkeep, a price.",
+      "type": "object",
+      "required": ["itemId"],
+      "properties": {
+        "itemId": { "$ref": "#/$defs/id", "description": "An item id (data/items.json)." },
+        "quantity": { "type": "number", "minimum": 0, "description": "How many; a whole number in practice." }
+      }
+    },
+    "output": {
+      "description": "One production output: an item (itemId), a Token placed on the mat (tokenId), or currency (pays nothing today). Rolled by src/systems/board/BoardRunner.js (chance, then tokenConstants.js outputRange for the quantity); written by the CMS's output rows (cms/src/components/shared/IOEntryList.jsx) and the simulator (cms/src/engine/sim/writeBack.js).",
+      "type": "object",
+      "properties": {
+        "itemId": { "$ref": "#/$defs/id", "description": "The item paid out (data/items.json)." },
+        "tokenId": { "$ref": "#/$defs/id", "description": "A Token type placed instead of an item (BoardRunner's tokenId branch)." },
+        "currency": { "type": "string", "enum": ["gold"], "description": "OUTPUT_CURRENCIES (src/config/registries/tokenConstants.js). No game reader pays it out; only the market label (tokenTypeDerivation.js) reads it." },
+        "chance": { "type": "number", "minimum": 0, "maximum": 100, "description": "Percent 0 to 100, not a fraction. Default 100." },
+        "minQty": { "type": "number", "minimum": 0, "description": "Smallest roll (whole number); derived from baseQty by the simulator." },
+        "maxQty": { "type": "number", "minimum": 0, "description": "Largest roll (whole number). An inverted range is swapped." },
+        "quantity": { "type": "number", "minimum": 0, "description": "Older single quantity, read when minQty and maxQty are absent." },
+        "baseQty": {
+          "description": "The author's quantity intent, which the simulator widens into minQty and maxQty (cms/src/engine/sim/fieldAdapter.js). The game reads it only as a fallback for enemy drops (enemyProfile.js).",
+          "type": "object",
+          "properties": {
+            "min": { "type": "number", "minimum": 0 },
+            "max": { "type": "number", "minimum": 0 }
+          }
+        },
+        "baseChance": { "type": "number", "minimum": 0, "maximum": 100, "description": "Simulator only: the authored chance, seeded by writeBack.js the first time the tuner moves chance (sim/fieldAdapter.js). No game reader." },
+        "variable": { "type": "boolean", "description": "Simulator only (sim/tuningPass.js): the tuner may move this output's quantity. No game reader." },
+        "anchor": { "type": "boolean", "description": "Simulator only (sim/anchorPass.js): this source anchors the item's value. No game reader." }
+      }
+    },
+    "plan": {
+      "description": "The progression ledger's plan block (src/systems/progression/ledger/plan.js). Kept out of data/ by Sync and written to cms/plan/plan.json; the workspace holds it on the record. Written by cms/src/components/shared/PlanFields.jsx. No reader in the running game.",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["planned", "draft", "live", "parked"], "description": "PLAN_STATUSES in plan.js. A planned record is a stub that never reaches data/." },
+        "tier": { "type": "number", "minimum": 0, "description": "The tier the owner gives it (a whole number)." },
+        "wedge": { "type": "string" },
+        "ring": { "type": "number", "description": "World ring 1 to 3." },
+        "note": { "type": "string" }
+      }
+    },
+    "sim": {
+      "description": "The economic simulator's intent (cms/src/engine/sim/). Written by cms/src/components/shared/SimIntentControls.jsx and XpPin.jsx. No reader in the running game.",
+      "type": "object",
+      "properties": {
+        "tempo": { "type": "string", "enum": ["quick", "fast", "medium", "slow", "heavy"], "description": "TEMPO_NAMES (src/config/registries/tempoBands.js): the cycle-time band." },
+        "purpose": { "type": "string", "enum": ["gph", "iph", "xph"], "description": "SIM_PURPOSES (cms/src/utils/simVocabulary.js): gold, items or XP per hour." },
+        "xpPinned": { "type": "boolean", "description": "The author typed the XP; Recalculate leaves it." }
+      }
+    },
+    "statement": {
+      "description": "One sentence of the Rules grammar (src/systems/effects/statements.js). Its id keys per-copy state (TriggerSystem cooldowns, BlockUpkeep), so it must stay stable. Slots are patched through src/systems/effects/statementSlots.js, which the CMS's Rules editor (Statements.jsx, RulesLine.jsx) imports.",
+      "type": "object",
+      "required": ["keyword"],
+      "properties": {
+        "id": { "type": "string", "description": "stm_ followed by letters and digits; unique and stable." },
+        "keyword": {
+          "type": "string",
+          "enum": ["provides", "grants", "acts_as", "requires", "restocks", "converts", "cannot", "applies", "deals", "heals", "restores", "removes", "spawns", "transforms", "station", "promotes"],
+          "description": "KEYWORD (src/systems/effects/statements.js); what each accepts is its KEYWORDS row. promotes is retired and does nothing."
+        },
+        "payload": { "$ref": "#/$defs/payload" },
+        "to": {
+          "description": "Which Tokens it aims at (filterRegistry.js targetModeMatches, from TileModifiers.js). Null or absent means untargeted.",
+          "type": ["object", "null"],
+          "properties": {
+            "mode": { "type": "string", "enum": ["all", "tag", "id", "tokenType"], "description": "TARGET_MODES (src/config/registries/modifierPalette.js): all, tag, id. tokenType is retired but still read. An unknown mode matches nothing." },
+            "value": { "type": "string", "description": "The tag, or the Token id, the mode names." },
+            "filters": {
+              "type": "array",
+              "description": "Extra conditions, all of which must hold (filterRegistry.js).",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": { "type": "string", "description": "tagged, is_station, charges_below, carrying or worked." },
+                  "value": {},
+                  "not": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "when": {
+          "description": "The moment it fires (src/config/registries/triggerRegistry.js; read by TriggerSystem.js, LoadoutMoments.js, FightMoments.js, LiveEffects.js). Null or absent means always on.",
+          "type": ["object", "null"],
+          "properties": {
+            "event": {
+              "type": "string",
+              "enum": ["CYCLE_COMPLETE", "TOKEN_DEPLETED", "SELF_TOKEN_DEPLETED", "COMBAT_RESOLVED", "COMBAT_ENGAGED", "SELF_COMBAT_ENGAGED", "ITEM_PRODUCED", "SELF_CYCLE_COMPLETE", "CYCLE_START", "SELF_CYCLE_START", "WORK_START", "EFFECT_TICK", "FIGHT_SWING", "FIGHT_HIT", "FIGHT_HP_BELOW", "ITEM_THRESHOLD"],
+              "description": "TRIGGER_EVENTS (triggerRegistry.js)."
+            },
+            "scope": { "type": "string", "enum": ["nearby", "global", "self"], "description": "TRIGGER_SCOPES. Absent means nearby." },
+            "cooldownMs": { "type": "number", "minimum": 0, "description": "Milliseconds between firings." },
+            "skill": { "type": "string", "description": "A skill id; WORK_START only (consumableRule.js)." },
+            "belowPct": { "type": "number", "description": "Whole percent 1 to 99, default 50; FIGHT_HP_BELOW only." },
+            "every": { "type": "number", "minimum": 1, "description": "Every nth swing or hit (a whole number)." },
+            "watchItemId": { "type": "string", "description": "The item watched; ITEM_PRODUCED and ITEM_THRESHOLD." },
+            "threshold": { "type": "number", "minimum": 1, "description": "ITEM_THRESHOLD's count." }
+          }
+        },
+        "upkeep": {
+          "description": "What keeps it running (src/systems/board/BlockUpkeep.js). Null or absent means free.",
+          "type": ["object", "null"],
+          "properties": {
+            "items": { "type": "array", "items": { "$ref": "#/$defs/itemQuantity" } },
+            "cadenceMs": { "type": "number", "minimum": 0, "description": "Milliseconds between payments (the editor's minimum is 1000)." }
+          }
+        },
+        "chargeDelta": { "type": "number", "description": "Charges it changes when it fires; negative spends (chargeMomentRegistry.js chargeDeltaOf). Absent means -1 for a firing rule, 0 for a per-cycle one." },
+        "chargeWhen": { "type": "string", "enum": ["on_fire", "per_cycle"], "description": "CHARGE_MOMENTS (src/config/registries/chargeMomentRegistry.js)." },
+        "reach": {
+          "type": ["string", "null"],
+          "enum": ["nearby", "self", "self_and_nearby", "board", "adjacent", "self_and_adjacent", null],
+          "description": "REACHES (src/config/registries/reachRegistry.js); adjacent and self_and_adjacent are older names read as nearby and self_and_nearby. Null means nearby."
+        },
+        "target": {
+          "description": "Who it acts on, for keywords that act on a role (roleRegistry.js; DealDamage.js, EffectActions.js).",
+          "type": ["object", "null"],
+          "properties": {
+            "role": { "type": "string", "enum": ["self", "actor", "source", "opponent"], "description": "ROLES (src/config/registries/roleRegistry.js); which ones a keyword takes is its KEYWORDS row." }
+          }
+        }
+      }
+    },
+    "payload": {
+      "description": "What the statement does; its shape depends on the keyword (blankPayload in src/systems/effects/statements.js). A number effect's type comes from MODIFIER_PALETTE (src/config/registries/modifierPalette.js).",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "description": "A MODIFIER_PALETTE type (WORK_TIME, YIELD, ...)." },
+        "bucket": { "type": "string", "enum": ["flat", "multiplier", "percentage"], "description": "MODIFIER_BUCKETS (modifierPalette.js)." },
+        "value": { "type": "number", "description": "The modifier's size; a percentage bucket holds a fraction (-0.05 is 5 % less)." },
+        "category": { "type": "string", "description": "What the modifier is limited to: a skill id or an item id." },
+        "skill": { "type": "string", "description": "A skill id (station, and skill-limited rules)." },
+        "stationKind": { "type": "string", "description": "A STATION_KINDS id narrowing a station's recipe pool." },
+        "tag": { "type": "string", "description": "acts_as and requires: the capability tag." },
+        "tier": { "type": "number", "description": "The tag's tier (a whole number)." },
+        "tokenIds": { "type": "array", "items": { "type": "string" }, "description": "Token ids (restocks)." },
+        "itemId": { "type": "string" },
+        "quantity": { "type": "number" },
+        "chance": { "type": "number", "description": "Percent 0 to 100." },
+        "amount": { "type": "number" },
+        "ignoresArmor": { "type": "boolean" },
+        "effectId": { "type": "string", "description": "applies: the library effect it lands." },
+        "scale": { "type": "number" },
+        "durationMs": { "type": "number", "minimum": 0 },
+        "forFight": { "type": "boolean" },
+        "forCycle": { "type": "boolean" },
+        "forSwing": { "type": "boolean" },
+        "typeId": { "type": "string", "description": "spawns and transforms: a Token type id." },
+        "placement": { "type": "string" },
+        "kind": { "type": "string", "description": "cannot: what is forbidden (adjacency_limit, ...)." },
+        "max": { "type": "number" },
+        "jobId": { "type": "string", "description": "promotes (retired)." },
+        "consumes": { "type": "array" },
+        "produces": { "type": "array" }
+      }
+    }
+  }
+}

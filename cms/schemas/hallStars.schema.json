@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fantasy-guild.local/cms/schemas/hallStars.schema.json",
+  "title": "Guild Hall stars",
+  "description": "data/hallStars.json: the Guild Hall's authored sky. The workspace holds the same two maps as hallConstellations and hallStars. The shape is documented and read in src/config/hallStars.js (loaded by src/config/registries/hallStarRegistry.js; a held rank's rules apply guild-wide through src/systems/progression/hallModifiers.js); authored on the CMS's Guild Hall page (cms/src/components/hallStars/, cms/src/engine/hallSky.js). Keys not listed here are reported as warnings.",
+  "type": "object",
+  "properties": {
+    "constellations": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/constellation" }
+    },
+    "stars": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/star" }
+    }
+  },
+  "$defs": {
+    "point": {
+      "type": "object",
+      "description": "In the sky's unit space, centred on the Hall (0, 0); +x right, +y down.",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+    "constellation": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "label": { "$ref": "#/$defs/point", "description": "Where its name is drawn." },
+        "skill": { "type": "string", "description": "The skill it belongs to, if any." }
+      }
+    },
+    "star": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "constellation": { "type": "string", "description": "A constellation id." },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "node": { "$ref": "#/$defs/point", "description": "Where the star sits." },
+        "tag": { "type": "string", "enum": ["below", "above", "left", "right"], "description": "TAG_SIDES (src/config/hallStars.js): where its name tag sits." },
+        "links": { "type": "array", "items": { "type": "string" }, "description": "hall, or other star ids (built-in ones included); it opens once a linked star has a rank." },
+        "sprite": { "type": "string" },
+        "outline": { "type": "string", "description": "The item (or sprite) whose outline the sky draws over it; left out, the sky picks by kind." },
+        "opensRing": { "type": ["number", "null"], "minimum": 2, "description": "A ring star: buying its first rank lets the guild settle that ring (a whole number from 2; src/systems/world/ringStars.js)." },
+        "ranks": {
+          "type": "array",
+          "description": "Rank r is the r-th entry's whole effect, not an increment.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tier": { "type": "number", "minimum": 0, "description": "The tier the owner gives the rank (the ledger prices by it)." },
+              "price": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" }, "description": "Paid from the Bank." },
+              "rules": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/statement" }, "description": "Held guild-wide while the rank is held." },
+              "lines": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" }, "description": "Passive Production lines the Guild Hall pays every lap." }
+            }
+          }
+        }
+      }
+    }
+  }
+}

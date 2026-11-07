@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fantasy-guild.local/cms/schemas/skillPerks.schema.json",
+  "title": "Skill perks",
+  "description": "data/skillPerks.json, and the workspace's skillPerks: each skill's milestone perks, keyed by skill id. Loaded by src/config/registries/perkRegistry.js (src/systems/hero/perkTable.js applies them); authored on the CMS's Skill Perks page (cms/src/components/perks/, cms/src/engine/skillPerks.js). The workspace may hold blank rows that Sync leaves out. Keys not listed here are reported as warnings.",
+  "type": "object",
+  "additionalProperties": { "$ref": "#/$defs/table" },
+  "$defs": {
+    "table": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The skill id, the same as its key." },
+        "perks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "level": { "type": ["number", "null"], "description": "The skill level that grants it (a whole number)." },
+              "effectId": { "type": ["string", "null"], "description": "The library effect it grants (data/effects.json)." },
+              "scale": { "type": "number", "description": "How strong, a whole number 1 to 5." }
+            }
+          }
+        }
+      }
+    }
+  }
+}

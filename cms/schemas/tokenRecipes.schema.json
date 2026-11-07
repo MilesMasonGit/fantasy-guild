@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fantasy-guild.local/cms/schemas/tokenRecipes.schema.json",
+  "title": "Recipes",
+  "description": "data/tokenRecipes.json: every recipe in one flat list; the workspace holds the same recipes in recipePools, one list per skill. Loaded by src/config/registries/recipePoolRegistry.js (a station draws every recipe of the skill its station rule names); authored in cms/src/components/editors/RecipeEditor.jsx. Keys not listed here are reported as warnings (unknown keys), not errors.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/recipe" },
+  "$defs": {
+    "recipe": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id", "description": "Unique and stable: a placed station saves the recipe it works as selectedRecipeId (src/systems/board/StationRecipe.js)." },
+        "name": { "type": "string", "description": "Named after its main output." },
+        "skill": { "type": "string", "description": "The skill pool it belongs to (recipePoolRegistry.js); a skill id." },
+        "levelRequirement": { "type": "number", "minimum": 0, "description": "The worker's level in the skill (StationRecipe.js)." },
+        "requiresContext": {
+          "type": "array",
+          "description": "Nearby capabilities it needs (recipePoolRegistry.js contextRequirementsOf; Charges.js): { tag, minTier } or a bare tag string (tier 1). chargeCost is never read.",
+          "items": {
+            "anyOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "properties": {
+                  "tag": { "type": "string" },
+                  "minTier": { "type": "number", "minimum": 1 },
+                  "chargeCost": { "type": "number", "description": "Not read by the game." }
+                }
+              }
+            ]
+          }
+        },
+        "inputs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" }, "description": "Paid each cycle (RecipeResolver.js); for a crop, the seeds, paid once per sowing." },
+        "outputs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/output" } },
+        "durationMs": { "type": "number", "minimum": 0, "description": "Milliseconds a cycle; overrides the station's cycleTimeMs. Derived from Tempo by Recalculate." },
+        "stationChargeCost": { "type": "number", "minimum": 0, "description": "Station charges a cycle spends (cycleCharges.js, default 1); 0 on a Foundation." },
+        "xp": { "type": "number", "minimum": 0, "description": "XP a cycle; derived by Recalculate unless sim.xpPinned." },
+        "sim": { "$ref": "common.schema.json#/$defs/sim" },
+        "stationKinds": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["furnace", "smithy", "kitchen", "brewery", "tannery", "workbench", "alchemy_table", "summoning_circle", "field", "herb_garden", "windmill"] },
+          "description": "STATION_KINDS (src/config/registries/tokenConstants.js): which stations of the skill offer it; empty means all of them."
+        },
+        "foundationKinds": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["wood", "stone", "bench", "farmland", "excavation", "battlefield"] },
+          "description": "FOUNDATION_KINDS: a building recipe offered on these Foundations, kept out of station pools (recipePoolRegistry.js)."
+        },
+        "foundationMinTier": { "type": "number", "minimum": 1, "description": "The lowest Foundation tier that offers it (tokenConstants.js foundationMinTierOf)." },
+        "crop": {
+          "description": "A crop sown on a field (tokenConstants.js cropTermsOf; src/systems/board/Fields.js).",
+          "type": "object",
+          "properties": {
+            "growMs": { "type": "number", "minimum": 0, "description": "Milliseconds to ripen (minimum 1000, default 3600000)." },
+            "load": { "type": "number", "minimum": 1, "description": "Harvests a sowing yields (default 10)." },
+            "ripeSprite": { "type": ["string", "null"] }
+          }
+        },
+        "plan": { "$ref": "common.schema.json#/$defs/plan" }
+      }
+    }
+  }
+}

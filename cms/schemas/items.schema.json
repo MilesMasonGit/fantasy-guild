@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fantasy-guild.local/cms/schemas/items.schema.json",
+  "title": "Items",
+  "description": "data/items.json, and the workspace's items collection: every item keyed by its id. Loaded by src/config/registries/itemRegistry.js; authored in cms/src/components/editors/ItemEditor.jsx. Keys not listed here are reported as warnings (unknown keys), not errors.",
+  "type": "object",
+  "additionalProperties": { "$ref": "#/$defs/item" },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id", "description": "The item's id, the same as its key (itemRegistry.js reads the key when id is missing). item_ followed by the slugged name while autoSyncId holds." },
+        "name": { "type": "string", "description": "Shown everywhere (RecipeList.js, BoardRunner.js); ItemEditor.jsx." },
+        "description": { "type": "string", "description": "The tooltip's text only (ui/components/drawer/ItemTip.jsx)." },
+        "type": {
+          "type": "string",
+          "enum": ["material", "ingredient", "tool", "weapon", "armor", "food", "drink", "potion", "currency", "drop"],
+          "description": "ITEM_TYPES (src/config/registries/itemRegistry.js). Display only (tint, Bank sort); derived by ItemEditor.jsx from the slot."
+        },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Free words for display and Bank search only. No editor writes them (only the AI generator)." },
+        "sprite": { "type": "string", "description": "A sprite id or an assets/ path (src/utils/AssetManager.js resolveSpritePath)." },
+        "stackable": { "type": "boolean", "description": "false holds one per Bank slot (src/systems/inventory/InventoryManager.js); anything else stacks. No editor control." },
+        "restoreAmount": { "type": "number", "minimum": 0, "description": "HP a food heals (src/systems/hero/ConsumptionSystem.js). Only food heals; drinks and consumables ignore it." },
+        "equipSlot": {
+          "type": "string",
+          "enum": ["", "hand", "hat", "chest", "trinket", "food", "drink", "consumable"],
+          "description": "EQUIPMENT_CATEGORY_DEFS ids (src/config/registries/equipmentCategories.js); empty means it cannot be equipped. Read by EquipmentValidator.js and EquipmentManager.js."
+        },
+        "value": { "type": ["number", "null"], "description": "Gold value, derived by Recalculate (cms/src/engine/sim/writeBack.js), never typed. Null means not yet derived. Read by the ledger only." },
+        "valueSource": { "type": ["string", "null"], "description": "The Token or recipe id the value was derived from (the simulator's anchor election); sticky until re-elected (cms/src/components/shared/AnchorElections.jsx)." },
+        "autoSyncId": { "type": "boolean", "description": "CMS only: true makes the id follow the name." },
+        "effects": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/effectRef" }, "description": "Rules the item carries, as references into data/effects.json (src/systems/hero/HeroEffects.js itemStatements)." },
+        "tool": {
+          "description": "What tool it is (src/config/registries/toolKinds.js toolOf, used by HeroTools.js).",
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap"], "description": "TOOL_KINDS (toolKinds.js); any other kind makes it not a tool." },
+            "tier": { "type": "number", "minimum": 1, "description": "A whole number from 1; anything else reads as 1." },
+            "starter": { "type": "boolean", "description": "true puts it in a new hero's hands (StarterTools.js)." }
+          }
+        },
+        "styles": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["melee", "ranged", "magic", "stealth"] },
+          "description": "A weapon's combat skill (src/config/registries/weaponStyles.js); only the first counts, none means melee."
+        },
+        "damage": { "type": "number", "description": "A weapon's damage, a whole number from 1 (src/utils/CombatFormulas.js); missing or 0 means unarmed (1)." },
+        "tier": { "type": "number", "minimum": 0, "description": "The material tier (1 copper, 2 iron, ...). Read only by the Bank's sort order." },
+        "damageType": {
+          "type": "string",
+          "enum": ["slash", "crush", "stab", "fire", "ice", "electric", "poison", "light", "dark"],
+          "description": "DAMAGE_TYPES (src/config/registries/damageTypes.js weaponDamageTypeOf); missing means the style's default."
+        },
+        "speed": { "type": "string", "enum": ["fast", "normal", "slow"], "description": "ATTACK_SPEED_MS (src/config/FormulaRegistry.js): 2, 3 or 4 seconds a swing. Absent means normal." },
+        "hands": { "type": "number", "description": "2 makes it two-handed (toolKinds.js handsOf); anything else is one hand." },
+        "offHand": { "type": "boolean", "description": "true makes a hand item an off-hand (weaponStyles.js, toolKinds.js)." },
+        "resistances": {
+          "type": "object",
+          "description": "Worn gear's resistances by damage type or group (physical, elemental, special): whole percent, not a fraction, -99 to 99 and not 0 (src/config/registries/gearDefence.js).",
+          "additionalProperties": { "type": "number" }
+        },
+        "damageCut": {
+          "type": "object",
+          "description": "Worn gear's cut of damage by combat style (melee, ranged, magic, stealth): whole percent 1 to 100 (gearDefence.js).",
+          "additionalProperties": { "type": "number" }
+        },
+        "arrow": {
+          "description": "A consumable that is an arrow (src/config/registries/damageTypes.js arrowOf, src/systems/combat/Arrows.js).",
+          "type": "object",
+          "properties": {
+            "damage": { "type": "number", "minimum": 0 },
+            "damageType": { "type": "string", "enum": ["slash", "crush", "stab", "fire", "ice", "electric", "poison", "light", "dark"], "description": "Defaults to stab." }
+          }
+        },
+        "isRoot": { "type": "boolean", "description": "Read only by the CMS's connectivity audit (cms/src/engine/connectivityAuditor.js): a raw item nothing needs to produce. No game reader, no editor." },
+        "plan": { "$ref": "common.schema.json#/$defs/plan" }
+      }
+    }
+  }
+}

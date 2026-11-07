@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fantasy-guild.local/cms/schemas/world.schema.json",
+  "title": "World tables",
+  "description": "data/world.json, and the workspace's world: the tables the world map is generated from. The shape is documented and read in src/config/worldTablesShape.js normaliseWorldTables, which drops or defaults anything malformed and refuses only tables without six distinct lines (loaded by src/config/registries/worldTablesRegistry.js; without the file the game runs on src/config/worldPlaceholder.js). Drawn and edited from the CMS's Ledger World page (cms/src/engine/worldTables.js). Ring-keyed maps use the ring number as the key. Keys not listed here are reported as warnings.",
+  "type": "object",
+  "properties": {
+    "version": { "type": "number", "const": 1, "description": "WORLD_TABLES_VERSION." },
+    "lines": {
+      "type": "array",
+      "description": "Exactly six, one wedge per hex side (LINE_COUNT), shuffled each run.",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "skill": { "type": "string", "description": "A skill id." },
+          "kits": { "type": "object", "description": "The line's lean between kit archetypes: kit id to weight.", "additionalProperties": { "type": "number" } },
+          "origins": { "$ref": "#/$defs/perRing", "description": "Per ring, the wild nodes' Token types as weighted ids." }
+        }
+      }
+    },
+    "neighbours": {
+      "type": "array",
+      "description": "Natural neighbours the line shuffle prefers.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "a": { "type": "string", "description": "A line id." },
+          "b": { "type": "string", "description": "A line id." },
+          "weight": { "type": "number" }
+        }
+      }
+    },
+    "neighbourStrength": { "type": "number", "description": "Each point of neighbour weight makes an order this many times likelier." },
+    "mainPerCell": { "type": "number", "description": "At least this many of its line's origins per cell." },
+    "blendsPerNeighbour": { "type": "number", "description": "Origins a cell takes from each other wedge it touches." },
+    "keys": { "type": "object", "description": "Per ring, Token types within reach of every cell one ring in.", "additionalProperties": { "type": "array", "items": { "type": "string" } } },
+    "kits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "biome": { "type": "string", "description": "The ground its mat stands on (an Atlas biome)." },
+          "work": { "type": "object", "description": "Natural work on its mat in heroes kept busy, by skill id; combat means camps.", "additionalProperties": { "type": "number" } },
+          "stone": { "type": "number", "description": "Stone outcrops on its mat." },
+          "camps": { "type": "array", "items": { "type": "string" }, "description": "The creatures' camps its combat work is." },
+          "bossCamps": { "type": "array", "items": { "type": "string" }, "description": "A combat specialty's better camp." }
+        }
+      }
+    },
+    "camps": {
+      "type": "object",
+      "description": "Per ring, the camps that stand in every world: a Token id, or { id, kits }.",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "anyOf": [
+            { "type": "string" },
+            {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "kits": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "heroTokens": { "type": "object", "description": "Tokens one hero keeps busy, per skill (else HERO_TOKENS_DEFAULT, 5).", "additionalProperties": { "type": "number" } },
+    "specialtyHeroes": { "type": "number", "description": "A specialty's skill gets at least this much work, in heroes." },
+    "arrival": {
+      "type": "object",
+      "description": "Per ring, the enemies a settled place arrives with.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "count": { "type": "array", "items": { "type": "number" }, "description": "[least, most], at most MAX_ARRIVAL (6)." },
+          "enemies": { "type": "array", "items": { "$ref": "#/$defs/weighted" } },
+          "bossChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "A fraction 0 to 1." },
+          "bosses": { "type": "array", "items": { "$ref": "#/$defs/weighted" } }
+        }
+      }
+    },
+    "specialties": { "type": "array", "items": { "type": "string" }, "description": "The specialty bag of every strict ring (skill ids)." },
+    "pityWindow": { "type": "number", "description": "A specialty absent from this many cells in a row comes next." },
+    "extras": {
+      "type": "array",
+      "description": "A place's chests.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "A Token type id." },
+          "kind": { "type": "string", "enum": ["treasure"], "description": "EXTRA_KIND." },
+          "value": { "type": "number" },
+          "lines": { "type": "array", "items": { "type": "string" } },
+          "rings": { "type": "array", "items": { "type": "number" } },
+          "max": { "type": "number" },
+          "weight": { "type": "number" }
+        }
+      }
+    },
+    "ringValue": { "type": "object", "description": "Per ring, what a cell's extras are worth.", "additionalProperties": { "type": "number" } },
+    "valueTolerance": { "type": "number" },
+    "prices": {
+      "type": "object",
+      "description": "Per ring, what settling a place costs.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "qty": { "type": "number" },
+                "from": { "type": "string", "enum": ["source", "hall"], "description": "PRICE_FROM: the source cell one ring in (default) or the Hall's cell." },
+                "item": { "type": "string", "description": "Asks for this item instead." }
+              }
+            }
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "skill": { "type": "string", "description": "A skill id, line (the cell's line's skill) or specialty." },
+                "level": { "type": "number" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "wild": {
+      "type": "object",
+      "description": "The rings beyond the strict ones.",
+      "properties": {
+        "rings": { "type": "number" },
+        "priceGrowth": { "type": "number" },
+        "levelStep": { "type": "number" },
+        "valueGrowth": { "type": "number" },
+        "extremeShare": { "type": "number" },
+        "compositionShare": { "type": "number", "description": "How much of a one-resource wild mat its one resource takes." },
+        "layouts": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "weight": { "type": "number" } } } }
+      }
+    }
+  },
+  "$defs": {
+    "weighted": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "weight": { "type": "number" }
+      }
+    },
+    "perRing": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/weighted" } }
+    }
+  }
+}

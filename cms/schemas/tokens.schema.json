@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fantasy-guild.local/cms/schemas/tokens.schema.json",
+  "title": "Tokens",
+  "description": "data/tokens.json, and the workspace's tokens collection: every Token type keyed by its id. Loaded by src/config/registries/tokenRegistry.js; authored in cms/src/components/editors/TokenEditor.jsx and LifecycleBlocks.jsx. A Token's rules live in data/effects.json and it holds references (effects). Keys not listed here are reported as warnings (unknown keys), not errors.",
+  "type": "object",
+  "additionalProperties": { "$ref": "#/$defs/token" },
+  "$defs": {
+    "weightedId": {
+      "type": "object",
+      "required": ["typeId"],
+      "properties": {
+        "typeId": { "$ref": "common.schema.json#/$defs/id", "description": "A Token type id." },
+        "weight": { "type": "number", "exclusiveMinimum": 0, "description": "Relative weight of a weighted pick." }
+      }
+    },
+    "token": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id", "description": "The Token's id, the same as its key (tokenRegistry.js). token_ followed by the slugged name while autoSyncId holds." },
+        "name": { "type": "string", "description": "tokenRegistry.js tokenName; TokenEditor.jsx." },
+        "description": { "type": "string", "description": "Derived by Recalculate from the Token's rules (cms/src/engine/descriptionDictionary.js), never typed. Display only." },
+        "sprite": { "type": "string", "description": "A sprite id or path; missing falls back to the type id (tokenRegistry.js)." },
+        "cardArt": { "type": "string", "description": "The card's own backdrop picture (src/ui/components/board/tokenCard.js cardArtOf)." },
+        "artSize": { "type": "string", "enum": ["small"], "description": "Only small counts, and only on a 1-by-1 Token (src/config/matGeometry.js)." },
+        "tokenType": {
+          "type": "string",
+          "enum": ["resource", "station", "passive", "context", "buff", "manager", "market", "enemy", "promotion", "spawner", "camp"],
+          "description": "TOKEN_TYPES (src/config/registries/tokenConstants.js). Derived from the rules by Recalculate (writeBack.js deriveTokenType), never picked; read by targeting (filterRegistry.js), RecipeResolver.js and QuestManager.js."
+        },
+        "rarity": {
+          "type": "string",
+          "enum": ["common", "uncommon", "rare", "epic", "mythic"],
+          "description": "TOKEN_RARITIES (tokenConstants.js). Only mythic matters in play: one placed at a time (src/systems/board/Placement.js)."
+        },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Mechanical, unlike item tags: a rule can aim at a tag, matched exactly and case-sensitively (filterRegistry.js)." },
+        "tier": { "type": "number", "minimum": 1, "description": "The default tier of its Acts-as tags and older provides (src/systems/effects/statements.js). The factory sets 1; no editor field." },
+        "uses": { "type": ["number", "null"], "description": "Charges it starts with (tokenRegistry.js tokenStartingUses): a whole number from 1, or null for unlimited, never 0 for unlimited." },
+        "requiresHero": { "type": "boolean", "description": "false lets it work without a hero (BoardRunner.js, workSkillRule.js, Growth.js); absent means true." },
+        "noStackDuplicates": { "type": "boolean", "description": "Its buffs do not stack with another copy (TileModifiers.js, supportLinks.js). No editor writes it." },
+        "size": { "type": "number", "enum": [1, 2], "description": "1, or 2 for a 2-by-2 footprint (src/config/matGeometry.js)." },
+        "staysPut": { "type": "boolean", "description": "true fixes it in place (src/systems/board/FixedTokens.js)." },
+        "clearable": { "type": "boolean", "description": "true lets the player clear it (src/systems/board/Demolition.js)." },
+        "landmark": { "type": "boolean", "description": "An endgame site (tokenRegistry.js isLandmark): counts toward the Token cap and is never pushed." },
+        "autoSyncId": { "type": "boolean", "description": "CMS only: true makes the id follow the name." },
+        "effects": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/effectRef" }, "description": "Its rules, as references into data/effects.json (tokenRegistry.js expandBearer)." },
+        "acceptedTokens": {
+          "type": "array",
+          "description": "What must be nearby for it to work (src/systems/board/RecipeResolver.js checkAcceptedTokens): { tag, minTier } (minTier default 1) or { tokenIds } (any one of them). The CMS shows them as Requires rows.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tag": { "type": "string" },
+              "minTier": { "type": "number", "minimum": 1 },
+              "tokenIds": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "config": {
+          "description": "Its work cycle, or null when it has no production side (src/systems/board/StationRecipe.js workConfigOf, WorkCheck.js, RecipeResolver.js).",
+          "type": ["object", "null"],
+          "properties": {
+            "skill": { "type": "string", "description": "The skill that works it (src/config/registries/skillRegistry.js); empty or unknown means no hero can work it (the audit says so)." },
+            "skillRequired": { "type": "number", "minimum": 0, "description": "The level needed, a whole number from 1." },
+            "cycleTimeMs": { "type": "number", "minimum": 0, "description": "Milliseconds a cycle; derived from Tempo by Recalculate. A recipe's durationMs wins." },
+            "xp": { "type": "number", "minimum": 0, "description": "XP a cycle; derived by Recalculate unless sim.xpPinned." },
+            "inputs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" } },
+            "outputs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/output" } }
+          }
+        },
+        "sim": { "$ref": "common.schema.json#/$defs/sim" },
+        "needsTool": {
+          "description": "The tool a hero must hold (toolKinds.js neededToolOf; WorkCheck.js, Flags.js). Ignored when catchPools is present.",
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap"], "description": "TOOL_KINDS (toolKinds.js)." },
+            "minTier": { "type": "number", "minimum": 1 }
+          }
+        },
+        "respawn": {
+          "description": "What happens when its charges run out (tokenConstants.js respawnOf; src/systems/board/Respawn.js).",
+          "type": "object",
+          "properties": {
+            "mode": { "type": "string", "enum": ["refill", "regrow"], "description": "RESPAWN_MODES (tokenConstants.js): refill waits and refills; regrow turns into another Token." },
+            "afterMs": { "type": "number", "minimum": 0, "description": "refill: milliseconds of rest (minimum 1000, default 12000)." },
+            "restingSprite": { "type": "string", "description": "refill: the picture while resting." },
+            "into": { "type": "string", "description": "regrow: the Token type it becomes; required, else the block is ignored." },
+            "needsNearby": { "$ref": "common.schema.json#/$defs/idList", "description": "refill: Token types that must be nearby." }
+          }
+        },
+        "spawner": {
+          "description": "It places other Tokens over time (src/systems/board/SpawnerSystem.js).",
+          "type": "object",
+          "properties": {
+            "spawns": { "type": "array", "items": { "$ref": "#/$defs/weightedId" }, "description": "A weighted pick; at least one usable entry or it is inert." },
+            "allowance": { "type": "number", "minimum": 0, "description": "How many it keeps out at once (a whole number)." },
+            "intervalMs": { "type": "number", "minimum": 0, "description": "Milliseconds between spawns (minimum 1000)." },
+            "upkeep": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" }, "description": "Paid per spawn, summed per item." },
+            "withinReach": { "type": "boolean", "description": "true places spawns within its reach." }
+          }
+        },
+        "grows": {
+          "description": "It grows into another Token (src/systems/board/Growth.js, TimedChanges.js; tokenConstants.js growsTermsOf).",
+          "type": "object",
+          "properties": {
+            "into": { "type": "string", "description": "The Token type it becomes." },
+            "afterMs": { "type": "number", "minimum": 0, "description": "Milliseconds to grow (the editor's minimum is 1000)." },
+            "needsNearby": { "$ref": "common.schema.json#/$defs/idList", "description": "Token types that must be nearby." },
+            "cost": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" }, "description": "Paid once per growth." }
+          }
+        },
+        "turns": {
+          "description": "A chance each cycle to turn into another Token, and back (tokenConstants.js turnTiming; TimedChanges.js).",
+          "type": "object",
+          "properties": {
+            "into": { "type": "array", "items": { "$ref": "#/$defs/weightedId" } },
+            "everyMs": { "type": "number", "minimum": 0, "description": "Milliseconds a cycle, default 60000." },
+            "chance": { "type": "number", "minimum": 0, "maximum": 100, "description": "Percent 0 to 100 per cycle, default 30." }
+          }
+        },
+        "foundation": {
+          "description": "A building site: which building recipes it offers (recipePoolRegistry.js recipesForFoundation; StationRecipe.js, Foundations.js). Both kind and skill are needed.",
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string", "enum": ["wood", "stone", "bench", "farmland", "excavation", "battlefield"], "description": "FOUNDATION_KINDS (tokenConstants.js)." },
+            "skill": { "type": "string", "description": "A skill id (construction, ...)." },
+            "tier": { "type": "number", "minimum": 1, "description": "Its tier, against a recipe's foundationMinTier (tokenConstants.js foundationTierOf)." }
+          }
+        },
+        "shop": {
+          "description": "It is sold in the shop (src/systems/board/Shop.js). The block counts only when price is a list.",
+          "type": "object",
+          "properties": {
+            "price": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" } },
+            "section": { "type": "string", "description": "A skill id or general; UI grouping only (MatCapBadge.jsx)." },
+            "skills": { "type": "array", "items": { "type": "string" }, "description": "Skill ids; unknown ones are dropped." },
+            "order": { "type": "number", "minimum": 1, "description": "Its place in the list; missing sorts last." },
+            "group": { "type": "string", "description": "Tokens with the same group label are one shop entry with options." }
+          }
+        },
+        "trickle": {
+          "type": "array",
+          "description": "Passive Production lines paid once per shared lap (src/systems/board/PassiveProduction.js; PASSIVE_LAP_BASE_MS in tokenConstants.js).",
+          "items": {
+            "type": "object",
+            "required": ["itemId"],
+            "properties": {
+              "itemId": { "type": "string" },
+              "quantity": { "type": "number", "minimum": 0 },
+              "everyMs": { "type": "number", "description": "Ignored: every line is paid on the shared lap. No editor writes it." }
+            }
+          }
+        },
+        "catchPools": {
+          "type": "array",
+          "description": "A water's catches by tool and bait (src/config/registries/catchPools.js catchPoolsOf; src/systems/board/Fishing.js). The first pool per tool and bait wins.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tool": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap"], "description": "A TOOL_KINDS kind." },
+              "bait": { "type": ["string", "null"], "description": "An item id, or null for the basic pool." },
+              "catches": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["itemId"],
+                  "properties": {
+                    "itemId": { "type": "string" },
+                    "weight": { "type": "number", "exclusiveMinimum": 0, "description": "Relative weight." }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "field": {
+          "description": "A field that grows crops (tokenConstants.js fieldOf; src/systems/board/Fields.js). Blank strings are dropped.",
+          "type": "object",
+          "properties": {
+            "emptySprite": { "type": "string" },
+            "growingSprite": { "type": "string" },
+            "startsWith": { "type": "string", "description": "The id of a crop recipe it starts sown with." }
+          }
+        },
+        "camp": {
+          "description": "A camp that heroes of a skill work from (tokenConstants.js campOf; src/systems/board/Camps.js). No skill means not a camp.",
+          "type": "object",
+          "properties": {
+            "skill": { "type": "string" },
+            "reach": { "type": "number", "minimum": 0, "description": "In mat units, default 320." }
+          }
+        },
+        "standsOn": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["water", "shore", "grass", "rock", "sand", "stone"] },
+          "description": "STANDS_ON_CHOICES (src/systems/atlas/TerrainMap.js); empty means anywhere dry (tokenRegistry.js standsOnOf; SiteRules.js)."
+        },
+        "standsNear": { "$ref": "common.schema.json#/$defs/idList", "description": "Token types it must stand near (tokenRegistry.js; SiteRules.js)." },
+        "enemy": {
+          "description": "It is an enemy: level makes it one (src/config/registries/enemyProfile.js). An authored number replaces what the level fills in.",
+          "type": "object",
+          "properties": {
+            "level": { "type": "number", "minimum": 1 },
+            "style": { "type": "string", "enum": ["melee", "ranged", "magic", "stealth"], "description": "ENEMY_STYLES (enemyProfile.js); anything else is melee." },
+            "kinds": {
+              "type": "array",
+              "maxItems": 2,
+              "items": { "type": "string", "enum": ["armoured", "nimble", "swift", "brute", "venomous"] },
+              "description": "ENEMY_KINDS (src/config/registries/enemyKinds.js), at most two."
+            },
+            "resistances": {
+              "type": "object",
+              "description": "By damage type or group; each value one of 100, 50, 25, -25, -50, others dropped (damageTypes.js normaliseResistances).",
+              "additionalProperties": { "type": "number", "enum": [100, 50, 25, -25, -50] }
+            },
+            "moves": {
+              "type": "array",
+              "description": "Its attacks (src/config/registries/enemyMoves.js enemyMovesOf); written by cms/src/components/editors/EnemyMovesFields.jsx.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "hits": { "type": "boolean" },
+                  "damageType": { "type": "string", "enum": ["slash", "crush", "stab", "fire", "ice", "electric", "poison", "light", "dark"] },
+                  "effectId": { "type": "string", "description": "A library effect the move lands." },
+                  "target": { "type": "string", "enum": ["self", "hero"] },
+                  "lasts": { "type": "string", "enum": ["attack", "swing", "fight"] },
+                  "weight": { "type": "number", "exclusiveMinimum": 0 }
+                }
+              }
+            },
+            "boss": { "type": "boolean", "description": "Display only (lifecycleLines.js)." },
+            "hit": { "type": "number", "description": "Authored hit, replacing the level's." },
+            "hp": { "type": "number" },
+            "speed": { "type": "string", "enum": ["fast", "normal", "slow"] },
+            "xp": { "type": "number" },
+            "dodge": { "type": "number" },
+            "accuracy": { "type": "number" },
+            "critChance": { "type": "number", "description": "Percent." },
+            "budgetScale": { "type": "number", "description": "An older multiplier." }
+          }
+        },
+        "provides": { "type": "array", "description": "Retired inline capability tags (strings or { tag, tier }), still read by statements.js and QuestManager.js; the CMS removes them when a rule is added." },
+        "plan": { "$ref": "common.schema.json#/$defs/plan" }
+      }
+    }
+  }
+}
