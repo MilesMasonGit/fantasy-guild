@@ -40,6 +40,12 @@ Status: draft
 - **A very low rate on repeatable work still counts as a steady source**: "Heroes produce a lot, and with a extremely low 0.1% drop rate and a 10s work cycle, a hero will still find at least a couple of an item if they work at a node all day long." That's 8,640 cycles a day, so about 8 finds a day. Pearls from the Oyster Bed and gems from the Geode stand as they are.
 - **Upgrade payback grows with the tier**: an early upgrade earns back its price in about an hour of the work it boosts, a late one in about a day, following the pace curve.
 
+- **Finds a day, unboosted, for one hero** (owner, 2026-11-07):
+  - **Bonus finds** (gems while mining, Bird Nests, Pearls): **about 20 a day**, about 1 in 400 actions at 10 seconds.
+  - **Rare gear drops**: **about 1 a day**, about 1 in 7,000 kills at 12-second fights (0.014 %).
+  - **The same finds a day at every tier.** Late actions take a little longer, so the chance per action rises slightly to match.
+- **Rare-find boosts** (owner, 2026-11-07): **a rare-find potion doubles finds**, rising to x3 for late potions, and **a Rare Finds building adds x1.5**, so together x3 to x4.5. ⚠️ This is an exception to the boost-strength targets (consumables +20 % today): the ledger's settings need a rare-finds target of its own, or its balancer will weaken these.
+
 ### What these mean for the rules
 
 - **A rate is judged as finds a day**, not as a chance: (86,400 seconds ÷ cycle seconds) × chance, for one hero working all day. A rare item's rate is set from how many a day it should give, and boosts (work potions, Rare Finds buildings) multiply that.
@@ -76,6 +82,5 @@ Three layers, each with one job:
 
 ## Open questions
 
-- **Target finds a day** for each kind of rare: a bonus find, a rare gear drop, a boss drop.
-- **How strong rare-find boosts are**: how many times a potion or a Rare Finds building multiplies a rate.
+- **Boss drops**: settled with the enemies session.
 - **How the costs of a chain show the player its worth**: whether a crafted item's XP accounts for the materials spent, beyond the same-rate rule.
