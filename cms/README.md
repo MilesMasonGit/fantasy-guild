@@ -15,7 +15,7 @@ shipped with the game.
   `tokenRecipes.json` and `effects.json` from the CMS's own store (browser
   localStorage), then commits `data/` onto whatever branch is checked out.
   Anything written into those files by hand is lost on the next sync.
-- **Recalculate** runs the economic simulator (`src/engine/sim/`).
+- **Recalculate** runs the economic simulator (`cms/src/engine/sim/`).
 - The file API lives in `vite-plugin-cms-api.js`. Backups are in `backups/`;
   `npm run cms:restore` (from the repo root) rebuilds a workspace from `data/`.
 - Tests for the CMS live with the game's tests (`src/tests/CMS*.test.js`).
