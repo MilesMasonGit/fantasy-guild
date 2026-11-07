@@ -194,15 +194,14 @@ describe('the world map reads a locked ring', () => {
     });
 });
 
-describe('the QA panel shows a locked ring before the pack is synced', () => {
-    it('puts the pack\'s ring stars beside the authored sky once, and the frontier\'s prices then hold a star\'s price', () => {
+describe('the ring stars ship in the sky, and the QA panel\'s ring-star button leaves them be', () => {
+    it('the sky holds one star per ring from 2 to 6; the button adds nothing, and the frontier\'s prices hold a star\'s price', () => {
         registerHallSky(null);
-        expect(ringStarsOf(authoredStars()).size).toBe(0);
-        expect(installRingStars()).toEqual({ success: true, added: 5 });
         expect([...ringStarsOf(authoredStars()).keys()]).toEqual([2, 3, 4, 5, 6]);
-        expect(installRingStars().success).toBe(false);
-        // The authored stars are all still there.
-        expect(authoredStars().length).toBe(normaliseHallSky(authoredHallSky()).stars.length + 5);
+        const before = authoredStars().length;
+        expect(installRingStars()).toEqual({ success: false, reason: 'The sky has its ring stars already' });
+        expect(authoredStars().length).toBe(before);
+        expect(before).toBe(normaliseHallSky(authoredHallSky()).stars.length);
 
         const { next } = ringTwoFrontier();
         expect(World.ringLockOf(next).stars[0].name).toBe('Charted Roads');

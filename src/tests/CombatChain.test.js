@@ -4,7 +4,6 @@ import path from 'path';
 import { GameState } from '../state/GameState.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import * as BoardState from '../systems/board/BoardState.js';
-import * as Shop from '../systems/board/Shop.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -36,6 +35,7 @@ const effects = read('effects.json');
 const tokens = Object.fromEntries(Object.entries(read('tokens.json')).map(([id, t]) => [id, expandBearer(t, effects)]));
 const items = read('items.json');
 const recipes = read('tokenRecipes.json');
+const starterCamp = read('starterCamp.json');
 
 const CAMP = 'token_goblin_camp';
 const GOBLIN = 'token_goblin';
@@ -87,12 +87,17 @@ describe('The Combat chain in shipped data (7.7)', () => {
         expect(camp.enemy).toBeUndefined();
     });
 
-    it('the camp is sold at the Shop for 10 Stone and 10 Oak Wood, in the Melee section', () => {
-        expect(camp.shop).toEqual({
-            price: [{ itemId: 'item_stone', quantity: 10 }, { itemId: 'item_oak_wood', quantity: 10 }],
-            section: 'melee',
+    it('the camp is not sold at the Shop: the Starter Camp places one, and a Goblin Banner builds one on a Battlefield', () => {
+        expect(camp.shop).toBeUndefined();
+        expect(starterCamp.tokens.filter((t) => t.typeId === CAMP)).toHaveLength(1);
+        const builds = Object.values(recipes).filter((r) => r.outputs?.some((o) => o.tokenId === CAMP));
+        expect(builds).toHaveLength(1);
+        expect(builds[0]).toMatchObject({
+            skill: 'construction',
+            inputs: [{ itemId: 'item_goblin_banner', quantity: 1 }, { itemId: 'item_oak_wood', quantity: 5 }],
+            foundationKinds: ['battlefield'],
         });
-        expect(Shop.sectionName('melee')).toBe('Melee');
+        expect(tokens.token_battlefield.foundation).toMatchObject({ kind: 'battlefield' });
     });
 
     it('its family is its whole list: just the Goblins', () => {
@@ -203,12 +208,11 @@ describe('The Goblin Camp on the mat', () => {
         TileModifiers.teardown();
     });
 
-    const buyCamp = () => {
-        InventoryManager.addItem('item_stone', 10);
-        InventoryManager.addItem('item_oak_wood', 10);
-        const result = Shop.buy(CAMP);
-        expect(result.success).toBe(true);
-        return BoardState.tokens().find((t) => t.typeId === CAMP);
+    // Placed as the Starter Camp places it: the camp is not sold.
+    const placeCamp = () => {
+        const inst = BoardState.createTokenInstance(CAMP);
+        BoardState.addToken(inst, 400, 890);
+        return BoardState.getTokenById(inst.id);
     };
     const placeMixed = () => {
         const inst = BoardState.createTokenInstance(MIXED);
@@ -218,14 +222,14 @@ describe('The Goblin Camp on the mat', () => {
     const count = (typeId) => BoardState.tokens().filter((t) => t.typeId === typeId).length;
     const always = (value) => () => value;
 
-    it('is bought with its price', () => {
-        expect(buyCamp()).toBeTruthy();
-        expect(InventoryManager.getItemCount('item_stone')).toBe(0);
-        expect(InventoryManager.getItemCount('item_oak_wood')).toBe(0);
+    it('is placed on the mat as a spawner', () => {
+        const camp = placeCamp();
+        expect(camp).toBeTruthy();
+        expect(SpawnerSystem.spawnerStatus(camp.id)).toMatchObject({ count: 0, cap: 3 });
     });
 
     it('the shipped camp spawns a Goblin whatever the roll, never a Chief', () => {
-        const camp = buyCamp();
+        const camp = placeCamp();
         const def = getTokenType(CAMP);
         expect(SpawnerSystem.attemptSpawn(camp, def, always(0.1))).toBe(camp);
         expect(SpawnerSystem.attemptSpawn(camp, def, always(0.99))).toBe(camp);
@@ -234,7 +238,7 @@ describe('The Goblin Camp on the mat', () => {
     });
 
     it('the shipped camp counts its Goblins against a cap of 3', () => {
-        const camp = buyCamp();
+        const camp = placeCamp();
         const def = getTokenType(CAMP);
         for (let i = 0; i < 3; i++) SpawnerSystem.attemptSpawn(camp, def, always(0.5));
         expect(SpawnerSystem.spawnerStatus(camp.id)).toMatchObject({ state: 'at_cap', count: 3, cap: 3 });
@@ -264,7 +268,7 @@ describe('The Goblin Camp on the mat', () => {
     });
 
     it('spawns for free: nothing is taken from the Bank', () => {
-        const camp = buyCamp();
+        const camp = placeCamp();
         InventoryManager.addItem('item_oak_wood', 5);
         SpawnerSystem.attemptSpawn(camp, getTokenType(CAMP), always(0.1));
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(5);

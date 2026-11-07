@@ -51,8 +51,13 @@ describe('The Farming chain in shipped data (7.4)', () => {
             expect(farmland.config).toBeNull();
         });
 
-        it('is sold at the Shop for 10 Oak Wood, in the Farming section', () => {
-            expect(farmland.shop).toEqual({ price: [{ itemId: 'item_oak_wood', quantity: 10 }], section: 'farming' });
+        it('is sold at the Shop for 10 Oak Wood, third in the list, in the Farming section with the Farming and Forestry icons', () => {
+            expect(farmland.shop).toEqual({
+                price: [{ itemId: 'item_oak_wood', quantity: 10 }],
+                section: 'farming',
+                skills: ['farming', 'forestry'],
+                order: 3,
+            });
         });
 
         it('offers exactly the nine building recipes', () => {
