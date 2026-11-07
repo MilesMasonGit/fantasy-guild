@@ -1,7 +1,7 @@
 // the QA panel's tools-that-break check: a brittle woodaxe and a brittle sword, worked until they break
 // ⚠️ DEV BUILDS ONLY: reached from `ToolsBreakDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
 
-import { EventBus } from '../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
@@ -128,10 +128,10 @@ export function setUpBreakScene() {
         EventBus.subscribe(BOARD_EVENTS.GEAR_BROKE, (p) => {
             if (!scene || (p?.heroId !== scene.cutter && p?.heroId !== scene.duelist)) return;
             scene.broke.push({ heroId: p.heroId, itemId: p.itemId, after: scene.cycles[p.instanceId] ?? null });
-        }),
+        }, UI_LISTENER),
         EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => {
             if (scene && p?.instanceId in scene.cycles) scene.cycles[p.instanceId]++;
-        })
+        }, UI_LISTENER)
     ];
     offBroke = () => offs.forEach(off => off());
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_tools_break' });
@@ -175,7 +175,8 @@ const heroName = (id) => HeroManager.getHero(id)?.name || id;
 const itemName = (id) => getItem(id)?.name || id;
 
 /**
- * What the scene shows, read from the engine, refreshed while the panel is open.
+ * What the scene shows, read from the engine, refreshed while the panel is open. Live play only:
+ * time away's breaks are in its summary.
  * @returns {string[]}
  */
 export function breakReadout() {
