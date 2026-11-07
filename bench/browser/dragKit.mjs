@@ -265,7 +265,10 @@ export function installDragKit() {
     kit.ensureShopFunds = () => {
         const rows = G.Shop.catalogue?.() || [];
         const typeIds = [];
-        for (const group of rows) for (const item of group.items || []) typeIds.push(item.typeId);
+        for (const item of rows) {
+            if (item.typeId) typeIds.push(item.typeId);
+            for (const option of item.options || []) if (option.typeId) typeIds.push(option.typeId);
+        }
         for (const t of typeIds) for (const { itemId, quantity } of G.Shop.priceOf(t)) {
             if (G.InventoryManager.getItemCount(itemId) < quantity * 60) G.InventoryManager.addItem(itemId, quantity * 60);
         }
