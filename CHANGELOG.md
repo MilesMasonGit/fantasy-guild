@@ -6,6 +6,7 @@ project's first tagged baseline — everything before it was untagged developmen
 ## [Unreleased]
 
 - **Tests follow the Foundations and ring stars Sync**: the content tests now pin the synced content (Coast and Goblin Camp no longer sold, mines and the Quarry on an Excavation, banner camps on a Battlefield, the Shop's list order and icons, the five ring stars in the sky); the Foundations pack test now checks the shipped data still holds the pack.
+- **Drag hint look** (owner's notes on brief 490): the carried hero's marks stand centred just above the Token's sprite, under any refusal, instead of beside the flag; over an enemy only weapons and shields show, never a tool; the skill mark is its icon with the level under it; marks draw at 1x; a failing mark is darker (brightness 0.3, was 0.5).
 - **Small fixes**: pressing on a picture inside an Encyclopedia chart box and dragging now pans smoothly; on screens 900 px tall or less (1366 x 768) the navigation bubbles step down a size so Settings stays on screen; the style sheet page test runs faster.
 - **Saves are files in the desktop game** (brief 450 S3): each slot's save is a file in a saves
   folder (`%APPDATA%\com.fantasyguild.game\saves`, `slot1.json` to `slot3.json`, each with its

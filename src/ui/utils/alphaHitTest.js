@@ -117,6 +117,38 @@ export function isPointOpaque(src, u, v, threshold = 25) {
     return mask.data[idx] >= threshold;
 }
 
+const boundsCache = new WeakMap();
+
+/**
+ * Where the opaque part of a cached sprite lies, as fractions of its picture
+ * `{ left, top, right, bottom }` (0..1, right and bottom exclusive), or null while its mask is not
+ * loaded or it has no opaque pixel.
+ *
+ * @param {string} src Image source URL
+ * @param {number} [threshold=25] Minimum alpha value (0-255) to consider opaque
+ */
+export function opaqueBoundsOf(src, threshold = 25) {
+    if (!src) return null;
+    const mask = alphaMaskCache.get(normalizeSrc(src)) || alphaMaskCache.get(src);
+    if (!mask) return null;
+    const cached = boundsCache.get(mask);
+    if (cached !== undefined && threshold === 25) return cached;
+    const { width, height, data } = mask;
+    let l = width, t = height, r = -1, b = -1;
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            if (data[y * width + x] < threshold) continue;
+            if (x < l) l = x;
+            if (x > r) r = x;
+            if (y < t) t = y;
+            if (y > b) b = y;
+        }
+    }
+    const out = r < 0 ? null : { left: l / width, top: t / height, right: (r + 1) / width, bottom: (b + 1) / height };
+    if (threshold === 25) boundsCache.set(mask, out);
+    return out;
+}
+
 /**
  * Test if a DOM element has an opaque pixel at client coordinates (clientX, clientY).
  *

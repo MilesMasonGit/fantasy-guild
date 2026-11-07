@@ -179,6 +179,15 @@ describe('an enemy: the hand items, no pass or fail', () => {
         expect(marksFor('a', wolf())).toEqual({ kind: 'hands', items: ['dh_greatsword'] });
     });
 
+    it('a tool in the hands is never shown over an enemy: only weapons and shields', () => {
+        GameState.state.heroes = [
+            hero('armed', { melee: 1 }, ['dh_pick', 'dh_sword', 'dh_shield']),
+            hero('tools', { melee: 1 }, ['dh_pick', 'dh_rod'])
+        ];
+        expect(marksFor('armed', wolf())).toEqual({ kind: 'hands', items: ['dh_sword', 'dh_shield'] });
+        expect(marksFor('tools', wolf())).toBeNull();
+    });
+
     it('bare hands show nothing', () => {
         GameState.state.heroes = [hero('a', { melee: 1 }, ['dh_ring'])];
         expect(marksFor('a', wolf())).toBeNull();

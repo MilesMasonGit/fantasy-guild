@@ -25,7 +25,7 @@ import {
     dockArtOffset, rosterFlagPlace, rosterAlertPlace, rosterAlertPx, hpPercent, hpTone
 } from './dockHeroView.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
-import { HeroDragMarks } from '../board/DragMarks.jsx';
+import { HeroDragMarks, MARK_SCREEN_PX } from '../board/DragMarks.jsx';
 
 /**
  * One hero standing on the roster.
@@ -346,7 +346,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
             {/* While a hero is carried over a Token, this hero's marks stand where the bubbles do; the bubbles step aside until it leaves. */}
             <HeroDragMarks
                 heroId={heroId}
-                size={DOCK_MARK_PX}
+                size={MARK_SCREEN_PX}
                 className="absolute left-1/2 -translate-x-1/2"
                 style={{ bottom: labelBottom + LABEL_PX }}
                 fallback={(lifted || bubbles.length > 0) ? (
@@ -394,9 +394,6 @@ const StatusBubble = ({ heroId, alert, tail }) => {
 
 /** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of them. */
 const LABEL_PX = 46;
-
-/** A drag hint mark on the bar: an item's 32 px art at 2x, as an item floating on the mat. */
-const DOCK_MARK_PX = 64;
 
 /** A wheel turn this soon after the last one is the same flick: one page per flick. */
 const WHEEL_GAP_MS = 200;
