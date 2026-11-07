@@ -70,7 +70,7 @@ Battlefield need descriptions typed in the CMS (T-332).
 
 ## Owner to-dos
 
-1. Hard refresh and look at the world map; then the look list when convenient.
+1. The minor changes from the look, for the next pass.
 2. Accept the Swift Laps pack and Sync on `main`; type the two Foundation descriptions.
 3. Art and sound when convenient (all on `owner_art_list.md`): world map board tiles and rope;
    title logo and painting; Hall chimes, the settle fanfare; constellation pictures (optional).
