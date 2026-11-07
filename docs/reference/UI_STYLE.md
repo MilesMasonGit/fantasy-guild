@@ -192,6 +192,11 @@ normal text colour; a new meaning needs the owner's OK.
 
 - **The view pans down from the mat** to the map, as the Guild Hall's glides up; no book. The
   top bar leaves with the mat; the hero bar and the nav stay.
+- **Under the whole screen**, as the Guild Hall's sky (owner, 2026-11-06): the painted world and
+  the hexes run to the screen's edges under the nav, the hero bar and the place panel, with no
+  edge at the mat's column. The map centres in the mat's room between them, and the panel stays
+  in that room. The pan moves the whole screen as one: the mat and the table up, the map up from
+  below the hero bar.
 - **A painted world beneath** (pick D): a colour field per kind of land, wobbly borders, a
   darker ink line where lands meet, sand on shores, tiny pixel symbols; past the rings shown it
   fades into fog. **No hexes past the third ring** unless the guild can reach into a wild ring.
@@ -210,7 +215,7 @@ normal text colour; a new meaning needs the owner's OK.
   as pills (sprite, have/need in the 9.9k shorthand, red when short). No ring, no yields. A cell
   behind a ring star adds one small line naming the Guild Hall star ("Light the Guild Hall's
   Charted Roads star to settle here"), never the ring's number (brief 380 M4).
-- **The inspection panel**: one studs frame, thin (336 px), over the map's right edge: the name
+- **The inspection panel**: one studs frame, thin (336 px), over the right edge of the mat's room: the name
   (a rename once settled), the land and line, the close X; then what it yields as ribbons, its
   price as rows, and a large main **Settle** across the panel's width (greyed with what is short
   under it, or with the ring star's line when its ring waits for one), or, once settled, its mat
@@ -294,8 +299,11 @@ item held.
 ## The Shop (brief 410)
 
 - **A panel from the bottom** beside the nav, on whichever side the nav is, over the hero bar;
-  studs frame, the green backdrop. As wide as its cards, up to the screen. The header: title,
-  one muted hint line, Tokens / cap, the X.
+  studs frame, the green backdrop. **Across the whole screen** (owner, 2026-11-06): from the
+  screen's edge under the nav to the far edge, its rows padded for the nav as the Bank drawer's.
+  The cards keep their size and sit from the nav's side (from the left beside a left nav, against
+  a right one); the arrows show only when the row overflows. The header: title, one muted hint
+  line, Tokens / cap, the X.
 - **Cards side by side, all one size** (`SHOP_CARD_W` x `SHOP_CARD_H` in `ShopPanel.jsx`):
   the name (a dropdown for a group), the Token at 128 px, its skill icons (32 px), then the
   price as **pills**, two by two at most, have / need in the shorthand counts. No skill
