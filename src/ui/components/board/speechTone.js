@@ -16,10 +16,10 @@ export const SPEECH_LINE = Object.freeze({
 export const SPEECH_FILL = '#0d0a08';
 
 /**
- * A hero's moment by its key (`heroSpeech.js`): going idle (or waiting for a fight) asks the player
- * to give them work; the rest are plain news.
+ * A hero's moment by its key (`heroSpeech.js`): going idle (or waiting for a fight) and a broken
+ * tool ask the player to give them work or a new tool; the rest are plain news.
  */
 export function momentTone(key) {
-    if (key === 'idle') return SPEECH_TONE.ATTENTION;
+    if (key === 'idle' || key === 'gearBroke') return SPEECH_TONE.ATTENTION;
     return SPEECH_TONE.PLAIN;
 }

@@ -5,7 +5,7 @@ import {
   EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStyleOf, authoredWeaponStyles, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS,
   expandBearer, statementsOf, doseKindsOf, DOSE_WHY, noDoseWhy, isSpentCategory,
   DAMAGE_TYPES, DAMAGE_GROUPS, DEFAULT_DAMAGE_TYPE_BY_STYLE, DEFAULT_ARROW_DAMAGE_TYPE, damageTypeLabel, isConsumableCategory,
-  isWornGear,
+  isWornGear, BREAK_CHANCE_MAX,
 } from '../../utils/constants';
 import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
@@ -240,6 +240,42 @@ function DoseLine({ item, effects }) {
   );
 }
 
+/**
+ * A tool's or weapon's chance to break, as a percent, written as `breakChance` only when above 0
+ * (`itemBreak.js`): a tool at the end of each work cycle it is used for, a weapon at each kill.
+ * Blank never breaks. The words typed are kept while typing ("0." on the way to 0.5).
+ */
+function BreakChanceField({ item, isTool, onChange }) {
+  const [draft, setDraft] = useState(item.breakChance == null ? '' : String(item.breakChance));
+  const write = (text) => {
+    setDraft(text);
+    const n = Number(text);
+    onChange({ breakChance: text.trim() !== '' && Number.isFinite(n) && n > 0 ? Math.min(BREAK_CHANCE_MAX, n) : undefined });
+  };
+  return (
+    <Field label="Break chance %" className="col-span-1">
+      <input
+        type="number"
+        min={0}
+        max={BREAK_CHANCE_MAX}
+        step="0.1"
+        aria-label="Break chance"
+        data-field="break-chance"
+        value={draft}
+        placeholder="Never breaks"
+        onChange={(e) => write(e.target.value)}
+        className="w-full"
+      />
+      <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+        {isTool
+          ? 'Checked as each work cycle it is used for ends: it breaks and is gone, and its hero stops.'
+          : 'Checked at each kill made with it: it breaks and is gone, and its hero stops.'}
+        {' '}Blank never breaks.
+      </p>
+    </Field>
+  );
+}
+
 /** Maps equipSlot to standard item type for game registry compatibility */
 function slotToType(slot) {
   if (!slot) return 'material';
@@ -270,7 +306,7 @@ export default function ItemEditor() {
       type: slotToType(slot),
       restoreAmount: RESTORING_CATEGORIES.has(slot) ? (item.restoreAmount || 5) : 0,
       // Tools, weapons and off-hand items are held in the hands; out of them, none of these means anything.
-      ...(slot === HAND_CATEGORY ? {} : { tool: undefined, hands: undefined, offHand: undefined, ...WEAPON_CLEARED }),
+      ...(slot === HAND_CATEGORY ? {} : { tool: undefined, hands: undefined, offHand: undefined, breakChance: undefined, ...WEAPON_CLEARED }),
       // Only worn gear lends resistances or cuts a style's damage.
       ...(isWornGear({ equipSlot: slot }) ? {} : { resistances: undefined, damageCut: undefined }),
       // Only a Consumable is shot from a bow.
@@ -292,7 +328,7 @@ export default function ItemEditor() {
   const isOffHandItem = isHand && !isTool && item.offHand === true;
   // An off-hand item is never swung: it drops the weapon's numbers and takes one hand.
   const setHeldAs = (kind) => updateItem(activeId, kind === 'offhand'
-    ? { offHand: true, type: 'armor', hands: undefined, ...WEAPON_CLEARED }
+    ? { offHand: true, type: 'armor', hands: undefined, breakChance: undefined, ...WEAPON_CLEARED }
     : { offHand: undefined, type: 'weapon' });
 
   const isRestoring = RESTORING_CATEGORIES.has(item.equipSlot);
@@ -460,6 +496,10 @@ export default function ItemEditor() {
           )}
 
           <GearLevelField item={item} onChange={(patch) => updateItem(activeId, patch)} />
+
+          {isHand && !isOffHandItem && (
+            <BreakChanceField key={item.id} item={item} isTool={isTool} onChange={(patch) => updateItem(activeId, patch)} />
+          )}
 
           {isTool && (
             <label className="col-span-2 flex items-center gap-2 cursor-pointer select-none">

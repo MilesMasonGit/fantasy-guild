@@ -139,6 +139,8 @@
         "resists": "Resists {type} {n}%",
         "weakTo": "Weak to {type} {n}%",
         "styleCut": "{style} damage −{n}%",
+        "breaksWork": "{n}% chance to break each cycle",
+        "breaksFight": "{n}% chance to break each kill",
         "clickToSelect": "Click to select",
         "clickToDeselect": "Click to deselect",
         "clickToInspect": "Click for details",
@@ -484,6 +486,8 @@
             "empty": "No other news.",
             "knockouts": "Knocked out",
             "lost": "Lost: {items}",
+            "broken": "Broken",
+            "brokeStopped": "{hero} stopped",
             "bankFull": "Bank full: waiting on the mat",
             "recipes": "New recipes",
             "finds": "First finds",
@@ -535,7 +539,8 @@
         "needsJob": "Needs a job",
         "idle": "Idle",
         "hurt": "Hurt",
-        "busy": "Busy"
+        "busy": "Busy",
+        "gearBroke": "{item} broke!"
     },
     "heroBar": {
         "perk": "Perk: {perk}"

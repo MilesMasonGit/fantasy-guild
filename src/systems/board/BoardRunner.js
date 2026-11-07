@@ -37,6 +37,7 @@ import * as Fields from './Fields.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
+import * as Breakage from '../equipment/Breakage.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { centreOf } from './nearby.js';
 import * as Hand from './Hand.js';
@@ -409,6 +410,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
             logger.warn('BoardRunner', `${def.name}: had room to build ${buildTypeId}, then did not`);
         }
     }
+
+    // ⚠️ Last of all, after every other draw this cycle made: the tool it used may break.
+    Breakage.afterWorkCycle(heroId, def, instance);
 }
 
 /**

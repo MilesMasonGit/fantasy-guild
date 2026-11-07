@@ -294,6 +294,28 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
                             })}
                         </Section>
                     )}
+                    {view.broken.length > 0 && (
+                        <Section id="broken" title={t('catchUp.news.broken')} enter={enter}>
+                            {view.broken.map(b => {
+                                const e = enter();
+                                return (
+                                    <EntityRibbon
+                                        key={b.key}
+                                        data-broken-item={b.itemId}
+                                        data-hero-id={b.heroId}
+                                        kind="item"
+                                        id={b.itemId}
+                                        name={b.name}
+                                        subtitle={t('catchUp.news.brokeStopped', { hero: b.heroName })}
+                                        countText={b.times > 1 ? `×${b.times}` : null}
+                                        size="sm"
+                                        className={e.className}
+                                        style={e.style}
+                                    />
+                                );
+                            })}
+                        </Section>
+                    )}
                     {view.bankFull.length > 0 && (
                         <Section id="bankFull" title={t('catchUp.news.bankFull')} enter={enter}>
                             {view.bankFull.map(r => {

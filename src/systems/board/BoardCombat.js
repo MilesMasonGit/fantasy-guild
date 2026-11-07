@@ -8,6 +8,7 @@ import * as LiveEffects from '../effects/LiveEffects.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { processCombat } from '../combat/CombatProcessor.js';
 import { applyDefeatPenalties } from '../combat/DefeatPenalties.js';
+import * as Breakage from '../equipment/Breakage.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import { statementsOf } from '../effects/statements.js';
@@ -476,6 +477,10 @@ function resolveVictory(instance, fight, enemy, heroId) {
         instanceId: id, outcome: 'victory', heroId: heroId || null, typeId: instance.typeId
     });
 
+    // The kill is the fight's cycle: the weapon swung may break now, never mid-fight. A broken one
+    // ends the hero's order (`Flags`, on `GEAR_BROKE`), and with it this fight.
+    Breakage.afterKill(heroId, instance);
+
     if (instance.usesRemaining != null && instance.usesRemaining <= 0) {
         const spot = pointOf(instance);
         BoardState.removeToken(id);
@@ -498,8 +503,8 @@ function resolveVictory(instance, fight, enemy, heroId) {
     }
 
     // Let the ported engine run its intermission and respawn the enemy: the board simply lets it
-    // happen.
-    fight.status = 'active';
+    // happen. Unless the fight has just ended (a broken weapon took the hero off it).
+    if (fights.get(id) === fight) fight.status = 'active';
 }
 
 /**

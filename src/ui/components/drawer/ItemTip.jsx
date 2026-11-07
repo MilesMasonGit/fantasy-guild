@@ -8,6 +8,7 @@ import { gearResistancesOf, gearDamageCutOf } from '../../../config/registries/g
 import { COMBAT_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { UNARMED_DAMAGE, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, attackSpeedMs } from '../../../config/FormulaRegistry.js';
+import { breakChanceOf } from '../../../config/registries/itemBreak.js';
 
 /** What kind of item it is, in the player's words. */
 export function itemTypeLabel(item) {
@@ -55,6 +56,14 @@ function weaponStats(item, style, hands) {
     ];
 }
 
+/** "1% chance to break each cycle" (a tool) or "… each kill" (a weapon); null when it never breaks. */
+function breakLine(item, tool) {
+    const chance = breakChanceOf(item);
+    if (!(chance > 0)) return null;
+    const n = Number(chance.toFixed(2)).toLocaleString('en-US');
+    return t(tool ? 'itemTip.breaksWork' : 'itemTip.breaksFight', { n });
+}
+
 /**
  * Everything the tooltip says about an item, as plain facts (the component below draws them).
  * Mounted only while a tooltip is open, so nothing here runs per frame.
@@ -69,6 +78,8 @@ export function itemTipFacts(item) {
         type: itemTypeLabel(item),
         equippable: category ? getCategoryInfo(category).label : null,
         tool: tool ? t('itemTip.tool', { kind: toolKindLabel(tool.kind), tier: tool.tier }) : null,
+        // A tool breaks at the end of a work cycle, a weapon at a kill (`Breakage.js`).
+        breaks: breakLine(item, tool),
         stats: weaponStats(item, style, hands),
         // What an arrow adds to a bow's shot: the damage and its type.
         arrow: arrow ? t('itemTip.arrow', { damage: arrow.damage, type: t(`fight.types.${arrow.damageType}`) }) : null,
@@ -106,7 +117,7 @@ export const ItemTipContent = ({ item, count = null, hint = null, details = true
     );
 };
 
-/** What kind of item it is: type, what it equips as, its tool, then its tags. */
+/** What kind of item it is: type, what it equips as, its tool, its chance to break, then its tags. */
 export const ItemKindLines = ({ facts }) => (
     <>
         <div data-item-tip-type className="text-white/70">{facts.type}</div>
@@ -114,6 +125,7 @@ export const ItemKindLines = ({ facts }) => (
             <div data-item-tip-equip className="text-white">{t('itemTip.equippable', { slot: facts.equippable })}</div>
         )}
         {facts.tool && <div data-item-tip-tool className="text-white">{facts.tool}</div>}
+        {facts.breaks && <div data-item-tip-breaks className="text-white">{facts.breaks}</div>}
         {facts.tags.length > 0 && (
             <div data-item-tip-tags className="ui-text-small text-white/55">{facts.tags.join(' · ')}</div>
         )}

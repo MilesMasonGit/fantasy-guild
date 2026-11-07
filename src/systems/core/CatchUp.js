@@ -36,6 +36,8 @@ import { logger } from '../../utils/Logger.js';
  * - `levelUps`: `[{ heroId, heroName, skillId, skillName, from, to }]`, one per hero and skill.
  * - `depleted`: `{ total, byType: { typeId: count } }`: Tokens that ran out of charges.
  * - `wounded`: `[{ heroId, heroName, times }]`: heroes defeated and carried home.
+ * - `broken`: `[{ heroId, heroName, itemId, times }]`: tools and weapons that broke in a hero's
+ *   hands (`Breakage.js`), in the order they broke; each such hero stopped there.
  * - `fightsWon`: `{ total, byEnemy: { enemyId: count } }`.
  * - `combat`: `{ food, elixirs, drops }`, each `{ itemId: count }`: meals eaten in fights, elixirs
  *   drunk as fights started, and what kills dropped (fights lost are `wounded`).
@@ -175,6 +177,8 @@ function startSummary({ news: withNews = true } = {}) {
     const levels = new Map();
     const depleted = { total: 0, byType: {} };
     const wounded = new Map();
+    /** `heroId|itemId` → row, in the order they broke. */
+    const broken = new Map();
     const fightsWon = { total: 0, byEnemy: {} };
     const combat = { food: {}, elixirs: {}, drops: {} };
     const add = (map, key, n = 1) => { map[key] = (map[key] || 0) + n; };
@@ -197,6 +201,13 @@ function startSummary({ news: withNews = true } = {}) {
         }),
         EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, ({ heroId } = {}) => {
             if (heroId) wounded.set(heroId, (wounded.get(heroId) || 0) + 1);
+        }),
+        EventBus.subscribe(BOARD_EVENTS.GEAR_BROKE, ({ heroId, heroName: name, itemId } = {}) => {
+            if (!heroId || !itemId) return;
+            const key = `${heroId}|${itemId}`;
+            const row = broken.get(key);
+            if (row) row.times++;
+            else broken.set(key, { heroId, heroName: name || heroName(heroId), itemId, times: 1 });
         }),
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, ({ enemyId } = {}) => {
             fightsWon.total++;
@@ -228,6 +239,7 @@ function startSummary({ news: withNews = true } = {}) {
                 levelUps: [...levels.values()],
                 depleted,
                 wounded: [...wounded.entries()].map(([heroId, times]) => ({ heroId, heroName: heroName(heroId), times })),
+                broken: [...broken.values()],
                 fightsWon,
                 combat,
                 news: news ? news.stop({ gained, net }) : null

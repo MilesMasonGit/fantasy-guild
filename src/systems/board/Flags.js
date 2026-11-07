@@ -790,6 +790,34 @@ export function furl(heroId, reason = 'recall') {
 }
 
 /**
+ * The weapon `heroId` swung broke at their kill (`GEAR_BROKE`, `use: 'fight'`). Anyone may fight
+ * barehanded, so a kept order would have them punch on: the order lapses where they stand, marked
+ * `needsJob` as a job gone for good is, and their fight ends with the kill. A broken tool needs
+ * nothing here: the order stays, and the hero lets go of a Token they can no longer work.
+ */
+function stopAfterBrokenWeapon({ heroId, use } = {}) {
+    if (use !== 'fight') return;
+    const r = rt();
+    const flag = BoardState.flagOf(heroId);
+    if (!r || !flag || isSpot(flag)) return;
+    quiet++;
+    try {
+        release(heroId);
+        BoardCombat.endFightOfHero(heroId);
+        clearSkips(r, heroId);
+        r.nextTryAt.delete(heroId);
+        const body = BoardState.heroBodyOf(heroId);
+        const at = body && Number.isFinite(body.x) && Number.isFinite(body.y) ? body : flag;
+        const { pinnedTo: _left, ...rest } = flag;
+        BoardState.setFlag(heroId, { ...rest, x: at.x, y: at.y, spot: true, needsJob: true });
+        r.dirty = true;
+    } finally {
+        quiet--;
+    }
+    announceMoved(heroId);
+}
+
+/**
  * What `heroId` is waiting for, or null: `{ instanceId, kind }` for a hero with nothing claimed
  * whose order passed over something that will be theirs to work by itself, the first such in the
  * order's own order.
@@ -1010,4 +1038,5 @@ export function init() {
     // for `isEnemyToken`/`endFightOfHero`). `EventBus.publish` is synchronous, so this runs before
     // `resolveDefeat`'s own `TILE_CHANGED`/`COMBAT_RESOLVED` publishes.
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, ({ heroId }) => furl(heroId, 'defeat')));
+    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.GEAR_BROKE, stopAfterBrokenWeapon));
 }
