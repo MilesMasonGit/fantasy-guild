@@ -3777,6 +3777,112 @@
           "lines": []
         }
       ]
+    },
+    "star_well_lap": {
+      "id": "star_well_lap",
+      "constellation": "well",
+      "name": "Swift Laps",
+      "description": "The Guild Hall's outputs come round sooner: its lap runs 8 minutes, then 6, then 5, from 10.",
+      "node": {
+        "x": 0.45,
+        "y": 0.62
+      },
+      "tag": "below",
+      "links": [
+        "wishing_well"
+      ],
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_redberry",
+              "quantity": 110000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_well_lap_1",
+              "keyword": "provides",
+              "payload": {
+                "type": "PASSIVE_LAP",
+                "bucket": "percentage",
+                "value": -0.2
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 140000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_well_lap_2",
+              "keyword": "provides",
+              "payload": {
+                "type": "PASSIVE_LAP",
+                "bucket": "percentage",
+                "value": -0.4
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        },
+        {
+          "tier": 2,
+          "price": [
+            {
+              "itemId": "item_trout",
+              "quantity": 30000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_well_lap_3",
+              "keyword": "provides",
+              "payload": {
+                "type": "PASSIVE_LAP",
+                "bucket": "percentage",
+                "value": -0.5
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
     }
   }
 }
