@@ -6,7 +6,7 @@
  *  src/state and imports from src/systems only the pure kernel listed in CONFIG_KERNEL. What does NOT
  *  hold: utils imports config (the sprite manifest, the registries), and config imports that kernel. */
 
-/** The src/systems modules src/config may import: pure helpers and name tables, no game state. */
+/** The src/systems modules src/config may import: helpers and name tables that never reach src/state (config-never-reaches-state checks it). */
 const CONFIG_KERNEL = [
   '^src/systems/atlas/(TerrainMap|WaterShapes)[.]js$',
   '^src/systems/board/boardEvents[.]js$',
