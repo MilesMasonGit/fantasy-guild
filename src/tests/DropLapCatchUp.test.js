@@ -15,7 +15,8 @@ import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.
 import * as HallRules from '../systems/progression/HallRules.js';
 import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { qaLapStar, LAP_STAR_ID } from '../ui/dev/qaLapStar.js';
+
+const LAP_STAR_ID = 'star_well_lap';
 
 /**
  * Brief 390 G5: the drop lap away from the game agrees with the lap at the table. A save holding
@@ -37,13 +38,10 @@ class SilentAudio {
     removeEventListener() {}
 }
 
-/** The authored sky with the lap star beside it, as the pack would make it. */
+/** The authored sky, which holds the lap star. */
 function skyWithLap() {
     const authored = authoredHallSky();
-    return {
-        constellations: { ...authored.constellations },
-        stars: { ...authored.stars, [LAP_STAR_ID]: { id: LAP_STAR_ID, ...qaLapStar() } }
-    };
+    return { constellations: { ...authored.constellations }, stars: { ...authored.stars } };
 }
 
 /** Slot 0 holds a game with the Guild Hall on the mat, saved at `savedAt` with the lap star at `rank`. */

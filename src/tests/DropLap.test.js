@@ -29,7 +29,6 @@ import { resetMatTuning } from '../config/matTuning.js';
 import { hallEffectsNow } from '../ui/components/board/GuildHallEffectsPopover.jsx';
 import { lifecycleLines } from '../ui/components/drawer/lifecycleLines.js';
 import { outlineSpriteName } from '../ui/components/board/hallStarOutline.js';
-import { qaLapStar, LAP_STAR_ID } from '../ui/dev/qaLapStar.js';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
 import { buildRateBook, FACTOR } from '../systems/progression/ledger/rates.js';
 import { buildPace } from '../systems/progression/ledger/pace.js';
@@ -86,8 +85,16 @@ registerTokenTypes({
     }
 });
 
-/** The pack's star, in a sky of its own (beside a Well line star, for the ledger's words). */
-function lapSky(star = qaLapStar()) {
+const LAP_STAR_ID = 'star_well_lap';
+
+/** The synced lap star, without its id (a fresh copy each call, so a test may edit it). */
+const lapStar = () => {
+    const { id, ...star } = structuredClone(authoredHallSky().stars[LAP_STAR_ID]);
+    return star;
+};
+
+/** The lap star, in a sky of its own (beside a Well line star, for the ledger's words). */
+function lapSky(star = lapStar()) {
     return { constellations: {}, stars: { [LAP_STAR_ID]: { id: LAP_STAR_ID, ...star } } };
 }
 
@@ -211,7 +218,7 @@ describe('⭐ the floor: a lap is floored like any speed-up and held to the whol
     });
 
     it('a stack past the floor stops at 2 minutes in the game too', () => {
-        const star = qaLapStar();
+        const star = lapStar();
         star.ranks[0].rules[0].payload.value = -0.95;
         registerHallSky(lapSky(star));
         holdLap(1);
@@ -263,8 +270,8 @@ describe('⭐ the lap star in words, in the sky and in the rules', () => {
         const def = getUpgradeDef(LAP_STAR_ID);
         expect(starSentence(def)).toBe('The Guild Hall\'s outputs arrive more often: its lap is shorter.');
         expect([1, 2, 3].map(r => starAmount(def, r))).toEqual(['outputs every 8:00', 'outputs every 6:00', 'outputs every 5:00']);
-        expect(describeStarRank(normaliseStar({ id: LAP_STAR_ID, ...qaLapStar() }), 1)).toBe('Makes the Guild Hall\'s lap 20% shorter.');
-        expect(hallRuleSentence(qaLapStar().ranks[2].rules[0])).toBe('Makes the Guild Hall\'s lap 50% shorter.');
+        expect(describeStarRank(normaliseStar({ id: LAP_STAR_ID, ...lapStar() }), 1)).toBe('Makes the Guild Hall\'s lap 20% shorter.');
+        expect(hallRuleSentence(lapStar().ranks[2].rules[0])).toBe('Makes the Guild Hall\'s lap 50% shorter.');
     });
 
     it('wears a candle in the sky', () => {
@@ -290,22 +297,11 @@ describe('⭐ the lap star in words, in the sky and in the rules', () => {
     });
 });
 
-describe('⭐ the pack and its QA mirror are the same star', () => {
-    it('the committed pack copy holds exactly the QA fixture\'s star', () => {
-        const file = new URL('../../docs/active/research/pending_packs/drop_lap/2026-11-06-drop-lap.json', import.meta.url);
-        const pack = JSON.parse(fs.readFileSync(file, 'utf8'));
-        const entry = pack.entries.find(e => e.kind === 'hallStar' && e.id === LAP_STAR_ID);
-        expect(entry.op).toBe('create');
-        expect(entry.value).toEqual(qaLapStar());
-        expect(authoredHallSky().stars?.[LAP_STAR_ID], 'synced: the QA mirror then gives way').toBeUndefined();
-    });
-});
-
 describe('⭐ the ledger rates the Hall at the lap its setup holds', () => {
     const content = () => {
         const c = paceContent();
         const sky = paceHallSky();
-        sky.stars[LAP_STAR_ID] = { id: LAP_STAR_ID, ...qaLapStar(), links: [HALL_NODE] };
+        sky.stars[LAP_STAR_ID] = { id: LAP_STAR_ID, ...lapStar(), links: [HALL_NODE] };
         sky.stars[LAP_STAR_ID].ranks.forEach(r => { r.price = [{ itemId: 'item_oak_wood', quantity: 10 }]; r.tier = 0; });
         c.hallSky = sky;
         return c;
