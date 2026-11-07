@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import fs from 'node:fs';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
