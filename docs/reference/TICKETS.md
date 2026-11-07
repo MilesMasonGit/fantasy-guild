@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-332**
+**Next free number: T-333**
 
 ---
 
@@ -90,6 +90,7 @@ here.
 | T-305 | P2 | open, needs a brief | **Put the approved content roadmap in the CMS as Planned entries** (owner 2026-11-02, [concept_content_roadmap.md](../active/concept_content_roadmap.md)): a pack per chain page, so the ledger can check the whole plan. Needs T-294 first (tiers, the 20-level ladder). Planned entries never reach the game. |
 | T-318 | P3 | open | **The Token name on hover is larger** (owner, 2026-11-05). Show the owner two or three sizes on one screenshot page, then build only the pick (briefs README: looks are picked from screenshots). Check it on small and large Tokens and at mat zoom. Eye-check: no, the screenshot pick is the look. |
 | T-317 | P3 | open | **Hero bar HP bars are light red** (owner, 2026-11-05): every hero HP bar on the hero bar uses the mat's light red (`HP_COLOUR` in `src/ui/components/board/healthBar.js`) whatever the health, replacing the green, amber and red tones (`hpTone` in `dockHeroView.js`). Check any other hero HP bar (hero sheet, fight window) and say which already match. Look-only, merges on the gate with a line in STATUS. |
+| T-332 | P3 | open | **A pack's Token description does not survive the Sync** (found 2026-11-06 after the Foundations pack: Excavation and Battlefield read "A token for the guild playmat."; the CMS writes descriptions from rules, `cms/src/engine/descriptionDictionary.js`). Either the CMS keeps an authored description, or packs stop writing one; the owner types the two in the CMS meanwhile | director 2026-11-06 |
 | T-331 | P3 | open | **The star panel's price shows a stale have count when the pinned panel switches stars** (found by the 390 G5 builder, 6 Nov): it showed 0/110000 with 110,000 in the Bank until any Bank change. `GuildUpgradeInspection.jsx`: the `haveSignature` `useGameState` recomputes only on events, not when `upgradeDef` changes | director 2026-11-06 |
 | T-329 | P3 | open | **A wide sideways swipe over the encyclopedia chart can trigger the browser's Back** (found by the 470 E2 builder, 6 Nov, in a Chrome tab; untested in the Tauri window). Check Tauri; if it happens, stop overscroll navigation on the chart | director 2026-11-06 |
 | T-327 | P3 | open | **Inline text outlines never show** (460 P1, 6 Nov): `tailwind.css` gives every element the hard 1 px text outline with `!important`, so inline `textShadow` loses: four soft ones are dead code, and seven hard outlines written on purpose never show (work plate numbers, fighters' HP numbers, the fight window's words, VitalBar, three Guild Hall OUTLINEs, the dock pager). Decide per case whether the thicker outline was wanted; table 3 of `research/hard_pixel/list.md` | director 2026-11-06 |
