@@ -65,13 +65,19 @@ export function holdsToolFor(heroId, need) {
  * null (also for no need). At water that is the first tool of any kind it takes.
  */
 export function fittingToolOf(heroId, need) {
+    const slot = fittingToolSlotOf(heroId, need);
+    return slot === null ? null : getGrid(heroRecord(heroId))[slot];
+}
+
+/** The grid slot of {@link fittingToolOf}'s tool, or null: the one a work cycle uses. */
+export function fittingToolSlotOf(heroId, need) {
     if (!need) return null;
     const hero = heroRecord(heroId);
     if (!hero) return null;
     const grid = getGrid(hero);
     for (let slot = 0; slot < grid.length; slot++) {
         const itemId = grid[slot];
-        if (itemId && toolMeets(heldTool(itemId), need) && slotBacked(hero, slot)) return itemId;
+        if (itemId && toolMeets(heldTool(itemId), need) && slotBacked(hero, slot)) return slot;
     }
     return null;
 }

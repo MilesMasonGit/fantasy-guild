@@ -269,7 +269,18 @@ export const BOARD_EVENTS = {
      * `TILE_CHANGED`/`COMBAT_RESOLVED`. `hero_downed` decouples the rules' damage (a poison
      * tick, a Deals) from `BoardCombat` the same way.
      */
-    HERO_DEFEATED: 'board:hero_defeated'
+    HERO_DEFEATED: 'board:hero_defeated',
+
+    /**
+     * A hero's tool or weapon broke as a cycle it was used for completed (`Breakage.js`): the copy
+     * is gone from their hands. Payload: `{ heroId, heroName, itemId, slot, use, instanceId, typeId }`,
+     * `use` being `'work'` (a tool, at a work cycle's end) or `'fight'` (a weapon, at a kill), and
+     * the Token worked or fought.
+     *
+     * `Flags.init` subscribes: a broken weapon ends the order (fighting needs none, so a kept order
+     * would punch on); a broken tool leaves the order, and the hero lets go for want of it.
+     */
+    GEAR_BROKE: 'board:gear_broke'
 };
 
 /**

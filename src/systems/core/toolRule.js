@@ -6,12 +6,13 @@ import {
 import { getProvidedTagsWithTiers } from '../effects/statements.js';
 import { isConsumableCategory } from '../../config/registries/equipmentCategories.js';
 import { catchPoolsOf } from '../../config/registries/catchPools.js';
+import { breakChanceProblem } from '../../config/registries/itemBreak.js';
 
 /**
  * Tools are items a hero holds in one hand; a gathering Token names the kind and tier it needs.
  * These findings say where content is written in a way that cannot work: a tool no hero can hold,
- * a need no tool answers, and content still written the old way (a tool Token on the mat, or a
- * Token or recipe asking for one nearby).
+ * a need no tool answers, a Break chance that never breaks anything (`itemBreak.js`), and content
+ * still written the old way (a tool Token on the mat, or a Token or recipe asking for one nearby).
  *
  * Pure: the caller hands in the catalogues. Tokens must be expanded (their statements present), or
  * a tool Token's `Acts as` cannot be seen.
@@ -39,6 +40,12 @@ export function toolFindings({ items = {}, tokens = {}, recipes = [] } = {}) {
         } else if (item.hands === 2) {
             push('Item', item.id || id, item, 'is a tool, and a tool takes one hand: its Two hands setting is ignored');
         }
+    }
+
+    // A Break chance only a tool or a weapon, with a percent above 0 and up to 100, can use.
+    for (const [id, item] of Object.entries(items || {})) {
+        const problem = breakChanceProblem(item);
+        if (problem) push('Item', item.id || id, item, problem);
     }
 
     for (const [id, token] of Object.entries(tokens || {})) {

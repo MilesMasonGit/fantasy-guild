@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MAT_Z } from './matLayers.js';
-import { addMoment, liveMoments, stackOf, momentText, speaksMoment, idleMomentOf, DEPLETED_TTL_MS } from './heroSpeech.js';
+import { addMoment, liveMoments, stackOf, momentText, speaksMoment, idleMomentOf, DEPLETED_TTL_MS, GEAR_BROKE_KEY } from './heroSpeech.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
 import { floatsOf, anyFloats, subscribeFloats } from './levelUpFloats.js';
 import { LevelUpFloats } from './LevelUpFloat.jsx';
 import { useMatFit } from './MatFitContext.jsx';
@@ -117,6 +118,12 @@ export const HeroBubbleLayer = ({ heroes }) => {
             EventBus.subscribe(ENGINE_EVENTS.STATUS_APPLIED, (p) => {
                 if (p?.targetType !== 'hero' || !p.targetId || !p.statusId) return;
                 sayRef.current(p.targetId, 'statusLands', { key: `status:${p.statusId}`, text: momentText.statusLands(p.statusId) }, CALLOUT_MS);
+            }, UI_LISTENER),
+            // The tool or weapon in their hands broke: they say so, and stop.
+            EventBus.subscribe(BOARD_EVENTS.GEAR_BROKE, (p) => {
+                if (!p?.heroId || !p.itemId) return;
+                const name = getItem(p.itemId)?.name || p.itemId;
+                sayRef.current(p.heroId, 'gearBroke', { key: GEAR_BROKE_KEY, text: momentText.gearBroke(name) });
             }, UI_LISTENER)
         ];
         return () => unsubs.forEach(u => u());
@@ -133,6 +140,8 @@ export const HeroBubbleLayer = ({ heroes }) => {
             const idle = h.state === 'idle';
             next.set(h.heroId, idle);
             if (prev && prev.get(h.heroId) === false && idle) {
+                // A hero whose tool just broke has said why they stop.
+                if (liveMoments(momentsRef.current.get(h.heroId) || [], Date.now()).some(m => m.key === GEAR_BROKE_KEY)) continue;
                 // Waiting for another hero's fight or Token says so; waiting for a resting node,
                 // or standing at a spot they were sent to, says nothing; a job gone asks for one.
                 const waiting = Flags.waitingOf(h.heroId);

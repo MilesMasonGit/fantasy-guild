@@ -6,6 +6,19 @@ project's first tagged baseline — everything before it was untagged developmen
 ## [Unreleased]
 
 - **The Shop spans the screen and the world map runs under everything** (owner's notes after the 2026-11-06 eye-check): the Shop panel now reaches from the screen's edge under the nav to the far edge, its cards from the nav's side; the world map is laid under the whole screen like the Guild Hall's sky, running on under the nav, the hero bar and the place panel, centred in the mat's room, and the pan down moves the whole screen as one.
+- **Tools and weapons can break** (brief 480 L1): an item may carry a **Break chance** (a percent,
+  set in the CMS on a tool or a weapon; no content has one yet, so nothing in today's game breaks).
+  It is checked only as a cycle the item was used for completes: a tool at the end of each work
+  cycle on a Token that needs it, a weapon at each kill, never part-way through. A broken item is
+  gone from the hero's hands and nothing replaces it (nothing in the game equips from the Bank by
+  itself). The hero says "{item} broke!" in the gold frame and stops with the yellow alert: with a
+  broken tool they keep their order and wait by the Token ("Oak: Needs Woodaxe"), and pick up again
+  once handed a new one; with a broken weapon their order ends where they stand ("Needs a job"),
+  since anyone can fight barehanded. Time away plays it the same, and the "While you were away"
+  news lists what broke, and whose hands it broke in, right after the knock-outs. The item's
+  tooltip and its Encyclopedia card say the chance ("1% chance to break each cycle", "… each kill").
+  The CMS's item editor offers the field on tools and weapons, and both audits name a chance that
+  can never break anything. The QA panel's "Tools that break" section shows it on test items.
 - **Tests follow the Foundations and ring stars Sync**: the content tests now pin the synced content (Coast and Goblin Camp no longer sold, mines and the Quarry on an Excavation, banner camps on a Battlefield, the Shop's list order and icons, the five ring stars in the sky); the Foundations pack test now checks the shipped data still holds the pack.
 - **Drag hint look** (owner's notes on brief 490): the carried hero's marks stand centred just above the Token's sprite, under any refusal, instead of beside the flag; over an enemy only weapons and shields show, never a tool; the skill mark is its icon with the level under it; marks draw at 1x; a failing mark is darker (brightness 0.3, was 0.5).
 - **The Shop pops up from the bottom** (brief 410 S2): in place of the drawer from the left, the

@@ -8,6 +8,7 @@
  */
 
 import { calloutText } from './callouts.js';
+import { t } from '../../../i18n/index.js';
 
 /** Bubbles above one head at once. */
 export const MAX_BUBBLES = 3;
@@ -61,8 +62,13 @@ export const momentText = {
     // The same moment for an enemy: the hero who beat it says so.
     beaten: (enemy) => `${enemy} Beaten`,
     // A status landing on the hero in a fight, said as a callout over an enemy is: "Venom!".
-    statusLands: (statusId) => calloutText.statusLands(statusId)
+    statusLands: (statusId) => calloutText.statusLands(statusId),
+    // The tool or weapon in their hands broke as a cycle ended: they stop.
+    gearBroke: (item) => t('orders.gearBroke', { item })
 };
+
+/** The key a broken tool's line is said under: while it is up, going idle says nothing more. */
+export const GEAR_BROKE_KEY = 'gearBroke';
 
 /**
  * What a hero says on going idle, given what they wait for (`Flags.waitingOf`), its name and
@@ -100,6 +106,8 @@ export function idleMomentOf(waiting, name = null, { order = null, needsJob = fa
  * * `depleted`: kept: the hero who used a Token up says so.
  * * `beaten`: kept: `depleted` said of an enemy, by the hero who beat it.
  * * `statusLands`: kept: a status landing on a fighting hero ("Venom!"), over their health bar.
+ * * `gearBroke`: kept: the hero's tool or weapon broke and they stop ("Rusty Woodaxe broke!"); it
+ * stands for the idle line that would follow.
  */
 export const MOMENT_SPOKEN = Object.freeze({
     arrived: false,
@@ -108,7 +116,8 @@ export const MOMENT_SPOKEN = Object.freeze({
     depleted: true,
     beaten: true,
     needsJob: true,
-    statusLands: true
+    statusLands: true,
+    gearBroke: true
 });
 
 /** Whether a moment of this kind (`momentText`'s key) is spoken at all. */

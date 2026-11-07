@@ -82,6 +82,7 @@ once; the oldest moment gives way.
 | 16b | *(nothing)* | A gatherer whose node is resting (a vein refilling, a tree growing back) goes quiet instead of saying line 12: they wait silently and work it the moment it is back; the job flag's hover and the roster say "Waiting for Copper Vein" (brief 230 S1b, owner 2026-10-24). | **Silent by ruling** |
 | 17 | {enemy} Beaten | Line 15 said of an enemy: the hero who beat it says it (brief 220 C5). Shows for **3 seconds**, one line per kind. | Kept |
 | 18 | {status}! | A status lands on the hero in a fight ("Venom!"), over their health bar (brief 360 C3). Shows for about **2 seconds**, one line per status, so stacks landing hit after hit keep one bubble. | Kept |
+| 19 | {item} broke! | The tool or weapon in the hero's hands broke as a cycle ended ("Rusty Woodaxe broke!"; brief 480 L1), in the gold "look here" frame: the hero stops. It stands for line 12 or 16a, which they would say next as they go idle. Shows for **5 seconds**. Not said during time away (the summary's news lists it). | Kept |
 
 ## 3. Callouts (not speech bubbles)
 
