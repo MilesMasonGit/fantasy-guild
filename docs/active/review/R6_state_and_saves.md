@@ -1,0 +1,109 @@
+# R6: State and saves
+
+Read 2026-11-07 on `main` e16338be (reviewer, Fable 5.1; one Sonnet survey of every saved field's
+writers and readers; two Sonnet verifiers). Area per the concept doc: `src/state/` (the facade and
+the schema), the save slots (`SaveManager`, `SaveSlotHelper`, `SaveFiles`, the desktop file
+backend), migration; the questions are derived data stored, dead fields, save size and frequency,
+and migration safety.
+
+## Summary for the owner
+
+**What this area does for the player.** It is the save game: what is remembered between
+sessions (every hero, the Bank, the mat, every Region the guild has settled, the world), how often
+it is written, where it goes (the browser's storage, or a file per slot in the desktop build), and
+what happens when a save is damaged or from another version.
+
+**How healthy it is: good, and careful where it counts.** Saves are written whole or not at all
+(temp file, flush, rename), the save before is kept as a backup, a damaged save is retried from
+that backup once and the player is told, a catch-up can be undone with "Load as I left it", and
+the save is written straight from the live state without copying it first. The architecture
+map's account of this area was checked line by line and is accurate. Nothing found is a bug a
+player would meet in normal play. The findings are housekeeping: fields the save still carries
+for systems that no longer exist, a slot screen that parses whole saves to show a name and a
+count, a save that grows with every Region settled and has never been measured, and two small
+load-path edges.
+
+**The three findings that matter most.**
+1. **Seventeen saved fields for systems that are gone** (CR4-067): a card counter the validator still
+   requires, a recruitment section with no writer, Bank fields from the retired Projects, two
+   progress fields no system ever used, four hero fields that are always null or empty, and a
+   legacy wound timer that new heroes are still born with.
+2. **The title screen parses every slot's whole save to show five numbers** (CR4-068): with the
+   Atlas a save holds every Region's board and the world, and all three slots are parsed again
+   on every open and on every change to the save folder.
+3. **The save's size is unmeasured and grows with every Region** (CR4-069): the whole state is
+   stringified on the main thread at each autosave, each travel and each catch-up; in the
+   browser build the backup copy doubles the footprint against a fixed storage quota, and the
+   backup write fails silently first.
+
+**Counts.** 5 findings: 1 `cleanup`, 2 `perf` (reasoned, P3), 1 `bug` (P3, two edges of the load
+path), 1 `docs`; 0 `owner-decision`. Verified: see each finding's `Verified by`.
+
+**Measure first.** `json.length` of a save at each `SaveManager.save` in a dev build, on the
+owner's real slot and on a game with six Regions, and the `serializeJson` time beside it; the
+`JSON.parse` time of `getAllSlotInfos` on the same slot.
+
+---
+
+## Findings
+
+### CR4-067  Seventeen saved fields for systems that are gone, and a required key among them
+- **Tag**: cleanup
+- **Priority / Effort / Risk**: P3 / M / medium
+- **Confidence**: verified
+- **Where**: `src/state/StateSchema.js:171-173,334-335` (`cards.idCounter`: no reader or writer anywhere; `cards` is in `REQUIRED_KEYS`, so a save without the dead section is refused); `:167-169` and `src/state/GameState.js:92` (`recruitment.candidates`: no writer, no reader; the getter has no caller); `:180-183` (`inventory.slots`: inert, as its own comment says); `:189` (`inventory.maxStack`: never read; the code uses the item template's, `InventoryManager.js:156,249`); `:190` (`inventory.maxStackBonus`: read at `InventoryManager.js:157,249`, written by nothing since the Projects went); `:198-199` with `InventoryStore.js:24` and `GuildUpgradeManager.js:173` (`groupDefs[].isCustom`: written `false`, read by nothing); `:217,219` (`progress.unlockedRarities`, `discoveredTasksByBiome`: no reader or writer outside the schema); `:293` and `GameState.js:64,93` (`quests.nextQuestAt`: default only); `:282` (`quests.active`: read once by `QuestManager.js:35` to convert an older save's sidebar quests, written only by the resets at `QuestTokens.js:139` and `QuestManager.js:63`); the hero record, `src/systems/hero/HeroGenerator.js:64-65,73,78,86` (`classId` and `traitId` always null, "retired concepts, kept as null so the saved hero shape is unchanged"; `classId` is read as a sprite fallback, `hero.spriteId || hero.classId`, in fourteen places (`fightView.js:246`, `MatBoard.jsx:237`, `FightTab.jsx:53`, `DockHeroFigure.jsx:130,186`, `HeroDockTab.jsx:137,187`, `HeroInspectionSheet.jsx:53,131`, `HeroEditModal.jsx:108,126,140`, `ParticleOverlay.jsx:324`, `AssetManager.js:119,144`) that never fire because `HeroGenerator.js:55,67` always sets `spriteId`; `traitId` has no reader; `woundedUntil: null` on every new hero, the legacy field `StateSchema.js:159-161` says is converted away (read once by `WoundedSystem.js:63` for that conversion, then nulled at :65,91); `statuses: []`, reset to `[]` again on every load by `HeroRehydration.js:69` and read by nothing: statuses live on `effects`; `createdAt`, no reader; `src/ui/dev/classlessDev.js:102-105` writes all five on a QA hero); the Region record, `StateSchema.js:121-122` and `Atlas.js:118` (`settledAt`: written, never read) and `:103-104` (`ingredients`: read only by the dev terrain tool, `terrainDev.js:82`); `src/systems/core/SaveManager.js:280-315` (`exportSave`, `importSave`: no caller outside tests; there is no export or import button)
+- **What**: The save carries seventeen fields for systems that were removed (cards, recruitment drawer, Projects, rarities, biome tasks, sidebar quests, the old status engine, hero classes and traits) or that nothing ever reads, and the validator refuses a save that lacks the dead `cards` section. None of it costs the player anything but bytes; the cost is to the next reader, who meets `woundedUntil` on a new hero and `unlockedRarities` in the schema and has to find out from the code that they are nothing. The hero fields are the delicate ones: the engine bench fingerprints the hero record (`src/systems/hero/logic/HeroRehydration.js:65-67` keeps `statuses` for that reason, and `bench/lib/fingerprint.mjs:63,66` hashes `statuses` and `woundedUntil`), so dropping them changes the fingerprint and the bench's baseline must be re-taken in the same change.
+- **Evidence**: grep results as cited (the field survey of 2026-11-07, 45 greps over `src`, `cms/src`, `bench`).
+- **Fix sketch**: One builder slice with R9: drop the dead fields from `INITIAL_STATE`, `createRegionRecord` and `HeroGenerator` (and the fourteen `|| hero.classId` fallbacks with `classId`);  take `cards` out of `REQUIRED_KEYS`; have `migrateState` delete the dead keys from an older save (as it does `currency` and `cartographer`), including `woundedUntil` once converted; delete `exportSave`/`importSave` or give them the button they were written for. Must not change: any live field; `migrateState`'s refusal rule; the bench's work fingerprint without a re-baselined `bench/baseline.json` in the same commit. R3's CR4-040 (`provenance`, `newDiscoveries`) and its card-era finding (`assignedCardId`, `perks`) cover the four hero and collection fields not repeated here.
+- **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. Seventeen fields counted; `cards` in `REQUIRED_KEYS`, `exportSave`/`importSave` test-only, the fingerprint hashing `statuses` and `woundedUntil` (`bench/lib/fingerprint.mjs:63,66`) confirmed; no reader or writer found for `recruitment`, `inventory.slots`, `maxStack`, `unlockedRarities`, `discoveredTasksByBiome`, `nextQuestAt`, `createdAt`, `isCustom`, `traitId`, `settledAt`. Corrected: `classId` is read as a never-firing sprite fallback in fourteen places (now listed, and in the fix sketch); `woundedUntil` is read once by the conversion; `quests.active` is also reset by `QuestManager.js:63`; the QA hero in `classlessDev.js` writes the hero fields.
+
+### CR4-068  The title screen parses every slot's whole save to show five numbers
+- **Tag**: perf
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: reasoned
+- **Where**: `src/systems/core/SaveSlotHelper.js:45-66` (`getSlotInfo`: `JSON.parse(json)` of the whole save, then `meta.guildName`, `heroes.length`, `meta.totalPlaytime`, `savedAt`, `version`), `:73-79` (`getAllSlotInfos`: all three slots); callers: `src/ui/modals/SlotSelectionModal.jsx:85-97` (`refreshSlots` on every open of the title screen, after a delete, and from `useSaveFilesWatch` when a desktop save file has changed: `SaveFiles.refreshAll` re-reads every slot file from disk on each window focus while the screen is up, `SaveFiles.js:8-10,155-160`, and calls the listeners only when a file's text differs, `:159`); what a save holds: `StateSchema.js:296-315` (every settled Region's frozen board and terrain grid, the whole hex world)
+- **What**: To draw the three slot rows the game parses three complete saves, each of which now holds every Region the guild has ever settled (its Tokens, flags, loot and a terrain grid of a few thousand cells) and the run's world. On a long-played slot that is a parse of megabytes for a guild name and a hero count, done again every time the player comes back to the title screen, after every delete, and (in the desktop build) whenever a save file changed under the window. Not a cost in play; a stall on the one screen where the player is waiting.
+- **Evidence**: As cited; no save-size number exists (CR4-069).
+- **Fix sketch**: Write a small header beside the save (`savedAt`, `version`, `guildName`, `heroCount`, `totalPlaytime`) as a second line or a second key the slot screen reads alone; or cache the parsed header per slot text (`SaveFiles` already keeps the text in `copies`, so the cache key is the string's identity); or, cheapest, parse only once per text and memoise in `SaveSlotHelper`. Must not change: what the slot rows show; the damaged-slot path (`:62-65`). **Hypothesis to test**: `getAllSlotInfos` time on the owner's slot, before and after.
+- **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. `getSlotInfo`'s whole-save parse, the three slots and the callers (`refreshSlots` on open, on delete, and through `useSaveFilesWatch`) confirmed; the focus path re-reads the files on every focus but re-parses only when one changed (`refreshAll` notifies on a difference), and does not exist in the browser build: rewritten.
+
+### CR4-069  The save grows with every Region and has never been measured
+- **Tag**: perf, memory
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: reasoned
+- **Where**: `src/state/GameState.js:148-164` (`serializeJson`: one `JSON.stringify` of the whole state on the main thread), called from `SaveManager.save` (`SaveManager.js:224-273`) on the autosave timer (`:199-218`, 10 minutes by default, `SettingsManager.js:64`), on every travel (`src/systems/atlas/Atlas.js:130-132` `saveNow`), at the end of every catch-up (`CatchUp.js:374`), at a new game (`EngineBootstrap.js:334`), on `beforeunload` and the desktop close handshake; what grows: `StateSchema.js:294-315` (`atlas.regions[id].board`, a whole board per settled Region, frozen by a JSON round trip at `Atlas.js:263,415`; `region.terrain`, `src/systems/atlas/TerrainMap.js:211-222`, one character per cell plus the water and stone shapes; `world`, generated whole); the browser build's limits: `SaveManager.js:248-262` (slot text plus a backup copy per slot, three slots, in one `localStorage` origin whose quota is about 5 MB in Chromium; the backup write is "best-effort" and fails silently, `:253-259`, before the main write's `QuotaExceededError` is reported, `:44-62`); `docs/reference/PERFORMANCE.md`, `bench/README.md`, `baseline/*.txt`: no save size anywhere (`grep -i "save size"`: none)
+- **What**: Every save writes the whole game: the live mat and every Region ever settled, each with its own board and terrain grid, and the world. Nothing has measured how big that is or how long the stringify takes, on the owner's real slot or on a game with many Regions, and the number matters three times: on the main thread at every autosave and travel (a stall the player would feel as a hitch at the moment of arriving somewhere), in the browser build's fixed storage quota, where the backup copy doubles the footprint and is the first thing to fail, silently, and in the slot screen's parse (CR4-068). The desktop build has no quota problem, and its write is off the main thread after the stringify.
+- **Evidence**: As cited; the absence of a number is the finding.
+- **Fix sketch**: First measure: log `json.length` and the `serializeJson` time in a dev build at each save, and add the save size to `bench:soak`'s report (R11), on the owner's slot and on `cap128` with six Regions. Then, if the number warrants it: strip the frozen boards of runtime fields a Region does not need while away (clocks that do not run, `placedAt` order), store `terrain.cells` once per seed rather than per Region where Regions share a map, and in the browser build warn once when a save passes half the quota. Must not change: what a Region restores to on return; the save format's version (a shape change bumps `GAME_VERSION`, which refuses every existing save: the owner's call, not the fixer's).
+- **Verified by**: Sonnet verifier, 2026-11-07: confirmed: every save trigger at its cited line (`startAutoSave` :199-218, `Atlas.saveNow` :130-132, `CatchUp.js:374`, `EngineBootstrap.js:334`, `beforeunload` :210-214, `installCloseSave` :158-176), the two JSON round trips, the one-character-per-cell terrain encoding, the best-effort backup before the quota-reported main write, and no save-size number in the three places searched.
+
+### CR4-070  Two edges of the load path: a misleading version message, and no backup retry after a late failure
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/systems/core/SaveManager.js:350` (`const savedVersion = data.version || state.meta?.version || '0.9.0'`: a save with no version at all is given one that is newer than the game, refused by `migrateState` at `SaveMigration.js:28-30`, and reported at `:391` as "from a previous version"); `:365-387` against `:344-348,359-363,388-397` (a save that parses and passes `validateSaveData` but throws inside `GameState.initFromSave`, `InventoryManager.init`, `reconcileHeldCopies` or `MatResize.fitToMat` lands in the `catch` at `:388`, which notifies "Load Failed - Save Corrupted" and returns false: the backup retry (`loadDamaged`, `:406-422`) is reached only from the parse and validation failures above it); `src/state/StateSchema.js:345-398` (`validateSaveData` checks each required section for presence and non-null, `heroes` for being an array and two inventory shapes; `board` and `quests` have no type check, and `migrateState`'s back-fill skips a section that is not a plain object, `SaveMigration.js:53`, so `board: []` or `quests: 7` passes both)
+- **What**: Two edges, neither reachable from the game's own writes. A save file edited by hand or by a tool so that its version is missing is told it is from a previous version, which it is not. A save that is well-formed JSON with every section present but a wrong-typed section or a bad record inside one passes the shallow check and fails later, where the player gets "Save Corrupted" and no retry from the backup that the parse-failure path would have given them. The desktop build invites exactly this (the saves folder is for copying and editing, `SaveFiles.js:2-4`), so the edges are the player's, not the engine's.
+- **Evidence**: As cited; `Atlas.ensureState` (`Atlas.js:73-92`) repairs its own section, which is why `atlas` is not in the list above.
+- **Fix sketch**: Default a missing version to `'unknown'` and say so in the message; move the `loadDamaged` fallback to cover the whole of `loadSlot` after the parse (a load that fails for any reason retries the backup once), keeping `IncompatibleSaveError` outside it; add `isPlainObject(board)`, `Array.isArray(board.sprites)`, `isPlainObject(board.tokens)` and the same for `quests` to `validateSaveData`, since the back-fill cannot repair a wrong-typed section. Must not change: the version refusal rule; the "Save Restored" banner's wording.
+- **Verified by**: Sonnet verifier, 2026-11-07: confirmed. The `'0.9.0'` default (:350) against `GAME_VERSION = '0.8.1'`, the refusal and its message (:391); the three paths into `loadDamaged` (read throw, parse failure, validation failure) against the final catch for everything thrown after validation; `validateSaveData`'s checks as listed, with no type check on `board` or `quests`, and the back-fill skipping a non-object section (`SaveMigration.js:53`). Also noted: `typeof inventory.items !== 'object'` accepts an array.
+
+### CR4-071  Docs: schema comments that explain a field by a system that is gone
+- **Tag**: docs
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/state/StateSchema.js:179` ("Kept declared so old saves carrying it still load": `migrateState` never refuses an extra field, so dropping `inventory.slots` from `INITIAL_STATE` would refuse nothing); `:165` ("Candidates persist so players can't reroll": nothing writes a candidate, CR4-067); `:172` ("Counter for generating unique card IDs (ephemeral loop cards)": the loop is gone); `:190` ("Added from projects": the Projects are retired, `:210-214`); `:160-161` ("`woundedUntil` … still carried by every hero in the owner's real saves and is converted on the first wounded tick" while `HeroGenerator.js:73` writes it on every new hero); `src/systems/hero/HeroGenerator.js:63` ("kept as null so the saved hero shape is unchanged": the shape is the bench fingerprint's, which the comment should say, as `src/systems/hero/logic/HeroRehydration.js:65-67` does); what was checked and is right: every `path:line` in `docs/reference/ARCHITECTURE.md` §4 (`:236-330`: the slot keys, the backup roll, the close handshake, the load path's seven steps, the catch-up, the derived-versus-stored table) matches the code as read today; §4.5's table could add `hero.hp.max` (recomputed from the best combat skill on every load, `logic/HeroRehydration.js:100-112`) and `inventory.maxTabs` beside `maxSlots`
+- **What**: Six comments explain a saved field by the system that used to read it, and so tell a reader the field is live. The architecture map, by contrast, is exact for this area.
+- **Evidence**: As cited.
+- **Fix sketch**: With CR4-067's deletions four comments go; rewrite the other two; add the two rows to §4.5. Must not change: nothing in code.
+- **Verified by**: Sonnet verifier, 2026-11-07: confirmed; line cites tightened by one or two. Every quoted comment exists; five ARCHITECTURE §4 cites spot-checked against the code match (`SettingsManager.js:8`, `SaveSlotHelper.js:8`, `SaveFiles.js:39-43`, `SaveManager.js:353,359,384,440,518`, `GameState.js:14`); one drift: the doc's `StateSchema.js:345-399` ends at :398.
+
+---
+
+## Notes (no `path:line` of their own, or another area's)
+
+- **Derived data stored, checked.** `progress.rosterLimit`, `inventory.maxTabs`, `inventory.maxSlots` (from the upgrade ranks, `GuildUpgradeManager.recompute` on load), `quests.tutorialStep` (from `completedTutorials`), `hero.hp.max` (from the best combat skill), `hero.skills[].level` (follows `xp`; whether it is recomputed from `xp` on load was not checked), `atlas.nextRegionNumber` (repaired from the highest Region id). All are rewritten on every load, so none can drift in a way the player sees; they are redundancy, not bugs, and ARCHITECTURE §4.5 lists most of them. `hero.aggregator`, `className`, `traitName`, `level`, `_rev` are stripped on save (`GameState.js:14`) and rebuilt unconditionally: correct.
+- **Old-save fields consumed on load.** `hero.bankedSkills`, `jobId`, `energy`, `lastEatenAt`, `lastDrunkAt` are read once and deleted by `HeroRehydration` (`:31,42,89-92`); `quests.active` by `QuestManager.js:35`; `flagRules`, `disallowed`, the Vault and Tray fields, `currency`, `cartographer`, the retired upgrade ranks by `migrateState`. That is the right pattern; CR4-067 asks for the remaining dead fields to join it.
+- **Save frequency is fine.** Ten minutes by default (1, 10, 60 or off), plus travel, catch-up end, new game and close. `Atlas.saveNow` on travel is the one save the player cannot turn off; it is also the one that writes the most (a new frozen board).
+- **The write path, checked.** Browser: backup roll then `setItem` (`SaveManager.js:248-262`); desktop: the text is queued per slot, a newer write replaces one still waiting, the file is written whole via temp-and-rename with `sync_all` (`saves.rs:66-76`), a non-JSON previous file is never rolled over the backup (`saves.rs:91-100`), and `restoreAndReload` waits for the disk before reloading (`SaveManager.js:455-464`). `keepBackupSlot` keeps the good backup after a damaged load until the next successful save (`:239,245,262`). No fault found.
+- **`serialize()` versus `serializeJson()`.** `GameState.serialize()` (`GameState.js:116-130`, a `structuredClone` of the whole state) is called by no game code; 24 test files use it. The comment at `SaveManager.js:235` and the one at `GameState.js:133` describe `serializeJson` as byte-identical to it: whether a test asserts that was not checked (R10), after which `serialize()` is a test helper and could live with the tests (R9).
+- **Settings are not in the save** (`SettingsManager`, localStorage): right for per-device settings; the autosave interval and the typography scale are therefore per machine, which a player moving a save between machines would notice. Not a defect; a line for the GDD if the owner cares.

@@ -1,6 +1,6 @@
 # Review round 4: status
 
-*Kept by the reviewer. Next free finding number: **CR4-067**.*
+*Kept by the reviewer. Next free finding number: **CR4-072**.*
 
 ## Sessions
 
@@ -12,7 +12,7 @@
 | R3 | Heroes, combat, equipment, progression | ready for triage | 2026-11-07 | b7559216 | `R3_heroes_combat_equipment_progression.md`: 13 findings (3 perf reasoned, 3 bug, 6 cleanup, 1 docs; 0 owner-decision, 1 owner question). Good, with one hot spot and card-era residue. Top: the loadout rebuilt on every per-tick work-time read, so T-078 is hot not latent (CR4-033); the bucket maths written four times with drift (CR4-036); two save fields written on every item gain and read by nothing (CR4-040). |
 | R4 | Drawing | ready for triage | 2026-11-07 | 83461380 | `R4_drawing.md`: 15 findings (1 memory measured, 10 perf reasoned, 1 bug, 2 cleanup, 1 docs; 0 owner-decision). Good, much better than round 3 left it. Top: the cause of T-333, one-shot mat effects that only remove themselves when a frame finishes (CR4-046); a document query and layout read on every pointer move (CR4-048); fifteen pollers that never pause and an upkeep badge recomputing the mat per Bank change (CR4-050). Measure first: the soak hidden phase after CR4-046, a pointer-move trace, the ground build marks. |
 | R5 | React plumbing | ready for triage | 2026-11-07 | 01830b61 | `R5_react_plumbing.md`: 6 findings (2 perf reasoned, 1 a11y owner-decision, 2 cleanup, 1 docs). Good: every subscription unsubscribes, no store hands React a fresh object, selectors keep the contract. Top: a hero's status recomputed by four stores per walk tick (CR4-061); the root redrawing the whole screen for a hover or a click (CR4-062); drag sources announcing a keyboard drag that cannot happen (CR4-063, owner). Measure first: re-run `bench/tick-commits.mjs`. |
-| R6 | State and saves | not started | | | |
+| R6 | State and saves | ready for triage | 2026-11-07 | e16338be | `R6_state_and_saves.md`: 5 findings (1 cleanup, 2 perf reasoned, 1 bug, 1 docs; 0 owner-decision). Good and careful: whole-file writes, a rolling backup, a retry, an undo; the architecture map is exact here. Top: seventeen saved fields nothing reads and a required key for a dead system (CR4-067); the title screen parsing whole saves for five numbers (CR4-068); a save that grows per Region and has never been measured (CR4-069). Measure first: save size and stringify time on the owner's slot. |
 | R7 | World, atlas, quests | not started | | | |
 | R8 | Content boundary and CMS layer | not started | | | |
 | R9 | Dead code, duplicates, cycles, lint | not started | | | |
@@ -27,7 +27,7 @@ States: `not started`, `reading`, `verifying`, `ready for triage`, `triaged`,
 
 | open | verified | ticket | moot | owner-no |
 |---|---|---|---|---|
-| 0 | 66 | 0 | 0 | 0 |
+| 0 | 71 | 0 | 0 | 0 |
 
 ## Baselines (phase 1, director)
 
