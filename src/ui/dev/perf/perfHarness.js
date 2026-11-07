@@ -29,6 +29,7 @@ import { getAllItems } from '../../../config/registries/itemRegistry.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import * as ItemStubs from '../../../systems/notifications/itemStubs.js';
 import * as Banners from '../../../systems/notifications/banners.js';
+import { isDrawingPaused } from '../../components/board/frameClock.js';
 
 const REPORT_VERSION = 1;
 const THRESHOLDS = [6.06, 8.33, 16.7];
@@ -560,6 +561,8 @@ export async function installPerf() {
             return { ...EngineBootstrap.getEngine(), NotificationSystem, Shop, MatCap, FixedTokens, EquipmentValidator, getAllItems, SettingsManager, ItemStubs, Banners };
         },
         get running() { return running; },
+        // For the memory soak's hidden phase: whether the mat's drawing clocks are paused.
+        get drawingPaused() { return isDrawingPaused(); },
         get profilingArmed() { return profilingArmed(); }
     };
     globalThis.__perf = api;
