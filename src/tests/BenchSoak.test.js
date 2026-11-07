@@ -181,19 +181,19 @@ describe('the verdicts', () => {
     it('nodes: a slow ratchet past 200 fails though its slope is under the limits', () => {
         const v = Array.from({ length: 27 }, (_, i) => 5000 + Math.round(i * 9.5));   // +247 over 26 min, never down
         const fit = fitOf(v);
-        expect(fit.slope).toBeLessThan(nodes.warnSlope);
+        expect(fit.slope).toBeLessThan(nodes.failSlope);
         expect(judgeMetric(nodes, fit, v)).toMatchObject({ verdict: 'FAIL', why: expect.stringMatching(/never fell back/) });
     });
 
-    it('nodes: the same rise with churn falling back is not a ratchet', () => {
+    it('nodes: the same rise with churn falling back is not a ratchet, only a warning on its slope', () => {
         const v = Array.from({ length: 27 }, (_, i) => 5000 + Math.round(i * 9.5) + (i % 3 === 1 ? -150 : 0));
         expect(v[26] - v[0]).toBeGreaterThan(nodes.failNet);
-        expect(judgeMetric(nodes, fitOf(v), v).verdict).toBe('ok');
+        expect(judgeMetric(nodes, fitOf(v), v)).toMatchObject({ verdict: 'WARN', why: expect.stringMatching(/grows/) });
     });
 
     it('nodes: a steep climb fails on its slope even with churn', () => {
-        const v = Array.from({ length: 27 }, (_, i) => 5000 + 80 * i + (i % 2 ? 200 : -200));
-        expect(judgeMetric(nodes, fitOf(v), v)).toMatchObject({ verdict: 'FAIL', why: expect.stringMatching(/over the limit of 50/) });
+        const v = Array.from({ length: 27 }, (_, i) => 5000 + 40 * i + (i % 2 ? 200 : -200));
+        expect(judgeMetric(nodes, fitOf(v), v)).toMatchObject({ verdict: 'FAIL', why: expect.stringMatching(/over the limit of 20/) });
     });
 
     it('too few samples or minutes is "short", never judged; info metrics are never judged', () => {
@@ -218,12 +218,12 @@ describe('the verdicts', () => {
         expect(a.heapUsed.verdict).toBe('FAIL');
     });
 
-    it('a listener and a subscriber leak fail; documents piling up fail, one more that stays does not', () => {
-        const a = analyse(makeSamples({ listeners: (t) => 800 + Math.floor(t * 2), bus: (t) => 300 + Math.floor(t), documents: (t) => (t > 25 ? 3 : t > 20 ? 2 : 1) }));
+    it('a listener and a subscriber leak fail; documents piling up fail, a new SVG picture or two does not', () => {
+        const a = analyse(makeSamples({ listeners: (t) => 800 + Math.floor(t * 2), bus: (t) => 300 + Math.floor(t), documents: (t) => (t > 25 ? 15 : t > 20 ? 13 : 11) }));
         expect(a.listeners.verdict).toBe('FAIL');
         expect(a.busSubscribers.verdict).toBe('FAIL');
         expect(a.documents.verdict).toBe('FAIL');
-        expect(analyse(makeSamples({ documents: (t) => (t > 20 ? 2 : 1) })).documents.verdict).toBe('ok');
+        expect(analyse(makeSamples({ documents: (t) => (t > 25 ? 13 : t > 20 ? 12 : 11) })).documents.verdict).toBe('ok');
     });
 });
 
@@ -267,6 +267,30 @@ describe('the hidden phase', () => {
         const old = makeSamples({ paused: () => null });
         const h = hiddenCheck(old, intervalsOf(old));
         expect(h.drawingPaused).toBeNull();
+        expect(h.problems).toEqual([]);
+    });
+
+    it('a pile-up while hidden fails on its own slope, though the page lets go on return', () => {
+        // Nodes and listeners climb every hidden minute (a detached DOM held until the next frame)
+        // and drop back once the page draws again: the visible fit sees nothing.
+        const s = makeSamples({
+            nodes: (t, ph) => (ph === 'hidden' ? 2000 + 250 * (t - 12) : 2000),
+            listeners: (t, ph) => (ph === 'hidden' ? 850 + 110 * (t - 12) : 850)
+        });
+        expect(analyse(s).nodes.verdict).toBe('ok');
+        const h = hiddenCheck(s, intervalsOf(s));
+        expect(h.growth.nodes).toBeCloseTo(250);
+        expect(h.levels.nodes).toMatchObject({ before: 2000, hiddenMax: 3250, after: 2000 });
+        expect(h.problems.join(' | ')).toMatch(/DOM nodes \(live and detached\) grew 250\.0 nodes\/min while hidden \(limit 20\)/);
+        expect(h.problems.join(' | ')).toMatch(/JS event listeners grew 110\.0/);
+        expect(hiddenText(h)).toMatch(/held while hidden/);
+    });
+
+    it('a hidden phase too short to fit is shown, not judged', () => {
+        const s = makeSamples({ minutes: 3, hidden: 1, warmup: 0.3, nodes: (t, ph) => (ph === 'hidden' ? 2250 : 2000) });
+        const h = hiddenCheck(s, intervalsOf(s));
+        expect(h.growth).toEqual({});
+        expect(h.levels.nodes).toMatchObject({ before: 2000, hiddenMax: 2250, after: 2000 });
         expect(h.problems).toEqual([]);
     });
 
@@ -334,6 +358,14 @@ describe('the heap snapshot reader', () => {
         expect(classNameOf('code', 'x')).toBe('(compiled code)');
         expect(classNameOf('closure', 'f')).toBe('(closure)');
         expect(classNameOf('object', '')).toBe('(anonymous)');
+    });
+
+    it('groups objects named by their id or their whole tag', () => {
+        expect(classNameOf('object', 'system / Context / scope @75823')).toBe('system / Context / scope');
+        expect(classNameOf('native', 'Detached <img src="assets/items/ore/i_ore_copper.png">', 2)).toBe('Detached <img>');
+        expect(classNameOf('native', '<div id="boot-splash" style="position: fixed;">', 2)).toBe('Detached <div>');
+        expect(classNameOf('native', '<audio preload="auto">', 1)).toBe('<audio>');
+        expect(classNameOf('native', 'blink::KeyframeEffectModel<blink::StringKeyframe>')).toBe('blink::KeyframeEffectModel<blink::StringKeyframe>');
     });
 
     it('retained sizes follow the dominator tree: a node reached two ways belongs to neither', () => {

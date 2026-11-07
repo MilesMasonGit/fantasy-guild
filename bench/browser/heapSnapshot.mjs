@@ -9,12 +9,20 @@
 // (so a list of a thousand nodes is not counted a thousand times). Objects unreachable that way
 // (garbage the snapshot's own GC left) are not counted.
 
-/** DevTools' name for a node's class (its "constructor" in the Summary view). */
+/**
+ * DevTools' name for a node's class (its "constructor" in the Summary view). A trailing object id
+ * (`system / Context / scope @75823`) is dropped, and a DOM element named by its whole tag
+ * (`<img src="…">`) is grouped by its tag name (`<img>`), or every such object would be a class
+ * of its own.
+ */
 export function classNameOf(type, name, detachedness = 0) {
     switch (type) {
         case 'hidden': return '(system)';
         case 'object':
-        case 'native': return `${detachedness === 2 ? 'Detached ' : ''}${name || '(anonymous)'}`;
+        case 'native': {
+            const base = String(name || '').replace(/ @\d+$/, '').replace(/^(Detached )?<([A-Za-z][\w-]*)[\s>][\s\S]*$/, '$1<$2>');
+            return `${detachedness === 2 && !base.startsWith('Detached ') ? 'Detached ' : ''}${base || '(anonymous)'}`;
+        }
         case 'code': return '(compiled code)';
         default: return `(${type})`;
     }

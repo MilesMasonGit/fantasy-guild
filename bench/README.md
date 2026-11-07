@@ -358,7 +358,7 @@ measure something else), and background throttling off. Chrome, the profile and
 any server the bench started are removed on every way out, Ctrl+C included (what still runs on
 the profile after the browser exits is killed first, or Windows keeps the folder).
 
-**Stopping a browser bench** (`bench:draw`, `bench:drag`, `bench:profile`, `bench:crisp`, the
+**Stopping a browser bench** (`bench:draw`, `bench:drag`, `bench:profile`, `bench:crisp`, `bench:soak`, the
 `bench/catchup/page.mjs` and the `*-commits` and `stack-writes` tools; `bench/browser/benchHygiene.mjs`):
 
 - **Ctrl+C** in its terminal is the clean way: it says it is stopping and removes everything.
@@ -367,7 +367,7 @@ the profile after the browser exits is killed first, or Windows keeps the folder
   A bench started straight with `node bench/draw.mjs` has no wrapper, so this does not apply.
 - **`taskkill //PID <pid> //T //F`** on the bench's node process is the last resort: `/T` takes Chrome
   with it. It gets no chance to tidy up, so its profile stays behind until a later bench clears it.
-  To find a leftover from PowerShell: `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'fg-bench-chrome|bench.(draw|drag|profile|crisp)' } | Select-Object ProcessId, Name, CommandLine`.
+  To find a leftover from PowerShell: `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'fg-bench-chrome|bench.(draw|drag|profile|crisp|soak)' } | Select-Object ProcessId, Name, CommandLine`.
   (A plain `tasklist` cannot tell the bench's Chrome from the owner's; never kill Chrome by name.)
 
 Each browser bench, when it first starts Chrome, deletes `fg-bench-chrome-*` profiles more than a

@@ -14,27 +14,37 @@ import { SCENE_IDS, EXTRA_SCENE_IDS, ENVELOPE_SCENE, ENVELOPE_SCENE_NAMES, EXIT 
  * visible samples after the warm-up (the hidden phase's samples are left out of the fit, but a
  * step it leaves behind shows in the visible samples after it).
  *
- * Why these numbers (reasoned; bench/README.md, "Memory soak", has what a run measured):
- * - **Heap over 200 KB a minute fails** (over 50 warns). 200 KB/min is 12 MB an hour, ~96 MB over
- *   an 8-hour session left running beside other programs: more than the page's whole heap on the
- *   128 board, and GC pauses grow with the heap. 50 KB/min (24 MB in 8 h) is the size a cache
- *   warming up can reach (sprites, decoded art, JIT code), so it is only flagged.
- * - **A count that rises and never falls back fails**: DOM nodes by more than 200, listeners by
- *   more than 30, EventBus subscribers by more than 10, documents or frames by more than 1. A live
- *   board churns (toasts come and go, Tokens are used up and respawn), so a count going up and
- *   down is fine; one that only ratchets up is something mounted and never let go. "Never falls
- *   back" allows a dip of `jitter` below the highest value so far.
- * - **Or a count whose slope is over `failSlope`** even with churn on top: 50 nodes a minute is
- *   24,000 in 8 h, several times the page; 10 listeners or 2 subscribers a minute likewise.
+ * Why these numbers. The page on cap128 after GC (measured by the smoke runs, bench/README.md): JS heap
+ * 16–17 MB, ~2,000 DOM nodes, ~850 listeners, ~520 EventBus subscribers, 11 documents and 11
+ * frames. The rule of thumb: a growth that would reach about five times the page in an 8-hour
+ * session left running beside other programs fails.
+ * - **Heap over 200 KB a minute fails** (over 50 warns): 96 MB in 8 h, six times the heap, and GC
+ *   pauses grow with it. 50 KB/min is what a cache still warming up can show (decoded art, JIT
+ *   code: the smoke runs' compiled code grew ~130 KB a minute in their first minutes), so it is
+ *   only flagged.
+ * - **A count over its slope limit fails** even with churn on top: 20 nodes a minute (9,600 in
+ *   8 h), 10 listeners, 2 EventBus subscribers; warnings at a quarter of that.
+ * - **A count that rises and never falls back fails**: DOM nodes by more than 200 (a tenth of the
+ *   page), listeners by more than 30, EventBus subscribers by more than 10, documents or frames by
+ *   more than 3. A live board churns (toasts come and go, Tokens are used up and respawn), so a
+ *   count going up and down is fine; one that only ratchets up is something mounted and never let
+ *   go. "Never falls back" allows a dip of `jitter` below the highest value so far. Documents and
+ *   frames are the page plus one per SVG picture on screen (each is drawn through an SVG document
+ *   and frame of its own: 10 on cap128), so a picture shown for the first time adds one for good.
  * - **Too short to judge**: under {@link CONFIG.minFitMinutes} minutes or {@link
  *   CONFIG.minFitSamples} samples in the fit, slopes are printed but not judged ("short"): a
  *   3-minute slope extrapolated to hours is noise.
+ * - **The hidden phase** is judged by the same slope limits on its own samples (from
+ *   {@link CONFIG.minHiddenSamples} samples over {@link CONFIG.minHiddenMinutes} minutes): a game
+ *   left in a background tab for hours must not pile up what it releases on return.
  * The `compare` entries are `--compare`'s tolerances against bench/soak-baseline.json: a slope or
  * a level (median of the fitted samples) worse by more than both the floor and the ratio fails.
  */
 export const CONFIG = {
     minFitMinutes: 10,
     minFitSamples: 5,
+    minHiddenMinutes: 2,
+    minHiddenSamples: 3,
     /** Hidden phase: the page's own task time must fall to this share of the visible phase's. */
     hiddenTaskShare: 0.75,
     /** Hidden phase: the engine must keep at least this share of its visible tick rate. */
@@ -46,23 +56,23 @@ export const CONFIG = {
         },
         nodes: {
             label: 'DOM nodes (live and detached)', unit: 'nodes', read: (s) => s.cdp?.Nodes,
-            warnSlope: 10, failSlope: 50, failNet: 200, jitter: 20, compare: { slopeFloor: 10, slopeRatio: 0.5, levelFloor: 500, levelRatio: 0.2 }
+            warnSlope: 5, failSlope: 20, failNet: 200, jitter: 20, compare: { slopeFloor: 10, slopeRatio: 0.5, levelFloor: 500, levelRatio: 0.2 }
         },
         listeners: {
             label: 'JS event listeners', unit: 'listeners', read: (s) => s.cdp?.JSEventListeners,
-            warnSlope: 2, failSlope: 10, failNet: 30, jitter: 5, compare: { slopeFloor: 2, slopeRatio: 0.5, levelFloor: 100, levelRatio: 0.2 }
+            warnSlope: 2.5, failSlope: 10, failNet: 30, jitter: 5, compare: { slopeFloor: 2, slopeRatio: 0.5, levelFloor: 100, levelRatio: 0.2 }
         },
         busSubscribers: {
             label: 'EventBus subscribers', unit: 'subs', read: (s) => s.page?.bus?.total,
             warnSlope: 0.5, failSlope: 2, failNet: 10, jitter: 2, compare: { slopeFloor: 1, slopeRatio: 0.5, levelFloor: 20, levelRatio: 0.2 }
         },
         documents: {
-            label: 'Documents', unit: 'docs', read: (s) => s.cdp?.Documents,
-            failSlope: 0.5, failNet: 1, jitter: 0, compare: { slopeFloor: 0.2, slopeRatio: 0.5, levelFloor: 2, levelRatio: 0.5 }
+            label: 'Documents (page + SVG pictures)', unit: 'docs', read: (s) => s.cdp?.Documents,
+            failSlope: 0.5, failNet: 3, jitter: 0, compare: { slopeFloor: 0.2, slopeRatio: 0.5, levelFloor: 3, levelRatio: 0.2 }
         },
         frames: {
-            label: 'Frames (iframes)', unit: 'frames', read: (s) => s.cdp?.Frames,
-            failSlope: 0.5, failNet: 1, jitter: 0, compare: { slopeFloor: 0.2, slopeRatio: 0.5, levelFloor: 2, levelRatio: 0.5 }
+            label: 'Frames (page + SVG pictures)', unit: 'frames', read: (s) => s.cdp?.Frames,
+            failSlope: 0.5, failNet: 3, jitter: 0, compare: { slopeFloor: 0.2, slopeRatio: 0.5, levelFloor: 3, levelRatio: 0.2 }
         },
         // Printed and fitted, never judged: they move with the game, or are too noisy to gate on.
         heapTotal: { label: 'JS heap total', unit: 'KB', read: (s) => s.cdp?.JSHeapTotalSize / 1024, info: true },
@@ -362,6 +372,22 @@ export function hiddenCheck(samples, intervals, cfg = CONFIG) {
     }
     if (out.visibleAgain === false) out.problems.push('the page did not read visible again after the hidden phase');
     if (out.drawingResumed === false) out.problems.push('the drawing clocks stayed paused after the page came back');
+
+    // What the hidden phase held, and whether it let go: the last sample before hiding, the
+    // hidden samples' highest, the first after showing; and each judged metric's own hidden slope.
+    const before = [...samples].reverse().find((s) => s.i < hiddenSamples[0].i);
+    out.levels = {};
+    out.growth = {};
+    for (const [key, def] of Object.entries(cfg.metrics)) {
+        if (!['heapUsed', 'nodes', 'listeners', 'busSubscribers', 'elements'].includes(key)) continue;
+        const hv = hiddenSamples.map((s) => def.read(s)).filter(Number.isFinite);
+        out.levels[key] = { label: def.label, unit: def.unit, before: before ? def.read(before) : null, hiddenMax: hv.length ? Math.max(...hv) : null, after: after ? def.read(after) : null };
+        if (def.info || !Number.isFinite(def.failSlope)) continue;
+        const fit = fitLine(seriesOf(samples, def, (s) => s.phase === 'hidden'));
+        if (!fit || fit.n < cfg.minHiddenSamples || fit.spanMin < cfg.minHiddenMinutes) continue;
+        out.growth[key] = round(fit.slope, 3);
+        if (fit.slope > def.failSlope) out.problems.push(`${def.label} grew ${fmt(fit.slope, 1)} ${def.unit}/min while hidden (limit ${def.failSlope})`);
+    }
     return out;
 }
 
@@ -489,8 +515,8 @@ export function slopesTable(analysis) {
         a.label,
         a.fit ? `${a.fit.n} / ${fmt(a.fit.spanMin, 1)}` : '—',
         a.fit ? `${fmt(a.fit.slope, 2)} ${a.unit}` : '—',
-        fmt(a.net, a.unit === 'KB' ? 0 : 0),
-        a.unit === 'KB' ? `${fmt(a.level / 1024, 1)} MB` : fmt(a.level, 0),
+        fmt(a.net, 0),
+        a.unit === 'KB' ? (Number.isFinite(a.level) ? `${fmt(a.level / 1024, 1)} MB` : '—') : fmt(a.level, 0),
         a.fit ? fmt(a.fit.r2, 2) : '—',
         a.hiddenFit ? `${fmt(a.hiddenFit.slope, 2)}` : '—',
         a.verdict + (a.why ? `: ${a.why}` : '')
@@ -510,6 +536,13 @@ export function hiddenText(h) {
         ]),
         `Page task time hidden / visible: ${h.taskShare === null ? '—' : fmt(h.taskShare * 100, 0) + ' %'}; engine ticks hidden / visible: ${h.tickShare === null ? '—' : fmt(h.tickShare * 100, 0) + ' %'}.`
     ];
+    const lv = Object.entries(h.levels || {});
+    if (lv.length) {
+        const v = (l, x) => (l.unit === 'KB' ? fmt(x / 1024, 2) : fmt(x, 0));
+        lines.push(table(['held while hidden', 'before', 'hidden max', 'after', 'hidden slope /min'], lv.map(([key, l]) => [
+            `${l.label}${l.unit === 'KB' ? ' (MB)' : ''}`, v(l, l.before), v(l, l.hiddenMax), v(l, l.after), key in (h.growth || {}) ? fmt(h.growth[key], 2) : '—'
+        ])));
+    }
     if (h.failed) lines.push(`✗ ${h.failed}`);
     for (const p of h.problems) lines.push(`✗ ${p}`);
     if (!h.failed && !h.problems.length) lines.push('✓ Hidden, the page stopped drawing and kept playing, and came back.');

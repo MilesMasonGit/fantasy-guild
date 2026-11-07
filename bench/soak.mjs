@@ -124,7 +124,8 @@ function processMemory(pids) {
     if (process.platform !== 'win32' || !pids.length) return null;
     const cmd = `Get-Process -Id ${pids.join(',')} -ErrorAction SilentlyContinue | ForEach-Object { '{0} {1} {2}' -f $_.Id, $_.PrivateMemorySize64, $_.WorkingSet64 }`;
     const r = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', cmd], { encoding: 'utf8', timeout: 20000, windowsHide: true });
-    if (r.status !== 0 || !r.stdout) return null;
+    // ⚠️ Not the exit status: PowerShell exits 1 when any one id is gone, errors silenced or not.
+    if (!r.stdout) return null;
     const out = {};
     for (const line of r.stdout.split(/\r?\n/)) {
         const [pid, priv, ws] = line.trim().split(/\s+/).map(Number);
@@ -168,6 +169,9 @@ async function heapSnapshot(page, file) {
 }
 
 async function setMinimised(chrome, windowId, page, minimised) {
+    // The Perf HUD's window restarts at the switch, so the hidden interval's frames are the hidden
+    // page's own, not those drawn between the sample and the switch (a heap snapshot can sit there).
+    await page.evaluate('window.__perf?.running && window.__perf.reset(), true');
     await chrome.cdp.send('Browser.setWindowBounds', { windowId, bounds: { windowState: minimised ? 'minimized' : 'normal' } });
     const want = minimised ? 'hidden' : 'visible';
     try {
