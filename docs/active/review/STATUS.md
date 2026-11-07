@@ -1,6 +1,6 @@
 # Review round 4: status
 
-*Kept by the reviewer. Next free finding number: **CR4-092**.*
+*Kept by the reviewer. Next free finding number: **CR4-101**.*
 
 ## Sessions
 
@@ -17,17 +17,33 @@
 | R8 | Content boundary and CMS layer | ready for triage | 2026-11-07 | 18fd3e7f | `R8_content_boundary_and_cms.md`: 4 findings (2 bug, 1 cleanup, 1 docs; 0 owner-decision). Good: small startup work, one shared copy of nearly every rule, the map exact. Top: the Sync's stale-workspace guard compares ids only and the write is not atomic (CR4-078, P2, the owner's content); a recipe's items are checked nowhere but the CMS page (CR4-079); the Sync's words still promise maps (CR4-081). |
 | R9 | Dead code, duplicates, cycles, lint | ready for triage | 2026-11-07 | 1410f15e | `R9_dead_code_duplicates_cycles_lint.md`: 5 findings (4 cleanup, 1 docs; 0 owner-decision). The tools' lists read item by item: about fifty dead exports and 127 stray `export default` lines (CR4-082), nine groups of logic written twice or three times (CR4-083), five lint errors that are lost logic among 74 (CR4-084); the cycle and dependency reports add nothing to R0. Nothing to measure. |
 | R10 | Tests | ready for triage | 2026-11-07 | 1410f15e | `R10_tests.md`: 5 findings (1 test P2, 2 perf measured, 1 cleanup, 1 docs; 0 owner-decision). Strong: 7,875 of 7,880 pass at the default seed and all but one under a second seed. Top: one test relies on luck, the farming harvest (CR4-087); half the suite's time is thirty files, mostly seed sweeps and spawned processes (CR4-088); 57 files boot a browser environment for `localStorage` alone (CR4-089). Measured in two full runs. |
-| R11 | Memory and idle | not started (soak baseline taken 2026-11-07: T-333, T-335 are its leads) | | | |
-| R12 | Shell, build, startup | not started | | | |
+| R11 | Memory and idle | ready for triage | 2026-11-07 | b22900a1 | `R11_memory_and_idle.md`: 4 findings (2 memory measured, 1 perf measured, 1 docs; 0 owner-decision). Good: nothing the page owns leaks while visible. Top: the hidden pile-up is R4's CR4-046 and the soak's snapshots are taken after it drains (CR4-092); the 52 KB/min heap growth cannot be attributed from a minified build (CR4-093); at idle the page spends 124 ms/s and 122 style passes/s redrawing an unchanged mat (CR4-094). Measure first: a soak with a snapshot inside the hidden phase after CR4-046; a 60-minute unminified soak. |
+| R12 | Shell, build, startup | ready for triage | 2026-11-07 | b22900a1 | `R12_shell_build_startup.md`: 5 findings (1 memory measured, 2 perf reasoned, 1 bug, 1 docs; 0 owner-decision). Good shell, quiet. Top: the boot preloads and pins all 756 sprites, 31 MB decoded (CR4-096); one 2.1 MB script with no code splitting and no boot timing mark (CR4-097); a minimised desktop app keeps the visible page's idle costs, unmeasured (CR4-098); no Content-Security-Policy (CR4-099). Measure first: boot marks; the desktop app minimised for ten minutes. |
 
 States: `not started`, `reading`, `verifying`, `ready for triage`, `triaged`,
 `closed`.
+
+## Round summary (reviewer, 2026-11-07)
+
+All twelve areas are read and ready for triage: 100 findings, every one verified by a second reader
+(Sonnet) against the code, 8 at P2 and 92 at P3, 2 `owner-decision`, 4 questions for the owner
+below. By tag: 33 perf (6 measured, the rest reasoned and capped at P2), 32 cleanup, 14 bug, 12
+docs, 5 memory, 2 test, 1 a11y. The code is in good shape everywhere; no area is unhealthy.
+
+**Suggested triage order for the planning agent.** (1) The P2s: the stale-workspace guard in the
+CMS Sync (CR4-078, the owner's content), the luck-dependent test (CR4-087), the hidden-page
+pile-up and its mechanism (CR4-046, CR4-092), the zero-charge ghost (CR4-027), the loadout rebuilt
+per per-tick read (CR4-033), the one-shot effects and pollers that make a minimised game cost
+(CR4-050, CR4-098). (2) The four owner questions. (3) The measurements the areas ask for before
+their perf fixes (each area's "Measure first" line), batched into one bench window. (4) The
+deletions, by folder, from R9's lists and the areas' cleanup findings (R9's Notes gather them).
+(5) Docs, in one pass over `ARCHITECTURE.md`, `TICKETS.md` and the comments each area lists.
 
 ## Findings by state
 
 | open | verified | ticket | moot | owner-no |
 |---|---|---|---|---|
-| 0 | 91 | 0 | 0 | 0 |
+| 0 | 100 | 0 | 0 | 0 |
 
 ## Baselines (phase 1, director)
 
