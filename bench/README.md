@@ -358,7 +358,7 @@ measure something else), and background throttling off. Chrome, the profile and
 any server the bench started are removed on every way out, Ctrl+C included (what still runs on
 the profile after the browser exits is killed first, or Windows keeps the folder).
 
-**Stopping a browser bench** (`bench:draw`, `bench:drag`, `bench:profile`, `bench:crisp`, the
+**Stopping a browser bench** (`bench:draw`, `bench:drag`, `bench:profile`, `bench:crisp`, `bench:soak`, the
 `bench/catchup/page.mjs` and the `*-commits` and `stack-writes` tools; `bench/browser/benchHygiene.mjs`):
 
 - **Ctrl+C** in its terminal is the clean way: it says it is stopping and removes everything.
@@ -367,7 +367,7 @@ the profile after the browser exits is killed first, or Windows keeps the folder
   A bench started straight with `node bench/draw.mjs` has no wrapper, so this does not apply.
 - **`taskkill //PID <pid> //T //F`** on the bench's node process is the last resort: `/T` takes Chrome
   with it. It gets no chance to tidy up, so its profile stays behind until a later bench clears it.
-  To find a leftover from PowerShell: `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'fg-bench-chrome|bench.(draw|drag|profile|crisp)' } | Select-Object ProcessId, Name, CommandLine`.
+  To find a leftover from PowerShell: `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'fg-bench-chrome|bench.(draw|drag|profile|crisp|soak)' } | Select-Object ProcessId, Name, CommandLine`.
   (A plain `tasklist` cannot tell the bench's Chrome from the owner's; never kill Chrome by name.)
 
 Each browser bench, when it first starts Chrome, deletes `fg-bench-chrome-*` profiles more than a
@@ -617,6 +617,139 @@ exact. Not a timing tool: one run is ~1 min and compares pixels only within itse
 | `--neuter=anims`, `--neuter=labels` | one guard off (anims: the cases among the resting Tokens change 13 of 68; labels: 2 of 14 soft at rest, 26 layers at rest against 9) | 1 |
 | `--dev --no-build --scene=cap128 --keep=<dir> --settle=10 --verbose` | the dev build; reuse `dist-perf/`; another board; keep the screenshots; each Token's exact share | |
 | `--scene=heroes12`, `--scene=floor60` | a plain board (`S1`, `S2`, `S3`, `cap128`, `camp128`, `cap256`) or an envelope scene, whose page timers stop when the board is frozen. Not the scenes that open a drawer or a sheet | |
+
+### `npm run bench:soak`: does the page grow over hours? (Memory soak)
+
+An idle game runs for hours beside other programs. The engine bench's S6 shows the engine's heap
+alone stays steady; this soaks the **whole page** (React, the DOM, listeners, the canvases) on the
+perf build in headless Chrome, served and loaded as `bench:draw` does, and checks that a hidden page
+stops drawing, keeps playing and does not pile anything up.
+
+1. One board (`cap128` by default, `--scene=` any `bench:draw` scene), settled 60 s.
+2. A **sample** every `--every` seconds (60): the game's own counts through `window.__perf` (Tokens,
+   heroes, loot piles, toasts, stubs, banners, EventBus subscribers by event, elements in the
+   document, and the Perf HUD's frames, frame work and engine ticks since the last sample, whose
+   window it then resets); then **two forced full garbage collections**
+   (`HeapProfiler.collectGarbage`; the second lets the first one's swept DOM objects go); then
+   Chrome's counters (`Performance.getMetrics`: JS heap used and total, DOM nodes live and detached,
+   JS event listeners, documents, frames, layout objects, style passes, layouts, script and task
+   time) and the private memory of the page's renderer and of the GPU process (Windows,
+   `Get-Process`). The page's renderer is the one that has used the most CPU time by the end of the
+   settle: Chrome keeps idle spare renderers, and the page can load into one that was there
+   before it, so "the process that appeared with the page" picked a spare that then exited. Each
+   row is printed as it is taken, and the results JSON is rewritten after every sample, so a soak
+   cut short keeps its data.
+3. A **hidden phase** in the middle, `--hidden` minutes (5), snapped to the sample grid, with a
+   sample at each switch: the browser window is **minimised** (`Browser.setWindowBounds`). In
+   headless Chrome that makes `document.visibilityState` hidden and fires `visibilitychange`, so
+   `src/ui/drawingPause.js` pauses the mat's clocks; animation frames stop; timers keep their rate
+   (the benches' Chrome runs without background timer throttling). Checked in Chrome 156: hidden
+   within 0.3 s, animation frames 0 a second, a 100 ms timer still 10 a second, visible again on
+   `normal`. Not used: a second tab hides the first only when made with `newWindow: false`, and
+   `Page.setWebLifecycleState` freezes the page's timers (the game would stop).
+4. A **least-squares line** per metric over the visible samples after the warm-up (`--warmup`: a
+   tenth of the run, at most 5 minutes; the warm-up rows read `warm-up`). The hidden phase's samples
+   are left out of that fit, but a step it leaves behind lands in it.
+
+**Verdicts** (`CONFIG` at the top of `bench/browser/soakLib.mjs`, where the reasons are written out).
+The page on `cap128` after GC: JS heap 16–17 MB, ~2,000 DOM nodes, ~850 listeners, ~520 EventBus
+subscribers, 11 documents and 11 frames (the page and its 10 SVG pictures: each SVG drawn as a
+picture is a document and a frame of its own, read from a heap snapshot). The rule of thumb: a growth
+that would reach about five times the page in an 8-hour session fails.
+
+| Metric | Fails when | Warns when |
+|---|---|---|
+| JS heap used | slope over 200 KB/min (about 94 MB in 8 h) | over 50 KB/min |
+| DOM nodes (live and detached) | slope over 20/min, or up 200 and never falling back more than 20 | over 5/min |
+| JS event listeners | slope over 10/min, or up 30 and never falling back more than 5 | over 2.5/min |
+| EventBus subscribers | slope over 2/min, or up 10 and never falling back more than 2 | over 0.5/min |
+| Documents, frames | slope over 0.5/min, or up 3 and never falling back (a picture shown for the first time adds one for good) | |
+| heap total, elements, layout objects, Tokens, renderer and GPU memory | never: printed and fitted only | |
+
+A slope is judged only from **5 samples over 10 minutes** of fit; a shorter run prints its slopes
+as `short`. A count going up and down is a live board churning; one that only ratchets up is
+something mounted and never let go.
+
+**The hidden phase** passes when the document read hidden at every hidden sample, the drawing
+clocks read paused (`window.__perf.drawingPaused`, a getter of the perf harness), fewer than one
+frame a second was drawn, the page's own task time fell to 75 % of the visible phase's or less, the
+engine kept 80 % of its tick rate, and afterwards the page was visible with its clocks running.
+It also prints, for heap, nodes, listeners, subscribers and elements, the value before hiding, the
+highest while hidden and the value after showing, and judges each judged metric's **own hidden
+slope** by the same limits (from 3 samples over 2 minutes): a game left in a background tab for
+hours must not pile up what it lets go of on return. Page task time is Chrome's `TaskDuration` less
+`DevToolsCommandDuration` (the bench's own GCs, probes and snapshots).
+
+**`--snapshot`**: a heap snapshot (`HeapProfiler.takeHeapSnapshot`) at the first fitted sample and
+at the last, saved as `bench/results/soak-<time>-start.heapsnapshot` and `-end` (git-ignored; open
+them in DevTools → Memory), and the 15 classes whose retained size grew most between them, with
+their counts (`bench/browser/heapSnapshot.mjs`: the dominator tree from the root through every edge
+but weak ones, a class's objects counted once when one dominates another, as DevTools does; DOM
+elements grouped by tag, `Detached <img>`). About 45 MB and 2–3 s each on `cap128`; the time is
+DevTools time, left out of the page's task time. ⚠️ Taking a snapshot leaves the renderer's private
+memory higher for the rest of the run (+30 MB after the first, measured): read renderer memory from
+a run without `--snapshot`.
+
+| Command | What it does | Time |
+|---|---|---|
+| `npm run bench:soak` | perf build, `cap128`, 30 min, a sample a minute, hidden 12–17 min | ~32 min |
+| `npm run bench:soak -- --minutes=480 --hidden=30` | an 8-hour session | |
+| `npm run bench:soak -- --scene=notify --every=30` | another board (a burst scene too); samples every 30 s (at least 10) | |
+| `npm run bench:soak -- --hidden=0` | no hidden phase | |
+| `npm run bench:soak -- --snapshot` | heap snapshots at both ends of the fit, diffed by class | +10 s |
+| `npm run bench:soak -- --compare` | compare with `bench/soak-baseline.json`: each judged metric's slope (worse by more than its floor and 50 %: heap 100 KB/min, nodes 10/min, listeners 2/min, subscribers 1/min) and level (the median of the fitted samples, worse by more than its floor and 20 %: heap 5 MB, nodes 500, listeners 100, subscribers 20); another board is not comparable; a run too short to judge compares levels only | |
+| `npm run bench:soak -- --save-baseline` | write this run as `bench/soak-baseline.json`; refused from a run that failed, is too short to judge or FAILED a metric | |
+| `--no-build --settle=60 --warmup=3 --port=5400` | reuse `dist-perf/`; seconds before the first sample; minutes left out of the fit; the server's port | |
+
+| Exit | Means |
+|---|---|
+| 0 | no metric over its limits, no regression against the baseline, the hidden phase behaved (WARN does not fail) |
+| 1 | a metric FAILED, REGRESSED against the baseline, or the hidden page misbehaved (kept drawing, did not pause its clocks, stopped ticking, piled up, did not come back) |
+| 3 | the soak failed: Chrome or the page went wrong, the page reloaded, headless Chrome did not hide the page, no baseline, another board than the baseline's |
+
+Results: `bench/results/soak-<time>-<commit>.json` (git-ignored): every sample (Chrome's counters,
+the page's counts, the renderer's memory), the intervals' rates, each metric's fits and verdict, the
+hidden check, the snapshot diff and the compare. There is no `bench/soak-baseline.json` yet: take it
+with `--save-baseline` on a quiet machine, a full 30-minute run.
+
+**What it cannot measure**
+
+- **The desktop app minimised.** WebView2 keeps the page visible when minimised (`drawingPause.js`);
+  the game pauses its clocks through `fg-window-minimised` and frames keep coming. The hidden phase
+  is a browser's hidden document, where frames stop.
+- **A real background tab's throttling.** The benches' Chrome turns background timer throttling
+  off; a normal Chrome slows a hidden tab's timers to once a second, and to once a minute after
+  5 minutes, so the game would tick slower there than here.
+- **GPU memory** only as the GPU process's private memory, which everything Chrome draws shares;
+  canvases' pixels are in the renderer's.
+- **Peak memory.** Every sample is after two forced GCs: what the page retains, not what it
+  allocates between collections.
+- **Hours by default.** 30 minutes; certify a session with `--minutes=480`.
+
+**What the smoke runs measured** (2026-11-06, `c5092348` and `068d52f3`, `cap128`, the owner's PC
+with other agents' work running; too short to judge any slope):
+
+- 3 minutes, hidden 1 (`--minutes=3 --hidden=1 --settle=30 --snapshot`): heap after GC 15.97 →
+  16.51 → 16.81 MB on the visible samples (149 KB/min over 2 minutes, mostly compiled code:
+  `(compiled code)` +860 objects, +262 KB retained, between the snapshots), nodes 2,032 → 1,973 →
+  1,963, listeners 864 → 843 → 839, EventBus subscribers 523–524 (`game_reset` 179 of them),
+  documents and frames 11 throughout. 163 fps and 10 ticks a second visible; hidden the drawing
+  clocks read paused, 0.3 layouts and 2.1 style passes a second against 9.7 and 123, page task time
+  29 % of the visible phase's, engine ticks 96 %. **While hidden the page held 256 more DOM nodes
+  and 113 more listeners after one minute** (1,973 → 2,229 nodes, 843 → 956 listeners) with only
+  18 more elements in the document, so they were detached; all were let go once it was visible.
+- 4 minutes, hidden 2, a sample every 20 s (`--minutes=4 --hidden=2 --every=20 --settle=20`):
+  the pile-up is a **steady climb, not a step**: DOM nodes 1,970 → 2,055 → 2,162 → 2,265 → 2,342 →
+  2,457 → 2,554 over six hidden samples (about **296 a minute**), listeners 842 → 1,115 (about 138
+  a minute), elements in the document only about 27 a minute, heap about 130 KB a minute; back to
+  1,994 nodes and 854 listeners at the first visible sample. Too short to judge (6 samples over
+  1.7 min); if it keeps that rate, a default run's hidden phase (5 samples over 4 min) fails on
+  nodes and listeners (limits 20 and 10 a minute). Hidden: 0 fps, page task time 8 % of the visible phase's
+  (13.8 against 171 ms/s), 0.5 style passes a second against 127, engine ticks 100 %. Visible heap
+  16.28 → 16.84 MB over 3.3 minutes (182 KB/min, r² 0.96): whether that is the warm-up's compiled
+  code or a trend needs the 30-minute run. Exit 0.
+- 1 minute with snapshots, after the renderer fix: renderer private memory 116 → 131 → 161 MB
+  (the last after the first snapshot), GPU process 194 MB.
 
 ### `npm run bench:drag`: does dragging always work?
 

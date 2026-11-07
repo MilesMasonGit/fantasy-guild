@@ -97,7 +97,7 @@ synchronously: `for (let i=0;i<400;i++) window.Game.GameLoop.runHandlers(100)`.
 **Drags can be automated** with a synthetic pointer sequence from
 `javascript_tool`: `pointerdown` on the handle → one `pointermove` past 8 px →
 several stepped moves → `pointerup` at the target, ~30 ms apart, ~250 ms after
-the drop. When a move opens a pop-out (the bin sidebar), wait ≥100 ms after that
+the drop. When a move opens a pop-out, wait ≥100 ms after that
 move before releasing, so the measurement is not timing-sensitive. Events: `new PointerEvent(type, {bubbles:true, cancelable:true,
 composed:true, pointerId:1, pointerType:'mouse', isPrimary:true,
 buttons: type==='pointerup'?0:1, clientX:x, clientY:y})`, moves and up
@@ -138,8 +138,7 @@ test does against the real server).
 
 `npm run lint`, `npm run cycles`, `node tools/reachability.mjs`.
 **Reachability lies**: it walks from `main.jsx` only (test-only files look
-dead), doesn't know the CMS imports seven game modules, and the barrel
-`registries/index.js` hides orphans. Before deleting something as dead, grep
+dead), and doesn't know the CMS imports about 60 game modules (`cms/src` reaches into `src/`). Before deleting something as dead, grep
 for it three ways (import, string id, CMS).
 
 ## Worktrees (parallel code phases, spikes and measurements)

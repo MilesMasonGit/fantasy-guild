@@ -162,6 +162,7 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
   stand-in until the owner's Stone pieces. *(`StoneShapes.js`, `Layout.js`, `terrainRegistry.js`)*
 
 ### What a Token is — Built
+*⚠️ Stale since 2026-10-08: the Token counts below (86 types) no longer match `data/tokens.json` (146); see [doc_audit.md](../active/review/doc_audit.md).*
 Everything on the mat is a Token: resource nodes, tools, stations, spawners,
 Foundations, enemies, quests, the Guild Hall. 86 Token types ship
 (`data/tokens.json`): resource 48, context 10, station 8, spawner 7, enemy 4,
@@ -1647,6 +1648,7 @@ drawers**. The menu can be flipped to the right.
 ---
 
 ## 11. Tools around the game
+*⚠️ Stale since 2026-10-08: the bench has 12 scenarios, not 7; see [doc_audit.md](../active/review/doc_audit.md).*
 
 - **The CMS** (`cms/`, a separate local app): the **only** way to author
   content (Tokens, items, recipes, Maps, effects). Its **Recalculate** runs the
@@ -1671,6 +1673,7 @@ drawers**. The menu can be flipped to the right.
 ---
 
 ## 12. Content snapshot (2026-10-08)
+*⚠️ Stale since 2026-10-08: every count below is out of date (146 Tokens, 151 items, 117 recipes, 92 effects in `data/` on 2026-11-06; jobs retired); see [doc_audit.md](../active/review/doc_audit.md).*
 
 | | Count | Notes |
 |---|---|---|
@@ -1687,6 +1690,7 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
 ---
 
 ## 13. Planned and dormant
+*⚠️ Stale since 2026-10-07: the Atlas is built, not planned, and `data/stations.json` was deleted (26a434c9); see [doc_audit.md](../active/review/doc_audit.md).*
 
 - **Atlas — Planned for the crunch** (after deep optimization):
   [`docs/active/concept_atlas.md`](../active/concept_atlas.md). Loot Maps and

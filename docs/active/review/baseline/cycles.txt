@@ -1,0 +1,26 @@
+# cycles, 2026-11-06, 93338609, npm run cycles
+=== IMPORT CYCLES in src/ ===
+
+Cycle 1 — 16 modules mutually reachable  [broken at load time by a dynamic import]:
+  src/systems/board/FlagColours.js -> src/state/GameState.js =(dynamic)=> src/systems/board/FlagColours.js
+  all members:
+    src/state/GameState.js
+    src/systems/board/FlagColours.js
+    src/systems/equipment/EquipmentManager.js
+    src/systems/equipment/EquipmentValidator.js
+    src/systems/equipment/heldCopies.js
+    src/systems/hero/HeroEffects.js
+    src/systems/hero/HeroManager.js
+    src/systems/hero/logic/HeroLifecycle.js
+    src/systems/hero/logic/HeroLookup.js
+    src/systems/hero/logic/HeroRehydration.js
+    src/systems/hero/logic/HeroRoster.js
+    src/systems/hero/logic/HeroState.js
+    src/systems/inventory/InventoryFormatter.js
+    src/systems/inventory/InventoryManager.js
+    src/systems/inventory/InventoryStore.js
+    src/systems/progression/RegistryManager.js
+
+Of these, 0 cycle group(s) are formed entirely by static imports (the dangerous kind); the rest are broken at load time by a dynamic import.
+Scanned 1255 files, 10122 internal import edges.
+Found 1 cycle group(s).

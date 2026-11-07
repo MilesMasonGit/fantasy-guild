@@ -191,3 +191,54 @@ T-322 — The draw bench's fights40 and fights80 never built: fights<N> stopped 
 T-320 — StyleSheetPage close test split into two (X, Escape), one render each — fix/small-batch — 2026-11-06
 T-328 — Encyclopedia chart pictures can no longer be dragged off by the browser, so a pan from a picture carries on — fix/small-batch — 2026-11-06
 T-330 — Nav bubbles step down to 96 px on screens 900 px tall or less, so all six fit 1366 x 768 — fix/small-batch — 2026-11-06
+T-257 — A hero pulled out of a fight stays marked as fighting for ever — 51600e25 — 2026-11-06
+T-259 — The tutorial: remove the Old Site step; fix the copper-tool step's text — 9d8d20c5 — 2026-11-06
+T-264 — Enemies spawned at a non-whole point stood frozen — 645900d2 — 2026-11-06
+T-265 — Spawned Tokens get non-whole centres — d2911400 — 2026-11-06
+T-266 — Each enemy camp counts its own enemies — 5ca7ba4f — 2026-11-06
+T-267 — The drawer inspection still shows an enemy's charges and says 'Nothing yet' under Drives — f964ddab — 2026-11-06
+T-268 — Bank Sort: a tool with no tier of its own sorts by its tool tier — 15438bd5 — 2026-11-06
+T-269 — Bank search matches from the start of a word — 15438bd5 — 2026-11-06
+T-270 — Carried rules read as the hero's and name their skill — — — 2026-11-02
+T-271 — Ledger first reach skips one-off finds — c9f08bc2 — 2026-11-06
+T-272 — Ledger leak check reads a map at its Region's tier and lets the map item arrive one stage early — c9f08bc2 — 2026-11-06
+T-273 — A vein that refills at the end of a step announces its next cycle twice — 99c53837 — 2026-11-06
+T-274 — The pack gate blocks a declared "faster" stage when one entry also loses its time — 9092d268 — 2026-11-06
+T-275 — Retire the drawer Token inspection — 47aac08b — 2026-11-06
+T-276 — A river layout can crash a Region preview for some seeds — dccc26e8 — 2026-11-06
+T-277 — Idle heroes may hang over the mat edge — 4acddc87 — 2026-11-06
+T-278 — Pin `createdAt` in `AtlasSettle.test.js`'s `newGame()` — 2c58dd1d — 2026-11-06
+T-279 — Ledger: price a Hall rank in its skill's main input when the skill gathers nothing — — — 2026-11-02
+T-280 — Ledger: the Hall payback check counts the cost of opening a star — — — 2026-11-02
+T-281 — Ledger: milestone perks count only for work gated at or above the perk's level — — — 2026-11-02
+T-282 — An effect that spawns a Token names it by its id — — — 2026-11-01
+T-283 — Remove "Built copies slower by %" — — — 2026-11-02
+T-284 — The Starter Camp gets a small Stone patch; its first mine recipe needs no map — — — 2026-11-01
+T-285 — Ledger: the main reach still places Tokens by retired map items — — — 2026-11-02
+T-286 — `MatPlacement.relax` deoptimises over and over — — — 2026-11-03
+T-288 — `changePackTool` compares against a stale autosave — — — 2026-11-02
+T-289 — `CMSChangePackReview` and `CMSChangePackStarterCamp` "finish, then undo" fail under a loaded full suite — — — 2026-11-03
+T-290 — The encyclopedia still places things by the retired map items — — — 2026-11-02
+T-291 — The balancing preview's XP proposals are undone by Sync — — — 2026-11-02
+T-292 — Machinery no shipped content uses since the maps retired — — — 2026-11-03
+T-297 — No emoji for skill icons — — — 2026-11-06
+T-293 — Icon swaps from the icon rule — — — 2026-11-06
+T-319 — Water shimmer from the last Region lingers after travel — — — 2026-11-06
+T-313 — Bounty quests retry a failed landing every tick on a full mat — — — 2026-11-06
+T-311 — Work change accepted 2026-11-05 — — — 2026-11-06
+T-298 — Stale docs found by the upgrade review — — — 2026-11-03
+T-245 — Carried rules read as Token rules in the Rules editor — — — 2026-11-02
+T-246 — The item tooltip shows a weapon's styles, damage and speed — — — 2026-11-02
+T-248 — Enemies stroll with their art over the mat edge — f7f82a45 — 2026-11-06
+T-249 — After a kill, the next camp enemy swings first — — — 2026-11-02
+T-254 — Leftovers of "help is free" — 7e2a76e4 — 2026-11-06
+T-255 — CMSStudio's render test times out under load — 158bcba4 — 2026-11-06
+T-197 — Loot piles' hover animation is almost all their cost — — — 2026-11-03
+T-198 — Bubbles are the largest cost per hero and per fight — — — 2026-11-03
+T-200 — Wandering enemies are expensive in the engine and on the mat — — — 2026-11-01
+T-202 — The stub column keeps every row mounted — — — 2026-11-03
+T-204 — GDD §3 says the Token Cap upgrade is not built yet — 4e49631b — 2026-11-06
+T-205 — Chrome's CPU throttle drifts — — — 2026-11-03
+T-206 — Stale bench Chrome profiles and orphan processes — — — 2026-11-02
+T-208 — Flaky tests under full-suite load — 33e87e62 — 2026-11-06
+T-210 — Remove the description bridge — 0862280d — 2026-11-06

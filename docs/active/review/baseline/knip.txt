@@ -1,0 +1,388 @@
+# knip, 2026-11-06, 93338609, npm run dead-code
+Unused files (15)
+bench/calibration/engine.mjs                
+bench/calibration/worker.mjs                
+bench/catchup/harness.mjs                   
+bench/catchup/page.mjs                      
+bench/catchup/time.mjs                      
+bench/scenarios/c240-cap.mjs                
+bench/scenarios/c256-cap.mjs                
+bench/scenarios/hour-after-load.mjs         
+bench/scenarios/s6-long-idle.mjs            
+bench/scenarios/s7-waiting-room.mjs         
+bench/scenarios/s8-catchup.mjs              
+bench/scenarios/s8f-ticks.mjs               
+bench/scenarios/s8l-steps.mjs               
+tools/asset-rename/check-list.mjs           
+tools/asset-rename/generate-legacy-names.mjs
+Unused dependencies (1)
+@dnd-kit/modifiers  package.json:69:6
+Unlisted dependencies (2)
+picomatch            src/tests/CMSLedgerPlan.test.js:7:23
+@vitest/coverage-v8  vitest.config.js                    
+Unlisted binaries (1)
+dot  package.json
+Unused exports (201)
+HALL                                                          bench/calibration/setups.mjs:184:10                       
+run                                                 function  bench/lib/harness.mjs:257:23                              
+PROBE_NAMES                                                   bench/lib/instrument-plugin.mjs:70:14                     
+default                                             variable  src/config/DatabaseManager.js:33:16                       
+toRoman                                             function  src/config/guildUpgrades.js:394:17                        
+HALL_STARS_FILE                                               src/config/hallStars.js:49:14                             
+getDamageType                                       function  src/config/registries/damageTypes.js:36:17                
+getDamageGroup                                      function  src/config/registries/damageTypes.js:40:17                
+getCategoryCap                                                src/config/registries/equipmentConstants.js:34:5          
+default                                                       src/config/registries/equipmentConstants.js:140:16        
+default                                             variable  src/config/registries/heroPortraits.js:28:16              
+magnitudePhrase                                     function  src/config/registries/magnitudeRegistry.js:144:17         
+MAGNITUDE_ROLES                                               src/config/registries/magnitudeRegistry.js:180:14         
+isAuthorableModifier                                function  src/config/registries/modifierPalette.js:674:17           
+RETIRED_TARGET_MODES                                          src/config/registries/modifierPalette.js:706:14           
+TITLE_PREFIXES                                                src/config/registries/nameRegistry.js:38:14               
+EPITHETS                                                      src/config/registries/nameRegistry.js:46:14               
+effectBlocksOf                                      function  src/config/registries/tokenRegistry.js:281:17             
+statementsOf                                                  src/config/registries/tokenRegistry.js:293:10             
+statementsWith                                                src/config/registries/tokenRegistry.js:293:24             
+styleOf                                                       src/systems/atlas/WaterShapes.js:1868:14                  
+CAMP_REACH_DEFAULT              Camps                         src/systems/board/Camps.js:37:18                          
+DEFAULT_STATEMENT_CHARGE_DELTA  Charges                       src/systems/board/Charges.js:43:10                        
+minCentreGap                    EffectActions       function  src/systems/board/EffectActions.js:158:17                 
+remove                          HeroMotion          function  src/systems/board/HeroMotion.js:561:17                    
+distance                                            function  src/systems/board/nearby.js:29:17                         
+isInHand                        TimedChanges                  src/systems/board/TimedChanges.js:87:21                   
+DOSE_WHY                                                      src/systems/core/consumableRule.js:98:14                  
+noDoseWhy                                           function  src/systems/core/consumableRule.js:105:17                 
+default                                             function  src/systems/core/ContentAudit.js:928:16                   
+success                         NotificationSystem            src/systems/core/NotificationSystem.js:75:14              
+info                            NotificationSystem            src/systems/core/NotificationSystem.js:76:14              
+error                           NotificationSystem            src/systems/core/NotificationSystem.js:78:14              
+crisis                          NotificationSystem            src/systems/core/NotificationSystem.js:79:14              
+default                                             variable  src/systems/core/SaveManager.js:603:16                    
+SCOPES                                                        src/systems/effects/constants.js:128:14                   
+migratePerkEffectIds                                function  src/systems/effects/effectIdMigration.js:148:17           
+migrateAppliesTargetsIn                             function  src/systems/effects/effectMigration.js:221:17             
+appliesByRole                                       function  src/systems/effects/statements.js:335:17                  
+SLOT_VOCABULARIES                                             src/systems/effects/statementSlots.js:976:14              
+rulesTextOf                                         function  src/systems/effects/statementText.js:969:17               
+canEquipToSlot                  EquipmentValidator  function  src/systems/equipment/EquipmentValidator.js:13:17         
+HERO_ICONS                                                    src/systems/hero/HeroGenerator.js:20:14                   
+HERO_SPRITES                                                  src/systems/hero/HeroGenerator.js:30:14                   
+getRegenConfig                  RegenSystem         function  src/systems/hero/RegenSystem.js:70:17                     
+getAllSkills                    SkillSystem         function  src/systems/hero/SkillSystem.js:195:17                    
+default                                             variable  src/systems/hero/XpRateTracker.js:116:16                  
+hasPins                         ItemStubs           function  src/systems/notifications/itemStubs.js:301:17             
+default                                             variable  src/systems/progression/GuildUpgradeManager.js:199:16     
+SEVERITIES                                                    src/systems/progression/ledger/checks.js:40:14            
+CHECK_GROUP_TEXT                                              src/systems/progression/ledger/checks.js:89:14            
+SEVERITY_TEXT                                                 src/systems/progression/ledger/checks.js:90:14            
+PROFILE_TEXT                                                  src/systems/progression/ledger/pace.js:1345:29            
+planTierOf                                          function  src/systems/progression/ledger/plan.js:137:17             
+BOOST_KINDS                                                   src/systems/progression/ledger/profiles.js:72:14          
+BOUNTY_REWARD_ITEMS                                           src/systems/quests/QuestManager.js:21:5                   
+copyReward                                                    src/systems/quests/QuestManager.js:21:26                  
+questReward                                                   src/systems/quests/QuestManager.js:21:38                  
+SETTLE_TEXT                     World                         src/systems/world/World.js:20:5                           
+guildSkillLevel                 World                         src/systems/world/World.js:21:40                          
+row                                                 function  src/tests/fixtures/mat.js:28:17                           
+beside                                              function  src/tests/fixtures/mat.js:33:17                           
+default                                             variable  src/ui/components/atlas/AtlasTome.jsx:278:16              
+previewBuilds                                       function  src/ui/components/atlas/mapPreview.js:238:17              
+default                                             variable  src/ui/components/atlas/MapPreview.jsx:73:16              
+default                                             variable  src/ui/components/atlas/SettleTitle.jsx:68:16             
+lastPictureTimes                                              src/ui/components/atlas/WorldMap.jsx:155:14               
+default                                             variable  src/ui/components/atlas/WorldMap.jsx:506:16               
+default                                             variable  src/ui/components/atlas/WorldPanel.jsx:335:16             
+default                                             variable  src/ui/components/base/ArrowScrollList.jsx:220:16         
+default                                             variable  src/ui/components/base/BannerArt.jsx:85:16                
+default                                             variable  src/ui/components/base/CloseX.jsx:45:16                   
+default                                             variable  src/ui/components/base/EntityRibbon.jsx:312:16            
+default                                             class     src/ui/components/base/ErrorBoundary.jsx:63:16            
+default                                             variable  src/ui/components/base/FPSCounter.jsx:42:16               
+default                                             variable  src/ui/components/base/ItemIcon.jsx:102:16                
+default                                             variable  src/ui/components/base/KitButton.jsx:81:16                
+default                                             variable  src/ui/components/base/ParticleOverlay.jsx:600:16         
+default                                             variable  src/ui/components/base/PixelFrame.jsx:46:16               
+default                                             variable  src/ui/components/base/PixelGlyph.jsx:183:16              
+default                                             variable  src/ui/components/base/ProgressBar.jsx:53:16              
+default                                             variable  src/ui/components/base/StatCell.jsx:11:16                 
+default                                             variable  src/ui/components/base/TokenSprite.jsx:261:16             
+default                                             variable  src/ui/components/base/Tooltip.jsx:157:16                 
+default                                             variable  src/ui/components/base/VitalBar.jsx:51:16                 
+cueAmbient                                          function  src/ui/components/board/ambientCues.js:11:17              
+default                                             variable  src/ui/components/board/AmbientLife.jsx:344:16            
+default                                             variable  src/ui/components/board/AnimatedEnemySprite.jsx:182:16    
+default                                             variable  src/ui/components/board/AnimatedHeroSprite.jsx:147:16     
+TOKEN_BAR_GAP_U                                               src/ui/components/board/boardConstants.js:62:14           
+default                                             variable  src/ui/components/board/Bubble.jsx:44:16                  
+default                                             variable  src/ui/components/board/BubbleText.jsx:15:16              
+default                                             variable  src/ui/components/board/CalloutLayer.jsx:209:16           
+default                                             variable  src/ui/components/board/CampReachRing.jsx:46:16           
+default                                             variable  src/ui/components/board/FightLayer.jsx:157:16             
+default                                             variable  src/ui/components/board/FlagLayer.jsx:285:16              
+MARKER_FILL                                                   src/ui/components/board/FlagMark.jsx:8:14                 
+default                                             variable  src/ui/components/board/FlagMark.jsx:55:16                
+FLOAT_MS                                                      src/ui/components/board/fx/fightFloats.js:29:14           
+default                                             variable  src/ui/components/board/fx/MatFxLayer.jsx:37:16           
+CHIP_MS                                                       src/ui/components/board/fx/strikeChips.js:36:14           
+lastGroundBuilds                                    function  src/ui/components/board/groundBuilds.js:53:17             
+onGroundBuilt                                       function  src/ui/components/board/groundBuilds.js:58:17             
+default                                             variable  src/ui/components/board/GuildHallDetails.jsx:35:16        
+default                                             variable  src/ui/components/board/GuildHallEffectsPopover.jsx:174:16
+default                                             variable  src/ui/components/board/HallCeremony.jsx:191:16           
+HP_COLOUR                                                     src/ui/components/board/healthBar.js:4:14                 
+HP_TRACK                                                      src/ui/components/board/healthBar.js:5:14                 
+HP_EDGE                                                       src/ui/components/board/healthBar.js:6:14                 
+default                                             variable  src/ui/components/board/HealthBar.jsx:65:16               
+default                                             variable  src/ui/components/board/HeroBubbleLayer.jsx:315:16        
+default                                             variable  src/ui/components/board/IdlePlate.jsx:88:16               
+default                                             variable  src/ui/components/board/LevelUpFloat.jsx:103:16           
+default                                             variable  src/ui/components/board/MatBoard.jsx:736:16               
+default                                             variable  src/ui/components/board/MatFitContext.jsx:26:16           
+default                                             variable  src/ui/components/board/MatHero.jsx:369:16                
+default                                             variable  src/ui/components/board/MatModeControls.jsx:147:16        
+default                                             variable  src/ui/components/board/MatRings.jsx:131:16               
+default                                             variable  src/ui/components/board/MatToken.jsx:728:16               
+default                                             variable  src/ui/components/board/OrderDragLine.jsx:252:16          
+default                                             variable  src/ui/components/board/PassiveProductionTooltip.jsx:75:16
+default                                             variable  src/ui/components/board/ProblemMark.jsx:41:16             
+default                                             variable  src/ui/components/board/QuestTooltip.jsx:96:16            
+default                                             variable  src/ui/components/board/RecipeList.jsx:289:16             
+paintRing                                           function  src/ui/components/board/RingBadge.jsx:55:17               
+default                                             variable  src/ui/components/board/RingBadge.jsx:134:16              
+default                                             function  src/ui/components/board/SpeechFrame.jsx:92:16             
+default                                             variable  src/ui/components/board/SpriteLayerView.jsx:221:16        
+default                                             variable  src/ui/components/board/StarOutline.jsx:28:16             
+default                                             variable  src/ui/components/board/SupportLinkLayer.jsx:87:16        
+default                                             variable  src/ui/components/board/TerrainCanvas.jsx:168:16          
+default                                             variable  src/ui/components/board/TerrainGridOverlay.jsx:114:16     
+default                                             variable  src/ui/components/board/TokenBubbles.jsx:334:16           
+default                                             variable  src/ui/components/board/TokenCard.jsx:647:16              
+default                                             function  src/ui/components/board/TokenHitArt.jsx:153:16            
+default                                             variable  src/ui/components/board/TokenInspectPopup.jsx:183:16      
+default                                             variable  src/ui/components/board/TopBarTip.jsx:12:16               
+default                                             variable  src/ui/components/board/WorkPlateLayer.jsx:287:16         
+default                                             variable  src/ui/components/combat/CombatGlyph.jsx:20:16            
+default                                             variable  src/ui/components/combat/EnemyCard.jsx:122:16             
+default                                             variable  src/ui/components/combat/FightPanel.jsx:681:16            
+default                                             variable  src/ui/components/combat/FightPanelPopup.jsx:160:16       
+default                                             variable  src/ui/components/combat/FightTab.jsx:124:16              
+default                                             variable  src/ui/components/dev/AnimationStudioModal.jsx:668:16     
+default                                             variable  src/ui/components/dev/DevSpawnItemModal.jsx:124:16        
+default                                             variable  src/ui/components/dock/DockEquipmentGrid.jsx:219:16       
+default                                             variable  src/ui/components/dock/DockHeroFigure.jsx:527:16          
+default                                             variable  src/ui/components/dock/HeroDockTab.jsx:300:16             
+default                                             variable  src/ui/components/drawer/BankItemWindow.jsx:76:16         
+default                                             variable  src/ui/components/drawer/HeroInspectionSheet.jsx:283:16   
+default                                             variable  src/ui/components/drawer/InspectionPanel.jsx:48:16        
+default                                             variable  src/ui/components/drawer/ItemTip.jsx:161:16               
+default                                             variable  src/ui/components/drawer/LeaveMatControl.jsx:63:16        
+default                                             variable  src/ui/components/drawer/UpkeepSummaryPanel.jsx:72:16     
+default                                             variable  …/components/encyclopedia/EncyclopediaChartView.jsx:482:16
+default                                             variable  src/ui/components/encyclopedia/EncyclopediaPanel.jsx:89:16
+default                                             variable  src/ui/components/notifications/BannerStack.jsx:132:16    
+default                                             variable  src/ui/components/notifications/ItemStubColumn.jsx:342:16 
+default                                             function  …/ui/components/notifications/ScreenCalloutLayer.jsx:63:16
+GLIDE_MS                                                      src/ui/components/notifications/stubGlide.js:13:14        
+default                                             variable  src/ui/components/title/NewGameScreen.jsx:147:16          
+default                                             variable  src/ui/components/title/TitleScreen.jsx:173:16            
+useViewport                                                   src/ui/context/ViewportContext.jsx:30:14                  
+default                                             function  src/ui/dev/AnimationDevSection.jsx:66:16                  
+default                                             function  src/ui/dev/AtlasDevSection.jsx:117:16                     
+default                                             function  src/ui/dev/BankDevSection.jsx:52:16                       
+default                                             function  src/ui/dev/ClasslessDevSection.jsx:63:16                  
+default                                             variable  src/ui/dev/CombatKit.jsx:99:16                            
+default                                             function  src/ui/dev/CombatScreenDevSection.jsx:60:16               
+default                                             function  src/ui/dev/DamageTypesDevSection.jsx:35:16                
+default                                             function  src/ui/dev/EncountersDevSection.jsx:35:16                 
+default                                             function  src/ui/dev/EnemyMovesDevSection.jsx:35:16                 
+default                                             function  src/ui/dev/FarmingDevSection.jsx:59:16                    
+default                                             function  src/ui/dev/FishingDevSection.jsx:46:16                    
+default                                             function  src/ui/dev/ForestryDevSection.jsx:59:16                   
+default                                             function  src/ui/dev/GearDefenceDevSection.jsx:35:16                
+default                                             function  src/ui/dev/GearDevSection.jsx:46:16                       
+default                                             function  src/ui/dev/GuildHallDevSection.jsx:209:16                 
+default                                             function  src/ui/dev/MiningDevSection.jsx:48:16                     
+default                                             function  src/ui/dev/NotificationsDevSection.jsx:48:16              
+default                                             function  src/ui/dev/OrchardDevSection.jsx:59:16                    
+default                                             function  src/ui/dev/perf/PerfDevSection.jsx:73:16                  
+default                                             variable  src/ui/dev/perf/PerfProfiler.jsx:94:16                    
+default                                             function  src/ui/dev/PerksDevSection.jsx:54:16                      
+default                                             function  src/ui/dev/SkillLoopsDevSection.jsx:72:16                 
+default                                             function  src/ui/dev/StationsDevSection.jsx:48:16                   
+default                                             function  src/ui/dev/StatusesDevSection.jsx:48:16                   
+default                                             variable  src/ui/dev/StyleSheetPage.jsx:1097:16                     
+default                                             function  src/ui/dev/SuppliesDevSection.jsx:35:16                   
+default                                             function  src/ui/dev/ToolsBreakDevSection.jsx:70:16                 
+default                                             function  src/ui/dev/WorkConsumablesDevSection.jsx:46:16            
+default                                             variable  src/ui/dev/WorkPlateDemo.jsx:214:16                       
+default                                             variable  src/ui/dnd/DragGhost.jsx:139:16                           
+default                                             function  src/ui/guildInspectSelection.js:32:16                     
+default                                             function  src/ui/hooks/useBoardScale.js:104:16                      
+default                                             function  src/ui/hooks/useMatSize.js:38:16                          
+default                                             variable  src/ui/modals/TypographyScaleModal.jsx:138:16             
+ReactRoot                                                     src/ui/ReactRoot.jsx:76:14                                
+rpsOutcome                      CombatFormulas                src/utils/CombatFormulas.js:25:10                         
+weightedChoice                                      function  src/utils/RNG.js:29:17                                    
+shuffle                                             function  src/utils/RNG.js:53:17                                    
+Duplicate exports (158)
+DatabaseManager|default                   src/config/DatabaseManager.js                           
+HERO_PORTRAITS|default                    src/config/registries/heroPortraits.js                  
+reportContentIntegrity|default            src/systems/core/ContentAudit.js                        
+SaveManager|default                       src/systems/core/SaveManager.js                         
+carries|heroCarries                       src/systems/effects/LiveEffects.js                      
+EquipmentManager|default                  src/systems/equipment/EquipmentManager.js               
+HeroManager|default                       src/systems/hero/HeroManager.js                         
+XpRateTracker|default                     src/systems/hero/XpRateTracker.js                       
+GuildUpgradeManager|default               src/systems/progression/GuildUpgradeManager.js          
+ArrivalCard|default                       src/ui/components/atlas/ArrivalCard.jsx                 
+AtlasTome|default                         src/ui/components/atlas/AtlasTome.jsx                   
+MapPreview|default                        src/ui/components/atlas/MapPreview.jsx                  
+SettleTitle|default                       src/ui/components/atlas/SettleTitle.jsx                 
+WorldCamera|default                       src/ui/components/atlas/WorldCamera.jsx                 
+WorldMap|default                          src/ui/components/atlas/WorldMap.jsx                    
+WorldPanel|default                        src/ui/components/atlas/WorldPanel.jsx                  
+WorldScreen|default                       src/ui/components/atlas/WorldScreen.jsx                 
+ArrowScrollList|default                   src/ui/components/base/ArrowScrollList.jsx              
+BannerArt|default                         src/ui/components/base/BannerArt.jsx                    
+CloseX|default                            src/ui/components/base/CloseX.jsx                       
+EntityRibbon|default                      src/ui/components/base/EntityRibbon.jsx                 
+ErrorBoundary|default                     src/ui/components/base/ErrorBoundary.jsx                
+FPSCounter|default                        src/ui/components/base/FPSCounter.jsx                   
+GIModal|default                           src/ui/components/base/GIModal.jsx                      
+ItemIcon|default                          src/ui/components/base/ItemIcon.jsx                     
+KitButton|default                         src/ui/components/base/KitButton.jsx                    
+ParticleOverlay|default                   src/ui/components/base/ParticleOverlay.jsx              
+PixelFrame|default                        src/ui/components/base/PixelFrame.jsx                   
+PixelGlyph|default                        src/ui/components/base/PixelGlyph.jsx                   
+ProgressBar|default                       src/ui/components/base/ProgressBar.jsx                  
+SkillIcon|default                         src/ui/components/base/SkillIcon.jsx                    
+StatCell|default                          src/ui/components/base/StatCell.jsx                     
+TokenSprite|default                       src/ui/components/base/TokenSprite.jsx                  
+Tooltip|default                           src/ui/components/base/Tooltip.jsx                      
+VitalBar|default                          src/ui/components/base/VitalBar.jsx                     
+AmbientLife|default                       src/ui/components/board/AmbientLife.jsx                 
+AnimatedEnemySprite|default               src/ui/components/board/AnimatedEnemySprite.jsx         
+AnimatedHeroSprite|default                src/ui/components/board/AnimatedHeroSprite.jsx          
+Board|default                             src/ui/components/board/Board.jsx                       
+Bubble|default                            src/ui/components/board/Bubble.jsx                      
+BubbleText|default                        src/ui/components/board/BubbleText.jsx                  
+CalloutLayer|default                      src/ui/components/board/CalloutLayer.jsx                
+TOOL_CALLOUT_GAP_MS|INPUT_CALLOUT_GAP_MS  src/ui/components/board/callouts.js                     
+CampReachRing|default                     src/ui/components/board/CampReachRing.jsx               
+MARK_ART_PX|MARK_SCREEN_PX                src/ui/components/board/DragMarks.jsx                   
+FightLayer|default                        src/ui/components/board/FightLayer.jsx                  
+FlagLayer|default                         src/ui/components/board/FlagLayer.jsx                   
+FlagMark|default                          src/ui/components/board/FlagMark.jsx                    
+MatFxLayer|default                        src/ui/components/board/fx/MatFxLayer.jsx               
+GuildHallBoard|default                    src/ui/components/board/GuildHallBoard.jsx              
+GuildHallDetails|default                  src/ui/components/board/GuildHallDetails.jsx            
+GuildHallEffectsPopover|default           src/ui/components/board/GuildHallEffectsPopover.jsx     
+HallCamera|default                        src/ui/components/board/HallCamera.jsx                  
+HallCeremony|default                      src/ui/components/board/HallCeremony.jsx                
+HallSky|default                           src/ui/components/board/HallSky.jsx                     
+HealthBar|default                         src/ui/components/board/HealthBar.jsx                   
+HeroBubbleLayer|default                   src/ui/components/board/HeroBubbleLayer.jsx             
+HIT_PERIOD_MS|ATTACK_ONCE_MS              src/ui/components/board/hitAnimations.js                
+IdlePlate|default                         src/ui/components/board/IdlePlate.jsx                   
+LevelUpFloats|default                     src/ui/components/board/LevelUpFloat.jsx                
+MatBoard|default                          src/ui/components/board/MatBoard.jsx                    
+MatCapBadge|default                       src/ui/components/board/MatCapBadge.jsx                 
+MatHero|default                           src/ui/components/board/MatHero.jsx                     
+MapModeToggles|default                    src/ui/components/board/MatModeControls.jsx             
+MatRegionName|default                     src/ui/components/board/MatRegionName.jsx               
+MatRings|default                          src/ui/components/board/MatRings.jsx                    
+MatToken|default                          src/ui/components/board/MatToken.jsx                    
+MatTopBar|default                         src/ui/components/board/MatTopBar.jsx                   
+MatUpkeepBadge|default                    src/ui/components/board/MatUpkeepBadge.jsx              
+OrderDragLine|default                     src/ui/components/board/OrderDragLine.jsx               
+PassiveProductionTooltip|default          src/ui/components/board/PassiveProductionTooltip.jsx    
+ProblemMark|default                       src/ui/components/board/ProblemMark.jsx                 
+QuestTooltip|default                      src/ui/components/board/QuestTooltip.jsx                
+RecipeList|default                        src/ui/components/board/RecipeList.jsx                  
+RingBadge|default                         src/ui/components/board/RingBadge.jsx                   
+SpeechFrame|default                       src/ui/components/board/SpeechFrame.jsx                 
+SpriteLayerView|default                   src/ui/components/board/SpriteLayerView.jsx             
+StarOutline|default                       src/ui/components/board/StarOutline.jsx                 
+SupportLinkLayer|default                  src/ui/components/board/SupportLinkLayer.jsx            
+TerrainCanvas|default                     src/ui/components/board/TerrainCanvas.jsx               
+TerrainGridOverlay|default                src/ui/components/board/TerrainGridOverlay.jsx          
+TokenBubbles|default                      src/ui/components/board/TokenBubbles.jsx                
+TokenCard|default                         src/ui/components/board/TokenCard.jsx                   
+TokenHitArt|default                       src/ui/components/board/TokenHitArt.jsx                 
+TokenInspectPopup|default                 src/ui/components/board/TokenInspectPopup.jsx           
+TopBarTip|default                         src/ui/components/board/TopBarTip.jsx                   
+WorkPlateLayer|default                    src/ui/components/board/WorkPlateLayer.jsx              
+CombatGlyph|default                       src/ui/components/combat/CombatGlyph.jsx                
+EnemyCardTip|default                      src/ui/components/combat/EnemyCard.jsx                  
+LiveFightPanel|default                    src/ui/components/combat/FightPanel.jsx                 
+FightPanelPopup|default                   src/ui/components/combat/FightPanelPopup.jsx            
+FightTabStrip|default                     src/ui/components/combat/FightTab.jsx                   
+AnimationStudioModal|default              src/ui/components/dev/AnimationStudioModal.jsx          
+DevSpawnItemModal|default                 src/ui/components/dev/DevSpawnItemModal.jsx             
+BankHeroPanel|default                     src/ui/components/dock/BankHeroPanel.jsx                
+BottomHeroDock|default                    src/ui/components/dock/BottomHeroDock.jsx               
+DockEquipmentGrid|default                 src/ui/components/dock/DockEquipmentGrid.jsx            
+DockHeroFigure|default                    src/ui/components/dock/DockHeroFigure.jsx               
+HeroDockTab|default                       src/ui/components/dock/HeroDockTab.jsx                  
+BankDrawer|default                        src/ui/components/drawer/BankDrawer.jsx                 
+BankItemWindow|default                    src/ui/components/drawer/BankItemWindow.jsx             
+BankTab|default                           src/ui/components/drawer/BankTab.jsx                    
+GuildUpgradeInspection|default            src/ui/components/drawer/GuildUpgradeInspection.jsx     
+HeroInspectionSheet|default               src/ui/components/drawer/HeroInspectionSheet.jsx        
+InspectionPanel|default                   src/ui/components/drawer/InspectionPanel.jsx            
+ItemTipContent|default                    src/ui/components/drawer/ItemTip.jsx                    
+LeaveMatControl|default                   src/ui/components/drawer/LeaveMatControl.jsx            
+ShopPanel|default                         src/ui/components/drawer/ShopPanel.jsx                  
+UpkeepSummaryPanel|default                src/ui/components/drawer/UpkeepSummaryPanel.jsx         
+ChartView|default                         src/ui/components/encyclopedia/EncyclopediaChartView.jsx
+InspectPanel|default                      src/ui/components/encyclopedia/EncyclopediaPanel.jsx    
+EncyclopediaScreen|default                src/ui/components/encyclopedia/EncyclopediaScreen.jsx   
+CatchUpOverlay|default                    src/ui/components/hud/CatchUpOverlay.jsx                
+BubbleMenu|default                        src/ui/components/nav/BubbleMenu.jsx                    
+BannerStack|default                       src/ui/components/notifications/BannerStack.jsx         
+ItemStubColumn|default                    src/ui/components/notifications/ItemStubColumn.jsx      
+ScreenCalloutLayer|default                src/ui/components/notifications/ScreenCalloutLayer.jsx  
+TestDashboard|default                     src/ui/components/TestDashboard.jsx                     
+NewGameScreen|default                     src/ui/components/title/NewGameScreen.jsx               
+TitleScreen|default                       src/ui/components/title/TitleScreen.jsx                 
+AnimationDevSection|default               src/ui/dev/AnimationDevSection.jsx                      
+AtlasDevSection|default                   src/ui/dev/AtlasDevSection.jsx                          
+BankDevSection|default                    src/ui/dev/BankDevSection.jsx                           
+ClasslessDevSection|default               src/ui/dev/ClasslessDevSection.jsx                      
+CombatKit|default                         src/ui/dev/CombatKit.jsx                                
+CombatScreenDevSection|default            src/ui/dev/CombatScreenDevSection.jsx                   
+DamageTypesDevSection|default             src/ui/dev/DamageTypesDevSection.jsx                    
+EncountersDevSection|default              src/ui/dev/EncountersDevSection.jsx                     
+EnemyMovesDevSection|default              src/ui/dev/EnemyMovesDevSection.jsx                     
+FarmingDevSection|default                 src/ui/dev/FarmingDevSection.jsx                        
+FishingDevSection|default                 src/ui/dev/FishingDevSection.jsx                        
+ForestryDevSection|default                src/ui/dev/ForestryDevSection.jsx                       
+GearDefenceDevSection|default             src/ui/dev/GearDefenceDevSection.jsx                    
+GearDevSection|default                    src/ui/dev/GearDevSection.jsx                           
+GuildHallDevSection|default               src/ui/dev/GuildHallDevSection.jsx                      
+MiningDevSection|default                  src/ui/dev/MiningDevSection.jsx                         
+NotificationsDevSection|default           src/ui/dev/NotificationsDevSection.jsx                  
+OrchardDevSection|default                 src/ui/dev/OrchardDevSection.jsx                        
+PerfDevSection|default                    src/ui/dev/perf/PerfDevSection.jsx                      
+PerfProfiler|default                      src/ui/dev/perf/PerfProfiler.jsx                        
+PerksDevSection|default                   src/ui/dev/PerksDevSection.jsx                          
+SkillLoopsDevSection|default              src/ui/dev/SkillLoopsDevSection.jsx                     
+StationsDevSection|default                src/ui/dev/StationsDevSection.jsx                       
+StatusesDevSection|default                src/ui/dev/StatusesDevSection.jsx                       
+StyleSheetPage|default                    src/ui/dev/StyleSheetPage.jsx                           
+SuppliesDevSection|default                src/ui/dev/SuppliesDevSection.jsx                       
+ToolsBreakDevSection|default              src/ui/dev/ToolsBreakDevSection.jsx                     
+WorkConsumablesDevSection|default         src/ui/dev/WorkConsumablesDevSection.jsx                
+WorkPlateDemo|default                     src/ui/dev/WorkPlateDemo.jsx                            
+DragGhost|default                         src/ui/dnd/DragGhost.jsx                                
+selectGuildInspectSelection|default       src/ui/guildInspectSelection.js                         
+useBoardScale|default                     src/ui/hooks/useBoardScale.js                           
+useMatSize|default                        src/ui/hooks/useMatSize.js                              
+HeroEditModal|default                     src/ui/modals/HeroEditModal.jsx                         
+SettingsModal|default                     src/ui/modals/SettingsModal.jsx                         
+SlotSelectionModal|default                src/ui/modals/SlotSelectionModal.jsx                    
+TypographyScaleModal|default              src/ui/modals/TypographyScaleModal.jsx                  
+ReactRoot|default                         src/ui/ReactRoot.jsx                                    
+Configuration hints (2)
+cms/**    knip.json  Remove from ignore                                           
+.css      knip.json  Compiled extension excluded by project (imports not followed)
