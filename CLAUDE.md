@@ -42,6 +42,12 @@ built, so batches stay small and the owner looks often):
   session (project skills in `.claude/skills/`); each reads its own
   checklist and begins. Pick the model in the app first (Fable for the
   director).
+- **Reviewer** (owner, 2026-11-06): type `/reviewer` in a fresh session to
+  read one area of the code review round 4
+  ([`concept_code_review_2026.md`](docs/active/concept_code_review_2026.md)).
+  Read-only on code, on branch `review`; it writes verified findings into
+  `docs/active/review/`, the planning agent turns them into tickets and fix
+  briefs, the director fixes them.
 - **Content agent** (owner, 2026-11-04): type `/content` in a fresh session to plan
   or tweak items, recipes, Tokens and buildings. It works on branch
   `planning-content`, by the owner's rules in
@@ -158,6 +164,12 @@ concept doc or brief.
 - **`docs/active/NOW.md`**: what's in flight and what's next, one screen.
   Start here. **`HANDOFF.md`** (the state a fresh director resumes from) and
   **`STATUS.md`** (the wave's living table and summaries) sit beside it.
+- **`docs/reference/ARCHITECTURE.md`**: the map of the code as it is (layers,
+  the tick, saves, drawing, the content boundary, what no longer exists),
+  checked against the code. Read it before reading code; if it disagrees with
+  the code, the code wins and the doc gets fixed.
+- **`docs/active/review/`**: the code review round 4's findings, baselines and
+  triage records ([README](docs/active/review/README.md)).
 - **`docs/reference/`**: [GDD](docs/reference/GDD.md) (what the game is),
   [TICKETS](docs/reference/TICKETS.md) (the only backlog),
   [TESTING](docs/reference/TESTING.md) (merge gate, verifying in the game), and

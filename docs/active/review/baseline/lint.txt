@@ -1,0 +1,7 @@
+# eslint, 2026-11-06, 93338609, npm run lint (summary: counts per rule)
+errors 74 warnings 5
+   64 no-unused-vars
+    5 react-hooks/rules-of-hooks
+    5 react-hooks/exhaustive-deps
+    4 no-useless-assignment
+    1 no-constant-condition

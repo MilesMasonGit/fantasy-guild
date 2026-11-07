@@ -1,0 +1,1647 @@
+# jscpd, 2026-11-06, 93338609, npm run duplication
+Using config from .jscpd.json
+config file .jscpd.json: unknown field '//thresholds'
+[1mClone found (javascript)[22m
+ - config\matTuning.js [233:21 - 243:16]
+   config\playmatTuning.js [545:9 - 555:16]
+[90m 233 │ [39m    if (!TUNABLE || !def || !Number.isFinite(value)) return false;
+[90m 234 │ [39m    const next = Math.max(def.min, Math.min(def.max, value));
+[90m 235 │ [39m    if (next === values[key]) return false;
+[90m 236 │ [39m    values[key] = next;
+[90m 237 │ [39m    persist();
+[90m 238 │ [39m    listeners.forEach(fn => fn(key, next));
+[90m 239 │ [39m    return true;
+[90m 240 │ [39m}
+[90m 241 │ [39m
+[90m 242 │ [39m/** Put everything back to how it ships. */
+[90m 243 │ [39mexport function resetMatTuning() {
+[90m 545 │ [39m    if (!def || !Number.isFinite(value)) return false;
+[90m 546 │ [39m    const next = Math.max(def.min, Math.min(def.max, value));
+[90m 547 │ [39m    if (next === values[key]) return false;
+[90m 548 │ [39m    values[key] = next;
+[90m 549 │ [39m    persist();
+[90m 550 │ [39m    listeners.forEach(fn => fn(key, next));
+[90m 551 │ [39m    return true;
+[90m 552 │ [39m}
+[90m 553 │ [39m
+[90m 554 │ [39m/** Put everything back to how it ships. */
+[90m 555 │ [39mexport function resetTuning() {
+
+[1mClone found (javascript)[22m
+ - config\registries\itemRegistry.js [47:69 - 57:6]
+   config\registries\itemRegistry.js [60:67 - 70:6]
+[90m  47 │ [39m    for (const [path, module] of Object.entries(jsonItemFilesSingle || {})) {
+[90m  48 │ [39m        try {
+[90m  49 │ [39m            const itemsData = module.default || module;
+[90m  50 │ [39m            for (const [itemId, itemDef] of Object.entries(itemsData)) {
+[90m  51 │ [39m                if (!itemDef.id) itemDef.id = itemId;
+[90m  52 │ [39m                dynamicItems[itemId] = migrateEffectIds(migrateSkillIds(itemDef));
+[90m  53 │ [39m            }
+[90m  54 │ [39m        } catch (error) {
+[90m  55 │ [39m            console.warn(`Error loading item JSON from ${path}:`, error);
+[90m  56 │ [39m        }
+[90m  57 │ [39m    }
+[90m  60 │ [39m    for (const [path, module] of Object.entries(jsonItemFilesGlob || {})) {
+[90m  61 │ [39m        try {
+[90m  62 │ [39m            const itemsData = module.default || module;
+[90m  63 │ [39m            for (const [itemId, itemDef] of Object.entries(itemsData)) {
+[90m  64 │ [39m                if (!itemDef.id) itemDef.id = itemId;
+[90m  65 │ [39m                dynamicItems[itemId] = migrateEffectIds(migrateSkillIds(itemDef));
+[90m  66 │ [39m            }
+[90m  67 │ [39m        } catch (error) {
+[90m  68 │ [39m            console.warn(`Error loading item JSON from ${path}:`, error);
+[90m  69 │ [39m        }
+[90m  70 │ [39m    }
+
+[1mClone found (javascript)[22m
+ - systems\atlas\Budget.js [139:44 - 156:2]
+   systems\world\cellMat.js [87:50 - 103:2]
+[90m 139 │ [39m    const keys = Object.keys(weights).sort();
+[90m 140 │ [39m    const sum = keys.reduce((n, k) => n + Math.max(0, weights[k]), 0);
+[90m 141 │ [39m    const out = Object.fromEntries(keys.map(k => [k, 0]));
+[90m 142 │ [39m    if (!(sum > 0) || !(total > 0)) return out;
+[90m 143 │ [39m
+[90m 144 │ [39m    const rest = [];
+[90m 145 │ [39m    let given = 0;
+[90m 146 │ [39m    for (const k of keys) {
+[90m 147 │ [39m        const quota = total * Math.max(0, weights[k]) / sum;
+[90m 148 │ [39m        const whole = Math.floor(quota);
+[90m 149 │ [39m        out[k] = whole;
+[90m 150 │ [39m        given += whole;
+[90m 151 │ [39m        rest.push({ k, frac: quota - whole });
+[90m 152 │ [39m    }
+[90m 153 │ [39m    rest.sort((a, b) => b.frac - a.frac || byText(a.k, b.k));
+[90m 154 │ [39m    for (let i = 0; i < total - given; i++) out[rest[i % rest.length].k]++;
+[90m 155 │ [39m    return out;
+[90m 156 │ [39m}
+[90m  87 │ [39m    const keys = Object.keys(weights).sort(byText);
+[90m  88 │ [39m    const sum = keys.reduce((n, k) => n + Math.max(0, weights[k]), 0);
+[90m  89 │ [39m    const out = Object.fromEntries(keys.map(k => [k, 0]));
+[90m  90 │ [39m    if (!(sum > 0) || !(total > 0)) return out;
+[90m  91 │ [39m    const rest = [];
+[90m  92 │ [39m    let given = 0;
+[90m  93 │ [39m    for (const k of keys) {
+[90m  94 │ [39m        const quota = total * Math.max(0, weights[k]) / sum;
+[90m  95 │ [39m        const whole = Math.floor(quota);
+[90m  96 │ [39m        out[k] = whole;
+[90m  97 │ [39m        given += whole;
+[90m  98 │ [39m        rest.push({ k, frac: quota - whole });
+[90m  99 │ [39m    }
+[90m 100 │ [39m    rest.sort((a, b) => b.frac - a.frac || byText(a.k, b.k));
+[90m 101 │ [39m    for (let i = 0; i < total - given; i++) out[rest[i % rest.length].k]++;
+[90m 102 │ [39m    return out;
+[90m 103 │ [39m}
+
+[1mClone found (javascript)[22m
+ - systems\atlas\Layout.js [495:29 - 502:25]
+   systems\atlas\StoneShapes.js [45:30 - 52:21]
+[90m 495 │ [39m    const direction = () => {
+[90m 496 │ [39m        for (let k = 0; k < 32; k++) {
+[90m 497 │ [39m            const x = random() * 2 - 1;
+[90m 498 │ [39m            const y = random() * 2 - 1;
+[90m 499 │ [39m            const d = x * x + y * y;
+[90m 500 │ [39m            if (d > 0.04 && d <= 1) {
+[90m 501 │ [39m                const l = Math.sqrt(d);
+[90m 502 │ [39m                return { x: x / l, y: y / l };
+[90m  45 │ [39mfunction directionOf(random) {
+[90m  46 │ [39m    for (let k = 0; k < 32; k++) {
+[90m  47 │ [39m        const x = random() * 2 - 1;
+[90m  48 │ [39m        const y = random() * 2 - 1;
+[90m  49 │ [39m        const d = x * x + y * y;
+[90m  50 │ [39m        if (d > 0.04 && d <= 1) {
+[90m  51 │ [39m            const l = Math.sqrt(d);
+[90m  52 │ [39m            return { ax: Math.round(1000 * x / l), ay: Math.round(1000 * y / l) };
+
+[1mClone found (javascript)[22m
+ - systems\atlas\StoneShapes.js [45:1 - 52:19]
+   systems\atlas\WaterShapes.js [1825:1 - 1832:19]
+[90m  45 │ [39mfunction directionOf(random) {
+[90m  46 │ [39m    for (let k = 0; k < 32; k++) {
+[90m  47 │ [39m        const x = random() * 2 - 1;
+[90m  48 │ [39m        const y = random() * 2 - 1;
+[90m  49 │ [39m        const d = x * x + y * y;
+[90m  50 │ [39m        if (d > 0.04 && d <= 1) {
+[90m  51 │ [39m            const l = Math.sqrt(d);
+[90m  52 │ [39m            return { ax: Math.round(1000 * x / l), ay: Math.round(1000 * y / l) };
+[90m1825 │ [39mfunction directionOf(random) {
+[90m1826 │ [39m    for (let k = 0; k < 32; k++) {
+[90m1827 │ [39m        const x = random() * 2 - 1;
+[90m1828 │ [39m        const y = random() * 2 - 1;
+[90m1829 │ [39m        const d = x * x + y * y;
+[90m1830 │ [39m        if (d > 0.04 && d <= 1) {
+[90m1831 │ [39m            const l = Math.sqrt(d);
+[90m1832 │ [39m            return [x / l, y / l];
+
+[1mClone found (javascript)[22m
+ - systems\atlas\TerrainMap.js [117:24 - 131:21]
+   systems\board\TerrainLattice.js [274:24 - 288:21]
+[90m 117 │ [39m            dist[i] = 0;
+[90m 118 │ [39m            queue.push(i);
+[90m 119 │ [39m        }
+[90m 120 │ [39m    }
+[90m 121 │ [39m    for (let head = 0; head < queue.length; head++) {
+[90m 122 │ [39m        const i = queue[head];
+[90m 123 │ [39m        const c = i % cols;
+[90m 124 │ [39m        const r = (i - c) / cols;
+[90m 125 │ [39m        for (let dr = -1; dr <= 1; dr++) {
+[90m 126 │ [39m            for (let dc = -1; dc <= 1; dc++) {
+[90m 127 │ [39m                const nc = c + dc;
+[90m 128 │ [39m                const nr = r + dr;
+[90m 129 │ [39m                if (nc < 0 || nr < 0 || nc >= cols || nr >= rows) continue;
+[90m 130 │ [39m                const n = nr * cols + nc;
+[90m 131 │ [39m                if (dist[n] === -1) {
+[90m 274 │ [39m            done[i] = 1;
+[90m 275 │ [39m            queue.push(i);
+[90m 276 │ [39m        }
+[90m 277 │ [39m    }
+[90m 278 │ [39m    for (let head = 0; head < queue.length; head++) {
+[90m 279 │ [39m        const i = queue[head];
+[90m 280 │ [39m        const c = i % cols;
+[90m 281 │ [39m        const r = (i - c) / cols;
+[90m 282 │ [39m        for (let dr = -1; dr <= 1; dr++) {
+[90m 283 │ [39m            for (let dc = -1; dc <= 1; dc++) {
+[90m 284 │ [39m                const nc = c + dc;
+[90m 285 │ [39m                const nr = r + dr;
+[90m 286 │ [39m                if (nc < 0 || nr < 0 || nc >= cols || nr >= rows) continue;
+[90m 287 │ [39m                const n = nr * cols + nc;
+[90m 288 │ [39m                if (done[n]) continue;
+
+[1mClone found (javascript)[22m
+ - systems\atlas\TerrainMap.js [124:33 - 131:21]
+   systems\atlas\TerrainMap.js [160:98 - 167:25]
+[90m 124 │ [39m        const r = (i - c) / cols;
+[90m 125 │ [39m        for (let dr = -1; dr <= 1; dr++) {
+[90m 126 │ [39m            for (let dc = -1; dc <= 1; dc++) {
+[90m 127 │ [39m                const nc = c + dc;
+[90m 128 │ [39m                const nr = r + dr;
+[90m 129 │ [39m                if (nc < 0 || nr < 0 || nc >= cols || nr >= rows) continue;
+[90m 130 │ [39m                const n = nr * cols + nc;
+[90m 131 │ [39m                if (dist[n] === -1) {
+[90m 160 │ [39m            if (i === home || c === 0 || r === 0 || c === cols - 1 || r === rows - 1) open = true;
+[90m 161 │ [39m            for (let dr = -1; dr <= 1; dr++) {
+[90m 162 │ [39m                for (let dc = -1; dc <= 1; dc++) {
+[90m 163 │ [39m                    const nc = c + dc;
+[90m 164 │ [39m                    const nr = r + dr;
+[90m 165 │ [39m                    if (nc < 0 || nr < 0 || nc >= cols || nr >= rows) continue;
+[90m 166 │ [39m                    const n = nr * cols + nc;
+[90m 167 │ [39m                    if (water[n] || seen[n]) continue;
+
+[1mClone found (javascript)[22m
+ - systems\atlas\WaterShapes.js [156:1 - 169:6]
+   systems\board\TerrainGrass.js [163:1 - 177:6]
+[90m 156 │ [39m});
+[90m 157 │ [39m
+[90m 158 │ [39m// ---------------------------------------------------------------------------------------------
+[90m 159 │ [39m// Noise
+[90m 160 │ [39m
+[90m 161 │ [39m/** A 32-bit hash of two integers and a salt (lowbias32's finaliser). */
+[90m 162 │ [39mfunction hash(x, y, salt) {
+[90m 163 │ [39m    let h = Math.imul(x + 0x632be5ab, 0x9e3779b1) ^ Math.imul(y + 0x85157af5, 0x85ebca77) ^ salt;
+[90m 164 │ [39m    h = Math.imul(h ^ (h >>> 16), 0x7feb352d);
+[90m 165 │ [39m    h = Math.imul(h ^ (h >>> 15), 0x846ca68b);
+[90m 166 │ [39m    return (h ^ (h >>> 16)) >>> 0;
+[90m 167 │ [39m}
+[90m 168 │ [39m
+[90m 169 │ [39mconst corner = (gx, gy, salt) => (hash(gx, gy, salt) >>> 8) / 16777216;
+[90m 163 │ [39m});
+[90m 164 │ [39m
+[90m 165 │ [39m// ---------------------------------------------------------------------------------------------
+[90m 166 │ [39m// Hashing and noise
+[90m 167 │ [39m
+[90m 168 │ [39m/** A 32-bit hash of two integers and a salt (lowbias32's finaliser). */
+[90m 169 │ [39mfunction hash(x, y, salt) {
+[90m 170 │ [39m    let h = Math.imul(x + 0x632be5ab, 0x9e3779b1) ^ Math.imul(y + 0x85157af5, 0x85ebca77) ^ salt;
+[90m 171 │ [39m    h = Math.imul(h ^ (h >>> 16), 0x7feb352d);
+[90m 172 │ [39m    h = Math.imul(h ^ (h >>> 15), 0x846ca68b);
+[90m 173 │ [39m    return (h ^ (h >>> 16)) >>> 0;
+[90m 174 │ [39m}
+[90m 175 │ [39m
+[90m 176 │ [39m/** A Region's salt for one kind of choice. */
+[90m 177 │ [39mconst saltOf = (seed, which) => hash(seed | 0, which, 0x2545f491);
+
+[1mClone found (javascript)[22m
+ - systems\atlas\WaterShapes.js [162:14 - 169:6]
+   systems\board\TerrainLattice.js [166:16 - 173:6]
+[90m 162 │ [39mfunction hash(x, y, salt) {
+[90m 163 │ [39m    let h = Math.imul(x + 0x632be5ab, 0x9e3779b1) ^ Math.imul(y + 0x85157af5, 0x85ebca77) ^ salt;
+[90m 164 │ [39m    h = Math.imul(h ^ (h >>> 16), 0x7feb352d);
+[90m 165 │ [39m    h = Math.imul(h ^ (h >>> 15), 0x846ca68b);
+[90m 166 │ [39m    return (h ^ (h >>> 16)) >>> 0;
+[90m 167 │ [39m}
+[90m 168 │ [39m
+[90m 169 │ [39mconst corner = (gx, gy, salt) => (hash(gx, gy, salt) >>> 8) / 16777216;
+[90m 166 │ [39mfunction hash32(x, y, salt) {
+[90m 167 │ [39m    let h = Math.imul(x + 0x632be5ab, 0x9e3779b1) ^ Math.imul(y + 0x85157af5, 0x85ebca77) ^ salt;
+[90m 168 │ [39m    h = Math.imul(h ^ (h >>> 16), 0x7feb352d);
+[90m 169 │ [39m    h = Math.imul(h ^ (h >>> 15), 0x846ca68b);
+[90m 170 │ [39m    return (h ^ (h >>> 16)) >>> 0;
+[90m 171 │ [39m}
+[90m 172 │ [39m
+[90m 173 │ [39mconst smoothstep = (t) => t * t * (3 - 2 * t);
+
+[1mClone found (javascript)[22m
+ - systems\atlas\WaterShapes.js [319:26 - 325:10]
+   systems\atlas\WaterShapes.js [331:19 - 337:10]
+[90m 319 │ [39mfunction segmentDistance2(px, py, ax, ay, bx, by) {
+[90m 320 │ [39m    const dx = bx - ax;
+[90m 321 │ [39m    const dy = by - ay;
+[90m 322 │ [39m    const L2 = dx * dx + dy * dy;
+[90m 323 │ [39m    let t = L2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / L2 : 0;
+[90m 324 │ [39m    t = t < 0 ? 0 : t > 1 ? 1 : t;
+[90m 325 │ [39m    const ex = px - (ax + dx * t);
+[90m 331 │ [39mfunction toSegment(px, py, ax, ay, bx, by) {
+[90m 332 │ [39m    const dx = bx - ax;
+[90m 333 │ [39m    const dy = by - ay;
+[90m 334 │ [39m    const L2 = dx * dx + dy * dy;
+[90m 335 │ [39m    let t = L2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / L2 : 0;
+[90m 336 │ [39m    t = t < 0 ? 0 : t > 1 ? 1 : t;
+[90m 337 │ [39m    const cx = ax + dx * t;
+
+[1mClone found (javascript)[22m
+ - systems\atlas\WaterShapes.js [348:37 - 356:23]
+   systems\atlas\WaterShapes.js [1187:64 - 1195:23]
+[90m 348 │ [39m    if (last < 2) return pts.slice();
+[90m 349 │ [39m    const keep = new Uint8Array(pts.length);
+[90m 350 │ [39m    keep[0] = 1;
+[90m 351 │ [39m    keep[last] = 1;
+[90m 352 │ [39m    const stack = [[0, last]];
+[90m 353 │ [39m    while (stack.length) {
+[90m 354 │ [39m        const [a, b] = stack.pop();
+[90m 355 │ [39m        let best = -1;
+[90m 356 │ [39m        let far = tol;
+[90m1187 │ [39m    if (last < 2) return { pts: pts.slice(), hws: hws.slice() };
+[90m1188 │ [39m    const keep = new Uint8Array(pts.length);
+[90m1189 │ [39m    keep[0] = 1;
+[90m1190 │ [39m    keep[last] = 1;
+[90m1191 │ [39m    const stack = [[0, last]];
+[90m1192 │ [39m    while (stack.length) {
+[90m1193 │ [39m        const [a, b] = stack.pop();
+[90m1194 │ [39m        let best = -1;
+[90m1195 │ [39m        let far = tol;
+
+[1mClone found (javascript)[22m
+ - systems\atlas\WaterShapes.js [552:44 - 558:14]
+   systems\atlas\WaterShapes.js [611:92 - 617:14]
+[90m 552 │ [39m    const { near, seen, touched } = scratch;
+[90m 553 │ [39m    const stamp = ++scratch.stamp;
+[90m 554 │ [39m    touched.length = 0;
+[90m 555 │ [39m    for (let k = 0; k + 1 < pts.length; k++) {
+[90m 556 │ [39m        const [ax, ay] = pts[k];
+[90m 557 │ [39m        const [bx, by] = pts[k + 1];
+[90m 558 │ [39m        const { i0, i1, j0, j1 } = span(lattice, Math.min(ax, bx) - reach, Math.min(ay, by) - reach, Math.max(ax, bx) + reach, Math.max(ay, by) + reach);
+[90m 611 │ [39m    const seg = bends ? (scratch.seg || (scratch.seg = new Int32Array(near.length))) : null;
+[90m 612 │ [39m    const stamp = ++scratch.stamp;
+[90m 613 │ [39m    touched.length = 0;
+[90m 614 │ [39m    for (let k = 0; k + 1 < pts.length; k++) {
+[90m 615 │ [39m        const [ax, ay] = pts[k];
+[90m 616 │ [39m        const [bx, by] = pts[k + 1];
+[90m 617 │ [39m        const wa = hs[k];
+
+[1mClone found (javascript)[22m
+ - systems\atlas\WaterShapes.js [557:36 - 562:49]
+   systems\atlas\WaterShapes.js [624:37 - 629:49]
+[90m 557 │ [39m        const [bx, by] = pts[k + 1];
+[90m 558 │ [39m        const { i0, i1, j0, j1 } = span(lattice, Math.min(ax, bx) - reach, Math.min(ay, by) - reach, Math.max(ax, bx) + reach, Math.max(ay, by) + reach);
+[90m 559 │ [39m        for (let j = j0; j <= j1; j++) {
+[90m 560 │ [39m            const y = lattice.y0 + j * step;
+[90m 561 │ [39m            for (let i = i0; i <= i1; i++) {
+[90m 562 │ [39m                const x = lattice.x0 + i * step;
+[90m 624 │ [39m        const L2 = dx * dx + dy * dy;
+[90m 625 │ [39m        const { i0, i1, j0, j1 } = span(lattice, Math.min(ax, bx) - reach, Math.min(ay, by) - reach, Math.max(ax, bx) + reach, Math.max(ay, by) + reach);
+[90m 626 │ [39m        for (let j = j0; j <= j1; j++) {
+[90m 627 │ [39m            const y = lattice.y0 + j * step;
+[90m 628 │ [39m            for (let i = i0; i <= i1; i++) {
+[90m 629 │ [39m                const x = lattice.x0 + i * step;
+
+[1mClone found (javascript)[22m
+ - systems\atlas\WaterShapes.js [629:48 - 635:23]
+   systems\atlas\WaterShapes.js [863:45 - 869:23]
+[90m 629 │ [39m                const x = lattice.x0 + i * step;
+[90m 630 │ [39m                let t = L2 > 0 ? ((x - ax) * dx + (y - ay) * dy) / L2 : 0;
+[90m 631 │ [39m                t = t < 0 ? 0 : t > 1 ? 1 : t;
+[90m 632 │ [39m                const ex = x - (ax + dx * t);
+[90m 633 │ [39m                const ey = y - (ay + dy * t);
+[90m 634 │ [39m                const d2 = ex * ex + ey * ey;
+[90m 635 │ [39m                if (d2 >= reach2) continue;
+[90m 863 │ [39m                const L2 = dx * dx + dy * dy;
+[90m 864 │ [39m                let t = L2 > 0 ? ((x - ax) * dx + (y - ay) * dy) / L2 : 0;
+[90m 865 │ [39m                t = t < 0 ? 0 : t > 1 ? 1 : t;
+[90m 866 │ [39m                const ex = x - (ax + dx * t);
+[90m 867 │ [39m                const ey = y - (ay + dy * t);
+[90m 868 │ [39m                const d2 = ex * ex + ey * ey;
+[90m 869 │ [39m                if (d2 < near) near = d2;
+
+[1mClone found (javascript)[22m
+ - systems\atlas\regionNames.js [73:40 - 79:2]
+   systems\atlas\seededRandom.js [16:42 - 22:2]
+[90m  73 │ [39m        state = (state + 0x6D2B79F5) | 0;
+[90m  74 │ [39m        let t = state;
+[90m  75 │ [39m        t = Math.imul(t ^ (t >>> 15), t | 1);
+[90m  76 │ [39m        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+[90m  77 │ [39m        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+[90m  78 │ [39m    };
+[90m  79 │ [39m}
+[90m  16 │ [39m        state = (state + 0x6D2B79F5) >>> 0;
+[90m  17 │ [39m        let t = state;
+[90m  18 │ [39m        t = Math.imul(t ^ (t >>> 15), t | 1);
+[90m  19 │ [39m        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+[90m  20 │ [39m        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+[90m  21 │ [39m    };
+[90m  22 │ [39m}
+
+[1mClone found (javascript)[22m
+ - systems\atlas\seededRandom.js [18:11 - 25:7]
+   ui\components\board\ambientGround.js [29:11 - 36:7]
+[90m  18 │ [39m        t = Math.imul(t ^ (t >>> 15), t | 1);
+[90m  19 │ [39m        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+[90m  20 │ [39m        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+[90m  21 │ [39m    };
+[90m  22 │ [39m}
+[90m  23 │ [39m
+[90m  24 │ [39m/** The seed after `seed`: a reroll steps the seed with this, so a run of rerolls replays. */
+[90m  25 │ [39mexport function nextSeed(seed) {
+[90m  29 │ [39m        t = Math.imul(t ^ (t >>> 15), t | 1);
+[90m  30 │ [39m        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+[90m  31 │ [39m        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+[90m  32 │ [39m    };
+[90m  33 │ [39m}
+[90m  34 │ [39m
+[90m  35 │ [39m/** An RGBA word as the canvas's bytes lie in memory (little-endian: red first). */
+[90m  36 │ [39mexport const rgbaWord = (r, g, b, a = 255) => ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
+
+[1mClone found (javascript)[22m
+ - systems\board\DealDamage.js [40:1 - 48:2]
+   systems\board\EffectActions.js [41:8 - 47:2]
+[90m  40 │ [39mfunction countMatches(statement, roles) {
+[90m  41 │ [39m    if (!usesCountedSelector(statement?.payload)) return 0;
+[90m  42 │ [39m    if (roles?.self == null) return 0;
+[90m  43 │ [39m    // The counted selector carries its own reach, so "per Coast Token on the
+[90m  44 │ [39m    // board" is as sayable as "per nearby Coast Token".
+[90m  45 │ [39m    return TileModifiers.filterTargets(roles.self, {
+[90m  46 │ [39m        to: statement.counted, reach: statement.counted?.reach
+[90m  47 │ [39m    }, roles.selfPoint || null).length;
+[90m  48 │ [39m}
+[90m  41 │ [39mexport function countMatches(statement, roles) {
+[90m  42 │ [39m    if (!usesCountedSelector(statement?.payload)) return 0;
+[90m  43 │ [39m    if (roles?.self == null) return 0;
+[90m  44 │ [39m    return TileModifiers.filterTargets(roles.self, {
+[90m  45 │ [39m        to: statement.counted, reach: statement.counted?.reach
+[90m  46 │ [39m    }, roles.selfPoint || null).length;
+[90m  47 │ [39m}
+
+[1mClone found (javascript)[22m
+ - systems\board\Orders.js [39:59 - 46:2]
+   ui\components\board\flagText.js [52:104 - 59:2]
+[90m  39 │ [39m    return hero && hero.status === 'wounded' ? hero : null;
+[90m  40 │ [39m}
+[90m  41 │ [39m
+[90m  42 │ [39m/** `0:42`, `4:05`. */
+[90m  43 │ [39mfunction clock(ms) {
+[90m  44 │ [39m    const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
+[90m  45 │ [39m    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+[90m  46 │ [39m}
+[90m  52 │ [39m    return reason === Flags.SKIP.CLAIMED && isEnemyDef(getTokenType(typeId)) ? 'claimed_fight' : reason;
+[90m  53 │ [39m}
+[90m  54 │ [39m
+[90m  55 │ [39m/** `0:42`, `4:05`. */
+[90m  56 │ [39mfunction clock(ms) {
+[90m  57 │ [39m    const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
+[90m  58 │ [39m    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+[90m  59 │ [39m}
+
+[1mClone found (javascript)[22m
+ - systems\board\Placement.js [178:29 - 187:23]
+   systems\board\Placement.js [271:9 - 277:27]
+[90m 178 │ [39m    if (!options.keepCycle) forfeitCycle(instance);
+[90m 179 │ [39m
+[90m 180 │ [39m    BoardState.addToken(instance, decision.x, decision.y);
+[90m 181 │ [39m
+[90m 182 │ [39m    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
+[90m 183 │ [39m    EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: instance.id, typeId: instance.typeId });
+[90m 184 │ [39m    markAdjacencyDirty([from, { x: decision.x, y: decision.y }]);
+[90m 185 │ [39m
+[90m 186 │ [39m    return {
+[90m 187 │ [39m        success: true,
+[90m 271 │ [39m        forfeitCycle(instance);
+[90m 272 │ [39m        BoardState.addToken(instance, decision.x, decision.y);
+[90m 273 │ [39m        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
+[90m 274 │ [39m        EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: instance.id, typeId: instance.typeId });
+[90m 275 │ [39m        markAdjacencyDirty([from, { x: decision.x, y: decision.y }]);
+[90m 276 │ [39m        return {
+[90m 277 │ [39m            success: true, restocked: true, nudgedLeftover: true,
+
+[1mClone found (javascript)[22m
+ - systems\board\TerrainBlend.js [153:30 - 162:39]
+   systems\board\TerrainLattice.js [420:20 - 429:39]
+[90m 153 │ [39m        if (from) from[s] = s;
+[90m 154 │ [39m        buckets[0].push(s);
+[90m 155 │ [39m    }
+[90m 156 │ [39m    for (let d = 0; d <= limit; d++) {
+[90m 157 │ [39m        const bucket = buckets[d];
+[90m 158 │ [39m        for (let b = 0; b < bucket.length; b++) {
+[90m 159 │ [39m            const i = bucket[b];
+[90m 160 │ [39m            if (dist[i] !== d + 1) continue;
+[90m 161 │ [39m            const x = i % width;
+[90m 162 │ [39m            const y = (i - x) / width;
+[90m 420 │ [39m        dist[s] = 1;
+[90m 421 │ [39m        buckets[0].push(s);
+[90m 422 │ [39m    }
+[90m 423 │ [39m    for (let d = 0; d <= limit; d++) {
+[90m 424 │ [39m        const bucket = buckets[d];
+[90m 425 │ [39m        for (let b = 0; b < bucket.length; b++) {
+[90m 426 │ [39m            const i = bucket[b];
+[90m 427 │ [39m            if (dist[i] !== d + 1) continue;      // superseded since queued
+[90m 428 │ [39m            const x = i % width;
+[90m 429 │ [39m            const y = (i - x) / width;
+
+[1mClone found (javascript)[22m
+ - systems\board\TerrainBlend.js [163:40 - 173:47]
+   systems\board\TerrainLattice.js [429:38 - 439:47]
+[90m 163 │ [39m            const look = side[entry[i]];
+[90m 164 │ [39m            for (let dy = -1; dy <= 1; dy++) {
+[90m 165 │ [39m                const ny = y + dy;
+[90m 166 │ [39m                if (ny < 0 || ny >= height) continue;
+[90m 167 │ [39m                for (let dx = -1; dx <= 1; dx++) {
+[90m 168 │ [39m                    if (!dx && !dy) continue;
+[90m 169 │ [39m                    const nx = x + dx;
+[90m 170 │ [39m                    if (nx < 0 || nx >= width) continue;
+[90m 171 │ [39m                    const nd = d + (dx && dy ? 4 : 3);
+[90m 172 │ [39m                    if (nd > limit) continue;
+[90m 173 │ [39m                    const j = ny * width + nx;
+[90m 429 │ [39m            const y = (i - x) / width;
+[90m 430 │ [39m            for (let dy = -1; dy <= 1; dy++) {
+[90m 431 │ [39m                const ny = y + dy;
+[90m 432 │ [39m                if (ny < 0 || ny >= height) continue;
+[90m 433 │ [39m                for (let dx = -1; dx <= 1; dx++) {
+[90m 434 │ [39m                    if (!dx && !dy) continue;
+[90m 435 │ [39m                    const nx = x + dx;
+[90m 436 │ [39m                    if (nx < 0 || nx >= width) continue;
+[90m 437 │ [39m                    const nd = d + (dx && dy ? 4 : 3);
+[90m 438 │ [39m                    if (nd > limit) continue;
+[90m 439 │ [39m                    const j = ny * width + nx;
+
+[1mClone found (javascript)[22m
+ - systems\board\TerrainGrass.js [238:5 - 245:7]
+   systems\board\TerrainPatches.js [120:5 - 127:7]
+[90m 238 │ [39m    const blendRow = (gy, out) => {
+[90m 239 │ [39m        const base = gy * gw;
+[90m 240 │ [39m        for (let px = 0; px < width; px++) {
+[90m 241 │ [39m            const k = base + gxOf[px];
+[90m 242 │ [39m            const c0 = corners[k];
+[90m 243 │ [39m            out[px] = c0 + (corners[k + 1] - c0) * fxOf[px];
+[90m 244 │ [39m        }
+[90m 245 │ [39m    };
+[90m 120 │ [39m    const blendRow = (gy, out) => {
+[90m 121 │ [39m        const base = gy * gw;
+[90m 122 │ [39m        for (let px = 0; px < width; px++) {
+[90m 123 │ [39m            const k = base + gxOf[px];
+[90m 124 │ [39m            const c0 = corners[k];
+[90m 125 │ [39m            out[px] = c0 + (corners[k + 1] - c0) * fxOf[px];
+[90m 126 │ [39m        }
+[90m 127 │ [39m    };
+
+[1mClone found (javascript)[22m
+ - systems\board\TerrainGrass.js [301:71 - 306:37]
+   systems\board\TerrainGrass.js [348:28 - 353:37]
+[90m 301 │ [39m    const s = l <= 0.5 ? range / (max + min) : range / (2 - max - min);
+[90m 302 │ [39m    const rc = (max - r) / range;
+[90m 303 │ [39m    const gc = (max - g) / range;
+[90m 304 │ [39m    const bc = (max - b) / range;
+[90m 305 │ [39m    const h = r === max ? bc - gc : g === max ? 2 + rc - bc : 4 + gc - rc;
+[90m 306 │ [39m    return [(((h / 6) % 1) + 1) % 1, l, s];
+[90m 348 │ [39m    const range = max - min;
+[90m 349 │ [39m    const rc = (max - r) / range;
+[90m 350 │ [39m    const gc = (max - g) / range;
+[90m 351 │ [39m    const bc = (max - b) / range;
+[90m 352 │ [39m    const h = r === max ? bc - gc : g === max ? 2 + rc - bc : 4 + gc - rc;
+[90m 353 │ [39m    return [(((h / 6) % 1) + 1) % 1, range / max, max];
+
+[1mClone found (javascript)[22m
+ - systems\board\TerrainGrass.js [908:27 - 914:10]
+   systems\board\TerrainGrass.js [946:34 - 952:10]
+[90m 908 │ [39m    const { shoreN, foamN } = ctx;
+[90m 909 │ [39m    const { patchN } = look;
+[90m 910 │ [39m    const code = (slot << SLOT_SHIFT) | 1;
+[90m 911 │ [39m    const sT = shoreN.top, sB = shoreN.bottom, sY = shoreN.fy;
+[90m 912 │ [39m    const fT = foamN.top, fB = foamN.bottom, fY = foamN.fy;
+[90m 913 │ [39m    const pT = patchN.top, pB = patchN.bottom, pY = patchN.fy;
+[90m 914 │ [39m    const far = 1 + bands.length;
+[90m 946 │ [39m    const { shoreN, foamN, depth } = ctx;
+[90m 947 │ [39m    const { patchN } = look;
+[90m 948 │ [39m    const code = (slot << SLOT_SHIFT) | 1;
+[90m 949 │ [39m    const sT = shoreN.top, sB = shoreN.bottom, sY = shoreN.fy;
+[90m 950 │ [39m    const fT = foamN.top, fB = foamN.bottom, fY = foamN.fy;
+[90m 951 │ [39m    const pT = patchN.top, pB = patchN.bottom, pY = patchN.fy;
+[90m 952 │ [39m    const dT = look.depthN?.top, dB = look.depthN?.bottom, dY = look.depthN?.fy;
+
+[1mClone found (javascript)[22m
+ - systems\board\TerrainGrass.js [1729:84 - 1735:18]
+   systems\board\TerrainGrass.js [1887:39 - 1893:18]
+[90m1729 │ [39m    const { shape, colour, pieceAt, cols, rows, planCol, planRow, planShore } = ctx;
+[90m1730 │ [39m    for (let r = 0; r < rows; r++) {
+[90m1731 │ [39m        const pr = planRow[r];
+[90m1732 │ [39m        for (let c = 0, i = r * cols; c < cols; c++, i++) {
+[90m1733 │ [39m            if (!shape[i]) continue;
+[90m1734 │ [39m            const v = planShore[pr + planCol[c]];
+[90m1735 │ [39m            if (v === SHORE.WET) {
+[90m1887 │ [39m    const hi = SHORE.BANK + BANK_COUNT;
+[90m1888 │ [39m    for (let r = 0; r < rows; r++) {
+[90m1889 │ [39m        const pr = planRow[r];
+[90m1890 │ [39m        for (let c = 0, i = r * cols; c < cols; c++, i++) {
+[90m1891 │ [39m            if (!shape[i]) continue;
+[90m1892 │ [39m            const v = planShore[pr + planCol[c]];
+[90m1893 │ [39m            if (v >= lo && v < hi) {
+
+[1mClone found (javascript)[22m
+ - systems\board\TerrainGrass.js [1729:77 - 1734:22]
+   systems\board\TerrainGrass.js [1903:76 - 1908:22]
+[90m1729 │ [39m    const { shape, colour, pieceAt, cols, rows, planCol, planRow, planShore } = ctx;
+[90m1730 │ [39m    for (let r = 0; r < rows; r++) {
+[90m1731 │ [39m        const pr = planRow[r];
+[90m1732 │ [39m        for (let c = 0, i = r * cols; c < cols; c++, i++) {
+[90m1733 │ [39m            if (!shape[i]) continue;
+[90m1734 │ [39m            const v = planShore[pr + planCol[c]];
+[90m1903 │ [39m    const { shape, colour, pieceAt, cols, rows, planCol, planRow, planRing } = ctx;
+[90m1904 │ [39m    for (let r = 0; r < rows; r++) {
+[90m1905 │ [39m        const pr = planRow[r];
+[90m1906 │ [39m        for (let c = 0, i = r * cols; c < cols; c++, i++) {
+[90m1907 │ [39m            if (!shape[i]) continue;
+[90m1908 │ [39m            const v = planRing[pr + planCol[c]];
+
+[1mClone found (javascript)[22m
+ - systems\board\TerrainPatches.js [248:20 - 253:14]
+   systems\board\TerrainShade.js [58:28 - 63:12]
+[90m 248 │ [39m    const worn = [];
+[90m 249 │ [39m    for (let py = 0, row = 0; py < height; py++, row += width) {
+[90m 250 │ [39m        const { coarse, fine } = noise.row(py);
+[90m 251 │ [39m        const ct = coarse.top, cb = coarse.bottom, cfy = coarse.fy;
+[90m 252 │ [39m        const ft = fine.top, fb = fine.bottom, ffy = fine.fy;
+[90m 253 │ [39m        const rowWeight = middle ? 1 + middle.s - 3 * middle.s * middle.down[py] : 1;
+[90m  58 │ [39m    const fineWeight = FINE;
+[90m  59 │ [39m    for (let py = 0, row = 0; py < height; py++, row += width) {
+[90m  60 │ [39m        const { coarse, fine } = noise.row(py);
+[90m  61 │ [39m        const ct = coarse.top, cb = coarse.bottom, cfy = coarse.fy;
+[90m  62 │ [39m        const ft = fine.top, fb = fine.bottom, ffy = fine.fy;
+[90m  63 │ [39m        for (let px = 0; px < width; px++) {
+
+[1mClone found (javascript)[22m
+ - systems\board\TileModifiers.js [422:46 - 438:14]
+   systems\progression\ledger\rates.js [241:44 - 249:18]
+[90m 422 │ [39m                seenTypes.add(instance.typeId);
+[90m 423 │ [39m                claimed = true;
+[90m 424 │ [39m            }
+[90m 425 │ [39m            // Every ambient keyword must name the thing it does, or it reaches nothing: an effect
+[90m 426 │ [39m            // axis for the two that scale a number, a status for the one that puts something on a
+[90m 427 │ [39m            // person.
+[90m 428 │ [39m            if (statement.keyword === KEYWORD.APPLIES) {
+[90m 429 │ [39m                // ⚠️ EITHER shape counts: an `Applies` naming a library effect carries no
+[90m 430 │ [39m                // `statusId`, so testing `statusId` alone would never yield it and the feature
+[90m 431 │ [39m                // would be inert on a Token while rendering a perfectly good sentence.
+[90m 432 │ [39m                if (!statement.payload?.statusId && !statement.payload?.effectId) continue;
+[90m 433 │ [39m                // An `Applies` aimed at a role is not a filter rule, so it never reaches a tile's
+[90m 434 │ [39m                // occupants this way.
+[90m 435 │ [39m                if (statement.target?.role) continue;
+[90m 436 │ [39m            } else if (!statement.payload?.type) {
+[90m 437 │ [39m                continue;
+[90m 438 │ [39m            }
+[90m 241 │ [39m                    seenTypes.add(source.id);
+[90m 242 │ [39m                    claimed = true;
+[90m 243 │ [39m                }
+[90m 244 │ [39m                if (statement.keyword === KEYWORD.APPLIES) {
+[90m 245 │ [39m                    if (!statement.payload?.statusId && !statement.payload?.effectId) continue;
+[90m 246 │ [39m                    if (statement.target?.role) continue;
+[90m 247 │ [39m                } else if (!statement.payload?.type) {
+[90m 248 │ [39m                    continue;
+[90m 249 │ [39m                }
+
+[1mClone found (javascript)[22m
+ - systems\notifications\catchUpNews.js [37:105 - 46:18]
+   systems\notifications\routing.js [85:78 - 93:18]
+[90m  37 │ [39m        EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, heroName, skillId, oldLevel, newLevel } = {}) => {
+[90m  38 │ [39m            // The same reading the live banner makes, at the same moment.
+[90m  39 │ [39m            const unlocked = recipesUnlockedBy(listRecipes(), {
+[90m  40 │ [39m                skillId,
+[90m  41 │ [39m                oldLevel: Number(oldLevel) || 0,
+[90m  42 │ [39m                newLevel: Number(newLevel) || 0,
+[90m  43 │ [39m                othersBest: othersBestLevel(GameState.heroes, heroId, skillId)
+[90m  44 │ [39m            });
+[90m  45 │ [39m            if (!unlocked.length) return;
+[90m  46 │ [39m            const key = `${heroId}|${skillId}`;
+[90m  85 │ [39m        handle: ({ heroId, heroName, skillId, oldLevel, newLevel, startLevel } = {}) => {
+[90m  86 │ [39m            const unlocked = recipesUnlockedBy(listRecipes(), {
+[90m  87 │ [39m                skillId,
+[90m  88 │ [39m                oldLevel: Number(oldLevel) || 0,
+[90m  89 │ [39m                newLevel: Number(newLevel) || 0,
+[90m  90 │ [39m                othersBest: othersBestLevel(GameState.heroes, heroId, skillId)
+[90m  91 │ [39m            });
+[90m  92 │ [39m            if (!unlocked.length) return;
+[90m  93 │ [39m            const name = heroName || heroOf(heroId)?.name || 'A hero';
+
+[1mClone found (javascript)[22m
+ - systems\progression\ledger\engine.js [153:59 - 165:9]
+   systems\progression\ledger\rates.js [105:77 - 117:9]
+[90m 153 │ [39mconst text = (v) => (typeof v === 'string' && v ? v : null);
+[90m 154 │ [39m
+[90m 155 │ [39mfunction keyed(collection) {
+[90m 156 │ [39m    const out = {};
+[90m 157 │ [39m    if (Array.isArray(collection)) {
+[90m 158 │ [39m        collection.forEach((def, i) => { if (isObject(def)) out[def.id ?? String(i)] = def; });
+[90m 159 │ [39m    } else if (isObject(collection)) {
+[90m 160 │ [39m        for (const [key, def] of Object.entries(collection)) if (isObject(def)) out[def.id ?? key] = def;
+[90m 161 │ [39m    }
+[90m 162 │ [39m    return out;
+[90m 163 │ [39m}
+[90m 164 │ [39m
+[90m 165 │ [39mfunction recipeList({ recipes, recipePools }) {
+[90m 105 │ [39mconst clamp01 = (n) => (Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0);
+[90m 106 │ [39m
+[90m 107 │ [39mfunction keyed(collection) {
+[90m 108 │ [39m    const out = {};
+[90m 109 │ [39m    if (Array.isArray(collection)) {
+[90m 110 │ [39m        collection.forEach((def, i) => { if (isObject(def)) out[def.id ?? String(i)] = def; });
+[90m 111 │ [39m    } else if (isObject(collection)) {
+[90m 112 │ [39m        for (const [key, def] of Object.entries(collection)) if (isObject(def)) out[def.id ?? key] = def;
+[90m 113 │ [39m    }
+[90m 114 │ [39m    return out;
+[90m 115 │ [39m}
+[90m 116 │ [39m
+[90m 117 │ [39mfunction recipeMap({ recipes, recipePools }) {
+
+[1mClone found (javascript)[22m
+ - systems\quests\QuestManager.js [69:29 - 77:56]
+   systems\quests\QuestTokens.js [141:15 - 144:52]
+[90m  69 │ [39m        const q = GameState.state.quests;
+[90m  70 │ [39m        // `active` holds only a save's sidebar quests waiting to be turned into
+[90m  71 │ [39m        // quest Tokens (`QuestTokens.migrateSidebarQuests`).
+[90m  72 │ [39m        if (!Array.isArray(q.active)) q.active = [];
+[90m  73 │ [39m        // A save from before the list existed kept only a step number, which maps
+[90m  74 │ [39m        // onto nothing now.
+[90m  75 │ [39m        if (!Array.isArray(q.completedTutorials)) q.completedTutorials = [];
+[90m  76 │ [39m        // The bounty clock, in game ms.
+[90m  77 │ [39m        if (!Number.isFinite(q.clockMs)) q.clockMs = 0;
+[90m 141 │ [39m    const q = state.quests;
+[90m 142 │ [39m    if (!Array.isArray(q.active)) q.active = [];
+[90m 143 │ [39m    if (!Array.isArray(q.completedTutorials)) q.completedTutorials = [];
+[90m 144 │ [39m    if (!Number.isFinite(q.clockMs)) q.clockMs = 0;
+
+[1mClone found (jsx)[22m
+ - ui\components\atlas\AtlasTome.jsx [175:16 - 181:18]
+   ui\components\base\BannerArt.jsx [32:16 - 38:18]
+[90m 175 │ [39m        setRoom(prev => (prev.w === w && prev.h === h ? prev : { w, h }));
+[90m 176 │ [39m    }, []);
+[90m 177 │ [39m    useLayoutEffect(() => {
+[90m 178 │ [39m        measure();
+[90m 179 │ [39m        window.addEventListener('resize', measure);
+[90m 180 │ [39m        const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+[90m 181 │ [39m        if (ro && stage.current) ro.observe(stage.current);
+[90m  32 │ [39m        setSize(prev => (prev.w === w && prev.h === h ? prev : { w, h }));
+[90m  33 │ [39m    }, []);
+[90m  34 │ [39m    useLayoutEffect(() => {
+[90m  35 │ [39m        measure();
+[90m  36 │ [39m        window.addEventListener('resize', measure);
+[90m  37 │ [39m        const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+[90m  38 │ [39m        if (ro && box.current) ro.observe(box.current);
+
+[1mClone found (jsx)[22m
+ - ui\components\atlas\AtlasTome.jsx [178:9 - 186:9]
+   ui\components\encyclopedia\EncyclopediaScreen.jsx [296:9 - 304:9]
+[90m 178 │ [39m        measure();
+[90m 179 │ [39m        window.addEventListener('resize', measure);
+[90m 180 │ [39m        const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+[90m 181 │ [39m        if (ro && stage.current) ro.observe(stage.current);
+[90m 182 │ [39m        return () => {
+[90m 183 │ [39m            window.removeEventListener('resize', measure);
+[90m 184 │ [39m            ro?.disconnect();
+[90m 185 │ [39m        };
+[90m 186 │ [39m    }, [measure]);
+[90m 296 │ [39m        measure();
+[90m 297 │ [39m        window.addEventListener('resize', measure);
+[90m 298 │ [39m        const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+[90m 299 │ [39m        if (ro && stage.current) ro.observe(stage.current);
+[90m 300 │ [39m        return () => {
+[90m 301 │ [39m            window.removeEventListener('resize', measure);
+[90m 302 │ [39m            ro?.disconnect();
+[90m 303 │ [39m        };
+[90m 304 │ [39m    }, []);
+
+[1mClone found (jsx)[22m
+ - ui\components\atlas\WorldCamera.jsx [126:5 - 140:29]
+   ui\components\board\HallCamera.jsx [80:5 - 95:29]
+[90m 126 │ [39m    const stopGlide = useCallback(() => {
+[90m 127 │ [39m        const glide = glideRef.current;
+[90m 128 │ [39m        if (!glide) return;
+[90m 129 │ [39m        glideRef.current = null;
+[90m 130 │ [39m        clearTimeout(glide.timer);
+[90m 131 │ [39m        cancelAnimationFrame(glide.frame);
+[90m 132 │ [39m        for (const anim of glide.anims) {
+[90m 133 │ [39m            anim.onfinish = null;
+[90m 134 │ [39m            anim.cancel();
+[90m 135 │ [39m        }
+[90m 136 │ [39m    }, []);
+[90m 137 │ [39m
+[90m 138 │ [39m    const arrive = useCallback((glide) => {
+[90m 139 │ [39m        if (glide && glideRef.current !== glide) return;
+[90m 140 │ [39m        setPhase(p => (p === WORLD_CAMERA.TO_WORLD ? WORLD_CAMERA.WORLD : p === WORLD_CAMERA.TO_MAT ? WORLD_CAMERA.MAT : p));
+[90m  80 │ [39m    const stopGlide = useCallback(() => {
+[90m  81 │ [39m        const glide = glideRef.current;
+[90m  82 │ [39m        if (!glide) return;
+[90m  83 │ [39m        glideRef.current = null;
+[90m  84 │ [39m        clearTimeout(glide.timer);
+[90m  85 │ [39m        cancelAnimationFrame(glide.frame);
+[90m  86 │ [39m        for (const anim of glide.anims) {
+[90m  87 │ [39m            anim.onfinish = null;
+[90m  88 │ [39m            anim.cancel();
+[90m  89 │ [39m        }
+[90m  90 │ [39m    }, []);
+[90m  91 │ [39m
+[90m  92 │ [39m    /** The glide in progress has arrived, or was skipped: rest where it was heading. */
+[90m  93 │ [39m    const arrive = useCallback((glide) => {
+[90m  94 │ [39m        if (glide && glideRef.current !== glide) return;
+[90m  95 │ [39m        setPhase(p => (p === CAMERA.TO_SKY ? CAMERA.SKY : p === CAMERA.TO_MAT ? CAMERA.MAT : p));
+
+[1mClone found (jsx)[22m
+ - ui\components\atlas\WorldCamera.jsx [140:115 - 153:14]
+   ui\components\board\HallCamera.jsx [95:87 - 109:14]
+[90m 140 │ [39m        setPhase(p => (p === WORLD_CAMERA.TO_WORLD ? WORLD_CAMERA.WORLD : p === WORLD_CAMERA.TO_MAT ? WORLD_CAMERA.MAT : p));
+[90m 141 │ [39m    }, []);
+[90m 142 │ [39m
+[90m 143 │ [39m    const finish = useCallback(() => {
+[90m 144 │ [39m        if (glideRef.current) arrive(glideRef.current);
+[90m 145 │ [39m    }, [arrive]);
+[90m 146 │ [39m
+[90m 147 │ [39m    useLayoutEffect(() => {
+[90m 148 │ [39m        const el = cameraRef.current;
+[90m 149 │ [39m        if (!el || !isGliding(phase)) {
+[90m 150 │ [39m            stopGlide();
+[90m 151 │ [39m            return;
+[90m 152 │ [39m        }
+[90m 153 │ [39m        const anchor = tableAnchor?.current;
+[90m  95 │ [39m        setPhase(p => (p === CAMERA.TO_SKY ? CAMERA.SKY : p === CAMERA.TO_MAT ? CAMERA.MAT : p));
+[90m  96 │ [39m    }, []);
+[90m  97 │ [39m
+[90m  98 │ [39m    const finish = useCallback(() => {
+[90m  99 │ [39m        if (glideRef.current) arrive(glideRef.current);
+[90m 100 │ [39m    }, [arrive]);
+[90m 101 │ [39m
+[90m 102 │ [39m    useLayoutEffect(() => {
+[90m 103 │ [39m        const el = cameraRef.current;
+[90m 104 │ [39m        // At rest the rest style is committed already, so cancelling shows no in-between frame.
+[90m 105 │ [39m        if (!el || !isGliding(phase)) {
+[90m 106 │ [39m            stopGlide();
+[90m 107 │ [39m            return;
+[90m 108 │ [39m        }
+[90m 109 │ [39m        const height = el.offsetHeight;
+
+[1mClone found (jsx)[22m
+ - ui\components\atlas\WorldCamera.jsx [171:55 - 188:31]
+   ui\components\board\HallCamera.jsx [118:46 - 135:31]
+[90m 171 │ [39m        const to = phase === WORLD_CAMERA.TO_WORLD ? -height : 0;
+[90m 172 │ [39m        const ms = height > 0 ? Math.round(GLIDE_MS * Math.min(1, Math.abs(to - from) / height)) : 0;
+[90m 173 │ [39m        if (typeof el.animate !== 'function' || ms <= 0) {
+[90m 174 │ [39m            arrive(null);
+[90m 175 │ [39m            return;
+[90m 176 │ [39m        }
+[90m 177 │ [39m        const glide = { from, anims: [], timer: null, frame: 0 };
+[90m 178 │ [39m        glideRef.current = glide;
+[90m 179 │ [39m        const landBy = (wait) => {
+[90m 180 │ [39m            clearTimeout(glide.timer);
+[90m 181 │ [39m            glide.timer = setTimeout(() => arrive(glide), wait);
+[90m 182 │ [39m        };
+[90m 183 │ [39m        const start = () => {
+[90m 184 │ [39m            if (glideRef.current !== glide) return;
+[90m 185 │ [39m            // Started in the same frame, the two run from the same start time.
+[90m 186 │ [39m            const keyframes = [{ transform: `translateY(${from}px)` }, { transform: `translateY(${to}px)` }];
+[90m 187 │ [39m            const timing = { duration: ms, easing: GLIDE_EASING, fill: 'forwards' };
+[90m 188 │ [39m            glide.anims = [el, layerRef.current].filter(Boolean).map(node => node.animate(keyframes, timing));
+[90m 118 │ [39m        const to = phase === CAMERA.TO_SKY ? height : 0;
+[90m 119 │ [39m        const ms = height > 0 ? Math.round(GLIDE_MS * Math.min(1, Math.abs(to - from) / height)) : 0;
+[90m 120 │ [39m        if (typeof el.animate !== 'function' || ms <= 0) {
+[90m 121 │ [39m            arrive(null);
+[90m 122 │ [39m            return;
+[90m 123 │ [39m        }
+[90m 124 │ [39m        const glide = { from, anims: [], timer: null, frame: 0 };
+[90m 125 │ [39m        glideRef.current = glide;
+[90m 126 │ [39m        const landBy = (wait) => {
+[90m 127 │ [39m            clearTimeout(glide.timer);
+[90m 128 │ [39m            glide.timer = setTimeout(() => arrive(glide), wait);
+[90m 129 │ [39m        };
+[90m 130 │ [39m        const start = () => {
+[90m 131 │ [39m            if (glideRef.current !== glide) return;
+[90m 132 │ [39m            // Started in the same frame, the two run from the same start time.
+[90m 133 │ [39m            const keyframes = [{ transform: `translateY(${from}px)` }, { transform: `translateY(${to}px)` }];
+[90m 134 │ [39m            const timing = { duration: ms, easing: GLIDE_EASING, fill: 'forwards' };
+[90m 135 │ [39m            glide.anims = [el, tableRef.current].filter(Boolean).map(node => node.animate(keyframes, timing));
+
+[1mClone found (jsx)[22m
+ - ui\components\atlas\WorldCamera.jsx [188:40 - 201:12]
+   ui\components\board\HallCamera.jsx [135:40 - 150:12]
+[90m 188 │ [39m            glide.anims = [el, layerRef.current].filter(Boolean).map(node => node.animate(keyframes, timing));
+[90m 189 │ [39m            glide.anims[0].onfinish = () => arrive(glide);
+[90m 190 │ [39m            landBy(ms + GLIDE_SPARE_MS);
+[90m 191 │ [39m        };
+[90m 192 │ [39m        if (moving) {
+[90m 193 │ [39m            start();
+[90m 194 │ [39m            return;
+[90m 195 │ [39m        }
+[90m 196 │ [39m        // ⚠️ As the Hall's glide: a fresh glide starts once the side just laid down has been
+[90m 197 │ [39m        // drawn and frames flow again (the map's first picture takes a moment to build), so it
+[90m 198 │ [39m        // does not run most of its course before the first frame shows.
+[90m 199 │ [39m        landBy(FIRST_FRAME_WAIT_MS);
+[90m 200 │ [39m        const asked = performance.now();
+[90m 201 │ [39m        let count = 0;
+[90m 135 │ [39m            glide.anims = [el, tableRef.current].filter(Boolean).map(node => node.animate(keyframes, timing));
+[90m 136 │ [39m            glide.anims[0].onfinish = () => arrive(glide);
+[90m 137 │ [39m            landBy(ms + GLIDE_SPARE_MS);
+[90m 138 │ [39m        };
+[90m 139 │ [39m        if (moving) {
+[90m 140 │ [39m            start();
+[90m 141 │ [39m            return;
+[90m 142 │ [39m        }
+[90m 143 │ [39m        // ⚠️ A fresh glide starts once the side just laid down has been drawn and frames flow
+[90m 144 │ [39m        // again. The frames after a mount can stall (on a session's first open of the Hall the
+[90m 145 │ [39m        // browser readies the sky's new layers, ~0.3 s), and a glide started before that stall had
+[90m 146 │ [39m        // run most of its course when the first frame after it showed. Until it starts, the camera
+[90m 147 │ [39m        // holds where the glide starts.
+[90m 148 │ [39m        landBy(FIRST_FRAME_WAIT_MS);
+[90m 149 │ [39m        const asked = performance.now();
+[90m 150 │ [39m        let seen = 0;
+
+[1mClone found (jsx)[22m
+ - ui\components\atlas\WorldMap.jsx [434:122 - 447:10]
+   ui\components\encyclopedia\EncyclopediaChartView.jsx [396:120 - 409:10]
+[90m 434 │ [39m            setView(clampView({ x: start.from.x + dx, y: start.from.y + dy }, fitRef.current.sight, fitRef.current.bounds));
+[90m 435 │ [39m        };
+[90m 436 │ [39m        const up = (ev) => {
+[90m 437 │ [39m            if (ev.pointerId !== start.id) return;
+[90m 438 │ [39m            window.removeEventListener('pointermove', move);
+[90m 439 │ [39m            window.removeEventListener('pointerup', up);
+[90m 440 │ [39m            window.removeEventListener('pointercancel', up);
+[90m 441 │ [39m            if (start.moved) dropClick.current = true;
+[90m 442 │ [39m        };
+[90m 443 │ [39m        window.addEventListener('pointermove', move);
+[90m 444 │ [39m        window.addEventListener('pointerup', up);
+[90m 445 │ [39m        window.addEventListener('pointercancel', up);
+[90m 446 │ [39m    };
+[90m 447 │ [39m    const onWheel = (e) => {
+[90m 396 │ [39m            setView(clampPan({ x: start.from.x + dx, y: start.from.y + dy }, viewportRef.current, layoutRef.current.box));
+[90m 397 │ [39m        };
+[90m 398 │ [39m        const up = (ev) => {
+[90m 399 │ [39m            if (ev.pointerId !== start.id) return;
+[90m 400 │ [39m            window.removeEventListener('pointermove', move);
+[90m 401 │ [39m            window.removeEventListener('pointerup', up);
+[90m 402 │ [39m            window.removeEventListener('pointercancel', up);
+[90m 403 │ [39m            if (start.moved) dropClick.current = true;
+[90m 404 │ [39m        };
+[90m 405 │ [39m        window.addEventListener('pointermove', move);
+[90m 406 │ [39m        window.addEventListener('pointerup', up);
+[90m 407 │ [39m        window.addEventListener('pointercancel', up);
+[90m 408 │ [39m    };
+[90m 409 │ [39m    const onClickCapture = (e) => {
+
+[1mClone found (javascript)[22m
+ - ui\components\atlas\mapPreview.js [157:1 - 167:42]
+   ui\components\board\groundSheets.js [50:1 - 60:42]
+[90m 157 │ [39mfunction decode(path) {
+[90m 158 │ [39m    return new Promise((resolve) => {
+[90m 159 │ [39m        if (typeof Image === 'undefined' || typeof document === 'undefined') { resolve(null); return; }
+[90m 160 │ [39m        const img = new Image();
+[90m 161 │ [39m        img.onload = () => {
+[90m 162 │ [39m            try {
+[90m 163 │ [39m                const canvas = document.createElement('canvas');
+[90m 164 │ [39m                canvas.width = img.naturalWidth;
+[90m 165 │ [39m                canvas.height = img.naturalHeight;
+[90m 166 │ [39m                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+[90m 167 │ [39m                ctx.drawImage(img, 0, 0);
+[90m  50 │ [39mfunction decode(path) {
+[90m  51 │ [39m    return new Promise((resolve) => {
+[90m  52 │ [39m        if (typeof Image === 'undefined' || typeof document === 'undefined') { resolve(null); return; }
+[90m  53 │ [39m        const img = new Image();
+[90m  54 │ [39m        img.onload = () => {
+[90m  55 │ [39m            try {
+[90m  56 │ [39m                const canvas = document.createElement('canvas');
+[90m  57 │ [39m                canvas.width = img.naturalWidth;
+[90m  58 │ [39m                canvas.height = img.naturalHeight;
+[90m  59 │ [39m                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+[90m  60 │ [39m                ctx.drawImage(img, 0, 0);
+
+[1mClone found (jsx)[22m
+ - ui\components\board\MatHero.jsx [112:24 - 117:16]
+   ui\components\combat\FightPanel.jsx [72:19 - 77:16]
+[90m 112 │ [39m        if (!listening || !heroId) return undefined;
+[90m 113 │ [39m        return EventBus.subscribe(COMBAT_ATTACK_EVENT, (p) => {
+[90m 114 │ [39m            if (p?.heroId !== heroId || !isRealAttack(p)) return;
+[90m 115 │ [39m            setAt(typeof performance !== 'undefined' ? performance.now() : Date.now());
+[90m 116 │ [39m        }, UI_LISTENER);
+[90m 117 │ [39m    }, [heroId, listening]);
+[90m  72 │ [39m        if (!live || !heroId) return undefined;
+[90m  73 │ [39m        return EventBus.subscribe(COMBAT_ATTACK_EVENT, (p) => {
+[90m  74 │ [39m            if (p?.heroId !== heroId || !isRealAttack(p)) return;
+[90m  75 │ [39m            setAt(typeof performance !== 'undefined' ? performance.now() : Date.now());
+[90m  76 │ [39m        }, UI_LISTENER);
+[90m  77 │ [39m    }, [heroId, live]);
+
+[1mClone found (jsx)[22m
+ - ui\components\board\TokenCard.jsx [53:101 - 64:3]
+   ui\components\drawer\GuildUpgradeInspection.jsx [21:27 - 32:3]
+[90m  53 │ [39mconst skillName = (id) => getSkill(id)?.name || (id ? id.charAt(0).toUpperCase() + id.slice(1) : '');
+[90m  54 │ [39m
+[90m  55 │ [39m/** One section of the card's panel; a rule parts it from the one above. */
+[90m  56 │ [39mconst Section = ({ children, className, ...rest }) => (
+[90m  57 │ [39m    <section className={cn('px-2 py-1.5 flex flex-col gap-1 border-t-2 border-white/15 first:border-t-0', className)} {...rest}>
+[90m  58 │ [39m        {children}
+[90m  59 │ [39m    </section>
+[90m  60 │ [39m);
+[90m  61 │ [39m
+[90m  62 │ [39mconst Heading = ({ children }) => (
+[90m  63 │ [39m    <span className="ui-text-small font-bold gi-caps tracking-wider text-gi-muted">{children}</span>
+[90m  64 │ [39m);
+[90m  21 │ [39mconst UPGRADE_ICON_PX = 32;
+[90m  22 │ [39m
+[90m  23 │ [39m/** One section of the sheet; a rule parts it from the one above, as on the Token card. */
+[90m  24 │ [39mconst Section = ({ children, className, ...rest }) => (
+[90m  25 │ [39m    <section className={cn('px-2 py-1.5 flex flex-col gap-1 border-t-2 border-white/15 first:border-t-0', className)} {...rest}>
+[90m  26 │ [39m        {children}
+[90m  27 │ [39m    </section>
+[90m  28 │ [39m);
+[90m  29 │ [39m
+[90m  30 │ [39mconst Heading = ({ children }) => (
+[90m  31 │ [39m    <span className="ui-text-small font-bold gi-caps tracking-wider text-gi-muted">{children}</span>
+[90m  32 │ [39m);
+
+[1mClone found (jsx)[22m
+ - ui\components\dock\DockHeroFigure.jsx [2:60 - 11:9]
+   ui\components\dock\HeroDockTab.jsx [1:59 - 10:9]
+[90m   2 │ [39mimport { PixelTriangle } from '../base/ArrowScrollList.jsx';
+[90m   3 │ [39mimport { cn } from '../../utils/cn.js';
+[90m   4 │ [39mimport { useGameState } from '../../hooks/useGameState.js';
+[90m   5 │ [39mimport * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
+[90m   6 │ [39mimport { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
+[90m   7 │ [39mimport { DRAG_KIND, DND_SURFACE, rosterFlagPayload, isRosterFlag } from '../../dnd/dragConstants.js';
+[90m   8 │ [39mimport { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
+[90m   9 │ [39mimport { EventBus } from '../../../systems/core/EventBus.js';
+[90m  10 │ [39mimport { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+[90m  11 │ [39mimport { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
+[90m   1 │ [39mimport { memo, useCallback, useMemo, useRef } from 'react';
+[90m   2 │ [39mimport { cn } from '../../utils/cn.js';
+[90m   3 │ [39mimport { useGameState } from '../../hooks/useGameState.js';
+[90m   4 │ [39mimport * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
+[90m   5 │ [39mimport { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
+[90m   6 │ [39mimport { DRAG_KIND, DND_SURFACE, rosterFlagPayload, isRosterFlag } from '../../dnd/dragConstants.js';
+[90m   7 │ [39mimport { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
+[90m   8 │ [39mimport { EventBus } from '../../../systems/core/EventBus.js';
+[90m   9 │ [39mimport { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+[90m  10 │ [39mimport { useDragSettleHover } from './useDragSettleHover.js';
+
+[1mClone found (jsx)[22m
+ - ui\components\dock\DockHeroFigure.jsx [68:29 - 83:116]
+   ui\components\dock\HeroDockTab.jsx [66:36 - 81:116]
+[90m  68 │ [39m        beneathDrawers: true,
+[90m  69 │ [39m        // An item equips, another roster hero reorders.
+[90m  70 │ [39m        accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId)
+[90m  71 │ [39m            || (isRosterFlag(p) && p.heroId !== heroId),
+[90m  72 │ [39m        onDrop: p => {
+[90m  73 │ [39m            if (p.kind === DRAG_KIND.ITEM && p.itemId) {
+[90m  74 │ [39m                if (!equipOrAnnounce(EquipmentManager, heroId, p.itemId, null, p)) return false;
+[90m  75 │ [39m                justDroppedRef.current = true;
+[90m  76 │ [39m                setTimeout(() => { justDroppedRef.current = false; }, 250);
+[90m  77 │ [39m                EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId, afterDrop: true });
+[90m  78 │ [39m            } else if (isRosterFlag(p) && p.heroId && p.heroId !== heroId) {
+[90m  79 │ [39m                onReorder?.(p.heroId, heroId);
+[90m  80 │ [39m            }
+[90m  81 │ [39m        }
+[90m  82 │ [39m    });
+[90m  83 │ [39m    const nodeRef = useMemo(() => mergeRefs(drag.setNodeRef, drop.setNodeRef), [drag.setNodeRef, drop.setNodeRef]);
+[90m  66 │ [39m        surface: DND_SURFACE.DRAWER,
+[90m  67 │ [39m        // An item equips; a tab dragged within the column is a reorder.
+[90m  68 │ [39m        accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId)
+[90m  69 │ [39m            || (isRosterFlag(p) && p.heroId !== heroId),
+[90m  70 │ [39m        onDrop: p => {
+[90m  71 │ [39m            if (p.kind === DRAG_KIND.ITEM && p.itemId) {
+[90m  72 │ [39m                if (!equipOrAnnounce(EquipmentManager, heroId, p.itemId, null, p)) return false;
+[90m  73 │ [39m                justDroppedRef.current = true;
+[90m  74 │ [39m                setTimeout(() => { justDroppedRef.current = false; }, 250);
+[90m  75 │ [39m                EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId, afterDrop: true });
+[90m  76 │ [39m            } else if (isRosterFlag(p) && p.heroId && p.heroId !== heroId) {
+[90m  77 │ [39m                onReorder?.(p.heroId, heroId);
+[90m  78 │ [39m            }
+[90m  79 │ [39m        }
+[90m  80 │ [39m    });
+[90m  81 │ [39m    const nodeRef = useMemo(() => mergeRefs(drag.setNodeRef, drop.setNodeRef), [drag.setNodeRef, drop.setNodeRef]);
+
+[1mClone found (jsx)[22m
+ - ui\components\dock\DockHeroFigure.jsx [163:5 - 173:10]
+   ui\components\dock\HeroDockTab.jsx [176:5 - 186:10]
+[90m 163 │ [39m    const roster = useGameState(
+[90m 164 │ [39m        () => ({ state: rosterStateOf(heroId), alert: rosterAlertOf(heroId) }),
+[90m 165 │ [39m        [
+[90m 166 │ [39m            BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.ALERT_CHANGED,
+[90m 167 │ [39m            BOARD_EVENTS.GROWTH_ALERT_CHANGED, BOARD_EVENTS.TOOL_NEEDED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET
+[90m 168 │ [39m        ],
+[90m 169 │ [39m        null,
+[90m 170 │ [39m        { deps: [heroId] }
+[90m 171 │ [39m    ) || { state: 'idle', alert: null };
+[90m 172 │ [39m
+[90m 173 │ [39m    const bubbles = useHeroBarBubbles(heroId);
+[90m 176 │ [39m    const roster = useGameState(
+[90m 177 │ [39m        () => ({ state: rosterStateOf(heroId), alert: rosterAlertOf(heroId) }),
+[90m 178 │ [39m        [
+[90m 179 │ [39m            BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.ALERT_CHANGED,
+[90m 180 │ [39m            BOARD_EVENTS.GROWTH_ALERT_CHANGED, BOARD_EVENTS.TOOL_NEEDED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET
+[90m 181 │ [39m        ],
+[90m 182 │ [39m        null,
+[90m 183 │ [39m        { deps: [heroId] }
+[90m 184 │ [39m    ) || { state: 'idle', alert: null };
+[90m 185 │ [39m
+[90m 186 │ [39m    const isWounded = hero.status === 'wounded';
+
+[1mClone found (jsx)[22m
+ - ui\components\dock\DockHeroFigure.jsx [208:41 - 216:81]
+   ui\components\dock\HeroDockTab.jsx [227:55 - 235:85]
+[90m 208 │ [39m                clearHeroBubbles(heroId);
+[90m 209 │ [39m                onSelect?.(heroId);
+[90m 210 │ [39m            }}
+[90m 211 │ [39m            onDoubleClick={(e) => {
+[90m 212 │ [39m                e.stopPropagation();
+[90m 213 │ [39m                onDoubleClick?.(heroId);
+[90m 214 │ [39m            }}
+[90m 215 │ [39m            onMouseEnter={() => { onHoverChange(true); setRosterHover(heroId); }}
+[90m 216 │ [39m            onMouseLeave={() => { onHoverChange(false); setRosterHover(null); }}
+[90m 227 │ [39m                    if (justDroppedRef.current) return;
+[90m 228 │ [39m                    onSelect?.(heroId);
+[90m 229 │ [39m                }}
+[90m 230 │ [39m                onDoubleClick={(e) => {
+[90m 231 │ [39m                    e.stopPropagation();
+[90m 232 │ [39m                    onDoubleClick?.(heroId);
+[90m 233 │ [39m                }}
+[90m 234 │ [39m                onMouseEnter={() => { onHoverChange(true); setRosterHover(heroId); }}
+[90m 235 │ [39m                onMouseLeave={() => { onHoverChange(false); setRosterHover(null); }}
+
+[1mClone found (javascript)[22m
+ - ui\dev\campsDev.js [85:42 - 90:136]
+   ui\dev\ordersDev.js [68:29 - 73:136]
+[90m  85 │ [39mfunction qaHero(name, skills, tool = null) {
+[90m  86 │ [39m    const ranks = GameState.state.progress.guildUpgrades || (GameState.state.progress.guildUpgrades = {});
+[90m  87 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m  88 │ [39m    GuildUpgradeManager.recompute();
+[90m  89 │ [39m    const hero = generateHero({ name });
+[90m  90 │ [39m    for (const [id, level] of Object.entries(skills)) hero.skills[id] = { ...(hero.skills?.[id] || {}), level, xp: xpForLevel(level) };
+[90m  68 │ [39mfunction qaHero(name, skills) {
+[90m  69 │ [39m    const ranks = GameState.state.progress.guildUpgrades || (GameState.state.progress.guildUpgrades = {});
+[90m  70 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m  71 │ [39m    GuildUpgradeManager.recompute();
+[90m  72 │ [39m    const hero = generateHero({ name });
+[90m  73 │ [39m    for (const [id, level] of Object.entries(skills)) hero.skills[id] = { ...(hero.skills?.[id] || {}), level, xp: xpForLevel(level) };
+
+[1mClone found (javascript)[22m
+ - ui\dev\campsDev.js [86:35 - 91:7]
+   ui\dev\ordersDev.js [69:35 - 74:11]
+[90m  86 │ [39m    const ranks = GameState.state.progress.guildUpgrades || (GameState.state.progress.guildUpgrades = {});
+[90m  87 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m  88 │ [39m    GuildUpgradeManager.recompute();
+[90m  89 │ [39m    const hero = generateHero({ name });
+[90m  90 │ [39m    for (const [id, level] of Object.entries(skills)) hero.skills[id] = { ...(hero.skills?.[id] || {}), level, xp: xpForLevel(level) };
+[90m  91 │ [39m    if (!HeroManager.addHero(hero)) return null;
+[90m  69 │ [39m    const ranks = GameState.state.progress.guildUpgrades || (GameState.state.progress.guildUpgrades = {});
+[90m  70 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m  71 │ [39m    GuildUpgradeManager.recompute();
+[90m  72 │ [39m    const hero = generateHero({ name });
+[90m  73 │ [39m    for (const [id, level] of Object.entries(skills)) hero.skills[id] = { ...(hero.skills?.[id] || {}), level, xp: xpForLevel(level) };
+[90m  74 │ [39m    return HeroManager.addHero(hero) ? hero : null;
+
+[1mClone found (javascript)[22m
+ - ui\dev\classlessDev.js [33:1 - 42:2]
+   ui\dev\hallStarsDev.js [61:1 - 69:2]
+[90m  33 │ [39mfunction hallPoint() {
+[90m  34 │ [39m    return HeroMotion.guildHallPoint() || { x: 960, y: 520 };
+[90m  35 │ [39m}
+[90m  36 │ [39m
+[90m  37 │ [39m/** A Token of `typeId` at the free spot nearest `point`, or null. */
+[90m  38 │ [39mfunction put(typeId, point) {
+[90m  39 │ [39m    const at = MatPlacement.findSpot(typeId, point, { reach: 300 }) || point;
+[90m  40 │ [39m    const inst = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+[90m  41 │ [39m    return Placement.placeTokenAt(inst, at)?.success ? inst : null;
+[90m  42 │ [39m}
+[90m  61 │ [39mfunction hallPoint() {
+[90m  62 │ [39m    return HeroMotion.guildHallPoint() || { x: 960, y: 520 };
+[90m  63 │ [39m}
+[90m  64 │ [39m
+[90m  65 │ [39mfunction put(typeId, point) {
+[90m  66 │ [39m    const at = MatPlacement.findSpot(typeId, point, { reach: 300 }) || point;
+[90m  67 │ [39m    const inst = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+[90m  68 │ [39m    return Placement.placeTokenAt(inst, at)?.success ? inst : null;
+[90m  69 │ [39m}
+
+[1mClone found (javascript)[22m
+ - ui\dev\classlessDev.js [122:89 - 128:10]
+   ui\dev\ordersDev.js [295:97 - 304:10]
+[90m 122 │ [39m    if (slot == null) return { ok: false, error: 'Start or load a game in a slot first' };
+[90m 123 │ [39m    SaveManager.save(false);
+[90m 124 │ [39m    const before = localStorage.getItem(SaveManager.getSlotKey(slot));
+[90m 125 │ [39m    if (before) localStorage.setItem(getBackupKey(slot), before);
+[90m 126 │ [39m    const data = JSON.parse(GameState.serializeJson());
+[90m 127 │ [39m    const saved = data.state || data;
+[90m 128 │ [39m    const id = `hero_qa_old_knight_${Date.now().toString(36)}`;
+[90m 295 │ [39m    if (!a || !b) return { ok: false, error: 'No room right of the Guild Hall for two Old Oaks' };
+[90m 296 │ [39m
+[90m 297 │ [39m    // Keep the game as it stands as the slot's backup.
+[90m 298 │ [39m    SaveManager.save(false);
+[90m 299 │ [39m    const before = localStorage.getItem(SaveManager.getSlotKey(slot));
+[90m 300 │ [39m    if (before) localStorage.setItem(getBackupKey(slot), before);
+[90m 301 │ [39m    // A copy of the save, written as main wrote it: the live board is never touched here.
+[90m 302 │ [39m    const data = JSON.parse(GameState.serializeJson());
+[90m 303 │ [39m    const saved = data.state || data;
+[90m 304 │ [39m    const savedBoard = saved.board;
+
+[1mClone found (javascript)[22m
+ - ui\dev\combatScreenDev.js [11:57 - 21:9]
+   ui\dev\statusesDev.js [12:68 - 22:9]
+[90m  11 │ [39mimport * as CatchUp from '../../systems/core/CatchUp.js';
+[90m  12 │ [39mimport { InventoryManager } from '../../systems/inventory/InventoryManager.js';
+[90m  13 │ [39mimport { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
+[90m  14 │ [39mimport { generateHero } from '../../systems/hero/HeroGenerator.js';
+[90m  15 │ [39mimport { getTokenType, registerTokenTypes } from '../../config/registries/tokenRegistry.js';
+[90m  16 │ [39mimport { registerItems, getItem } from '../../config/registries/itemRegistry.js';
+[90m  17 │ [39mimport { EFFECTS, registerEffects } from '../../config/registries/effectRegistry.js';
+[90m  18 │ [39mimport { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
+[90m  19 │ [39mimport { ROLE } from '../../config/registries/roleRegistry.js';
+[90m  20 │ [39mimport { makeStatement, KEYWORD } from '../../systems/effects/statements.js';
+[90m  21 │ [39mimport { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
+[90m  12 │ [39mimport * as LiveEffects from '../../systems/effects/LiveEffects.js';
+[90m  13 │ [39mimport { InventoryManager } from '../../systems/inventory/InventoryManager.js';
+[90m  14 │ [39mimport { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
+[90m  15 │ [39mimport { generateHero } from '../../systems/hero/HeroGenerator.js';
+[90m  16 │ [39mimport { getTokenType, registerTokenTypes } from '../../config/registries/tokenRegistry.js';
+[90m  17 │ [39mimport { registerItems, getItem } from '../../config/registries/itemRegistry.js';
+[90m  18 │ [39mimport { EFFECTS, registerEffects } from '../../config/registries/effectRegistry.js';
+[90m  19 │ [39mimport { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
+[90m  20 │ [39mimport { ROLE } from '../../config/registries/roleRegistry.js';
+[90m  21 │ [39mimport { makeStatement, KEYWORD } from '../../systems/effects/statements.js';
+[90m  22 │ [39mimport { EFFECT_TYPES } from '../../systems/effects/constants.js';
+
+[1mClone found (javascript)[22m
+ - ui\dev\combatScreenDev.js [86:38 - 91:14]
+   ui\dev\statusesDev.js [103:25 - 109:2]
+[90m  86 │ [39mexport function fighterAt(level, name) {
+[90m  87 │ [39m    const hero = generateHero({ spriteId: 'fighter' });
+[90m  88 │ [39m    for (const id of Object.keys(hero.skills || {})) hero.skills[id] = { ...hero.skills[id], level, xp: xpForLevel(level) };
+[90m  89 │ [39m    const maxHp = heroMaxHpFromSkills(hero.skills);
+[90m  90 │ [39m    hero.hp = { current: maxHp, max: maxHp };
+[90m  91 │ [39m    if (name) hero.name = name;
+[90m 103 │ [39mfunction fighterAt(level) {
+[90m 104 │ [39m    const hero = generateHero({ spriteId: 'fighter' });
+[90m 105 │ [39m    for (const id of Object.keys(hero.skills || {})) hero.skills[id] = { ...hero.skills[id], level, xp: xpForLevel(level) };
+[90m 106 │ [39m    const maxHp = heroMaxHpFromSkills(hero.skills);
+[90m 107 │ [39m    hero.hp = { current: maxHp, max: maxHp };
+[90m 108 │ [39m    return hero;
+[90m 109 │ [39m}
+
+[1mClone found (javascript)[22m
+ - ui\dev\combatScreenDev.js [196:35 - 201:2]
+   ui\dev\toolsBreakDev.js [167:40 - 172:2]
+[90m 196 │ [39mexport async function playTimeAway(ms = AWAY_MS) {
+[90m 197 │ [39m    if (CatchUp.isRunning()) return { ok: false, error: 'A catch-up is already playing' };
+[90m 198 │ [39m    const now = Date.now();
+[90m 199 │ [39m    await CatchUp.run({ savedAt: now - ms, now, save: false });
+[90m 200 │ [39m    return { ok: true };
+[90m 201 │ [39m}
+[90m 167 │ [39mexport async function playBreakTimeAway(ms = AWAY_MS) {
+[90m 168 │ [39m    if (CatchUp.isRunning()) return { ok: false, error: 'A catch-up is already playing' };
+[90m 169 │ [39m    const now = Date.now();
+[90m 170 │ [39m    await CatchUp.run({ savedAt: now - ms, now, save: false });
+[90m 171 │ [39m    return { ok: true };
+[90m 172 │ [39m}
+
+[1mClone found (javascript)[22m
+ - ui\dev\damageTypesDev.js [4:1 - 12:9]
+   ui\dev\gearDefenceDev.js [4:1 - 12:9]
+[90m   4 │ [39mimport { EventBus } from '../../systems/core/EventBus.js';
+[90m   5 │ [39mimport { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+[90m   6 │ [39mimport * as HeroManager from '../../systems/hero/HeroManager.js';
+[90m   7 │ [39mimport * as EquipmentManager from '../../systems/equipment/EquipmentManager.js';
+[90m   8 │ [39mimport { InventoryManager } from '../../systems/inventory/InventoryManager.js';
+[90m   9 │ [39mimport { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
+[90m  10 │ [39mimport { getTokenType, registerTokenTypes } from '../../config/registries/tokenRegistry.js';
+[90m  11 │ [39mimport { registerItems, getItem } from '../../config/registries/itemRegistry.js';
+[90m  12 │ [39mimport { qaOrder } from './qaOrders.js';
+[90m   4 │ [39mimport { EventBus } from '../../systems/core/EventBus.js';
+[90m   5 │ [39mimport { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+[90m   6 │ [39mimport * as HeroManager from '../../systems/hero/HeroManager.js';
+[90m   7 │ [39mimport * as EquipmentManager from '../../systems/equipment/EquipmentManager.js';
+[90m   8 │ [39mimport { InventoryManager } from '../../systems/inventory/InventoryManager.js';
+[90m   9 │ [39mimport { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
+[90m  10 │ [39mimport { getTokenType, registerTokenTypes } from '../../config/registries/tokenRegistry.js';
+[90m  11 │ [39mimport { registerItems, getItem } from '../../config/registries/itemRegistry.js';
+[90m  12 │ [39mimport { EFFECTS, registerEffects } from '../../config/registries/effectRegistry.js';
+
+[1mClone found (javascript)[22m
+ - ui\dev\damageTypesDev.js [50:9 - 57:10]
+   ui\dev\gearDefenceDev.js [103:9 - 110:10]
+[90m  50 │ [39m        }
+[90m  51 │ [39m    });
+[90m  52 │ [39m    const enemy = (id, name, sprite, enemyBlock) => ({
+[90m  53 │ [39m        id, name, tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 50, sprite, requiresHero: true,
+[90m  54 │ [39m        enemy: { style: 'melee', ...enemyBlock },
+[90m  55 │ [39m        config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [{ itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 }] }
+[90m  56 │ [39m    });
+[90m  57 │ [39m    const elementalArt = getTokenType('token_fire_elemental')?.sprite || 's_crime';
+[90m 103 │ [39m        }
+[90m 104 │ [39m    });
+[90m 105 │ [39m    const enemy = (id, name, sprite, enemyBlock) => ({
+[90m 106 │ [39m        id, name, tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 50, sprite, requiresHero: true,
+[90m 107 │ [39m        enemy: { style: 'melee', ...enemyBlock },
+[90m 108 │ [39m        config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [{ itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 }] }
+[90m 109 │ [39m    });
+[90m 110 │ [39m    const art = (typeId) => getTokenType(typeId)?.sprite || 's_crime';
+
+[1mClone found (javascript)[22m
+ - ui\dev\fishingDev.js [4:1 - 12:12]
+   ui\dev\workConsumablesDev.js [4:1 - 12:12]
+[90m   4 │ [39mimport { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
+[90m   5 │ [39mimport { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+[90m   6 │ [39mimport { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
+[90m   7 │ [39mimport * as BoardState from '../../systems/board/BoardState.js';
+[90m   8 │ [39mimport * as Placement from '../../systems/board/Placement.js';
+[90m   9 │ [39mimport { qaOrder } from './qaOrders.js';
+[90m  10 │ [39mimport * as MatPlacement from '../../systems/board/MatPlacement.js';
+[90m  11 │ [39mimport * as TileModifiers from '../../systems/board/TileModifiers.js';
+[90m  12 │ [39mimport * as Fishing from '../../systems/board/Fishing.js';
+[90m   4 │ [39mimport { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
+[90m   5 │ [39mimport { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+[90m   6 │ [39mimport { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
+[90m   7 │ [39mimport * as BoardState from '../../systems/board/BoardState.js';
+[90m   8 │ [39mimport * as Placement from '../../systems/board/Placement.js';
+[90m   9 │ [39mimport { qaOrder } from './qaOrders.js';
+[90m  10 │ [39mimport * as MatPlacement from '../../systems/board/MatPlacement.js';
+[90m  11 │ [39mimport * as TileModifiers from '../../systems/board/TileModifiers.js';
+[90m  12 │ [39mimport * as SpriteLayer from '../../systems/board/SpriteLayer.js';
+
+[1mClone found (javascript)[22m
+ - ui\dev\fishingDev.js [12:58 - 20:9]
+   ui\dev\toolsBreakDev.js [12:57 - 20:9]
+[90m  12 │ [39mimport * as Fishing from '../../systems/board/Fishing.js';
+[90m  13 │ [39mimport * as EquipmentManager from '../../systems/equipment/EquipmentManager.js';
+[90m  14 │ [39mimport { InventoryManager } from '../../systems/inventory/InventoryManager.js';
+[90m  15 │ [39mimport * as HeroManager from '../../systems/hero/HeroManager.js';
+[90m  16 │ [39mimport { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
+[90m  17 │ [39mimport { generateHero } from '../../systems/hero/HeroGenerator.js';
+[90m  18 │ [39mimport { getTokenType, registerTokenTypes, tokenStartingUses, tokenName } from '../../config/registries/tokenRegistry.js';
+[90m  19 │ [39mimport { getItem, registerItems } from '../../config/registries/itemRegistry.js';
+[90m  20 │ [39mimport { toolKindLabel } from '../../config/registries/toolKinds.js';
+[90m  12 │ [39mimport * as CatchUp from '../../systems/core/CatchUp.js';
+[90m  13 │ [39mimport * as EquipmentManager from '../../systems/equipment/EquipmentManager.js';
+[90m  14 │ [39mimport { InventoryManager } from '../../systems/inventory/InventoryManager.js';
+[90m  15 │ [39mimport * as HeroManager from '../../systems/hero/HeroManager.js';
+[90m  16 │ [39mimport { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
+[90m  17 │ [39mimport { generateHero } from '../../systems/hero/HeroGenerator.js';
+[90m  18 │ [39mimport { getTokenType, registerTokenTypes, tokenStartingUses, tokenName } from '../../config/registries/tokenRegistry.js';
+[90m  19 │ [39mimport { getItem, registerItems } from '../../config/registries/itemRegistry.js';
+[90m  20 │ [39mimport { getGrid } from '../../config/registries/equipmentConstants.js';
+
+[1mClone found (javascript)[22m
+ - ui\dev\fishingDev.js [97:16 - 106:9]
+   ui\dev\toolsBreakDev.js [80:14 - 89:9]
+[90m  97 │ [39mlet offCatches = null;
+[90m  98 │ [39m
+[90m  99 │ [39mfunction put(typeId, point) {
+[90m 100 │ [39m    const spot = MatPlacement.findSpot(typeId, point, { reach: 320 }) || point;
+[90m 101 │ [39m    const inst = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+[90m 102 │ [39m    return Placement.placeTokenAt(inst, { x: spot.x, y: spot.y })?.success ? inst : null;
+[90m 103 │ [39m}
+[90m 104 │ [39m
+[90m 105 │ [39m/** A new Fishing 10 hero with room made in the roster, holding `items` (tools and bait) from the Bank. */
+[90m 106 │ [39mfunction qaFisher(name, items) {
+[90m  80 │ [39mlet offBroke = null;
+[90m  81 │ [39m
+[90m  82 │ [39mfunction put(typeId, point) {
+[90m  83 │ [39m    const spot = MatPlacement.findSpot(typeId, point, { reach: 320 }) || point;
+[90m  84 │ [39m    const inst = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+[90m  85 │ [39m    return Placement.placeTokenAt(inst, { x: spot.x, y: spot.y })?.success ? inst : null;
+[90m  86 │ [39m}
+[90m  87 │ [39m
+[90m  88 │ [39m/** A new hero at `level` in every skill, full health, room made in the roster, holding `itemId` from the Bank. */
+[90m  89 │ [39mfunction qaHero(name, level, itemId) {
+
+[1mClone found (javascript)[22m
+ - ui\dev\fishingDev.js [97:22 - 106:9]
+   ui\dev\workConsumablesDev.js [100:14 - 109:9]
+[90m  97 │ [39mlet offCatches = null;
+[90m  98 │ [39m
+[90m  99 │ [39mfunction put(typeId, point) {
+[90m 100 │ [39m    const spot = MatPlacement.findSpot(typeId, point, { reach: 320 }) || point;
+[90m 101 │ [39m    const inst = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+[90m 102 │ [39m    return Placement.placeTokenAt(inst, { x: spot.x, y: spot.y })?.success ? inst : null;
+[90m 103 │ [39m}
+[90m 104 │ [39m
+[90m 105 │ [39m/** A new Fishing 10 hero with room made in the roster, holding `items` (tools and bait) from the Bank. */
+[90m 106 │ [39mfunction qaFisher(name, items) {
+[90m 100 │ [39mlet offs = [];
+[90m 101 │ [39m
+[90m 102 │ [39mfunction put(typeId, point) {
+[90m 103 │ [39m    const spot = MatPlacement.findSpot(typeId, point, { reach: 320 }) || point;
+[90m 104 │ [39m    const inst = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+[90m 105 │ [39m    return Placement.placeTokenAt(inst, { x: spot.x, y: spot.y })?.success ? inst : null;
+[90m 106 │ [39m}
+[90m 107 │ [39m
+[90m 108 │ [39m/** A new hero at level 10 in `skill`, with room made in the roster, carrying `items` from the Bank. */
+[90m 109 │ [39mfunction qaWorker(name, skill, items) {
+
+[1mClone found (javascript)[22m
+ - ui\dev\fishingDev.js [106:30 - 111:18]
+   ui\dev\forestryDev.js [113:31 - 118:18]
+[90m 106 │ [39mfunction qaFisher(name, items) {
+[90m 107 │ [39m    const ranks = GuildUpgradeManager.getRanks();
+[90m 108 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m 109 │ [39m    GuildUpgradeManager.recompute();
+[90m 110 │ [39m    const hero = generateHero({ name });
+[90m 111 │ [39m    hero.skills = { fishing: { ...(hero.skills?.fishing || {}), level: 10, xp: xpForLevel(10) } };
+[90m 113 │ [39mfunction qaHero(name, skillIds) {
+[90m 114 │ [39m    const ranks = GuildUpgradeManager.getRanks();
+[90m 115 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m 116 │ [39m    GuildUpgradeManager.recompute();
+[90m 117 │ [39m    const hero = generateHero({ name });
+[90m 118 │ [39m    hero.skills = Object.fromEntries(skillIds.map(id => [id, { ...(hero.skills?.[id] || {}), level: 10, xp: xpForLevel(10) }]));
+
+[1mClone found (javascript)[22m
+ - ui\dev\fishingDev.js [106:23 - 111:20]
+   ui\dev\workConsumablesDev.js [109:30 - 114:20]
+[90m 106 │ [39mfunction qaFisher(name, items) {
+[90m 107 │ [39m    const ranks = GuildUpgradeManager.getRanks();
+[90m 108 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m 109 │ [39m    GuildUpgradeManager.recompute();
+[90m 110 │ [39m    const hero = generateHero({ name });
+[90m 111 │ [39m    hero.skills = { fishing: { ...(hero.skills?.fishing || {}), level: 10, xp: xpForLevel(10) } };
+[90m 109 │ [39mfunction qaWorker(name, skill, items) {
+[90m 110 │ [39m    const ranks = GuildUpgradeManager.getRanks();
+[90m 111 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m 112 │ [39m    GuildUpgradeManager.recompute();
+[90m 113 │ [39m    const hero = generateHero({ name });
+[90m 114 │ [39m    hero.skills = { [skill]: { ...(hero.skills?.[skill] || {}), level: 10, xp: xpForLevel(10) } };
+
+[1mClone found (javascript)[22m
+ - ui\dev\fishingDev.js [134:117 - 139:10]
+   ui\dev\stationsDev.js [78:128 - 82:10]
+[90m 134 │ [39m    if (!getItem(ROD) || !getItem(SHRIMP)) return { ok: false, error: 'No Fishing Rod or Raw Shrimp in the content' };
+[90m 135 │ [39m    registerQa();
+[90m 136 │ [39m    const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall' || getTokenType(t.typeId)?.isGuildHall);
+[90m 137 │ [39m    const c = hall ? { x: hall.x, y: hall.y } : { x: 880, y: 560 };
+[90m 138 │ [39m
+[90m 139 │ [39m    const lake = put(QA_FISHING.LAKE, { x: c.x - 480, y: c.y + 290 });
+[90m  78 │ [39m    if (!getSkillRecipePool('smithing').length && !registered) return { ok: false, error: 'No Smithing recipes in the content' };
+[90m  79 │ [39m    registerQa();
+[90m  80 │ [39m    const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall' || getTokenType(t.typeId)?.isGuildHall);
+[90m  81 │ [39m    const c = hall ? { x: hall.x, y: hall.y } : { x: 880, y: 560 };
+[90m  82 │ [39m    const furnace = put(QA_TYPES.FURNACE, { x: c.x - 160, y: c.y + 260 });
+
+[1mClone found (javascript)[22m
+ - ui\dev\forestryDev.js [12:64 - 33:13]
+   ui\dev\orchardDev.js [13:58 - 35:13]
+[90m  12 │ [39mimport * as Demolition from '../../systems/board/Demolition.js';
+[90m  13 │ [39mimport * as FixedTokens from '../../systems/board/FixedTokens.js';
+[90m  14 │ [39mimport { InventoryManager } from '../../systems/inventory/InventoryManager.js';
+[90m  15 │ [39mimport { flagStatusLine } from '../components/board/flagText.js';
+[90m  16 │ [39mimport * as HeroManager from '../../systems/hero/HeroManager.js';
+[90m  17 │ [39mimport { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
+[90m  18 │ [39mimport { generateHero } from '../../systems/hero/HeroGenerator.js';
+[90m  19 │ [39mimport { registerTokenTypes, tokenStartingUses, tokenName } from '../../config/registries/tokenRegistry.js';
+[90m  20 │ [39mimport { getItem } from '../../config/registries/itemRegistry.js';
+[90m  21 │ [39mimport { EFFECT_TYPES } from '../../systems/effects/constants.js';
+[90m  22 │ [39mimport { xpForLevel } from '../../utils/XPCurve.js';
+[90m  23 │ [39m
+[90m  24 │ [39m/**
+[90m  25 │ [39m * Test Tokens made in memory for this check only (never written to `data/`, gone on reload), with
+[90m  26 │ [39m * the S2a fields the S8 content pack will give the real ones:
+[90m  27 │ [39m * - a QA Oak Forest: plants QA Oak Saplings within its reach up to 3 (a seedling each), speeds
+[90m  28 │ [39m *   its Oaks' regrowth 30 %, can be cleared where a map placed it;
+[90m  29 │ [39m * - a QA Oak: 2 logs, then a QA Oak Stump, which needs the QA Oak Forest in reach and pays one Oak
+[90m  30 │ [39m *   Seedling to become a QA Oak Sapling (20 s, 14 s with the Forest), which grows back (20 s);
+[90m  31 │ [39m * - a QA Birch Forest and a QA Birch Stump that needs it and a Birch Seedling (8 s).
+[90m     … 2 more lines[39m
+[90m  13 │ [39mimport * as Respawn from '../../systems/board/Respawn.js';
+[90m  14 │ [39mimport * as FixedTokens from '../../systems/board/FixedTokens.js';
+[90m  15 │ [39mimport { InventoryManager } from '../../systems/inventory/InventoryManager.js';
+[90m  16 │ [39mimport { flagStatusLine } from '../components/board/flagText.js';
+[90m  17 │ [39mimport * as HeroManager from '../../systems/hero/HeroManager.js';
+[90m  18 │ [39mimport { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
+[90m  19 │ [39mimport { generateHero } from '../../systems/hero/HeroGenerator.js';
+[90m  20 │ [39mimport { registerTokenTypes, tokenStartingUses, tokenName } from '../../config/registries/tokenRegistry.js';
+[90m  21 │ [39mimport { getItem } from '../../config/registries/itemRegistry.js';
+[90m  22 │ [39mimport { EFFECT_TYPES } from '../../systems/effects/constants.js';
+[90m  23 │ [39mimport { xpForLevel } from '../../utils/XPCurve.js';
+[90m  24 │ [39m
+[90m  25 │ [39m/**
+[90m  26 │ [39m * Test Tokens made in memory for this check only (never written to `data/`, gone on reload), with
+[90m  27 │ [39m * the S2b shape the S8 content pack will give the real Apple Orchard, Sapling and Tree:
+[90m  28 │ [39m * - a QA Apple Orchard: plants QA Apple Saplings within its reach up to 3 (an Apple Seed each) and
+[90m  29 │ [39m *   speeds its trees' fruiting 40 %;
+[90m  30 │ [39m * - a QA Apple Sapling: grows into a QA Apple Tree in 20 s;
+[90m  31 │ [39m * - a QA Apple Tree: 3 picks, then Bare (drawn as its Bare picture) for 30 s (18 s with the
+[90m  32 │ [39m *   Orchard), then fruiting again all at once, only with a QA Apple Orchard in reach. It stays
+[90m     … 3 more lines[39m
+
+[1mClone found (javascript)[22m
+ - ui\dev\forestryDev.js [108:82 - 139:16]
+   ui\dev\orchardDev.js [95:61 - 126:16]
+[90m 108 │ [39m    const inst = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+[90m 109 │ [39m    return Placement.placeTokenAt(inst, point)?.success ? inst : null;
+[90m 110 │ [39m}
+[90m 111 │ [39m
+[90m 112 │ [39m/** A new hero holding only these skills at level 10, with room made in the roster. */
+[90m 113 │ [39mfunction qaHero(name, skillIds) {
+[90m 114 │ [39m    const ranks = GuildUpgradeManager.getRanks();
+[90m 115 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m 116 │ [39m    GuildUpgradeManager.recompute();
+[90m 117 │ [39m    const hero = generateHero({ name });
+[90m 118 │ [39m    hero.skills = Object.fromEntries(skillIds.map(id => [id, { ...(hero.skills?.[id] || {}), level: 10, xp: xpForLevel(10) }]));
+[90m 119 │ [39m    return HeroManager.addHero(hero) ? hero : null;
+[90m 120 │ [39m}
+[90m 121 │ [39m
+[90m 122 │ [39m/** What the scene laid, for the readout. */
+[90m 123 │ [39mlet scene = null;
+[90m 124 │ [39m
+[90m 125 │ [39m/**
+[90m 126 │ [39m * The mat's upper right:
+[90m 127 │ [39m * - a QA Oak Forest with two QA Oaks in its reach and a QA Forester flagged on it: the Forest
+[90m     … 12 more lines[39m
+[90m  95 │ [39m    const inst = BoardState.createTokenInstance(typeId, uses);
+[90m  96 │ [39m    return Placement.placeTokenAt(inst, point)?.success ? inst : null;
+[90m  97 │ [39m}
+[90m  98 │ [39m
+[90m  99 │ [39m/** A new hero holding only these skills at level 10, with room made in the roster. */
+[90m 100 │ [39mfunction qaHero(name, skillIds) {
+[90m 101 │ [39m    const ranks = GuildUpgradeManager.getRanks();
+[90m 102 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m 103 │ [39m    GuildUpgradeManager.recompute();
+[90m 104 │ [39m    const hero = generateHero({ name });
+[90m 105 │ [39m    hero.skills = Object.fromEntries(skillIds.map(id => [id, { ...(hero.skills?.[id] || {}), level: 10, xp: xpForLevel(10) }]));
+[90m 106 │ [39m    return HeroManager.addHero(hero) ? hero : null;
+[90m 107 │ [39m}
+[90m 108 │ [39m
+[90m 109 │ [39m/** What the scene laid, for the readout. */
+[90m 110 │ [39mlet scene = null;
+[90m 111 │ [39m
+[90m 112 │ [39m/**
+[90m 113 │ [39m * The top of the mat:
+[90m 114 │ [39m * - a QA Apple Orchard with a fruiting QA Apple Tree and a Bare one in its reach, and a QA Picker
+[90m     … 12 more lines[39m
+
+[1mClone found (javascript)[22m
+ - ui\dev\forestryDev.js [109:70 - 123:4]
+   ui\dev\skillLoopsDev.js [194:7 - 208:4]
+[90m 109 │ [39m    return Placement.placeTokenAt(inst, point)?.success ? inst : null;
+[90m 110 │ [39m}
+[90m 111 │ [39m
+[90m 112 │ [39m/** A new hero holding only these skills at level 10, with room made in the roster. */
+[90m 113 │ [39mfunction qaHero(name, skillIds) {
+[90m 114 │ [39m    const ranks = GuildUpgradeManager.getRanks();
+[90m 115 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m 116 │ [39m    GuildUpgradeManager.recompute();
+[90m 117 │ [39m    const hero = generateHero({ name });
+[90m 118 │ [39m    hero.skills = Object.fromEntries(skillIds.map(id => [id, { ...(hero.skills?.[id] || {}), level: 10, xp: xpForLevel(10) }]));
+[90m 119 │ [39m    return HeroManager.addHero(hero) ? hero : null;
+[90m 120 │ [39m}
+[90m 121 │ [39m
+[90m 122 │ [39m/** What the scene laid, for the readout. */
+[90m 123 │ [39mlet scene = null;
+[90m 194 │ [39m    });
+[90m 195 │ [39m}
+[90m 196 │ [39m
+[90m 197 │ [39m/** A new hero holding only these skills at level 10, with room made in the roster. */
+[90m 198 │ [39mfunction qaHero(name, skillIds) {
+[90m 199 │ [39m    const ranks = GuildUpgradeManager.getRanks();
+[90m 200 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m 201 │ [39m    GuildUpgradeManager.recompute();
+[90m 202 │ [39m    const hero = generateHero({ name });
+[90m 203 │ [39m    hero.skills = Object.fromEntries(skillIds.map(id => [id, { ...(hero.skills?.[id] || {}), level: 10, xp: xpForLevel(10) }]));
+[90m 204 │ [39m    return HeroManager.addHero(hero) ? hero : null;
+[90m 205 │ [39m}
+[90m 206 │ [39m
+[90m 207 │ [39m/** Ids of what the waiting scene laid, for the readout. */
+[90m 208 │ [39mlet waitScene = null;
+
+[1mClone found (javascript)[22m
+ - ui\dev\gearDefenceDev.js [9:87 - 17:9]
+   ui\dev\statusesDev.js [15:67 - 23:9]
+[90m   9 │ [39mimport { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
+[90m  10 │ [39mimport { getTokenType, registerTokenTypes } from '../../config/registries/tokenRegistry.js';
+[90m  11 │ [39mimport { registerItems, getItem } from '../../config/registries/itemRegistry.js';
+[90m  12 │ [39mimport { EFFECTS, registerEffects } from '../../config/registries/effectRegistry.js';
+[90m  13 │ [39mimport { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
+[90m  14 │ [39mimport { ROLE } from '../../config/registries/roleRegistry.js';
+[90m  15 │ [39mimport { makeStatement, KEYWORD } from '../../systems/effects/statements.js';
+[90m  16 │ [39mimport { EFFECT_TYPES } from '../../systems/effects/constants.js';
+[90m  17 │ [39mimport { qaOrder } from './qaOrders.js';
+[90m  15 │ [39mimport { generateHero } from '../../systems/hero/HeroGenerator.js';
+[90m  16 │ [39mimport { getTokenType, registerTokenTypes } from '../../config/registries/tokenRegistry.js';
+[90m  17 │ [39mimport { registerItems, getItem } from '../../config/registries/itemRegistry.js';
+[90m  18 │ [39mimport { EFFECTS, registerEffects } from '../../config/registries/effectRegistry.js';
+[90m  19 │ [39mimport { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
+[90m  20 │ [39mimport { ROLE } from '../../config/registries/roleRegistry.js';
+[90m  21 │ [39mimport { makeStatement, KEYWORD } from '../../systems/effects/statements.js';
+[90m  22 │ [39mimport { EFFECT_TYPES } from '../../systems/effects/constants.js';
+[90m  23 │ [39mimport { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
+
+[1mClone found (javascript)[22m
+ - ui\dev\hallStarsDev.js [58:51 - 72:12]
+   ui\dev\perksDev.js [60:16 - 73:19]
+[90m  58 │ [39m    InventoryManager.addItem('item_oak_wood', 600);
+[90m  59 │ [39m}
+[90m  60 │ [39m
+[90m  61 │ [39mfunction hallPoint() {
+[90m  62 │ [39m    return HeroMotion.guildHallPoint() || { x: 960, y: 520 };
+[90m  63 │ [39m}
+[90m  64 │ [39m
+[90m  65 │ [39mfunction put(typeId, point) {
+[90m  66 │ [39m    const at = MatPlacement.findSpot(typeId, point, { reach: 300 }) || point;
+[90m  67 │ [39m    const inst = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+[90m  68 │ [39m    return Placement.placeTokenAt(inst, at)?.success ? inst : null;
+[90m  69 │ [39m}
+[90m  70 │ [39m
+[90m  71 │ [39m/** What the scene laid, for the readout. */
+[90m  72 │ [39mlet scene = null;
+[90m  60 │ [39m    return true;
+[90m  61 │ [39m}
+[90m  62 │ [39m
+[90m  63 │ [39mfunction hallPoint() {
+[90m  64 │ [39m    return HeroMotion.guildHallPoint() || { x: 960, y: 520 };
+[90m  65 │ [39m}
+[90m  66 │ [39m
+[90m  67 │ [39mfunction put(typeId, point) {
+[90m  68 │ [39m    const at = MatPlacement.findSpot(typeId, point, { reach: 300 }) || point;
+[90m  69 │ [39m    const inst = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+[90m  70 │ [39m    return Placement.placeTokenAt(inst, at)?.success ? inst : null;
+[90m  71 │ [39m}
+[90m  72 │ [39m
+[90m  73 │ [39mfunction makeRoom(extra = 1) {
+
+[1mClone found (javascript)[22m
+ - ui\dev\hallStarsDev.js [88:101 - 94:39]
+   ui\dev\miningDev.js [110:30 - 116:39]
+[90m  88 │ [39m    if (!vein || !camp) return { ok: false, error: 'No room right of the Guild Hall for the scene' };
+[90m  89 │ [39m    TileModifiers.rebuildAll();
+[90m  90 │ [39m
+[90m  91 │ [39m    const ranks = GuildUpgradeManager.getRanks();
+[90m  92 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m  93 │ [39m    GuildUpgradeManager.recompute();
+[90m  94 │ [39m    const miner = generateHero({ name: 'QA Hall Miner' });
+[90m 110 │ [39m    Respawn.restInstead(iron);
+[90m 111 │ [39m    TileModifiers.rebuildAll();
+[90m 112 │ [39m
+[90m 113 │ [39m    const ranks = GuildUpgradeManager.getRanks();
+[90m 114 │ [39m    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+[90m 115 │ [39m    GuildUpgradeManager.recompute();
+[90m 116 │ [39m    const miner = generateHero({ name: 'QA Miner' });
+
+[1mClone found (javascript)[22m
+ - ui\dev\statusesDev.js [99:5 - 112:16]
+   ui\dev\suppliesDev.js [48:5 - 72:16]
+[90m  99 │ [39m    });
+[90m 100 │ [39m}
+[90m 101 │ [39m
+[90m 102 │ [39m/** A hero in the Fighter's art at `level` in every skill, full health. */
+[90m 103 │ [39mfunction fighterAt(level) {
+[90m 104 │ [39m    const hero = generateHero({ spriteId: 'fighter' });
+[90m 105 │ [39m    for (const id of Object.keys(hero.skills || {})) hero.skills[id] = { ...hero.skills[id], level, xp: xpForLevel(level) };
+[90m 106 │ [39m    const maxHp = heroMaxHpFromSkills(hero.skills);
+[90m 107 │ [39m    hero.hp = { current: maxHp, max: maxHp };
+[90m 108 │ [39m    return hero;
+[90m 109 │ [39m}
+[90m 110 │ [39m
+[90m 111 │ [39m/** The heroes this scene made, by enemy type: the readout's rows. */
+[90m 112 │ [39mlet sceneHeroes = [];
+[90m  48 │ [39m    });
+[90m  49 │ [39m}
+[90m  50 │ [39m
+[90m  51 │ [39m/** A hero in the Fighter's art at `level` in every skill, full health, nothing equipped. */
+[90m  52 │ [39mfunction fighterAt(level) {
+[90m  53 │ [39m    const hero = generateHero({ spriteId: 'fighter' });
+[90m  54 │ [39m    for (const id of Object.keys(hero.skills || {})) hero.skills[id] = { ...hero.skills[id], level, xp: xpForLevel(level) };
+[90m  55 │ [39m    const maxHp = heroMaxHpFromSkills(hero.skills);
+[90m  56 │ [39m    hero.hp = { current: maxHp, max: maxHp };
+[90m  57 │ [39m    return hero;
+[90m  58 │ [39m}
+[90m  59 │ [39m
+[90m  60 │ [39m/**
+[90m  61 │ [39m * Beside the Guild Hall, two Cows and two new Fighters, each flag planted on one:
+[90m  62 │ [39m * - a level 40 Fighter with Valor and Ironskin (30 of each in the Bank): a bubble names each
+[90m  63 │ [39m *   elixir as the first fight starts, the Bank drops by one of each, and again after ten Cows;
+[90m  64 │ [39m * - a level 5 Fighter with Shrimp and Water (20 Shrimp, 5 Water): below 25 % HP they eat, a
+[90m  65 │ [39m *   "+5 ♥" bubble over them; the Water stays in the Bank (drinks never heal);
+[90m  66 │ [39m * - a level 5 Fighter with only Water, hurt to 2 HP and standing beside the Hall, out of any
+[90m  67 │ [39m *   fight: they do not drink (drinks never heal, out of a fight either); the Water stays in the
+[90m     … 5 more lines[39m
+
+[90m┌────────────┬────────────────┬─────────────┬──────────────┬──────────────┬──────────────────┬───────────────────┐[39m
+[90m│[39m[31m Format     [39m[90m│[39m[31m Files analyzed [39m[90m│[39m[31m Total lines [39m[90m│[39m[31m Total tokens [39m[90m│[39m[31m Clones found [39m[90m│[39m[31m Duplicated lines [39m[90m│[39m[31m Duplicated tokens [39m[90m│[39m
+[90m├────────────┼────────────────┼─────────────┼──────────────┼──────────────┼──────────────────┼───────────────────┤[39m
+[90m│[39m javascript [90m│[39m 432            [90m│[39m 87009       [90m│[39m 560765       [90m│[39m 55           [90m│[39m 484 (0.56%)      [90m│[39m 4597 (0.82%)      [90m│[39m
+[90m├────────────┼────────────────┼─────────────┼──────────────┼──────────────┼──────────────────┼───────────────────┤[39m
+[90m│[39m jsx        [90m│[39m 158            [90m│[39m 27976       [90m│[39m 187459       [90m│[39m 13           [90m│[39m 142 (0.51%)      [90m│[39m 1210 (0.65%)      [90m│[39m
+[90m├────────────┼────────────────┼─────────────┼──────────────┼──────────────┼──────────────────┼───────────────────┤[39m
+[90m│[39m [1mTotal:[22m     [90m│[39m 590            [90m│[39m 114985      [90m│[39m 748224       [90m│[39m 68           [90m│[39m 626 (0.54%)      [90m│[39m 5807 (0.78%)      [90m│[39m
+[90m└────────────┴────────────────┴─────────────┴──────────────┴──────────────┴──────────────────┴───────────────────┘[39m
+[90mFound 68 clones.[39m
+[90mtime: 760.027ms[39m
+
+[90m💡 Auto-refactor with AI: [1m[39mnpx skills add https://github.com/kucherenko/jscpd --skill dry-refactoring[90m[22m
+[90m🎩 New: Gangsta Agents — discipline your AI coding → gangsta.page[39m
+[90m💖 Support jscpd project → https://opencollective.com/jscpd[39m

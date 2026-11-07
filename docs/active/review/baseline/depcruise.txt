@@ -1,0 +1,123 @@
+# dependency-cruiser, 2026-11-06, 93338609, npm run depcruise
+
+  warn utils-only-utils: src/utils/CombatFormulas.js → src/systems/effects/constants.js
+  warn no-circular: src/systems/inventory/InventoryManager.js → 
+      src/systems/progression/RegistryManager.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/inventory/InventoryManager.js
+  warn no-circular: src/systems/inventory/InventoryManager.js → 
+      src/systems/inventory/InventoryStore.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/inventory/InventoryManager.js
+  warn no-circular: src/systems/inventory/InventoryManager.js → 
+      src/systems/inventory/InventoryFormatter.js →
+      src/systems/inventory/InventoryStore.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/inventory/InventoryManager.js
+  warn no-circular: src/systems/inventory/InventoryFormatter.js → 
+      src/systems/inventory/InventoryStore.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/hero/HeroEffects.js →
+      src/systems/inventory/InventoryManager.js →
+      src/systems/inventory/InventoryFormatter.js
+  warn no-circular: src/systems/hero/logic/HeroState.js → 
+      src/systems/hero/logic/HeroLookup.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/hero/HeroManager.js →
+      src/systems/hero/logic/HeroState.js
+  warn no-circular: src/systems/hero/logic/HeroState.js → 
+      src/systems/board/FlagColours.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/hero/HeroManager.js →
+      src/systems/hero/logic/HeroState.js
+  warn no-circular: src/systems/hero/logic/HeroRehydration.js → 
+      src/systems/equipment/heldCopies.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/hero/HeroManager.js →
+      src/systems/hero/logic/HeroRehydration.js
+  warn no-circular: src/systems/hero/logic/HeroLookup.js → 
+      src/systems/hero/logic/HeroRehydration.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/hero/HeroManager.js →
+      src/systems/hero/logic/HeroLookup.js
+  warn no-circular: src/systems/hero/logic/HeroLifecycle.js → 
+      src/systems/hero/logic/HeroRehydration.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/hero/HeroManager.js →
+      src/systems/hero/logic/HeroLifecycle.js
+  warn no-circular: src/systems/hero/logic/HeroLifecycle.js → 
+      src/systems/board/FlagColours.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/hero/HeroManager.js →
+      src/systems/hero/logic/HeroLifecycle.js
+  warn no-circular: src/systems/hero/HeroManager.js → 
+      src/systems/hero/logic/HeroState.js →
+      src/systems/board/FlagColours.js →
+      src/state/GameState.js →
+      src/systems/hero/HeroManager.js
+  warn no-circular: src/systems/hero/HeroManager.js → 
+      src/systems/hero/logic/HeroRoster.js →
+      src/state/GameState.js →
+      src/systems/hero/HeroManager.js
+  warn no-circular: src/systems/hero/HeroManager.js → 
+      src/systems/hero/logic/HeroRehydration.js →
+      src/state/GameState.js →
+      src/systems/hero/HeroManager.js
+  warn no-circular: src/systems/hero/HeroManager.js → 
+      src/systems/hero/logic/HeroLookup.js →
+      src/state/GameState.js →
+      src/systems/hero/HeroManager.js
+  warn no-circular: src/systems/hero/HeroEffects.js → 
+      src/systems/inventory/InventoryManager.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/hero/HeroEffects.js
+  warn no-circular: src/systems/equipment/heldCopies.js → 
+      src/systems/inventory/InventoryStore.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/equipment/heldCopies.js
+  warn no-circular: src/systems/equipment/EquipmentManager.js → 
+      src/systems/inventory/InventoryManager.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js
+  warn no-circular: src/systems/equipment/EquipmentManager.js → 
+      src/systems/hero/HeroManager.js →
+      src/systems/hero/logic/HeroLifecycle.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js
+  warn no-circular: src/systems/equipment/EquipmentManager.js → 
+      src/systems/equipment/heldCopies.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js
+  warn no-circular: src/systems/equipment/EquipmentManager.js → 
+      src/systems/equipment/EquipmentValidator.js →
+      src/systems/hero/HeroManager.js →
+      src/systems/hero/logic/HeroLifecycle.js →
+      src/state/GameState.js →
+      src/systems/equipment/EquipmentManager.js
+  warn no-circular: src/state/GameState.js → 
+      src/systems/hero/HeroManager.js →
+      src/systems/hero/logic/HeroLifecycle.js →
+      src/state/GameState.js
+  warn no-circular: src/state/GameState.js → 
+      src/systems/equipment/EquipmentManager.js →
+      src/systems/hero/HeroEffects.js →
+      src/systems/equipment/heldCopies.js →
+      src/state/GameState.js
+  warn no-circular: src/state/GameState.js → 
+      src/systems/board/FlagColours.js →
+      src/state/GameState.js
+
+x 24 dependency violations (0 errors, 24 warnings). 615 modules, 3748 dependencies cruised.
+

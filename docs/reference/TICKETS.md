@@ -19,7 +19,8 @@ here.
 - **Priority**: **P1** a player can hit it, or a measured miss of a target ·
   **P2** real cost or risk · **P3** tidy-up.
 - **Origin**: the old ID, so the full write-up can be found in
-  `docs/archive/` (CR3 = code review round 3, `docs/archive/review_v3/`;
+  `docs/archive/` (CR4 = code review round 4, `docs/active/review/`;
+  CR3 = code review round 3, `docs/archive/review_v3/`;
   FB = token lifecycle feedback; FMR = free playmat review, 2026-09-21).
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).

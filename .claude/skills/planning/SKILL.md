@@ -41,6 +41,15 @@ builds from. `CLAUDE.md` ("The loop" and "Planning sessions") is the rule book.
    queue. Mark the concept `briefed`.
 5. Keep `ideas.md` current: a listed idea leaves the page when it has moved
    on, pointing to where it went.
+6. **Review intake** (round 4, `docs/active/review/README.md`): when
+   `docs/active/review/STATUS.md` marks an area `ready for triage`, group its
+   verified findings into a batch of about fifteen (`owner-decision` items
+   first, each in plain words: what the player sees today, what would change,
+   options with the recommendation first), ask the owner the batch as
+   multiple choice, record the answers in `review/triage_<date>.md`, file one
+   `T-` ticket per accepted finding (Origin `CR4-NNN`), set each finding's
+   state, then write the fix briefs (cleanups first, then measured perf
+   slices, then refactors) and add their rows to the order table.
 
 ## Rules
 
