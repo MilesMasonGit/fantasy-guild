@@ -25,7 +25,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-333**
+**Next free number: T-334**
 
 ---
 
@@ -47,6 +47,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-333 | P2 | open, needs measuring (the 30-minute soak) | **A hidden page piles up detached elements and listeners** (soak bench smoke, 2026-11-06, cap128, headless Chrome 156): while `document.visibilityState` is hidden and the drawing clocks are paused, DOM nodes climbed about 296 a minute and listeners about 138 a minute, steady, most of them detached (the document itself grew only 27 a minute); all released at the first visible frame. A game left in a background browser tab for hours keeps climbing; the desktop app is probably unaffected (WebView2 keeps the page visible when minimised: unverified). Guess, not checked: elements removed while no frame runs stay alive until the next rendered frame. Confirm with `npm run bench:soak` (default 30 min, 5 hidden) in a bench window, then find the holder with `--snapshot`. | soak prep, review R11 |
 | T-258 | P2 | open | **Put the tutorial's Old Site step back once the endgame ruins exist** (owner 2026-10-27 removed it, T-259): the concept puts 25 endgame ruins in the Starter Camp; no Token is marked `landmark` yet. When the ruins are authored and placed, restore the inspect step and its lines | K4 (Owner 2026-11-04: the old steps retire with brief 480; a place for the ruins goes in its goal, if wanted.) |
 | T-287 | P3 | open | **Enemy performance, next steps** (T-200 report; the tether census and the loot flight's forced layout merged 2026-11-03): the walk-end neighbourhood rebuild (~8 % of the enemies80 tick; limiting it to the walker needs a ruling on modifiers that are stale on purpose: `charges_below`, `worked`, `carrying`); MatBoard re-rendering every tick with walkers (structural, eye-check); a JS-stepped walk glide (~3,000 transition events a second; eye-check and `bench:crisp`) | T-200 engineer 2026-11-02 |
 | T-294 | P2 | open | **The ledger and world tables can't hold the ladder yet**: the ledger's plan tiers stop at 5 (`PLAN_TIERS`, the ladder needs 7) and a cell's settle level and price follow its ring, not its rung. Open tiers 6 and 7, let a cell's requirement follow the rung of its main material, then set stage budgets and the new pace curve in the plan ([the ladder](../active/concept_content_roadmap.md#the-ladder-owner-approved-2026-11-02)). **Ring stars (brief 380 M4) lean on the same mapping**: the ledger prices a ring's Guild Hall star so the ring opens when the stage before it ends, reading ring n as opening after tier n − 1 in one place (`ringBudgetTier` in `ledger/pace.js`); when rings hold several rungs, make it the ring before's last tier, re-run the stars' proposals (CMS Guild Hall page) and re-price the wild rings' stars, which wait on budgets for tiers 3 and on (today priced by the wild price growth, in tier 3's Watermelon) | content roadmap 2026-11-02 |
