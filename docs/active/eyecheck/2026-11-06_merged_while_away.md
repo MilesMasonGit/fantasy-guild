@@ -37,3 +37,6 @@ You approved merging these on the tests while away. Nothing here needs a branch 
 
 12. **The settle ceremony** (380 M5). Settle a place from the world map: the gold banner, then the name and land across the mat with a fanfare (a door sound until your file), then the heroes walk in from the bottom to the Hall; the enemies stand spread round it and wait. Click or press a key to skip. Travel back: no ceremony. Choices: title size A as built or B twice; reduced motion A heroes still walk or B appear at once.
    Verdict:
+
+13. **Tools that break** (480 L1; no item has a chance yet). QA panel → Tools that break: lay out the scene; the axe and the sword break, the hero says it in gold and stops with the yellow alert; a Bank tooltip line gives the chance; Play 5 min away lists them under Broken.
+   Verdict:
