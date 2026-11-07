@@ -245,6 +245,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Summaries
 
+*Fri 6 Nov 22:10. Session closed at the owner's word. Everything is merged and pushed (main 2846de23, 627 files green); worktrees cleaned (only p23b and the four planning ones remain). Owner: hard refresh to see the map under the UI, the look list, the Swift Laps pack, two Foundation descriptions. Next: the owner's code review and optimisation pass with a fresh agent; retake the bench baselines in the first quiet window (the 01:00 timer died with this session). See HANDOFF.md.*
+
 *Fri 6 Nov 13:45. Director stopped at its usage limit. On main and pushed today: the six overnight pieces, Guild Hall sky and panel, world map, time-away summary, settings and title screen, encyclopedia words, Disallow removed, hard pixel, Hall ceremony, bench fights, Foundations (pack in cms/incoming), ring stars (pack in cms/incoming). Look list: docs/active/eyecheck/2026-11-06_merged_while_away.md. Builders told to commit WIP and stop: new-game (ng, fit to 1366 pending), drop lap (g5, merge waits for the owner's budgets), save files (s3, merge waits for the owner's OK), settle ceremony (m5, on ring-stars), small fixes (sb). Next: verify and merge each from its worktree STATUS.md; baselines at 01:00.*
 
 **Tue 2026-11-03, 03:30: night bench done.** Draw baseline saved b4aa17f2; performance round 2 about half the work on 40 piles, a quarter elsewhere, same work; waits for the owner's look.
