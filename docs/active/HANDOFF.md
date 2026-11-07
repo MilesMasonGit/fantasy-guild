@@ -27,10 +27,7 @@ Sync (T-293, T-013 closed).
 waits for the owner to accept and Sync; then grep nothing (no id renames). Excavation and
 Battlefield need descriptions typed in the CMS (T-332).
 
-**Owner's look list:** `docs/active/eyecheck/2026-11-06_merged_while_away.md`, 13 items, no
-verdicts yet; the owner said all good to merge. Archive it when they've looked, with verdicts.
-The owner could not see the map-under-the-UI change at first: the server served it; a hard
-refresh (Ctrl+Shift+R) is the likely fix. Confirm.
+**Owner's look list:** looked at and approved 6 Nov late evening, archived (`docs/archive/eyecheck/2026-11-06_merged_while_away.md`); the owner has only minor changes, for the next pass.
 
 ## Branches and worktrees (verified at writing)
 
