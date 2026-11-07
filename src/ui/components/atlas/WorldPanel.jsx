@@ -29,6 +29,7 @@ import { useWorldArrived } from './WorldCamera.jsx';
 export const PANEL_W = 336;
 /** The gap between the panel and the screen's edges. */
 export const PANEL_GAP = 16;
+const NO_INSETS = Object.freeze({ left: 0, top: 0, right: 0, bottom: 0 });
 const HERE_FLAG_PX = 48;
 const PREVIEW_MARGIN_PX = 4;
 const PREVIEW_MAX_H = 180;
@@ -229,8 +230,10 @@ const CartographerNote = ({ note }) => (
  *
  * @param {object} props
  * @param {object|null} props.cell a `worldView()` cell
+ * @param {{left: number, top: number, right: number, bottom: number}} [props.insets] the mat's room
+ *   in the screen the map covers: the panel stays in it, over its right edge
  */
-export const WorldPanel = ({ cell, note, version, message, onMessage, onSettle, onTravel, onClose }) => {
+export const WorldPanel = ({ cell, note, version, message, onMessage, onSettle, onTravel, onClose, insets = NO_INSETS }) => {
     const settled = cell?.state === CELL_STATE.SETTLED;
     const frontier = cell?.state === CELL_STATE.FRONTIER;
     const region = cell?.regionId ? Atlas.getRegion(cell.regionId) : null;
@@ -242,7 +245,12 @@ export const WorldPanel = ({ cell, note, version, message, onMessage, onSettle, 
             backdrop="world"
             data-world-panel
             className="absolute flex flex-col pointer-events-auto"
-            style={{ right: PANEL_GAP, top: PANEL_GAP, width: PANEL_W, maxHeight: `calc(100% - ${2 * PANEL_GAP}px)` }}
+            style={{
+                right: insets.right + PANEL_GAP,
+                top: insets.top + PANEL_GAP,
+                width: PANEL_W,
+                maxHeight: `calc(100% - ${insets.top + insets.bottom + 2 * PANEL_GAP}px)`
+            }}
             frameClassName="min-h-0 flex flex-col p-3 bg-gi-surface/95 text-white"
             onPointerDown={(e) => e.stopPropagation()}
         >
