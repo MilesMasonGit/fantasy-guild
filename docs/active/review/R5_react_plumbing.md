@@ -1,0 +1,123 @@
+# R5: React plumbing
+
+Read 2026-11-07 on `main` 01830b61 (reviewer, Fable 5.1; one Sonnet survey of every subscription
+and store in `src/ui/components`; two Sonnet verifiers). Area per the concept doc: `ui/context`,
+`ui/hooks`, the selectors, `ui/modals`, `ui/dnd`, and the root (`ReactRoot.jsx`); the question is
+renders per tick, context size, selectors that return new objects, and listeners never
+unsubscribed.
+
+## Summary for the owner
+
+**What this area does for the player.** It is the wiring between the game engine and what is
+drawn: how a change in the game (a hero walks, an item lands in the Bank) becomes a redraw of
+exactly the parts of the screen that show it, and nothing else; the drag-and-drop that carries
+Tokens, flags and items; the windows (settings, save slots, hero edit); and the root that lays
+out the screen.
+
+**How healthy it is: good, the best-kept area so far.** The store hook that feeds React
+(`useGameState`) compares before it asks React to draw, shares what did not change, and batches a
+burst of events into one read; the per-Token hook wakes only the Token an event names; every
+one of the 73 direct subscriptions in components is unsubscribed on unmount; none of the twenty
+module stores hands React a fresh object when nothing changed; and the drag system was rebuilt
+after round 3 so that pointer moves read no layout and only the thing in the hand redraws. The
+last measured figure (2026-10-13) was 0.57 React commits a tick on the stress board, with 48 %
+of ticks drawing nothing. Nothing found here is a bug a player would meet; the findings are
+duplicated per-tick work, a root that redraws the whole screen for small things, an
+accessibility promise the drag sources make and cannot keep, and dead or misnamed plumbing.
+
+**The three findings that matter most.**
+1. **A hero's status is worked out three or four times per hero every tick anyone walks**
+   (CR4-061): the mat's hero list, the flag layer, each hero bar figure, and (while the Bank is
+   open) each hero tab all run the same `Flags.statusOf` from scratch on `HEROES_WALKED`. One
+   per-tick snapshot would serve all four.
+2. **The root redraws the whole screen for small UI changes** (CR4-062): hovering a star in
+   the Guild Hall, or clicking a Token, re-renders `ReactRoot`, and because it hands its children
+   fresh objects and inline callbacks every render, none of the nav, the drawers, the hero panel
+   or the cameras can skip. The mat itself is protected (its element is kept), which is why this
+   is P3 and not P2.
+3. **Every drag source announces a keyboard drag that cannot happen** (CR4-063): dnd-kit's
+   `role="button"`, a Tab stop and "press space bar to lift" text are on every hero, flag, Bank
+   item and Shop row, but no keyboard sensor is registered. Fixing it either adds keyboard drag
+   or removes the Tab stops: the owner's call (`owner-decision`).
+
+**Counts.** 6 findings: 2 `perf` (reasoned, P3), 1 `a11y` (owner-decision, P3), 2 `cleanup`,
+1 `docs`; 1 `owner-decision`. Verified: see each finding's `Verified by`.
+
+**Measure first.** Re-run `node bench/tick-commits.mjs` (last run 2026-10-13; UI work has merged
+since) for the per-tick baseline before and after CR4-061; a React Profiler recording of one
+hover across the Hall's stars and one Token click for CR4-062.
+
+---
+
+## Findings
+
+### CR4-061  A hero's status is recomputed by four stores on every walk tick
+- **Tag**: perf
+- **Priority / Effort / Risk**: P3 / M / low
+- **Confidence**: reasoned
+- **Where**: on `BOARD_EVENTS.HEROES_WALKED` (published once per tick in which any hero moved, `src/systems/board/HeroMotion.js:608`): `src/ui/components/board/MatBoard.jsx:210-262` (`heroesRaw`: `Flags.statusOf` per hero, R4's CR4-052), `src/ui/components/board/FlagLayer.jsx:46-86,99` (`projectFlags`: `statusOf` per flag), `src/ui/components/dock/DockHeroFigure.jsx:163-172` (one store per figure, every hero: `rosterStateOf` and `rosterAlertOf`, each calling `Flags.statusOf` and `healingLeftMs`, `src/ui/components/board/flagText.js:62-65,145-157,190-196`: `statusOf` twice and a `heroes.find` twice per figure per tick), `src/ui/components/dock/HeroDockTab.jsx:176-185` (the same store again per tab while the Bank's hero column is mounted, `BankHeroPanel.jsx:159-160`); `src/systems/board/Flags.js:930-958` (`statusOf`: `flagOf`, `workTokenOf`, `claimOfHero`, `displayPointOf`, `Camps.campOfHero`, `isWalking`, `isPottering` per call, no per-tick cache)
+- **What**: Every tick in which a hero takes a step, four different stores each wake, each run their selector in a microtask, and each ask the engine the same question ("what is this hero doing?") for every hero: once for the mat's hero list, once for the flags, twice per hero bar figure (state and alert each call `statusOf`), and twice more per hero tab while the Bank is open. With eight heroes that is 30 to 50 `statusOf` calls a tick, each a handful of Map lookups and a `Camps.campOfHero`, plus eight `heroes.find` scans for the wounded check, and then eight to sixteen compare-and-settle passes, nearly all of which conclude nothing changed (a step changes a position, not a status). Not a visible cost today; it is the one place the review found the same per-tick work done in several places, and it grows with the roster.
+- **Evidence**: As cited; `docs/reference/PERFORMANCE.md:827-872` (the tick-commits measurement: "the stores' selectors 0.06 ms a tick" on 2026-10-13, before the per-figure roster store listed `HEROES_WALKED`; `git log -S HEROES_WALKED -- src/ui/components/dock` will date that).
+- **Fix sketch**: A per-tick status snapshot in `Flags` (`statusOf` memoised on the move journal's version, as `BoardState`'s caches are, R2) so the four readers share one answer; or one roster store (`rosterView(heroId)` fed by one `HEROES_WALKED` subscription) that the figures and tabs read with `useSyncExternalStore`, as the hero bar bubbles already do (`heroBarBubbles.js`). Must not change: what each figure and flag shows, and the `tick-commits` work fingerprint. **Hypothesis to test**: `node bench/tick-commits.mjs` selector time and renders a tick, before and after, S2 with the Bank open.
+- **Verified by**: unverified
+
+### CR4-062  The root redraws the whole screen for small UI state, and hands its children fresh props every time
+- **Tag**: perf
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: reasoned
+- **Where**: `src/ui/ReactRoot.jsx:137,265` (`hoveredUpgradeId` state, set from `GuildHallBoard.jsx:450-453` on every star's mouse enter, leave, focus and blur), `:107-113` (`tableBackground`: a fresh style object per render, spread into a `style` at `HallCamera.jsx:205` and `WorldCamera.jsx:240,270`), `:261-265,398,444` (inline arrows for `onSelectUpgrade`, `onEditHero`, `onClose`), `src/ui/hooks/useUIModals.js:186-225` (`controls` and its `settings`, `slotSelection`, `drawer`, `shop`, `dock`, `nav` objects rebuilt every render; `ui` itself is a fresh spread), consumers that take them: `BubbleMenu.jsx:94` (`ui`), `BankDrawer.jsx:25` (`drawer`), `GuildHallBoard.jsx:186-187`, none memoised (`grep -c memo`: 0 in `BubbleMenu`, `GuildHallBoard`, `HallCamera`, `WorldCamera`, `BankDrawer`, `MatTopBar`, `GuildHallDetails`); what is protected: `src/ui/components/board/Board.jsx:86-109` (`matContents` kept while its inputs hold, so a root render does not reach `MatBoard`), `useInspectTokenHandlers.js` (stable inspect handlers, for the same reason)
+- **What**: `ReactRoot` holds the hover state of the Guild Hall's stars and the inspect selection, so a pointer crossing a star, or a click on a Token, re-renders the root; and because the root builds the `ui` object, the table's style and several callbacks afresh on each render, every child that takes them is re-rendered too: the nav and its five bubbles, the Bank drawer, the hero panel, both cameras, the top bar, the Hall's web with every star. The project already saw this for the mat and kept its element (`matContents`), which is why the cost is a few dozen component renders per hover rather than the whole board; it is still the whole screen's chrome redrawn for a tooltip-sized change. On the dev build's React Profiler this is the commit that follows every Hall hover.
+- **Evidence**: As cited; `src/ui/hooks/useInspectTokenHandlers.js:3-8` states the rule ("every `ReactRoot` render … would hand `Board` new functions … redrawing the whole mat on one click") that the rest of the root does not keep.
+- **Fix sketch**: Move `hoveredUpgradeId` down to the Hall screen (it is read only by `GuildHallDetails`); `useMemo` the `tableBackground` style on `[backgroundDrawn, backgroundTile]`; have `useUIModals` memoise each sub-object on its own state (as `fullscreen` and `inspect` already are) and `useCallback` the three inline arrows; then `React.memo` `BubbleMenu`, `BankDrawer` and `GuildHallBoard`. Must not change: anything drawn; the Escape layer order; the `ui_modal:opened` contract (`useUIModals.js:10-33`). **Hypothesis to test**: a React Profiler recording of ten star hovers, components rendered per hover, before and after.
+- **Verified by**: unverified
+
+### CR4-063  Every drag source announces a keyboard drag that cannot happen
+- **Tag**: a11y, owner-decision
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/dnd/DndKit.jsx:585-587,614-626` (`useEntityDrag`: `keyboardAccessible = true` by default spreads `role="button"`, `tabIndex: 0`, `aria-roledescription: 'draggable'` and `aria-describedby` pointing at dnd-kit's instructions, "To pick up a draggable item, press the space bar…"), `:404` (`useSensors(useSensor(AlphaPointerSensor, SENSOR_OPTIONS))`: the only sensor; `grep KeyboardSensor src`: 0), `:578-582` (the comment knows: "There is no keyboard sensor registered … that text describes a drag that cannot happen. `MatToken` passes `false`"), against `grep -rn keyboardAccessible src/ui`: no caller passes it (`MatToken.jsx:720` uses dnd-kit's `useDraggable` directly and spreads no attributes); the eight sources that take the default: `FlagLayer.jsx:145`, `MatHero.jsx:171`, `DockEquipmentGrid.jsx:111`, `DockHeroFigure.jsx:58`, `HeroDockTab.jsx:57`, `BankTab.jsx:311`, `HeroInspectionSheet.jsx:125`, `ShopPanel.jsx:228`
+- **What**: Every hero on the mat and in the bar, every flag, every Bank item, every equipment slot and every Shop row is a Tab stop that tells a screen reader it can be picked up with the space bar. Nothing happens when it is pressed. A player who uses the keyboard tabs through dozens of controls that do nothing; a player with a screen reader is told a lie. The comment in the hook describes the fix the code never got.
+- **Evidence**: As cited.
+- **Fix sketch**: Either (a) register dnd-kit's `KeyboardSensor` with `sortableKeyboardCoordinates` or a mat-aware coordinate getter, so the announcement is true (a feature, and keyboard drops onto a free mat need a target rule), or (b) make `keyboardAccessible` default `false`, which removes the Tab stops and the text, and leaves the sources as plain pointer targets. **Owner-decision**: (b) removes keyboard focus from every drag source, which a player could notice; (a) is new interaction design. Must not change: pointer drags; the drag bench (`bench:drag`) passes either way, since it sends pointer input.
+- **Verified by**: unverified
+
+### CR4-064  Dead plumbing: a drag kind nothing creates, a context nothing reads, and card-era names
+- **Tag**: cleanup
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/dnd/dragConstants.js:9` (`DRAG_KIND.HERO`: `grep -rn "kind: DRAG_KIND.HERO\|kind: 'hero'" src` finds no drag payload; the three `kind: 'hero'` hits, `DealDamage.js:96`, `Placement.js:401`, `routing.js:107`, are a damage target, a loot sprite and a banner; heroes are carried as flags, `rosterFlagPayload`, `:24-26`) with its eight dead consumers: `Board.jsx:33`, `dropOnMat.js:56`, `FlagLayer.jsx:154`, `OrderDragLine.jsx:30`, `OrderLighting.jsx:11`, `BankHeroPanel.jsx:92`, `dragConstants.js:53` (`dropByKind[HERO]`), and `MatHero.jsx:179` (`heroCarried` can never be true, so the "figure steps aside" styling at `:259,305,361,364` is dead), while 8 tests build `HERO` payloads by hand (`B5Flags`, `FlagSpritesRules`, `JobMarker`, `MatBankLock`, `MatFrameDrops`, `OrderAim`, `OrderDragLine`, `RecruitDropOnEnemy`) and so keep the branches green; `src/ui/context/ViewportContext.jsx` (`ViewportProvider` mounted at `ReactRoot.jsx:220`, three motion values; `useViewport`, `targetX`, `targetY`, `targetScale`: no reader anywhere, `knip` lists `useViewport`; `TitleScreen.jsx:25` has its own unrelated `useViewport`); `src/ui/dnd/DndKit.jsx:260-261` (`DragSurfaceContext`, `useDragSurface`: no consumer; the `surface` state behind it is still needed for `bold`, `:524`, which only `GuildHallGhost` reads, `DragGhost.jsx:51-55`; `TokenGhost`, `FlagGhost` and `ItemGhost` take `bold` and ignore it); card-era names: `DeckDndProvider`, `DeckDndContext` (`DndKit.jsx:242,392`, listed as residue in `ARCHITECTURE.md:504`); exports only tests import: `surfaceAtPoint`, `dragSourceId` (`DndKit.jsx:177,367`), `MIN_BOARD_SCALE` (`useBoardScale.js:12`), `isDemolishMode` (`useMapMode.js:38`), `HOVER_HIDE_DELAY_MS` (`useHoverOpen.js:7`), `DEFAULT_FONT_SIZES` (`TypographyScaleModal.jsx:7`), `formatPlaytime`, `AWAY_REPLACES_LAST_SAVED` (`SlotSelectionModal.jsx:23,50`), `PICKUP_MS`, `playPickupFlight` (`pickupFlight.js:15,55`); an export nothing imports: `SWATCH_FLAG_PX` (`HeroEditModal.jsx:19`); both a named and a default export of the same thing (`knip` "duplicate exports"): `DragGhost`, `useBoardScale`, `useMatSize`, `HeroEditModal`, `SettingsModal`, `SlotSelectionModal`, `TypographyScaleModal`, `ReactRoot`
+- **What**: A drag kind that the player cannot produce is checked in eight places and styled in a ninth, and eight tests exercise it, so the dead code looks alive. A React context is mounted around the whole app for three values nobody reads (its header says the drag system reads them; the drag system does not import it). The drag provider still carries the names of the card decks that were removed in 0.6. The rest is the usual export residue.
+- **Evidence**: grep results as cited; `docs/active/review/baseline/knip.txt:188,377-385`.
+- **Fix sketch**: Delete `DRAG_KIND.HERO` and its branches, rewriting the eight tests to carry flags (`rosterFlagPayload`), and drop `heroCarried` from `MatHero`; delete `ViewportContext.jsx` and the provider; delete `DragSurfaceContext`/`useDragSurface` and the unused `bold` parameters, keeping `surface` for the Hall ghost; rename `DeckDnd*` to `EntityDnd*` or `Dnd*` (tests import `DeckDndContext` in 10 files: one search-and-replace); un-export the test-only names or move their tests to the public surface; drop the duplicate defaults. Must not change: any drag's behaviour (the drag bench and the eight rewritten tests say so).
+- **Verified by**: unverified
+
+### CR4-065  Small store leads: a title screen that listens for life, a selector run twice at mount, a lint warning that is right
+- **Tag**: cleanup
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/modals/SlotSelectionModal.jsx:33-44,76-81` (`useSlotMessage` subscribes `NOTIFICATION_ADDED` and `NOTIFICATION_DISMISSED` with no `isOpen` gate; the modal is always mounted, `ReactRoot.jsx:450`, and returns `null` at `:108`, so every notification in the game re-renders the closed title screen's hooks); `src/ui/hooks/useGameState.js:92-103,124-136` (`settle` is a closure rebuilt every render and read by two effects with `[]` and `options.deps || []` dependency lists: eslint `exhaustive-deps` at `:124` and `:135` is right about the shape, wrong about the risk, since `settle` reads only `options` and `options` is documented as read-once; and the deps effect runs at mount too, so every store read runs its selector twice on mount: once in `useState`, once in that effect); `src/ui/components/hud/CatchUpOverlay.jsx:43-46` (a new `run` object per `CATCH_UP_PROGRESS` event, with no check that `fraction` moved); `src/ui/hooks/useUIModals.js:100-110,112,138` (`isNavActive` depends on four states, `navToggle` on it, and `ReactRoot.jsx:169-172` re-subscribes `OPEN_ENCYCLOPEDIA` whenever either changes: an unsubscribe-and-resubscribe per view opened or closed); `src/ui/components/dock/BottomHeroDock.jsx:29-36` (eslint: the `|| []` fallback on a store value could make `handleReorderHero` new every render; unreachable in practice, since the selector returns an array); `src/ui/components/board/levelUpFloats.js:143-148` and `src/ui/components/dock/heroBarBubbles.js:110` (module-level `EventBus.subscribe` at import time, released only by Vite's `import.meta.hot.dispose`: by design for a module store, but the one subscription shape in the UI that a test cannot tear down)
+- **What**: None of these costs a player anything measurable. They are the loose ends a reader of this area trips over: a title screen that keeps listening after the game starts, a selector contract that eslint flags on every lint run, a per-chunk object the catch-up bar does not need, and two stores that subscribe at import. Listed so R9 (tests) and the planning agent see them in one place rather than refiling them.
+- **Evidence**: As cited; the lint run of 2026-11-07 (`exhaustive-deps` at `useGameState.js:124,135` and `BottomHeroDock.jsx:29`).
+- **Fix sketch**: Gate `useSlotMessage` on `isOpen` (or mount the modal only while open, as `HeroEditModal` is); move `settle` into a `useCallback` on `[options.shallow, options.deepClone, options.bypassClone]` or a ref, which also silences the two warnings honestly; compare `fraction` before `setRun`; wrap `heroIds` in `useMemo` or drop the fallback. Must not change: the store contract (`useGameState.js:8-43`); the title screen's message line.
+- **Verified by**: unverified
+
+### CR4-066  Docs: comments that describe wiring the code does not have
+- **Tag**: docs
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/context/ViewportContext.jsx:4-8` ("so the Dnd system can know the current zoom/pan": `DndKit.jsx` imports nothing from it; nothing does, CR4-064); `src/ui/dnd/DndKit.jsx:581-582` ("`MatToken` passes `false`": no caller passes `keyboardAccessible`, `MatToken` does not use the hook, CR4-063); `src/ui/hooks/useUIModals.js:7` ("Modal state and EventBus subscriptions for the React layer": it subscribes to nothing and publishes one event); `src/ui/dnd/DragGhost.jsx:15` ("`bold` is true while the cursor is over the board" as the ghosts' contract: three of the four ghosts ignore it); `docs/reference/ARCHITECTURE.md:210` ("42 UI files import `GameState`": 25 under `src/ui` today, 13 outside `ui/dev`); what the doc gets right, checked: `:80` (file and line counts for `hooks/`, `context/`, `dnd/`, `modals/`, `utils/`: all five exact), `:202` (73 direct `subscribe` sites outside `ui/dev`: exact), `:206` (~20 `useSyncExternalStore` files: 20), `:213-215` (contexts carry no game state: true)
+- **What**: Four comments describe wiring that was planned or removed, and one number in the architecture map has drifted by a factor of two. Everything else the map says about this area matches the code.
+- **Evidence**: grep counts as cited.
+- **Fix sketch**: With the deletions in CR4-064 two of the comments go; rewrite the other two; fix the number. Must not change: nothing in code.
+- **Verified by**: unverified
+
+---
+
+## Notes (no `path:line` of their own, or another area's)
+
+- **What was checked and is fine.** Every one of the 73 `EventBus.subscribe` sites in components is inside an effect with its unsubscribe in the cleanup, including the multi-subscription ones (`CalloutLayer`, `HeroBubbleLayer`, `fightWatch`, `CatchUpOverlay`, `ShopPanel`); none re-creates its subscription per render. No module store's `useSyncExternalStore` getter returns a fresh object: all return primitives, version numbers or a cached reference, and every setter is guarded against an unchanged write except `Banners.reset` (emits on an already-empty list) and `fightPanelStore.openFightPanel` (always replaces). Of the 25 `useGameState` selectors, 22 return primitives, signatures or flat projections; three return a live object (`GuildHallBoard.jsx:189` and `GuildUpgradeInspection.jsx:58`: the `guildUpgrades` rank map, whose values are primitives, so the shallow copy is a correct flat projection; `MatBoard.jsx:291`: `terrain` and `ground` of the active Region, by design "same object until the Region changes", and `Atlas.js:114` replaces `region.ground` rather than mutating it). No call omits `events`, none builds a conditional `events` array, none uses `bypassClone` or `deepClone`. `BankTab.jsx:42-60` and `HeroEditModal.jsx:104-115` list no `GAME_RESET`, which is safe because `EngineBootstrap.js:351-353` publishes `INVENTORY_UPDATED` and `HEROES_UPDATED` right after it; `itemOverrides` values are strings (`InventoryManager.js:83,377`), so the one-level copy is flat.
+- **Per-tick events reaching stores** (for the director's measurement): `HEROES_WALKED` wakes `MatBoard.heroesRaw`, `FlagLayer`, every `DockHeroFigure`, every `HeroDockTab` (CR4-061) and, while a moving hero speaks, `HeroBubbleLayer.jsx:213-217` (`setNow(Date.now())`, intended, only while `following`); `ENEMIES_WALKED` wakes `MatBoard.tokensRaw` (R4's CR4-052); `BOARD_EVENTS.PROGRESS` reaches React only through `fightWatch` (change-checked) and `useTokenState` routes. `RegenSystem.js:62` publishes `HEROES_UPDATED` from inside a tick handler whenever a hero healed or ate that tick: on a board with wounded or hungry heroes that is a near-per-tick event waking eleven stores (R3's CR4-044 covers the publisher).
+- **dnd-kit's re-render shape, confirmed.** Drop targets (`useEntityDrop`, twelve holders) re-render at pickup, at each change of target and at drop, not per pointer move; only `GuildHallGhost` reads the per-move public context, as its comment says. `DndKit.jsx:54`'s capturing `scroll` listener on the document runs on every scroll event in the page (a `WeakMap` write); cheap, and the design that lets drags read no layout.
+- **The 5 `rules-of-hooks` lint errors** are all `useOuterUpgrade`, a test fixture named like a hook: R0's CR4-009. The 5 `exhaustive-deps` warnings: three in this area (CR4-065), `SpriteLayerView.jsx:129` (R4) and one more in R6's files.
+- **`useGameState`'s `events` read once at mount** is documented (`:31-33`) and no caller violates it; a lint rule or a dev-mode warning when `events` changes identity would make the contract enforceable (R9).
+- **Modals.** `GIModal` (Headless UI `Dialog` with its own close disabled and Escape from `escapeLayers.js`) is sound: one capturing window listener while any layer is open, removed with the last layer. `TypographyScaleModal` reads seven computed styles at mount (one forced style pass, once per open). `SettingsModal` copies the whole settings object per change (small). `HeroEditModal` is mounted only while open.
