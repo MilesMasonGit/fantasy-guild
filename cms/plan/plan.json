@@ -1394,6 +1394,14 @@
         "status": "live",
         "tier": 3,
         "note": "Part of the Cedar Tree's cycle (world refill pack)."
+      },
+      "token_excavation": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_battlefield": {
+        "status": "live",
+        "tier": 0
       }
     },
     "recipes": {

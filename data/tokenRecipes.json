@@ -3133,7 +3133,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "excavation"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3176,7 +3176,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "excavation"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3211,7 +3211,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "excavation"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3480,7 +3480,7 @@
     "stationChargeCost": 1,
     "xp": 30,
     "foundationKinds": [
-      "stone"
+      "wood"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3632,7 +3632,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3671,7 +3671,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3710,7 +3710,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3749,7 +3749,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3788,7 +3788,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3827,7 +3827,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3866,7 +3866,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3905,7 +3905,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3944,7 +3944,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -3983,7 +3983,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -4022,7 +4022,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -4061,7 +4061,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -4100,7 +4100,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -4139,7 +4139,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -4178,7 +4178,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -4217,7 +4217,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -4256,7 +4256,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
@@ -4295,7 +4295,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "wood"
+      "battlefield"
     ],
     "sim": {
       "tempo": "heavy"
