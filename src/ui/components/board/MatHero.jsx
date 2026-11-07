@@ -32,8 +32,7 @@ import { plateNameDrop, plateUnit } from './workPlate.js';
 import { PROBLEM_SPRITE, PROBLEM_MARK_ART_PX, SEVERITY } from './problemMark.js';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { t } from '../../../i18n/index.js';
-import { HeroDragMarks } from './DragMarks.jsx';
-import { lootSpriteMatPx } from '../../utils/lootFlight.js';
+import { HeroDragMarks, markMatPx } from './DragMarks.jsx';
 
 /**
  * The events that move a hero's health in a fight: the engine changes `hp` in place and says so
@@ -356,7 +355,7 @@ const MatHeroBody = memo(function MatHeroBody({
             {/* While a hero is carried over a Token, this hero's marks over the head; the "needs a job" mark steps aside. */}
             <HeroDragMarks
                 heroId={heroId}
-                size={lootSpriteMatPx(fit)}
+                size={markMatPx(fit)}
                 className="absolute"
                 style={{ left: HERO_HIT_PX / 2, bottom: HERO_BOX_PX - (HERO_BOX_PX - artPx) / 2, transform: 'translateX(-50%)' }}
                 fallback={needsJob && !heroCarried && !moving ? <NeedsJobMark artPx={artPx} artScale={artScale} /> : null}

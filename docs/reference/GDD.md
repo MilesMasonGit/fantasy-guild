@@ -704,13 +704,16 @@ less micromanagement than area flags).
   they keep the job they had.
 - **Drag hints** (brief 490): while the carried hero is over a Token, **every
   hero** shows whether they could work it, over their figure on the mat, on
-  their hero bar card and beside the carried flag: the **tool** the Token needs
-  (their own fitting tool, else the lowest tier that will do) and the **skill**
-  with their level on it, each outlined green when they pass and red, drawn
-  darker, when not, by the same checks the game uses. A Token with no tool need
-  shows the skill only; one naming no skill shows nothing. Over an **enemy**
-  each hero shows the items in their hands instead (a two-handed weapon once,
-  bare hands nothing), with no outline. Each mark is a floating item's size.
+  their hero bar card, and the carried hero's also centred just above the
+  Token's sprite (under the refusal, when there is one): the **tool** the Token
+  needs (their own fitting tool, else the lowest tier that will do) and the
+  **skill** icon with their level under it, each outlined green when they pass
+  and red, drawn much darker, when not, by the same checks the game uses. A
+  Token with no tool need shows the skill only; one naming no skill shows
+  nothing. Over an **enemy** each hero shows only the weapons and shields in
+  their hands instead (a two-handed weapon once; never a tool; no weapon or
+  shield shows nothing), with no outline. Marks are drawn at 1x (32 px) at the
+  mat's natural 2x Token scale.
   Hero speech and the bar's bubbles step aside while the marks show; the marks
   go when the pointer leaves the Token or the hero is dropped.
 - **One hero per Token.** A hero sent to a Token another hero works waits

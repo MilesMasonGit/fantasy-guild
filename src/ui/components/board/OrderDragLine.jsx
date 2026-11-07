@@ -1,9 +1,9 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useActiveDrag, snapshotDndRegions, surfaceWithinRegions } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { useMatFit } from './MatFitContext.jsx';
-import { boardScaleAt } from '../base/TokenSprite.jsx';
+import { boardScaleAt, tokenSizeFor, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { MAT_Z } from './matLayers.js';
 import { pointerToMat, matRectForDrag } from './matPoint.js';
 import { dashedLinePath, MARCH_PX_PER_S } from './orderLine.js';
@@ -15,6 +15,8 @@ import { SPEECH_TONE } from './speechTone.js';
 import { plateUnit } from './workPlate.js';
 import { calloutTopOf } from './CalloutLayer.jsx';
 import { setHintTarget } from './dragHints.js';
+import { HeroDragMarks, markMatPx } from './DragMarks.jsx';
+import { opaqueBoundsOf } from '../../utils/alphaHitTest.js';
 
 /** The line: one art pixel of gold over a black copy one art pixel down-right, as the camp ring. */
 const LINE_GOLD = 'var(--color-gi-gold)';
@@ -31,9 +33,10 @@ const carriesHero = (payload) => !!payload?.heroId
  * While a hero is carried to a new job, a dashed line from where they stand on the mat to the
  * point they would be sent to (the pointer: the drop's own point), its dashes marching towards it.
  * Over a Token the hero can work, the carried flag and the line's end snap to the Token's centre;
- * over one they cannot, a red bubble over it says why ("Needs Pickaxe"), as the drop would.
+ * over one they cannot, a red bubble over it says why ("Needs Pickaxe"), as the drop would. Over any
+ * Token the carried hero's drag hint marks stand centred over its sprite, under that bubble.
  * Nothing is mounted at rest; while carried, one `<svg>` whose two paths are rewritten once per
- * animation frame, and the ghost moved, never through React: only the bubble is React's, redrawn
+ * animation frame, and the ghost moved, never through React: only the bubble and marks are React's, redrawn
  * as the Token under the pointer changes (`orderAim.js`). A hero with no figure on the mat (none
  * today: every hero stands on it) draws no line. Under reduced motion the dashes stand still.
  */
@@ -106,7 +109,7 @@ function MarchingLine({ heroId, session, matRef }) {
     const artScale = boardScaleAt(fit);
     const goldRef = useRef(null);
     const shadowRef = useRef(null);
-    const [bubble, setBubble] = useState(null);
+    const [target, setTarget] = useState(null);
 
     useEffect(() => {
         let pointer = null;
@@ -132,7 +135,7 @@ function MarchingLine({ heroId, session, matRef }) {
             const aimNow = aim(at);
             if (aimNow !== aimed) {
                 aimed = aimNow;
-                setBubble(aimed.reason ? { instance: aimed.instance, reason: aimed.reason } : null);
+                setTarget(aimed.instance ? { instance: aimed.instance, reason: aimed.reason } : null);
                 // Every hero's marks, worked out once per Token entered (`dragHints.js`).
                 setHintTarget(aimed.instance);
             }
@@ -177,30 +180,70 @@ function MarchingLine({ heroId, session, matRef }) {
                 <path ref={goldRef} d="" transform={`scale(${artScale})`} fill={LINE_GOLD} />
             </g>
         </svg>
-        {bubble && <ReasonBubble instance={bubble.instance} reason={bubble.reason} fit={fit} matH={mat.h} />}
+        {target && <AimedLabel heroId={heroId} instance={target.instance} reason={target.reason} fit={fit} matH={mat.h} />}
         </>
     );
 }
 
 /**
- * Why the carried hero cannot be sent to the Token under the pointer, over it: the drop's own
- * refusal callout, held for as long as the pointer stays on that Token.
+ * The top middle of Token `instance`'s drawn sprite, in mat units: its art (`artPx` across, centred
+ * on the Token's point), narrowed to the picture's opaque part when `bounds` (`opaqueBoundsOf`)
+ * is known, so a sprite drawn off-centre in its picture still gets the marks over its middle.
+ * @returns {{x:number, top:number}}
  */
-function ReasonBubble({ instance, reason, fit, matH }) {
+export function spriteTopMiddle(instance, artPx, bounds = null) {
+    const b = bounds || { left: 0, top: 0, right: 1, bottom: 1 };
+    const left = instance.x - artPx / 2;
+    return { x: left + ((b.left + b.right) / 2) * artPx, top: instance.y - artPx / 2 + b.top * artPx };
+}
+
+/** The picture a Token draws on the mat, when it is one still sprite (an animated sheet is not). */
+function drawnSpriteOf(instanceId) {
+    if (typeof document === 'undefined') return null;
+    const art = document.querySelector(`[data-token-art][data-token-id="${instanceId}"]`);
+    const img = art?.querySelector('img:not([aria-hidden="true"])');
+    if (!img?.naturalWidth || img.naturalWidth !== img.naturalHeight) return null;
+    return img.getAttribute('src');
+}
+
+/**
+ * Over the Token under the pointer, worked out once as it is entered: the carried hero's drag hint
+ * marks centred just above its sprite and, when the hero cannot be sent there, the drop's own
+ * refusal over them. Where a callout would be lifted clear of a work plate or a fight's bars, the
+ * column is too.
+ */
+function AimedLabel({ heroId, instance, reason, fit, matH }) {
     const f = fit || 1;
     const u = plateUnit(f);
-    const at = { x: instance.x, y: instance.y, typeId: instance.typeId, anchorId: instance.id };
-    const top = calloutTopOf(at, { fit: f, matH, u });
+    const markPx = markMatPx(f);
+    const place = useMemo(() => {
+        const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, instance.typeId, boardScaleAt(f));
+        const sprite = spriteTopMiddle(instance, artPx, opaqueBoundsOf(drawnSpriteOf(instance.id)));
+        const at = { x: instance.x, y: instance.y, typeId: instance.typeId };
+        // A callout over this Token is lifted above a work plate or a fight's bars: so is the column.
+        const lifted = calloutTopOf({ ...at, anchorId: instance.id }, { fit: f, matH, u });
+        const plain = calloutTopOf(at, { fit: f, matH, u });
+        const top = sprite.top - markPx / 8;
+        return { x: sprite.x, top: lifted < plain ? Math.min(top, lifted) : top };
+    }, [instance, f, matH, u, markPx]);
     return (
         <div
-            data-order-reason={instance.id}
+            data-order-aim={instance.id}
             className="absolute left-0 top-0 w-0 h-0 pointer-events-none"
             style={{ zIndex: MAT_Z.CALLOUT }}
         >
-            <div className="absolute" style={{ left: 0, top: 0, transform: `translate(${at.x}px, ${top}px) translate(-50%, -100%)` }}>
-                <SpeechFrame tone={SPEECH_TONE.CANT} u={u} tail className="order-reason-bubble whitespace-nowrap ui-text-title font-bold">
-                    {reason}
-                </SpeechFrame>
+            <div
+                className="absolute flex flex-col items-center"
+                style={{ left: 0, top: 0, gap: markPx / 4, transform: `translate(${place.x}px, ${place.top}px) translate(-50%, -100%)` }}
+            >
+                {reason && (
+                    <div data-order-reason={instance.id}>
+                        <SpeechFrame tone={SPEECH_TONE.CANT} u={u} tail className="order-reason-bubble whitespace-nowrap ui-text-title font-bold">
+                            {reason}
+                        </SpeechFrame>
+                    </div>
+                )}
+                <HeroDragMarks heroId={heroId} size={markPx} />
             </div>
         </div>
     );

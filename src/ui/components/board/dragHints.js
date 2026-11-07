@@ -19,8 +19,9 @@ import { toolItemFor } from '../../../config/registries/toolKinds.js';
  * Pass and fail are `WorkCheck.heroReason`'s own two gates read apart (`skillFailure`,
  * `toolNeedOf` with `HeroTools.fittingToolOf`), never a copy of them. A Token naming no skill
  * gates nobody (`heroReason` answers null), so it shows nothing.
- * - An enemy: the items in the hero's hands, one each (a two-handed weapon takes one slot), with no
- * pass or fail. Bare hands show nothing.
+ * - An enemy: the weapons and shields in the hero's hands, one each (a two-handed weapon takes one
+ * slot), with no pass or fail. A gathering tool is never shown there; hands holding no weapon or
+ * shield show nothing.
  *
  * ⚠️ Worked out once as the carried hero enters a Token (`OrderDragLine` calls
  * {@link setHintTarget} as the Token under the pointer changes), never per pointer move, and
@@ -38,7 +39,7 @@ export function marksFor(heroId, instance) {
     if (!def || !heroId) return null;
     if (isEnemyToken(instance)) {
         const hero = heroRecord(heroId);
-        const items = hero ? handEntries(hero).map(e => e.itemId) : [];
+        const items = hero ? handEntries(hero).map(e => e.itemId).filter(id => !HeroTools.isToolItem(id)) : [];
         return items.length ? { kind: 'hands', items } : null;
     }
     const config = workConfigOf(def, instance);
