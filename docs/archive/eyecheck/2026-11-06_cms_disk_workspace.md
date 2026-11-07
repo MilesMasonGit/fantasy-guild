@@ -1,5 +1,7 @@
 # Eye-check: the CMS keeps its workspace on disk (branch `prep/cm`)
 
+**Outcome (2026-11-07): owner all ok; Q1 a and Q2 a as built. Merged to `main` 4897fd3d, the owner's folder back on `main`.**
+
 *Written 2026-11-06 by the director. One look, in your own browser, at the CMS
 only. The game is unchanged on this branch (only tests moved).*
 
@@ -21,32 +23,32 @@ only. The game is unchanged on this branch (only tests moved).*
 1. **First start.** Open http://localhost:5174. You should see a short
    "Loading the workspace…" and then, once, a note at the top saying the
    workspace moved to disk.
-   `Verdict: ok / change: ___`
+   `Verdict: ok (owner, 2026-11-07)`
 2. **Everything is still there.** Look at the Items, Tokens, Recipes and
    Effects lists: the same content as before, including anything you had not
    Synced yet (the Swift Laps star and the Foundations you accepted today).
-   `Verdict: ok / change: ___`
+   `Verdict: ok (owner, 2026-11-07)`
 3. **Backups window.** Open it from the top bar. Its header reads
    "Workspace: on disk, saved HH:MM", and the list holds a backup named
    `migrated_<time>`.
-   `Verdict: ok / change: ___`
+   `Verdict: ok (owner, 2026-11-07)`
 4. **An edit reaches disk.** Change one Token's description, wait two
    seconds, reopen the Backups window: the saved time moved. Reload the page:
    the edit is still there and the editor reopens on that Token. Undo your
    edit the same way if you like.
-   `Verdict: ok / change: ___`
+   `Verdict: ok (owner, 2026-11-07)`
 5. **Poke around.** Open the editors you normally use (Token, Item, Recipe,
    Effects, the Changes page, the ledger tabs). Anything slower, missing or
    odd compared with yesterday goes here.
-   `Verdict: ok / change: ___`
+   `Verdict: ok (owner, 2026-11-07)`
 6. **New workspace is safe now.** Only if you want to: Backups window, "New
    workspace". It saves a `before-new_<time>` backup first and empties only
    the content; your sim dials and the change-pack reviews stay. Load the
    backup back afterwards.
-   `Verdict: ok / skipped / change: ___`
+   `Verdict: ok (owner, 2026-11-07)`
 7. **The Studio is untouched.** `npm run studio` (port 5175): Recolor and
    Animation open and work as before.
-   `Verdict: ok / change: ___`
+   `Verdict: ok (owner, 2026-11-07)`
 
 ## Two choices for you (the director built the recommended one)
 
@@ -56,10 +58,12 @@ only. The game is unchanged on this branch (only tests moved).*
   every second you edit and would flood the history).
   b) Yes, commit it on each Sync.
   c) Yes, on every save.
+  **Owner: a.**
 - **Q2. Where should "Workspace: on disk, saved HH:MM" show?**
   a) In the Backups window and the Backups button's tooltip (built,
   recommended: in the top bar it grew the bar from 52 to 81 px).
   b) Also a small "Saved 14:05" chip in the top bar.
+  **Owner: a.**
 
 ## Afterwards
 

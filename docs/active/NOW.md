@@ -20,16 +20,13 @@ changelog and `docs/archive/`.*
   (the code as it is), the doc audit, knip and dependency-cruiser, the Chrome
   DevTools MCP, the memory soak bench, the `/reviewer` skill and the findings
   process in [review/](review/README.md); the CMS keeps its workspace on disk
-  and has a command line (eye-check waiting).
+  and has a command line (eye-checked and merged 2026-11-07).
 
 ## Next
 
-1. **Owner**: eye-check the CMS on disk
-   ([eyecheck/2026-11-06_cms_disk_workspace.md](eyecheck/2026-11-06_cms_disk_workspace.md));
-   approve the project MCP server when the app asks; answer its two questions.
-2. **Director**, first quiet window: the baselines on `main` (engine, draw,
-   calibrate, then the 30-minute `bench:soak --save-baseline`); merge `prep/cm`
-   after the look; T-334.
+1. **Owner**: approve the project MCP server when the app asks.
+2. **Director**, first quiet window: the 30-minute `bench:soak --save-baseline`
+   on `main` (engine and draw baselines retaken 7 Nov); T-334.
 3. **Reviewer** (`/reviewer`): session R0 (the map), then R1 onward; the
    planning agent triages each area's findings with the owner and writes the
    fix briefs; the director fixes.

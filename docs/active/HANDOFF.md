@@ -10,7 +10,7 @@ round 4. Read `CLAUDE.md`, this file and `STATUS.md`, then verify with
 **The code review and optimisation pass, round 4**
 ([concept_code_review_2026.md](concept_code_review_2026.md), approved
 2026-11-06, with the owner's six rulings recorded in it). The preparation
-phase (phase 0) is done except the CMS eye-check. The review itself runs in
+phase (phase 0) is done, the CMS eye-check included (merged 2026-11-07, 4897fd3d). The review itself runs in
 `/reviewer` sessions, one area each; the planning agent turns findings into
 tickets and fix briefs ([review/README.md](review/README.md)); the director
 runs the fix briefs as usual.
@@ -41,39 +41,28 @@ Merged today, all docs or tooling, no eye-check needed:
 
 ## Branches and worktrees (verified at writing)
 
-- **The owner's folder is on `prep/cm`**, not `main`, for the CMS eye-check
-  ([eyecheck/2026-11-06_cms_disk_workspace.md](eyecheck/2026-11-06_cms_disk_workspace.md)).
-  `prep/cm` = `main` 31e61032 plus the CMS work (d6987558). Gate run by the
-  director on the merged result: suite (T-334 only), cycles, game and CMS
-  builds, `npm run cms -- validate --data` (0 errors, 6 unknown keys listed
-  in the eye-check's brief report). **After the look:** fixes on `prep/cm`,
-  then in the owner's folder `git switch main`, `git merge --ff-only prep/cm`
-  (the branch already contains main; if main moved, a normal merge; the
-  content/code hook may refuse a merge commit that carries the owner's Sync
-  beside code: `ALLOW_CONTENT_CODE_MIX=1 git commit` is the documented way),
-  push, `npm install --prefix cms` is already done in the owner's folder.
-  Archive the eye-check file with the verdicts.
-- **The CMS migration already ran** at the switch: changing `cms/vite.config.js`
-  made the owner's running CMS server restart with the new code, and their
-  open tab moved its browser workspace to `cms/workspace/workspace.json`
-  (revision 1, 154 items, 157 Tokens: their unsynced work) after saving
-  `cms/backups/migrated_2026-11-07T06-33-45-801Z.json`. The file is
-  git-ignored. Nothing was cleared from the browser.
-- `.claude/worktrees/cm`: on `main` (detached from `prep/cm`), the director's
-  spare worktree for commits on `main` while the owner's folder is on the
-  branch; its `cms/node_modules` is a real folder, its root `node_modules` a
-  junction (rmdir the junction before removing it).
+- **The owner's folder is back on `main`** (4897fd3d, pushed). The CMS
+  eye-check passed (owner all ok 2026-11-07, Q1 a and Q2 a as built,
+  [archived file](../archive/eyecheck/2026-11-06_cms_disk_workspace.md));
+  `prep/cm` is merged and can be deleted. The owner may Sync as usual.
+- **The CMS workspace lives in `cms/workspace/workspace.json`** (git-ignored)
+  since the migration on 2026-11-07, with a backup
+  `cms/backups/migrated_2026-11-07T06-33-45-801Z.json`. Nothing was cleared
+  from the browser.
+- `.claude/worktrees/cm`: detached, no longer needed; its `cms/node_modules`
+  is a real folder, its root `node_modules` a junction (rmdir the junction
+  before `git worktree remove`).
 - `.claude/worktrees/p23b`: detached, the bench scratch folder.
 - `pcm`, `pco`, `pp`, `psk`: the planning agents' branches, left as they are.
 - `eyecheck/fights-rivers`: unmerged on purpose (retired Terrain QA buttons).
 
 ## Bench state and queue
 
-- Baselines still not retaken (see the previous handoff's note); the
-  calibration stamp is stale.
-- **First quiet window (01:00 or 13:00), on `main` in `p23b`, in order:**
-  `npm run bench -- --compare`, `npm run bench -- --save-baseline`,
-  `npm run bench:draw -- --save-baseline`, `npm run bench:calibrate`, then
+- Engine and draw baselines and the calibration stamp retaken on `main`
+  85cefe1f in the 01:00 window on 7 Nov (3f336e14; work changed only on the
+  S2 family and C240/C256 against the old baseline, as expected from the bench
+  fights and still enemies).
+- **Next quiet window (01:00 or 13:00), on `main` in `p23b`:**
   `npm run bench:soak -- --save-baseline` (30 min visible, 5 hidden; expect
   the hidden phase to FAIL on T-333, record it) and the bundle size and suite
   time into `review/baseline/`; commit the baselines with the date and fill
@@ -93,9 +82,7 @@ Merged today, all docs or tooling, no eye-check needed:
 
 ## Owner to-dos
 
-1. The CMS eye-check and its two questions (workspace file in git: no is
-   built; status line in the Backups window: built).
-2. Approve the Chrome DevTools MCP when the app asks.
+1. Approve the Chrome DevTools MCP when the app asks.
 3. Accept the Swift Laps pack if not yet (it is synced: `star_well_lap` is in
    `data/hallStars.json` since 421c58bd); type the two Foundation descriptions
    (T-332).
