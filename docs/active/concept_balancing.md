@@ -32,6 +32,21 @@ Status: draft
 - **Crafting and gathering earn about the same XP an hour at the same level**, "however we should consider that the player is consuming resources (paying a cost) when crafting, but also getting multiple payouts (XP from crafting an item in each link of the chain)."
 - **Actions take a little longer each tier**: "I want players to be motivated to build work-speed increasing buildings." So Faster Work buildings must stay clearly worth building late, and the boost targets (buildings up to +30 % today) are checked against that.
 
+### Drops, finds and prices (owner, 2026-11-07)
+
+- **Basic drops are near-sure**: "those basic drops are going to be near-sure and dropping every kill, maybe in larger quantities too." Hide, Silk, meats and scales come every kill, and rarer materials come from tougher enemies.
+- **Rare drops for powerful gear are very rare**: "special rare drops that may happen only 0.1% of the time or less, to let the player grind and hunt for rare items for powerful equipment."
+- **Bonus finds are 1 in 100 or rarer**: "There are multiple heroes working on these tasks for hours or days at a time, so a regular drop rate will give them a flood of items. Players need a reason to craft potions or other consumables that will boost those drop rates to effectively farm those rare items. The purpose of our basic items that are easy to get (herbs, wood, ore) is to utilize them to get the more challenging items."
+- **A very low rate on repeatable work still counts as a steady source**: "Heroes produce a lot, and with a extremely low 0.1% drop rate and a 10s work cycle, a hero will still find at least a couple of an item if they work at a node all day long." That's 8,640 cycles a day, so about 8 finds a day. Pearls from the Oyster Bed and gems from the Geode stand as they are.
+- **Upgrade payback grows with the tier**: an early upgrade earns back its price in about an hour of the work it boosts, a late one in about a day, following the pace curve.
+
+### What these mean for the rules
+
+- **A rate is judged as finds a day**, not as a chance: (86,400 seconds ÷ cycle seconds) × chance, for one hero working all day. A rare item's rate is set from how many a day it should give, and boosts (work potions, Rare Finds buildings) multiply that.
+- **Basic materials feed the hunt**: herbs, wood and ore become the potions and boosts that make rare finds farmable. Rare-find potions are therefore a main reason to run Alchemy, and their strength is a balancing target of its own.
+- **A one-off find** (a Fallen Star, a Shipwreck) that wears out for good is still luck and isn't a steady source. Only repeatable work counts.
+- ⚠️ **The ledger disagrees today**: it warns on any drop under 5 % with no sure way (`LUCK_BELOW`), so every rare find will show as "Luck only". T-336 changes it to finds a day.
+
 ## The shape (agent's proposal, to settle in the next round)
 
 Three layers, each with one job:
@@ -43,8 +58,8 @@ Three layers, each with one job:
    - **Crafting and gathering earn the same per hour.** A chain pays at every link, so a whole guild earns several skills' XP from one late item, and it pays for that in materials.
    - **Ingredient counts double every two tiers**, and stay well short of hundreds per ingot.
    - **Cycle times** grow a little each tier, so work-speed buildings pay off.
-   - **Drop and rare-find rates**: by kind (a bonus find, a needed drop, a boss drop), not item by item.
-   - **Upgrade prices** (Guild Hall, buildings): by payback time, as the ledger already measures it.
+   - **Drops and finds**: basic drops near-sure every kill; bonus finds 1 in 100 or rarer; rare gear drops 0.1 % or less; all set as finds a day.
+   - **Upgrade prices** (Guild Hall, building variants): payback from about an hour early to about a day late, as the ledger measures it.
 3. **The ledger** (exists): times the result for every entry, flags walls and empty stretches, and its balancing preview nudges the outliers. Nudges stay within what the rules allow, or the rule changes.
 
 ## Steps
@@ -61,6 +76,6 @@ Three layers, each with one job:
 
 ## Open questions
 
-- **Drop and rare-find rates**, by kind: a bonus find, a needed drop, a boss drop.
-- **Upgrade prices**: Guild Hall stars and building variants, by payback time.
+- **Target finds a day** for each kind of rare: a bonus find, a rare gear drop, a boss drop.
+- **How strong rare-find boosts are**: how many times a potion or a Rare Finds building multiplies a rate.
 - **How the costs of a chain show the player its worth**: whether a crafted item's XP accounts for the materials spent, beyond the same-rate rule.
