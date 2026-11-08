@@ -25,6 +25,11 @@ import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { rosterFlagPayload } from '../ui/dnd/dragConstants.js';
+import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
+import { walkerGlide } from '../ui/components/board/walkerGlide.js';
+import { setDrawn } from '../ui/dev/perf/drawSwitches.js';
+import { walkHero } from './fixtures/walkHero.js';
+import { clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -152,17 +157,81 @@ describe('(d) the limp filter fades on the main thread', () => {
     const draw = (limp) => render(
         h(DndContext, null,
             h(MatHero, { heroId: 'h1', name: 'h1', sprite: STILL_HERO, left: 0, top: 0, limp }))
-    ).container.querySelector('[data-board-hero="h1"] > div.w-full.h-full');
+    ).container.querySelector('[data-board-hero="h1"]');
 
-    it('the art box carries will-change: contents, limping or not; the fade itself is kept', () => {
+    it('the hero\'s box carries will-change: contents, limping or not, over the art; the fade itself is kept', () => {
         const well = draw(false);
+        const art = well.querySelector(':scope > div.w-full.h-full');
         expect(well.style.willChange).toBe('contents');
-        expect(well.style.filter).toBe('');
-        expect(well.className).toMatch(/transition-\[filter\]/);
+        expect(art.style.filter).toBe('');
+        expect(art.className).toMatch(/transition-\[filter\]/);
         cleanup();
         const limping = draw(true);
         expect(limping.style.willChange).toBe('contents');
-        expect(limping.style.filter).toBe('grayscale(0.7) brightness(0.8) sepia(0.25)');
+        expect(limping.querySelector(':scope > div.w-full.h-full').style.filter).toBe('grayscale(0.7) brightness(0.8) sepia(0.25)');
+    });
+});
+
+/**
+ * ⭐ **X2: a walking hero glides as a walking enemy does** (brief 550). On the compositor (a smooth
+ * `transform` transition with no `will-change`) the walking hero was drawn resampled, and
+ * everything drawn over it on layers of their own. Now its box, and its speech stack, carry
+ * `will-change: contents` and jump a whole screen pixel at a time (`walkerGlide`).
+ */
+describe('⭐ (X2) a walking hero glides in whole screen pixels, on the main thread', () => {
+    afterEach(() => { setDrawn('walkDraw', true); BoardState.setInstantArrival(true); clearMat(); });
+
+    it('every step: its box stepped by the screen pixels it covers, never a smooth glide; will-change: contents throughout', async () => {
+        const seen = new Set();
+        const { steps } = await walkHero({ fit: 1 }, (fig, dx, dy) => {
+            expect(fig.style.willChange).toBe('contents');
+            expect(fig.style.transition).toBe(walkerGlide(dx, dy, 1));
+            expect(fig.style.transition).not.toMatch(/linear/);
+            seen.add(fig.style.transition);
+        });
+        expect(steps).toBeGreaterThan(5);
+        // About 11 u a tick at this walk speed: eleven jumps of under a pixel at a fit of 1.
+        expect([...seen]).toContain('transform 100ms steps(11, start)');
+    });
+
+    it('at the mat\'s fit: a smaller mat takes fewer jumps', async () => {
+        const seen = new Set();
+        const { steps } = await walkHero({ fit: 0.5 }, (fig, dx, dy) => {
+            expect(fig.style.transition).toBe(walkerGlide(dx, dy, 0.5));
+            seen.add(fig.style.transition);
+        });
+        expect(steps).toBeGreaterThan(5);
+        expect([...seen]).toContain('transform 100ms steps(6, start)');
+    });
+
+    it('standing, it carries will-change: contents too, and no glide', () => {
+        const { container } = render(h(DndContext, null, h(MatHero, { heroId: 'hs', name: 'hs', sprite: STILL_HERO, left: 10, top: 20 })));
+        const box = container.querySelector('[data-board-hero="hs"]');
+        expect(box.style.willChange).toBe('contents');
+        expect(box.style.transition).toBe('none');
+    });
+
+    it('with the walk drawing switched off, a step simply lands', async () => {
+        setDrawn('walkDraw', false);
+        const { steps } = await walkHero({}, (fig) => { expect(fig.style.transition).toBe('none'); });
+        expect(steps).toBeGreaterThan(5);
+    });
+
+    it('its speech stack: will-change: contents, and each step a glide in whole screen pixels; a redraw in place keeps it', () => {
+        const at = (x) => [{ heroId: 'hb', state: 'idle', x, y: 500, moving: true, tokenId: null, alert: null }];
+        const view = render(h(DndContext, null, h(MatFitProvider, { value: 0.5 }, h(HeroBubbleLayer, { heroes: at(400) }))));
+        act(() => { EventBus.publish('hero_leveled', { heroId: 'hb', skillName: 'Forestry', newLevel: 5 }); });
+        const stack = () => view.container.querySelector('[data-hero-bubble-stack="hb"]');
+        expect(stack().style.willChange).toBe('contents');
+        expect(stack().style.transition).toBe('none');   // nowhere to come from yet
+        view.rerender(h(DndContext, null, h(MatFitProvider, { value: 0.5 }, h(HeroBubbleLayer, { heroes: at(412) }))));
+        expect(stack().style.transition).toBe(walkerGlide(12, 0, 0.5));
+        expect(stack().style.transition).toBe('transform 100ms steps(6, start)');
+        view.rerender(h(DndContext, null, h(MatFitProvider, { value: 0.5 }, h(HeroBubbleLayer, { heroes: at(412) }))));
+        expect(stack().style.transition).toBe('transform 100ms steps(6, start)');
+        view.rerender(h(DndContext, null, h(MatFitProvider, { value: 0.5 }, h(HeroBubbleLayer, { heroes: [{ ...at(412)[0], moving: false }] }))));
+        expect(stack().style.transition).toBe('none');
+        expect(stack().style.willChange).toBe('contents');
     });
 });
 

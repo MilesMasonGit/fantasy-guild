@@ -6,16 +6,12 @@ import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, PixelArt } from '../base/TokenSprite.jsx';
 import { AnimatedHeroSprite } from './AnimatedHeroSprite.jsx';
-import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
+import { walkerGlide } from './walkerGlide.js';
 
 /** A limping hero: drained of colour, a touch darker, and a slower walk cycle. */
 const LIMP_FILTER = 'grayscale(0.7) brightness(0.8) sepia(0.25)';
 const LIMP_FRAME_MS = 250;
-/**
- * The art's box. ⚠️ `will-change: contents`, so the limp filter's fade runs on the main thread: on
- * the compositor it drew the hero, and everything drawn over it, on layers of their own, resampled.
- */
-const ART_STYLE = Object.freeze({ pointerEvents: 'none', willChange: 'contents' });
+const ART_STYLE = Object.freeze({ pointerEvents: 'none' });
 const LIMP_ART_STYLE = Object.freeze({ ...ART_STYLE, filter: LIMP_FILTER });
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { isElementOpaqueAtPoint, onFigurePart } from '../../utils/alphaHitTest.js';
@@ -166,6 +162,59 @@ export function heroBoxAt(point) {
 }
 
 /**
+ * A walking hero's box follows the engine without React, as a walking enemy's do
+ * (`MatToken.useWalkerFollow`). While `on`, each `HEROES_WALKED` writes the hero's current box
+ * corner straight into its `transform` (the same `translate` the render would write), with the
+ * glide for that step (`walkerGlide`: whole screen pixels at `pxPerUnit`, or none while `still`).
+ * Any render writes the same live point and the same glide (returned here), so React and this
+ * never disagree.
+ */
+function useHeroFollow({ on, heroId, pxPerUnit, still, boxRef, left, top }) {
+    const live = useRef(null);
+    live.current = { pxPerUnit, still };
+    // Where the box was last sent, and the glide it carries for that step.
+    const sentTo = useRef(null);
+    const glide = useRef(null);
+    // What the steps last wrote since the last render: an equal write is skipped (each is a CSS
+    // parse and a restyle inside the tick). Forgotten on every render, which writes the box itself.
+    const written = useRef({ transition: null, transform: null });
+    // A layout effect, so it is listening from the commit on, and it catches up at once on any
+    // step taken between the render and now.
+    useLayoutEffect(() => {
+        if (!on) return undefined;
+        const follow = () => {
+            const at = heroBoxAt(HeroMotion.bodyView(heroId));
+            const el = boxRef.current;
+            if (!at || !el) return;
+            const from = sentTo.current;
+            const transition = live.current.still || !from ? 'none' : walkerGlide(at.left - from.left, at.top - from.top, live.current.pxPerUnit);
+            sentTo.current = at;
+            glide.current = transition;
+            const transform = `translate(${at.left}px, ${at.top}px)`;
+            const last = written.current;
+            if (transition !== last.transition) { el.style.transition = transition; last.transition = transition; }
+            if (transform !== last.transform) { el.style.transform = transform; last.transform = transform; }
+        };
+        follow();
+        const unsubscribe = EventBus.subscribe(BOARD_EVENTS.HEROES_WALKED, follow, UI_LISTENER);
+        return () => {
+            unsubscribe();
+            glide.current = null;
+        };
+    }, [on, heroId, boxRef]);
+    // After the effect above, so a walk's first step glides from where the box stood.
+    useLayoutEffect(() => {
+        sentTo.current = { left, top };
+        written.current.transition = null;
+        written.current.transform = null;
+    });
+    if (!on) return null;
+    if (glide.current != null) return glide.current;
+    const from = sentTo.current;
+    return still || !from ? 'none' : walkerGlide(left - from.left, top - from.top, pxPerUnit);
+}
+
+/**
  * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
  * drag start, end and change of target; the hook lives in this thin shell, and the figure
  * (`MatHeroBody`) is memoised on what it draws, so a drag elsewhere does not redraw it.
@@ -224,7 +273,7 @@ const MatHeroBody = memo(function MatHeroBody({
 
     // Walking is the engine's: `HeroMotion` moves the hero ten times a second and says whether
     // they are moving and which way they face. The screen glides for exactly one tick between
-    // those steps, so the walk looks continuous.
+    // those steps, a screen pixel a jump, so the walk looks continuous.
     const isWalking = moving;
     const walkDrawn = useDrawn('walkDraw');
     const barsDrawn = useDrawn('bubbles');
@@ -241,17 +290,15 @@ const MatHeroBody = memo(function MatHeroBody({
     const boxTop = live ? live.top : (top ?? 0);
     const boxRef = useRef(null);
     const setBoxRef = useCallback((el) => { boxRef.current = el; dragRef?.(el); }, [dragRef]);
-    // A layout effect, so it is listening from the commit on, and it catches
-    // up at once on any step taken between the render and now.
-    useLayoutEffect(() => {
-        if (!followsItself) return undefined;
-        const follow = () => {
-            const at = heroBoxAt(HeroMotion.bodyView(heroId));
-            if (at && boxRef.current) boxRef.current.style.transform = `translate(${at.left}px, ${at.top}px)`;
-        };
-        follow();
-        return EventBus.subscribe(BOARD_EVENTS.HEROES_WALKED, follow, UI_LISTENER);
-    }, [followsItself, heroId]);
+    const walkGlide = useHeroFollow({
+        on: followsItself,
+        heroId,
+        pxPerUnit: fit * (globalThis.devicePixelRatio || 1),
+        still: !walkDrawn,
+        boxRef,
+        left: boxLeft,
+        top: boxTop
+    });
 
     // In a fight, standing still, the bar draws in the fight layer over the loot; walking, it stays
     // on the figure. Decided in the same render as the fight, so it never shows twice.
@@ -286,7 +333,12 @@ const MatHeroBody = memo(function MatHeroBody({
             onMouseLeave={() => onHover?.(null)}
             // A walker moves by `transform`: a step costs no layout and the ground under the hero
             // is not redrawn. Always this style, walking or not, so a box switching from left/top
-            // to a transform would not slide in from the mat corner. ⚠️ Never add `will-change` here: it measured 3× slower.
+            // to a transform would not slide in from the mat corner.
+            // ⚠️ `will-change: contents`, as an enemy's boxes: the glide and everything in the box
+            // (the limp filter's fade, a flash) run on the main thread. On the compositor the
+            // walking hero was drawn resampled, and everything drawn over it on layers of their
+            // own. So it glides in whole screen pixels (`walkerGlide`), or the main thread repaints
+            // on every frame of every step. Never `will-change: transform`: that measured 3× slower.
             style={{
                 left: 0,
                 top: 0,
@@ -294,9 +346,8 @@ const MatHeroBody = memo(function MatHeroBody({
                 width: HERO_HIT_PX,
                 height: HERO_BOX_PX,
                 zIndex: z,
-                transition: isWalking && walkDrawn
-                    ? `transform ${TICK_INTERVAL_MS}ms linear`
-                    : 'none'
+                willChange: 'contents',
+                transition: isWalking && walkDrawn ? (walkGlide ?? 'none') : 'none'
             }}
             className={cn(
                 'absolute p-0 m-0 bg-transparent border-0 outline-none',

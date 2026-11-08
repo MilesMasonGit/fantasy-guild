@@ -19,7 +19,8 @@ import {
 import { MatToken } from '../ui/components/board/MatToken.jsx';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { matW, matH } from '../config/matGeometry.js';
-import { placeAt } from './fixtures/mat.js';
+import { placeAt, clearMat } from './fixtures/mat.js';
+import { walkHero } from './fixtures/walkHero.js';
 import * as Flags from '../systems/board/Flags.js';
 import { MatHero } from '../ui/components/board/MatHero.jsx';
 import { AnimatedEnemySprite } from '../ui/components/board/AnimatedEnemySprite.jsx';
@@ -230,14 +231,19 @@ describe('motion', () => {
         expect(d).toBe(c);
     });
 
-    it('walkDraw off: a walking hero is not given the glide transition', () => {
-        GameState.initNew();
-        const props = { heroId: 'h1', name: 'h1', left: 100, top: 100, z: 5, moving: true };
-        const glide = () => mount(h(MatHero, props)).container.querySelector('[data-board-hero]').style.transition;
-        expect(glide()).toContain('linear');
-        cleanup();
+    it('walkDraw off: a walking hero is not given the glide transition', async () => {
+        const glides = async () => {
+            GameState.initNew();
+            clearMat();
+            const seen = new Set();
+            await walkHero({}, (fig) => seen.add(fig.style.transition));
+            cleanup();
+            BoardState.setInstantArrival(true);
+            return [...seen];
+        };
+        expect((await glides()).some(t => /^transform \d+ms steps\(/.test(t))).toBe(true);
         setDrawn('walkDraw', false);
-        expect(glide()).toBe('none');
+        expect(await glides()).toEqual(['none']);
     });
 });
 

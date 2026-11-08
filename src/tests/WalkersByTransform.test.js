@@ -15,7 +15,6 @@ import { resetMatTuning } from '../config/matTuning.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatHero } from '../ui/components/board/MatHero.jsx';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
-import { TICK_INTERVAL_MS } from '../config/loopConstants.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
@@ -54,14 +53,16 @@ describe('⭐ a hero walks by transform', () => {
         expect(drawnPoint(el)).toEqual({ x: 120, y: 340 });
     });
 
-    it('glides one tick per step while moving, and not at all while standing', () => {
+    it('handed its point, it stands: no glide, moving or not, and the same style either way', () => {
+        // A walking hero is handed no point and follows its steps itself, a screen pixel a jump
+        // (`SpriteSharpness.test.js`, X2).
         const props = { heroId: 'hw', name: 'W', left: 120, top: 340, z: 5 };
         const { container, rerender } = mount(h(MatHero, { ...props, moving: true }));
         const el = container.querySelector('[data-board-hero="hw"]');
-        expect(el.style.transition).toBe(`transform ${TICK_INTERVAL_MS}ms linear`);
+        expect(el.style.transition).toBe('none');
         rerender(h(DndContext, null, h(MatHero, { ...props, moving: false })));
         expect(el.style.transition).toBe('none');
-        expect(translated(el)).toBe(true);    // the same style either way
+        expect(translated(el)).toBe(true);
     });
 });
 
@@ -77,7 +78,8 @@ describe('⭐ speech bubbles follow by transform', () => {
         expect(stack.style.left).toBe('0px');
         expect(stack.style.transform).toMatch(/^translate\(-?[\d.]+px, -?[\d.]+px\) translate\(-50%, -100%\)$/);
         expect(drawnPoint(stack).x).toBe(400);
-        expect(stack.style.transition).toBe(`transform ${TICK_INTERVAL_MS}ms linear`);
+        // Its first drawing has nowhere to glide from; each step after glides (`SpriteSharpness.test.js`, X2).
+        expect(stack.style.transition).toBe('none');
     });
 });
 

@@ -341,9 +341,11 @@ Hall's star web (`GuildHallBoard.jsx`, `HallSky.jsx`) and the Atlas with the hex
 ### 5.2 What moves and how
 
 - **Walkers** (heroes, walking enemies) are moved by `transform: translate(…)` written straight
-  to the element on each `HEROES_WALKED` / `ENEMIES_WALKED`, with a CSS
-  `transition: transform 100ms linear` so a step glides for exactly one tick
-  (`MatHero.jsx:226-255,288-300`; enemies `MatToken.jsx:52-100`, `walkerGlide.js`).
+  to the element on each `HEROES_WALKED` / `ENEMIES_WALKED`, with a CSS transition that steps
+  the box a screen pixel at a time for exactly one tick (`walkerGlide.js`: `steps(n, start)`),
+  on the main thread (`will-change: contents`, so the walker is drawn crisp and nothing drawn
+  over it is re-layered): heroes `MatHero.jsx` (`useHeroFollow`) and their speech stacks
+  `HeroBubbleLayer.jsx`, enemies `MatToken.jsx` (`useWalkerFollow`).
 - **Frame clocks** (`src/ui/components/board/frameClock.js`): `onStep` (every 100 ms, all
   subscribers in one frame; the work bars, `workBar.js:57`), `onDue` (each subscriber at its own
   next time: hero and enemy sprite frames, ambient life at 8/s, loot bob, token fx, clock poses).

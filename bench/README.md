@@ -618,8 +618,10 @@ soft, and a pixel off, until the animation ends. Two guards keep the resting Tok
   pulse (one rule in `src/tailwind.css`), a resting Token's art (its filter flash and hop) and an
   enemy's boxes (`MatToken.jsx`), the spawn pop while it plays (`spawnMotion.js`), a -1 on a
   Token no hero works (`TokenBadges.jsx`), a flag's fade (`FlagLayer.jsx`: flags sort in among the
-  Tokens) and a hero's limp filter fade (`MatHero.jsx`). What is drawn in front of every resting
-  Token stays on the compositor: a worked Token's -1 and hit loop, a walking hero, floor loot.
+  Tokens), and a hero's box (`MatHero.jsx`: the walk, stepped a screen pixel a jump as an enemy's
+  by `walkerGlide.js`, and the limp filter fade) and speech stack (`HeroBubbleLayer.jsx`). What is
+  drawn in front of every resting Token stays on the compositor: a worked Token's -1 and hit loop,
+  floor loot.
   ⚠️ Not the whole mat: that repainted it on every frame of every animation and cost a third more
   frame work at 1×;
 - a Token's name label is `invisible` while it is not showing (`TokenBadges.jsx`), so its drop
@@ -632,14 +634,22 @@ by the game's own event or classes where it can: on the back-most Token, which e
 drawn after (a -1 from a real charges event, the landing hop, the art's filter flash, the spawn pop,
 a Token turning into another, a pulsing gear), an enemy walking, the back-most flag fading (its own
 transition, to the 30 % of a drag) and the back-most hero going limp (its art's filter fade), and in
-front of the resting Tokens (a -1 on a worked Token, a walking hero, real loot thrown on the floor);
+front of the resting Tokens (a -1 on a worked Token, a hero walking with the stepped glide the game
+gives it, real loot thrown on the floor);
 screenshots, and stops it. Two checks: how many still Tokens **changed** a pixel of their art (where their picture
 is opaque: the mat shows through the rest), and how many of the still Tokens
 nothing else covers are **drawn exactly** to their art (98 % of the opaque pixels in the middle of
 the art where nearest-neighbour sampling of the picture puts them). A case fails when it changes
 more than 5 % of the still Tokens or leaves fewer exact than at rest; the rest fails when any is not
-exact. The flag and limp cases, which the game plays on the main thread, also fail when they add a
-composited layer (`LAYERED`): at a fit of 1 a layer more moves no pixel, at any other fit it does. Not a timing tool: one run is ~1 min and compares pixels only within itself.
+exact. The flag, limp and hero cases, which the game plays on the main thread, also fail when they
+add a composited layer (`LAYERED`): at a fit of 1 a layer more moves no pixel, at any other fit it
+does. **The walking hero itself** is judged too (`HERO`): the back-most hero drawn crisp at rest is
+given a still portrait (one picture to judge it by, whatever its frame), and in the hero case at
+least 98 % of its core pixels (the middle band of the figure, clear of its feet's work plate and
+two pixels in from its edges) must show one of its picture's own colours: drawn pixel for texel they
+all do, at any phase; resampled on the compositor, colours between texels blend into new ones
+(2026-11-08, X1's tip: 33 to 69 % at fits 0.55 to 0.83). Not a timing tool: one run is ~1 min and
+compares pixels only within itself.
 
 **Floor loot itself** (T-393: items pinched during their bob, their shadow drifted): an item with a
 hard shadow is thrown on a spot nothing drawn over loot reaches (work plates, fights, bubbles, other
@@ -647,7 +657,8 @@ loot), on bare ground where there is any, and screenshotted for 2.6 s, a whole b
 another with reduced motion emulated (`hold`). Each shot finds the art at the whole-pixel corner
 where most of its pixels show their texel (with whole screen pixels a texel, any sub-pixel phase is
 one of these corners), and the shadow at the corner where most of its uncovered pixels are black.
-It passes when the art keeps **one shape** (the same pixels off its picture in every shot), the
+It passes when the art keeps **one shape** (the same pixels off its picture in every shot, give or
+take a stray pixel or two), the
 shadow stays in **one place**, 2 art pixels right of the art, and the
 art stands 1, 2, 3 and 4 **whole art pixels** above where it rests (`hold`: 3 in every shot); the
 height is read against the shadow, which stands on the ground 2 art pixels down-right of where the

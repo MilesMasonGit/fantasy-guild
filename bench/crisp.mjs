@@ -178,8 +178,10 @@ const CASES = [
     },
     {
         id: 'hero',
-        what: 'a hero walking (a transform transition on a hero, drawn above every Token)',
-        start: `(() => { const h = [...document.querySelectorAll('[data-board-hero]')].pop(); if (!h) return false; h.dataset.crispCase = 'true'; h.dataset.crispWas = h.style.transform || ''; h.style.transition = 'transform ${LONG}ms linear'; const r = h.getBoundingClientRect(); h.style.transform = (h.style.transform || '') + ' translate(24px, 0px)'; return { x: r.left - 48, y: r.top - 48, w: r.width + 96, h: r.height + 96 }; })()`,
+        mainThread: true,
+        judgesHero: true,
+        what: 'a hero walking (its box\'s transform glide, a screen pixel a jump, as walkerGlide steps it), the hero itself judged',
+        start: `(() => { const h = (window.__crispHero && document.querySelector('[data-board-hero="' + window.__crispHero + '"]')) || [...document.querySelectorAll('[data-board-hero]')].pop(); if (!h) return false; h.dataset.crispCase = 'true'; h.dataset.crispWas = h.style.transform || ''; const fit = Number(document.querySelector('[data-board-scale]').dataset.boardScale); h.style.transition = 'transform ${LONG}ms steps(' + Math.ceil(24 * fit * devicePixelRatio) + ', start)'; const r = h.getBoundingClientRect(); h.style.transform = (h.style.transform || '') + ' translate(24px, 0px)'; return { x: r.left - 48, y: r.top - 48, w: r.width + 96, h: r.height + 96 }; })()`,
         stop: `(() => { const h = document.querySelector('[data-crisp-case]'); h.style.transition = 'none'; h.style.transform = h.dataset.crispWas; delete h.dataset.crispCase; delete h.dataset.crispWas; return true; })()`
     }
 ];
@@ -202,7 +204,7 @@ async function screenshot(page, keepAs) {
     if (keepAs) fs.writeFileSync(keepAs, png);
     const sharp = require('sharp');
     const { data: raw, info } = await sharp(png).raw().ensureAlpha().toBuffer({ resolveWithObject: true });
-    return { raw, width: info.width };
+    return { raw, width: info.width, height: info.height };
 }
 
 /**
@@ -296,6 +298,68 @@ function exactShareAt(shot, r, pic) {
     return total ? exact / total : null;
 }
 const EXACT = 0.98;
+
+// ---------------------------------------------------------------------------
+// The walking hero itself
+// ---------------------------------------------------------------------------
+
+/** The still portrait the judged hero is given: one picture to judge it by, whatever its frame. */
+const HERO_STILL_SPRITE = 'hm_cleric_por';
+
+/**
+ * Give hero `id` the still portrait, and say where it is drawn: its picture, its box on screen and
+ * whether it faces left (drawn mirrored). Null when it is not drawn as a still picture.
+ */
+const HERO_STILL = (id) => `(async () => {
+    const G = window.__perf.game;
+    const hero = G.GameState.state.heroes.find(h => h.id === ${JSON.stringify(id)});
+    if (!hero) return null;
+    const was = hero.spriteId;
+    hero.spriteId = '${HERO_STILL_SPRITE}';
+    G.EventBus.publish('heroes_updated', {});
+    await new Promise(r => setTimeout(r, 500));
+    const box = document.querySelector('[data-board-hero="' + ${JSON.stringify(id)} + '"]');
+    const img = box && box.querySelector('img');
+    if (!img || box.querySelector('[data-hero-row]')) return { was, drawn: false };
+    const r = img.getBoundingClientRect();
+    const outer = img.parentElement.parentElement;
+    return { was, drawn: true, src: img.currentSrc || img.src, left: r.left, top: r.top, size: r.width, flipped: /scaleX\\(-1\\)/.test(outer.style.transform) };
+})()`;
+const HERO_BACK = (id, was) => `(() => { const G = window.__perf.game; const hero = G.GameState.state.heroes.find(h => h.id === ${JSON.stringify(id)}); if (hero) { hero.spriteId = ${JSON.stringify(was)}; G.EventBus.publish('heroes_updated', {}); } return true; })()`;
+
+/** A picture mirrored left to right (a hero facing left). */
+function mirrored(pic) {
+    const data = Buffer.alloc(pic.data.length);
+    for (let y = 0; y < pic.h; y++) {
+        for (let x = 0; x < pic.w; x++) pic.data.copy(data, (y * pic.w + x) * 4, (y * pic.w + (pic.w - 1 - x)) * 4, (y * pic.w + (pic.w - 1 - x)) * 4 + 4);
+    }
+    return { w: pic.w, h: pic.h, data };
+}
+
+/**
+ * How crisply a hero's still picture is drawn on a screenshot: the share of its core pixels (the
+ * middle band of the figure, clear of the work plate at its feet and anything over its head, two
+ * pixels in from any edge of its art) that show one of its picture's own colours. Drawn pixel for
+ * texel (at any phase, even a row off) every one does; resampled on the compositor, the colours
+ * between texels blend into new ones. `dxMax`: how far right it may have walked, in pixels.
+ */
+function heroCrisp(shot, hero, pic, dxMax = 0) {
+    const size = Math.round(hero.size);
+    const per = size / pic.w;
+    const opaque = (px, py) => px >= 0 && py >= 0 && px < size && py < size
+        && pic.data[(Math.floor((py + 0.5) / per) * pic.w + Math.floor((px + 0.5) / per)) * 4 + 3] === 255;
+    const band = insideOf(pic, size).filter(t => t.py >= size * 0.15 && t.py <= size * 0.7);
+    const core = band.filter(t => {
+        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (!opaque(t.px + dx, t.py + dy)) return false;
+        return true;
+    });
+    const palette = new Set();
+    for (let q = 0; q < pic.data.length; q += 4) if (pic.data[q + 3] === 255) palette.add((pic.data[q] << 16) | (pic.data[q + 1] << 8) | pic.data[q + 2]);
+    const x0 = Math.round(hero.left), y0 = Math.round(hero.top);
+    const at = findArt(shot, band, range(x0 - 3, x0 + 3 + dxMax), range(y0 - 3, y0 + 3));
+    const inPalette = core.filter(t => palette.has(rgbAt(shot, at.x + t.px, at.y + t.py))).length;
+    return { crisp: core.length ? inPalette / core.length : 0, exact: at.share, at: [at.x, at.y], pixels: core.length };
+}
 
 // ---------------------------------------------------------------------------
 // Floor loot's bob: one shape, whole art pixels, its shadow still on the ground
@@ -428,7 +492,8 @@ function findArt(clip, inside, xs, ys) {
             if (share > best.share) best = { share, x, y };
         }
     }
-    best.misses = inside.filter(t => rgbAt(clip, best.x + t.px, best.y + t.py) !== t.rgb).map(t => `${t.px},${t.py}`).join(' ');
+    best.misses = new Set(inside.filter(t => rgbAt(clip, best.x + t.px, best.y + t.py) !== t.rgb).map(t => `${t.px},${t.py}`));
+    best.pixels = inside.length;
     return best;
 }
 
@@ -502,6 +567,7 @@ async function watchLoot(page, found, { art, ms, keepAs = null }) {
         return {
             artShare: a.share,
             artMisses: a.misses,
+            artPixels: a.pixels,
             artAt: [a.x, a.y],
             shadowShare: s ? s.share : null,
             shadowAt: s ? [s.x, s.y] : null,
@@ -521,8 +587,14 @@ async function watchLoot(page, found, { art, ms, keepAs = null }) {
  */
 function judgeLoot(seen, { art, hold = null }) {
     const fails = [];
-    const shapes = new Set(seen.map(s => s.artMisses));
-    if (shapes.size > 1) fails.push(`the art drawn in ${shapes.size} shapes`);
+    // Shapes: shots whose art is off its picture at the same pixels, give or take a stray pixel or
+    // two (half a percent): a bob of part pixels moved whole rows from height to height.
+    const shapes = [];
+    for (const { artMisses: m, artPixels: n } of seen) {
+        const near = (r) => [...m].filter(k => !r.has(k)).length + [...r].filter(k => !m.has(k)).length <= Math.max(2, n * 0.005);
+        if (!shapes.some(near)) shapes.push(m);
+    }
+    if (shapes.length > 1) fails.push(`the art drawn in ${shapes.length} shapes`);
     const minArt = Math.min(...seen.map(s => s.artShare));
     if (seen.some(s => s.shadowShare == null)) {
         fails.push('no shadow drawn');
@@ -539,7 +611,7 @@ function judgeLoot(seen, { art, hold = null }) {
     }
     const lifts = [...new Set(seen.map(s => s.lift))].sort((a, b) => a - b);
     const gaps = [...new Set(seen.map(s => (s.gap ? s.gap.join('/') : '-')))];
-    const line = `${seen.length} shots; art in ${shapes.size} shape(s), exact to its picture ${minArt.toFixed(2)} at worst; shadow in ${new Set(seen.map(s => (s.shadowAt ? s.shadowAt.join(',') : '-'))).size} place(s), exact ${seen.some(s => s.shadowShare == null) ? '-' : Math.min(...seen.map(s => s.shadowShare)).toFixed(2)} at worst; lifts ${lifts.map(l => (l == null ? '-' : Number.isInteger(l) ? l : l.toFixed(2))).join(', ')} art px; shadow gap right/down ${gaps.join(' ')} px`;
+    const line = `${seen.length} shots; art in ${shapes.length} shape(s), exact to its picture ${minArt.toFixed(2)} at worst; shadow in ${new Set(seen.map(s => (s.shadowAt ? s.shadowAt.join(',') : '-'))).size} place(s), exact ${seen.some(s => s.shadowShare == null) ? '-' : Math.min(...seen.map(s => s.shadowShare)).toFixed(2)} at worst; lifts ${lifts.map(l => (l == null ? '-' : Number.isInteger(l) ? l : l.toFixed(2))).join(', ')} art px; shadow gap right/down ${gaps.join(' ')} px`;
     return { fails, line };
 }
 
@@ -578,6 +650,27 @@ async function main() {
         // An envelope scene's page timers would keep changing the screen on a frozen board.
         await page.evaluate('(window.__perf.game.GameLoop.stop(), clearInterval(window.__benchTimer), clearInterval(window.__envSampler), true)');
         await sleep(4500);   // a floater lasts 3 s; slides, hops and flashes less
+
+        // The hero the walking case judges: from the back, the first that, given a still portrait,
+        // is drawn crisp at rest with nothing over its middle (no bubble, no hero in front).
+        let judgedHero = null;
+        const heroIds = await page.evaluate(`[...document.querySelectorAll('[data-board-hero]')].sort((a, b) => (Number(a.style.zIndex) || 0) - (Number(b.style.zIndex) || 0)).map(b => b.dataset.boardHero)`);
+        for (const id of heroIds.slice(0, 4)) {
+            const dressed = await page.evaluate(HERO_STILL(id));
+            if (!dressed) continue;
+            if (dressed.drawn) {
+                const pic = await picture(dressed.src);
+                const hero = { id, ...dressed, pic: dressed.flipped ? mirrored(pic) : pic };
+                const atRest = heroCrisp(await screenshot(page), hero, hero.pic);
+                if (atRest.crisp >= EXACT && atRest.pixels >= 100) { judgedHero = { ...hero, atRest }; break; }
+            }
+            await page.evaluate(HERO_BACK(id, dressed.was));
+        }
+        if (judgedHero) await page.evaluate(`(window.__crispHero = ${JSON.stringify(judgedHero.id)}, true)`);
+        console.log(judgedHero
+            ? `walking hero judged: ${judgedHero.id} as a still portrait, ${(judgedHero.atRest.crisp * 100).toFixed(1)} % of its ${judgedHero.atRest.pixels} core pixels in its own colours at rest`
+            : 'walking hero: no hero drawn crisp at rest to judge (the case still counts Tokens and layers)');
+        await sleep(1500);
 
         const tokens = await page.evaluate(`(() => {
           const others = [...document.querySelectorAll('[data-token-art="true"] img, [data-board-hero], [data-flag]')].map(o => ({ o, r: o.getBoundingClientRect() }));
@@ -635,7 +728,8 @@ async function main() {
             const caseLayers = layers;
             await page.evaluate(c.stop);
             const changed = still.filter(t => !(moved && overlaps(t, moved)) && !samePixels(artPixels(rest1, t), artPixels(shot, t)));
-            rows.push({ id: c.id, what: c.what, changed: changed.length, exact: exactIn(shot), layers: caseLayers, mainThread: !!c.mainThread });
+            const hero = c.judgesHero && judgedHero ? heroCrisp(shot, judgedHero, judgedHero.pic, Math.ceil(24 * fit) + 2) : null;
+            rows.push({ id: c.id, what: c.what, changed: changed.length, exact: exactIn(shot), layers: caseLayers, mainThread: !!c.mainThread, hero });
             await sleep(700 + (c.settleMs || 0));
         };
         for (const c of CASES) await runCase(c);
@@ -678,6 +772,7 @@ async function main() {
             console.log(`${r.id.padEnd(9)} ${String(r.changed).padStart(4)} of ${String(still.length).padEnd(14)} ${String(r.exact).padStart(4)} of ${String(judged.length).padEnd(6)} ${String(r.layers).padStart(3)} (rest ${restLayers})      ${r.what}`);
         }
         console.log(`rest at the end: ${drift} changed`);
+        for (const r of rows) if (r.hero) console.log(`${r.id.padEnd(9)} the hero itself: ${(r.hero.crisp * 100).toFixed(1)} % of its core pixels in its own colours (at rest ${(judgedHero.atRest.crisp * 100).toFixed(1)} %), drawn at ${r.hero.at.join(',')}`);
         for (const r of lootRows) {
             console.log(`${r.id.padEnd(9)} ${r.fails.length ? 'FAILED' : 'ok'}: ${r.line}${r.fails.length ? `\n          ${r.fails.join('; ')}` : ''}`);
             console.log(`          ${r.what}`);
@@ -688,19 +783,22 @@ async function main() {
         // Exactness is not noisy: with the guards on every uncovered still Token is exact.
         const failed = rows.filter(r => r.changed > allowed || r.exact < restExact);
         const layered = rows.filter(r => r.mainThread && r.layers > restLayers);
+        const softHero = rows.filter(r => r.hero && r.hero.crisp < EXACT);
         const soft = judged.length - restExact;
         const softAtRest = soft > 0;
         const lootFailed = lootRows.filter(r => r.fails.length);
         // Layers and the loot do not lean on the still Tokens: said even when the board moved.
+        if (softHero.length && drift > allowed) console.log(`\nHERO: ${softHero.map(r => r.id).join(', ')} drew the walking hero resampled`);
         if (layered.length && drift > allowed) console.log(`\nLAYERED: ${layered.map(r => r.id).join(', ')} ran on the compositor (a composited layer more than at rest)`);
         if (lootFailed.length && drift > allowed) console.log(`\nLOOT: ${lootFailed.map(r => r.id).join(', ')} not drawn as an item floats`);
         if (drift > allowed) throw new Error(`the board was not still (${drift} Tokens changed at rest)`);
         if (failed.length) console.log(`\nCHANGED: ${failed.map(r => r.id).join(', ')} changed how still Tokens are drawn`);
         if (softAtRest) console.log(`\nSOFT: at rest ${soft} still Tokens are not drawn exactly to their art`);
+        if (softHero.length) console.log(`\nHERO: ${softHero.map(r => r.id).join(', ')} drew the walking hero resampled`);
         if (layered.length) console.log(`\nLAYERED: ${layered.map(r => r.id).join(', ')} ran on the compositor (a composited layer more than at rest)`);
         if (lootFailed.length) console.log(`\nLOOT: ${lootFailed.map(r => r.id).join(', ')} not drawn as an item floats`);
-        if (!failed.length && !layered.length && !softAtRest && !lootFailed.length) console.log('\nok: still Tokens are drawn exactly to their art, no animation changes that, and floor loot floats in one shape over a still shadow');
-        return failed.length || layered.length || softAtRest || lootFailed.length ? 1 : 0;
+        if (!failed.length && !layered.length && !softHero.length && !softAtRest && !lootFailed.length) console.log('\nok: still Tokens are drawn exactly to their art, no animation changes that, and floor loot floats in one shape over a still shadow');
+        return failed.length || layered.length || softHero.length || softAtRest || lootFailed.length ? 1 : 0;
     } finally {
         if (chrome) await chrome.close();
         if (server) await server.close();
