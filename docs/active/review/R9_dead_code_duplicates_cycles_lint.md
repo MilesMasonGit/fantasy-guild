@@ -62,6 +62,7 @@ next pass shorter).
 - **Evidence**: the grep per name as cited; `knip.json:3-14` (tests are entries, `cms/**` ignored, `ignoreExportsUsedInFile: true`, so a name used in its own file is not reported, which is why the 49 are standalone).
 - **Fix sketch**: Three builder-lite slices: (1) the 49 deletions, each with its dead tests, in one commit per folder (the three dead `NotificationSystem` methods are also listed as `vi.fn()` keys in 263 test files' mock factories, harmless extra keys that can stay or go with a scripted edit); (2) the five `export` keywords; (3) the 127 `export default` lines (a scripted edit; a test that imports a default of one of them would fail the suite and name itself). Then a knip re-run as the new baseline. Must not change: the four CMS-only and four bench-called names; `RingBadge.jsx`, `ViewportContext.jsx`, `healthBar.js` and `groundBuilds.js` follow their own findings; the bench's work fingerprint (nothing here is on the tick path).
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. Every name in the delete list word-grepped over `src`, `cms`, `bench`, `scripts` and `tools` including namespace-qualified calls: 49 confirmed dead (same-named bindings elsewhere are different functions); one refuted and removed, `heroCarries`, called by `TileModifiers.js:224` through `import * as LiveEffects`. All 127 `default` rows scanned: no default or dynamic-default import anywhere; the 13 CMS-only and 4 bench-called names confirmed at their lines. The three dead `NotificationSystem` methods appear as mock keys in 263 test files (noted).
+- **State**: ticket T-379 (triaged 2026-11-07)
 
 ### CR4-083  Nine groups of logic written twice or three times, beyond the nine R0 filed
 - **Tag**: cleanup
@@ -72,6 +73,7 @@ next pass shorter).
 - **Evidence**: As cited; `.jscpd.json:3` carries a `"//thresholds"` key that jscpd's schema rejects (the warning at the top of the report); it was always a comment and the settings below it (60 tokens, 5 lines) are honoured.
 - **Fix sketch**: One helper per group: `countMatches` imported by `DealDamage`; `randomUnitDirection(random)` in `seededRandom.js`; `bfsDistance(grid, seeds)` and `chamferDistance(grid, seeds)` in `TerrainMap.js`; `cornerHash(x, y, salt)` beside it; `ensureQuestState(q)` in `QuestTokens`; `commitPlacement` in `Placement`; `keyed` in the ledger; `useDragPan` and `useMeasure` hooks in `ui/hooks`. Groups 3 and 4 need the ground-plan and water tests' byte-identical fingerprints (`GroundPlan.test.js`, `WaterShapes.test.js`) and the draw bench's calibration stamp unchanged; group 2 must keep the generator's draw order (the layout bench and the settle tests). Rename `"//thresholds"` to `"//"`-prefixed prose inside the existing `"//"` string, or move it to a README. Must not change: any seed's layout, any ground picture.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. Groups 1, 4, 5, 6, 7, 8, 9 confirmed as the same logic (`countMatches` exported at `EffectActions.js:41`); group 2's three copies return different shapes (now said); group 3 was loose: two BFS copies, two chamfer-distance copies and one shared loop inside a flood fill, not four copies of one routine (rewritten). `.jscpd.json:3` and the warning at `jscpd.txt:3` confirmed.
+- **State**: ticket T-379 (triaged 2026-11-07)
 
 ### CR4-084  Five lint errors are lost logic, eleven are stray names in the game, and the rest belong to tests and folders eslint should skip
 - **Tag**: cleanup
@@ -82,6 +84,7 @@ next pass shorter).
 - **Evidence**: the lint output as cited (the full list is in this session's run; the baseline's counts match).
 - **Fix sketch**: One builder-lite slice: decide `MERGE_GRACE_MS` (use it at `:331` or delete it), drop `areaId` from the four signatures (or file the per-area drop rule as a ticket), delete the `emoji` block, the `variant` prop and `isDragActive`, the eleven stray names, the thirty-three test leftovers; with R0's CR4-007 the twenty outside-scope errors go from the count. Then `npm run lint` is green and stays a signal. Must not change: the loot roll's draw order (`_rollEntryDetails` reads `Math.random` in sequence; removing a parameter does not move a draw); the icon's drawn fallback.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed. `MERGE_GRACE_MS = 900` against `scheduleAbsorption(sprite.id, 1100)` at :331; `areaId` in five places and never read (the destructure at :33 added); `emoji` never rendered; `variant` never applied or passed; `isDragActive` dead beside the live `isAnyDragging` (:107,169,186); the seven `import React` files use no `React.` member (one JSDoc type in `MatTopBar.jsx:48`); eight unused bindings in `MapRewardsRetired.test.js:12-18`. The 74/5 totals and the 11/33/20 split come from the reviewer's own lint run and were not re-run by the verifier.
+- **State**: ticket T-058 (triaged 2026-11-07)
 
 ### CR4-085  The one import cycle and the 24 dependency warnings are R0's two findings; `reachability` names two more test-only files
 - **Tag**: cleanup
@@ -92,6 +95,7 @@ next pass shorter).
 - **Evidence**: As cited.
 - **Fix sketch**: None of its own; CR4-001, CR4-002, CR4-005, CR4-010 and T-300 carry the work. After them, the cycle report should read "0 cycle groups" and depcruise "0 violations", which makes both tools a gate rather than a baseline.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed (one cycle group of 16, 24 warnings, every `no-circular` through `GameState.js`; the FlagColours path is the one without `EquipmentManager`/`HeroManager`, now stated); the reachability figures are the reviewer's run of `tools/reachability.mjs`, which exists, and were not re-run.
+- **State**: ticket T-380 (triaged 2026-11-07)
 
 ### CR4-086  Docs: the architecture map's dead-code numbers hold; one jscpd comment key is a warning on every run
 - **Tag**: docs
@@ -102,6 +106,7 @@ next pass shorter).
 - **Evidence**: As cited.
 - **Fix sketch**: Fold the `"//thresholds"` prose into the `"//"` string or a `README`; note the two reachability counts' different bases in §2.1 in one line. Must not change: nothing in code.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed against `knip.txt` (15 files, 201 exports with 98/29/14 by folder, 158 duplicates, 1/2/1 dependencies and binary, two configuration hints), `knip.json:2,3-4,13` and `package.json:61` (knip 6.44.1), `.jscpd.json:3`; the "584 of 599" count is R0's depcruise figure and not checkable from the baselines.
+- **State**: ticket T-382 (triaged 2026-11-07)
 
 ---
 

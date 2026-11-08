@@ -52,6 +52,7 @@ with six Regions and eight heroes.
 - **Evidence**: the commit dates as cited (`git log --format="%h %ad" -S"<text>" -- <file> | tail -1`); R6's CR4-067 lists the dead fields themselves.
 - **Fix sketch**: Delete the eight branches and `quests.active` (with its `ensureState` resets), and the tests that feed them hand-made old saves (R10 lists them); the `bankedSkills` fold stays only if the owner wants the QA scene that exercises it (`classlessDev.js`), else both go; leave a one-line comment at `SaveMigration.js:28` saying why no field removed before the current version needs a migration. Must not change: the refusal rule; the nine reachable branches; the bench fingerprint (`woundedUntil` stays on the hero record until R6's CR4-067 removes it with a re-baseline).
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. The bump commit, the refusal, every first-commit date and the absence of a current writer for each dead field confirmed (`woundedUntil` and `quests.active` are only ever written null or empty). Corrected: `bountyQuest` is live (only the migration's `status`/`isTutorial` handling is dead), `questReward`'s `quest.tutorial` fallback is live (its `isTutorial` test is dead), and `bankedSkills` is reachable from one dev-only QA scene. The nine reachable branches were not re-checked by the verifier.
+- **State**: ticket T-376 (triaged 2026-11-07)
 
 ### CR4-073  Settling a place lays the mat out up to nine times, and every candidate pond rasterises the whole water field
 - **Tag**: perf
@@ -62,6 +63,7 @@ with six Regions and eight heroes.
 - **Evidence**: As cited; no measurement exists.
 - **Fix sketch**: Have `settle` take the plan `seedFor` already computed (pass the preview, not the seed); build the eleven noise layers once per layout record and hand them to `rasterise`; rasterise a candidate pond on the lattice window round its centre, not the whole mat; keep a running water count; share one `followNodes` pass between `biomeAt` and `terrains`. Must not change: the layout for a given seed (byte-identical `terrain` and node positions, which `GroundPlan.test.js` and the settle tests fingerprint), the determinism rule (`Layout.js:68-73`). **Hypothesis to test**: `console.time` round `Atlas.settle` on a Riverside and a Highland cell, before and after, dev build; add `layout()` to `bench/micro`.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed. `LAYOUT_TRIES = 8`, the second `preview` in `settle` (`Settling.js:171` passes the seed, not the plan), `SMALL_TRIES = 24` with one `sampleWater` per candidate, `rasterise` rebuilding the eleven layers per call with no cache, the 240 × 132 lattice (`SAMPLES = 4`, `TERRAIN_CELL = 32`, 253,440 bytes), the `wet` reduce, the two `followNodes` passes, the `scan` fallback, `pondOf`'s 3 × 8 bound; the scan size and the bench wording were tightened.
+- **State**: ticket T-354 (triaged 2026-11-07)
 
 ### CR4-074  The open world map recomputes every cell's price, lock and Region on every Bank change
 - **Tag**: perf
@@ -72,6 +74,7 @@ with six Regions and eight heroes.
 - **Evidence**: As cited.
 - **Fix sketch**: Compute `allRegions()`, `settledCellIds` and `ringStarsOf(authoredStars())` once per `worldView` and pass them down; price only the cells whose state is `FRONTIER` (settled and beyond cells show no price the player can act on; check `WorldPanel`); or debounce the refresh to a frame. Must not change: what the map shows, and when it updates (a price turning green as the Bank fills). **Hypothesis to test**: `console.time('worldView')` with the Atlas open on a six-Region game, before and after.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. The mount rule (`worldSide`, stage or portal), the refresh events, the per-cell `priceOf` hero loop, the per-unsettled-cell `ringStarsOf`, the per-settled-cell `allRegions()` and the two `settledCellIds` passes confirmed. Corrected: there is no second `ringStarsOf` at `worldView.js:62` (a comment line), and the Region list is built S + 2 times, not two to four.
+- **State**: ticket T-354 (triaged 2026-11-07)
 
 ### CR4-075  Dead and idle plumbing in the three folders
 - **Tag**: cleanup
@@ -82,6 +85,7 @@ with six Regions and eight heroes.
 - **Evidence**: grep results as cited; `docs/active/review/baseline/knip.txt:46,81-85`.
 - **Fix sketch**: Delete `abandonQuest`, the `sourceRect` parameter, the three re-exports, `reroll` and its comments (or keep `reroll` if the Regions page will get a reroll back: the planning agent's call), `ignored`, `anywhereDry`, `installedSources`, the five unimported exports; move `lookups()`'s memo to module level as `Settling.js` does; un-export the test-only names or move their tests to the public surface (R9). Must not change: any layout or world for a given seed.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed; no missed importer. `abandonQuest` and `reroll` callerless, `ignored` unreachable behind `RECIPE_KINDS`, `anywhereDry` unread, world recipes carrying no `rules` (`cellRegion.js:27-43`, `data/maps.json` without a `rules` key) so `RegionRules.apply` registers nothing but the dev map's, `installedSources` test-only, the five unimported exports (three used inside their own files), the test-only exports, and `lookups()` twice per roll try.
+- **State**: ticket T-377 (triaged 2026-11-07)
 
 ### CR4-076  Two settle-time placements use `Math.hypot` and trigonometry, against the layout's own determinism rule
 - **Tag**: bug
@@ -92,6 +96,7 @@ with six Regions and eight heroes.
 - **Evidence**: As cited.
 - **Fix sketch**: Compare squared distances, as `Layout.js` does (`dx*dx + dy*dy > r*r`); for the arrival's directions, draw them by rejection from the seeded generator as `Layout.js:72-73` describes, or accept that the arrival is not under the rule and say so in `Arrival.js:30`. Must not change: the stone's and the lairs' positions for any seed not on a boundary (every real seed; the Starter Camp and arrival tests confirm).
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. `StarterCamp.js:184` and the rule at `Layout.js:68-73` confirmed; the claim that it was the only executable use was refuted: `Arrival.js` has nine more (`:69-70,81-82,111,132,137,152,166`), now in the finding.
+- **State**: ticket T-365 (triaged 2026-11-07)
 
 ### CR4-077  Docs: comments for a reroll that is gone, rules that are never carried, and ticket ids in code
 - **Tag**: docs
@@ -102,6 +107,7 @@ with six Regions and eight heroes.
 - **Evidence**: As cited.
 - **Fix sketch**: With CR4-072 and CR4-075's deletions most of it goes; strip the ids. Must not change: nothing in code.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed; every quoted comment at its line, the three folders' counts exact (15/5,296, 13/2,193, 5/1,194). Two loose cites dropped (`StoneShapes.js:13` and `QuestTokens.js:60,62` carry no id; `Budget.js:26,249` say "slots" only in passing).
+- **State**: ticket T-382 (triaged 2026-11-07)
 
 ---
 

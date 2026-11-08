@@ -76,6 +76,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: `baseline/soak.txt` lines 32-37: hidden phase, DOM nodes +294 a minute, listeners +136 a minute, both restored on the next visible sample; `matFx.js:58-60` and `tokenFx.js:28-30` (`onfinish`/`oncancel` → `remove`, no timer); the grep above (no caller reads the pause); `HallCamera.jsx:128-131` (`landBy`: `setTimeout(() => arrive(glide), wait)` beside `onfinish`).
 - **Fix sketch**: Two small changes, either alone enough: (a) in `playAt` and `playIn`, beside `onfinish`, a `setTimeout(done, duration + delay + spare)` as `HallCamera` does (timers do run hidden, throttled to once a second, then once a minute after five hidden minutes, which still bounds the pile to a minute's worth); (b) gate the watchers (`watchMatFx`, `watchFightFloats`, `TokenHitArt`'s three handlers, `later`) on `isDrawingPaused()` so nothing mounts while the window is hidden (an effect that would have ended before the window returns is never missed). (b) is cheaper and also stops the on-resume burst; (a) is the safety net for anything else that animates. `usedBubble` already caps itself. Must not change: how any effect looks while visible; the catch-up (its bus is quiet, so UI listeners never fire there). **Hypothesis to test**: `npm run bench:soak` hidden slope for nodes and listeners falls from +294/+136 a minute to about 0, and T-333 closes.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed. Read every cited range; grepped `src/` and `bench/` for `isDrawingPaused|document.hidden|visibilityState` (only the definition, the setter, the perf harness and bench scripts); re-read the soak rows (1,877 → 3,347 nodes hidden, back to 1,875 visible; +133 to +137 listeners a step). Line cite for the soak rows corrected.
+- **State**: ticket T-333 (triaged 2026-11-07)
 
 ### CR4-047  Loot flights booked while the page is hidden never drain until a frame runs, and all land at once
 - **Tag**: perf
@@ -86,6 +87,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: As cited; `ParticleOverlay.jsx:93`'s comment "A collection reads no box" against `_boardPoint`'s `getBoundingClientRect` per booked flight.
 - **Fix sketch**: In `spawnCollected`, when `isDrawingPaused()` (or `document.hidden`), skip the drawing and land at once (`landFlight` with no particle, no `bookFlight` hold), so the stub counts stay live and nothing queues; measure the board once per `placeBooked` batch rather than per booking. Must not change: the flight's look when visible; `PARTICLE_LANDED`'s payload (the Hall dips on it).
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed `spawnCollected` (:310-352, `booked.push` :346), `_nextSlot` (:440-446), `placeBooked`/`update` called only inside the rAF loop (:169-170), `_boardPoint` (:449-452). Not re-read: that `update` lands every stale booking in one frame.
+- **State**: ticket T-341 (triaged 2026-11-07)
 
 ### CR4-048  Every pointer move over the mat queries the whole document and forces layout
 - **Tag**: perf
@@ -96,6 +98,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: As cited; `grep -rn "data-alpha-test" src/ui`: set only by `MatHero.jsx:269`; read by `alphaHitTest.js`, `pressRouting.js:11` and `DndKit.jsx:324`.
 - **Fix sketch**: One hit-test pass per frame, not per move: coalesce `pointermove` into a single `requestAnimationFrame` (or the step clock while a frame is pending), and in it read the mat's rect once (or keep it from a `ResizeObserver`/scroll listener) and reuse it for both the alpha test and the hover; have the alpha test take the element from `e.target.closest('[data-alpha-test]')` instead of querying the document, and measure only that one. Keep `Tooltip`'s `place` to the coalesced frame too. Must not change: which Token is hovered or pressed (the `tokenAtPoint` rule, `pressRouting`), the drag's feel (an eye-check if it does: pickup and hover). **Hypothesis to test**: `bench:drag` pickup and drop longest frames (T-201's numbers) and a pointer-move trace's `updateAlphaPointerEvents` self time, before and after.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. `tokenAtPoint` is at `Flags.js:214-221` (not :177-187), and only mat heroes carry `data-alpha-test` (no dock figure does), so the per-move cost is smaller than first written; the three unthrottled layout reads per move stand.
+- **State**: ticket T-349 (triaged 2026-11-07)
 
 ### CR4-049  The hero-drag's order line runs its own frame loop with a layout read every frame
 - **Tag**: perf
@@ -106,6 +109,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: As cited.
 - **Fix sketch**: Measure on pointer move, not per frame (the pointer is what moves the ghost), and step the march's phase on the shared due clock; drop the ancestor `MutationObserver` in favour of one measurement after dnd-kit's own move (`onDragMove`). Must not change: the line's look and the snap (an eye-check if the march's cadence changes). Joins T-201's list.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed (rAF loop :125-159 re-queued at :126, cancelled at :162; `place` :71-82 reads the ghost rect only while snapped; MutationObservers :70,:88-90). Note: `matRectForDrag` is cached per drag (`matPoint.js:44-53`), so the per-frame layout read is the ghost rect alone.
+- **State**: ticket T-349 (triaged 2026-11-07)
 
 ### CR4-050  Fifteen pollers tick whether or not anything changed, none pauses while hidden, and one recomputes the whole upkeep summary on every Bank change
 - **Tag**: perf
@@ -116,6 +120,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: As cited; `baseline/soak.txt` hidden rows: `task ms/s` 8 with `fps` 0; `MatCapBadge.jsx` keys its refresh on `capSignature` while `MatUpkeepBadge` and `UpkeepSummaryPanel` do not.
 - **Fix sketch**: One shared poll clock in `frameClock.js` (`onPoll(fn, everyMs)`: a single timer, honouring `setDrawingPaused`, calling each subscriber in one frame) and move the fifteen onto it; gate `MatUpkeepBadge`/`UpkeepSummaryPanel` on a signature of the summary (as the cap badge does) and drop their event subscriptions for the ones the poll covers, or the poll for the ones the events cover; in `TokenCard`, give `ArtWindow`'s layout effect its real dependencies. Must not change: what each readout shows and how fast it updates (the clock readings may update on the shared tick instead of their own phase: not an eye-check). **Hypothesis to test**: `bench:soak`'s hidden `task ms/s` and `node bench/tick-commits.mjs`'s commits per tick with the mat idle.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. Recounted: 16 `setInterval` under `src/ui` outside `ui/dev`, one of them the dev-only Animation Studio, so fifteen in the game; every interval length matches. The upkeep badge's per-event recompute (`UPKEEP_EVENTS` is a superset of the three named) and the summary panel's fresh object confirmed. "A render and usually a commit" was overstated: most pollers set a primitive and bail out; rewritten.
+- **State**: ticket T-343 (triaged 2026-11-07)
 
 ### CR4-051  Drop-shadow filters on things that animate or sit on the dock
 - **Tag**: perf
@@ -126,6 +131,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: As cited; the rule is `docs/reference/PERFORMANCE.md:118-122` (item 7, "Filters are the graphics card's work") and `src/tailwind.css:416-421` (CR3-350: the biggest graphics cost found in round 3).
 - **Fix sketch**: Draw the gear's and marks' hard shadow as a second pixel-offset copy or a generated outline sheet (the pattern `sheetOutlineLayer` already provides) instead of `drop-shadow`; stop the gear pulse under `prefers-reduced-motion` (already) and when `isDrawingPaused()` (a `data-paused` attribute on the mat root that the CSS keys on); leave the nav orbs' shadow if the look needs it but note it costs a layer each. Must not change: the look (an eye-check for the gear and marks: a two-pixel black offset should be pixel-identical). **Hypothesis to test**: `bench:profile` layer count and paint share on `cap128` with three stations awaiting a recipe, before and after.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. Every filter site confirmed, two added (`MatHero.jsx:149`, `DragGhost.jsx:65`); the dock alert marks are conditional, not always mounted (title and Where rewritten); the PERFORMANCE.md cite was wrong (:650-668 is the causes table, which does not mention filters) and now points at the rule. Untested by either reader: that Chrome runs the style step for a hidden CSS animation.
+- **State**: ticket T-350 (triaged 2026-11-07)
 
 ### CR4-052  The mat's Token and hero projections are rebuilt on every walking step
 - **Tag**: perf
@@ -136,6 +142,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: As cited; `MatBoard.jsx:156-162`'s comment describes the walker design the selectors serve.
 - **Fix sketch**: Split the projections: a walker list keyed on `ENEMIES_WALKED` that holds only ids and sort-ys, and a Token list that ignores walking steps; a hero projection keyed on a hero-state version (bump it in `Flags` on claim change and in `HeroMotion` on stop/start/turn, not on every step) and narrow `HEROES_UPDATED` (CR4-044). Must not change: the stack order and when a walker crosses a neighbour (`walkerSortY`'s rule), the one-commit-per-tick behaviour. **Hypothesis to test**: `node bench/tick-commits.mjs` renders per tick on `enemies80`/`heroes16` before and after, and a tick profile's `useGameState` selector share.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed; the two line ranges were off by one or two and are corrected. Both selectors run on every listed event; the per-walker `others` array, the per-hero `roster.find`, `statusOf` and `bodyView`, and `projectFlags`'s `statusOf` per flag all as described.
+- **State**: ticket T-351 (triaged 2026-11-07)
 
 ### CR4-053  The arrow scroll list measures on every render and rebuilds its observer every render
 - **Tag**: perf
@@ -146,6 +153,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: As cited.
 - **Fix sketch**: Give both effects their dependencies (`[measure]`), observe once per mount and re-observe children only when the child count changes, and let the `ResizeObserver` be the only measurer after mount. Must not change: when the arrow bars appear (an eye-check is not needed: the same measurements, fewer times). **Hypothesis to test**: `bench:draw --only=notify300` frame work p50 before and after.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. The measure effect (:114), `contentOverflows` (:75-85) and the per-render observer (:124-130) confirmed. `BankTab.jsx` does not use the list (its scroll box is a plain `overflow-y-auto` div, :247) and the stubs' 1 s intervals live in each stub, not the column: users and cadence rewritten.
+- **State**: ticket T-351 (triaged 2026-11-07)
 
 ### CR4-054  Fight windows and stub copies survive a load or a new game, and their timers keep running
 - **Tag**: bug
@@ -156,6 +164,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: As cited; `fightWatch.js:433` (`clearAll`) does reset its own `pending` on `GAME_RESET`, so the fight *watch* resets and the fight *windows* do not.
 - **Fix sketch**: Call `resetFightPanels()` and `resetCopies()` from the one `GAME_LOADED`/`GAME_RESET` (`reason: 'new_game' | 'load'`) handler the notifications already use (`routing.js:180-188`'s `startFresh`), or subscribe in the stores themselves. Must not change: windows across a Region travel (`reason: 'travel'`: keep them, the heroes are the same).
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed. `resetFightPanels` (`fightPanelStore.js:118`) and `resetCopies` (`stubLanding.js:58`) are called only from tests; neither file references `GAME_RESET` or `GAME_LOADED`; the 1 s check is `FightPanelPopup.jsx:141-147`; `fightWatch.clearAll` (:433) is on `GAME_RESET` at :472; the notification routing's own reset is `src/systems/notifications/routing.js:180-184`.
+- **State**: ticket T-363 (triaged 2026-11-07)
 
 ### CR4-055  Dead drawing code and stylesheet rules, and one listener that always does nothing
 - **Tag**: cleanup
@@ -166,6 +175,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: grep results as cited per name.
 - **Fix sketch**: One builder-lite slice with R9: delete the dead constants, keyframes and classes (keep `TokenChargeDeltaFloater` only if the owner wants the floater back; otherwise delete it with its CSS), drop the `arrived` listener until the line is wanted (`MOMENT_SPOKEN` decides), and re-point T-317 at `hpTone`. Must not change: anything drawn (every item here draws nothing today).
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. Every dead item confirmed by grep except `gi-lvl-fade`, which is live (`.gi-lvl-float { animation-name: gi-lvl-fade }`, tailwind.css:541, applied at `LevelUpFloat.jsx:39`): removed. `stop.strike` is at `strikeChips.js:129` and leaks only when called after `stop()`; `MatUpkeepPopover` is an unneeded export, not test-only; T-317's wording corrected (an owner request to use `HP_COLOUR`, not a claim about a cause).
+- **State**: ticket T-378 (triaged 2026-11-07)
 
 ### CR4-056  Tickets and comments that no longer match the drawing code
 - **Tag**: docs
@@ -176,6 +186,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: Each read against the code at the paired line; `grep -rn healthTextWidth src` → nothing.
 - **Fix sketch**: Ticket edits by the planning agent; comment fixes in the slices that touch the files (CR4-046, 047, 054, 055). No code change.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. All ticket lines and comment cites confirmed except `heroSpeech.js:366` (the file has 138 lines; the comment is at :51) and the poller count's explanation, both fixed.
+- **State**: ticket T-382 (triaged 2026-11-07)
 
 ### CR4-057  The ground plan is rebuilt for sliders it does not read, and waits for sheets it does not need
 - **Tag**: perf
@@ -186,6 +197,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: As cited; `bench/micro/groundPlan.bench.js` holds the plan's node-only timing (its bar is 60 ms).
 - **Fix sketch**: Two revisions, plan and screen, each bumped only by its own keys (`isScreenKey(key)`); build the plan when `ground` changes, not when `ready` turns true, and only the screen pass behind `ready`; move `buildGroundPlan` off the render (an effect, or the world picture's worker pattern) if the DevTools `fg-perf:ground-plan` measure says it is worth it. Must not change: the picture (byte-identical for the same ground, tuning and fit; the draw bench's calibration stamp), the 250 ms fit settle. **Hypothesis to test**: time from `GAME_LOADED` to the first ground paint on a cold start, before and after.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed. `useTuningRevision` (:59-79) skips only ambient keys other than `ambientGust`; the plan memo (:116) depends on `ready`; `buildGroundPlan` takes `ground` alone and no `Terrain*.js` imports `groundSheets` (the import runs the other way: `groundSheets.js` takes `muteTexels` from `TerrainSurface.js`); the six screen-only keys are read only in `groundScreen.js` and `muteTexels`; 8 + 7 sheets.
+- **State**: ticket T-352 (triaged 2026-11-07)
 
 ### CR4-058  The screen pass redoes plan-only work on every fit change and allocates in its hot loops
 - **Tag**: perf
@@ -196,6 +208,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: As cited; `TerrainCanvas.jsx:141` times only `buildScreenPass`, so the recorded "screen" time leaves out `groundLife` (`:147`) and `putImageData` (`:145`).
 - **Fix sketch**: Keep `looksOf`'s tables and the grass ramps on the plan (the same WeakMap that holds `lookAtOf`), keyed on the sheet set; gate `groundLife`'s three builders on their switches; reuse one scratch array per walk; replace `push(...spread)` with a loop. Must not change: the picture (byte-identical). **Hypothesis to test**: the `fg-perf:ground-screen` measure plus `groundLife`'s time on `cap128` and a coast Region, before and after a fit change.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. The fade tint (`TerrainSurface.js:119`) is built once per plan, not per pass: removed. The rest confirmed: `looksOf` uncached beside the cached `lookAtOf`, `grassTable` and `grassColours` per pass, a string key per opaque prop pixel, `paint` twice with gusts on (the default, `playmatTuning.js:436`), `groundLife` building water and lava data with no switch check (gust data is gated through `pass.pieces`), the lattice and blend allocations, `limit` up to 16,382.
+- **State**: ticket T-352 (triaged 2026-11-07)
 
 ### CR4-059  The water's shimmer repaints a bounding box the size of the water eight times a second
 - **Tag**: perf
@@ -206,6 +219,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: As cited; `AmbientLife.jsx:15-29` states the design the box falls short of.
 - **Fix sketch**: Put back in bands rather than one box (a box per changed row run, or a fixed grid of tiles marked dirty), so a step copies only the stripes it touched; or step the water's phase per region of the mat so the stripes stay local. Gust: skip the rewrite of unchanged pixels. Must not change: the look (an eye-check on a coast Region only if the stripes' cadence changes). **Hypothesis to test**: `bench:draw --switches --only=<a coast scene>` with `ambientWater` on and off, and the sum of `putImageData` areas per second at idle (the terrain reader's suggested measure).
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed. `dirtyBox` is one min/max rectangle; the shimmer's phase `0.015x + 0.025y + noise` buckets equal-phase pixels on diagonals; the sparkle placement (uniform over the water) also widens the box and is now mentioned; the gust rewrites still-leaning pixels into the box; the lava writes on a level change only; `putImageData` of the box at `AmbientLife.jsx:128`.
+- **State**: ticket T-350 (triaged 2026-11-07)
 
 ### CR4-060  Instrumentation nobody reads and an ambient cue nobody sends
 - **Tag**: cleanup
@@ -216,6 +230,7 @@ notification column has no backdrop blur and removes stubs and banners on timers
 - **Evidence**: grep results as cited per name.
 - **Fix sketch**: Either wire the build numbers somewhere the director can read them (the Perf HUD, or a `bench:draw` field, since CR4-057 and 058 want them) or delete `lastGroundBuilds`/`onGroundBuilt`/`previewBuilds`/`lastPictureTimes` and keep only the `performance.measure`; delete `cueAmbient` and the two dead branches, or wire the QA buttons; drop the four unread plan fields after checking the tests that read them are testing the plan, not the picture. Must not change: the picture; the test oracles.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed by grep: `lastGroundBuilds`, `onGroundBuilt`, `previewBuilds`, `lastPictureTimes` (`WorldMap.jsx:155`) and `cueAmbient` have no importer or caller; the cue branches are `AmbientLife.jsx:291,297` with the listener at :244; the four plan fields are read by tests only; the oracle functions are test-only.
+- **State**: ticket T-352 (triaged 2026-11-07)
 
 ---
 

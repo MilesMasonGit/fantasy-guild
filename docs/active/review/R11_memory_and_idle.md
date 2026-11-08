@@ -55,6 +55,7 @@ build with `minify: false`.
 - **Evidence**: As cited; the class diff of the two snapshots (`soak.txt:89-107`) shows no detached DOM class at all, which is consistent with the release at 18.0 min.
 - **Fix sketch**: Fix CR4-046 (a timer fallback beside `onfinish`, or `getAnimations().forEach(a => a.finish())` on `setDrawingPaused(true)`), then re-run `npm run bench:soak -- --hidden=20 --snapshot` with one more snapshot taken at the last hidden sample (`bench/soak.mjs`, beside the end-of-fit snapshot) so the detached classes and their retainers are in the report; the hidden limits (20 nodes, 10 listeners a minute) then become the gate they were written as. Must not change: the soak's visible-phase thresholds and the saved baseline's shape; the engine's hidden tick rate (100 %, by design).
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. Every soak number and the two visible-sample snapshots confirmed, and CR4-046's mechanism; the `soak.mjs` line cites were wrong (fixed) and the "feeders" were this area's inference presented as R4's: now stated as unproven attribution.
+- **State**: ticket T-333 (triaged 2026-11-07)
 
 ### CR4-093  The visible heap grows 52 KB a minute, and the perf build's minification hides what is growing
 - **Tag**: memory
@@ -65,6 +66,7 @@ build with `minify: false`.
 - **Evidence**: As cited; the closure-name diff is reproducible from the two snapshot files with a 40-line node script (node types `closure`, `object`, `native`, grouped by `name`).
 - **Fix sketch**: Give the perf build readable names for the soak only (`build.minify: false` or `terserOptions.keep_fnames` under `mode === 'perf'`; the draw bench's calibration stamp must be checked for a change in frame cost, since unminified code is slightly slower), then a 60-minute soak with `--snapshot` and the retainer paths of the top growing closures read in DevTools; add `performance.measureUserAgentSpecificMemory()` (or the CDP `Memory.getDOMCounters` plus `Browser.getProcessMemory` the soak already reads) per sample to split the renderer's growth into JS, DOM, canvas and image. Must not change: the soak's visible thresholds; the engine's work.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. The slopes, the class diff, the unminified-build inference (`vite.config.js:120` sets only `outDir`) and T-335's text confirmed; the renderer figures restated (level 165.6 MB, 117 → 178); the `soak.mjs` line cite fixed; the two snapshot files exist in the director's worktree (45.8 and 46.5 MB). The closure-name diff was the reviewer's and was not re-run.
+- **State**: ticket T-335 (triaged 2026-11-07)
 
 ### CR4-094  At idle, visible, the page spends 124 ms a second and 122 style passes a second redrawing a mat where nothing changed
 - **Tag**: perf
@@ -75,6 +77,7 @@ build with `minify: false`.
 - **Evidence**: As cited.
 - **Fix sketch**: None of its own: R4's CR4-050, CR4-051, CR4-059 and CR4-046 are the fixes; after each, `npm run bench:soak -- --minutes=10 --hidden=0` and read the visible "page task ms/s" and "style passes/s" lines (and add both to `soak-baseline.json`'s compared metrics, which today compare memory slopes only, `soakLib.mjs:52-73`). The target is a page that renders only when something changed: style passes near the engine's tick rate, task time a third of today's. Must not change: what is drawn.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. Every visible and hidden number confirmed; two samples read 164 and 161 rather than 165 (stated); the R4 findings exist and say what is attributed to them; `PERFORMANCE.md`'s 0.57 commits a tick is at :864,874.
+- **State**: ticket T-350 (triaged 2026-11-07)
 
 ### CR4-095  Docs: the memory tickets' guesses are now findings, and the soak's hidden check is right but its snapshots are not where the question is
 - **Tag**: docs
@@ -85,6 +88,7 @@ build with `minify: false`.
 - **Evidence**: As cited.
 - **Fix sketch**: The planning agent updates T-333 and T-335 at triage; a line in `soak.mjs`'s header; one `npx update-browserslist-db@latest` (a `package-lock.json` change, so a commit of its own). Must not change: nothing in code.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed; the ticket quotes, the WebView2 comment, the drawing-pause lines, §5.4 and the soak header as described; the ARCHITECTURE/R4 poller-count difference it noticed is now listed.
+- **State**: ticket T-382 (triaged 2026-11-07)
 
 ---
 

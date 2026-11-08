@@ -72,6 +72,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: As cited; `TileModifiers.js:922-936` (`growTimeOf`) shows the versioned cache pattern the other axes use and `WORK_TIME` lacks; `TICKETS.md:152` lists T-078 as "latent".
 - **Fix sketch**: Memoise `loadoutStatements(hero)` per hero on a key of what it reads: the grid (`hero.equipment` identity or `hero._rev`), the perk-bearing levels (`hero.skills` levels, or `_rev` bumped on level-up), and a Bank version counter for `slotBacked` (`InventoryStore` bumps one on any quantity change; `slotBacked` reads only "at least one", so the key can be the set of consumable item ids with stock, or simply the counter); keep `liveStatements` live (the effects list is small and changes on its own clock) or version it on `hero.effects` mutation. Then `heroContributions` is a filter over a cached array. Must not change: the answer (the bench fingerprint, `heroXp`, `tokensHash`), the Bank-stock rule, perks reached mid-catch-up (the key must include levels). **Hypothesis to test**: the catch-up profile's self time in `loadoutStatements`, `statementsFromEntry`, `effectTitle` and `lendingEntries` before and after; T-078 closes with this.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. BoardRunner.js:719 → workTimeOf (:855) → resolveAxis with six scans and the arrays; heroContributions rebuilds the two statement lists per call and returns early only with no worker; traced the per-call allocations in lendingEntries, loadoutRefs, loadoutStatements (second expansion when partly worn, a spread per statement), perkStatements and liveStatements; version caches exist for growTimeOf (:906), campReachOf (:953) and nearbyGateMet (:992) and not for WORK_TIME; TICKETS.md:152 lists T-078 as latent.
+- **State**: ticket T-078 (triaged 2026-11-07)
 
 ### CR4-034  The swung weapon is derived up to seven times per swing (more with fight moments) and once more per tick
 - **Tag**: perf
@@ -82,6 +83,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: As cited; `getEquippedEntries` allocates per call; no memo in `CombatFormulas.js` (grep `Map(|cache|memo`: none).
 - **Fix sketch**: Derive once per swing: a `fighterView(hero)` (`{ weapon, slot, style, level }`) computed at the top of `handleHeroAttack` and `enemySwing` and passed into `heroBlow`, `heroMissChance`, `heroCritChance`, `nextArrowOf`; keep the existing functions as thin wrappers that build the view for other callers. Must not change: any number or draw (the bench fingerprint); the live read within a swing (the view is per swing, never cached across ticks). Joins T-026. **Hypothesis to test**: the catch-up profile on a fight-heavy board (`enemies80` or the S8 hour: 240 kills) for `getEquippedEntries` and `getHeroWeaponSlot`.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed with the count corrected (folded in): seven weapon derivations on a landed ranged blow, three on a miss, one per fight moment through loadoutStatements, one per tick for the swing pace; getEquippedEntries allocates per call; no memo in CombatFormulas.js; the cited line ranges are right.
+- **State**: ticket T-347 (triaged 2026-11-07)
 
 ### CR4-035  Every enemy swing draws a random number to choose between one hero
 - **Tag**: cleanup
@@ -92,6 +94,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: As cited; `grep -rn "assignedHeroIds" src/systems/combat` shows the list is built once from a single id and never appended.
 - **Fix sketch**: `const targetHeroId = assignedHeroIds[0];` (or pass `heroId` straight through). **Changes the random stream**: expect `WORK CHANGED` on every fighting scenario (S2, S3, S8, C240, C256) and accept it knowingly; the ticket must say so and the baseline be re-saved after. Nothing else changes.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. assignedHeroIds is built once as a one-element array and never pushed to or reassigned; the one draw at CombatAttackProcessor.js:198 always yields index 0 and consumes one Math.random per enemy swing.
+- **State**: ticket T-368 (triaged 2026-11-07)
 
 ### CR4-036  The bucket maths is written four times, and the copies disagree
 - **Tag**: bug
@@ -102,6 +105,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: As cited, each side read.
 - **Fix sketch**: One exported `classifyModifier(payload)` → `{ bucket: 'flat'|'multiplier'|'percentage', value }` and one `categoryMatches(payloadCategory, asked)` in `ModifierAggregator.js`, used by `query`/`collect*`, `heroContributions`, `rates.heroBuckets` and `gearDefenceRule`; `growTimeOf` calls `applyThreeBucket` over its cached sums (same arithmetic, one formula); the CMS's palette already refuses `additive`, so the classifier can treat a bare or `additive` bucket as flat and warn once. Must not change: any resolved number for today's content (the bench fingerprint; the ledger's `calibration` figures), the aggregator's `_isParentOf` semantics. A content-audit rule (R8) that refuses a bucketless `Provides` closes the door for good.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed on all four divergences (a) to (d) by reading both sides of each; the ledger copy shares the three bucket lines, not six (folded in); growTimeOf's arithmetic equals applyThreeBucket's (:70-74) wrapped in floorSpeedUp; gearDefenceRule is a fourth matcher; getXpMultiplier has no flat.
+- **State**: ticket T-360 (triaged 2026-11-07)
 
 ### CR4-037  The hero-scope XP bonus is read from a place nothing writes, so kills get no XP bonus
 - **Tag**: bug
@@ -112,6 +116,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: As cited; `grep -c XP_BONUS data/*.json`: effects 4, Hall stars 10, items 0, perks 0.
 - **Fix sketch**: Owner question (STATUS): (a) kills get the same XP bonuses as work: `handleVictory` resolves the award through `TileModifiers.resolveAxis(instanceId, XP_BONUS, award, style)` on the enemy Token (guild and hero scopes included) and `getXpMultiplier` is deleted; or (b) XP bonuses are for work only, by design: delete `getXpMultiplier` and the `scaled` line in `addXP`, fix the comment. Either way `addXP` stops reading an axis nobody writes. (a) **changes `heroXp` in the bench fingerprint** on fighting scenarios; (b) changes nothing.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. XP_BONUS's palette entry has no heroOnly (the 14 heroOnly entries are :383-564); both hero writers filter on heroOnly; every addModifier caller in src and cms/src was listed and none writes XP_BONUS to a hero aggregator; addXP applies only getXpMultiplier; handleVictory passes the flat award; the work path applies the bonus through resolveAxis; data counts match.
+- **State**: ticket T-371 (owner 2026-11-07: every XP bonus is skill-specific, kills included; brief 530) (triaged 2026-11-07)
 
 ### CR4-038  Dead machinery inside the aggregator runs on every scan
 - **Tag**: cleanup
@@ -122,6 +127,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: As cited; grep results as stated.
 - **Fix sketch**: Delete `cache` and the comment, the expiry branch and `purgeExpired`, `setSourceEnabled`/`disabledSources`/`removeSourceType`/`getLogicOverrides`/`LOGIC_OVERRIDE`, `SCOPES`, the three unused `EFFECT_TYPES` and the 28 unused `TARGET_CATEGORIES` keys (after R8 confirms the CMS does not author them: `cms/src` references only `ALL` and `COMBAT` too), and `persistent: true`. `_forEachMatching` then reads nothing but the modifier. Must not change: `_isParentOf`'s matching, `version`, the bench fingerprint (a pure deletion).
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed with one miscount (30 keys, 28 unused; folded in). this.cache appears only at :80 and :164; no expiry producer; setSourceEnabled, disabledSources, removeSourceType, getLogicOverrides, LOGIC_OVERRIDE and SCOPES have no reference anywhere, tests included; persistent: true is read by nothing; the three EFFECT_TYPES have no non-test reference.
+- **State**: ticket T-375 (triaged 2026-11-07)
 
 ### CR4-039  Card-era paths in combat and the hero record that nothing can reach
 - **Tag**: cleanup
@@ -132,6 +138,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: As cited; grep results as stated.
 - **Fix sketch**: Delete the thorns branch and `COMBAT_ENEMY_TRAIT_TRIGGER` (or author `traits` for real, the owner's call later; the event's `NO_LISTENER` entry already says "future"); delete the `combat_trigger` branches; drop `areaId` from `LootSystem` and the victory payload; delete `setAssignment` and stop writing `assignedCardId` and `perks` on new heroes (a load keeps old saves' fields harmlessly, as `migrateState` back-fills only missing keys); rename `cardId` to `fightId` on the combat events in one slice with their UI readers (`grep -rn "cardId" src/ui`). Must not change: the bench fingerprint (`heroHash` fingerprints the hero record: check whether it includes `perks`/`assignedCardId` before dropping them, `bench/lib/fingerprint.mjs`).
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. traits: [] is the only place traits is set, so the thorns find runs over an empty array on every landed hit; combat_trigger is in no data file; areaId is passed through and never read; setAssignment has no caller, tests included; hero.perks is read nowhere; bench/lib/fingerprint.mjs's heroHash (:58-72) hashes neither perks nor assignedCardId.
+- **State**: ticket T-375 (triaged 2026-11-07)
 
 ### CR4-040  Two save fields grow on every item gain and are read by nothing
 - **Tag**: cleanup
@@ -142,6 +149,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: As cited; `grep -rn "provenance\|newDiscoveries" src` outside tests: `StateSchema.js:245,254` and `RegistryManager.js` only; `grep -rlw isLootDiscovered\|markAsSeen\|recordEnemyDefeat\|pushHistory src cms/src bench` outside tests: `RegistryManager.js` only.
 - **Fix sketch**: Delete `provenance` and `newDiscoveries` writes, `isLootDiscovered`, `markAsSeen`, `recordEnemyDefeat`, the history block and the `REGISTRY_UPDATED` publishes (and the name from `NO_LISTENER`); drop the two fields in `SaveMigration` (as the Vault and Tray fields were) so old saves shrink on their next load; retitle the file ("discoveries and lifetime counts"). Close T-086 as done. Must not change: `discoveredItems`, `itemLifetimeCounts`, `ITEM_DISCOVERED` (the stubs and the Encyclopedia read them), the bench fingerprint (`bankHash` does not read `collection`; check `fingerprint.mjs`).
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. The two writes and the publish are as cited and called from InventoryManager.js:181; grep -w over src, cms/src and bench outside tests for the two fields and the seven dead methods finds only RegistryManager.js and StateSchema.js:245,254; REGISTRY_UPDATED has no subscriber; routing.js:80-82 maps ITEM_DISCOVERED to ItemStubs.markNew; noteEnemyBeaten writes enemyKillCounts from CombatResolutionProcessor.js:35; TICKETS.md:158 still says kill counts are never recorded.
+- **State**: ticket T-375 (triaged 2026-11-07)
 
 ### CR4-041  Hero, equipment, effects and progression exports with no caller
 - **Tag**: cleanup
@@ -152,6 +160,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: grep results as stated per name.
 - **Fix sketch**: One builder-lite slice with R2's CR4-030: delete each with its tests, point the three `withArticle` copies at the export, and make `getXpProgress` read `XP_TABLE`. Must not change: the `HeroManager` and `EquipmentManager` barrels' live members; `bench/browser/dragKit.mjs`, which imports `canEquipToSlot` (live).
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed after two corrections (folded in): rolesForKeyword is live (statementSlots.js and statements.js call it) and was removed; withArticle is live, with three hand copies as stated, so it is listed as duplicated, not dead; four line numbers adjusted. Every other name has no caller outside its file or barrel; HERO_ICONS and HERO_SPRITES are unused even inside HeroGenerator.js; getXpProgress calls xpForLevel twice and has two callers in heroPanelSkills.js. clearHero and normalizeAuras were confirmed to have no non-test caller; their test importers were not re-checked.
+- **State**: ticket T-375 (triaged 2026-11-07)
 
 ### CR4-042  A timed effect refreshed by a fight- or cycle-bound landing loses its timer
 - **Tag**: bug
@@ -162,6 +171,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: As cited; `UNTIL_FIGHT_ENDS` is `Number.MAX_SAFE_INTEGER` (grep).
 - **Fix sketch**: When an existing timed instance is refreshed by a bound landing, keep the timer and add the binding only if the timer would end first (`existing.expiresAt` unchanged when it is finite and the new landing is bound); or keep two instances. Must not change: the refresh rule for two timed landings (`Math.max`), `endFightEffects`' removal of bound instances, the bench fingerprint (no scenario mixes the two today; the identity gate must stay green).
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. UNTIL_FIGHT_ENDS is Number.MAX_SAFE_INTEGER (:123); a forFight/forCycle landing on an existing timed instance sets expiresAt to it and the flag (:180-186); endFightEffects and endCycleEffects then remove it; liveStatements has no expiresAt test. Whether any content lands one effect both ways was not checked.
+- **State**: ticket T-361 (triaged 2026-11-07)
 
 ### CR4-043  Gear that carries a percentage combat axis, or an immunity naming no status, would misbehave silently
 - **Tag**: bug
@@ -172,6 +182,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: As cited.
 - **Fix sketch**: In `combatContributions`, keep percentage-bucket `heroOnly` payloads and register them as `bucket: 'percentage'` with their category (one code path shared with `syncAggregator`, which also fixes the dropped category there); skip a `STATUS_IMMUNITY` with no category and have `ContentAudit` name it (R8). Must not change: the flat path, the bench fingerprint (no item carries these today).
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. combatContributions keeps flat only (:246) under a comment claiming the palette refuses other buckets; SWING_TIME and FOOD_HEALING are percentage-only heroOnly entries and DAMAGE allows both; syncAggregator's percentage path drops the category; a STATUS_IMMUNITY with no category is registered without one and matches every status through the ALL fallback in _forEachMatching, with no guard.
+- **State**: ticket T-362 (triaged 2026-11-07)
 
 ### CR4-044  `HEROES_UPDATED` is published on every XP grant and every regen tick, and twice by every Hall recompute
 - **Tag**: perf
@@ -182,6 +193,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: As cited; `bench/baseline.json` S8 `cycles: 2100` per hour; `docs/reference/PERFORMANCE.md:862-872` recorded 0.57 commits per tick on S2 after round 3's P2-8 (the figure the hypothesis below is measured against; that page does not itself name `HEROES_UPDATED`).
 - **Fix sketch**: Publish a narrower `HERO_XP_GAINED { heroId, skillId }` from `addXP` (the sheet and the level-up feed listen to it) and keep `HEROES_UPDATED` for the level-up itself; in `RegenSystem`, publish `HERO_HP_CHANGED { heroId }` or batch the regen publish to once a second; in `recompute`, publish only what changed (compare `maxTabs`/`maxSlots`/`rosterLimit` before and after). Must not change: anything drawn (an eye-check is not needed if every current listener still hears a change it cares about; R5 should list them first). **Hypothesis to test**: `node bench/tick-commits.mjs` commits and renders per tick on S2 before and after.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed on the code with one citation corrected (folded in): the three publish sites and their triggers are as cited, REGEN_CONFIG is 1 HP per 10 s, 35 UI files subscribe, S8 is 2,100 cycles in about an hour; PERFORMANCE.md:862-872 gives the 0.57 commits-per-tick figure but does not name HEROES_UPDATED, so that phrase was dropped. The effect size is an estimate.
+- **State**: ticket T-347 (triaged 2026-11-07)
 
 ### CR4-045  Comments that describe machinery this area no longer has
 - **Tag**: docs
@@ -192,6 +204,7 @@ and in a fixed order; `rollFraction` draws only when the blow has a fraction.
 - **Evidence**: Each read against the code at the paired line.
 - **Fix sketch**: Rewrite in the slices that touch their files (CR4-037, 038, 040, 043); the rest in one docs commit. No code change.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed for ten comments, with three adjustments folded in: the aggregator's expiry comment describes code that exists but never runs (reworded), engine.js's two comments are at lines 19 and 54, and BoardCombat.js:28-29 is stale naming rather than missing machinery (reworded).
+- **State**: ticket T-382 (triaged 2026-11-07)
 
 ---
 

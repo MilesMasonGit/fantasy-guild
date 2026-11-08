@@ -51,6 +51,7 @@ whether CR4-087 is the only one.
 - **Evidence**: the two JSON reports in this session's scratch folder (`vitest.json`, `vitest_seed_b.json`); the gate (`TESTING.md:5-9`) runs the default seed only.
 - **Fix sketch**: Read the harvest path for the draw (`Fields.js`, the harvest cycle's output roll) and decide: if the quantity is meant to vary, the test asserts `>= 1` or pins `Math.random` for that cycle; if it is meant to be fixed, the engine is wrong. Then add a second-seed run to the gate's description (not the default run: it doubles the time) or to the nightly bench window, since the harness already supports it. Must not change: the harvest's design (the owner's); the default seed.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed from both JSON reports (seed b: 7,874 passed, 1 failed "expected 2 to be 1" in `FarmingHarvest.test.js`; default seed: 0 failed); the file seeds nothing by hand; `TESTING.md:5-9,44-52` as described. The test's title corrected.
+- **State**: ticket T-340 (triaged 2026-11-07)
 
 ### CR4-088  Half the suite's time is thirty files, and the slowest are seed sweeps and spawned processes
 - **Tag**: perf
@@ -61,6 +62,7 @@ whether CR4-087 is the only one.
 - **Evidence**: the JSON reports as cited; `baseline/suite.txt` ("transform 39.8 s, setup 25.5 s, import 538 s, tests 500 s, environment 842 s (summed across workers)"; "the CMS-only files (63) take 48 s alone").
 - **Fix sketch**: Two vitest projects (or a `--project` flag): `quick` (the gate: every file, but the sweeps at their small counts, e.g. 300 seeds and 8 worlds, read from an env var the sweep tests already accept, `FG_SWEEP=full`) and `full` (the sweeps at 3,000 and 40, the CMS, the spawned-process tests), with `full` run in the bench window beside `bench:soak`. Must not change: any assertion; the sweeps' full counts in the full run; the merge gate's rule that nothing red merges. **Hypothesis to test**: the `quick` run's wall time on the quiet machine against the 203 s baseline.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed from the JSON report: 632 files, 7,880 tests, 264.6 s wall, 704.6 s summed, the thirty slowest 325.3 s (46.2 %), 126 tests over 1 s and 11 over 5 s, the 61 CMS files 175.4 s, every quoted file and test time within rounding; the seed-b run took 238 s wall. `suite.txt`'s import and environment lines confirmed.
+- **State**: ticket T-357 (triaged 2026-11-07)
 
 ### CR4-089  Fifty-seven files ask for the browser environment and never touch a document
 - **Tag**: perf
@@ -71,6 +73,7 @@ whether CR4-087 is the only one.
 - **Evidence**: As cited; the count is by grep and each of the 57 needs a try (a module they import may read the DOM at init in a way the grep misses: `AudioSystem` creates `Audio` elements).
 - **Fix sketch**: A `src/tests/setup/storageShim.js` that installs minimal `localStorage`/`sessionStorage` when `globalThis.localStorage` is undefined; then drop the `jsdom` docblock from the 57 files one at a time, keeping it where the file fails under node. Must not change: any assertion; the five existing setup files' order (`seededRandom.js` must stay first). **Hypothesis to test**: the suite's `environment` line and wall time, before and after.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed: 288 jsdom files, 57 with none of the DOM markers by the same grep; `SettingsManager.js:104-106` and `SaveManager.js:133` read storage; `vitest.config.js:40-41` as quoted. Not checked by the verifier: that `init()` calls `load()` (it does, `SettingsManager.js:95`).
+- **State**: ticket T-357 (triaged 2026-11-07)
 
 ### CR4-090  Three fixture helpers are written out by hand in 46, 25 and 20 files; 39 guard tests read the source tree; 41 files wait on real timers
 - **Tag**: cleanup
@@ -81,6 +84,7 @@ whether CR4-087 is the only one.
 - **Evidence**: grep counts as cited.
 - **Fix sketch**: Add `fixtures/heroes.js` (`makeHero(id, { level, hp, style })` covering both shapes) and `fixtures/game.js` (`newGame`, `buildBoard`, `loadShipped`), then replace the local copies file by file (a builder-lite slice per ten files); give the guard tests one shared, cached tree walk per worker (vitest's `globalSetup` or a file-level cache keyed by `SRC`); replace the real waits with fake timers where the awaited thing is a timer, keeping the few that wait on a real microtask queue; mark the two `it.skip` as `it.fails` with the content note. Must not change: any assertion's meaning; the guard tests' coverage.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. The 46/25/20/12 local helpers, the `mat.js` exports, the 29 `sourceScan` importers, the six `Date.now()` files and the two `it.skip` lines confirmed. Corrected: `mat.js` also exports `SPACING` and is imported by 108 files; 70 files use fake timers; of the 41 files mentioning `setTimeout` about 24 await a real one (17 also use fake timers); `DragSharedSource` waits nine times; the guard-test count depends on the grep pattern (29 are certain).
+- **State**: ticket T-357 (triaged 2026-11-07)
 
 ### CR4-091  Docs: the testing guide is right; the seed check it describes is not in the gate
 - **Tag**: docs
@@ -91,6 +95,7 @@ whether CR4-087 is the only one.
 - **Evidence**: As cited.
 - **Fix sketch**: Add the second-seed run to the bench window's routine in `TESTING.md` and the director's checklist; refresh the counts. Must not change: nothing in code.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed (`TESTING.md:5-9,44-52,7`; the concept doc's 627/7,350 against 632/7,880 today). `ARCHITECTURE.md:529-531` not re-read by the verifier.
+- **State**: ticket T-382 (triaged 2026-11-07)
 
 ---
 

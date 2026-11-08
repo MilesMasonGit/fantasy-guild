@@ -82,6 +82,7 @@ CR4-001 is done, the engine bench's work check must come back unchanged.
 - **Evidence**: `npm run cycles` at ea6b9f92: "Cycle 1 — 16 modules mutually reachable [broken at load time by a dynamic import]: `src/systems/board/FlagColours.js -> src/state/GameState.js =(dynamic)=> src/systems/board/FlagColours.js`"; `npm run depcruise`: 23 `no-circular` warnings, each listing `src/state/GameState.js`. `grep -rn initFromSave src` outside tests: `GameState.js:31,33` and `SaveManager.js:365` only.
 - **Fix sketch**: Make `initFromSave` synchronous and dumb (`this.state = savedState; this.isInitialized = true`) and move the body of `_rehydrateAll` into the load path beside its caller (a `rehydrateLoadedState()` in `src/systems/core/` called from `SaveManager.loadSlot` right after `initFromSave`, with static imports of the three modules). `GameState` then imports nothing from `src/systems`, the group dissolves, and the `state-systems-dynamic-only` rule can become "state never imports systems". Must not change: the order of work on load (heroes rebuilt before `GAME_LOADED`, `SaveManager.js:365-384`), the `quests` back-fill for old saves (`GameState.js:56-65`), the bench work fingerprint. Tests that call `GameState.initFromSave` directly and expect rehydrated heroes need the new helper.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. Read GameState.js:31-54 and the warning comment; ran tools/cycles.mjs (1 group, 16 members as listed, 0 static) and depcruise (23 no-circular, 1 utils-only-utils); grepped initFromSave (SaveManager.js:365 the only non-test src caller; bench/scenarios/hour-after-load.mjs also calls it); ran its own strongly-connected-components pass over the non-test import graph with GameState removed: 0 cycle groups remain.
+- **State**: ticket T-373 (triaged 2026-11-07)
 
 ### CR4-002  `CombatFormulas` is combat logic filed under utilities
 - **Tag**: cleanup
@@ -92,6 +93,7 @@ CR4-001 is done, the engine bench's work check must come back unchanged.
 - **Evidence**: `npm run depcruise`: `warn utils-only-utils: src/utils/CombatFormulas.js → src/systems/effects/constants.js`; folder edges from the depcruise JSON: `src/utils -> src/config` 8 (`AssetManager.js` 2, `CombatFormulas.js` 6). `grep -rln CombatFormulas src cms/src` outside tests: 26 files, of which 19 import it (the verifier's count) and 7 name it in comments; none in `utils/`, `cms/` or `bench/`.
 - **Fix sketch**: Move the file to `src/systems/combat/CombatFormulas.js` and update the 19 import paths plus the tests that import it. No code inside changes. After the move `utils/` reads only the sprite manifest (`AssetManager.js`), and the `utils-only-utils` rule can go to `error` at 0. Must not change: the bench work fingerprint (pure move).
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed after one correction. Header imports, 405 lines, the single utils-only-utils warning and the 8 utils→config edges all hold; the importer count was 26 files naming it, of which 19 import it and 7 mention it in comments (corrected above).
+- **State**: ticket T-373 (triaged 2026-11-07)
 
 ### CR4-003  4,262 lines of ground-picture painting live in the engine folder but only the drawing side uses them
 - **Tag**: cleanup
@@ -102,6 +104,7 @@ CR4-001 is done, the engine bench's work check must come back unchanged.
 - **Evidence**: depcruise JSON, edges into `src/systems/board/Terrain*`: from `src/ui/components/atlas/mapPreview.js`, `src/ui/components/board/groundScreen.js`, `groundSheets.js`, `ambientGround.js`, `TerrainCanvas.jsx`, and the Terrain files themselves; nothing else. `grep -h "^import.*from" src/systems/board/Terrain*.js` outside the group: `terrainRegistry.js` (8), `playmatTuning.js` (8), `atlas/WaterShapes.js` (2), `atlas/Layout.js` (1), and `atlas/TerrainMap.js` (found by the verifier). `wc -l src/systems/board/Terrain*.js` = 4,262. `ARCHITECTURE.md` §5.3 and §7 already name this as "not encoded as a rule (a review decision)".
 - **Fix sketch**: Move the eight files to `src/ui/components/board/terrain/` (or a new `src/ground/` if the atlas preview's import from `ui/components/atlas` should not cross into `board`), and `playmatTuning.js` beside them (it is a dev tool, not content; the Playmat Tuner panel in `ui/dev` is its only writer). Pure move, import paths only. Must not change: the ground picture (`npm run bench:draw -- --compare` unchanged; the draw bench's calibration stamp), the `terrain` draw switch's behaviour, the per-device localStorage key the tuner uses (`playmatTuning.js:15`). Not an eye-check: the picture is byte-identical if the move is pure.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed after one addition. 8 files, 4,262 lines (per-file counts checked), systems/board 20,110; importers are the five UI files plus two bench/micro files, nothing in systems or cms; the group also imports atlas/TerrainMap.js (added above); playmatTuning.js:7-11 says what is quoted.
+- **State**: ticket T-373 (triaged 2026-11-07)
 
 ### CR4-004  A content glob for a folder that does not exist, and the loop that reads it
 - **Tag**: cleanup
@@ -112,6 +115,7 @@ CR4-001 is done, the engine bench's work check must come back unchanged.
 - **Evidence**: `ls data/items` → "No such file or directory"; jscpd: "Clone found: `config\registries\itemRegistry.js [47:69 - 57:6]` / `[60:67 - 70:6]`"; `ARCHITECTURE.md` §6 and §10 item 4 already note both.
 - **Fix sketch**: Delete `itemFilesGlob` and the second loop; rewrite the `tokenRegistry.js` comment to say what the loader does. Must not change: how `items.json` is read and migrated (`:47-57`). If the owner ever wants split item files, the CMS would write them, and that is a design question for then.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. DatabaseManager.js:11 as quoted, data/items absent, itemRegistry.js:60-70 identical to :47-57 but for the source, loadJsonTokens reads tokenFilesSingle only; itemFilesGlob has exactly two hits across src, cms, bench, scripts, tools.
+- **State**: ticket T-376 (triaged 2026-11-07)
 
 ### CR4-005  `RingBadge.jsx` is drawn by nothing; only a test imports it
 - **Tag**: cleanup
@@ -122,6 +126,7 @@ CR4-001 is done, the engine bench's work check must come back unchanged.
 - **Evidence**: `node tools/reachability.mjs`: `135 src/ui/components/board/RingBadge.jsx` under "UNREACHABLE from src/main.jsx"; `grep -rn RingBadge src cms bench` outside the file: `src/tests/RingGlide.test.js` (import), `src/tests/TickRedraws.test.js:305` (a string in a render-count table), `ringRow.js:24` (comment), `tailwind.css:759` (comment). No `React.lazy` or component registry names it.
 - **Fix sketch**: Delete `RingBadge.jsx` with `RingGlide.test.js` (a test of dead code), unless R4 (Drawing) finds the CSS rule at `tailwind.css:759` is itself unused. Move the one-line "why this is CSS, not the frame clock" explanation into `ringRow.js` and `tailwind.css` so the comments stop pointing at a deleted file. Nothing the player sees changes: the component is not mounted today.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. Grepped src, cms, bench, scripts, tools: only the two comments, the RingGlide test import and a string in TickRedraws.test.js:305 (added above); no lazy or registry reference; reachability lists it unreachable; knip does not list it as an unused file.
+- **State**: ticket T-378 (triaged 2026-11-07)
 
 ### CR4-006  The dead-code tool is told that tests are users and that the CMS does not exist
 - **Tag**: cleanup
@@ -132,6 +137,7 @@ CR4-001 is done, the engine bench's work check must come back unchanged.
 - **Evidence**: `npx knip` at ea6b9f92: "Unused files (15)", none in `src/`, while `node tools/reachability.mjs` lists 2 non-CMS, non-worker `src` files reachable from nothing but tests; knip's "Configuration hints (2)" block.
 - **Fix sketch**: Add a second config, `knip.review.json`, whose entries are `src/main.jsx`, the CMS entry files, `bench/*.mjs`, `scripts/*`, `tools/*.mjs` (no tests) and whose `project` includes `cms/src/**`; add `"dead-code:strict": "knip --config knip.review.json"` to `package.json`. Leave `npm run dead-code` as it is so the saved baseline stays comparable. Then re-run for R9 and record both outputs in `baseline/`. Must not change: nothing in the game.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. knip.json entries, ignore and $schema as stated; knip 6.44.1; the configuration hint is printed; 15 unused files all outside src; reachability lists RingBadge.jsx and terrainDev.js; its own scan of cms/ found 62 distinct relative specifiers resolving into src/, matching the count.
+- **State**: ticket T-380 (triaged 2026-11-07)
 
 ### CR4-007  Lint from the main folder counts every other session's worktree
 - **Tag**: cleanup
@@ -142,6 +148,7 @@ CR4-001 is done, the engine bench's work check must come back unchanged.
 - **Evidence**: From the main folder, `npx eslint --print-config .claude/worktrees/rw/src/main.jsx` and `npx eslint --print-config _art_leftovers/x.js` both print a config (an ignored path prints a notice instead). `Get-ChildItem -Recurse .claude/worktrees -Include *.js,*.jsx,*.mjs,*.cjs` outside `node_modules`: 11,448 files. Lint JSON at ea6b9f92 grouped by folder: `docs/active` 12, `scripts` 8, `src/tests` 38, `src/systems` 5, `src/ui` 16.
 - **Fix sketch**: Add `'.claude/**'`, `'_art_leftovers/**'` and `'docs/**'` to `ignores` (one line each). The main folder then reports the same 67 problems as a worktree minus the research scripts. Must not change: the rules themselves (T-058 decides those).
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. Read eslint.config.js:19-27 (seven ignores, none for .claude, _art_leftovers or docs); from the main checkout --print-config printed a config for a worktree file and an _art_leftovers file; worktree lint JSON: 79 problems (74/5), folder counts docs 12, scripts 8, src/systems 5, src/ui 16, src/tests 38; the one no-constant-condition is inject.js:150.
+- **State**: ticket T-380 (triaged 2026-11-07)
 
 ### CR4-008  `package.json` lists a package nothing uses and misses two that tests and the coverage config use
 - **Tag**: cleanup
@@ -152,6 +159,7 @@ CR4-001 is done, the engine bench's work check must come back unchanged.
 - **Evidence**: knip at ea6b9f92: "Unused dependencies (1) `@dnd-kit/modifiers package.json:71:6`; Unlisted dependencies (2) `picomatch src/tests/CMSLedgerPlan.test.js:7:23`, `@vitest/coverage-v8 vitest.config.js`; Unlisted binaries (1) `dot package.json`".
 - **Fix sketch**: `npm uninstall @dnd-kit/modifiers`; `npm install -D picomatch @vitest/coverage-v8` (pin to the versions already in `package-lock.json`); either install Graphviz on this PC and run `depcruise:graph` once for the review, or note in the script's name that it needs `dot`. The lockfile changes, so this is a code commit with no `data/`. Must not change: the four other `@dnd-kit/*` packages the drag code uses.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. package.json:71 as quoted, no import of @dnd-kit/modifiers anywhere outside node_modules; picomatch imported at CMSLedgerPlan.test.js:7 and absent from package.json and cms/package.json (transitive only); vitest.config.js:63-64 sets coverage provider v8 and node_modules/@vitest/coverage-v8 does not exist; package.json:40 as quoted; `which dot` finds nothing.
+- **State**: ticket T-380 (triaged 2026-11-07)
 
 ### CR4-009  Five "React hook" lint errors are one test helper with a hook's name
 - **Tag**: test
@@ -162,6 +170,7 @@ CR4-001 is done, the engine bench's work check must come back unchanged.
 - **Evidence**: eslint JSON at ea6b9f92, rule `react-hooks/rules-of-hooks`: the five sites above, message "React Hook `useOuterUpgrade` cannot be called at the top level"; `outerUpgrade.js:26-34` shows `beforeEach`/`afterEach` from `vitest`, no React import.
 - **Fix sketch**: Rename to `withOuterUpgrade` (or `registerOuterUpgrade`) in the fixture and the five tests. Lint drops from 74 to 69 errors. Nothing in the game changes.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. outerUpgrade.js:26 is a plain function calling vitest beforeEach/afterEach, no React import; the five call sites are at the cited lines at module top level; the worktree lint JSON has exactly those five rules-of-hooks hits.
+- **State**: ticket T-380 (triaged 2026-11-07)
 
 ### CR4-010  6,773 lines of CMS-only code live in the game's source folder
 - **Tag**: cleanup
@@ -172,6 +181,7 @@ CR4-001 is done, the engine bench's work check must come back unchanged.
 - **Evidence**: `node tools/reachability.mjs`: the 12 files listed under "UNREACHABLE from src/main.jsx" with their line counts; `grep -rln progression/ledger cms/src`: 10 CMS files; `grep -rln "progression/ledger" src` outside tests: 6 UI files, all importing `engine.js`; `grep -rln statementSlots|tempoBands cms/src`: `cms/src/utils/constants.js`, `cms/src/engine/sim/{answers,tempoPass,tuningPass}.js`.
 - **Fix sketch**: Two honest options for the planning agent to put to the owner as a batch question, neither urgent. (a) Move the twelve files to `cms/src/engine/ledger/` with their 25 tests to `cms/` (the CMS has its own vitest config), updating the import paths in `cms/src` and leaving `engine.js` where it is; the game's suite loses 48 s and knip's picture of `src/` becomes true. (b) Leave them, add a one-line README in `src/systems/progression/ledger/` saying which files are CMS-only, and encode it: a depcruise rule that nothing under `src/` outside `ledger/` and tests imports those twelve. Must not change: the CMS's Sync and its ledger pages, the `engine.js` the Encyclopedia uses, the content boundary (`data/` stays the only path from CMS to game).
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed with two notes folded in above: ledger has a twelfth file, plan.js, which engine.js imports (so it is reachable and rightly not among the ten); the line counts follow reachability.mjs (wc -l gives 6,761). Checked every importer of the ten ledger files, statementSlots.js and tempoBands.js across src, cms and bench: CMS code and tests only; the six UI importers take only engine.js; ledger 6,881 lines, the rest of progression 855.
+- **State**: ticket T-381 (owner question parked in STATUS) (triaged 2026-11-07)
 
 ### CR4-011  What the copy-paste detector found: 68 clones, nine of them real logic twins
 - **Tag**: cleanup
@@ -191,6 +201,7 @@ CR4-001 is done, the engine bench's work check must come back unchanged.
 - **Evidence**: `npx jscpd` at ea6b9f92: "Found 68 clones", totals table `javascript 431 files 55 clones 484 lines (0.56 %)`, `jsx 158 files 13 clones 142 lines (0.51 %)`; pair list derived from the report's "Clone found" blocks.
 - **Fix sketch**: R9 files each pair that matters as its own finding with its own risk; the camera pair (3) and the dock pair (4) touch what the player sees and would want an eye-check if merged; pairs 1, 2, 5, 7 are pure helpers and safe. Must not change: the bench work fingerprint for 1 and 7 (the RNG helper's sequence must stay bit-identical).
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed after two corrections (the Hall-glide comment is at WorldCamera.jsx:196; the QA-fixture clones number 23, not 20; both fixed above). Ran jscpd (68 clones) and read every cited pair; partner lines: ambientGround.js:29-36, regionNames.js:73-79, flagText.js:52-59, routing.js:85-93, groundSheets.js:50-60.
+- **State**: ticket T-379 (triaged 2026-11-07)
 
 ### CR4-012  `ARCHITECTURE.md` at ea6b9f92: six small drifts
 - **Tag**: docs
@@ -201,6 +212,7 @@ CR4-001 is done, the engine bench's work check must come back unchanged.
 - **Evidence**: `find`/`wc -l` per folder at ea6b9f92; `npx depcruise src --config .dependency-cruiser.cjs` summary line; a script that resolves every backticked `path:line` in the doc against the worktree (0 missing files, 0 lines past end of file).
 - **Fix sketch**: Update the six numbers and the header's commit; one docs commit. Nothing else in the document needs to change.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed; the doc line numbers were wrong and are corrected above. Re-measured: 632 test files; 115,660 non-test lines by the +1-per-file convention (115,062 by wc -l); ui/dev 73 / 9,828; ui/components other 105 / 18,439; depcruise 614 modules, 3746 dependencies; docs/active/review exists; qaLapStar.js deleted by 1e28bea0 only.
+- **State**: ticket T-382 (triaged 2026-11-07)
 
 ---
 

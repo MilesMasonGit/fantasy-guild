@@ -56,6 +56,7 @@ owner's real slot and on a game with six Regions, and the `serializeJson` time b
 - **Evidence**: grep results as cited (the field survey of 2026-11-07, 45 greps over `src`, `cms/src`, `bench`).
 - **Fix sketch**: One builder slice with R9: drop the dead fields from `INITIAL_STATE`, `createRegionRecord` and `HeroGenerator` (and the fourteen `|| hero.classId` fallbacks with `classId`);  take `cards` out of `REQUIRED_KEYS`; have `migrateState` delete the dead keys from an older save (as it does `currency` and `cartographer`), including `woundedUntil` once converted; delete `exportSave`/`importSave` or give them the button they were written for. Must not change: any live field; `migrateState`'s refusal rule; the bench's work fingerprint without a re-baselined `bench/baseline.json` in the same commit. R3's CR4-040 (`provenance`, `newDiscoveries`) and its card-era finding (`assignedCardId`, `perks`) cover the four hero and collection fields not repeated here.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. Seventeen fields counted; `cards` in `REQUIRED_KEYS`, `exportSave`/`importSave` test-only, the fingerprint hashing `statuses` and `woundedUntil` (`bench/lib/fingerprint.mjs:63,66`) confirmed; no reader or writer found for `recruitment`, `inventory.slots`, `maxStack`, `unlockedRarities`, `discoveredTasksByBiome`, `nextQuestAt`, `createdAt`, `isCustom`, `traitId`, `settledAt`. Corrected: `classId` is read as a never-firing sprite fallback in fourteen places (now listed, and in the fix sketch); `woundedUntil` is read once by the conversion; `quests.active` is also reset by `QuestManager.js:63`; the QA hero in `classlessDev.js` writes the hero fields.
+- **State**: ticket T-376 (triaged 2026-11-07)
 
 ### CR4-068  The title screen parses every slot's whole save to show five numbers
 - **Tag**: perf
@@ -66,6 +67,7 @@ owner's real slot and on a game with six Regions, and the `serializeJson` time b
 - **Evidence**: As cited; no save-size number exists (CR4-069).
 - **Fix sketch**: Write a small header beside the save (`savedAt`, `version`, `guildName`, `heroCount`, `totalPlaytime`) as a second line or a second key the slot screen reads alone; or cache the parsed header per slot text (`SaveFiles` already keeps the text in `copies`, so the cache key is the string's identity); or, cheapest, parse only once per text and memoise in `SaveSlotHelper`. Must not change: what the slot rows show; the damaged-slot path (`:62-65`). **Hypothesis to test**: `getAllSlotInfos` time on the owner's slot, before and after.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. `getSlotInfo`'s whole-save parse, the three slots and the callers (`refreshSlots` on open, on delete, and through `useSaveFilesWatch`) confirmed; the focus path re-reads the files on every focus but re-parses only when one changed (`refreshAll` notifies on a difference), and does not exist in the browser build: rewritten.
+- **State**: ticket T-353 (triaged 2026-11-07)
 
 ### CR4-069  The save grows with every Region and has never been measured
 - **Tag**: perf, memory
@@ -76,6 +78,7 @@ owner's real slot and on a game with six Regions, and the `serializeJson` time b
 - **Evidence**: As cited; the absence of a number is the finding.
 - **Fix sketch**: First measure: log `json.length` and the `serializeJson` time in a dev build at each save, and add the save size to `bench:soak`'s report (R11), on the owner's slot and on `cap128` with six Regions. Then, if the number warrants it: strip the frozen boards of runtime fields a Region does not need while away (clocks that do not run, `placedAt` order), store `terrain.cells` once per seed rather than per Region where Regions share a map, and in the browser build warn once when a save passes half the quota. Must not change: what a Region restores to on return; the save format's version (a shape change bumps `GAME_VERSION`, which refuses every existing save: the owner's call, not the fixer's).
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed: every save trigger at its cited line (`startAutoSave` :199-218, `Atlas.saveNow` :130-132, `CatchUp.js:374`, `EngineBootstrap.js:334`, `beforeunload` :210-214, `installCloseSave` :158-176), the two JSON round trips, the one-character-per-cell terrain encoding, the best-effort backup before the quota-reported main write, and no save-size number in the three places searched.
+- **State**: ticket T-353 (triaged 2026-11-07)
 
 ### CR4-070  Two edges of the load path: a misleading version message, and no backup retry after a late failure
 - **Tag**: bug
@@ -86,6 +89,7 @@ owner's real slot and on a game with six Regions, and the `serializeJson` time b
 - **Evidence**: As cited; `Atlas.ensureState` (`Atlas.js:73-92`) repairs its own section, which is why `atlas` is not in the list above.
 - **Fix sketch**: Default a missing version to `'unknown'` and say so in the message; move the `loadDamaged` fallback to cover the whole of `loadSlot` after the parse (a load that fails for any reason retries the backup once), keeping `IncompatibleSaveError` outside it; add `isPlainObject(board)`, `Array.isArray(board.sprites)`, `isPlainObject(board.tokens)` and the same for `quests` to `validateSaveData`, since the back-fill cannot repair a wrong-typed section. Must not change: the version refusal rule; the "Save Restored" banner's wording.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed. The `'0.9.0'` default (:350) against `GAME_VERSION = '0.8.1'`, the refusal and its message (:391); the three paths into `loadDamaged` (read throw, parse failure, validation failure) against the final catch for everything thrown after validation; `validateSaveData`'s checks as listed, with no type check on `board` or `quests`, and the back-fill skipping a non-object section (`SaveMigration.js:53`). Also noted: `typeof inventory.items !== 'object'` accepts an array.
+- **State**: ticket T-364 (triaged 2026-11-07)
 
 ### CR4-071  Docs: schema comments that explain a field by a system that is gone
 - **Tag**: docs
@@ -96,6 +100,7 @@ owner's real slot and on a game with six Regions, and the `serializeJson` time b
 - **Evidence**: As cited.
 - **Fix sketch**: With CR4-067's deletions four comments go; rewrite the other two; add the two rows to §4.5. Must not change: nothing in code.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed; line cites tightened by one or two. Every quoted comment exists; five ARCHITECTURE §4 cites spot-checked against the code match (`SettingsManager.js:8`, `SaveSlotHelper.js:8`, `SaveFiles.js:39-43`, `SaveManager.js:353,359,384,440,518`, `GameState.js:14`); one drift: the doc's `StateSchema.js:345-399` ends at :398.
+- **State**: ticket T-382 (triaged 2026-11-07)
 
 ---
 

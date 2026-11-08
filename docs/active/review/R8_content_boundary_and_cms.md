@@ -55,6 +55,7 @@ startup).
 - **Evidence**: As cited; the memory of the earlier loss is in the code's own comment (`gameData.js:160-161`).
 - **Fix sketch**: Send the workspace revision with the Sync and refuse a body made from a revision older than the disk workspace's (the check `workspaceFile.js` already has); compare content, not ids, in `compareSync` and show changed entities in the 409 diff alongside removed ones; write each file to a temp name and rename all at the end (or write to a staging folder and move); read `git rev-parse --abbrev-ref HEAD` before committing and refuse (or warn in the response) when it is not `main`, the rule being the owner's. Must not change: the files' content or formatting (`JSON.stringify(content, null, 2)`); the command line's `sync`, which shares `writeSync` and reads the disk workspace (unaffected by a stale tab).
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed. `compareSync` keys on ids only and the page shows only removed and added entities (`SyncGuardPanel.jsx`, `TopBar.jsx`); the Sync body carries no revision; `writeSync` is a plain `writeFileSync` loop with the log line after it; `commitSync` runs no branch check (`rev-parse --short HEAD` only, after the commit). Line cites for `fileUtils.js` and `workspaceFile.js` corrected.
+- **State**: ticket T-339 (triaged 2026-11-07)
 
 ### CR4-079  A recipe's inputs and outputs are checked against the item list nowhere but the CMS page
 - **Tag**: bug
@@ -65,6 +66,7 @@ startup).
 - **Evidence**: As cited.
 - **Fix sketch**: Add the recipe loop to `findUnknownRefs` (inputs and outputs `itemId` against `items`, `requiresContext[].tag` against the Tokens' provided tags), so `ContentAudit` reports it at boot and the CMS's own use of the rule (`connectivityAuditor.js:1,115-175` already calls the game's rules) gets it for free; have `cms validate` and the pack check run `findUnknownRefs` beside the schema check, and have a Sync with a Critical audit row ask before writing, as the removal guard does. Must not change: the audit's report-only contract (`ContentAudit.js:37-51`); the schema files.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. No boot-time check resolves a recipe's item ids (`ContentAudit.js:148-163` Tokens only, `unknownRefRule.js:224-230` the skill only, `lifecycleAudit.js:482-486` Foundation outputs only, `toolRule.js:79-86` retired tool tags only); `cms validate` runs the schema check alone; `connectivityAuditor.js:185-210` resolves them as Critical. Corrected: the command line's `recalc` and `sync` do run the economy audit through `recalculate.js:128` (`sync` prints its summary line only); 117 recipes and 151 items confirmed.
+- **State**: ticket T-366 (triaged 2026-11-07)
 
 ### CR4-080  An item glob that matches nothing, a maps file nothing reads, a Maps dial in the simulator, and a slug rule written twice
 - **Tag**: cleanup
@@ -75,6 +77,7 @@ startup).
 - **Evidence**: grep results as cited; `cms/schemas/*` word lists are pinned to the game's by `src/tests/CMSSchemas.test.js:134-152` (not run here).
 - **Fix sketch**: Drop `itemFilesGlob` and its loop; delete `data/maps.json` and adjust the guard test; remove `mapScrapRatio`, `scrapRatioAt` and the dial's rows; have `assetNaming.js` import `slugify`. Must not change: any slug the two rules produce today (they agree, so nothing renames).
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. No `data/items/` folder, the empty glob and its loop, `data/maps.json` as `{}` with no reader and the guard test, `scrapRatioAt` callerless and the dial read only by the settings window, the two slug rules agreeing (`.trim()` and null handling differ harmlessly), the backup-name filter substituting with no cap, the pack-name rules rejecting at 80: all confirmed. The settings window's path (`shared/`, not `editors/`) and two line cites corrected.
+- **State**: ticket T-376 (triaged 2026-11-07)
 
 ### CR4-081  Docs: the Sync still says it writes maps, and the map's CMS numbers
 - **Tag**: docs
@@ -85,6 +88,7 @@ startup).
 - **Evidence**: As cited.
 - **Fix sketch**: Three string edits; drop the ticket id from the commit message. Must not change: nothing in code.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed: the three "maps included" strings, "CMS-53" in the commit message (`gameData.js:97`), 62 distinct game modules imported by the CMS with exactly one under `ui/`, 8 registries reading `DatabaseManager`, 9 glob calls (one the empty items glob).
+- **State**: ticket T-382 (triaged 2026-11-07)
 
 ---
 

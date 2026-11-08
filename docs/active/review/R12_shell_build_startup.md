@@ -50,6 +50,7 @@ phase does not apply: it minimises headless Chrome, which does hide the page).
 - **Evidence**: As cited; the decoded-size estimate is from the PNG headers, not a measurement in the browser.
 - **Fix sketch**: Gate on the title screen's own art (the UI icons, the playmat, the first hero portraits: the slot screen draws no Tokens), load the rest lazily (sprites are referenced by `<img src>` and canvases that fetch on demand; a `rel=prefetch` list or a background warm after the slot is chosen keeps the "no pop-in" promise without 500 parallel requests), and drop `retained` (or cap it to the critical set). Must not change: no visible sprite pop-in on the first mat (the eye-check: a new game's first mat and the Shop's rows); the sprite-fx manifest gate (`fxReady`). **Hypothesis to test**: `performance.mark('fg-boot:art-ready')` before and after, on the owner's PC and in the browser build over a throttled network.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed, with units made decimal (32.8 MB decoded in all, 10.9 MB critical, 0.93 MB critical on disk) and the build-emit cite moved to :89-95. `retained` never cleared, 500 loads fired at once, the gate and the timeout, the mount waiting at `main.jsx:97`: all as stated; the 756 files match `IMAGE_RE`.
+- **State**: ticket T-355 (triaged 2026-11-07)
 
 ### CR4-097  One 2.1 MB script, no code splitting: every screen, painter and content table parses before the title screen
 - **Tag**: perf
@@ -60,6 +61,7 @@ phase does not apply: it minimises headless Chrome, which does hide the page).
 - **Evidence**: As cited; the size is measured, the time is not.
 - **Fix sketch**: First `performance.mark`s at `main.jsx`'s steps (`DOMContentLoaded`, settings, engine init, art ready, React mounted, splash gone) printed by the perf harness and read by `bench:draw`; then `manualChunks` for the vendor set (`react`, `react-dom`, `framer-motion`, `@dnd-kit/*`, `@headlessui/react`, `lucide-react`) so they cache across versions, and `React.lazy` for `EncyclopediaScreen` and `WorldScreen` (both mount behind a click); consider loading `data/*.json` as JSON assets rather than inlined modules if the parse mark says it matters. Must not change: the perf build's harness import; the worker's split; the bench calibration (a chunk change moves nothing the benches measure, but `bench:draw`'s page load does). **Hypothesis to test**: the `fg-boot:*` marks before and after, cold, on the owner's PC.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. The bundle sizes, the absence of `manualChunks` and `React.lazy`, the worker split, the font preloads and the line counts confirmed; the content JSON sums to 464 KB; `performance.mark` has no use in `src` at all (the Atlas preview is a `performance.measure`), and three other `import()` sites exist without splitting a chunk: both stated.
+- **State**: ticket T-355 (triaged 2026-11-07)
 
 ### CR4-098  A minimised desktop app keeps the visible page's idle costs, and nothing has measured them
 - **Tag**: perf
@@ -70,6 +72,7 @@ phase does not apply: it minimises headless Chrome, which does hide the page).
 - **Evidence**: As cited; reasoned from what the pause covers, no measurement.
 - **Fix sketch**: Measure first: the perf build in the desktop app, minimised ten minutes, with the Perf HUD's task-time counter (or `performance.measureUserAgentSpecificMemory` and the long-task observer the harness has) logged to the console. Then, under `fg-window-minimised`, have the drawing pause also set `document.body.dataset.paused` so a CSS rule stops the infinite animations (`animation-play-state: paused`), pause the pollers (CR4-050's fix gives them one place to pause), and skip the per-tick store reads' React commits (the stores already compare before `setState`; a paused flag in `useGameState` would drop the commit while minimised and read once on restore). Must not change: the engine's ticks and saves while minimised; what the page looks like on restore (the first frame after restore redraws everything that changed).
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed: the WebView2 bridge (`lib.rs:31-49`), the pause covering the frame clocks only (`drawingPause.js:12-13,18`), the ambient life on `frameClock.onDue`, R4's CR4-046/050/051 as cited, the soak's hidden and visible rows, T-333's "unverified". Not re-derived: R4's count of fifteen pollers (the verifier's own grep finds 19 `setInterval(` sites outside tests and `ui/dev`, R4 having classified the rest).
+- **State**: ticket T-344 (triaged 2026-11-07)
 
 ### CR4-099  The desktop app ships with no Content-Security-Policy
 - **Tag**: bug
@@ -80,6 +83,7 @@ phase does not apply: it minimises headless Chrome, which does hide the page).
 - **Evidence**: As cited; `grep -rn "innerHTML\|dangerouslySetInnerHTML" src/ui`: none today (the reviewer checked `src/ui` only).
 - **Fix sketch**: A policy that matches what the page does: `default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; worker-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost` (Tauri 2's IPC origins), checked in the dev build and the `tauri:build` once; `'unsafe-inline'` for styles because the game writes inline `style` attributes everywhere (R4). Must not change: the saves' `invoke` path; the world-picture worker (`worker-src blob:`); the perf harness in perf builds.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed: `csp: null` (:28-30), `withGlobalTauri: true` (:14), the seven commands (`lib.rs:22-30`), the save-file wording (`SaveFiles.js:2-4`), no CSP meta in `index.html`, no `innerHTML`/`dangerouslySetInnerHTML` under `src/ui`. The proposed policy string was not checked against Tauri 2's IPC origins.
+- **State**: ticket T-367 (triaged 2026-11-07)
 
 ### CR4-100  Docs: the startup description is right, two comments are history, and the shell's version is at 0.8.0 with the rest
 - **Tag**: docs
@@ -90,6 +94,7 @@ phase does not apply: it minimises headless Chrome, which does hide the page).
 - **Evidence**: As cited.
 - **Fix sketch**: Strip the four history comments; fix the preloader's reason; a `[profile.release]` with `lto = true`, `codegen-units = 1`, `strip = true` in `Cargo.toml` is the usual Tauri trim and would shrink the installer, if the owner cares (not a defect). Must not change: nothing in code.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. The five versions agree at 0.8.0 (all five files read), the four history comments, the preloader's reason, §1's boot order, the debug-only log plugin and the missing release profile confirmed; the verifier found one more drift, `index.html:9`'s description, now listed.
+- **State**: ticket T-382 (triaged 2026-11-07)
 
 ---
 

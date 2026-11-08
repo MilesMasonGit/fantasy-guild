@@ -60,6 +60,7 @@ hover across the Hall's stars and one Token click for CR4-062.
 - **Evidence**: As cited; `docs/reference/PERFORMANCE.md:827-872` (the tick-commits measurement: "the stores' selectors 0.06 ms a tick" on 2026-10-13, before the per-figure roster store listed `HEROES_WALKED`; `git log -S HEROES_WALKED -- src/ui/components/dock` will date that).
 - **Fix sketch**: A per-tick status snapshot in `Flags` (`statusOf` memoised on the move journal's version, as `BoardState`'s caches are, R2) so the four readers share one answer; or one roster store (`rosterView(heroId)` fed by one `HEROES_WALKED` subscription) that the figures and tabs read with `useSyncExternalStore`, as the hero bar bubbles already do (`heroBarBubbles.js`). Must not change: what each figure and flag shows, and the `tick-commits` work fingerprint. **Hypothesis to test**: `node bench/tick-commits.mjs` selector time and renders a tick, before and after, S2 with the Bank open.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed. The four stores listing `HEROES_WALKED` (`MatBoard.jsx:256`, `FlagLayer.jsx:101`, `DockHeroFigure.jsx:166`, `HeroDockTab.jsx:179`); two `statusOf` calls per figure and per tab for an unwounded hero (one when wounded, `rosterStateOf` returns early), so up to six per hero per event; no cache in `Flags.js`; the hero column mounts behind `showTabs` (`BankHeroPanel.jsx:158`). The panel's path was corrected (`dock/`, not `bank/`).
+- **State**: ticket T-351 (triaged 2026-11-07)
 
 ### CR4-062  The root redraws the whole screen for small UI state, and hands its children fresh props every time
 - **Tag**: perf
@@ -70,6 +71,7 @@ hover across the Hall's stars and one Token click for CR4-062.
 - **Evidence**: As cited; `src/ui/hooks/useInspectTokenHandlers.js:3-8` states the rule ("every `ReactRoot` render … would hand `Board` new functions … redrawing the whole mat on one click") that the rest of the root does not keep.
 - **Fix sketch**: Move `hoveredUpgradeId` down to the Hall screen (it is read only by `GuildHallDetails`); `useMemo` the `tableBackground` style on `[backgroundDrawn, backgroundTile]`; have `useUIModals` memoise each sub-object on its own state (as `fullscreen` and `inspect` already are) and `useCallback` the three inline arrows; then `React.memo` `BubbleMenu`, `BankDrawer` and `GuildHallBoard`. Must not change: anything drawn; the Escape layer order; the `ui_modal:opened` contract (`useUIModals.js:10-33`). **Hypothesis to test**: a React Profiler recording of ten star hovers, components rendered per hover, before and after.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed. `hoveredUpgradeId` state at `ReactRoot.jsx:137`, set from the four star handlers (`GuildHallBoard.jsx:450-453`), reset at :153,176, read at :207; `tableBackground` a literal per render, spread at the three cited camera lines; `useUIModals` rebuilds six sub-objects and `ui` per render while `fullscreen` and `inspect` are memoised; the three inline arrows at :261,398,444; `grep -c memo` 0 in the seven children named; `matContents` (`Board.jsx:86-109`) plus `React.memo` on `MatBoard` protect the mat.
+- **State**: ticket T-351 (triaged 2026-11-07)
 
 ### CR4-063  Every drag source announces a keyboard drag that cannot happen
 - **Tag**: a11y, owner-decision
@@ -80,6 +82,7 @@ hover across the Hall's stars and one Token click for CR4-062.
 - **Evidence**: As cited.
 - **Fix sketch**: Either (a) register dnd-kit's `KeyboardSensor` with `sortableKeyboardCoordinates` or a mat-aware coordinate getter, so the announcement is true (a feature, and keyboard drops onto a free mat need a target rule), or (b) make `keyboardAccessible` default `false`, which removes the Tab stops and the text, and leaves the sources as plain pointer targets. **Owner-decision**: (b) removes keyboard focus from every drag source, which a player could notice; (a) is new interaction design. Must not change: pointer drags; the drag bench (`bench:drag`) passes either way, since it sends pointer input.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed. The sensor list (`:404`, `SENSOR_OPTIONS` :240), no `KeyboardSensor` anywhere, the default `true` at :585-587, the eight callers at the cited lines, `MatToken.jsx:720` taking `setNodeRef` and `listeners` only, the stale comment at :581. Two spread attributes the finding left out were added. Not checked by either reader: that `aria-describedby` resolves to dnd-kit's instruction text (it is dnd-kit's `attributes['aria-describedby']`, `:373`).
+- **State**: ticket T-370 (owner 2026-11-07: remove the Tab stops) (triaged 2026-11-07)
 
 ### CR4-064  Dead plumbing: a drag kind nothing creates, a context nothing reads, and card-era names
 - **Tag**: cleanup
@@ -90,6 +93,7 @@ hover across the Hall's stars and one Token click for CR4-062.
 - **Evidence**: grep results as cited; `docs/active/review/baseline/knip.txt:188,377-385`.
 - **Fix sketch**: Delete `DRAG_KIND.HERO` and its branches, rewriting the eight tests to carry flags (`rosterFlagPayload`), and drop `heroCarried` from `MatHero`; delete `ViewportContext.jsx` and the provider; drop the unused `bold` parameters from the three ghosts (`DragSurfaceContext` stays: the Shop panel reads it); rename `DeckDnd*` to `EntityDnd*` or `Dnd*` (tests import `DeckDndContext` in 10 files: one search-and-replace); un-export the test-only names or move their tests to the public surface; drop the duplicate defaults. Must not change: any drag's behaviour (the drag bench and the eight rewritten tests say so).
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. Confirmed: no non-test payload carries `DRAG_KIND.HERO` (every payload is FLAG, TOKEN or ITEM), the three `kind: 'hero'` hits are a damage target, a loot sprite and a banner, `heroCarried` is always false, the eight tests build HERO payloads, nothing reads `ViewportContext`'s values, the card-era names and the export residue. Refuted and removed: "`DragSurfaceContext`/`useDragSurface`: no consumer": `ShopPanel.jsx:15,115-116` reads it (and `bench/drag-commits.mjs:204`), so that context is live and the fix sketch no longer deletes it.
+- **State**: ticket T-309 (triaged 2026-11-07)
 
 ### CR4-065  Small store leads: a title screen that listens for life, a selector run twice at mount, a lint warning that is right
 - **Tag**: cleanup
@@ -100,6 +104,7 @@ hover across the Hall's stars and one Token click for CR4-062.
 - **Evidence**: As cited; the lint run of 2026-11-07 (`exhaustive-deps` at `useGameState.js:124,135` and `BottomHeroDock.jsx:29`).
 - **Fix sketch**: Gate `useSlotMessage` on `isOpen` (or mount the modal only while open, as `HeroEditModal` is); move `settle` into a `useCallback` on `[options.shallow, options.deepClone, options.bypassClone]` or a ref, which also silences the two warnings honestly; compare `fraction` before `setRun`; wrap `heroIds` in `useMemo` or drop the fallback. Must not change: the store contract (`useGameState.js:8-43`); the title screen's message line.
 - **Verified by**: Sonnet verifier, 2026-11-07: confirmed by grep for the cites it opened; the `SlotSelectionModal` and `useGameState` lines were read cold by the reviewer (2026-11-07) against the file text quoted in this session.
+- **State**: ticket T-378 (triaged 2026-11-07)
 
 ### CR4-066  Docs: comments that describe wiring the code does not have
 - **Tag**: docs
@@ -110,6 +115,7 @@ hover across the Hall's stars and one Token click for CR4-062.
 - **Evidence**: grep counts as cited.
 - **Fix sketch**: With the deletions in CR4-064 two of the comments go; rewrite the other two; fix the number. Must not change: nothing in code.
 - **Verified by**: Sonnet verifier, 2026-11-07: partly; corrected. The four comments confirmed as described; the five folder counts, the 73 subscribe sites and the 25/13 `GameState` importers recounted and exact (the doc's 42 is the count of files that merely mention the word); the `useSyncExternalStore` count is 19 in `src/ui` and 20 across `src`, now stated.
+- **State**: ticket T-382 (triaged 2026-11-07)
 
 ---
 

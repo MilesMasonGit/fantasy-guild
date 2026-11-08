@@ -75,6 +75,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: `bench/baseline.json`: `C240 p50 0.566, p99 7.379`; `C256 p50 0.555, p99 15.874`; `S2 p50 0.310, p99 0.746`. Code as cited; `MatPlacement.js:325-326`'s own comment: "A move anywhere forgets". `findSpotAnywhere` has no `memo`/`failedSearches` read after the `findSpot` call (`:438-475`). T-326 (6 Nov) measured 16 spawners' misses at about 0.65 ms each in one tick on C240.
 - **Fix sketch**: (1) Memoise `findSpotAnywhere`'s failure under the same key as `findSpot` (it reads the same three things), so a `NO_ROOM` station asks once per board change, not once per tick. (2) Make the memo survive a move that cannot matter: replay the move journal as `nearby.neighbourIds` does (`BoardState.eachMoveSince`) and forget only keys whose point lies within the search's reach of either end of the move, or at minimum stamp with the membership version plus a count of moves within the reach rather than all moves. (3) For a blocked Foundation, remember the refusal under the same memo (a push solver's answer depends on the same three things plus the fixed set). Must not change: where any Token lands (the bench's `S4` push storm fingerprint and `tokensHash` on every scenario), the `Cannot` rule's exactness (a memo must never return a stale success: only failures are memoised, as today), T-326's own fix. **Hypothesis to test**: C240 and C256 p99 drop toward their p50 with no change to any fingerprint; T-326's 0.65 ms misses stop recurring on an unchanged board.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. Read BoardRunner.js:672-681 inside the per-Token pass, hasRoomForProduct, findSpotAnywhere (memo.add and failureMemo appear only in findSpot, :379-392), forceSpot, relax (PUSH_PASSES 30), roomVersion/failureMemo, setTokenPoint and journalMove, EnemyMotion.js:183; bench/baseline.json C240 0.566/7.379, C256 0.555/15.874, S2 0.310/0.746 match; T-326 matches. Only the link from p99 to this mechanism is untested, as the finding says.
+- **State**: ticket T-345 (triaged 2026-11-07)
 
 ### CR4-019  A station's recipe list is rebuilt from the whole recipe table on every call, including every tick it is worked
 - **Tag**: perf
@@ -85,6 +86,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited; `RecipeResolver.js:30-31` says the neighbour list "is cached per instance … because this module asks it several times per station per tick", which is true of neighbours and shows the pattern the pool lacks.
 - **Fix sketch**: In `recipePoolRegistry.js`, memoise `recipesForStation(skill, kind)` and `recipesForFoundation` per key on `registryVersion()` plus `RECIPES.length` (recipes are only ever pushed, `:238`), returning the same frozen array each time; `selectedRecipe` then finds in a shared array. Must not change: the pool's order (it is the order the station card lists recipes in and the order the resolver falls through), the bench fingerprint. **Hypothesis to test**: the catch-up CPU profile shows `skillRecipes`/`recipesForStation` in its top functions before and gone after.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. recipePoolRegistry.js has no Map, cache, memo or version; three filters as described plus recipesForFoundation; callers on the tick path as cited; two small qualifications folded in (the double build needs a selected recipe; a Foundation builds the pool only with a selection).
+- **State**: ticket T-346 (triaged 2026-11-07)
 
 ### CR4-020  For every worked Token, every tick: the neighbours' tags rebuilt whether or not the recipe needs them, and the loot floor counted once per input
 - **Tag**: perf
@@ -95,6 +97,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited; `Charges.js:234` runs `contextProvidersAround(instanceId)` before `for (const req of contextRequirementsOf(...))`, so a recipe with no `requiresContext` still scans. `SpriteLayer.js:20-25, 434-442` describe the over-cap floor as the steady state with a full Bank.
 - **Fix sketch**: (1) One tag map per station per tick, or per `neighbourIds` cache entry: compute `{ tiers, types, providers }` once in `RecipeResolver` and hand it to `Charges.planCycle`, or cache it in `nearby.js` beside the id list (same invalidation). (2) Return early from `planContextCharges` when there are no requirements. (3) Keep a `Map<itemId, quantity>` of floor stacks in `SpriteLayer`, updated where sprites are added, merged and taken (`addSprite`, `takeSprite`, `absorbSprite`), and have `countOnBoard` read it. Must not change: any answer (the bench fingerprint holds Bank items and Tokens), the order of inputs checked. **Hypothesis to test**: the catch-up profile's share for `getProvidedTagsWithTiers`, `contextTiersAround` and `countOnBoard` before and after.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed after a correction (folded in): only planContextCharges always walks the neighbours; checkAcceptedTokens and unmetContext return early without acceptedTokens or context, so the walk is one per typical worked Token and three for one with both. countOnBoard is filter().reduce() with no per-item map; checkInputs once per input per tick; missingUpkeep up to twice per spawner; Growth.available is cached per epoch, one count per item per tick.
+- **State**: ticket T-346 (triaged 2026-11-07)
 
 ### CR4-021  Per-type facts recomputed per Token per tick, before any guard
 - **Tag**: perf
@@ -105,6 +108,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited; `BlockUpkeep.js:22` `statementsOf(def).filter(s => s?.upkeep?.items?.length && s.upkeep.cadenceMs > 0)` with no memo; `TimedChanges.js:357-359` comment; `BoardRunner.js:522` places `tickUpkeep` first in the per-Token pass.
 - **Fix sketch**: Memoise per type on `registryVersion()`: `costedStatements` (a `Map<typeId, statements[]>` like `TimedChanges.planOf`), `triggeredStatements(def, triggerId)` (a `Map` per trigger id), and whether any Token on the mat carries an `ITEM_THRESHOLD` rule (an index like `TileModifiers.ambientSourceIndex`, so a Bank change with no such Token walks nothing). In `TimedChanges.advance`, reuse one `Set` (clear it per step) and take the resting handlers without copying when none applies. In `HeroMotion`, cache the Hall instance and the roster order on the membership version. In `Flags`, cache the planting order on `board.nextFlagOrder`. Must not change: handler order in `TimedChanges` (it is the table's order), the bench fingerprint, `TickRedraws.test.js`. **Hypothesis to test**: the catch-up profile's allocation share; `TimedChanges.advance` and `tickUpkeep` self time before and after.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. costedStatements unmemoised and first in the per-Token pass; activeHandlers slices for every respawn type and refilters for turned Tokens; advance allocates a Set per step; triggeredStatements and handleGlobalItemThreshold as cited; guildHallPoint and homeSpot scan tokens() with no cache, called from destinationOf for home and homeward heroes; plantingOrder sorts on every pass. The claim that the Hall scan is new since T-027 was not checked.
+- **State**: ticket T-346 (triaged 2026-11-07)
 
 ### CR4-022  A tick in which several spawners fire rebuilds the spawner census and re-sorts the Token list after each spawn
 - **Tag**: perf
@@ -115,6 +119,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited; `SpawnerSystem.js:238-241` comment: "a spawn earlier in the same pass bumps membership and the next spawner re-counts" (the design accepts one re-count per spawn; the list sort is on top). The verifier checked that the tether bump at `:400-402` fires only for enemy camps and causes no extra rebuild.
 - **Fix sketch**: Let `ensureCensus` patch itself for a single add (one entry in `countByType`, one in `tethered`, one push to `spawners`) instead of rescanning. `BoardState.tokens()`'s sort could insert the new Token at the end (arrival order is `placedAt` ascending and a new Token has the highest) instead of re-sorting. Must not change: arrival order (the frozen list is the order every pass iterates in; the bench fingerprint depends on it), the one-scan-per-change guarantee `TetherCensus.test.js` checks. **Hypothesis to test**: C240's worst tick in the engine bench before and after, with fingerprints identical.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed after a correction (folded in): the tether bump causes no second rebuild (nothing reads the census between the landing and setTether) and fires only for enemy camps, so it is one rescan and one list sort per spawn; those two are as cited and on the tick path through TimedChanges.
+- **State**: ticket T-346 (triaged 2026-11-07)
 
 ### CR4-023  A finished cycle scans the mat for listeners twice, and every Bank change walks every Token
 - **Tag**: perf
@@ -125,6 +130,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited; `grep -n "event: BOARD_EVENTS.CYCLE_COMPLETE" triggerRegistry.js` → lines 88, 186, 208 (the third, `SELF_CYCLE_COMPLETE`, is self-scoped and scans nothing).
 - **Fix sketch**: Subscribe once per bus event and dispatch to every trigger kind that shares it inside one `tokensWithin` scan; keep a per-board index "which trigger ids does any Token on the mat carry" (membership + registry versioned) and return at once from `handleNearby` and `handleGlobalItemThreshold` when none does. Must not change: firing order across kinds (today's order is definition order within one event's listeners; keep it), the cascade guard, the bench fingerprint (`randomDraws`: a trigger that fires draws; the scan itself draws nothing). **Hypothesis to test**: the catch-up profile's `handleNearby` self time.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. Lines 88 and 186 nearby-scoped on one event, 208 self-scoped; one subscription per definition; tokensWithin is a linear scan with no spatial index; the global kind has no early exit; CYCLE_COMPLETE published from BoardRunner.js:380 and BoardCombat.js:468; S8 cycles 2100 per hour matches.
+- **State**: ticket T-346 (triaged 2026-11-07)
 
 ### CR4-024  A fight publishes its progress every tick and rebuilds the enemy's stat block every tick
 - **Tag**: perf
@@ -135,6 +141,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited.
 - **Fix sketch**: Gate the combat `PROGRESS` on the same `publishProgress` the runner passes for work (hand it into `tickToken`), or publish only when `hp.current` changed; rebuild the block only when `registryVersion()` moved (keep it on the fight with the version it was read at), which also makes `fight.enemy` current. Must not change: what the fight does (the bench fingerprint, `heroXp`, `randomDraws`), `TickRedraws.test.js`'s counts for work rings. Note for R4/R5: the ring redraw rate.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. enemyProfileOf rebuilds a fresh object per fought enemy per tick with no cache; combat PROGRESS has no throttle while work is gated by PROGRESS_EVERY 3; createFight keeps the first block and FightMoments reads its kinds; two more PROGRESS subscribers (TokenBubbles, TokenCard) added above.
+- **State**: ticket T-347 (triaged 2026-11-07)
 
 ### CR4-025  A Token that leaves the mat keeps its buff cache until the next load
 - **Tag**: memory
@@ -145,6 +152,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited; `baseline/soak.txt` lines 89-105 (top 15 classes by retained growth: no `Map`, no `ModifierAggregator`); `bench/baseline.json` S8 `depleted: 240` per hour.
 - **Fix sketch**: On `BOARD_EVENTS.TILE_CHANGED` with `typeId: null`, or better in `BoardState.removeToken`'s callers' one place (`EffectActions`/`Charges.destroyToken`, `Placement`), call `TileModifiers.rebuildToken(id)` for the departed id (it already does the right thing for a gone Token), or sweep the maps against `BoardState.tokens()` inside `rebuildTokens` when membership moved. Must not change: the rebuild semantics for Tokens still on the mat, the bench fingerprint. **Hypothesis to test**: in a dev console after an hour of play, `aggregators.size` (expose it on `Game.TileModifiers` for the check) against `BoardState.tokens().length`; today the first grows past the second.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. The only deleters are clearAll and rebuildToken's not-on-mat branch; every non-test caller of rebuildToken passes ids from tokensAround or BoardState.tokens(); external callers of rebuildAround and rebuildAll (BoardRunner, EffectActions, EngineBootstrap, HallRules, dev tools) pass no departed id; soak.txt lines 91-105 show no Map or ModifierAggregator among the 15 classes, Object +1,684 / 190.6 KB; baseline depleted 240.
+- **State**: ticket T-348 (triaged 2026-11-07)
 
 ### CR4-026  The transform glow store is never cleared and is quadratic in a catch-up burst
 - **Tag**: perf
@@ -155,6 +163,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited; `TokenGlows.js:9-11` comment: "Wall clock … does not speed up with a catch-up"; `GameClock.isCatchingUp()` exists (`src/systems/core/GameClock.js:37`) and is not read here.
 - **Fix sketch**: Return at once from `raiseGlow` while `GameClock.isCatchingUp()` (a glow raised during a catch-up is never seen), and clear the map on `GAME_LOADED` and `BOARD_SWAPPED`. Must not change: the live glow (its length, who gets it), the bench fingerprint (the store draws nothing and changes nothing the fingerprint reads). **Hypothesis to test**: `glows.size` right after a 24-hour catch-up on the realistic board; today it is in the thousands.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. prune scans the whole map on every raise; glowOf deletes only its own entry; isCatchingUp is not read in the file; the only other reader is MatToken.jsx (glowOf); resetGlows is test-only; wall clock by comment and code.
+- **State**: ticket T-348 (triaged 2026-11-07)
 
 ### CR4-027  Moving a Token onto a copy of itself can leave the moved Token on the mat with zero charges
 - **Tag**: bug
@@ -165,6 +174,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited; `MatPlacement.js:932`: `if (other.id === instance.id || other.id === excludeId) continue;` is the only exclusion; `Placement.js:264-266` returns on `absorbed` with no `BoardState.removeToken`; `grep -rn "usesRemaining <= 0" src/systems/board` shows the only destroy paths are a spent charge (`Charges.js:121,192`) and a fight (`BoardCombat.js:484`), neither of which this path reaches.
 - **Fix sketch**: In `restock`, when `decision.absorbed` and the moving instance is on the mat (`BoardState.getTokenById(instance.id)`), take it off (`BoardState.removeToken`, `forgetCycle`, release its hero's claim through the same path a depleted Token takes, publish `TILE_CHANGED { typeId: null }` for its old point and `ADJACENCY_DIRTY` for both points); in `moveTokenTo`, publish `vacated(from)` only when the Token actually left `from`. Add the mat-to-mat test beside `MatPlacement.test.js:262`. Must not change: the hand-drop restock (tested), the leftover path (`absorbed: false`, which already nudges the remainder beside the copy), the bench fingerprint (no scenario moves a Token onto a copy; check `S4` all the same).
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. Traced moveTokenTo to placeTokenAt (noRestock false) to dropAt to restockTargetAt (excludes only the moving id) to restock, which sets the mover's usesRemaining to 0 and returns on absorbed without removeToken; moveTokenTo then publishes the vacated point and HERO_MOVED; dropOnMat.js:84 removes nothing; the tested case is a hand-drop; no test moves an on-mat Token onto a copy; no tick path destroys a 0-charge Token; a worked one reaches the charge check and gets Out of charges (an unstaffed one idles quietly; a type with respawn reads as resting).
+- **State**: ticket T-342 (triaged 2026-11-07)
 
 ### CR4-028  A growth that lands pays afterwards, and the payment's failure is ignored
 - **Tag**: bug
@@ -175,6 +185,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited; `Growth.js:99-101`: `export function payFor(def) { payCost(growsTermsOf(def).cost); }`.
 - **Fix sketch**: Pay before transforming (`if (!Growth.payFor(def)) { setGrowthAlert(...); return null; }`, with `payFor` returning the boolean), matching the rest of the board's order; a growth whose payment fails then waits with its alert like a stopped one. Must not change: the growth's timing and alert words, the bench fingerprint (S2 has paid growths? check `tokensHash` on S5 and S8; a payment that always succeeded today pays the same amount, in the same tick, so the fingerprint should hold).
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. payFor discards payCost's boolean; growInto checks the cached count, transforms, then pays; the docblock at TimedChanges.js:171-175 says paying after landing is deliberate, so the finding's claim is only the unchecked return.
+- **State**: ticket T-359 (triaged 2026-11-07)
 
 ### CR4-029  The starvation tally is written every blocked tick and read by nothing
 - **Tag**: cleanup
@@ -185,6 +196,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited.
 - **Fix sketch**: Delete `noteStarved`, the map and the two readers, and the four call sites, with the three tests that read it (`Risk13Allocation`, `TokenCycle`, `WorkCheck`) and the eight that reset it; or, if the ledger's calibration wants it (ask the content agent), read it from the bench's fingerprint instead. Nothing the player sees changes; the bench fingerprint does not read it.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. Outside tests only the definitions, two comments and the four writers exist; three tests read the tally and eight reset it (folded into the fix sketch).
+- **State**: ticket T-374 (triaged 2026-11-07)
 
 ### CR4-030  Dead and duplicated surface in the board: ten exports with no caller, and the round-3 copies still standing
 - **Tag**: cleanup
@@ -195,6 +207,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: grep results as cited; `TimedChanges.js:19-20` comment against `grep -rn "TimedChanges.\(pickWeighted\|setInHand\|isInHand\)" src` outside tests → none.
 - **Fix sketch**: One builder-lite slice: delete the dead exports with their tests (`recallHeroById` with care: check the QA panel's recall button goes through `Flags.furl`, not this), replace the literal Hall ids with `MatCap.isGuildHall`, `clampOnto` with `clampToMat` if the rounding difference is not load-bearing in the push's inner loop (measure the push bench, `S4`, before and after), `heroX` with `standingSpot(...).x`, and `DealDamage`'s copy with the import. Must not change: the bench fingerprint (`S4 arrivalsWorst` and `tokensHash`), `FixedTokens.test.js` and `FightRoom` tests.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed after two corrections (folded in): every dead export checked has no importer outside tests (MatResize.teardown is used inside its file by init; minCentreGap has no test either); clampOnto is an exact copy of clampToMat, the rounding being in clampInside; the countMatches copy is at DealDamage.js:40-48; the Hall check duplication is the id literal in three places, not four equivalent predicates.
+- **State**: ticket T-374 (triaged 2026-11-07)
 
 ### CR4-031  Comments that describe machinery the code no longer has
 - **Tag**: docs
@@ -205,6 +218,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited, each against the code at the paired line.
 - **Fix sketch**: Rewrite the five comments in the slices that touch their files (CR4-018, 020, 024, 030); `boardEvents.js:258-259` can be fixed alone. No code change.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed after two qualifications (folded in): checkPlacement runs per candidate at MatPlacement.js:309, 763 and 897 behind the cannotMatters gate; the TimedChanges comment is half right (tests do import the re-exports). The boardEvents, RecipeResolver and SpawnerSystem items read as stated.
+- **State**: ticket T-382 (triaged 2026-11-07)
 
 ### CR4-032  A triggered status with a chance rolls the dice twice, the second roll unused
 - **Tag**: cleanup
@@ -215,6 +229,7 @@ structural; passive production is closed-form with a carried remainder.
 - **Evidence**: As cited; `TriggerSystem.js:306-307` comment ("A chance rolled before the rule fired … is not rolled again here") covers only `Spawns`.
 - **Fix sketch**: Skip the generic loop for `KEYWORD.APPLIES` (it has no item-shaped payload to act on), or roll in one place and pass `hit` down. **This changes the random stream** on any scenario with a chancy triggered `Applies`: expect `WORK CHANGED` on the bench and accept it knowingly, as the ticket must say. Must not change: the status's own chance and who it lands on.
 - **Verified by**: verifier (Sonnet, read-only, 2026-11-07): confirmed. rollsChance draws only under 100 and is called at StatusApplication.js:75, 107, 129; the generic loop then draws again for an Applies with chance under 100 whatever the first roll gave; no branch below acts on an Applies payload (its default payload has no type), so the result is unused.
+- **State**: ticket T-368 (triaged 2026-11-07)
 
 ---
 
