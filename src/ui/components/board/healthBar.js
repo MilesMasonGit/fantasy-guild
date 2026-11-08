@@ -1,9 +1,7 @@
 import { HERO_HIT_PX, HERO_BOX_PX } from './boardConstants.js';
 
-/** A health bar's fill colour, its track and its edge. */
+/** A health bar's fill colour. */
 export const HP_COLOUR = '#F09595';
-export const HP_TRACK = 'rgba(10, 8, 6, 0.85)';
-export const HP_EDGE = '#0d0a08';
 
 /**
  * The bar's measures in plate pixels (one screen pixel at the mat's 2× art, `workPlate.plateUnit`):

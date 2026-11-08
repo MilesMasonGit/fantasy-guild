@@ -25,7 +25,7 @@ import { registerTokenTypes, tokenStartingUses } from '../config/registries/toke
 import { resetMatTuning } from '../config/matTuning.js';
 import { artRadiusOf } from '../config/matGeometry.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { DRAG_KIND, rosterFlagPayload } from '../ui/dnd/dragConstants.js';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
@@ -78,7 +78,7 @@ function put(point, typeId, uses = undefined) {
 const dropFlag = (heroId, point) => dropOnMat(
     BoardState.flagOf(heroId)
         ? { kind: DRAG_KIND.FLAG, heroId, from: { flag: true } }
-        : { kind: DRAG_KIND.HERO, heroId },
+        : rosterFlagPayload(heroId),
     point
 );
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };

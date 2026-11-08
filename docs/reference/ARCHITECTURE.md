@@ -100,8 +100,7 @@ top folders by import count from `npm run depcruise` (JSON output, 615 modules, 
     (`statementSlots` above all), but nothing under `src/` outside `src/tests/` does.
   - Loaded another way: `src/ui/components/atlas/worldPicture.worker.js` (a Worker made with
     `new URL(…)`, `src/ui/components/atlas/WorldMap.jsx:100`).
-  - **Imported by tests only**: `src/ui/components/board/RingBadge.jsx` (only comments mention
-    it in game code: `ringRow.js:24`, `tailwind.css:759`) and `src/ui/dev/terrainDev.js`.
+  - **Imported by tests only**: `src/ui/dev/terrainDev.js`.
     Candidates for the review, not verdicts.
 
 ---
@@ -210,8 +209,7 @@ ways:
 5. **Direct reads**: 42 UI files import `GameState` and read it imperatively (render-time reads,
    event handlers, polling intervals, §5.4).
 
-**React contexts carry no game state**: `ViewportContext` (framer-motion values,
-`src/ui/context/ViewportContext.jsx`), `MatFitContext` (a number, `MatFitContext.jsx:18`), the
+**React contexts carry no game state**: `MatFitContext` (a number, `MatFitContext.jsx:18`), the
 dnd contexts (`src/ui/dnd/DndKit.jsx:242-364`), and two camera/page contexts in `ui/components/atlas`.
 
 **Re-renders per tick (measured, not re-run here).** `node bench/tick-commits.mjs`

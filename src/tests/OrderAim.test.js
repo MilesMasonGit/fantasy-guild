@@ -118,8 +118,8 @@ describe('on the mat, while a hero is carried', () => {
         delete window.matchMedia;
     });
 
-    it.each([DRAG_KIND.FLAG, DRAG_KIND.HERO])('over a Token they can work (%s), the flag and the line end snap to its centre; off it, back to the pointer', async (kind) => {
-        const { container, ghost, middle } = mountOnce(kind);
+    it('over a Token they can work, the flag and the line end snap to its centre; off it, back to the pointer', async () => {
+        const { container, ghost, middle } = mountOnce();
         await moveTo(420, 310);
         expect(pathOf(container)).toBe(lineTo(TREE));
         expect(close(middle(), TREE)).toBe(true);

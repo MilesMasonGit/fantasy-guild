@@ -237,7 +237,8 @@ describe('the Shop panel', () => {
         const view = mountDrawer();
         const r = row(view, 'fixture_sp_forest');
         expect(r.getAttribute('data-shop-affordable')).toBe('true');
-        expect(r.getAttribute('aria-roledescription')).toBe('draggable');
+        expect(r.className).toContain('cursor-grab');
+        expect(r.hasAttribute('tabindex')).toBe(false);
         expect(r.querySelector('[data-shop-missing]')).toBeNull();
         const payload = { kind: DRAG_KIND.TOKEN, ...shopCardPayload('fixture_sp_forest') };
         expect(isShopPayload(payload)).toBe(true);
@@ -252,7 +253,7 @@ describe('the Shop panel', () => {
         // The card itself is not dimmed; its Token is.
         expect(r.className).not.toMatch(/opacity-/);
         expect(r.querySelector('[data-shop-art]').className).toContain('opacity-40');
-        expect(r.getAttribute('aria-roledescription')).toBeNull();
+        expect(r.className).toContain('cursor-not-allowed');
         expect(r.querySelector('[data-shop-missing]')).toBeNull();
         expect(r.textContent).not.toMatch(/Need/);
         const pill = r.querySelector('[data-shop-pill="item_oak_wood"]');
@@ -408,7 +409,8 @@ describe('Shop groups', () => {
         const r = groupRow(view);
         expect(r.getAttribute('data-shop-row')).toBe('fixture_pnl_big');
         expect(r.querySelector('[data-shop-price]').textContent).toContain('30/20');
-        expect(r.getAttribute('aria-roledescription')).toBe('draggable');
+        expect(r.className).toContain('cursor-grab');
+        expect(r.hasAttribute('tabindex')).toBe(false);
     });
 
     it('the picked entry is gated by its own price: affordable small, not big', () => {
@@ -419,7 +421,7 @@ describe('Shop groups', () => {
         const r = groupRow(view);
         expect(r.getAttribute('data-shop-affordable')).toBe('false');
         expect(r.querySelector('[data-shop-pill="item_oak_wood"]').getAttribute('data-short')).toBe('true');
-        expect(r.getAttribute('aria-roledescription')).toBeNull();
+        expect(r.className).toContain('cursor-not-allowed');
     });
 });
 

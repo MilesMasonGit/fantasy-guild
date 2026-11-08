@@ -15,7 +15,7 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { DRAG_KIND, rosterFlagPayload } from '../ui/dnd/dragConstants.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -56,7 +56,7 @@ function recruit(id) {
 }
 
 /** The hero bar's drop (a hero not yet on the mat) and the planted flag's drop. */
-const barDrop = (heroId, point) => dropOnMat({ kind: DRAG_KIND.HERO, heroId, from: { dock: true } }, point);
+const barDrop = (heroId, point) => dropOnMat(rosterFlagPayload(heroId), point);
 const flagDrop = (heroId, point) => dropOnMat({ kind: DRAG_KIND.FLAG, heroId, from: { flag: true } }, point);
 
 /** Tick in game steps for up to `ms`, noting whether `heroId` ever fought; stops when `enemy` has left. */

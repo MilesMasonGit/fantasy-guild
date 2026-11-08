@@ -6,7 +6,6 @@ import { SaveManager } from '../systems/core/SaveManager.js';
 import { EventBus, UI_LISTENER } from '../systems/core/EventBus.js';
 
 import { DeckDndProvider } from './dnd/DndKit.jsx';
-import { ViewportProvider } from './context/ViewportContext.jsx';
 import { setMatBankLocked } from './hooks/useMatBankLock.js';
 
 import { useUIModals } from './hooks/useUIModals.js';
@@ -217,8 +216,7 @@ export const ReactRoot = () => {
     }, [ui.inspect]);
 
     return (
-        <ViewportProvider>
-            <DeckDndProvider>
+        <DeckDndProvider>
             <ScreenCalloutLayer />
             <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                 {/* ⚠️ `overflow-clip`: the Hall's web runs past the column to the screen's edge, and a
@@ -458,8 +456,7 @@ export const ReactRoot = () => {
             {/* Over everything: the loading bar while time away is caught up, then the summary. */}
             <CatchUpOverlay />
 
-            </DeckDndProvider>
-        </ViewportProvider>
+        </DeckDndProvider>
     );
 };
 

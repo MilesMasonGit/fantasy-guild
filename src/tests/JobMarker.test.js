@@ -27,7 +27,7 @@ import { cornerInsetOfMask } from '../ui/components/board/markerCorner.js';
 import { setAlphaMaskForTests } from '../ui/utils/alphaHitTest.js';
 import { tokenSizeFor, TOKEN_SURFACE } from '../ui/components/base/TokenSprite.jsx';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { rosterFlagPayload } from '../ui/dnd/dragConstants.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -117,7 +117,7 @@ describe('on a Token the flag sits where that Token’s own art begins', () => {
         const t = put(TOKEN, 'fixture_producer');
         // This sprite fills its square: the flag's middle stands just outside its corner.
         setAlphaMaskForTests(tokenSpritePath(t.typeId), FULL());
-        dropOnMat({ kind: DRAG_KIND.HERO, heroId: 'h1' }, TOKEN);
+        dropOnMat(rosterFlagPayload('h1'), TOKEN);
         const { container } = mount(h(FlagLayer));
         await act(async () => { await new Promise(r => setTimeout(r, 20)); });
         const el = container.querySelector('[data-flag="h1"]');
@@ -132,7 +132,7 @@ describe('on a Token the flag sits where that Token’s own art begins', () => {
 describe('the mat', () => {
     it('draws the Lucide flag in the flag’s button', () => {
         put(TOKEN, 'fixture_producer');
-        dropOnMat({ kind: DRAG_KIND.HERO, heroId: 'h1' }, TOKEN);
+        dropOnMat(rosterFlagPayload('h1'), TOKEN);
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         expect(flag.querySelector('[data-flag-mark] svg.lucide-flag-triangle-right')).toBeTruthy();
@@ -149,7 +149,7 @@ describe('the mat', () => {
     it('sorts just behind its Token’s line', () => {
         const t = put(TOKEN, 'fixture_producer');
         const level = put({ x: TOKEN.x + 160, y: TOKEN.y - 0.25 }, 'fixture_producer');
-        dropOnMat({ kind: DRAG_KIND.HERO, heroId: 'h1' }, TOKEN);
+        dropOnMat(rosterFlagPayload('h1'), TOKEN);
         expect(Flags.pinnedTokenOf('h1')?.id).toBe(t.id);
         const { container } = mount(h(MatBoard));
         const flag = container.querySelector('button[data-flag="h1"]');
