@@ -345,5 +345,3 @@ export const EquipmentManager = {
     resolveTargetSlot,
     recalculateEquipmentModifiers
 };
-
-export default EquipmentManager;
