@@ -257,6 +257,3 @@ export const TokenSprite = ({ typeId, sprite = null, surface = TOKEN_SURFACE.BOA
         />
     );
 };
-
-export default TokenSprite;
-

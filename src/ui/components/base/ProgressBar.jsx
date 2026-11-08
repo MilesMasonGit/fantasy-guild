@@ -49,5 +49,3 @@ export const ProgressBar = ({ value, max, width, height = 10, style, ...rest }) 
         </div>
     </div>
 );
-
-export default ProgressBar;

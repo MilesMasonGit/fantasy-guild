@@ -91,5 +91,3 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className, titl
         </div>
     );
 };
-
-export default ItemIcon;

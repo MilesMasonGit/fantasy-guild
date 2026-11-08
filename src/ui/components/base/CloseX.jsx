@@ -41,5 +41,3 @@ export const PanelHeader = ({ title, sprite = null, onClose, closeLabel = 'Close
         {onClose && <CloseX onClick={onClose} label={closeLabel} />}
     </div>
 );
-
-export default CloseX;

@@ -7,5 +7,3 @@ export const StatCell = ({ caption, children, className = '', ...rest }) => (
         <span className="ui-text-body text-gi-text">{children}</span>
     </div>
 );
-
-export default StatCell;

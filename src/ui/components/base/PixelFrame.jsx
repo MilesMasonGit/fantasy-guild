@@ -42,5 +42,3 @@ export const PixelFrame = ({ kind = FRAME_KIND.CHAMFER, backdrop = null, classNa
         </div>
     );
 };
-
-export default PixelFrame;

@@ -47,5 +47,3 @@ export const VitalBar = ({ value, max, height = 16, textClass = 'ui-text-small',
         </div>
     );
 };
-
-export default VitalBar;

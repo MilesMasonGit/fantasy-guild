@@ -77,5 +77,3 @@ export const PixelToggle = ({ on, onClass, disabled = false, className, ...rest 
         <PixelSwitch on={on} onClass={onClass} className="group-hover:group-enabled:border-[var(--color-ui-white)]" />
     </button>
 );
-
-export default KitButton;

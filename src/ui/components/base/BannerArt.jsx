@@ -81,5 +81,3 @@ export const BannerArt = ({ banner, className, focusY = 0.5, scale: fixedScale =
         </div>
     );
 };
-
-export default BannerArt;

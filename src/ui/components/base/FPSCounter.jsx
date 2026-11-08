@@ -38,5 +38,3 @@ export const FPSCounter = React.memo(() => {
         </div>
     );
 });
-
-export default FPSCounter;
