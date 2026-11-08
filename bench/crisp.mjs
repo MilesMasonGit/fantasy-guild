@@ -9,6 +9,9 @@
 //                                        1); `--neuter=anims` or `--neuter=labels` for one
 //   npm run bench:crisp -- --scene=cap128 --no-build --keep=<dir>   another board (a plain one or an
 //                                        envelope scene); keep the shots
+//   npm run bench:crisp -- --window=1920x1080   another window (1600×1000 by default); the mat's fit
+//                                        follows (S2: 1200x770 fit 0.55, 1600x1000 0.76,
+//                                        1920x1080 0.83, 2060x1266 1.00)
 //   --verbose                            each judged Token's share of exact pixels at rest
 //
 // How: the board is built, settled and FROZEN (the game loop stopped, the running animations
@@ -26,7 +29,12 @@
 //   be exact at rest and in every case.
 // Chrome's composited layers are counted beside it: an animation on the compositor splits every
 // sprite drawn after it onto "overlap" layers, and Chrome draws the board's sprites resampled.
-// Exit codes: 0 every still Token exact and unchanged · 1 a case changed them or one is soft · 3 the check failed.
+// Then floor loot itself: an item is thrown and watched through a whole bob (`bob`), and again with
+// reduced motion (`hold`). Every shot must draw the art exactly to its picture (one shape) and the
+// hard shadow exactly to its silhouette, the shadow in one place on the ground, 2 art pixels right
+// of the art, and the art 1 to 4 whole art pixels above where it rests (held 3 with reduced motion).
+// Exit codes: 0 every still Token exact and unchanged, the loot as it should float · 1 a case changed
+// them, one is soft, or the loot is not · 3 the check failed.
 // ⚠️ Pixels compare only within one run (one machine, one Chrome); nothing is kept between runs.
 
 import fs from 'node:fs';
@@ -292,10 +300,11 @@ const EXACT = 0.98;
 /**
  * Throw one item on the floor for the bob checks: quantity 1 (no count badge over its shadow), one
  * the sprite generator made a hard shadow for and none of which lies on the floor (so it does not
- * slide into a pile), `dx` mat units across from under the back-most Token. Resolves to what
- * `findThrown` needs, or a string saying why not.
+ * slide into a pile), on a spot where nothing the mat draws over loot (work plates, fights, bubbles,
+ * other loot) reaches its box, its bob or its shadow, and away from the items thrown before; bare
+ * ground if there is any. Resolves to what `FIND_THROWN` needs, or a string saying why not.
  */
-const THROW_FOR_BOB = (dx) => `(async () => {
+const THROW_FOR_BOB = `(async () => {
     const G = window.__perf.game;
     const man = await fetch('/_gen/sprite-fx/manifest.json').then(r => (r.ok ? r.json() : null)).catch(() => null);
     if (!man) return 'no sprite-fx manifest';
@@ -308,15 +317,46 @@ const THROW_FOR_BOB = (dx) => `(async () => {
         if (key && !onFloor.has(key)) { pick = { id: it.id, key }; break; }
     }
     if (!pick) return 'no item with a shadow to throw';
-    const { art } = ${BACK};
     const mat = document.querySelector('[data-board-origin]');
     const s = Number(mat.dataset.boardScale);
-    const r = art.getBoundingClientRect(), m = mat.getBoundingClientRect();
+    const m = mat.getBoundingClientRect();
     const w = Number(mat.dataset.naturalWidth), h = m.height / s;
-    const x = Math.max(80, Math.min(w - 80, (r.left + r.width / 2 - m.left) / s + ${dx}));
-    const y = Math.max(80, Math.min(h - 80, (r.bottom - m.top) / s + 60));
-    G.SpriteLayer.addSprite('item', pick.id, 1, { centre: { x, y } });
-    return { key: pick.key, sx: m.left + x * s, sy: m.top + y * s };
+    const art = Math.max(1, Math.round(2 * s));
+    const size = 32 * art;
+    const rectOf = (el) => { const r = el.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
+    const shown = (el) => { const c = getComputedStyle(el); return c.visibility !== 'hidden' && c.display !== 'none' && Number(c.opacity) > 0; };
+    // Over loot: what the mat's layers above the loot's draw, and other loot.
+    const lootLayer = document.querySelector('[data-item-sprite]')?.parentElement;
+    const lootZ = lootLayer ? Number(lootLayer.style.zIndex) || 0 : Infinity;
+    const big = (q) => (q.r - q.l) * (q.b - q.t) > (m.width * m.height) / 4;
+    const over = [];
+    for (const el of mat.querySelectorAll('*')) {
+        if (!(Number(el.style.zIndex) > lootZ)) continue;
+        for (const leaf of [el, ...el.querySelectorAll('*')]) {
+            const q = rectOf(leaf);
+            if (q.r > q.l && q.b > q.t && !big(q) && shown(leaf)) over.push(q);
+        }
+    }
+    for (const b of document.querySelectorAll('[data-item-sprite]')) over.push(rectOf(b));
+    // Under it: Tokens, heroes, flags (bare ground first, so nothing dark sits by the shadow).
+    const under = [...document.querySelectorAll('[data-token-art="true"] img, [data-board-hero], [data-flag]')].map(rectOf);
+    const thrown = window.__crispThrown || (window.__crispThrown = []);
+    const hit = (box, list) => list.some(q => box.l < q.r && q.l < box.r && box.t < q.b && q.t < box.b);
+    const spots = [];
+    for (let y = 120; y < h - 120; y += 24) {
+        for (let x = 120; x < w - 120; x += 24) {
+            const cx = m.left + x * s, cy = m.top + y * s;
+            const box = { l: cx - size / 2 - 4, t: cy - size / 2 - 6 * art - 4, r: cx + size / 2 + 4 * art + 4, b: cy + size / 2 + 4 * art + 4 };
+            if (box.l < 0 || box.t < 0 || box.r > innerWidth || box.b > innerHeight) continue;
+            if (hit(box, over) || thrown.some(p => Math.hypot(p.sx - cx, p.sy - cy) < 3 * size)) continue;
+            spots.push({ x, y, sx: cx, sy: cy, bare: !hit(box, under) });
+        }
+    }
+    const spot = spots.find(p => p.bare) || spots[0];
+    if (!spot) return 'no spot on screen clear of what is drawn over loot';
+    thrown.push(spot);
+    G.SpriteLayer.addSprite('item', pick.id, 1, { centre: { x: spot.x, y: spot.y } });
+    return { key: pick.key, sx: spot.sx, sy: spot.sy, bare: spot.bare };
 })()`;
 
 /** The thrown item's box, its art and its shadow, tagged so a later read finds the same one. */
@@ -584,8 +624,8 @@ async function main() {
         // Floor loot itself, across its bob and held by reduced motion (after the rest is judged:
         // what is thrown stays on the floor).
         const lootRows = [];
-        const watchThrown = async (id, what, dx, judge) => {
-            const thrown = await page.evaluate(THROW_FOR_BOB(dx));
+        const watchThrown = async (id, what, judge) => {
+            const thrown = await page.evaluate(THROW_FOR_BOB);
             if (typeof thrown === 'string') { lootRows.push({ id, what, fails: [thrown], line: '' }); return; }
             await sleep(1200);   // the hop out of its Token is over
             const found = await page.evaluate(FIND_THROWN(thrown));
@@ -594,9 +634,9 @@ async function main() {
             lootRows.push({ id, what, ...judgeLoot(seen, { art: artPx, ...judge }) });
             if (args.verbose) console.log(id, JSON.stringify(seen));
         };
-        await watchThrown('bob', 'an item on the floor bobbing: one shape, 1 to 4 whole art px, its shadow still', 160, {});
+        await watchThrown('bob', 'an item on the floor bobbing: one shape, 1 to 4 whole art px, its shadow still', {});
         await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
-        await watchThrown('hold', 'the same with reduced motion: held 3 art px up, one shape, its shadow still', -160, { hold: 3 });
+        await watchThrown('hold', 'the same with reduced motion: held 3 art px up, one shape, its shadow still', { hold: 3 });
         await page.send('Emulation.setEmulatedMedia', { features: [] });
 
         console.log('');
