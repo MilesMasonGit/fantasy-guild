@@ -638,7 +638,8 @@ is opaque: the mat shows through the rest), and how many of the still Tokens
 nothing else covers are **drawn exactly** to their art (98 % of the opaque pixels in the middle of
 the art where nearest-neighbour sampling of the picture puts them). A case fails when it changes
 more than 5 % of the still Tokens or leaves fewer exact than at rest; the rest fails when any is not
-exact. Not a timing tool: one run is ~1 min and compares pixels only within itself.
+exact. The flag and limp cases, which the game plays on the main thread, also fail when they add a
+composited layer (`LAYERED`): at a fit of 1 a layer more moves no pixel, at any other fit it does. Not a timing tool: one run is ~1 min and compares pixels only within itself.
 
 **Floor loot itself** (T-393: items pinched during their bob, their shadow drifted): an item with a
 hard shadow is thrown on a spot nothing drawn over loot reaches (work plates, fights, bubbles, other

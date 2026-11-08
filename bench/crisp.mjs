@@ -105,7 +105,9 @@ const CHARGES = (who) => `(() => { const t = ${who}; if (!t) return false; windo
 /**
  * Each case: `start` (in the page; false skips the case on this board; a box {x, y, w, h} leaves
  * the still Tokens under the thing it moves out of the count), `stop`, and `settleMs`
- * after the stop. Where the game has a path the page can reach, the case takes it (a real
+ * after the stop. `mainThread`: the game plays it on the main thread (`will-change: contents`), so it
+ * may add no composited layer: at a fit of 1 a layer more moves no pixel, but at every other fit it
+ * draws what comes after it resampled. Where the game has a path the page can reach, the case takes it (a real
  * charges event draws the real -1 with the real props); otherwise it puts the game's own classes
  * where the game puts them, or (the spawn pop) does exactly what `spawnMotion.playSpawn` does.
  */
@@ -155,12 +157,14 @@ const CASES = [
     },
     {
         id: 'flag',
+        mainThread: true,
         what: 'a flag fading (its own opacity transition, to the 30 % of a drag) on the back-most flag',
         start: `(() => { const f = [...document.querySelectorAll('[data-flag]')].sort((a, b) => (Number(a.style.zIndex) || 0) - (Number(b.style.zIndex) || 0))[0]; if (!f) return false; f.dataset.crispCase = 'true'; f.dataset.crispWas = f.style.transitionDuration; f.style.transitionDuration = '${LONG}ms'; f.classList.add('opacity-30'); const r = f.getBoundingClientRect(); return { x: r.left - 8, y: r.top - 8, w: r.width + 16, h: r.height + 16 }; })()`,
         stop: `(() => { const f = document.querySelector('[data-crisp-case]'); f.style.transitionDuration = '0ms'; f.classList.remove('opacity-30'); getComputedStyle(f).opacity; f.style.transitionDuration = f.dataset.crispWas; delete f.dataset.crispCase; delete f.dataset.crispWas; return true; })()`
     },
     {
         id: 'limp',
+        mainThread: true,
         what: 'a hero going limp (the filter fade on its art, MatHero\'s LIMP_FILTER) on the back-most hero',
         start: `(() => { const h = [...document.querySelectorAll('[data-board-hero]')].sort((a, b) => (Number(a.style.zIndex) || 0) - (Number(b.style.zIndex) || 0))[0]; const art = h && h.querySelector(':scope > div.w-full.h-full'); if (!art) return false; art.dataset.crispCase = 'true'; art.dataset.crispWas = art.style.filter; art.style.transitionDuration = '${LONG}ms'; art.style.filter = 'grayscale(0.7) brightness(0.8) sepia(0.25)'; const a = h.getBoundingClientRect(), b = (art.querySelector('img') || art).getBoundingClientRect(); const x = Math.min(a.left, b.left) - 24, y = Math.min(a.top, b.top) - 24; return { x, y, w: Math.max(a.right, b.right) + 24 - x, h: Math.max(a.bottom, b.bottom) + 24 - y }; })()`,
         stop: `(() => { const el = document.querySelector('[data-crisp-case]'); el.style.transitionDuration = '0ms'; el.style.filter = el.dataset.crispWas; getComputedStyle(el).filter; el.style.transitionDuration = ''; delete el.dataset.crispCase; delete el.dataset.crispWas; return true; })()`
@@ -628,7 +632,7 @@ async function main() {
             const caseLayers = layers;
             await page.evaluate(c.stop);
             const changed = still.filter(t => !(moved && overlaps(t, moved)) && !samePixels(artPixels(rest1, t), artPixels(shot, t)));
-            rows.push({ id: c.id, what: c.what, changed: changed.length, exact: exactIn(shot), layers: caseLayers });
+            rows.push({ id: c.id, what: c.what, changed: changed.length, exact: exactIn(shot), layers: caseLayers, mainThread: !!c.mainThread });
             await sleep(700 + (c.settleMs || 0));
         };
         for (const c of CASES) await runCase(c);
@@ -669,15 +673,20 @@ async function main() {
         const allowed = Math.max(2, Math.round(still.length * 0.05));
         // Exactness is not noisy: with the guards on every uncovered still Token is exact.
         const failed = rows.filter(r => r.changed > allowed || r.exact < restExact);
-        if (drift > allowed) throw new Error(`the board was not still (${drift} Tokens changed at rest)`);
+        const layered = rows.filter(r => r.mainThread && r.layers > restLayers);
         const soft = judged.length - restExact;
         const softAtRest = soft > 0;
         const lootFailed = lootRows.filter(r => r.fails.length);
+        // Layers and the loot do not lean on the still Tokens: said even when the board moved.
+        if (layered.length && drift > allowed) console.log(`\nLAYERED: ${layered.map(r => r.id).join(', ')} ran on the compositor (a composited layer more than at rest)`);
+        if (lootFailed.length && drift > allowed) console.log(`\nLOOT: ${lootFailed.map(r => r.id).join(', ')} not drawn as an item floats`);
+        if (drift > allowed) throw new Error(`the board was not still (${drift} Tokens changed at rest)`);
         if (failed.length) console.log(`\nCHANGED: ${failed.map(r => r.id).join(', ')} changed how still Tokens are drawn`);
         if (softAtRest) console.log(`\nSOFT: at rest ${soft} still Tokens are not drawn exactly to their art`);
+        if (layered.length) console.log(`\nLAYERED: ${layered.map(r => r.id).join(', ')} ran on the compositor (a composited layer more than at rest)`);
         if (lootFailed.length) console.log(`\nLOOT: ${lootFailed.map(r => r.id).join(', ')} not drawn as an item floats`);
-        if (!failed.length && !softAtRest && !lootFailed.length) console.log('\nok: still Tokens are drawn exactly to their art, no animation changes that, and floor loot floats in one shape over a still shadow');
-        return failed.length || softAtRest || lootFailed.length ? 1 : 0;
+        if (!failed.length && !layered.length && !softAtRest && !lootFailed.length) console.log('\nok: still Tokens are drawn exactly to their art, no animation changes that, and floor loot floats in one shape over a still shadow');
+        return failed.length || layered.length || softAtRest || lootFailed.length ? 1 : 0;
     } finally {
         if (chrome) await chrome.close();
         if (server) await server.close();
