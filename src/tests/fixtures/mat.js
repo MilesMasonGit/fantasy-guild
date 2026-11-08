@@ -24,16 +24,6 @@ export function placeAt(typeIdOrInstance, x, y) {
     return BoardState.addToken(instance, x, y);
 }
 
-/** `n` points in a row, `gap` apart, starting at `(x0, y0)`. */
-export function row(n, { x0 = 64, y0 = 64, gap = SPACING } = {}) {
-    return Array.from({ length: n }, (_, i) => ({ x: x0 + i * gap, y: y0 }));
-}
-
-/** The point `(dx, dy)` away from a Token's centre. */
-export function beside(instance, dx = SPACING, dy = 0) {
-    return { x: instance.x + dx, y: instance.y + dy };
-}
-
 /** Take every Token off the mat. */
 export function clearMat() {
     for (const token of BoardState.tokens()) BoardState.removeToken(token.id);
