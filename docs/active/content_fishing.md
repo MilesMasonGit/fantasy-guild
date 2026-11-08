@@ -29,8 +29,8 @@ Fish keep their order from [food and drink](content_food_and_drink.md), on the 2
 | 30 | Tropical Fish | **Coral Reef** | Fine Rod | Cooking | H |
 | 40 | Salmon | River, Lake | Master Rod | Cooking | H |
 | 50 | Lobster | Coast | Lobster Pot | Cooking | H |
-| 60 | Swordfish | Coast | Adamantine Harpoon | Cooking | H |
-| 80 | Shark | **Shark-Infested Waters** | Darkmetal Harpoon | Cooking | H |
+| 63 | Swordfish | Coast | Adamantine Harpoon | Cooking | H |
+| 83 | Shark | **Shark-Infested Waters** | Darkmetal Harpoon | Cooking | H |
 
 ## Tools
 
@@ -41,8 +41,8 @@ Fish keep their order from [food and drink](content_food_and_drink.md), on the 2
 | Fine Rod | Crafting | 16 | Bamboo, Copper Nails, String | A |
 | **Master Rod** | Crafting | 42 | Maple Plank, Mythril Nails, String | A |
 | **Lobster Pot** | Crafting | 36 | Fir Plank, Iron Nails, String | A |
-| **Adamantine Harpoon** | Smithing | 74 | Adamantine Ingot, Mahogany Wood, String | N |
-| **Darkmetal Harpoon** | Smithing | 81 | Darkmetal Ingot, Ebony Wood, String | A |
+| **Adamantine Harpoon** | Smithing | 63 | Adamantine Ingot, Mahogany Wood, String | N |
+| **Darkmetal Harpoon** | Smithing | 83 | Darkmetal Ingot, Ebony Wood, String | A |
 
 These fill open levels on [Crafting](content_crafting.md) and [Smithing](content_smithing.md).
 
@@ -53,13 +53,13 @@ These fill open levels on [Crafting](content_crafting.md) and [Smithing](content
 | 25 | **Oyster Bed** | Oysters, rarely a Pearl | Cooking's Oyster Stew; ⚠️ Pearls need a user | Worked with a Trap | N |
 | 30 | **Coral Reef** | Tropical Fish | The only home of Tropical Fish | A reef in warm seas; worked with a Fine Rod | N |
 | 45 | **Shipwreck** | Planks, Nails, a chance of gems and a chest | A treasure rush | Rod or Trap; a few uses, then gone | N |
-| 80 | **Shark-Infested Waters** | Sharks | The only home of Sharks | Harpoon only; a big rare spot | N |
+| 83 | **Shark-Infested Waters** | Sharks | The only home of Sharks | Harpoon only; a big rare spot | N |
 
 ## Planning agent's calls
 
 - **Waters stay Coast, River, Lake.** The Shrimp Coast goes, as ruled in October. Bog Pool could join River and Lake with the same fish; it isn't needed.
 - **Bait stays Shrimp Bait and Worm Bait**: no more bait kinds until something needs it.
-- **Harpoons on Adamantine and Darkmetal**, because those are Smithing's open levels. ⚠️ The first Harpoon asks for Smithing 74 for a fish at Fishing 60, so Fishing can wait on Smithing a long while. An earlier metal would mean giving up a Smithing item, or a level bringing two recipes.
+- **Harpoons on Adamantine and Darkmetal**, because those are Smithing's open levels. **Each fish waits for its Harpoon** (owner asked for the fix, 2026-11-07; [the gate rules](../reference/BALANCE_RULES.md) section 6): the Adamantine Harpoon is Smithing 63 and Swordfish Fishing 63; the Darkmetal Harpoon is Smithing 83 and Shark Fishing 83, since level 81 holds the Darkmetal Woodaxe that Ebony needs. Cooking's first recipe for each moves with it.
 
 ## What this changes
 

@@ -111,6 +111,8 @@ Each step reads the one before, so the order matters:
 
 **A gate is balanced when the optimized player's path through it stays on the curve**, and the typical and bare players stay inside their bounds.
 
+**Settled 2026-11-07** ([BALANCE_RULES.md](../reference/BALANCE_RULES.md) section 6): a place costs about 1 hour of the guild's optimized work at copper, rising to a day at darkmetal, on the payback curve; it asks for its tier's opening level; **no deliberate pause at a new tier**: no gate holds an optimized player past about two levels' time (owner).
+
 ### The proof
 
 1. **The ledger, on every change**: minutes, run by the content agent and the pack gate before a pack reaches the inbox.

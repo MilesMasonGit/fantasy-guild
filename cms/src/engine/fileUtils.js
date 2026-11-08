@@ -3,6 +3,7 @@ import { useEntityStore } from '../stores/useEntityStore';
 import { useGlobalStore } from '../stores/useGlobalStore';
 import { syncFiles } from './recipeSync';
 import { PLAN_SYNC_KEY } from './planFile';
+import { diskRevision, saveWorkspaceNow } from './diskWorkspace';
 
 /** Workspace save, load, and one-way game data sync. */
 
@@ -59,19 +60,25 @@ export async function restoreFromGame() {
 
 /**
  * Send files built by `syncFiles` to `data/`, and the plan beside them to `cms/plan/`. A 409 with `needsConfirm` is an answer, not an error: the Sync would remove content and wrote nothing.
+ * Any other refusal (a stale tab, the project off `main`) throws an error marked `refused`, its message the server's own words.
  * ⚠️ The plan rides apart (`plan`), never among `data/`'s files: Planned stubs never reach `data/`.
  */
 export async function sendSync(files, { confirmRemovals = false } = {}) {
   const { [PLAN_SYNC_KEY]: plan, ...gameFiles } = files || {};
+  // The revision this tab's workspace came from: the server refuses a Sync from a copy the disk has moved past.
+  const baseRevision = diskRevision();
   const response = await fetch('/api/sync-game-data', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ files: gameFiles, ...(plan ? { plan } : {}), confirmRemovals }),
+    body: JSON.stringify({ files: gameFiles, ...(plan ? { plan } : {}), confirmRemovals, ...(baseRevision !== null ? { baseRevision } : {}) }),
   });
 
   if (response.status === 409) {
     const body = await response.json().catch(() => null);
     if (body?.needsConfirm) return { needsConfirm: true, diff: body.diff, files };
+    const refusal = new Error(body?.error || 'The Sync was refused');
+    refusal.refused = true;
+    throw refusal;
   }
   if (!response.ok) {
     const err = await response.json().catch(() => ({ error: 'Unknown sync error' }));
@@ -92,6 +99,8 @@ export async function syncToGame() {
 
   // Run full economy recalculation before sync so output is 100% consistent
   const balanced = state.recalculateEconomy(globals);
+  // Edits still waiting for their second go to the disk first, so the revision sent is this tab's latest.
+  await saveWorkspaceNow();
 
   return sendSync(syncFiles(balanced));
 }

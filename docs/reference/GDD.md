@@ -519,6 +519,11 @@ has none yet) and melee have content today.
 - XP comes from work cycles (the recipe's or Token's `xp`) and kills (into the
   style the hero fought in: their weapon's, Melee barehanded). Level cap 99; XP to level 99 ≈ 13 million
   (RuneScape-style curve, `XPCurve.js`).
+- **XP bonuses apply per skill, kills included** (owner 2026-11-07, brief 530): a bonus aimed at a
+  skill widens that skill's XP wherever it is earned, a work cycle of it or, for Melee, Ranged, Magic
+  and Stealth, a kill won in that style; a bonus aimed at no skill widens every skill's XP, kills too.
+  Gear, perks, potions, a Token's neighbours and Guild Hall stars all count, summed into one bonus
+  (a positive bonus always adds at least 1 XP). *(`BoardRunner.js`, `CombatResolutionProcessor.js`)*
 - A skill level gives no work speed: a cycle takes its authored time whoever works it (owner 2026-10-09, T-125).
 - **Hero level** = the average of all their skills (display only).
 - **Content that still says `logging`** (data/ and the CMS workspace, until the
@@ -1337,7 +1342,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   A star has ranks, each with the owner's tier, its own price, and its **whole** effect
   (not an increment): **rules** in the statement grammar (§7) held for the whole guild while
   the rank is held, in every Region and wherever the Hall stands (a skill's XP, Yield or
-  Double Loot and Work Time narrowed to that skill; Token upgrades aimed at a Token or tag:
+  Double Loot and Work Time narrowed to that skill, a combat skill's XP reaching the kills won in
+  that style; Token upgrades aimed at a Token or tag:
   Grow Time for a vein's rest or a tree's regrowth, Camp Reach; the guild-only Wound Time
   for the Infirmary, Loadout Slots for one more of a loadout kind, and Lap Time for the
   Passive Production lap), and **lines** of

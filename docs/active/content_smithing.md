@@ -25,7 +25,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - **Metal levels**: copper 1, iron 20, silver 30, mythril 40, gold 50, adamantine 60, darkmetal 80.
 - **Base set, on copper, iron, mythril, adamantine and darkmetal, at the same place in each tier**: Ingot at the tier's start, then Dagger +2, Woodaxe +3, Pickaxe +4, Sword +6, Helmet +7, Arrowheads +8, Plate Gloves +9, Plate Boots +11, Shield +12, Chestplate +13 (counted from a round 20, 40, 60, 80; copper from 0). So an improved version arrives exactly 20 levels after the last. **Two exceptions**: the Adamantine and Darkmetal Woodaxes come straight after their ingots, since Mahogany and Ebony need them.
 - **Beyond it**: Nails on copper, iron and mythril. Kunai on copper and iron. Cleaver and Mace on iron. Harpoons on adamantine and darkmetal (Fishing).
-- **76 recipes and 23 open levels**, left for what later skills need: 14, 15, 16, 17, 18, 19, 54, 55, 57, 58, 63, 70, 75, 76, 77, 78, 79, 85, 90, 94, 95, 96, 97.
+- **76 recipes and 23 open levels**, left for what later skills need: 14, 15, 16, 17, 18, 19, 54, 55, 57, 58, 70, 74, 75, 76, 77, 78, 79, 85, 90, 94, 95, 96, 97.
 - **Handles use that metal's wood**, so Forestry and Smithing climb together. The Adamantine and Darkmetal Woodaxes use the wood before, or each would need itself to be made.
 - **Which axe fells what**: Copper fells Oak and Fir, Iron fells Birch and Maple, Mythril fells Cedar, Adamantine fells Mahogany, Darkmetal fells Ebony.
 - **Everything is made at the Blacksmith** (owner, 2026-11-04; [Construction](content_construction.md)); its variants have different benefits, not new lists; coal is the fuel.
@@ -111,7 +111,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 60 | Adamantine Ingot | material | Adamantine Ore, Coal | everything of this metal | H |
 | 61 | Adamantine Woodaxe | tool: fells Mahogany | Adamantine Ingot, Cedar Wood |  | H |
 | 62 | Adamantine Dagger | Stealth weapon | Adamantine Ingot, Mahogany Wood |  | A |
-| 63 | *open* |  |  |  |  |
+| 63 | Adamantine Harpoon | tool | Adamantine Ingot, Mahogany Wood, String | Fishing: Swordfish | N |
 | 64 | Adamantine Pickaxe | tool | Adamantine Ingot, Mahogany Wood |  | H |
 | 65 | Gold Chain | material | Gold Ingot | Crafting: amulets, with gems | H |
 | 66 | Adamantine Sword | Melee weapon | Adamantine Ingot, Mahogany Wood |  | A |
@@ -122,7 +122,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 | 71 | Adamantine Plate Boots | boots (new slot) | Adamantine Ingot |  | A |
 | 72 | Adamantine Shield | off hand | Adamantine Ingot, Mahogany Wood |  | A |
 | 73 | Adamantine Chestplate | chest | Adamantine Ingot |  | H |
-| 74 | Adamantine Harpoon | tool | Adamantine Ingot, Mahogany Wood, String | Fishing: Swordfish | N |
+| 74 | *open* |  |  |  |  |
 | 75 | *open* |  |  |  |  |
 | 76 | *open* |  |  |  |  |
 | 77 | *open* |  |  |  |  |

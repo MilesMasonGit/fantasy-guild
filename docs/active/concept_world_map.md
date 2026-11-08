@@ -333,7 +333,7 @@ the player to **make nodes**.*
 ## Open
 
 - How a cell's requirements are priced (the simulator and the ledger's stage
-  budgets); which tiers sit in which ring of each wedge.
+  budgets); which tiers sit in which ring of each wedge. **Priced by rule (owner, 2026-11-07)**: the guild's optimized work, about 1 hour at copper to a day at darkmetal, and the tier's opening level in one or two skills ([BALANCE_RULES.md](../reference/BALANCE_RULES.md) section 6).
 - How the ledger's stages map onto wedges and rings (Starter Camp = the
   Hall's cell).
 - Which enemies make up each cell's arrival encounter (content, through the

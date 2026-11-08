@@ -258,17 +258,22 @@ async function cmdSync(paths, options, load, out) {
     const { status, body } = await writeSync({
         files, plan: plan ?? null, confirmRemovals: options['confirm-removals'] === true,
         dataRoot: paths.dataRoot, planRoot: paths.planRoot, commit,
+        // The command line reads the disk workspace itself, so it is never stale; off main it warns instead of refusing.
+        branchRule: 'warn',
     });
-    if (status === 409) {
+    if (status === 409 && body.needsConfirm) {
         const lines = [`Refused: ${describeSyncDiff(body.diff)}`];
         for (const { key, plural: label } of SYNC_COLLECTIONS) {
             const removed = body.diff.removed[key] || [];
             if (removed.length) lines.push(`Removed ${label}: ${removed.map((r) => `${r.name} (${r.id})`).join(', ')}`);
+            const changed = body.diff.changed?.[key] || [];
+            if (changed.length) lines.push(`Changed ${label}: ${changed.map((r) => `${r.name} (${r.id})`).join(', ')}`);
         }
         lines.push('Nothing was written to data/. If the removals are meant, run again with --confirm-removals.');
         throw new CliError(lines.join('\n'));
     }
     if (status !== 200) throw new CliError(body.error || `Sync failed (${status})`);
+    if (body.warning) out(`Warning: ${body.warning}`);
     out(`Wrote ${plural(body.filesWritten.length, 'file')} to ${shortPath(paths.root, paths.dataRoot)}: ${body.filesWritten.join(', ')}.`);
     out(body.commit.committed ? `Committed as ${body.commit.sha}.` : `Not committed: ${body.commit.reason}.`);
     return 0;

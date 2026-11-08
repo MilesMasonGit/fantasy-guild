@@ -7,6 +7,25 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, code review round 4 fixes (owner, 2026-11-07: all of briefs 510, 530, 520, 540 approved, in that order)
+
+*Sat 7 Nov, 22:30, batch proposed and started. Where we are: the review's tickets are in; the owner approved all four briefs. Building now: 510 F1 (CMS Sync guard), F2 (luck-dependent farming test), F3 (hidden page effects), F4 (zero-charge ghost), four builders in worktrees f1 to f4. Next: F5, F6, F7, brief 530 X1, 520's M0 instruments, then 540. Owner, 2026-11-07: **benches this weekend too**: the engine work check whenever a fix is ready, and the long runs (measurements, soak) in the 01:00 to 07:00 window on Saturday and Sunday nights. Owner: start `/content` for 530 X2 when convenient. Blockers: none.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 510 F1: the CMS refuses a Sync from a stale tab or off `main` (T-339) | builder | `fix/cms-sync-guard` (`f1`) | ready c8c6b731, gate running (the CMS now refuses a Sync from a stale tab or off `main`, and says why) | Sat | |
+| 510 F2: the luck-dependent farming test (T-340) | builder-lite | `fix/farming-seed-test` (`f2`) | **merged** 83b884a4 (test only; file green under both seeds, full suite green under seed b) | Sat | Sat |
+| 510 F3: a hidden page stops piling up effects (T-333, T-341) | builder | `fix/hidden-fx` (`f3`) | ready 21a23367, gate running; T-333 closes after the soak (520 M5) | Sat | |
+| 510 F4: no ghost Token after merging two on the mat (T-342) | builder | `fix/zero-charge-ghost` (`f4`) | **merged** 38b81dae (632 files green, cycles, build, engine work same everywhere) | Sat | Sat |
+| 510 F5: hero gear not re-read every tick (T-078) | engineer | `perf/loadout-memo` (`f5`) | building (own before/after profile) | Sat | |
+| 510 F6: one poll clock that pauses (T-343) | builder | `perf/poll-clock` (`f6`, from F3) | building | Sat | |
+| 510 F7: a minimised desktop app goes quiet (T-344) | builder | | queued (after 520 M7) | | |
+| 530 X1: kills get their style XP bonuses (engine) | builder | `feat/combat-xp-bonus` (`f2`) | ready e3d2fe39, gate running (no bench fighter holds a combat or all-skills XP bonus: same work expected; the ledger does not model kill XP, X2 priced by hand) | Sat | |
+| 530 X2: four combat XP stars (content pack) | content agent | `planning-content` | owner starts `/content` | | |
+| 520 M0: bench instruments | builder-lite | `bench/review-instruments` (`m0`) | building | | |
+| 520 M1 to M9: measurements | director | | queued (bench windows) | | |
+| 540 C1 to C9: cleanup and docs | builder / builder-lite | | queued (after 510 and 530 X1) | | |
+
 ## Director, code review round 4 preparation (owner, 2026-11-06 interview; concept_code_review_2026.md approved)
 
 *Sat 7 Nov, late morning, the batch looked at. Where we are: phase 0 of the review is complete. The CMS on disk is merged (owner all ok), every baseline is taken (engine, draw, calibration, soak, bundle, suite; `review/STATUS.md` table full), T-334 is merged, the suite is fully green again. The soak confirmed T-333 (hidden page pile-up) and found T-335 (visible heap +52 KB/min, steady). Next: `/reviewer` R0 (the map) in a fresh session, then R1 onward; the planning agent's intake. Owner: approve the MCP server when asked. Blockers: none.*

@@ -220,6 +220,11 @@ export async function saveWorkspaceNow() {
     return !useDiskWorkspace.getState().conflict;
 }
 
+/** The disk revision this page's workspace was loaded from or last saved as, or null when it is not connected to the disk. */
+export function diskRevision() {
+    return session && Number.isInteger(session.revision) ? session.revision : null;
+}
+
 /** Whether the disk moved on since this page loaded it (the command line, another tab); checked whenever the page comes back into view. */
 async function checkDisk() {
     const s = session;
