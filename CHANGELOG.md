@@ -22,6 +22,12 @@ project's first tagged baseline — everything before it was untagged developmen
   "per cycle to the working hero, or per kill in a combat style". No combat XP star exists yet
   (four follow as content).
 
+- **A hidden page stops piling up effects** (no change while you watch): with the game in a
+  background tab, the numbers, sparks, blinks, hit flashes and knockout puffs the fights and
+  Tokens would have shown are no longer made and left waiting, so nothing builds up in memory and
+  nothing bursts out when you come back. Any effect still ends on time even if its animation
+  never reports done. Loot collected while the page is hidden shows on its stub at once instead
+  of waiting to fly, and the flights booked in one frame measure the board once between them.
 - **Dragging a Token onto a half-used copy of itself no longer leaves a ghost behind**: when all
   its charges fit into the copy, the dragged Token now leaves the mat, as a dropped one from the
   hand always did. Before, it stayed at its old spot with no charges and an "Out of charges" mark
