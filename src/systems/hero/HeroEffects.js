@@ -129,12 +129,14 @@ export function loadoutStatements(hero) {
  * exactly as fresh as expanding every time, whoever made the change (the equip rules, a level-up, a
  * load, a dev button or a test writing the state straight), and nothing has to remember to say so.
  * The Bank is read as `slotBacked` reads it, for the slots alone, so loot coming in keeps the answer.
+ * Content is compared by identity: an item, library entry or perk table registered again is seen,
+ * one edited in place is not (content only ever arrives by registering).
  *
  * The answer is shared between callers, so it is frozen: a caller copies before it changes anything.
  */
 const kept = new WeakMap();
 
-/** A skill record's level field, as the readers find it (a bare number is its own level). */
+/** A skill record's `level`; undefined for a bare number, which is its own level and compared as the record. */
 function levelField(record) {
     return record !== null && typeof record === 'object' ? record.level : undefined;
 }

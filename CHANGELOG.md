@@ -5,6 +5,13 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **A long catch-up no longer rebuilds what each hero carries on every tick** (engine speed;
+  nothing changes in play): a hero's gear, potions and milestone perks are turned into their rules
+  once and kept, and every read first checks the hero still matches (each slot's item, whether the
+  Bank still holds a shared item, the levels the perks and gear requirements ask), instead of
+  rebuilding them for every worked Token on every tick. On the realistic board's 6-hour catch-up,
+  measured back to back on a shared machine, this work fell from about 10 % of the time to 2 %,
+  and the catch-up from about 26.5 s to 23.2 s, ending with the same board, Bank and XP.
 - **A farming test no longer depends on the dice** (tests only): the last-harvest test pins its random rolls for that cycle, so it passes under the second test seed too.
 
 - **Dev panel: the "Lap star in the sky" button is gone** (dev only). It installed a hand-copied

@@ -1049,10 +1049,10 @@ function addHeroProvides(sums, statements, effectType, category) {
         if (payload.type !== effectType) continue;
 
         // ⚠️ The narrowing field, honoured here by hand. Everything else on this path bypasses
-        // `ModifierAggregator` (the loadout is read off the hero, not an aggregator), so it also bypasses
-        // `_forEachMatching`, which is where a category is normally matched. An item scoped to
-        // Mining would otherwise apply to Fishing, silently, and only when carried rather than when
-        // placed.
+        // `ModifierAggregator` (the loadout is read off the hero, not an aggregator), so it also
+        // bypasses `_forEachMatching`, which is where a category is normally matched. An item scoped
+        // to Mining would otherwise apply to Fishing, silently, and only when carried rather than
+        // when placed.
         if (payload.category && payload.category !== category) continue;
 
         const value = Number(payload.value);
