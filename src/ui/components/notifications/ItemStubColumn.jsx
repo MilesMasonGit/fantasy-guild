@@ -339,5 +339,3 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
         </div>
     );
 });
-
-export default ItemStubColumn;

@@ -85,5 +85,3 @@ export const InspectPanel = ({ book, focusKey, got, heroes, onChartFrom, style }
         </PixelFrame>
     );
 };
-
-export default InspectPanel;

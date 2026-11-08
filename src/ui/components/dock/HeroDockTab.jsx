@@ -295,5 +295,3 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
         </div>
     );
 });
-
-export default HeroDockTab;

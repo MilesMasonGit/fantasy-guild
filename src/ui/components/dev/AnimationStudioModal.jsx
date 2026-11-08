@@ -664,5 +664,3 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
         </div>
     );
 };
-
-export default AnimationStudioModal;

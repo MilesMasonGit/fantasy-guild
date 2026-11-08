@@ -99,5 +99,3 @@ export const UpkeepSummaryPanel = ({ className = 'h-full' } = {}) => {
         </div>
     );
 };
-
-export default UpkeepSummaryPanel;

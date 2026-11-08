@@ -157,5 +157,3 @@ export const ItemDetailLines = ({ facts }) => (
         )}
     </>
 );
-
-export default ItemTipContent;

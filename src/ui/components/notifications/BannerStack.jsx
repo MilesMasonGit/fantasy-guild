@@ -128,5 +128,3 @@ export const BannerStack = memo(function BannerStack() {
         </div>
     );
 });
-
-export default BannerStack;

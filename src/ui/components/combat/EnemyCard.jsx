@@ -118,5 +118,3 @@ export const EnemyCardTip = ({ typeId, instanceId = null }) => {
         />
     );
 };
-
-export default EnemyCardTip;

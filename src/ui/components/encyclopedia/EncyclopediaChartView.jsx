@@ -478,5 +478,3 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
         </div>
     );
 };
-
-export default ChartView;

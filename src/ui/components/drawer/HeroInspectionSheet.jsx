@@ -279,5 +279,3 @@ const SkillPerks = ({ perks }) => {
         </div>
     );
 };
-
-export default HeroInspectionSheet;

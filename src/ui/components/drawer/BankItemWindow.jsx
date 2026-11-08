@@ -72,5 +72,3 @@ export const BankItemWindow = ({ entry, onClose }) => {
         </section>
     );
 };
-
-export default BankItemWindow;

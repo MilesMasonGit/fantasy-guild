@@ -677,5 +677,3 @@ export const LiveFightPanel = ({ heroId, onClose, onMinimize = null, onDragStart
         />
     );
 };
-
-export default LiveFightPanel;

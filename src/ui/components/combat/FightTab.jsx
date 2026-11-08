@@ -120,5 +120,3 @@ export const FightTabStrip = () => {
         </div>
     );
 };
-
-export default FightTabStrip;

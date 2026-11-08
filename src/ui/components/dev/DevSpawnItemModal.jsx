@@ -120,5 +120,3 @@ export const DevSpawnItemModal = ({ onClose }) => {
         </div>
     );
 };
-
-export default DevSpawnItemModal;
