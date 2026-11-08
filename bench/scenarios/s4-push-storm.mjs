@@ -84,6 +84,15 @@ export default {
     },
 
     async custom({ now, setMatTuning, fixtures }) {
+        // ⚠️ Each timed stage starts with an empty young generation. Without it, whether a scavenge
+        // landed inside a stage's first, cold operation hung on how much the process had allocated
+        // before (even on how many files Vite listed in `public/` at start): the worst arrival read
+        // 9 or 18 ms by that luck alone. A scavenge only, never a full collection: a full one before
+        // every stage made the later stages slower (the shrink 28 → 38 ms). A no-op where `gc` is
+        // not exposed (the push-storm test, the in-game Perf page).
+        const collect = () => globalThis.gc?.({ type: 'minor' });
+
+        collect();
         // --- 1. Arrivals: spawned from the Forest; they push once it's full.
         const arrivals = [];
         let arrivalsLanded = 0;
@@ -105,6 +114,7 @@ export default {
         // flies back. This times the refusal — the full search that fails.
         const refused = [];
         let refusedDropsLanded = 0;
+        collect();
         for (let i = 0; i < 50; i++) {
             const instance = BoardState.createTokenInstance('bench_tree', 40, null, BoardState.ORIGIN.SPAWNED);
             const aim = { x: CENTRE.x + 30, y: CENTRE.y + 10 };
@@ -122,6 +132,7 @@ export default {
         const landingStatus = { placed: 0, nudged: 0, refused: 0, restocked: 0 };
         const nudges = [];
         const dropped = [];
+        collect();
         for (let i = 0; i < 50; i++) {
             // A player's own Token (placed), so it can be taken off again below.
             const instance = BoardState.createTokenInstance('bench_tree', 40, null, BoardState.ORIGIN.PLACED);
@@ -151,6 +162,7 @@ export default {
 
         // --- 4. Shrink the mat 20 → 6.
         const beforeShrink = fixtures.census();
+        collect();
         const t0 = now();
         setMatTuning('matSteps', 6);
         const shrinkMs = now() - t0;
