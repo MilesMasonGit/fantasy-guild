@@ -3,6 +3,7 @@
 import { getTokenType, standsNearOf, standsOnOf, tokenName } from '../../config/registries/tokenRegistry.js';
 import { STANDS_ON_CHOICES, needsText } from '../atlas/TerrainMap.js';
 import { recipesForFoundation } from '../../config/registries/recipePoolRegistry.js';
+import { withArticle } from '../effects/toolNames.js';
 import * as BoardState from './BoardState.js';
 import * as GroundRules from './GroundRules.js';
 import { nearRadius } from './nearby.js';
@@ -13,9 +14,6 @@ import { nearRadius } from './nearby.js';
  * Arcane node in reach of a leyline). `MatPlacement` asks both of every spot; a Foundation asks
  * them of the Token it is set to build, at its own centre, so a mine is never built off its Stone.
  */
-
-/** "a Leyline", "an Altar": Tokens are countable things. */
-const withArticle = (name) => `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
 
 /** The sentence a spot with none of `typeIds` in reach is refused with: "Needs a Leyline or an Altar nearby." */
 export function nearText(typeIds) {

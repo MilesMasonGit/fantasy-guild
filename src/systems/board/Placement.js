@@ -56,6 +56,14 @@ function markAdjacencyDirty(points) {
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: list });
 }
 
+/** Put `instance` on the mat at (x, y), announce it, and mark where it left (`from`) and landed. */
+function putOnMat(instance, from, x, y) {
+    BoardState.addToken(instance, x, y);
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
+    EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: instance.id, typeId: instance.typeId });
+    markAdjacencyDirty([from, { x, y }]);
+}
+
 /** The payload for a point a Token has just left: no Token there to name. */
 const vacated = (point) => ({ ...point, typeId: null });
 
@@ -176,11 +184,7 @@ export function placeTokenAt(instance, point, options = {}) {
     const from = pointOf(BoardState.getTokenById(instance.id));
     if (!options.keepCycle) forfeitCycle(instance);
 
-    BoardState.addToken(instance, decision.x, decision.y);
-
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
-    EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: instance.id, typeId: instance.typeId });
-    markAdjacencyDirty([from, { x: decision.x, y: decision.y }]);
+    putOnMat(instance, from, decision.x, decision.y);
 
     return {
         success: true,
@@ -279,10 +283,7 @@ function restock(instance, decision) {
     if (decision.x != null) {
         const from = pointOf(BoardState.getTokenById(instance.id));
         forfeitCycle(instance);
-        BoardState.addToken(instance, decision.x, decision.y);
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
-        EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: instance.id, typeId: instance.typeId });
-        markAdjacencyDirty([from, { x: decision.x, y: decision.y }]);
+        putOnMat(instance, from, decision.x, decision.y);
         return {
             success: true, restocked: true, nudgedLeftover: true,
             x: decision.x, y: decision.y, addedCharges: decision.transferred

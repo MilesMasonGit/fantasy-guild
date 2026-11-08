@@ -37,3 +37,16 @@ export function othersBestLevel(heroes, heroId, skillId) {
     }
     return best;
 }
+
+/**
+ * The recipes a `HERO_LEVELED` event unlocks for the guild: the one reading the live banner and
+ * the catch-up news both make. `heroes` are the guild's, for the others' best level.
+ */
+export function recipesUnlockedByLevelUp(recipes, heroes, { heroId, skillId, oldLevel, newLevel } = {}) {
+    return recipesUnlockedBy(recipes, {
+        skillId,
+        oldLevel: Number(oldLevel) || 0,
+        newLevel: Number(newLevel) || 0,
+        othersBest: othersBestLevel(heroes, heroId, skillId)
+    });
+}
