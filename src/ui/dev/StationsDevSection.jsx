@@ -44,5 +44,3 @@ export function StationsDevSection() {
         </div>
     );
 }
-
-export default StationsDevSection;

@@ -55,5 +55,3 @@ export function FarmingDevSection() {
         </div>
     );
 }
-
-export default FarmingDevSection;

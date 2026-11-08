@@ -48,5 +48,3 @@ export function BankDevSection() {
         </div>
     );
 }
-
-export default BankDevSection;

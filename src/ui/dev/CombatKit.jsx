@@ -95,5 +95,3 @@ export const CombatKit = () => (
         <Cards />
     </div>
 );
-
-export default CombatKit;

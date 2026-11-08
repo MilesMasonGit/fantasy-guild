@@ -56,5 +56,3 @@ export function CombatScreenDevSection() {
         </div>
     );
 }
-
-export default CombatScreenDevSection;

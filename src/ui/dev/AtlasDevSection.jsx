@@ -113,5 +113,3 @@ export function AtlasDevSection() {
         </div>
     );
 }
-
-export default AtlasDevSection;

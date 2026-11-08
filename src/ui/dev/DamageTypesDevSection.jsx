@@ -31,5 +31,3 @@ export function DamageTypesDevSection() {
         </div>
     );
 }
-
-export default DamageTypesDevSection;

@@ -44,5 +44,3 @@ export function StatusesDevSection() {
         </div>
     );
 }
-
-export default StatusesDevSection;

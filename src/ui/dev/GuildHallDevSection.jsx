@@ -191,5 +191,3 @@ export function GuildHallDevSection() {
         </div>
     );
 }
-
-export default GuildHallDevSection;

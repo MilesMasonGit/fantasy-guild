@@ -42,5 +42,3 @@ export function FishingDevSection() {
         </div>
     );
 }
-
-export default FishingDevSection;

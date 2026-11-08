@@ -68,5 +68,3 @@ export function SkillLoopsDevSection() {
         </div>
     );
 }
-
-export default SkillLoopsDevSection;

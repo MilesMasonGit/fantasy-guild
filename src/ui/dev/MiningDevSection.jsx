@@ -44,5 +44,3 @@ export function MiningDevSection() {
         </div>
     );
 }
-
-export default MiningDevSection;

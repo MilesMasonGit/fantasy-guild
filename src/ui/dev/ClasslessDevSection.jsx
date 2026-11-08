@@ -45,5 +45,3 @@ export function ClasslessDevSection() {
         </div>
     );
 }
-
-export default ClasslessDevSection;

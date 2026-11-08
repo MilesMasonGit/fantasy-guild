@@ -31,5 +31,3 @@ export function EncountersDevSection() {
         </div>
     );
 }
-
-export default EncountersDevSection;

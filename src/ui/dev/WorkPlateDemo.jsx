@@ -210,5 +210,3 @@ export const WorkPlateDemo = () => (
         {IDLE_PLATE_MOMENTS.map(m => <IdlePatch key={m.id} moment={m} />)}
     </div>
 );
-
-export default WorkPlateDemo;

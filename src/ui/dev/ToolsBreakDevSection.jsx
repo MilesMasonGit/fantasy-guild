@@ -66,5 +66,3 @@ export function ToolsBreakDevSection() {
         </div>
     );
 }
-
-export default ToolsBreakDevSection;

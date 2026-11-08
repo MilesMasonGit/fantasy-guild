@@ -62,5 +62,3 @@ export function AnimationDevSection() {
         </div>
     );
 }
-
-export default AnimationDevSection;
