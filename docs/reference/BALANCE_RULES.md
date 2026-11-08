@@ -8,7 +8,7 @@ Status: approved 2026-11-07, amended the same day after a critical review and th
 
 **Everything follows the level a thing unlocks at** (written L). Tiers start at copper 1, iron 20, silver 30, mythril 40, gold 50, adamantine 60 and darkmetal 80, so "one tier later" means about 20 levels on.
 
-**Five rules, one per kind of number:**
+**Six rules, one per kind of number:**
 
 | Number | Rule | In one line |
 |---|---|---|
@@ -17,6 +17,7 @@ Status: approved 2026-11-07, amended the same day after a critical review and th
 | Ingredient counts | **Double every 40 levels**, raw ingredients only | 2 ore a copper bar, 8 a darkmetal bar |
 | Drops and finds | **Set as finds a day** for one hero | Basic drops every kill; bonus finds 20 a day; rare gear drops 1 a day |
 | Upgrade prices | **Payback from 1 hour to 1 day**, by tier | Always worth buying, late ones are goals |
+| Gates | **No gate holds an optimized player past about two levels' time**; places priced on the same 1 hour to 1 day curve | A steady climb, every gate visible |
 
 **The curve describes a well-optimized player** (owner, 2026-11-07): one who holds the boosts a good player would at that point. A typical player is slower than the curve, about 1.5 to 2x, and a player with no boosts at most 3x.
 
@@ -142,6 +143,22 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 **Consumables last a number of cycles, and crafts make batches** (owner, after the review: "A dose is meant to last a number of cycles, not time. But also we will make batches."). **A batch must pay back at least 4x**: the work time the whole batch saves (or the finds it adds) is at least four times the hero time it took to make, its ingredients included. ⚠️ Today a work potion lasts 1 cycle and a drink 10 (`consumableRule.js`), so a batch would need to be very large: the dose lengths are worth raising (T-338).
 
 **Upgrade prices go by payback** (owner): the hours of the boosted work it takes to earn back the price. **For a Hall star that boosts the whole guild, payback counts all the work it boosts**, not one hero's. **Payback = 1 hour × 24^(L / 80)**: 1 hour at 1, 2.2 at 20, 4.9 at 40, 10.8 at 60, a day at 80. That covers Guild Hall stars and building variants, priced in the tier's materials.
+
+## 6. Gates
+
+**Every unlock sits behind one or more gates, and no gate holds a well-optimized player longer than about two levels' worth of time** (owner, 2026-11-07: no pause at a new tier, stay on the curve). That is the ledger's wall rule, a step over twice the curve's time. The ring star, a place's price and its arrival fight are paid along the way.
+
+| Gate | Rule |
+|---|---|
+| **A level** | One unlock per level as far as real items allow (the content philosophy); an ingredient's gathering level matches the first recipe that uses it |
+| **A place** (a world map cell) | **Its price is the hours of the whole guild's optimized work at its tier, on the payback curve**: about 1 hour at copper, 2 at iron, 5 at mythril, 11 at adamantine, a day at darkmetal (owner). Paid in its tier's goods; nearer places stay cheaper, as the world map rules say. **It asks for its tier's opening level** in one or two of the skills its goods need: an iron place asks Mining 20 or Forestry 20 (owner) |
+| **A ring star** (the Hall star that opens a ring) | Priced so the ring opens as the stage before it ends, as built (brief 380 M4) |
+| **A tool** | **The gating tool's recipe lands within 2 levels of what it gates**, counting the skills as climbing together (agent's call). ⚠️ Today's plan breaks this for the Harpoons: the Adamantine Harpoon is Smithing 74 for Swordfish at Fishing 60, the Darkmetal Harpoon Smithing 83 for Shark at Fishing 80 ([Fishing](../active/content_fishing.md) already warns). The paper pass moves them or the fish |
+| **A building** | A station or camp needed for work is priced by the one-off step rule: no wait past the pace there |
+| **A rare item** | Set by finds a day (section 4): one hero alone passes it slowly; several heroes or boosts in good time |
+| **A chain** | No skill waits on another past the wall rule: the ledger's path time, at each player |
+
+**A gate is balanced when the optimized player's path through it stays on the curve**, and the typical and no-boost players stay inside their bounds (section 5).
 
 ## Worked examples
 
