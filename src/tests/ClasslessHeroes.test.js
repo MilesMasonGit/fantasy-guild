@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
-import * as CombatFormulas from '../utils/CombatFormulas.js';
+import * as CombatFormulas from '../systems/combat/CombatFormulas.js';
 import { handleVictory } from '../systems/combat/CombatResolutionProcessor.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { rehydrateHero, settleSkillSheet } from '../systems/hero/logic/HeroRehydration.js';

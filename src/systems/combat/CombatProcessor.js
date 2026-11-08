@@ -1,6 +1,6 @@
 import * as HeroManager from '../hero/HeroManager.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
-import * as CombatFormulas from '../../utils/CombatFormulas.js';
+import * as CombatFormulas from './CombatFormulas.js';
 import { handleVictory } from './CombatResolutionProcessor.js';
 import { handleHeroAttack, processEnemyAttack, checkHealth } from './CombatAttackProcessor.js';
 import { resetTallies } from './FightHooks.js';

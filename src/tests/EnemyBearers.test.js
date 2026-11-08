@@ -20,7 +20,7 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
-import { enemyTypeResistance } from '../utils/CombatFormulas.js';
+import { enemyTypeResistance } from '../systems/combat/CombatFormulas.js';
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
 

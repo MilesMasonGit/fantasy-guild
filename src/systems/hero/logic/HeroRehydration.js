@@ -1,6 +1,6 @@
 import { ModifierAggregator } from '../../effects/ModifierAggregator.js';
 import { calculateHeroLevel } from '../HeroGenerator.js';
-import { heroMaxHpFromSkills } from '../../../utils/CombatFormulas.js';
+import { heroMaxHpFromSkills } from '../../combat/CombatFormulas.js';
 import { GameState } from '../../../state/GameState.js';
 import { createEmptyEquipment } from '../../../config/registries/equipmentConstants.js';
 import { normaliseHeldCopies } from '../../equipment/heldCopies.js';

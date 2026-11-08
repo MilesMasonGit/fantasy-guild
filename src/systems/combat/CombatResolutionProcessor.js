@@ -1,5 +1,5 @@
 import { EventBus } from '../core/EventBus.js';
-import * as CombatFormulas from '../../utils/CombatFormulas.js';
+import * as CombatFormulas from './CombatFormulas.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';

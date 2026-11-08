@@ -14,7 +14,7 @@ import { tokenStartingUses, registerTokenTypes } from '../config/registries/toke
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import { calculateHeroLevel } from '../systems/hero/HeroGenerator.js';
-import * as CombatFormulas from '../utils/CombatFormulas.js';
+import * as CombatFormulas from '../systems/combat/CombatFormulas.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import {
     STARTING_SKILL_IDS,

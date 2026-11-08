@@ -26,7 +26,7 @@ import { renderStatement } from '../systems/effects/statementText.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
 import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
-import * as CF from '../utils/CombatFormulas.js';
+import * as CF from '../systems/combat/CombatFormulas.js';
 import { enemyProfileOf, ENEMY_OVERRIDE_FIELDS } from '../config/registries/enemyProfile.js';
 import {
     DAMAGE_TYPES, DAMAGE_GROUPS, groupOf, typesOfGroup, weaponDamageTypeOf, arrowOf, normaliseResistances,

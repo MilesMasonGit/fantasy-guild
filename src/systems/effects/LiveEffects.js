@@ -3,7 +3,7 @@ import { EFFECTS } from '../../config/registries/effectRegistry.js';
 import { statementsFromEntry, normaliseScale, scaleStatement, statusBlockOf } from './effectLibrary.js';
 import { KEYWORD } from './statements.js';
 import { EFFECT_TYPES } from './constants.js';
-import { heroStatusStackCap } from '../../utils/CombatFormulas.js';
+import { heroStatusStackCap } from '../combat/CombatFormulas.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import { STATUS_TICK_INTERVAL_MS } from '../../config/FormulaRegistry.js';

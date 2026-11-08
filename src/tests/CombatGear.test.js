@@ -18,7 +18,7 @@ import * as OutputRules from '../systems/board/OutputRules.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
-import * as CF from '../utils/CombatFormulas.js';
+import * as CF from '../systems/combat/CombatFormulas.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';

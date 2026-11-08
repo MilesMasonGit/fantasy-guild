@@ -7,7 +7,7 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { getGrid } from '../../config/registries/equipmentConstants.js';
 import { neededToolOf } from '../../config/registries/toolKinds.js';
 import { breakChanceOf } from '../../config/registries/itemBreak.js';
-import { getHeroWeaponSlot } from '../../utils/CombatFormulas.js';
+import { getHeroWeaponSlot } from '../combat/CombatFormulas.js';
 import { fittingToolSlotOf } from './HeroTools.js';
 import { destroyEquipped } from './EquipmentManager.js';
 

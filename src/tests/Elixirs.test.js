@@ -21,7 +21,7 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
-import * as CombatFormulas from '../utils/CombatFormulas.js';
+import * as CombatFormulas from '../systems/combat/CombatFormulas.js';
 import * as ConsumptionSystem from '../systems/hero/ConsumptionSystem.js';
 import { ELIXIR_FIGHTS } from '../config/loopConstants.js';
 import { renderStatement } from '../systems/effects/statementText.js';

@@ -12,7 +12,7 @@ import {
     BASE_CRIT_CHANCE,
     REGEN_CONFIG,
 } from '../config/FormulaRegistry.js';
-import * as CF from '../utils/CombatFormulas.js';
+import * as CF from '../systems/combat/CombatFormulas.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';

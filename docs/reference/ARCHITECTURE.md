@@ -59,13 +59,13 @@ top folders by import count from `npm run depcruise` (JSON output, 615 modules, 
 | `src/main.jsx` | 1 / 127 | Boot sequence (§1). | — | systems/core, ui |
 | `src/config/` | 52 / 10,590 | Content registries (`registries/`, 38 files), tuning tables, combat numbers (`FormulaRegistry.js`), the Hall upgrade web (`guildUpgrades.js`), dev tuners stored in localStorage (`playmatTuning.js`, `matTuning.js`). | `DatabaseManager.js`, `registries/tokenRegistry.js`, `registries/itemRegistry.js` | systems/effects (14 edges), systems/atlas (3) — see §7 |
 | `src/i18n/` | 1 + `en.json` / 72 + 568 | On-screen strings, `t()`; every `*.json` beside it is a language (`src/i18n/index.js:5-8`). | `index.js` | utils |
-| `src/state/` | 2 / 575 | The save's shape and validation (`StateSchema.js`), the live store and serialisation (`GameState.js`). | `GameState.js` | utils; systems by **dynamic** import only (§7) |
-| `src/utils/` | 7 / 1,011 | Logger, RNG, formatters, XP curve, sprite path resolution (`AssetManager.js`), combat formulas (`CombatFormulas.js`). | — | config (8 edges), systems/effects (1) |
+| `src/state/` | 2 / 543 | The save's shape and validation (`StateSchema.js`), the live store and serialisation (`GameState.js`). | `GameState.js` | utils; nothing in systems (§7) |
+| `src/utils/` | 6 / 606 | Logger, RNG, formatters, XP curve, sprite path resolution (`AssetManager.js`). | — | config (2 edges) |
 | `src/systems/core/` | 29 / 6,080 | Loop, clocks, bus, saves, catch-up, settings, audio, content audits (`ContentAudit.js`, `lifecycleAudit.js`, `*Rule.js`). | `EngineBootstrap.js`, `GameLoop.js`, `SaveManager.js`, `CatchUp.js` | config, board, effects, utils |
 | `src/systems/board/` | 69 / 20,110 | The playmat: Token storage (`BoardState.js`), placement rules and geometry (`Placement.js`, `MatPlacement.js`), hero orders (`Flags.js`), walking (`HeroMotion.js`, `EnemyMotion.js`), work cycles (`BoardRunner.js`), modifier caches (`TileModifiers.js`), combat on the mat (`BoardCombat.js`), timed changes and spawners (`TimedChanges.js`, `SpawnerSystem.js`), loot sprites (`SpriteLayer.js`). **Also ~4,260 lines of ground-picture code** (`Terrain*.js`) used only by the UI (§5). | `BoardRunner.js` | config (146), core, effects, hero, state |
 | `src/systems/effects/` | 12 / 4,551 | The statement grammar (`statements.js`), its text (`statementText.js`), modifier math (`ModifierAggregator.js`), live statuses (`LiveEffects.js`), content id migrations. | `statements.js`, `LiveEffects.js` | config |
 | `src/systems/hero/` | 15 / 1,613 | Hero records, generation, regen, skills, consumption, rehydration. | `HeroManager.js` | config, core, effects |
-| `src/systems/combat/` | 8 / 752 | Attack resolution, loot rolls, wounded clock, defeat penalties. | `CombatProcessor.js`, `WoundedSystem.js` | config, core, utils, hero |
+| `src/systems/combat/` | 9 / 1,157 | Attack resolution and the combat maths (`CombatFormulas.js`), loot rolls, wounded clock, defeat penalties. | `CombatProcessor.js`, `WoundedSystem.js` | config, core, utils, hero |
 | `src/systems/equipment/` | 7 / 727 | Gear and tools held by heroes, breakage, starter tools. | `EquipmentManager.js` | config, state |
 | `src/systems/inventory/` | 5 / 729 | The Bank: add/remove, tabs, rate tracking. | `InventoryManager.js` | utils, config, core |
 | `src/systems/atlas/` | 15 / 5,296 | Regions and travel (`Atlas.js`), Region generation from map ingredients (`Budget.js`, `Layout.js`, `WaterShapes.js`), the Starter Camp. | `Atlas.js` | config, board, core |
@@ -453,8 +453,8 @@ ui, lower never importing higher.
 | state → systems | 0 | holds |
 | config → state | 0, not even transitively | holds |
 | config → systems | 22 edges to 13 modules | **does not hold**: registries call pure helpers (`effects/*` migrations and statements, `atlas/TerrainMap`, `atlas/WaterShapes`, `core/wearRule`, `core/engineEvents`, `board/boardEvents`, `progression/hallStarText`, `hero/perkTable`) |
-| utils → config | 8 | **does not hold**: `AssetManager` reads the sprite manifest, `CombatFormulas` reads registries |
-| utils → systems | 1 (`CombatFormulas.js` → `systems/effects/constants.js`) | violation (warn) |
+| utils → config | 2 | **does not hold**: `AssetManager` reads the sprite manifest |
+| utils → systems | 0 | holds |
 | i18n → anything but utils | 0 | holds |
 | ui/components → ui/dev | 45 | production components import `ui/dev/perf/drawSwitches.js` (13) and `PerfProfiler.jsx` (2); `TestDashboard.jsx` imports every dev section |
 
@@ -480,7 +480,7 @@ rule was shown to fire on a scratch fixture tree before being kept, and reports 
 | `config-never-reaches-state` (transitively) | error | 0 |
 | `config-systems-kernel-only`: config imports from systems only `CONFIG_KERNEL` | error | 0 |
 | `i18n-leaf` | error | 0 |
-| `utils-only-utils` (utils → systems, state, ui; utils → config allowed) | warn | 1 |
+| `utils-only-utils` (utils → systems, state, ui; utils → config allowed) | warn | 0 |
 | `no-tests-from-src` | error | 0 |
 | `no-orphans` | info | — |
 

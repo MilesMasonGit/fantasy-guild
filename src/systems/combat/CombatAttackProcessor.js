@@ -1,6 +1,6 @@
 import * as HeroManager from '../hero/HeroManager.js';
 import { EventBus } from '../core/EventBus.js';
-import * as CombatFormulas from '../../utils/CombatFormulas.js';
+import * as CombatFormulas from './CombatFormulas.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
 import { handleHeroWounded } from './CombatResolutionProcessor.js';
 import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';

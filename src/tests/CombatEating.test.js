@@ -16,7 +16,7 @@ vi.mock('../systems/hero/HeroManager.js', () => ({
     setHeroStatus: vi.fn()
 }));
 
-vi.mock('../utils/CombatFormulas.js', () => ({
+vi.mock('../systems/combat/CombatFormulas.js', () => ({
     rollSwing: vi.fn(() => ({ hit: true, crit: false })),
     heroMissChance: vi.fn(() => 10),
     heroCritChance: vi.fn(() => 5),

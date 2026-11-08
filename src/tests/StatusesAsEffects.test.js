@@ -17,7 +17,7 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
-import { heroHitDamage, heroBlow, damageMultiplierOf, heroTypeResistance } from '../utils/CombatFormulas.js';
+import { heroHitDamage, heroBlow, damageMultiplierOf, heroTypeResistance } from '../systems/combat/CombatFormulas.js';
 
 /** A hero's resistance to Physical hits: the shield shape, now that flat armour is retired. */
 const shield = (h) => heroTypeResistance(h, 'physical');

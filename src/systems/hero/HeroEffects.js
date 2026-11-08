@@ -12,7 +12,7 @@ import { isWeapon, meetsGearRequirements } from '../../config/registries/weaponS
 import { arrowOf } from '../../config/registries/damageTypes.js';
 import { gearResistancesOf, gearDamageCutOf } from '../../config/registries/gearDefence.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
-import { getHeroWeaponSlot } from '../../utils/CombatFormulas.js';
+import { getHeroWeaponSlot } from '../combat/CombatFormulas.js';
 import { isSpentCategory, isAlwaysOn } from '../core/consumableRule.js';
 import { earnedPerkRefs } from './HeroPerks.js';
 

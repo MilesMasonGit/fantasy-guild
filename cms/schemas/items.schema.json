@@ -45,7 +45,7 @@
           "items": { "type": "string", "enum": ["melee", "ranged", "magic", "stealth"] },
           "description": "A weapon's combat skill (src/config/registries/weaponStyles.js); only the first counts, none means melee."
         },
-        "damage": { "type": "number", "description": "A weapon's damage, a whole number from 1 (src/utils/CombatFormulas.js); missing or 0 means unarmed (1)." },
+        "damage": { "type": "number", "description": "A weapon's damage, a whole number from 1 (src/systems/combat/CombatFormulas.js); missing or 0 means unarmed (1)." },
         "tier": { "type": "number", "minimum": 0, "description": "The material tier (1 copper, 2 iron, ...). Read only by the Bank's sort order." },
         "damageType": {
           "type": "string",

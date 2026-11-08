@@ -6,7 +6,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { neededToolOf } from '../../config/registries/toolKinds.js';
 import { artRadiusOf } from '../../config/matGeometry.js';
 import { GameState } from '../../state/GameState.js';
-import * as CombatFormulas from '../../utils/CombatFormulas.js';
+import * as CombatFormulas from '../combat/CombatFormulas.js';
 import * as BoardState from './BoardState.js';
 import * as HeroMotion from './HeroMotion.js';
 import { centreOf, distanceSq } from './nearby.js';

@@ -12,15 +12,15 @@ import {
     matchupMultiplier,
     rpsOutcome,
     SWING_TIME_FACTOR_RANGE,
-} from '../config/FormulaRegistry.js';
-import { COMBAT_SKILL_IDS, BAREHANDED_STYLE_ID } from '../config/registries/skillRegistry.js';
-import { getItem } from '../config/registries/itemRegistry.js';
-import { getEquippedEntries, getGrid, isWeaponCategory } from '../config/registries/equipmentConstants.js';
-import { isWeapon, weaponStyleOf, meetsGearRequirements } from '../config/registries/weaponStyles.js';
+} from '../../config/FormulaRegistry.js';
+import { COMBAT_SKILL_IDS, BAREHANDED_STYLE_ID } from '../../config/registries/skillRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
+import { getEquippedEntries, getGrid, isWeaponCategory } from '../../config/registries/equipmentConstants.js';
+import { isWeapon, weaponStyleOf, meetsGearRequirements } from '../../config/registries/weaponStyles.js';
 import {
     weaponDamageTypeOf, BAREHANDED_DAMAGE_TYPE, PLAIN_ENEMY_HIT_TYPE, resistanceFor
-} from '../config/registries/damageTypes.js';
-import { EFFECT_TYPES } from '../systems/effects/constants.js';
+} from '../../config/registries/damageTypes.js';
+import { EFFECT_TYPES } from '../effects/constants.js';
 
 export { rpsOutcome };
 

@@ -5,7 +5,7 @@ import { getRandomName } from '../../config/registries/nameRegistry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 import { createEmptyEquipment } from '../../config/registries/equipmentConstants.js';
-import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
+import { heroMaxHpFromSkills } from '../combat/CombatFormulas.js';
 
 /**
  * HeroGenerator - creates new heroes.

@@ -3,7 +3,7 @@ import * as BoardCombat from '../../../systems/board/BoardCombat.js';
 import * as LiveEffects from '../../../systems/effects/LiveEffects.js';
 import { isFightElixir } from '../../../systems/hero/ConsumptionSystem.js';
 import { MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
-import * as CombatFormulas from '../../../utils/CombatFormulas.js';
+import * as CombatFormulas from '../../../systems/combat/CombatFormulas.js';
 import { levelDamageBonus, UNARMED_DAMAGE } from '../../../config/FormulaRegistry.js';
 import { DAMAGE_GROUPS, DAMAGE_TYPES, PLAIN_ENEMY_HIT_TYPE, arrowOf } from '../../../config/registries/damageTypes.js';
 import { nextArrowOf, shootsArrows, carriedArrowIds } from '../../../systems/combat/Arrows.js';
