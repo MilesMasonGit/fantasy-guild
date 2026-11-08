@@ -24,6 +24,9 @@ export default [
             'archive/**',
             'src-tauri/**',
             'public/**',
+            '.claude/**',
+            '_art_leftovers/**',
+            'docs/**',
         ],
     },
 
