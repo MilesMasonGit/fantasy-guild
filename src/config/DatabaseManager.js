@@ -28,5 +28,3 @@ export const DatabaseManager = {
     // generated from the placeholder (`worldTablesRegistry.js`).
     worldFilesSingle: import.meta.glob('/data/world.json', { eager: true }),
 };
-
-export default DatabaseManager;

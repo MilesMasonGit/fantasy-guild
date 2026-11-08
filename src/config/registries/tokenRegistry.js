@@ -271,24 +271,6 @@ export function productionRoutes(typeId) {
 // Pure, so the progression ledger's rate calculator reads outputs exactly as the board rolls them.
 export { outputRange, rollOutputQuantity, expectedOutputQuantity } from './tokenConstants.js';
 
-/**
- * ⚠️ Nothing calls this: the statements shape replaced effect blocks. Reads
- * `effectBlocks`, or a legacy `buff` as a single block.
- */
-export function effectBlocksOf(def) {
-    if (Array.isArray(def?.effectBlocks)) return def.effectBlocks;
-    if (def?.buff) return [def.buff];
-    return [];
-}
-
-/**
- * A Token's **statements** — the shape that replaced effect blocks.
- *
- * Re-exported from `statements.js` so the rest of the game has one import for
- * "read a Token's rules".
- */
-export { statementsOf, statementsWith } from '../../systems/effects/statements.js';
-
 import {
     KEYWORD as STATEMENT_KEYWORD,
     statementsOf as statementList,

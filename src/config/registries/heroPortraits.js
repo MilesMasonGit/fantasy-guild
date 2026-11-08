@@ -24,5 +24,3 @@ export const HERO_PORTRAITS = [
 
 /** Longest name a hero may be given, so the dock tab never has to truncate. */
 export const HERO_NAME_MAX = 18;
-
-export default HERO_PORTRAITS;

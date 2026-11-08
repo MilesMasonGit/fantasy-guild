@@ -17,7 +17,6 @@ import { getItem } from './itemRegistry.js';
 import { toolOf, handsOf, HANDS } from './toolKinds.js';
 import {
     GRID_SLOT_COUNT,
-    getCategoryCap,
     isEquipCategory,
     isWeaponCategory,
     isGearCategory,
@@ -31,7 +30,6 @@ import {
 export {
     HANDS,
     GRID_SLOT_COUNT,
-    getCategoryCap,
     isEquipCategory,
     isWeaponCategory,
     isGearCategory,
@@ -74,11 +72,6 @@ export function getEquippedEntries(hero) {
     return getGrid(hero)
         .map((itemId, index) => (itemId ? { index, itemId, category: categoryOfItem(itemId) } : null))
         .filter(Boolean);
-}
-
-/** How many items of a category the hero is carrying. */
-export function countInCategory(hero, categoryId) {
-    return getEquippedEntries(hero).filter(e => e.category === categoryId).length;
 }
 
 /** The first empty grid slot, or -1 when the grid is full. */
@@ -125,33 +118,3 @@ export function getPrimaryWeapon(hero) {
     const slot = getPrimaryWeaponSlot(hero);
     return slot === null ? null : getGrid(hero)[slot];
 }
-
-/** Every equipped item id of a given kind (gear / sustenance / consumable). */
-export function itemsOfKind(hero, kind) {
-    const ids = new Set(categoryIdsOfKind(kind));
-    return getEquippedEntries(hero).filter(e => ids.has(e.category)).map(e => e.itemId);
-}
-
-/** Grid indices holding worn gear — what defeat-loss applies to. */
-export function gearSlots(hero) {
-    return getEquippedEntries(hero).filter(e => isGearCategory(e.category)).map(e => e.index);
-}
-
-export default {
-    GRID_SLOT_COUNT,
-    SLOT_ORDER,
-    EQUIPMENT_CATEGORIES,
-    createEmptyEquipment,
-    getGrid,
-    categoryOfItem,
-    getEquippedEntries,
-    countInCategory,
-    findFreeSlot,
-    slotsInCategory,
-    getPrimaryWeaponSlot,
-    getPrimaryWeapon,
-    handEntries,
-    handsOfItem,
-    itemsOfKind,
-    gearSlots
-};

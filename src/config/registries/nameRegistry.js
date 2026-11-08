@@ -33,24 +33,6 @@ export const FIRST_NAMES = [
 ];
 
 /**
- * Optional title prefixes (used rarely for flavor)
- */
-export const TITLE_PREFIXES = [
-    'Sir', 'Lady', 'Lord', 'Elder', 'Young', 'Old', 'Mad', 'Wise',
-    'Swift', 'Bold', 'Brave', 'Grim', 'Sly', 'Keen', 'Wild', 'Fair'
-];
-
-/**
- * Optional nicknames/epithets (appended sometimes)
- */
-export const EPITHETS = [
-    'the Bold', 'the Brave', 'the Swift', 'the Wise', 'the Strong',
-    'the Cunning', 'the Fierce', 'the Quiet', 'the Lucky', 'the Cursed',
-    'Ironhand', 'Shadowfoot', 'Firebrand', 'Stormborn', 'Nightwalker',
-    'Goldtooth', 'Redbeard', 'Blackwood', 'Whitewolf', 'Greycloak'
-];
-
-/**
  * Get a random first name
  * @returns {string}
  */
