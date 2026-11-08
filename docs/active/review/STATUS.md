@@ -45,7 +45,7 @@ deletions, by folder, from R9's lists and the areas' cleanup findings (R9's Note
 |---|---|---|---|---|
 | 0 | 0 | 100 | 0 | 0 |
 
-*Triaged 2026-11-07 by the planning agent ([triage record](triage_2026-11-07.md)): every finding has a ticket (T-339 to T-382, plus T-058, T-078, T-140, T-309, T-333 and T-335 updated). None moot and none owner-no; four items inside tickets wait on the parked questions below.*
+*Triaged 2026-11-07 by the planning agent ([triage record](triage_2026-11-07.md)): every finding has a ticket (T-339 to T-382, plus T-058, T-078, T-140, T-309, T-333 and T-335 updated). None moot and none owner-no; the four parked questions were answered yes the same day.*
 
 ## Baselines (phase 1, director)
 
@@ -60,7 +60,7 @@ deletions, by folder, from R9's lists and the areas' cleanup findings (R9's Note
 
 ## Questions for the owner
 
-**Parked by the planning agent, 2026-11-07** (the rest of each ticket goes ahead; only the named item waits; recommendation first):
+**Parked by the planning agent, 2026-11-07; answered by the owner the same day: yes to all four (each recommendation).** Recorded in T-381, T-375, T-378, T-382 and brief 540.
 
 1. **Where the CMS's balancing code lives** (CR4-010, T-381). About 6,800 lines that only the CMS uses (the progression ledger's checks and balancing) sit in the game's code folder, and their tests add 48 s to every test run. (a) **Move them into the CMS's folder** (recommended: the game's tests get faster and the dead-code tools see the game as it is; nothing changes for the player or in the CMS). (b) Leave them where they are, with a note saying why.
 2. **The "thorns" enemy trait** (CR4-039, T-375). Combat has a branch for an enemy trait that hurts the attacker, left from the card era; no enemy can carry it today. (a) **Delete it** (recommended: if thorns come back, it is designed then, with the enemy moves of brief 280). (b) Keep it for authoring later.
