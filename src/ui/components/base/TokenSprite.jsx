@@ -178,9 +178,11 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
     // `lifted` is a held object: raised by a fixed transform, and its shadow rises with it, 2 art
     // pixels down-right of the art. `hovering` is a floating one: raised by its bob (`lootBob.js`)
     // while its shadow stays on the ground, 2 art pixels down-right of where the art rests.
-    // ⚠️ The ground shadow is placed by `translate`, as the art is moved by a transform: placed by
-    // left/top, Chrome snaps it to whole mat units first and it lands a screen pixel off the art.
-    // `translate`, not `transform`, so the loot's hop (`lootArc.js`) can move it without undoing it.
+    // ⚠️ The ground shadow is drawn as the art is, so the two round to the same screen pixels: an
+    // `<img>` (a background image is snapped to whole pixels, the art is not) placed by `translate`
+    // (left/top are snapped to whole mat units first). `translate`, not `transform`, so the loot's
+    // hop (`lootArc.js`) can move it without undoing it. Code looking for the art skips it
+    // (`[data-sprite-shadow]`).
     return (
         <span
             className={cn('relative inline-block pointer-events-none select-none', className)}
@@ -188,10 +190,14 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
             data-sprite-outline={outline || undefined}
         >
             {shadow && hovering && (
-                <span
+                <img
+                    src={shadow.url}
+                    alt=""
                     aria-hidden="true"
+                    draggable={false}
                     data-sprite-shadow="true"
-                    style={{ ...layerStyle(shadow.url, 0, 0, size, size), translate: `${shadow.offset}px ${shadow.offset}px` }}
+                    className="absolute left-0 top-0 pointer-events-none"
+                    style={spriteImgStyle(size, { translate: `${shadow.offset}px ${shadow.offset}px` })}
                 />
             )}
             <span

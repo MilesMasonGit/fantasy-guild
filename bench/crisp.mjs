@@ -31,7 +31,8 @@
 // sprite drawn after it onto "overlap" layers, and Chrome draws the board's sprites resampled.
 // Then floor loot itself: an item is thrown and watched through a whole bob (`bob`), and again with
 // reduced motion (`hold`). Every shot must draw the art exactly to its picture (one shape) and the
-// hard shadow exactly to its silhouette, the shadow in one place on the ground, 2 art pixels right
+// hard shadow exactly to its silhouette (inner pixels: a sprite's outer edge at a fractional position
+// is blended), the shadow in one place on the ground, 2 art pixels right
 // of the art, and the art 1 to 4 whole art pixels above where it rests (held 3 with reduced motion).
 // Exit codes: 0 every still Token exact and unchanged, the loot as it should float · 1 a case changed
 // them, one is soft, or the loot is not · 3 the check failed.
@@ -309,7 +310,7 @@ const THROW_FOR_BOB = `(async () => {
     const man = await fetch('/_gen/sprite-fx/manifest.json').then(r => (r.ok ? r.json() : null)).catch(() => null);
     if (!man) return 'no sprite-fx manifest';
     const keys = Object.keys(man.sprites).filter(k => k.startsWith('assets/items/') && !man.sprites[k].cols);
-    const onFloor = new Set([...document.querySelectorAll('[data-item-sprite] img')].map(i => decodeURI(new URL(i.src).pathname).replace(/^\\//, '')));
+    const onFloor = new Set([...document.querySelectorAll('[data-item-sprite] img:not([data-sprite-shadow])')].map(i => decodeURI(new URL(i.src).pathname).replace(/^\\//, '')));
     let pick = null;
     for (const it of Object.values(G.getAllItems())) {
         if (!it || !it.id || it.equipSlot || typeof it.sprite !== 'string') continue;
@@ -362,15 +363,16 @@ const THROW_FOR_BOB = `(async () => {
 /** The thrown item's box, its art and its shadow, tagged so a later read finds the same one. */
 const FIND_THROWN = (thrown) => `(() => {
     const want = ${JSON.stringify(thrown)};
-    const all = [...document.querySelectorAll('[data-item-sprite]')].filter(b => decodeURI(new URL(b.querySelector('img').src).pathname).endsWith(want.key));
+    const artOf = (b) => b.querySelector('img:not([data-sprite-shadow])');
+    const all = [...document.querySelectorAll('[data-item-sprite]')].filter(b => decodeURI(new URL(artOf(b).src).pathname).endsWith(want.key));
     const dist = (b) => { const q = b.getBoundingClientRect(); return Math.hypot(q.left + q.width / 2 - want.sx, q.top + q.height / 2 - want.sy); };
     const box = all.sort((a, b) => dist(a) - dist(b))[0];
     if (!box) return null;
-    const img = box.querySelector('img');
+    const img = artOf(box);
     const outer = img.parentElement.parentElement;
     const r = outer.getBoundingClientRect();
     const shadow = box.querySelector('[data-sprite-shadow]');
-    const url = shadow ? getComputedStyle(shadow).backgroundImage.replace(/^url\\("?|"?\\)$/g, '') : null;
+    const url = !shadow ? null : shadow.tagName === 'IMG' ? (shadow.currentSrc || shadow.src) : getComputedStyle(shadow).backgroundImage.replace(/^url\\("?|"?\\)$/g, '');
     return { left: r.left, top: r.top, size: r.width, art: img.currentSrc || img.src, shadow: url };
 })()`;
 
@@ -383,75 +385,89 @@ async function screenshotClip(page, clip) {
 }
 
 /**
- * Where a sprite drawn `size` px across from picture `pic` is on a clip, and how exactly: of the
- * candidate whole-pixel corners, the one where the most of its opaque texels show exactly their
- * colour (nearest-neighbour). With a whole number of screen pixels a texel, every sub-pixel phase
- * Chrome might draw at is one of these corners; a sprite drawn a pixel short or long matches none.
+ * The pixels of a sprite drawn `size` px across from picture `pic` that its texels paint whatever
+ * sub-pixel phase it is drawn at: those whose texel, and the texels a pixel either side would show,
+ * are opaque. Its outer edge is left out: drawn at a fractional position, Chrome blends it with
+ * what is behind. Box pixels, each with the colour the picture puts there.
  */
-function findArt(clip, pic, size, xs, ys) {
+function interiorOf(pic, size) {
     const per = size / pic.w;
+    const at = (px, py) => {
+        if (px < 0 || py < 0 || px >= size || py >= size) return -1;
+        const q = (Math.floor((py + 0.5) / per) * pic.w + Math.floor((px + 0.5) / per)) * 4;
+        return pic.data[q + 3] === 255 ? q : -1;
+    };
+    const out = [];
+    for (let py = 0; py < size; py++) {
+        for (let px = 0; px < size; px++) {
+            const q = at(px, py);
+            if (q < 0 || at(px - 1, py) < 0 || at(px + 1, py) < 0 || at(px, py - 1) < 0 || at(px, py + 1) < 0) continue;
+            out.push({ px, py, rgb: (pic.data[q] << 16) | (pic.data[q + 1] << 8) | pic.data[q + 2] });
+        }
+    }
+    return out;
+}
+
+const rgbAt = (clip, x, y) => {
+    if (x < 0 || y < 0 || x >= clip.width || y >= clip.height) return -1;
+    const p = (y * clip.width + x) * 4;
+    return (clip.raw[p] << 16) | (clip.raw[p + 1] << 8) | clip.raw[p + 2];
+};
+
+/**
+ * Where the art is on a clip, and how exactly: of the candidate whole-pixel corners, the one where
+ * the most of its interior pixels show exactly their texel's colour. With a whole number of screen
+ * pixels a texel, every sub-pixel phase Chrome might draw at is one of these corners; art drawn a
+ * pixel short or long (pinched) matches at none.
+ */
+function findArt(clip, inner, xs, ys) {
     let best = { share: -1, x: 0, y: 0 };
     for (const y of ys) {
         for (const x of xs) {
-            let total = 0, exact = 0;
-            for (let py = 0; py < size; py++) {
-                const cy = y + py;
-                if (cy < 0 || cy >= clip.height) continue;
-                const ty = Math.floor((py + 0.5) / per);
-                for (let px = 0; px < size; px++) {
-                    const cx = x + px;
-                    if (cx < 0 || cx >= clip.width) continue;
-                    const q = (ty * pic.w + Math.floor((px + 0.5) / per)) * 4;
-                    if (pic.data[q + 3] !== 255) continue;
-                    total++;
-                    const p = (cy * clip.width + cx) * 4;
-                    if (clip.raw[p] === pic.data[q] && clip.raw[p + 1] === pic.data[q + 1] && clip.raw[p + 2] === pic.data[q + 2]) exact++;
-                }
-            }
-            const share = total ? exact / total : 0;
+            let exact = 0;
+            for (const t of inner) if (rgbAt(clip, x + t.px, y + t.py) === t.rgb) exact++;
+            const share = inner.length ? exact / inner.length : 0;
             if (share > best.share) best = { share, x, y };
         }
     }
     return best;
 }
 
-/** Whether the art found at `art` covers clip pixel (cx, cy). */
-function artCovers(art, pic, size, cx, cy) {
-    const px = cx - art.x, py = cy - art.y;
-    if (px < 0 || py < 0 || px >= size || py >= size) return false;
-    const per = size / pic.w;
-    return pic.data[(Math.floor((py + 0.5) / per) * pic.w + Math.floor((px + 0.5) / per)) * 4 + 3] === 255;
-}
-
 /**
- * Where the hard shadow (a solid black silhouette, drawn under the art) is on a clip: of the
- * candidate corners, the one where the most of its texels the art leaves uncovered are black.
+ * Where the hard shadow (a solid black silhouette under the art) is on a clip: of the candidate
+ * corners, the one where the most of its interior pixels clear of the art (and of the art's blended
+ * edge) are black.
  */
-function findShadow(clip, sil, size, art, pic, xs, ys) {
-    const per = size / sil.w;
+function findShadow(clip, silInner, artMask, art, xs, ys) {
+    const nearArt = (cx, cy) => artMask.has(`${cx - art.x},${cy - art.y}`) || artMask.has(`${cx - art.x - 1},${cy - art.y}`)
+        || artMask.has(`${cx - art.x + 1},${cy - art.y}`) || artMask.has(`${cx - art.x},${cy - art.y - 1}`) || artMask.has(`${cx - art.x},${cy - art.y + 1}`);
     let best = { share: -1, x: 0, y: 0 };
     for (const y of ys) {
         for (const x of xs) {
             let total = 0, black = 0;
-            for (let py = 0; py < size; py++) {
-                const cy = y + py;
-                if (cy < 0 || cy >= clip.height) continue;
-                const ty = Math.floor((py + 0.5) / per);
-                for (let px = 0; px < size; px++) {
-                    const cx = x + px;
-                    if (cx < 0 || cx >= clip.width) continue;
-                    if (sil.data[(ty * sil.w + Math.floor((px + 0.5) / per)) * 4 + 3] !== 255) continue;
-                    if (artCovers(art, pic, size, cx, cy)) continue;
-                    total++;
-                    const p = (cy * clip.width + cx) * 4;
-                    if (clip.raw[p] === 0 && clip.raw[p + 1] === 0 && clip.raw[p + 2] === 0) black++;
-                }
+            for (const t of silInner) {
+                const cx = x + t.px, cy = y + t.py;
+                if (nearArt(cx, cy)) continue;
+                total++;
+                if (rgbAt(clip, cx, cy) === 0) black++;
             }
             const share = total >= 20 ? black / total : 0;
             if (share > best.share) best = { share, x, y };
         }
     }
     return best;
+}
+
+/** Every box pixel a sprite's opaque texels paint (its edge too), as "x,y" keys. */
+function maskOf(pic, size) {
+    const per = size / pic.w;
+    const out = new Set();
+    for (let py = 0; py < size; py++) {
+        for (let px = 0; px < size; px++) {
+            if (pic.data[(Math.floor((py + 0.5) / per) * pic.w + Math.floor((px + 0.5) / per)) * 4 + 3] === 255) out.add(`${px},${py}`);
+        }
+    }
+    return out;
 }
 
 const range = (lo, hi) => Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
@@ -474,9 +490,12 @@ async function watchLoot(page, found, { art, ms, keepAs = null }) {
     const until = Date.now() + ms;
     while (Date.now() < until) shots.push(await screenshotClip(page, clip));
     const kept = new Set();
+    const artInner = interiorOf(pic, size);
+    const artMask = maskOf(pic, size);
+    const silInner = sil ? interiorOf(sil, size) : null;
     return shots.map((shot) => {
-        const a = findArt(shot, pic, size, xs, ys);
-        const s = sil ? findShadow(shot, sil, size, a, pic, range(a.x - 2, a.x + 4 * art + 2), range(a.y - 2, a.y + 8 * art + 2)) : null;
+        const a = findArt(shot, artInner, xs, ys);
+        const s = sil ? findShadow(shot, silInner, artMask, a, range(a.x - 2, a.x + 4 * art + 2), range(a.y - 2, a.y + 8 * art + 2)) : null;
         // One picture of each way it was drawn.
         const seenAs = `${a.x}_${a.y}_${s ? `${s.x}_${s.y}` : 'none'}`;
         if (keepAs && !kept.has(seenAs)) { kept.add(seenAs); fs.writeFileSync(`${keepAs}-${kept.size}_art${a.x}_${a.y}_shadow${s ? `${s.x}_${s.y}` : 'none'}.png`, Buffer.from(shot.png, 'base64')); }

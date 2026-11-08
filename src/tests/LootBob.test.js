@@ -140,7 +140,7 @@ describe('⭐ a pile on the floor', () => {
             const shadow = container.querySelector('[data-sprite-shadow]');
             expect(shadow).not.toBeNull();
             expect(art.contains(shadow)).toBe(false);
-            expect(art.contains(container.querySelector('img'))).toBe(true);
+            expect(art.contains(container.querySelector('img:not([data-sprite-shadow])'))).toBe(true);
             const placed = shadow.getAttribute('style');
             run(BOB_PERIOD_MS);
             expect(shadow.getAttribute('style')).toBe(placed);

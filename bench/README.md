@@ -644,7 +644,8 @@ exact. Not a timing tool: one run is ~1 min and compares pixels only within itse
 hard shadow is thrown on a spot nothing drawn over loot reaches (work plates, fights, bubbles, other
 loot), on bare ground where there is any, and screenshotted for 2.6 s, a whole bob (`bob`); then
 another with reduced motion emulated (`hold`). In every shot the art must be drawn exactly to its
-picture and the shadow exactly to its silhouette (one shape), the shadow in one place, 2 art pixels
+picture and the shadow exactly to its silhouette (one shape: their inner pixels, the outer edge
+left out, which Chrome blends with what is behind at a fractional position), the shadow in one place, 2 art pixels
 right of the art, and the art 1, 2, 3 and 4 whole art pixels above where it rests (`hold`: 3 in
 every shot). The art's height is read against its shadow, which stands on the ground 2 art pixels
 down-right of where the art rests. `--keep` saves one clip of each way the item was drawn

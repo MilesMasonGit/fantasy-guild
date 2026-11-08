@@ -112,11 +112,19 @@ describe('a dragged Token and floating loot cast the hard shadow', () => {
     it('floating loot: shadow 2 art px away (32 px art at 64 px: 4 px), on the ground while the art bobs (owner, 2026-11-08)', () => {
         const { container } = render(h(PixelArt, { src: ITEM_SRC, size: 64, hovering: true }));
         const sil = container.querySelector('[data-sprite-shadow]');
-        // Placed by `translate`, as the art is moved by a transform, so both land on the same pixels.
-        expect([sil.style.left, sil.style.top, sil.style.translate]).toEqual(['0px', '0px', '4px 4px']);
+        const art = container.querySelector('img:not([data-sprite-shadow])');
+        // Drawn as the art is (an <img>, the silhouette), placed by `translate` as the art is moved
+        // by a transform, so both round to the same screen pixels.
+        expect(sil.tagName).toBe('IMG');
+        expect(sil.getAttribute('src')).toContain('/_gen/sprite-fx/sil/assets/items/item_look.png');
+        expect([sil.style.width, sil.style.height, sil.style.translate, sil.style.imageRendering]).toEqual(['64px', '64px', '4px 4px', 'pixelated']);
+        expect(sil.className).toMatch(/\babsolute left-0 top-0\b/);
+        expect(sil.getAttribute('aria-hidden')).toBe('true');
         expect(sil.parentElement.className).not.toContain('gi-sprite-hover');
-        expect(container.querySelector('img').parentElement.className).toContain('gi-sprite-hover');
-        expect(container.querySelector('img').parentElement.contains(sil)).toBe(false);
+        expect(art.parentElement.className).toContain('gi-sprite-hover');
+        expect(art.parentElement.contains(sil)).toBe(false);
+        // Under the art: before it in the box.
+        expect(sil.compareDocumentPosition(art) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
     it('floating loot inside the mat: the ground shadow is whole screen pixels too, 2 art px at the art step', () => {
