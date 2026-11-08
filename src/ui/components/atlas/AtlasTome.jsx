@@ -274,5 +274,3 @@ export const TomeSpread = ({ left, right }) => {
         </div>
     );
 };
-
-export default AtlasTome;

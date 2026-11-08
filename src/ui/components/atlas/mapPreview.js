@@ -231,14 +231,6 @@ export function previewReady(plan) {
 const groundSheet = (id) => mutedSheet(sheetPath(id));
 const propSheet = (id, asDrawn) => (asDrawn ? drawnSheet(propSheetPath(id)) : mutedSheet(propSheetPath(id)));
 
-/** How long the last picture took, in ms, and how many have been built. */
-const builds = { last: null, count: 0 };
-
-/** **For the dev check.** The last picture's build time and the count so far. */
-export function previewBuilds() {
-    return { ...builds };
-}
-
 /**
  * The picture of a plan (`Atlas.preview` or a reroll) on `mat` (the mat now, in mat units) at
  * `fit`: RGBA bytes, `cols` × `rows`. The Region record it reads is the one `Atlas.settle` would
@@ -258,8 +250,6 @@ export function previewPicture(plan, fit, mat = plan.layout.mat) {
     }
     paintTokens(pass.data, pass.cols, pass.rows, draws);
     const t1 = performance.now();
-    builds.last = t1 - t0;
-    builds.count++;
     if (import.meta.env?.DEV || import.meta.env?.MODE === 'perf') {
         try { performance.measure('fg-perf:atlas-preview', { start: t0, end: t1 }); } catch { /* an old browser */ }
     }

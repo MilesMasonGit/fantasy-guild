@@ -151,9 +151,6 @@ async function worldPictures(view) {
     return out;
 }
 
-/** The time the last world picture took to build, for the QA panel and the checks. */
-export const lastPictureTimes = () => [...pictures.values()].map(p => p.ms);
-
 /** A canvas showing one of the kept pictures at the art scale, its Hall's middle at the map's origin. */
 const PictureCanvas = ({ picture, which, ...rest }) => {
     const ref = useRef(null);
@@ -502,5 +499,3 @@ export const WorldCellDemo = () => {
         </div>
     );
 };
-
-export default WorldMap;

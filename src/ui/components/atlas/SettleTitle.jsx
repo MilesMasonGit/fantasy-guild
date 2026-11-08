@@ -64,5 +64,3 @@ export const SettleTitle = ({ title, closing = false, still = false, onSkip, ban
         </motion.div>
     </div>
 );
-
-export default SettleTitle;

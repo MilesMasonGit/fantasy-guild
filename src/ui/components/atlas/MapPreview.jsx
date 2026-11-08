@@ -69,5 +69,3 @@ export const MapPreview = ({ plan, mat, fit }) => {
         />
     );
 };
-
-export default MapPreview;
