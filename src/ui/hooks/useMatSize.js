@@ -34,5 +34,3 @@ export function useMatSize() {
 
     return size;
 }
-
-export default useMatSize;

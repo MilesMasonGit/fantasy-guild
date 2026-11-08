@@ -72,7 +72,7 @@ const BANK_SHIFT_STYLE = Object.freeze({ '--hero-col': columnWidthCss(NOTIFICATI
  * commands (there is no engine context). An engine command announces its own change; the UI
  * publishes only UI events (`engineEvents.js`).
  */
-export const ReactRoot = () => {
+const ReactRoot = () => {
     const ui = useUIModals();
     const { onInspectToken, onClearInspect } = useInspectTokenHandlers(ui.inspect);
 

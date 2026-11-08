@@ -28,5 +28,3 @@ export function selectGuildInspectSelection({
     const def = getUpgradeDefFn(selectedUpgradeId);
     return def ? { type: 'guild_upgrade', id: def.id, upgradeDef: def, pane: 'guild' } : null;
 }
-
-export default selectGuildInspectSelection;

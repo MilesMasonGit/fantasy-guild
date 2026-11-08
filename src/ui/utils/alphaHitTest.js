@@ -232,29 +232,6 @@ export function setAlphaMaskForTests(src, mask) {
     alphaMaskCache.set(src, mask);
 }
 
-/**
- * Traverse stacked elements at (clientX, clientY) and return the topmost element
- * that is solid/opaque according to alpha hit-testing.
- *
- * @param {number} clientX Viewport X
- * @param {number} clientY Viewport Y
- * @param {string} [selector='[data-alpha-test]'] CSS selector for candidate elements
- * @param {number} [threshold=25] Alpha threshold
- * @returns {HTMLElement|null} The topmost opaque element or null
- */
-export function resolveTopOpaqueElement(clientX, clientY, selector = '[data-alpha-test]', threshold = 25) {
-    if (typeof document === 'undefined') return null;
-
-    const elements = document.elementsFromPoint(clientX, clientY);
-    for (const el of elements) {
-        const candidate = el.closest(selector);
-        if (candidate && isElementOpaqueAtPoint(candidate, clientX, clientY, threshold)) {
-            return candidate;
-        }
-    }
-    return null;
-}
-
 function getZIndex(el) {
     const z = el.style?.zIndex || (typeof window !== 'undefined' ? window.getComputedStyle(el).zIndex : 'auto');
     return z === 'auto' ? 0 : parseInt(z, 10) || 0;
