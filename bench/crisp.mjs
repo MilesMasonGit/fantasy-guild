@@ -30,10 +30,9 @@
 // Chrome's composited layers are counted beside it: an animation on the compositor splits every
 // sprite drawn after it onto "overlap" layers, and Chrome draws the board's sprites resampled.
 // Then floor loot itself: an item is thrown and watched through a whole bob (`bob`), and again with
-// reduced motion (`hold`). Every shot must draw the art exactly to its picture (one shape) and the
-// hard shadow exactly to its silhouette (inner pixels: a sprite's outer edge at a fractional position
-// is blended), the shadow in one place on the ground, 2 art pixels right
-// of the art, and the art 1 to 4 whole art pixels above where it rests (held 3 with reduced motion).
+// reduced motion (`hold`). The art must keep one shape (the same pixels off its picture in every
+// shot), the shadow stay in one place, 2 art pixels right of the art, and the art stand 1 to 4
+// whole art pixels above where it rests (held 3 with reduced motion).
 // Exit codes: 0 every still Token exact and unchanged, the loot as it should float · 1 a case changed
 // them, one is soft, or the loot is not · 3 the check failed.
 // ⚠️ Pixels compare only within one run (one machine, one Chrome); nothing is kept between runs.
@@ -360,7 +359,7 @@ const THROW_FOR_BOB = `(async () => {
     return { key: pick.key, sx: spot.sx, sy: spot.sy, bare: spot.bare };
 })()`;
 
-/** The thrown item's box, its art and its shadow, tagged so a later read finds the same one. */
+/** The thrown item (its picture, nearest the spot): where its box rests, its art and its shadow's picture. */
 const FIND_THROWN = (thrown) => `(() => {
     const want = ${JSON.stringify(thrown)};
     const artOf = (b) => b.querySelector('img:not([data-sprite-shadow])');
@@ -385,24 +384,18 @@ async function screenshotClip(page, clip) {
 }
 
 /**
- * The pixels of a sprite drawn `size` px across from picture `pic` that its texels paint whatever
- * sub-pixel phase it is drawn at: those whose texel, and the texels a pixel either side would show,
- * are opaque. Its outer edge is left out: drawn at a fractional position, Chrome blends it with
- * what is behind. Box pixels, each with the colour the picture puts there.
+ * The box pixels a sprite drawn `size` px across from picture `pic` paints with an opaque texel, each
+ * with that texel's colour, left out the box's outer rows and columns: drawn at a fractional
+ * position, Chrome blends the box's edge with what is behind. (Inside the box the sampling is
+ * nearest-neighbour: an opaque texel next to a clear one leaves a hard edge.)
  */
-function interiorOf(pic, size) {
+function insideOf(pic, size) {
     const per = size / pic.w;
-    const at = (px, py) => {
-        if (px < 0 || py < 0 || px >= size || py >= size) return -1;
-        const q = (Math.floor((py + 0.5) / per) * pic.w + Math.floor((px + 0.5) / per)) * 4;
-        return pic.data[q + 3] === 255 ? q : -1;
-    };
     const out = [];
-    for (let py = 0; py < size; py++) {
-        for (let px = 0; px < size; px++) {
-            const q = at(px, py);
-            if (q < 0 || at(px - 1, py) < 0 || at(px + 1, py) < 0 || at(px, py - 1) < 0 || at(px, py + 1) < 0) continue;
-            out.push({ px, py, rgb: (pic.data[q] << 16) | (pic.data[q + 1] << 8) | pic.data[q + 2] });
+    for (let py = 1; py < size - 1; py++) {
+        for (let px = 1; px < size - 1; px++) {
+            const q = (Math.floor((py + 0.5) / per) * pic.w + Math.floor((px + 0.5) / per)) * 4;
+            if (pic.data[q + 3] === 255) out.push({ px, py, rgb: (pic.data[q] << 16) | (pic.data[q + 1] << 8) | pic.data[q + 2] });
         }
     }
     return out;
@@ -415,39 +408,38 @@ const rgbAt = (clip, x, y) => {
 };
 
 /**
- * Where the art is on a clip, and how exactly: of the candidate whole-pixel corners, the one where
- * the most of its interior pixels show exactly their texel's colour. With a whole number of screen
- * pixels a texel, every sub-pixel phase Chrome might draw at is one of these corners; art drawn a
- * pixel short or long (pinched) matches at none.
+ * Where the art is on a clip: of the candidate whole-pixel corners, the one where the most of its
+ * pixels show exactly their texel's colour. With a whole number of screen pixels a texel, every
+ * sub-pixel phase is one of these corners. `share` is how exactly it is drawn there (art drawn a
+ * row short, pinched, matches at no corner), `misses` which of its pixels are not: its shape as
+ * drawn, the same in every shot when only whole pixels move it.
  */
-function findArt(clip, inner, xs, ys) {
+function findArt(clip, inside, xs, ys) {
     let best = { share: -1, x: 0, y: 0 };
     for (const y of ys) {
         for (const x of xs) {
             let exact = 0;
-            for (const t of inner) if (rgbAt(clip, x + t.px, y + t.py) === t.rgb) exact++;
-            const share = inner.length ? exact / inner.length : 0;
+            for (const t of inside) if (rgbAt(clip, x + t.px, y + t.py) === t.rgb) exact++;
+            const share = inside.length ? exact / inside.length : 0;
             if (share > best.share) best = { share, x, y };
         }
     }
+    best.misses = inside.filter(t => rgbAt(clip, best.x + t.px, best.y + t.py) !== t.rgb).map(t => `${t.px},${t.py}`).join(' ');
     return best;
 }
 
 /**
- * Where the hard shadow (a solid black silhouette under the art) is on a clip: of the candidate
- * corners, the one where the most of its interior pixels clear of the art (and of the art's blended
- * edge) are black.
+ * Where the hard shadow (a solid black silhouette, under the art) is on a clip: of the candidate
+ * corners, the one where the most of its pixels the art leaves uncovered are black.
  */
-function findShadow(clip, silInner, artMask, art, xs, ys) {
-    const nearArt = (cx, cy) => artMask.has(`${cx - art.x},${cy - art.y}`) || artMask.has(`${cx - art.x - 1},${cy - art.y}`)
-        || artMask.has(`${cx - art.x + 1},${cy - art.y}`) || artMask.has(`${cx - art.x},${cy - art.y - 1}`) || artMask.has(`${cx - art.x},${cy - art.y + 1}`);
+function findShadow(clip, silInside, artMask, art, xs, ys) {
     let best = { share: -1, x: 0, y: 0 };
     for (const y of ys) {
         for (const x of xs) {
             let total = 0, black = 0;
-            for (const t of silInner) {
+            for (const t of silInside) {
                 const cx = x + t.px, cy = y + t.py;
-                if (nearArt(cx, cy)) continue;
+                if (artMask.has(`${cx - art.x},${cy - art.y}`)) continue;
                 total++;
                 if (rgbAt(clip, cx, cy) === 0) black++;
             }
@@ -458,7 +450,7 @@ function findShadow(clip, silInner, artMask, art, xs, ys) {
     return best;
 }
 
-/** Every box pixel a sprite's opaque texels paint (its edge too), as "x,y" keys. */
+/** Every box pixel a sprite's opaque texels paint, as "x,y" keys. */
 function maskOf(pic, size) {
     const per = size / pic.w;
     const out = new Set();
@@ -490,17 +482,18 @@ async function watchLoot(page, found, { art, ms, keepAs = null }) {
     const until = Date.now() + ms;
     while (Date.now() < until) shots.push(await screenshotClip(page, clip));
     const kept = new Set();
-    const artInner = interiorOf(pic, size);
+    const artInside = insideOf(pic, size);
     const artMask = maskOf(pic, size);
-    const silInner = sil ? interiorOf(sil, size) : null;
+    const silInside = sil ? insideOf(sil, size) : null;
     return shots.map((shot) => {
-        const a = findArt(shot, artInner, xs, ys);
-        const s = sil ? findShadow(shot, silInner, artMask, a, range(a.x - 2, a.x + 4 * art + 2), range(a.y - 2, a.y + 8 * art + 2)) : null;
+        const a = findArt(shot, artInside, xs, ys);
+        const s = sil ? findShadow(shot, silInside, artMask, a, range(a.x - 2, a.x + 4 * art + 2), range(a.y - 2, a.y + 8 * art + 2)) : null;
         // One picture of each way it was drawn.
         const seenAs = `${a.x}_${a.y}_${s ? `${s.x}_${s.y}` : 'none'}`;
         if (keepAs && !kept.has(seenAs)) { kept.add(seenAs); fs.writeFileSync(`${keepAs}-${kept.size}_art${a.x}_${a.y}_shadow${s ? `${s.x}_${s.y}` : 'none'}.png`, Buffer.from(shot.png, 'base64')); }
         return {
             artShare: a.share,
+            artMisses: a.misses,
             artAt: [a.x, a.y],
             shadowShare: s ? s.share : null,
             shadowAt: s ? [s.x, s.y] : null,
@@ -512,20 +505,23 @@ async function watchLoot(page, found, { art, ms, keepAs = null }) {
 
 /**
  * The verdict on a watched item. `bob`: it rises and sinks 1 to 4 whole art pixels (all four
- * reached), keeps one shape, and its shadow stays in one place, 2 art pixels right of the art.
- * `hold` (reduced motion): one place, raised `hold` art pixels, the same.
+ * reached), keeps one shape (the same pixels of its art drawn off its picture in every shot: where
+ * an item rests can leave a pixel off at every height, a bob of part pixels moved it from height to
+ * height), and its shadow stays in one place, 2 art pixels right of the art and drawn as exactly as
+ * the art. `hold` (reduced motion): one place, raised `hold` art pixels, the same.
  */
 function judgeLoot(seen, { art, hold = null }) {
     const fails = [];
+    const shapes = new Set(seen.map(s => s.artMisses));
+    if (shapes.size > 1) fails.push(`the art drawn in ${shapes.size} shapes`);
     const minArt = Math.min(...seen.map(s => s.artShare));
-    if (minArt < EXACT) fails.push(`the art drawn exactly in ${seen.filter(s => s.artShare >= EXACT).length} of ${seen.length} shots (lowest ${minArt.toFixed(2)})`);
     if (seen.some(s => s.shadowShare == null)) {
         fails.push('no shadow drawn');
     } else {
-        const minShadow = Math.min(...seen.map(s => s.shadowShare));
-        if (minShadow < EXACT) fails.push(`the shadow drawn exactly in ${seen.filter(s => s.shadowShare >= EXACT).length} of ${seen.length} shots (lowest ${minShadow.toFixed(2)})`);
         const places = new Set(seen.map(s => s.shadowAt.join(',')));
         if (places.size > 1) fails.push(`the shadow moved (${places.size} places)`);
+        const minShadow = Math.min(...seen.map(s => s.shadowShare));
+        if (minShadow < Math.min(EXACT, minArt)) fails.push(`the shadow drawn less exactly than the art (${minShadow.toFixed(2)} against ${minArt.toFixed(2)})`);
         if (seen.some(s => s.gap[0] !== 2 * art || !Number.isInteger(s.lift))) fails.push('the shadow is not 2 whole art pixels right of the art, or the art not whole art pixels above it');
         const lifts = [...new Set(seen.map(s => s.lift))].sort((a, b) => a - b);
         if (hold != null) {
@@ -536,7 +532,7 @@ function judgeLoot(seen, { art, hold = null }) {
     }
     const lifts = [...new Set(seen.map(s => s.lift))].sort((a, b) => a - b);
     const gaps = [...new Set(seen.map(s => (s.gap ? s.gap.join('/') : '-')))];
-    const line = `${seen.length} shots; art exact ${seen.filter(s => s.artShare >= EXACT).length}/${seen.length}, shadow exact ${seen.filter(s => s.shadowShare >= EXACT).length}/${seen.length}; shadow places ${new Set(seen.map(s => (s.shadowAt ? s.shadowAt.join(',') : '-'))).size}; lifts ${lifts.map(l => (l == null ? '-' : Number.isInteger(l) ? l : l.toFixed(2))).join(', ')} art px; shadow gap right/down ${gaps.join(' ')} px`;
+    const line = `${seen.length} shots; art in ${shapes.size} shape(s), exact to its picture ${minArt.toFixed(2)} at worst; shadow in ${new Set(seen.map(s => (s.shadowAt ? s.shadowAt.join(',') : '-'))).size} place(s), exact ${seen.some(s => s.shadowShare == null) ? '-' : Math.min(...seen.map(s => s.shadowShare)).toFixed(2)} at worst; lifts ${lifts.map(l => (l == null ? '-' : Number.isInteger(l) ? l : l.toFixed(2))).join(', ')} art px; shadow gap right/down ${gaps.join(' ')} px`;
     return { fails, line };
 }
 

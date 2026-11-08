@@ -643,13 +643,17 @@ exact. Not a timing tool: one run is ~1 min and compares pixels only within itse
 **Floor loot itself** (T-393: items pinched during their bob, their shadow drifted): an item with a
 hard shadow is thrown on a spot nothing drawn over loot reaches (work plates, fights, bubbles, other
 loot), on bare ground where there is any, and screenshotted for 2.6 s, a whole bob (`bob`); then
-another with reduced motion emulated (`hold`). In every shot the art must be drawn exactly to its
-picture and the shadow exactly to its silhouette (one shape: their inner pixels, the outer edge
-left out, which Chrome blends with what is behind at a fractional position), the shadow in one place, 2 art pixels
-right of the art, and the art 1, 2, 3 and 4 whole art pixels above where it rests (`hold`: 3 in
-every shot). The art's height is read against its shadow, which stands on the ground 2 art pixels
-down-right of where the art rests. `--keep` saves one clip of each way the item was drawn
-(`bob-<n>_art<x>_<y>_shadow<x>_<y>.png`, in clip pixels).
+another with reduced motion emulated (`hold`). Each shot finds the art at the whole-pixel corner
+where most of its pixels show their texel (with whole screen pixels a texel, any sub-pixel phase is
+one of these corners), and the shadow at the corner where most of its uncovered pixels are black.
+It passes when the art keeps **one shape** (the same pixels off its picture in every shot), the
+shadow stays in **one place**, 2 art pixels right of the art and drawn as exactly as the art, and the
+art stands 1, 2, 3 and 4 **whole art pixels** above where it rests (`hold`: 3 in every shot); the
+height is read against the shadow, which stands on the ground 2 art pixels down-right of where the
+art rests. How exactly the art matches its picture is printed but not judged: Chrome draws a sprite
+whose box lands on a fractional pixel a row or column off at some resting places, at every height
+alike (a box's outer row is left out: Chrome blends it with what is behind). `--keep` saves one clip
+of each way the item was drawn (`bob-<n>_art<x>_<y>_shadow<x>_<y>.png`, in clip pixels).
 
 The mat's fit follows the window: `--window=WxH`. On S2 (2026-11-08): 1200x770 is fit 0.55
 (art 1×), 1600x1000 0.76, 1920x1080 0.83, 2060x1266 1.00 (art 2×).
