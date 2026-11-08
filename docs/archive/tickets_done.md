@@ -242,3 +242,4 @@ T-205 — Chrome's CPU throttle drifts — — — 2026-11-03
 T-206 — Stale bench Chrome profiles and orphan processes — — — 2026-11-02
 T-208 — Flaky tests under full-suite load — 33e87e62 — 2026-11-06
 T-210 — Remove the description bridge — 0862280d — 2026-11-06
+T-341 — Loot collected while the page is hidden books no flight (its count shows at once); a batch of flights reads the board box once — 4581ad49 — 2026-11-07

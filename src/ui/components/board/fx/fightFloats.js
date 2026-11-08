@@ -5,6 +5,7 @@ import { STRIKE_DELAY_MS } from '../hitAnimations.js';
 import { tokenSizeFor, TOKEN_SURFACE } from '../../base/TokenSprite.jsx';
 import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
 import { playAt, fxArtUnit } from './matFx.js';
+import { isDrawingPaused } from '../frameClock.js';
 import { startFightWatch, subscribeMoments, MOMENT, statusIcon } from '../../combat/fightWatch.js';
 import { glyphSrc, GLYPH_COLOUR } from '../../combat/combatGlyphs.js';
 import { t } from '../../../../i18n/index.js';
@@ -137,7 +138,8 @@ export function playFloat(m, now = performance.now()) {
 export function watchFightFloats() {
     const stopWatch = startFightWatch();
     const off = subscribeMoments((m) => {
-        if (isDrawn('matFx')) playFloat(m);
+        // ⚠️ None while drawing is paused: each would stay on the page until the window came back.
+        if (isDrawn('matFx') && !isDrawingPaused()) playFloat(m);
     });
     return () => {
         off();

@@ -14,6 +14,7 @@ import { playTokenFx } from './fx/tokenFxPlay.js';
 import { SPARK_MS } from './fx/matFx.js';
 import { startStrikeChips } from './fx/strikeChips.js';
 import { loopPoses } from './fx/clockPoses.js';
+import { isDrawingPaused } from './frameClock.js';
 
 /** The engine's one-per-attack combat event (`CombatAttackProcessor`). */
 export const COMBAT_ATTACK_EVENT = ENGINE_EVENTS.COMBAT_HERO_ATTACK;
@@ -91,8 +92,10 @@ export function TokenHitArt({ instanceId, skill, heroId = null, active = false, 
         for (const a of h.copies) a?.cancel();
         lastHit.current = null;
     };
+    // ⚠️ The three one-shot handlers draw nothing while drawing is paused (a hidden window): each
+    // effect would stay on the page until the window came back, then all end at once.
     useTokenEvent(COMBAT_ATTACK_EVENT, onAttack ? instanceId : null, (p) => {
-        if (!p?.hit) return;
+        if (!p?.hit || isDrawingPaused()) return;
         const el = ref.current;
         if (!el || typeof el.animate !== 'function') return;
         stopHit();
@@ -116,11 +119,11 @@ export function TokenHitArt({ instanceId, skill, heroId = null, active = false, 
     React.useEffect(() => stopHit, []);
 
     useTokenEvent(BOARD_EVENTS.CYCLE_COMPLETE, onAttack ? null : instanceId, (p) => {
-        if (p?.failed || !p?.heroId || !isDrawn('tokenFx')) return;
+        if (p?.failed || !p?.heroId || !isDrawn('tokenFx') || isDrawingPaused()) return;
         ringBlink(ref.current, 'hover', { frames: CYCLE_BLINK_FRAMES });
     });
     useTokenEvent(BOARD_EVENTS.EFFECT_FIRED, instanceId, (p) => {
-        if (!isDrawn('tokenFx')) return;
+        if (!isDrawn('tokenFx') || isDrawingPaused()) return;
         const echo = () => echoRing(ref.current, 'hover', { unit: unitRef.current });
         // A neighbour's rule: the echo waits for its spark to land (`matFx.spark`).
         if (p?.fromTokenId && p.fromTokenId !== instanceId) later(SPARK_MS, echo);

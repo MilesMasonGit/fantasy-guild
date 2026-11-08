@@ -5,6 +5,13 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **A hidden page stops piling up effects** (no change while you watch): with the game in a
+  background tab, the numbers, sparks, blinks, hit flashes and knockout puffs the fights and
+  Tokens would have shown are no longer made and left waiting, so nothing builds up in memory and
+  nothing bursts out when you come back. Any effect still ends on time even if its animation
+  never reports done. Loot collected while the page is hidden shows on its stub at once instead
+  of waiting to fly, and the flights booked in one frame measure the board once between them.
+
 - **Dev panel: the "Lap star in the sky" button is gone** (dev only). It installed a hand-copied
   Swift Laps star for testing before the owner synced the real one; the tests now read the synced
   star from the data, and the copy is deleted.
