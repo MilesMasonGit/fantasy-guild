@@ -646,14 +646,25 @@ async function main() {
         // Floor loot itself, across its bob and held by reduced motion (after the rest is judged:
         // what is thrown stays on the floor).
         const lootRows = [];
+        // ⚠️ At some resting places Chrome draws an item a row or column off its picture, at every
+        // height alike (a sprite at a fractional position; not the bob's doing). There the art is
+        // found a pixel off at one corner or the other and its gap to the shadow reads a pixel out, so
+        // an item is thrown again elsewhere, up to four times, until one rests drawn exactly.
         const watchThrown = async (id, what, judge) => {
-            const thrown = await page.evaluate(THROW_FOR_BOB);
-            if (typeof thrown === 'string') { lootRows.push({ id, what, fails: [thrown], line: '' }); return; }
-            await sleep(1200);   // the hop out of its Token is over
-            const found = await page.evaluate(FIND_THROWN(thrown));
-            if (!found) { lootRows.push({ id, what, fails: ['the thrown item was not found on the floor'], line: '' }); return; }
+            let found = null;
+            let tries = 0;
+            for (; tries < 4; tries++) {
+                const thrown = await page.evaluate(THROW_FOR_BOB);
+                if (typeof thrown === 'string') { lootRows.push({ id, what, fails: [thrown], line: '' }); return; }
+                await sleep(1200);   // the hop out of its Token is over
+                found = await page.evaluate(FIND_THROWN(thrown));
+                if (!found) { lootRows.push({ id, what, fails: ['the thrown item was not found on the floor'], line: '' }); return; }
+                const first = await watchLoot(page, found, { art: artPx, ms: 1 });
+                if (first[0].artShare >= EXACT) break;
+            }
             const seen = await watchLoot(page, found, { art: artPx, ms: 2600, keepAs: args.keep && path.join(args.keep, id) });
-            lootRows.push({ id, what, ...judgeLoot(seen, { art: artPx, ...judge }) });
+            const verdict = judgeLoot(seen, { art: artPx, ...judge });
+            lootRows.push({ id, what, ...verdict, line: `${verdict.line}${tries ? `; thrown ${Math.min(tries, 3) + 1} times for a resting place drawn exactly` : ''}` });
             if (args.verbose) console.log(id, JSON.stringify(seen));
         };
         await watchThrown('bob', 'an item on the floor bobbing: one shape, 1 to 4 whole art px, its shadow still', {});

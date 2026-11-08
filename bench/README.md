@@ -653,7 +653,9 @@ art stands 1, 2, 3 and 4 **whole art pixels** above where it rests (`hold`: 3 in
 height is read against the shadow, which stands on the ground 2 art pixels down-right of where the
 art rests. How exactly the art matches its picture is printed but not judged: Chrome draws a sprite
 whose box lands on a fractional pixel a row or column off at some resting places, at every height
-alike (a box's outer row is left out: Chrome blends it with what is behind). `--keep` saves one clip
+alike (a box's outer row is left out: Chrome blends it with what is behind). There the art is found a
+pixel off and its gap to the shadow reads a pixel out, so the item is thrown again elsewhere, up to
+four times, until one rests drawn exactly (the line says how many throws it took). `--keep` saves one clip
 of each way the item was drawn (`bob-<n>_art<x>_<y>_shadow<x>_<y>.png`, in clip pixels).
 
 The mat's fit follows the window: `--window=WxH`. On S2 (2026-11-08): 1200x770 is fit 0.55
