@@ -14,13 +14,13 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | 510 F1: the CMS refuses a Sync from a stale tab or off `main` (T-339) | builder | `fix/cms-sync-guard` (`f1`) | building | Sat | |
-| 510 F2: the luck-dependent farming test (T-340) | builder-lite | `fix/farming-seed-test` (`f2`) | building | Sat | |
+| 510 F2: the luck-dependent farming test (T-340) | builder-lite | `fix/farming-seed-test` (`f2`) | **merged** 83b884a4 (test only; file green under both seeds, full suite green under seed b) | Sat | Sat |
 | 510 F3: a hidden page stops piling up effects (T-333, T-341) | builder | `fix/hidden-fx` (`f3`) | building | Sat | |
 | 510 F4: no ghost Token after merging two on the mat (T-342) | builder | `fix/zero-charge-ghost` (`f4`) | building | Sat | |
 | 510 F5: hero gear not re-read every tick (T-078) | engineer | | queued (after 520 M1, or with its own before profile) | | |
 | 510 F6: one poll clock that pauses (T-343) | builder | | queued (after F3) | | |
 | 510 F7: a minimised desktop app goes quiet (T-344) | builder | | queued (after 520 M7) | | |
-| 530 X1: kills get their style's XP bonuses (engine) | builder | | queued | | |
+| 530 X1: kills get their style XP bonuses (engine) | builder | `feat/combat-xp-bonus` (`f2`) | building | Sat | |
 | 530 X2: four combat XP stars (content pack) | content agent | `planning-content` | owner starts `/content` | | |
 | 520 M0: bench instruments | builder-lite | | queued | | |
 | 520 M1 to M9: measurements | director | | queued (bench windows) | | |
