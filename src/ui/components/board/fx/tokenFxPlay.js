@@ -1,6 +1,7 @@
 import { HIT_ANIMATIONS, buildHitKeyframes } from '../hitAnimations.js';
 import { flashTint, afterimages, ringBlink, echoRing } from './tokenFx.js';
 import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
+import { animateFx } from './oneShot.js';
 
 /** A blink: shown and hidden, one effect frame each, three times. */
 const BLINK = Object.freeze(['visible', 'hidden', 'visible', 'hidden', 'visible', 'hidden']);
@@ -23,7 +24,7 @@ export function playTokenFx(wrapper, payload, { unit = 1 } = {}) {
             const dir = payload.dir === -1 ? -1 : 1;
             flashTint(wrapper, 'white', { frames: 2 });
             const keyframes = buildHitKeyframes(anim, { dir, unit });
-            if (keyframes.length) wrapper.animate(keyframes, { duration: anim.ms });
+            if (keyframes.length) animateFx(wrapper, keyframes, { duration: anim.ms });
             afterimages(wrapper, anim.poses.map(q => ({ ms: q.ms, x: (q.x || 0) * dir, y: q.y || 0 })), { unit });
             break;
         }
@@ -38,11 +39,11 @@ export function playTokenFx(wrapper, payload, { unit = 1 } = {}) {
             break;
         case 'blink': {
             const { keyframes, duration } = heldPoses(BLINK.map(v => ({ ms: FX_FRAME_MS, visibility: v })), { rest: { visibility: 'visible' } });
-            wrapper.animate(keyframes, { duration });
+            animateFx(wrapper, keyframes, { duration });
             break;
         }
         case 'hide':
-            wrapper.animate([{ visibility: 'hidden' }, { visibility: 'hidden' }], { duration: payload.ms || 600 });
+            animateFx(wrapper, [{ visibility: 'hidden' }, { visibility: 'hidden' }], { duration: payload.ms || 600 });
             break;
         default:
             break;

@@ -15,6 +15,7 @@ import { SPARK_MS } from './fx/matFx.js';
 import { startStrikeChips } from './fx/strikeChips.js';
 import { loopPoses } from './fx/clockPoses.js';
 import { isDrawingPaused } from './frameClock.js';
+import { animateFx } from './fx/oneShot.js';
 
 /** The engine's one-per-attack combat event (`CombatAttackProcessor`). */
 export const COMBAT_ATTACK_EVENT = ENGINE_EVENTS.COMBAT_HERO_ATTACK;
@@ -105,7 +106,7 @@ export function TokenHitArt({ instanceId, skill, heroId = null, active = false, 
         const u = unitRef.current;
         const keyframes = buildHitKeyframes(anim, { dir, reducedMotion: prefersReducedMotion(), unit: u });
         const hit = { knock: null, cancelLater: null, copies: [] };
-        if (keyframes.length) hit.knock = el.animate(keyframes, { duration: anim.ms, delay: STRIKE_DELAY_MS });
+        if (keyframes.length) hit.knock = animateFx(el, keyframes, { duration: anim.ms, delay: STRIKE_DELAY_MS });
         // The copies read the art as it is at the strike (an enemy's sheet frame), so they are made then.
         hit.cancelLater = later(STRIKE_DELAY_MS, () => {
             if (!isDrawn('tokenFx')) return;

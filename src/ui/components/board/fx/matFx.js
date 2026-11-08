@@ -17,7 +17,7 @@ import { clearOfFight } from '../healthBar.js';
 import * as BoardCombat from '../../../../systems/board/BoardCombat.js';
 import * as HeroManager from '../../../../systems/hero/HeroManager.js';
 import { isDrawingPaused } from '../frameClock.js';
-import { whenOver } from './oneShot.js';
+import { animateFx, whenOver } from './oneShot.js';
 
 /**
  * The mat's effects that stand on the mat rather than on one Token's art: numbers rising off a
@@ -55,7 +55,11 @@ export function playAt(el, x, y, keyframes, duration, delay = 0) {
     // after it on layers of their own, drawn soft (tailwind.css, at `.gi-token-land`).
     el.style.willChange = 'contents';
     host.appendChild(el);
-    const anim = el.animate(keyframes, { duration, delay, fill: 'none' });
+    const anim = animateFx(el, keyframes, { duration, delay, fill: 'none' });
+    if (!anim) {
+        el.remove();
+        return null;
+    }
     whenOver(anim, delay + duration, () => el.remove());
     return anim;
 }
@@ -181,7 +185,7 @@ export function knockoutGhost(instanceId) {
     const drop = KNOCKOUT.drop.map(y => ({ ms: FX_FRAME_MS, y }));
     const fall = heldPoses(drop, { unit });
     if (!playAt(box, t.x - sprite.size / 2, t.y - sprite.size / 2, fall.keyframes, fall.duration)) return false;
-    for (const [copy, keyframes, duration] of parts) copy.animate(keyframes, { duration, fill: 'none' });
+    for (const [copy, keyframes, duration] of parts) animateFx(copy, keyframes, { duration, fill: 'none' });
     puff(t.x, t.y + sprite.size / 2 - 2 * unit, { delay: 6 * FX_FRAME_MS });
     return true;
 }
@@ -216,10 +220,12 @@ export function heroFlash(heroId, tint = 'green', { frames = 2 } = {}) {
     copy.style.pointerEvents = 'none';
     copy.style.visibility = 'hidden';
     holder.parentElement.appendChild(copy);
-    const anim = copy.animate([{ visibility: 'visible' }, { visibility: 'visible' }], { duration: frames * FX_FRAME_MS, fill: 'none' });
-    const done = () => copy.remove();
-    anim.onfinish = done;
-    anim.oncancel = done;
+    const anim = animateFx(copy, [{ visibility: 'visible' }, { visibility: 'visible' }], { duration: frames * FX_FRAME_MS, fill: 'none' });
+    if (!anim) {
+        copy.remove();
+        return false;
+    }
+    whenOver(anim, frames * FX_FRAME_MS, () => copy.remove());
     return true;
 }
 
@@ -367,16 +373,14 @@ export function usedBubble(heroId, itemId, text) {
         { ms: USED_BUBBLE_MS - 4 * FX_FRAME_MS, y: -2 }
     ];
     const { keyframes, duration } = heldPoses(shown(rise), { unit, rest: { visibility: 'hidden' } });
-    const anim = typeof el.animate === 'function' ? el.animate(keyframes, { duration, fill: 'none' }) : null;
+    const anim = animateFx(el, keyframes, { duration, fill: 'none' });
     const entry = { el, anim };
     column.items.push(entry);
     if (!anim) {
         dropUsed(heroId, column, entry);
         return null;
     }
-    const done = () => { if (column.items.includes(entry)) dropUsed(heroId, column, entry); };
-    anim.onfinish = done;
-    anim.oncancel = done;
+    whenOver(anim, duration, () => { if (column.items.includes(entry)) dropUsed(heroId, column, entry); });
     return anim;
 }
 

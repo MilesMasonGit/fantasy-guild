@@ -1,3 +1,5 @@
+import { animateFx } from './oneShot.js';
+
 /**
  * Motion for pixel art: poses in whole art pixels, each held for its time, then a jump to the next.
  * ⚠️ `steps(1, end)` on every keyframe is the point: a smooth curve between whole-pixel poses
@@ -48,13 +50,13 @@ export function heldPoses(poses, { unit = 1, rest = null } = {}) {
 
 /**
  * Play held poses on an element. One-shot; nothing is held after the end.
- * @returns {Animation|null} null where the browser cannot animate
+ * @returns {Animation|null} null where the browser cannot animate or drawing is paused (`animateFx`)
  */
 export function playPoses(el, poses, { unit = 1, rest = null, delay = 0, fill = 'none' } = {}) {
     if (!el || typeof el.animate !== 'function') return null;
     const { keyframes, duration } = heldPoses(poses, { unit, rest });
     if (!duration) return null;
-    return el.animate(keyframes, { duration, delay, fill });
+    return animateFx(el, keyframes, { duration, delay, fill });
 }
 
 /**

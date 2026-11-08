@@ -3,6 +3,7 @@ import { ENGINE_EVENTS, UI_EVENTS } from '../../../../systems/core/engineEvents.
 import * as BoardState from '../../../../systems/board/BoardState.js';
 import { getTokenType } from '../../../../config/registries/tokenRegistry.js';
 import { heldPoses, prefersReducedMotion } from './pixelSteps.js';
+import { animateFx } from './oneShot.js';
 
 /**
  * Region settle (effect 18): arriving in a Region, the Guild Hall lands first, then the Region's
@@ -84,10 +85,10 @@ export function playSettle(boxes, wait, { unit = 1 } = {}) {
     const { keyframes, duration } = heldPoses(poses, { unit, rest: { y: 0, visibility: 'visible' } });
     const out = [];
     for (const el of boxes) {
-        if (!el || typeof el.animate !== 'function') continue;
+        const anim = animateFx(el, keyframes, { duration, composite: 'add' });
+        if (!anim) continue;
         const before = el.style.willChange;
         el.style.willChange = 'contents';
-        const anim = el.animate(keyframes, { duration, composite: 'add' });
         const restore = () => { el.style.willChange = before; };
         anim.onfinish = restore;
         anim.oncancel = restore;

@@ -1,7 +1,7 @@
 import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
 import { spriteOf, makeCopy } from './spriteCopy.js';
 import { onDue, isDrawingPaused } from '../frameClock.js';
-import { whenOver } from './oneShot.js';
+import { animateFx, whenOver } from './oneShot.js';
 import { outlineLayer } from '../../../utils/spriteFx.js';
 import { TRAIL_TINT } from '../../../../config/spriteFx.js';
 
@@ -21,12 +21,12 @@ export function playIn(wrapper, el, keyframes, timing, { under = false } = {}) {
     if (!wrapper || !el) return null;
     if (under) wrapper.insertBefore(el, wrapper.firstChild);
     else wrapper.appendChild(el);
-    if (typeof el.animate !== 'function') {
+    const t = { fill: 'none', ...timing };
+    const anim = animateFx(el, keyframes, t);
+    if (!anim) {
         el.remove();
         return null;
     }
-    const t = { fill: 'none', ...timing };
-    const anim = el.animate(keyframes, t);
     whenOver(anim, (t.delay || 0) + (Number(t.duration) || 0) * (t.iterations ?? 1), () => el.remove());
     return anim;
 }
