@@ -157,18 +157,18 @@ const CH = Object.freeze({
 // Noise
 
 /** A 32-bit hash of two integers and a salt (lowbias32's finaliser). */
-function hash(x, y, salt) {
+export function hash32(x, y, salt) {
     let h = Math.imul(x + 0x632be5ab, 0x9e3779b1) ^ Math.imul(y + 0x85157af5, 0x85ebca77) ^ salt;
     h = Math.imul(h ^ (h >>> 16), 0x7feb352d);
     h = Math.imul(h ^ (h >>> 15), 0x846ca68b);
     return (h ^ (h >>> 16)) >>> 0;
 }
 
-const corner = (gx, gy, salt) => (hash(gx, gy, salt) >>> 8) / 16777216;
+const corner = (gx, gy, salt) => (hash32(gx, gy, salt) >>> 8) / 16777216;
 const smooth = (t) => t * t * (3 - 2 * t);
 
 /** A layer's salt from a record's. */
-const layerSalt = (salt, channel) => hash(salt | 0, channel, 0x3c6ef372);
+const layerSalt = (salt, channel) => hash32(salt | 0, channel, 0x3c6ef372);
 
 /**
  * Smooth value noise in [0, 1) on square cells of `cell` units, its corners hashed. The corners
@@ -1147,7 +1147,7 @@ const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
  */
 export function riverVariety(salt) {
     const s = layerSalt(salt >>> 0, CH.VARIETY);
-    const at = (k, [lo, hi]) => lo + (hi - lo) * (hash(k, 0, s) / 4294967296);
+    const at = (k, [lo, hi]) => lo + (hi - lo) * (hash32(k, 0, s) / 4294967296);
     return { wind: at(1, RIVER_VARIETY.wind), wide: at(2, RIVER_VARIETY.wide), reach: at(3, RIVER_VARIETY.reach) };
 }
 
@@ -1369,8 +1369,8 @@ class Maker {
      */
     course(points, hw0, hw1, { avoid = null, meets = [], calm = null } = {}) {
         const M = MEANDER;
-        const salt = hash(this.salt | 0, CH.MEANDER * 64 + this.courses++, 0x2545f491);
-        const roll = (a, b) => hash(a, b, salt) / 4294967296;
+        const salt = hash32(this.salt | 0, CH.MEANDER * 64 + this.courses++, 0x2545f491);
+        const roll = (a, b) => hash32(a, b, salt) / 4294967296;
         const along = (s, row, cell) => noiseAt(s, row, cell, salt);
         const { wind, wide } = this.variety;
         const line = resample(points, M.spacing);
@@ -1819,18 +1819,25 @@ class Maker {
     }
 }
 
-/** A direction from `random`, without trigonometry: a point in the square kept if it lies in the ring. */
-function directionOf(random) {
+/**
+ * A random direction by rejection, no trigonometry: a point in the square kept if it lies in the
+ * ring. Returns the raw point and its length, `[x, y, length]`, so each caller divides and rounds
+ * in its own shape; `[1, 0, 1]` after 32 misses. Draws two numbers from `random` per try.
+ */
+export function directionSample(random) {
     for (let k = 0; k < 32; k++) {
         const x = random() * 2 - 1;
         const y = random() * 2 - 1;
         const d = x * x + y * y;
-        if (d > 0.04 && d <= 1) {
-            const l = Math.sqrt(d);
-            return [x / l, y / l];
-        }
+        if (d > 0.04 && d <= 1) return [x, y, Math.sqrt(d)];
     }
-    return [1, 0];
+    return [1, 0, 1];
+}
+
+/** A direction from `random`, without trigonometry. */
+function directionOf(random) {
+    const [x, y, l] = directionSample(random);
+    return [x / l, y / l];
 }
 
 /**

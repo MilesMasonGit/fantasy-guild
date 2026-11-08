@@ -3,7 +3,7 @@
 import { PLAN_PIXEL_U, distanceFields } from './TerrainLattice.js';
 import { spreadSamples, CALIBRATION_SAMPLES } from './TerrainPatches.js';
 import { generatedOf, DEFAULT_LOOK } from '../../../../config/registries/terrainRegistry.js';
-import { STYLE, STYLE_TERRAIN } from '../../../../systems/atlas/WaterShapes.js';
+import { STYLE, STYLE_TERRAIN, hash32 } from '../../../../systems/atlas/WaterShapes.js';
 import { tuning, tuningDefault, CLEAN_LOOKS, cleanKeys } from './playmatTuning.js';
 
 /**
@@ -165,16 +165,8 @@ const SALT = Object.freeze({
 // ---------------------------------------------------------------------------------------------
 // Hashing and noise
 
-/** A 32-bit hash of two integers and a salt (lowbias32's finaliser). */
-function hash(x, y, salt) {
-    let h = Math.imul(x + 0x632be5ab, 0x9e3779b1) ^ Math.imul(y + 0x85157af5, 0x85ebca77) ^ salt;
-    h = Math.imul(h ^ (h >>> 16), 0x7feb352d);
-    h = Math.imul(h ^ (h >>> 15), 0x846ca68b);
-    return (h ^ (h >>> 16)) >>> 0;
-}
-
 /** A Region's salt for one kind of choice. */
-const saltOf = (seed, which) => hash(seed | 0, which, 0x2545f491);
+const saltOf = (seed, which) => hash32(seed | 0, which, 0x2545f491);
 
 /** A chance as a cut on a 32-bit hash: `hash < cut` happens that often. */
 const cut32 = (p) => (p >= 1 ? 4294967296 : p > 0 ? Math.floor(p * 4294967296) : 0);
@@ -183,7 +175,7 @@ const cut32 = (p) => (p >= 1 ? 4294967296 : p > 0 ? Math.floor(p * 4294967296) :
 const smooth = (t) => t * t * (3 - 2 * t);
 
 /** A noise corner's value, uniform in [0, 1). */
-const cornerOf = (gx, gy, salt) => (hash(gx, gy, salt) >>> 8) / 16777216;
+const cornerOf = (gx, gy, salt) => (hash32(gx, gy, salt) >>> 8) / 16777216;
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 
@@ -1026,7 +1018,7 @@ function wideBankAt(bank, i, px, py, out) {
     const wide = grassNoise(px, py, seed, W.wideCell, CH.BANK_WIDE);
     if (bar > 0 && out < bar * extra * (W.bar[0] + W.bar[1] * wide)) {
         if (out <= at) return SHORE.BANK + BANK_SLOTS.lake;
-        if (hash(px, py, saltOf(seed, CH.BANK_SPECK)) < cut32(W.speck)) return SHORE.BANK + BANK_SLOTS.lake + BAR_COLOUR.DARK;
+        if (hash32(px, py, saltOf(seed, CH.BANK_SPECK)) < cut32(W.speck)) return SHORE.BANK + BANK_SLOTS.lake + BAR_COLOUR.DARK;
         return SHORE.BANK + BANK_SLOTS.lake + (grassNoise(px, py, seed, W.cell, CH.BANK) > W.light ? BAR_COLOUR.LIGHT : BAR_COLOUR.MID);
     }
     if (out <= thin) return 0;
@@ -1068,7 +1060,7 @@ export function poolCentres(width, height, seed, pools, clear = null) {
     const R = GRASS_RULES;
     const count = Math.round(pools.perFrame * (width * height) / (R.frame.w * R.frame.h) * Math.max(0, tuning('groundLakes')));
     const salt = saltOf(seed, SALT.POOL_PLACE);
-    const u = (k, axis) => hash(k, axis, salt) / 4294967296;
+    const u = (k, axis) => hash32(k, axis, salt) / 4294967296;
     const span = 1 - 2 * R.poolMargin;
     const [r0, r1] = pools.radius;
     const reach = pools.rings[pools.rings.length - 1][0] + 0.5 * R.poolNoise + 0.5 * R.poolFineNoise;
@@ -1437,17 +1429,17 @@ function bodyRow(ctx, r) {
                 // A lit top: open grass of its kind above, more mound below.
                 const jd = i + down;
                 if (kinds[ju] === k && !(u & MOUND) && (kinds[jd] !== k || (shape[jd] & MOUND))
-                    && hash(c, r, sLight) < lightCuts[k]) col = base[k] + 3;
+                    && hash32(c, r, sLight) < lightCuts[k]) col = base[k] + 3;
             } else if ((u & ON_EARTH) === ON && kinds[ju] === k && (u & MOUND)) {
                 // Under a mound's bottom edge.
-                if (hash(c, r - 1, sShadow) < shadowCut) col = base[k] + 1;
+                if (hash32(c, r - 1, sShadow) < shadowCut) col = base[k] + 1;
             } else if (left) {
                 // Under and right of a bottom edge, now and then.
                 const jl = ju - 1;
                 const l = shape[jl];
                 if ((l & ON_EARTH) === ON && kinds[jl] === k && (l & MOUND)
                     && (kinds[i - 1] !== k || !(shape[i - 1] & MOUND))
-                    && hash(c - 1, r - 1, sDiagonal) < diagonalCut) col = base[k] + 1;
+                    && hash32(c - 1, r - 1, sDiagonal) < diagonalCut) col = base[k] + 1;
             }
         }
         colour[i] = col;
@@ -1468,25 +1460,25 @@ function strokesRow(ctx, r) {
     let c = -1;
     for (;;) {
         if (gapLog === 0) c++;
-        else c += 1 + Math.floor(Math.log((hash(c, r, sGap) + 0.5) / 4294967296) / gapLog);
+        else c += 1 + Math.floor(Math.log((hash32(c, r, sGap) + 0.5) / 4294967296) / gapLog);
         if (c >= cols) return;
         const i = r * cols + c;
         const k = kinds[i];
         const spec = strokeKinds[k];
         if (!spec) continue;
-        if (hash(c, r, sCentre) >= spec.keepCut) continue;
-        if (!(shape[i] & PATCH) && hash(c, r, sPatch) >= spec.floorCut) continue;
+        if (hash32(c, r, sCentre) >= spec.keepCut) continue;
+        if (!(shape[i] & PATCH) && hash32(c, r, sPatch) >= spec.floorCut) continue;
         const { tipCut, shadowAt, tone, tip, dark, reach, back, sway } = spec;
         const spread = spec.cluster > 1 && reach > 1;
         for (let s = 0; s < spec.cluster; s++) {
-            const h = hash(c, r, strokeSalts[s]);
+            const h = hash32(c, r, strokeSalts[s]);
             const x = c + (spread ? (((h & 255) * reach) >>> 8) - back : 0);
             const y = r + (spread ? ((((h >>> 8) & 255) * reach) >>> 8) - back : 0);
             if (x < 0 || x >= cols || y < 0 || y >= rows) continue;
             if ((shape[y * cols + x] & ON_EARTH) !== ON) continue;
             const height = spec.heights[(((h >>> 16) & 255) * spec.heights.length) >>> 8];
             const lean = ((h >>> 24) & 255) < leanCut;
-            const more = hash(c, r, moreSalts[s]);
+            const more = hash32(c, r, moreSalts[s]);
             const lit = (more & 0xffff) < tipCut;
             for (let t = 0; t < height; t++) {
                 const xx = x + (lean && t === 0 ? 1 : 0);
@@ -1532,7 +1524,7 @@ function drawEarthDetails(ctx, seed) {
         const i = earth[e];
         const r = (i / cols) | 0;
         const c = i - r * cols;
-        const h = hash(c, r, sSmall);
+        const h = hash32(c, r, sSmall);
         if ((h >>> 16) < tuftCut) tufts.push(i);
         if ((h & 0x7fff) * 2 >= pebbleCut || c + 1 >= cols || r + 1 >= rows || !isEarth(i + cols + 1)) continue;
         colour[i] = PEBBLE;
@@ -1546,13 +1538,13 @@ function drawEarthDetails(ctx, seed) {
     for (const i of tufts) {
         const r = (i / cols) | 0;
         const c = i - r * cols;
-        const blades = small.blades[hash(c, r, sTuftSize) & 3];
+        const blades = small.blades[hash32(c, r, sTuftSize) & 3];
         for (let k = 0; k < blades; k++) {
             const xx = c + k - 1;
             if (xx < 0 || xx >= cols) continue;
             const j = r * cols + xx;
             if (!isEarth(j)) continue;
-            const hb = hash(c, r, bladeSalts[k]);
+            const hb = hash32(c, r, bladeSalts[k]);
             const height = small.heights[hb & 3];
             const lit = ((hb >>> 8) & 255) < tipCut;
             const sway = sways[kinds[j]];
@@ -1580,7 +1572,7 @@ function drawEarthDetails(ctx, seed) {
         const c = i - r * cols;
         const g = base[kinds[i]];
         if (r > 0 && isGrass(i - cols)) {
-            const h = hash(c, r, sEdge);
+            const h = hash32(c, r, sEdge);
             pieceAt[i] = 0;
             if ((h & 0xffff) < edgeCut) {
                 colour[i] = g + 3;
@@ -1589,7 +1581,7 @@ function drawEarthDetails(ctx, seed) {
                     pieceAt[i + cols] = 0;
                 }
             } else colour[i] = RIM_SHADOW;
-        } else if (((c > 0 && isGrass(i - 1)) || (c < cols - 1 && isGrass(i + 1))) && hash(c, r, sSide) < sideCut) {
+        } else if (((c > 0 && isGrass(i - 1)) || (c < cols - 1 && isGrass(i + 1))) && hash32(c, r, sSide) < sideCut) {
             colour[i] = g + 2;
             pieceAt[i] = 0;
         }
@@ -1628,7 +1620,7 @@ function settleEarth(ctx, seed) {
         if (col !== COLOUR.MIDDLE && col !== E1 && col !== E2) continue;
         const r = (i / cols) | 0;
         const c = i - r * cols;
-        const h = hash(c, r, sMottle);
+        const h = hash32(c, r, sMottle);
         const p = planRow[r] + planCol[c];
         const px = p % planW;
         const big = grassNoise(px, (p - px) / planW, seed, SETTLE.cell, CH.SETTLE);
@@ -1664,8 +1656,8 @@ function settleEarth(ctx, seed) {
             const i = near[k];
             const r = (i / cols) | 0;
             const c = i - r * cols;
-            if (hash(c, r, salt) < cut) {
-                colour[i] = hash(c, r, sTone) & 1 ? E2 : E1;
+            if (hash32(c, r, salt) < cut) {
+                colour[i] = hash32(c, r, sTone) & 1 ? E2 : E1;
                 pieceAt[i] = 0;
             }
         }
@@ -1679,7 +1671,7 @@ function settleEarth(ctx, seed) {
         const c = i - r * cols;
         const edge = (c > 0 && isGrass(i - 1)) || (c < cols - 1 && isGrass(i + 1))
             || (r > 0 && isGrass(i - cols)) || (r < rows - 1 && isGrass(i + cols));
-        if (edge && hash(c, r, sReach) < reachCut) {
+        if (edge && hash32(c, r, sReach) < reachCut) {
             colour[i] = base[kinds[i]] + 2;
             pieceAt[i] = 0;
         }
@@ -1708,8 +1700,8 @@ function drawOverlayEdges(ctx, seed, slot, ov) {
             const k = kinds[i];
             const u = kinds[i - cols];
             if (k === patch) {
-                if (u === patch || !ours(i - cols) || hash(c, r, sEdge) >= bladeCut) continue;
-                const height = heights[hash(c, r, sHeight) % heights.length];
+                if (u === patch || !ours(i - cols) || hash32(c, r, sEdge) >= bladeCut) continue;
+                const height = heights[hash32(c, r, sHeight) % heights.length];
                 for (let t = 0; t < height && r - t >= 0; t++) {
                     const j = i - t * cols;
                     if (ours(j)) {
@@ -1717,7 +1709,7 @@ function drawOverlayEdges(ctx, seed, slot, ov) {
                         pieceAt[j] = sway;
                     }
                 }
-            } else if (u === patch && colour[i] < COLOUR.DIM && hash(c, r, sDim) < dimCut) {
+            } else if (u === patch && colour[i] < COLOUR.DIM && hash32(c, r, sDim) < dimCut) {
                 colour[i] += COLOUR.DIM;
             }
         }
@@ -1812,9 +1804,9 @@ function drawWater(ctx, grass, seed) {
         let col = cls.colour;
         if (cls.mix === 1) col = planBits[p] & WATER_BIT.FOAM_LIGHT ? COLOUR.FOAM : COLOUR.FOAM2;
         else if (cls.mix === 2) col = planBits[p] & WATER_BIT.SHALLOW_LIGHT ? COLOUR.SEA + 3 : COLOUR.SEA + 2;
-        if (cls.fleck && hash(c, r, sFleck) < fleckCuts[slot]) col = COLOUR.FOAM2;
+        if (cls.fleck && hash32(c, r, sFleck) < fleckCuts[slot]) col = COLOUR.FOAM2;
         const band = planDepth ? planDepth[p] : 0;
-        if (band && depthBySlot[slot]) col = depthColour(band, hash(c, r, sDepth), depthBySlot[slot]);
+        if (band && depthBySlot[slot]) col = depthColour(band, hash32(c, r, sDepth), depthBySlot[slot]);
         colour[i] = col;
     }
 
@@ -1830,13 +1822,13 @@ function drawWater(ctx, grass, seed) {
         let c = -1;
         for (;;) {
             if (gapLog === 0) c++;
-            else c += 1 + Math.floor(Math.log((hash(c, r, sGap) + 0.5) / 4294967296) / gapLog);
+            else c += 1 + Math.floor(Math.log((hash32(c, r, sGap) + 0.5) / 4294967296) / gapLog);
             if (c >= cols - 6) break;
             const i = r * cols + c;
             const k = kinds[i];
             if (!isWater[k]) continue;
             const w = specBySlot[k >> SLOT_SHIFT];
-            const h = hash(c, r, sWave);
+            const h = hash32(c, r, sWave);
             if ((w.waves || 0) < busiest && h >= cut32((w.waves || 0) / busiest)) continue;
             const cls = classAt(i);
             if (!cls.waves || !(planBits[planRow[r] + planCol[c]] & WATER_BIT.WAVES)) continue;

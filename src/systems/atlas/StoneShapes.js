@@ -1,6 +1,6 @@
 // Stone as shapes on the mat: outcrops of bare rock, and a ridge across it
 
-import { noiseAt } from './WaterShapes.js';
+import { noiseAt, directionSample } from './WaterShapes.js';
 
 /**
  * Stone terrain is a feature of a Region's ground, as water is (owner: mines and quarries stand
@@ -41,18 +41,10 @@ const SAMPLES = 4;
 
 const between = (random, lo, hi) => lo + (hi - lo) * random();
 
-/** A unit direction by rejection, no trigonometry, as integers in thousandths. */
+/** A unit direction as integers in thousandths. */
 function directionOf(random) {
-    for (let k = 0; k < 32; k++) {
-        const x = random() * 2 - 1;
-        const y = random() * 2 - 1;
-        const d = x * x + y * y;
-        if (d > 0.04 && d <= 1) {
-            const l = Math.sqrt(d);
-            return { ax: Math.round(1000 * x / l), ay: Math.round(1000 * y / l) };
-        }
-    }
-    return { ax: 1000, ay: 0 };
+    const [x, y, l] = directionSample(random);
+    return { ax: Math.round(1000 * x / l), ay: Math.round(1000 * y / l) };
 }
 
 function fromPoint(x, y, p) {
