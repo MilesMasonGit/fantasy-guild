@@ -21,8 +21,9 @@ export const RING_COLOUR = Object.freeze({
 });
 
 /**
- * The count rings that GLIDE to a new value instead of jumping: a Token's charges. `RingBadge`
- * gives them a CSS transition (`gi-ring-glide`, ~0.8 s).
+ * The count rings that GLIDE to a new value instead of jumping: a Token's charges, by a CSS
+ * transition (`gi-ring-glide`, ~0.8 s). Why CSS and not the frame clock: the browser runs it with
+ * no JavaScript, only the ring whose value changed animates, and a ring at rest costs nothing.
  */
 export const GLIDING_RINGS = Object.freeze(new Set(['charges']));
 

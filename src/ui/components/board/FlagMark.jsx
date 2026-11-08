@@ -2,10 +2,9 @@ import { FlagTriangleRight } from 'lucide-react';
 import { flagFill, isFlagColour } from '../../../systems/board/FlagColours.js';
 
 /**
- * The flag's colours: filled with its hero's colour (`FLAG_FILLS`; pale bone for none), a
- * near-black edge, white round it when lit.
+ * The flag's edge colours (its fill is its hero's colour, `flagFill`): a near-black edge, white
+ * round it when lit.
  */
-export const MARKER_FILL = flagFill(null);
 export const MARKER_EDGE = '#17110c';
 export const MARKER_HOVER = '#ffffff';
 

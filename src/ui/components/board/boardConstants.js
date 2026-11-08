@@ -55,13 +55,6 @@ export const HERO_HIT_PX = 64;
 export const HERO_BOX_PX = 128;
 
 /**
- * The gap, in mat units, between a Token's own edge and its progress bar: the bar hangs just
- * under the Token, at the Token's own width. It is the ring row's gap below the lower of the
- * Token and its hero's feet (`ringRow.js`).
- */
-export const TOKEN_BAR_GAP_U = 8;
-
-/**
  * Why a flag passed a Token over, as the tail of one hover line, e.g. 'Iron Forge — needs
  * materials'.
  * Keyed by every reason `Flags` can record: its own `SKIP` values plus the `ALERT` values

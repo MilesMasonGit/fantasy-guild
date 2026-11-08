@@ -1,110 +1,17 @@
-import React, { memo, useState, useEffect } from 'react';
+import { memo } from 'react';
 import { cn } from '../../utils/cn.js';
-import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import { useTokenEvent } from './tokenEvents.js';
 import { inputSummary, outputSummary, contextSummary } from './recipeText.js';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { getSkill, DEMOLITION_SKILL_ID } from '../../../config/registries/skillRegistry.js';
-import { RING_D_U } from './ringRow.js';
 import { Tooltip } from '../base/Tooltip.jsx';
 
 /**
- * The small things drawn on a Token besides its ring bubbles: its name above the box, the -1
- * floater, and the recipe gear and the demolition mark, which sit in the middle row
- * (`TokenBubbles` places them).
+ * The small things drawn on a Token besides its ring bubbles: its name above the box, and the
+ * recipe gear and the demolition mark, which sit in the middle row (`TokenBubbles` places them).
  * A Token is a circle at a point, so what these badges are about is its **instance id**, and
  * everything they need to draw arrives as a prop from `MatToken`, which already reads the
- * Token's details by id. Only the charge floater still listens for itself, because a `-1` is a
- * moment rather than a state.
+ * Token's details by id.
  */
-
-const FLOATER_AT_REST_STYLE = Object.freeze({ willChange: 'contents' });
-
-/**
- * ⚠️ The -1 / +50 floaters are switched off: a worked Token's charges count down on its work plate
- * instead. Kept, not deleted, because they also told of charges changing with no hero at work: a
- * Token restocked by dropping a copy on it (its "Restocked" callout still says so), a Tool Rack or
- * anvil worn by the station beside it, a Token refilled after resting, an enemy's charge on a kill.
- * Those now change without a number.
- */
-export const CHARGE_FLOATERS = false;
-
-/**
- * TokenChargeDeltaFloater: floating numbers (-1, +50) when this Token's charges change.
- * `anchor="ring"`: just above the charges ring's spot, `slot` (`{left, top}` in the Token's box,
- * the spot a ring `RING_D_U` across takes); `"corner"`: the Token's bottom-right, for a Token with
- * no charges. Nothing at all is drawn while no number floats. Memoised: it draws from its own
- * state, not from its Token's redraws.
- * ⚠️ `atRest` (no hero works the Token): the rise runs on the main thread, since among the resting
- * Tokens a compositor animation redrew every Token in front of it soft (tailwind.css, at
- * `.gi-token-land`). A worked Token is drawn in front of every resting one, so its -1, the usual
- * one, stays on the compositor: on the main thread the -1s alone cost a third more frame work.
- */
-export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ instanceId, anchor = 'corner', atRest = false, slot = null }) {
-    const [deltas, setDeltas] = useState([]);
-    const timers = React.useRef(new Set());
-
-    useTokenEvent(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, instanceId, (p) => {
-        if (p?.delta == null || p?.delta === 0) return;
-        const id = Math.random().toString(36).slice(2);
-        setDeltas(prev => [...prev, { id, delta: p.delta }]);
-        const timer = setTimeout(() => {
-            setDeltas(prev => prev.filter(d => d.id !== id));
-            timers.current.delete(timer);
-        }, 3000);
-        timers.current.add(timer);
-    });
-
-    useEffect(() => {
-        const pending = timers.current;
-        return () => {
-            for (const timer of pending) clearTimeout(timer);
-            pending.clear();
-        };
-    }, []);
-
-    if (!deltas.length) return null;
-
-    const floats = (
-        <div
-            data-charge-floater={anchor}
-            className={cn(
-                "absolute z-40 pointer-events-none",
-                anchor === 'ring' ? "left-1/2 bottom-full mb-1" : "right-1.5 bottom-3.5",
-                "transition-all duration-150 ease-out"
-            )}
-        >
-            {/**
-             * Each number rises and fades by a CSS animation (`gi-charge-float`, tailwind.css)
-             * on the compositor, not on framer-motion's JavaScript frame loop. Same 3 s curve.
-             */}
-            {deltas.map(d => (
-                <div
-                    key={d.id}
-                    className={cn(
-                        "gi-charge-float",
-                        anchor === 'ring' ? "absolute left-0 bottom-0 -translate-x-1/2" : "absolute right-0 bottom-0",
-                        "font-bold ui-text-title tabular-nums leading-none tracking-tight pointer-events-none select-none whitespace-nowrap",
-                        d.delta > 0 ? "text-emerald-300" : "text-amber-200"
-                    )}
-                    style={atRest ? FLOATER_AT_REST_STYLE : undefined}
-                >
-                    {d.delta > 0 ? `+${d.delta.toLocaleString()}` : (d.delta < 0 ? `-${Math.abs(d.delta).toLocaleString()}` : `${d.delta}`)}
-                </div>
-            ))}
-        </div>
-    );
-    if (!slot) return floats;
-    return (
-        <div
-            data-bubble-slot="charges"
-            className="absolute z-20 pointer-events-none"
-            style={{ left: slot.left, top: slot.top, width: RING_D_U, height: RING_D_U }}
-        >
-            {floats}
-        </div>
-    );
-});
 
 /**
  * TokenNameBadge: a Token's or hero's name once the pointer rests on it (`shown`), centred.

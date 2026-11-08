@@ -25,7 +25,6 @@ import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
 import { PLATE, CELL, plateFootOf, platePlace } from '../ui/components/board/workPlate.js';
 import { IDLE_TIPS, idlePlateCells, timerCellOf } from '../ui/components/board/idlePlate.js';
 import { MAT_Z } from '../ui/components/board/matLayers.js';
-import { CHARGE_FLOATERS } from '../ui/components/board/TokenBadges.jsx';
 import { PROBLEM_SPRITE, SEVERITY } from '../ui/components/board/problemMark.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
 import { STEP_MS } from '../ui/components/board/frameClock.js';
@@ -711,33 +710,15 @@ describe('⭐ the problem mark on a Token', () => {
     });
 });
 
-describe('the floater', () => {
-    it('⭐ switched off: a charge spent or restocked draws nothing, worked or not', () => {
-        expect(CHARGE_FLOATERS).toBe(false);
+describe('no charge number floats', () => {
+    it('⭐ a charge spent or restocked draws nothing, worked or not', () => {
         for (const token of [worked({ usesRemaining: 4 }), worked({ heroId: null, usesRemaining: 4 })]) {
             const { container, unmount } = mount(bub({ token }));
             act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, { instanceId: 'tok_r', delta: -1, remaining: 3 }); });
             act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, { instanceId: 'tok_r', delta: 50, remaining: 53 }); });
-            expect(container.querySelector('[data-charge-floater]')).toBeNull();
             expect(drawn(container)).toEqual([]);
             unmount();
         }
-    });
-});
-
-/** Were the floaters switched back on (`CHARGE_FLOATERS`), where they ride. */
-describe.skipIf(!CHARGE_FLOATERS)('the floater, switched on', () => {
-    it('⭐ nothing is drawn for it at rest; a -1 rides from the corner', () => {
-        const { container } = mount(bub({ token: worked({ heroId: null, usesRemaining: 4 }) }));
-        expect(drawn(container)).toEqual([]);
-        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, { instanceId: 'tok_r', delta: -1, remaining: 3 }); });
-        expect(container.querySelector('[data-charge-floater]').getAttribute('data-charge-floater')).toBe('corner');
-    });
-
-    it('a Token with no charges floats it from the corner', () => {
-        const { container } = mount(bub({ token: worked({ usesRemaining: null }) }));
-        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, { instanceId: 'tok_r', delta: 50, remaining: 50 }); });
-        expect(container.querySelector('[data-charge-floater]').getAttribute('data-charge-floater')).toBe('corner');
     });
 });
 
