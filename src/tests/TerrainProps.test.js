@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { propsForGround, groupSizes, BLOCK_CELLS } from '../systems/board/TerrainProps.js';
-import { resolveArtPixels, CELL_PX } from '../systems/board/TerrainLattice.js';
+import { propsForGround, groupSizes, BLOCK_CELLS } from '../ui/components/board/terrain/TerrainProps.js';
+import { resolveArtPixels, CELL_PX } from '../ui/components/board/terrain/TerrainLattice.js';
 import { LOOKS, PROP_PX, PROP_SHEETS, PROP_SHEET_CELLS, propsOf } from '../config/registries/terrainRegistry.js';
-import { tuning, setTuning, resetTuning } from '../config/playmatTuning.js';
+import { tuning, setTuning, resetTuning } from '../ui/components/board/terrain/playmatTuning.js';
 import { groundWith, flat } from './fixtures/ground.js';
 
 /**

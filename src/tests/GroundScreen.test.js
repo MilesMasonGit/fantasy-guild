@@ -2,11 +2,11 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { screenGrid, buildScreenPass, MAT_EDGE } from '../ui/components/board/groundScreen.js';
 import { boardScaleAt, boardArtSteps } from '../ui/components/base/TokenSprite.jsx';
 import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS } from '../config/registries/terrainRegistry.js';
-import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
-import { drawGrass, grassTable } from '../systems/board/TerrainGrass.js';
+import { buildGroundPlan } from '../ui/components/board/terrain/TerrainSurface.js';
+import { drawGrass, grassTable } from '../ui/components/board/terrain/TerrainGrass.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
 import { regionWith, flat } from './fixtures/ground.js';
-import { tuning, setTuning, resetTuning } from '../config/playmatTuning.js';
+import { tuning, setTuning, resetTuning } from '../ui/components/board/terrain/playmatTuning.js';
 
 afterEach(() => resetTuning());
 

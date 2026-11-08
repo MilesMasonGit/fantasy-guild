@@ -15,7 +15,7 @@ import { layoutOptions, shippedMat } from '../../src/systems/atlas/layoutInputs.
 import { DEV_MAPS } from '../../src/systems/atlas/devMaps.js';
 import { seedFromText } from '../../src/systems/atlas/seededRandom.js';
 import { regionGround } from '../../src/systems/atlas/regionGround.js';
-import { buildGroundPlan } from '../../src/systems/board/TerrainSurface.js';
+import { buildGroundPlan } from '../../src/ui/components/board/terrain/TerrainSurface.js';
 
 const RECIPES = {
     'Forest + Coast': ['forest', 'coast'],

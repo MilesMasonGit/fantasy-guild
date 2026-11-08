@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { patchNoise, buildWearMask, FINE, minClumpPx } from '../systems/board/TerrainPatches.js';
-import { resolveArtPixels, CELL_PX } from '../systems/board/TerrainLattice.js';
+import { patchNoise, buildWearMask, FINE, minClumpPx } from '../ui/components/board/terrain/TerrainPatches.js';
+import { resolveArtPixels, CELL_PX } from '../ui/components/board/terrain/TerrainLattice.js';
 import { LOOKS, wearOf } from '../config/registries/terrainRegistry.js';
-import { setTuning, resetTuning } from '../config/playmatTuning.js';
+import { setTuning, resetTuning } from '../ui/components/board/terrain/playmatTuning.js';
 import { groundWith, flat } from './fixtures/ground.js';
 
 /**

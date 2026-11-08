@@ -2,9 +2,9 @@
 
 import { PLAN_PIXEL_U, distanceFields } from './TerrainLattice.js';
 import { spreadSamples, CALIBRATION_SAMPLES } from './TerrainPatches.js';
-import { generatedOf, DEFAULT_LOOK } from '../../config/registries/terrainRegistry.js';
-import { STYLE, STYLE_TERRAIN } from '../atlas/WaterShapes.js';
-import { tuning, tuningDefault, CLEAN_LOOKS, cleanKeys } from '../../config/playmatTuning.js';
+import { generatedOf, DEFAULT_LOOK } from '../../../../config/registries/terrainRegistry.js';
+import { STYLE, STYLE_TERRAIN } from '../../../../systems/atlas/WaterShapes.js';
+import { tuning, tuningDefault, CLEAN_LOOKS, cleanKeys } from './playmatTuning.js';
 
 /**
  * The owner's settled ground rules (`docs/active/research/ground_gen/gen.py`: `ground`, `mixed`,

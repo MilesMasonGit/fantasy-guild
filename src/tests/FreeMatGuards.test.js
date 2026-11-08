@@ -243,7 +243,7 @@ describe('⭐ THE GRID IS DELETED (slice 1.6d-2)', () => {
     });
 
     it('scans the drawing of the ground like everything else', () => {
-        for (const path of ['systems/board/TerrainLattice.js', 'systems/board/TerrainProps.js', 'ui/components/board/TerrainCanvas.jsx']) {
+        for (const path of ['ui/components/board/terrain/TerrainLattice.js', 'ui/components/board/terrain/TerrainProps.js', 'ui/components/board/TerrainCanvas.jsx']) {
             expect(FILES.some(f => f.path === path), `${path} is not scanned`).toBe(true);
         }
     });

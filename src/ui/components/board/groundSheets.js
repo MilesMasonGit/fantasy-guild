@@ -3,8 +3,8 @@
 import {
     SHEETS, PROP_SHEETS, sheetPath, propSheetPath
 } from '../../../config/registries/terrainRegistry.js';
-import { muteTexels } from '../../../systems/board/TerrainSurface.js';
-import { tuning } from '../../../config/playmatTuning.js';
+import { muteTexels } from './terrain/TerrainSurface.js';
+import { tuning } from './terrain/playmatTuning.js';
 import { logger } from '../../../utils/Logger.js';
 
 /**

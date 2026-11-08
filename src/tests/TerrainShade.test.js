@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
-import { buildShadePattern, shadeNoise, buildWearEdges, PATTERN_SHARES } from '../systems/board/TerrainShade.js';
-import { buildWearMask } from '../systems/board/TerrainPatches.js';
-import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
-import { resolveArtPixels, PLAN_PIXEL_U } from '../systems/board/TerrainLattice.js';
+import { buildShadePattern, shadeNoise, buildWearEdges, PATTERN_SHARES } from '../ui/components/board/terrain/TerrainShade.js';
+import { buildWearMask } from '../ui/components/board/terrain/TerrainPatches.js';
+import { buildGroundPlan } from '../ui/components/board/terrain/TerrainSurface.js';
+import { resolveArtPixels, PLAN_PIXEL_U } from '../ui/components/board/terrain/TerrainLattice.js';
 import { LOOKS } from '../config/registries/terrainRegistry.js';
-import { tuning, setTuning, resetTuning } from '../config/playmatTuning.js';
+import { tuning, setTuning, resetTuning } from '../ui/components/board/terrain/playmatTuning.js';
 import { groundWith, flat } from './fixtures/ground.js';
 
 /**

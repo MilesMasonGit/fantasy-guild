@@ -17,7 +17,7 @@ import { DEV_MAPS } from '../systems/atlas/devMaps.js';
 import { HALL_TYPE_ID } from '../systems/atlas/Layout.js';
 import { shippedMat } from '../systems/atlas/layoutInputs.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
-import * as TerrainSurface from '../systems/board/TerrainSurface.js';
+import * as TerrainSurface from '../ui/components/board/terrain/TerrainSurface.js';
 import { buildScreenPass } from '../ui/components/board/groundScreen.js';
 import { primeGroundSheets, resetGroundSheets, mutedSheet, drawnSheet } from '../ui/components/board/groundSheets.js';
 import {

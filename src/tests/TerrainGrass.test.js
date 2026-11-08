@@ -3,11 +3,11 @@ import {
     ramp, lighten, toward, grassColours, grassTable, grassNoise, earthNoise, grassShapeAt, buildGrassPlan, drawGrass,
     drawsGenerated, grassCells, lookRules, shadeRatio, waterBands, poolCentres, poolRingAt, depthBand,
     GRASS_RULES, COLOUR, BIT, SHORE, KIND_MASK, SLOT_SHIFT, KIND_LIMIT, kindColour, BANK_SLOTS
-} from '../systems/board/TerrainGrass.js';
-import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
-import { resolveArtPixels } from '../systems/board/TerrainLattice.js';
+} from '../ui/components/board/terrain/TerrainGrass.js';
+import { buildGroundPlan } from '../ui/components/board/terrain/TerrainSurface.js';
+import { resolveArtPixels } from '../ui/components/board/terrain/TerrainLattice.js';
 import { LOOKS, generatedOf } from '../config/registries/terrainRegistry.js';
-import { setTuning, resetTuning } from '../config/playmatTuning.js';
+import { setTuning, resetTuning } from '../ui/components/board/terrain/playmatTuning.js';
 import { groundWith, flat } from './fixtures/ground.js';
 import { hallSpot, HALL_CLEARING, layout } from '../systems/atlas/Layout.js';
 import { budget } from '../systems/atlas/Budget.js';

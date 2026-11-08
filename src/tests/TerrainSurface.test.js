@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { buildGroundPlan, sheetFor, muteTexels } from '../systems/board/TerrainSurface.js';
+import { buildGroundPlan, sheetFor, muteTexels } from '../ui/components/board/terrain/TerrainSurface.js';
 import { LOOKS, SHEETS } from '../config/registries/terrainRegistry.js';
-import { setTuning, resetTuning } from '../config/playmatTuning.js';
+import { setTuning, resetTuning } from '../ui/components/board/terrain/playmatTuning.js';
 import { groundWith, flat } from './fixtures/ground.js';
 
 /**

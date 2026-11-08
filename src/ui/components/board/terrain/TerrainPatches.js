@@ -1,8 +1,8 @@
 // wear: a second sheet showing through a look in clumps
 
 import { hash01, PLAN_PIXEL_U } from './TerrainLattice.js';
-import { wearOf } from '../../config/registries/terrainRegistry.js';
-import { tuning } from '../../config/playmatTuning.js';
+import { wearOf } from '../../../../config/registries/terrainRegistry.js';
+import { tuning } from './playmatTuning.js';
 
 /**
  * Clumps of earth worn through grass, gravel through rock: a second sheet inside one look, with

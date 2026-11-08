@@ -9,7 +9,7 @@ import { AMBIENT_EFFECTS, ambientSettings } from './ambientSettings.js';
 import { boardScaleAt, tokenSizeFor, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { preloadAlphaMask } from '../../utils/alphaHitTest.js';
 import { tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';
-import { onTuningChanged, isAmbientKey } from '../../../config/playmatTuning.js';
+import { onTuningChanged, isAmbientKey } from './terrain/playmatTuning.js';
 import { useDrawn, isDrawn } from '../../dev/perf/drawSwitches.js';
 
 /**
