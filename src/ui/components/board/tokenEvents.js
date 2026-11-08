@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { shareEqual } from '../../hooks/structuralShare.js';
+import { areCommitsHeld, whenCommitsReleased } from '../../hooks/commitHold.js';
 
 /**
  * One EventBus subscription per event type, however many Tokens are drawn.
@@ -116,11 +117,22 @@ export function useTokenState(id, selector, routesOf) {
     const lastRef = useRef(state);
 
     const queued = useRef(false);
+    const stopWaiting = useRef(null);
     const refresh = useCallback(() => {
-        if (queued.current) return;
+        // Minimised: read nothing now, once on restore (`commitHold.js`).
+        const heldBack = () => {
+            if (!areCommitsHeld()) return false;
+            stopWaiting.current ??= whenCommitsReleased(() => {
+                stopWaiting.current = null;
+                refresh();
+            });
+            return true;
+        };
+        if (queued.current || heldBack()) return;
         queued.current = true;
         queueMicrotask(() => {
             queued.current = false;
+            if (heldBack()) return;
             // Unchanged parts keep their identity (`shareEqual`), as `useGameState`'s do.
             const next = shareEqual(lastRef.current, live.current());
             if (next === lastRef.current) return;
@@ -145,6 +157,10 @@ export function useTokenState(id, selector, routesOf) {
     // A new id, or anything that changed between the first read and the
     // subscription above: read once more.
     useEffect(() => { refresh(); }, [id, refresh]);
+    useEffect(() => () => {
+        stopWaiting.current?.();
+        stopWaiting.current = null;
+    }, []);
 
     return state;
 }

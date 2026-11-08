@@ -1017,6 +1017,16 @@ body *:not(input):not(textarea):not(code) {
   animation: gi-sky-drift-clouds 300s var(--gi-sky-ease) infinite;
 }
 
+/* Paused while minimised: the desktop app sets `data-paused` on the body (`drawingPause.js`), where
+   the page is never told it is hidden and these would run on unseen. Every looping animation in the
+   game's stylesheets belongs here (`MinimisedQuiet.test.js` checks). */
+body[data-paused] .gi-gear-alert,
+body[data-paused] .gi-sky-drift-stars,
+body[data-paused] .gi-sky-drift-clouds,
+body[data-paused] .catch-up-sheen {
+  animation-play-state: paused;
+}
+
 /* A star's outline, one of its own art pixels (`--star-px`) wide and white, shows only under the
    pointer or keyboard focus: never at rest, whatever the star's look or whether it is pinned. */
 .gi-star-btn:hover .gi-star-img,
