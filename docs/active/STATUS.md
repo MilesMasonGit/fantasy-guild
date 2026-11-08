@@ -11,8 +11,8 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 550 X1: nothing blurs on hover or turn; floating items crisp (T-393) | engineer | `fix/sprite-sharpness` (`ss`) | building | Sun | |
-| 550 X2: walking heroes crisp (merge only if the draw and drag benches show no extra cost) | engineer | same branch, after X1 | queued | | |
+| 550 X1: nothing blurs on hover or turn; floating items crisp (T-393) | engineer | `fix/sprite-sharpness` (`ss`) | ready d236bead: `bench:crisp` new cases fail on main and pass at all four fits (flag fade 25 to 48 Tokens soft and 6 to 11 extra layers, now 0 to 5 and none; bob one shape, shadow still; turn instant); limp fade fixed too; spawn pop blur found on main (T-394). Gate with X2 | Sun | |
+| 550 X2: walking heroes crisp (merge only if the draw and drag benches show no extra cost) | engineer | same branch | building | Sun | |
 
 ## Director, code review round 4 fixes (owner, 2026-11-07: all of briefs 510, 530, 520, 540 approved, in that order)
 
