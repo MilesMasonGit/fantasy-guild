@@ -10,6 +10,8 @@ project's first tagged baseline — everything before it was untagged developmen
   hand always did. Before, it stayed at its old spot with no charges and an "Out of charges" mark
   (or, for a Token that refills, free charges later). A drop with charges left over still stands
   beside the copy, and a Token put back down where it stood is no longer said to have left it.
+- **A farming test no longer depends on the dice** (tests only): the last-harvest test pins its random rolls for that cycle, so it passes under the second test seed too.
+
 - **Dev panel: the "Lap star in the sky" button is gone** (dev only). It installed a hand-copied
   Swift Laps star for testing before the owner synced the real one; the tests now read the synced
   star from the data, and the copy is deleted.
