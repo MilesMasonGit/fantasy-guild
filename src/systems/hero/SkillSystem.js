@@ -4,7 +4,6 @@ import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import { levelFromXp } from '../../utils/XPCurve.js';
 import { applyXpBonus } from './xpBonus.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
-import { EFFECT_TYPES } from '../effects/constants.js';
 import { logger } from '../../utils/Logger.js';
 import { XpRateTracker } from './XpRateTracker.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
@@ -45,26 +44,6 @@ export function getSkillLevel(heroId, skillId) {
     if (!skill) return null;
 
     return skill.level;
-}
-
-/**
- * Get XP multiplier for a skill from the HERO's own scope (gear, statuses and
- * guild perks attached to the person). Applied in `addXP`.
- *
- * @param {string} heroId
- * @param {string} skillId
- * @returns {number} Multiplier (1.0 = base, 1.1 = +10%, etc.)
- */
-export function getXpMultiplier(heroId, skillId) {
-    const hero = HeroManager.getHero(heroId);
-    if (!hero || !hero.aggregator) return 1.0;
-
-    const targetSkillId = skillId;
-
-    // XP bonuses are authored as percentages, which SUM (+10% and +10% give
-    // +20%, not ×1.21).
-    return hero.aggregator.getMultiplierBucket(EFFECT_TYPES.XP_BONUS, targetSkillId)
-         * hero.aggregator.getPercentageBucket(EFFECT_TYPES.XP_BONUS, targetSkillId);
 }
 
 export { applyXpBonus };
@@ -111,10 +90,12 @@ export function addXP(heroId, skillId, amount) {
         return { success: false, error: 'SKILL_NOT_HELD' };
     }
 
-    // The hero's own XP bonuses land here, and ONLY here, so +10% Cooking XP is
-    // worth the same however the XP was earned.
-    const scaled = applyXpBonus(amount, amount * getXpMultiplier(heroId, targetSkillId));
-    const granted = amount > 0 ? Math.max(1, scaled) : scaled;
+    // ⚠️ No XP bonus is applied here: the caller passes the award already resolved, because a
+    // bonus belongs to the skill the XP was earned in and is resolved where it is earned (a work
+    // cycle in `BoardRunner`, a kill in `CombatResolutionProcessor`), through the Token's, the
+    // guild's and the hero's scopes at once. Applying one here as well would count it twice.
+    const rounded = Math.round(amount);
+    const granted = amount > 0 ? Math.max(1, rounded) : rounded;
 
     const oldLevel = skill.level;
     skill.xp += granted;

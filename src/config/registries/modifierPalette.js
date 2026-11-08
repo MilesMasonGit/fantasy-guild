@@ -296,7 +296,7 @@ export const MODIFIER_PALETTE = [
         categories: 'skill',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Support',
-        hint: 'XP awarded to the working hero per cycle.'
+        hint: 'XP awarded per cycle to the working hero, or per kill in a combat style.'
     },
     {
         type: EFFECT_TYPES.LOOT_MULT,

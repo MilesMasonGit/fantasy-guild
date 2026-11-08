@@ -14,6 +14,14 @@ project's first tagged baseline — everything before it was untagged developmen
   overwrite with different content, beside the removed and added ones. The files are written to
   temporary names first and all renamed at the end, so a failed write leaves `data/` as it was.
   The files' format is unchanged.
+- **Kills get their combat style's XP bonuses**: an XP bonus aimed at Melee, Ranged, Magic or
+  Stealth now widens the XP a kill won in that style gives, the way a Forestry XP bonus widens a
+  chopping cycle's; a bonus aimed at no skill (Merry) widens kills too. Gear, perks, potions and
+  Guild Hall stars all count, summed into one bonus with the same at-least-1-XP floor as work. The
+  hero-side XP multiplier that nothing ever filled is gone, and the XP Bonus hint in the CMS says
+  "per cycle to the working hero, or per kill in a combat style". No combat XP star exists yet
+  (four follow as content).
+
 - **Dragging a Token onto a half-used copy of itself no longer leaves a ghost behind**: when all
   its charges fit into the copy, the dragged Token now leaves the mat, as a dropped one from the
   hand always did. Before, it stayed at its old spot with no charges and an "Out of charges" mark
