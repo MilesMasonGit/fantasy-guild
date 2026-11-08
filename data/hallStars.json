@@ -88,6 +88,14 @@
         "x": -1.86,
         "y": 0.12
       }
+    },
+    "war_camp": {
+      "id": "war_camp",
+      "name": "The War Camp",
+      "label": {
+        "x": 0,
+        "y": -2
+      }
     }
   },
   "stars": {
@@ -3868,6 +3876,194 @@
                 "type": "PASSIVE_LAP",
                 "bucket": "percentage",
                 "value": -0.5
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_melee_xp": {
+      "id": "star_melee_xp",
+      "constellation": "war_camp",
+      "name": "Warrior’s Lore",
+      "description": "Melee teaches more: +15 % Melee XP from kills a rank.",
+      "node": {
+        "x": 0.15,
+        "y": -1.62
+      },
+      "tag": "above",
+      "links": [
+        "star_infirmary"
+      ],
+      "ranks": [
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 10000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_melee_xp_1_1",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "melee"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_ranged_xp": {
+      "id": "star_ranged_xp",
+      "constellation": "war_camp",
+      "name": "Archer’s Lore",
+      "description": "Ranged teaches more: +15 % Ranged XP from kills a rank.",
+      "node": {
+        "x": 0.45,
+        "y": -1.62
+      },
+      "tag": "above",
+      "links": [
+        "star_infirmary"
+      ],
+      "ranks": [
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 10000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_ranged_xp_1_2",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "ranged"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_magic_xp": {
+      "id": "star_magic_xp",
+      "constellation": "war_camp",
+      "name": "Mage’s Lore",
+      "description": "Magic teaches more: +15 % Magic XP from kills a rank.",
+      "node": {
+        "x": -0.15,
+        "y": -1.62
+      },
+      "tag": "above",
+      "links": [
+        "star_larder"
+      ],
+      "ranks": [
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 10000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_magic_xp_1_3",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "magic"
+              },
+              "chargeDelta": 0,
+              "to": {
+                "mode": "all",
+                "value": ""
+              },
+              "reach": "board",
+              "target": null,
+              "when": null,
+              "upkeep": null
+            }
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "star_stealth_xp": {
+      "id": "star_stealth_xp",
+      "constellation": "war_camp",
+      "name": "Rogue’s Lore",
+      "description": "Stealth teaches more: +15 % Stealth XP from kills a rank.",
+      "node": {
+        "x": -0.45,
+        "y": -1.62
+      },
+      "tag": "above",
+      "links": [
+        "star_larder"
+      ],
+      "ranks": [
+        {
+          "tier": 1,
+          "price": [
+            {
+              "itemId": "item_cherry",
+              "quantity": 10000
+            }
+          ],
+          "rules": [
+            {
+              "id": "stm_star_stealth_xp_1_4",
+              "keyword": "provides",
+              "payload": {
+                "type": "XP_BONUS",
+                "bucket": "percentage",
+                "value": 0.15,
+                "category": "stealth"
               },
               "chargeDelta": 0,
               "to": {
