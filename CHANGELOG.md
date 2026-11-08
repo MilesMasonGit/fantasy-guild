@@ -5,6 +5,8 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Bench instruments for the code review's measurements** (bench and tooling only, no change to the game): the memory soak takes a heap snapshot at the last hidden sample and compares the page task time and style passes with its baseline, `bench:soak -- --readable` soaks an unminified build, the game marks its boot steps (read by `bench:draw`), dev builds log each save's size and stringify time, and a new micro-bench times `Atlas.settle` and `worldView()`.
+
 - **A farming test no longer depends on the dice** (tests only): the last-harvest test pins its random rolls for that cycle, so it passes under the second test seed too.
 
 - **Dev panel: the "Lap star in the sky" button is gone** (dev only). It installed a hand-copied

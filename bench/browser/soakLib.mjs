@@ -49,6 +49,15 @@ export const CONFIG = {
     hiddenTaskShare: 0.75,
     /** Hidden phase: the engine must keep at least this share of its visible tick rate. */
     hiddenTickShare: 0.8,
+    /**
+     * Rates compared with the baseline though not fitted: the visible, fitted intervals' time-weighted
+     * mean (`fittedRates`). Worse by more than both the floor and the ratio regresses. An idle page
+     * measured 124 ms of its own task time and 122 style passes a second.
+     */
+    rates: {
+        taskMsPerS: { label: 'page task time', unit: 'ms/s', compare: { floor: 25, ratio: 0.25 } },
+        stylesPerS: { label: 'style passes', unit: '/s', compare: { floor: 25, ratio: 0.25 } }
+    },
     metrics: {
         heapUsed: {
             label: 'JS heap used', unit: 'KB', read: (s) => s.cdp?.JSHeapUsedSize / 1024,
@@ -105,7 +114,7 @@ export const defaultWarmup = (minutes) => Math.min(5, minutes * 0.1);
 export function parseArgs(argv) {
     const a = {
         scene: DEFAULTS.scene, minutes: DEFAULTS.minutes, every: DEFAULTS.every, hidden: DEFAULTS.hidden,
-        warmup: null, settle: DEFAULTS.settle, snapshot: false, compare: false, saveBaseline: false, build: true, port: null
+        warmup: null, settle: DEFAULTS.settle, snapshot: false, readable: false, compare: false, saveBaseline: false, build: true, port: null
     };
     for (const arg of argv) {
         const [key, ...rest] = arg.replace(/^--/, '').split('=');
@@ -118,6 +127,7 @@ export function parseArgs(argv) {
             case 'warmup': a.warmup = num(v, '--warmup', { min: 0 }); break;
             case 'settle': a.settle = num(v, '--settle', { min: 0 }); break;
             case 'snapshot': a.snapshot = true; break;
+            case 'readable': a.readable = true; break;
             case 'compare': a.compare = true; break;
             case 'save-baseline': a.saveBaseline = true; break;
             case 'no-build': a.build = false; break;
@@ -160,7 +170,8 @@ export function sceneId(value) {
  * Each step: `{ atS, phase, fit, then, snapshot }`. A sample's `phase` is the one in force over the
  * interval that ends with it: the sample at the hiding is `visible`, the one at the showing is
  * `hidden`. `fit`: a visible sample after the warm-up (the slopes' samples). `then`: `'hide'` or
- * `'show'` after the sample. `snapshot`: `'start'` (the first fitted sample) or `'end'` (the last).
+ * `'show'` after the sample. `snapshot`: `'start'` (the first fitted sample), `'hidden'` (the last hidden sample, taken while
+ * the page is still hidden) or `'end'` (the last).
  */
 export function soakPlan({ minutes, every, hidden = 0, warmup = 0 }) {
     const totalS = minutes * 60;
@@ -193,6 +204,8 @@ export function soakPlan({ minutes, every, hidden = 0, warmup = 0 }) {
     if (firstFit) firstFit.snapshot = 'start';
     const last = steps[steps.length - 1];
     if (last !== firstFit) last.snapshot = 'end';
+    const lastHidden = steps.filter((s) => s.phase === 'hidden').pop();
+    if (lastHidden) lastHidden.snapshot = 'hidden';
     return { totalS, hiddenStartS: hs, hiddenEndS: he, warmupS: warmup * 60, steps };
 }
 
@@ -311,7 +324,7 @@ export function intervalsOf(samples) {
         const per = (v, k = 1) => (v === null ? null : (v * k) / dt);
         const iv = b.page?.interval || {};
         out.push({
-            from: a.i, to: b.i, phase: b.phase, seconds: dt,
+            from: a.i, to: b.i, phase: b.phase, fit: !!(a.fit && b.fit), seconds: dt,
             taskMsPerS: per(task === null ? null : Math.max(0, task - devtools), 1000),
             scriptMsPerS: per(delta(a, b, 'ScriptDuration'), 1000),
             stylesPerS: per(delta(a, b, 'RecalcStyleCount')),
@@ -328,7 +341,15 @@ const RATE_KEYS = ['taskMsPerS', 'scriptMsPerS', 'stylesPerS', 'layoutsPerS', 'f
 
 /** Time-weighted means of the interval rates of one phase. */
 export function phaseRates(intervals, phase) {
-    const ivs = intervals.filter((iv) => iv.phase === phase);
+    return ratesOf(intervals.filter((iv) => iv.phase === phase));
+}
+
+/** The rates of the visible intervals after the warm-up: what the baseline keeps and compares. */
+export function fittedRates(intervals) {
+    return ratesOf(intervals.filter((iv) => iv.phase === 'visible' && iv.fit));
+}
+
+function ratesOf(ivs) {
     const out = { intervals: ivs.length, seconds: ivs.reduce((s, iv) => s + iv.seconds, 0) };
     for (const k of RATE_KEYS) {
         const ok = ivs.filter((iv) => Number.isFinite(iv[k]));
@@ -399,7 +420,7 @@ const share = (a, b) => (Number.isFinite(a) && Number.isFinite(b) && b > 0 ? a /
 // ---------------------------------------------------------------------------
 
 /** What `--save-baseline` keeps: the settings, and per judged metric its slope and level. */
-export function baselineOf(analysis, args, meta = {}) {
+export function baselineOf(analysis, args, meta = {}, rates = null) {
     const metrics = {};
     for (const [key, a] of Object.entries(analysis)) {
         if (!CONFIG.metrics[key]?.compare) continue;
@@ -408,7 +429,8 @@ export function baselineOf(analysis, args, meta = {}) {
     return {
         meta: { ...meta, note: 'Slopes per minute and levels (median of the fitted samples). Machine-specific: re-take on the owner\'s PC, quiet: npm run bench:soak -- --save-baseline' },
         settings: settingsOf(args),
-        metrics
+        metrics,
+        rates: Object.fromEntries(Object.keys(CONFIG.rates).filter((k) => Number.isFinite(rates?.[k])).map((k) => [k, round(rates[k], 1)]))
     };
 }
 
@@ -435,7 +457,7 @@ function judgeNumber(base, now, floor, ratio) {
  * Compare with bench/soak-baseline.json. Another board is not comparable (`reason`); a slope that
  * this run or the baseline could not judge (too short) is "not judged"; levels are always compared.
  */
-export function compareToBaseline(analysis, args, baseline, cfg = CONFIG) {
+export function compareToBaseline(analysis, args, baseline, cfg = CONFIG, rates = null) {
     const bs = baseline?.settings;
     if (!bs) return { comparable: false, reason: 'the baseline records no settings', checks: [], regressed: false };
     if (bs.scene !== args.scene) return { comparable: false, reason: `the baseline is the ${bs.scene} board, this run ${args.scene}`, checks: [], regressed: false };
@@ -457,6 +479,14 @@ export function compareToBaseline(analysis, args, baseline, cfg = CONFIG) {
         checks.push({
             metric: key, what: `level ${def.unit}`, base: base.level, now: round(now?.level, 1),
             ...judgeNumber(base.level, now?.level, def.compare.levelFloor, def.compare.levelRatio)
+        });
+    }
+    for (const [key, def] of Object.entries(cfg.rates || {})) {
+        const base = baseline.rates?.[key];
+        if (!Number.isFinite(base)) { checks.push({ metric: key, what: `visible ${def.unit}`, verdict: 'no baseline' }); continue; }
+        checks.push({
+            metric: key, what: `visible ${def.unit}`, base, now: round(rates?.[key], 1),
+            ...judgeNumber(base, rates?.[key], def.compare.floor, def.compare.ratio)
         });
     }
     return { comparable: true, notes, checks, regressed: checks.some((c) => c.verdict === 'REGRESSED') };

@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     CONFIG, parseArgs, soakPlan, fitLine, neverFallsBack, judgeMetric, analyse, intervalsOf, phaseRates,
-    hiddenCheck, compareToBaseline, baselineOf, baselineRefusal, slopesTable, hiddenText, sampleHeader, sampleRow, defaultWarmup
+    hiddenCheck, fittedRates, compareToBaseline, baselineOf, baselineRefusal, slopesTable, hiddenText, sampleHeader, sampleRow, defaultWarmup
 } from '../../bench/browser/soakLib.mjs';
 import { classSummary, classNameOf, diffClasses } from '../../bench/browser/heapSnapshot.mjs';
 
@@ -79,7 +79,8 @@ function makeSnapshot(nodeList, edgeList) {
 describe('soak options', () => {
     it('defaults to cap128 for 30 minutes, a sample a minute, hidden 5 minutes, 3 minutes of warm-up', () => {
         const a = parseArgs([]);
-        expect(a).toMatchObject({ scene: 'cap128', minutes: 30, every: 60, hidden: 5, warmup: 3, settle: 60, snapshot: false, compare: false, saveBaseline: false, build: true });
+        expect(a).toMatchObject({ scene: 'cap128', minutes: 30, every: 60, hidden: 5, warmup: 3, settle: 60, snapshot: false, readable: false, compare: false, saveBaseline: false, build: true });
+        expect(parseArgs(['--readable']).readable).toBe(true);
     });
 
     it('the warm-up is a tenth of the run, at most 5 minutes, unless given', () => {
@@ -118,6 +119,7 @@ describe('the soak timeline', () => {
         expect(at(120).fit).toBe(false);
         expect(at(180)).toMatchObject({ fit: true, snapshot: 'start' });
         expect(at(1800).snapshot).toBe('end');
+        expect(p.steps.filter((s) => s.snapshot === 'hidden').map((s) => s.atS)).toEqual([1020]);
     });
 
     it('the 3-minute smoke: visible, hide at 1, show at 2, visible', () => {
@@ -125,7 +127,7 @@ describe('the soak timeline', () => {
         expect(p.steps.map((s) => [s.atS, s.phase, s.then, s.fit, s.snapshot])).toEqual([
             [0, 'visible', null, false, null],
             [60, 'visible', 'hide', true, 'start'],
-            [120, 'hidden', 'show', false, null],
+            [120, 'hidden', 'show', false, 'hidden'],
             [180, 'visible', null, true, 'end']
         ]);
     });
@@ -336,6 +338,24 @@ describe('the soak baseline', () => {
         const bigger = compareToBaseline(analyse(makeSamples({ nodes: () => 7000 })), args, baseline);
         expect(bigger.checks.find((c) => c.metric === 'nodes' && c.what.startsWith('level')).verdict).toBe('REGRESSED');
         expect(bigger.checks.find((c) => c.metric === 'nodes' && c.what.startsWith('slope')).verdict).toBe('ok');
+    });
+
+    it('compare: the page task time and the style passes are compared as rates of the fitted intervals', () => {
+        const rates = fittedRates(intervalsOf(makeSamples()));
+        expect(rates.taskMsPerS).toBeCloseTo(100);
+        expect(rates.stylesPerS).toBeCloseTo(200 / 60);
+        const baseline = baselineOf(steady, args, {}, rates);
+        expect(baseline.rates).toEqual({ taskMsPerS: 100, stylesPerS: 3.3 });
+        const same = compareToBaseline(steady, args, baseline, undefined, rates);
+        expect(same.regressed).toBe(false);
+        expect(same.checks.filter((c) => c.metric === 'taskMsPerS' || c.metric === 'stylesPerS').map((c) => c.verdict)).toEqual(['ok', 'ok']);
+        const busy = compareToBaseline(steady, args, baseline, undefined, { ...rates, taskMsPerS: 180, stylesPerS: 120 });
+        expect(busy.regressed).toBe(true);
+        expect(busy.checks.filter((c) => c.verdict === 'REGRESSED').map((c) => c.metric)).toEqual(['taskMsPerS', 'stylesPerS']);
+        // An old baseline without rates leaves them unjudged.
+        const old = compareToBaseline(steady, args, baselineOf(steady, args), undefined, rates);
+        expect(old.regressed).toBe(false);
+        expect(old.checks.filter((c) => c.verdict === 'no baseline').map((c) => c.metric)).toEqual(['taskMsPerS', 'stylesPerS']);
     });
 
     it('compare: a short run\'s slopes are not judged, its levels are', () => {
