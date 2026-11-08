@@ -5,7 +5,6 @@ import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers, neverWearsOutType } from '../../config/registries/tokenRegistry.js';
 import { neighbourIds } from './nearby.js';
 import { contextRequirementsOf } from '../../config/registries/recipePoolRegistry.js';
-import { DEFAULT_STATEMENT_CHARGE_DELTA } from '../effects/statements.js';
 import { DEFAULT_STATION_CHARGE_COST, statementChargeDelta, statementCycleCost } from './cycleCharges.js';
 import * as BoardState from './BoardState.js';
 import * as Hand from './Hand.js';
@@ -31,16 +30,6 @@ import * as Respawn from './Respawn.js';
 
 // What one cycle costs a Token lives in a pure module the progression ledger's rate calculator shares.
 export { DEFAULT_STATION_CHARGE_COST, statementChargeDelta, statementCycleCost };
-
-/**
- * What a triggered statement spends when it does not author a `chargeDelta`: -1, one charge per
- * firing (a charge burns on service, not on luck). An author who wants a free effect writes
- * `chargeDelta: 0`; the absence of the field is not that.
- *
- * Declared in `statements.js` and re-exported here: the CMS's authoring control needs the same
- * number and reads the statement grammar, not the board runtime.
- */
-export { DEFAULT_STATEMENT_CHARGE_DELTA };
 
 /**
  * Whether a Token instance's charges are unlimited: it holds none, or its type never wears out (a

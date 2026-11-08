@@ -44,5 +44,3 @@ export const InspectionPanel = ({
         </div>
     );
 };
-
-export default InspectionPanel;

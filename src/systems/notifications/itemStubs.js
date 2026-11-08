@@ -297,12 +297,6 @@ export function resetPin(itemId) {
     emitNow();
 }
 
-/** Whether any stub is pinned. */
-export function hasPins() {
-    for (const s of stubs.values()) if (s.pinned) return true;
-    return false;
-}
-
 /** The pins as the save keeps them: `[{ itemId, added, removed }]`, in pin order. */
 export function serializePins() {
     return getStubs().filter(s => s.pinned).map(s => ({ itemId: s.itemId, added: s.added, removed: s.removed }));

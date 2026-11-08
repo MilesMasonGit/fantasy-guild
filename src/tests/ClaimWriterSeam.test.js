@@ -13,14 +13,14 @@ const RULES = [
     [/\bforgetWorkClaim\s*\(/g, ['systems/board/Flags.js', 'systems/board/BoardState.js'], 'drops a saved work note'],
     [/\brecordWorkClaim\s*\(/g, ['systems/board/HeroMotion.js', 'systems/board/BoardState.js'], 'records an arrival'],
     [
-        /\bHeroMotion\s*\.\s*(restoreAtWork|placeAtFlag|enter|sendHome|settle|remove)\s*\(/g,
+        /\bHeroMotion\s*\.\s*(restoreAtWork|placeAtFlag|enter|sendHome|settle)\s*\(/g,
         ['systems/board/Flags.js'],
         'runs a HeroMotion lifecycle step'
     ]
 ];
 
 /** HeroMotion's lifecycle, as named imports would spell it. */
-const LIFECYCLE = new Set(['restoreAtWork', 'placeAtFlag', 'enter', 'sendHome', 'settle', 'remove']);
+const LIFECYCLE = new Set(['restoreAtWork', 'placeAtFlag', 'enter', 'sendHome', 'settle']);
 const NAMED_IMPORT = /import\s*\{([^}]*)\}\s*from\s*['"][^'"]*\/(HeroMotion|BoardState)(\.js)?['"]/g;
 
 describe('Flags is the only writer of claims and the only driver of HeroMotion (CR3-562)', () => {

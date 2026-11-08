@@ -331,5 +331,3 @@ export const WorldPanel = ({ cell, note, version, message, onMessage, onSettle, 
         </PixelFrame>
     );
 };
-
-export default WorldPanel;

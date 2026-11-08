@@ -33,14 +33,6 @@ export const DAMAGE_TYPES = Object.freeze([
 const TYPE_BY_ID = new Map(DAMAGE_TYPES.map(t => [t.id, t]));
 const GROUP_BY_ID = new Map(DAMAGE_GROUPS.map(g => [g.id, g]));
 
-export function getDamageType(id) {
-    return TYPE_BY_ID.get(id) || null;
-}
-
-export function getDamageGroup(id) {
-    return GROUP_BY_ID.get(id) || null;
-}
-
 export const isDamageTypeId = (id) => TYPE_BY_ID.has(id);
 export const isDamageGroupId = (id) => GROUP_BY_ID.has(id);
 /** A type or a group: what a resistance, a weakness or a Type Damage / Resistance row may name. */

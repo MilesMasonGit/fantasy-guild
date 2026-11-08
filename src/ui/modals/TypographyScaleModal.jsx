@@ -134,5 +134,3 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
         </GIModal>
     );
 };
-
-export default TypographyScaleModal;

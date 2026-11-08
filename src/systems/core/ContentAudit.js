@@ -924,5 +924,3 @@ export function reportSaveContent(state) {
 
     return ghosts;
 }
-
-export default reportContentIntegrity;

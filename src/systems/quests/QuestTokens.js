@@ -132,7 +132,8 @@ export function questIntervalMs() {
 // State
 // ---------------------------------------------------------------------------
 
-function questState() {
+/** The saved quest state, made whole: the tutorial list and the bounty clock. Null before a game exists. */
+export function questState() {
     const state = GameState.state;
     if (!state) return null;
     if (!state.quests || typeof state.quests !== 'object') {

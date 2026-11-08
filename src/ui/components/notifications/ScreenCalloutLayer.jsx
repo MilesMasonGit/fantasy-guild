@@ -59,5 +59,3 @@ export function ScreenCalloutLayer() {
         document.body
     );
 }
-
-export default ScreenCalloutLayer;

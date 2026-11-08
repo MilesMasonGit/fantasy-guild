@@ -110,5 +110,3 @@ export const TerrainGridOverlay = React.memo(function TerrainGridOverlay({ mat }
         </div>
     );
 });
-
-export default TerrainGridOverlay;

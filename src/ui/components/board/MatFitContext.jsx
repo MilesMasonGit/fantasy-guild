@@ -23,7 +23,6 @@ export const MatFitProvider = MatFitContext.Provider;
 /** The mat's current on-screen scale, or 1 if nothing is providing one. */
 export const useMatFit = () => React.useContext(MatFitContext);
 
-export default MatFitContext;
 
 /**
  * The mat's fit, for things drawn OUTSIDE the mat. The horizontal hero dock draws each hero at

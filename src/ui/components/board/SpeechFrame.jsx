@@ -88,5 +88,3 @@ export function SpeechFrame({ tone = SPEECH_TONE.PLAIN, u = 1, tail = false, tai
         </div>
     );
 }
-
-export default SpeechFrame;

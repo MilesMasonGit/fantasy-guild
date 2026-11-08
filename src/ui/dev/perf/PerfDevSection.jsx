@@ -69,5 +69,3 @@ export function PerfDevSection() {
         </div>
     );
 }
-
-export default PerfDevSection;

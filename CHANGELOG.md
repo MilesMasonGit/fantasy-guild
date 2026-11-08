@@ -4,6 +4,7 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Dead exports, stray default exports and copied helpers swept out** (nothing a player sees changes). 127 default exports nothing imported are gone, along with about forty names nothing read (Roman numerals, the damage-type lookups, the unused name and epithet lists, spare random helpers, the ground build timers' unused readers, the pin check and more) and the re-exports that only pointed at them. Helpers written twice are now written once: the m:ss countdown, the largest-remainder split, the seeded random generator (checked equal over 1.2 million draws), the corner hash and the random direction of the ground and water painters, the quest state defaults, putting a Token on the mat, the article before a Token name, the recipe-unlock reading of a level-up, the window pan drag and the element-size measure.
 - **Code-health tools tidied**, nothing a player sees changes: a stricter dead-code check (`npm run dead-code:strict`, which sees the CMS and does not count tests as users), the linter skips other sessions folders and docs, the package list drops an unused drag package and names two it relied on by accident, and the unused names and leftovers the linter flagged in the game and its tests are gone. The merge delay for same-kind sprites is now one constant (1100 ms, as before).
 
 

@@ -153,5 +153,3 @@ export function TokenHitArt({ instanceId, skill, heroId = null, active = false, 
         </div>
     );
 }
-
-export default TokenHitArt;

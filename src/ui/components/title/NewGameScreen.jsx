@@ -143,5 +143,3 @@ export const NewGameScreen = ({ slotIndex, onBegin, onBack }) => {
         </TitleScreen>
     );
 };
-
-export default NewGameScreen;

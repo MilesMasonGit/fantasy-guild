@@ -31,5 +31,3 @@ export function GearDefenceDevSection() {
         </div>
     );
 }
-
-export default GearDefenceDevSection;

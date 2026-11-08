@@ -1,6 +1,6 @@
 // Fantasy Guild — where a number comes from
 
-import { ROLE, getRole } from './roleRegistry.js';
+import { ROLE } from './roleRegistry.js';
 
 /**
  * A magnitude that is **computed** rather than typed.
@@ -175,6 +175,3 @@ export function magnitudeParts(payload) {
 export function usesCountedSelector(payload) {
     return payload?.magnitude === MAGNITUDE_KIND.COUNT;
 }
-
-/** Named for the CMS boundary check. */
-export const MAGNITUDE_ROLES = Object.freeze({ getRole });

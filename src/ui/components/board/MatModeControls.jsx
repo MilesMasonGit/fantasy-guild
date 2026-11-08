@@ -143,5 +143,3 @@ export const ModeBannerView = ({ mode }) => (
         <CancelAllMarksButton />
     </div>
 );
-
-export default MapModeToggles;

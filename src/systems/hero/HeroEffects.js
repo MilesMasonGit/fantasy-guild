@@ -106,7 +106,7 @@ export function loadoutRefs(hero) {
  * free buff for as long as the Bank held one, never spent. Where gear and a potion share an
  * effect, the always-on rule counts at the gear's own scale, from the gear.
  *
- * The hero's milestone perks ride at the end ({@link perkStatements}), so every reader of what a
+ * The hero's milestone perks ride at the end ({@link expandPerks}), so every reader of what a
  * hero carries (work, fights, moments, the combat numbers) reads them through this one door.
  */
 export function loadoutStatements(hero) {
@@ -243,10 +243,6 @@ function expandLoadout(hero, library) {
  * A perk has nothing to spend: its rules are free whatever cost the effect carries, and it names
  * no item (`sourceItemIds` empty), so no dose ever stands in for it.
  */
-export function perkStatements(hero) {
-    return expandPerks(hero, null);
-}
-
 function expandPerks(hero, library) {
     const refs = earnedPerkRefs(hero);
     if (!refs.length) return refs;

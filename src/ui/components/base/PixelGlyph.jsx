@@ -179,5 +179,3 @@ export const PixelGlyph = ({ name, scale = 2, className, style, ...rest }) => {
         </svg>
     );
 };
-
-export default PixelGlyph;

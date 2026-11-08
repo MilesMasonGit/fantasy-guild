@@ -216,5 +216,3 @@ export const ArrowScrollList = ({
         </>
     );
 };
-
-export default ArrowScrollList;

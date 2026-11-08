@@ -304,5 +304,3 @@ export const HeroBubbleLayer = ({ heroes }) => {
         </div>
     );
 };
-
-export default HeroBubbleLayer;

@@ -283,5 +283,3 @@ export const WorkPlateLayer = memo(function WorkPlateLayer({ plates, restTokenId
         </div>
     );
 });
-
-export default WorkPlateLayer;

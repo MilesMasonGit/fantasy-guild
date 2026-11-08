@@ -522,5 +522,3 @@ const BarBubbles = ({ heroId, bubbles }) => {
         </div>
     );
 };
-
-export default DockHeroFigure;

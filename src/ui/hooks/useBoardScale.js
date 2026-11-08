@@ -100,5 +100,3 @@ export function useBoardScale(naturalPx, naturalH = naturalPx) {
     // square, like the free playmat (1920 × 1040 u).
     return { ref, scale, size: Math.round(naturalPx * scale), height: Math.round(naturalH * scale) };
 }
-
-export default useBoardScale;

@@ -153,5 +153,3 @@ export const FightBarHost = memo(function FightBarHost({ hostRef, yieldToTokens 
         />
     );
 });
-
-export default FightLayer;

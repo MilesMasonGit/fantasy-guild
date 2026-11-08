@@ -31,5 +31,3 @@ export const GuildHallDetails = ({ selection, onClear, onReturn }) => (
         </PixelFrame>
     </div>
 );
-
-export default GuildHallDetails;

@@ -169,5 +169,3 @@ export const TitleScreen = ({ look = DEFAULT_TITLE_LOOK, panelPx = TITLE_PANEL_P
         </div>
     );
 };
-
-export default TitleScreen;

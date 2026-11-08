@@ -33,5 +33,3 @@ export const MatFxLayer = memo(function MatFxLayer() {
         />
     );
 });
-
-export default MatFxLayer;

@@ -133,11 +133,6 @@ export function isPlanned(def) {
     return statusOf(def) === PLAN_STATUS.PLANNED;
 }
 
-/** The owner's tier for a record, or null when none is set. */
-export function planTierOf(def) {
-    return planOf(def).tier;
-}
-
 /** Where a record's plan puts it on the world map: `{ wedge, ring }`, each null when unset. */
 export function planPlaceOf(def) {
     const block = isObject(def?.plan) ? def.plan : {};

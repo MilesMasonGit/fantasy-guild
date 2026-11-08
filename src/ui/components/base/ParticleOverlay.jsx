@@ -609,5 +609,3 @@ class ParticleSystem {
         }
     }
 }
-
-export default ParticleOverlay;

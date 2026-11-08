@@ -2,6 +2,7 @@
 
 import { STRICT_RINGS, heroTokensOf, kitById, lineById } from '../../config/worldTablesShape.js';
 import { mulberry32, seedFromText } from '../atlas/seededRandom.js';
+import { apportion } from '../atlas/Budget.js';
 import { ORIGIN_ROLE, EXTREME } from './generate.js';
 
 /**
@@ -78,29 +79,6 @@ export const LAYOUT_GROUND = Object.freeze({
 });
 
 const byText = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
-
-/**
- * Whole-number shares of `total` by weight, largest remainder first, ties to the key that sorts
- * first (`Budget.apportion`'s rule, restated so this file stays import-light for the ledger).
- */
-export function shares(weights, total) {
-    const keys = Object.keys(weights).sort(byText);
-    const sum = keys.reduce((n, k) => n + Math.max(0, weights[k]), 0);
-    const out = Object.fromEntries(keys.map(k => [k, 0]));
-    if (!(sum > 0) || !(total > 0)) return out;
-    const rest = [];
-    let given = 0;
-    for (const k of keys) {
-        const quota = total * Math.max(0, weights[k]) / sum;
-        const whole = Math.floor(quota);
-        out[k] = whole;
-        given += whole;
-        rest.push({ k, frac: quota - whole });
-    }
-    rest.sort((a, b) => b.frac - a.frac || byText(a.k, b.k));
-    for (let i = 0; i < total - given; i++) out[rest[i % rest.length].k]++;
-    return out;
-}
 
 /** The ground a kit stands on. */
 export function kitBiome(tables, kitId) {
@@ -222,7 +200,7 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [] }
             leftover += heroes[skill] * want / count;
             continue;
         }
-        for (const [typeId, n] of Object.entries(shares(Object.fromEntries(pool), want))) {
+        for (const [typeId, n] of Object.entries(apportion(Object.fromEntries(pool), want))) {
             addTo(nodes, typeId, n);
             skillOfNode.set(typeId, skill);
         }
@@ -291,10 +269,10 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [] }
         const focus = Math.round(total * (tables.wild?.compositionShare ?? 0.75));
         const rest = { ...counts };
         delete rest[extreme.focus];
-        counts = { ...shares(rest, total - focus), [extreme.focus]: focus };
+        counts = { ...apportion(rest, total - focus), [extreme.focus]: focus };
         if (!skillOfNode.has(extreme.focus)) skillOfNode.set(extreme.focus, skillOf(extreme.focus));
     }
-    if (ground.nodes > 1 && total > 0) counts = shares(counts, Math.round(total * ground.nodes));
+    if (ground.nodes > 1 && total > 0) counts = apportion(counts, Math.round(total * ground.nodes));
 
     const treasures = new Map();
     for (const extra of cell?.extras || []) {

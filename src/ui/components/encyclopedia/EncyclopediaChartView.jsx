@@ -10,6 +10,7 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { ItemTipContent } from '../drawer/ItemTip.jsx';
 import { formatClock } from '../drawer/lifecycleLines.js';
+import { panDrag } from '../../utils/panDrag.js';
 import { KIND } from './encyclopediaModel.js';
 import {
     layoutChart, grownBox, keepInSight, centreOn, clampPan, needText, entryOfKey, oneOffWays, farSideOf,
@@ -385,26 +386,15 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
     const onPointerDown = (e) => {
         if (e.button !== 0) return;
         dropClick.current = false;
-        const start = { id: e.pointerId, x: e.clientX, y: e.clientY, from: viewRef.current, moved: false };
-        const move = (ev) => {
-            if (ev.pointerId !== start.id) return;
-            const dx = ev.clientX - start.x;
-            const dy = ev.clientY - start.y;
-            if (!start.moved && Math.hypot(dx, dy) < DRAG_START_PX) return;
-            start.moved = true;
-            setGliding(false);
-            setView(clampPan({ x: start.from.x + dx, y: start.from.y + dy }, viewportRef.current, layoutRef.current.box));
-        };
-        const up = (ev) => {
-            if (ev.pointerId !== start.id) return;
-            window.removeEventListener('pointermove', move);
-            window.removeEventListener('pointerup', up);
-            window.removeEventListener('pointercancel', up);
-            if (start.moved) dropClick.current = true;
-        };
-        window.addEventListener('pointermove', move);
-        window.addEventListener('pointerup', up);
-        window.addEventListener('pointercancel', up);
+        const from = viewRef.current;
+        panDrag(e, {
+            thresholdPx: DRAG_START_PX,
+            onPan: (dx, dy) => {
+                setGliding(false);
+                setView(clampPan({ x: from.x + dx, y: from.y + dy }, viewportRef.current, layoutRef.current.box));
+            },
+            onEnd: (moved) => { if (moved) dropClick.current = true; }
+        });
     };
     const onClickCapture = (e) => {
         if (!dropClick.current) return;
@@ -478,5 +468,3 @@ export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, her
         </div>
     );
 };
-
-export default ChartView;

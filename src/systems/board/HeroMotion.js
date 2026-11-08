@@ -557,11 +557,6 @@ export function settle(heroId) {
     if (body) step(heroId, body, 0);
 }
 
-/** Take a hero off the mat at once (recall, defeat; `sendHome` is the walk home). */
-export function remove(heroId) {
-    BoardState.setHeroBody(heroId, null);
-}
-
 /**
  * Walk every hero on the mat `delta` game ms. Run once per engine tick, right
  * after `Flags.assign` (which may have given them somewhere new to go) and

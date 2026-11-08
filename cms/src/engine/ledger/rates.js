@@ -21,6 +21,7 @@ import { applyXpBonus } from '../../../../src/systems/hero/xpBonus.js';
 import { perkRowsOf, perksEarnedAt } from '../../../../src/systems/hero/perkTable.js';
 import { neverWearsOut } from '../../../../src/systems/core/wearRule.js';
 import { isSpentCategory, isAlwaysOn, isWorkMoment, workSkillMatches, doseKindsOf, DOSE, DOSE_LENGTH } from '../../../../src/systems/core/consumableRule.js';
+import { keyed } from '../../../../src/systems/progression/ledger/engine.js';
 import { modifiersOf as regionModifiersOf } from '../../../../src/systems/atlas/regionModifiers.js';
 
 /**
@@ -103,16 +104,6 @@ const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v)
 const list = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
 const text = (v) => (typeof v === 'string' && v ? v : null);
 const clamp01 = (n) => (Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0);
-
-function keyed(collection) {
-    const out = {};
-    if (Array.isArray(collection)) {
-        collection.forEach((def, i) => { if (isObject(def)) out[def.id ?? String(i)] = def; });
-    } else if (isObject(collection)) {
-        for (const [key, def] of Object.entries(collection)) if (isObject(def)) out[def.id ?? key] = def;
-    }
-    return out;
-}
 
 function recipeMap({ recipes, recipePools }) {
     const out = {};
@@ -342,7 +333,7 @@ function noteAxis(notes, sourceId, type, targetDef, statement) {
 }
 
 /**
- * The hero's side, as the board reads it (`HeroEffects.loadoutStatements`, `HeroEffects.perkStatements`,
+ * The hero's side, as the board reads it (`HeroEffects.loadoutStatements`, which carries the perks,
  * `LiveEffects.modifierStatements` and `grantStatements`): the always-on rules of what they wear (the
  * tool and gear), their milestone perks at their levels, and what their drinks and work potions put
  * on them for each cycle of this skill.

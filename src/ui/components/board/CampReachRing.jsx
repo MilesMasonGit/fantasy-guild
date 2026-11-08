@@ -42,5 +42,3 @@ export const CampReachRing = memo(function CampReachRing({ ring = null }) {
         </svg>
     );
 });
-
-export default CampReachRing;

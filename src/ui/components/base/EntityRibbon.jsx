@@ -306,5 +306,3 @@ export const EntityRibbon = ({
         </div>
     );
 };
-
-export default EntityRibbon;

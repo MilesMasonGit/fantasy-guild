@@ -42,5 +42,3 @@ export function GearDevSection() {
         </div>
     );
 }
-
-export default GearDevSection;

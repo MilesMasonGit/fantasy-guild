@@ -31,5 +31,3 @@ export function SuppliesDevSection() {
         </div>
     );
 }
-
-export default SuppliesDevSection;

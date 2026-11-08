@@ -127,3 +127,8 @@ export function formatTimeAgo(timestamp) {
     return date.toLocaleDateString();
 }
 
+/** A countdown as the UI writes it: `4:57`, rounded up to the second. */
+export function formatClock(ms) {
+    const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}

@@ -59,5 +59,3 @@ export const LeaveMatControl = ({ instanceId }) => {
         </button>
     );
 };
-
-export default LeaveMatControl;

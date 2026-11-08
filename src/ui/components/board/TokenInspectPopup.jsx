@@ -179,5 +179,3 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
         </div>
     );
 };
-
-export default TokenInspectPopup;

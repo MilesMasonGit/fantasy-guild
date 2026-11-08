@@ -90,5 +90,3 @@ function hudNeverShowing() {
 }
 
 export const usePerfHudShowing = PERF_ENABLED ? useDevHudShowing : hudNeverShowing;
-
-export default PerfProfiler;

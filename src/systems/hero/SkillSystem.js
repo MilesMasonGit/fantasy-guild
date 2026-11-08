@@ -167,26 +167,3 @@ export function requirementFailure(heroId, requirement) {
 
     return effectiveLevel >= (requirement.level || 0) ? null : 'LEVEL';
 }
-
-/**
- * Get all skills for a hero with their levels
- * @param {string} heroId 
- * @returns {Object|null} { skillId: { level, xp, name, icon } }
- */
-export function getAllSkills(heroId) {
-    const hero = HeroManager.getHero(heroId);
-    if (!hero) return null;
-
-    const result = {};
-    for (const [skillId, skillData] of Object.entries(hero.skills)) {
-        const skillInfo = getSkill(skillId);
-        result[skillId] = {
-            ...skillData,
-            name: skillInfo?.name || skillId,
-            icon: skillInfo?.icon || '?',
-            category: skillInfo?.category || 'unknown'
-        };
-    }
-
-    return result;
-}

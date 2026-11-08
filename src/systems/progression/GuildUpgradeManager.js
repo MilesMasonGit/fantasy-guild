@@ -168,5 +168,3 @@ export const GuildUpgradeManager = {
         }
     }
 };
-
-export default GuildUpgradeManager;

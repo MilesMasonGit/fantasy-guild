@@ -84,5 +84,3 @@ export const IdlePlate = memo(function IdlePlate({ host, tokenId, typeId, x, y, 
         host
     );
 });
-
-export default IdlePlate;

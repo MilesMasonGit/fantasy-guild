@@ -42,5 +42,3 @@ export function WorkConsumablesDevSection() {
         </div>
     );
 }
-
-export default WorkConsumablesDevSection;

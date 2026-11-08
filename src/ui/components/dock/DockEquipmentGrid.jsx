@@ -215,5 +215,3 @@ function SlotMark({ category }) {
         />
     );
 }
-
-export default DockEquipmentGrid;

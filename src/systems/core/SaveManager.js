@@ -604,5 +604,3 @@ export const SaveManager = {
         return this.currentSlot;
     }
 };
-
-export default SaveManager;

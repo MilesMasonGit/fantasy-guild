@@ -156,5 +156,3 @@ export const FightPanelPopup = ({ onOpened = null }) => {
         </div>
     );
 };
-
-export default FightPanelPopup;

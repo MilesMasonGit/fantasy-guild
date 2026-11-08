@@ -1093,5 +1093,3 @@ export const StyleSheetPage = ({ onClose }) => {
         </div>
     );
 };
-
-export default StyleSheetPage;

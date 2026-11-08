@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useElementSize } from '../../hooks/useElementSize.js';
 import { motion } from 'framer-motion';
 import { t } from '../../../i18n/index.js';
 import { GameState } from '../../../state/GameState.js';
@@ -286,22 +287,7 @@ export const EncyclopediaScreen = ({ onClose }) => {
 
     // The room the book lies in, measured; the pane's own resize too (ResizeObserver can be silent).
     const stage = useRef(null);
-    const [room, setRoom] = useState({ w: 0, h: 0 });
-    useLayoutEffect(() => {
-        const measure = () => {
-            const el = stage.current;
-            if (!el) return;
-            setRoom(prev => (prev.w === el.clientWidth && prev.h === el.clientHeight ? prev : { w: el.clientWidth, h: el.clientHeight }));
-        };
-        measure();
-        window.addEventListener('resize', measure);
-        const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
-        if (ro && stage.current) ro.observe(stage.current);
-        return () => {
-            window.removeEventListener('resize', measure);
-            ro?.disconnect();
-        };
-    }, []);
+    const room = useElementSize(stage);
 
     const body = useMemo(() => cssPx('--font-size-xs', 16), []);
     const metrics = useMemo(() => chartMetrics(body), [body]);

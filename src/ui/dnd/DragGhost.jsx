@@ -136,5 +136,3 @@ const ItemGhost = ({ payload }) => {
         </div>
     );
 };
-
-export default DragGhost;

@@ -164,5 +164,3 @@ export const TerrainCanvas = React.memo(function TerrainCanvas({ ground, onPictu
         />
     );
 });
-
-export default TerrainCanvas;

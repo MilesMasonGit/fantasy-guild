@@ -143,5 +143,3 @@ export const AnimatedHeroSprite = ({
         </div>
     );
 };
-
-export default AnimatedHeroSprite;

@@ -1,5 +1,7 @@
 // Region names and the Atlas's words, all in one place
 
+import { mulberry32 } from './seededRandom.js';
+
 /**
  * Everything the player reads about Regions lives here, so translating the Atlas means translating
  * this file.
@@ -65,15 +67,4 @@ export function flavourName(seed = 0) {
     const compound = !first.includes(' ') && random() < 0.4;
     const name = compound ? `${first}${pick(FLAVOUR_ENDING)}` : `${first} ${pick(FLAVOUR_PLACE)}`;
     return name.slice(0, FLAVOUR_NAME_MAX);
-}
-
-function mulberry32(seed) {
-    let state = seed | 0;
-    return () => {
-        state = (state + 0x6D2B79F5) | 0;
-        let t = state;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
 }

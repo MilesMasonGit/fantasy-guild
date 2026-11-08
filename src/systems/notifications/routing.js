@@ -10,7 +10,7 @@ import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import * as ItemStubs from './itemStubs.js';
 import * as Banners from './banners.js';
 import { TONE } from './bannerKinds.js';
-import { recipesUnlockedBy, othersBestLevel } from './recipeUnlocks.js';
+import { recipesUnlockedByLevelUp } from './recipeUnlocks.js';
 import { hasNews } from './catchUpNews.js';
 import * as Atlas from '../atlas/Atlas.js';
 import { defaultBannerFor } from '../../config/areaBanners.js';
@@ -83,12 +83,7 @@ export const ROUTES = [
     {
         event: ENGINE_EVENTS.HERO_LEVELED, to: 'banner:recipe',
         handle: ({ heroId, heroName, skillId, oldLevel, newLevel, startLevel } = {}) => {
-            const unlocked = recipesUnlockedBy(listRecipes(), {
-                skillId,
-                oldLevel: Number(oldLevel) || 0,
-                newLevel: Number(newLevel) || 0,
-                othersBest: othersBestLevel(GameState.heroes, heroId, skillId)
-            });
+            const unlocked = recipesUnlockedByLevelUp(listRecipes(), GameState.heroes, { heroId, skillId, oldLevel, newLevel });
             if (!unlocked.length) return;
             const name = heroName || heroOf(heroId)?.name || 'A hero';
             Banners.push({

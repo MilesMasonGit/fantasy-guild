@@ -12,23 +12,12 @@ export const RING_D_U = 40;
 
 export const RING_STROKE_U = RING_D_U * 3 / 28;
 
-/** Each ring's colour. A cycle fills; charges empty. */
-export const RING_COLOUR = Object.freeze({
-    cycle: '#f4f1e8',
-    charges: '#fbbf24',   // the game's gi-gold
-    // Skill XP in the inspection.
-    xp: '#fb923c'
-});
-
 /**
  * The count rings that GLIDE to a new value instead of jumping: a Token's charges, by a CSS
  * transition (`gi-ring-glide`, ~0.8 s). Why CSS and not the frame clock: the browser runs it with
  * no JavaScript, only the ring whose value changed animates, and a ring at rest costs nothing.
  */
 export const GLIDING_RINGS = Object.freeze(new Set(['charges']));
-
-/** The stroke a greyed ring (a blocked cycle) is drawn in. */
-export const RING_GREY = '#8a8a8a';
 
 /**
  * The cycle ring's number: whole seconds left, rounded up, never below 1s

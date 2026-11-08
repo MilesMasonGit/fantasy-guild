@@ -8,5 +8,3 @@ import { FloatingTip } from '../base/Tooltip.jsx';
 export const TopBarTip = ({ anchor, title, lines = [], width = 240 }) => (
     <FloatingTip anchor={anchor} title={title} lines={lines} maxWidth={width} tipProps={{ 'data-top-bar-tip': true }} />
 );
-
-export default TopBarTip;

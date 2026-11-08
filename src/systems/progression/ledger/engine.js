@@ -152,7 +152,8 @@ const list = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
 const finite = (n, fallback) => (Number.isFinite(n) ? n : fallback);
 const text = (v) => (typeof v === 'string' && v ? v : null);
 
-function keyed(collection) {
+/** A collection (a list or an object) as an object keyed by each record's id, or its list place / key. */
+export function keyed(collection) {
     const out = {};
     if (Array.isArray(collection)) {
         collection.forEach((def, i) => { if (isObject(def)) out[def.id ?? String(i)] = def; });

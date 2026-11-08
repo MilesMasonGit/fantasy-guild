@@ -153,5 +153,3 @@ export const FloatingTip = ({ title, lines, content, maxWidth = 280, anchor = nu
         document.body
     );
 };
-
-export default Tooltip;

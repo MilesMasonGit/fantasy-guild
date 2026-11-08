@@ -50,5 +50,3 @@ export const FlagMark = ({ size, colour = null, outline = null, alt, className, 
         </span>
     );
 };
-
-export default FlagMark;

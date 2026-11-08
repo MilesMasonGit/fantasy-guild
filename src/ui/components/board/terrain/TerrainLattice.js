@@ -1,7 +1,7 @@
 // the ground's pixel map: which terrain at every plan pixel, cell edges wiggled, beaches cut
 
 import { TERRAIN, TERRAIN_CELL } from '../../../../systems/atlas/TerrainMap.js';
-import { rasterise, STYLE_TERRAIN } from '../../../../systems/atlas/WaterShapes.js';
+import { rasterise, STYLE_TERRAIN, hash32 } from '../../../../systems/atlas/WaterShapes.js';
 import { fringeOf } from '../../../../config/registries/terrainRegistry.js';
 import { tuning } from './playmatTuning.js';
 
@@ -161,14 +161,6 @@ export function edgeStrips(cx, cy, axis, here, there, seed = 0, cellPx = CELL_PX
  * distance fields' cell scan relies on).
  */
 export const RAGGED = Object.freeze({ amp: 0.85, octaves: Object.freeze([[19, 0.6], [8, 0.28], [3, 0.12]]) });
-
-/** A 32-bit hash of two integers and a salt (lowbias32's finaliser). */
-function hash32(x, y, salt) {
-    let h = Math.imul(x + 0x632be5ab, 0x9e3779b1) ^ Math.imul(y + 0x85157af5, 0x85ebca77) ^ salt;
-    h = Math.imul(h ^ (h >>> 16), 0x7feb352d);
-    h = Math.imul(h ^ (h >>> 15), 0x846ca68b);
-    return (h ^ (h >>> 16)) >>> 0;
-}
 
 const smoothstep = (t) => t * t * (3 - 2 * t);
 

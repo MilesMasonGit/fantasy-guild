@@ -55,5 +55,3 @@ export function OrchardDevSection() {
         </div>
     );
 }
-
-export default OrchardDevSection;

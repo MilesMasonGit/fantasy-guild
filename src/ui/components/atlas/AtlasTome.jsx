@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { useElementSize } from '../../hooks/useElementSize.js';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { TOME_ART, TOME_SCALE, COVER_ART, spreadSize, pageRects } from './tomeArt.js';
@@ -166,24 +167,7 @@ export const AtlasTome = ({ tabs, tab, onTab, closeButton, label, children }) =>
     const [turn, setTurn] = useState(null);
     const turns = useRef(0);
     const stage = useRef(null);
-    const [room, setRoom] = useState({ w: 0, h: 0 });
-    const measure = useCallback(() => {
-        const el = stage.current;
-        if (!el) return;
-        const w = el.clientWidth;
-        const h = el.clientHeight;
-        setRoom(prev => (prev.w === w && prev.h === h ? prev : { w, h }));
-    }, []);
-    useLayoutEffect(() => {
-        measure();
-        window.addEventListener('resize', measure);
-        const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
-        if (ro && stage.current) ro.observe(stage.current);
-        return () => {
-            window.removeEventListener('resize', measure);
-            ro?.disconnect();
-        };
-    }, [measure]);
+    const room = useElementSize(stage);
 
     const select = (id) => {
         if (id === tab) return;
@@ -274,5 +258,3 @@ export const TomeSpread = ({ left, right }) => {
         </div>
     );
 };
-
-export default AtlasTome;

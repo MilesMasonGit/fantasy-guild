@@ -16,5 +16,3 @@ export const CombatGlyph = ({ name, colour = GLYPH_COLOUR.text, scale = 2, outli
         />
     );
 };
-
-export default CombatGlyph;

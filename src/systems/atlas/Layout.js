@@ -5,7 +5,7 @@ import {
     TERRAIN, DEFAULT_TERRAIN, TERRAIN_CELL, MAX_WATER_SHARE, terrainGrid, cellIndex, cellCentre,
     shoreDistance, islandsOf, followNodes, encodeTerrain
 } from './TerrainMap.js';
-import { planWater, readWater, sampleWater, fieldAt, withoutInland, smallWater, emptyWater } from './WaterShapes.js';
+import { directionSample, planWater, readWater, sampleWater, fieldAt, withoutInland, smallWater, emptyWater } from './WaterShapes.js';
 import { planStone, readStone, sampleStone } from './StoneShapes.js';
 
 /**
@@ -488,16 +488,8 @@ export function layout(summary, {
 
     /** A unit direction, by rejection: a point in the square kept if it lies in the ring. */
     const direction = () => {
-        for (let k = 0; k < 32; k++) {
-            const x = random() * 2 - 1;
-            const y = random() * 2 - 1;
-            const d = x * x + y * y;
-            if (d > 0.04 && d <= 1) {
-                const l = Math.sqrt(d);
-                return { x: x / l, y: y / l };
-            }
-        }
-        return { x: 1, y: 0 };
+        const [x, y, l] = directionSample(random);
+        return { x: x / l, y: y / l };
     };
 
     /** A whole-unit point between `lo` and `hi` from `(cx, cy)`, by rejection: no trigonometry. */

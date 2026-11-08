@@ -52,20 +52,10 @@ export const QuestManager = {
     },
 
     ensureState() {
-        if (!GameState.state) return;
-        if (!GameState.state.quests) {
-            GameState.state.quests = {
-                completedTutorials: [],
-                tutorialStep: 0,
-                clockMs: 0
-            };
-        }
-        const q = GameState.state.quests;
-        // A save from before the list existed kept only a step number, which maps
-        // onto nothing now.
-        if (!Array.isArray(q.completedTutorials)) q.completedTutorials = [];
-        // The bounty clock, in game ms.
-        if (!Number.isFinite(q.clockMs)) q.clockMs = 0;
+        // A save from before the list existed kept only a step number, which maps onto nothing now;
+        // `questState` gives it the list and the bounty clock.
+        const q = QuestTokens.questState();
+        if (!q) return;
         // Counts only steps the chain still has: an old save's `tutorial_N`
         // ids stay in the list, harmless, and count for nothing.
         q.tutorialStep = q.completedTutorials.filter(id => tutorialTemplate(id)).length;

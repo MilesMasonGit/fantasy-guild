@@ -55,5 +55,3 @@ export function ForestryDevSection() {
         </div>
     );
 }
-
-export default ForestryDevSection;

@@ -187,5 +187,3 @@ export const ConstellationPicture = ({ cid, centre, flash }) => {
         />
     );
 };
-
-export default HallCeremony;

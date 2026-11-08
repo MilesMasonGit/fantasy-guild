@@ -208,5 +208,3 @@ const LootSprite = React.memo(function LootSprite({
         </button>
     );
 });
-
-export default SpriteLayerView;

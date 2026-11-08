@@ -25,11 +25,6 @@ export function nearRadius() {
     return matTuning('nearRadius');
 }
 
-/** Straight-line distance between two mat points. */
-export function distance(a, b) {
-    return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
 /**
  * Squared distance between two mat points.
  * ⚠️ Centres are not whole numbers (a spawn, a nudged drop, a push), so two distances equal on

@@ -71,9 +71,5 @@ export function dismissAll() {
 export function getQueue() {
     return [...queue];
 }
-
-export const success = (message, options) => notify(message, 'success', options);
 export const info = (message, options) => notify(message, 'info', options);
 export const warning = (message, options) => notify(message, 'warning', options);
-export const error = (message, options) => notify(message, 'error', options);
-export const crisis = (message, options) => notify(message, 'crisis', { ...options, duration: 0 });

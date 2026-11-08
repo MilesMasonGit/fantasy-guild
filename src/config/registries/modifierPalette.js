@@ -686,21 +686,3 @@ export const TARGET_MODES = [
     { mode: 'tag', label: 'Tokens tagged', hint: 'Every Token carrying this tag — "all nearby Coast tokens".' },
     { mode: 'id', label: 'One exact Token', hint: 'One specific Token type — "Shrimp Beds only".' }
 ];
-
-/**
- * ⚠️ **`by category` was retired from the editor.**
- *
- * It aimed at `tokenType`, which is now *derived* from what a Token has rather
- * than chosen — so authoring against it would mean targeting a value the CMS
- * computed. Tags are explicit and the author controls them, which is the whole
- * reason the owner wanted them front and centre.
- *
- * ⚠️ **`all` is not the same reach.** The category filter meant "all nearby
- * **resources**"; `all` means "all nearby **Tokens**" — broader in one
- * direction, narrower in the other. Aiming at a *kind* of Token now means
- * tagging those Tokens. `matchesTokenTarget` still understands `tokenType` so
- * that nothing already authored changes behaviour; it is simply not offered.
- *
- * ⚠️ **Nothing imports this constant.** The retirement it records lives in `matchesTokenTarget`; this export is only a label for it. Do not mistake it for machinery: deleting it would break nothing.
- */
-export const RETIRED_TARGET_MODES = ['tokenType'];

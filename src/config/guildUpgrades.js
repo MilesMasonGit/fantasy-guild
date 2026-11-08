@@ -389,24 +389,3 @@ export function getLockReason(upgradeId, ranks = {}) {
     const detail = getLockDetail(upgradeId, ranks);
     return detail ? detail.text : null;
 }
-
-/** Convert number to Roman numerals (e.g. 1 -> 'I', 4 -> 'IV', 10 -> 'X'). */
-export function toRoman(num) {
-    if (!num || num <= 0) return '0';
-    const lookup = [
-        { val: 10, sym: 'X' },
-        { val: 9, sym: 'IX' },
-        { val: 5, sym: 'V' },
-        { val: 4, sym: 'IV' },
-        { val: 1, sym: 'I' }
-    ];
-    let roman = '';
-    let n = num;
-    for (const { val, sym } of lookup) {
-        while (n >= val) {
-            roman += sym;
-            n -= val;
-        }
-    }
-    return roman;
-}
