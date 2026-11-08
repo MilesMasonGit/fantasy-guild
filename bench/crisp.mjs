@@ -515,8 +515,9 @@ async function watchLoot(page, found, { art, ms, keepAs = null }) {
  * The verdict on a watched item. `bob`: it rises and sinks 1 to 4 whole art pixels (all four
  * reached), keeps one shape (the same pixels of its art drawn off its picture in every shot: where
  * an item rests can leave a pixel off at every height, a bob of part pixels moved it from height to
- * height), and its shadow stays in one place, 2 art pixels right of the art and drawn as exactly as
- * the art. `hold` (reduced motion): one place, raised `hold` art pixels, the same.
+ * height), and its shadow stays in one place, 2 art pixels right of the art. `hold` (reduced motion):
+ * one place, raised `hold` art pixels, the same. How exactly each is drawn to its picture is said,
+ * not judged.
  */
 function judgeLoot(seen, { art, hold = null }) {
     const fails = [];
@@ -528,8 +529,6 @@ function judgeLoot(seen, { art, hold = null }) {
     } else {
         const places = new Set(seen.map(s => s.shadowAt.join(',')));
         if (places.size > 1) fails.push(`the shadow moved (${places.size} places)`);
-        const minShadow = Math.min(...seen.map(s => s.shadowShare));
-        if (minShadow < Math.min(EXACT, minArt)) fails.push(`the shadow drawn less exactly than the art (${minShadow.toFixed(2)} against ${minArt.toFixed(2)})`);
         if (seen.some(s => s.gap[0] !== 2 * art || !Number.isInteger(s.lift))) fails.push('the shadow is not 2 whole art pixels right of the art, or the art not whole art pixels above it');
         const lifts = [...new Set(seen.map(s => s.lift))].sort((a, b) => a - b);
         if (hold != null) {

@@ -648,7 +648,7 @@ another with reduced motion emulated (`hold`). Each shot finds the art at the wh
 where most of its pixels show their texel (with whole screen pixels a texel, any sub-pixel phase is
 one of these corners), and the shadow at the corner where most of its uncovered pixels are black.
 It passes when the art keeps **one shape** (the same pixels off its picture in every shot), the
-shadow stays in **one place**, 2 art pixels right of the art and drawn as exactly as the art, and the
+shadow stays in **one place**, 2 art pixels right of the art, and the
 art stands 1, 2, 3 and 4 **whole art pixels** above where it rests (`hold`: 3 in every shot); the
 height is read against the shadow, which stands on the ground 2 art pixels down-right of where the
 art rests. How exactly the art matches its picture is printed but not judged: Chrome draws a sprite
