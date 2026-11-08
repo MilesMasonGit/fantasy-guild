@@ -10,7 +10,6 @@ import {
     BASE_CRIT_CHANCE,
     CRIT_MULTIPLIER,
     matchupMultiplier,
-    rpsOutcome,
     SWING_TIME_FACTOR_RANGE,
 } from '../../config/FormulaRegistry.js';
 import { COMBAT_SKILL_IDS, BAREHANDED_STYLE_ID } from '../../config/registries/skillRegistry.js';
@@ -21,8 +20,6 @@ import {
     weaponDamageTypeOf, BAREHANDED_DAMAGE_TYPE, PLAIN_ENEMY_HIT_TYPE, resistanceFor
 } from '../../config/registries/damageTypes.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
-
-export { rpsOutcome };
 
 /** A hero's level in one skill, as saved; 0 when they hold none of it (a villager). */
 function skillLevelOf(hero, skillId) {
