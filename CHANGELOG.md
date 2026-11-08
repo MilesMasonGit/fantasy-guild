@@ -11,6 +11,12 @@ project's first tagged baseline — everything before it was untagged developmen
   nothing bursts out when you come back. Any effect still ends on time even if its animation
   never reports done. Loot collected while the page is hidden shows on its stub at once instead
   of waiting to fly, and the flights booked in one frame measure the board once between them.
+- **Dragging a Token onto a half-used copy of itself no longer leaves a ghost behind**: when all
+  its charges fit into the copy, the dragged Token now leaves the mat, as a dropped one from the
+  hand always did. Before, it stayed at its old spot with no charges and an "Out of charges" mark
+  (or, for a Token that refills, free charges later). A drop with charges left over still stands
+  beside the copy, and a Token put back down where it stood is no longer said to have left it.
+- **A farming test no longer depends on the dice** (tests only): the last-harvest test pins its random rolls for that cycle, so it passes under the second test seed too.
 
 - **Dev panel: the "Lap star in the sky" button is gone** (dev only). It installed a hand-copied
   Swift Laps star for testing before the owner synced the real one; the tests now read the synced

@@ -200,10 +200,10 @@ a Brewery; better stations are faster, not new lists.
 
 | Level | Name | Kind | Made with | Art |
 |---|---|---|---|---|
-| 60 | Swordfish Steak | food | Swordfish | H |
+| 60 | Orange Chicken | food | Raw Chicken, Orange | A |
 | 61 | Hearty Beef Stew | food | Raw Beef, Carrot, Sofrito | A |
 | 62 | Hearty Potato Stew | food | Potato, Leek, Sofrito | A |
-| 63 | Orange Chicken | food | Raw Chicken, Orange | A |
+| 63 | Swordfish Steak | food | Swordfish | H |
 | 64 | Wine | drink: Enchanting | Grapes | H |
 | 65 | Corn Chowder | food | Corn, Milk, Potato | A |
 | 66 | Pineapple Punch | drink: Crime | Pineapple, Lemon, Water | N |
@@ -234,10 +234,10 @@ a Brewery; better stations are faster, not new lists.
 
 | Level | Name | Kind | Made with | Art |
 |---|---|---|---|---|
-| 80 | Cooked Shark | food | Shark | H |
+| 80 | Coconut Pie | food | Dough, Coconut, Butter | A |
 | 81 | Ember Steak | food | Raw Beef, Emberroot | A |
 | 82 | Ember Ale | drink: any work | Wheat, Emberroot, Water | A |
-| 83 | Coconut Pie | food | Dough, Coconut, Butter | A |
+| 83 | Cooked Shark | food | Shark | H |
 | 84 | Swordfish in Sofrito | food | Swordfish, Sofrito | A |
 | 85 | Spiced Wine | drink: any work | Wine, Emberroot | A |
 | 86 | Ember Stew | food | Raw Beef, Emberroot, Sofrito | A |
@@ -261,7 +261,7 @@ Recipes: **24 have, 48 adapt, 27 new** (H, A, N above). Adapt means a recolour o
 
 ## Moved or changed from today
 
-- **Fish recipes match their catch levels**: Shrimp 1, Trout 5, Oyster 25, Tropical Fish 30, Salmon 40, Lobster 50, Swordfish 60, Shark 80. Other recipes shift a level or so around them. Today's levels are placeholders: Swordfish cooks at 4, Trout at 35.
+- **Fish recipes match their catch levels**: Shrimp 1, Trout 5, Oyster 25, Tropical Fish 30, Salmon 40, Lobster 50, Swordfish 63, Shark 83 (each waits for its Harpoon, 2026-11-07). Other recipes shift a level or so around them. Today's levels are placeholders: Swordfish cooks at 4, Trout at 35.
 - **Steak moves up**: it heals 35 at level 1 today, more than anything.
 - **The eight tier 3 fruits are placed**, closing that Open link; so are Lemonade and Limeade.
 - **Limes's first fight still eats Redberries** (brief 480).
