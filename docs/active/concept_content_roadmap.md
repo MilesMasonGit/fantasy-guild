@@ -94,6 +94,8 @@ Later sessions will revise earlier ones; that is expected.
 
 ## The ladder (owner, approved 2026-11-02)
 
+**Amended by the owner, 2026-11-07 ([concept_balancing.md](concept_balancing.md))**: the pace curve is one smooth rule, each level 6.5 % longer, for a well-optimized player: about 15 days a skill, the whole game about 6 weeks optimized and 2 to 3 months typical. The times and the 34 days a skill below are from before.
+
 **Amended by the owner, 2026-11-04: "each new tier to start every 20 levels. Copper is 1-19, Iron is 20-39, etc. We'll fit silver and gold in where it fits."** Metals open at copper 1, iron 20, silver 30, mythril 40, gold 50, adamantine 60, darkmetal 80. The table's "Opens at level" and its times below are from before this and must be worked out again; [Cooking's list](content_food_and_drink.md) still uses the old bands and follows when its pack is made. ⚠️ Darkmetal opens six levels sooner and iron five later, which moves the ledger's budgets.
 
 | Rung | Plan tier | Wood | Opens at level | Mined with | Focused guild reaches it | Even spread reaches it | Rings (main-line cells, roughly) | What the player is chasing |

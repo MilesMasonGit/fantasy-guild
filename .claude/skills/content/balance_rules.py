@@ -5,9 +5,10 @@ Run from the repository root: python .claude/skills/content/balance_rules.py
 Every number on the rules page comes from here; change a constant, re-run, and copy the tables.
 """
 
-# The pace curve (the ladder's ruling): minutes one level takes, geometric between points,
-# read the way the ledger reads it (settings.js, minutesPerLevelAt).
-PACE = [(1, 3), (10, 8), (20, 30), (40, 180), (60, 720), (99, 1440)]
+# The pace curve (owner, 2026-11-07): one smooth rule, each level 6.5 % longer than the last,
+# 3 minutes at level 1, for a well-optimized player.
+PACE_START_MINUTES = 3
+PACE_GROWTH = 1.065
 XP_HOUR_AT_1 = 1660      # what level 1's 83 XP in 3 minutes makes an hour; keeps today's start
 OLD_TASK_PER_TIER = 2    # an old task is this many times slower 20 levels later (owner, 2026-11-07)
 CYCLE_BASE = {'gather': 6, 'prepare': 8, 'make': 12}   # seconds at level 0
@@ -18,12 +19,7 @@ PAYBACK_HOURS = (1, 24)   # an upgrade's payback at level 1 and level 80
 
 
 def minutes_per_level(level):
-    if level <= PACE[0][0]:
-        return PACE[0][1]
-    for (a, am), (b, bm) in zip(PACE, PACE[1:]):
-        if level <= b:
-            return am * (bm / am) ** ((level - a) / (b - a))
-    return PACE[-1][1]
+    return PACE_START_MINUTES * PACE_GROWTH ** (level - 1)
 
 
 def xp_an_hour(level):

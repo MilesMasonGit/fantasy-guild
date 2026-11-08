@@ -1,4 +1,4 @@
-Status: approved 2026-11-07, amended the same day after a critical review (samples in the review's notes, below)
+Status: approved 2026-11-07, amended the same day after a critical review and the owner's smooth curve
 
 # Balance rules
 
@@ -18,11 +18,13 @@ Status: approved 2026-11-07, amended the same day after a critical review (sampl
 | Drops and finds | **Set as finds a day** for one hero | Basic drops every kill; bonus finds 20 a day; rare gear drops 1 a day |
 | Upgrade prices | **Payback from 1 hour to 1 day**, by tier | Always worth buying, late ones are goals |
 
-**These are starting numbers.** The ledger reads them, times the whole game at the Bare, Typical and Maxed players, and its balancing preview proposes nudges. A nudge that goes beyond what these rules allow means the rule changes, on this page.
+**The curve describes a well-optimized player** (owner, 2026-11-07): one who holds the boosts a good player would at that point. A typical player is slower than the curve, about 1.5 to 2x, and a player with no boosts at most 3x.
+
+**These are starting numbers.** The ledger reads them, times the whole game at each player, and its balancing preview proposes nudges. A nudge that goes beyond what these rules allow means the rule changes, on this page.
 
 ## 1. XP
 
-**The pace curve** (the ladder's ruling) says how long one level takes: 3 minutes at 1, 8 at 10, 30 at 20, 3 hours at 40, 12 hours at 60 and a day at 99, smoothly in between. One skill's climb is about 34 days.
+**The pace curve is one smooth rule** (owner, 2026-11-07): "I want our progression curve to be consistent across the game." **Each level takes 6.5 % longer than the one before**, starting at 3 minutes: about 5 minutes at 10, 35 at 40, 2 hours at 60, 7 at 80, 14 at 90 and a day at 99. **One skill's climb is about 15 days** for a well-optimized player, so the whole game is about 6 weeks optimized and about 2 to 3 months for a typical player. This replaces the ladder's points (12 hours at 60, a day at 99, 34 days a skill): a single percentage can't keep all three of 3 minutes at 1, a day at 99 and 34 days, and the owner kept the first two.
 
 **XP an hour doubles every 20 levels** (owner, 2026-11-07: "2x a tier"). A task unlocked at level L pays **1,660 × 2^((L − 1) / 20) XP an hour**. That's what level 1's 83 XP in 3 minutes makes, so the start stays as it is today.
 
@@ -30,31 +32,31 @@ Status: approved 2026-11-07, amended the same day after a critical review (sampl
 
 | Level | Minutes a level | XP an hour, new work | XP to the next level | XP to reach it |
 |---|---|---|---|---|
-| 1 | 3 | 1,660 | 83 | 0 |
-| 5 | 5 | 1,907 | 147 | 418 |
-| 10 | 8 | 2,268 | 302 | 1,421 |
-| 20 | 30 | 3,207 | 1,603 | 8,587 |
-| 30 | 73 | 4,535 | 5,555 | 38,453 |
-| 40 | 180 | 6,414 | 19,241 | 141,911 |
-| 50 | 360 | 9,071 | 54,423 | 463,001 |
-| 60 | 720 | 12,828 | 153,932 | 1,371,179 |
-| 70 | 860 | 18,141 | 260,034 | 3,342,273 |
-| 80 | 1,027 | 25,655 | 439,271 | 6,672,004 |
-| 90 | 1,227 | 36,282 | 742,052 | 12,296,861 |
-| 98 | 1,415 | 47,874 | 1,128,746 | 19,480,579 |
+| 1 | 3 min | 1,660 | 83 | 0 |
+| 5 | 4 min | 1,907 | 123 | 387 |
+| 10 | 5 min | 2,268 | 200 | 1,139 |
+| 20 | 10 min | 3,207 | 531 | 4,363 |
+| 30 | 19 min | 4,535 | 1,408 | 12,923 |
+| 40 | 35 min | 6,414 | 3,739 | 35,646 |
+| 50 | 66 min | 9,071 | 9,925 | 95,968 |
+| 60 | 2.1 h | 12,828 | 26,348 | 256,100 |
+| 70 | 3.9 h | 18,141 | 69,945 | 681,200 |
+| 80 | 7.2 h | 25,655 | 185,680 | 1,809,700 |
+| 90 | 13.6 h | 36,282 | 492,920 | 4,805,494 |
+| 98 | 22.5 h | 47,874 | 1,076,429 | 10,495,094 |
 
-About 20.6 million XP to 99. Today's table needs about 13 million.
+About 11.6 million XP to 99. Today's table needs about 13 million.
 
-**XP per action** = the XP an hour × the action's seconds ÷ 3,600, rounded, at least 1. The seconds are **the work cycle alone**: rests don't count, because the rest rule (section 2) keeps a lone hero busy most of the time.
+**XP per action** = the XP an hour × the action's seconds ÷ 3,600 ÷ **the optimized boost factor** for that tier, rounded, at least 1. The factor is how much faster a well-optimized hero earns than a hero with no boosts (speed and XP boosts together), read from the boost budget (section 5); until that table is filled, it is 1. The seconds are **the work cycle alone**: rests don't count, because the rest rule (section 2) keeps a lone hero busy most of the time.
 
-**Which level's XP an hour**: the level halfway between this unlock and the skill's next one, not the unlock itself. In a skill with few unlocks (Mining's metals, Fletching), XP an hour stays flat while the table keeps rising, so without this those skills climb about 40 % slower than the curve (review: Mining 47.7 days against 34.4; with the midpoint, 35.0). Where the next unlock is the next level, it's the same as the unlock level.
+**Which level's XP an hour**: the level halfway between this unlock and the skill's next one, not the unlock itself. In a skill with few unlocks (Mining's metals, Fletching), XP an hour stays flat while the table keeps rising, so without this those skills climb about 40 % slower than the curve (review, on the old curve: Mining 47.7 days against 34.4; with the midpoint, 35.0). Where the next unlock is the next level, it's the same as the unlock level.
 
 **Pick action seconds that give whole XP early on**: at 3 to 12 XP an action, rounding can be 13 % off.
 
-- **An old task falls behind**: 2x slower a tier later, 4x two tiers on, and about 30x slower at 99. Reaching 99 on a level-1 task alone would take about 517 days of one hero's work.
+- **An old task falls behind**: 2x slower a tier later, 4x two tiers on, and about 30x slower at 99. Reaching 99 on a level-1 task alone would take about 290 days of one hero's work.
 - **Crafting and gathering pay the same an hour** at the same level (owner). A craft pays more per action only because it takes longer.
 - **Each link of a chain pays its own XP**, to its own skill. A late item earns the guild several skills' XP, and the guild pays for that in materials.
-- **Aimed at a hero with no boosts.** A Typical player's buildings and drinks make them a little faster than the curve. The ledger checks that Bare stays playable and Maxed doesn't trivialise it (within 3x of the curve), and nudges XP if it doesn't.
+- **Aimed at a well-optimized hero.** The ledger checks that a typical player lands about 1.5 to 2x slower and a player with no boosts no more than 3x slower, and nudges XP if not.
 
 ## 2. Action time
 

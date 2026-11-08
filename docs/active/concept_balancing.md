@@ -62,7 +62,65 @@ Status: approved 2026-11-07 (the rules: [BALANCE_RULES.md](../reference/BALANCE_
 - **Speed boosts keep today's adding and the 80 % cap, with smaller targets**: everything at Maxed cuts at most 65 %.
 - **Rare items are a gate**: "Rare items are a gate that can be passed by having multiple heroes working on similar tasks, or by using boosts."
 - **Agent's calls from the review, written into the rules**: XP from the work cycle alone, with a rest rule (uses × cycle ≥ 3 × rest); XP an hour taken halfway to the skill's next unlock, so skills with few unlocks keep pace; a make step's time grows with its bar count, so Daggers aren't the best XP; T-337 keeps each saved hero's level; a guild-wide Hall star's payback counts all the work it boosts.
-- **The calendar**: 21 skills × 34.4 days ÷ 8 heroes is about 90 days with no slack, a little over the 3-month aim, as the ladder already said.
+- **The calendar**: 21 skills × 34.4 days ÷ 8 heroes is about 90 days with no slack, a little over the 3-month aim, as the ladder already said. *(Superseded the same day by the smooth curve: 21 × 15.3 ÷ 8 is about 40 days optimized.)*
+
+## How we test and balance it (owner, 2026-11-07)
+
+*The owner: "We also need to consider how our various boosts are balanced, as well as the upgrade costs. How we gate items is also a factor... We need a plan for how we're going to test and balance all of these."*
+
+### The owner's rulings
+
+- **All at once on paper**: "I want the progression logic to be consistent throughout the game. As an example, I want level 10 to take 8 mins of well-optimized work to level up, then level 11 to take 12 mins. I want level 90 to take 4 hours, level 91 to take 5 hours. These numbers are just examples." The whole planned game is balanced in one pass, by rule, then played.
+- **The curve describes a well-optimized player.** A typical player is slower, about 1.5 to 2x; no boosts, at most 3x.
+- **One smooth curve: each level 6.5 % longer**, 3 minutes at 1, a day at 99, about 15 days a skill optimized. It amends the ladder's 34 days a skill: about 6 weeks for the whole game optimized, 2 to 3 months typical ([BALANCE_RULES.md](../reference/BALANCE_RULES.md) section 1).
+- **Proof in three steps**: the ledger on every change, the real engine on fixed boards, then the owner's play against a milestone sheet.
+- **Boosts are held to a budget per kind and tier.**
+- **Late tiers are tested from start-at-a-tier saves.**
+
+### The paper pass, in order
+
+Each step reads the one before, so the order matters:
+
+| Step | What | Settles |
+|---|---|---|
+| 1 | **The curve and the XP table** | How long every level takes for the optimized player; the XP each level needs (T-337) |
+| 2 | **The boost budget** (below) | What the optimized and typical players hold at each tier, so the XP per action can allow for it |
+| 3 | **Base numbers by the rules** | Every planned entry's XP, action time, ingredient counts and drop rates (the script, on T-305's Planned entries) |
+| 4 | **Upgrade prices** | Each Hall star and building variant priced by payback against what step 2 says it gives |
+| 5 | **Gates** (below) | Every unlock's gate checked for walls and luck |
+| 6 | **The ledger over the whole plan** | Walls, stage times and every player's pace from 1 to 99 in every skill; fixes by rule, never one number at a time |
+
+### The boost budget
+
+**One table, one row per tier, one column per kind of boost**: speed, yield, XP, rare finds. Each cell holds the total a typical and an optimized player hold there, and every building, drink, potion, tool, perk and Hall star is counted against it. The ledger adds the boosts up per player and flags a total over its cell. A new boost then shows at once what it uses up. It grows from the boost targets the ledger already has, and the speed cap ruled after the review (at most a 65 % cut at Maxed) is its ceiling.
+
+### Gates
+
+**Every unlock is behind one or more gates**, and each kind is checked by what the ledger already measures:
+
+| Gate | What it is | Checked by |
+|---|---|---|
+| A level | The skill level to make or work it | The curve: no step over 2x its expected time (walls) |
+| A tool | A pick or axe of a tier, a rod, a harpoon | The tool's recipe lands before what it gates (the tool rule) |
+| A place | A ring, unlocked by Hall stars (ring stars), or a special Token | Checks F, over 100 seeds: every world reaches it |
+| A building | A station or camp built first | Its price against payback; the one-off step rule |
+| A rare item | A find or rare drop | Finds a day (T-336): several heroes or boosts pass it in good time |
+| A chain | Ingredients from other skills | The ledger's path time: no skill waits on another past its wall |
+
+**A gate is balanced when the optimized player's path through it stays on the curve**, and the typical and bare players stay inside their bounds.
+
+### The proof
+
+1. **The ledger, on every change**: minutes, run by the content agent and the pack gate before a pack reaches the inbox.
+2. **The real engine on fixed boards, one per tier**: what `npm run bench:calibrate` does for five boards today, extended to a board for each tier with its boosts. It proves the ledger's rates within a few percent, so the paper pass can be trusted.
+3. **The owner's play, against a milestone sheet**: a short list per tier ("the first iron bar by about 1 h optimized", "a level 40 skill by day 2"). The game logs real times beside the ledger's forecast. A gap over the tolerance sends the cause back to the rules.
+4. **Start-at-a-tier saves**: a QA button builds a save at the start of any tier, from the ledger's typical player (levels, tools, buildings, a stock of materials), so an hour of mythril or darkmetal play takes an hour, not weeks.
+
+### Tools this needs
+
+- **The ledger**: the smooth curve, the optimized player as the curve's target, and the boost budget table and its check (T-339, with T-336 and T-338).
+- **Testing**: a calibration board per tier, a milestone sheet with a play log, and start-at-a-tier saves (T-340).
+- **The numbers script** on the Planned entries (a brief, after T-305).
 
 ## The shape (agent's proposal, to settle in the next round)
 
