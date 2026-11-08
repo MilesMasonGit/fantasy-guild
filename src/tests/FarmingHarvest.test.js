@@ -189,7 +189,10 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         run(20200);
         expect(InventoryManager.getItemCount(SEED)).toBe(0);
         Orders.orderAt('farmer', { x: FIELD.x, y: FIELD.y });
-        run(1200);
+        // A chance roll can double this harvest (and its seed); a high roll misses every chance, so
+        // the cycle pays exactly one wheat and one seed whatever the seed.
+        const noLuck = vi.spyOn(Math, 'random').mockReturnValue(0.999);
+        try { run(1200); } finally { noLuck.mockRestore(); }
         expect(wheat()).toBe(1);
         expect(Fields.stageOf(field)).toBe(Fields.STAGE.GROWING);
         expect(InventoryManager.getItemCount(SEED) + SpriteLayer.countOnBoard(SEED)).toBe(0);

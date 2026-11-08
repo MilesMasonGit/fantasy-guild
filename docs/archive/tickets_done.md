@@ -242,3 +242,4 @@ T-205 — Chrome's CPU throttle drifts — — — 2026-11-03
 T-206 — Stale bench Chrome profiles and orphan processes — — — 2026-11-02
 T-208 — Flaky tests under full-suite load — 33e87e62 — 2026-11-06
 T-210 — Remove the description bridge — 0862280d — 2026-11-06
+T-340 — The last-harvest farming test pins its random rolls, so it passes under the second test seed; the full second-seed suite is green — fix/farming-seed-test — 2026-11-07
