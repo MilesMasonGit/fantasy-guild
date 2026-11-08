@@ -12,6 +12,7 @@ import { GameState } from '../../../state/GameState.js';
 import { skipHint } from './boardConstants.js';
 import { problemOf, problemText } from './problemMark.js';
 import { t } from '../../../i18n/index.js';
+import { formatClock } from '../../../utils/Formatters.js';
 
 /**
  * The words for orders, in one place: the flag's tooltip, a Token's own hover lines and the
@@ -52,12 +53,6 @@ function hintKey(reason, typeId) {
     return reason === Flags.SKIP.CLAIMED && isEnemyDef(getTokenType(typeId)) ? 'claimed_fight' : reason;
 }
 
-/** `0:42`, `4:05`. */
-function clock(ms) {
-    const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
-    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
-
 /** A healing hero's time left, or null when they are not healing. */
 function healingLeftMs(heroId) {
     const hero = (GameState.state?.heroes || []).find(h => h?.id === heroId);
@@ -72,7 +67,7 @@ export function flagStatusLine(heroId) {
     const healing = healingLeftMs(heroId);
     const s = Flags.statusOf(heroId);
     if (s.state === 'returning') return s.limping ? t('orders.limpingHome') : t('orders.headingHome');
-    if (healing != null) return t('orders.healingShort', { time: clock(healing) });
+    if (healing != null) return t('orders.healingShort', { time: formatClock(healing) });
     return dockStatusLine({ ...s, waitingFor: s.state === 'idle' ? waitingTypeOf(heroId) : null });
 }
 

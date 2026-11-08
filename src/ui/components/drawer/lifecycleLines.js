@@ -1,4 +1,5 @@
 
+import { formatClock } from '../../../utils/Formatters.js';
 import { turnTiming, PASSIVE_LAP_BASE_MS, fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
 
 /**
@@ -161,11 +162,7 @@ function bossLines(def) {
     return def?.enemy?.boss === true ? [{ label: 'Boss', value: 'Fights only the heroes you send', tone: TONE.MUTED }] : [];
 }
 
-/** A countdown as the UI writes it: `4:57`, rounded up to the second. */
-export function formatClock(ms) {
-    const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
-    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
+export { formatClock };
 
 /** One lap's pay as words: "1 Oak Seed", "10 Water (Wishing Well)". */
 function passivePays(passive, itemName) {
