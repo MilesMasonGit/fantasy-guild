@@ -5,6 +5,14 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Kills get their combat style's XP bonuses**: an XP bonus aimed at Melee, Ranged, Magic or
+  Stealth now widens the XP a kill won in that style gives, the way a Forestry XP bonus widens a
+  chopping cycle's; a bonus aimed at no skill (Merry) widens kills too. Gear, perks, potions and
+  Guild Hall stars all count, summed into one bonus with the same at-least-1-XP floor as work. The
+  hero-side XP multiplier that nothing ever filled is gone, and the XP Bonus hint in the CMS says
+  "per cycle to the working hero, or per kill in a combat style". No combat XP star exists yet
+  (four follow as content).
+
 - **A farming test no longer depends on the dice** (tests only): the last-harvest test pins its random rolls for that cycle, so it passes under the second test seed too.
 
 - **Dev panel: the "Lap star in the sky" button is gone** (dev only). It installed a hand-copied
