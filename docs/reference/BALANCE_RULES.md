@@ -107,17 +107,37 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 **Boosts of one kind add up** in the game (`ModifierAggregator`): +30 % and +20 % make +50 %, not +56 %. Speed boosts cut the time, and **no stack cuts more than 80 %** (`workTime.js`).
 
-**Speed: keep the cap, lower the targets** (owner, after the review). Every speed boost a Maxed hero can hold, Hall included, adds up to **at most a 65 % cut**, inside the 3x bound and short of the 80 % cap, so one more Faster Work building always still helps. The Hall's late +100 % is no longer a speed target: its speed stars share the budget.
+**The boost budget** (owner, 2026-11-07). One table says what a **typical / optimized** player holds at the start of each tier, for each kind of boost. Every building, drink, potion, perk and Hall star is counted against its cell, and the ledger flags a total over it (T-383). Farming's growth time counts as speed.
 
-| Kind | Target |
+| Rule | Ruling |
 |---|---|
-| A Faster Work building | about −20 % time |
-| A speed drink | about −10 % time |
-| Hall speed stars, all ranks of a skill | about −35 % time |
-| **Yield** (Double Output, camps' variants, Hall yield stars) | grows by tier, so a Typical guild needs one or two gatherers per crafter: about +50 % at iron to +300 % at darkmetal together |
-| **A rare-find potion** | **+100 %, rising to +200 % for late potions** (owner) |
-| **A Rare Finds building** | **+50 %** (owner); with a potion, x2.5 to x3.5 |
-| Other Hall stars (XP, more finds) | +10 % early, up to +100 % late |
+| **Size** | An optimized hero earns 1.4x a hero with no boosts at copper, rising to **3x at darkmetal**, the most the 3x bound allows. Boosts matter more as the game goes on |
+| **Typical** | Holds about half of each speed and XP boost: close to optimized early (about 1.2x), **about 2x behind late** |
+| **Gatherers** | Yield boosts grow with the tier so **a typical guild needs about 2 gatherers per crafter at every tier**, against 9 at darkmetal with no boosts |
+| **Speed ceiling** | At most a 65 % cut at Maxed, inside the game's 80 % cap, so one more Faster Work building always still helps |
+
+| Tier | Speed cut | XP | Yield | Rare finds | Earns, against no boosts | Optimized over typical | Gatherers per crafter: none, typical, optimized |
+|---|---|---|---|---|---|---|---|
+| Copper (1) | 10 / 20 % | +5 / +10 % | +2 / +27 % | +0 / +100 % | 1.17x / 1.38x | 1.18x | 2.2 / 2.2 / 1.8 |
+| Iron (20) | 15 / 30 % | +5 / +10 % | +41 / +77 % | +0 / +100 % | 1.24x / 1.57x | 1.27x | 3.1 / 2.2 / 1.8 |
+| Silver (30) | 18 / 35 % | +8 / +15 % | +68 / +110 % | +0 / +100 % | 1.30x / 1.77x | 1.36x | 3.7 / 2.2 / 1.8 |
+| Mythril (40) | 20 / 40 % | +8 / +15 % | +100 / +150 % | +50 / +150 % | 1.34x / 1.92x | 1.43x | 4.4 / 2.2 / 1.8 |
+| Gold (50) | 22 / 45 % | +10 / +20 % | +138 / +197 % | +50 / +150 % | 1.42x / 2.18x | 1.54x | 5.2 / 2.2 / 1.8 |
+| Adamantine (60) | 25 / 50 % | +10 / +20 % | +183 / +254 % | +50 / +250 % | 1.47x / 2.40x | 1.64x | 6.2 / 2.2 / 1.8 |
+| Darkmetal (80) | 30 / 60 % | +10 / +20 % | +300 / +400 % | +50 / +250 % | 1.57x / 3.00x | 1.91x | 8.8 / 2.2 / 1.8 |
+
+*Cells are typical / optimized. "Earns" is speed and XP together. Made by `balance_rules.py`; the speed and XP columns, the typical share and the yield gap are its settings.*
+
+**Who carries it, at darkmetal for an optimized hero** (earlier tiers in the same shares). **Buildings carry the most speed** (owner); the yield and XP shares are the agent's calls:
+
+| Kind | Shared out |
+|---|---|
+| Speed | Faster Work building −30 %, Hall stars −15 %, drink −10 %, skill perk −5 % |
+| Yield | Double Output building (a sure double at most) +100 %, Hall stars +200 %, camp variants and perks +100 % |
+| XP | More XP building +10 %, Hall stars +5 %, drink +5 % |
+| Rare finds | A rare-find potion +100 %, rising to +200 % for late potions (owner); a Rare Finds building +50 % (owner), from mythril, when the first Rare Finds variants come |
+
+⚠️ **Today's Hall is over budget on XP**: its Lore stars give +15 % XP (Builder's Lore +30 %) in the first tiers, where the whole XP budget is +10 %. The paper pass brings them in. A Double Output building can give at most +100 % (a sure double), so most late yield is the Hall's.
 
 **Consumables last a number of cycles, and crafts make batches** (owner, after the review: "A dose is meant to last a number of cycles, not time. But also we will make batches."). **A batch must pay back at least 4x**: the work time the whole batch saves (or the finds it adds) is at least four times the hero time it took to make, its ingredients included. ⚠️ Today a work potion lasts 1 cycle and a drink 10 (`consumableRule.js`), so a batch would need to be very large: the dose lengths are worth raising (T-338).
 

@@ -94,6 +94,8 @@ Each step reads the one before, so the order matters:
 
 **One table, one row per tier, one column per kind of boost**: speed, yield, XP, rare finds. Each cell holds the total a typical and an optimized player hold there, and every building, drink, potion, tool, perk and Hall star is counted against it. The ledger adds the boosts up per player and flags a total over its cell. A new boost then shows at once what it uses up. It grows from the boost targets the ledger already has, and the speed cap ruled after the review (at most a 65 % cut at Maxed) is its ceiling.
 
+**Settled 2026-11-07** ([BALANCE_RULES.md](../reference/BALANCE_RULES.md) section 5): the optimized advantage grows to 3x by darkmetal; a typical player is about 1.2x behind early and 2x late; yield boosts keep a typical guild at about 2 gatherers per crafter at every tier; **buildings carry the most speed** (owner).
+
 ### Gates
 
 **Every unlock is behind one or more gates**, and each kind is checked by what the ledger already measures:
