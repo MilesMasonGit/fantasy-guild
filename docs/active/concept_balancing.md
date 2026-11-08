@@ -1,4 +1,4 @@
-Status: draft (the rules: [BALANCE_RULES.md](../reference/BALANCE_RULES.md), draft)
+Status: approved 2026-11-07 (the rules: [BALANCE_RULES.md](../reference/BALANCE_RULES.md))
 
 # Balancing the game's numbers
 
