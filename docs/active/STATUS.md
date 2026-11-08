@@ -21,7 +21,7 @@ build green) · bench-queued · eye-check · merged.*
 | 510 F4: no ghost Token after merging two on the mat (T-342) | builder | `fix/zero-charge-ghost` (`f4`) | **merged** 38b81dae (632 files green, cycles, build, engine work same everywhere) | Sat | Sat |
 | 510 F5: hero gear not re-read every tick (T-078) | engineer | `perf/loadout-memo` (`f5`) | **merged** 67d7abca (635 files green, cycles, build, engine work same everywhere); 6 h catch-up: loadout 10 % to 2 % of busy time, wall about 12 % faster; per-slot Bank check instead of a version counter | Sat | Sat |
 | 510 F6: one poll clock that pauses (T-343) | builder | `perf/poll-clock` (`f6`) | **merged** e73ba8af (635 files green, cycles, build, engine work same everywhere); upkeep badge and panel on events only (a lapsed upkeep shows at the next mat or Bank event) | Sat | Sat |
-| 510 F7: a minimised desktop app goes quiet (T-344) | builder | | queued (after 520 M7) | | |
+| 510 F7: a minimised desktop app goes quiet (T-344) | builder | `perf/minimised-quiet` (`f7`) | building (code); desktop measurement before and after tonight with the `tauri:build` | Sun | |
 | 530 X1: kills get their style XP bonuses (engine) | builder | `feat/combat-xp-bonus` (`f2`) | **merged** 2016b539 (633 files green, cycles, build, engine work same everywhere: no bench fighter holds such a bonus); the ledger does not model kill XP | Sat | Sat |
 | 530 X2: four combat XP stars (content pack) | content agent | `planning-content` | pack `cms/incoming/2026-11-07-combat-xp-stars.json` ready; **owner: accept and Sync on main** | Sat | |
 | 520 M0: bench instruments | builder-lite | `bench/review-instruments` (`m0`) | **merged** 6bb0d201 (634 files green, cycles, build, no save log in the shipped build, engine work same) | Sat | Sat |
@@ -33,8 +33,8 @@ build green) · bench-queued · eye-check · merged.*
 | 540 C5: world, atlas, quests (T-377) | builder-lite | `cleanup/world` (`c5`, from C1) | **merged** dea2cdd3 as one combined branch (635 files green, cycles 0 groups, depcruise clean, game and CMS builds, engine work same; S8 family accepted under T-373, a bench loader artifact, T-385) | Sun | Sun |
 | 540 C6: src/ui and the keyboard ruling (T-378, T-309, T-370) | builder | `cleanup/ui` (`c6`, from C1) | **merged** dea2cdd3 as one combined branch (635 files green, cycles 0 groups, depcruise clean, game and CMS builds, engine work same; S8 family accepted under T-373, a bench loader artifact, T-385) | Sun | Sun |
 | 540 C8: tools and lint (T-380, T-058) | builder-lite | `cleanup/tools-lint` (`c8`) | **merged** 9f61aaeb (635 files green, cycles 0, depcruise clean, builds, engine work same; lint errors 78 to 8, all in art scripts; `npm install` run after: `@vitest/coverage-v8` added). Gate from now: cycles and depcruise join (C9 writes it into TESTING) | Sun | Sun |
-| 540 C7: dead exports and duplicates across folders (T-379) | builder-lite | `cleanup/sweep` (`c7`) | building | Sun | |
-| 540 C9: docs pass (T-369, T-382) | builder-lite | | queued (last) | | |
+| 540 C7: dead exports and duplicates across folders (T-379) | builder-lite | `cleanup/sweep` (`c7`) | **merged** 7796f8a9 (635 files green, cycles 0, depcruise clean, builds, engine work same; unused exports 182 to 17, duplicate groups merged; left groups in T-390, T-391) | Sun | Sun |
+| 540 C9: docs pass (T-369, T-382) | builder-lite | `cleanup/docs-pass` (`c9`) | **merged** 95831653 (635 files green, lint 0 errors, cycles 0, depcruise clean, builds). The gate now includes cycles, depcruise and lint (TESTING.md). Desktop release-size settings in Cargo.toml: `tauri:build` check tonight. Browserslist data updated bcff0b5c | Sun | Sun |
 
 ## Director, code review round 4 preparation (owner, 2026-11-06 interview; concept_code_review_2026.md approved)
 
