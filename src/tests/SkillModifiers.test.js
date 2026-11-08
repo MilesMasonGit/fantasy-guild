@@ -6,7 +6,8 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 /**
- * Skill levels and the hero's modifiers: a level gives no work speed, and XP bonuses reach the bar.
+ * Skill levels and the hero's modifiers: a level gives no work speed, and `addXP` grants the award
+ * its caller resolved, through the XP floor.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -42,21 +43,10 @@ describe('A skill level adds no work speed', () => {
     });
 });
 
-describe('XP bonuses reach the XP bar (CR2-073)', () => {
-    it('reads the axis that exists — XP_BONUS, not XP_GAIN', () => {
-        const hero = heroWithSkill('mining', 10);
-        hero.aggregator.addModifier({
-            source: 'test:charm',
-            type: EFFECT_TYPES.XP_BONUS,
-            target: { category: 'mining' },
-            value: 0.5,
-            persistent: true
-        });
-
-        expect(SkillSystem.getXpMultiplier('hero_1', 'mining')).toBeCloseTo(1.5);
-    });
-
-    it('applies the multiplier when XP is actually awarded', () => {
+describe('addXP grants what the caller resolved', () => {
+    // XP bonuses are resolved where the XP is earned, by skill (a cycle in `BoardRunner`, a kill in
+    // `CombatResolutionProcessor`); a stray XP_BONUS on the hero's aggregator is not read here.
+    it('ignores an XP_BONUS on the hero aggregator, so no bonus is counted twice', () => {
         const hero = heroWithSkill('mining', 10);
         hero.aggregator.addModifier({
             source: 'test:charm',
@@ -69,21 +59,8 @@ describe('XP bonuses reach the XP bar (CR2-073)', () => {
 
         const result = SkillSystem.addXP('hero_1', 'mining', 100);
 
-        expect(result.granted).toBe(150);
-        expect(hero.skills.mining.xp - before).toBe(150);
-    });
-
-    it('is targeted — a Cooking bonus does nothing for Mining', () => {
-        const hero = heroWithSkill('mining', 10);
-        hero.aggregator.addModifier({
-            source: 'test:apron',
-            type: EFFECT_TYPES.XP_BONUS,
-            target: { category: 'cooking' },
-            value: 0.5,
-            persistent: true
-        });
-
-        expect(SkillSystem.addXP('hero_1', 'mining', 100).granted).toBe(100);
+        expect(result.granted).toBe(100);
+        expect(hero.skills.mining.xp - before).toBe(100);
     });
 
     it('leaves an unbuffed hero on exactly the awarded amount', () => {
@@ -92,31 +69,22 @@ describe('XP bonuses reach the XP bar (CR2-073)', () => {
     });
 
     it('never rounds a small award away to nothing', () => {
-        // A hypothetical −90% would otherwise turn a 1 XP grant into 0 and stall
-        // a bar completely. Progress may be slowed; it may not be stopped.
-        const hero = heroWithSkill('mining', 10);
-        hero.aggregator.addModifier({
-            source: 'test:curse',
-            type: EFFECT_TYPES.XP_BONUS,
-            target: { category: 'mining' },
-            value: -0.9,
-            persistent: true
-        });
+        // Progress may be slowed; it may not be stopped.
+        heroWithSkill('mining', 10);
+        expect(SkillSystem.addXP('hero_1', 'mining', 0.4).granted).toBe(1);
+    });
 
-        expect(SkillSystem.addXP('hero_1', 'mining', 1).granted).toBe(1);
+    it('rounds a fractional award', () => {
+        heroWithSkill('mining', 10);
+        expect(SkillSystem.addXP('hero_1', 'mining', 2.6).granted).toBe(3);
     });
 });
 
 describe('The XP floor: a positive XP bonus adds at least 1 XP', () => {
+    /** What a cycle or kill of `base` XP grants under a summed `bonus`, as the callers resolve it. */
     function grant(base, bonus) {
-        const hero = heroWithSkill('mining', 10);
-        if (bonus) {
-            hero.aggregator.addModifier({
-                source: 'test:charm', type: EFFECT_TYPES.XP_BONUS,
-                target: { category: 'mining' }, value: bonus, persistent: true
-            });
-        }
-        return SkillSystem.addXP('hero_1', 'mining', base).granted;
+        heroWithSkill('mining', 10);
+        return SkillSystem.addXP('hero_1', 'mining', SkillSystem.applyXpBonus(base, base * (1 + bonus))).granted;
     }
 
     it('+10% on a 1 XP cycle gives 2', () => expect(grant(1, 0.1)).toBe(2));
@@ -129,14 +97,7 @@ describe('The XP floor: a positive XP bonus adds at least 1 XP', () => {
     });
 
     it('a bonus that cancels out (+10% and -10%) gives the base', () => {
-        const hero = heroWithSkill('mining', 10);
-        for (const value of [0.1, -0.1]) {
-            hero.aggregator.addModifier({
-                source: 'test:' + value, type: EFFECT_TYPES.XP_BONUS,
-                target: { category: 'mining' }, value, persistent: true
-            });
-        }
-        expect(SkillSystem.addXP('hero_1', 'mining', 1).granted).toBe(1);
+        expect(grant(1, 0.1 - 0.1)).toBe(1);
         expect(SkillSystem.applyXpBonus(5, 5.0000000001)).toBe(5);
     });
 

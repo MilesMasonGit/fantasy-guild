@@ -247,15 +247,21 @@ describe('pack check and pack apply', () => {
     });
 });
 
+/** A throwaway git repository on `branch`; `{ repo, git }`. */
+function gitRepo(branch) {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'fg-cms-git-'));
+    tmpRoots.push(repo);
+    const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+    git('init', '-q', '-b', branch);
+    git('config', 'user.email', 'test@example.com');
+    git('config', 'user.name', 'Test');
+    git('config', 'commit.gpgsign', 'false');
+    return { repo, git };
+}
+
 describe('the Sync commit', () => {
     it('stages and commits only the files the Sync wrote, never a palette waiting in data/', async () => {
-        const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'fg-cms-git-'));
-        tmpRoots.push(repo);
-        const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
-        git('init', '-q');
-        git('config', 'user.email', 'test@example.com');
-        git('config', 'user.name', 'Test');
-        git('config', 'commit.gpgsign', 'false');
+        const { repo, git } = gitRepo('main');
         fs.mkdirSync(path.join(repo, 'data', 'palettes'), { recursive: true });
         fs.writeFileSync(path.join(repo, 'data', 'items.json'), '{}');
         fs.writeFileSync(path.join(repo, 'data', 'palettes', 'custom_palettes.json'), '{}');
@@ -272,6 +278,87 @@ describe('the Sync commit', () => {
         expect(body.commit.committed).toBe(true);
         expect(git('show', '--name-only', '--format=%s', 'HEAD').split('\n').filter(Boolean)).toEqual(['CMS sync: 1 items', 'data/items.json']);
         expect(git('status', '--porcelain')).toBe('M data/palettes/custom_palettes.json');
+        expect(body.warning).toBeUndefined();
+    });
+
+    function branchRepo(branch) {
+        const { repo, git } = gitRepo(branch);
+        fs.mkdirSync(path.join(repo, 'data'), { recursive: true });
+        fs.writeFileSync(path.join(repo, 'data', 'items.json'), '{}');
+        git('add', '-A');
+        git('commit', '-q', '-m', 'start');
+        return { repo, git };
+    }
+    const logFile = { 'items.json': { item_log: { id: 'item_log', name: 'Log' } } };
+
+    it('off main, the page\'s Sync refuses, naming the branch, and writes nothing', async () => {
+        const { repo, git } = branchRepo('fix/something');
+        const { status, body } = await writeSync({
+            files: logFile, dataRoot: path.join(repo, 'data'), planRoot: path.join(repo, 'cms', 'plan'),
+            commit: { projectRoot: repo }, branchRule: 'refuse',
+        });
+        expect(status).toBe(409);
+        expect(body).toMatchObject({ wrongBranch: true, branch: 'fix/something' });
+        expect(body.error).toMatch(/branch "fix\/something", not main/);
+        expect(fs.readFileSync(path.join(repo, 'data', 'items.json'), 'utf8')).toBe('{}');
+        expect(fs.readdirSync(path.join(repo, 'data'))).toEqual(['items.json']);
+        expect(git('rev-list', '--count', 'HEAD')).toBe('1');
+    });
+
+    it('a detached HEAD is not main either', async () => {
+        const { repo, git } = branchRepo('main');
+        git('checkout', '-q', '--detach');
+        const { status, body } = await writeSync({
+            files: logFile, dataRoot: path.join(repo, 'data'), planRoot: path.join(repo, 'cms', 'plan'), commit: { projectRoot: repo },
+        });
+        expect(status).toBe(409);
+        expect(body.branch).toBe('HEAD');
+    });
+
+    it('a project git cannot name a branch for is refused too', async () => {
+        const notRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'fg-cms-nogit-'));
+        tmpRoots.push(notRepo);
+        fs.mkdirSync(path.join(notRepo, 'data'));
+        fs.writeFileSync(path.join(notRepo, 'data', 'items.json'), '{}');
+        const { status, body } = await writeSync({
+            files: logFile, dataRoot: path.join(notRepo, 'data'), planRoot: path.join(notRepo, 'cms', 'plan'), commit: { projectRoot: notRepo },
+        });
+        expect(status).toBe(409);
+        expect(body).toMatchObject({ wrongBranch: true, branch: null });
+        expect(fs.readFileSync(path.join(notRepo, 'data', 'items.json'), 'utf8')).toBe('{}');
+    });
+
+    it('off main, the command line\'s sync warns and goes ahead', async () => {
+        const { repo, git } = branchRepo('feature');
+        const { status, body } = await writeSync({
+            files: logFile, dataRoot: path.join(repo, 'data'), planRoot: path.join(repo, 'cms', 'plan'),
+            commit: { projectRoot: repo }, branchRule: 'warn',
+        });
+        expect(status).toBe(200);
+        expect(body.warning).toMatch(/branch "feature", not main/);
+        expect(body.commit.committed).toBe(true);
+        expect(git('log', '-1', '--format=%s')).toBe('CMS sync: 1 items');
+        expect(git('rev-parse', '--abbrev-ref', 'HEAD')).toBe('feature');
+    });
+
+    it('npm run cms -- sync in a project off main prints the warning', async () => {
+        const { repo, git } = gitRepo('feature');
+        fs.cpSync(path.join(root, 'data'), path.join(repo, 'data'), { recursive: true });
+        fs.mkdirSync(path.join(repo, 'cms', 'plan'), { recursive: true });
+        fs.copyFileSync(path.join(root, 'cms', 'plan', 'plan.json'), path.join(repo, 'cms', 'plan', 'plan.json'));
+        git('add', '-A');
+        git('commit', '-q', '-m', 'start');
+        const run = async (...argv) => {
+            const out = [];
+            const err = [];
+            const code = await runCli(argv, { root: repo, load, out: (s) => out.push(s), err: (s) => err.push(s) });
+            return { code, out: out.join('\n'), err: err.join('\n') };
+        };
+        expect((await run('restore')).code).toBe(0);
+        const r = await run('sync');
+        expect(r.code, r.err).toBe(0);
+        expect(r.out).toMatch(/Warning: The project is on branch "feature", not main/);
+        expect(r.out).toMatch(/Wrote \d+ files/);
     });
 });
 

@@ -42,6 +42,7 @@ import { STRIKE_DELAY_MS } from '../ui/components/board/hitAnimations.js';
 import { fightReach, fightBarShift, CHIP, CHIP_PX, MAT_BAR } from '../ui/components/board/healthBar.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
+import { setDrawingPaused } from '../ui/components/board/frameClock.js';
 
 /**
  * The combat screen read from a real fight (brief 220, C6b): the fight watch keeps each fight's
@@ -382,6 +383,22 @@ describe('the panel, the plate and the floats read the real fight', () => {
             runUntil(() => false, 20);
             stop();
             expect(calls.filter(c => c.el.hasAttribute('data-fight-float'))).toHaveLength(0);
+        });
+
+        it('none while drawing is paused (a hidden window): the fight goes on, nothing piles up', () => {
+            buildFight();
+            const stop = watchFightFloats();
+            setDrawingPaused(true);
+            try {
+                runUntil(() => false, 20);
+            } finally {
+                setDrawingPaused(false);
+            }
+            const hidden = calls.filter(c => c.el.hasAttribute('data-fight-float')).length;
+            runUntil(() => calls.some(c => c.el.hasAttribute('data-fight-float')), 20);
+            stop();
+            expect(hidden).toBe(0);
+            expect(calls.filter(c => c.el.hasAttribute('data-fight-float')).length).toBeGreaterThan(0);
         });
     });
 });

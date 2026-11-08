@@ -10,6 +10,7 @@ import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { isDrawn } from '../../dev/perf/drawSwitches.js';
 import { bookFlight, fliesToStub, landFlight, placeFlights } from '../notifications/stubLanding.js';
 import { LOOT_FLIGHT_SPARKLES } from '../../utils/lootEffects.js';
+import { isDrawingPaused } from '../board/frameClock.js';
 
 /** Gap between staggered particles from one collection burst. */
 const STAGGER_MS = 60;
@@ -78,10 +79,15 @@ const CANVAS_CLASS = 'fixed left-0 top-0 z-(--z-mat-flights) pointer-events-none
  * `data-natural-width` reads as unscaled.
  */
 export function boardPointToScreen(boardEl, x, y) {
+    return boardToScreen(boardEl)(x, y);
+}
+
+/** {@link boardPointToScreen} for many points from one read of the board's box. */
+function boardToScreen(boardEl) {
     const r = boardEl.getBoundingClientRect();
     const natural = Number(boardEl.getAttribute?.('data-natural-width'));
     const scale = natural > 0 && r.width > 0 ? r.width / natural : 1;
-    return { x: r.left + x * scale, y: r.top + y * scale };
+    return (x, y) => ({ x: r.left + x * scale, y: r.top + y * scale });
 }
 
 /**
@@ -93,7 +99,9 @@ export function boardPointToScreen(boardEl, x, y) {
  * ⚠️ A collection reads no box. Auto-collect runs inside the engine's tick, where one box read lays
  * the page out in the middle of the tick and again for the frame. A flight is booked when it is
  * collected and placed by the frame loop (`ParticleSystem.placeBooked`), before it draws for the
- * first time: that read is the layout the frame was about to do anyway.
+ * first time, with one read of the board's box for the whole batch: the layout the frame was
+ * about to do anyway. A collection while drawing is paused (a hidden window) books nothing: no
+ * frame would place it, so its count shows at once.
  * The canvas is only as big as the flights in the air (`ParticleSystem._fit`) and is hidden
  * while nothing flies: a window-sized one was cleared and redrawn whole on every frame of every
  * flight, and stayed a full-window layer in between.
@@ -309,6 +317,9 @@ class ParticleSystem {
      */
     spawnCollected({ kind, refId, heroId, quantity, x, y, fromScreenX, fromScreenY, toScreenX, toScreenY, destination, instanceId }) {
         if (!SettingsManager.get('ui.itemParticles')) return;
+        // ⚠️ No frames while drawing is paused: a booking would hold its stub's count back until the
+        // window came back, and then every one would land at once.
+        if (isDrawingPaused()) return;
         if (typeof window !== 'undefined' &&
             window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
         const actualRefId = refId || heroId;
@@ -374,8 +385,16 @@ class ParticleSystem {
             if (hall === undefined) hall = lootFlightTarget(document);
             return hall;
         };
+        let toScreen;
+        const boardPoint = (p) => {
+            if (toScreen === undefined) {
+                const board = document.querySelector('[data-board-origin]');
+                toScreen = board ? boardToScreen(board) : null;
+            }
+            return toScreen ? toScreen(p.x, p.y) : null;
+        };
         for (const b of booked) {
-            const particle = this._flightOf(b, hallLanding);
+            const particle = this._flightOf(b, hallLanding, boardPoint);
             if (!particle) {
                 landFlight(b.booking);
                 continue;
@@ -386,8 +405,8 @@ class ParticleSystem {
     }
 
     /** A booked flight with its path worked out from the boxes as they stand now, or null. */
-    _flightOf(b, hallLanding) {
-        const from = b.from || this._boardPoint(b.boardPoint);
+    _flightOf(b, hallLanding, boardPoint) {
+        const from = b.from || boardPoint(b.boardPoint);
         if (!from || !this._isPointInViewport(from)) return null;
 
         // A flight to a stub with no place on the stubs (no column any more, no room for another
@@ -443,12 +462,6 @@ class ParticleSystem {
         this._lastSpawnAt = now;
         if (this._slot >= MAX_CONCURRENT) return null;
         return this._slot++;
-    }
-
-    /** Where a board point is on screen, or null with no board. */
-    _boardPoint({ x, y }) {
-        const board = document.querySelector('[data-board-origin]');
-        return board ? boardPointToScreen(board, x, y) : null;
     }
 
     /** The box of a hero in the dock, or of the dock. */

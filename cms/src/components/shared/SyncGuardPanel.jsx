@@ -55,6 +55,7 @@ export default function SyncGuardPanel({ diff, busy, onRestore, onSyncAnyway, on
         </p>
         <div className="overflow-y-auto mb-4 pr-1" style={{ minHeight: 0 }}>
           <Section heading="Would be removed" lists={diff.removed} verb="removed" />
+          <Section heading="Would be overwritten with different content" lists={diff.changed || {}} verb="changed" />
           <Section heading="Would be added" lists={diff.added} verb="added" />
         </div>
         <div className="flex gap-2 justify-end">

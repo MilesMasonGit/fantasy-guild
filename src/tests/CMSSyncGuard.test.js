@@ -11,6 +11,8 @@ import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { compareSync, describeSyncDiff } from '../../cms/src/engine/syncGuard';
 import TopBar from '../../cms/src/components/layout/TopBar.jsx';
 import cmsFileApi from '../../cms/vite-plugin-cms-api.js';
+import { writeSync } from '../../cms/gameData.js';
+import { saveWorkspaceFile } from '../../cms/workspaceFile.js';
 
 /**
  * Sync to Game refuses to remove content the game has unless the author confirms. A stale browser
@@ -102,6 +104,124 @@ describe('compareSync', () => {
             "If you didn't delete these on purpose, your CMS copy is probably out of date: use Backups → Restore from Game first."
         );
         expect(describeSyncDiff({ removed: { recipes: [{ id: 'r', name: 'r' }] }, added: {} })).toMatch(/^This Sync would remove 1 recipe that the game has now\. If/);
+        expect(describeSyncDiff({ removed: { recipes: [{ id: 'r', name: 'r' }] }, changed: { items: [{ id: 'i', name: 'i' }, { id: 'j', name: 'j' }] }, added: {} }))
+            .toMatch(/^This Sync would remove 1 recipe that the game has now, and overwrite 2 it has with different content\. If/);
+    });
+
+    it('lists entities whose content changed, by content and not key order, without calling them removals', () => {
+        const next = files({
+            'tokens.json': { token_a: { name: 'Alpha', tier: 2 }, token_b: { name: 'Beta' } },
+            'items.json': { item_x: { type: 'material', name: 'Ex' }, item_m: { name: 'Mire', type: 'material' } },
+            'tokenRecipes.json': [{ id: 'rec_1', name: 'One', skill: 'smithing' }, { name: 'Old', skill: 'cooking', inputs: [{ itemId: 'item_x', qty: 3 }] }],
+        });
+        const diff = compareSync(files(), next);
+        expect(diff.hasRemovals).toBe(false);
+        expect(diff.hasChanges).toBe(true);
+        expect(diff.changed.tokens).toEqual([{ id: 'token_a', name: 'Alpha' }]);
+        expect(diff.changed.items).toEqual([]);
+        expect(diff.changed.recipes).toEqual([{ id: 'pooled_cooking_0', name: 'Old' }]);
+        expect(compareSync(files(), files()).hasChanges).toBe(false);
+    });
+
+    it('lists a file whose other fields changed as a whole', () => {
+        const camp = { tokens: [{ typeId: 'token_a', x: 1, y: 1 }], size: 5 };
+        const diff = compareSync({ 'starterCamp.json': camp }, { 'starterCamp.json': { ...camp, size: 6 } });
+        expect(diff.changed.starterCamp).toEqual([{ id: 'starterCamp.json', name: 'starterCamp.json (fields outside its entries)' }]);
+        const moved = compareSync({ 'starterCamp.json': camp }, { 'starterCamp.json': { ...camp, tokens: [{ typeId: 'token_a', x: 2, y: 1 }] } });
+        expect(moved.changed.starterCamp).toEqual([{ id: 'token_a', name: 'token_a' }]);
+    });
+});
+
+describe('writeSync', () => {
+    let dataDir;
+    beforeEach(() => {
+        dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fg-sync-write-'));
+        for (const [name, content] of Object.entries(files())) fs.writeFileSync(path.join(dataDir, name), JSON.stringify(content));
+    });
+    afterEach(() => fs.rmSync(dataDir, { recursive: true, force: true }));
+    const sync = (over) => writeSync({ dataRoot: dataDir, planRoot: path.join(dataDir, 'plan'), ...over });
+
+    it('writes every file or none: a file that cannot be written leaves all of data/ as it was', async () => {
+        const before = Object.fromEntries(fs.readdirSync(dataDir).map((f) => [f, fs.readFileSync(path.join(dataDir, f), 'utf8')]));
+        // A folder where items.json's temporary file would go makes that one write fail after tokens.json's.
+        fs.mkdirSync(path.join(dataDir, `items.json.${process.pid}.tmp`));
+        const next = files({ 'tokens.json': { token_a: { name: 'A2' }, token_b: { name: 'Beta' } }, 'items.json': { item_x: { name: 'X2' }, item_m: { name: 'Mire' } } });
+        const { status, body } = await sync({ files: next });
+        expect(status).toBe(500);
+        expect(body.error).toMatch(/nothing was written/);
+        fs.rmdirSync(path.join(dataDir, `items.json.${process.pid}.tmp`));
+        const after = Object.fromEntries(fs.readdirSync(dataDir).map((f) => [f, fs.readFileSync(path.join(dataDir, f), 'utf8')]));
+        expect(after).toEqual(before);
+    });
+
+    it('keeps the files\' formatting and leaves no temporary file behind', async () => {
+        const next = files({ 'tokens.json': { token_a: { name: 'A2' }, token_b: { name: 'Beta' } } });
+        const { status } = await sync({ files: next });
+        expect(status).toBe(200);
+        expect(fs.readFileSync(path.join(dataDir, 'tokens.json'), 'utf8')).toBe(JSON.stringify(next['tokens.json'], null, 2));
+        expect(fs.readdirSync(dataDir).filter((f) => f.endsWith('.tmp'))).toEqual([]);
+    });
+
+    it('answers a removal with the changed entries listed beside the removed ones', async () => {
+        const next = files({ 'tokens.json': { token_a: { name: 'Alpha', tier: 9 } } });
+        const { status, body } = await sync({ files: next });
+        expect(status).toBe(409);
+        expect(body.diff.removed.tokens).toEqual([{ id: 'token_b', name: 'Beta' }]);
+        expect(body.diff.changed.tokens).toEqual([{ id: 'token_a', name: 'Alpha' }]);
+    });
+});
+
+describe('the sync route against the workspace revision', () => {
+    let dir, handler;
+    const wsFile = () => path.join(dir, 'workspace', 'workspace.json');
+
+    function request(method, url, body) {
+        return new Promise((resolve) => {
+            const req = new EventEmitter();
+            Object.assign(req, { method, url, headers: {} });
+            const res = {
+                statusCode: 200,
+                setHeader: () => {},
+                end: (text = '') => resolve({ status: res.statusCode, body: text ? JSON.parse(text) : null })
+            };
+            handler(req, res, () => resolve({ status: 'next' }));
+            if (body !== undefined) req.emit('data', JSON.stringify(body));
+            req.emit('end');
+        });
+    }
+
+    beforeEach(() => {
+        dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fg-sync-rev-'));
+        fs.mkdirSync(path.join(dir, 'data'));
+        for (const [name, content] of Object.entries(files())) fs.writeFileSync(path.join(dir, 'data', name), JSON.stringify(content));
+        const empty = { items: {}, tokens: {}, effects: {}, recipePools: {} };
+        saveWorkspaceFile(wsFile(), empty, { baseRevision: 0 });
+        saveWorkspaceFile(wsFile(), empty, { baseRevision: 1 });
+        cmsFileApi({ sandboxDir: dir }).configureServer({ middlewares: { use: (fn) => { handler = fn; } } });
+    });
+    afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+    it('refuses a Sync made from an older revision than the disk\'s, writing nothing', async () => {
+        const next = files({ 'tokens.json': { token_a: { name: 'Alpha from a stale tab' }, token_b: { name: 'Beta' } } });
+        const res = await request('POST', '/api/sync-game-data', { files: next, baseRevision: 1 });
+        expect(res.status).toBe(409);
+        expect(res.body).toMatchObject({ staleWorkspace: true, revision: 2, baseRevision: 1 });
+        expect(res.body.needsConfirm).toBeUndefined();
+        expect(res.body.error).toMatch(/out-of-date copy of the workspace/);
+        expect(JSON.parse(fs.readFileSync(path.join(dir, 'data', 'tokens.json'), 'utf8'))).toEqual(files()['tokens.json']);
+    });
+
+    it('even with the removals confirmed', async () => {
+        const res = await request('POST', '/api/sync-game-data', { files: files({ 'tokens.json': {} }), baseRevision: 0, confirmRemovals: true });
+        expect(res.status).toBe(409);
+        expect(res.body.staleWorkspace).toBe(true);
+    });
+
+    it('writes a Sync made from the disk\'s own revision', async () => {
+        const next = files({ 'tokens.json': { token_a: { name: 'Alpha 2' }, token_b: { name: 'Beta' } } });
+        const res = await request('POST', '/api/sync-game-data', { files: next, baseRevision: 2 });
+        expect(res.status).toBe(200);
+        expect(JSON.parse(fs.readFileSync(path.join(dir, 'data', 'tokens.json'), 'utf8')).token_a.name).toBe('Alpha 2');
     });
 });
 
@@ -205,6 +325,27 @@ describe('the Sync to Game button', () => {
         expect(calls[1].body).toMatchObject({ confirmRemovals: true, files: calls[0].body.files });
         expect(view.queryByRole('dialog')).toBeNull();
         expect(view.getByText('Synced to Game!')).toBeTruthy();
+    });
+
+    it('a refusal (the wrong branch, a stale tab) is shown to the author in the server\'s words, with no panel', async () => {
+        const alerts = [];
+        vi.stubGlobal('confirm', () => true);
+        vi.stubGlobal('alert', (text) => alerts.push(text));
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        const said = 'The project is on branch "fix/x", not main: content is synced on main only. Nothing was written.';
+        vi.stubGlobal('fetch', vi.fn(async (url, opts = {}) => {
+            calls.push({ url, body: JSON.parse(opts.body) });
+            return { ok: false, status: 409, json: async () => ({ error: said, wrongBranch: true, branch: 'fix/x' }) };
+        }));
+        calls = [];
+        const view = renderBar();
+        await act(async () => { fireEvent.click(view.getByRole('button', { name: /Sync to Game/ })); });
+        expect(alerts).toEqual([said]);
+        expect(view.queryByRole('dialog')).toBeNull();
+        expect(view.getByText('Sync Error')).toBeTruthy();
+        // Not connected to a workspace on disk: no revision to send.
+        expect(calls[0].body.baseRevision).toBeUndefined();
+        console.error.mockRestore();
     });
 
     it('Restore from Game instead loads data/ into the workspace and writes nothing', async () => {
