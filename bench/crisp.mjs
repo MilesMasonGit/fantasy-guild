@@ -562,8 +562,8 @@ async function watchLoot(page, found, { art, ms, keepAs = null }) {
         const a = findArt(shot, artInside, xs, ys);
         const s = sil ? findShadow(shot, silInside, artMask, a, range(a.x - 2, a.x + 4 * art + 2), range(a.y - 2, a.y + 8 * art + 2)) : null;
         // One picture of each way it was drawn.
-        const seenAs = `${a.x}_${a.y}_${s ? `${s.x}_${s.y}` : 'none'}`;
-        if (keepAs && !kept.has(seenAs)) { kept.add(seenAs); fs.writeFileSync(`${keepAs}-${kept.size}_art${a.x}_${a.y}_shadow${s ? `${s.x}_${s.y}` : 'none'}.png`, Buffer.from(shot.png, 'base64')); }
+        const seenAs = `${a.x}_${a.y}_${s ? `${s.x}_${s.y}` : 'none'}_${a.misses.size}`;
+        if (keepAs && !kept.has(seenAs)) { kept.add(seenAs); fs.writeFileSync(`${keepAs}-${kept.size}_art${a.x}_${a.y}_shadow${s ? `${s.x}_${s.y}` : 'none'}_misses${a.misses.size}.png`, Buffer.from(shot.png, 'base64')); }
         return {
             artShare: a.share,
             artMisses: a.misses,
@@ -710,8 +710,9 @@ async function main() {
         if (still.length < 10) throw new Error(`only ${still.length} still Tokens to watch: the board did not freeze`);
         const judged = [];
         for (const t of still.filter(t => !t.tinted && !t.covered)) judged.push({ t, pic: await picture(t.src) });
-        const exactIn = (shot) => judged.filter(({ t, pic }) => (exactShare(shot, t, pic) ?? 0) >= EXACT).length;
+        const exactIn = (shot, list = judged) => list.filter(({ t, pic }) => (exactShare(shot, t, pic) ?? 0) >= EXACT).length;
         const restExact = exactIn(rest1);
+        const exactAtRest = new Set(judged.filter(({ t, pic }) => (exactShare(rest1, t, pic) ?? 0) >= EXACT).map(({ t }) => t.id));
         if (args.verbose) {
             const shares = judged.map(({ t, pic }) => ({ id: t.id, x: Math.round(t.r.left), y: Math.round(t.r.top), share: exactShare(rest1, t, pic) }));
             console.log(JSON.stringify(shares.sort((a, b) => a.share - b.share).map(s => `${s.share.toFixed(2)}@${s.x},${s.y}`)));
@@ -729,7 +730,11 @@ async function main() {
             await page.evaluate(c.stop);
             const changed = still.filter(t => !(moved && overlaps(t, moved)) && !samePixels(artPixels(rest1, t), artPixels(shot, t)));
             const hero = c.judgesHero && judgedHero ? heroCrisp(shot, judgedHero, judgedHero.pic, Math.ceil(24 * fit) + 2) : null;
-            rows.push({ id: c.id, what: c.what, changed: changed.length, exact: exactIn(shot), layers: caseLayers, mainThread: !!c.mainThread, hero });
+            // A Token the case's own movement passes over is judged neither way (a walking hero may
+            // come to stand over one).
+            const clear = judged.filter(({ t }) => !(moved && overlaps(t, moved)));
+            const exactBefore = clear.filter(({ t }) => exactAtRest.has(t.id)).length;
+            rows.push({ id: c.id, what: c.what, changed: changed.length, exact: exactIn(shot), softened: exactBefore - exactIn(shot, clear.filter(({ t }) => exactAtRest.has(t.id))), layers: caseLayers, mainThread: !!c.mainThread, hero });
             await sleep(700 + (c.settleMs || 0));
         };
         for (const c of CASES) await runCase(c);
@@ -742,8 +747,9 @@ async function main() {
         const lootRows = [];
         // ⚠️ At some resting places Chrome draws an item a row or column off its picture, at every
         // height alike (a sprite at a fractional position; not the bob's doing). There the art is
-        // found a pixel off at one corner or the other and its gap to the shadow reads a pixel out, so
-        // an item is thrown again elsewhere, up to four times, until one rests drawn exactly.
+        // found a pixel off at one corner or the other, its gap to the shadow reads a pixel out, and
+        // the few pixels off come and go between shots. So an item is thrown again elsewhere, up to
+        // four times, until one rests with not a pixel off its picture.
         const watchThrown = async (id, what, judge) => {
             let found = null;
             let tries = 0;
@@ -754,7 +760,7 @@ async function main() {
                 found = await page.evaluate(FIND_THROWN(thrown));
                 if (!found) { lootRows.push({ id, what, fails: ['the thrown item was not found on the floor'], line: '' }); return; }
                 const first = await watchLoot(page, found, { art: artPx, ms: 1 });
-                if (first[0].artShare >= EXACT) break;
+                if (first[0].artMisses.size === 0) break;
             }
             const seen = await watchLoot(page, found, { art: artPx, ms: 2600, keepAs: args.keep && path.join(args.keep, id) });
             const verdict = judgeLoot(seen, { art: artPx, ...judge });
@@ -781,7 +787,7 @@ async function main() {
         // most of them.
         const allowed = Math.max(2, Math.round(still.length * 0.05));
         // Exactness is not noisy: with the guards on every uncovered still Token is exact.
-        const failed = rows.filter(r => r.changed > allowed || r.exact < restExact);
+        const failed = rows.filter(r => r.changed > allowed || r.softened > 0);
         const layered = rows.filter(r => r.mainThread && r.layers > restLayers);
         const softHero = rows.filter(r => r.hero && r.hero.crisp < EXACT);
         const soft = judged.length - restExact;

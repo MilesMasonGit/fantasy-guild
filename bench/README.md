@@ -640,8 +640,9 @@ screenshots, and stops it. Two checks: how many still Tokens **changed** a pixel
 is opaque: the mat shows through the rest), and how many of the still Tokens
 nothing else covers are **drawn exactly** to their art (98 % of the opaque pixels in the middle of
 the art where nearest-neighbour sampling of the picture puts them). A case fails when it changes
-more than 5 % of the still Tokens or leaves fewer exact than at rest; the rest fails when any is not
-exact. The flag, limp and hero cases, which the game plays on the main thread, also fail when they
+more than 5 % of the still Tokens or leaves one that was exact at rest no longer exact (a Token its
+own movement passes over aside: a walking hero may come to stand over one); the rest fails when any
+is not exact. The flag, limp and hero cases, which the game plays on the main thread, also fail when they
 add a composited layer (`LAYERED`): at a fit of 1 a layer more moves no pixel, at any other fit it
 does. **The walking hero itself** is judged too (`HERO`): the back-most hero drawn crisp at rest is
 given a still portrait (one picture to judge it by, whatever its frame), and in the hero case at
@@ -665,8 +666,9 @@ height is read against the shadow, which stands on the ground 2 art pixels down-
 art rests. How exactly the art matches its picture is printed but not judged: Chrome draws a sprite
 whose box lands on a fractional pixel a row or column off at some resting places, at every height
 alike (a box's outer row is left out: Chrome blends it with what is behind). There the art is found a
-pixel off and its gap to the shadow reads a pixel out, so the item is thrown again elsewhere, up to
-four times, until one rests drawn exactly (the line says how many throws it took). `--keep` saves one clip
+pixel off, its gap to the shadow reads a pixel out and the few pixels off come and go between shots,
+so the item is thrown again elsewhere, up to four times, until one rests with not a pixel off its
+picture (the line says how many throws it took). `--keep` saves one clip
 of each way the item was drawn (`bob-<n>_art<x>_<y>_shadow<x>_<y>.png`, in clip pixels).
 
 The mat's fit follows the window: `--window=WxH`. On S2 (2026-11-08): 1200x770 is fit 0.55
