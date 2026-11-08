@@ -1,5 +1,6 @@
 // ambient life on the ground: the water's shimmer, a gust through the grass, the lava's pulse
 
+import { mulberry32 } from '../../../systems/atlas/seededRandom.js';
 import { grassNoise, lookRules, SLOT_SHIFT, COLOUR } from './terrain/TerrainGrass.js';
 
 /**
@@ -21,16 +22,7 @@ export const FRAME_MS = 125;
 const TAU = Math.PI * 2;
 
 /** A small fast generator of the ambience's own, in [0, 1). */
-export function ambientRandom(seed = 1) {
-    let a = seed >>> 0;
-    return () => {
-        a = (a + 0x6d2b79f5) >>> 0;
-        let t = a;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
+export const ambientRandom = (seed = 1) => mulberry32(seed);
 
 /** An RGBA word as the canvas's bytes lie in memory (little-endian: red first). */
 export const rgbaWord = (r, g, b, a = 255) => ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
