@@ -115,7 +115,6 @@ function addRecord(atlas, {
     region.terrain = terrain;
     region.rules = Array.isArray(rules) ? [...rules] : [];
     region.cellId = typeof cellId === 'string' && cellId ? cellId : null;
-    region.settledAt = GameState.state?.time?.gameTimeMs || 0;
     region.board = board;
     atlas.regions[region.id] = region;
     return region;

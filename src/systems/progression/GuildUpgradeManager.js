@@ -163,7 +163,7 @@ export const GuildUpgradeManager = {
             n += 1;
             const id = `bank-tab-${n}`;
             if (inv.groupOrder.includes(id) || inv.groupDefs[id]) continue;
-            inv.groupDefs[id] = { id, title: `Tab ${inv.groupOrder.length + 1}`, isCustom: false, orderedItems: [] };
+            inv.groupDefs[id] = { id, title: `Tab ${inv.groupOrder.length + 1}`, orderedItems: [] };
             inv.groupOrder.push(id);
         }
     }

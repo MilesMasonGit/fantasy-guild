@@ -157,7 +157,6 @@ The findings' full write-ups are in `docs/active/review/R*_*.md` (search the CR4
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
 | T-374 | P3 | brief 540 | **Dead code in `src/systems/board/`**: the starvation tally nothing reads (`InputAllocator`; planning call: delete, the fingerprint does not read it); ten exports with no caller (`recallHeroById`, `loadLeft` and more) and the round-3 copies (literal Hall ids, `clampOnto`, `heroX`) | CR4-029, 030 |
-| T-376 | P3 | brief 540 | **Dead code in core, state and config**: the defeat and "invasion" sounds and their dead hooks (owner ruling 2026-11-07: drop both; `ORPHAN_EVENTS` then goes); seventeen saved fields for gone systems and `cards` out of `REQUIRED_KEYS`; migration branches for saves the version check refuses (and the `bankedSkills` QA scene with them: planning call); the item glob for a folder that does not exist; the simulator's Maps dial (with T-140). `data/maps.json` is the owner's to remove in the CMS, never by hand | CR4-004, 014, 067, 072, 080 |
 | T-377 | P3 | brief 540 | **Dead code in world, atlas and quests**: `abandonQuest`, `sourceRect`, three re-exports, the Regions reroll (planning call: delete; the new-game world reroll is brief 450's), `ignored`, `anywhereDry`, `installedSources`, five unimported exports | CR4-075 |
 | T-378 | P3 | brief 540 | **Dead code in `src/ui/`**: `RingBadge.jsx` and its test; the charge-change floater behind `CHARGE_FLOATERS = false` and its CSS (owner 2026-11-07: delete), dead keyframes and classes, the always-empty `arrived` listener; small store leads (the slot screen listening while closed, a selector run twice at mount). The `HERO` drag kind is T-309 | CR4-005, 055, 065 |
 | T-379 | P3 | brief 540 | **Exports and copies across folders**: 49 exports nothing reads and 127 stray `export default` lines (knip); eighteen groups of logic written twice or three times (R0's nine and R9's nine; the camera and dock pairs need an eye-check, the RNG helper must stay bit-identical) | CR4-011, 082, 083 |
@@ -195,7 +194,6 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-140 | P3 | open | **The Map check's dials and refusals are read by nothing** since Atlas A5 retired `mapPass.js`: in `cms/src/engine/sim/dials.js` `mapScrapRatio`, `mapProductiveReturn`, `rarityPremium`, `rarityWeights`/`RARITY_WEIGHTS`, `scrapRatioAt`, `productiveReturnAt`, `pinnedAt`; `dayInReach` in `xpPass.js` (and `hoursPerDay` if the Pace dials no longer need it); the seven `map-*` codes in `refusals.js`; their fields in the CMS Settings modal. Delete with their tests (`EconSimXP`'s `dayInReach` cases; `EconSimLevers`' Map-card test flips back to absent). Also `checkPass.js` skips unlimited Tokens because the Map check used to name them: nothing names them now. Review round 4 (CR4-080) confirms `mapScrapRatio`, `scrapRatioAt` and the dial's rows; done with T-376. | Atlas A5, CR4-080 |
 | T-141 | P3 | blocked | **Content audit: a respawning node still sold at the Shop** (roadmap A5 lists it): warn when a Token with A2's Respawns block also has a `shop` block. Blocked on A2 merging (its block shape). One rule in `lifecycleAudit.js`, so the boot check and the CMS Economy Audit share it. | Atlas A5 |
 | T-054 | P3 | open | Class names that match no stylesheet: `animate-in`/`fade-in`/`zoom-in-95` (no `tailwindcss-animate`), `custom-scrollbar`, `gi-scrollbar`. The unused z-index tokens went in 87a461a2; the unloaded stylesheets were already gone. | CR3-465 |
 | T-056 | P3 | open | Rename `DeckDndProvider`/`DeckDndContext` (about forty test files import them). The tile accessors, unused constants, tray particle fields and dead particle lookups went in 70590720. | CR3-504, 408 |
@@ -235,7 +233,6 @@ first, when content that uses it is authored.*
 | T-082 | latent | Shop's unreachable refund path skips mat events. | CR3-206 |
 | T-083 | re-check | Synchronous subscribers; several whole-mat rebuilds per tick. Probably closed by Wave 3b — re-measure before working on it. | CR3-102 |
 | T-084 | not needed | Push solver all-pairs (S4 worst push ~15 ms vs 8). Only matters past ~250 Tokens; T-035 may make it moot. | CR3-152 |
-| T-086 | needs a Codex screen | Enemy kill counts never recorded. | CR3-035 |
 | T-087 | owner-deferred | Desktop-shell group (save export, `src-tauri`). | CR3-046 |
 | T-088 | Stage 2 | Randomness is unseeded and has no injectable source. | CR3-044 |
 | T-089 | Stage 2 | Hero state lives in seven stores. | CR3-561 |

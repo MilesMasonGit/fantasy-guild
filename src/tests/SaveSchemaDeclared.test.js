@@ -25,8 +25,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * Sections whose *contents* are keyed by id or index rather than by a fixed set
  * of field names, so there is nothing to declare below the section itself.
- * `heroes` and `recruitment.candidates` are arrays of hero blobs whose shape is
- * owned by `HeroGenerator`, not by this schema.
+ * `heroes` is an array of hero blobs whose shape is owned by `HeroGenerator`,
+ * not by this schema.
  */
 const OPAQUE_SECTIONS = ['heroes'];
 
@@ -281,35 +281,6 @@ describe('The validator guards the sections this game is made of (CR2-043)', () 
         expect(state.currency).toBeUndefined();
         expect(INITIAL_STATE.currency).toBeUndefined();
         expect(validateSaveData({ version: GAME_VERSION, state }).valid).toBe(true);
-    });
-
-    it('an older save still carrying currency loads, and the section is dropped', () => {
-        const state = GameState.serialize().state;
-        state.currency = { gold: 1234, influence: 10, totalRecruits: 0 };
-        expect(validateSaveData({ version: GAME_VERSION, state }).valid).toBe(true);
-        const migrated = migrateState(state, GAME_VERSION);
-        expect(migrated.currency).toBeUndefined();
-        expect(validateSaveData({ version: GAME_VERSION, state: migrated }).valid).toBe(true);
-    });
-
-    // The Map bursts and the Map purchase left the save with their code
-    // (Token Lifecycle 9.1).
-    it('an older save with unopened Maps on the mat loads, and the Maps and their bookkeeping are dropped', () => {
-        const state = GameState.serialize().state;
-        state.board.maps = [{ id: 'map_abc', typeId: 'token_oak_forest_map', x: 100, y: 100, usesRemaining: 1 }];
-        state.cartographer = { purchasedMaps: ['map_oak_forest'] };
-        state.progress.mapDiscoveries = { token_oak_tree: true };
-        state.progress.guildHallMapOpens = 3;
-        expect(validateSaveData({ version: GAME_VERSION, state }).valid).toBe(true);
-
-        const migrated = migrateState(state, GAME_VERSION);
-        expect(migrated.board.maps).toBeUndefined();
-        expect(migrated.cartographer).toBeUndefined();
-        expect(migrated.progress.mapDiscoveries).toBeUndefined();
-        expect(migrated.progress.guildHallMapOpens).toBeUndefined();
-        // Everything else on the board is kept.
-        expect(migrated.board.tokens).toEqual(state.board.tokens);
-        expect(validateSaveData({ version: GAME_VERSION, state: migrated }).valid).toBe(true);
     });
 });
 

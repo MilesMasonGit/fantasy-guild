@@ -230,27 +230,6 @@ export const UI_EVENTS = Object.freeze({
 });
 
 /**
- * Names subscribed somewhere with **no publisher** — dead listeners owned by
- * other tickets. They are declared (so the subscriptions name a constant) and
- * pinned here so the list can only shrink. Kept in a separate object so no
- * live code is tempted to publish them.
- */
-export const ORPHAN_EVENTS = Object.freeze({
-    /** ⚠ No publisher: the dock and inspection sheet list it. Statuses announce through `heroes_updated`. */
-    HERO_STATUS_CHANGED: 'hero:status_changed',
-    /** ⚠ No publisher: `AudioSystem` listens. */
-    COMBAT_DEFEAT: 'combat_defeat',
-    /** ⚠ No publisher: `AudioSystem` listens. */
-    INVASION_STARTED: 'invasion_started',
-    /** ⚠ No publisher: `AudioSystem` listens. */
-    HERO_ASSIGNED: 'hero_assigned',
-    /** ⚠ No publisher: `AudioSystem` listens. */
-    SKILL_LEVELED: 'skill_leveled',
-    /** ⚠ No publisher: the On Tick trigger's bus name. `LiveEffects` fires its statements directly, so `TriggerSystem`'s subscription to it is inert. */
-    EFFECT_TICK: 'effect_tick',
-});
-
-/**
  * Engine events published with **no subscriber**, and why each is kept rather
  * than deleted: each marks a moment a rule, the Perf HUD or the console
  * (`Game.EventBus.setLogging(true)`) can hook without touching the engine.

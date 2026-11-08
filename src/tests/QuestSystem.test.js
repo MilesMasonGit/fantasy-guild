@@ -192,7 +192,6 @@ describe('Quest System (quest Tokens since B6.1)', () => {
         expect(res.success).toBe(false);
         expect(res.reason).toMatch(/Dismiss/);
         expect(find(b.id)).toBe(b);   // still on the mat, no cooldown slot
-        expect(GameState.state.quests.active).toEqual([]);
     });
 
     it('handles collection quests with item deductions on claim', () => {

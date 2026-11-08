@@ -118,8 +118,6 @@ export function createRegionRecord(id = null) {
         // The world map's cell it was settled on (`"q,r"`). Null for the Starter Camp (the Hall's
         // cell, by its kind) and for a Region written off the map (the dev tools').
         cellId: null,
-        // Game time (ms) it was written at.
-        settledAt: 0,
         // Hidden from the Region list.
         archived: false,
         // ⚠️ Null for the Region the guild is in: its board is the live `state.board`. Every other
@@ -156,38 +154,16 @@ export const INITIAL_STATE = {
     // `HeroGenerator` (creation) and `HeroRehydration` (load). Fields that only
     // appear on some heroes are saved with them, notably
     // `woundedRemainingMs` (WoundedSystem's recovery countdown; null once
-    // recovered, absent on a hero who has never been wounded) and its legacy
-    // predecessor `woundedUntil`, which is still carried by every hero in the
-    // owner's real saves and is converted on the first wounded tick.
+    // recovered, absent on a hero who has never been wounded).
     heroes: [],    // Array of hero objects
-
-    // === Recruitment (Phase 7 drawer flow) ===
-    // Candidates persist so players can't reroll for free by reopening the
-    // drawer — same lock the legacy board recruit card provided.
-    recruitment: {
-        candidates: []   // up to 3 generated hero blobs awaiting a hire pick
-    },
-
-    cards: {
-        idCounter: 1     // Counter for generating unique card IDs (ephemeral loop cards)
-    },
 
     // === Inventory ===
     inventory: {
-        // Inert. Nothing reads `slots.max` or `slots.used` anywhere in the game
-        // or the CMS — the live cap is `maxSlots` below and usage is counted on
-        // demand. Kept declared so old saves carrying it still load.
-        slots: {
-            max: 20,
-            used: 0
-        },
         // Bank capacity, both rank-derived: GuildUpgradeManager.recompute()
         // rewrites them on every load (1 + bank_tabs, 64 per tab).
         // These are the starting values, i.e. rank 0.
         maxTabs: 1,
         maxSlots: 64,
-        maxStack: 1e12,   // see DEFAULT_MAX_STACK in itemRegistry.js
-        maxStackBonus: 0,  // Added from projects (inventory_slots/max_stack chains)
         items: {},        // { itemId: { quantity, durabilities? } }
         // Bank tabs. Extra entries are added ONLY by
         // GuildUpgradeManager._ensureBankTabs when the `bank_tabs` upgrade
@@ -195,35 +171,18 @@ export const INITIAL_STATE = {
         // are no player-created tabs (owner ruling 2026-08-25, CR2-089).
         groupOrder: ['default-loot'],   // ['default-loot', 'bank-tab-2', …]
         groupDefs: {
-            // `isCustom` is inert: always false now, kept so old saves load.
-            'default-loot': { title: 'Loot', isCustom: false, id: 'default-loot', orderedItems: [] }
+            'default-loot': { title: 'Loot', id: 'default-loot', orderedItems: [] }
         },
         itemOverrides: {} // itemId -> groupId: { 'item_apple': 'bank-tab-2' }
     },
 
-    // === Currency ===
-    // Deleted with the gold code (Token Lifecycle 9.4, SP-65). Gold, and the
-    // inert `influence` and `totalRecruits` beside it, left the save; an older
-    // save's `currency` section is dropped by `migrateState`.
-
     // === Progress ===
-    // The Projects system is retired (owner decision 2026-07-17, CR-038) —
-    // the Guild Hall upgrade tree (progress.guildUpgrades, created by
-    // GuildUpgradeManager) is its replacement. Old saves may still carry
-    // completedProjects/projects/chainProgress/modifiers; they load as
-    // ignored extra fields.
     progress: {
         rosterLimit: 0, // Active roster capacity (matches roster_size rank: 1 once a new game has made its first hero, max 8 — ROSTER_MAX)
-        unlockedRarities: ['common', 'uncommon'],
-        // Per-biome task discovery: { biomeId: ['task1', 'task2', ...] }
-        discoveredTasksByBiome: {},
         // Guild Hall upgrade ranks: { upgradeId: rank }. Owned by
         // GuildUpgradeManager, which derives rosterLimit and the bank caps
-        // from it on every load. (The Token Vault tracks went in Token
-        // Lifecycle 9.3; `migrateState` drops their ranks.)
+        // from it on every load.
         guildUpgrades: {}
-        // `mapDiscoveries` and `guildHallMapOpens` went with the Map bursts
-        // (Token Lifecycle 9.1); `migrateState` drops them from an older save.
     },
 
     // === Time ===
@@ -277,7 +236,6 @@ export const INITIAL_STATE = {
 
     // === Quests (Phase 8 Quests & Tutorial Chain) ===
     quests: {
-        active: [],
         // The tutorial quests already finished. `tutorialStep` is derived from
         // its length by `QuestManager.ensureState()` on every load — this list
         // is the record, the step number is the summary.
@@ -285,10 +243,8 @@ export const INITIAL_STATE = {
         tutorialStep: 0,
         // The bounty clock in game ms (B6.1, TL-18): advanced by the tick's
         // `delta` while fewer bounty quest Tokens than the cap are on the mat.
-        // The quests themselves are Tokens (`instance.quest`); `active` above
-        // only holds an older save's sidebar quests until they are converted.
-        clockMs: 0,
-        nextQuestAt: null
+        // The quests themselves are Tokens (`instance.quest`).
+        clockMs: 0
     },
 
     // === The Atlas (Regions) ===
@@ -311,10 +267,6 @@ export const INITIAL_STATE = {
     // existed: old saves are abandoned, so none is generated for them. ⚠️ Not in REQUIRED_KEYS:
     // a required section may not be null.
     world: null,
-
-    // === Cartographer (Maps) ===
-    // Deleted with the Map bursts and the Map purchase (Token Lifecycle 9.1).
-    // An older save's `cartographer` section is dropped by `migrateState`.
 };
 
 /**
@@ -325,12 +277,9 @@ export const INITIAL_STATE = {
  * `migrateState` runs before this check and backfills any wholly-missing
  * top-level section from INITIAL_STATE, so requiring them cannot reject a save
  * that merely predates them.
- *
- * `cards` is kept only because saves still carry it; it now holds one unused
- * id counter.
  */
 const REQUIRED_KEYS = [
-    'meta', 'heroes', 'cards',
+    'meta', 'heroes',
     'inventory', 'progress', 'time',
     'collection', 'board', 'quests', 'atlas'
 ];

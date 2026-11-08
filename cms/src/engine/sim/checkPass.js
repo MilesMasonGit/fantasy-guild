@@ -137,9 +137,8 @@ export function runCheckPass(entities = [], {
         const life = lifetimeOf(entity, { cycleTimeMs: cycleTimes.get(entity.id), dials });
         lifetimes.set(entity.id, life);
 
-        // An unlimited Token has no authored lifetime to be an outlier of — the
-        // Map check already names it (`map-unlimited-token`), and repeating the
-        // complaint in a second vocabulary would be two rows for one situation.
+        // An unlimited Token has no authored lifetime to be an outlier of: its
+        // hours are the dial's assumption, not the content's.
         if (life.unlimited || !Number.isFinite(life.hours)) continue;
 
         const rarity = tokens[entity.id]?.rarity ?? entity.rarity ?? null;

@@ -162,9 +162,9 @@ notifications fade timer (`src/systems/notifications/routing.js:54`), and the UI
 - **One bus**: `EventBus` (`src/systems/core/EventBus.js:15-167`), a `Map<name, Set<fn>>`,
   synchronous delivery in subscription order, each callback in `try/catch` (`:96-107`). There
   is no queue and no batching on the bus itself.
-- **Names, two catalogues**: `ENGINE_EVENTS` (43 names), `UI_EVENTS` (10), `ORPHAN_EVENTS` (6
-  subscribed, never published), `NO_LISTENER` (7 published, never subscribed) in
-  `src/systems/core/engineEvents.js` (lines 35, 195, 242, 262); `BOARD_EVENTS` (32 names) and
+- **Names, two catalogues**: `ENGINE_EVENTS` (43 names), `UI_EVENTS` (10), `NO_LISTENER` (7
+  published, never subscribed) in `src/systems/core/engineEvents.js`; every declared name has a
+  publisher; `BOARD_EVENTS` (32 names) and
   `ALERT` (17) in `src/systems/board/boardEvents.js`. Raw-string event names are refused by
   `EngineEventNames.test.js` and `BoardEventNames.test.js`. Counts are from importing the
   modules (2026-11-06).
@@ -228,8 +228,7 @@ these numbers: **unverified**, re-run in a bench window.
 ### 4.1 The shape
 
 `INITIAL_STATE` (`src/state/StateSchema.js:138-320`) has these top-level sections: `meta`,
-`heroes` (hero shape owned by `HeroGenerator`/`HeroRehydration`, `:152-162`), `recruitment`,
-`cards` (one unused counter, §8), `inventory` (the Bank), `progress` (roster limit, Hall upgrade
+`heroes` (hero shape owned by `HeroGenerator`/`HeroRehydration`), `inventory` (the Bank), `progress` (roster limit, Hall upgrade
 ranks), `time` (`gameTimeMs`), `collection` (discoveries and counters), `ui` (New! badges, pinned
 stubs), `board` (the active Region's mat, `createEmptyBoard`, `:52-88`), `quests`, `atlas`
 (every Region; inactive ones hold a frozen board, `createRegionRecord`, `:94-132`), `world` (the
@@ -435,8 +434,7 @@ src/config/DatabaseManager.js ──▶ src/config/registries/*.js ──▶ sys
   `palettes/` (`ls data`). Never hand-edit it (`CLAUDE.md`).
 - **`DatabaseManager`** (`src/config/DatabaseManager.js:4-31`) globs eight of them eagerly at
   build time; there is no runtime fetch. **`data/maps.json` (`{}`) and `data/palettes/` are read
-  by no game code** (`src/tests/MapBurstRetired.test.js:39` guards maps), and the
-  `/data/items/**/*.json` glob (`:11`) matches nothing: there is no `data/items/` folder.
+  by no game code** (`src/tests/MapBurstRetired.test.js:39` guards maps).
 - **Registries** turn the JSON into lookups and run content migrations once at import: e.g.
   `tokenRegistry.js:42-63` expands effect-library references and rewrites renamed skill and
   effect ids through pure helpers in `src/systems/effects/`. That is why `config` imports a
@@ -516,7 +514,7 @@ names or comments only.
 
 | Name in comments or docs | Reality |
 |---|---|
-| **Cards, decks, the Area Deck Loop** | Gone since the 0.6.0 playmat rework (`StateSchema.js:13-21`). Residue: `state.cards.idCounter` (never read, still a required save key, `StateSchema.js:171-173,334-335`); `DeckDndProvider`/`DeckDndContext` (`src/ui/dnd/DndKit.jsx:242,392`); `collection.cardUseCounts` is **live** under an old name (completed cycles per Token type, `BoardRunner.js:392`). `TokenCard.jsx`, `EnemyCard.jsx`, `ArrivalCard.jsx` are UI panels, not cards. A card-era `data/effects.json` must not return (`DatabaseManager.js:13-14`). |
+| **Cards, decks, the Area Deck Loop** | Gone since the 0.6.0 playmat rework (`StateSchema.js:13-21`). Residue: `DeckDndProvider`/`DeckDndContext` (`src/ui/dnd/DndKit.jsx:242,392`); `collection.cardUseCounts` is **live** under an old name (completed cycles per Token type, `BoardRunner.js:392`). `TokenCard.jsx`, `EnemyCard.jsx`, `ArrivalCard.jsx` are UI panels, not cards. A card-era `data/effects.json` must not return (`DatabaseManager.js:13-14`). |
 | **Tiles as a grid on the mat** | No mat grid: Tokens sit at points (`StateSchema.js:28-35,56`, `MatPlacement.js` header). Residue: `TileModifiers`, `TILE_CHANGED`, `TILE_EVENT_ALERT`, "tile aggregators"; the word "tile" appears on 437 non-test lines in 111 files. `FreeMatGuards.test.js` forbids a `tile` field in engine event payloads (`boardEvents.js:8-11`). |
 | **"Tile" caveat** (`docs/archive/review_v3/code_review_v3_master_plan.md` §2.D) | Legitimate grids still exist: the **terrain cell lattice** under the ground picture (`src/ui/components/board/terrain/TerrainLattice.js`, 32 u cells; it no longer uses the word "tile" at all, 0 hits, against 122 in that review), sprite sheets (`sprite-manifest.js` has 0 "tile" hits now too), and **the hex world map** (`src/systems/world/hex.js`; "tile" is its art word, `WorldMap.jsx`, `worldPicture.js`). **§2.D is stale on the Guild Hall**: it is no longer a 7×7 board but a web of stars at unit coordinates around the Hall (`GuildHallBoard.jsx` `WEB_W`/`WEB_UNIT_PX`, `config/guildUpgrades.js`); no 7×7 Hall grid was found. |
 | **Exploration** | No system. Only a retired skill id "Explore" in a comment (`src/systems/core/unknownRefRule.js:20`) and the word in `QuestManager.js:160`. |

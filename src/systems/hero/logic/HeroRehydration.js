@@ -4,7 +4,7 @@ import { heroMaxHpFromSkills } from '../../combat/CombatFormulas.js';
 import { GameState } from '../../../state/GameState.js';
 import { createEmptyEquipment } from '../../../config/registries/equipmentConstants.js';
 import { normaliseHeldCopies } from '../../equipment/heldCopies.js';
-import { HERO_SKILL_IDS, RETIRED_SKILL_IDS, isSkillId } from '../../../config/registries/skillRegistry.js';
+import { HERO_SKILL_IDS, RETIRED_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 import { xpForLevel } from '../../../utils/XPCurve.js';
 
 /**
@@ -13,22 +13,15 @@ import { xpForLevel } from '../../../utils/XPCurve.js';
 
 /**
  * Bring a hero's sheet to today's shape, as every load and every new hero does: every skill in the
- * registry held, at level 1 where the hero has none. An older save's levels are kept: skills set
- * aside at a job change (`bankedSkills`) come back (a held copy wins), levels in a cut skill
- * (`RETIRED_SKILL_IDS`) are dropped, and the job is dropped. Villagers are left alone.
+ * registry held, at level 1 where the hero has none. An older save's levels are kept: levels in a
+ * cut skill (`RETIRED_SKILL_IDS`) are dropped, and the job is dropped. Villagers are left alone.
  *
- * @returns {{ restored: string[], dropped: string[], added: string[] }} skill ids
+ * @returns {{ dropped: string[], added: string[] }} skill ids
  */
 export function settleSkillSheet(hero) {
-    const result = { restored: [], dropped: [], added: [] };
+    const result = { dropped: [], added: [] };
     if (!hero || hero.isVillager) return result;
     if (!hero.skills || typeof hero.skills !== 'object') hero.skills = {};
-    for (const [skillId, banked] of Object.entries(hero.bankedSkills || {})) {
-        if (!banked || !isSkillId(skillId) || hero.skills[skillId]) continue;
-        hero.skills[skillId] = { ...banked };
-        result.restored.push(skillId);
-    }
-    delete hero.bankedSkills;
     for (const skillId of RETIRED_SKILL_IDS) {
         if (!hero.skills[skillId]) continue;
         delete hero.skills[skillId];
@@ -54,8 +47,7 @@ export function rehydrateHero(hero) {
     if (!hero.spriteId) hero.spriteId = 'hn_recruit_por';
     if (!hero.icon) hero.icon = 'hn_recruit_icon_por';
 
-    // Every skill on the sheet, an older save's job and banked skills folded in. Runs before the
-    // derived stats.
+    // Every skill on the sheet, an older save's job dropped. Runs before the derived stats.
     settleSkillSheet(hero);
 
     updateHeroFromSkills(hero);
@@ -86,10 +78,12 @@ export function rehydrateHero(hero) {
     }
     hero.equipment = equipment;
     normaliseHeldCopies(hero);
-    delete hero.lastEatenAt;
-    delete hero.lastDrunkAt;
-    // Heroes no longer have energy; older saves still carry the field.
+    // Heroes no longer have energy, a class, a trait or a recruitment stamp; older saves still
+    // carry the fields.
     delete hero.energy;
+    delete hero.classId;
+    delete hero.traitId;
+    delete hero.createdAt;
 
     // UI change counter.
     hero._rev = (hero._rev || 0) + 1;

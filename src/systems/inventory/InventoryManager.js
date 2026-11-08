@@ -152,9 +152,7 @@ export const InventoryManager = {
             // Falls back to the shared constant, not to state: an existing
             // save carries whatever ceiling was current when it was written,
             // and a stale one silently starts dropping output.
-            const baseMaxStack = template.maxStack || DEFAULT_MAX_STACK;
-            const stackBonus = GameState.inventory.maxStackBonus || 0;
-            const maxStack = baseMaxStack + stackBonus;
+            const maxStack = template.maxStack || DEFAULT_MAX_STACK;
             const spaceRemaining = maxStack - entry.quantity;
 
             // A maxed stack hands the remainder to the board, not to nothing.
@@ -245,7 +243,7 @@ export const InventoryManager = {
                 free--;
             }
             if (template.stackable === false && n > 1) return false;
-            const maxStack = (template.maxStack || DEFAULT_MAX_STACK) + (GameState.inventory.maxStackBonus || 0);
+            const maxStack = template.maxStack || DEFAULT_MAX_STACK;
             if (n > maxStack) return false;
             counts.set(itemId, n);
         }
@@ -331,9 +329,6 @@ export const InventoryManager = {
     // `bank_tabs` Guild Hall upgrade, which raises `inventory.maxTabs`;
     // `GuildUpgradeManager._ensureBankTabs` then creates the matching entry in
     // `groupOrder`/`groupDefs`.
-    //
-    // `groupDefs[id].isCustom` survives in saved games as an inert field (always
-    // false, read by nothing) so old saves keep loading.
 
     /**
      * Replace a group's manual item order wholesale (the Bank pane's reorderable

@@ -31,9 +31,6 @@ export {
  * * bounty generation ({@link QuestManager.createRandomQuest}; the pools and
  *   the generator live in `questBounties.js`);
  * * the reward rule (`questReward`, also in `questBounties.js`).
- *
- * `state.quests.active` is read once, by the migration that turns a save's
- * sidebar quests into Tokens, and is then empty.
  */
 
 let unsubs = [];
@@ -60,16 +57,12 @@ export const QuestManager = {
         if (!GameState.state) return;
         if (!GameState.state.quests) {
             GameState.state.quests = {
-                active: [],
                 completedTutorials: [],
                 tutorialStep: 0,
                 clockMs: 0
             };
         }
         const q = GameState.state.quests;
-        // `active` holds only a save's sidebar quests waiting to be turned into
-        // quest Tokens (`QuestTokens.migrateSidebarQuests`).
-        if (!Array.isArray(q.active)) q.active = [];
         // A save from before the list existed kept only a step number, which maps
         // onto nothing now.
         if (!Array.isArray(q.completedTutorials)) q.completedTutorials = [];

@@ -12,9 +12,6 @@ import { heroMaxHpFromSkills } from '../combat/CombatFormulas.js';
  *
  * Every hero starts holding every skill at level 1 (`skillRegistry.HERO_SKILL_IDS`): what they
  * become is what they are sent to do.
- *
- * `classId` and `traitId` are still written as `null` only to keep the saved
- * hero shape unchanged.
  */
 
 /**
@@ -43,9 +40,6 @@ export function generateHero(options = {}) {
     const hero = {
         id: `hero_${nanoid(8)}`,
         name,
-        // Retired concepts, kept as null so the saved hero shape is unchanged.
-        classId: null,
-        traitId: null,
         icon,
         spriteId, 
 
@@ -60,9 +54,7 @@ export function generateHero(options = {}) {
         // Always empty: statuses ride on `effects` (see `HeroRehydration`).
         statuses: [],
 
-        equipment: createEmptyEquipment(),
-
-        createdAt: Date.now()
+        equipment: createEmptyEquipment()
     };
 
     hero.aggregator.id = hero.id;

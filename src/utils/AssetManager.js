@@ -116,7 +116,7 @@ export function resolveSpritePath(entity) {
 
     let id;
     if (typeof entity === 'object') {
-        id = entity.spriteId || entity.sprite || entity.background || entity.classId || entity.templateId || entity.id || entity.itemId;
+        id = entity.spriteId || entity.sprite || entity.background || entity.templateId || entity.id || entity.itemId;
     } else {
         id = entity;
     }
@@ -141,7 +141,7 @@ export function resolveSpritePath(entity) {
 
 export function resolveAnimationPath(entity) {
     const id = typeof entity === 'object' && entity !== null
-        ? (entity.spriteId || entity.sprite || entity.classId || entity.templateId || entity.id)
+        ? (entity.spriteId || entity.sprite || entity.templateId || entity.id)
         : entity;
     if (!id || typeof id !== 'string') return null;
     const sheet = ANIMATION_MAP[id] || ANIMATION_MAP[currentSpriteName(id)];

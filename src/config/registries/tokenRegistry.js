@@ -33,11 +33,8 @@ import { STANDS_ON_CHOICES } from '../../systems/atlas/TerrainMap.js';
 import { neverWearsOut } from '../../systems/core/wearRule.js';
 
 /**
- * Merge every Token JSON source into one keyed object.
- *
- * Mirrors `itemRegistry.js`'s loader: the single file first, then the folder
- * glob, so a split-out file can override a same-id entry in `tokens.json`.
- * An entry missing an `id` takes its key, matching how items behave.
+ * Read `tokens.json` into one keyed object. An entry missing an `id` takes its
+ * key, matching how items behave.
  */
 function loadJsonTokens() {
     const tokens = {};

@@ -225,7 +225,7 @@ describe('gear asks a level in its style', () => {
 });
 
 describe('an older save keeps every level', () => {
-    /** A Knight as the class rework saved one: a job, class skills, banked skills, a cut skill. */
+    /** A Knight as the class rework saved one: a job, class skills, a cut skill. */
     const knight = () => ({
         id: 'hero_old_knight', name: 'Sir Old', jobId: 'knight', className: 'Recruit',
         hp: { current: 35, max: 35 }, status: 'idle', equipment: [],
@@ -235,44 +235,35 @@ describe('an older save keeps every level', () => {
             fletching: { level: 18, xp: xpForLevel(18) + 7 },
             leadership: { level: 30, xp: xpForLevel(30) },
             armory: { level: 9, xp: xpForLevel(9) }
-        },
-        bankedSkills: {
-            magic: { level: 33, xp: xpForLevel(33) },
-            enchanting: { level: 7, xp: xpForLevel(7) },
-            commerce: { level: 40, xp: xpForLevel(40) },
-            melee: { level: 3, xp: xpForLevel(3) }
         }
     });
 
-    it('keeps held levels, brings banked ones back, drops the job and the cut skills', () => {
+    it('keeps held levels, drops the job and the cut skills', () => {
         const h = knight();
         const result = settleSkillSheet(h);
         expect(Object.keys(h.skills).sort()).toEqual([...HERO_SKILL_IDS].sort());
         expect(h.skills.melee).toEqual({ level: 25, xp: xpForLevel(25) });
         expect(h.skills.fletching).toEqual({ level: 18, xp: xpForLevel(18) + 7 });
-        expect(h.skills.magic.level).toBe(33);
-        expect(h.skills.enchanting.level).toBe(7);
+        expect(h.skills.magic).toEqual({ level: 1, xp: 0 });
         expect(h.skills.mining.level).toBe(12);
         expect(h.skills.ranged).toEqual({ level: 1, xp: 0 });
         expect(h).not.toHaveProperty('jobId');
-        expect(h).not.toHaveProperty('bankedSkills');
-        expect(result.restored.sort()).toEqual(['enchanting', 'magic']);
         expect(result.dropped.sort()).toEqual(['armory', 'leadership']);
     });
 
-    it('on load: no title, and HP from the best combat skill (a banked Magic 33 counts)', () => {
+    it('on load: no title, and HP from the best combat skill', () => {
         const h = knight();
         GameState.state.heroes.push(h);
         rehydrateHero(h);
         expect(h).not.toHaveProperty('className');
-        expect(h.hp).toEqual({ current: 35, max: 43 });
+        expect(h.hp).toEqual({ current: 35, max: 35 });
     });
 
     it('settles a hero twice to the same sheet', () => {
         const h = knight();
         settleSkillSheet(h);
         const once = JSON.stringify(h.skills);
-        expect(settleSkillSheet(h)).toEqual({ restored: [], dropped: [], added: [] });
+        expect(settleSkillSheet(h)).toEqual({ dropped: [], added: [] });
         expect(JSON.stringify(h.skills)).toBe(once);
     });
 

@@ -21,7 +21,7 @@ export const InventoryStore = {
                     maxSlots: 20,
                     groupOrder: ['default-loot'],
                     groupDefs: {
-                        'default-loot': { title: 'Loot', isCustom: false, id: 'default-loot', orderedItems: [] }
+                        'default-loot': { title: 'Loot', id: 'default-loot', orderedItems: [] }
                     },
                     itemOverrides: {}
                 };
@@ -32,7 +32,7 @@ export const InventoryStore = {
         if (!inv.groupOrder) inv.groupOrder = ['default-loot'];
         if (!inv.groupDefs) {
             inv.groupDefs = {
-                'default-loot': { title: 'Loot', isCustom: false, id: 'default-loot', orderedItems: [] }
+                'default-loot': { title: 'Loot', id: 'default-loot', orderedItems: [] }
             };
         }
         if (!inv.itemOverrides) inv.itemOverrides = {};
