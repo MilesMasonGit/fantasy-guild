@@ -8,7 +8,7 @@ import { visibleOptions, LIST_CAP } from '../../cms/src/components/editors/rules
 import { RulesPanel } from '../../cms/src/components/editors/RulesLine.jsx';
 import { KEYWORD, KEYWORDS, makeStatement } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
-import { slotsOf, SLOT_KIND } from '../systems/effects/statementSlots.js';
+import { slotsOf, SLOT_KIND } from '../../cms/src/engine/ledger/statementSlots.js';
 
 /**
  * ⭐ **The Rules Line, driven the way an author drives it** (Rules Line P2–P3).

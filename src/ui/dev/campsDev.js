@@ -19,7 +19,7 @@ import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType, registerTokenTypes, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
-import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
+import { heroMaxHpFromSkills } from '../../systems/combat/CombatFormulas.js';
 
 /**
  * The four camps of the change pack (`token_logging_camp` and the rest), as QA test types: the same

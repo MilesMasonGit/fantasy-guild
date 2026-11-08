@@ -2,14 +2,14 @@ import { normaliseWorldTables } from '../../../src/config/worldTablesShape.js';
 import { PLACEHOLDER_WORLD_TABLES } from '../../../src/config/worldPlaceholder.js';
 import {
     worldContext, planWith, sweepWorlds, placementOf, plannedTables, F_CHECKS, WORLD_F,
-} from '../../../src/systems/progression/ledger/world.js';
+} from './ledger/world.js';
 import { planPlaceOf } from '../../../src/systems/progression/ledger/plan.js';
-import { CHECKS } from '../../../src/systems/progression/ledger/checks.js';
-import { formatMinutes } from '../../../src/systems/progression/ledger/settings.js';
+import { CHECKS } from './ledger/checks.js';
+import { formatMinutes } from './ledger/settings.js';
 import { usableTables } from './worldTables.js';
 
 /**
- * The World plan over the CMS workspace (`src/systems/progression/ledger/world.js` does the work).
+ * The World plan over the CMS workspace (`ledger/world.js` does the work).
  *
  * The base tables are the workspace's own (`world`, which Sync writes to `data/world.json`) when it
  * holds tables that can be generated from; else the game's placeholder (`src/config/worldPlaceholder.js`),

@@ -5,9 +5,9 @@ import { MAT_Z } from './matLayers.js';
 import { buildScreenPass, screenGrid, groundPixel } from './groundScreen.js';
 import { groundSheetsReady, loadGroundSheets, onGroundSheetsReady, mutedSheet, drawnSheet } from './groundSheets.js';
 import { timedBuild } from './groundBuilds.js';
-import { buildGroundPlan } from '../../../systems/board/TerrainSurface.js';
+import { buildGroundPlan } from './terrain/TerrainSurface.js';
 import { sheetPath, propSheetPath } from '../../../config/registries/terrainRegistry.js';
-import { onTuningChanged, isAmbientKey, tuning } from '../../../config/playmatTuning.js';
+import { onTuningChanged, isAmbientKey, tuning } from './terrain/playmatTuning.js';
 import { groundLife } from './ambientGround.js';
 
 /**

@@ -1,4 +1,4 @@
-import { CALIBRATED_FILES, fileHashes, calibrationState, calibrationFinding } from '../../../src/systems/progression/ledger/calibration.js';
+import { CALIBRATED_FILES, fileHashes, calibrationState, calibrationFinding } from './ledger/calibration.js';
 
 /**
  * Whether the rate calculator's calibration (`bench/calibration/stamp.json`, written by
@@ -8,7 +8,7 @@ import { CALIBRATED_FILES, fileHashes, calibrationState, calibrationFinding } fr
  * checks it covers `CALIBRATED_FILES` exactly.
  */
 const SOURCES = import.meta.glob([
-  '../../../src/systems/progression/ledger/rates.js',
+  './ledger/rates.js',
   '../../../src/systems/effects/ModifierAggregator.js',
   '../../../src/systems/effects/statements.js',
   '../../../src/systems/effects/effectLibrary.js',
@@ -50,10 +50,12 @@ const SOURCES = import.meta.glob([
 
 const STAMPS = import.meta.glob('../../../bench/calibration/stamp.json', { eager: true, import: 'default' });
 
-/** The bundled texts by project path (`src/…`, `bench/…`). */
+/** The bundled texts by project path (`src/…`, `bench/…`, `cms/src/engine/…`); Vite writes a glob under this folder as `./…`. */
 export function bundledSources() {
   const out = {};
-  for (const [file, text] of Object.entries(SOURCES)) out[file.replace(/^(\.\.\/)+/, '')] = text;
+  for (const [file, text] of Object.entries(SOURCES)) {
+    out[file.startsWith('./') ? `cms/src/engine/${file.slice(2)}` : file.replace(/^(\.\.\/)+/, '')] = text;
+  }
   return out;
 }
 

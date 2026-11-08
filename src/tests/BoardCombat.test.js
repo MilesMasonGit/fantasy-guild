@@ -350,7 +350,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         run(3000);
         expect(BoardCombat.getFight(idAt(10))).not.toBeNull();
 
-        Placement.recallHeroById('hero_1');
+        Flags.furl('hero_1');
         run(100);
 
         expect(BoardCombat.getFight(idAt(10))).toBeNull();
@@ -377,7 +377,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         }
         expect(lowest).toBeLessThan(max);
 
-        Placement.recallHeroById('hero_1');
+        Flags.furl('hero_1');
         run(100);
         Orders.orderAt('hero_1', C(10));
         run(100);
@@ -392,7 +392,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
 
         // One hero per Token: hero_2 only gets the enemy once hero_1's flag is
         // taken down (Free Playmat 1.4b).
-        Placement.recallHeroById('hero_1');
+        Flags.furl('hero_1');
         Orders.orderAt('hero_2', C(10));
         run(100);
 

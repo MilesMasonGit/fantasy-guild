@@ -23,7 +23,6 @@ import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { WorkPlateLayer } from '../ui/components/board/WorkPlateLayer.jsx';
-import { CHARGE_FLOATERS } from '../ui/components/board/TokenBadges.jsx';
 import { MAT_Z } from '../ui/components/board/matLayers.js';
 import { PLATE, CELL, plateCells, plateUnit, platePlace, clockText, workPlateOf, leadOf } from '../ui/components/board/workPlate.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
@@ -248,8 +247,6 @@ describe('⭐ on the mat', () => {
         await act(async () => { Charges.applyDelta(t, -1); });
         await flush();
         expect(count()).toBe('11');
-        expect(CHARGE_FLOATERS).toBe(false);
-        expect(container.querySelector('[data-charge-floater]')).toBeNull();
     });
 
     it('a Token nobody works keeps its own "!", and gets no plate', async () => {

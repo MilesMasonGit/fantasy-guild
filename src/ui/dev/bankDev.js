@@ -28,7 +28,7 @@ export function devBankEveryKind() {
         for (const item of Object.values(getAllItems())) {
             if (!item?.id || InventoryManager.getItemCount(item.id) > 0) continue;
             if (InventoryManager.lacksSlotFor(item.id)) { left++; continue; }
-            if (InventoryManager.addItem(item.id, 1, 'dev') > 0) added++;
+            if (InventoryManager.addItem(item.id, 1) > 0) added++;
         }
     });
     return { added, left };

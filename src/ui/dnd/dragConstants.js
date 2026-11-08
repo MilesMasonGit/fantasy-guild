@@ -6,7 +6,6 @@
 export const DRAG_KIND = {
     /** A board object: dragged to or from the mat, or straight off a loot sprite. */
     TOKEN: 'token',
-    HERO: 'hero',
     ITEM: 'item',
     /**
      * A hero's flag: moves the flag. Carries `heroId`. Started by the flag itself, by a hero on
@@ -50,7 +49,6 @@ export const DRAG_SFX = {
         // Tokens are weighty physical objects resting on a surface, so
         // they reuse the solid card-place thunk rather than a light click.
         [DRAG_KIND.TOKEN]: 'card_place',
-        [DRAG_KIND.HERO]: 'hero_assign',
         [DRAG_KIND.FLAG]: 'hero_assign',
         [DRAG_KIND.ITEM]: 'item_equip'
     }

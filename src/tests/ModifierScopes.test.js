@@ -4,7 +4,6 @@ import {
     combinePercentages,
     applyThreeBucket
 } from '../systems/effects/ModifierAggregator.js';
-import { normalizeAuras } from '../systems/effects/GuildModifiers.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 /**
@@ -51,19 +50,6 @@ const pct = (source, value, category = 'mining') => ({
 /** The resolved percentage factor one aggregator contributes for a skill. */
 const factor = (agg, category = 'mining') =>
     combinePercentages(agg.collectPercentages(EFFECT_TYPES.YIELD, category));
-
-describe('normalizeAuras — one or many (free-form authoring)', () => {
-    it('reads a single modifier, a list, and nothing at all', () => {
-        expect(normalizeAuras(null)).toEqual([]);
-        expect(normalizeAuras(undefined)).toEqual([]);
-        expect(normalizeAuras(pct('a', 0.2))).toHaveLength(1);
-        expect(normalizeAuras([pct('a', 0.2), pct('a', 0.1, 'fishing')])).toHaveLength(2);
-    });
-
-    it('drops empty entries from an authored list', () => {
-        expect(normalizeAuras([pct('a', 0.2), null])).toHaveLength(1);
-    });
-});
 
 describe('Rule 1 — duplicates stack additively (D-23)', () => {
     it('two +20% sources give +40%, NOT the compounded +44%', () => {

@@ -8,6 +8,7 @@ import * as CatchUp from '../systems/core/CatchUp.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { createEmptyBoard, validateSaveData } from '../state/StateSchema.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -236,7 +237,7 @@ describe('⭐ there and back equals save and load', () => {
         const data = JSON.parse(GameState.serializeJson());
         const state = migrateState(data.state, data.version);
         expect(validateSaveData({ version: data.version, state }).errors).toEqual([]);
-        await GameState.initFromSave(state);
+        loadSavedState(state);
         EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0, savedAt: data.savedAt });
 
         expect(Atlas.list().map(r => r.id)).toEqual([a, b]);
@@ -263,7 +264,7 @@ describe('arriving rebuilds what a load rebuilds', () => {
 
         // A reload in Region A: the tile caches now know A's Tokens and nothing of B's.
         const data = JSON.parse(GameState.serializeJson());
-        await GameState.initFromSave(migrateState(data.state, data.version));
+        loadSavedState(migrateState(data.state, data.version));
         EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0, savedAt: data.savedAt });
 
         Atlas.travel(b);
@@ -500,6 +501,7 @@ describe('⭐ there and back plays exactly like save and load (fresh engine per 
             EngineBootstrap: (await import('../systems/core/EngineBootstrap.js')).EngineBootstrap,
             GameLoop: (await import('../systems/core/GameLoop.js')).GameLoop,
             GameState: (await import('../state/GameState.js')).GameState,
+            LoadedState: await import('../systems/core/LoadedState.js'),
             InventoryManager: (await import('../systems/inventory/InventoryManager.js')).InventoryManager,
             DiscoveryManager: (await import('../systems/core/DiscoveryManager.js')).DiscoveryManager,
             EventBus: (await import('../systems/core/EventBus.js')).EventBus,
@@ -563,7 +565,7 @@ describe('⭐ there and back plays exactly like save and load (fresh engine per 
             const data = JSON.parse(l.GameState.serializeJson());
             data.state.board.workClaims = {};
             const state = l.SaveMigration.migrateState(data.state, data.version);
-            await l.GameState.initFromSave(state);
+            l.LoadedState.loadSavedState(state);
             // As SaveManager.loadGame does, before anything hears of the board.
             l.MatResize.fitToMat();
             l.EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0, savedAt: data.savedAt });

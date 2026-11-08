@@ -85,8 +85,8 @@ const hero = (id) => ({
     skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
 });
 
-function Item({ id = 'item-src', itemId = 'item_coal' }) {
-    const d = useEntityDrag({ id, kind: DRAG_KIND.ITEM, payload: { itemId } });
+function Item({ id = 'item-src', itemId = 'item_coal', keyboardAccessible }) {
+    const d = useEntityDrag({ id, kind: DRAG_KIND.ITEM, payload: { itemId }, keyboardAccessible });
     return h('div', { ref: d.setNodeRef, ...d.handleProps, 'data-testid': id });
 }
 
@@ -234,7 +234,7 @@ describe('a drag through the shared source behaves as before', () => {
             return null;
         }
         const out = {};
-        const view = render(h(DeckDndProvider, null, h(Item, { id: 'one', itemId: 'one' }), h(Item, { id: 'two', itemId: 'two' }), h(InHand, { out }), h(Spy)));
+        const view = render(h(DeckDndProvider, null, h(Item, { id: 'one', itemId: 'one', keyboardAccessible: true }), h(Item, { id: 'two', itemId: 'two', keyboardAccessible: true }), h(InHand, { out }), h(Spy)));
         act(() => {
             fireEvent.pointerDown(view.getByTestId('one'), ptr(10, 10));
             fireEvent.pointerMove(document, ptr(40, 10));
@@ -275,9 +275,9 @@ describe('a drag through the shared source behaves as before', () => {
         act(() => { fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }); });
     });
 
-    it('keeps dnd-kit\'s attributes on a source, pressed only while it is in the hand', () => {
+    it('a source that opts in (keyboardAccessible) keeps dnd-kit\'s attributes, pressed only while it is in the hand', () => {
         function Source({ id, disabled = false }) {
-            const d = useEntityDrag({ id, kind: DRAG_KIND.ITEM, payload: { itemId: id }, disabled });
+            const d = useEntityDrag({ id, kind: DRAG_KIND.ITEM, payload: { itemId: id }, disabled, keyboardAccessible: true });
             return h('div', { ref: d.setNodeRef, ...d.handleProps, 'data-testid': id });
         }
         const out = {};

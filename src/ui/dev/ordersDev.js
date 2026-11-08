@@ -257,7 +257,6 @@ export function jumpTutorialTo(stepId) {
         BoardState.removeToken(token.id);
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: token.id, x: token.x, y: token.y, typeId: null });
     }
-    q.active = (q.active || []).filter(a => !a?.isTutorial);
     q.completedTutorials = TUTORIAL_QUESTS.slice(0, index).map(t => t.id);
     QuestTokens.ensure();
     EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, {});

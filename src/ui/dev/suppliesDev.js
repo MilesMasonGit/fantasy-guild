@@ -15,7 +15,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { registerItems, getItem } from '../../config/registries/itemRegistry.js';
 import { registerEffects } from '../../config/registries/effectRegistry.js';
 import { makeStatement, KEYWORD } from '../../systems/effects/statements.js';
-import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
+import { heroMaxHpFromSkills } from '../../systems/combat/CombatFormulas.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 
 /**

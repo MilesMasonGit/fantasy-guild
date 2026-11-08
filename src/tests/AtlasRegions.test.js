@@ -9,6 +9,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as MatCap from '../systems/board/MatCap.js';
+import * as Landmarks from '../systems/board/Landmarks.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import { REGION_KIND } from '../systems/atlas/Atlas.js';
@@ -242,7 +243,7 @@ describe('the Token cap: 128, and endgame sites count toward it', () => {
     it('a landmark Token counts toward the cap like any placed Token', () => {
         const before = MatCap.tokenCount();
         const site = placeAt('fixture_atlas_site', 200, 200);
-        expect(MatCap.isLandmark(site)).toBe(true);
+        expect(Landmarks.isLandmark(site)).toBe(true);
         expect(MatCap.countsTowardCap(site)).toBe(true);
         expect(MatCap.tokenCount()).toBe(before + 1);
         placeAt('fixture_producer', 400, 200);

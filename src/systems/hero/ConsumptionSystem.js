@@ -2,7 +2,7 @@ import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { getEquippedEntries, categoryIdsOfKind, isConsumableCategory, CATEGORY_KINDS } from '../../config/registries/equipmentConstants.js';
+import { getEquippedEntries, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
 import { CONSUME_THRESHOLD, ELIXIR_FIGHTS } from '../../config/loopConstants.js';
 import * as HeroEffects from './HeroEffects.js';
 import { logger } from '../../utils/Logger.js';
@@ -71,12 +71,6 @@ function consumeEquipped(hero, categoryId, { inFight = false } = {}) {
         heroId: hero.id, itemId: entry.itemId, category: categoryId, amount
     });
     return { itemId: entry.itemId, amount };
-}
-
-/** Does this hero want food right now? */
-export function needsFood(heroId) {
-    const hero = HeroManager.getHero(heroId);
-    return !!hero && isLow(hero.hp);
 }
 
 /**
@@ -209,19 +203,4 @@ export function startWorkDoses(heroId, skill) {
 /** Whether an item is drunk at a work cycle's start (a drink or a work potion). */
 export function isWorkDose(itemId) {
     return workDoseOf(itemId) > 0;
-}
-
-/** Everything the hero could still consume, for UI and diagnostics. */
-export function getConsumables(heroId) {
-    const hero = HeroManager.getHero(heroId);
-    if (!hero) return { food: null, drink: null, consumables: [] };
-
-    const consumableCategories = new Set(categoryIdsOfKind(CATEGORY_KINDS.CONSUMABLE));
-    return {
-        food: equippedOfCategory(hero, 'food')?.itemId || null,
-        drink: equippedOfCategory(hero, 'drink')?.itemId || null,
-        consumables: getEquippedEntries(hero)
-            .filter(e => consumableCategories.has(e.category))
-            .map(e => e.itemId)
-    };
 }

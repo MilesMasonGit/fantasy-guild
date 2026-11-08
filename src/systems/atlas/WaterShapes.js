@@ -42,8 +42,6 @@ export const STYLE_TERRAIN = Object.freeze(['', 'water', 'water:lake', 'water:su
 /** The shapes a stored record may hold. */
 export const SHAPE = Object.freeze({ LAKE: 'lake', RIVER: 'river', POOL: 'pool', SEA: 'sea' });
 
-const STYLE_OF = Object.freeze({ lake: STYLE.LAKE, river: STYLE.LAKE, pool: STYLE.SULPHUR, sea: STYLE.SEA });
-
 /** The water varieties a biome's rules may name (`Budget.BIOME_WATER`). */
 export const WATER_KIND = Object.freeze({
     LAKE: 'lake', LAKE_RIVER: 'lake_river', RIVER: 'river', SPLIT: 'split', SPRING: 'spring',
@@ -264,7 +262,7 @@ export function noiseAt(x, y, cell, salt) {
 // Paths
 
 /** Chaikin's corner cutting, `k` times: each segment's quarter points, the ends kept. */
-export function smoothPath(points, k) {
+function smoothPath(points, k) {
     let pts = points;
     for (let n = 0; n < k; n++) {
         const q = [pts[0]];
@@ -1863,6 +1861,3 @@ export function withoutInland(record) {
     const shapes = record.shapes.filter(s => s.k === SHAPE.SEA);
     return shapes.length ? { ...record, shapes } : null;
 }
-
-/** The style each shape is drawn in. */
-export const styleOf = (shape) => STYLE_OF[shape.k] || STYLE.NONE;

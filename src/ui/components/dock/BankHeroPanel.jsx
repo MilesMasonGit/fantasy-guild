@@ -89,7 +89,7 @@ export const BankHeroPanel = ({
     const recall = useEntityDrop({
         id: 'hero-panel-drop',
         surface: DND_SURFACE.DRAWER,
-        accepts: p => !!p?.heroId && (p.kind === DRAG_KIND.FLAG || p.kind === DRAG_KIND.HERO),
+        accepts: p => !!p?.heroId && p.kind === DRAG_KIND.FLAG,
         onDrop: () => null,
         disabled: !shownHeroId
     });

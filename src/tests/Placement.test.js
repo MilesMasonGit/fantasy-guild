@@ -158,7 +158,7 @@ describe('Forfeited cycles (D-54, D-131)', () => {
         Orders.orderAt('hero_1', A);
         BoardState.getTokenById(forest.id).cycleElapsedMs = 7000;
 
-        Placement.recallHeroById('hero_1');
+        Flags.furl('hero_1');
 
         expect(BoardState.getTokenById(forest.id).cycleElapsedMs).toBe(0);
     });
@@ -309,51 +309,6 @@ describe('Planting a hero’s flag (D-111, D-147)', () => {
         expect(Orders.orderAt('hero_1', null).success).toBe(false);
     });
 });
-
-describe('Recalling a hero', () => {
-    it('returns them to the Dock', () => {
-        const forest = place('fixture_producer', A);
-        Orders.orderAt('hero_1', A);
-
-        expect(Placement.recallHeroById('hero_1').heroId).toBe('hero_1');
-        expect(BoardState.flagOf('hero_1')).toBeNull();
-        expect(BoardState.displayPointOf('hero_1')).toBeNull();
-        expect(BoardState.getTokenById(forest.id).typeId).toBe('fixture_producer');   // Token stays
-    });
-
-    it('recallHeroById finds them wherever they are', () => {
-        place('fixture_producer', FAR);
-        Orders.orderAt('hero_1', FAR);
-
-        expect(Placement.recallHeroById('hero_1').success).toBe(true);
-        expect(BoardState.flagOf('hero_1')).toBeNull();
-        expect(BoardState.workTokenOf('hero_1')).toBeNull();
-    });
-
-    it('recallHeroById on a hero already in the Dock succeeds quietly', () => {
-        // Defeat calls this without knowing where the hero is; making the
-        // no-op case an error would push that check outward.
-        expect(Placement.recallHeroById('hero_nobody').success).toBe(true);
-    });
-
-    /** Moved here from `TokenHeroDisplacement.test.js`, deleted with the push in 1.6d-1. */
-    it('flies them to the Dock as a particle on a direct recall (right click)', () => {
-        place('fixture_producer', A);
-        Orders.orderAt('hero_1', A);
-
-        const collected = [];
-        const unsub = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, e => collected.push(e));
-
-        const res = Placement.recallHeroById('hero_1');
-
-        expect(res.success).toBe(true);
-        expect(BoardState.flagOf('hero_1')).toBeNull();
-        expect(BoardState.displayPointOf('hero_1')).toBeNull();
-        expect(collected.some(e => e.kind === 'hero' && e.destination === 'dock' && e.heroId === 'hero_1')).toBe(true);
-        unsub();
-    });
-});
-
 // Was 'Returning a Token to the Vault (right-click)'. Right-click to the Vault
 // went in Token Lifecycle 9.3; Remove (5.2) is the one way off the mat, and
 // these pin that it behaves as the Vault route did for the mat and the hero.

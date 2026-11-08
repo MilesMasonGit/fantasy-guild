@@ -2,9 +2,9 @@ import { describe, it, expect, afterEach } from 'vitest';
 import {
     PLAN_PIXEL_U, CELL_PX, planSize, hash01, edgeAmplitude, edgeProfile, edgeStrips,
     resolveArtPixels, distanceFromSeeds, distanceFields
-} from '../systems/board/TerrainLattice.js';
+} from '../ui/components/board/terrain/TerrainLattice.js';
 import { TERRAIN_CELL, terrainGrid } from '../systems/atlas/TerrainMap.js';
-import { resetTuning, setTuning } from '../config/playmatTuning.js';
+import { resetTuning, setTuning } from '../ui/components/board/terrain/playmatTuning.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
 import { groundWith, regionWith, flat } from './fixtures/ground.js';
 

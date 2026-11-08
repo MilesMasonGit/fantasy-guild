@@ -5,6 +5,7 @@ import { render, cleanup } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
@@ -24,7 +25,7 @@ import { registerTokenTypes, tokenStartingUses } from '../config/registries/toke
 import { resetMatTuning } from '../config/matTuning.js';
 import { artRadiusOf } from '../config/matGeometry.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { DRAG_KIND, rosterFlagPayload } from '../ui/dnd/dragConstants.js';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
@@ -77,7 +78,7 @@ function put(point, typeId, uses = undefined) {
 const dropFlag = (heroId, point) => dropOnMat(
     BoardState.flagOf(heroId)
         ? { kind: DRAG_KIND.FLAG, heroId, from: { flag: true } }
-        : { kind: DRAG_KIND.HERO, heroId },
+        : rosterFlagPayload(heroId),
     point
 );
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -298,7 +299,7 @@ describe('un-pinning and re-pinning by dragging', () => {
 describe('save and load', () => {
     async function saveAndReload() {
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
-        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        loadSavedState(migrateState(saved.state, saved.version));
         EventBus.publish('game_loaded', { slot: 0 });
     }
 

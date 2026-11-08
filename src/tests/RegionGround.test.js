@@ -7,7 +7,7 @@ import {
 } from '../systems/atlas/TerrainMap.js';
 import { regionGround, decodedTerrain, looksForGround } from '../systems/atlas/regionGround.js';
 import { createRegionRecord } from '../state/StateSchema.js';
-import { hash01 } from '../systems/board/TerrainLattice.js';
+import { hash01 } from '../ui/components/board/terrain/TerrainLattice.js';
 import { cellsOf, regionWith } from './fixtures/ground.js';
 
 /**

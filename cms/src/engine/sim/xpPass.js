@@ -124,16 +124,6 @@ export function hoursForGold(gold, projection) {
     return projection.masteryHours + (gold - projection.goldAtMastery) / projection.tailGph;
 }
 
-/** Estimated day in reach for a price, at `hoursPerDay` of play. Day 1 is the first day, so anything affordable inside the first session reads as day 1 rather than day 0. `null` where `hoursForGold` cannot answer, which the table renders as a dash. */
-export function dayInReach(cost, projection, dials = DEFAULT_DIALS) {
-    const hours = hoursForGold(cost, projection);
-    if (hours === null) return null;
-    const perDay = Number.isFinite(dials.hoursPerDay) && dials.hoursPerDay > 0
-        ? dials.hoursPerDay
-        : DEFAULT_DIALS.hoursPerDay;
-    return Math.max(1, Math.ceil(hours / perDay));
-}
-
 /**
  * Derive XP per cycle for every entity with a solved cycle, and the pacing
  * projection.

@@ -3,8 +3,8 @@
 import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS, generatedOf } from '../../../config/registries/terrainRegistry.js';
 import {
     drawGrass, grassTable, grassColours, shadeRatio, cleanOf, cleanColour, grassNoise, COLOUR, SLOT_SHIFT
-} from '../../../systems/board/TerrainGrass.js';
-import { tuning } from '../../../config/playmatTuning.js';
+} from './terrain/TerrainGrass.js';
+import { tuning } from './terrain/playmatTuning.js';
 
 /**
  * The second of the ground's two stages (the first is `TerrainSurface.buildGroundPlan`, 2 mat units

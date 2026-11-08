@@ -11,6 +11,7 @@ import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
+import * as Hand from '../systems/board/Hand.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
@@ -78,8 +79,8 @@ function runUntil(done, ms = 60000) {
 }
 
 const held = new Set();
-function pickUp(instance) { held.add(instance.id); TimedChanges.setInHand(instance.id, true); }
-function putDown(instance) { held.delete(instance.id); TimedChanges.setInHand(instance.id, false); }
+function pickUp(instance) { held.add(instance.id); Hand.setInHand(instance.id, true); }
+function putDown(instance) { held.delete(instance.id); Hand.setInHand(instance.id, false); }
 
 let completed;
 let depleted;
@@ -106,7 +107,7 @@ beforeEach(() => {
 
 afterEach(() => {
     while (offs.length) offs.pop()();
-    for (const id of [...held]) TimedChanges.setInHand(id, false);
+    for (const id of [...held]) Hand.setInHand(id, false);
     held.clear();
 });
 

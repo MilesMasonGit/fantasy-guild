@@ -19,7 +19,7 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
-import { slotsOf, costSlots, SLOT_KIND } from '../systems/effects/statementSlots.js';
+import { slotsOf, costSlots, SLOT_KIND } from '../../cms/src/engine/ledger/statementSlots.js';
 import { renderStatement, renderSegments } from '../systems/effects/statementText.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { listFiles, readSource, rel, setScanTimeout } from './fixtures/sourceScan.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
-import { ENGINE_EVENTS, UI_EVENTS, ORPHAN_EVENTS, NO_LISTENER } from '../systems/core/engineEvents.js';
+import * as engineEvents from '../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS, NO_LISTENER } from '../systems/core/engineEvents.js';
 
 /**
  * every global event is declared in `engineEvents.js` and named by its
@@ -23,7 +24,7 @@ const ALL_CODE = FILES.map(f => f.code).join('\n');
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const GROUPS = { ENGINE_EVENTS, UI_EVENTS, ORPHAN_EVENTS };
+const GROUPS = { ENGINE_EVENTS, UI_EVENTS };
 const DECLARED = Object.entries(GROUPS).flatMap(([group, obj]) =>
     Object.entries(obj).map(([key, name]) => ({ group, key, name, ref: `${group}.${key}` })));
 
@@ -90,13 +91,12 @@ describe('global events are declared and named by constant (CR3-559)', () => {
     });
 
     it('every engine and UI event has a publisher', () => {
-        const missing = DECLARED.filter(d => d.group !== 'ORPHAN_EVENTS' && !isPublished(d.ref)).map(d => d.ref);
+        const missing = DECLARED.filter(d => !isPublished(d.ref)).map(d => d.ref);
         expect(missing).toEqual([]);
     });
 
-    it('ORPHAN_EVENTS have no publisher (the list may only shrink)', () => {
-        const published = DECLARED.filter(d => d.group === 'ORPHAN_EVENTS' && isPublished(d.ref)).map(d => d.ref);
-        expect(published).toEqual([]);
+    it('there is no list of events subscribed with no publisher: every declared name is published', () => {
+        expect(engineEvents).not.toHaveProperty('ORPHAN_EVENTS');
     });
 
     it('CR3-107: an engine event with no listener is a written decision', () => {

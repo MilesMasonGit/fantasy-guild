@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -88,7 +89,7 @@ const spawnedAt = (typeId, x, y) =>
 /** Save the game and load it back, as a slot does. */
 async function saveAndLoad() {
     const data = JSON.parse(GameState.serializeJson());
-    await GameState.initFromSave(migrateState(data.state, data.version));
+    loadSavedState(migrateState(data.state, data.version));
     return data;
 }
 
@@ -139,7 +140,7 @@ describe('⭐ a new game lays the Starter Camp down as fixtures', () => {
 
 describe('⭐ a camp Token refuses a drag, and says why', () => {
     it('by the engine and by a drop on the mat, it stays where it is', () => {
-        for (const t of campTokens().filter(c => !MatCap.isLandmark(c))) {
+        for (const t of campTokens().filter(c => !Landmarks.isLandmark(c))) {
             const before = pointOf(t);
             expect(Placement.moveTokenTo(t.id, { x: 1500, y: 950 }), t.typeId)
                 .toEqual({ success: false, reason: Placement.CAMP_FIXED_IN_PLACE });
@@ -189,7 +190,7 @@ describe('⭐ no push moves a camp Token', () => {
 
 describe('⭐ a camp Token cannot be demolished, and says why', () => {
     it('marking it is refused with the camp\'s reason, and nothing is marked', () => {
-        for (const t of campTokens().filter(c => !MatCap.isLandmark(c))) {
+        for (const t of campTokens().filter(c => !Landmarks.isLandmark(c))) {
             const refused = Demolition.mark(t.id);
             expect(refused, t.typeId).toEqual({
                 success: false, code: Demolition.REFUSAL.CAMP, reason: Demolition.REFUSAL_TEXT[Demolition.REFUSAL.CAMP]

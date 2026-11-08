@@ -26,9 +26,6 @@ const RISE = Object.freeze([
     { ms: FX_FRAME_MS, y: 0 }, { ms: FX_FRAME_MS, y: -3 }, { ms: FX_FRAME_MS, y: -5 }, { ms: 5 * FX_FRAME_MS, y: -6 }
 ]);
 
-/** How long a float shows. */
-export const FLOAT_MS = RISE.reduce((sum, p) => sum + p.ms, 0);
-
 /** How far under the top of its fighter's art a float starts, and how far a second one at once stands below, in art pixels. */
 const UNDER_ART_TOP_PX = 9;
 const LANE_ART_PX = 12;

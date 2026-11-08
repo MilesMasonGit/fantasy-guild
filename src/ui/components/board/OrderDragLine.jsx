@@ -25,9 +25,8 @@ const LINE_SHADOW = '#000';
 const reducedMotion = () => typeof window !== 'undefined'
     && !!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 
-/** Whether a drag carries a hero (their figure, their marker or their roster tab). */
-const carriesHero = (payload) => !!payload?.heroId
-    && (payload.kind === DRAG_KIND.HERO || payload.kind === DRAG_KIND.FLAG);
+/** Whether a drag carries a hero (their flag, picked up by itself, their figure or their roster tab). */
+const carriesHero = (payload) => !!payload?.heroId && payload.kind === DRAG_KIND.FLAG;
 
 /**
  * While a hero is carried to a new job, a dashed line from where they stand on the mat to the

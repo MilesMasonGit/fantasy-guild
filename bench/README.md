@@ -363,7 +363,7 @@ run's board events.
 
 A run of every setup writes `bench/calibration/stamp.json`: commit it. It holds each result and a
 hash of every file the calculator imports or follows (`CALIBRATED_FILES` in
-`src/systems/progression/ledger/calibration.js`); the CMS Ledger says the calibration is stale once
+`cms/src/engine/ledger/calibration.js`); the CMS Ledger says the calibration is stale once
 any of them changes. Heavy enough to move timing numbers: never beside a bench.
 
 ## Drawing and drag benches

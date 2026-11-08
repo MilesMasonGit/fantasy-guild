@@ -332,7 +332,7 @@ class ParticleSystem {
         let template;
         if (isHero) {
             const hero = (GameState.heroes || []).find(h => h.id === actualRefId);
-            const heroSpriteRef = hero?.spriteId || hero?.heroSprite || hero?.icon || hero?.classId || actualRefId;
+            const heroSpriteRef = hero?.spriteId || hero?.heroSprite || hero?.icon || actualRefId;
             template = {
                 id: actualRefId,
                 icon: '🧙',

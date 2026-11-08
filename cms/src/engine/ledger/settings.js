@@ -1,6 +1,6 @@
 // the progression ledger's settings: stage budgets, the tolerance, the target player, the pace curve
 
-import { PLAN_TIERS, tierBudgetMs, tierOrNull } from './plan.js';
+import { PLAN_TIERS, tierBudgetMs, tierOrNull } from '../../../../src/systems/progression/ledger/plan.js';
 
 /**
  * What the owner sets once for the whole ledger, kept with the plan in `cms/plan/plan.json`:

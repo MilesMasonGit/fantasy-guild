@@ -11,7 +11,7 @@ import { HALL_CLEARING } from '../systems/atlas/Layout.js';
 import { TERRAIN, TERRAIN_CELL, terrainAt, decodeTerrain } from '../systems/atlas/TerrainMap.js';
 import { readWater, waterFieldAt, SHAPE } from '../systems/atlas/WaterShapes.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
-import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
+import { buildGroundPlan } from '../ui/components/board/terrain/TerrainSurface.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { setStarterCampForTests, resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
 import { artRadiusOf } from '../config/matGeometry.js';

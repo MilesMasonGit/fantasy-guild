@@ -1,7 +1,7 @@
-import { PROFILES, PROFILE_TEXT, PACE_TEXT } from '../../../src/systems/progression/ledger/pace.js';
-import { BOOST_KIND, BOOST_KIND_TEXT, factorId } from '../../../src/systems/progression/ledger/profiles.js';
+import { PROFILES, PROFILE_TEXT, PACE_TEXT } from './ledger/pace.js';
+import { BOOST_KIND, BOOST_KIND_TEXT, factorId } from './ledger/profiles.js';
 import { parseKey, itemKey, tokenKey, recipeKey, LEDGER_ENGINE_TEXT, COMBAT } from '../../../src/systems/progression/ledger/engine.js';
-import { minutesToReach, minutesPerLevelAt, formatMinutes } from '../../../src/systems/progression/ledger/settings.js';
+import { minutesToReach, minutesPerLevelAt, formatMinutes } from './ledger/settings.js';
 
 /**
  * What the Ledger's pace views show, worked out from a pace (`pace.js`): an entry's path time at

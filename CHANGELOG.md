@@ -5,6 +5,30 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Dead code removed from the world, Atlas and quests** (no change in play): the quest manager's callerless `abandonQuest`, the unused `sourceRect` on `claimQuest`, three unused re-exports, the Atlas's `reroll` (no screen has used it since the world map; the new-game world reroll is separate and stays), the budget's `ignored` list, the layout's `anywhereDry`, the Region rules' `installedSources` and several unimported exports. The world's materials memo is now kept once, not rebuilt on each call of `lookups()`.
+
+- **Dead code and duplicate copies removed from the board engine, nothing a player sees changes**: the per-type blocked-tick tally nothing read, the exports with no caller (`recallHeroById`, `loadLeft`, `minCentreGap`, `enemyBearerOfHero`, `isPurelyTriggered` and the `TimedChanges` re-exports), the second `isLandmark`, and the round-3 copies of the Hall id, `clampToMat`, the hero standing spot and `countMatches` now use the shared helpers.
+- **Dead code removed from the core, the save and the content loader**, nothing a player sees changes: the hooks for a defeat sound and an invasion sound that nothing ever triggered (the banner's warning tone still plays) and the list of events with no sender; twelve saved fields and two save sections no system reads any more (recruitment candidates, a card counter, the inert Bank slot count and stack caps, rarities, per-biome tasks, the old sidebar quest list and its timer, a hero's class, trait and recruitment stamp, a Region's settling time), which an older save drops as it loads; save steps for fields removed before the current save version; the QA panel's old promoted-Knight save; the loader for a `data/items/` folder that does not exist. In the CMS, the economy simulator's Map dials and Map refusal cards, retired with the Maps.
+- **Dead code removed from heroes, effects, combat and progression**, nothing a player sees changes: the modifier aggregator's unused cache, expiry check and source switches; the unreachable enemy thorns branch and its event; the card-era loot kind, area id and hero card assignment; the two save fields written on every item gain and read by nothing (`provenance` and `newDiscoveries`, which an old save drops on its next load); about twenty exports with no caller; the three copies of the a/an helper now use one. A hero's skill rows read the XP table.
+- **Drag sources are no longer keyboard Tab stops** (owner ruling 2026-11-07): heroes, flags,
+  Bank items, equipment slots and Shop cards stop telling a screen reader they can be picked up
+  with the space bar, which never worked; a mouse drag is unchanged. With it, unused code in the
+  screens was deleted (the switched-off charge-change floater, an unmounted ring badge, unused
+  styles and constants, a hero drag kind nothing starts, an unused motion context), and the title
+  screen stops listening for notifications once a game is running. Nothing else a player sees changes.
+- **The CMS's economy simulator files moved into the CMS** (CMS and tools only): the twelve
+  ledger files the game never runs (`balance`, `calibration`, `checks`, `economy`, `hall`, `pace`,
+  `profiles`, `rates`, `settings`, `world`, `statementSlots`, `tempoBands`) moved to
+  `cms/src/engine/ledger/`; `engine.js` and `plan.js`, which the Encyclopedia uses, stay in the
+  game. A new dependency rule keeps game code from importing the CMS. The CMS Ledger will call the
+  rate calculator's calibration stale until `npm run bench:calibrate` runs again.
+- **Code folders tidied, nothing a player sees changes**: rebuilding heroes after a load moved
+  out of the save store into the load path (`src/systems/core/LoadedState.js`), which ends the
+  game's one import loop (`npm run cycles` reads 0 groups, was 1 of 16 modules); the combat maths
+  (`CombatFormulas.js`) moved to `src/systems/combat/`; the ground painters (`Terrain*.js`) and
+  their dev tuner (`playmatTuning.js`) moved beside the drawing code in
+  `src/ui/components/board/terrain/`. Saves, the ground picture and the tuner's stored values are
+  unchanged.
 - **The bench's worst pushing arrival stops depending on luck with the garbage collector** (bench only, nothing plays differently). S4 now empties the young generation (one scavenge) before each of its four timed stages (arrivals, refused drops, landing drops, the shrink). The first arrival, the cold one, is always the worst at about 9 ms; in some processes a scavenge of the build's leftovers landed inside it and added 5 to 10 ms, and how often depended on how much the process had allocated before, down to how many files `public/` holds (Vite lists them when the bench worker starts). The same commit read a median worst arrival of 9 ms in one worktree and 15 to 17 ms in another with identical work, which looked like a regression on the cleanup branches; with the collection both read about 9 ms. The work is unchanged.
 
 - **Bench instruments for the code review's measurements** (bench and tooling only, no change to the game): the memory soak takes a heap snapshot at the last hidden sample and compares the page task time and style passes with its baseline, `bench:soak -- --readable` soaks an unminified build, the game marks its boot steps (read by `bench:draw`), dev builds log each save's size and stringify time, and a new micro-bench times `Atlas.settle` and `worldView()`.

@@ -1,4 +1,5 @@
 import { ALERT } from '../../../systems/board/boardEvents.js';
+import { withArticle } from '../../../systems/effects/toolNames.js';
 
 /**
  * A hero's sentence for a Token they cannot work. Heroes no longer speak a Token's problems (its
@@ -12,9 +13,6 @@ export function joinNames(names) {
     if (names.length <= 1) return names[0] || '';
     return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
-
-/** "a Pickaxe", "an Anvil" — Tokens are countable things, items are not. */
-const withArticle = (name) => `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
 
 /**
  * The sentence for one block, or null if this reason has no wording yet.

@@ -3,15 +3,12 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { render, cleanup, act } from '@testing-library/react';
+import { render, cleanup } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { Board } from '../ui/components/board/Board.jsx';
-import { TokenChargeDeltaFloater } from '../ui/components/board/TokenBadges.jsx';
 import { playSpawn } from '../ui/components/board/spawnMotion.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { primeGroundSheets, resetGroundSheets } from '../ui/components/board/groundSheets.js';
@@ -102,18 +99,6 @@ describe('⭐ an animation among the resting Tokens never runs on the compositor
         expect(el.style.willChange).toBe('contents');
         anim.onfinish();
         expect(el.style.willChange).toBe('');
-    });
-
-    it('a -1 on a Token at rest stays off the compositor; on a worked Token it is left alone', () => {
-        const fire = (id) => act(() => {
-            EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, { instanceId: id, delta: -1, remaining: 3, typeId: 'fixture_producer' });
-        });
-        const resting = render(h(TokenChargeDeltaFloater, { instanceId: 'tok_rest', atRest: true }));
-        fire('tok_rest');
-        expect(resting.container.querySelector('.gi-charge-float').style.willChange).toBe('contents');
-        const worked = render(h(TokenChargeDeltaFloater, { instanceId: 'tok_work', atRest: false }));
-        fire('tok_work');
-        expect(worked.container.querySelector('.gi-charge-float').style.willChange).toBe('');
     });
 });
 

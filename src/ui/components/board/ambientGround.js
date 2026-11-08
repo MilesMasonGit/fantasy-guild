@@ -1,6 +1,6 @@
 // ambient life on the ground: the water's shimmer, a gust through the grass, the lava's pulse
 
-import { grassNoise, lookRules, SLOT_SHIFT, COLOUR } from '../../../systems/board/TerrainGrass.js';
+import { grassNoise, lookRules, SLOT_SHIFT, COLOUR } from './terrain/TerrainGrass.js';
 
 /**
  * Slow, lazy and subtle (owner, brief 190 P3): long quiet stretches and occasional events, each

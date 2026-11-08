@@ -12,7 +12,7 @@ import { planStone, readStone, sampleStone } from './StoneShapes.js';
  * The layout half of generation: places every Token a budget (`Budget.js`) writes, on a mat of a
  * given size, around a clear ring for the Guild Hall at the centre, and makes the terrain grid
  * the Tokens stand on (`TerrainMap.js`). A pure function of the budget, the seed and the geometry
- * it is handed: a reroll is a new seed, and moves only coordinates and ground.
+ * it is handed: a new seed, and moves only coordinates and ground.
  *
  * The placement follows the owner's settled placement rounds (`place1.py`, `place2.py` in
  * `docs/active/research/ground_gen/`):
@@ -54,7 +54,7 @@ import { planStone, readStone, sampleStone } from './StoneShapes.js';
  * node's.
  *
  * The result lists the Tokens in budget order (nodes, then camps, then treasures), whatever
- * order they were placed in, so a reroll moves only coordinates; a tie for the nearest node
+ * order they were placed in, so a new seed moves only coordinates; a tie for the nearest node
  * goes to the one listed first.
  *
  * A spot is legal by `MatPlacement`'s rules restated on explicit numbers: the art circle inside the
@@ -243,25 +243,20 @@ export function campBand(point, art, mat) {
     return Math.max(ex, ey);
 }
 
-/** The default terrain rule: anything may stand anywhere dry. */
-export function anywhereDry(typeId, terrain) {
-    return terrain !== TERRAIN.WATER;
-}
-
 /**
  * Lay a budget out on the mat.
  *
  * @param {object|object[]} summary  a `Budget.budget()` result, or its `entries` (then no water,
  *   and every Token on the default ground)
  * @param {object} options
- * @param {number} options.seed  any 32-bit number; a reroll passes a new one
+ * @param {number} options.seed  any 32-bit number; a new one gives a new layout
  * @param {{w: number, h: number}} options.mat  the mat size in mat units, given explicitly so a
  *   layout means the same on every machine (the live mat size is a per-device dev setting)
  * @param {{hitboxPct: number, overlapPct: number}} options.crowding  the hitbox and overlap rules
  * @param {(typeId: string) => number} options.artRadius  a Token type's art radius
  * @param {(typeId: string, terrain: string, shore: boolean) => boolean} [options.terrainAllows]
  *   whether a Token may stand on a cell of a terrain, `shore` saying whether that cell is dry land
- *   touching water; {@link anywhereDry} by default. `layoutInputs` plugs each Token's "Stands on" in.
+ *   touching water; anywhere dry by default. `layoutInputs` plugs each Token's "Stands on" in.
  * @param {(typeId: string, point: {x: number, y: number}, placed: {typeId: string, x: number, y: number}[]) => boolean} [options.allows]
  *   a last say on a spot that passes every other rule; `placed` includes the Hall
  * @param {(typeId: string) => string|null} [options.affinity]  what a node's kind prefers to stand
@@ -274,7 +269,7 @@ export function anywhereDry(typeId, terrain) {
  *   terrain: {cell: number, cols: number, rows: number, legend: string[], cells: string, water?: object, stone?: object}}}
  */
 export function layout(summary, {
-    seed, mat, crowding, artRadius, terrainAllows = anywhereDry, allows = null, affinity = null, hallTypeId = HALL_TYPE_ID
+    seed, mat, crowding, artRadius, terrainAllows = (typeId, terrain) => terrain !== TERRAIN.WATER, allows = null, affinity = null, hallTypeId = HALL_TYPE_ID
 } = {}) {
     if (!mat || !(mat.w > 0) || !(mat.h > 0)) throw new TypeError('layout() needs the mat size: { mat: { w, h } }');
     if (!crowding || !Number.isFinite(crowding.hitboxPct) || !Number.isFinite(crowding.overlapPct)) {

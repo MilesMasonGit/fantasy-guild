@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameState } from '../../state/GameState.js';
 import isEqual from 'fast-deep-equal/es6';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
@@ -59,19 +59,21 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
         eventFilterRef.current = eventFilter;
     });
 
+    const { shallow, deepClone, bypassClone } = options;
+
     // Clone only if it's an object/array, otherwise return as-is. bypassClone returns the raw
     // reference (O(1)); use only if you trust the UI not to mutate!
-    const safeClone = (val) => {
+    const safeClone = useCallback((val) => {
         if (val === null || typeof val !== 'object') return val;
-        
-        if (options.bypassClone) return val;
 
-        if (options.shallow) {
+        if (bypassClone) return val;
+
+        if (shallow) {
             if (Array.isArray(val)) return [...val];
             return Object.assign(Object.create(Object.getPrototypeOf(val)), val);
         }
 
-        if (options.deepClone) {
+        if (deepClone) {
             try {
                 return structuredClone(val);
             } catch (e) {
@@ -80,20 +82,20 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
         }
 
         return Array.isArray(val) ? [...val] : Object.assign(Object.create(Object.getPrototypeOf(val)), val);
-    };
+    }, [shallow, deepClone, bypassClone]);
 
     // The value to hand React for a fresh read: `prev` itself when nothing changed, else the
     // new slice with its unchanged parts taken from `prev`. Never the selector's own top-level
     // object: that may be the store's.
-    const settle = (prev, slice) => {
+    const settle = useCallback((prev, slice) => {
         if (prev === slice) return prev;
         if (slice === null || typeof slice !== 'object') return slice;
-        if (options.bypassClone) return isEqual(prev, slice) ? prev : slice;
+        if (bypassClone) return isEqual(prev, slice) ? prev : slice;
         const shared = shareEqual(prev, slice);
         if (shared === prev) return prev;
-        if (options.deepClone) return shareEqual(prev, safeClone(slice));
+        if (deepClone) return shareEqual(prev, safeClone(slice));
         return shared === slice ? safeClone(slice) : shared;
-    };
+    }, [bypassClone, deepClone, safeClone]);
 
     const [state, setState] = useState(() => {
         const initialSlice = selector(GameState);
@@ -121,7 +123,7 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
         };
         const cleanupFns = eventsRef.current.map(event => EventBus.subscribe(event, handleStateChange, UI_LISTENER));
         return () => cleanupFns.forEach(cleanup => cleanup());
-    }, []);
+    }, [settle]);
 
     // Prop-driven sync: runs when props like 'heroId' change, so we don't wait for a game
     // event.

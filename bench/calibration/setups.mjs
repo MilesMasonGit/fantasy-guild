@@ -1,5 +1,5 @@
 // The calibration setups: small fixed boards of SHIPPED content, each played in the real engine and
-// priced by the progression ledger's rate calculator (`src/systems/progression/ledger/rates.js`).
+// priced by the progression ledger's rate calculator (`cms/src/engine/ledger/rates.js`).
 //
 // ⚠️ Unlike the bench scenarios, these read the shipped content on purpose: the point is to check the
 // calculator against the engine on the game's own numbers. A content change moves both sides.

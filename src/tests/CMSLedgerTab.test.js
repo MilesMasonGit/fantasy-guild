@@ -17,7 +17,7 @@ import cmsFileApi from '../../cms/vite-plugin-cms-api.js';
 import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import {
     settingsOf, DEFAULT_LEDGER_SETTINGS, stageBudgetMs, minutesPerLevelAt, minutesToReach, formatMinutes,
-} from '../systems/progression/ledger/settings.js';
+} from '../../cms/src/engine/ledger/settings.js';
 import { tierBudgetMs } from '../systems/progression/ledger/plan.js';
 
 /**

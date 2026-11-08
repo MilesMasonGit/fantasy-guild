@@ -31,7 +31,7 @@ import { mulberry32 } from './seededRandom.js';
 export const GUILD_HALL_TYPE = 'token_guild_hall';
 
 /** How far the built-in camp's Forest and Mine stand from the Hall: one flag between them reaches both. */
-export const BUILT_IN_OFFSET = 320;
+const BUILT_IN_OFFSET = 320;
 
 /**
  * The built-in camp's Bank: Oak Seeds so the Forest spawns trees at once (it pays one seed per

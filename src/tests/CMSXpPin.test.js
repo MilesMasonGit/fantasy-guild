@@ -14,7 +14,7 @@ import { DEFAULT_DIALS } from '../../cms/src/engine/sim/dials.js';
 import { progressionRows, recordPatch } from '../../cms/src/engine/progressionRows';
 import { workspaceBalance, balancePack, balanceText } from '../../cms/src/engine/ledgerBalance.js';
 import { setValue, proposedValue } from '../../cms/src/engine/changePacks.js';
-import { LEVER } from '../systems/progression/ledger/balance.js';
+import { LEVER } from '../../cms/src/engine/ledger/balance.js';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 import RecipeEditor from '../../cms/src/components/editors/RecipeEditor.jsx';
 import { balanceContent } from './fixtures/balanceWorld.js';

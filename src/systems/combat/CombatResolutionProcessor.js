@@ -1,5 +1,5 @@
 import { EventBus } from '../core/EventBus.js';
-import * as CombatFormulas from '../../utils/CombatFormulas.js';
+import * as CombatFormulas from './CombatFormulas.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
@@ -59,7 +59,6 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
     // the kill happened instead of teleporting into the Bank.
     EventBus.publish(ENGINE_EVENTS.COMBAT_VICTORY, {
         cardId: fight.id, heroId, instanceId: fight.instanceId ?? null,
-        areaId: fight.areaId || 'area_guild_hall',
         enemyId: enemy.id, enemyName: enemy.name,
         drops: fight.drops || []
     });

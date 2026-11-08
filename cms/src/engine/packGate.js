@@ -1,7 +1,7 @@
 import { currentValue, setValue, proposedValue, entryConflict, fingerprint, canonicalJson, validatePack } from './changePacks.js';
 import { compareSnapshots, stageMoveText } from './ledgerCompare.js';
 import { declaredStages } from './packIntent.js';
-import { PACE_TEXT } from '../../../src/systems/progression/ledger/pace.js';
+import { PACE_TEXT } from './ledger/pace.js';
 
 /**
  * The agent gate: a change pack applied to the workspace in memory, the ledger worked out before

@@ -17,7 +17,7 @@ import { getAllItems } from '../../config/registries/itemRegistry.js';
 import * as Placement from '../../systems/board/Placement.js';
 import { qaOrder } from './qaOrders.js';
 import * as HeroManager from '../../systems/hero/HeroManager.js';
-import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
+import { heroMaxHpFromSkills } from '../../systems/combat/CombatFormulas.js';
 import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';

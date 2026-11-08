@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
-import { buildPace } from '../systems/progression/ledger/pace.js';
-import { PROFILE, PROFILES } from '../systems/progression/ledger/profiles.js';
+import { buildPace } from '../../cms/src/engine/ledger/pace.js';
+import { PROFILE, PROFILES } from '../../cms/src/engine/ledger/profiles.js';
 import { paceContent } from './fixtures/paceWorld.js';
 
 /**

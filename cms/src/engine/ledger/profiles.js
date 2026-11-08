@@ -1,14 +1,14 @@
 // the progression ledger's profiles: the boosts a Bare, a Typical and a Maxed player bring to each piece of work
 
-import { statementsOf, KEYWORD } from '../../effects/statements.js';
-import { EFFECT_TYPES } from '../../effects/constants.js';
-import { expandBearer } from '../../effects/effectLibrary.js';
-import { reachOf, reachCovers, RELATION } from '../../../config/registries/reachRegistry.js';
-import { targetModeMatches, matchesFilters, FILTER_NEEDS } from '../../../config/registries/filterRegistry.js';
-import { respawnOf, growsTermsOf, campOf, fieldOf } from '../../../config/registries/tokenConstants.js';
-import { toolOf, toolMeets, toolItemFor } from '../../../config/registries/toolKinds.js';
-import { getCategoryDef } from '../../../config/registries/equipmentCategories.js';
-import { isSpentCategory, isWorkMoment, workSkillMatches } from '../../core/consumableRule.js';
+import { statementsOf, KEYWORD } from '../../../../src/systems/effects/statements.js';
+import { EFFECT_TYPES } from '../../../../src/systems/effects/constants.js';
+import { expandBearer } from '../../../../src/systems/effects/effectLibrary.js';
+import { reachOf, reachCovers, RELATION } from '../../../../src/config/registries/reachRegistry.js';
+import { targetModeMatches, matchesFilters, FILTER_NEEDS } from '../../../../src/config/registries/filterRegistry.js';
+import { respawnOf, growsTermsOf, campOf, fieldOf } from '../../../../src/config/registries/tokenConstants.js';
+import { toolOf, toolMeets, toolItemFor } from '../../../../src/config/registries/toolKinds.js';
+import { getCategoryDef } from '../../../../src/config/registries/equipmentCategories.js';
+import { isSpentCategory, isWorkMoment, workSkillMatches } from '../../../../src/systems/core/consumableRule.js';
 import { FACTOR, WORK } from './rates.js';
 import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMovesLap, RATE_AXES } from './hall.js';
 

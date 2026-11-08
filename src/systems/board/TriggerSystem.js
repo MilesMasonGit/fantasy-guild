@@ -4,7 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { PLACEMENT, placementOf } from '../../config/registries/placementRegistry.js';
-import { statementsOf, stationSkillOf, firingChanceOf } from '../effects/statements.js';
+import { statementsOf, firingChanceOf } from '../effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
@@ -572,13 +572,6 @@ export function teardown() {
     }
     unsubscribers = [];
     resetCascadeGuard();
-}
-
-/** Whether a Token is purely triggered: no staffed production at all. */
-export function isPurelyTriggered(def) {
-    if (!def) return false;
-    const hasTrigger = statementsOf(def).some(s => s?.when?.event);
-    return hasTrigger && !def.config && !stationSkillOf(def);
 }
 
 /** @see getTriggerEvent — re-exported so callers need one import. */

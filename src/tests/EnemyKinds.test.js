@@ -13,7 +13,7 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
-import * as CF from '../utils/CombatFormulas.js';
+import * as CF from '../systems/combat/CombatFormulas.js';
 import { enemyProfileOf, enemyFilledStats } from '../config/registries/enemyProfile.js';
 import { ENEMY_KINDS, MAX_ENEMY_KINDS, enemyKindsOf, kindsClash } from '../config/registries/enemyKinds.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';

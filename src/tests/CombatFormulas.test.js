@@ -6,7 +6,7 @@ import {
     heroMaxHpFromSkills,
     getHeroCombatStyle,
     heroAttackSpeedMs,
-} from '../utils/CombatFormulas.js';
+} from '../systems/combat/CombatFormulas.js';
 
 /**
  * The style cycle and a new hero's numbers. The rest of the combat numbers (HP, damage, misses,

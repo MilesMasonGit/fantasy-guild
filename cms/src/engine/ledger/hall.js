@@ -1,9 +1,9 @@
 // the progression ledger's view of the Guild Hall: every track (built-in and authored star), its ranks, and the neighbour gate
 
-import { GUILD_UPGRADES, BUILT_IN_UPGRADE_IDS, HALL_NODE, getUpgradePrice } from '../../../config/guildUpgrades.js';
-import { rankOf } from '../../../config/hallStars.js';
-import { KEYWORD } from '../../effects/statements.js';
-import { EFFECT_TYPES } from '../../effects/constants.js';
+import { GUILD_UPGRADES, BUILT_IN_UPGRADE_IDS, HALL_NODE, getUpgradePrice } from '../../../../src/config/guildUpgrades.js';
+import { rankOf } from '../../../../src/config/hallStars.js';
+import { KEYWORD } from '../../../../src/systems/effects/statements.js';
+import { EFFECT_TYPES } from '../../../../src/systems/effects/constants.js';
 
 /**
  * One list for the profiles and the pace to read the Hall from: the built-in tracks (Bunk Beds,

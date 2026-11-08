@@ -2,7 +2,7 @@
 
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { ROLE, AMBIENT_ROLES } from './roleRegistry.js';
-import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * What a Triggered Token can react to, and how far it listens.
@@ -277,10 +277,12 @@ export const TRIGGER_EVENTS = [
          *
          * ⚠️ Not offered on the adjacency scopes: an effect carried by a person
          * has no neighbours.
+         *
+         * ⚠️ **No bus event** (`event: null`): `LiveEffects` fires its statements itself.
          */
         id: 'EFFECT_TICK',
         roles: [ROLE.SELF],
-        event: ORPHAN_EVENTS.EFFECT_TICK,
+        event: null,
         /**
          * ⚠️ Phrased to follow the word **"When"**, because every moment's label
          * does. "Every few seconds, while carried" read as *"When every few

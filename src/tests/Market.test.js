@@ -5,7 +5,6 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
-import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
@@ -49,7 +48,6 @@ beforeEach(() => {
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
-    InputAllocator.resetStarvationStats();
     GameState.state.heroes = [makeHero('hero_1')];
     GameState.state.inventory.maxSlots = 50;
 });

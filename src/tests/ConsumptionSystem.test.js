@@ -93,11 +93,6 @@ describe('the 25% rule (D-17)', () => {
         expect(bank.get('ale')).toBe(5);
     });
 
-    it('reports need without consuming', () => {
-        hero.hp.current = 10;
-        expect(ConsumptionSystem.needsFood('h1')).toBe(true);
-        expect(bank.get('bread')).toBeUndefined();
-    });
 });
 
 describe('supply chain, not timing', () => {
@@ -153,15 +148,5 @@ describe('drinks in a fight', () => {
         expect(ConsumptionSystem.tryEat('h1', { inFight: true })).toEqual([]);
         expect(hero.hp.current).toBe(10);
         expect(bank.get('ale')).toBe(5);
-    });
-});
-
-describe('grid inspection', () => {
-    it('reports what the hero is carrying, by class', () => {
-        expect(ConsumptionSystem.getConsumables('h1')).toEqual({
-            food: 'bread',
-            drink: 'ale',
-            consumables: ['elixir', 'scroll']
-        });
     });
 });

@@ -1,7 +1,6 @@
-import { EFFECT_TYPES, TARGET_CATEGORIES } from './constants.js';
+import { TARGET_CATEGORIES } from './constants.js';
 import { COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
 import { isDamageGroupId, isDamageTypeId, groupOf } from '../../config/registries/damageTypes.js';
-import * as GameClock from '../core/GameClock.js';
 
 /**
  * Three-Bucket math:  Final = (Base + Σ flat) × (Σ multipliers) × (1 + Σ percentages)
@@ -77,8 +76,6 @@ export class ModifierAggregator {
     constructor(entityId) {
         this.entityId = entityId;
         this.modifiers = new Map(); // sourceId -> [UMI_Object]
-        this.cache = new Map();     // effectType:category -> float
-        this.disabledSources = new Set(); // sourceIds that should be ignored
         // Moves on every change to what this aggregator holds, so a reader may keep an answer
         // derived from it until the number moves (`TileModifiers.growTimeOf`).
         this.version = 0;
@@ -104,47 +101,12 @@ export class ModifierAggregator {
     }
  
     /**
-     * Enable or disable a specific modifier source
-     * @param {string} sourceId 
-     * @param {boolean} enabled 
-     */
-    setSourceEnabled(sourceId, enabled) {
-        const wasDisabled = this.disabledSources.has(sourceId);
-        
-        if (enabled && wasDisabled) {
-            this.disabledSources.delete(sourceId);
-            this.clearCache();
-        } else if (!enabled && !wasDisabled) {
-            this.disabledSources.add(sourceId);
-            this.clearCache();
-        }
-    }
-
-    /**
      * Remove all modifiers from a specific source
      * @param {string} sourceId 
      */
     removeModifiersBySource(sourceId) {
         if (this.modifiers.has(sourceId)) {
             this.modifiers.delete(sourceId);
-            this.clearCache();
-        }
-    }
-
-    /**
-     * Clear specific modifier type from a source (e.g. for aura updates)
-     * @param {string} sourceId 
-     * @param {string} type 
-     */
-    removeSourceType(sourceId, type) {
-        const sourceMods = this.modifiers.get(sourceId);
-        if (sourceMods) {
-            const filtered = sourceMods.filter(m => m.type !== type);
-            if (filtered.length === 0) {
-                this.modifiers.delete(sourceId);
-            } else {
-                this.modifiers.set(sourceId, filtered);
-            }
             this.clearCache();
         }
     }
@@ -158,10 +120,9 @@ export class ModifierAggregator {
     }
 
     /**
-     * Reset the calculation cache
+     * Bump the version so readers drop what they derived from this aggregator
      */
     clearCache() {
-        this.cache.clear();
         this.version++;
     }
 
@@ -265,26 +226,13 @@ export class ModifierAggregator {
     }
 
     /**
-     * Iterate every live, matching modifier. Handles expiry, disabled sources,
-     * effect-type filtering and category/parent matching in one place.
+     * Iterate every matching modifier (effect-type filtering and category/parent matching in one place).
      * @private
      */
     _forEachMatching(effectType, category, fn) {
-        const now = GameClock.now();
-        let expiredFound = false;
-
-        for (const [sourceId, mods] of this.modifiers) {
-            if (this.disabledSources.has(sourceId)) continue;
-
+        for (const mods of this.modifiers.values()) {
             for (let i = mods.length - 1; i >= 0; i--) {
                 const mod = mods[i];
-
-                // Expiry Check
-                if (mod.expiry && now >= mod.expiry) {
-                    expiredFound = true;
-                    continue;
-                }
-
                 if (mod.type !== effectType) continue;
 
                 const targetCat = mod.target?.category || TARGET_CATEGORIES.ALL;
@@ -297,55 +245,6 @@ export class ModifierAggregator {
                 if (matches) fn(mod);
             }
         }
-
-        if (expiredFound) {
-            this.purgeExpired();
-        }
-    }
-
-    /**
-     * Remove all expired modifiers
-     */
-    purgeExpired() {
-        const now = GameClock.now();
-        let changed = false;
-
-        for (const [sourceId, mods] of this.modifiers) {
-            const initialCount = mods.length;
-            const filtered = mods.filter(mod => !mod.expiry || now < mod.expiry);
-            
-            if (filtered.length !== initialCount) {
-                changed = true;
-                if (filtered.length === 0) {
-                    this.modifiers.delete(sourceId);
-                } else {
-                    this.modifiers.set(sourceId, filtered);
-                }
-            }
-        }
-
-        if (changed) {
-            this.clearCache();
-        }
-    }
-
-    /**
-     * Get complex logic metadata
-     * @param {string} overrideKey 
-     * @returns {Array} List of metadata objects for the override
-     */
-    getLogicOverrides(overrideKey) {
-        const overrides = [];
-        for (const [sourceId, mods] of this.modifiers) {
-            if (this.disabledSources.has(sourceId)) continue;
- 
-            for (const mod of mods) {
-                if (mod.type === EFFECT_TYPES.LOGIC_OVERRIDE && mod.metadata?.logic === overrideKey) {
-                    overrides.push(mod.metadata);
-                }
-            }
-        }
-        return overrides;
     }
 
     /**

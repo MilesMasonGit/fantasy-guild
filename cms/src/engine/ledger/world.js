@@ -1,15 +1,15 @@
 // the ledger meets the world: origins' wedges and rings, a world for a seed read as places, checks F, many worlds swept (pure)
 
-import { PLAN_STATUS, statusOf, planPlaceOf } from './plan.js';
-import { HOW, buildLedger, computeReach, itemKey, tokenKey, recipeKey, ringKey, isOneOff } from './engine.js';
+import { PLAN_STATUS, statusOf, planPlaceOf } from '../../../../src/systems/progression/ledger/plan.js';
+import { HOW, buildLedger, computeReach, itemKey, tokenKey, recipeKey, ringKey, isOneOff } from '../../../../src/systems/progression/ledger/engine.js';
 import { SEVERITY, ruleIndex, whyNever } from './checks.js';
-import { generateWorld, priceTemplateOf } from '../../world/generate.js';
-import { worldFindings, WORLD_CHECK } from '../../world/checks.js';
-import { cellMat, COMBAT } from '../../world/cellMat.js';
-import { materialsFromTokens, hallOriginsOf } from '../../world/materials.js';
-import { STRICT_RINGS, heroTokensOf, kitById, lineById } from '../../../config/worldTablesShape.js';
-import { normaliseStarterCamp } from '../../../config/starterCampShape.js';
-import { stationSkillOf } from '../../effects/statements.js';
+import { generateWorld, priceTemplateOf } from '../../../../src/systems/world/generate.js';
+import { worldFindings, WORLD_CHECK } from '../../../../src/systems/world/checks.js';
+import { cellMat, COMBAT } from '../../../../src/systems/world/cellMat.js';
+import { materialsFromTokens, hallOriginsOf } from '../../../../src/systems/world/materials.js';
+import { STRICT_RINGS, heroTokensOf, kitById, lineById } from '../../../../src/config/worldTablesShape.js';
+import { normaliseStarterCamp } from '../../../../src/config/starterCampShape.js';
+import { stationSkillOf } from '../../../../src/systems/effects/statements.js';
 
 /**
  * The world map's side of the ledger (brief 330 W5).

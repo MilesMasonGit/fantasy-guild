@@ -10,8 +10,6 @@ import { useLayoutEffect, useRef } from 'react';
  * touched at rest. With reduced motion the stubs just move.
  */
 
-export const GLIDE_MS = 280;
-
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** The translate a gliding stub is at right now, in px down (0 when it is not gliding). */

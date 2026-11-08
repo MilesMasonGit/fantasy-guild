@@ -7,6 +7,7 @@ import * as CatchUp from '../systems/core/CatchUp.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as EffectActions from '../systems/board/EffectActions.js';
@@ -148,7 +149,7 @@ async function saveAndLoad(edit = null) {
     const data = JSON.parse(GameState.serializeJson());
     if (edit) edit(data.state);
     const state = migrateState(data.state, data.version);
-    await GameState.initFromSave(state);
+    loadSavedState(state);
     EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0, savedAt: data.savedAt });
 }
 

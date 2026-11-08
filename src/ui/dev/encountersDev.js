@@ -15,7 +15,7 @@ import { getTokenType, registerTokenTypes, tokenStartingUses } from '../../confi
 import { registerItems } from '../../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../../config/registries/recipePoolRegistry.js';
 import * as StationRecipe from '../../systems/board/StationRecipe.js';
-import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
+import { heroMaxHpFromSkills } from '../../systems/combat/CombatFormulas.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 
 /**

@@ -5,11 +5,6 @@
  * (`cms/src/engine/sim/tempoPass.js` and friends) offers the names and snaps tagged producers to a
  * band's middle, and `ContentRules` checks a Token that has been given one.
  *
- * It lives game-side rather than in `cms/` for the same reason `tokenConstants`
- * does: the CMS imports the game's vocabulary across the project
- * boundary, one direction only, so the two apps cannot disagree about what
- * `slow` means. `src/tests/CMSBoundary.test.js` guards that seam.
- *
  * ## The table
  *
  * | Tempo  | Level 1  | Level 40 | Level 90 |

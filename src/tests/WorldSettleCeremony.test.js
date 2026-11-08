@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { validateSaveData } from '../state/StateSchema.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
@@ -408,7 +409,7 @@ describe('⭐ the heroes walk in', () => {
         const data = JSON.parse(GameState.serializeJson());
         const state = migrateState(data.state, data.version);
         expect(validateSaveData({ version: data.version, state }).errors).toEqual([]);
-        await GameState.initFromSave(state);
+        loadSavedState(state);
         for (const hero of crew) expect(HeroMotion.isWaitingToWalkIn(hero.id)).toBe(false);
         run(100);
         for (const hero of crew) expect(HeroMotion.isHome(hero.id)).toBe(true);

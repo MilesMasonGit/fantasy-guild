@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     TEMPO_NAMES, TEMPO_BANDS, LEVEL_SCALE_DIVISOR,
     isTempo, levelScale, bandFor, isInBand,
-} from '../config/registries/tempoBands.js';
+} from '../../cms/src/engine/ledger/tempoBands.js';
 
 /**
  * The tempo band table (economic simulator rework, plan §13.3).

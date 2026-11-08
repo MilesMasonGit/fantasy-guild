@@ -2,7 +2,7 @@
 
 import { regionGround } from '../../../systems/atlas/regionGround.js';
 import { HALL_TYPE_ID, hallSpot } from '../../../systems/atlas/Layout.js';
-import { buildGroundPlan } from '../../../systems/board/TerrainSurface.js';
+import { buildGroundPlan } from '../board/terrain/TerrainSurface.js';
 import { tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
 import { sheetPath, propSheetPath } from '../../../config/registries/terrainRegistry.js';
 import { buildScreenPass, screenGrid } from '../board/groundScreen.js';

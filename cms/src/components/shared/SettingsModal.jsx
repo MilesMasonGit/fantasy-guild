@@ -48,7 +48,7 @@ export default function SettingsModal({ isOpen, onClose }) {
 
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           <PaceDials />
-          <MapDials />
+          <LifetimeDials />
           <DialInteractions />
 
           <Section title="Economy Dials & Macro Pacing">
@@ -308,112 +308,20 @@ function DialInteractions() {
 }
 
 /**
- * The Map check's dials. These edit `simDials`, not the legacy `mapTargetROI` / `mapBurstSellRatio` globals below, which no pass reads.
- * ⚠️ They change what the Map check says, never what it writes to a Map.
+ * The Token check's lifetime dial. It edits `simDials`, not the legacy globals below, which no pass reads.
  */
-function MapDials() {
+function LifetimeDials() {
   const globals = useGlobalStore();
   const dials = globals.simDials || {};
 
   const setDial = (key, value) => globals.setGlobal('simDials', { ...dials, [key]: value });
-  const setPin = (key, pin, value) => {
-    const current = dials[key];
-    const pair = (current && typeof current === 'object')
-      ? current
-      : { early: current ?? 0, late: current ?? 0 };
-    setDial(key, { ...pair, [pin]: value });
-  };
-  const setRarity = (tier, value) =>
-    setDial('rarityWeights', { ...(dials.rarityWeights || {}), [tier]: value });
-
   const num = (value, fallback) => (Number.isFinite(value) ? value : fallback);
   const inputClass = 'w-full text-emerald-400 font-bold font-mono';
   const note = 'text-[10px] text-gray-500 italic';
 
-  const ret = (dials.mapProductiveReturn && typeof dials.mapProductiveReturn === 'object')
-    ? dials.mapProductiveReturn
-    : { early: 10, late: 1.5 };
-  const scrap = dials.mapScrapRatio;
-  const scrapPair = (scrap && typeof scrap === 'object') ? scrap : null;
-  const weights = dials.rarityWeights || {};
-
   return (
-    <Section title="Map Check Dials (economic simulator §13.6)">
+    <Section title="Token Lifetime Dial (economic simulator)">
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Scrap Ratio (early)">
-          <div className="flex flex-col gap-1">
-            <input
-              type="number" step="0.05" min="0" max="1"
-              value={scrapPair ? num(scrapPair.early, 0.4) : num(scrap, 0.4)}
-              onChange={(e) => (scrapPair
-                ? setPin('mapScrapRatio', 'early', Number(e.target.value))
-                : setDial('mapScrapRatio', Number(e.target.value)))}
-              className={inputClass}
-            />
-            <span className={note}>
-              What a whole burst scraps for, as a fraction of what the Map cost. No per-copy
-              cap — a Mythic windfall approaching the Map's price is a wanted story.
-            </span>
-          </div>
-        </Field>
-
-        <Field label="Scrap Ratio (late)">
-          <div className="flex flex-col gap-1">
-            <input
-              type="number" step="0.05" min="0" max="1"
-              value={scrapPair ? num(scrapPair.late, 0.4) : num(scrap, 0.4)}
-              onChange={(e) => setPin('mapScrapRatio', 'late', Number(e.target.value))}
-              className={inputClass}
-            />
-            <span className={note}>
-              Set this away from the early pin to make the ratio slide with the Map's derived
-              level; matching pins keep it flat, which is the shipped default.
-            </span>
-          </div>
-        </Field>
-
-        <Field label="Productive Return — early Maps (×cost)">
-          <div className="flex flex-col gap-1">
-            <input
-              type="number" step="0.5" min="0"
-              value={num(ret.early, 10)}
-              onChange={(e) => setPin('mapProductiveReturn', 'early', Number(e.target.value))}
-              className={inputClass}
-            />
-            <span className={note}>An early Map should plainly fund several more.</span>
-          </div>
-        </Field>
-
-        <Field label="Productive Return — late Maps (×cost)">
-          <div className="flex flex-col gap-1">
-            <input
-              type="number" step="0.1" min="0"
-              value={num(ret.late, 1.5)}
-              onChange={(e) => setPin('mapProductiveReturn', 'late', Number(e.target.value))}
-              className={inputClass}
-            />
-            <span className={note}>
-              A late Map barely clears its cost. The pins are read at level 1 and level 99 and
-              interpolated in a straight line over the Map's derived level.
-            </span>
-          </div>
-        </Field>
-
-        <Field label="Rarity Premium (0–1)">
-          <div className="flex flex-col gap-1">
-            <input
-              type="number" step="0.1" min="0" max="1"
-              value={num(dials.rarityPremium, 0.8)}
-              onChange={(e) => setDial('rarityPremium', Number(e.target.value))}
-              className={inputClass}
-            />
-            <span className={note}>
-              How steeply scrap value tracks scarcity. 0 splits the budget evenly; 1 makes a
-              rare entry worth exactly as much per draw as a common one.
-            </span>
-          </div>
-        </Field>
-
         <Field label="Unlimited Token Lifetime (hours)">
           <div className="flex flex-col gap-1">
             <input
@@ -423,32 +331,10 @@ function MapDials() {
               className={inputClass}
             />
             <span className={note}>
-              What the check assumes a Token that never runs out is worth working for. Feeds
-              the Map check only.
+              The lifetime the check reports for a Token that never runs out.
             </span>
           </div>
         </Field>
-      </div>
-
-      <div className="mt-4">
-        <h4 className="text-xs font-bold uppercase text-amber-400 mb-2">Rarity Draw Weights (§13.4)</h4>
-        <div className="grid grid-cols-5 gap-3">
-          {['common', 'uncommon', 'rare', 'epic', 'mythic'].map((tier) => (
-            <Field key={tier} label={tier}>
-              <input
-                type="number" step="1" min="0"
-                value={num(weights[tier], { common: 100, uncommon: 40, rare: 12, epic: 4, mythic: 1 }[tier])}
-                onChange={(e) => setRarity(tier, Number(e.target.value))}
-                className={inputClass}
-              />
-            </Field>
-          ))}
-        </div>
-        <p className={note + ' block mt-2'}>
-          One global table. A pool entry's weight is derived from its rarity tag, and shares
-          renormalise inside each pool — so pool composition, not tier, sets what a burst
-          actually feels like.
-        </p>
       </div>
     </Section>
   );

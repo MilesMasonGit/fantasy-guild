@@ -5,34 +5,14 @@ import { getRandomName } from '../../config/registries/nameRegistry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 import { createEmptyEquipment } from '../../config/registries/equipmentConstants.js';
-import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
+import { heroMaxHpFromSkills } from '../combat/CombatFormulas.js';
 
 /**
  * HeroGenerator - creates new heroes.
  *
  * Every hero starts holding every skill at level 1 (`skillRegistry.HERO_SKILL_IDS`): what they
  * become is what they are sent to do.
- *
- * `classId` and `traitId` are still written as `null` only to keep the saved
- * hero shape unchanged.
  */
-
-export const HERO_ICONS = [
-    '🧑', '👨', '👩', '🧔', '🧔‍♂️', '🧔‍♀️',
-    '🧓', '🧓‍♂️', '🧓‍♀️', '👦', '👧', '👴', '👵',
-    '🧙', '🧙‍♂️', '🧙‍♀️', '🧝', '🧝‍♂️', '🧝‍♀️',
-    '🧛', '🧛‍♂️', '🧛‍♀️', '🧜', '🧜‍♂️', '🧜‍♀️',
-    '🧞', '🧞‍♂️', '🧞‍♀️', '🤴', '👸', '🤵', '🥳',
-    '💂', '💂‍♂️', '💂‍♀️', '🧟', '🧟‍♂️', '🧟‍♀️',
-    '🦐', '🐕'
-];
-
-export const HERO_SPRITES = [
-    'hn_adventure_por',
-    'hm_fighter_por',
-    'hn_sneak_por',
-    'hm_wizard_por'
-];
 
 /**
  * Generate a complete hero object
@@ -60,9 +40,6 @@ export function generateHero(options = {}) {
     const hero = {
         id: `hero_${nanoid(8)}`,
         name,
-        // Retired concepts, kept as null so the saved hero shape is unchanged.
-        classId: null,
-        traitId: null,
         icon,
         spriteId, 
 
@@ -77,13 +54,7 @@ export function generateHero(options = {}) {
         // Always empty: statuses ride on `effects` (see `HeroRehydration`).
         statuses: [],
 
-        perks: {},
-
-        equipment: createEmptyEquipment(),
-
-        assignedCardId: null,
-
-        createdAt: Date.now()
+        equipment: createEmptyEquipment()
     };
 
     hero.aggregator.id = hero.id;

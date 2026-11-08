@@ -2,8 +2,8 @@
 
 import { PLAN_PIXEL_U } from './TerrainLattice.js';
 import { layeredNoise, layeredTables, spreadSamples, CALIBRATION_SAMPLES, FINE } from './TerrainPatches.js';
-import { wearOf } from '../../config/registries/terrainRegistry.js';
-import { tuning } from '../../config/playmatTuning.js';
+import { wearOf } from '../../../../config/registries/terrainRegistry.js';
+import { tuning } from './playmatTuning.js';
 
 /**
  * Structure at the large and the middle size without new art: every look's own sheet drawn a few

@@ -11,7 +11,7 @@ import { HealthBar } from './HealthBar.jsx';
 import { enemyBarPlace, fightBarShift } from './healthBar.js';
 import { IdlePlate } from './IdlePlate.jsx';
 import { idlePlateCells } from './idlePlate.js';
-import { TokenChargeDeltaFloater, CHARGE_FLOATERS, StationGearBadge, MarkedBadge } from './TokenBadges.jsx';
+import { StationGearBadge, MarkedBadge } from './TokenBadges.jsx';
 import { ProblemMark } from './ProblemMark.jsx';
 import { problemOf, problemText, PROBLEM_MARK_ART_PX, tokenGearPx } from './problemMark.js';
 import { createWorkBar, shareWorkBar } from './workBar.js';
@@ -48,7 +48,6 @@ const PLATE_POINTER = 'var(--plate-pointer, auto)';
  * stuck alert (`SPAWNER_ALERT_CHANGED`, read once on mount), a growing Token's (a Stump that needs
  * its Forest or a seedling: `GROWTH_ALERT_CHANGED`, likewise), or nothing chosen on a station.
  * - **Demolition mark** (the middle row): the whole time it applies.
- * - **The -1 / +50 floater**: switched off (`CHARGE_FLOATERS`); a worked Token's plate counts down.
  * - **Enemy health bar** (above the box): in a fight, and while an enemy is hovered. In a fight
  * the mat hands it `fightBar` (`{ host, left, top }`: the fight layer's node and this box's
  * corner in mat units) and the bar draws there, over the loot (`FightBarHost`).
@@ -322,10 +321,6 @@ export const TokenBubbles = ({
                         </Bubble>
                     )}
                 </div>
-            )}
-
-            {CHARGE_FLOATERS && (
-                <TokenChargeDeltaFloater instanceId={instanceId} anchor="corner" atRest={!hasHero} />
             )}
         </>
     );

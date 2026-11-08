@@ -12,7 +12,7 @@ import {
     BASE_CRIT_CHANCE,
     REGEN_CONFIG,
 } from '../config/FormulaRegistry.js';
-import * as CF from '../utils/CombatFormulas.js';
+import * as CF from '../systems/combat/CombatFormulas.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
@@ -224,14 +224,14 @@ describe('crits double before the type factor; no flat armour, no floor', () => 
         expect(CF.heroHitDamage(h, enemy(1, { armor: 9 }))).toBe(2);
         const plated = recruit();
         give(plated, EFFECT_TYPES.ARMOR, 5);
-        expect(CF.enemyHitDamage(enemy(1), plated)).toBe(1);
+        expect(CF.enemyBlow(enemy(1), plated).exact).toBe(1);
     });
 
     it('Pierce is read by nothing on either side', () => {
         const h = hero({ skill: 'melee', level: 1, weapon: 'rules_iron_sword' });
         give(h, EFFECT_TYPES.PIERCE, 1);
         expect(CF.heroHitDamage(h, enemy(1))).toBe(4);
-        expect(CF.enemyHitDamage(enemy(1, { hit: 5, pierce: 2 }), recruit())).toBe(5);
+        expect(CF.enemyBlow(enemy(1, { hit: 5, pierce: 2 }), recruit()).exact).toBe(5);
     });
 
     it('crit chance is 5 %, and gear adds to it; an enemy has 5 % unless authored', () => {

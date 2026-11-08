@@ -5,6 +5,7 @@ import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
@@ -19,7 +20,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { DRAG_KIND, rosterFlagPayload } from '../ui/dnd/dragConstants.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { matAccepts } from '../ui/components/board/Board.jsx';
@@ -182,7 +183,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
 
     it('a hero dragged from the roster onto a Token works it', () => {
         put(15, FOREST);
-        const payload = { kind: DRAG_KIND.HERO, heroId: 'h1', from: { dock: true } };
+        const payload = rosterFlagPayload('h1');
         expect(matAccepts(payload)).toBe(true);
         expect(counting('hero_deployed', () => dropOnMat(payload, C(15)))).toBe(1);
         expect(workTileOf('h1')).toBe(15);
@@ -267,7 +268,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
     it('an older save gives every hero without a colour one, in roster order, on load', async () => {
         GameState.state.heroes[1].flagColour = FLAG_COLOURS[0];
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
-        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        loadSavedState(migrateState(saved.state, saved.version));
         expect(flagColourOf('h2')).toBe(FLAG_COLOURS[0]);
         expect(flagColourOf('h1')).toBe(FLAG_COLOURS[1]);
         expect(GameState.state.heroes.every(x => FLAG_COLOURS.includes(x.flagColour))).toBe(true);
@@ -316,7 +317,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
         Orders.orderAt('h1', C(20));
         HeroManager.updateHeroProfile('h1', { flagColour: 'orange' });
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
-        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        loadSavedState(migrateState(saved.state, saved.version));
         expect(flagColourOf('h1')).toBe('orange');
     });
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
@@ -256,7 +257,7 @@ describe('⭐ recall mid-fight (FP-43, G-4)', () => {
         fightAt('h1', 14);
         untilDamaged('h1');
 
-        Placement.recallHeroById('h1');
+        Flags.furl('h1');
 
         expect(BoardCombat.fightOfHero('h1')).toBeNull();
         expect(BoardCombat.getFight(idAt(14))).toBeNull();
@@ -370,7 +371,7 @@ describe('⭐ an old save’s Disallow mark is dropped on load', () => {
 
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
         expect(saved.state.board.tokens[idAt(14)].disallowed).toBe(true);
-        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        loadSavedState(migrateState(saved.state, saved.version));
 
         const reloaded = tokenAt(14);
         expect('disallowed' in reloaded).toBe(false);

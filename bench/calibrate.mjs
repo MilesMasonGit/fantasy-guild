@@ -5,7 +5,7 @@
 //
 // Each setup (`bench/calibration/setups.mjs`) is a small board of shipped content played in the real
 // engine through the game's own catch-up, in its own process, and priced by the calculator
-// (`src/systems/progression/ledger/rates.js`). The table shows items and XP per hour, engine against
+// (`cms/src/engine/ledger/rates.js`). The table shows items and XP per hour, engine against
 // calculator, and the difference. Exits 1 when any compared number differs by more than the
 // tolerance (default 15 %), 3 when a run fails. Results go to `bench/results/calibration-*.json`.
 // A run of every setup also writes `bench/calibration/stamp.json` (commit it): the result and a hash
@@ -31,7 +31,7 @@ const seeds = String(args.seeds || '1,2,3').split(',').map(Number).filter(Number
 const tolerance = (Number(args.tolerance) || 15) / 100;
 
 const { SETUPS } = await import('./calibration/setups.mjs');
-const { CALIBRATED_FILES, STAMP_FILE, fileHashes } = await import('../src/systems/progression/ledger/calibration.js');
+const { CALIBRATED_FILES, STAMP_FILE, fileHashes } = await import('../cms/src/engine/ledger/calibration.js');
 const only = args.only ? String(args.only).split(',') : null;
 const setups = SETUPS.filter(s => !only || only.includes(s.id));
 

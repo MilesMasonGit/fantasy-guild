@@ -6,7 +6,7 @@ import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
 
 /**
  * The node budget: what a Region written from recipes holds, and what a layout then places.
- * A pure function of the ingredients and the Token cap. It takes no seed, so a reroll (a new seed
+ * A pure function of the ingredients and the Token cap. It takes no seed, so a new seed
  * for `Layout.js`) can never change it, and slot order does not matter.
  *
  * ## The recipe shape (internal)
@@ -44,7 +44,7 @@ import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
  *    brings (`BIOME_SMALL_WATER`); `Layout.js` builds the terrain grid from it. Camps and treasures
  *    take the ground where they land.
  *
- * A recipe of a kind the engine does not know is skipped and listed in `ignored`, never guessed at.
+ * A recipe of a kind the engine does not know is skipped, never guessed at.
  */
 
 /**
@@ -192,7 +192,7 @@ function canonical(ingredients) {
  *   biomes: Record<string, number>,
  *   ground: {main: string|null, terrains: Record<string, string>, water: number, shore: string[],
  *     inland: string[], small: Record<string, string>, stone?: {outcrops: number, ridge: boolean}},
- *   ingredients: string[], ignored: {ingredientId: string, kind: string}[]
+ *   ingredients: string[]
  * }}
  */
 export function budget(ingredients, { cap } = {}) {
@@ -200,7 +200,6 @@ export function budget(ingredients, { cap } = {}) {
 
     const slots = canonical(ingredients);
     const bases = slots.filter(i => i.kind === 'base');
-    const ignored = [];
 
     // Node points per Token, kept per biome ('' for none) so each node knows whose ground it is.
     const points = new Map();
@@ -241,9 +240,6 @@ export function budget(ingredients, { cap } = {}) {
                 into.set(poi.typeId, Math.max(into.get(poi.typeId) || 0, Math.floor(positive(poi.count, 1))));
             }
         }
-    }
-    for (const map of slots) {
-        if (map.kind !== 'base') ignored.push({ ingredientId: map.id, kind: map.kind });
     }
     // The main biome writes the most nodes (the Forest of a Forest and a small Coast), else, with no
     // nodes at all, it is the one slotted most.
@@ -292,8 +288,7 @@ export function budget(ingredients, { cap } = {}) {
             main: mainBiome, terrains, water, shore: [...shore].sort(byText), inland: [...(inlandOf[mainBiome] || [])], small: smallWaterOf(terrains, mainBiome),
             ...(stone ? { stone: { outcrops: Math.round(stone.outcrops), ridge: stone.ridge } } : {})
         },
-        ingredients: slots.map(i => i.id),
-        ignored
+        ingredients: slots.map(i => i.id)
     };
 }
 

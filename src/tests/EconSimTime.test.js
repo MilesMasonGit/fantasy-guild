@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { runTempoPass, bandMiddleMs, unitsPerHour } from '../../cms/src/engine/sim/tempoPass.js';
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 import { adaptCorpus, adaptToken, liveCharges, expectedQuantity } from '../../cms/src/engine/sim/fieldAdapter.js';
-import { bandFor } from '../config/registries/tempoBands.js';
+import { bandFor } from '../../cms/src/engine/ledger/tempoBands.js';
 import { expectedOutputQuantity } from '../config/registries/tokenRegistry.js';
 
 import tokenData from '../../data/tokens.json';

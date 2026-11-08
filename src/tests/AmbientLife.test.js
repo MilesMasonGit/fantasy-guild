@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
-import { drawGrass, grassNoise, lookRules, COLOUR, SLOT_SHIFT } from '../systems/board/TerrainGrass.js';
+import { buildGroundPlan } from '../ui/components/board/terrain/TerrainSurface.js';
+import { drawGrass, grassNoise, lookRules, COLOUR, SLOT_SHIFT } from '../ui/components/board/terrain/TerrainGrass.js';
 import { buildScreenPass } from '../ui/components/board/groundScreen.js';
 import {
     groundLife, createShimmer, createGust, createLava, lavaLevel, swellLit, ambientRandom,
@@ -11,7 +11,7 @@ import {
 } from '../ui/components/board/ambientSky.js';
 import { ambientSettings } from '../ui/components/board/ambientSettings.js';
 import { LOOKS } from '../config/registries/terrainRegistry.js';
-import { setTuning, resetTuning } from '../config/playmatTuning.js';
+import { setTuning, resetTuning } from '../ui/components/board/terrain/playmatTuning.js';
 import { groundWith } from './fixtures/ground.js';
 
 afterEach(() => resetTuning());

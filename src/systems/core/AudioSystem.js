@@ -1,7 +1,7 @@
 import { EventBus } from './EventBus.js';
 import { SettingsManager } from './SettingsManager.js';
 import { logger } from '../../utils/Logger.js';
-import { ENGINE_EVENTS, ORPHAN_EVENTS } from './engineEvents.js';
+import { ENGINE_EVENTS } from './engineEvents.js';
 
 export const BGM_PLAYLIST = [
     { id: 'gentle_pause', title: 'Gentle Pause', file: 'Gentle Pause.m4a' },
@@ -83,13 +83,9 @@ class AudioSystemClass {
         EventBus.subscribe(ENGINE_EVENTS.AUDIO_PLAY, (data) => this.playSfx(data.clip, data.options));
         
         EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, () => this.playSfx('levelup'));
-        EventBus.subscribe(ORPHAN_EVENTS.SKILL_LEVELED, () => this.playSfx('levelup'));
-        EventBus.subscribe(ORPHAN_EVENTS.INVASION_STARTED, () => this.playSfx('invasion'));
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => this.playSfx('victory'));
-        EventBus.subscribe(ORPHAN_EVENTS.COMBAT_DEFEAT, () => this.playSfx('defeat'));
         EventBus.subscribe(ENGINE_EVENTS.QUEST_CLAIMED, () => this.playSfx('quest_claim'));
         EventBus.subscribe(ENGINE_EVENTS.HERO_DEPLOYED, () => this.playSfx('hero_assign'));
-        EventBus.subscribe(ORPHAN_EVENTS.HERO_ASSIGNED, () => this.playSfx('hero_assign'));
         
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, () => this.playContextualSfx('hit'));
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, () => this.playContextualSfx('hit'));
@@ -326,7 +322,6 @@ class AudioSystemClass {
             'levelup': `${kenneyBase}handleSmallLeather.ogg`,
             'invasion': `${kenneyBase}bookFlip1.ogg`,
             'victory': `${kenneyBase}handleSmallLeather2.ogg`,
-            'defeat': `${kenneyBase}bookFlip2.ogg`,
             'hit': `${kenneyBase}metalClick.ogg`,
             'task_done': `${kenneyBase}bookPlace1.ogg`,
             'drag': TOKEN_DRAG_SFX,

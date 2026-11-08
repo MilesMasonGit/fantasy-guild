@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Flags from '../systems/board/Flags.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
@@ -20,7 +21,7 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
-import { enemyTypeResistance } from '../utils/CombatFormulas.js';
+import { enemyTypeResistance } from '../systems/combat/CombatFormulas.js';
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
 
@@ -175,7 +176,7 @@ describe('a fight is a bearer', () => {
 
         // The hero leaves; `tickTile` drops the fight. Nothing extra had to be
         // written to make a poison die with the creature carrying it.
-        Placement.recallHeroById('hero_1');
+        Flags.furl('hero_1');
         run(200);
 
         expect(BoardCombat.getFight(idAt(MONSTER))).toBeNull();

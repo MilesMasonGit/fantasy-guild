@@ -7,7 +7,6 @@ import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -68,7 +67,6 @@ beforeEach(() => {
     InventoryManager.init();
     SpriteLayer.init();
     TileModifiers.clearAll();
-    InputAllocator.resetStarvationStats();
     GameState.state.heroes = [makeHero('hero_1'), makeHero('hero_2')];
     GameState.state.inventory.maxSlots = 50;
     TriggerSystem.init();
@@ -256,16 +254,5 @@ describe('Cooldowns rate-limit an adjacency trigger too', () => {
         // again — this pins that the cooldown path is opt-in, not implicit.
         run(13000);
         expect(SpriteLayer.countOnBoard('item_bones')).toBe(2);
-    });
-});
-
-describe('Purely-triggered Tokens (CMS-31, CMS-80)', () => {
-    it('recognises a Token with no staffed production as purely triggered', () => {
-        expect(TriggerSystem.isPurelyTriggered(getTokenType('fixture_sigil'))).toBe(true);
-    });
-
-    it('does NOT exempt a Token that also produces (CMS-80)', () => {
-        // A mixed Token is held to the normal standard.
-        expect(TriggerSystem.isPurelyTriggered(getTokenType('fixture_producer'))).toBe(false);
     });
 });

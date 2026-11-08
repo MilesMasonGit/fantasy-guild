@@ -33,7 +33,6 @@ const PATHS = Object.freeze([
 ]);
 export const CHIP_COUNT = PATHS.length;
 const PATH_FRAMES = PATHS[0].length;
-export const CHIP_MS = PATH_FRAMES * FX_FRAME_MS;
 
 /**
  * Start the chips on a worked Token's hit wrapper.

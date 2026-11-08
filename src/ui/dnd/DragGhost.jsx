@@ -12,10 +12,11 @@ import { MARKER_ART_PX, MARKER_FOOT } from '../components/board/flagGeometry.js'
 
 /**
  * DragGhost: the floating representation of whatever is being dragged.
- * `bold` is true while the cursor is over the board, false over a drawer.
+ * `bold` is true while the cursor is over the board, false over a drawer; only the Guild Hall's
+ * ghost reads it.
  * Bloom is retired for Tokens: a carried Token never changes size or shows a card frame. It is
  * 128px from pick-up to release, and being held is expressed by the shadow instead, the hard
- * pixel shadow of `PixelArt`'s lifted state. `bold` is therefore ignored by `TokenGhost`.
+ * pixel shadow of `PixelArt`'s lifted state.
  * `ItemGhost` always draws a single 64px icon, lifted like the others.
  */
 
@@ -36,9 +37,9 @@ export const DragGhost = ({ payload, bold }) => {
         case DRAG_KIND.TOKEN:
             return isGuildHallPayload(payload)
                 ? <GuildHallGhost payload={payload} bold={bold} />
-                : <CarriedToken payload={payload} bold={bold} offBoard={false} />;
-        case DRAG_KIND.ITEM: return <div style={NOT_DIMMED} className="transition-opacity duration-150"><ItemGhost payload={payload} bold={bold} /></div>;
-        case DRAG_KIND.FLAG: return <FlagGhost payload={payload} bold={bold} />;
+                : <CarriedToken payload={payload} offBoard={false} />;
+        case DRAG_KIND.ITEM: return <div style={NOT_DIMMED} className="transition-opacity duration-150"><ItemGhost payload={payload} /></div>;
+        case DRAG_KIND.FLAG: return <FlagGhost payload={payload} />;
         default: return null;
     }
 };
@@ -51,12 +52,12 @@ export const DragGhost = ({ payload, bold }) => {
 const GuildHallGhost = ({ payload, bold }) => {
     const { over } = useDndContext();
     const isOverPlaymat = bold && over && over.data?.current?.surface === 'board';
-    return <CarriedToken payload={payload} bold={bold} offBoard={!isOverPlaymat} />;
+    return <CarriedToken payload={payload} offBoard={!isOverPlaymat} />;
 };
 
-const CarriedToken = ({ payload, bold, offBoard }) => (
+const CarriedToken = ({ payload, offBoard }) => (
     <div style={offBoard ? DIMMED : NOT_DIMMED} className="relative transition-opacity duration-150">
-        <TokenGhost payload={payload} bold={bold} />
+        <TokenGhost payload={payload} />
         {offBoard && (
             <div className="absolute top-1.5 left-[2px] z-50 pointer-events-none w-8 h-8 flex items-center justify-center">
                 <img

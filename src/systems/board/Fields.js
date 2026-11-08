@@ -133,11 +133,6 @@ export function cropOf(instance, def = getTokenType(instance?.typeId)) {
     return plantedCrop(instance, def) || pickOf(instance, def);
 }
 
-/** Harvests left on a ripe Field, else 0. */
-export function loadLeft(instance, def = getTokenType(instance?.typeId)) {
-    return stageOf(instance, def) === STAGE.RIPE ? stateOf(instance, def).load : 0;
-}
-
 /** Whether an empty Field is stopped: its pick's seed is not in the Bank (or on the mat). */
 export function isStopped(instance) {
     return Growth.growthAlertOf(instance?.id)?.alert === ALERT.GROW_NEEDS_ITEM;

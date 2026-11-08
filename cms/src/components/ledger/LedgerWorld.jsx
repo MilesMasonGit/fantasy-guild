@@ -5,8 +5,8 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import {
   workspaceWorldContext, worldForSeed, sweepWorkspace, sweepText, heroTime, worldTablesSource,
 } from '../../engine/ledgerWorld';
-import { F_CHECKS, WORLD_F } from '../../../../src/systems/progression/ledger/world.js';
-import { CHECKS } from '../../../../src/systems/progression/ledger/checks.js';
+import { F_CHECKS, WORLD_F } from '../../engine/ledger/world.js';
+import { CHECKS } from '../../engine/ledger/checks.js';
 import { tokenKey, itemKey } from '../../../../src/systems/progression/ledger/engine.js';
 import { STRICT_RINGS, kitById, heroTokensOf } from '../../../../src/config/worldTablesShape.js';
 import { cellCentre, hexPoints, mapSize } from '../../../../src/ui/components/atlas/worldMapLayout.js';

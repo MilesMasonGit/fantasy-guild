@@ -1,9 +1,9 @@
 // the ground's pixel map: which terrain at every plan pixel, cell edges wiggled, beaches cut
 
-import { TERRAIN, TERRAIN_CELL } from '../atlas/TerrainMap.js';
-import { rasterise, STYLE_TERRAIN } from '../atlas/WaterShapes.js';
-import { fringeOf } from '../../config/registries/terrainRegistry.js';
-import { tuning } from '../../config/playmatTuning.js';
+import { TERRAIN, TERRAIN_CELL } from '../../../../systems/atlas/TerrainMap.js';
+import { rasterise, STYLE_TERRAIN } from '../../../../systems/atlas/WaterShapes.js';
+import { fringeOf } from '../../../../config/registries/terrainRegistry.js';
+import { tuning } from './playmatTuning.js';
 
 /**
  * The ground plan is built at one pixel per 2 mat units, whatever the window: a ground pixel is

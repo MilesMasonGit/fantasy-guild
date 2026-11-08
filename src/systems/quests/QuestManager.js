@@ -17,9 +17,7 @@ import * as QuestTokens from './QuestTokens.js';
 import { createRandomQuest } from './questBounties.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../core/engineEvents.js';
 
-export {
-    BOUNTY_REWARD_ITEMS, copyReward, questReward, RANDOM_ITEMS, RANDOM_HUNTS
-} from './questBounties.js';
+export { RANDOM_ITEMS, RANDOM_HUNTS } from './questBounties.js';
 
 /**
  * Quests are Tokens the Guild Hall spawns (`QuestTokens.js`), which own the cap,
@@ -31,9 +29,6 @@ export {
  * * bounty generation ({@link QuestManager.createRandomQuest}; the pools and
  *   the generator live in `questBounties.js`);
  * * the reward rule (`questReward`, also in `questBounties.js`).
- *
- * `state.quests.active` is read once, by the migration that turns a save's
- * sidebar quests into Tokens, and is then empty.
  */
 
 let unsubs = [];
@@ -60,16 +55,12 @@ export const QuestManager = {
         if (!GameState.state) return;
         if (!GameState.state.quests) {
             GameState.state.quests = {
-                active: [],
                 completedTutorials: [],
                 tutorialStep: 0,
                 clockMs: 0
             };
         }
         const q = GameState.state.quests;
-        // `active` holds only a save's sidebar quests waiting to be turned into
-        // quest Tokens (`QuestTokens.migrateSidebarQuests`).
-        if (!Array.isArray(q.active)) q.active = [];
         // A save from before the list existed kept only a step number, which maps
         // onto nothing now.
         if (!Array.isArray(q.completedTutorials)) q.completedTutorials = [];
@@ -274,22 +265,11 @@ export const QuestManager = {
     },
 
     /**
-     * ⚠️ Retired with the sidebar: a bounty is dismissed from its Token's
-     * inspection (`QuestTokens.dismissBounty`). This only returns a refusal and has no caller.
-     */
-    abandonQuest(questId) {
-        const token = findQuestToken(questId);
-        if (token?.quest?.tutorial) return { success: false, reason: 'Tutorial quests cannot be abandoned' };
-        return { success: false, reason: 'Dismiss a bounty from its quest Token' };
-    },
-
-    /**
      * Claim a quest by its quest id or its Token's instance id; see
      * `QuestTokens.claimQuest` (the reward drops as loot beside the Token, and
      * the Token vanishes).
      */
-    // eslint-disable-next-line no-unused-vars
-    claimQuest(questId, sourceRect = null) {
+    claimQuest(questId) {
         this.ensureState();
         const token = findQuestToken(questId);
         if (!token) return { success: false, reason: 'Quest not found' };

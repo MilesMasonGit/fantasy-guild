@@ -18,7 +18,7 @@ import * as OutputRules from '../systems/board/OutputRules.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
-import * as CF from '../utils/CombatFormulas.js';
+import * as CF from '../systems/combat/CombatFormulas.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
@@ -27,7 +27,7 @@ import { isWeapon, weaponStyleOf, authoredWeaponStyles } from '../config/registr
 import { heroSide } from '../ui/components/combat/fightView.js';
 import { MODIFIER_PALETTE, getPaletteEntry } from '../config/registries/modifierPalette.js';
 import { makeStatement, KEYWORD, paletteForKeyword } from '../systems/effects/statements.js';
-import { slotsOf } from '../systems/effects/statementSlots.js';
+import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { findUnknownRefs } from '../systems/core/unknownRefRule.js';

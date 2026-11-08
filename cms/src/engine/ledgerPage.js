@@ -1,5 +1,5 @@
 import { HOW, LEDGER_ENGINE_TEXT, parseKey } from '../../../src/systems/progression/ledger/engine.js';
-import { ruleIndex, ruleOwner, ruleTier, isOneOff, STARTER_CAMP_KEY } from '../../../src/systems/progression/ledger/checks.js';
+import { ruleIndex, ruleOwner, ruleTier, isOneOff, STARTER_CAMP_KEY } from './ledger/checks.js';
 import { planOf } from '../../../src/systems/progression/ledger/plan.js';
 
 /**

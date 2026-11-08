@@ -3,7 +3,7 @@
  * ⚠️ The stale badge is a fingerprint: each answer carries a fingerprint of the record as the run left it, and the panel compares it with the live record. Deliberately over-eager (renaming a Token marks it stale), because a second model of which fields matter would rot.
  */
 
-import { bandFor } from '../../../../src/config/registries/tempoBands.js';
+import { bandFor } from '../ledger/tempoBands.js';
 import { isRefusal } from './refusals.js';
 
 /** A short, stable fingerprint of a record: djb2 over its JSON. It only has to change when the record does, within one browser session. */

@@ -12,7 +12,7 @@ import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { pointerToMat, matRectForDrag } from '../ui/components/board/matPoint.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { boardPointToScreen } from '../ui/components/base/ParticleOverlay.jsx';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { DRAG_KIND, rosterFlagPayload } from '../ui/dnd/dragConstants.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -292,12 +292,12 @@ describe('dropOnMat — one drop function for the playmat', () => {
 
     it('⭐ a hero from the Dock plants their flag exactly at the drop point (FP-94)', () => {
         const point = { x: 1003.5, y: 611.25 };
-        expect(dropOnMat({ kind: DRAG_KIND.HERO, heroId: 'h1', from: { dock: true } }, point).success).toBe(true);
+        expect(dropOnMat(rosterFlagPayload('h1'), point).success).toBe(true);
         expect(BoardState.flagOf('h1')).toMatchObject(point);
     });
 
     it('⭐ a dragged flag moves to the raw point, clamped to the mat (FP-94)', () => {
-        dropOnMat({ kind: DRAG_KIND.HERO, heroId: 'h1', from: { dock: true } }, C(3));
+        dropOnMat(rosterFlagPayload('h1'), C(3));
         dropOnMat({ kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }, { x: 1234.5, y: 77 });
         expect(BoardState.flagOf('h1')).toMatchObject({ x: 1234.5, y: 77 });
 

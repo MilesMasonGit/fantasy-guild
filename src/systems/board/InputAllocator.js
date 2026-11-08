@@ -16,12 +16,8 @@ import * as SpriteLayer from './SpriteLayer.js';
  * only coal-burners and throttling cascades downstream without explicit logic.
  *
  * ⚠️ A Token needing 1 Coal can act sooner than one needing 5, so under sustained shortage the
- * deep, expensive chains starve first. {@link getStarvationStats} counts blocked ticks per Token
- * type to measure it.
+ * deep, expensive chains starve first.
  */
-
-/** Blocked-tick counts per Token type. */
-const starvation = new Map();
 
 /** How many units of an item are reachable — Bank plus anything on the floor. */
 export function availableOf(itemId) {
@@ -74,22 +70,4 @@ export function consumeInputs(inputs) {
         }
     }
     return true;
-}
-
-/** Record that a Token type could not run for want of inputs. */
-export function noteStarved(typeId) {
-    starvation.set(typeId, (starvation.get(typeId) || 0) + 1);
-}
-
-/**
- * Blocked-tick counts per Token type, for comparing a cheap consumer against an expensive one under
- * the same shortage.
- */
-export function getStarvationStats() {
-    return Object.fromEntries(starvation);
-}
-
-/** Clear the measurement (between balance runs, and in tests). */
-export function resetStarvationStats() {
-    starvation.clear();
 }

@@ -1,6 +1,6 @@
 import { HOW, COMBAT, parseKey, itemKey } from '../../../src/systems/progression/ledger/engine.js';
-import { PROFILE, PACE_TEXT } from '../../../src/systems/progression/ledger/pace.js';
-import { minutesToReach, minutesPerLevelAt, formatMinutes } from '../../../src/systems/progression/ledger/settings.js';
+import { PROFILE, PACE_TEXT } from './ledger/pace.js';
+import { minutesToReach, minutesPerLevelAt, formatMinutes } from './ledger/settings.js';
 import { tierLabel } from '../../../src/systems/progression/ledger/plan.js';
 
 /**

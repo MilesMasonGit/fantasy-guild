@@ -2,14 +2,14 @@ import { describe, it, expect, afterEach } from 'vitest';
 import {
     cleanColour, cleanOf, quietDecorations, detailRules, drawGrass, grassColours, grassTable, lookRules, ramp,
     COLOUR, KIND_MASK, GRASS_RULES, kindColour
-} from '../systems/board/TerrainGrass.js';
-import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
-import { groundTone } from '../systems/board/TerrainBlend.js';
+} from '../ui/components/board/terrain/TerrainGrass.js';
+import { buildGroundPlan } from '../ui/components/board/terrain/TerrainSurface.js';
+import { groundTone } from '../ui/components/board/terrain/TerrainBlend.js';
 import {
     buildScreenPass, screenGrid, propCell, rimShade, RIM, MAT_EDGE, groundPixel
 } from '../ui/components/board/groundScreen.js';
 import { LOOKS, generatedOf, SHEET_PX, PROP_PX, PROP_SHEET_CELLS } from '../config/registries/terrainRegistry.js';
-import { setTuning, resetTuning, tuning, CLEAN_LOOKS, cleanKeys } from '../config/playmatTuning.js';
+import { setTuning, resetTuning, tuning, CLEAN_LOOKS, cleanKeys } from '../ui/components/board/terrain/playmatTuning.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
 import { groundWith, flat } from './fixtures/ground.js';
 

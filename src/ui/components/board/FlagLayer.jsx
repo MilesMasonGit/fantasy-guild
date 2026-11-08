@@ -152,7 +152,7 @@ const Flag = memo(function Flag(props) {
 
     // Dragged by the flag itself or by its hero: either way this hero is in the hand.
     const carried = drag.isDragging
-        || (anyDrag && (activePayload?.kind === DRAG_KIND.FLAG || activePayload?.kind === DRAG_KIND.HERO)
+        || (anyDrag && activePayload?.kind === DRAG_KIND.FLAG
             && activePayload?.heroId === flag.heroId);
 
     useEffect(() => {

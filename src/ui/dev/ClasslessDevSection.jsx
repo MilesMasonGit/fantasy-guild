@@ -1,9 +1,9 @@
 // The QA panel's classless heroes section (brief 270 K1): a new hero against Goblins with a sword
-// then a bow, an Iron Sword asking Melee 15, and an older save's promoted Knight, loaded.
+// then a bow, and an Iron Sword asking Melee 15.
 // ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
 
 import { useState } from 'react';
-import { setUpClasslessScene, giveGatedIronSword, loadOldKnightSave } from './classlessDev.js';
+import { setUpClasslessScene, giveGatedIronSword } from './classlessDev.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
@@ -39,20 +39,6 @@ export function ClasslessDevSection() {
                     }}
                 >
                     QA Iron Sword asking Melee 15
-                </button>
-                <button
-                    type="button"
-                    data-qa-classless-old-save
-                    className={buttonClass}
-                    onClick={async () => {
-                        setStatus('Loading…');
-                        const r = await loadOldKnightSave();
-                        setStatus(r.ok
-                            ? 'Loaded an old save with QA Old Knight: open their sheet. Melee 25, Magic 33 and Enchanting 7 (back from the bank), Fletching 18, every Starting skill 12; no Leadership, Armory or Commerce; no job title; 43 HP. The slot’s backup holds the game before'
-                            : r.error);
-                    }}
-                >
-                    Old save: a promoted Knight (rewrites this slot)
                 </button>
             </div>
             {status && <div className="ui-text-body text-gi-muted">{status}</div>}

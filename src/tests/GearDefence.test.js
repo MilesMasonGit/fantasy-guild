@@ -25,7 +25,7 @@ import { makeStatement, KEYWORD, paletteForKeyword } from '../systems/effects/st
 import { renderStatement } from '../systems/effects/statementText.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { statusBlockOf } from '../systems/effects/effectLibrary.js';
-import * as CF from '../utils/CombatFormulas.js';
+import * as CF from '../systems/combat/CombatFormulas.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { isWeapon, isOffHand } from '../config/registries/weaponStyles.js';
 import { handsOf } from '../config/registries/toolKinds.js';

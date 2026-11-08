@@ -43,7 +43,7 @@ import { getTokenType, registerTokenTypes, tokenStartingUses } from '../../src/c
 import * as HeroManager from '../../src/systems/hero/HeroManager.js';
 import { generateHero } from '../../src/systems/hero/HeroGenerator.js';
 import { xpForLevel } from '../../src/utils/XPCurve.js';
-import { buildRateBook, chainRates } from '../../src/systems/progression/ledger/rates.js';
+import { buildRateBook, chainRates } from '../../cms/src/engine/ledger/rates.js';
 import { registerHallSky } from '../../src/config/registries/hallStarRegistry.js';
 import * as HallRules from '../../src/systems/progression/HallRules.js';
 import { SETUPS, HALL } from './setups.mjs';

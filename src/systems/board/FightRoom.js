@@ -6,7 +6,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import * as BoardState from './BoardState.js';
 import * as Hand from './Hand.js';
-import { STAND_GAP } from './standing.js';
+import { standingSpot } from './standing.js';
 
 /**
  * When a hero reaches an enemy and the fight about to start would cover another fight or a hero
@@ -107,20 +107,13 @@ function boxOf(r, ex, ey, hx, hy, out) {
     return out;
 }
 
-/** Where the hero stands beside an enemy (art radius `r`) at `x`, on `side`: `standingSpot`'s rule. */
-function heroX(r, x, side, w) {
-    const offset = r + STAND_GAP;
-    const at = x + side * offset;
-    return at < 0 || at > w ? x - side * offset : at;
-}
-
 /**
  * The box a fight takes up, `{ left, top, right, bottom }` in mat units, with its enemy (of
  * `typeId`) at `centre` and its hero beside it on `side`.
  */
 export function fightBox(typeId, centre, side) {
     const r = artRadiusOf(typeId);
-    return boxOf(r, centre.x, centre.y, heroX(r, centre.x, side, matW()), centre.y, {});
+    return boxOf(r, centre.x, centre.y, standingSpot(typeId, centre, side).x, centre.y, {});
 }
 
 /** The box a hero standing at `point` takes up: their art and the bar over it. */
@@ -223,7 +216,7 @@ export function planFor(heroId, enemy, side) {
     const r = artRadiusOf(enemy.typeId);
     const w = matW();
     const h = matH();
-    const box = boxOf(r, enemy.x, enemy.y, heroX(r, enemy.x, side, w), enemy.y, {});
+    const box = boxOf(r, enemy.x, enemy.y, standingSpot(enemy.typeId, enemy, side).x, enemy.y, {});
     if (!crowdsAny(box, obstacles)) return { crowded: false, to: null };
 
     counts.searches++;
@@ -235,7 +228,7 @@ export function planFor(heroId, enemy, side) {
         const x = x0 + OFFSETS[k];
         const y = y0 + OFFSETS[k + 1];
         tried++;
-        boxOf(r, x, y, heroX(r, x, side, w), y, box);
+        boxOf(r, x, y, standingSpot(enemy.typeId, { x, y }, side).x, y, box);
         if (box.left < 0 || box.top < 0 || box.right > w || box.bottom > h) continue;
         if (!crowdsAny(box, obstacles)) {
             to = { x, y };

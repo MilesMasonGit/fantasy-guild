@@ -18,7 +18,7 @@ import { noiseAt } from './WaterShapes.js';
  * number from the layout's seeded generator, coordinates stored whole.
  */
 
-export const STONE_VERSION = 1;
+const STONE_VERSION = 1;
 
 /** The shapes a stored record may hold. */
 export const STONE_SHAPE = Object.freeze({ OUTCROP: 'outcrop', RIDGE: 'ridge' });

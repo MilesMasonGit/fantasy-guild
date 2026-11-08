@@ -50,7 +50,7 @@ export const FightTab = memo(function FightTab({ heroId }) {
     );
     const tab = readKey(key);
     if (!tab) return null;
-    const sprite = HeroManager.getHero(heroId)?.spriteId || HeroManager.getHero(heroId)?.classId || null;
+    const sprite = HeroManager.getHero(heroId)?.spriteId || null;
     return <FightTabView heroId={heroId} tab={tab} still={heroArt(sprite).still} onOpen={() => restoreFightPanel(heroId)} />;
 });
 

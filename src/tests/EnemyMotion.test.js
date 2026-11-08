@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
@@ -308,7 +309,7 @@ describe('save and load', () => {
         tick(1500);
 
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
-        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        loadSavedState(migrateState(saved.state, saved.version));
         EventBus.publish('game_loaded', { slot: 0 });
 
         const loaded = BoardState.getTokenById(enemy.id);

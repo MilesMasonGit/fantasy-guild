@@ -10,7 +10,7 @@ import {
     timelineOf, crowdedOf, emptyOf, curveLevelAt, timeTicks, OTHER_LANE, CROWD_MIN,
 } from '../../cms/src/engine/ledgerTimeline';
 import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
-import { settingsOf, minutesToReach } from '../systems/progression/ledger/settings.js';
+import { settingsOf, minutesToReach } from '../../cms/src/engine/ledger/settings.js';
 import { paceWorkspace } from './fixtures/paceWorld.js';
 
 /**

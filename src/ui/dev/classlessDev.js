@@ -3,8 +3,6 @@
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
-import { SaveManager } from '../../systems/core/SaveManager.js';
-import { getBackupKey } from '../../systems/core/SaveSlotHelper.js';
 import { GameState } from '../../state/GameState.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
@@ -17,8 +15,6 @@ import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManag
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { getItem, registerItems } from '../../config/registries/itemRegistry.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
-import { STARTING_SKILL_IDS } from '../../config/registries/skillRegistry.js';
-import { xpForLevel } from '../../utils/XPCurve.js';
 import { qaOrder } from './qaOrders.js';
 
 const GOBLIN = 'token_goblin';
@@ -89,50 +85,4 @@ export function giveGatedIronSword() {
     });
     InventoryManager.addItem(QA_GATED_SWORD, 1);
     return { ok: true };
-}
-
-/**
- * A hero record as the class rework saved one: a Knight with a job, class skills (Melee 25,
- * Fletching 18, and the cut Leadership 30 and Armory 9), and skills set aside at an earlier job
- * change (Magic 33, Enchanting 7, the cut Commerce 40); the Starting skills at 12.
- */
-export function oldKnightRecord(id) {
-    const at = (level, extra = 0) => ({ level, xp: xpForLevel(level) + extra });
-    return {
-        id, name: 'QA Old Knight', jobId: 'knight', classId: null, traitId: null,
-        icon: 'hn_recruit_icon_por', spriteId: 'fighter',
-        hp: { current: 35, max: 35 }, status: 'idle', woundedUntil: null, statuses: [], perks: {},
-        equipment: Array(9).fill(null), assignedCardId: null, createdAt: 0,
-        skills: {
-            ...Object.fromEntries(STARTING_SKILL_IDS.map(s => [s, at(12)])),
-            melee: at(25), fletching: at(18, 7), leadership: at(30), armory: at(9)
-        },
-        bankedSkills: { magic: at(33), enchanting: at(7), commerce: at(40) }
-    };
-}
-
-/**
- * Write this slot as an older save holding QA Old Knight (the game as it stands kept as the slot's
- * backup), then load it the way a player's load does: the Knight arrives with every level kept,
- * Magic and Enchanting back from the bank, Leadership, Armory and Commerce gone, no job.
- * @returns {Promise<{ok: boolean, error?: string}>}
- */
-export async function loadOldKnightSave() {
-    const slot = SaveManager.currentSlot;
-    if (slot == null) return { ok: false, error: 'Start or load a game in a slot first' };
-    SaveManager.save(false);
-    const before = localStorage.getItem(SaveManager.getSlotKey(slot));
-    if (before) localStorage.setItem(getBackupKey(slot), before);
-    const data = JSON.parse(GameState.serializeJson());
-    const saved = data.state || data;
-    const id = `hero_qa_old_knight_${Date.now().toString(36)}`;
-    saved.heroes = [...(saved.heroes || []), oldKnightRecord(id)];
-    const ranks = saved.progress.guildUpgrades || (saved.progress.guildUpgrades = {});
-    ranks.roster_size = Math.max(ranks.roster_size || 0, saved.heroes.length);
-    saved.progress.rosterLimit = Math.max(saved.progress.rosterLimit || 0, saved.heroes.length);
-    localStorage.setItem(SaveManager.getSlotKey(slot), JSON.stringify(data));
-
-    const loaded = await SaveManager.loadSlot(slot, { catchUp: false });
-    if (!loaded) return { ok: false, error: 'The old save would not load' };
-    return { ok: true, heroId: id };
 }

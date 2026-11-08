@@ -3,12 +3,12 @@ import { budget } from '../systems/atlas/Budget.js';
 import { layout, HALL_CLEARING, hallSpot } from '../systems/atlas/Layout.js';
 import { DEV_MAPS } from '../systems/atlas/devMaps.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
-import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
-import { patchNoise } from '../systems/board/TerrainPatches.js';
-import { grassShapeAt, KIND_MASK } from '../systems/board/TerrainGrass.js';
-import { PLAN_PIXEL_U, CELL_PX, edgeAmplitude } from '../systems/board/TerrainLattice.js';
+import { buildGroundPlan } from '../ui/components/board/terrain/TerrainSurface.js';
+import { patchNoise } from '../ui/components/board/terrain/TerrainPatches.js';
+import { grassShapeAt, KIND_MASK } from '../ui/components/board/terrain/TerrainGrass.js';
+import { PLAN_PIXEL_U, CELL_PX, edgeAmplitude } from '../ui/components/board/terrain/TerrainLattice.js';
 import { LOOKS } from '../config/registries/terrainRegistry.js';
-import { tuning, setTuning, resetTuning } from '../config/playmatTuning.js';
+import { tuning, setTuning, resetTuning } from '../ui/components/board/terrain/playmatTuning.js';
 import { createRegionRecord } from '../state/StateSchema.js';
 import { rasterise } from '../systems/atlas/WaterShapes.js';
 

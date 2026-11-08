@@ -1,4 +1,4 @@
-import { PACE_TEXT } from '../../../src/systems/progression/ledger/pace.js';
+import { PACE_TEXT } from './ledger/pace.js';
 import { tierLabel } from '../../../src/systems/progression/ledger/plan.js';
 import { timelineOf } from './ledgerTimeline.js';
 

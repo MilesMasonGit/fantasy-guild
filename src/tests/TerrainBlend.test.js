@@ -1,16 +1,16 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import {
     BLEND, BLEND_ORDER, BLEND_RULES, FADE_TINT, blendStylesFor, blendStyleOf, pairOf, blendBorders, groundTone
-} from '../systems/board/TerrainBlend.js';
-import { resolveArtPixels, distanceFromSeeds, PLAN_PIXEL_U } from '../systems/board/TerrainLattice.js';
-import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
+} from '../ui/components/board/terrain/TerrainBlend.js';
+import { resolveArtPixels, distanceFromSeeds, PLAN_PIXEL_U } from '../ui/components/board/terrain/TerrainLattice.js';
+import { buildGroundPlan } from '../ui/components/board/terrain/TerrainSurface.js';
 import { buildScreenPass } from '../ui/components/board/groundScreen.js';
 import { LAWN_TERRAIN } from '../config/registries/terrainRegistry.js';
 import { budget } from '../systems/atlas/Budget.js';
 import { layout } from '../systems/atlas/Layout.js';
 import { DEV_MAPS } from '../systems/atlas/devMaps.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
-import { tuning, setTuning, resetTuning } from '../config/playmatTuning.js';
+import { tuning, setTuning, resetTuning } from '../ui/components/board/terrain/playmatTuning.js';
 import { groundWith } from './fixtures/ground.js';
 
 /**
