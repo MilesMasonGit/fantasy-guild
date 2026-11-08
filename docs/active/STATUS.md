@@ -13,18 +13,19 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 510 F1: the CMS refuses a Sync from a stale tab or off `main` (T-339) | builder | `fix/cms-sync-guard` (`f1`) | ready c8c6b731, gate running (the CMS now refuses a Sync from a stale tab or off `main`, and says why) | Sat | |
+| 510 F1: the CMS refuses a Sync from a stale tab or off `main`, and says why (T-339) | builder | `fix/cms-sync-guard` (`f1`) | **merged** 43f6c81a (633 files green, cycles, game and CMS builds); CMS server restarted on it | Sat | Sat |
 | 510 F2: the luck-dependent farming test (T-340) | builder-lite | `fix/farming-seed-test` (`f2`) | **merged** 83b884a4 (test only; file green under both seeds, full suite green under seed b) | Sat | Sat |
-| 510 F3: a hidden page stops piling up effects (T-333, T-341) | builder | `fix/hidden-fx` (`f3`) | ready 21a23367, gate running; T-333 closes after the soak (520 M5) | Sat | |
+| 510 F3: a hidden page stops piling up effects (T-333, T-341) | builder | `fix/hidden-fx` (`f3`) | **merged** 60101754 (633 files green, cycles, build, engine work same everywhere); T-333 closes after the soak (520 M5) | Sat | Sat |
 | 510 F4: no ghost Token after merging two on the mat (T-342) | builder | `fix/zero-charge-ghost` (`f4`) | **merged** 38b81dae (632 files green, cycles, build, engine work same everywhere) | Sat | Sat |
-| 510 F5: hero gear not re-read every tick (T-078) | engineer | `perf/loadout-memo` (`f5`) | building (own before/after profile) | Sat | |
-| 510 F6: one poll clock that pauses (T-343) | builder | `perf/poll-clock` (`f6`, from F3) | building | Sat | |
+| 510 F5: hero gear not re-read every tick (T-078) | engineer | `perf/loadout-memo` (`f5`) | ready 5eb4379c, gate running; 6 h catch-up: loadout 10 % to 2 % of busy time, wall about 12 % faster; per-slot Bank check instead of a version counter (misses no writer); calibrate after merge | Sat | |
+| 510 F6: one poll clock that pauses (T-343) | builder | `perf/poll-clock` (`f6`) | ready df27fa6e, gate running; upkeep badge and panel on events only (a lapsed upkeep shows at the next mat or Bank event) | Sat | |
 | 510 F7: a minimised desktop app goes quiet (T-344) | builder | | queued (after 520 M7) | | |
-| 530 X1: kills get their style XP bonuses (engine) | builder | `feat/combat-xp-bonus` (`f2`) | ready e3d2fe39, gate running (no bench fighter holds a combat or all-skills XP bonus: same work expected; the ledger does not model kill XP, X2 priced by hand) | Sat | |
-| 530 X2: four combat XP stars (content pack) | content agent | `planning-content` | owner starts `/content` | | |
-| 520 M0: bench instruments | builder-lite | `bench/review-instruments` (`m0`) | building | | |
+| 530 X1: kills get their style XP bonuses (engine) | builder | `feat/combat-xp-bonus` (`f2`) | **merged** 2016b539 (633 files green, cycles, build, engine work same everywhere: no bench fighter holds such a bonus); the ledger does not model kill XP | Sat | Sat |
+| 530 X2: four combat XP stars (content pack) | content agent | `planning-content` | pack `cms/incoming/2026-11-07-combat-xp-stars.json` ready; **owner: accept and Sync on main** | Sat | |
+| 520 M0: bench instruments | builder-lite | `bench/review-instruments` (`m0`) | ready d7081e12, gate running |
 | 520 M1 to M9: measurements | director | | queued (bench windows) | | |
-| 540 C1 to C9: cleanup and docs | builder / builder-lite | | queued (after 510 and 530 X1) | | |
+| 540 C1: folder moves and the import cycle (T-373, T-381) | builder | `cleanup/folder-moves` (`c1`) | building | Sat | |
+| 540 C2 to C9: cleanup by folder, then docs | builder / builder-lite | | queued (after C1) | | |
 
 ## Director, code review round 4 preparation (owner, 2026-11-06 interview; concept_code_review_2026.md approved)
 
