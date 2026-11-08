@@ -129,6 +129,22 @@ moved 10–25 ms on unchanged code, and the median of the old three still moved
 enough to cross ×1.2 about one run in four. S4 is the cheapest scenario to
 repeat (each run is a few seconds), so its other three numbers get the same 11.
 
+S4 empties the young generation (`gc({ type: 'minor' })`, one scavenge) before
+each of its four timed stages. A stage's first operation is the cold one and
+usually its worst (the first arrival, about 9 ms, always). Without it, a
+scavenge of the build's leftovers (5–10 ms) landed inside the first arrival in
+some processes and not others, and how often hung on how much the process had
+allocated before: code size, and even how many files `public/` holds, since
+Vite lists them all when the worker starts (a worktree's generated art
+counts). On 2026-11-08 one commit read a median worst arrival of 9 ms in one
+worktree and 15–17 ms in another, with identical work; every slow process had
+a scavenge inside arrival 0 and no fast one did. Two other versions were
+measured and rejected: a full collection (`heapMb`) before the arrivals only
+moved a ~1 ms scavenge into the refused or landing drops (inside their worst
+operation in 4 to 8 processes of 11), and a full collection before every stage made the later stages slower (the
+shrink's median 28 → 38 ms, the refused drops' worst 1.05 → 1.36 ms). The
+scavenge leaves those three as they were.
+
 ⚠ Timing is noisy: another program using the CPU moves these numbers. Take the
 baseline on a quiet machine, and when a compare fails, run it again before
 believing it. Even quiet, a p99 or a worst-of-50 can land just over ×1.2 on

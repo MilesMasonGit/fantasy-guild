@@ -5,6 +5,8 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The bench's worst pushing arrival stops depending on luck with the garbage collector** (bench only, nothing plays differently). S4 now empties the young generation (one scavenge) before each of its four timed stages (arrivals, refused drops, landing drops, the shrink). The first arrival, the cold one, is always the worst at about 9 ms; in some processes a scavenge of the build's leftovers landed inside it and added 5 to 10 ms, and how often depended on how much the process had allocated before, down to how many files `public/` holds (Vite lists them when the bench worker starts). The same commit read a median worst arrival of 9 ms in one worktree and 15 to 17 ms in another with identical work, which looked like a regression on the cleanup branches; with the collection both read about 9 ms. The work is unchanged.
+
 - **Bench instruments for the code review's measurements** (bench and tooling only, no change to the game): the memory soak takes a heap snapshot at the last hidden sample and compares the page task time and style passes with its baseline, `bench:soak -- --readable` soaks an unminified build, the game marks its boot steps (read by `bench:draw`), dev builds log each save's size and stringify time, and a new micro-bench times `Atlas.settle` and `worldView()`.
 
 - **A long catch-up no longer rebuilds what each hero carries on every tick** (engine speed;
