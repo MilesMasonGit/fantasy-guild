@@ -5,7 +5,6 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
-import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
@@ -50,7 +49,6 @@ beforeEach(() => {
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
-    InputAllocator.resetStarvationStats();
     GameState.state.heroes = [makeHero('hero_1'), makeHero('hero_2')];
     GameState.state.inventory.maxSlots = 50;
 });
@@ -82,8 +80,7 @@ function runShortage(woodPerTick, durationMs) {
         // question is whether the deep chain gets a fair share of the scarce
         // INPUT — so measure the wood each one actually consumed.
         shallowInput: shallowCompletions * 2,
-        deepInput: deepCompletions * 5,
-        starvation: InputAllocator.getStarvationStats()
+        deepInput: deepCompletions * 5
     };
 }
 
@@ -140,12 +137,6 @@ describe('⚠️ Risk 13 — does first-come allocation starve deep chains?', ()
         const result = runShortage(1, 120000);
         expect(result.shallowCompletions).toBeGreaterThan(0);
         expect(result.deepCompletions).toBeGreaterThan(0);
-    });
-
-    it('records starvation per Token type, so the cause is attributable', () => {
-        const result = runShortage(0.02, 60000);
-        const starved = Object.keys(result.starvation);
-        expect(starved.length).toBeGreaterThan(0);
     });
 });
 

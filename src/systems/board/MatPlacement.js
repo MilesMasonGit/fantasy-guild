@@ -1,7 +1,7 @@
 // where a Token may stand on the free playmat
 
 import { getTokenType, registryVersion, isLandmarkType } from '../../config/registries/tokenRegistry.js';
-import { artRadiusOf, matW, matH, LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
+import { artRadiusOf, matW, matH, clampToMat, LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import { distanceSq, nearRadius } from './nearby.js';
@@ -115,21 +115,8 @@ export function insideMat(typeId, point) {
  * whole mat units.
  */
 export function clampInside(typeId, point) {
-    const at = clampOnto(typeId, point);
+    const at = clampToMat(point, artRadiusOf(typeId));
     return { x: Math.round(at.x), y: Math.round(at.y) };
-}
-
-/** {@link clampInside} without the rounding — for the push's inner loop. */
-function clampOnto(typeId, point) {
-    const r = artRadiusOf(typeId);
-    const w = matW();
-    const h = matH();
-    // A Token wider than the mat cannot be fully inside it at all; the middle is the least wrong
-    // place for it. Defensive.
-    return {
-        x: w >= 2 * r ? Math.max(r, Math.min(w - r, point.x)) : w / 2,
-        y: h >= 2 * r ? Math.max(r, Math.min(h - r, point.y)) : h / 2
-    };
 }
 
 /** Whether a Token type carries any `Cannot` rule at all. */
@@ -718,7 +705,7 @@ function relax(typeId, at, excludeId, fixedIds) {
         for (const k of chain.touched) {
             const t = bodies[k];
             if (t.fixed || !t.pushed) continue;
-            const c = clampOnto(t.typeId, t);
+            const c = clampToMat(t, artRadiusOf(t.typeId));
             t.x = c.x;
             t.y = c.y;
         }

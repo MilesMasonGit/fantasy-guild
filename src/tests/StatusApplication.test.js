@@ -3,9 +3,9 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Flags from '../systems/board/Flags.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
-import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
@@ -129,7 +129,6 @@ beforeEach(() => {
     InventoryManager.init();
     SpriteLayer.init();
     TileModifiers.clearAll();
-    InputAllocator.resetStarvationStats();
     GameState.state.heroes = [makeHero('hero_1'), makeHero('hero_2')];
     GameState.state.inventory.maxSlots = 50;
 });
@@ -182,7 +181,7 @@ describe('A Token filter resolves to the heroes working those Tokens', () => {
         // directly above it in `BoardRunner.completeCycle`.)
         place(8, 'fixture_cook_fire');
         const token = place(9, 'fixture_shrimp_bed', 'hero_1');
-        Placement.recallHeroById('hero_1');
+        Flags.furl('hero_1');
 
         run(13000);
 

@@ -5,7 +5,6 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
-import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
@@ -155,7 +154,6 @@ beforeEach(() => {
     InventoryManager.init();
     SpriteLayer.init();
     TileModifiers.clearAll();
-    InputAllocator.resetStarvationStats();
     TriggerSystem.init();
     GameState.state.heroes = [makeHero('hero_1')];
     GameState.state.inventory.maxSlots = 50;

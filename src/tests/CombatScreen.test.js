@@ -12,6 +12,7 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Flags from '../systems/board/Flags.js';
 import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import * as LiveEffects from '../systems/effects/LiveEffects.js';
@@ -261,7 +262,7 @@ describe('the fight watch: this fight and the last one', () => {
         const { heroId } = buildFight();
         const stop = startFightWatch();
         runUntil(() => (fightsOf(heroId).current?.log.length || 0) > 3, 30);
-        Placement.recallHeroById(heroId);
+        Flags.furl(heroId);
         await Promise.resolve();
         expect(fightsOf(heroId).current).toBeNull();
         expect(fightsOf(heroId).last.outcome).toBe(OUTCOME.LEFT);

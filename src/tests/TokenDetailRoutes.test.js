@@ -151,7 +151,7 @@ describe('each MatToken detail field updates on its own event (CR3-304)', () => 
         await doing(() => Orders.orderAt('h1', P(600, 600)));
         const read = await probe(t);
         expect(read(t).heroId).toBe('h1');
-        await doing(() => Placement.recallHeroById('h1'));
+        await doing(() => Flags.furl('h1'));
         expect(BoardState.workerOf(t.id)).toBeNull();
         expect(read(t).heroId).toBeNull();
     });

@@ -7,7 +7,6 @@ import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
-import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as WorkCheck from '../systems/board/WorkCheck.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
@@ -63,7 +62,6 @@ beforeEach(() => {
     InventoryManager.init();
     SpriteLayer.init();
     TileModifiers.clearAll();
-    InputAllocator.resetStarvationStats();
     GameState.state.inventory.maxSlots = 50;
     GameState.state.heroes = [hero('h1', { forestry: 50, mining: 50, alchemy: 50, smithing: 50 })];
 });
@@ -104,7 +102,7 @@ describe('the runner and the chooser give the same answer', () => {
 });
 
 describe('the check is pure', () => {
-    it('publishes nothing and notes no starvation when a flag merely considers a Token', () => {
+    it('publishes nothing when a flag merely considers a Token', () => {
         const instance = put(TILE, 'fixture_consumer');
         const events = [];
         const offs = [BOARD_EVENTS.TILE_EVENT_ALERT, BOARD_EVENTS.ALERT_CHANGED]
@@ -114,6 +112,5 @@ describe('the check is pure', () => {
         } finally { offs.forEach(o => o?.()); }
 
         expect(events).toEqual([]);
-        expect(InputAllocator.getStarvationStats().fixture_consumer ?? 0).toBe(0);
     });
 });

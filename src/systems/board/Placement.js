@@ -92,9 +92,8 @@ export const CAMP_FIXED_IN_PLACE = 'This came with the Starter Camp, so it stays
 
 /** Check if a token cannot be removed from the playmat once placed. */
 export function isPermanentToken(typeId, instance) {
-    if (typeId === 'token_guild_hall' || instance?.typeId === 'token_guild_hall') return true;
-    const def = getTokenType(typeId || instance?.typeId);
-    return !!(def?.cannotLeaveBoard || def?.isGuildHall);
+    if (MatCap.isGuildHall({ typeId: typeId || instance?.typeId })) return true;
+    return !!getTokenType(typeId || instance?.typeId)?.cannotLeaveBoard;
 }
 
 /**
@@ -400,29 +399,4 @@ export function removePlacedToken(id) {
     markAdjacencyDirty([at]);
 
     return { success: true, idledHeroId: heroId };
-}
-
-/**
- * Take a hero's flag down and bring them to the Dock, by id.
- */
-export function recallHeroById(heroId) {
-    if (!heroId) return refuse('No hero');
-    const point = BoardState.displayPointOf(heroId);
-    if (!Flags.furl(heroId, 'recall')) return { success: true, heroId };
-
-    if (point) {
-        EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
-            kind: 'hero',
-            refId: heroId,
-            heroId,
-            quantity: 1,
-            x: point.x,
-            y: point.y,
-            destination: 'dock'
-        });
-    }
-
-    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'board_recall' });
-
-    return { success: true, heroId };
 }

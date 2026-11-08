@@ -3,6 +3,7 @@ import { sourceFiles, readSource, rel, setScanTimeout } from './fixtures/sourceS
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Flags from '../systems/board/Flags.js';
 import * as Orders from '../systems/board/Orders.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
@@ -112,7 +113,7 @@ describe('the worker seam answers from flags and claims', () => {
     it('recall clears all three answers', () => {
         const small = put('fixture_seam_small', A, 10);
         Orders.orderAt('hero_1', A);
-        Placement.recallHeroById('hero_1');
+        Flags.furl('hero_1');
 
         expect(BoardState.workerOf(small.id)).toBeNull();
         expect(BoardState.workTokenOf('hero_1')).toBeNull();

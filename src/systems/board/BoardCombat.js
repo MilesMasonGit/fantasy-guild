@@ -219,12 +219,6 @@ export function fightOfHero(heroId) {
     return null;
 }
 
-/** The bearer for the enemy `heroId` is fighting, or null. */
-export function enemyBearerOfHero(heroId) {
-    const fight = fightOfHero(heroId);
-    return fight ? enemyBearer(fight.instanceId, fight) : null;
-}
-
 /**
  * The fight a statement aimed at `the enemy` reaches, or null: what every verb resolves `opponent`
  * through.

@@ -16,10 +16,6 @@ import { pickWeighted } from './weightedPick.js';
 import { ALERT } from './boardEvents.js';
 import { logger } from '../../utils/Logger.js';
 
-// Re-exported for existing callers and tests; it lives in a leaf module so SpawnerSystem can use it
-// without importing this one.
-export { pickWeighted };
-
 /**
  * Everything on the mat that happens on a clock rather than a hero's work.
  *
@@ -71,20 +67,6 @@ export { pickWeighted };
 
 /** Most changes one Token may go through in one tick — a guard, not a design number. */
 export const MAX_CHANGES_PER_TICK = 64;
-
-/**
- * Why a change waits while a Token is in the player's hand ({@link Hand}): a change is a
- * transform, so the Token is replaced by a new instance with a new id. The drag is keyed by the old
- * id, so a Sapling that grew while carried would vanish from under the cursor and the drop would
- * find no Token.
- *
- * So a change that falls due while its Token is in the hand is held, exactly as a change with
- * nowhere to stand is: its clock stays full and it fires on the first tick after the Token is put
- * down, where it was put down. The clock keeps counting, so a moved Sapling is not set back. Only
- * the handlers that replace the Token wait ({@link HANDLERS} `replaces`); a spawner in the hand
- * still spawns.
- */
-export { setInHand, isInHand } from './Hand.js';
 
 /**
  * The roll cycle and chance a Token turns by: its own `turns` block, or, on a turned Token, the
@@ -222,7 +204,7 @@ function gatePaused(instance, needsNearby) {
  *
  * * `clock` — the key in `instance.clocks` it counts on;
  * * `replaces` — true when firing puts a new instance in the Token's place, so
- *   it waits while the Token is in the player's hand ({@link setInHand});
+ *   it waits while the Token is in the player's hand ({@link Hand.setInHand});
  * * `idleWhile(instance, def)` — optional: while true the clock is held at zero
  *   (a full enemy camp);
  * * `pausedWhile(instance, def)` — optional: while true the clock stands still

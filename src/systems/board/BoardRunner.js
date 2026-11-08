@@ -250,7 +250,6 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // once the cycle it paid for has actually produced.
     const chargePlan = Charges.planCycle(id, instance, io);
     if (!chargePlan.ok) {
-        InputAllocator.noteStarved(instance.typeId);
         setAlert(instance,ALERT.CHARGES);
         return;
     }
@@ -258,7 +257,6 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     if (!InputAllocator.consumeInputs(inputs)) {
         // Raced by another Token between the availability check and here.
         // Keep the progress and wait — the cycle is not lost, only delayed.
-        InputAllocator.noteStarved(instance.typeId);
         setAlert(instance,ALERT.INPUTS);
         return;
     }
@@ -635,7 +633,6 @@ export function tick(delta) {
         if (check.reason === ALERT.INPUTS) {
             // Waits, keeping whatever progress it had. There are no partial cycles: it does not run
             // slower, it runs later.
-            InputAllocator.noteStarved(instance.typeId);
             const startsNow = setAlert(instance, ALERT.INPUTS);
 
             const missingItem = check.inputCheck?.missing?.[0];
@@ -656,7 +653,6 @@ export function tick(delta) {
         // full cycle waits and says so, rather than counting down to a completion it will have to
         // abandon. Nothing is deducted by the check.
         if (check.reason === ALERT.CHARGES) {
-            InputAllocator.noteStarved(instance.typeId);
             if (setAlert(instance, ALERT.CHARGES)) EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
                 instanceId: id,
                 severity: 'yellow',

@@ -83,7 +83,7 @@ describe('Letting go of a fight', () => {
         place(10, 'fixture_enemy', 'hero_1');
         untilFighting(hero);
 
-        Placement.recallHeroById('hero_1');
+        Flags.furl('hero_1');
         run(100);
 
         expect(BoardCombat.getFight(idAt(10))).toBeNull();

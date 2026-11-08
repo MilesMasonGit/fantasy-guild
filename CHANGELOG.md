@@ -7,6 +7,7 @@ project's first tagged baseline — everything before it was untagged developmen
 
 - **Dead code removed from the world, Atlas and quests** (no change in play): the quest manager's callerless `abandonQuest`, the unused `sourceRect` on `claimQuest`, three unused re-exports, the Atlas's `reroll` (no screen has used it since the world map; the new-game world reroll is separate and stays), the budget's `ignored` list, the layout's `anywhereDry`, the Region rules' `installedSources` and several unimported exports. The world's materials memo is now kept once, not rebuilt on each call of `lookups()`.
 
+- **Dead code and duplicate copies removed from the board engine, nothing a player sees changes**: the per-type blocked-tick tally nothing read, the exports with no caller (`recallHeroById`, `loadLeft`, `minCentreGap`, `enemyBearerOfHero`, `isPurelyTriggered` and the `TimedChanges` re-exports), the second `isLandmark`, and the round-3 copies of the Hall id, `clampToMat`, the hero standing spot and `countMatches` now use the shared helpers.
 - **The CMS's economy simulator files moved into the CMS** (CMS and tools only): the twelve
   ledger files the game never runs (`balance`, `calibration`, `checks`, `economy`, `hall`, `pace`,
   `profiles`, `rates`, `settings`, `world`, `statementSlots`, `tempoBands`) moved to

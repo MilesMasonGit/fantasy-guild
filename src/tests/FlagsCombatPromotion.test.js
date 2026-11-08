@@ -257,7 +257,7 @@ describe('⭐ recall mid-fight (FP-43, G-4)', () => {
         fightAt('h1', 14);
         untilDamaged('h1');
 
-        Placement.recallHeroById('h1');
+        Flags.furl('h1');
 
         expect(BoardCombat.fightOfHero('h1')).toBeNull();
         expect(BoardCombat.getFight(idAt(14))).toBeNull();
