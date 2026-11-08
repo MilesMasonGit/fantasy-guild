@@ -59,6 +59,8 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
 
   const showSyncError = (err) => {
     console.error('Sync failed:', err);
+    // A refusal says why in words the author must read (a stale tab, the wrong branch); the button alone would only say "Sync Error".
+    if (err?.refused) window.alert(err.message);
     setSyncStatus('error');
     setTimeout(() => setSyncStatus('idle'), 4000);
   };

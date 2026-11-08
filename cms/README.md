@@ -44,7 +44,7 @@ with the same revision guard as the page, and runs the page's own code.
 | `pack check <pack.json>` | Will the CMS accept the change pack (`incoming/README.md`)? Lists the entries that conflict with the workspace. |
 | `pack apply <pack.json> [--yes]` | Applies the pack to the workspace as the review page's Finish does (`src/engine/packReview.js`) and moves it to `applied/` beside it with the review record, so the Changes page can undo it. A conflict refuses the whole pack unless `--yes` (the page's Apply anyway). |
 | `recalc [--all]` | Runs Recalculate (`src/engine/recalculate.js`) on the workspace, saves it, and prints the audit. |
-| `sync [--confirm-removals] [--no-commit]` | Recalculates, then writes `data/` exactly as Sync to Game does (`gameData.js`, shared with the page's route) and commits only the files it wrote. A Sync that would remove content the game has is refused until `--confirm-removals`. |
+| `sync [--confirm-removals] [--no-commit]` | Recalculates, then writes `data/` exactly as Sync to Game does (`gameData.js`, shared with the page's route) and commits only the files it wrote. A Sync that would remove content the game has is refused until `--confirm-removals` (the refusal also lists the entries it would change). Off `main` it warns and goes ahead; the page's Sync refuses there. |
 | `restore` | Rebuilds the workspace from `data/` and `cms/plan/plan.json` (Restore from Game); the old one is kept in Backups as `before-restore_<time>`. `npm run cms:restore` runs it. |
 
 Options on every command: `--workspace=<file>`, `--data=<dir>` (the plan then

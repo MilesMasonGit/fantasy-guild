@@ -5,6 +5,15 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The CMS refuses a Sync from a stale tab or off `main`, and says why** (CMS only): Sync to
+  Game now sends the workspace revision the tab holds, and a tab that missed a later save (another
+  tab, the command line) is refused with "This Sync was made from an out-of-date copy of the
+  workspace … Reload the page and Sync again", writing nothing. The page's Sync also refuses when
+  the project is not on `main`, naming the branch; the command line's `sync` warns instead and goes
+  ahead. When a Sync would remove content, the confirm panel now also lists the entries it would
+  overwrite with different content, beside the removed and added ones. The files are written to
+  temporary names first and all renamed at the end, so a failed write leaves `data/` as it was.
+  The files' format is unchanged.
 - **Dev panel: the "Lap star in the sky" button is gone** (dev only). It installed a hand-copied
   Swift Laps star for testing before the owner synced the real one; the tests now read the synced
   star from the data, and the copy is deleted.
