@@ -243,3 +243,4 @@ T-206 — Stale bench Chrome profiles and orphan processes — — — 2026-11-0
 T-208 — Flaky tests under full-suite load — 33e87e62 — 2026-11-06
 T-210 — Remove the description bridge — 0862280d — 2026-11-06
 T-341 — Loot collected while the page is hidden books no flight (its count shows at once); a batch of flights reads the board box once — 4581ad49 — 2026-11-07
+T-343 — One poll clock that pauses: the fifteen UI pollers but the held-arrow repeat share frameClock.onPoll, stopped with the drawing and run once on resume; the Upkeep badge and summary poll nothing and redraw only on a changed signature; TokenCard's ArtWindow measures once and on resize — perf/poll-clock — 2026-11-07

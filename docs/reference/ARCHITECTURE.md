@@ -154,8 +154,8 @@ progress, completion). `BOARD_EVENTS.PROGRESS` is published only every 3rd tick
 
 Other timers that are not the tick: the autosave `setInterval` (default 10 minutes,
 `src/systems/core/SaveManager.js:204`, `src/systems/core/SettingsManager.js:18`), the
-notifications fade timer (`src/systems/notifications/routing.js:54`), and 16 UI polling
-intervals in `src/ui` outside `ui/dev` (§5.4).
+notifications fade timer (`src/systems/notifications/routing.js:54`), and the UI's poll clock
+(`frameClock.onPoll`, one timer for every readout that re-reads the game on a clock, §5.4).
 
 ### 3.3 The event bus
 
@@ -377,15 +377,26 @@ its only entry, `TerrainSurface.js`, is imported only by three UI files (`Terrai
 `installDrawingPause` (`src/ui/drawingPause.js:16-30`) pauses on `document.hidden` or the
 desktop app's `fg-window-minimised` event (sent from `src-tauri/src/lib.rs:31-47`, because
 WebView2 is never told it is minimised). It calls `setDrawingPaused`
-(`frameClock.js:190-207`), which stops **only the three frame clocks** (`onFrame`, `onStep`,
-`onDue`). On resume each clock draws one frame, not the missed ones.
+(`frameClock.js`), which stops the three frame clocks (`onFrame`, `onStep`, `onDue`) and the
+poll clock (`onPoll`). On resume each frame clock draws one frame, not the missed ones, and every
+poller runs once at once, so the readouts are current.
+
+**The poll clock** (`onPoll(fn, everyMs)`): one `setTimeout` for whichever poller is due soonest,
+no animation frame; due times fall on a grid of each period (`Date.now()`), so pollers of one
+period run together. On it: `FlagLayer`'s tooltip (500 ms), `HeroBubbleLayer` (500 ms, while a
+moment or float is up), `IdlePlate` (250 ms), `PassiveProductionTooltip`, `TokenCard`'s clock
+(1 s, card open), `WorkPlateLayer` (open plate), `MatCapBadge`'s open summary,
+`FightPanelPopup`'s window check (1 s), `DockHeroFigure`'s status bubble (1 s, hovered),
+`ItemStubColumn`'s pinned and open stubs (1 s), `SlotSelectionModal` (30 s). A test
+(`PollClock.test.js`) refuses a new `setInterval` under `src/ui` outside dev tools and
+`ArrowScrollList`'s held-arrow repeat (it runs only while a button is held, and stops on blur).
+The Upkeep badge and summary poll nothing: they work out again on the events that can change what
+they show (`UpkeepSummaryPanel.MAT_EVENTS`; the badge not on Bank changes, which cannot move its
+total), and draw only when what they show changes.
 
 Not paused by it (read from code; whether WebView2 throttles them when minimised is
 **unverified**): the game tick (by design, `drawingPause.js:11-13`), CSS animations (§5.2),
-Web Animations already running, ParticleOverlay and camera glides (own rAF), and the UI's own
-`setInterval` pollers (16 outside `ui/dev`: e.g. `FlagLayer.jsx:262` 500 ms,
-`HeroBubbleLayer.jsx:201`, `TokenCard.jsx:462`, `WorkPlateLayer.jsx:206`,
-`MatCapBadge.jsx:236`, `ItemStubColumn.jsx:135,153` 1 s, `DockHeroFigure.jsx:380`).
+Web Animations already running, and ParticleOverlay and camera glides (own rAF).
 What reads `isDrawingPaused()`: the one-shot effect watchers (`matFx.watchMatFx`,
 `fightFloats.watchFightFloats`, `TokenHitArt`'s hit, cycle-blink and echo handlers, `tokenFx.later`)
 make nothing while paused, and `ParticleOverlay.spawnCollected` books no flight (the stub's count

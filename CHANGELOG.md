@@ -5,6 +5,15 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The game's readouts share one clock that rests while the window is hidden** (no change
+  while you watch): the tooltips, timers, bubbles, the open Token card, the stubs' live rates and
+  the fight-window check re-read the game on one shared timer instead of a dozen of their own,
+  and it stops while the page is in a background tab or the desktop app is minimised; coming back,
+  every readout is brought up to date at once. The Upkeep badge and its summary no longer poll:
+  they work out again only when something that changes them happens (the badge no longer on every
+  item into or out of the Bank, which cannot change its total), and redraw only when what they
+  show has changed. The Token card's art no longer measures itself every second.
+
 - **A hidden page stops piling up effects** (no change while you watch): with the game in a
   background tab, the numbers, sparks, blinks, hit flashes and knockout puffs the fights and
   Tokens would have shown are no longer made and left waiting, so nothing builds up in memory and

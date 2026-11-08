@@ -6,6 +6,7 @@ import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { passiveHoverLines } from '../drawer/lifecycleLines.js';
 import { FloatingTip } from '../base/Tooltip.jsx';
+import { onPoll } from './frameClock.js';
 
 /** How often the tooltip re-reads the timer while shown. */
 export const PASSIVE_TOOLTIP_REFRESH_MS = 1000;
@@ -43,8 +44,7 @@ export const PassiveProductionTooltip = ({ instanceId, readLines = livePassiveLi
     const { isDragging: anyDrag } = useActiveDrag();
     const [, refresh] = useState(0);
     useEffect(() => {
-        const timer = setInterval(() => refresh(n => n + 1), PASSIVE_TOOLTIP_REFRESH_MS);
-        return () => clearInterval(timer);
+        return onPoll(() => refresh(n => n + 1), PASSIVE_TOOLTIP_REFRESH_MS);
     }, []);
     if (anyDrag) return null;
 

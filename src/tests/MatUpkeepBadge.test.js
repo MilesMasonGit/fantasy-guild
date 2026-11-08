@@ -11,6 +11,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
@@ -19,6 +20,7 @@ import {
     MatUpkeepBadge, totalPerMinute, formatTotal, POPOVER_WIDTH
 } from '../ui/components/board/MatUpkeepBadge.jsx';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { UpkeepSummaryPanel, summarySignature, REFRESH_EVENTS } from '../ui/components/drawer/UpkeepSummaryPanel.jsx';
 
 /**
  * Token Lifecycle feedback **B2.2** — the mat top bar's Upkeep badge: the
@@ -158,12 +160,49 @@ describe('⭐ MatUpkeepBadge (B2.2, FB-29)', () => {
         expect(badgeText(container)).toBe('Upkeep 3/min');
     });
 
-    it('a slow poll catches changes no event announces', () => {
+    it('⭐ nothing polls, and a Bank change works nothing out; a mat change does', () => {
         vi.useFakeTimers();
+        let reads = 0;
         let total = 0;
-        const { container } = render(React.createElement(MatUpkeepBadge, { readTotal: () => total }));
+        const { container } = render(React.createElement(MatUpkeepBadge, { readTotal: () => { reads++; return total; } }));
+        const before = reads;
         total = 2;
-        act(() => { vi.advanceTimersByTime(2000); });
+        act(() => { vi.advanceTimersByTime(60000); });
+        act(() => { EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, {}); });
+        expect(reads).toBe(before);
+        expect(badgeText(container)).toBe('Upkeep 0/min');
+
+        for (const event of [BOARD_EVENTS.SPAWNER_ALERT_CHANGED, ENGINE_EVENTS.ATLAS_CHANGED]) {
+            total += 1;
+            act(() => { EventBus.publish(event, {}); });
+            expect(badgeText(container)).toBe(`Upkeep ${total}/min`);
+        }
+        tileChanged('x');
+        expect(badgeText(container)).toBe('Upkeep 4/min');
+    });
+
+    it('⚠️ a Bank change cannot move the total: a spawner short of its item still counts', () => {
+        const forest = placeAt('fixture_ub_forest', 500, 500);
+        InventoryManager.addItem(SEED, 50);
+        const paying = computeUpkeepSummary();
+        InventoryManager.removeItem(SEED, 50);
+        const short = computeUpkeepSummary();
+        expect(short.items.find(r => r.itemId === SEED).waiting.map(w => w.instanceId)).toEqual([forest.id]);
+        expect(totalPerMinute(short)).toBe(totalPerMinute(paying));
+    });
+
+    it('a total that moves only by float noise is not drawn again', () => {
+        let total = 1.33;
+        let commits = 0;
+        const { container } = render(React.createElement(React.Profiler, { id: 'badge', onRender: () => { commits++; } },
+            React.createElement(MatUpkeepBadge, { readTotal: () => total })));
+        const before = commits;
+        total = 4 / 3;
+        tileChanged('x');
+        expect(commits).toBe(before);
+        total = 2;
+        tileChanged('x');
+        expect(commits).toBe(before + 1);
         expect(badgeText(container)).toBe('Upkeep 2/min');
     });
 
@@ -231,6 +270,52 @@ describe('⭐ MatUpkeepBadge (B2.2, FB-29)', () => {
         fireEvent.mouseLeave(popover());
         act(() => { vi.advanceTimersByTime(500); });
         expect(popover()).toBeNull();
+    });
+});
+
+describe('⭐ UpkeepSummaryPanel: drawn again only when what it shows changes', () => {
+    const renderPanel = () => {
+        const counter = { commits: 0 };
+        const view = render(React.createElement(React.Profiler, { id: 'panel', onRender: () => { counter.commits++; } },
+            React.createElement(UpkeepSummaryPanel)));
+        return { ...view, counter };
+    };
+
+    it('summarySignature: equal for the same summary worked out twice, different when a shown number moves', () => {
+        InventoryManager.addItem(SEED, 50);
+        placeAt('fixture_ub_forest', 500, 500);
+        const a = computeUpkeepSummary();
+        expect(summarySignature(computeUpkeepSummary())).toBe(summarySignature(a));
+        InventoryManager.addItem(SEED, 1);
+        expect(summarySignature(computeUpkeepSummary())).not.toBe(summarySignature(a));
+    });
+
+    it('a Bank change of an item it does not list draws nothing; one it lists draws once', () => {
+        InventoryManager.addItem(SEED, 50);
+        placeAt('fixture_ub_forest', 500, 500);
+        const { container, counter } = renderPanel();
+        const before = counter.commits;
+        act(() => { InventoryManager.addItem(ORE, 5); });
+        expect(counter.commits).toBe(before);
+        act(() => { InventoryManager.addItem(SEED, 5); });
+        expect(counter.commits).toBe(before + 1);
+        expect(container.textContent).toContain('Bank 55');
+    });
+
+    it('nothing polls: with no event, the panel is not worked out again', () => {
+        vi.useFakeTimers();
+        placeAt('fixture_ub_forest', 500, 500);
+        const { counter } = renderPanel();
+        const before = counter.commits;
+        act(() => { vi.advanceTimersByTime(60000); });
+        expect(counter.commits).toBe(before);
+    });
+
+    it('hears the Bank and every mat event that can change what it shows', () => {
+        expect(REFRESH_EVENTS).toEqual(expect.arrayContaining([
+            ENGINE_EVENTS.INVENTORY_UPDATED, BOARD_EVENTS.SPAWNER_ALERT_CHANGED, BOARD_EVENTS.TILE_CHANGED,
+            BOARD_EVENTS.TOKEN_PLACED, BOARD_EVENTS.TOKEN_DEPLETED, ENGINE_EVENTS.ATLAS_CHANGED, ENGINE_EVENTS.GAME_LOADED
+        ]));
     });
 });
 

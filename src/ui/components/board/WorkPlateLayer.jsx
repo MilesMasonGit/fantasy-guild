@@ -19,6 +19,7 @@ import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { skillArt } from '../base/SkillIcon.jsx';
 import { useMatSize } from '../../hooks/useMatSize.js';
+import { onPoll } from './frameClock.js';
 
 const PIXELATED = Object.freeze({ imageRendering: 'pixelated' });
 
@@ -203,8 +204,7 @@ const WorkPlate = memo(function WorkPlate({ tokenId, heroId, x, y, typeId, open,
     useEffect(() => {
         if (!open) return undefined;
         setNow(performance.now());
-        const timer = setInterval(() => setNow(performance.now()), TIMER_MS);
-        return () => clearInterval(timer);
+        return onPoll(() => setNow(performance.now()), TIMER_MS);
     }, [open]);
 
     const press = useCallback((e) => {

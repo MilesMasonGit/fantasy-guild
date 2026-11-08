@@ -6,6 +6,7 @@ import {
     useFightWindows, openFightWindows, fightWindows
 } from './fightPanelStore.js';
 import { startFightWatch, reconcile, adopt } from './fightWatch.js';
+import { onPoll } from '../board/frameClock.js';
 
 /** Closest a window comes to the screen's edge, and its gap from the button it opened from. */
 const MARGIN = 12;
@@ -140,10 +141,9 @@ export const FightPanelPopup = ({ onOpened = null }) => {
     const watched = all.length > 0;
     useEffect(() => {
         if (!watched) return undefined;
-        const timer = setInterval(() => {
+        return onPoll(() => {
             for (const w of fightWindows()) if (!reconcile(w.heroId)) adopt(w.heroId);
         }, WINDOW_CHECK_MS);
-        return () => clearInterval(timer);
     }, [watched]);
 
     // One Escape closes the top window; a window brought to the top is the top layer again.

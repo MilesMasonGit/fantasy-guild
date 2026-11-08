@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
-import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { computeUpkeepSummary } from '../../../systems/board/UpkeepSummary.js';
-import { UpkeepSummaryPanel, REFRESH_EVENTS, POLL_MS } from '../drawer/UpkeepSummaryPanel.jsx';
+import { UpkeepSummaryPanel, MAT_EVENTS } from '../drawer/UpkeepSummaryPanel.jsx';
 import { CAP_EVENTS } from './MatCapBadge.jsx';
 import { placeUnder } from './tooltipPlacement.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
@@ -12,16 +11,14 @@ import { TOP_BAR_ICON, TopBarIcon } from './MatTopBar.jsx';
 import { useHoverOpen } from '../../hooks/useHoverOpen.js';
 
 /**
- * What changes the badge's total: the Upkeep Summary's own events, the Token cap badge's (a
- * Token placed, spawned, lifted or run dry, a load), and a spawner starting or stopping
- * waiting. Spawner clocks move without an event, so the badge also polls every {@link POLL_MS}
- * like the panel.
+ * What changes the badge's total: a Token placed, spawned, turned, lifted or run dry, a spawner
+ * starting or stopping waiting, a camp waking or sleeping, a load (the summary's
+ * {@link MAT_EVENTS}, with the cap badge's). ⚠️ Not the Bank: a spawner short of an item still
+ * counts (it is waiting to pay), a rule's cost counts paid or not, and a spawner idle for any
+ * other reason (at cap, mat full, no room, asleep) is announced by one of these. So a Bank change,
+ * several a second on a busy mat, works nothing out, and nothing polls.
  */
-export const UPKEEP_EVENTS = Object.freeze([...new Set([
-    ...REFRESH_EVENTS,
-    ...CAP_EVENTS,
-    BOARD_EVENTS.SPAWNER_ALERT_CHANGED
-])]);
+export const UPKEEP_EVENTS = Object.freeze([...new Set([...MAT_EVENTS, ...CAP_EVENTS])]);
 
 /** The popover's width in px, fixed so `placeUnder` can keep it on screen before it is measured. */
 export const POPOVER_WIDTH = 300;
@@ -79,16 +76,16 @@ export const MatUpkeepPopover = ({ anchor, onMouseEnter, onMouseLeave }) => {
  * @param {{ readTotal?: () => number }} props  `readTotal` for tests
  */
 export const MatUpkeepBadge = ({ readTotal = liveUpkeepTotal }) => {
-    const [total, setTotal] = useState(() => readTotal());
+    // The text it shows, not the number: a total that moves by float noise is not drawn again.
+    const [text, setText] = useState(() => formatTotal(readTotal()));
     const { open, show, hide } = useHoverOpen();
     const ref = useRef(null);
 
     useEffect(() => {
-        const refresh = () => setTotal(readTotal());
+        const refresh = () => setText(formatTotal(readTotal()));
         refresh();
         const unsubs = UPKEEP_EVENTS.map(e => EventBus.subscribe(e, refresh, UI_LISTENER));
-        const timer = setInterval(refresh, POLL_MS);
-        return () => { unsubs.forEach(u => u?.()); clearInterval(timer); };
+        return () => unsubs.forEach(u => u?.());
     }, [readTotal]);
 
     return (
@@ -100,7 +97,7 @@ export const MatUpkeepBadge = ({ readTotal = liveUpkeepTotal }) => {
                 name="Upkeep"
                 title={null}
                 icon={<TopBarIcon src={TOP_BAR_ICON.UPKEEP} />}
-                countText={<span data-mat-upkeep-count>{formatTotal(total)}/min</span>}
+                countText={<span data-mat-upkeep-count>{text}/min</span>}
                 onMouseEnter={show}
                 onMouseLeave={hide}
                 className="whitespace-nowrap cursor-default"

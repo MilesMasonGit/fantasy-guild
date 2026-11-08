@@ -7,12 +7,40 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 
 /**
- * Events after which the summary is worked out again (the top bar's Upkeep badge hears these
- * too).
+ * What can change what the summary shows, besides the Bank: a Token placed, moved, turned, run dry
+ * or lifted (the mat and which spawners count), a spawner starting or stopping waiting (mat full,
+ * no room), an enemy camp waking or sleeping with the arrival (`ATLAS_CHANGED`), a load, a reset,
+ * a travel. ⚠️ Spawner clocks do not enter the summary, so nothing polls it: one of these events
+ * comes with every change it can show, with one exception. A rule's upkeep lapsing (the Bank
+ * short when its charge falls due) has no event of its own, so a "Waiting" line can appear only at
+ * the next one of these, which on a working mat is the next item in or out of the Bank.
  */
-export const REFRESH_EVENTS = [ENGINE_EVENTS.INVENTORY_UPDATED, BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED];
-/** Spawner clocks and statement lapses move without an event; a slow poll catches them. */
-export const POLL_MS = 2000;
+export const MAT_EVENTS = Object.freeze([
+    BOARD_EVENTS.TILE_CHANGED,
+    BOARD_EVENTS.TOKEN_PLACED,
+    BOARD_EVENTS.TOKEN_DEPLETED,
+    BOARD_EVENTS.SPAWNER_ALERT_CHANGED,
+    ENGINE_EVENTS.GUILD_UPGRADES_UPDATED,
+    ENGINE_EVENTS.ATLAS_CHANGED,
+    ENGINE_EVENTS.BOARD_SWAPPED,
+    ENGINE_EVENTS.GAME_RESET,
+    ENGINE_EVENTS.GAME_LOADED
+]);
+
+/** Events after which the summary is worked out again: {@link MAT_EVENTS} and every Bank change. */
+export const REFRESH_EVENTS = Object.freeze([ENGINE_EVENTS.INVENTORY_UPDATED, ...MAT_EVENTS]);
+
+/**
+ * Everything the panel draws from a summary, as one string: two summaries with the same signature
+ * draw the same panel, so a recompute that changed nothing visible is not drawn again.
+ */
+export function summarySignature(summary) {
+    return JSON.stringify((summary?.items || []).map(row => [
+        row.itemId, row.name, formatRate(row.perMinute), row.bank, row.onMat, formatRunsOut(row.runsOutMs),
+        row.consumers.map(c => [c.name, formatRate(c.perMinute), c.source]),
+        row.waiting.map(w => w.name)
+    ]));
+}
 
 /**
  * The Upkeep Summary: only what consumes. One item bar per item with its items per minute, and
@@ -27,10 +55,13 @@ export const UpkeepSummaryPanel = ({ className = 'h-full' } = {}) => {
     const [summary, setSummary] = useState(() => computeUpkeepSummary());
 
     useEffect(() => {
-        const refresh = () => setSummary(computeUpkeepSummary());
+        const refresh = () => {
+            const next = computeUpkeepSummary();
+            const sig = summarySignature(next);
+            setSummary(prev => (summarySignature(prev) === sig ? prev : next));
+        };
         const unsubs = REFRESH_EVENTS.map(e => EventBus.subscribe(e, refresh, UI_LISTENER));
-        const timer = setInterval(refresh, POLL_MS);
-        return () => { unsubs.forEach(u => u()); clearInterval(timer); };
+        return () => unsubs.forEach(u => u());
     }, []);
 
     const { items } = summary;
