@@ -16,6 +16,8 @@ import { itemTintName } from '../../base/itemTint.js';
 import { clearOfFight } from '../healthBar.js';
 import * as BoardCombat from '../../../../systems/board/BoardCombat.js';
 import * as HeroManager from '../../../../systems/hero/HeroManager.js';
+import { isDrawingPaused } from '../frameClock.js';
+import { whenOver } from './oneShot.js';
 
 /**
  * The mat's effects that stand on the mat rather than on one Token's art: numbers rising off a
@@ -54,9 +56,7 @@ export function playAt(el, x, y, keyframes, duration, delay = 0) {
     el.style.willChange = 'contents';
     host.appendChild(el);
     const anim = el.animate(keyframes, { duration, delay, fill: 'none' });
-    const done = () => el.remove();
-    anim.onfinish = done;
-    anim.oncancel = done;
+    whenOver(anim, delay + duration, () => el.remove());
     return anim;
 }
 
@@ -385,28 +385,30 @@ export function usedBubble(heroId, itemId, text) {
  * numbers are `fightFloats.js`'), a hero's green flash when food heals them in
  * a fight, the "used" bubble when a hero eats, drinks or drinks an elixir, the knockout when a
  * fight is won.
+ * ⚠️ None while drawing is paused (a hidden window): it draws no frames, so each would stay on the
+ * page until it came back, and then all end at once.
  * @returns {() => void} unsubscribe
  */
 export function watchMatFx() {
     const offs = [
         EventBus.subscribe(BOARD_EVENTS.EFFECT_FIRED, (p) => {
-            if (!p?.instanceId || !isDrawn('matFx')) return;
+            if (!p?.instanceId || !isDrawn('matFx') || isDrawingPaused()) return;
             const from = p.fromTokenId && p.fromTokenId !== p.instanceId ? p.fromTokenId : null;
             if (from) spark(from, p.instanceId);
             const n = Number(p.amount);
             if (n > 0) floatNumber(p.instanceId, `+${n}`, 'gain', { delay: from ? SPARK_MS : 0 });
         }, UI_LISTENER),
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATE, (p) => {
-            if (p?.heroId && Number(p.healed) > 0 && isDrawn('matFx')) heroFlash(p.heroId, 'green');
+            if (p?.heroId && Number(p.healed) > 0 && isDrawn('matFx') && !isDrawingPaused()) heroFlash(p.heroId, 'green');
         }, UI_LISTENER),
         // ⚠️ A UI listener, so a catch-up's meals and elixirs (a quiet bus) draw nothing.
         EventBus.subscribe(ENGINE_EVENTS.HERO_CONSUMED, (p) => {
-            if (!p?.heroId || !isDrawn('matFx')) return;
+            if (!p?.heroId || !isDrawn('matFx') || isDrawingPaused()) return;
             const text = usedBubbleText(p);
             if (text) usedBubble(p.heroId, p.itemId, text);
         }, UI_LISTENER),
         EventBus.subscribe(BOARD_EVENTS.COMBAT_RESOLVED, (p) => {
-            if (p?.outcome !== 'victory' || !p.instanceId || !isDrawn('matFx')) return;
+            if (p?.outcome !== 'victory' || !p.instanceId || !isDrawn('matFx') || isDrawingPaused()) return;
             const t = BoardState.getTokenById(p.instanceId);
             const leaving = t && t.usesRemaining != null && t.usesRemaining <= 0;
             if (!(leaving && knockoutGhost(p.instanceId))) knockoutInPlace(p.instanceId);

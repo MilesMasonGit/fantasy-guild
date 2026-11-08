@@ -88,11 +88,16 @@ export function isWorkspaceFile(value) {
     return isObject(value) && value.format === WORKSPACE_FORMAT && isObject(value.workspace);
 }
 
-/** Write through a temporary file and a rename, so a crash mid-write never leaves half a workspace. */
-function writeAtomically(file, text) {
+/** The first half of `writeAtomically`: the text in a temporary file beside `file`. Returns the temporary file's path. */
+export function writeTemp(file, text) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     const temp = `${file}.${process.pid}.tmp`;
     fs.writeFileSync(temp, text, 'utf8');
+    return temp;
+}
+
+/** The second half: the temporary file renamed over `file`. */
+export function replaceWithTemp(temp, file, text) {
     try {
         fs.renameSync(temp, file);
     } catch (err) {
@@ -101,6 +106,11 @@ function writeAtomically(file, text) {
         try { fs.unlinkSync(temp); } catch { /* already gone */ }
         if (!fs.existsSync(file)) throw err;
     }
+}
+
+/** Write through a temporary file and a rename, so a crash mid-write never leaves half a workspace. */
+export function writeAtomically(file, text) {
+    replaceWithTemp(writeTemp(file, text), file, text);
 }
 
 /** `2026-11-06T22-40-00-123Z`: sorts by time and survives the backup route's name filter. */

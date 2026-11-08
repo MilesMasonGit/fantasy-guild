@@ -1039,8 +1039,8 @@ function rateOf(book, target = {}, setup = {}) {
         note(EFFECT_TYPES.BONUS_DROP, [grant.factorId]);
     }
 
-    // XP: the cycle's own, widened by XP Bonus through the floor (`BoardRunner`), then the hero's own
-    // multiplier in `SkillSystem.addXP`, which holds no XP Bonus (only fight axes register on a hero).
+    // XP: the cycle's own, widened by XP Bonus through the floor (`BoardRunner`), then rounded and
+    // held at 1 or more as `SkillSystem.addXP` grants it (it applies no bonus of its own).
     const baseXp = Number(io.xp) || 0;
     const xb = resolve(EFFECT_TYPES.XP_BONUS, baseXp, category);
     note(EFFECT_TYPES.XP_BONUS, xb.used);

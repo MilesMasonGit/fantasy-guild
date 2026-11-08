@@ -817,6 +817,10 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
               files: parsed?.files,
               plan: parsed?.plan ?? null,
               confirmRemovals: parsed?.confirmRemovals === true,
+              // A Sync built from a tab whose workspace revision is older than the disk's is refused.
+              baseRevision: Number.isInteger(parsed?.baseRevision) ? parsed.baseRevision : null,
+              workspaceFile,
+              branchRule: 'refuse',
               dataRoot,
               planRoot,
               // ⚠️ Committed only when the folders are the project's own: a sandbox or test folder is outside its git.

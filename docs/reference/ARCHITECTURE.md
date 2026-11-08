@@ -386,7 +386,11 @@ Web Animations already running, ParticleOverlay and camera glides (own rAF), and
 `setInterval` pollers (16 outside `ui/dev`: e.g. `FlagLayer.jsx:262` 500 ms,
 `HeroBubbleLayer.jsx:201`, `TokenCard.jsx:462`, `WorkPlateLayer.jsx:206`,
 `MatCapBadge.jsx:236`, `ItemStubColumn.jsx:135,153` 1 s, `DockHeroFigure.jsx:380`).
-`isDrawingPaused()` has no caller in game code.
+What reads `isDrawingPaused()`: the one-shot effect watchers (`matFx.watchMatFx`,
+`fightFloats.watchFightFloats`, `TokenHitArt`'s hit, cycle-blink and echo handlers, `tokenFx.later`)
+make nothing while paused, and `ParticleOverlay.spawnCollected` books no flight (the stub's count
+shows at once). As a net under them, `playAt` and `playIn` (`fx/oneShot.js` `whenOver`) also take
+an effect away by a timer a second after its end, since a hidden page never finishes an animation.
 
 **Every frame, always**: nothing in a production build. In dev and perf-with-Debug builds the
 `FPSCounter` runs its own `requestAnimationFrame` loop and a React commit each second, unless
@@ -573,5 +577,5 @@ For the doc audit; nothing below was edited.
 10. `src/main.jsx:2` "Optimized via Auditor Persona": noise.
 11. Commits per tick (§3.4) were last measured 2026-10-13; `PERFORMANCE.md` itself was flagged
     out of date by the round-3 review (§2.E there), not re-checked here.
-12. `src/ui/components/board/frameClock.js`: `onFrame` and `isDrawingPaused` have no game
-    callers (tests only), though the header presents `onFrame` as one of the mat's three clocks.
+12. `src/ui/components/board/frameClock.js`: `onFrame` has no game callers (tests only), though
+    the header presents it as one of the mat's three clocks.

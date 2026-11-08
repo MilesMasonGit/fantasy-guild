@@ -31,6 +31,8 @@ import { FX_FRAME_MS } from '../ui/components/board/fx/pixelSteps.js';
 import { setSpriteFxManifest, assetKey } from '../ui/utils/spriteFx.js';
 import { tokenSpritePath } from '../config/registries/tokenRegistry.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
+import { setDrawingPaused } from '../ui/components/board/frameClock.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -333,6 +335,32 @@ describe('TokenHitArt', () => {
             expect(anim.calls).toHaveLength(1);
         } finally {
             anim.restore();
+        }
+    });
+    it('draws no hit, cycle blink or echo while drawing is paused (a hidden window), and does again after', () => {
+        setSpriteFxManifest({ sprites: { [SPRITE_KEY]: { w: 64, h: 64, outlined: true, hash: 'x' } } });
+        const anim = stubAnimate();
+        const art = () => h('span', null, h('span', null, h('img', { src: `/${SPRITE_KEY}`, style: { width: 128, height: 128 } })));
+        try {
+            vi.spyOn(BoardState, 'heroBodyOf').mockReturnValue({ x: 700, side: 1 });
+            mount(h(TokenHitArt, { instanceId: 'enemy_1', skill: 'combat', heroId: 'hero_1', active: true, tokenX: 600 }, h('span')));
+            mount(h(TokenHitArt, { instanceId: 'tree_1', skill: 'forestry', heroId: 'hero_1', active: false, tokenX: 300 }, art()));
+            const all = () => {
+                act(() => EventBus.publish(COMBAT_ATTACK_EVENT, { instanceId: 'enemy_1', heroId: 'hero_1', hit: true }));
+                act(() => EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: 'tree_1', heroId: 'hero_1' }));
+                act(() => EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: 'tree_1' }));
+            };
+            setDrawingPaused(true);
+            all();
+            expect(anim.calls).toHaveLength(0);
+            setDrawingPaused(false);
+            all();
+            // The knockback, the blink's ring and the echo's four rings.
+            expect(anim.calls).toHaveLength(6);
+        } finally {
+            setDrawingPaused(false);
+            anim.restore();
+            setSpriteFxManifest(null);
         }
     });
 });

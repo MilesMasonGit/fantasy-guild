@@ -1,6 +1,6 @@
-// the XP floor a cycle's award passes through
+// the XP floor a cycle's or a kill's award passes through
 
-/** Pure: the board (`BoardRunner`, `SkillSystem.addXP`) and the progression ledger's rate calculator share it. */
+/** Pure: work cycles (`BoardRunner`), kills (`CombatResolutionProcessor`) and the progression ledger's rate calculator share it. */
 
 // Below this a bonus is float noise from summed percentages (+10% and -10%), not a real bonus.
 const XP_BONUS_EPSILON = 1e-9;
