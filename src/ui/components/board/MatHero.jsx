@@ -8,11 +8,15 @@ import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, PixelArt } from '../base/Tok
 import { AnimatedHeroSprite } from './AnimatedHeroSprite.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 
-const NO_POINTER = Object.freeze({ pointerEvents: 'none' });
-
 /** A limping hero: drained of colour, a touch darker, and a slower walk cycle. */
 const LIMP_FILTER = 'grayscale(0.7) brightness(0.8) sepia(0.25)';
 const LIMP_FRAME_MS = 250;
+/**
+ * The art's box. ⚠️ `will-change: contents`, so the limp filter's fade runs on the main thread: on
+ * the compositor it drew the hero, and everything drawn over it, on layers of their own, resampled.
+ */
+const ART_STYLE = Object.freeze({ pointerEvents: 'none', willChange: 'contents' });
+const LIMP_ART_STYLE = Object.freeze({ ...ART_STYLE, filter: LIMP_FILTER });
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { isElementOpaqueAtPoint, onFigurePart } from '../../utils/alphaHitTest.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
@@ -304,7 +308,7 @@ const MatHeroBody = memo(function MatHeroBody({
                     className="w-full h-full flex items-center justify-center transition-[filter] duration-150"
                     // The art is wider than the hero's box and takes no pointer: a press beside
                     // the figure reaches the flag or Token behind it.
-                    style={limp ? { filter: LIMP_FILTER, pointerEvents: 'none' } : NO_POINTER}
+                    style={limp ? LIMP_ART_STYLE : ART_STYLE}
                 >
                     {animArt ? (
                         <AnimatedHeroSprite
@@ -320,12 +324,14 @@ const MatHeroBody = memo(function MatHeroBody({
                             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                         />
                     ) : (
+                        // ⚠️ The flip has no transition: one squeezed the art through every width
+                        // in between, resampled soft.
                         <PixelArt
                             src={staticArt}
                             alt={name || 'Hero'}
                             size={artPx}
                             outline={outline}
-                            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-transform duration-200"
+                            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                             style={{ transform: facingLeft ? 'scaleX(-1)' : 'none' }}
                         />
                     )}

@@ -172,17 +172,28 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
     const shadow = (lifted || hovering) ? shadowLayer(src, size, fit) : null;
     const ring = outline ? outlineLayer(src, size, outline) : null;
     const artRef = useRef(null);
-    useLayoutEffect(() => (hovering ? startBob(artRef.current) : undefined), [hovering]);
+    const bobUnit = boardScaleAt(fit);
+    useLayoutEffect(() => (hovering ? startBob(artRef.current, bobUnit) : undefined), [hovering, bobUnit]);
 
-    // `lifted` is a held object: raised by a fixed transform. `hovering` is a floating one:
-    // raised by its bob (`lootBob.js`) instead. Either way the shadow rises with the art, always
-    // 2 art pixels down-right of it.
+    // `lifted` is a held object: raised by a fixed transform, and its shadow rises with it, 2 art
+    // pixels down-right of the art. `hovering` is a floating one: raised by its bob (`lootBob.js`)
+    // while its shadow stays on the ground, 2 art pixels down-right of where the art rests.
+    // ⚠️ The ground shadow is placed by `translate`, as the art is moved by a transform: placed by
+    // left/top, Chrome snaps it to whole mat units first and it lands a screen pixel off the art.
+    // `translate`, not `transform`, so the loot's hop (`lootArc.js`) can move it without undoing it.
     return (
         <span
             className={cn('relative inline-block pointer-events-none select-none', className)}
             style={{ width: size, height: size, ...style }}
             data-sprite-outline={outline || undefined}
         >
+            {shadow && hovering && (
+                <span
+                    aria-hidden="true"
+                    data-sprite-shadow="true"
+                    style={{ ...layerStyle(shadow.url, 0, 0, size, size), translate: `${shadow.offset}px ${shadow.offset}px` }}
+                />
+            )}
             <span
                 ref={artRef}
                 className={cn('absolute left-0 top-0', hovering && 'gi-sprite-hover')}
@@ -192,7 +203,7 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
                     transform: lifted ? `translateY(-${LIFT_OFFSET_PX}px)` : undefined
                 }}
             >
-                {shadow && (
+                {shadow && !hovering && (
                     <span
                         aria-hidden="true"
                         data-sprite-shadow="true"

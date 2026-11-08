@@ -109,12 +109,22 @@ describe('a dragged Token and floating loot cast the hard shadow', () => {
         expect(container.querySelector('[data-sprite-shadow]').style.backgroundImage).toContain(`/sil/${key}`);
     });
 
-    it('floating loot: shadow 2 art px away (32 px art at 64 px: 4 px), and the bob moves art and shadow together', () => {
+    it('floating loot: shadow 2 art px away (32 px art at 64 px: 4 px), on the ground while the art bobs (owner, 2026-11-08)', () => {
         const { container } = render(h(PixelArt, { src: ITEM_SRC, size: 64, hovering: true }));
         const sil = container.querySelector('[data-sprite-shadow]');
-        expect([sil.style.left, sil.style.top]).toEqual(['4px', '4px']);
-        expect(sil.parentElement.className).toContain('gi-sprite-hover');
-        expect(container.querySelector('img').parentElement).toBe(sil.parentElement);
+        // Placed by `translate`, as the art is moved by a transform, so both land on the same pixels.
+        expect([sil.style.left, sil.style.top, sil.style.translate]).toEqual(['0px', '0px', '4px 4px']);
+        expect(sil.parentElement.className).not.toContain('gi-sprite-hover');
+        expect(container.querySelector('img').parentElement.className).toContain('gi-sprite-hover');
+        expect(container.querySelector('img').parentElement.contains(sil)).toBe(false);
+    });
+
+    it('floating loot inside the mat: the ground shadow is whole screen pixels too, 2 art px at the art step', () => {
+        // Fit 0.83: the item is drawn 2× (64 px on screen, 77.1 u); 4 screen px is 4.82 u.
+        const { container } = render(withFit(0.83, h(PixelArt, { src: ITEM_SRC, size: 64 / 0.83, hovering: true })));
+        const [x, y] = container.querySelector('[data-sprite-shadow]').style.translate.split(' ').map(parseFloat);
+        expect(x * 0.83).toBeCloseTo(4, 9);
+        expect(y * 0.83).toBeCloseTo(4, 9);
     });
 
     it('inside the mat, offsets are whole SCREEN pixels: at fit 0.5 a 256 u sprite is 128 px, so 4 px = 8 u', () => {

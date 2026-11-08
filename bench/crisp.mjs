@@ -63,6 +63,13 @@ function parseArgs(argv) {
                 break;
             }
             case 'settle': a.settleS = Number(v); break;
+            case 'window': {
+                const [w, h] = v.split('x').map(Number);
+                if (!(w > 0) || !(h > 0)) throw new Error(`--window: WIDTHxHEIGHT, not ${v}`);
+                a.width = w;
+                a.height = h;
+                break;
+            }
             case 'keep': a.keep = path.resolve(v); break;
             case 'verbose': a.verbose = true; break;
             default: throw new Error(`unknown option --${k}`);
@@ -137,6 +144,18 @@ const CASES = [
         what: 'a recipe gear pulsing (gi-gear-pulse) in its badges',
         start: `(() => { const { badges } = ${BACK}; const g = document.createElement('div'); g.id = 'crisp-case'; g.className = 'gi-gear-pulse absolute left-0 top-0'; g.style.cssText += 'width:28px;height:28px;background:#888'; badges.appendChild(g); return true; })()`,
         stop: `(document.getElementById('crisp-case')?.remove(), true)`
+    },
+    {
+        id: 'flag',
+        what: 'a flag fading (its own opacity transition, to the 30 % of a drag) on the back-most flag',
+        start: `(() => { const f = [...document.querySelectorAll('[data-flag]')].sort((a, b) => (Number(a.style.zIndex) || 0) - (Number(b.style.zIndex) || 0))[0]; if (!f) return false; f.dataset.crispCase = 'true'; f.dataset.crispWas = f.style.transitionDuration; f.style.transitionDuration = '${LONG}ms'; f.classList.add('opacity-30'); const r = f.getBoundingClientRect(); return { x: r.left - 8, y: r.top - 8, w: r.width + 16, h: r.height + 16 }; })()`,
+        stop: `(() => { const f = document.querySelector('[data-crisp-case]'); f.style.transitionDuration = '0ms'; f.classList.remove('opacity-30'); getComputedStyle(f).opacity; f.style.transitionDuration = f.dataset.crispWas; delete f.dataset.crispCase; delete f.dataset.crispWas; return true; })()`
+    },
+    {
+        id: 'limp',
+        what: 'a hero going limp (the filter fade on its art, MatHero\'s LIMP_FILTER) on the back-most hero',
+        start: `(() => { const h = [...document.querySelectorAll('[data-board-hero]')].sort((a, b) => (Number(a.style.zIndex) || 0) - (Number(b.style.zIndex) || 0))[0]; const art = h && h.querySelector(':scope > div.w-full.h-full'); if (!art) return false; art.dataset.crispCase = 'true'; art.dataset.crispWas = art.style.filter; art.style.transitionDuration = '${LONG}ms'; art.style.filter = 'grayscale(0.7) brightness(0.8) sepia(0.25)'; const a = h.getBoundingClientRect(), b = (art.querySelector('img') || art).getBoundingClientRect(); const x = Math.min(a.left, b.left) - 24, y = Math.min(a.top, b.top) - 24; return { x, y, w: Math.max(a.right, b.right) + 24 - x, h: Math.max(a.bottom, b.bottom) + 24 - y }; })()`,
+        stop: `(() => { const el = document.querySelector('[data-crisp-case]'); el.style.transitionDuration = '0ms'; el.style.filter = el.dataset.crispWas; getComputedStyle(el).filter; el.style.transitionDuration = ''; delete el.dataset.crispCase; delete el.dataset.crispWas; return true; })()`
     },
     {
         id: 'worked',
@@ -267,6 +286,202 @@ function exactShareAt(shot, r, pic) {
 const EXACT = 0.98;
 
 // ---------------------------------------------------------------------------
+// Floor loot's bob: one shape, whole art pixels, its shadow still on the ground
+// ---------------------------------------------------------------------------
+
+/**
+ * Throw one item on the floor for the bob checks: quantity 1 (no count badge over its shadow), one
+ * the sprite generator made a hard shadow for and none of which lies on the floor (so it does not
+ * slide into a pile), `dx` mat units across from under the back-most Token. Resolves to what
+ * `findThrown` needs, or a string saying why not.
+ */
+const THROW_FOR_BOB = (dx) => `(async () => {
+    const G = window.__perf.game;
+    const man = await fetch('/_gen/sprite-fx/manifest.json').then(r => (r.ok ? r.json() : null)).catch(() => null);
+    if (!man) return 'no sprite-fx manifest';
+    const keys = Object.keys(man.sprites).filter(k => k.startsWith('assets/items/') && !man.sprites[k].cols);
+    const onFloor = new Set([...document.querySelectorAll('[data-item-sprite] img')].map(i => decodeURI(new URL(i.src).pathname).replace(/^\\//, '')));
+    let pick = null;
+    for (const it of Object.values(G.getAllItems())) {
+        if (!it || !it.id || it.equipSlot || typeof it.sprite !== 'string') continue;
+        const key = keys.find(k => k.endsWith('/' + it.sprite + '.png'));
+        if (key && !onFloor.has(key)) { pick = { id: it.id, key }; break; }
+    }
+    if (!pick) return 'no item with a shadow to throw';
+    const { art } = ${BACK};
+    const mat = document.querySelector('[data-board-origin]');
+    const s = Number(mat.dataset.boardScale);
+    const r = art.getBoundingClientRect(), m = mat.getBoundingClientRect();
+    const w = Number(mat.dataset.naturalWidth), h = m.height / s;
+    const x = Math.max(80, Math.min(w - 80, (r.left + r.width / 2 - m.left) / s + ${dx}));
+    const y = Math.max(80, Math.min(h - 80, (r.bottom - m.top) / s + 60));
+    G.SpriteLayer.addSprite('item', pick.id, 1, { centre: { x, y } });
+    return { key: pick.key, sx: m.left + x * s, sy: m.top + y * s };
+})()`;
+
+/** The thrown item's box, its art and its shadow, tagged so a later read finds the same one. */
+const FIND_THROWN = (thrown) => `(() => {
+    const want = ${JSON.stringify(thrown)};
+    const all = [...document.querySelectorAll('[data-item-sprite]')].filter(b => decodeURI(new URL(b.querySelector('img').src).pathname).endsWith(want.key));
+    const dist = (b) => { const q = b.getBoundingClientRect(); return Math.hypot(q.left + q.width / 2 - want.sx, q.top + q.height / 2 - want.sy); };
+    const box = all.sort((a, b) => dist(a) - dist(b))[0];
+    if (!box) return null;
+    const img = box.querySelector('img');
+    const outer = img.parentElement.parentElement;
+    const r = outer.getBoundingClientRect();
+    const shadow = box.querySelector('[data-sprite-shadow]');
+    const url = shadow ? getComputedStyle(shadow).backgroundImage.replace(/^url\\("?|"?\\)$/g, '') : null;
+    return { left: r.left, top: r.top, size: r.width, art: img.currentSrc || img.src, shadow: url };
+})()`;
+
+/** A region of the screen as raw RGBA, with where it sits. */
+async function screenshotClip(page, clip) {
+    const { data } = await page.send('Page.captureScreenshot', { format: 'png', clip: { ...clip, scale: 1 } });
+    const sharp = require('sharp');
+    const { data: raw, info } = await sharp(Buffer.from(data, 'base64')).raw().ensureAlpha().toBuffer({ resolveWithObject: true });
+    return { raw, width: info.width, height: info.height, x0: clip.x, y0: clip.y, png: data };
+}
+
+/**
+ * Where a sprite drawn `size` px across from picture `pic` is on a clip, and how exactly: of the
+ * candidate whole-pixel corners, the one where the most of its opaque texels show exactly their
+ * colour (nearest-neighbour). With a whole number of screen pixels a texel, every sub-pixel phase
+ * Chrome might draw at is one of these corners; a sprite drawn a pixel short or long matches none.
+ */
+function findArt(clip, pic, size, xs, ys) {
+    const per = size / pic.w;
+    let best = { share: -1, x: 0, y: 0 };
+    for (const y of ys) {
+        for (const x of xs) {
+            let total = 0, exact = 0;
+            for (let py = 0; py < size; py++) {
+                const cy = y + py;
+                if (cy < 0 || cy >= clip.height) continue;
+                const ty = Math.floor((py + 0.5) / per);
+                for (let px = 0; px < size; px++) {
+                    const cx = x + px;
+                    if (cx < 0 || cx >= clip.width) continue;
+                    const q = (ty * pic.w + Math.floor((px + 0.5) / per)) * 4;
+                    if (pic.data[q + 3] !== 255) continue;
+                    total++;
+                    const p = (cy * clip.width + cx) * 4;
+                    if (clip.raw[p] === pic.data[q] && clip.raw[p + 1] === pic.data[q + 1] && clip.raw[p + 2] === pic.data[q + 2]) exact++;
+                }
+            }
+            const share = total ? exact / total : 0;
+            if (share > best.share) best = { share, x, y };
+        }
+    }
+    return best;
+}
+
+/** Whether the art found at `art` covers clip pixel (cx, cy). */
+function artCovers(art, pic, size, cx, cy) {
+    const px = cx - art.x, py = cy - art.y;
+    if (px < 0 || py < 0 || px >= size || py >= size) return false;
+    const per = size / pic.w;
+    return pic.data[(Math.floor((py + 0.5) / per) * pic.w + Math.floor((px + 0.5) / per)) * 4 + 3] === 255;
+}
+
+/**
+ * Where the hard shadow (a solid black silhouette, drawn under the art) is on a clip: of the
+ * candidate corners, the one where the most of its texels the art leaves uncovered are black.
+ */
+function findShadow(clip, sil, size, art, pic, xs, ys) {
+    const per = size / sil.w;
+    let best = { share: -1, x: 0, y: 0 };
+    for (const y of ys) {
+        for (const x of xs) {
+            let total = 0, black = 0;
+            for (let py = 0; py < size; py++) {
+                const cy = y + py;
+                if (cy < 0 || cy >= clip.height) continue;
+                const ty = Math.floor((py + 0.5) / per);
+                for (let px = 0; px < size; px++) {
+                    const cx = x + px;
+                    if (cx < 0 || cx >= clip.width) continue;
+                    if (sil.data[(ty * sil.w + Math.floor((px + 0.5) / per)) * 4 + 3] !== 255) continue;
+                    if (artCovers(art, pic, size, cx, cy)) continue;
+                    total++;
+                    const p = (cy * clip.width + cx) * 4;
+                    if (clip.raw[p] === 0 && clip.raw[p + 1] === 0 && clip.raw[p + 2] === 0) black++;
+                }
+            }
+            const share = total >= 20 ? black / total : 0;
+            if (share > best.share) best = { share, x, y };
+        }
+    }
+    return best;
+}
+
+const range = (lo, hi) => Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+
+/**
+ * Screenshot the thrown item for `ms` and judge every shot: the art drawn exactly to its picture
+ * (one shape), and where the art and its shadow are. `art` is one art pixel in screen pixels.
+ * The art's lift is read against its shadow: the shadow stands on the ground 2 art pixels right
+ * of and below where the art rests, so a lift is how far the art is above that.
+ */
+async function watchLoot(page, found, { art, ms, keepAs = null }) {
+    const pic = await picture(found.art);
+    const sil = found.shadow ? await picture(found.shadow) : null;
+    const size = Math.round(found.size);
+    const margin = 14 * art + 8;
+    const clip = { x: Math.max(0, Math.round(found.left) - margin), y: Math.max(0, Math.round(found.top) - margin), width: size + 2 * margin, height: size + 2 * margin };
+    const ax = Math.round(found.left) - clip.x, ay = Math.round(found.top) - clip.y;
+    const xs = range(ax - 3, ax + 3), ys = range(ay - 12 * art - 4, ay + 4);
+    const shots = [];
+    const until = Date.now() + ms;
+    while (Date.now() < until) shots.push(await screenshotClip(page, clip));
+    const kept = new Set();
+    return shots.map((shot) => {
+        const a = findArt(shot, pic, size, xs, ys);
+        const s = sil ? findShadow(shot, sil, size, a, pic, range(a.x - 2, a.x + 4 * art + 2), range(a.y - 2, a.y + 8 * art + 2)) : null;
+        // One picture of each way it was drawn.
+        const seenAs = `${a.x}_${a.y}_${s ? `${s.x}_${s.y}` : 'none'}`;
+        if (keepAs && !kept.has(seenAs)) { kept.add(seenAs); fs.writeFileSync(`${keepAs}-${kept.size}_art${a.x}_${a.y}_shadow${s ? `${s.x}_${s.y}` : 'none'}.png`, Buffer.from(shot.png, 'base64')); }
+        return {
+            artShare: a.share,
+            artAt: [a.x, a.y],
+            shadowShare: s ? s.share : null,
+            shadowAt: s ? [s.x, s.y] : null,
+            gap: s ? [s.x - a.x, s.y - a.y] : null,
+            lift: s ? (s.y - a.y - 2 * art) / art : null
+        };
+    });
+}
+
+/**
+ * The verdict on a watched item. `bob`: it rises and sinks 1 to 4 whole art pixels (all four
+ * reached), keeps one shape, and its shadow stays in one place, 2 art pixels right of the art.
+ * `hold` (reduced motion): one place, raised `hold` art pixels, the same.
+ */
+function judgeLoot(seen, { art, hold = null }) {
+    const fails = [];
+    const minArt = Math.min(...seen.map(s => s.artShare));
+    if (minArt < EXACT) fails.push(`the art drawn exactly in ${seen.filter(s => s.artShare >= EXACT).length} of ${seen.length} shots (lowest ${minArt.toFixed(2)})`);
+    if (seen.some(s => s.shadowShare == null)) {
+        fails.push('no shadow drawn');
+    } else {
+        const minShadow = Math.min(...seen.map(s => s.shadowShare));
+        if (minShadow < EXACT) fails.push(`the shadow drawn exactly in ${seen.filter(s => s.shadowShare >= EXACT).length} of ${seen.length} shots (lowest ${minShadow.toFixed(2)})`);
+        const places = new Set(seen.map(s => s.shadowAt.join(',')));
+        if (places.size > 1) fails.push(`the shadow moved (${places.size} places)`);
+        if (seen.some(s => s.gap[0] !== 2 * art || !Number.isInteger(s.lift))) fails.push('the shadow is not 2 whole art pixels right of the art, or the art not whole art pixels above it');
+        const lifts = [...new Set(seen.map(s => s.lift))].sort((a, b) => a - b);
+        if (hold != null) {
+            if (lifts.length !== 1 || lifts[0] !== hold) fails.push(`held at ${lifts.join(', ')} art px, not ${hold}`);
+        } else if (lifts.join(',') !== '1,2,3,4') {
+            fails.push(`lifts ${lifts.map(l => (Number.isInteger(l) ? l : l.toFixed(2))).join(', ')} art px, not 1 to 4`);
+        }
+    }
+    const lifts = [...new Set(seen.map(s => s.lift))].sort((a, b) => a - b);
+    const gaps = [...new Set(seen.map(s => (s.gap ? s.gap.join('/') : '-')))];
+    const line = `${seen.length} shots; art exact ${seen.filter(s => s.artShare >= EXACT).length}/${seen.length}, shadow exact ${seen.filter(s => s.shadowShare >= EXACT).length}/${seen.length}; shadow places ${new Set(seen.map(s => (s.shadowAt ? s.shadowAt.join(',') : '-'))).size}; lifts ${lifts.map(l => (l == null ? '-' : Number.isInteger(l) ? l : l.toFixed(2))).join(', ')} art px; shadow gap right/down ${gaps.join(' ')} px`;
+    return { fails, line };
+}
+
+// ---------------------------------------------------------------------------
 
 async function main() {
     const args = parseArgs(process.argv.slice(2));
@@ -285,6 +500,10 @@ async function main() {
         const page = await openBoard(chrome, sceneUrl(server.url, scene), { cpu: 1, stress: scene.stress, stressId: scene.stressId });
         const how = scene.ui ? await scene.ui(page) : null;
         if (how) console.log(how);
+        // One art pixel of the mat in screen pixels: the art steps to a whole multiple of its size.
+        const fit = await page.evaluate(`Number(document.querySelector('[data-board-scale]').dataset.boardScale)`);
+        const artPx = Math.max(1, Math.round(2 * fit));
+        console.log(`${args.width}×${args.height}: the mat at fit ${fit}, one art pixel ${artPx} screen px`);
         await page.send('LayerTree.enable');
         let layers = 0;
         page.on('LayerTree.layerTreeDidChange', (p) => { layers = (p.layers || []).filter(l => l.drawsContent).length; });
@@ -362,12 +581,34 @@ async function main() {
         const drift = still.filter(t => !samePixels(artPixels(rest1, t), artPixels(restAgain, t))).length;
         await runCase(LOOT_CASE);
 
+        // Floor loot itself, across its bob and held by reduced motion (after the rest is judged:
+        // what is thrown stays on the floor).
+        const lootRows = [];
+        const watchThrown = async (id, what, dx, judge) => {
+            const thrown = await page.evaluate(THROW_FOR_BOB(dx));
+            if (typeof thrown === 'string') { lootRows.push({ id, what, fails: [thrown], line: '' }); return; }
+            await sleep(1200);   // the hop out of its Token is over
+            const found = await page.evaluate(FIND_THROWN(thrown));
+            if (!found) { lootRows.push({ id, what, fails: ['the thrown item was not found on the floor'], line: '' }); return; }
+            const seen = await watchLoot(page, found, { art: artPx, ms: 2600, keepAs: args.keep && path.join(args.keep, id) });
+            lootRows.push({ id, what, ...judgeLoot(seen, { art: artPx, ...judge }) });
+            if (args.verbose) console.log(id, JSON.stringify(seen));
+        };
+        await watchThrown('bob', 'an item on the floor bobbing: one shape, 1 to 4 whole art px, its shadow still', 160, {});
+        await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+        await watchThrown('hold', 'the same with reduced motion: held 3 art px up, one shape, its shadow still', -160, { hold: 3 });
+        await page.send('Emulation.setEmulatedMedia', { features: [] });
+
         console.log('');
         console.log('case      still Tokens changed   drawn exactly   composited layers   what');
         for (const r of rows) {
             console.log(`${r.id.padEnd(9)} ${String(r.changed).padStart(4)} of ${String(still.length).padEnd(14)} ${String(r.exact).padStart(4)} of ${String(judged.length).padEnd(6)} ${String(r.layers).padStart(3)} (rest ${restLayers})      ${r.what}`);
         }
         console.log(`rest at the end: ${drift} changed`);
+        for (const r of lootRows) {
+            console.log(`${r.id.padEnd(9)} ${r.fails.length ? 'FAILED' : 'ok'}: ${r.line}${r.fails.length ? `\n          ${r.fails.join('; ')}` : ''}`);
+            console.log(`          ${r.what}`);
+        }
         // A Token or two may be brushed by a case's own movement or a hero's frame; the fault moves
         // most of them.
         const allowed = Math.max(2, Math.round(still.length * 0.05));
@@ -376,10 +617,12 @@ async function main() {
         if (drift > allowed) throw new Error(`the board was not still (${drift} Tokens changed at rest)`);
         const soft = judged.length - restExact;
         const softAtRest = soft > 0;
+        const lootFailed = lootRows.filter(r => r.fails.length);
         if (failed.length) console.log(`\nCHANGED: ${failed.map(r => r.id).join(', ')} changed how still Tokens are drawn`);
         if (softAtRest) console.log(`\nSOFT: at rest ${soft} still Tokens are not drawn exactly to their art`);
-        if (!failed.length && !softAtRest) console.log('\nok: still Tokens are drawn exactly to their art, and no animation changes that');
-        return failed.length || softAtRest ? 1 : 0;
+        if (lootFailed.length) console.log(`\nLOOT: ${lootFailed.map(r => r.id).join(', ')} not drawn as an item floats`);
+        if (!failed.length && !softAtRest && !lootFailed.length) console.log('\nok: still Tokens are drawn exactly to their art, no animation changes that, and floor loot floats in one shape over a still shadow');
+        return failed.length || softAtRest || lootFailed.length ? 1 : 0;
     } finally {
         if (chrome) await chrome.close();
         if (server) await server.close();
