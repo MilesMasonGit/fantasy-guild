@@ -45,7 +45,7 @@ export function grantStarterTools() {
         record.push(itemId);
         if (legacy && ownsToolKind(toolOf(items[itemId])?.kind, items)) continue;
         if (InventoryManager.hasItem(itemId, 1) || heldCount(itemId) > 0) continue;
-        if (InventoryManager.addItem(itemId, 1, 'opening') > 0) granted.push(itemId);
+        if (InventoryManager.addItem(itemId, 1) > 0) granted.push(itemId);
     }
     progress.starterTools = record;
     return granted;

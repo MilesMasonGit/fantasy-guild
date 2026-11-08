@@ -135,7 +135,7 @@ describe('Guild Hall upgrade web', () => {
         expect(GameState.state.progress.guildUpgrades).toEqual({ bank_tabs: 1 });
         // A save written before B9 carries the same shape and opens the same way.
         GameState.state.progress.guildUpgrades = { roster_size: 2, bank_tabs: 3 };
-        expect(GuildUpgradeManager.isAccessible(OUTER)).toBe(true);
+        expect(isUpgradeAccessible(OUTER, GuildUpgradeManager.getRanks())).toBe(true);
         expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(3);
     });
 
@@ -181,14 +181,14 @@ describe('Guild Hall upgrade web', () => {
     });
 
     it('unlocks dependent tracks upon upgrading predecessor', () => {
-        expect(GuildUpgradeManager.isAccessible(OUTER)).toBe(false);
+        expect(isUpgradeAccessible(OUTER, GuildUpgradeManager.getRanks())).toBe(false);
 
         stock(nextPrice('bank_tabs'));
         GuildUpgradeManager.purchase('bank_tabs');
         expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(1);
 
         // Now the star beyond it is open and purchasable
-        expect(GuildUpgradeManager.isAccessible(OUTER)).toBe(true);
+        expect(isUpgradeAccessible(OUTER, GuildUpgradeManager.getRanks())).toBe(true);
         stock(nextPrice(OUTER));
         const res = GuildUpgradeManager.purchase(OUTER);
         expect(res.success).toBe(true);

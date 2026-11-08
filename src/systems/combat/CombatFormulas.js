@@ -376,14 +376,6 @@ export function heroHitDamage(hero, enemy, options = {}) {
 }
 
 /**
- * An enemy's landed hit on a hero, as a whole number. ⚠️ Draws for a fraction ({@link rollFraction}).
- * @param {{ crit?: boolean, type?: string|null }} [options]
- */
-export function enemyHitDamage(enemy, hero, options = {}) {
-    return rollFraction(enemyBlow(enemy, hero, options).exact);
-}
-
-/**
  * Whether a blow's types helped or hurt it: `weak` when the target's weaknesses outweigh its
  * resistances across the parts, `resisted` the other way, null when neither moved it. The
  * attacker's own Type Damage boosts do not count: the words are about the target.

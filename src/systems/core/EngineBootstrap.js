@@ -243,7 +243,7 @@ export const EngineBootstrap = {
         // `InventoryManager`, like every other gain.
         if (state.inventory) state.inventory.items = {};
         for (const { itemId, quantity } of StarterCamp.openingBank(camp)) {
-            InventoryManager.addItem(itemId, quantity, 'opening');
+            InventoryManager.addItem(itemId, quantity);
         }
         // One of each starter tool: new heroes arrive empty-handed and take their first tools here.
         grantStarterTools();

@@ -10,6 +10,7 @@ import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { fieldOf } from '../../../config/registries/tokenConstants.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { getItem, getAllItems } from '../../../config/registries/itemRegistry.js';
+import { withArticle } from '../../../systems/effects/toolNames.js';
 import { neededToolOf, toolNeedPhrase } from '../../../config/registries/toolKinds.js';
 import { joinNames } from './heroBubbles.js';
 
@@ -89,9 +90,6 @@ export function problemOf({ alert = null, spawner = null, growth = null, choose 
     }
     return found.find(p => p.severity === SEVERITY.CANT) || found[0] || null;
 }
-
-/** "a Pickaxe", "an Anvil": Tokens are countable things, items are not. */
-const withArticle = (name) => `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
 
 /** "an Oak Forest", "an Oak Forest or a Wild Oak Forest": any one of them will do. */
 const joinOr = (names) => (names.length < 2 ? names[0] || '' : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`);

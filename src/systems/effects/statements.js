@@ -329,14 +329,6 @@ export function firingChanceOf(statement) {
 }
 
 /**
- * Whether an `Applies` aims at a role instead of its filter.
- *
- */
-export function appliesByRole(statement) {
-    return statement?.keyword === KEYWORD.APPLIES && !!statement?.target?.role;
-}
-
-/**
  * The palette entries a keyword offers (`hasTrigger` is currently unused).
  */
 export function paletteForKeyword(keywordId, hasTrigger) {

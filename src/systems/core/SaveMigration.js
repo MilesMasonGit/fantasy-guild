@@ -97,6 +97,16 @@ export function migrateState(state, savedVersion) {
         }
         if (changed) migrated.board = board;
     }
+    // Retired discovery maps: which Token or enemy produced an item, and the item ids marked
+    // New!, were written on every Bank gain and read by nothing. They are dropped, not kept.
+    if (isPlainObject(migrated.collection) && 'provenance' in migrated.collection) {
+        migrated.collection = { ...migrated.collection };
+        delete migrated.collection.provenance;
+    }
+    if (isPlainObject(migrated.ui) && 'newDiscoveries' in migrated.ui) {
+        migrated.ui = { ...migrated.ui };
+        delete migrated.ui.newDiscoveries;
+    }
     // Retired Disallow: a Token an older save marked "heroes may not work this" loses the mark,
     // on the live board and every Region's, and heroes may work it again.
     migrated = withoutDisallowMarks(migrated);

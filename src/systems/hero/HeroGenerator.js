@@ -17,23 +17,6 @@ import { heroMaxHpFromSkills } from '../combat/CombatFormulas.js';
  * hero shape unchanged.
  */
 
-export const HERO_ICONS = [
-    '🧑', '👨', '👩', '🧔', '🧔‍♂️', '🧔‍♀️',
-    '🧓', '🧓‍♂️', '🧓‍♀️', '👦', '👧', '👴', '👵',
-    '🧙', '🧙‍♂️', '🧙‍♀️', '🧝', '🧝‍♂️', '🧝‍♀️',
-    '🧛', '🧛‍♂️', '🧛‍♀️', '🧜', '🧜‍♂️', '🧜‍♀️',
-    '🧞', '🧞‍♂️', '🧞‍♀️', '🤴', '👸', '🤵', '🥳',
-    '💂', '💂‍♂️', '💂‍♀️', '🧟', '🧟‍♂️', '🧟‍♀️',
-    '🦐', '🐕'
-];
-
-export const HERO_SPRITES = [
-    'hn_adventure_por',
-    'hm_fighter_por',
-    'hn_sneak_por',
-    'hm_wizard_por'
-];
-
 /**
  * Generate a complete hero object
  * @param {Object} options - Generation options
@@ -77,11 +60,7 @@ export function generateHero(options = {}) {
         // Always empty: statuses ride on `effects` (see `HeroRehydration`).
         statuses: [],
 
-        perks: {},
-
         equipment: createEmptyEquipment(),
-
-        assignedCardId: null,
 
         createdAt: Date.now()
     };

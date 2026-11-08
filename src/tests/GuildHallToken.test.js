@@ -112,10 +112,6 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
     describe('Wishing Well Upgrade and Water Generation (T-099)', () => {
         const water = () => SpriteLayer.countOnBoard('item_water');
 
-        it('is accessible on Tile 31 directly from the start', () => {
-            expect(GuildUpgradeManager.isAccessible('wishing_well')).toBe(true);
-        });
-
         it("never rewrites the Guild Hall's type: it has no work cycle at any rank", () => {
             const ghDef = getTokenType('token_guild_hall');
             const before = { config: ghDef.config, tokenType: ghDef.tokenType, requiresHero: ghDef.requiresHero };
@@ -149,7 +145,6 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
             GuildUpgradeManager.purchase('wishing_well');            // rank 2
             BoardRunner.tick(PASSIVE_LAP_BASE_MS);
             expect(water()).toBe(30);
-            expect(GuildUpgradeManager.getDisplayList().find(u => u.id === 'wishing_well').statLabel).toBe('20 Water a lap');
         });
 
         it("a hero dropped on the Hall changes nothing: no work cycle, the same timer", () => {

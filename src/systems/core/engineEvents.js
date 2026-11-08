@@ -102,8 +102,6 @@ export const ENGINE_EVENTS = Object.freeze({
 
     /** Payload: `{ upgradeId, rank }`. */
     GUILD_UPGRADES_UPDATED: 'guild_upgrades_updated',
-    /** Payload: `{ type: 'item' | 'enemy', id }`. */
-    REGISTRY_UPDATED: 'registry_updated',
     /** First time an item was seen. Payload: `{ itemId, itemName }`. */
     ITEM_DISCOVERED: 'item_discovered',
     /** First time an enemy was seen. Payload: `{ enemyId, enemyName }`. */
@@ -154,13 +152,11 @@ export const ENGINE_EVENTS = Object.freeze({
     COMBAT_HERO_ATTACK: 'combat_hero_attack',
     /** Payload: `{ cardId, instanceId, heroId, enemyId, damage, hit, crit, heroHpRemaining }` (`instanceId`: the enemy Token). */
     COMBAT_ENEMY_ATTACK: 'combat_enemy_attack',
-    /** Payload: `{ cardId, heroId, traitId, damage }`. */
-    COMBAT_ENEMY_TRAIT_TRIGGER: 'combat_enemy_trait_trigger',
     /** Payload: `{ cardId, heroId, itemId, healed }`. */
     COMBAT_HERO_ATE: 'combat_hero_ate',
-    /** Payload: `{ cardId, heroId, instanceId, areaId, enemyId, enemyName, drops }`. */
+    /** Payload: `{ cardId, heroId, instanceId, enemyId, enemyName, drops }`. */
     COMBAT_VICTORY: 'combat_victory',
-    /** Payload: `{ cardId, heroId, enemyId, enemyName, instanceId?, areaId?, drops }`. */
+    /** Payload: `{ cardId, heroId, enemyId, enemyName, instanceId?, drops }`. */
     LOOT_GENERATED: 'loot_generated',
 
     /**
@@ -261,10 +257,8 @@ export const ORPHAN_EVENTS = Object.freeze({
  */
 export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.STATE_CHANGED]: 'retired: every surface listens to a specific event and GAME_RESET; one Atlas publish remains',
-    [ENGINE_EVENTS.REGISTRY_UPDATED]: 'console affordance; the discovery events below are the specific ones',
     [ENGINE_EVENTS.ENEMY_DISCOVERED]: 'first-seen moment, for a future bestiary notice',
     [ENGINE_EVENTS.TOKEN_RESTOCKED]: 'player action moment; the board events carry the redraw',
     [ENGINE_EVENTS.HERO_RECOVERED]: 'combat moment; HEROES_UPDATED carries the redraw',
-    [ENGINE_EVENTS.COMBAT_ENEMY_TRAIT_TRIGGER]: 'combat moment, for a future floating-text cue',
     [ENGINE_EVENTS.BGM_TRACK_CHANGED]: 'console affordance for the music system',
 });

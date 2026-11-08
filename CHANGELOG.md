@@ -5,6 +5,7 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Dead code removed from heroes, effects, combat and progression**, nothing a player sees changes: the modifier aggregator's unused cache, expiry check and source switches; the unreachable enemy thorns branch and its event; the card-era loot kind, area id and hero card assignment; the two save fields written on every item gain and read by nothing (`provenance` and `newDiscoveries`, which an old save drops on its next load); about twenty exports with no caller; the three copies of the a/an helper now use one. A hero's skill rows read the XP table.
 - **The CMS's economy simulator files moved into the CMS** (CMS and tools only): the twelve
   ledger files the game never runs (`balance`, `calibration`, `checks`, `economy`, `hall`, `pace`,
   `profiles`, `rates`, `settings`, `world`, `statementSlots`, `tempoBands`) moved to

@@ -28,7 +28,6 @@ vi.mock('../systems/combat/CombatFormulas.js', () => ({
     getHeroCombatStyle: vi.fn(() => 'melee'),
     enemyMissChance: vi.fn(() => 10),
     enemyCritChance: vi.fn(() => 5),
-    enemyHitDamage: vi.fn(() => 5),
     enemyBlow: vi.fn(() => ({ exact: 5, parts: [{ type: 'physical', pre: 5, amount: 5, resist: 0 }] })),
     enemyAttackSpeedMs: vi.fn(() => 2000)
 }));

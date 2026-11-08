@@ -452,11 +452,6 @@ export function removeFromHero(heroId, effectId = null) {
     return hero ? removeFrom(heroBearer(hero), effectId) : 0;
 }
 
-/** Drop everything a hero is carrying — the defeat cleanse. */
-export function clearHero(heroId) {
-    return removeFromHero(heroId, null);
-}
-
 /**
  * The statements a hero's live effects contribute, already scaled and stamped.
  *

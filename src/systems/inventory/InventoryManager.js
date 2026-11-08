@@ -115,11 +115,10 @@ export const InventoryManager = {
      * Add item(s) to inventory.
      * @param {string} itemId
      * @param {number} amount
-     * @param {string|null} sourceId - The source (card or enemy)
      * @returns {number} Amount actually added
      */
 
-    addItem(itemId, amount, sourceId = null) {
+    addItem(itemId, amount) {
         if (amount <= 0) return 0;
         const template = getItem(itemId);
         if (!template) {
@@ -178,7 +177,7 @@ export const InventoryManager = {
         InventoryStore.setEntry(itemId, entry);
         InventoryFormatter.invalidate();
 
-        RegistryManager.recordItemGain(itemId, addedCount, sourceId);
+        RegistryManager.recordItemGain(itemId, addedCount);
         announce(itemId, entry.quantity, { added: addedCount });
 
         logger.debug('InventoryManager', `Added ${addedCount}x ${itemId} (Total: ${entry.quantity})`);

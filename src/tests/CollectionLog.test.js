@@ -94,6 +94,21 @@ describe('the save', () => {
         expect(migrated.collection.tokensBuilt).toEqual({});
         expect(migrated.collection.discoveredItems).toEqual({ item_coal: true });
     });
+
+    it('an older save drops the retired provenance and New! maps, keeping the rest', () => {
+        const old = JSON.parse(JSON.stringify(INITIAL_STATE));
+        old.collection.provenance = { token_goblin: { item_coal: true } };
+        old.ui.newDiscoveries = { item_coal: true };
+        old.collection.discoveredItems = { item_coal: true };
+        old.ui.pinnedStubs = [{ itemId: 'item_coal', added: 1, removed: 0 }];
+        const migrated = migrateState(old, GAME_VERSION);
+        expect('provenance' in migrated.collection).toBe(false);
+        expect('newDiscoveries' in migrated.ui).toBe(false);
+        expect(migrated.collection.discoveredItems).toEqual({ item_coal: true });
+        expect(migrated.ui.pinnedStubs).toEqual(old.ui.pinnedStubs);
+        expect('provenance' in INITIAL_STATE.collection).toBe(false);
+        expect('newDiscoveries' in INITIAL_STATE.ui).toBe(false);
+    });
 });
 
 describe('lifetime totals', () => {

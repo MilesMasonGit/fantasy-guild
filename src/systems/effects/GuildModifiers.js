@@ -45,17 +45,6 @@ export function auraSourceId(ownerId, templateId) {
     return `${ownerId}:${templateId}`;
 }
 
-/**
- * Read an authored `passiveBuff` as a LIST of modifiers: accepts one object or an array.
- *
- * @param {object|object[]|null} passiveBuff
- * @returns {object[]} always an array, empty when there's nothing to register
- */
-export function normalizeAuras(passiveBuff) {
-    if (!passiveBuff) return [];
-    return Array.isArray(passiveBuff) ? passiveBuff.filter(Boolean) : [passiveBuff];
-}
-
 /** Each owner's aimed modifiers (`{ to, modifier }`), and the flat list every rebuild reads. */
 const aimedByOwner = new Map();
 let aimedFlat = [];
@@ -70,7 +59,7 @@ export function setAimedModifiers(owner, list) {
     aimedFlat = [...aimedByOwner.values()].flat();
 }
 
-/** Every owner's aimed modifiers. Empty (the same frozen list) when there are none. */
+/** Every owner's aimed modifiers. Empty when there are none. */
 export function aimedModifiers() {
     return aimedFlat;
 }

@@ -30,7 +30,7 @@ const LootSystem = {
      * Roll a victory's drops: floating sprites on the board, straight to the Bank otherwise.
      */
     handleCombatVictory(data) {
-        const { cardId, heroId, enemyId, enemyName, drops, areaId, instanceId } = data;
+        const { cardId, heroId, enemyId, enemyName, drops, instanceId } = data;
 
         const sourceData = (Array.isArray(drops) && drops.length > 0) ? { drops } : null;
 
@@ -54,7 +54,7 @@ const LootSystem = {
             ? (quantity, itemId) => OutputRules.doubleItemDrop(instanceId, itemId,
                 OutputRules.widenYield(instanceId, skill, quantity) * (doubled ? 2 : 1))
             : null;
-        const generatedDrops = this.rollEachLine(sourceData.drops, areaId, widen);
+        const generatedDrops = this.rollEachLine(sourceData.drops, widen);
 
         if (onBoard) {
             // On the board, loot drops as floating sprites where the kill
@@ -68,7 +68,7 @@ const LootSystem = {
         } else {
             // No Token to anchor sprites to: bank directly.
             for (const d of generatedDrops) {
-                InventoryManager.addItem(d.itemId, d.quantity || 1, enemyId);
+                InventoryManager.addItem(d.itemId, d.quantity || 1);
             }
         }
 
@@ -83,15 +83,15 @@ const LootSystem = {
      * @param {Function} [widen] - `(quantity, itemId)` → the quantity that lands (the kill's output rules)
      * @returns {Array} the drops that landed, possibly empty
      */
-    rollEachLine(entries, areaId, widen = null) {
+    rollEachLine(entries, widen = null) {
         const results = [];
         for (const entry of (Array.isArray(entries) ? entries : [])) {
             if (!entry) continue;
             const chance = entry.chance ?? 100;
             if (chance < 100 && Math.random() * 100 > chance) continue;
-            const drop = this._rollEntryDetails(entry, areaId);
-            if (drop && widen && drop.type !== 'combat_trigger') drop.quantity = widen(drop.quantity, drop.itemId);
-            if (drop && (drop.type === 'combat_trigger' || drop.quantity > 0)) results.push(drop);
+            const drop = this._rollEntryDetails(entry);
+            if (drop && widen) drop.quantity = widen(drop.quantity, drop.itemId);
+            if (drop && drop.quantity > 0) results.push(drop);
         }
         return results;
     },
@@ -100,10 +100,7 @@ const LootSystem = {
      * Rolls one entry's item and quantity
      * @private
      */
-    _rollEntryDetails(entry, areaId) {
-        if (entry.type === 'combat_trigger') {
-            return { type: 'combat_trigger', enemyId: entry.enemyId };
-        }
+    _rollEntryDetails(entry) {
         const itemId = entry.itemId || entry.id;
         const item = getItem(itemId);
         if (!item) {

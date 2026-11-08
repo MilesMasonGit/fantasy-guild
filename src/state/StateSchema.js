@@ -242,7 +242,6 @@ export const INITIAL_STATE = {
         itemLifetimeCounts: {},  // { [itemId]: number }
         enemyKillCounts: {},     // { [enemyId]: number }
         cardUseCounts: {},       // { [typeId]: number } — completed cycles per Token type
-        provenance: {},          // { [sourceId]: { [itemId]: true } }
         // The Encyclopedia's ticks (`collectionLog.js`); an older save gets them empty from `migrateState`.
         tokensHad: {},           // { [typeId]: true } — a Token of the type has stood on the mat
         recipesMade: {},         // { [recipeId]: true } — a cycle of the recipe has finished
@@ -251,7 +250,6 @@ export const INITIAL_STATE = {
 
     // === UI State (Transient Focus) ===
     ui: {
-        newDiscoveries: {},              // { [id]: true } - IDs with active "New!" badges
         pinnedStubs: []                  // [{ itemId, added, removed }] - pinned item stubs, counting since pinned
     },
 
