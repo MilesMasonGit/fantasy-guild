@@ -381,6 +381,13 @@ WebView2 is never told it is minimised). It calls `setDrawingPaused`
 (`frameClock.js`), which stops the three frame clocks (`onFrame`, `onStep`, `onDue`) and the
 poll clock (`onPoll`). On resume each frame clock draws one frame, not the missed ones, and every
 poller runs once at once, so the readouts are current.
+Under the minimise event only (not a hidden tab), `drawingPause.js` also puts `data-paused` on the
+body, where a rule in `tailwind.css` pauses every looping CSS animation (`MinimisedQuiet.test.js`
+refuses a looping animation without its paused twin), and holds the stores' commits
+(`src/ui/hooks/commitHold.js`): `useGameState` and `useTokenState` read nothing on their events
+while held, and each store that heard one reads once on restore, all in one React commit. Stores on
+`useSyncExternalStore` (fight panel, item stubs, bubbles, speech columns) and components that
+`setState` from their own `EventBus` listeners are not held.
 
 **The poll clock** (`onPoll(fn, everyMs)`): one `setTimeout` for whichever poller is due soonest,
 no animation frame; due times fall on a grid of each period (`Date.now()`), so pollers of one
@@ -396,7 +403,7 @@ they show (`UpkeepSummaryPanel.MAT_EVENTS`; the badge not on Bank changes, which
 total), and draw only when what they show changes.
 
 Not paused by it (read from code; whether WebView2 throttles them when minimised is
-**unverified**): the game tick (by design, `drawingPause.js:11-13`), CSS animations (§5.2),
+**unverified**): the game tick (by design), CSS animations in a hidden tab (the browser stops them; minimised, see above),
 Web Animations already running, and ParticleOverlay and camera glides (own rAF).
 What reads `isDrawingPaused()`: **`fx/oneShot.js` `animateFx`**, through which every one-shot Web
 Animation starts (effects, loot hops and slides, spawns, settles, the Hall's dip, the pickup

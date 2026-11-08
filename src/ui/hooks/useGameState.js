@@ -4,6 +4,7 @@ import isEqual from 'fast-deep-equal/es6';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { shareEqual } from './structuralShare.js';
+import { areCommitsHeld, whenCommitsReleased } from './commitHold.js';
 
 /**
  * Subscribe to GameState via the EventBus.
@@ -39,6 +40,8 @@ import { shareEqual } from './structuralShare.js';
  * * **What changed is new; what did not keeps its identity** (`shareEqual`). When one element of
  * a selected list changes, every other element is the very object handed out last time, so a
  * memoised child given an unchanged element does not draw again.
+ * * While the desktop app is minimised (`commitHold.js`) an event reads nothing; the store
+ * reads once on restore.
  * * A slice for ONE mat Token belongs in `useTokenState` (`tokenEvents.js`), which wakes only
  * that Token.
  * @param {Function} selector - Extracts a slice of state, per the contract above
@@ -108,12 +111,19 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
 
     useEffect(() => {
         let updateQueued = false;
-        const handleStateChange = (eventData) => {
-            if (eventFilterRef.current && !eventFilterRef.current(eventData)) return;
-            if (updateQueued) return;
+        let stopWaiting = null;
+        // Minimised: read nothing now, once on restore.
+        const heldBack = () => {
+            if (!areCommitsHeld()) return false;
+            stopWaiting ??= whenCommitsReleased(onRelease);
+            return true;
+        };
+        const read = () => {
+            if (updateQueued || heldBack()) return;
             updateQueued = true;
             queueMicrotask(() => {
                 updateQueued = false;
+                if (heldBack()) return;
                 const prevState = lastRef.current;
                 const next = settle(prevState, selectorRef.current(GameState));
                 if (next === prevState) return;
@@ -121,8 +131,19 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
                 setState(next);
             });
         };
+        const onRelease = () => {
+            stopWaiting = null;
+            read();
+        };
+        const handleStateChange = (eventData) => {
+            if (eventFilterRef.current && !eventFilterRef.current(eventData)) return;
+            read();
+        };
         const cleanupFns = eventsRef.current.map(event => EventBus.subscribe(event, handleStateChange, UI_LISTENER));
-        return () => cleanupFns.forEach(cleanup => cleanup());
+        return () => {
+            cleanupFns.forEach(cleanup => cleanup());
+            stopWaiting?.();
+        };
     }, [settle]);
 
     // Prop-driven sync: runs when props like 'heroId' change, so we don't wait for a game
