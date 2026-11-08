@@ -575,15 +575,15 @@ export const DeckDndProvider = ({ children }) => {
  * (`ENTITY_DRAG_ID`). `payload` is merged into the drag data under the given `kind`;
  * `sourceSurface` seeds the ghost's compact/bold state at pickup. `id` names the source
  * (`dragSourceId`).
- * `keyboardAccessible` (default true): whether dnd-kit's own attributes (`role="button"`,
- * `tabIndex={0}`, aria text about pressing space bar) are spread onto the node. ⚠️ There is no
- * keyboard sensor registered (`DeckDndProvider` wires only `AlphaPointerSensor`), so that text
- * describes a drag that cannot happen. `MatToken` passes `false`, which drops the false
- * instructions and the Tab stop.
+ * `keyboardAccessible` (default false): whether dnd-kit's own attributes (`role="button"`,
+ * `tabIndex={0}`, aria text about pressing the space bar) are spread onto the node. ⚠️ Leave it
+ * off while no keyboard sensor is registered (`DeckDndProvider` wires only `AlphaPointerSensor`):
+ * that text would describe a drag that cannot happen, and the node would be a Tab stop that does
+ * nothing.
  * Outside a `DeckDndProvider` a source draws but cannot be picked up.
  */
 export function useEntityDrag({
-    id, kind, payload, sourceSurface = DND_SURFACE.DRAWER, disabled = false, keyboardAccessible = true
+    id, kind, payload, sourceSurface = DND_SURFACE.DRAWER, disabled = false, keyboardAccessible = false
 }) {
     const rid = useId();
     const drags = React.useContext(EntityDragContext);

@@ -5,6 +5,12 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Drag sources are no longer keyboard Tab stops** (owner ruling 2026-11-07): heroes, flags,
+  Bank items, equipment slots and Shop cards stop telling a screen reader they can be picked up
+  with the space bar, which never worked; a mouse drag is unchanged. With it, unused code in the
+  screens was deleted (the switched-off charge-change floater, an unmounted ring badge, unused
+  styles and constants, a hero drag kind nothing starts, an unused motion context), and the title
+  screen stops listening for notifications once a game is running. Nothing else a player sees changes.
 - **The CMS's economy simulator files moved into the CMS** (CMS and tools only): the twelve
   ledger files the game never runs (`balance`, `calibration`, `checks`, `economy`, `hall`, `pace`,
   `profiles`, `rates`, `settings`, `world`, `statementSlots`, `tempoBands`) moved to
