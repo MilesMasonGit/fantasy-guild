@@ -102,7 +102,9 @@ export function playAbsorptionSlide(element, dx, dy, { unit = 1 } = {}) {
     if (copies.every(([c]) => c)) {
         // What it was drawn with goes as the dissolve starts: the picture, its shadow, its count.
         const gone = heldPoses([{ ms: 3 * FX_FRAME_MS, visibility: 'visible' }, { ms: 2 * FX_FRAME_MS, visibility: 'hidden' }], { rest: { visibility: 'hidden' } });
-        for (const el of [...art.children, ...[...element.children].filter(c => !c.contains(art))]) {
+        // The shadow stays on the ground, outside the art's box.
+        const drawn = new Set([...art.children, ...element.querySelectorAll('[data-sprite-shadow]'), ...[...element.children].filter(c => !c.contains(art))]);
+        for (const el of drawn) {
             animateFx(el, gone.keyframes, { duration: gone.duration, fill: 'forwards' });
         }
         for (const [copy, frame] of copies) {
