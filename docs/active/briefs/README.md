@@ -71,6 +71,7 @@ multiple choice at wave start.
 | 51 | [530 Combat XP stars](530_combat_xp_stars.md) (owner ruling 2026-11-07): kills get their style's XP bonuses (engine, expect WORK CHANGED only where a fighter holds a matching bonus); four Guild Hall stars, one per combat style, as a content agent pack; owner reviews the pack and Syncs | X2 by the content agent; X3 after X1 | no (pack review) |
 | 52 | [520 Code review round 4, the measurements](520_review_measurements.md): small bench instruments first, then one downtime window of profiles, traces, soaks, save size, settle timing, the desktop minimised and boot marks; each perf ticket marked measured or moot | M5 after 510 F3; M9 after 510 F2 | no |
 | 53 | [540 Code review round 4, cleanup by folder, then docs](540_review_cleanup.md): the import cycle and folder moves, dead code per folder, the owner's keyboard-drag and dead-sound rulings, the tools and lint, then one docs pass (the playtime comment); no owner CMS beyond the parked questions | C1 first | no |
+| 54 | [550 Sharp sprites](550_sprite_sharpness.md) (owner bug, T-393; **run first if the queue allows**): hovering a hero no longer blurs every Token; heroes turn instantly; walking heroes crisp (merged only after the bench); floating items bob in whole sprite pixels with their shadow still on the ground; two phases, engineer; no owner CMS | — | yes, one look in the built app |
 
 Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,
 then class rework v2, then the hero bar/panel on the new skill list, then
