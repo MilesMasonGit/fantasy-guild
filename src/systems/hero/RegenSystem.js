@@ -64,14 +64,6 @@ export function tick(delta) {
 }
 
 /**
- * Get current regen config
- * @returns {Object}
- */
-export function getRegenConfig() {
-    return JSON.parse(JSON.stringify(REGEN_CONFIG));
-}
-
-/**
  * Reset timers (useful for testing or pause/resume)
  */
 export function reset() {

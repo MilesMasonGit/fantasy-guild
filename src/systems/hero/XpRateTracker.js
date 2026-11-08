@@ -112,5 +112,3 @@ export const XpRateTracker = {
         history.clear();
     }
 };
-
-export default XpRateTracker;

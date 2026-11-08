@@ -342,7 +342,7 @@ function noteAxis(notes, sourceId, type, targetDef, statement) {
 }
 
 /**
- * The hero's side, as the board reads it (`HeroEffects.loadoutStatements`, `HeroEffects.perkStatements`,
+ * The hero's side, as the board reads it (`HeroEffects.loadoutStatements`, which carries the perks,
  * `LiveEffects.modifierStatements` and `grantStatements`): the always-on rules of what they wear (the
  * tool and gear), their milestone perks at their levels, and what their drinks and work potions put
  * on them for each cycle of this skill.
