@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateWorld, ORIGIN_ROLE, EXTREME } from '../systems/world/generate.js';
-import { cellMat, busyHeroes, shares, COMBAT, LAYOUT_GROUND, WILD_LAYOUT, KIT_BIOME, MAX_HEROES } from '../systems/world/cellMat.js';
+import { apportion as shares } from '../systems/atlas/Budget.js';
+import { cellMat, busyHeroes, COMBAT, LAYOUT_GROUND, WILD_LAYOUT, KIT_BIOME, MAX_HEROES } from '../systems/world/cellMat.js';
 import { recipesOfCell, recipesOfMat, cellRecipeId } from '../systems/world/cellRegion.js';
 import { budget } from '../systems/atlas/Budget.js';
 import { normaliseWorldTables, STRICT_RINGS, MAX_ARRIVAL, heroTokensOf } from '../config/worldTablesShape.js';
