@@ -7,7 +7,7 @@ import { modifiersOf } from './regionModifiers.js';
 import { activeRegion } from './Atlas.js';
 
 /**
- * A Region's rules (`region.rules`, copied from its maps when it was settled) hold everywhere on
+ * A Region's rules (`region.rules`, copied from its recipes when it was settled) hold everywhere on
  * its mat while the guild is there, and nowhere else. Today a rule is a `Provides`: it registers in
  * the guild-wide aggregator (`GuildModifiers.js`), which every Token's axes already read
  * (`TileModifiers.resolveAxis`), narrowed to a skill by its `category` as a Token's own would be.

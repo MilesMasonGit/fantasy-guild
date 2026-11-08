@@ -309,7 +309,8 @@ events while it plays (`CatchUp.js:29-46`).
 | Derived at load or at runtime, never trusted from the save | Where |
 |---|---|
 | Hero `aggregator`, `className`, `traitName`, `level`, `_rev` (stripped on save) | `GameState.js:14`, `HeroRehydration.js:46-49` |
-| Roster limit and Bank caps, from upgrade ranks | `GuildUpgradeManager.recompute` on `GAME_LOADED` (`src/systems/progression/GuildUpgradeManager.js:25,138`) |
+| Hero `hp.max`, from the best combat skill on every load | `updateHeroMaxHp`, `HeroRehydration.js` |
+| Roster limit, `inventory.maxSlots` and `inventory.maxTabs`, from upgrade ranks | `GuildUpgradeManager.recompute` on `GAME_LOADED` (`src/systems/progression/GuildUpgradeManager.js:25,138`) |
 | `quests.tutorialStep`, from `completedTutorials` | `QuestManager.js:80`, `QuestTokens.js:389` |
 | Per-Token modifier caches ("tile aggregators") | `TileModifiers.rebuildAll` on `GAME_LOADED` and `BOARD_SWAPPED` (`BoardRunner.js:744-781`) |
 | Which Token a hero's flag is working (only `workClaims` is saved) | `StateSchema.js:59-74,273-277` |

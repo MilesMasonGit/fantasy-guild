@@ -24,8 +24,7 @@
 
 /**
  * The stored form's version: a map whose water says another is drawn from its cells alone. A river
- * made since brief 370 also stores a half-width at each point (`h`); one stored before has none and
- * keeps its old banks, so a saved Region's water never changes.
+ * may also store a half-width at each point (`h`); one stored without it keeps its old banks, so a saved Region's water never changes.
  */
 export const WATER_VERSION = 1;
 
@@ -71,7 +70,7 @@ const LAKE = Object.freeze({ warpCell: 140, warp: 140, noiseCell: 60, noise: 44,
 const RIVER = Object.freeze({ widthCell: 180, width: 0.6, fineCell: 24, fine: 6, bank: 10 });
 
 /**
- * A river's course (the owner's picks A and C, brief 370), laid along its line ({@link Maker#path},
+ * A river's course (the owner's picks A and C), laid along its line ({@link Maker#path},
  * keeping `under` of its old wiggle): its bends one half-wave at a time, each swinging to the other
  * side, a half-wave `wave` of the river's widths long (longer where it is wider, as real rivers'
  * are; between 0.75 and 1.25 of that, and within `half`), each bend's swing the Region's `wind` of
@@ -111,7 +110,7 @@ const MEANDER = Object.freeze({
  * - `wide`: how much wider a river runs along its wider stretches: 0.5 is half as wide again at the
  *   widest, 0 none.
  * - `reach`: how far past the Hall's clearing the straight line between a river's ends must pass, in
- *   mat units: 140 keeps it to the mat's sides (every river before brief 370); less lets it run
+ *   mat units: 140 keeps it to the mat's sides (every river without a stored width); less lets it run
  *   nearer the middle, below 0 through the clearing's edge, bent round the Hall.
  */
 export const RIVER_VARIETY = Object.freeze({
@@ -924,7 +923,7 @@ export function readWater(record) {
             && Array.isArray(s.w) && s.w.length === 2 && s.w.every(num)) {
             const points = [];
             for (let i = 0; i < s.p.length; i += 2) points.push([s.p[i], s.p[i + 1]]);
-            // A width at each point (rivers since brief 370); a river stored before keeps its old banks.
+            // A width at each point (newer rivers); a river stored without them keeps its old banks.
             const widths = Array.isArray(s.h) && s.h.length === points.length && s.h.every(v => num(v) && v > 0);
             shapes.push(widths ? { k: s.k, points, w: s.w, h: s.h } : { k: s.k, points, w: s.w });
         } else if (s?.k === SHAPE.POOL && num(s.x) && num(s.y) && num(s.r) && s.r > 0) {

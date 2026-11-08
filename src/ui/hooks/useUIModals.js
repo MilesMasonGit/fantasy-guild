@@ -4,7 +4,7 @@ import { UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * useUIModals
- * Modal state and EventBus subscriptions for the React layer.
+ * Modal state for the React layer. It subscribes to nothing and publishes one event (below).
  */
 
 /**

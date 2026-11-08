@@ -165,7 +165,8 @@ export const EngineBootstrap = {
         GameLoop.onTick('time_tracking', (delta) => {
             if (GameState.getIsInitialized()) {
                 GameState.updateTime({ gameTimeMs: GameState.time.gameTimeMs + delta });
-                // Lifetime playtime for the save-slot screen.
+                // The save-slot screen's playtime is the guild's whole time: the catch-up runs this
+                // handler for accepted time away, so that counts too.
                 GameState.state.meta.totalPlaytime = (GameState.state.meta.totalPlaytime || 0) + delta;
             }
         }, 10);

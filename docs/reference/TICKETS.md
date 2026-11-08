@@ -25,7 +25,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-390**
+**Next free number: T-392**
 
 ---
 
@@ -116,7 +116,6 @@ The findings' full write-ups are in `docs/active/review/R*_*.md` (search the CR4
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-369 | P3 | brief 540 | **"Playtime" means the guild's whole time, including accepted away time** (owner ruling 2026-11-07): the catch-up keeps adding to `meta.totalPlaytime`, the word stays. Comment fix only: the field's comment in `StateSchema.js` and the handler in `EngineBootstrap.js:166-172` say so; no behaviour change | CR4-013 |
 
 **Performance, after their measurement (brief 520)**
 
@@ -160,7 +159,6 @@ The findings' full write-ups are in `docs/active/review/R*_*.md` (search the CR4
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-382 | P3 | brief 540 | **One docs pass for round 4**: `ARCHITECTURE.md`'s drifts (header commit, counts, the poller count 15, the boot lines, the reachability bases); comments describing machinery the code no longer has (board, heroes, React wiring, schema, atlas, startup history), each listed in its finding; the Sync's words still promising maps (`TopBar.jsx`, `FileManagerModal.jsx`); the jscpd comment key; `TESTING.md` gets the second-seed run in the bench window's routine; `soak.mjs`'s header says when its snapshots are taken; `npx update-browserslist-db@latest` as a commit of its own; the desktop release-size settings in `Cargo.toml` (`[profile.release]` with `lto = true`, `codegen-units = 1`, `strip = true`; owner 2026-11-07: yes), checked with one `tauri:build` | CR4-012, 031, 045, 056, 066, 071, 077, 081, 086, 091, 095, 100 |
 
 
 ### Brief 210 — the backlog intake (owner 2026-10-22, Backlog director)
@@ -184,6 +182,8 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | T-138 | P3 | owner | **Sprite-strip player for owner-drawn effects**: play a horizontal strip once at a mat point on the strike frame / event (like `AnimatedHeroSprite.jsx:57-76`); a new `assets/fx/` folder added to the spriteFx generator's skip list (`spriteFx.js:77-80`). Waits for the owner's first effect art (owner_art_list.md). | research/animation_menu.md |
 | T-119 | P3 | open | **Convert existing screens to the strings file** (format, lookup and TEXT.md built 2026-10-20, 9a103fbb: `src/i18n/en.json`, `t()`, `docs/reference/TEXT.md`; new UI uses it). The old screens convert in a later pass. | ideas.md |
 | T-389 | P3 | open | **The heroes' walking glide still starts about 6 CSS transitions a minute while the page is hidden** (found by T-333's second pass, 2026-11-08): `useStubGlide`, the size check in `ItemStubColumn` and `HeroBubbleLayer`'s measure read layout on every update while drawing is paused, so each walk step starts a transition nobody sees (about 19 KB a minute of heap while hidden, freed on show). Skip those measurements while paused and measure once on return | T-333 second pass, 2026-11-08 |
+| T-390 | P3 | open | **Duplicate groups the sweep left on purpose** (brief 540 C9, from T-379): the camera pair (`WorldCamera` / `HallCamera`) and the dock pair (`DockHeroFigure` / `HeroDockTab`) need a look-preserving slice with an eye on the screen; the distance-walk twins (`TerrainMap.shoreDistance` / `TerrainLattice`, `TerrainBlend.walkSides` / `TerrainLattice.walk`) and the ground-sheet decode (`mapPreview.decode` / `groundSheets.decode`) change drawing code, so each waits for the draw bench | brief 540 |
+| T-391 | P3 | open | **Two tuner stores copy each other** (brief 540 C9, from T-379): `matTuning` and `playmatTuning` hold near-identical code; merging them is a design call about what the Mat Tuner and the Ground tuner share, so it needs the owner | brief 540 |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
 

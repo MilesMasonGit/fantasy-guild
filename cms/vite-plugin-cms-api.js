@@ -810,7 +810,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
           return;
         }
 
-        // --- POST /api/sync-game-data (CMS-53 one-way full-file write to data/: `gameData.js`'s writeSync, which the command line's sync runs too) ---
+        // --- POST /api/sync-game-data (one-way full-file write to data/: `gameData.js`'s writeSync, which the command line's sync runs too) ---
         if (req.method === 'POST' && req.url === '/api/sync-game-data') {
           readJson(req, (parsed) => {
             writeSync({
