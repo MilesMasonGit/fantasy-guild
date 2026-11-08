@@ -13,7 +13,7 @@ import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
-import { registerSkillPerks } from '../config/registries/perkRegistry.js';
+import { registerSkillPerks, SKILL_PERKS } from '../config/registries/perkRegistry.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -145,7 +145,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    registerSkillPerks({ forestry: { perks: [] } });
+    registerSkillPerks({ forestry: { perks: [] }, mining: { perks: [] } });
 });
 
 describe('the loadout is kept, not expanded on every read', () => {
@@ -204,6 +204,9 @@ describe('gear: every change shows on the next read', () => {
         hero.equipment = [...hero.equipment];
         hero.equipment[2] = 'lk_quick_charm';
         expect(ids(HeroEffects.loadoutStatements(hero))).toEqual(['lk_fx_quick', 'lk_fx_rush']);
+        InventoryManager.addItem('lk_quicker_hat', 1);
+        hero.equipment.push('lk_quicker_hat');
+        expect(ids(HeroEffects.loadoutStatements(hero))).toEqual(['lk_fx_quick', 'lk_fx_quicker', 'lk_fx_rush']);
     });
 
     it('a copy held in the hands lends with the Bank empty; a link to the Bank only while it has one', () => {
@@ -303,6 +306,14 @@ describe('content registered again shows on the next read', () => {
             registerItems({ lk_quick_charm: item('lk_quick_charm', 'trinket', 'lk_fx_quick') });
         }
         expect(HeroEffects.loadoutStatements(hero)).toEqual(fresh(hero));
+    });
+
+    it('a perk table for a skill that had none, and a table written straight', () => {
+        expect(ids(HeroEffects.loadoutStatements(hero))).toEqual(['lk_fx_rush']);
+        registerSkillPerks({ mining: { perks: [{ level: 20, effectId: 'lk_fx_quicker' }] } });
+        expect(ids(HeroEffects.loadoutStatements(hero))).toEqual(['lk_fx_rush', 'lk_fx_quicker']);
+        SKILL_PERKS.forestry = [{ level: 10, effectId: 'lk_fx_quick', scale: 1 }];
+        expect(ids(HeroEffects.loadoutStatements(hero))).toEqual(['lk_fx_quick', 'lk_fx_quicker']);
     });
 });
 
