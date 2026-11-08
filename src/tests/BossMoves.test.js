@@ -25,7 +25,7 @@ import { ROLE } from '../config/registries/roleRegistry.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { renderStatement, rulesLinesOf } from '../systems/effects/statementText.js';
-import { slotsOf, costSlots } from '../systems/effects/statementSlots.js';
+import { slotsOf, costSlots } from '../../cms/src/engine/ledger/statementSlots.js';
 import { registerStatusFixtures, providesPct, providesFlat, BURN, VENOM } from './fixtures/statusEffects.js';
 
 /**

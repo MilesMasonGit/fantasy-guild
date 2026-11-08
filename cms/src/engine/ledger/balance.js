@@ -1,13 +1,13 @@
 // the progression ledger's balancing preview: numbers proposed so the Typical profile follows the pace
 
-import { buildLedger, HOW, COMBAT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey } from './engine.js';
+import { buildLedger, HOW, COMBAT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey } from '../../../../src/systems/progression/ledger/engine.js';
 import { buildPace, PACE_TEXT } from './pace.js';
 import { PROFILE, BOOST_KIND, BOOST_KIND_TEXT } from './profiles.js';
 import { LIFECYCLE } from './rates.js';
 import { settingsOf, formatMinutes } from './settings.js';
-import { tierLabel } from './plan.js';
-import { EFFECT_TYPES } from '../../effects/constants.js';
-import { SKILLS, SKILL_LAYERS } from '../../../config/registries/skillRegistry.js';
+import { tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
+import { EFFECT_TYPES } from '../../../../src/systems/effects/constants.js';
+import { SKILLS, SKILL_LAYERS } from '../../../../src/config/registries/skillRegistry.js';
 
 /**
  * Automatic balancing as a preview: the numbers the content would need for the

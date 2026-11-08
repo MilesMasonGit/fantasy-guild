@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import './fixtures/testTokens.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
-import { slotsOf, slotDisplay, SLOT_KIND } from '../systems/effects/statementSlots.js';
+import { slotsOf, slotDisplay, SLOT_KIND } from '../../cms/src/engine/ledger/statementSlots.js';
 import { renderSegments, renderStatement } from '../systems/effects/statementText.js';
 
 /**

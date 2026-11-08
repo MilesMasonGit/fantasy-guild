@@ -3,7 +3,7 @@ import { Search, RefreshCw, X } from 'lucide-react';
 
 import {
   CHECKS, CHECK_GROUP_TEXT, SEVERITIES, SEVERITY_TEXT, filterFindings,
-} from '../../../../src/systems/progression/ledger/checks.js';
+} from '../../engine/ledger/checks.js';
 
 export const SEVERITY_COLOR = { block: 'var(--color-error)', warn: 'var(--color-warning)', info: 'var(--color-text-muted)' };
 

@@ -1,8 +1,8 @@
 // the progression ledger's checks: integrity, plan against data, luck and access, and the pacing group's words
 
-import { planOf, PLAN_STATUS, tierLabel } from './plan.js';
-import { HOW, LEDGER_ENGINE_TEXT, parseKey, itemKey, tokenKey, recipeKey, isOneOff, oneOffFindOf } from './engine.js';
-import { toolOf } from '../../../config/registries/toolKinds.js';
+import { planOf, PLAN_STATUS, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
+import { HOW, LEDGER_ENGINE_TEXT, parseKey, itemKey, tokenKey, recipeKey, isOneOff, oneOffFindOf } from '../../../../src/systems/progression/ledger/engine.js';
+import { toolOf } from '../../../../src/config/registries/toolKinds.js';
 
 export { isOneOff };
 

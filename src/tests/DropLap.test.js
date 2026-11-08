@@ -29,10 +29,10 @@ import { hallEffectsNow } from '../ui/components/board/GuildHallEffectsPopover.j
 import { lifecycleLines } from '../ui/components/drawer/lifecycleLines.js';
 import { outlineSpriteName } from '../ui/components/board/hallStarOutline.js';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
-import { buildRateBook, FACTOR } from '../systems/progression/ledger/rates.js';
-import { buildPace } from '../systems/progression/ledger/pace.js';
-import { PROFILE } from '../systems/progression/ledger/profiles.js';
-import { starAddsRate } from '../systems/progression/ledger/hall.js';
+import { buildRateBook, FACTOR } from '../../cms/src/engine/ledger/rates.js';
+import { buildPace } from '../../cms/src/engine/ledger/pace.js';
+import { PROFILE } from '../../cms/src/engine/ledger/profiles.js';
+import { starAddsRate } from '../../cms/src/engine/ledger/hall.js';
 import { normaliseStar } from '../config/hallStars.js';
 import { paceContent } from './fixtures/paceWorld.js';
 import { paceHallSky } from './fixtures/paceHallSky.js';

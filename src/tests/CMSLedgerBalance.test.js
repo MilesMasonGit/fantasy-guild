@@ -14,7 +14,7 @@ import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import { workspaceBalance, balancePack, balanceText, sortedProposals, changeText, cantFixGroups } from '../../cms/src/engine/ledgerBalance.js';
 import { runLedgerJobNow } from '../../cms/src/engine/ledgerJobs.js';
 import { currentValue, fingerprint, validatePack } from '../../cms/src/engine/changePacks.js';
-import { proposeBalance, LEVER } from '../systems/progression/ledger/balance.js';
+import { proposeBalance, LEVER } from '../../cms/src/engine/ledger/balance.js';
 import { balanceContent } from './fixtures/balanceWorld.js';
 
 /**

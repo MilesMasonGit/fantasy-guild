@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderStatement, rulesLinesOf } from '../systems/effects/statementText.js';
-import { slotsOf } from '../systems/effects/statementSlots.js';
+import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { perkLines } from '../ui/components/dock/heroPerks.js';

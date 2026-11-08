@@ -1,4 +1,4 @@
-import { proposeBalance, applyProposals, recordOf, LEVER, BALANCE_TEXT, CANT_FIX } from '../../../src/systems/progression/ledger/balance.js';
+import { proposeBalance, applyProposals, recordOf, LEVER, BALANCE_TEXT, CANT_FIX } from './ledger/balance.js';
 import { contentOf } from './ledgerReport.js';
 import { currentValue, fingerprint, PACK_FORMAT, PACK_VERSION } from './changePacks.js';
 import { adaptToken, adaptRecipe, isInert, isUntagged } from './sim/fieldAdapter.js';

@@ -3,7 +3,7 @@
  * ⚠️ The band judges a source's total profit per hour, never one output at a time: a level-40 Token whose main output carries its earnings is in band even though the cheap material it also drops would look absurd judged alone. Levers run in order, one at a time: the band forgives it (a non-anchor gets twice the anchor band), quantity range, chance, cycle time, then refuse.
  */
 
-import { bandFor } from '../../../../src/config/registries/tempoBands.js';
+import { bandFor } from '../ledger/tempoBands.js';
 import { gphAt, purposeGoldFactor, toleranceFor, DEFAULT_DIALS } from './dials.js';
 import { isDeferredKind } from './fieldAdapter.js';
 import { makeRow, SEVERITY } from './rows.js';

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
-import { economyFindings, HUB_MIN_USES, VALUE_EFFORT_FACTOR } from '../systems/progression/ledger/economy.js';
-import { runChecks, CHECKS } from '../systems/progression/ledger/checks.js';
+import { economyFindings, HUB_MIN_USES, VALUE_EFFORT_FACTOR } from '../../cms/src/engine/ledger/economy.js';
+import { runChecks, CHECKS } from '../../cms/src/engine/ledger/checks.js';
 
 /**
  * The ledger's checks E (brief 290 L9): a hub with one source, a stock with no sink, spawner

@@ -17,7 +17,7 @@ import { registerEffects } from '../config/registries/effectRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
-import { slotsOf } from '../systems/effects/statementSlots.js';
+import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
 

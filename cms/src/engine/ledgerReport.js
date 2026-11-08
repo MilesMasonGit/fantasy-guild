@@ -1,11 +1,11 @@
 import { buildLedger, parseKey, itemKey, tokenKey, recipeKey, HOW } from '../../../src/systems/progression/ledger/engine.js';
-import { runChecks, SEVERITY } from '../../../src/systems/progression/ledger/checks.js';
+import { runChecks, SEVERITY } from './ledger/checks.js';
 import { isPlanned } from '../../../src/systems/progression/ledger/plan.js';
-import { buildPace } from '../../../src/systems/progression/ledger/pace.js';
+import { buildPace } from './ledger/pace.js';
 import { calibrationFindings } from './calibrationStatus.js';
 import { workspaceOriginFindings, baseWorldTables } from './ledgerWorld.js';
-import { plannedTables } from '../../../src/systems/progression/ledger/world.js';
-import { economyFindings } from '../../../src/systems/progression/ledger/economy.js';
+import { plannedTables } from './ledger/world.js';
+import { economyFindings } from './ledger/economy.js';
 import { SKILLS, expandBearer, auditLifecycleBlocks, findUnknownRefs, toolFindings } from '../utils/constants';
 
 /**

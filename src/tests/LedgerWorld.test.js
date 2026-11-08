@@ -5,10 +5,10 @@ import { fileURLToPath } from 'url';
 
 import { buildLedger, tokenKey, itemKey } from '../systems/progression/ledger/engine.js';
 import { cleanPlan, planPlaceOf, PLAN_RINGS } from '../systems/progression/ledger/plan.js';
-import { CHECKS } from '../systems/progression/ledger/checks.js';
+import { CHECKS } from '../../cms/src/engine/ledger/checks.js';
 import {
     WORLD_F, F_CHECKS, plannedTables, originFindings, worldPlan, sweepWorlds, worldChecks,
-} from '../systems/progression/ledger/world.js';
+} from '../../cms/src/engine/ledger/world.js';
 import { STRICT_RINGS, normaliseWorldTables } from '../config/worldTablesShape.js';
 import { PLACEHOLDER_WORLD_TABLES } from '../config/worldPlaceholder.js';
 import { workspaceFromDataFiles, validatePack } from '../../cms/src/engine/changePacks.js';

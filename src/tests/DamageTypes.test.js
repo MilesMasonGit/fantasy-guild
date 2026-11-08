@@ -21,7 +21,7 @@ import { registerTokenTypes, tokenStartingUses } from '../config/registries/toke
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { makeStatement, KEYWORD, paletteForKeyword } from '../systems/effects/statements.js';
-import { slotsOf } from '../systems/effects/statementSlots.js';
+import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';

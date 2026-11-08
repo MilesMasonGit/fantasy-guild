@@ -22,7 +22,7 @@ import { TARGET_MODES, MODIFIER_BUCKETS } from '../config/registries/modifierPal
 import { ENEMY_STYLES } from '../config/registries/enemyProfile.js';
 import { ENEMY_KINDS } from '../config/registries/enemyKinds.js';
 import { STANDS_ON_CHOICES } from '../systems/atlas/TerrainMap.js';
-import { TEMPO_NAMES } from '../config/registries/tempoBands.js';
+import { TEMPO_NAMES } from '../../cms/src/engine/ledger/tempoBands.js';
 import { ATTACK_SPEED_MS } from '../config/FormulaRegistry.js';
 import { EQUIPMENT_CATEGORY_DEFS } from '../config/registries/equipmentCategories.js';
 import { PLAN_STATUSES } from '../systems/progression/ledger/plan.js';

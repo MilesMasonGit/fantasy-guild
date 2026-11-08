@@ -7,7 +7,7 @@ import { useEntityStore } from '../../cms/src/stores/useEntityStore.js';
 import LedgerWorld from '../../cms/src/components/ledger/LedgerWorld.jsx';
 import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import { sweepText, sweepWorkspace, workspaceWorldContext, originPlaces } from '../../cms/src/engine/ledgerWorld.js';
-import { WORLD_F } from '../systems/progression/ledger/world.js';
+import { WORLD_F } from '../../cms/src/engine/ledger/world.js';
 import { WORLD_FIXTURE_RAW, WORLD_FIXTURE_TABLES, worldWorkspace } from './fixtures/ledgerWorldMap.js';
 import { normaliseWorldTables } from '../config/worldTablesShape.js';
 

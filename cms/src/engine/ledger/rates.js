@@ -1,27 +1,27 @@
 // the progression ledger's rate calculator: cycle time, items and XP per hour for a Token or a recipe, factor by factor
 
-import { ModifierAggregator, applyThreeBucket } from '../../effects/ModifierAggregator.js';
-import { EFFECT_TYPES, TARGET_CATEGORIES } from '../../effects/constants.js';
-import { KEYWORD, statementsOf, stationSkillOf, stationKindOf } from '../../effects/statements.js';
-import { expandBearer, effectRefsOf, statementsFromEntry, normaliseScale, MAX_SCALE } from '../../effects/effectLibrary.js';
-import { reachOf, reachCovers, RELATION } from '../../../config/registries/reachRegistry.js';
-import { FILTER_NEEDS, matchesFilters, filtersOf, getFilterKind, targetModeMatches } from '../../../config/registries/filterRegistry.js';
+import { ModifierAggregator, applyThreeBucket } from '../../../../src/systems/effects/ModifierAggregator.js';
+import { EFFECT_TYPES, TARGET_CATEGORIES } from '../../../../src/systems/effects/constants.js';
+import { KEYWORD, statementsOf, stationSkillOf, stationKindOf } from '../../../../src/systems/effects/statements.js';
+import { expandBearer, effectRefsOf, statementsFromEntry, normaliseScale, MAX_SCALE } from '../../../../src/systems/effects/effectLibrary.js';
+import { reachOf, reachCovers, RELATION } from '../../../../src/config/registries/reachRegistry.js';
+import { FILTER_NEEDS, matchesFilters, filtersOf, getFilterKind, targetModeMatches } from '../../../../src/config/registries/filterRegistry.js';
 import {
     outputRange, respawnOf, growsTermsOf, RESPAWN_MIN_MS, stationKindOffers, fieldOf, cropTermsOf,
     PASSIVE_LAP_BASE_MS, foundationTierMeets, campOf
-} from '../../../config/registries/tokenConstants.js';
-import { neededToolOf, toolOf, toolMeets, toolItemFor } from '../../../config/registries/toolKinds.js';
-import { hasCatchPools, catchPoolsOf } from '../../../config/registries/catchPools.js';
-import { wishingWellWater, WISHING_WELL_ITEM, BUILT_IN_UPGRADE_IDS } from '../../../config/guildUpgrades.js';
-import { normaliseHallSky, rankOf } from '../../../config/hallStars.js';
-import { hallRulesOf } from '../hallModifiers.js';
-import { flooredWorkTime, floorSpeedUp, passiveLapMs } from '../../board/workTime.js';
-import { ownCycleCost } from '../../board/cycleCharges.js';
-import { applyXpBonus } from '../../hero/xpBonus.js';
-import { perkRowsOf, perksEarnedAt } from '../../hero/perkTable.js';
-import { neverWearsOut } from '../../core/wearRule.js';
-import { isSpentCategory, isAlwaysOn, isWorkMoment, workSkillMatches, doseKindsOf, DOSE, DOSE_LENGTH } from '../../core/consumableRule.js';
-import { modifiersOf as regionModifiersOf } from '../../atlas/regionModifiers.js';
+} from '../../../../src/config/registries/tokenConstants.js';
+import { neededToolOf, toolOf, toolMeets, toolItemFor } from '../../../../src/config/registries/toolKinds.js';
+import { hasCatchPools, catchPoolsOf } from '../../../../src/config/registries/catchPools.js';
+import { wishingWellWater, WISHING_WELL_ITEM, BUILT_IN_UPGRADE_IDS } from '../../../../src/config/guildUpgrades.js';
+import { normaliseHallSky, rankOf } from '../../../../src/config/hallStars.js';
+import { hallRulesOf } from '../../../../src/systems/progression/hallModifiers.js';
+import { flooredWorkTime, floorSpeedUp, passiveLapMs } from '../../../../src/systems/board/workTime.js';
+import { ownCycleCost } from '../../../../src/systems/board/cycleCharges.js';
+import { applyXpBonus } from '../../../../src/systems/hero/xpBonus.js';
+import { perkRowsOf, perksEarnedAt } from '../../../../src/systems/hero/perkTable.js';
+import { neverWearsOut } from '../../../../src/systems/core/wearRule.js';
+import { isSpentCategory, isAlwaysOn, isWorkMoment, workSkillMatches, doseKindsOf, DOSE, DOSE_LENGTH } from '../../../../src/systems/core/consumableRule.js';
+import { modifiersOf as regionModifiersOf } from '../../../../src/systems/atlas/regionModifiers.js';
 
 /**
  * What one hero earns working one Token (or one recipe at a station) at the content's own numbers,

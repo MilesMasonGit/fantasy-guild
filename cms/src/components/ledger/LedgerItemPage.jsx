@@ -5,7 +5,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import {
   PLAN_STATUSES, PLAN_TEXT, PLAN_TIERS, tierLabel, tierOrNull,
 } from '../../../../src/systems/progression/ledger/plan.js';
-import { ruleIndex, CHECKS } from '../../../../src/systems/progression/ledger/checks.js';
+import { ruleIndex, CHECKS } from '../../engine/ledger/checks.js';
 import { parseKey, LEDGER_ENGINE_TEXT } from '../../../../src/systems/progression/ledger/engine.js';
 import { ledgerRows, LEDGER_KIND_TEXT } from '../../engine/ledgerRows';
 import { sourcesOf, usesOf, effectiveTier, effortText, firstReachText } from '../../engine/ledgerPage';

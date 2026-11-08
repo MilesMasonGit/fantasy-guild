@@ -18,7 +18,7 @@
  */
 
 export const CALIBRATED_FILES = Object.freeze([
-    'src/systems/progression/ledger/rates.js',
+    'cms/src/engine/ledger/rates.js',
     'src/systems/effects/ModifierAggregator.js',
     'src/systems/effects/statements.js',
     'src/systems/effects/effectLibrary.js',

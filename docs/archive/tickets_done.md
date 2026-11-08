@@ -246,3 +246,4 @@ T-339 — The CMS Sync refuses a stale tab (workspace revision) and, from the pa
 T-342 — Moving a Token onto a half-used copy it fits into no longer leaves a zero-charge ghost at its old spot — fix/zero-charge-ghost — 2026-11-07
 T-340 — The last-harvest farming test pins its random rolls, so it passes under the second test seed; the full second-seed suite is green — fix/farming-seed-test — 2026-11-07
 T-373 — The import cycle is cut (loading a save rebuilds heroes in systems/core/LoadedState.js; cycles 0), CombatFormulas moved to systems/combat, the ground painters and playmatTuning to ui/components/board/terrain; pure moves otherwise — cleanup/folder-moves — 2026-11-07
+T-381 — The twelve CMS-only ledger files moved to cms/src/engine/ledger (engine.js and plan.js stay); tests stay in src/tests with new paths; depcruise rule game-not-from-cms — cleanup/folder-moves — 2026-11-07

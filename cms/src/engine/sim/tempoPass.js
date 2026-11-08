@@ -1,6 +1,6 @@
 /** Economic simulator, pass 1 of 5: TIME. Picks every cycle time from its Tempo band (the middle of the band at the required level, snapped to whole seconds) and the units per hour of each output. Value-independent: it never reads an item value, which is half of why the design has no feedback loop. It writes nothing: a caller gets a Map, and `sim/writeBack.js` lands each cycle time on `config.cycleTimeMs` (Tokens) or `durationMs` (recipes). */
 
-import { bandFor } from '../../../../src/config/registries/tempoBands.js';
+import { bandFor } from '../ledger/tempoBands.js';
 import { isInert, isUntagged } from './fieldAdapter.js';
 import { makeRow, SEVERITY } from './rows.js';
 import { isSimPurpose } from '../../utils/simVocabulary.js';

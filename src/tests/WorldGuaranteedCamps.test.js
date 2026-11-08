@@ -4,7 +4,7 @@ import { cellMat, busyHeroes, MAX_HEROES } from '../systems/world/cellMat.js';
 import { worldFindings, WORLD_CHECK } from '../systems/world/checks.js';
 import { normaliseWorldTables, STRICT_RINGS } from '../config/worldTablesShape.js';
 import { PLACEHOLDER_WORLD_TABLES } from '../config/worldPlaceholder.js';
-import { worldPlan, WORLD_F } from '../systems/progression/ledger/world.js';
+import { worldPlan, WORLD_F } from '../../cms/src/engine/ledger/world.js';
 import { tokenKey } from '../systems/progression/ledger/engine.js';
 import { WORLD_FIXTURE_RAW, worldWorkspace, contentOf } from './fixtures/ledgerWorldMap.js';
 

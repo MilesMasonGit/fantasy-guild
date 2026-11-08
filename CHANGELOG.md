@@ -5,6 +5,12 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The CMS's economy simulator files moved into the CMS** (CMS and tools only): the twelve
+  ledger files the game never runs (`balance`, `calibration`, `checks`, `economy`, `hall`, `pace`,
+  `profiles`, `rates`, `settings`, `world`, `statementSlots`, `tempoBands`) moved to
+  `cms/src/engine/ledger/`; `engine.js` and `plan.js`, which the Encyclopedia uses, stay in the
+  game. A new dependency rule keeps game code from importing the CMS. The CMS Ledger will call the
+  rate calculator's calibration stale until `npm run bench:calibrate` runs again.
 - **Code folders tidied, nothing a player sees changes**: rebuilding heroes after a load moved
   out of the save store into the load path (`src/systems/core/LoadedState.js`), which ends the
   game's one import loop (`npm run cycles` reads 0 groups, was 1 of 16 modules); the combat maths

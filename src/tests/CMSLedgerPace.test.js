@@ -10,7 +10,7 @@ import { bundledSources } from '../../cms/src/engine/calibrationStatus';
 import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import {
     CALIBRATED_FILES, hashText, fileHashes, calibrationState, calibrationFinding,
-} from '../systems/progression/ledger/calibration.js';
+} from '../../cms/src/engine/ledger/calibration.js';
 import { paceWorkspace } from './fixtures/paceWorld.js';
 
 /**

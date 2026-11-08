@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { buildRateBook, chainRates, axisResolverOf, LIFECYCLE, LIMIT } from '../systems/progression/ledger/rates.js';
+import { buildRateBook, chainRates, axisResolverOf, LIFECYCLE, LIMIT } from '../../cms/src/engine/ledger/rates.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import { GameLoop } from '../systems/core/GameLoop.js';

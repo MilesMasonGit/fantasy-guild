@@ -57,20 +57,20 @@ top folders by import count from `npm run depcruise` (JSON output, 615 modules, 
 | Folder | Files / lines | Owns | Entry file(s) | Depends on |
 |---|---|---|---|---|
 | `src/main.jsx` | 1 / 127 | Boot sequence (§1). | — | systems/core, ui |
-| `src/config/` | 51 / 9,994 | Content registries (`registries/`, 38 files), tuning tables, combat numbers (`FormulaRegistry.js`), the Hall upgrade web (`guildUpgrades.js`), the mat-size dev tuner stored in localStorage (`matTuning.js`). | `DatabaseManager.js`, `registries/tokenRegistry.js`, `registries/itemRegistry.js` | systems/effects (14 edges), systems/atlas (3) — see §7 |
+| `src/config/` | 50 / 9,828 | Content registries (`registries/`, 38 files), tuning tables, combat numbers (`FormulaRegistry.js`), the Hall upgrade web (`guildUpgrades.js`), the mat-size dev tuner stored in localStorage (`matTuning.js`). | `DatabaseManager.js`, `registries/tokenRegistry.js`, `registries/itemRegistry.js` | systems/effects (14 edges), systems/atlas (3) — see §7 |
 | `src/i18n/` | 1 + `en.json` / 72 + 568 | On-screen strings, `t()`; every `*.json` beside it is a language (`src/i18n/index.js:5-8`). | `index.js` | utils |
 | `src/state/` | 2 / 543 | The save's shape and validation (`StateSchema.js`), the live store and serialisation (`GameState.js`). | `GameState.js` | utils; nothing in systems (§7) |
 | `src/utils/` | 6 / 606 | Logger, RNG, formatters, XP curve, sprite path resolution (`AssetManager.js`). | — | config (2 edges) |
 | `src/systems/core/` | 29 / 6,080 | Loop, clocks, bus, saves, catch-up, settings, audio, content audits (`ContentAudit.js`, `lifecycleAudit.js`, `*Rule.js`). | `EngineBootstrap.js`, `GameLoop.js`, `SaveManager.js`, `CatchUp.js` | config, board, effects, utils |
 | `src/systems/board/` | 61 / 15,862 | The playmat: Token storage (`BoardState.js`), placement rules and geometry (`Placement.js`, `MatPlacement.js`), hero orders (`Flags.js`), walking (`HeroMotion.js`, `EnemyMotion.js`), work cycles (`BoardRunner.js`), modifier caches (`TileModifiers.js`), combat on the mat (`BoardCombat.js`), timed changes and spawners (`TimedChanges.js`, `SpawnerSystem.js`), loot sprites (`SpriteLayer.js`). | `BoardRunner.js` | config (146), core, effects, hero, state |
-| `src/systems/effects/` | 12 / 4,551 | The statement grammar (`statements.js`), its text (`statementText.js`), modifier math (`ModifierAggregator.js`), live statuses (`LiveEffects.js`), content id migrations. | `statements.js`, `LiveEffects.js` | config |
+| `src/systems/effects/` | 11 / 3,573 | The statement grammar (`statements.js`), its text (`statementText.js`), modifier math (`ModifierAggregator.js`), live statuses (`LiveEffects.js`), content id migrations. | `statements.js`, `LiveEffects.js` | config |
 | `src/systems/hero/` | 15 / 1,613 | Hero records, generation, regen, skills, consumption, rehydration. | `HeroManager.js` | config, core, effects |
 | `src/systems/combat/` | 9 / 1,157 | Attack resolution and the combat maths (`CombatFormulas.js`), loot rolls, wounded clock, defeat penalties. | `CombatProcessor.js`, `WoundedSystem.js` | config, core, utils, hero |
 | `src/systems/equipment/` | 7 / 727 | Gear and tools held by heroes, breakage, starter tools. | `EquipmentManager.js` | config, state |
 | `src/systems/inventory/` | 5 / 729 | The Bank: add/remove, tabs, rate tracking. | `InventoryManager.js` | utils, config, core |
 | `src/systems/atlas/` | 15 / 5,296 | Regions and travel (`Atlas.js`), Region generation from map ingredients (`Budget.js`, `Layout.js`, `WaterShapes.js`), the Starter Camp. | `Atlas.js` | config, board, core |
 | `src/systems/world/` | 13 / 2,193 | The run's hex world map, generated once at a new game (`generate.js`), settling cells (`Settling.js`, `Arrival.js`). | `World.js` | config, atlas, board |
-| `src/systems/progression/` | 18 / 7,736 | Guild Hall upgrades (`GuildUpgradeManager.js`), discoveries and the collection log, and **`ledger/`** (12 files, 6,881 lines): the CMS's economy simulator plus the Encyclopedia's reach engine (§2.1). | `GuildUpgradeManager.js`, `ledger/engine.js` | config, effects, core, world |
+| `src/systems/progression/` | 8 / 2,119 | Guild Hall upgrades (`GuildUpgradeManager.js`), discoveries and the collection log, and **`ledger/`** (`engine.js`, `plan.js`): the Encyclopedia's reach engine, which the CMS's economy simulator (`cms/src/engine/ledger/`) also uses (§2.1). | `GuildUpgradeManager.js`, `ledger/engine.js` | config, effects, core, world |
 | `src/systems/quests/` | 5 / 1,194 | Tutorial chain and bounty quests, which are Tokens on the mat (`QuestTokens.js`). | `QuestManager.js` | config, board |
 | `src/systems/notifications/` | 6 / 1,018 | Banners and item stubs as small module stores; `routing.js` decides where each engine event goes. | `routing.js` (wired by `core/NotificationSubscriptions.js`) | config, core, state |
 | `src/ui/ReactRoot.jsx` + root files | 3 / 528 | Root component; `drawingPause.js`; `guildInspectSelection.js`. | `ReactRoot.jsx` | ui/components (32), hooks |
@@ -94,10 +94,10 @@ top folders by import count from `npm run depcruise` (JSON output, 615 modules, 
   export the CMS alone uses is reported unused.
 - **Reachable from `src/main.jsx`** (depcruise graph, static and dynamic edges): 584 of 599
   `src` modules. The 15 that are not, ~7,160 lines:
-  - CMS-only (imported by `cms/src`, `bench/` or tests): `src/systems/progression/ledger/` except
-    `engine.js` (10 files: `balance`, `pace`, `rates`, `profiles`, `world`, `checks`,
-    `economy`, `settings`, `hall`, `calibration`), `src/systems/effects/statementSlots.js`,
-    `src/config/registries/tempoBands.js`.
+  - CMS-only: none since the twelve ledger files (`balance`, `pace`, `rates`, `profiles`,
+    `world`, `checks`, `economy`, `settings`, `hall`, `calibration`, `statementSlots`,
+    `tempoBands`) moved to `cms/src/engine/ledger/`; game tests still import some of them
+    (`statementSlots` above all), but nothing under `src/` outside `src/tests/` does.
   - Loaded another way: `src/ui/components/atlas/worldPicture.worker.js` (a Worker made with
     `new URL(…)`, `src/ui/components/atlas/WorldMap.jsx:100`).
   - **Imported by tests only**: `src/ui/components/board/RingBadge.jsx` (only comments mention
@@ -433,7 +433,7 @@ src/config/DatabaseManager.js ──▶ src/config/registries/*.js ──▶ sys
 
 **The CMS** (`cms/`) is a separate local React app, the only authoring surface; its **Sync to
 Game** overwrites `data/` and commits it on the checked-out branch. It imports 62 game modules
-directly (mostly `src/config/registries`, `src/systems/progression/ledger`, `src/systems/effects`,
+directly (mostly `src/config/registries`, `src/systems/progression/ledger/engine.js` and `plan.js`, `src/systems/effects`,
 the content rules in `src/systems/core/*Rule.js`, and one UI file,
 `src/ui/components/atlas/worldMapLayout.js`), so a game-side change can break it. Internals: see
 [`cms/README.md`](../../cms/README.md).
@@ -477,6 +477,7 @@ rule was shown to fire on a scratch fixture tree before being kept, and reports 
 | `no-circular`: any cycle, dynamic links included | warn | 0 |
 | `systems-not-from-ui`, `systems-no-react`, `state-not-from-ui` | error | 0 |
 | `state-never-imports-systems`: state imports nothing from systems | error | 0 |
+| `game-not-from-cms`: nothing under `src/` but tests imports `cms/` | error | 0 |
 | `config-not-from-state-or-ui` | error | 0 |
 | `config-never-reaches-state` (transitively) | error | 0 |
 | `config-systems-kernel-only`: config imports from systems only `CONFIG_KERNEL` | error | 0 |

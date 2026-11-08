@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
 import { buildLedger, tokenKey, itemKey, wedgeKey, ringKey, HOW } from '../systems/progression/ledger/engine.js';
-import { buildPace, PROFILE } from '../systems/progression/ledger/pace.js';
-import { worldPlan } from '../systems/progression/ledger/world.js';
+import { buildPace, PROFILE } from '../../cms/src/engine/ledger/pace.js';
+import { worldPlan } from '../../cms/src/engine/ledger/world.js';
 import { normaliseWorldTables } from '../config/worldTablesShape.js';
 import { PLACEHOLDER_WORLD_TABLES } from '../config/worldPlaceholder.js';
 import { workspaceLedger, contentOf as reportContent } from '../../cms/src/engine/ledgerReport.js';

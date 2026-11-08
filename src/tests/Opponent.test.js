@@ -30,7 +30,7 @@ import { ROLE, ROLES, getRole } from '../config/registries/roleRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { KEYWORD, makeStatement, rolesForKeyword } from '../systems/effects/statements.js';
-import { slotsOf } from '../systems/effects/statementSlots.js';
+import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
 

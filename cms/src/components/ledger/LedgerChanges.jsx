@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { moveText, stageMoveText } from '../../engine/ledgerCompare';
 import { SEVERITY_COLOR } from './LedgerProblems';
 import { OTHER_LANE } from '../../engine/ledgerTimeline';
-import { PACE_TEXT } from '../../../../src/systems/progression/ledger/pace.js';
+import { PACE_TEXT } from '../../engine/ledger/pace.js';
 
 const laneName = (id) => (id === OTHER_LANE ? 'No skill level' : PACE_TEXT.skill(id));
 
