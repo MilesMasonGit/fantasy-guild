@@ -13,7 +13,6 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
-import { getTokenType } from '../config/registries/tokenRegistry.js';
 
 /**
  * Triggered Tokens — the fifth category.

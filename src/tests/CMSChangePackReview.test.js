@@ -13,7 +13,7 @@ import App from '../../cms/src/App.jsx';
 import cmsFileApi from '../../cms/vite-plugin-cms-api.js';
 import { fingerprint } from '../../cms/src/engine/changePacks.js';
 import {
-    emptySession, accept, applyEarly, reject, acceptAll, rejectAll, finish, planUndo, undo, rowState,
+    emptySession, applyEarly, reject, acceptAll, rejectAll, finish, planUndo, undo, rowState,
 } from '../../cms/src/engine/packReview.js';
 
 /**

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { createPortal } from 'react-dom';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';

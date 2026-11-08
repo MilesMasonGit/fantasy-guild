@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
@@ -42,7 +41,6 @@ export const EntityRibbon = ({
     // the row needs explaining rather than naming, or `null` for none.
     title,
     size = 'md',
-    variant = 'default',
     onClick,
     onInspect,
     amount,

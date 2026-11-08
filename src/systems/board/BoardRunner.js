@@ -14,7 +14,6 @@ import * as Charges from './Charges.js';
 import * as Respawn from './Respawn.js';
 import * as BlockUpkeep from './BlockUpkeep.js';
 import * as TriggerSystem from './TriggerSystem.js';
-import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as Flags from './Flags.js';

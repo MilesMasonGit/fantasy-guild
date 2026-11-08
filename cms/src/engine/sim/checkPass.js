@@ -1,12 +1,12 @@
 /**
  * Economic simulator: the check pass. It derives nothing: it reads the settled line and says out loud what looks wrong, in two checks.
  * 1. The progression guard: the band ceiling at level L must sit below the band floor at level L+10, everywhere on the curve. It is aimed at the developer's dials, not at content. It holds for anchor bands only, because the doubled non-anchor band overlaps at the seam. ⚠️ It also fails by a fraction of a percent where the earn curve flattens past its bend, so the guard refuses only where the curve is still compounding and reports the flattened tail as one Info row.
- * 2. Charge scale, hours first: the panel shows lifetime in hours, with soft Info rows for outliers (a Common living over about a day, any Token living under about ten minutes). ⚠️ Charges are read through `liveCharges`: `uses`, never `charges`.
+ * 2. Charge scale, hours first: the panel shows lifetime in hours, with soft Info rows for outliers (a Common living over about a day, any Token living under about ten minutes). ⚠️ `entity.charges` is set by the adapter from `uses` (`liveCharges`), never from an authored `charges`.
  * Like every pass here it writes nothing: a caller gets rows and a Map.
  */
 
 import { gphAt, toleranceFor, DEFAULT_DIALS } from './dials.js';
-import { isInert, liveCharges } from './fieldAdapter.js';
+import { isInert } from './fieldAdapter.js';
 import { cyclesPerHour } from './tuningPass.js';
 import { makeRow, SEVERITY } from './rows.js';
 import { makeRefusal } from './refusals.js';

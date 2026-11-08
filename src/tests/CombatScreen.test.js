@@ -11,7 +11,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
-import * as Placement from '../systems/board/Placement.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
@@ -475,7 +474,7 @@ describe('the fight window belongs to its hero (owner, 2026-11-05)', () => {
 
 describe('an elixir counts the fight it is working in (owner, 2026-10-25: 10 down to 1)', () => {
     it('a fresh one shows 10, one less as each fight ends, 1 in its last fight, then it is gone', () => {
-        const { heroId, enemyId } = buildFight();
+        const { heroId } = buildFight();
         const hero = () => HeroManager.getHero(heroId);
         const shown = () => activeElixirsOf(hero()).map(e => e.count);
         const engaged = () => {

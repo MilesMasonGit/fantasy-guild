@@ -14,7 +14,6 @@ const { DndContext } = await import('@dnd-kit/core');
 const { SettingsManager } = await import('../systems/core/SettingsManager.js');
 const { EngineBootstrap } = await import('../systems/core/EngineBootstrap.js');
 const { GameLoop } = await import('../systems/core/GameLoop.js');
-const { EventBus } = await import('../systems/core/EventBus.js');
 const { GameState } = await import('../state/GameState.js');
 const { InventoryManager } = await import('../systems/inventory/InventoryManager.js');
 const Atlas = await import('../systems/atlas/Atlas.js');

@@ -159,7 +159,6 @@ The findings' full write-ups are in `docs/active/review/R*_*.md` (search the CR4
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
 | T-379 | P3 | brief 540 | **Exports and copies across folders**: 49 exports nothing reads and 127 stray `export default` lines (knip); eighteen groups of logic written twice or three times (R0's nine and R9's nine; the camera and dock pairs need an eye-check, the RNG helper must stay bit-identical) | CR4-011, 082, 083 |
-| T-380 | P3 | brief 540 | **The code-health tools**: a strict knip config that sees the CMS and does not count tests as users; eslint skips `.claude/`, `_art_leftovers/`, `docs/`; `package.json` drops `@dnd-kit/modifiers` and adds `picomatch` and `@vitest/coverage-v8`; the test helper named like a hook renamed. After T-373, cycles and depcruise read 0 and can join the gate | CR4-006, 007, 008, 009, 085 |
 
 **Docs (brief 540, last phase)**
 
@@ -197,7 +196,6 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | T-054 | P3 | open | Class names that match no stylesheet: `animate-in`/`fade-in`/`zoom-in-95` (no `tailwindcss-animate`), `custom-scrollbar`, `gi-scrollbar`. The unused z-index tokens went in 87a461a2; the unloaded stylesheets were already gone. | CR3-465 |
 | T-056 | P3 | open | Rename `DeckDndProvider`/`DeckDndContext` (about forty test files import them). The tile accessors, unused constants, tray particle fields and dead particle lookups went in 70590720. | CR3-504, 408 |
 | T-057 | P3 | open | Rename tile-named engine vocabulary — code names and event strings together, one slice. | CR3-501 |
-| T-058 | P3 | brief 540 | Lint residue (74 errors at 1410f15e), read item by item in review round 4: five are lost logic (`MERGE_GRACE_MS` in `SpriteLayer.js:39`, declared and never used: use it at `:331` with 1100 or delete it; `areaId` in four signatures: drop it, areas are gone; an `emoji` block, a `variant` prop, `isDragActive`), eleven are stray names in the game, the rest test leftovers (with T-380's ignores and hook rename). Don't add hook dependencies blindly. Then lint can join the merge gate | CR3-110, 265, 312, 359, 467, CR4-084 |
 | T-059 | P3 | open | The CMS imports `itemRegistry` for one constant. | CR3-511 |
 | T-060 | P3 | blocked (soak) | Toasts may leave page elements behind. A 60-minute soak decides: certification Part G (`docs/archive/certification_checklist.md`), or automate it with the drawing bench's Chrome driver. | CR3-039 |
 | T-063 | P3 | open | `resolveAnimationPath` hard-codes an id map and uses a relative `assets/` path. *Unverified since 2026-09-21.* | FMR |

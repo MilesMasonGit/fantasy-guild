@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { isPointOpaque, isElementOpaqueAtPoint, resolveTopOpaqueElement, setAlphaMaskForTests } from '../ui/utils/alphaHitTest.js';
+import { isPointOpaque, isElementOpaqueAtPoint, setAlphaMaskForTests } from '../ui/utils/alphaHitTest.js';
 
 describe('Pixel-Perfect Alpha Hit-Testing (alphaHitTest.js)', () => {
     it('returns true optimistically if image mask is not yet cached or src is missing', () => {

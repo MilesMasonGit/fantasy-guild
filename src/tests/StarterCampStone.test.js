@@ -9,7 +9,7 @@ import { HALL_CLEARING } from '../systems/atlas/Layout.js';
 import { TERRAIN, TERRAIN_CELL, terrainAt, decodeTerrain } from '../systems/atlas/TerrainMap.js';
 import { readStone, STONE_SHAPE } from '../systems/atlas/StoneShapes.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { setStarterCampForTests, resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
+import { resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

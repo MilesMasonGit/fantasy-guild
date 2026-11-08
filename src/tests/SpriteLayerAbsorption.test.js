@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -88,7 +88,7 @@ describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
 
     it('creates separate stacks for tokens farther than 2 steps apart', () => {
         // Spot 0 (top-left) and spot 35 (bottom-right)
-        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(0) });
+        SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(0) });
         const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(35) });
 
         expect(second.targetStackId).toBeNull();

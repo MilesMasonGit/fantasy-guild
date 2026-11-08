@@ -52,9 +52,6 @@ const here = path.dirname(fileURLToPath(import.meta.url));
  */
 const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 
-/** The Token standing exactly on spot `i`. */
-const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
-
 function fighter(id) {
     const hero = generateHero({ name: id });
     hero.id = id;

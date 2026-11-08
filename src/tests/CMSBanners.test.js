@@ -7,7 +7,6 @@ import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
 import StarterCampPage from '../../cms/src/components/starterCamp/StarterCampPage.jsx';
-import { areaBannerIds } from '../config/areaBanners.js';
 
 /**
  * The banner field in the CMS: a Base Map and the Starter Camp each pick an area banner (or leave

@@ -1,4 +1,3 @@
-import React from 'react';
 
 /** Both sky tiles are 512 art pixels square, drawn at 2×. */
 export const SKY_TILE_ART_PX = 512;

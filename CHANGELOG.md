@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Code-health tools tidied**, nothing a player sees changes: a stricter dead-code check (`npm run dead-code:strict`, which sees the CMS and does not count tests as users), the linter skips other sessions folders and docs, the package list drops an unused drag package and names two it relied on by accident, and the unused names and leftovers the linter flagged in the game and its tests are gone. The merge delay for same-kind sprites is now one constant (1100 ms, as before).
+
 
 - **Dead code removed from the world, Atlas and quests** (no change in play): the quest manager's callerless `abandonQuest`, the unused `sourceRect` on `claimQuest`, three unused re-exports, the Atlas's `reroll` (no screen has used it since the world map; the new-game world reroll is separate and stays), the budget's `ignored` list, the layout's `anywhereDry`, the Region rules' `installedSources` and several unimported exports. The world's materials memo is now kept once, not rebuilt on each call of `lookups()`.
 

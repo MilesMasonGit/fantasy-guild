@@ -5,8 +5,6 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as Flags from '../systems/board/Flags.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 /**

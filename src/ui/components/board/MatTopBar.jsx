@@ -1,4 +1,3 @@
-import React from 'react';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { useLiveMatFit } from './MatFitContext.jsx';

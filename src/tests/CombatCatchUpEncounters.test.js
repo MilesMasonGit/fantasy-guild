@@ -278,7 +278,7 @@ describe('encounters during a catch-up', () => {
         };
 
         let step = 0;
-        let hunter = buildDen();
+        buildDen();
         let stop = watch(() => step);
         for (step = 0; step < AWAY_MS / 1000; step++) GameLoop.runHandlers(1000);
         const plainEvents = stop();
@@ -294,14 +294,13 @@ describe('encounters during a catch-up', () => {
             if (next !== undefined) expect(next - k).toBeGreaterThanOrEqual(29);
         }
 
-        hunter = buildDen();
+        buildDen();
         stop = watch(() => 0);
         await CatchUp.run({ savedAt: NOW - AWAY_MS, now: NOW, save: false, yieldFn: () => Promise.resolve() });
         const caughtEvents = stop();
         const caught = { events: caughtEvents.map(([e]) => e), hero: GameState.state.heroes[0].skills.melee.xp, draws: stream.draws,
             tokens: BoardState.tokens().map(t => ({ typeId: t.typeId, uses: t.usesRemaining, clocks: t.clocks ?? null })) };
         expect(caught).toEqual(plain);
-        void hunter;
     }, 60_000);
 
     it('an old save with two heroes working one enemy loads into one fight; the second waits', async () => {

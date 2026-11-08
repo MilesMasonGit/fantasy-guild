@@ -47,7 +47,7 @@ describe('EconSim — the runner', () => {
         const result = runSim(corpus());
         const explained = new Set(result.rows.filter(r => r.itemId).map(r => r.itemId));
 
-        for (const [itemId, item] of Object.entries(itemData)) {
+        for (const [itemId] of Object.entries(itemData)) {
             if (result.values.has(itemId)) continue;
             expect(explained.has(itemId), `${itemId} is neither priced nor explained`).toBe(true);
         }

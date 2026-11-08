@@ -15,7 +15,7 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { GUILD_UPGRADES, HALL_NODE, getUpgradeDef, getUpgradeWebLinks } from '../config/guildUpgrades.js';
-import { useOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
+import { withOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -28,7 +28,7 @@ const stateOf = (container, id) =>
 const litOf = (container, key) =>
     container.querySelector(`[data-hall-link="${key}"]`)?.getAttribute('data-link-lit');
 
-useOuterUpgrade();
+withOuterUpgrade();
 
 beforeEach(() => {
     GameState.initNew();

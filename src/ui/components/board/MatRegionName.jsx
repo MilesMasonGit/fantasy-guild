@@ -1,4 +1,3 @@
-import React from 'react';
 import * as Atlas from '../../../systems/atlas/Atlas.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { Tooltip } from '../base/Tooltip.jsx';

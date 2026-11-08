@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
-import { GAME_VERSION } from '../state/StateSchema.js';
-import { migrateState } from '../systems/core/SaveMigration.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
@@ -10,7 +8,6 @@ import * as RecipeResolver from '../systems/board/RecipeResolver.js';
 import { RECIPE } from '../systems/board/RecipeResolver.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { QuestManager } from '../systems/quests/QuestManager.js';
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;

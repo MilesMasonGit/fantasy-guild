@@ -330,7 +330,7 @@ describe('A kill', () => {
     });
 
     it('a depleted enemy Token disappears, leaving its hero standing there', () => {
-        const bear = place(10, 'fixture_enemy', 'hero_1', 1);
+        place(10, 'fixture_enemy', 'hero_1', 1);
         run(60000);
 
         expect(tokenAt(10)).toBeNull();
