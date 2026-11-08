@@ -5,6 +5,8 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **A farming test no longer depends on the dice** (tests only): the last-harvest test pins its random rolls for that cycle, so it passes under the second test seed too.
+
 - **Dev panel: the "Lap star in the sky" button is gone** (dev only). It installed a hand-copied
   Swift Laps star for testing before the owner synced the real one; the tests now read the synced
   star from the data, and the copy is deleted.
