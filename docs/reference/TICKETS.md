@@ -103,7 +103,6 @@ The findings' full write-ups are in `docs/active/review/R*_*.md` (search the CR4
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-344 | P3 | brief 510, after 520 M7 | **A minimised desktop app keeps the visible page's idle cost** (WebView2 never hides the page; `src/ui/drawingPause.js` pauses only the frame clocks): measure first (brief 520 M7), then under `fg-window-minimised` also pause the CSS loops (`data-paused` on the body), the pollers (T-343) and the per-tick React commits, reading once on restore. Engine ticks and saves keep running | CR4-098 |
 
 **Combat XP stars (brief 530; owner ruling 2026-11-07)**
 
