@@ -22,7 +22,6 @@ import { matW, matH } from '../config/matGeometry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { walkHero } from './fixtures/walkHero.js';
 import * as Flags from '../systems/board/Flags.js';
-import { MatHero } from '../ui/components/board/MatHero.jsx';
 import { AnimatedEnemySprite } from '../ui/components/board/AnimatedEnemySprite.jsx';
 import { AnimatedHeroSprite } from '../ui/components/board/AnimatedHeroSprite.jsx';
 import { ItemStubColumn } from '../ui/components/notifications/ItemStubColumn.jsx';
