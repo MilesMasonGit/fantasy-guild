@@ -13,6 +13,7 @@ import {
 } from './worldMapLayout.js';
 import { paintWorld, paintRope, ringEdges, tileStandIn, pictureFrame, landOf, FOG_CSS } from './worldPicture.js';
 import { CellTip } from './WorldPanel.jsx';
+import { panDrag } from '../../utils/panDrag.js';
 
 /**
  * The world map: the painted world (`worldPicture.js`) with the shown cells standing on it as
@@ -421,25 +422,13 @@ export const WorldMap = ({ view, selectedId = null, onSelect, reserve = NO_RESER
     const onPointerDown = (e) => {
         if (e.button !== 0) return;
         dropClick.current = false;
-        const start = { id: e.pointerId, x: e.clientX, y: e.clientY, from: atRef.current, moved: false };
-        const move = (ev) => {
-            if (ev.pointerId !== start.id) return;
-            const dx = (ev.clientX - start.x) / scale;
-            const dy = (ev.clientY - start.y) / scale;
-            if (!start.moved && Math.hypot(dx, dy) < DRAG_START_PX) return;
-            start.moved = true;
-            setView(clampView({ x: start.from.x + dx, y: start.from.y + dy }, fitRef.current.sight, fitRef.current.bounds));
-        };
-        const up = (ev) => {
-            if (ev.pointerId !== start.id) return;
-            window.removeEventListener('pointermove', move);
-            window.removeEventListener('pointerup', up);
-            window.removeEventListener('pointercancel', up);
-            if (start.moved) dropClick.current = true;
-        };
-        window.addEventListener('pointermove', move);
-        window.addEventListener('pointerup', up);
-        window.addEventListener('pointercancel', up);
+        const from = atRef.current;
+        panDrag(e, {
+            thresholdPx: DRAG_START_PX,
+            scale,
+            onPan: (dx, dy) => setView(clampView({ x: from.x + dx, y: from.y + dy }, fitRef.current.sight, fitRef.current.bounds)),
+            onEnd: (moved) => { if (moved) dropClick.current = true; }
+        });
     };
     const onWheel = (e) => {
         const dx = e.shiftKey ? e.deltaY : e.deltaX;

@@ -1,4 +1,5 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useElementSize } from '../../hooks/useElementSize.js';
 import { cn } from '../../utils/cn.js';
 import { areaBannerSrc, areaBannerLabel } from '../../../config/areaBanners.js';
 
@@ -22,25 +23,8 @@ export function coverScale(boxW, boxH, artW = ASSUMED_ART_PX, artH = ASSUMED_ART
  */
 export const BannerArt = ({ banner, className, focusY = 0.5, scale: fixedScale = null, ...rest }) => {
     const box = useRef(null);
-    const [size, setSize] = useState({ w: 0, h: 0 });
+    const size = useElementSize(box);
     const [art, setArt] = useState({ w: ASSUMED_ART_PX, h: ASSUMED_ART_PX });
-    const measure = useCallback(() => {
-        const el = box.current;
-        if (!el) return;
-        const w = el.clientWidth;
-        const h = el.clientHeight;
-        setSize(prev => (prev.w === w && prev.h === h ? prev : { w, h }));
-    }, []);
-    useLayoutEffect(() => {
-        measure();
-        window.addEventListener('resize', measure);
-        const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
-        if (ro && box.current) ro.observe(box.current);
-        return () => {
-            window.removeEventListener('resize', measure);
-            ro?.disconnect();
-        };
-    }, [measure]);
 
     const src = areaBannerSrc(banner);
     const scale = fixedScale ?? coverScale(size.w, size.h, art.w, art.h);
