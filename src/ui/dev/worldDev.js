@@ -55,7 +55,7 @@ export function meetFrontierPrices() {
     for (const [itemId, need] of items) {
         const short = need - InventoryManager.getItemCount(itemId);
         if (short > 0) {
-            InventoryManager.addItem(itemId, short, 'qa');
+            InventoryManager.addItem(itemId, short);
             added++;
         }
     }

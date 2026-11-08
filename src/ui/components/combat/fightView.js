@@ -243,7 +243,7 @@ export function heroSide(hero) {
         name: hero.name,
         style,
         level: style ? level : null,
-        sprite: hero.spriteId || hero.classId || null,
+        sprite: hero.spriteId || null,
         hp: { cur: Math.max(0, hero.hp?.current ?? 0), max: hero.hp?.max ?? 0 },
         hit,
         hitParts,

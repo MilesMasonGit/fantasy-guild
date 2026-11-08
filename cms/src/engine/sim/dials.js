@@ -56,15 +56,6 @@ export const PURPOSE_XP_FACTORS = Object.freeze({
     gph: 0.3,
 });
 
-/** Rarity weights. The array order of `TOKEN_RARITIES` is the tier order; these are the draw weights a Map pool renormalises within. */
-export const RARITY_WEIGHTS = Object.freeze({
-    common: 100,
-    uncommon: 40,
-    rare: 12,
-    epic: 4,
-    mythic: 1,
-});
-
 export const DEFAULT_DIALS = Object.freeze({
     gphPins: GPH_PINS,
     xphPins: XPH_PINS,
@@ -73,7 +64,7 @@ export const DEFAULT_DIALS = Object.freeze({
      * ⚠️ An expectation, not an input: no pass reads it to decide anything. The XP pass integrates `xphPins` against the game's own threshold curve (`src/utils/XPCurve.js`) and reports the hours that actually fall out; the Pace dial shows the two side by side. Turning this alone moves nothing.
      */
     skillMasteryHours: 55,
-    /** The player the projections assume, not a property of the game. The XP pass turns the pacing projection into an estimated day in reach for every Map's price. */
+    /** The player the projections assume, not a property of the game: the Pace dial's curve preview reads it. */
     hoursPerDay: 8,
 
     purposeGoldFactors: PURPOSE_GOLD_FACTORS,
@@ -82,18 +73,12 @@ export const DEFAULT_DIALS = Object.freeze({
     trainingLossCap: 0.25,
 
     craftMarginPerStep: 0.15,
-    /** What a Map's scrapped contents fetch, as a fraction of their value. No per-copy cap: a Mythic windfall approaching the Map's price is a wanted story. Read by the Map pass through `scrapRatioAt`, which also accepts an `{ early, late }` pin pair in place of the single number. */
-    mapScrapRatio: 0.40,
-    /** Map productive return as two pins: an early Map plainly funds several more, a late one barely clears its cost. Read by the Map pass through `productiveReturnAt`, which interpolates linearly over the Map's derived level, `early` at level 1 and `late` at level 99, the same reading `gphAt` takes of the GPH pins. */
-    mapProductiveReturn: Object.freeze({ early: 10, late: 1.5 }),
-    rarityPremium: 0.8,
-    /** Assumed productive lifetime of an unlimited-use Token, in hours. Feeds the Map check only. */
+    /** Assumed productive lifetime of an unlimited-use Token, in hours: the lifetime `checkPass` reports for one. */
     unlimitedLifetimeHours: 16,
 
     toleranceBrackets: TOLERANCE_BRACKETS,
     /** Non-anchor sources get a doubled band. Read by the TUNE pass through `toleranceFor`; it is step 0 of the lever policy. */
     nonAnchorBandMultiplier: 2,
-    rarityWeights: RARITY_WEIGHTS,
     /** Downcycling's one number. Developer-set and strictly under 100%: at or above it, breaking a thing down and rebuilding it would duplicate gold, so `normaliseDials` refuses it. */
     downcycleRecoveryRatio: 0.5,
 });
@@ -158,29 +143,3 @@ export function toleranceFor(level, dials = DEFAULT_DIALS, { isAnchor = true } =
     return bracket.band * multiplier;
 }
 
-/**
- * A dial that may be one number or an `{ early, late }` pin pair, read at a Map's derived level.
- * ⚠️ `early` is read at level 1 and `late` at level 99 (the whole skill range), interpolated in a straight line; a pair of equal values is a flat dial, and a bare number is the same thing written shorter.
- */
-export function pinnedAt(dial, level, fallback) {
-    if (Number.isFinite(dial)) return dial;
-    const early = Number.isFinite(dial?.early) ? dial.early : fallback;
-    const late = Number.isFinite(dial?.late) ? dial.late : early;
-    const L = Number.isFinite(level) ? Math.max(1, Math.min(99, level)) : 1;
-    const t = (L - 1) / 98;
-    return early + t * (late - early);
-}
-
-/** What a Map's scrapped contents fetch, as a fraction of the Map's cost, at the Map's derived level. Flat while the dial is a single number. */
-export function scrapRatioAt(level, dials = DEFAULT_DIALS) {
-    return pinnedAt(dials.mapScrapRatio ?? DEFAULT_DIALS.mapScrapRatio, level, 0.40);
-}
-
-/**
- * How many times its own cost a Map's burst must earn back, at the Map's
- * derived level: an early Map plainly funds several more, a late
- * one barely clears its cost.
- */
-export function productiveReturnAt(level, dials = DEFAULT_DIALS) {
-    return pinnedAt(dials.mapProductiveReturn ?? DEFAULT_DIALS.mapProductiveReturn, level, 10);
-}

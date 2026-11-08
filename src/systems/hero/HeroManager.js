@@ -13,17 +13,13 @@ export const isRosterFull = Lifecycle.isRosterFull;
 // --- Lookup Exports ---
 export const getHero = Lookup.getHero;
 export const getAllHeroes = Lookup.getAllHeroes;
-export const getHeroCount = Lookup.getHeroCount;
 export const getHeroesByStatus = Lookup.getHeroesByStatus;
-export const getIdleHeroes = Lookup.getIdleHeroes;
-export const getHeroLevel = Lookup.getHeroLevel;
 
 // --- Roster Exports ---
 export const reorderHero = Roster.reorderHero;
 
 // --- State Exports ---
 export const setHeroStatus = State.setHeroStatus;
-export const setAssignment = State.setAssignment;
 export const updateHeroProfile = State.updateHeroProfile;
 
 export const modifyHeroHp = State.modifyHeroHp;
@@ -39,13 +35,9 @@ export const HeroManager = {
     isRosterFull,
     getHero,
     getAllHeroes,
-    getHeroCount,
     getHeroesByStatus,
-    getIdleHeroes,
-    getHeroLevel,
     reorderHero,
     setHeroStatus,
-    setAssignment,
     updateHeroProfile,
     modifyHeroHp,
     rehydrateHero,

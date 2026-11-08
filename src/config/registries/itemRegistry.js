@@ -38,26 +38,12 @@ export const ITEM_TYPES = {
 
 // === Dynamic Item Loader ===
 const jsonItemFilesSingle = DatabaseManager.itemFilesSingle;
-const jsonItemFilesGlob = DatabaseManager.itemFilesGlob;
 
 function loadJsonItems() {
     const dynamicItems = {};
 
     // Process items.json if it exists
     for (const [path, module] of Object.entries(jsonItemFilesSingle || {})) {
-        try {
-            const itemsData = module.default || module;
-            for (const [itemId, itemDef] of Object.entries(itemsData)) {
-                if (!itemDef.id) itemDef.id = itemId;
-                dynamicItems[itemId] = migrateEffectIds(migrateSkillIds(itemDef));
-            }
-        } catch (error) {
-            console.warn(`Error loading item JSON from ${path}:`, error);
-        }
-    }
-
-    // Process items/**/*.json if they exist
-    for (const [path, module] of Object.entries(jsonItemFilesGlob || {})) {
         try {
             const itemsData = module.default || module;
             for (const [itemId, itemDef] of Object.entries(itemsData)) {

@@ -57,8 +57,7 @@ class GameStateClass {
     get itemLifetimeCounts() { return this.state?.collection?.itemLifetimeCounts || {}; }
     get enemyKillCounts() { return this.state?.collection?.enemyKillCounts || {}; }
     get cardUseCounts() { return this.state?.collection?.cardUseCounts || {}; }
-    get recruitment() { return this.state?.recruitment || { candidates: [] }; }
-    get quests() { return this.state?.quests || { active: [], tutorialStep: 0, nextQuestAt: null }; }
+    get quests() { return this.state?.quests || { tutorialStep: 0 }; }
     get ui() { return this.state?.ui || {}; }
     // The playmat. Selectors receive this object, not `state`, so a top-level
     // slice needs a getter here to be reachable from the UI.

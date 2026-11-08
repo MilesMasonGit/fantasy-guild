@@ -59,7 +59,6 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
     // the kill happened instead of teleporting into the Bank.
     EventBus.publish(ENGINE_EVENTS.COMBAT_VICTORY, {
         cardId: fight.id, heroId, instanceId: fight.instanceId ?? null,
-        areaId: fight.areaId || 'area_guild_hall',
         enemyId: enemy.id, enemyName: enemy.name,
         drops: fight.drops || []
     });

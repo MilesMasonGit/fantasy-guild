@@ -62,9 +62,9 @@ describe('AssetManager path resolution', () => {
     });
 
     it('resolves hero class names and retired selectors to the portrait they drew', () => {
-        expect(resolveSpritePath({ classId: 'fighter' })).toBe('assets/heroes/hm_fighter_por.png');
-        expect(resolveSpritePath({ classId: 'ranger' })).toBe('assets/heroes/hn_range_por.png');
-        expect(resolveSpritePath({ classId: 'wizard' })).toBe('assets/heroes/hm_wizard_por.png');
+        expect(resolveSpritePath({ spriteId: 'fighter' })).toBe('assets/heroes/hm_fighter_por.png');
+        expect(resolveSpritePath({ spriteId: 'ranger' })).toBe('assets/heroes/hn_range_por.png');
+        expect(resolveSpritePath({ spriteId: 'wizard' })).toBe('assets/heroes/hm_wizard_por.png');
         // ⚠️ Not the old knight and rogue drawings that shared their names: these selectors always drew the class portraits.
         expect(resolveSpritePath({ spriteId: 'hero_knight' })).toBe('assets/heroes/hm_fighter_por.png');
         expect(resolveSpritePath({ spriteId: 'hero_rogue' })).toBe('assets/heroes/hn_sneak_por.png');
@@ -99,7 +99,7 @@ describe('animation sheets', () => {
         expect(resolveAnimationPath('hero_recruit_0')).toBe('assets/heroes/hn_recruit_sheet.png');
         expect(resolveAnimationPath({ spriteId: 'hm_fighter' })).toBe('assets/heroes/hn_fighter_sheet.png');
         expect(resolveAnimationPath({ spriteId: 'hero_knight' })).toBe('assets/heroes/hn_fighter_sheet.png');
-        expect(resolveAnimationPath({ classId: 'ranger' })).toBe('assets/heroes/hn_ranger_sheet.png');
+        expect(resolveAnimationPath({ spriteId: 'ranger' })).toBe('assets/heroes/hn_ranger_sheet.png');
         expect(resolveAnimationPath('hf_bard_por')).toBeNull();
     });
 

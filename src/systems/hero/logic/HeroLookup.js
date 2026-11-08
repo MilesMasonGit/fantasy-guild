@@ -1,6 +1,5 @@
 import { GameState } from '../../../state/GameState.js';
 import { rehydrateHero } from './HeroRehydration.js';
-import { calculateHeroLevel } from '../HeroGenerator.js';
 
 /**
  * Get a hero by ID (O(N) across the roster)
@@ -24,25 +23,6 @@ export function getAllHeroes() {
     return GameState.heroes;
 }
 
-export function getHeroCount() {
-    return GameState.heroes.length;
-}
-
 export function getHeroesByStatus(status) {
     return GameState.heroes.filter(h => h.status === status);
-}
-
-export function getIdleHeroes() {
-    return getHeroesByStatus('idle');
-}
-
-/**
- * Get hero's calculated level
- * @param {string} heroId 
- * @returns {number|null}
- */
-export function getHeroLevel(heroId) {
-    const hero = getHero(heroId);
-    if (!hero) return null;
-    return calculateHeroLevel(hero.skills);
 }

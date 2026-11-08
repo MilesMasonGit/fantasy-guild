@@ -243,7 +243,6 @@ describe('the combat numbers follow the levels', () => {
             EquipmentManager.recalculateEquipmentModifiers(h);
         }
         expect(h.aggregator.query(EFFECT_TYPES.DAMAGE)).toBe(2);
-        expect(h.perks).toEqual({});
     });
 
     it('lends gear its rules the level its wearer meets it, without a re-equip', () => {

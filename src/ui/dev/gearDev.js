@@ -22,7 +22,7 @@ export function devFillBank() {
         if (!item?.id || takesCopy(item.id)) continue;
         if (InventoryManager.getItemCount(item.id) > 0) continue;
         if (InventoryManager.lacksSlotFor(item.id)) break;
-        if (InventoryManager.addItem(item.id, 1, 'dev') > 0) filled++;
+        if (InventoryManager.addItem(item.id, 1) > 0) filled++;
     }
     return { filled, free: InventoryManager.freeSlots() };
 }

@@ -307,9 +307,9 @@ describe('food and drink in a fight', () => {
         hero.equipment[0] = 'fixture_bread';
         InventoryManager.addItem('fixture_bread', 1);
         hero.hp = { current: 2, max: 11 };
-        expect(ConsumptionSystem.needsFood('hero_1')).toBe(true);
         expect(ConsumptionSystem.tryEat('hero_1', { inFight: true })).toHaveLength(1);
+        InventoryManager.addItem('fixture_bread', 1);
         hero.hp = { current: 3, max: 11 };              // 27 %: not low
-        expect(ConsumptionSystem.needsFood('hero_1')).toBe(false);
+        expect(ConsumptionSystem.tryEat('hero_1', { inFight: true })).toEqual([]);
     });
 });

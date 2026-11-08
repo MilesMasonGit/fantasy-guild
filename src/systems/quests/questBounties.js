@@ -22,15 +22,13 @@ export function copyReward(list) {
 }
 
 /**
- * What claiming a quest pays, as `[{ itemId, quantity, name }]`.
- *
- * A quest from an older save carries `rewardMapId` and no `rewardItems`; it
- * pays the default for its kind, so an old save cannot claim a Map.
+ * What claiming a quest pays, as `[{ itemId, quantity, name }]`: its own list, or the default for
+ * its kind when it has none.
  */
 export function questReward(quest) {
     const list = Array.isArray(quest?.rewardItems) && quest.rewardItems.length
         ? quest.rewardItems
-        : ((quest?.tutorial || quest?.isTutorial) ? TUTORIAL_REWARD_ITEMS : BOUNTY_REWARD_ITEMS);
+        : (quest?.tutorial ? TUTORIAL_REWARD_ITEMS : BOUNTY_REWARD_ITEMS);
     return list
         .filter(r => r?.itemId && r.quantity > 0)
         .map(r => ({ itemId: r.itemId, quantity: r.quantity, name: getItem(r.itemId)?.name || r.itemId }));
@@ -85,7 +83,6 @@ export function createRandomQuest(existing) {
         const count = rollBetween(hunt.min, hunt.max);
         return {
             id: nextId(),
-            isTutorial: false,
             type: 'hunt',
             title: `Defeat ${count} ${hunt.name}`,
             targetType: 'enemy_hunted',
@@ -99,7 +96,6 @@ export function createRandomQuest(existing) {
         const requiredCount = rollBetween(item.min, item.max);
         return {
             id: nextId(),
-            isTutorial: false,
             type: 'collection',
             title: `Collect ${requiredCount} ${item.name}`,
             targetType: 'item_collected',

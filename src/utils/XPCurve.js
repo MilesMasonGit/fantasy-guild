@@ -49,8 +49,8 @@ export function levelFromXp(xp) {
  */
 export function getXpProgress(xp) {
     const level = levelFromXp(xp);
-    const currentLevelXp = xpForLevel(level);
-    const nextLevelXp = xpForLevel(level + 1); // Note: xpForLevel(100) returns xpForLevel(99)
+    const currentLevelXp = XP_TABLE[level];
+    const nextLevelXp = XP_TABLE[level + 1]; // Note: XP_TABLE[100] equals XP_TABLE[99]
 
     const xpIntoLevel = xp - currentLevelXp;
     const xpForThisLevel = nextLevelXp - currentLevelXp; // This is the denominator

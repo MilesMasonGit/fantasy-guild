@@ -111,14 +111,6 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
             const verdict = CombatFormulas.blowVerdict(blow.parts);
             fight.combat.enemyHp.current = Math.max(0, fight.combat.enemyHp.current - damage);
 
-            if (enemy.traits) {
-                const thorns = enemy.traits.find(t => t.id === 'thorns');
-                if (thorns) {
-                    const reflex = thorns.level || 1;
-                    HeroManager.modifyHeroHp(hero.id, -reflex);
-                    EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_TRAIT_TRIGGER, { cardId: fight.id, heroId: hero.id, traitId: 'thorns', damage: reflex });
-                }
-            }
             EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage, hit: true, crit: swing.crit, types, verdict, arrowId, enemyHpRemaining: fight.combat.enemyHp.current });
 
             if (fight.combat.enemyHp.current > 0 && !isDown(hero)) {

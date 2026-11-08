@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 
 import {
     runXpPass, xphAt, purposeXpFactor, xpPerCycle, hoursToMastery,
-    buildProjection, hoursForGold, dayInReach, PRINTED_XPH_PINS,
+    buildProjection, hoursForGold, PRINTED_XPH_PINS,
 } from '../../cms/src/engine/sim/xpPass.js';
 import { normaliseDials, XPH_PINS, PURPOSE_XP_FACTORS } from '../../cms/src/engine/sim/dials.js';
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';
@@ -294,49 +294,13 @@ describe('the mastery check (plan §13.2)', () => {
     });
 });
 
-// === Day in reach ============================================================
+// === The gold ladder =========================================================
 
-describe('the day-in-reach ladder', () => {
+describe('the gold ladder', () => {
     const projection = buildProjection(DIALS);
 
-    it('needs no time at all for a free thing, and day 1 is the earliest day', () => {
+    it('needs no time at all for a free thing', () => {
         expect(hoursForGold(0, projection)).toBe(0);
-        expect(dayInReach(0, projection, DIALS)).toBe(1);
-        expect(dayInReach(1, projection, DIALS)).toBe(1);
-    });
-
-    it('divides board-hours by the assumed hours per day, rounding up', () => {
-        const cost = 5_000_000;
-        const hours = hoursForGold(cost, projection);
-        expect(Number.isFinite(hours)).toBe(true);
-        for (const hoursPerDay of [1, 4, 8, 16]) {
-            const dials = normaliseDials({ hoursPerDay });
-            expect(dayInReach(cost, buildProjection(dials), dials))
-                .toBe(Math.max(1, Math.ceil(hoursForGold(cost, buildProjection(dials)) / hoursPerDay)));
-        }
-    });
-
-    it('puts a more expensive thing no earlier than a cheaper one', () => {
-        let previous = 0;
-        for (const cost of [1_000, 100_000, 1e6, 1e7, 1e8, 1e9]) {
-            const day = dayInReach(cost, projection, DIALS);
-            expect(day).toBeGreaterThanOrEqual(previous);
-            previous = day;
-        }
-    });
-
-    it('falls back to a nonsense hoursPerDay rather than dividing by it', () => {
-        for (const hoursPerDay of [0, -3, NaN, null]) {
-            const day = dayInReach(1e6, projection, { ...DIALS, hoursPerDay });
-            expect(Number.isFinite(day)).toBe(true);
-            expect(day).toBeGreaterThanOrEqual(1);
-        }
-    });
-
-    it('answers null, not NaN or Infinity, for an unanswerable price', () => {
-        for (const cost of [NaN, undefined, null, -100, Infinity]) {
-            expect(dayInReach(cost, projection, DIALS)).toBeNull();
-        }
     });
 
     it('projects income that only ever grows, and never stalls after 99', () => {

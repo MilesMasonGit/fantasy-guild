@@ -4,7 +4,6 @@ import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
-import * as GameClock from '../core/GameClock.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { floorSpeedUp } from '../board/workTime.js';
@@ -57,11 +56,9 @@ const WoundedSystem = {
      */
     processWoundedTick(hero, deltaMs) {
         if (typeof hero.woundedRemainingMs !== 'number') {
-            // Legacy saves stored a wall-clock deadline in woundedUntil: convert
-            // whatever is left on it; fresh wounds get the full timer.
-            const full = woundTimeMs();
-            const legacyRemaining = hero.woundedUntil ? hero.woundedUntil - GameClock.now() : full;
-            hero.woundedRemainingMs = Math.max(0, Math.min(full, legacyRemaining));
+            // A fresh wound gets the full timer. ⚠️ `woundedUntil` is always null now, and is kept
+            // on the hero record because the bench's work fingerprint reads it.
+            hero.woundedRemainingMs = Math.max(0, woundTimeMs());
             hero.woundedUntil = null;
             logger.debug('WoundedSystem', `Set recovery timer for ${hero.name}: ${hero.woundedRemainingMs}ms`);
         }

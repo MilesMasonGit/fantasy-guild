@@ -2,21 +2,18 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * RegistryManager - Manages discoveries, collection log, and navigation history for the Library.
- * Handles the "Global Knowledge" propagation and "New!" badge lifecycle.
+ * RegistryManager - discoveries and lifetime item counts.
  */
 export const RegistryManager = {
     /**
      * Records that an item has been gained and updates discovery/lifetime stats.
      * @param {string} itemId 
      * @param {number} amount 
-     * @param {string|null} sourceId - The cardTemplateId or enemyId that produced this item
      */
-    recordItemGain(itemId, amount = 1, sourceId = null) {
+    recordItemGain(itemId, amount = 1) {
         if (!itemId || !GameState.state) return;
         
         const collection = GameState.state.collection;
@@ -29,143 +26,15 @@ export const RegistryManager = {
             logger.info('Registry', `New item discovered: ${itemId}`);
         }
 
-        if (sourceId) {
-            if (!collection.provenance) collection.provenance = {};
-            if (!collection.provenance[sourceId]) collection.provenance[sourceId] = {};
-            
-            if (!collection.provenance[sourceId][itemId]) {
-                collection.provenance[sourceId][itemId] = true;
-                logger.info('Registry', `New provenance discovered: ${itemId} from ${sourceId}`);
-            }
-        }
-
         const counts = collection.itemLifetimeCounts || {};
         const currentCount = counts[itemId] || 0;
         counts[itemId] = currentCount + amount;
         collection.itemLifetimeCounts = counts;
 
         if (isNew) {
-            if (!GameState.state.ui.newDiscoveries) GameState.state.ui.newDiscoveries = {};
-            GameState.state.ui.newDiscoveries[itemId] = true;
-            
             const template = getItem(itemId);
             const itemName = template?.name || itemId;
             EventBus.publish(ENGINE_EVENTS.ITEM_DISCOVERED, { itemId, itemName });
         }
-        
-        EventBus.publish(ENGINE_EVENTS.REGISTRY_UPDATED, { type: 'item', id: itemId });
-    },
-
-    /**
-     * Checks if an item has been discovered from a specific source.
-     * @param {string} sourceId 
-     * @param {string} itemId 
-     * @returns {boolean}
-     */
-    isLootDiscovered(sourceId, itemId) {
-        if (!sourceId || !itemId) return false;
-        return GameState.state?.collection?.provenance?.[sourceId]?.[itemId] === true;
-    },
-
-    /**
-     * Records that an enemy has been defeated.
-     * @param {string} enemyId 
-     */
-    recordEnemyDefeat(enemyId) {
-        if (!enemyId || !GameState.state) return;
-
-        const collection = GameState.state.collection;
-        if (!collection) return;
-
-        let isNew = false;
-        if (!collection.discoveredEnemies[enemyId]) {
-            collection.discoveredEnemies[enemyId] = true;
-            isNew = true;
-            logger.info('Registry', `New enemy discovered: ${enemyId}`);
-        }
-
-        const counts = collection.enemyKillCounts || {};
-        const currentCount = counts[enemyId] || 0;
-        counts[enemyId] = currentCount + 1;
-        collection.enemyKillCounts = counts;
-
-        if (isNew) {
-            if (!GameState.state.ui.newDiscoveries) GameState.state.ui.newDiscoveries = {};
-            GameState.state.ui.newDiscoveries[enemyId] = true;
-
-            // An enemy id IS a Token id, so the name comes from the Token registry.
-            const template = getTokenType(enemyId);
-            const enemyName = template?.name || enemyId;
-            EventBus.publish(ENGINE_EVENTS.ENEMY_DISCOVERED, { enemyId, enemyName });
-        }
-
-        EventBus.publish(ENGINE_EVENTS.REGISTRY_UPDATED, { type: 'enemy', id: enemyId });
-    },
-
-    /**
-     * Marks a discovery as "seen" (clears the New! badge).
-     * @param {string} entityId 
-     */
-    markAsSeen(entityId) {
-        if (GameState.state?.ui?.newDiscoveries?.[entityId]) {
-            delete GameState.state.ui.newDiscoveries[entityId];
-            // No event is published; badges re-read state on render.
-        }
-    },
-
-    /**
-     * Navigation History (session-based, not persisted in GameState), supporting
-     * the browser-style back/forward buttons.
-     */
-    _history: [],
-    _historyIndex: -1,
-
-    pushHistory(mode, id, metadata = {}) {
-        // If we are moving forward after a "Back", truncate the future
-        if (this._historyIndex < this._history.length - 1) {
-            this._history = this._history.slice(0, this._historyIndex + 1);
-        }
-
-        this._history.push({ mode, id, metadata });
-        this._historyIndex = this._history.length - 1;
-        
-        // Limit history size to 50 steps
-        if (this._history.length > 50) {
-            this._history.shift();
-            this._historyIndex--;
-        }
-    },
-
-    popHistory() {
-        if (this._historyIndex > 0) {
-            this._historyIndex--;
-            return this._history[this._historyIndex];
-        }
-        return null;
-    },
-
-    peekHistory() {
-        return this._history[this._historyIndex] || null;
-    },
-
-    canGoBack() {
-        return this._historyIndex > 0;
-    },
-
-    canGoForward() {
-        return this._historyIndex < this._history.length - 1;
-    },
-
-    goForward() {
-        if (this.canGoForward()) {
-            this._historyIndex++;
-            return this._history[this._historyIndex];
-        }
-        return null;
-    },
-
-    clearHistory() {
-        this._history = [];
-        this._historyIndex = -1;
     }
 };

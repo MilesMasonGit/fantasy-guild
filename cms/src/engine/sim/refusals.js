@@ -63,66 +63,6 @@ export const REFUSAL_CATALOGUE = Object.freeze({
         ],
     },
 
-    'map-scrap-rich': {
-        severity: SEVERITY.WARNING,
-        remedies: () => [
-            'Put more entries in the pool — the scrap budget is split across the whole pool, so a short pool hands every burst a big share of it.',
-            'Re-tag the pool\'s Tokens rarer — a rarer entry draws less often, and the rarity premium dial decides how much less.',
-            'Raise the Map\'s price, or ask more materials of it, if a burst this generous is what this Map is for.',
-            'Turn the scrap-ratio dial down, if every Map reads this way rather than just this one.',
-        ],
-    },
-    'map-underwater': {
-        severity: SEVERITY.WARNING,
-        remedies: () => [
-            'Put a stronger producer in the pool — what a burst is worth is what its Tokens earn over their lifetime, not what they scrap for.',
-            'Give the pool\'s Tokens more charges, so each one works for longer before it is spent.',
-            'Lower the Map\'s price, or ask fewer materials of it.',
-            'Turn the productive-return pins down, if Maps at this end of the game should not have to pay for themselves this hard.',
-        ],
-    },
-    'map-item-heavy': {
-        severity: SEVERITY.WARNING,
-        remedies: () => [
-            'Drop a raw-item entry from the pool, or ask less of it — raw items are counted at face value and eat the scrap budget before any Token is priced.',
-            'Raise the Map\'s price, if the pile of raw goods is the point of this Map.',
-            'Turn the scrap-ratio dial up, if raw-item entries are normal across the corpus.',
-        ],
-    },
-    'map-unlimited-token': {
-        severity: SEVERITY.WARNING,
-        remedies: () => [
-            'Give the Token a charge count, so a burst hands out something that is eventually spent.',
-            'Take it out of the pool and let the player earn it another way — unlimited is a special design space, not a burst reward.',
-            'Nothing, if an unlimited Token really is this Map\'s headline prize; the check cannot bound what never runs out.',
-        ],
-    },
-    'map-enemy-band': {
-        severity: SEVERITY.WARNING,
-        remedies: ({ generous = false } = {}) => [
-            generous
-                ? 'Thin the enemy\'s drop table, or tag it rarer so the burst charges more for it.'
-                : 'Give the enemy a better drop table, or tag it commoner so the burst charges less for it.',
-            'Re-price the items it drops by flagging a different source as their anchor.',
-            'Turn the rarity-premium dial, if every rare entry in the corpus is priced this way.',
-        ],
-    },
-    'map-support-entry': {
-        severity: SEVERITY.INFO,
-        remedies: () => [
-            'Nothing — a support Token is counted at exactly what the burst charged for it, so it neither helps nor hurts the verdict.',
-            'Give it a work cycle, if it was meant to produce something.',
-        ],
-    },
-    'map-idle-entry': {
-        severity: SEVERITY.INFO,
-        remedies: () => [
-            'Give it a work cycle, if this entry was meant to earn its keep.',
-            'Tag its Tempo and Purpose, if it has a cycle the simulator skipped for want of tags.',
-            'Nothing, if a burst is allowed to hand out things that do no work.',
-        ],
-    },
-
     // The one refusal aimed at the developer's dials: it says the dial set itself has broken the progression guard, so every remedy names a dial.
     'progression-guard': {
         severity: SEVERITY.CRITICAL,

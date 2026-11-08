@@ -13,7 +13,7 @@ import {
 import * as EquipmentValidator from './EquipmentValidator.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
-import { takesCopy, holdsCopy, markHeld, slotBacked, heldCount } from './heldCopies.js';
+import { takesCopy, holdsCopy, markHeld, heldCount } from './heldCopies.js';
 import { isWeapon, isOffHand } from '../../config/registries/weaponStyles.js';
 
 /**
@@ -305,40 +305,6 @@ export function reconcileHeldCopies(heroes = HeroManager.getAllHeroes() || []) {
 }
 
 /**
- * Whether each equipped item can currently do anything: a held copy always, a shared item while
- * the Bank holds one. A shared item stays equipped without stock but does nothing; rules are read
- * live from the loadout, which checks stock where it is used.
- *
- * @returns {Record<number, boolean>} slot index → whether it is backed
- */
-export function syncEquipmentModifiers(heroId) {
-    const hero = HeroManager.getHero(heroId);
-    if (!hero?.equipment) return {};
-
-    const backed = {};
-    getGrid(hero).forEach((itemId, slot) => {
-        if (!itemId) return;
-        backed[slot] = slotBacked(hero, slot);
-    });
-    return backed;
-}
-
-/**
- * Get the item equipped in a specific slot
- */
-export function getEquippedItem(heroId, slot) {
-    return HeroManager.getHero(heroId)?.equipment?.[slot] || null;
-}
-
-/**
- * Get all equipment for a hero
- */
-export function getAllEquipment(heroId) {
-    const hero = HeroManager.getHero(heroId);
-    return hero ? [...getGrid(hero)] : createEmptyEquipment();
-}
-
-/**
  * Wipe the `equip:*` modifiers older saves still hold on their heroes'
  * aggregators, then register the loadout's combat contributions.
  */
@@ -364,7 +330,7 @@ export function recalculateEquipmentModifiers(hero) {
     for (const { type, value, category } of contributions) {
         // `target.category` lets STATUS_IMMUNITY name one status instead of blocking all.
         hero.aggregator.addModifier({
-            type, value, bucket: 'flat', source, persistent: true,
+            type, value, bucket: 'flat', source,
             ...(category ? { target: { category } } : {})
         });
     }
@@ -377,9 +343,6 @@ export const EquipmentManager = {
     destroyEquipped,
     reconcileHeldCopies,
     resolveTargetSlot,
-    syncEquipmentModifiers,
-    getEquippedItem,
-    getAllEquipment,
     recalculateEquipmentModifiers
 };
 

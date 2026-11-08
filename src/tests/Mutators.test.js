@@ -182,10 +182,10 @@ describe('Phase 1 — Three-Bucket math (§15.3)', () => {
             const agg = new ModifierAggregator('test');
             agg.addModifier(speedMod('fish', 2, {
                 bucket: 'multiplier',
-                target: { category: TARGET_CATEGORIES.FISHING }
+                target: { category: 'fishing' }
             }));
-            expect(agg.getMultiplierBucket(EFFECT_TYPES.SPEED, TARGET_CATEGORIES.FISHING)).toBe(2);
-            expect(agg.getMultiplierBucket(EFFECT_TYPES.SPEED, TARGET_CATEGORIES.MINING)).toBe(1);
+            expect(agg.getMultiplierBucket(EFFECT_TYPES.SPEED, 'fishing')).toBe(2);
+            expect(agg.getMultiplierBucket(EFFECT_TYPES.SPEED, 'mining')).toBe(1);
         });
 
         it('§15.12 — one shared bucket pair: separate sources merge before summing', () => {

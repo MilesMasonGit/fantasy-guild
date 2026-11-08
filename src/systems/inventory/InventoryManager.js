@@ -115,11 +115,10 @@ export const InventoryManager = {
      * Add item(s) to inventory.
      * @param {string} itemId
      * @param {number} amount
-     * @param {string|null} sourceId - The source (card or enemy)
      * @returns {number} Amount actually added
      */
 
-    addItem(itemId, amount, sourceId = null) {
+    addItem(itemId, amount) {
         if (amount <= 0) return 0;
         const template = getItem(itemId);
         if (!template) {
@@ -153,9 +152,7 @@ export const InventoryManager = {
             // Falls back to the shared constant, not to state: an existing
             // save carries whatever ceiling was current when it was written,
             // and a stale one silently starts dropping output.
-            const baseMaxStack = template.maxStack || DEFAULT_MAX_STACK;
-            const stackBonus = GameState.inventory.maxStackBonus || 0;
-            const maxStack = baseMaxStack + stackBonus;
+            const maxStack = template.maxStack || DEFAULT_MAX_STACK;
             const spaceRemaining = maxStack - entry.quantity;
 
             // A maxed stack hands the remainder to the board, not to nothing.
@@ -178,7 +175,7 @@ export const InventoryManager = {
         InventoryStore.setEntry(itemId, entry);
         InventoryFormatter.invalidate();
 
-        RegistryManager.recordItemGain(itemId, addedCount, sourceId);
+        RegistryManager.recordItemGain(itemId, addedCount);
         announce(itemId, entry.quantity, { added: addedCount });
 
         logger.debug('InventoryManager', `Added ${addedCount}x ${itemId} (Total: ${entry.quantity})`);
@@ -246,7 +243,7 @@ export const InventoryManager = {
                 free--;
             }
             if (template.stackable === false && n > 1) return false;
-            const maxStack = (template.maxStack || DEFAULT_MAX_STACK) + (GameState.inventory.maxStackBonus || 0);
+            const maxStack = template.maxStack || DEFAULT_MAX_STACK;
             if (n > maxStack) return false;
             counts.set(itemId, n);
         }
@@ -332,9 +329,6 @@ export const InventoryManager = {
     // `bank_tabs` Guild Hall upgrade, which raises `inventory.maxTabs`;
     // `GuildUpgradeManager._ensureBankTabs` then creates the matching entry in
     // `groupOrder`/`groupDefs`.
-    //
-    // `groupDefs[id].isCustom` survives in saved games as an inert field (always
-    // false, read by nothing) so old saves keep loading.
 
     /**
      * Replace a group's manual item order wholesale (the Bank pane's reorderable

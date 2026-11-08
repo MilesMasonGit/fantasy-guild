@@ -234,7 +234,7 @@ export const MatBoard = React.memo(function MatBoard({
                     facing: body.facing,
                     limp: body.limp,
                     name: hero?.name || 'Hero',
-                    sprite: hero?.spriteId || hero?.classId || null,
+                    sprite: hero?.spriteId || null,
                     // Not working productively: the Token it holds is stuck. Such a hero gets
                     // no glow (the Token's problem mark says it alone) and stands idle instead
                     // of swinging. The same test as the Token's own hit reaction (`strikesLive`).

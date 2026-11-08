@@ -25,12 +25,10 @@ export function loadSavedState(savedState) {
 
     if (!state.quests) {
         state.quests = {
-            active: [],
             completedTutorials: [],
             tutorialStep: 0,
             // quests run on the game-time `clockMs`, not the wall clock.
-            clockMs: 0,
-            nextQuestAt: null
+            clockMs: 0
         };
     }
     logger.info('GameState', 'Save rehydration complete.');

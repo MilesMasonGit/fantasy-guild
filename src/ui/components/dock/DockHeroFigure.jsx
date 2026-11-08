@@ -24,7 +24,7 @@ import {
     DOCK_STRIP_PX, DOCK_LABEL_GAP_PX, DOCK_NAME_TEXT_CLASS, ROSTER_FLAG_PX, DOCK_HP_BAR_PX, DOCK_HP_BAR_HEIGHT_PX,
     dockArtOffset, rosterFlagPlace, rosterAlertPlace, rosterAlertPx, hpPercent, hpTone
 } from './dockHeroView.js';
-import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { HeroDragMarks, MARK_SCREEN_PX } from '../board/DragMarks.jsx';
 import { onPoll } from '../board/frameClock.js';
 
@@ -128,13 +128,12 @@ function useDockHero(heroId) {
                 spriteId: h.spriteId,
                 icon: h.icon,
                 heroSprite: h.heroSprite,
-                classId: h.classId,
                 status: h.status,
                 flagColour: h.flagColour || null,
                 hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
             } : null;
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.GAME_RESET],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
     );
@@ -184,7 +183,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
     const alertPlace = rosterAlertPlace(artPx);
     const alertPx = rosterAlertPx(artPx);
 
-    const sprite = hero.spriteId || hero.classId || null;
+    const sprite = hero.spriteId || null;
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
     const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hn_recruit_por');
 
