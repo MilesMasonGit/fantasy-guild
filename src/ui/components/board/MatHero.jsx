@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 
 import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn.js';
 import { HERO_HIT_PX, HERO_BOX_PX } from './boardConstants.js';
-import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
+import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, PixelArt } from '../base/TokenSprite.jsx';
 import { AnimatedHeroSprite } from './AnimatedHeroSprite.jsx';
@@ -174,13 +174,9 @@ export const MatHero = memo(function MatHero(props) {
         payload: { heroId, name, from: { hero: true } },
         sourceSurface: DND_SURFACE.BOARD
     });
-    // This hero carried out of the hero bar or the hero sheet: the figure on the mat steps aside.
-    const { activePayload, isDragging } = useActiveDrag();
-    const heroCarried = isDragging && activePayload?.kind === DRAG_KIND.HERO && activePayload?.heroId === heroId;
     return (
         <MatHeroBody
             {...props}
-            heroCarried={heroCarried}
             dragRef={drag.setNodeRef}
             dragProps={drag.handleProps}
         />
@@ -207,7 +203,6 @@ const MatHeroBody = memo(function MatHeroBody({
     plated = false,
     fightBarHost = null,
     fightApart = null,
-    heroCarried = false,
     needsJob = false,
     dragRef,
     dragProps
@@ -254,9 +249,9 @@ const MatHeroBody = memo(function MatHeroBody({
         return EventBus.subscribe(BOARD_EVENTS.HEROES_WALKED, follow, UI_LISTENER);
     }, [followsItself, heroId]);
 
-    // In a fight, standing still, the bar draws in the fight layer over the loot; walking or carried
-    // off, it stays on the figure. Decided in the same render as the fight, so it never shows twice.
-    const barAway = !!fightBarHost && !followsItself && !heroCarried;
+    // In a fight, standing still, the bar draws in the fight layer over the loot; walking, it stays
+    // on the figure. Decided in the same render as the fight, so it never shows twice.
+    const barAway = !!fightBarHost && !followsItself;
 
     const activeAnimation = isWalking ? 'walk' : animationState;
     const attackAt = useLastAttackAt(heroId, activeAnimation === 'combat');
@@ -301,8 +296,7 @@ const MatHeroBody = memo(function MatHeroBody({
             }}
             className={cn(
                 'absolute p-0 m-0 bg-transparent border-0 outline-none',
-                'pointer-events-auto cursor-grab active:cursor-grabbing',
-                heroCarried && 'opacity-0 pointer-events-none'
+                'pointer-events-auto cursor-grab active:cursor-grabbing'
             )}
         >
             {(animArt || staticArt) && (
@@ -358,10 +352,10 @@ const MatHeroBody = memo(function MatHeroBody({
                 size={markMatPx(fit)}
                 className="absolute"
                 style={{ left: HERO_HIT_PX / 2, bottom: HERO_BOX_PX - (HERO_BOX_PX - artPx) / 2, transform: 'translateX(-50%)' }}
-                fallback={needsJob && !heroCarried && !moving ? <NeedsJobMark artPx={artPx} artScale={artScale} /> : null}
+                fallback={needsJob && !moving ? <NeedsJobMark artPx={artPx} artScale={artScale} /> : null}
             />
             {/* Under the feet: the art reaches past the hero's box by half their difference. */}
-            <TokenNameBadge name={name} shown={rested && !heroCarried} below offset={(artPx - HERO_BOX_PX) / 2 + (plated ? plateNameDrop(fit) : 0)} />
+            <TokenNameBadge name={name} shown={rested} below offset={(artPx - HERO_BOX_PX) / 2 + (plated ? plateNameDrop(fit) : 0)} />
         </button>
     );
 });

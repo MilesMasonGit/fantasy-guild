@@ -20,7 +20,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { DRAG_KIND, rosterFlagPayload } from '../ui/dnd/dragConstants.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { matAccepts } from '../ui/components/board/Board.jsx';
@@ -183,7 +183,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
 
     it('a hero dragged from the roster onto a Token works it', () => {
         put(15, FOREST);
-        const payload = { kind: DRAG_KIND.HERO, heroId: 'h1', from: { dock: true } };
+        const payload = rosterFlagPayload('h1');
         expect(matAccepts(payload)).toBe(true);
         expect(counting('hero_deployed', () => dropOnMat(payload, C(15)))).toBe(1);
         expect(workTileOf('h1')).toBe(15);

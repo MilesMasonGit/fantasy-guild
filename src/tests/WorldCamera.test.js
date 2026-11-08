@@ -284,7 +284,7 @@ describe('the map under the whole screen', () => {
         const { code, mat } = hallCameraSides();
         const camera = mat.slice(mat.indexOf('<WorldCamera'), mat.indexOf('>', mat.indexOf('tableAnchor=', mat.indexOf('<WorldCamera'))) + 1);
         expect(camera).toContain('tableAnchor={tableRef}');
-        const box = code.slice(code.indexOf('ref={tableRef}'), code.indexOf('</ViewportProvider>'));
+        const box = code.slice(code.indexOf('ref={tableRef}'), code.indexOf('</DeckDndProvider>'));
         expect(box.indexOf('<BubbleMenu')).toBeGreaterThan(0);
         expect(box.indexOf('<WorldCamera')).toBeGreaterThan(0);
         expect(box.indexOf('<BottomHeroDock')).toBeGreaterThan(0);
