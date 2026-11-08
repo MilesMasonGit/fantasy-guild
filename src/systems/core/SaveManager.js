@@ -15,6 +15,7 @@ import * as MatResize from '../board/MatResize.js';
 import { reconcileHeldCopies } from '../equipment/EquipmentManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { t } from '../../i18n/index.js';
+import { loadSavedState } from './LoadedState.js';
 
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 /** sessionStorage: the slot the next page load opens by itself, without a catch-up. */
@@ -362,7 +363,7 @@ export const SaveManager = {
                 return this.loadDamaged(slotIndex, { fromBackup, catchUp });
             }
 
-            await GameState.initFromSave(state);
+            loadSavedState(state);
             // Before anything plays, the catch-up included: an older save's heroes sharing one copy
             // of a tool get one each from the Bank, in roster order. The Bank's entries are put in
             // their one shape first, as the slot's start does again later.

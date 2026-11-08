@@ -7,6 +7,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { createEmptyBoard, createRegionRecord, validateSaveData } from '../state/StateSchema.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -209,7 +210,7 @@ describe('the seed: the guild\'s own, never Math.random', () => {
         Atlas.preview([WOOD]);
         const data = JSON.parse(GameState.serializeJson());
         const expected = nextSeed(GameState.state.atlas.seed);
-        await GameState.initFromSave(migrateState(data.state, data.version));
+        loadSavedState(migrateState(data.state, data.version));
         expect(Atlas.preview([WOOD]).seed).toBe(expected);
     });
 
@@ -424,7 +425,7 @@ describe('travelling to a settled Region', () => {
         const data = JSON.parse(GameState.serializeJson());
         const state = migrateState(data.state, data.version);
         expect(validateSaveData({ version: data.version, state }).errors).toEqual([]);
-        await GameState.initFromSave(state);
+        loadSavedState(state);
         EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0, savedAt: data.savedAt });
         expect(copy(Atlas.getRegion(region.id))).toEqual(record);
 

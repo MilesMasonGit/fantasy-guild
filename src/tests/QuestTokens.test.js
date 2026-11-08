@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
@@ -278,7 +279,7 @@ describe('saves (B6.1)', () => {
         QuestManager.cleanup();
 
         GameState.initNew();
-        await GameState.initFromSave(saved);
+        loadSavedState(saved);
         QuestManager.init();
         EventBus.publish('game_loaded', { slot: 0 });
         const [loaded] = bounties();
@@ -307,7 +308,7 @@ describe('saves (B6.1)', () => {
         };
         QuestManager.cleanup();
         GameState.initNew();
-        await GameState.initFromSave(state);
+        loadSavedState(state);
         QuestManager.init();
         EventBus.publish('game_loaded', { slot: 0 });
 

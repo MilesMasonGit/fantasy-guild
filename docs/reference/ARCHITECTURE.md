@@ -270,10 +270,11 @@ point** (`board.tokens`, `:56`), heroes' orders in `board.flags` (`:63`), floor 
    old flags to orders, and drops retired fields (`currency`, `cartographer`, Vault/Tray board
    fields, retired upgrade ranks, old sprite names) (`:65-121`).
 3. `validateSaveData` (`:359` → `StateSchema.js:345-399`).
-4. `GameState.initFromSave` (`:365`): rehydrates each hero and their equipment modifiers and
-   assigns flag colours through **dynamic imports** (`GameState.js:41-67`).
+4. `loadSavedState` (`:366` → `src/systems/core/LoadedState.js`): `GameState.initFromSave` only
+   stores the save; the helper then rehydrates each hero and their equipment modifiers, assigns
+   flag colours and back-fills `quests`, by static imports.
 5. Bank normalised, shared gear copies reconciled, rate trackers cleared, autosave started, mat
-   fitted to its current size (`SaveManager.js:368-381`), then `GAME_LOADED` (`:384`).
+   fitted to its current size (`SaveManager.js:369-382`), then `GAME_LOADED` (`:385`).
 6. Back in `onSlotSelected`: `DiscoveryManager`, `AudioSystem`, `InventoryManager` init, the
    catch-up on load (§4.4), starter tools granted if missing, `GameLoop.start()`, then
    `GAME_RESET`, `HEROES_UPDATED`, `INVENTORY_UPDATED` (`EngineBootstrap.js:319-354`).
@@ -449,7 +450,7 @@ ui, lower never importing higher.
 |---|---|---|
 | systems → ui, state → ui, config → ui | 0 | holds |
 | systems → React | 0 | holds |
-| state → systems | 3, **all dynamic** (`GameState.js:47,48,54`) | holds only because of the dynamic imports |
+| state → systems | 0 | holds |
 | config → state | 0, not even transitively | holds |
 | config → systems | 22 edges to 13 modules | **does not hold**: registries call pure helpers (`effects/*` migrations and statements, `atlas/TerrainMap`, `atlas/WaterShapes`, `core/wearRule`, `core/engineEvents`, `board/boardEvents`, `progression/hallStarText`, `hero/perkTable`) |
 | utils → config | 8 | **does not hold**: `AssetManager` reads the sprite manifest, `CombatFormulas` reads registries |
@@ -462,12 +463,9 @@ and what they import: 18 `systems` modules plus `AssetManager` and `XPCurve`, no
 `state`) at the bottom; then `state`; then the stateful `systems`; then `ui`. `utils` and
 `config` are one layer in practice.
 
-**Cycles.** `npm run cycles` (`tools/cycles.mjs`) finds **one cycle group of 16 modules**
-(`GameState`, `FlagColours`, `EquipmentManager`, `EquipmentValidator`, `heldCopies`,
-`HeroEffects`, `HeroManager`, five `hero/logic/*`, `InventoryFormatter`, `InventoryManager`,
-`InventoryStore`, `RegistryManager`) and **0 formed only by static imports**: every path runs
-through `GameState._rehydrateAll`'s dynamic imports. depcruise lists the same group as **23
-cycle paths** (warn). There are **0 layer errors**.
+**Cycles.** `npm run cycles` (`tools/cycles.mjs`) finds **0 cycle groups**: the one group of 16
+modules ran through dynamic imports in `GameState`, and rebuilding a loaded save now lives in
+`src/systems/core/LoadedState.js`. depcruise lists **0 cycle paths**. There are **0 layer errors**.
 
 **The rules now in `.dependency-cruiser.cjs`** (edited 2026-11-06 to match the above; every new
 rule was shown to fire on a scratch fixture tree before being kept, and reports 0 on `src`):
@@ -475,9 +473,9 @@ rule was shown to fire on a scratch fixture tree before being kept, and reports 
 | Rule | Severity | Today |
 |---|---|---|
 | `no-static-cycle`: a cycle made only of static imports | error | 0 |
-| `no-circular`: any cycle, dynamic links included | warn | 23 |
+| `no-circular`: any cycle, dynamic links included | warn | 0 |
 | `systems-not-from-ui`, `systems-no-react`, `state-not-from-ui` | error | 0 |
-| `state-systems-dynamic-only`: state may reach systems only by dynamic import | error | 0 |
+| `state-never-imports-systems`: state imports nothing from systems | error | 0 |
 | `config-not-from-state-or-ui` | error | 0 |
 | `config-never-reaches-state` (transitively) | error | 0 |
 | `config-systems-kernel-only`: config imports from systems only `CONFIG_KERNEL` | error | 0 |

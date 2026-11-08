@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -148,7 +149,7 @@ describe('a save with Bank Slots ranks', () => {
     async function load(state) {
         const migrated = migrateState(state, GAME_VERSION);
         expect(validateSaveData({ version: GAME_VERSION, state: migrated }).errors).toEqual([]);
-        await GameState.initFromSave(migrated);
+        loadSavedState(migrated);
         InventoryManager.init();
         GuildUpgradeManager.recompute();
     }

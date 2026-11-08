@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
@@ -508,7 +509,7 @@ describe('⭐ saves remember what each hero is working (M5, HM-7)', () => {
     /** Save, load it back, and announce the load — as `SaveManager.loadGame` does. */
     async function saveAndReload() {
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
-        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        loadSavedState(migrateState(saved.state, saved.version));
         EventBus.publish('game_loaded', { slot: 0 });
     }
 
@@ -566,7 +567,7 @@ describe('⭐ saves remember what each hero is working (M5, HM-7)', () => {
         run(12000);
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
         delete saved.state.board.tokens[tok.id];      // the Token is gone in the save
-        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        loadSavedState(migrateState(saved.state, saved.version));
         EventBus.publish('game_loaded', { slot: 0 });
 
         expect(BoardState.savedWorkClaims()).toEqual([]);

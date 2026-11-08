@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, beforeAll } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { FLAG_COLOURS } from '../systems/board/FlagColours.js';
@@ -168,7 +169,7 @@ describe('A save from before the Vault went still loads (Token Lifecycle 9.3)', 
         expect(migrated.progress).not.toHaveProperty('flagRadiusBonus');
         expect(validateSaveData({ version: GAME_VERSION, state: migrated }).errors).toEqual([]);
         // And loaded, nothing brings it back.
-        await GameState.initFromSave(migrated);
+        loadSavedState(migrated);
         expect(GameState.state.progress.guildUpgrades).not.toHaveProperty('flag_radius');
         expect(GameState.state.progress).not.toHaveProperty('flagRadiusBonus');
     });
@@ -182,7 +183,7 @@ describe('A save from before the Vault went still loads (Token Lifecycle 9.3)', 
 
     it('loads into a live game', async () => {
         const data = oldSave();
-        await GameState.initFromSave(migrateState(data.state, data.version));
+        loadSavedState(migrateState(data.state, data.version));
         expect(GameState.state.board.tokens.tok_a.typeId).toBe('token_oak_forest');
         expect(GameState.state.board.tokenBank).toBeUndefined();
         expect(GameState.state.board.tray).toBeUndefined();
@@ -211,7 +212,7 @@ describe('a hero round-trips through a save (CR3-266)', () => {
     /** Save the live game and load it back the way a slot does. */
     async function saveAndLoad() {
         const revived = JSON.parse(JSON.stringify(GameState.serialize()));
-        await GameState.initFromSave(migrateState(revived.state, revived.version));
+        loadSavedState(migrateState(revived.state, revived.version));
         return GameState.state;
     }
 

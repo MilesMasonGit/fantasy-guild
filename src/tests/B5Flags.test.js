@@ -5,6 +5,7 @@ import { render, cleanup } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
@@ -298,7 +299,7 @@ describe('un-pinning and re-pinning by dragging', () => {
 describe('save and load', () => {
     async function saveAndReload() {
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
-        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        loadSavedState(migrateState(saved.state, saved.version));
         EventBus.publish('game_loaded', { slot: 0 });
     }
 

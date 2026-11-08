@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { rehydrateHero } from '../systems/hero/logic/HeroRehydration.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { GRID_SLOT_COUNT } from '../config/registries/equipmentConstants.js';
 
 
@@ -44,7 +45,7 @@ describe('CR2-040: hero loadout survives rehydration at its own indices', () => 
         const hero = savedHero([...saved]);
         const state = { ...GameState.state, heroes: [hero] };
 
-        await GameState.initFromSave(state);
+        loadSavedState(state);
 
         expect(GameState.heroes[0].equipment).toEqual(saved);
     });

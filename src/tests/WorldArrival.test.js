@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { validateSaveData } from '../state/StateSchema.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
@@ -184,7 +185,7 @@ describe('⭐ the arrival on a settled place', () => {
         const data = JSON.parse(GameState.serializeJson());
         const state = migrateState(data.state, data.version);
         expect(validateSaveData({ version: data.version, state }).errors).toEqual([]);
-        await GameState.initFromSave(state);
+        loadSavedState(state);
         expect(GameState.state.board.arrival).toEqual({ ids: result.arrival.ids, cleared: false });
         expect(Occupation.isOccupied()).toBe(true);
         expect(Occupation.standingEnemies()).toHaveLength(result.arrival.ids.length);

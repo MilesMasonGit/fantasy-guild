@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -88,7 +89,7 @@ const spawnedAt = (typeId, x, y) =>
 /** Save the game and load it back, as a slot does. */
 async function saveAndLoad() {
     const data = JSON.parse(GameState.serializeJson());
-    await GameState.initFromSave(migrateState(data.state, data.version));
+    loadSavedState(migrateState(data.state, data.version));
     return data;
 }
 

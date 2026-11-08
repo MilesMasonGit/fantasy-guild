@@ -28,42 +28,10 @@ class GameStateClass {
         logger.info('GameState', 'Fresh initialization complete.');
     }
 
-    async initFromSave(savedState) {
+    /** Only stores the save; `loadSavedState` (systems/core/LoadedState.js) rebuilds what it leaves out. */
+    initFromSave(savedState) {
         this.state = savedState;
-        await this._rehydrateAll();
         this.isInitialized = true;
-        logger.info('GameState', 'Save rehydration complete.');
-    }
-
-    /**
-     * Unified rehydration flow
-     */
-    async _rehydrateAll() {
-        if (!this.state) return;
-
-        // ⚠️ Keep these imports dynamic: HeroManager and EquipmentManager
-        // (through the modules they import) import this one back, and static
-        // imports re-form the import cycle `npm run cycles` guards.
-        const HM = await import('../systems/hero/HeroManager.js');
-        const EM = await import('../systems/equipment/EquipmentManager.js');
-        (this.state.heroes || []).forEach(hero => {
-            HM.rehydrateHero(hero);
-            EM.recalculateEquipmentModifiers(hero);
-        });
-        // A save from before heroes held a colour from the start: each gets one, in roster order.
-        const { assignFlagColours } = await import('../systems/board/FlagColours.js');
-        assignFlagColours();
-
-        if (!this.state.quests) {
-            this.state.quests = {
-                active: [],
-                completedTutorials: [],
-                tutorialStep: 0,
-                // quests run on the game-time `clockMs`, not the wall clock.
-                clockMs: 0,
-                nextQuestAt: null
-            };
-        }
     }
 
     /**
