@@ -8,12 +8,14 @@ project's first tagged baseline — everything before it was untagged developmen
 - **A game left in a background tab no longer piles up hidden page elements** (no change while
   you watch). Chrome keeps every animation a hidden page starts, and what it plays on, until the
   page draws again, even after the game has taken that element away. The first fix stopped the
-  effects; the loot hopping out of its Tokens and sliding onto piles, the Guild Hall's dip as
-  loot lands on it, and the "Needs Coal" callouts kept animating, and 20 minutes in a background
-  tab left about 1,550 animations holding nearly 5,000 elements until you came back. Now nothing on
-  the mat starts an animation while the page is hidden (one shared helper starts them all, and a
-  test refuses any other way), and the mat says no callouts until you are back. A hero's heal
-  flash and "used" bubble now also end on a timer if the window hides while they play.
+  effects, but the loot hopping out of its Tokens and sliding onto piles and the "Needs Coal"
+  callouts kept animating: 20 minutes in a background tab left about 1,420 animations holding
+  nearly 5,000 elements until you came back (the memory soak: page elements grew 269 a minute
+  while hidden, listeners 88). Now nothing on the mat starts an animation while the page is hidden
+  (one shared helper starts them all, and a test refuses any other way), and the mat says no
+  callouts until you are back; the same soak reads no growth while hidden (elements and listeners
+  flat over the 20 minutes). A hero's heal flash and "used" bubble now also end on a timer if the
+  window hides while they play.
 
 - **The bench's worst pushing arrival stops depending on luck with the garbage collector** (bench only, nothing plays differently). S4 now empties the young generation (one scavenge) before each of its four timed stages (arrivals, refused drops, landing drops, the shrink). The first arrival, the cold one, is always the worst at about 9 ms; in some processes a scavenge of the build's leftovers landed inside it and added 5 to 10 ms, and how often depended on how much the process had allocated before, down to how many files `public/` holds (Vite lists them when the bench worker starts). The same commit read a median worst arrival of 9 ms in one worktree and 15 to 17 ms in another with identical work, which looked like a regression on the cleanup branches; with the collection both read about 9 ms. The work is unchanged.
 

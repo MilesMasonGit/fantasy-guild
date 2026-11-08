@@ -8,8 +8,9 @@ export const ONE_SHOT_SPARE_MS = 1000;
  * or minimised window), or where the element cannot animate. Every one-shot animation in the game
  * starts here, and each caller takes null as "draw nothing".
  * ⚠️ Chrome keeps every animation started in a hidden page, and the element it plays on, until the
- * page draws a frame again, even once that element is taken away: a hidden page that kept starting
- * them (the loot hopping out of its Tokens) piled up thousands of detached elements.
+ * page draws a frame again, even once that element is taken away and the animation cancelled: a
+ * hidden page that kept starting them (the loot hopping out of its Tokens) piled up thousands of
+ * detached elements.
  * @param {Element|null} el
  * @param {Keyframe[]} keyframes
  * @param {KeyframeAnimationOptions} timing
