@@ -23,7 +23,6 @@ import {
     isConsumableCategory,
     getCategoryInfo,
     listCategoryIds,
-    categoryIdsOfKind,
     CATEGORY_KINDS
 } from './equipmentCategories.js';
 
@@ -35,7 +34,6 @@ export {
     isGearCategory,
     isConsumableCategory,
     getCategoryInfo,
-    categoryIdsOfKind,
     CATEGORY_KINDS
 };
 
