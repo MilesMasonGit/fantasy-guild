@@ -21,7 +21,7 @@ import {
 import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
 import { SKY_SAMPLE_RANKS, SKY_SAMPLE_PAID, devGiveNextPrice } from '../ui/dev/GuildHallDevSection.jsx';
 import { hallCameraSides } from './fixtures/hallCameraSides.js';
-import { useOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
+import { withOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -31,7 +31,7 @@ const renderWeb = (props = {}) => render(React.createElement(GuildHallBoard, pro
 const star = (container, id) => container.querySelector(`[data-hall-node="${id}"] img`);
 const src = (rel) => readFileSync(resolve(__dirname, rel), 'utf8');
 
-useOuterUpgrade();
+withOuterUpgrade();
 
 beforeEach(() => {
     GameState.initNew();

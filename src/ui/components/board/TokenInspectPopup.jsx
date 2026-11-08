@@ -95,7 +95,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
         const spaceLeft = targetRect.left - margin;
 
         // Favour top -> bottom, then right -> left
-        let dir = 'top';
+        let dir;
         if (spaceTop >= popupH + tailGap) {
             dir = 'top';
         } else if (spaceBottom >= popupH + tailGap) {

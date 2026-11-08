@@ -33,11 +33,6 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
     getQueue: vi.fn(() => [])
 }));
 
-/** The id of any authored Token that is NOT a Map. */
-function aPlainTokenId() {
-    const types = getAllTokenTypes();
-    return Object.keys(types).find(id => !types[id].mapId);
-}
 
 beforeEach(() => {
     GameState.initNew();

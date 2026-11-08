@@ -53,19 +53,12 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className, titl
     const validSize = [16, 32, 64, 128].includes(Number(size)) ? Number(size) : 32;
     const sizeClass = `gi-icon-${validSize}`;
 
-    let emoji = '📦';
     let name = '';
 
     if (typeof resolvedItem === 'object' && resolvedItem !== null) {
-        emoji = resolvedItem.icon || '📦';
         name = resolvedItem.name || '';
-    } else if (typeof resolvedItem === 'string') {
-        if (resolvedItem.length <= 4) {
-            emoji = resolvedItem;
-        } else {
-            emoji = '📦';
-            name = resolvedItem;
-        }
+    } else if (typeof resolvedItem === 'string' && resolvedItem.length > 4) {
+        name = resolvedItem;
     }
 
     if (!spritePath || hasError) {

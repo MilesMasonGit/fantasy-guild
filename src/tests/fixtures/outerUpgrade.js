@@ -22,7 +22,7 @@ export const OUTER_UPGRADE = {
 };
 
 /** Add {@link OUTER_UPGRADE} to the web for every test of the calling file. */
-export function useOuterUpgrade() {
+export function withOuterUpgrade() {
     beforeEach(() => {
         if (!GUILD_UPGRADES.includes(OUTER_UPGRADE)) GUILD_UPGRADES.push(OUTER_UPGRADE);
     });

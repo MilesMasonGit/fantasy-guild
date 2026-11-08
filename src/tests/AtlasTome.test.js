@@ -3,8 +3,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, fireEvent, cleanup } from '@testing-library/react';
 import { AtlasTome, TomeSpread } from '../ui/components/atlas/AtlasTome.jsx';
-import { act } from '@testing-library/react';
-import { TOME_ART, PARCHMENT_ART, TOME_SCALE, spreadSize, pageRects } from '../ui/components/atlas/tomeArt.js';
+import { TOME_ART, PARCHMENT_ART, TOME_SCALE, pageRects } from '../ui/components/atlas/tomeArt.js';
 import { placeBook, tabsTucked } from '../ui/components/atlas/AtlasTome.jsx';
 
 /**

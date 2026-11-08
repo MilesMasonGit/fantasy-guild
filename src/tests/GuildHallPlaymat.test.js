@@ -9,7 +9,7 @@ import {
 } from '../config/guildUpgrades.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
-import { useOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
+import { withOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -21,7 +21,7 @@ const stock = (price) => price.forEach(p => InventoryManager.addItem(p.itemId, p
 /** The price of the next rank of an upgrade, as the manager sees it. */
 const nextPrice = (id) => GuildUpgradeManager.getNextCost(id);
 
-useOuterUpgrade();
+withOuterUpgrade();
 
 beforeEach(() => {
     GameState.initNew();

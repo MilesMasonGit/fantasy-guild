@@ -19,7 +19,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { totalPrice } from '../config/guildUpgrades.js';
-import { useOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
+import { withOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -35,7 +35,7 @@ function buy(id) {
     expect(GuildUpgradeManager.purchase(id).success, id).toBe(true);
 }
 
-useOuterUpgrade();
+withOuterUpgrade();
 
 let sounds;
 let unsubscribe;

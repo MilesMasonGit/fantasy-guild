@@ -3,7 +3,6 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { SRC, listFiles, readSource, rel, setScanTimeout } from './fixtures/sourceScan.js';
 import React from 'react';
 import { render, cleanup, act } from '@testing-library/react';
-import { DndContext } from '@dnd-kit/core';
 
 vi.mock('../config/registries/recipePoolRegistry.js', async (orig) => ({
     ...(await orig()),

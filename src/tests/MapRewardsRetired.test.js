@@ -9,13 +9,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { registerItems, getItem } from '../config/registries/itemRegistry.js';
-import { LootSystem } from '../systems/combat/LootSystem.js';
-import * as Placement from '../systems/board/Placement.js';
-import * as Orders from '../systems/board/Orders.js';
-import * as BoardRunner from '../systems/board/BoardRunner.js';
-import * as TileModifiers from '../systems/board/TileModifiers.js';
-import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),

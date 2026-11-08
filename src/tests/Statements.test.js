@@ -6,7 +6,7 @@ import * as Placement from '../systems/board/Placement.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { tokenStartingUses, getTokenType, getProvidedTagsWithTiers } from '../config/registries/tokenRegistry.js';
+import { getTokenType, getProvidedTagsWithTiers } from '../config/registries/tokenRegistry.js';
 import { deriveTokenType } from '../config/registries/tokenTypeDerivation.js';
 import { OUTPUT_CURRENCIES, isOutputCurrency } from '../config/registries/tokenConstants.js';
 import { renderStatement, upkeepLine, rulesLinesOf } from '../systems/effects/statementText.js';

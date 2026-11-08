@@ -13,10 +13,10 @@ import {
     getUpgradeDef, getLockDetail, getLockReason, isUpgradeAccessible, LOCK_KIND, GUILD_UPGRADES
 } from '../config/guildUpgrades.js';
 import { selectGuildInspectSelection } from '../ui/guildInspectSelection.js';
-import { useOuterUpgrade } from './fixtures/outerUpgrade.js';
+import { withOuterUpgrade } from './fixtures/outerUpgrade.js';
 
 // Every shipped upgrade joins the Hall, so the locked one is the test star beyond Bank Tabs.
-useOuterUpgrade();
+withOuterUpgrade();
 
 const closeButton = (container) =>
     Array.from(container.querySelectorAll('button'))

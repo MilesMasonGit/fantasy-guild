@@ -55,7 +55,6 @@ function appliedWorkspace() {
     return ws;
 }
 
-const flatCatalogue = () => Shop.catalogue().map(i => i.typeId);
 const builds = (typeId) => recipesForFoundation(getTokenType(typeId)).map(r => r.outputs.find(o => o.tokenId).tokenId);
 
 function newGame() {

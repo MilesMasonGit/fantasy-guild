@@ -136,14 +136,14 @@ describe('mat overlays', () => {
 
     it('bubbles and tooltips', () => {
         const el = questToken();
-        const on = mount(el);
+        mount(el);
         expect(document.body.querySelector('[data-idle-plate] [data-plate-cell="quest"]')).not.toBeNull();
         expect(document.body.querySelector('[data-quest-tooltip]')).not.toBeNull();
         cleanup();
 
         setDrawn('bubbles', false);
         setDrawn('tooltips', false);
-        const off = mount(el);
+        mount(el);
         expect(document.body.querySelector('[data-idle-plate]')).toBeNull();
         expect(document.body.querySelector('[data-quest-tooltip]')).toBeNull();
         QuestManager.cleanup();

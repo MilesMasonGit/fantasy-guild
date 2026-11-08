@@ -5,7 +5,6 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
-import * as BoardState from '../systems/board/BoardState.js';
 import { matW, matH } from '../config/matGeometry.js';
 
 /**

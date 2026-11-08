@@ -1,0 +1,18 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "cms/src/main.jsx",
+    "cms/src/studio/main.jsx",
+    "cms/vite*.js",
+    "cms/*.{js,mjs}",
+    "bench/**/*.mjs",
+    "scripts/*.mjs",
+    "scripts/*.js",
+    "tools/**/*.mjs"
+  ],
+  "project": ["src/**/*.{js,jsx}", "cms/src/**/*.{js,jsx}", "bench/**/*.{js,mjs}", "scripts/**/*.{js,mjs}", "tools/**/*.mjs"],
+  "ignore": ["src/tests/**"],
+  "ignoreDependencies": ["@fontsource/*", "tailwindcss", "zustand", "file-saver", "@google/generative-ai", "ajv", "@tailwindcss/vite", "eslint-plugin-react-refresh"],
+  "ignoreBinaries": ["dot"],
+  "ignoreExportsUsedInFile": true
+}

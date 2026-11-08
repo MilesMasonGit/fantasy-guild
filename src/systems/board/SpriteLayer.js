@@ -36,7 +36,7 @@ import * as GameClock from '../core/GameClock.js';
  */
 
 /** Same-type sprites merge into counted stacks after this long. */
-const MERGE_GRACE_MS = 900;
+const MERGE_GRACE_MS = 1100;
 
 /** Guards the collect → bank → overflow → collect loop. */
 let collecting = false;
@@ -321,14 +321,14 @@ export function addSprite(kind, refId, quantity = 1, source = null) {
         fromX,
         fromY,
         targetStackId: targetExisting ? targetExisting.id : null,
-        absorbAt: targetExisting ? GameClock.now() + 1100 : null,
+        absorbAt: targetExisting ? GameClock.now() + MERGE_GRACE_MS : null,
         usesRemaining: null,
         bornAt: GameClock.now()
     };
     list.push(sprite);
 
     if (targetExisting) {
-        scheduleAbsorption(sprite.id, 1100);
+        scheduleAbsorption(sprite.id, MERGE_GRACE_MS);
     }
 
     EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, { spriteId: sprite.id });

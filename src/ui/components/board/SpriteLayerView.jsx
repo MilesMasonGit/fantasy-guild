@@ -77,15 +77,6 @@ function selectFloorLoot(state) {
 }
 
 /**
- * Whether a drag is in flight anywhere. `DndKit` stamps `gi-dnd-active` on `<body>` for the
- * life of a drag. Reading it is what stops a Token being collected out from under a drag that
- * has already started: the pointer leaves the sprite on the very first movement, so without
- * this guard grabbing a Token would send it to storage instead.
- */
-const isDragActive = () =>
-    typeof document !== 'undefined' && document.body.classList.contains('gi-dnd-active');
-
-/**
  * How long after a sprite is created its arc is still worth playing.
  * ⚠️ This is the guard that stops a loaded board re-throwing its entire floor. Sprites
  * persist, `fromX`/`fromY` with them, and every one of them mounts fresh on load, so without a

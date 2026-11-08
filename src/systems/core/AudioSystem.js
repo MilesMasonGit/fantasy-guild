@@ -174,7 +174,7 @@ class AudioSystemClass {
             this.playNextTrack();
         };
 
-        audio.onerror = (e) => {
+        audio.onerror = () => {
             logger.warn('AudioSystem', `Failed to load track ${nextTrack.title}, advancing...`);
             setTimeout(() => this.playNextTrack(), 1000);
         };

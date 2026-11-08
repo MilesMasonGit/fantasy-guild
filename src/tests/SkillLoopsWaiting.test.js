@@ -176,7 +176,7 @@ describe('a station out of an input', () => {
         InventoryManager.addItem('item_coal', 1);
         const said = [];
         const off = EventBus.subscribe(BOARD_EVENTS.INPUT_NEEDED, (p) => said.push(p));
-        let smelted = 0;
+        let smelted;
         try {
             smelted = cyclesOf(furnace, () => {
                 Orders.orderAt('smith', { x: 800, y: 500 });

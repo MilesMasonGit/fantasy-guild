@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Code-health tools tidied**, nothing a player sees changes: a stricter dead-code check (`npm run dead-code:strict`, which sees the CMS and does not count tests as users), the linter skips other sessions folders and docs, the package list drops an unused drag package and names two it relied on by accident, and the unused names and leftovers the linter flagged in the game and its tests are gone. The merge delay for same-kind sprites is now one constant (1100 ms, as before).
+
 
 - **A game left in a background tab no longer piles up hidden page elements** (no change while
   you watch). Chrome keeps every animation a hidden page starts, and what it plays on, until the
