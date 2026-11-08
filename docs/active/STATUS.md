@@ -25,7 +25,12 @@ build green) · bench-queued · eye-check · merged.*
 | 520 M0: bench instruments | builder-lite | `bench/review-instruments` (`m0`) | **merged** 6bb0d201 (634 files green, cycles, build, no save log in the shipped build, engine work same) | Sat | Sat |
 | 520 M1 to M9: measurements | director | | **queued tonight** (owner: weekend nights allowed): 01:00 M1 catch-up profile and C240, M4 tick commits, M3 hero drag; then C1 draw compare and calibration, M5 soaks (hidden 20, visible 10, readable 60). Still to do: M2, M6, M7 (desktop by hand), M8, M9 | | |
 | 540 C1: folder moves and the import cycle (T-373, T-381) | builder | `cleanup/folder-moves` (`c1`) | ready 75c8b8de: cycles 1 group to 0, CombatFormulas and the ground painters moved, the CMS-only ledger files into `cms/src/engine/ledger/` (tests stay in `src/tests`, option a, director call), a `game-not-from-cms` depcruise rule; gate running, draw compare and calibration tonight | Sat | |
-| 540 C2 to C9: cleanup by folder, then docs | builder / builder-lite | | queued (after C1) | | |
+| 540 C2: board dead code (T-374) | builder-lite | `cleanup/board` (`c2`, from C1) | ready e0ec50b1; `Shop.buy` and `MatResize.teardown` kept (still used); gate in the morning, with S4 before and after | Sun | |
+| 540 C3: hero, effects, combat, progression (T-375) | builder-lite | `cleanup/hero-effects` (`c3`, from C1) | ready 1448a736; old saves drop `provenance` and `newDiscoveries` (test added); gate in the morning | Sun | |
+| 540 C4: core, state, config (T-376, T-140, T-086) | builder | `cleanup/core-state` (`c4`, from C3) | building | Sun | |
+| 540 C5: world, atlas, quests (T-377) | builder-lite | `cleanup/world` (`c5`, from C1) | ready c8e10b77; gate in the morning | Sun | |
+| 540 C6: src/ui and the keyboard ruling (T-378, T-309, T-370) | builder | `cleanup/ui` (`c6`, from C1) | ready d50f8f99; drag sources are no longer Tab stops (the owner's ruling); gate and drag bench in the morning | Sun | |
+| 540 C7 to C9: sweeps across folders, tools and lint, docs | builder-lite | | queued (after C2 to C6) | | |
 
 ## Director, code review round 4 preparation (owner, 2026-11-06 interview; concept_code_review_2026.md approved)
 
@@ -225,6 +230,8 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 None open.
 
 ## Questions for the owner
+
+- **Native buttons that can be dragged are still Tab stops** (brief 540 C6, 2026-11-08): the mat hero, flags and Bank item tiles are buttons with a real click (the hero opens its sheet), so the keyboard ruling left them as Tab stops. A) keep them (recommended: keyboard players keep the click); B) take them out of the Tab order too.
 
 
 - ~~Ring star pricing~~ **Answered 2026-11-06 evening: A** (the owner accepted the pack as built and synced it, 51a648da).
