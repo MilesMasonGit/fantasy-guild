@@ -7,6 +7,13 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, brief 550 sharp sprites (owner, 2026-11-08: the owner's main problem with the production build)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 550 X1: nothing blurs on hover or turn; floating items crisp (T-393) | engineer | `fix/sprite-sharpness` (`ss`) | building | Sun | |
+| 550 X2: walking heroes crisp (merge only if the draw and drag benches show no extra cost) | engineer | same branch, after X1 | queued | | |
+
 ## Director, code review round 4 fixes (owner, 2026-11-07: all of briefs 510, 530, 520, 540 approved, in that order)
 
 *Sun 8 Nov, 08:00. Where we are: briefs 510 (F1 to F7), 530 X1, 520 (instruments, measurements, results file) and 540 (C1 to C9) are on main and pushed; the gate now includes cycles, depcruise and lint. Next: tonight two desktop builds (with the release-size settings), the draw baseline retake and the atlas timing; then the minimised-app measurement with the owner, and M6 on a copy of the owner slot. Owner: accept and Sync the four combat stars pack on main (then the director checks a melee kill); the Tab-stop question below; 10 minutes with the desktop app when the builds are ready. Blockers: none.*
