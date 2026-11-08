@@ -95,7 +95,7 @@ export function commitSync(projectRoot, counts, paths) {
         const message = [
             'CMS sync' + (summary ? ': ' + summary : ''),
             '',
-            'Written by "Sync to Game" (CMS-53: one-way full-file write from the',
+            'Written by "Sync to Game" (one-way full-file write from the',
             'CMS workspace). Content only -- this commit holds only the files the Sync',
             'wrote in `data/` and the plan (`cms/plan/`), so it can be rolled back without touching code.'
         ].join('\n');

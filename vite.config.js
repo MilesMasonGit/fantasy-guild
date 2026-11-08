@@ -4,21 +4,16 @@ import path from 'path';
 import fs from 'fs';
 
 import { fileURLToPath } from 'url';
-// Wave 5 (CR3-350): the sprites' hard shadows and coloured outlines are
-// pictures generated from the art, into the git-ignored public/_gen/sprite-fx/
-// — before a build, and when the dev server starts or a sprite changes.
+// The sprites' hard shadows and coloured outlines are pictures generated from
+// the art, into the git-ignored public/_gen/sprite-fx/: before a build, and
+// when the dev server starts or a sprite changes.
 import { spriteFxPlugin } from './scripts/spriteFx.mjs';
 // The art bench (`/art-bench/`, dev server only; never in the build).
 import { artBenchPlugin } from './scripts/artBench.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // The app version, taken from package.json at build time and injected as
-// `__APP_VERSION__` (CR2-145).
-//
-// ⚠️ CLAUDE.md requires the version to be bumped in five files together. The
-// Settings screen used to print a *sixth* copy, typed by hand, and it had
-// drifted to "v0.9.0" while the five real files all said 0.6.0. Reading it
-// from here means there is no sixth copy to forget.
+// `__APP_VERSION__`, so the Settings screen has no hand-typed copy to drift.
 //
 // ⚠️ This is the APP version. It is NOT `GAME_VERSION` in `state/StateSchema.js`,
 // which is the *save format* version and moves on its own schedule — they are

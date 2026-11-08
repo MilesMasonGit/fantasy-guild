@@ -26,9 +26,8 @@ import * as BoardState from './BoardState.js';
  * Beside means Near. Every nearby question here (the context around a station, the tools it
  * accepts, and which stations a context Token serves) is
  * `nearby.neighbourIds()`: Tokens whose centres are within the Near radius, named by instance id.
- * Acts as and recipe context carry no reach field of their own; they are Near. The neighbour list
- * is cached per instance and dropped on any Token add, move or removal or a Near change, because
- * this module asks it several times per station per tick.
+ * Acts as and recipe context carry no reach field of their own; they are Near. The neighbour ids
+ * are cached per instance in `nearby.js`; the tag maps built from them are not.
  */
 
 /** Resolution outcomes for a station. */

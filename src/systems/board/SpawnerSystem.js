@@ -67,7 +67,10 @@ export const SPAWNER_STATE = Object.freeze({
     SLEEPING: 'sleeping'
 });
 
-/** Spawner instance ids whose last landing found no room — cleared by the next success. */
+/**
+ * Spawner instance ids whose last landing found no room, cleared by the next success.
+ * Never saved: after a load a spawner that was waiting reads as spawning until its next try.
+ */
 const noRoom = new Set();
 
 /** How one attempt ended (see {@link tryToSpawn}). */

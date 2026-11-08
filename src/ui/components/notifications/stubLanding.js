@@ -54,7 +54,7 @@ export function getCopies() {
     return [...copies.values()].sort((a, b) => a.slot - b.slot);
 }
 
-/** Forget every copy (tests, and a column that goes away). */
+/** Forget every copy (tests only). */
 export function resetCopies() {
     for (const t of timers.values()) clearTimeout(t);
     timers.clear();

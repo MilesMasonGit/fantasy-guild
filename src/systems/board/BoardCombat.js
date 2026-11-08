@@ -25,8 +25,8 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * resolution, the Wounded state and passive regen carry over unchanged; only the trigger differs: a
  * hero is dropped onto an enemy Token.
  *
- * `CombatProcessor.processCombat(card, trait, delta)` operates on a rich card instance
- * (`card.combat`, `card.status`, `card.traits`). A Token instance is deliberately light (typeId,
+ * `CombatProcessor.processCombat(fight, trait, delta)` operates on a rich fight object
+ * (`fight.combat`, `fight.status`, `fight.traits`). A Token instance is deliberately light (typeId,
  * charges, elapsed). Rather than fatten every Token to satisfy a signature, this keeps one
  * ephemeral combat object per fought enemy Token, in a runtime-only map keyed by the enemy's
  * instance id. At most a handful exist at once, and none of it needs saving.

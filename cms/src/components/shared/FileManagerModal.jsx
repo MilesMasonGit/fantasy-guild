@@ -80,7 +80,7 @@ export default function FileManagerModal({ isOpen, onClose }) {
   };
 
   const requestRestoreFromGame = () => {
-    setConfirmState({ type: 'restoreFromGame', data: null, message: 'Restore workspace directly from game files (data/*.json)? This will load all current tokens, items (maps included), recipes, and effects.' });
+    setConfirmState({ type: 'restoreFromGame', data: null, message: 'Restore workspace directly from game files (data/*.json)? This will load all current tokens, items, recipes, and effects.' });
   };
 
   const executeConfirm = async () => {

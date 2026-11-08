@@ -1,5 +1,4 @@
 // Fantasy Guild - Main Entry Point
-// Optimized via Auditor Persona
 
 import './tailwind.css';
 import './styles/main.css';
@@ -54,10 +53,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Wave 5: which sprites have a generated hard shadow and outlines
     // (`scripts/spriteFx.mjs`). A small file; failure only means no effects.
     const fxReady = loadSpriteFxManifest();
-    // `AssetManager.initializeAssets()` used to be dynamically imported and
-    // called here. It was an empty function kept for "legacy support for
-    // main.jsx" — i.e. this line was the only reason it existed. Both went on
-    // 2026-08-24 (CR2-103). `preloadGameArt()` above is the real pipeline.
 
     // 2. Initialize Core Management Layers
     // SettingsManager must load stored settings BEFORE SaveManager reads the
@@ -108,7 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const reactRootEl = document.getElementById('react-root');
     if (reactRootEl) {
         const root = createRoot(reactRootEl);
-        // CR3-203: the last-resort boundary. Everything that matters is
+        // The last-resort boundary. Everything that matters is
         // already covered by its own named boundary inside ReactRoot; this
         // one only catches whatever isn't under a named surface yet.
         root.render(

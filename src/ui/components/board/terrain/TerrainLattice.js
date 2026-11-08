@@ -346,7 +346,7 @@ export function resolveArtPixels(ground, withFringes = true, blend = null) {
     }
 
     // The cells beside a different one, eight ways: the only cells two pixels can differ in,
-    // since a strip reaches under half a cell.
+    // since a ragged border never leaves the cells beside a different one.
     const border = new Uint8Array(cols * rows);
     for (let cy = 0; cy < rows; cy++) {
         for (let cx = 0; cx < cols; cx++) {
@@ -362,7 +362,7 @@ export function resolveArtPixels(ground, withFringes = true, blend = null) {
     // Then the borders where two terrains meet, drawn ragged.
     raggedBorders(at, width, height, cells, cols, rows, cellPx, border, seed);
 
-    // Which palette entries some pixel shows: the cells' terrains (a strip only carries a
+    // Which palette entries some pixel shows: the cells' terrains (a ragged border only carries a
     // neighbouring cell's), the water's, and whatever a fringe writes.
     const present = new Uint8Array(256);
     for (let i = 0; i < cells.length; i++) present[cells[i]] = 1;

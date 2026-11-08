@@ -32,9 +32,10 @@ import { renderStatement } from '../effects/statementText.js';
 /**
  * A board as a map of Tokens by instance id, with their type and point.
  *
- * Built fresh for every check rather than cached. A placement check runs on a
- * drop, not on the tick, and a stale copy of the board is the one thing that
- * would make a restriction refuse the wrong Token.
+ * Built fresh for every check rather than cached: a stale copy of the board is
+ * the one thing that would make a restriction refuse the wrong Token. A check
+ * runs for each candidate spot when a Cannot rule is in range, so it is not
+ * only a drop-time cost.
  *
  * @typedef {Map<string, {typeId: string, x: number, y: number}>} BoardView
  */

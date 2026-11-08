@@ -59,7 +59,7 @@ export function setAimedModifiers(owner, list) {
     aimedFlat = [...aimedByOwner.values()].flat();
 }
 
-/** Every owner's aimed modifiers. Empty when there are none. */
+/** Every owner's aimed modifiers. An empty list when there are none. */
 export function aimedModifiers() {
     return aimedFlat;
 }

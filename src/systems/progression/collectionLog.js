@@ -16,8 +16,8 @@ import { GameState } from '../../state/GameState.js';
  * and `collection.tokensBuilt` (each Token a Foundation became, {@link noteTokenBuilt}).
  *
  * Silent on purpose: nothing here announces (the Bank's "New" stub is the only pop).
- * ⚠️ Everything lives in the run's `state.collection`: a new game starts empty, and the ritual
- * (not built yet) must clear `tokensHad`, `recipesMade` and `tokensBuilt` with the rest of the run.
+ * ⚠️ Everything lives in the run's `state.collection`: a new game starts empty, and a run reset
+ * must clear `tokensHad`, `recipesMade` and `tokensBuilt` with the rest of the run.
  */
 
 /** Note that a Token of `typeId` stood on the mat. One property write; nothing else. */

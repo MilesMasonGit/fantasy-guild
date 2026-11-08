@@ -39,7 +39,7 @@ const hasCannot = (typeId) => statementsWith(getTokenType(typeId), KEYWORD.CANNO
  * `Restrictions.reconcile` would move map fixtures on the next load.
  *
  * ⚠️ Near is the live Near radius (`Restrictions` reads no other), so this one input is still a
- * per-device value until T-097.
+ * per-device value.
  */
 export function cannotCheck(typeIds) {
     if (![...typeIds, HALL_TYPE_ID].some(hasCannot)) return null;

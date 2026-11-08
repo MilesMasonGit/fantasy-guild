@@ -12,7 +12,9 @@ Nothing merges to `main` until all of these hold:
 2. **Bench**: `npm run bench -- --compare` exits **0**. **The director runs
    it, never a subagent, and only in the owner's downtime**: weekdays
    13:00–17:00 and 01:00–07:00 Vancouver time, one bench at a time (a second
-   bench, a test suite or a build moves every number). Subagents stop at
+   bench, a test suite or a build moves every number). The window's routine
+   also includes the second-seed run, `FG_TEST_SEED=b npx vitest run`: a test
+   that fails only under it is relying on luck. Subagents stop at
    items 1, 3 and 4 and report "ready for bench"; the branch waits in the
    bench queue in `docs/active/STATUS.md` until a window.
    - Exit 1 = `REGRESSED` (slower). Timing is noisy under machine load; re-run
@@ -21,8 +23,10 @@ Nothing merges to `main` until all of these hold:
    - Exit 2 = `WORK CHANGED`: the change altered what the game does. Stop and
      find out why, unless the ticket says a gameplay change is expected.
    - See [`bench/README.md`](../../bench/README.md).
-3. **Cycles**: `npm run cycles` shows no new dangerous import cycle.
-4. **Build**: `npm run build` succeeds.
+3. **Cycles and layering**: `npm run cycles` reports 0 groups and
+   `npm run depcruise` reports 0 violations.
+4. **Lint and build**: `npm run lint` reads 0 errors (warnings stay out of the
+   gate) and `npm run build` succeeds.
 5. **In the game**: anything a player could see is exercised in the running
    game (below). If something truly can't be automated, hand the owner an
    explicit manual check; never quietly skip it or claim it passed.

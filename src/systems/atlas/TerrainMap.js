@@ -5,7 +5,7 @@ import { readWater } from './WaterShapes.js';
 /**
  * The ground is a grid of square cells, each one terrain; Tokens stand freely on top, and the cell
  * under a Token's centre is its terrain. Generation (`Layout.js`) makes the grid together with the
- * layout so the nodes and the ground agree; brief 80 paints it, and a later slice checks a Token's
+ * layout so the nodes and the ground agree; the terrain painters draw it, and placement checks a Token's
  * terrain needs against it.
  *
  * Pure and seeded like the layout: arithmetic IEEE fixes exactly, no trigonometry, no `**`.

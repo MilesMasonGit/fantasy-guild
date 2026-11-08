@@ -14,7 +14,7 @@ const CRITICAL_RE = /^assets\/(playmat|tokens|heroes|icon)\//;
 // Never let a broken/missing image hold the game hostage.
 const GATE_TIMEOUT_MS = 4000;
 
-// Loaded Image objects are kept referenced so decoded bitmaps stay warm.
+// Every loaded Image is held for the life of the page, so all of the art stays in memory.
 const retained = [];
 
 function loadImage(src) {
