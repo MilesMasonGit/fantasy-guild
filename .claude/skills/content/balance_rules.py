@@ -40,8 +40,18 @@ def cycle(kind, level):
     return CYCLE_BASE[kind] * CYCLE_GROWTH ** (level / 20)
 
 
-def xp_per_action(kind, level):
-    return max(1, round(xp_an_hour(level) * cycle(kind, level) / 3600))
+def make_seconds(level, bars):
+    """A make step takes longer the more bars it uses, so XP per bar doesn't favour the smallest item."""
+    return cycle('make', level) * (1 + 0.2 * (bars - 1))
+
+
+def xp_level(unlock, next_unlock):
+    """The level whose XP an hour a task pays: halfway to the skill's next unlock."""
+    return (unlock + next_unlock) / 2 if next_unlock > unlock + 1 else unlock
+
+
+def xp_per_action(kind, level, seconds=None):
+    return max(1, round(xp_an_hour(level) * (seconds or cycle(kind, level)) / 3600))
 
 
 def count(base, level):

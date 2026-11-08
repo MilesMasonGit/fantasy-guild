@@ -1,4 +1,4 @@
-Status: approved 2026-11-07
+Status: approved 2026-11-07, amended the same day after a critical review (samples in the review's notes, below)
 
 # Balance rules
 
@@ -45,7 +45,11 @@ Status: approved 2026-11-07
 
 About 20.6 million XP to 99. Today's table needs about 13 million.
 
-**XP per action** = the XP an hour at its unlock level × the action's seconds ÷ 3,600, rounded, at least 1. The seconds are the work's real time per action, rests included, as the ledger reads it.
+**XP per action** = the XP an hour × the action's seconds ÷ 3,600, rounded, at least 1. The seconds are **the work cycle alone**: rests don't count, because the rest rule (section 2) keeps a lone hero busy most of the time.
+
+**Which level's XP an hour**: the level halfway between this unlock and the skill's next one, not the unlock itself. In a skill with few unlocks (Mining's metals, Fletching), XP an hour stays flat while the table keeps rising, so without this those skills climb about 40 % slower than the curve (review: Mining 47.7 days against 34.4; with the midpoint, 35.0). Where the next unlock is the next level, it's the same as the unlock level.
+
+**Pick action seconds that give whole XP early on**: at 3 to 12 XP an action, rounding can be 13 % off.
 
 - **An old task falls behind**: 2x slower a tier later, 4x two tiers on, and about 30x slower at 99. Reaching 99 on a level-1 task alone would take about 517 days of one hero's work.
 - **Crafting and gathering pay the same an hour** at the same level (owner). A craft pays more per action only because it takes longer.
@@ -64,6 +68,10 @@ About 20.6 million XP to 99. Today's table needs about 13 million.
 
 The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds, growth and fights aren't timed here: builds and growth follow the ledger's one-off step rule (no wait longer than the pace allows there), and fights belong to combat.
 
+**A make step takes longer the more bars it uses**: seconds × (1 + 0.2 × (count − 1)). A Chestplate (5 bars) takes 1.8x a Dagger (1 bar). Without it, XP per bar favours the smallest item, and players grind Daggers (review: 263 XP a bar for a darkmetal Dagger, 151 for a Chestplate).
+
+**The rest rule**: a gathering Token's uses × its cycle is at least 3 × its rest, so one hero on one copy is busy at least 75 % of the time. Today's veins hold 5 uses of 3 to 4 seconds, then rest 60 to 90 seconds, so a lone hero waits most of the time and a camp of three copies earns 3 to 4x as much (review, from `rates.js`).
+
 ## 3. Ingredient counts
 
 **Only steps made from raw things grow.** Ore, wood, crops, herbs, fish and drops are raw: their count is **base × 2^(L / 40)**, rounded, doubling every two tiers (owner). A step made from made things (bars, cloth, leather, a Sofrito) uses **a fixed count for its kind** at every tier. Late gear costs more because its bars cost more, and never piles into hundreds of ore (owner's first ruling).
@@ -72,6 +80,8 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 |---|---|---|---|---|---|---|---|---|
 | 1 (most raw ingredients) | 1 | 1 | 2 | 2 | 2 | 3 | 4 | 6 |
 | 2 (ore per bar, wood per plank) | 2 | 3 | 3 | 4 | 5 | 6 | 8 | 11 |
+
+**What one gather action gives stays the same at every tier** (owner, after the review): "Increased ingredient gain is expected through building and Star upgrades. In practice we do grow yields, but for the base numbers they should not." So a Bare guild needs more gatherers per crafter as it climbs (about 2 per smelter at copper, 8 at darkmetal), and **yield boosts close the gap**: Double Output buildings, the Logging and Mining Camps' variants, and the Hall's yield stars. Their targets grow by tier so a Typical guild keeps about one or two gatherers per crafter (section 5).
 
 **Fixed counts by kind** (agent's call, starting values): Dagger 1, Sword 2, Woodaxe and Pickaxe 2, Gloves and Boots 2, Helmet or Hat 3, Shield 3, Mace and Cleaver 3, Cape 3, Chestplate, Chest, Robe and Tunic 5. A handle is 1 wood. Nails, Arrowheads, Chain and Bands take 1 bar and make several. Weird items in potions are 1. Water and juices in drinks and potions are 1.
 
@@ -89,19 +99,27 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 **The same finds a day at every tier** (owner), so the chance per action rises slightly as actions lengthen.
 
+**Rare items are a gate** (owner, after the review): "Rare items are a gate that can be passed by having multiple heroes working on similar tasks, or by using boosts." 20 a day is the default for one unboosted hero. A find whose gate needs more (or fewer) is set by that: one hero alone is slow to pass it, and several heroes or boosts pass it in good time. The review's count, about 600 gems a month from a few miners against 44 pieces worn, is the check to run when the jewellery pack is made.
+
 ## 5. Boosts and upgrades
 
-**Boost strengths** are targets the ledger already holds; this page adds the rare-find one:
+**Boosts of one kind add up** in the game (`ModifierAggregator`): +30 % and +20 % make +50 %, not +56 %. Speed boosts cut the time, and **no stack cuts more than 80 %** (`workTime.js`).
+
+**Speed: keep the cap, lower the targets** (owner, after the review). Every speed boost a Maxed hero can hold, Hall included, adds up to **at most a 65 % cut**, inside the 3x bound and short of the 80 % cap, so one more Faster Work building always still helps. The Hall's late +100 % is no longer a speed target: its speed stars share the budget.
 
 | Kind | Target |
 |---|---|
-| A building or support | up to +30 % |
-| A drink or work potion | about +20 % |
-| **A rare-find potion** | **x2, rising to x3 for late potions** (owner) |
-| **A Rare Finds building** | **x1.5** (owner), so together x3 to x4.5 |
-| A Guild Hall star | +10 % early, up to +100 % late |
+| A Faster Work building | about −20 % time |
+| A speed drink | about −10 % time |
+| Hall speed stars, all ranks of a skill | about −35 % time |
+| **Yield** (Double Output, camps' variants, Hall yield stars) | grows by tier, so a Typical guild needs one or two gatherers per crafter: about +50 % at iron to +300 % at darkmetal together |
+| **A rare-find potion** | **+100 %, rising to +200 % for late potions** (owner) |
+| **A Rare Finds building** | **+50 %** (owner); with a potion, x2.5 to x3.5 |
+| Other Hall stars (XP, more finds) | +10 % early, up to +100 % late |
 
-**Upgrade prices go by payback** (owner): the hours of the boosted work it takes to earn back the price. **Payback = 1 hour × 24^(L / 80)**: 1 hour at 1, 2.2 at 20, 4.9 at 40, 10.8 at 60, a day at 80. That covers Guild Hall stars and building variants, priced in the tier's materials.
+**Consumables last a number of cycles, and crafts make batches** (owner, after the review: "A dose is meant to last a number of cycles, not time. But also we will make batches."). **A batch must pay back at least 4x**: the work time the whole batch saves (or the finds it adds) is at least four times the hero time it took to make, its ingredients included. ⚠️ Today a work potion lasts 1 cycle and a drink 10 (`consumableRule.js`), so a batch would need to be very large: the dose lengths are worth raising (T-338).
+
+**Upgrade prices go by payback** (owner): the hours of the boosted work it takes to earn back the price. **For a Hall star that boosts the whole guild, payback counts all the work it boosts**, not one hero's. **Payback = 1 hour × 24^(L / 80)**: 1 hour at 1, 2.2 at 20, 4.9 at 40, 10.8 at 60, a day at 80. That covers Guild Hall stars and building variants, priced in the tier's materials.
 
 ## Worked examples
 
@@ -130,10 +148,21 @@ The ores themselves (gather): copper ore 6.0 s and 3 XP, iron 6.9 s and 6 XP, my
 
 **Master's Draught, a late potion** (Alchemy 90): 5 Starflower and 5 Moonpetal (base 1 at L 90), 1 Voidcap as the weird item, 1 Elder Draught as the base. It takes 22.5 s and pays 227 XP. Its herbs pay Farming 75 XP (Starflower, L 80) and 33 XP (Moonpetal, L 60) each, and the Elder Draught pays Cooking.
 
+## Not covered yet
+
+The review listed numbers no rule sets yet; each needs a rule when its chain is balanced:
+
+- **Arrows and Kunai per craft**: an archer can loose about 1,200 arrows an hour, so a craft must make many.
+- **Recipes with several outputs, or chance outputs**: how their XP is split.
+- **Food's healing** against the time it takes to make, with combat.
+- **Station charges, Construction prices and tool prices**, against what they save.
+- **Combat XP**, with combat.
+
 ## What this page needs elsewhere
 
 - **The ladder's pace curve and stage budgets in the ledger's settings** (T-294).
 - **The new XP table in the game** (T-337).
 - **Rare finds judged by finds a day, and rare-find boosts with their own target** (T-336).
+- **Longer doses, a ledger that counts gatherers per crafter, and the speed budget** (T-338).
 - **A script that writes these numbers onto the Planned entries**, once they're in the CMS (T-305): a brief for the director.
 - **Combat's power curve**: its own segment.

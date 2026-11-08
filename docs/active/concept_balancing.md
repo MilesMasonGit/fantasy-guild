@@ -53,6 +53,17 @@ Status: approved 2026-11-07 (the rules: [BALANCE_RULES.md](../reference/BALANCE_
 - **A one-off find** (a Fallen Star, a Shipwreck) that wears out for good is still luck and isn't a steady source. Only repeatable work counts.
 - ⚠️ **The ledger disagrees today**: it warns on any drop under 5 % with no sure way (`LUCK_BELOW`), so every rare find will show as "Luck only". T-336 changes it to finds a day.
 
+### After the critical review (owner, 2026-11-07)
+
+*A reviewer ran sample guilds through real chains. The XP spine held (one skill climbs in exactly 34.4 days); four things broke when a guild feeds a chain. The owner's answers:*
+
+- **Base gather yields stay flat**: "Increased ingredient gain is expected through building and Star upgrades. In practice we do grow yields, but for the base numbers they should not." Yield boosts carry the gatherer-to-crafter balance, so their targets grow by tier.
+- **Doses last a number of cycles, and crafts make batches**: "A dose is meant to last a number of cycles, not time. But also we will make batches." A batch pays back at least 4x its making time.
+- **Speed boosts keep today's adding and the 80 % cap, with smaller targets**: everything at Maxed cuts at most 65 %.
+- **Rare items are a gate**: "Rare items are a gate that can be passed by having multiple heroes working on similar tasks, or by using boosts."
+- **Agent's calls from the review, written into the rules**: XP from the work cycle alone, with a rest rule (uses × cycle ≥ 3 × rest); XP an hour taken halfway to the skill's next unlock, so skills with few unlocks keep pace; a make step's time grows with its bar count, so Daggers aren't the best XP; T-337 keeps each saved hero's level; a guild-wide Hall star's payback counts all the work it boosts.
+- **The calendar**: 21 skills × 34.4 days ÷ 8 heroes is about 90 days with no slack, a little over the 3-month aim, as the ladder already said.
+
 ## The shape (agent's proposal, to settle in the next round)
 
 Three layers, each with one job:
