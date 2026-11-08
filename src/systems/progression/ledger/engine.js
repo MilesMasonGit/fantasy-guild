@@ -15,8 +15,8 @@ import { toolOf, neededToolOf, toolMeets, starterToolIds } from '../../../config
 import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesShape.js';
 
 /**
- * Two engines over one picture of the content (`buildWorld`), shared by the CMS's ledger views and,
- * later, the game's encyclopedia and collection log:
+ * Two engines over one picture of the content (`buildWorld`), shared by the CMS's ledger views and
+ * the game's encyclopedia:
  *
  * - **Reach** (`computeReach`): for every item, Token and recipe, the earliest tier at which a player
  *   can have it, the path that gets there ("Iron Ore ← Iron Vein (Mining 15) ← Ores ring 2 ← …"),
@@ -51,7 +51,7 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
  * price in materials (the seed picks them), which wedge a seed's key origins and camps fall in, room
  * under the Token cap, a placement rule refusing a spot, the guild's roster.
  *
- * Pure: it reads only what it is handed.
+ * Pure apart from one live read: `buildWorld` asks `getUpgradeDef('wishing_well')` for the Well's price.
  */
 
 /** A drop under this chance (with no sure way to the same thing) is luck only. */

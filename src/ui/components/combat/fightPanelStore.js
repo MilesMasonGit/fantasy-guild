@@ -114,7 +114,7 @@ export function isFightPanelOpen(heroId) {
     return !!w && !w.minimized;
 }
 
-/** Close every window (tests, a new game). */
+/** Close every window (tests only). */
 export function resetFightPanels() {
     seq = 0;
     if (windows.length) set([]);

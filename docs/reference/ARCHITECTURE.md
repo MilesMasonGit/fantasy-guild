@@ -1,7 +1,7 @@
 # Fantasy Guild — Architecture
 
 **Status:** reference, the map of the code **as it is** on `main` (v0.8.0, save schema 0.8.1).
-**Checked against code:** 2026-11-06, commit `93338609` (branch `prep/ar`). Every claim below
+**Checked against code:** 2026-11-06, commit `93338609` (branch `prep/ar`); the module map's sizes and the boot-order line numbers re-measured 2026-11-08 at `7796f8a9`. Every claim below
 carries a `path:line` or `path`; where something was reasoned rather than read, it says
 **unverified**. Code wins if this document disagrees; fix the document.
 
@@ -35,13 +35,13 @@ Tauri window (src-tauri/, Rust)    save files, save-on-close, "window minimised"
 | **State** | One mutable object, `GameState.state`, owned by a singleton facade (`src/state/GameState.js:19-167`); its shape is `INITIAL_STATE` (`src/state/StateSchema.js:138`). |
 | **Content** | `data/*.json` is bundled at build time by `import.meta.glob` (`src/config/DatabaseManager.js:4-31`) and turned into registries in `src/config/registries/`. |
 | **Event bus** | One singleton pub/sub (`src/systems/core/EventBus.js:167`) with event names declared in two catalogues (`src/systems/core/engineEvents.js`, `src/systems/board/boardEvents.js`). |
-| **React UI** | Mounted once after art preload (`src/main.jsx:97-108`); root component `src/ui/ReactRoot.jsx`. |
+| **React UI** | Mounted once after art preload (`src/main.jsx:101-114`); root component `src/ui/ReactRoot.jsx`. |
 | **Drawing** | DOM elements per Token/hero (`src/ui/components/board/MatBoard.jsx`), a few canvases, and shared clocks that pause when the window is hidden (`src/ui/drawingPause.js`). |
 
-Boot order (`src/main.jsx:27-127`): settings load (`:58`), SaveManager init (`:59`), save files
-read (`:61`), `EngineBootstrap.init()` wires every engine subscription and the tick handlers
-(`:91`), the drawing pause is installed (`:94`), React mounts once art, sprite effects and save
-files are ready (`:97-108`). **The loop does not start at boot**: it starts when a save slot is
+Boot order (`src/main.jsx:27-136`): settings load (`:60`), SaveManager init (`:62`), save files
+read (`:64`), `EngineBootstrap.init()` wires every engine subscription and the tick handlers
+(`:94`), the drawing pause is installed (`:98`), React mounts once art, sprite effects and save
+files are ready (`:101-114`). **The loop does not start at boot**: it starts when a save slot is
 opened (`EngineBootstrap.startSlot` → `onSlotSelected` → `GameLoop.start()`,
 `src/systems/core/EngineBootstrap.js:293-354`), called from the slot screen
 (`src/ui/ReactRoot.jsx:83`).
@@ -50,34 +50,34 @@ opened (`EngineBootstrap.startSlot` → `onSlotSelected` → `GameLoop.start()`,
 
 ## 2. Module map
 
-Sizes are non-test `.js`/`.jsx` lines on 2026-11-06. `src/` holds **115,131** such lines
-outside `src/tests/` (627 test files, ~139k lines, live in `src/tests/`). "Depends on" is the
-top folders by import count from `npm run depcruise` (JSON output, 615 modules, 3,748 edges).
+Sizes are non-test `.js`/`.jsx` lines on 2026-11-08. `src/` holds **106,761** such lines
+outside `src/tests/` (635 test files, ~139k lines, live in `src/tests/`). "Depends on" is the
+top folders by import count from `npm run depcruise` (JSON output, 604 modules, 3,688 edges).
 
 | Folder | Files / lines | Owns | Entry file(s) | Depends on |
 |---|---|---|---|---|
-| `src/main.jsx` | 1 / 127 | Boot sequence (§1). | — | systems/core, ui |
-| `src/config/` | 50 / 9,828 | Content registries (`registries/`, 38 files), tuning tables, combat numbers (`FormulaRegistry.js`), the Hall upgrade web (`guildUpgrades.js`), the mat-size dev tuner stored in localStorage (`matTuning.js`). | `DatabaseManager.js`, `registries/tokenRegistry.js`, `registries/itemRegistry.js` | systems/effects (14 edges), systems/atlas (3) — see §7 |
+| `src/main.jsx` | 1 / 136 | Boot sequence (§1). | — | systems/core, ui |
+| `src/config/` | 50 / 9,682 | Content registries (`registries/`, 38 files), tuning tables, combat numbers (`FormulaRegistry.js`), the Hall upgrade web (`guildUpgrades.js`), the mat-size dev tuner stored in localStorage (`matTuning.js`). | `DatabaseManager.js`, `registries/tokenRegistry.js`, `registries/itemRegistry.js` | systems/effects (14 edges), systems/atlas (3) — see §7 |
 | `src/i18n/` | 1 + `en.json` / 72 + 568 | On-screen strings, `t()`; every `*.json` beside it is a language (`src/i18n/index.js:5-8`). | `index.js` | utils |
-| `src/state/` | 2 / 543 | The save's shape and validation (`StateSchema.js`), the live store and serialisation (`GameState.js`). | `GameState.js` | utils; nothing in systems (§7) |
-| `src/utils/` | 6 / 606 | Logger, RNG, formatters, XP curve, sprite path resolution (`AssetManager.js`). | — | config (2 edges) |
-| `src/systems/core/` | 29 / 6,080 | Loop, clocks, bus, saves, catch-up, settings, audio, content audits (`ContentAudit.js`, `lifecycleAudit.js`, `*Rule.js`). | `EngineBootstrap.js`, `GameLoop.js`, `SaveManager.js`, `CatchUp.js` | config, board, effects, utils |
-| `src/systems/board/` | 61 / 15,862 | The playmat: Token storage (`BoardState.js`), placement rules and geometry (`Placement.js`, `MatPlacement.js`), hero orders (`Flags.js`), walking (`HeroMotion.js`, `EnemyMotion.js`), work cycles (`BoardRunner.js`), modifier caches (`TileModifiers.js`), combat on the mat (`BoardCombat.js`), timed changes and spawners (`TimedChanges.js`, `SpawnerSystem.js`), loot sprites (`SpriteLayer.js`). | `BoardRunner.js` | config (146), core, effects, hero, state |
-| `src/systems/effects/` | 11 / 3,573 | The statement grammar (`statements.js`), its text (`statementText.js`), modifier math (`ModifierAggregator.js`), live statuses (`LiveEffects.js`), content id migrations. | `statements.js`, `LiveEffects.js` | config |
-| `src/systems/hero/` | 15 / 1,613 | Hero records, generation, regen, skills, consumption, rehydration. | `HeroManager.js` | config, core, effects |
-| `src/systems/combat/` | 9 / 1,157 | Attack resolution and the combat maths (`CombatFormulas.js`), loot rolls, wounded clock, defeat penalties. | `CombatProcessor.js`, `WoundedSystem.js` | config, core, utils, hero |
-| `src/systems/equipment/` | 7 / 727 | Gear and tools held by heroes, breakage, starter tools. | `EquipmentManager.js` | config, state |
-| `src/systems/inventory/` | 5 / 729 | The Bank: add/remove, tabs, rate tracking. | `InventoryManager.js` | utils, config, core |
-| `src/systems/atlas/` | 15 / 5,296 | Regions and travel (`Atlas.js`), Region generation from map ingredients (`Budget.js`, `Layout.js`, `WaterShapes.js`), the Starter Camp. | `Atlas.js` | config, board, core |
-| `src/systems/world/` | 13 / 2,193 | The run's hex world map, generated once at a new game (`generate.js`), settling cells (`Settling.js`, `Arrival.js`). | `World.js` | config, atlas, board |
-| `src/systems/progression/` | 8 / 2,119 | Guild Hall upgrades (`GuildUpgradeManager.js`), discoveries and the collection log, and **`ledger/`** (`engine.js`, `plan.js`): the Encyclopedia's reach engine, which the CMS's economy simulator (`cms/src/engine/ledger/`) also uses (§2.1). | `GuildUpgradeManager.js`, `ledger/engine.js` | config, effects, core, world |
-| `src/systems/quests/` | 5 / 1,194 | Tutorial chain and bounty quests, which are Tokens on the mat (`QuestTokens.js`). | `QuestManager.js` | config, board |
-| `src/systems/notifications/` | 6 / 1,018 | Banners and item stubs as small module stores; `routing.js` decides where each engine event goes. | `routing.js` (wired by `core/NotificationSubscriptions.js`) | config, core, state |
+| `src/state/` | 2 / 489 | The save's shape and validation (`StateSchema.js`), the live store and serialisation (`GameState.js`). | `GameState.js` | utils; nothing in systems (§7) |
+| `src/utils/` | 6 / 568 | Logger, RNG, formatters, XP curve, sprite path resolution (`AssetManager.js`). | — | config (2 edges) |
+| `src/systems/core/` | 30 / 6,091 | Loop, clocks, bus, saves, catch-up, settings, audio, content audits (`ContentAudit.js`, `lifecycleAudit.js`, `*Rule.js`). | `EngineBootstrap.js`, `GameLoop.js`, `SaveManager.js`, `CatchUp.js` | config, board, effects, utils |
+| `src/systems/board/` | 61 / 15,699 | The playmat: Token storage (`BoardState.js`), placement rules and geometry (`Placement.js`, `MatPlacement.js`), hero orders (`Flags.js`), walking (`HeroMotion.js`, `EnemyMotion.js`), work cycles (`BoardRunner.js`), modifier caches (`TileModifiers.js`), combat on the mat (`BoardCombat.js`), timed changes and spawners (`TimedChanges.js`, `SpawnerSystem.js`), loot sprites (`SpriteLayer.js`). | `BoardRunner.js` | config (146), core, effects, hero, state |
+| `src/systems/effects/` | 11 / 3,401 | The statement grammar (`statements.js`), its text (`statementText.js`), modifier math (`ModifierAggregator.js`), live statuses (`LiveEffects.js`), content id migrations. | `statements.js`, `LiveEffects.js` | config |
+| `src/systems/hero/` | 15 / 1,561 | Hero records, generation, regen, skills, consumption, rehydration. | `HeroManager.js` | config, core, effects |
+| `src/systems/combat/` | 9 / 1,152 | Attack resolution and the combat maths (`CombatFormulas.js`), loot rolls, wounded clock, defeat penalties. | `CombatProcessor.js`, `WoundedSystem.js` | config, core, utils, hero |
+| `src/systems/equipment/` | 7 / 688 | Gear and tools held by heroes, breakage, starter tools. | `EquipmentManager.js` | config, state |
+| `src/systems/inventory/` | 5 / 723 | The Bank: add/remove, tabs, rate tracking. | `InventoryManager.js` | utils, config, core |
+| `src/systems/atlas/` | 15 / 5,238 | Regions and travel (`Atlas.js`), Region generation from map ingredients (`Budget.js`, `Layout.js`, `WaterShapes.js`), the Starter Camp. | `Atlas.js` | config, board, core |
+| `src/systems/world/` | 13 / 2,172 | The run's hex world map, generated once at a new game (`generate.js`), settling cells (`Settling.js`, `Arrival.js`). | `World.js` | config, atlas, board |
+| `src/systems/progression/` | 8 / 1,955 | Guild Hall upgrades (`GuildUpgradeManager.js`), discoveries and the collection log, and **`ledger/`** (`engine.js`, `plan.js`): the Encyclopedia's reach engine, which the CMS's economy simulator (`cms/src/engine/ledger/`) also uses (§2.1). | `GuildUpgradeManager.js`, `ledger/engine.js` | config, effects, core, world |
+| `src/systems/quests/` | 5 / 1,116 | Tutorial chain and bounty quests, which are Tokens on the mat (`QuestTokens.js`). | `QuestManager.js` | config, board |
+| `src/systems/notifications/` | 6 / 1,015 | Banners and item stubs as small module stores; `routing.js` decides where each engine event goes. | `routing.js` (wired by `core/NotificationSubscriptions.js`) | config, core, state |
 | `src/ui/ReactRoot.jsx` + root files | 3 / 528 | Root component; `drawingPause.js`; `guildInspectSelection.js`. | `ReactRoot.jsx` | ui/components (32), hooks |
-| `src/ui/components/board/` | 133 / 23,381 | The mat as drawn: `MatBoard.jsx`, `MatToken.jsx`, `MatHero.jsx`, `TerrainCanvas.jsx`, `AmbientLife.jsx`, the frame clocks, flags, bubbles, fx; the ground-picture painters and their dev tuner (`terrain/`, §5.3); also the Guild Hall sky (`GuildHallBoard.jsx`, `HallSky.jsx`). | `Board.jsx`, `MatBoard.jsx` | systems/board, config |
-| `src/ui/components/` (other) | 105 / 18,334 | `atlas/` (Atlas and world map, 3,104), `base/` (shared widgets, 2,660), `combat/` (2,420), `encyclopedia/` (2,513), `drawer/` (Bank, 2,357), `dock/` (hero bar, 1,963), `notifications/` (930), `hud/`, `nav/`, `title/`, `dev/` (792), `TestDashboard.jsx` (the QA panel host, 439). | — | config (201 edges), systems/board (170), systems/core (92) |
-| `src/ui/dev/` | 74 / 9,898 | QA panel sections and fixtures, the Perf HUD and stress boards (`perf/`). Rendered only in dev or perf builds (`src/ui/ReactRoot.jsx:427-436`, `src/main.jsx:115-117`). | `perf/perfHarness.js` | systems/board, config, core |
-| `src/ui/hooks/`, `context/`, `dnd/`, `modals/`, `utils/` | 12/838, 1/36, 4/946, 4/814, 7/834 | Store hooks (`useGameState.js`, `structuralShare.js`), the viewport motion values, dnd-kit wiring (`DndKit.jsx`), slot/settings/hero modals, hit-testing and loot flight helpers. | `hooks/useGameState.js`, `dnd/DndKit.jsx` | systems/core, ui/components |
+| `src/ui/components/board/` | 133 / 23,102 | The mat as drawn: `MatBoard.jsx`, `MatToken.jsx`, `MatHero.jsx`, `TerrainCanvas.jsx`, `AmbientLife.jsx`, the frame clocks, flags, bubbles, fx; the ground-picture painters and their dev tuner (`terrain/`, §5.3); also the Guild Hall sky (`GuildHallBoard.jsx`, `HallSky.jsx`). | `Board.jsx`, `MatBoard.jsx` | systems/board, config |
+| `src/ui/components/` (other) | 105 / 18,194 | `atlas/` (Atlas and world map, 3,054), `base/` (shared widgets, 2,615), `combat/` (2,410), `encyclopedia/` (2,485), `drawer/` (Bank, 2,373), `dock/` (hero bar, 1,955), `notifications/` (923), `hud/`, `nav/`, `title/`, `dev/` (788), `TestDashboard.jsx` (the QA panel host, 439). | — | config (201 edges), systems/board (170), systems/core (92) |
+| `src/ui/dev/` | 73 / 9,716 | QA panel sections and fixtures, the Perf HUD and stress boards (`perf/`). Rendered only in dev or perf builds (`src/ui/ReactRoot.jsx:427-436`, `src/main.jsx:121-123`). | `perf/perfHarness.js` | systems/board, config, core |
+| `src/ui/hooks/`, `dnd/`, `modals/`, `utils/` | 13/865, 4/944, 4/816, 8/843 | Store hooks (`useGameState.js`, `structuralShare.js`), dnd-kit wiring (`DndKit.jsx`), slot/settings/hero modals, hit-testing and loot flight helpers. | `hooks/useGameState.js`, `dnd/DndKit.jsx` | systems/core, ui/components |
 | `src/styles/`, `src/tailwind.css` | 3 CSS files / 1,851 | Tailwind v4 plus hand CSS; 27 `@keyframes`. | — | — |
 
 ### 2.1 What the tooling says about dead code
@@ -93,7 +93,7 @@ top folders by import count from `npm run depcruise` (JSON output, 615 modules, 
   distinct game modules** by relative path (counted from `cms/src` and `cms/*.js`), so an
   export the CMS alone uses is reported unused.
 - **Reachable from `src/main.jsx`** (depcruise graph, static and dynamic edges): 584 of 599
-  `src` modules. The 15 that are not, ~7,160 lines:
+  `src` modules (`tools/reachability.mjs` counts every file including tests, a different base). The 15 that are not, ~7,160 lines:
   - CMS-only: none since the twelve ledger files (`balance`, `pace`, `rates`, `profiles`,
     `world`, `checks`, `economy`, `settings`, `hall`, `calibration`, `statementSlots`,
     `tempoBands`) moved to `cms/src/engine/ledger/`; game tests still import some of them
@@ -206,7 +206,7 @@ ways:
    listeners (banners `src/systems/notifications/banners.js:24`, item stubs
    `src/systems/notifications/itemStubs.js:52`, drag hints, order and support highlights, fight
    panel, map mode, dev draw switches, …; grep `const listeners = new Set()`).
-5. **Direct reads**: 42 UI files import `GameState` and read it imperatively (render-time reads,
+5. **Direct reads**: 25 UI files import `GameState` (13 outside `ui/dev`) and read it imperatively (render-time reads,
    event handlers, polling intervals, §5.4).
 
 **React contexts carry no game state**: `MatFitContext` (a number, `MatFitContext.jsx:18`), the
@@ -513,8 +513,8 @@ rule was shown to fire on a scratch fixture tree before being kept, and reports 
 | `no-tests-from-src` | error | 0 |
 | `no-orphans` | info | — |
 
-Run: `npm run depcruise` → `x 24 dependency violations (0 errors, 24 warnings). 615 modules,
-3748 dependencies cruised.`
+Run: `npm run depcruise` → `✔ no dependency violations found (604 modules, 3688 dependencies
+cruised)`
 
 Not encoded as a rule (a review decision, not a fact): whether production UI should import
 `ui/dev/perf/*`.
@@ -558,7 +558,7 @@ names or comments only.
 | Perf HUD, stress boards | dev build, `?stress=<name>` | Live frame and render counts | `src/ui/dev/perf/`, `PERFORMANCE.md:24-44` |
 | Tests | `npm test` | Unit and guard tests, seeded `Math.random` | `docs/reference/TESTING.md:3-50` |
 | Import cycles | `npm run cycles` | Cycle groups, static versus dynamic | `tools/cycles.mjs` header; today 1 group, 0 static |
-| Module graph and layer rules | `npm run depcruise` (`npm run depcruise:graph` needs Graphviz `dot`, not installed per knip, and writes into `docs/active/review/`, which does not exist yet) | §7 | `.dependency-cruiser.cjs` |
+| Module graph and layer rules | `npm run depcruise` (`npm run depcruise:graph` needs Graphviz `dot`, not installed per knip, and writes into `docs/active/review/`) | §7 | `.dependency-cruiser.cjs` |
 | Dead code | `npm run dead-code` (knip) | Unused files, exports, dependencies | `knip.json`; §2.1 for its blind spots |
 | Copy-paste | `npm run duplication` (jscpd, `.jscpd.json`: `src`, 60 tokens, 5 lines) | Duplicated logic | `.jscpd.json` (not run for this document) |
 | Reachability | `node tools/reachability.mjs` | Files unreachable from `main.jsx` | `docs/reference/TESTING.md:130-137` |
@@ -594,10 +594,7 @@ For the doc audit; nothing below was edited.
 6. `src/systems/core/engineEvents.js`: `STATE_CHANGED` retired but still published by travel;
    six `ORPHAN_EVENTS` are subscribed with no publisher, four of them by `AudioSystem`.
 7. `docs/reference/GDD.md` header: "Last checked against code: 2026-10-06".
-8. `package.json` `depcruise:graph` writes to `docs/active/review/` (missing) with `dot` (not
-   installed).
-9. `knip.json` `$schema` points at knip 5; knip 6.44 is installed.
-10. `src/main.jsx:2` "Optimized via Auditor Persona": noise.
+8. `package.json` `depcruise:graph` needs `dot` (not installed).
 11. Commits per tick (§3.4) were last measured 2026-10-13; `PERFORMANCE.md` itself was flagged
     out of date by the round-3 review (§2.E there), not re-checked here.
 12. `src/ui/components/board/frameClock.js`: `onFrame` has no game callers (tests only), though

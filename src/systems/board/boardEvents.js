@@ -255,8 +255,8 @@ export const BOARD_EVENTS = {
      * fight in the same sense that one cycle is one piece of work. Firing only on arrival would
      * mean a hero parked on a Bear for twenty kills procs once, which reads as broken.
      *
-     * Detected as a transition INTO `active`, which catches the first engagement (idle → active)
-     * and each post-intermission respawn with one rule rather than two.
+     * Detected with two signals, `idle` to `active` and the intermission ending: a plain
+     * transition into `active` misses every engagement after a kill (`BoardCombat.js`).
      */
     COMBAT_ENGAGED: 'board:combat_engaged',
 

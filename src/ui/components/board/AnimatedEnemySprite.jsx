@@ -13,8 +13,8 @@ import { onDue } from './frameClock.js';
  * row per state). Enemy sheets read two rows per cycle, wrapping row 0 into row 1 for 8
  * frames, and row 2 into row 3, so both cycles are the same length and the frame index alone
  * (`0..7`) always picks the right column and row-within-cycle.
- * No engine coupling: which cycle plays and which way the enemy faces are pure presentation.
- * Nothing here writes to `BoardState`, subscribes to the board's event bus, or runs on the
+ * No engine coupling beyond reading: which cycle plays and which way the enemy faces are pure
+ * presentation (the facing reads `BoardState.heroBodyOf`). Nothing here writes to `BoardState`, subscribes to the board's event bus, or runs on the
  * engine tick; an enemy that isn't rendered costs nothing, and one that is steps on the shared
  * sprite clock (`frameClock.js` `onDue`), like a hero's.
  * Which cycle plays: `heroId` is the Token's current worker, already tracked reactively by

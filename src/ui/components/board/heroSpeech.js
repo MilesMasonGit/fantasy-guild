@@ -48,7 +48,7 @@ export function stackOf(moments, now) {
         .slice(-MAX_BUBBLES);
 }
 
-/** The lines for the three moments. Plain and factual. */
+/** The lines for each moment. Plain and factual. */
 export const momentText = {
     arrived: (token) => `Working at ${token}.`,
     idle: () => 'Nothing to work here.',

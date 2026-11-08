@@ -1,4 +1,4 @@
-// Discovery Manager: records enemies as encountered, for the Codex (Bestiary).
+// Discovery Manager: records enemies as encountered, in `collection.discoveredEnemies`.
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
@@ -7,12 +7,12 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
 
 /**
- * DiscoveryManager - Centralized discovery tracking for the Codex
+ * DiscoveryManager - Centralized discovery tracking
  * 
  * Responsibilities — **enemies only**:
  * - Listen for combat attacks and record the enemy as encountered
  * - Update `GameState.collection.discoveredEnemies`
- * - Notify the player of a new Bestiary entry
+ * - Publish `ENEMY_DISCOVERED` (nothing listens yet)
  */
 export const DiscoveryManager = {
     initialized: false,
@@ -37,12 +37,12 @@ export const DiscoveryManager = {
         });
 
         this.initialized = true;
-        logger.info('DiscoveryManager', 'Discovery Manager initialized (Card Encounter and Combat mode)');
+        logger.info('DiscoveryManager', 'Discovery Manager initialized');
     },
 
 
     /**
-     * Flag an enemy as discovered in the Bestiary
+     * Flag an enemy as discovered
      * @param {string} enemyId 
      */
     discoverEnemy(enemyId) {
