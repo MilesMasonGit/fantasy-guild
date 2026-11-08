@@ -1,7 +1,7 @@
 // camps: a Token that hands the heroes sent to it every job of its skill in its reach
 
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
-import { fieldOf, campOf, CAMP_REACH_DEFAULT } from '../../config/registries/tokenConstants.js';
+import { fieldOf, campOf } from '../../config/registries/tokenConstants.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { stationSkillOf } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
@@ -34,7 +34,7 @@ import { campReachOf } from './TileModifiers.js';
  */
 
 /** A Token type's camp terms, `{ skill, reach }`, or null (`tokenConstants.campOf`). */
-export { campOf, CAMP_REACH_DEFAULT };
+export { campOf };
 
 /**
  * The camp a Token on the mat is (`{ skill, reach }`), or null: not a camp, or marked for
