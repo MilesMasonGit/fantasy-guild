@@ -191,7 +191,6 @@ describe('how they register', () => {
         expect(forest.rules).toHaveLength(2);
         Atlas.travel(forest.id);
         expect(guildYield('forestry')).toEqual([0.1, 0.1]);
-        expect(RegionRules.installedSources()).toHaveLength(2);
         expect(yieldOf(nodeOf(OAK).id, 'forestry')).toBeCloseTo(120);
     });
 

@@ -17,8 +17,8 @@ import { currentWorld } from './worldState.js';
 
 export { currentWorld };
 export {
-    SETTLE_TEXT, settleCell, writePlace, arriveAt, settledCellIds, cellStatesNow, priceOf, ringLockOf, outputsOf, regionIdOfCell,
-    activeCellId, cellName, placeName, guildSkillLevel
+    settleCell, writePlace, arriveAt, settledCellIds, cellStatesNow, priceOf, ringLockOf, outputsOf, regionIdOfCell,
+    activeCellId, cellName, placeName
 } from './Settling.js';
 
 /**
@@ -38,9 +38,10 @@ export function runSeedOf(state = GameState.state) {
     return seedFromText(`world|${state?.meta?.createdAt ?? 0}`);
 }
 
+const materialsOf = materialsFromTokens(getTokenType);
+
 /** What the generator reads besides the tables: what each origin yields, and the Starter Camp's origins. */
 export function lookups() {
-    const materialsOf = materialsFromTokens(getTokenType);
     return { materialsOf, hallOrigins: hallOriginsOf(StarterCamp.starterCamp()?.tokens, materialsOf) };
 }
 

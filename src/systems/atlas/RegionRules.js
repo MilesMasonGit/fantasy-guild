@@ -46,11 +46,6 @@ export function apply() {
     return [...installed];
 }
 
-/** The source ids this module has registered. */
-export function installedSources() {
-    return [...installed];
-}
-
 let unsubscribers = [];
 
 /**

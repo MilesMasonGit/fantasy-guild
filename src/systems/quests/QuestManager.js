@@ -17,9 +17,7 @@ import * as QuestTokens from './QuestTokens.js';
 import { createRandomQuest } from './questBounties.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../core/engineEvents.js';
 
-export {
-    BOUNTY_REWARD_ITEMS, copyReward, questReward, RANDOM_ITEMS, RANDOM_HUNTS
-} from './questBounties.js';
+export { RANDOM_ITEMS, RANDOM_HUNTS } from './questBounties.js';
 
 /**
  * Quests are Tokens the Guild Hall spawns (`QuestTokens.js`), which own the cap,
@@ -274,22 +272,11 @@ export const QuestManager = {
     },
 
     /**
-     * ⚠️ Retired with the sidebar: a bounty is dismissed from its Token's
-     * inspection (`QuestTokens.dismissBounty`). This only returns a refusal and has no caller.
-     */
-    abandonQuest(questId) {
-        const token = findQuestToken(questId);
-        if (token?.quest?.tutorial) return { success: false, reason: 'Tutorial quests cannot be abandoned' };
-        return { success: false, reason: 'Dismiss a bounty from its quest Token' };
-    },
-
-    /**
      * Claim a quest by its quest id or its Token's instance id; see
      * `QuestTokens.claimQuest` (the reward drops as loot beside the Token, and
      * the Token vanishes).
      */
-    // eslint-disable-next-line no-unused-vars
-    claimQuest(questId, sourceRect = null) {
+    claimQuest(questId) {
         this.ensureState();
         const token = findQuestToken(questId);
         if (!token) return { success: false, reason: 'Quest not found' };

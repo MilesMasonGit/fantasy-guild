@@ -105,17 +105,15 @@ group('the node budget', () => {
     group('a recipe of another kind', () => {
         const forest = base('forest', 40, [{ typeId: 'oak', weight: 3 }, { typeId: 'berry', weight: 1 }]);
 
-        it('is skipped and reported, not guessed at', () => {
+        it('is skipped, not guessed at', () => {
             const summary = budget([forest, { id: 'leyline', kind: 'leyline' }], { cap: CAP });
             expect(countsOf(summary)).toEqual({ oak: 30, berry: 10 });
-            expect(summary.ignored).toEqual([{ ingredientId: 'leyline', kind: 'leyline' }]);
         });
 
         it('a retired modifier changes nothing', () => {
             const modifier = { id: 'overgrown', kind: 'modifier', effects: [{ kind: 'density', typeId: 'oak', points: 16 }] };
             const summary = budget([forest, modifier], { cap: CAP });
             expect(countsOf(summary)).toEqual({ oak: 30, berry: 10 });
-            expect(summary.ignored).toEqual([{ ingredientId: 'overgrown', kind: 'modifier' }]);
         });
     });
 

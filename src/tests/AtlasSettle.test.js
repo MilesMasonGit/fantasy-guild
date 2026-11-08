@@ -214,13 +214,13 @@ describe('the seed: the guild\'s own, never Math.random', () => {
         expect(Atlas.preview([WOOD]).seed).toBe(expected);
     });
 
-    it('previewing, rerolling and settling draw no random number', () => {
+    it('previewing and settling draw no random number', () => {
         let draws = 0;
         const real = Math.random;
         const spy = vi.spyOn(Math, 'random').mockImplementation(() => { draws++; return real(); });
         try {
             let plan = Atlas.preview([WOOD, THICKET]);
-            for (let i = 0; i < 3; i++) plan = Atlas.reroll(plan);
+            for (let i = 0; i < 3; i++) plan = Atlas.preview([WOOD, THICKET]);
             expect(Atlas.settle({ ingredients: [WOOD, THICKET], seed: plan.seed }).success).toBe(true);
         } finally {
             spy.mockRestore();
@@ -229,41 +229,20 @@ describe('the seed: the guild\'s own, never Math.random', () => {
     });
 });
 
-describe('reroll: a new seed, and nothing else', () => {
-    it('ten rerolls: the next seed each time, the very same Node Summary, every Token placed, the Tokens moved', () => {
-        const first = Atlas.preview([WOOD, HILLS, THICKET]);
-        const guildSeed = GameState.state.atlas.seed;
-        const fresh = budget([WOOD, HILLS, THICKET], { cap: MatCap.matCap() });
-        let plan = first;
-        for (let i = 0; i < 10; i++) {
-            const next = Atlas.reroll(plan);
-            expect(next.seed).toBe(nextSeed(plan.seed));
-            expect(next.summary).toBe(first.summary);
-            expect(next.summary).toEqual(fresh);
-            expect(next.layout.unplaced).toEqual([]);
-            expect(countsOf(next.layout.nodes)).toEqual(summaryCounts(first.summary));
-            expect(next.layout.hall).toEqual(first.layout.hall);
-            const moved = next.layout.nodes.filter((n, k) => n.x !== plan.layout.nodes[k].x || n.y !== plan.layout.nodes[k].y);
-            expect(moved.length).toBeGreaterThan(next.layout.nodes.length / 2);
-            plan = next;
-        }
-        // The guild seed has followed it to the last seed shown.
-        expect(guildSeed).toBe(first.seed);
-        expect(GameState.state.atlas.seed).toBe(plan.seed);
-    });
-
+describe('preview seeds', () => {
     it('a later preview never shows a seed already shown, so two Regions never share a seed', () => {
         const shown = [];
         let plan = Atlas.preview([WOOD]);
         shown.push(plan.seed);
-        for (let i = 0; i < 3; i++) shown.push((plan = Atlas.reroll(plan)).seed);
+        for (let i = 0; i < 3; i++) shown.push((plan = Atlas.preview([WOOD])).seed);
         const first = Atlas.settle({ ingredients: [WOOD], seed: plan.seed }).region;
         // The table opens again, for another map.
         let again = Atlas.preview([HILLS]);
         expect(shown).not.toContain(again.seed);
         shown.push(again.seed);
         // Closed without settling, opened once more: still nothing shown before.
-        again = Atlas.reroll(again);
+        again = Atlas.preview([HILLS]);
+        expect(shown).not.toContain(again.seed);
         shown.push(again.seed);
         const fresh = Atlas.preview([HILLS]);
         expect(shown).not.toContain(fresh.seed);
@@ -271,26 +250,20 @@ describe('reroll: a new seed, and nothing else', () => {
         expect(second.seed).not.toBe(first.seed);
     });
 
-    it('a guild whose reroll lands on a river with no clear line across the mat still gets its layout', () => {
-        // Created at this stamp, the guild's first Hills reroll draws a mountain river all twelve
-        // of whose straight lines run through the Hall's clearing.
+    it('a guild whose Hills layout lands on a river with no clear line across the mat still gets its layout', () => {
+        // Created at this stamp, the seed after the guild's first Hills preview draws a mountain river
+        // all twelve of whose straight lines run through the Hall's clearing.
         GameState.state.meta.createdAt = 1761800000095;
         const plan = Atlas.preview([HILLS]);
-        const next = Atlas.reroll(plan);
-        expect(next.seed).toBe(nextSeed(plan.seed));
+        const next = Atlas.preview([HILLS], { seed: nextSeed(plan.seed) });
         expect(next.fits).toBe(true);
         expect(next.layout.terrain.water.shapes.some(s => s.k === 'river')).toBe(true);
-    });
-
-    it('takes only a preview', () => {
-        expect(() => Atlas.reroll(42)).toThrow(/takes a preview/);
-        expect(() => Atlas.reroll({ seed: 1 })).toThrow(/takes a preview/);
     });
 });
 
 describe('settle writes the previewed layout as a Region', () => {
     it('the Region records its ingredients, seed, biomes, ground, terrain and rules; the guild stays put', () => {
-        const plan = Atlas.reroll(Atlas.preview([WOOD, THICKET], { seed: 11 }));
+        const plan = Atlas.preview([WOOD, THICKET], { seed: nextSeed(11) });
         const home = Atlas.activeRegionId();
         const live = canon(GameState.state.board);
 
@@ -477,7 +450,6 @@ describe('the dev console', () => {
         expect(view.summary.split('\n')[0]).toMatch(/^\d+ Tokens/);
         expect(view.picture).toContain('H');
         expect(view.picture.split('\n').length).toBeGreaterThan(30);
-        expect(Atlas.reroll(view.preview).summary).toBe(view.preview.summary);
 
         const result = Atlas.devSettle(['mountain_camp'], view.seed);
         expect(result.success).toBe(true);

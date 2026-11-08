@@ -182,19 +182,6 @@ describe('Quest System (quest Tokens since B6.1)', () => {
         }
     });
 
-    it('abandoning is retired: tutorials refuse as before, bounties point at Dismiss', () => {
-        const tutorialRes = QuestManager.abandonQuest('cart_tool');
-        expect(tutorialRes.success).toBe(false);
-        expect(tutorialRes.reason).toBe('Tutorial quests cannot be abandoned');
-
-        const b = bounty({ type: 'hunt', targetType: 'enemy_hunted', enemyId: 'token_goblin', requiredCount: 3 });
-        const res = QuestManager.abandonQuest(b.id);
-        expect(res.success).toBe(false);
-        expect(res.reason).toMatch(/Dismiss/);
-        expect(find(b.id)).toBe(b);   // still on the mat, no cooldown slot
-        expect(GameState.state.quests.active).toEqual([]);
-    });
-
     it('handles collection quests with item deductions on claim', () => {
         const collection = bounty({
             type: 'collection', title: 'Collect 10 Oak Wood', targetType: 'item_collected',

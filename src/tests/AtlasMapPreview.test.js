@@ -214,7 +214,7 @@ describe('⭐ the picture is the mat\'s own', () => {
         expect(picture.tokens).toBe(0);
         expect(Buffer.from(picture.data).equals(Buffer.from(mine.data))).toBe(true);
         // Another seed is another picture.
-        const other = previewPicture(Atlas.reroll(plan), fit, mat);
+        const other = previewPicture(Atlas.preview(recipes, { seed: 4243 }), fit, mat);
         expect(Buffer.from(other.data).equals(Buffer.from(picture.data))).toBe(false);
     });
 
