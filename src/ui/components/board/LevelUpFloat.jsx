@@ -99,5 +99,3 @@ export const LevelUpFloats = ({ floats, unit, fit }) => (
         {floats.map(f => <LevelUpFloat key={`${f.key}:${f.from}`} f={f} unit={unit} fit={fit} />)}
     </div>
 );
-
-export default LevelUpFloats;

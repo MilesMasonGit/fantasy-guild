@@ -40,5 +40,3 @@ export const Bubble = ({ kind, of = null, style, tip, dragProps, inline = false,
         </div>
     );
 };
-
-export default Bubble;

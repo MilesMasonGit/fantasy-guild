@@ -71,5 +71,3 @@ export const PassiveProductionTooltip = ({ instanceId, readLines = livePassiveLi
         />
     );
 };
-
-export default PassiveProductionTooltip;

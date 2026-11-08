@@ -732,5 +732,3 @@ function activeGroundSource() {
 export function heroPlacement({ x, y }) {
     return heroBoxAt({ x, y });
 }
-
-export default MatBoard;

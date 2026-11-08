@@ -247,5 +247,3 @@ function AimedLabel({ heroId, instance, reason, fit, matH }) {
         </div>
     );
 }
-
-export default OrderDragLine;

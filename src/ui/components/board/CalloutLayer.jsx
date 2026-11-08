@@ -210,5 +210,3 @@ export const CalloutLayer = memo(function CalloutLayer() {
         </div>
     );
 });
-
-export default CalloutLayer;

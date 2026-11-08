@@ -285,5 +285,3 @@ export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, wo
         </div>
     );
 };
-
-export default RecipeList;

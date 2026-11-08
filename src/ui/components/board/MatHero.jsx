@@ -359,5 +359,3 @@ const MatHeroBody = memo(function MatHeroBody({
         </button>
     );
 });
-
-export default MatHero;

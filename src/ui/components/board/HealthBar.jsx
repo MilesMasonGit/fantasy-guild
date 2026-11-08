@@ -61,5 +61,3 @@ export const HealthBar = ({ who, of = null, cur, max, style, u = 1, outward = 0,
         </div>
     );
 };
-
-export default HealthBar;

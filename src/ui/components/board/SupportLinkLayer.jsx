@@ -83,5 +83,3 @@ export const SupportLinkLayer = memo(function SupportLinkLayer({ matRef = null }
         </div>
     );
 });
-
-export default SupportLinkLayer;

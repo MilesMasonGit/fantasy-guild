@@ -127,5 +127,3 @@ export const MatRings = React.memo(function MatRings({ hoveredCentre = null, mat
         </svg>
     );
 });
-
-export default MatRings;

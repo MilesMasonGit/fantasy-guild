@@ -170,5 +170,3 @@ export const GuildHallEffectsPopover = ({ anchorRef, pinned, popoverRef }) => {
         document.body
     );
 };
-
-export default GuildHallEffectsPopover;

@@ -325,5 +325,3 @@ export const TokenBubbles = ({
         </>
     );
 };
-
-export default TokenBubbles;

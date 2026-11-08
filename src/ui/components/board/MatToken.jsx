@@ -724,5 +724,3 @@ export function MatTokenGrab({ pressedRef, grabRef }) {
 
 /** The mat Tokens' shared drag source's id. */
 export const MAT_TOKEN_DRAG_ID = 'mat-token';
-
-export default MatToken;

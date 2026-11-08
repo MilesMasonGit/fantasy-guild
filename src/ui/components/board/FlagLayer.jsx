@@ -281,5 +281,3 @@ export const FlagTooltip = ({ anchor, heroId }) => {
         />
     );
 };
-
-export default FlagLayer;

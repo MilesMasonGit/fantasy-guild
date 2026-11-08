@@ -37,5 +37,3 @@ export const ProblemMark = memo(function ProblemMark({ problem, tip, artUnit = 2
         </Tooltip>
     );
 });
-
-export default ProblemMark;

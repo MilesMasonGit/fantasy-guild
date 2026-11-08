@@ -644,5 +644,3 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
         </div>
     );
 };
-
-export default TokenCard;

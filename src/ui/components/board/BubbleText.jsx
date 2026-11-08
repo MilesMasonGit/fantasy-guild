@@ -11,5 +11,3 @@ export const BubbleText = ({ text }) => (
             : part.text))}
     </>
 );
-
-export default BubbleText;

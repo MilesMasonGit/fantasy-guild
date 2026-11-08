@@ -92,5 +92,3 @@ export const QuestTooltip = ({ instanceId, quest, anchorOf = artOf }) => {
         </>} />
     );
 };
-
-export default QuestTooltip;

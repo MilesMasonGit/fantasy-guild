@@ -7,11 +7,6 @@
 
 const listeners = new Set();
 
-/** Ask the mat's ambient life for `what` now: `'gust'` or `'birds'`. */
-export function cueAmbient(what) {
-    for (const fn of [...listeners]) fn(what);
-}
-
 /** Hear the cues; returns an unsubscribe. */
 export function onAmbientCue(fn) {
     listeners.add(fn);

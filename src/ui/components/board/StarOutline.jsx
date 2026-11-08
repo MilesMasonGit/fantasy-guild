@@ -24,5 +24,3 @@ export const StarOutline = ({ src, look, state }) => {
         />
     );
 };
-
-export default StarOutline;

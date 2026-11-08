@@ -178,5 +178,3 @@ export const AnimatedEnemySprite = ({
         </div>
     );
 };
-
-export default AnimatedEnemySprite;

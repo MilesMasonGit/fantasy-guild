@@ -340,5 +340,3 @@ export const AmbientLife = React.memo(function AmbientLife({ pictures = null, to
         </>
     );
 });
-
-export default AmbientLife;
