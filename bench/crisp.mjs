@@ -341,7 +341,7 @@ const THROW_FOR_BOB = `(async () => {
             if (q.r > q.l && q.b > q.t && !big(q) && shown(leaf)) over.push(q);
         }
     }
-    for (const b of document.querySelectorAll('[data-item-sprite]')) over.push(rectOf(b));
+    for (const b of document.querySelectorAll('[data-item-sprite], [data-item-sprite] *')) over.push(rectOf(b));
     // Under it: Tokens, heroes, flags (bare ground first, so nothing dark sits by the shadow).
     const under = [...document.querySelectorAll('[data-token-art="true"] img, [data-board-hero], [data-flag]')].map(rectOf);
     const thrown = window.__crispThrown || (window.__crispThrown = []);
@@ -434,10 +434,12 @@ function findArt(clip, inside, xs, ys) {
 
 /**
  * Where the hard shadow (a solid black silhouette, under the art) is on a clip: of the candidate
- * corners, the one where the most of its pixels the art leaves uncovered are black.
+ * corners, the one that puts the most of its pixels the art leaves uncovered on black ones (a count,
+ * not a share: a corner that hides nearly all of it under the art matches the few left by chance).
+ * `share` is how many of those it puts on black.
  */
 function findShadow(clip, silInside, artMask, art, xs, ys) {
-    let best = { share: -1, x: 0, y: 0 };
+    let best = { share: -1, black: -1, x: 0, y: 0 };
     for (const y of ys) {
         for (const x of xs) {
             let total = 0, black = 0;
@@ -447,8 +449,8 @@ function findShadow(clip, silInside, artMask, art, xs, ys) {
                 total++;
                 if (rgbAt(clip, cx, cy) === 0) black++;
             }
-            const share = total >= 20 ? black / total : 0;
-            if (share > best.share) best = { share, x, y };
+            const share = total ? black / total : 0;
+            if (black > best.black || (black === best.black && share > best.share)) best = { share, black, x, y };
         }
     }
     return best;
