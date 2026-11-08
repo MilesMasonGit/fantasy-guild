@@ -5,6 +5,7 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Dead code and duplicate copies removed from the board engine, nothing a player sees changes**: the per-type blocked-tick tally nothing read, the exports with no caller (`recallHeroById`, `loadLeft`, `minCentreGap`, `enemyBearerOfHero`, `isPurelyTriggered` and the `TimedChanges` re-exports), the second `isLandmark`, and the round-3 copies of the Hall id, `clampToMat`, the hero standing spot and `countMatches` now use the shared helpers.
 - **The CMS's economy simulator files moved into the CMS** (CMS and tools only): the twelve
   ledger files the game never runs (`balance`, `calibration`, `checks`, `economy`, `hall`, `pace`,
   `profiles`, `rates`, `settings`, `world`, `statementSlots`, `tempoBands`) moved to

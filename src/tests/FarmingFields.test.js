@@ -186,12 +186,12 @@ describe('⭐ empty → growing → ripe', () => {
         expect(stage(field)).toBe(Fields.STAGE.GROWING);
         tick(100);
         expect(stage(field)).toBe(Fields.STAGE.RIPE);
-        expect(Fields.loadLeft(field)).toBe(3);
+        expect(Fields.fieldState(field).load).toBe(3);
         expect(field.field).toEqual({ cropId: WHEAT, load: 3, full: 3 });
         expect(WorkCheck.fixableReason(field.id, field).reason).toBeNull();
         // Ripe, its clock stands at zero: nothing more happens until it is harvested.
         tick(120000);
-        expect(Fields.loadLeft(field)).toBe(3);
+        expect(Fields.fieldState(field).load).toBe(3);
         expect(seeds()).toBe(1);
     });
 
@@ -254,7 +254,7 @@ describe('⭐ harvesting the load; the last cycle sows again', () => {
         const field = ripeField(1);
         Fields.harvested(field, def(field));
         Fields.harvested(field, def(field));
-        expect(Fields.loadLeft(field)).toBe(1);
+        expect(Fields.fieldState(field).load).toBe(1);
         expect(seeds()).toBe(1);
         Fields.harvested(field, def(field), { overMs: 400 });
         expect(stage(field)).toBe(Fields.STAGE.GROWING);
@@ -324,11 +324,11 @@ describe('supports in reach', () => {
         arrive('fa_composter', AT.x + 150, AT.y);
         pick(field, WHEAT);
         tick(60100);
-        expect(Fields.loadLeft(field)).toBe(5);
+        expect(Fields.fieldState(field).load).toBe(5);
         expect(Fields.fieldState(field)).toMatchObject({ stage: 'ripe', load: 5, full: 5 });
         // One arriving after it ripened changes nothing until the next crop.
         arrive('fa_composter', AT.x - 150, AT.y);
-        expect(Fields.loadLeft(field)).toBe(5);
+        expect(Fields.fieldState(field).load).toBe(5);
     });
 });
 
@@ -337,7 +337,7 @@ describe('a map\'s wild patch starts ripe with its crop picked', () => {
         const wild = arrive('fa_wild');
         expect(wild.field).toBeUndefined();
         expect(stage(wild)).toBe(Fields.STAGE.RIPE);
-        expect(Fields.loadLeft(wild)).toBe(3);
+        expect(Fields.fieldState(wild).load).toBe(3);
         expect(Fields.pickOf(wild).id).toBe(WHEAT);
         expect(WorkCheck.fixableReason(wild.id, wild).reason).toBeNull();
         tick(10000);

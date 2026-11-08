@@ -37,7 +37,15 @@ import { PLACEMENT, RANDOM_FREE_DARTS, placementOf } from '../../config/registri
  * re-derived here, so a computed magnitude cannot come to mean two things depending on the verb.
  */
 
-/** How many things a statement's `counted` selector matched. */
+/**
+ * How many things the statement's second, `counted` selector matched.
+ *
+ * ⚠️ Counted from the bearer, not the target: 1 damage per nearby Coast Token on a monster means
+ * the Tokens beside the monster.
+ *
+ * By instance id, measured from the bearer's point if it has left. Zero when the rule does not use
+ * a count, so the multiply is harmless.
+ */
 export function countMatches(statement, roles) {
     if (!usesCountedSelector(statement?.payload)) return 0;
     if (roles?.self == null) return 0;
@@ -145,18 +153,6 @@ export function restore(statement, roles) {
 
     Charges.applyDelta(instance, amount);
     return amount;
-}
-
-/**
- * The smallest centre-to-centre gap a spawned Token keeps from every other Token: the same rule a
- * hand-placed Token obeys.
- *
- * Not a second definition: `MatPlacement.minGap` is the one place the hitbox and overlap
- * percentages are turned into a distance, and a spawn crowding differently from a drop would be
- * drift.
- */
-export function minCentreGap(typeA, typeB) {
-    return MatPlacement.minGap(typeA, typeB);
 }
 
 /**

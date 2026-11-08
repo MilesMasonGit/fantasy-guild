@@ -140,7 +140,7 @@ describe('⭐ a new game lays the Starter Camp down as fixtures', () => {
 
 describe('⭐ a camp Token refuses a drag, and says why', () => {
     it('by the engine and by a drop on the mat, it stays where it is', () => {
-        for (const t of campTokens().filter(c => !MatCap.isLandmark(c))) {
+        for (const t of campTokens().filter(c => !Landmarks.isLandmark(c))) {
             const before = pointOf(t);
             expect(Placement.moveTokenTo(t.id, { x: 1500, y: 950 }), t.typeId)
                 .toEqual({ success: false, reason: Placement.CAMP_FIXED_IN_PLACE });
@@ -190,7 +190,7 @@ describe('⭐ no push moves a camp Token', () => {
 
 describe('⭐ a camp Token cannot be demolished, and says why', () => {
     it('marking it is refused with the camp\'s reason, and nothing is marked', () => {
-        for (const t of campTokens().filter(c => !MatCap.isLandmark(c))) {
+        for (const t of campTokens().filter(c => !Landmarks.isLandmark(c))) {
             const refused = Demolition.mark(t.id);
             expect(refused, t.typeId).toEqual({
                 success: false, code: Demolition.REFUSAL.CAMP, reason: Demolition.REFUSAL_TEXT[Demolition.REFUSAL.CAMP]

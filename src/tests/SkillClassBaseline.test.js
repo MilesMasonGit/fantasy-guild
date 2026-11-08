@@ -6,7 +6,6 @@ import * as Flags from '../systems/board/Flags.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
-import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as SkillSystem from '../systems/hero/SkillSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -87,7 +86,6 @@ beforeEach(() => {
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
-    InputAllocator.resetStarvationStats();
     GameState.state.inventory.maxSlots = 50;
 });
 

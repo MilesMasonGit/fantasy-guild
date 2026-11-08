@@ -10,7 +10,6 @@ import * as RecipeResolver from '../systems/board/RecipeResolver.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import { RECIPE } from '../systems/board/RecipeResolver.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as InputAllocator from '../systems/board/InputAllocator.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -72,7 +71,6 @@ beforeEach(() => {
     InventoryManager.init();
     SpriteLayer.init();
     TileModifiers.clearAll();
-    InputAllocator.resetStarvationStats();
     // ⚠️ Stacking and context combinations here are laid out on the 8-tile ring
     // (diagonal neighbours), so Near is pinned at 272 u. The shipped default has
     // been 164 u — side neighbours only.

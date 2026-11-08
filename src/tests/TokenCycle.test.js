@@ -6,7 +6,6 @@ import * as Flags from '../systems/board/Flags.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
-import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
@@ -68,7 +67,6 @@ beforeEach(() => {
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
-    InputAllocator.resetStarvationStats();
     GameState.state.heroes = [makeHero('hero_1'), makeHero('hero_2')];
     GameState.state.inventory.maxSlots = 50;
 });
@@ -191,7 +189,7 @@ describe('A hero is a GATE (D-53, D-57)', () => {
     it('stops when the hero leaves, and forfeits the cycle (D-131)', () => {
         place(10, 'fixture_producer', 'hero_1');
         run(8000);
-        Placement.recallHeroById('hero_1');
+        Flags.furl('hero_1');
 
         expect(tokenAt(10).cycleElapsedMs).toBe(0);
         run(30000);
@@ -306,20 +304,6 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
 
         expect(SpriteLayer.countOnBoard('fixture_glowcap')).toBe(1);      // cheap ran
         expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(0);  // deep starved
-    });
-
-    it('counts blocked ticks per Token type so the balance pass has data', () => {
-        InventoryManager.addItem('fixture_oak_wood', 3);
-        // An order never claims a Token it cannot run, so the starving Token is
-        // staffed by a claim made directly — the runner's tally of a STAFFED
-        // Token going hungry is what this pins (Free Playmat 1.4b).
-        const deep = place(20, 'fixture_deep_consumer');
-        Orders.orderAt('hero_2', C(20));
-        BoardState.setClaim('hero_2', { instanceId: deep.id, typeId: deep.typeId });
-        run(5000);
-
-        const stats = InputAllocator.getStarvationStats();
-        expect(stats.fixture_deep_consumer).toBeGreaterThan(0);
     });
 
     it('shortfall is per ITEM — a wood shortage never stalls an ore producer', () => {

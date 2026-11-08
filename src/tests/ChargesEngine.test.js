@@ -8,7 +8,6 @@ import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as Charges from '../systems/board/Charges.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { ALERT, BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -73,7 +72,6 @@ beforeEach(() => {
     InventoryManager.init();
     SpriteLayer.init();
     TileModifiers.clearAll();
-    InputAllocator.resetStarvationStats();
     TriggerSystem.init();
     GameState.state.heroes = [makeHero('hero_1'), makeHero('hero_2')];
     GameState.state.inventory.maxSlots = 50;

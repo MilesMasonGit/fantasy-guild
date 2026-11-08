@@ -61,7 +61,7 @@ describe('the Farming scene', () => {
         expect(stage(s.wild)).toBe('ripe');
         expect(stage(s.growing)).toBe('growing');
         expect(stage(s.ripe)).toBe('ripe');
-        expect(Fields.loadLeft(at(s.ripe))).toBe(6);
+        expect(Fields.fieldState(at(s.ripe)).load).toBe(6);
         expect(stage(s.herbGarden)).toBe('empty');
         expect(Growth.growthAlertOf(at(s.herbGarden).id)).toEqual({ alert: 'grow_needs_item', needs: [QA_ITEMS.SAGE_SEED] });
         expect(stage(s.empty)).toBe('empty');

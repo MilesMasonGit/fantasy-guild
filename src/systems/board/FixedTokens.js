@@ -9,7 +9,7 @@ import * as Landmarks from './Landmarks.js';
  * Fixed and movable Tokens on the post-Atlas mat.
  *
  * Fixed: a fixture (`BoardState.isFixture`: a map's node, or a Token the Starter Camp laid), a
- * landmark (`MatCap.isLandmark`), a planted Token ({@link isPlanted}) and a Token whose type stays
+ * landmark (`Landmarks.isLandmark`), a planted Token ({@link isPlanted}) and a Token whose type stays
  * where it stands ({@link staysPut}). A fixed Token is never dragged, binned or pushed; it still
  * answers a click, and may still be demolished unless it is a map's node or the camp's. Everything
  * else is movable.
@@ -72,7 +72,7 @@ export function isFixed(instance) {
     if (!instance) return false;
     const editing = Landmarks.isLayoutEditing();
     return (BoardState.isFixture(instance) && !(editing && BoardState.isCampFixture(instance)))
-        || (MatCap.isLandmark(instance) && !editing)
+        || (Landmarks.isLandmark(instance) && !editing)
         || (staysPut(instance) && !editing)
         || isPlanted(instance);
 }

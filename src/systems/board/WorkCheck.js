@@ -19,8 +19,8 @@ import { neededToolOf } from '../../config/registries/toolKinds.js';
  * `Flags` (while a flag chooses which Token to work). The two must agree or heroes get sent to
  * Tokens that then sit stuck; `WorkCheck.test.js` pins it.
  *
- * ⚠️ Pure: it never publishes, never notes starvation, never charges. The runner keeps the side
- * effects (the alert mark, `TILE_EVENT_ALERT`, the starvation tally) because they describe a hero
+ * ⚠️ Pure: it never publishes, never charges. The runner keeps the side
+ * effects (the alert mark, `TILE_EVENT_ALERT`) because they describe a hero
  * actually standing there; a flag merely considering a Token must not raise them.
  */
 

@@ -9,6 +9,8 @@ import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
+import * as Hand from '../systems/board/Hand.js';
+import { pickWeighted } from '../systems/board/weightedPick.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -158,7 +160,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    for (const t of BoardState.tokens()) TimedChanges.setInHand(t.id, false);
+    for (const t of BoardState.tokens()) Hand.setInHand(t.id, false);
     TriggerSystem.teardown();
     TileModifiers.teardown();
     resetMatTuning();
@@ -297,14 +299,14 @@ describe('⭐ a spawned Token moves like any other, and keeps what makes it spaw
         run(29000);
 
         // Picked up with a second to go, carried for five.
-        TimedChanges.setInHand(sapling.id, true);
+        Hand.setInHand(sapling.id, true);
         run(5000);
         expect(BoardState.getTokenById(sapling.id)).toBeTruthy();       // the drag's id still names it
         expect(sapling.clocks.growMs).toBe(30000);                      // held full, not set back
 
         // Dropped: the move lands on the same instance...
         expect(Placement.moveTokenTo(sapling.id, { x: 900, y: 700 }).success).toBe(true);
-        TimedChanges.setInHand(sapling.id, false);
+        Hand.setInHand(sapling.id, false);
         expect(at(900, 700)?.id).toBe(sapling.id);
 
         // ...and the next tick grows it there.
@@ -316,10 +318,10 @@ describe('⭐ a spawned Token moves like any other, and keeps what makes it spaw
 
     it('a Coast in the hand does not turn either', () => {
         const coast = placeAt('fixture_tl_cove', 400, 400);
-        TimedChanges.setInHand(coast.id, true);
+        Hand.setInHand(coast.id, true);
         run(60000);
         expect(BoardState.getTokenById(coast.id)?.typeId).toBe('fixture_tl_cove');
-        TimedChanges.setInHand(coast.id, false);
+        Hand.setInHand(coast.id, false);
         run(100);
         expect(at(400, 400)?.typeId).toBe('fixture_tl_shrimp_coast');
     });
@@ -367,15 +369,15 @@ describe('⭐ turns — a Coast turns, then turns back on the same cycle', () =>
 
     it('picks by weight', () => {
         const entries = [{ typeId: 'fixture_tl_shrimp_coast', weight: 1 }, { typeId: 'fixture_tl_crab_coast', weight: 3 }];
-        expect(TimedChanges.pickWeighted(entries, () => 0.2)).toBe('fixture_tl_shrimp_coast');   // 0.8 of 4
-        expect(TimedChanges.pickWeighted(entries, () => 0.3)).toBe('fixture_tl_crab_coast');     // 1.2 of 4
-        expect(TimedChanges.pickWeighted(entries, () => 0.999)).toBe('fixture_tl_crab_coast');
+        expect(pickWeighted(entries, () => 0.2)).toBe('fixture_tl_shrimp_coast');   // 0.8 of 4
+        expect(pickWeighted(entries, () => 0.3)).toBe('fixture_tl_crab_coast');     // 1.2 of 4
+        expect(pickWeighted(entries, () => 0.999)).toBe('fixture_tl_crab_coast');
         // Unknown types and non-positive weights are never picked.
-        expect(TimedChanges.pickWeighted([{ typeId: 'nope', weight: 5 }, { typeId: 'fixture_tl_crab_coast', weight: 0 }], () => 0)).toBeNull();
+        expect(pickWeighted([{ typeId: 'nope', weight: 5 }, { typeId: 'fixture_tl_crab_coast', weight: 0 }], () => 0)).toBeNull();
 
         const rng = seeded(3);
         const counts = { fixture_tl_shrimp_coast: 0, fixture_tl_crab_coast: 0 };
-        for (let i = 0; i < 4000; i++) counts[TimedChanges.pickWeighted(entries, rng)]++;
+        for (let i = 0; i < 4000; i++) counts[pickWeighted(entries, rng)]++;
         expect(counts.fixture_tl_crab_coast / 4000).toBeGreaterThan(0.7);
         expect(counts.fixture_tl_crab_coast / 4000).toBeLessThan(0.8);
     });
@@ -618,14 +620,14 @@ describe('⭐ TL-12 — a turning Token rolls a chance once per cycle, both ways
 
     it('in the hand it does not roll at all; put down, it rolls on the next tick', () => {
         const lagoon = placeAt('fixture_tl_lagoon', 400, 400);
-        TimedChanges.setInHand(lagoon.id, true);
+        Hand.setInHand(lagoon.id, true);
         const random = scripted([0.1]);
         TimedChanges.tick(60000, random);
         TimedChanges.tick(60000, random);
         expect(random.calls).toBe(0);
         expect(lagoon.clocks.turnMs).toBe(60000);         // held full
         expect(TimedChanges.nextTurnRoll(lagoon).inMs).toBe(0);
-        TimedChanges.setInHand(lagoon.id, false);
+        Hand.setInHand(lagoon.id, false);
         TimedChanges.tick(100, random);
         expect(random.calls).toBe(1);
         expect(at(400, 400).typeId).toBe('fixture_tl_shrimp_coast');

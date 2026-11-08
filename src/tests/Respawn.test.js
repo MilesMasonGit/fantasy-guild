@@ -15,6 +15,7 @@ import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
+import * as Hand from '../systems/board/Hand.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as WorkCheck from '../systems/board/WorkCheck.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
@@ -163,8 +164,8 @@ const at = (point) => BoardState.tokensAtPoint(point.x, point.y)[0] ?? null;
 const claimOf = (heroId) => BoardState.claimOfHero(heroId)?.instanceId ?? null;
 
 const held = new Set();
-const pickUp = (t) => { held.add(t.id); TimedChanges.setInHand(t.id, true); };
-const putDown = (t) => { held.delete(t.id); TimedChanges.setInHand(t.id, false); };
+const pickUp = (t) => { held.add(t.id); Hand.setInHand(t.id, true); };
+const putDown = (t) => { held.delete(t.id); Hand.setInHand(t.id, false); };
 
 let events;
 const offs = [];
@@ -194,7 +195,7 @@ beforeEach(() => {
 
 afterEach(() => {
     while (offs.length) offs.pop()();
-    for (const id of [...held]) TimedChanges.setInHand(id, false);
+    for (const id of [...held]) Hand.setInHand(id, false);
     held.clear();
 });
 
