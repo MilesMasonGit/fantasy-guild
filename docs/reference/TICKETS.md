@@ -155,7 +155,6 @@ The findings' full write-ups are in `docs/active/review/R*_*.md` (search the CR4
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-379 | P3 | brief 540 | **Exports and copies across folders**: 49 exports nothing reads and 127 stray `export default` lines (knip); eighteen groups of logic written twice or three times (R0's nine and R9's nine; the camera and dock pairs need an eye-check, the RNG helper must stay bit-identical) | CR4-011, 082, 083 |
 
 **Docs (brief 540, last phase)**
 
