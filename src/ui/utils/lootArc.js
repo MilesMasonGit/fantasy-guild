@@ -1,6 +1,7 @@
 import { FX_FRAME_MS, arcPoses, heldPoses, prefersReducedMotion } from '../components/board/fx/pixelSteps.js';
 import { afterimages, playIn } from '../components/board/fx/tokenFx.js';
 import { spriteOf, makeCopy } from '../components/board/fx/spriteCopy.js';
+import { animateFx } from '../components/board/fx/oneShot.js';
 import { LOOT_HOP_AFTERIMAGES, LOOT_PILE_DISSOLVE } from './lootEffects.js';
 
 /**
@@ -48,15 +49,16 @@ export function playLootArc(element, fx, fy, { unit = 1 } = {}) {
     const hop = heldPoses(poses.map(({ ms, x, y }) => ({ ms, x, y })), { unit });
     let anim;
     try {
-        anim = element.animate(hop.keyframes, { duration: hop.duration, fill: 'none' });
+        anim = animateFx(element, hop.keyframes, { duration: hop.duration, fill: 'none' });
     } catch {
         return null;
     }
+    if (!anim) return null;
     // The shadow keeps to the ground: it takes back the height of each pose.
     const shadow = element.querySelector('[data-sprite-shadow]');
     if (shadow) {
         const ground = heldPoses(poses.map(({ ms, lift }) => ({ ms, x: 0, y: lift })), { unit });
-        shadow.animate(ground.keyframes, { duration: ground.duration, fill: 'none' });
+        animateFx(shadow, ground.keyframes, { duration: ground.duration, fill: 'none' });
     }
     const art = element.querySelector('img')?.parentElement;
     if (art && LOOT_HOP_AFTERIMAGES) afterimages(art, poses.slice(0, HOP_POSES).map(({ ms, x, y }) => ({ ms, x, y })), { unit });
@@ -85,10 +87,11 @@ export function playAbsorptionSlide(element, dx, dy, { unit = 1 } = {}) {
     const box = heldPoses(slide, { unit, rest: { x: ax, y: ay, visibility: 'hidden' } });
     let anim;
     try {
-        anim = element.animate(box.keyframes, { duration: box.duration, fill: 'forwards' });
+        anim = animateFx(element, box.keyframes, { duration: box.duration, fill: 'forwards' });
     } catch {
         return null;
     }
+    if (!anim) return null;
     if (!LOOT_PILE_DISSOLVE) return anim;
     const art = element.querySelector('img')?.parentElement;
     const sprite = spriteOf(art);
@@ -97,7 +100,7 @@ export function playAbsorptionSlide(element, dx, dy, { unit = 1 } = {}) {
         // What it was drawn with goes as the dissolve starts: the picture, its shadow, its count.
         const gone = heldPoses([{ ms: 3 * FX_FRAME_MS, visibility: 'visible' }, { ms: 2 * FX_FRAME_MS, visibility: 'hidden' }], { rest: { visibility: 'hidden' } });
         for (const el of [...art.children, ...[...element.children].filter(c => !c.contains(art))]) {
-            el.animate(gone.keyframes, { duration: gone.duration, fill: 'forwards' });
+            animateFx(el, gone.keyframes, { duration: gone.duration, fill: 'forwards' });
         }
         for (const [copy, frame] of copies) {
             const shown = Array.from({ length: ABSORB_FRAMES }, (_, i) => ({ ms: FX_FRAME_MS, visibility: i === frame ? 'visible' : 'hidden' }));

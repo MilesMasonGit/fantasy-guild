@@ -347,8 +347,9 @@ Hall's star web (`GuildHallBoard.jsx`, `HallSky.jsx`) and the Atlas with the hex
   subscribers in one frame; the work bars, `workBar.js:57`), `onDue` (each subscriber at its own
   next time: hero and enemy sprite frames, ambient life at 8/s, loot bob, token fx, clock poses).
   `onFrame` (every frame) exists but **has no subscriber in game code** (grep, 2026-11-06).
-- **One-shot animations** use the Web Animations API (`el.animate`, 19 sites: hit knocks
-  `TokenHitArt.jsx:105`, fx, loot arcs, spawns) or framer-motion (9 files).
+- **One-shot animations** use the Web Animations API, each started through
+  `fx/oneShot.js` `animateFx` (hit knocks, fx, loot arcs, spawns, settles; §5.4), or framer-motion
+  (9 files).
 - **CSS infinite animations**: the gear-alert blink, drifting bits, the Hall sky's star and
   cloud drift (600 s, 300 s), the catch-up sheen (`src/tailwind.css:467,827,1110,1115`,
   `src/styles/components.css:96`).
@@ -396,11 +397,26 @@ total), and draw only when what they show changes.
 Not paused by it (read from code; whether WebView2 throttles them when minimised is
 **unverified**): the game tick (by design, `drawingPause.js:11-13`), CSS animations (§5.2),
 Web Animations already running, and ParticleOverlay and camera glides (own rAF).
-What reads `isDrawingPaused()`: the one-shot effect watchers (`matFx.watchMatFx`,
-`fightFloats.watchFightFloats`, `TokenHitArt`'s hit, cycle-blink and echo handlers, `tokenFx.later`)
-make nothing while paused, and `ParticleOverlay.spawnCollected` books no flight (the stub's count
-shows at once). As a net under them, `playAt` and `playIn` (`fx/oneShot.js` `whenOver`) also take
-an effect away by a timer a second after its end, since a hidden page never finishes an animation.
+What reads `isDrawingPaused()`: **`fx/oneShot.js` `animateFx`**, through which every one-shot Web
+Animation starts (effects, loot hops and slides, spawns, settles, the Hall's dip, the pickup
+flight), makes none while paused and returns null, which each caller takes as "draw nothing"
+(a test, `HiddenPageFx.test.js`, refuses `.animate(` anywhere else under `src/ui` but the two camera
+glides, which start only from a drawn frame and land by their own timer). ⚠️ Chrome holds every
+animation started in a hidden page, and the element it plays on, until the page draws again, even
+once the element is taken away and the animation cancelled (a layout read does not let them go
+either; measured in headless Chrome 156): a `bench:soak` heap snapshot after 20 minutes hidden held about
+1,550 animations, 1,335 on the loot that had hopped out of its Tokens (and its shadows) and 88 on
+the callouts' CSS `callout-pop` (started by a layout read in the hidden page), with nearly 5,000
+detached elements under them. So `CalloutLayer` says nothing while paused either. Still made
+while hidden: the heroes' walking glide (a CSS transition on each hero's box, about 6 a minute),
+started by the same layout reads (the item stub column's `useStubGlide` and size check, and
+`HeroBubbleLayer`'s measure, which still run on every update while hidden), held until the page
+draws again but on live elements.
+The one-shot effect watchers (`matFx.watchMatFx`, `fightFloats.watchFightFloats`, `TokenHitArt`'s hit, cycle-blink and
+echo handlers, `tokenFx.later`) also make nothing while paused, and `ParticleOverlay.spawnCollected`
+books no flight (the stub's count shows at once). An effect already playing when the window hides
+is taken away by a timer a second after its end (`playAt`, `playIn`, `heroFlash`, `usedBubble`:
+`fx/oneShot.js` `whenOver`), since a hidden page never finishes an animation.
 
 **Every frame, always**: nothing in a production build. In dev and perf-with-Debug builds the
 `FPSCounter` runs its own `requestAnimationFrame` loop and a React commit each second, unless

@@ -5,6 +5,18 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **A game left in a background tab no longer piles up hidden page elements** (no change while
+  you watch). Chrome keeps every animation a hidden page starts, and what it plays on, until the
+  page draws again, even after the game has taken that element away. The first fix stopped the
+  effects, but the loot hopping out of its Tokens and sliding onto piles and the "Needs Coal"
+  callouts kept animating: 20 minutes in a background tab left about 1,420 animations holding
+  nearly 5,000 elements until you came back (the memory soak: page elements grew 269 a minute
+  while hidden, listeners 88). Now nothing on the mat starts an animation while the page is hidden
+  (one shared helper starts them all, and a test refuses any other way), and the mat says no
+  callouts until you are back; the same soak reads no growth while hidden (elements and listeners
+  flat over the 20 minutes). A hero's heal flash and "used" bubble now also end on a timer if the
+  window hides while they play.
+
 - **Dead code removed from the world, Atlas and quests** (no change in play): the quest manager's callerless `abandonQuest`, the unused `sourceRect` on `claimQuest`, three unused re-exports, the Atlas's `reroll` (no screen has used it since the world map; the new-game world reroll is separate and stays), the budget's `ignored` list, the layout's `anywhereDry`, the Region rules' `installedSources` and several unimported exports. The world's materials memo is now kept once, not rebuilt on each call of `lookups()`.
 
 - **Dead code and duplicate copies removed from the board engine, nothing a player sees changes**: the per-type blocked-tick tally nothing read, the exports with no caller (`recallHeroById`, `loadLeft`, `minCentreGap`, `enemyBearerOfHero`, `isPurelyTriggered` and the `TimedChanges` re-exports), the second `isLandmark`, and the round-3 copies of the Hall id, `clampToMat`, the hero standing spot and `countMatches` now use the shared helpers.

@@ -2,6 +2,7 @@ import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { arcPoses, heldPoses } from './fx/pixelSteps.js';
+import { animateFx } from './fx/oneShot.js';
 
 /** Poses in the air, and how long each holds: the hop out of the spawner. */
 const SPAWN_STEPS = 12;
@@ -67,19 +68,17 @@ export function spawnPeak(dx, dy, over = 0, unit = 1) {
  * at `.gi-token-land`).
  * @param {{unit?: number, over?: number}} [options] mat units per art pixel; how far the spawner's
  *        art reaches above its point (half its drawn size)
- * @returns {Animation|null} null where the browser cannot animate
+ * @returns {Animation|null} null where the browser cannot animate or drawing is paused (`animateFx`)
  */
 export function playSpawn(el, dx, dy, { unit = 1, over = 0 } = {}) {
-    if (!el || typeof el.animate !== 'function') return null;
-    const before = el.style.willChange;
-    el.style.willChange = 'contents';
     const poses = arcPoses(dx, dy, { unit, peak: spawnPeak(dx, dy, over, unit), steps: SPAWN_STEPS, ms: SPAWN_POSE_MS });
     const { keyframes, duration } = heldPoses(poses.map(({ ms, x, y }) => ({ ms, x, y })), { unit });
-    const anim = el.animate(keyframes, { duration, composite: 'add' });
-    if (anim) {
-        const restore = () => { el.style.willChange = before; };
-        anim.onfinish = restore;
-        anim.oncancel = restore;
-    }
+    const anim = animateFx(el, keyframes, { duration, composite: 'add' });
+    if (!anim) return null;
+    const before = el.style.willChange;
+    el.style.willChange = 'contents';
+    const restore = () => { el.style.willChange = before; };
+    anim.onfinish = restore;
+    anim.oncancel = restore;
     return anim;
 }

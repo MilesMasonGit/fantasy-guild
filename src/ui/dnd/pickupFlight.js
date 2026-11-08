@@ -1,5 +1,6 @@
 import { getEventCoordinates } from '@dnd-kit/utilities';
 import { heldPoses, prefersReducedMotion } from '../components/board/fx/pixelSteps.js';
+import { animateFx } from '../components/board/fx/oneShot.js';
 
 /**
  * Picking something up flies it to the cursor (T-154): the carried ghost is centred on the
@@ -57,5 +58,5 @@ export function playPickupFlight(el, offset) {
     if (Math.hypot(offset.x, offset.y) < 2) return null;
     const poses = STILL_BACK.map(k => ({ ms: PICKUP_MS / STILL_BACK.length, x: -offset.x * k, y: -offset.y * k }));
     const { keyframes, duration } = heldPoses(poses, { unit: 1 });
-    return el.animate(keyframes, { duration });
+    return animateFx(el, keyframes, { duration });
 }

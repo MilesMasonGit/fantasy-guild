@@ -20,6 +20,7 @@ import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.j
 import { SPEECH_TONE } from './speechTone.js';
 import { plateUnit, platePlace } from './workPlate.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
+import { isDrawingPaused } from './frameClock.js';
 
 /** Clear air between the top of a Token's art and the bottom of its callout's tail, in mat units. */
 const GAP_PX = 6;
@@ -72,8 +73,9 @@ export const CalloutLayer = memo(function CalloutLayer() {
         const toolSaidAt = new Map();   // instanceId → when "Needs Pickaxe" was last said over it
         const inputSaidAt = new Map();  // instanceId → when "Needs Coal" was last said over it
         const growthSaidAt = new Map(); // instanceId → when "Needs Oak Seedling" was last said over it
-        /** Whether a reminder over `instanceId` is due; if so, noted as said now. */
+        /** Whether a reminder over `instanceId` is due; if so, noted as said now. Never while drawing is paused. */
         const remind = (saidAt, instanceId, gapMs) => {
+            if (isDrawingPaused()) return false;
             const now = Date.now();
             if (!dueAgain(saidAt.get(instanceId) ?? null, now, gapMs)) return false;
             if (saidAt.size > 256) {
@@ -82,8 +84,11 @@ export const CalloutLayer = memo(function CalloutLayer() {
             saidAt.set(instanceId, now);
             return true;
         };
+        // ⚠️ Nothing is said while drawing is paused (a hidden window): a bubble's `callout-pop`
+        // animation, once a layout read in the hidden page has started it, keeps the bubble alive
+        // after its timer takes it away, until the page draws again.
         const say = ({ anchorId = null, x = null, y = null, typeId = null, text, tone = SPEECH_TONE.PLAIN }) => {
-            if (!text) return;
+            if (!text || isDrawingPaused()) return;
             const anchor = anchorId ? BoardState.getTokenById(anchorId) : null;
             const at = anchor ? { x: anchor.x, y: anchor.y, typeId: anchor.typeId } : { x, y, typeId };
             if (!Number.isFinite(at.x) || !Number.isFinite(at.y)) return;
