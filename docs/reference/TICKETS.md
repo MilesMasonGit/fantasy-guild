@@ -109,8 +109,6 @@ The findings' full write-ups are in `docs/active/review/R*_*.md` (search the CR4
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-371 | P2 | brief 530 X1 | **Kills get their style's XP bonuses** (owner ruling 2026-11-07: every XP bonus is skill-specific, and a bonus aimed at Melee, Ranged, Magic or Stealth applies to the XP a kill awards in that style). Today `SkillSystem.getXpMultiplier` reads a hero aggregator nothing writes, so a kill never gets a bonus. `handleVictory` resolves the award through `TileModifiers.resolveAxis(instanceId, XP_BONUS, award, style)` and the dead hero multiplier goes (replaced by the rule, not just deleted). Expect WORK CHANGED where a fighting hero holds a matching bonus | CR4-037 |
-| T-372 | P2 | brief 530 X2 | **Four Guild Hall stars, one per combat style, each raising that style's kill XP** (owner 2026-11-07): a CMS change pack by the content agent (`/content`), names, constellation, prices and amounts proposed the simplest way and shown to the owner as a short list | owner 2026-11-07 |
 
 **The owner's other rulings (2026-11-07)**
 
