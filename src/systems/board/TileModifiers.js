@@ -1009,10 +1009,12 @@ export function nearbyGateMet(instance, typeIds) {
 /**
  * What the hero working this tile contributes, out of the items they carry.
  *
- * ⚠️ Read live, not cached into the tile's aggregator, and that is deliberate. A tile's aggregator
- * is rebuilt when the board changes. A loadout is not the board: a hero can be re-equipped, walk to
- * another tile, or run their potions dry without a single Token moving, and every one of those
- * would leave a cached contribution stale. It is a handful of items read once per axis resolution.
+ * ⚠️ Read on every resolution, not cached into the tile's aggregator, and that is deliberate. A
+ * tile's aggregator is rebuilt when the board changes. A loadout is not the board: a hero can be
+ * re-equipped, walk to another tile, or run their potions dry without a single Token moving, and
+ * every one of those would leave a cached contribution stale. The loadout's statements are kept per
+ * hero by `HeroEffects.loadoutStatements`, which checks them against what they were built from on
+ * every read, so this is a pass over a kept list.
  *
  * Why an item's `Provides` needs no filter: a Token's buff has to say which neighbours it reaches.
  * An item has exactly one hero and that hero is standing on exactly one tile, so there is only one
@@ -1020,48 +1022,44 @@ export function nearbyGateMet(instance, typeIds) {
  * rather than obeyed, because there is nothing for it to choose between.
  */
 function heroContributions(instanceId, effectType, category = TARGET_CATEGORIES.ALL) {
-    const empty = { flat: 0, multipliers: [], percentages: [] };
+    const sums = { flat: 0, multipliers: [], percentages: [] };
 
     const heroId = BoardState.workerOf(instanceId);
-    if (!heroId) return empty;
+    if (!heroId) return sums;
 
     const hero = HeroManager.getHero(heroId);
-    if (!hero) return empty;
+    if (!hero) return sums;
 
-    let flat = 0;
-    const multipliers = [];
-    const percentages = [];
-
-    // ⚠️ Carried effects join the loadout here, and for the same reason it is read live: a live
-    // effect expires on its own clock, with no board change and no player action, so a cached
-    // contribution would outlive it. This is what makes Cookout (+10% gathering yield for a while)
-    // expressible as an ordinary library effect.
+    // ⚠️ Carried effects join the loadout here, after it, and are read live: a live effect expires
+    // on its own clock, with no board change and no player action, so a kept contribution would
+    // outlive it. This is what makes Cookout (+10% gathering yield for a while) expressible as an
+    // ordinary library effect.
     // A carried effect bound to another Token's cycle ("for the cycle") does not reach this one.
-    const contributing = [
-        ...HeroEffects.loadoutStatements(hero),
-        ...LiveEffects.modifierStatements(hero, instanceId)
-    ];
+    addHeroProvides(sums, HeroEffects.loadoutStatements(hero), effectType, category);
+    addHeroProvides(sums, LiveEffects.modifierStatements(hero, instanceId), effectType, category);
+    return sums;
+}
 
-    for (const statement of contributing) {
+/** Add the `Provides` of one axis among `statements` into `sums`' buckets, in order. */
+function addHeroProvides(sums, statements, effectType, category) {
+    for (const statement of statements) {
         if (statement.keyword !== KEYWORD.PROVIDES) continue;
 
         const payload = statement.payload || {};
         if (payload.type !== effectType) continue;
 
         // ⚠️ The narrowing field, honoured here by hand. Everything else on this path bypasses
-        // `ModifierAggregator` (the loadout is read live rather than cached), so it also bypasses
-        // `_forEachMatching`, which is where a category is normally matched. An item scoped to
-        // Mining would otherwise apply to Fishing, silently, and only when carried rather than when
-        // placed.
+        // `ModifierAggregator` (the loadout is read off the hero, not an aggregator), so it also
+        // bypasses `_forEachMatching`, which is where a category is normally matched. An item scoped
+        // to Mining would otherwise apply to Fishing, silently, and only when carried rather than
+        // when placed.
         if (payload.category && payload.category !== category) continue;
 
         const value = Number(payload.value);
         if (!Number.isFinite(value)) continue;
 
-        if (payload.bucket === 'flat') flat += value;
-        else if (payload.bucket === 'multiplier') multipliers.push(value);
-        else percentages.push(value);
+        if (payload.bucket === 'flat') sums.flat += value;
+        else if (payload.bucket === 'multiplier') sums.multipliers.push(value);
+        else sums.percentages.push(value);
     }
-
-    return { flat, multipliers, percentages };
 }

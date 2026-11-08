@@ -246,3 +246,4 @@ T-339 — The CMS Sync refuses a stale tab (workspace revision) and, from the pa
 T-341 — Loot collected while the page is hidden books no flight (its count shows at once); a batch of flights reads the board box once — 4581ad49 — 2026-11-07
 T-342 — Moving a Token onto a half-used copy it fits into no longer leaves a zero-charge ghost at its old spot — fix/zero-charge-ghost — 2026-11-07
 T-340 — The last-harvest farming test pins its random rolls, so it passes under the second test seed; the full second-seed suite is green — fix/farming-seed-test — 2026-11-07
+T-078 — The hero loadout is kept per hero and checked against what it was built from on every read (slots, item definitions, Bank backing, perk and requirement levels, perk tables, library entries), not expanded per tick; 6 h catch-up profile: loadout 10 % to 2 % of busy time, wall 26.5 s to 23.2 s, same work on S2, S4, C240 — perf/loadout-memo — 2026-11-07
