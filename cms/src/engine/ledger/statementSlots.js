@@ -1,25 +1,25 @@
 import {
     KEYWORD, KEYWORDS, WHEN, getKeyword, paletteForKeyword, makeStatement, DEFAULT_STATEMENT_CHARGE_DELTA,
     rolesForKeyword, firingChanceOf
-} from './statements.js';
+} from '../../../../src/systems/effects/statements.js';
 import {
     CHARGE_MOMENT, chargeMomentsFor, chargeMomentOf, chargeDeltaOf
-} from '../../config/registries/chargeMomentRegistry.js';
-import { TRIGGER_EVENTS, getTriggerEvent, rolesOf, isFightMoment, everyOf, healthBelowOf, momentWords } from '../../config/registries/triggerRegistry.js';
-import { isWorkMoment } from '../core/consumableRule.js';
-import { ROLES, getRole } from '../../config/registries/roleRegistry.js';
-import { REACHES, reachOf, getReach } from '../../config/registries/reachRegistry.js';
+} from '../../../../src/config/registries/chargeMomentRegistry.js';
+import { TRIGGER_EVENTS, getTriggerEvent, rolesOf, isFightMoment, everyOf, healthBelowOf, momentWords } from '../../../../src/config/registries/triggerRegistry.js';
+import { isWorkMoment } from '../../../../src/systems/core/consumableRule.js';
+import { ROLES, getRole } from '../../../../src/config/registries/roleRegistry.js';
+import { REACHES, reachOf, getReach } from '../../../../src/config/registries/reachRegistry.js';
 import {
     TARGET_MODES, getPaletteEntry, bucketsFor, describeModifierDirection, clampModifierValue
-} from '../../config/registries/modifierPalette.js';
-import { statusBlockOf } from './effectLibrary.js';
-import { RESTRICTION_KINDS, getRestrictionKind } from '../../config/registries/restrictionPalette.js';
-import { FILTER_KINDS, filtersOf } from '../../config/registries/filterRegistry.js';
-import { MAGNITUDE_KIND, statsForRoles } from '../../config/registries/magnitudeRegistry.js';
-import { PLACEMENTS, placementOf } from '../../config/registries/placementRegistry.js';
-import { getAllSkills } from '../../config/registries/skillRegistry.js';
-import { DAMAGE_GROUPS, DAMAGE_TYPES, typesOfGroup, damageTypeLabel } from '../../config/registries/damageTypes.js';
-import { STATION_KINDS, stationKindLabel } from '../../config/registries/tokenConstants.js';
+} from '../../../../src/config/registries/modifierPalette.js';
+import { statusBlockOf } from '../../../../src/systems/effects/effectLibrary.js';
+import { RESTRICTION_KINDS, getRestrictionKind } from '../../../../src/config/registries/restrictionPalette.js';
+import { FILTER_KINDS, filtersOf } from '../../../../src/config/registries/filterRegistry.js';
+import { MAGNITUDE_KIND, statsForRoles } from '../../../../src/config/registries/magnitudeRegistry.js';
+import { PLACEMENTS, placementOf } from '../../../../src/config/registries/placementRegistry.js';
+import { getAllSkills } from '../../../../src/config/registries/skillRegistry.js';
+import { DAMAGE_GROUPS, DAMAGE_TYPES, typesOfGroup, damageTypeLabel } from '../../../../src/config/registries/damageTypes.js';
+import { STATION_KINDS, stationKindLabel } from '../../../../src/config/registries/tokenConstants.js';
 
 /**
  * A statement, described as the ordered slots an author fills in: the model behind the

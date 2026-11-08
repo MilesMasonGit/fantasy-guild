@@ -17,7 +17,7 @@ import { DRAG_KIND, DND_SURFACE, rosterFlagPayload } from '../../dnd/dragConstan
 import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
 import { skillPurpose } from '../../../config/registries/skillRegistry.js';
 import { heroSkillList, skillLevelText, skillXpView, skillDetail } from '../dock/heroPanelSkills.js';
-import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { skillPerkView, perkLines } from '../dock/heroPerks.js';
 import { t } from '../../../i18n/index.js';
@@ -50,13 +50,13 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId })
             if (!h) return null;
             return JSON.stringify({
                 name: h.name,
-                spriteId: h.spriteId || null, icon: h.icon || null, classId: h.classId || null,
+                spriteId: h.spriteId || null, icon: h.icon || null,
                 flagColour: h.flagColour || null,
                 hp: Math.max(0, Math.round(h.hp?.current ?? 0)), hpMax: Math.max(1, h.hp?.max ?? 100),
                 skills: Object.fromEntries(Object.entries(h.skills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }]))
             });
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_LEVELED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.GAME_RESET],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
     );
@@ -128,7 +128,7 @@ const HeroFigure = ({ hero, heroId, size }) => {
         kind: DRAG_KIND.FLAG,
         payload: rosterFlagPayload(heroId, hero?.name, { dock: true, inspection: true })
     });
-    const sprite = hero.spriteId || hero.classId || null;
+    const sprite = hero.spriteId || null;
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
     const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hn_recruit_por');
     // The job flag at its size on the mat beside a hero (12 of the hero's 64 art pixels), standing

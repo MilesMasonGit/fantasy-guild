@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { GAME_VERSION } from '../state/StateSchema.js';
 import { migrateState, IncompatibleSaveError } from '../systems/core/SaveMigration.js';
 import { SaveManager } from '../systems/core/SaveManager.js';
@@ -164,7 +165,7 @@ describe('spot vacancies are retired with the Managers (SP-55, 9.2)', () => {
     it('an older save carrying board.vacancies still loads, and the field is dropped', async () => {
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
         saved.state.board.vacancies = { spot_500_420: { typeId: 'fixture_spot_big', x: 500, y: 420, unstocked: true } };
-        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        loadSavedState(migrateState(saved.state, saved.version));
         BoardState.tokens();
         expect(GameState.state.board.vacancies).toBeUndefined();
     });

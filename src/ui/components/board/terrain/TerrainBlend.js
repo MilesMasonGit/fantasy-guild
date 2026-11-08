@@ -2,9 +2,9 @@
 
 import { hash01, PLAN_PIXEL_U } from './TerrainLattice.js';
 import { noiseWalker, drawsGenerated, grassColours, kindColour, COLOUR } from './TerrainGrass.js';
-import { generatedOf, getLook, DEFAULT_LOOK, LAWN_TERRAIN } from '../../config/registries/terrainRegistry.js';
-import { TERRAIN } from '../atlas/TerrainMap.js';
-import { tuning } from '../../config/playmatTuning.js';
+import { generatedOf, getLook, DEFAULT_LOOK, LAWN_TERRAIN } from '../../../../config/registries/terrainRegistry.js';
+import { TERRAIN } from '../../../../systems/atlas/TerrainMap.js';
+import { tuning } from './playmatTuning.js';
 
 /**
  * Where two biomes' grounds meet (a forest's grass and a mountain's rock), the drawing blends them

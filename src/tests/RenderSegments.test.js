@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import './fixtures/testTokens.js';
 import { buildCorpus } from './fixtures/renderCorpus.js';
 import { renderSegments, renderStatement } from '../systems/effects/statementText.js';
-import { slotsOf } from '../systems/effects/statementSlots.js';
+import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 
 /**

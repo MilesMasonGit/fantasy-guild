@@ -26,7 +26,7 @@ import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
 import { migrateEffectIds } from '../systems/effects/effectIdMigration.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { enemyMovesOf, pickMove, moveLastsFor, moveProblems } from '../config/registries/enemyMoves.js';
-import * as CF from '../utils/CombatFormulas.js';
+import * as CF from '../systems/combat/CombatFormulas.js';
 import { registerStatusFixtures, VENOM } from './fixtures/statusEffects.js';
 
 /**

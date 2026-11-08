@@ -2,11 +2,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, act } from '@testing-library/react';
-import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
+import { buildGroundPlan } from '../ui/components/board/terrain/TerrainSurface.js';
 import { buildScreenPass } from '../ui/components/board/groundScreen.js';
 import { groundLife } from '../ui/components/board/ambientGround.js';
 import { MAT_Z, STACK_PLACES, placeZ } from '../ui/components/board/matLayers.js';
-import { setTuning, resetTuning } from '../config/playmatTuning.js';
+import { setTuning, resetTuning } from '../ui/components/board/terrain/playmatTuning.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
 import { groundWith } from './fixtures/ground.js';
 

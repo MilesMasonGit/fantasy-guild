@@ -11,7 +11,7 @@ import { allowsTerrain } from './TerrainMap.js';
 
 /**
  * `Layout.js` is pure and takes its geometry as numbers; this is where the game supplies them, so
- * settle and reroll (and A6's preview) hand every layout the same inputs.
+ * settle and preview hand every layout the same inputs.
  *
  * ⚠️ The mat size and crowding numbers are the **shipped defaults**, never this device's Mat Tuner
  * values: a settled Region's coordinates must mean the same on every machine. On a device whose

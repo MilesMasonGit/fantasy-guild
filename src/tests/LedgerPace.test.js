@@ -3,11 +3,11 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
-import { buildRateBook, LIFECYCLE, LIMIT, WORK } from '../systems/progression/ledger/rates.js';
-import { buildPace, gainOf } from '../systems/progression/ledger/pace.js';
-import { PROFILE } from '../systems/progression/ledger/profiles.js';
-import { runChecks, CHECKS } from '../systems/progression/ledger/checks.js';
-import { settingsOf, levelAtMinutes, minutesToReach } from '../systems/progression/ledger/settings.js';
+import { buildRateBook, LIFECYCLE, LIMIT, WORK } from '../../cms/src/engine/ledger/rates.js';
+import { buildPace, gainOf } from '../../cms/src/engine/ledger/pace.js';
+import { PROFILE } from '../../cms/src/engine/ledger/profiles.js';
+import { runChecks, CHECKS } from '../../cms/src/engine/ledger/checks.js';
+import { settingsOf, levelAtMinutes, minutesToReach } from '../../cms/src/engine/ledger/settings.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import { paceContent } from './fixtures/paceWorld.js';
 

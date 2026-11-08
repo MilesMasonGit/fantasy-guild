@@ -14,7 +14,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
-import * as CombatFormulas from '../utils/CombatFormulas.js';
+import * as CombatFormulas from '../systems/combat/CombatFormulas.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';

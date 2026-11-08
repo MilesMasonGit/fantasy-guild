@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { buildLedger, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
-import { runChecks, CHECKS, filterFindings, findingsByKey, STARTER_CAMP_KEY } from '../systems/progression/ledger/checks.js';
+import { runChecks, CHECKS, filterFindings, findingsByKey, STARTER_CAMP_KEY } from '../../cms/src/engine/ledger/checks.js';
 import { normaliseWorldTables } from '../config/worldTablesShape.js';
 import { ledgerContent, withIronChest, withoutOrigin } from './fixtures/ledgerWorld.js';
 

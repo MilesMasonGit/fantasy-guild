@@ -15,7 +15,7 @@ import { setRosterHover } from '../board/orderLit.js';
 import { TopBarTip } from '../board/TopBarTip.jsx';
 import { useHeroPortrait, PORTRAIT_PX } from './heroPortrait.js';
 import { SLOT_ORDER } from '../../../config/registries/equipmentConstants.js';
-import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** A tab's height: the portrait, and the name overlapping its foot. */
 const TAB_H_PX = 88;
@@ -134,13 +134,12 @@ function useTabHero(heroId) {
                 spriteId: h.spriteId,
                 icon: h.icon,
                 heroSprite: h.heroSprite,
-                classId: h.classId,
                 status: h.status,
                 equippedCount,
                 hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
             };
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.GAME_RESET],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
     );
@@ -184,7 +183,7 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
     ) || { state: 'idle', alert: null };
 
     const isWounded = hero.status === 'wounded';
-    const sprite = hero.spriteId || hero.classId || null;
+    const sprite = hero.spriteId || null;
     const sheet = sprite ? resolveAnimationPath(sprite) : null;
     const cut = useHeroPortrait(sheet);
     const still = sheet ? null : resolveSpritePath(sprite || hero.icon || 'hn_recruit_por');

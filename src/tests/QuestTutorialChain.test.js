@@ -429,14 +429,12 @@ describe('a save from when the chain had the old-site step moves on to the next 
         expect(GameState.state.quests.tutorialStep).toBe(BEFORE.length - 1);
     });
 
-    it('the old step recorded as claimed, or waiting in the old sidebar list, counts for nothing', () => {
+    it('the old step recorded as claimed counts for nothing', () => {
         for (const t of QuestTokens.tutorialTokens()) BoardState.removeToken(t.id);
         const q = GameState.state.quests;
         q.completedTutorials.push(...BEFORE, 'cart_inspect');
-        q.active.push({ ...oldInspectQuest(), isTutorial: true, status: 'active' });
         EventBus.publish(ENGINE_EVENTS.GAME_LOADED, {});
         expect(tutorialOnMat()).toEqual(['cart_camp']);
-        expect(q.active).toEqual([]);
         expect(q.tutorialStep).toBe(BEFORE.length - 1);
         expect(QuestTokens.tutorialChainDone()).toBe(false);
     });

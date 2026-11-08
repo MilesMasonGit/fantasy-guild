@@ -15,25 +15,6 @@ export function setHeroStatus(heroId, status) {
     return { success: true };
 }
 
-/**
- * Handle assignment state changes internally.
- */
-export function setAssignment(heroId, cardId) {
-    const hero = getHero(heroId);
-    if (!hero) return { success: false, error: 'HERO_NOT_FOUND' };
-
-    hero.assignedCardId = cardId;
-    
-    // Only set to working/idle if they aren't wounded.
-    if (hero.status !== 'wounded') {
-        hero.status = cardId ? 'working' : 'idle';
-    }
-
-    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { heroId, source: 'setAssignment' });
-    return { success: true };
-}
-
-
 export function updateHeroProfile(heroId, updates = {}) {
     const hero = getHero(heroId);
     if (!hero) return { success: false, error: 'HERO_NOT_FOUND' };

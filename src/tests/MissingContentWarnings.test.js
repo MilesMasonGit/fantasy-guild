@@ -39,9 +39,9 @@ afterEach(() => {
 
 describe('A drop that pays nothing (LootSystem)', () => {
     it('names the item once when the loot table points at nothing', () => {
-        LootSystem._rollEntryDetails({ itemId: 'ghost_item' }, 'area');
-        LootSystem._rollEntryDetails({ itemId: 'ghost_item' }, 'area');
-        LootSystem._rollEntryDetails({ itemId: 'ghost_item' }, 'area');
+        LootSystem._rollEntryDetails({ itemId: 'ghost_item' });
+        LootSystem._rollEntryDetails({ itemId: 'ghost_item' });
+        LootSystem._rollEntryDetails({ itemId: 'ghost_item' });
 
         const lines = missingContentWarnings();
         expect(lines).toHaveLength(1);
@@ -51,7 +51,7 @@ describe('A drop that pays nothing (LootSystem)', () => {
     });
 
     it('says nothing at all for an item that exists', () => {
-        LootSystem._rollEntryDetails({ itemId: 'fixture_oak_wood' }, 'area');
+        LootSystem._rollEntryDetails({ itemId: 'fixture_oak_wood' });
         expect(missingContentWarnings()).toHaveLength(0);
     });
 });

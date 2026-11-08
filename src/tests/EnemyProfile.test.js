@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { enemyProfileOf, enemyDropsOf, isEnemyDef, ENEMY_STYLES } from '../config/registries/enemyProfile.js';
 import { enemyLevelStats } from '../config/FormulaRegistry.js';
-import { getCombatXpAward } from '../utils/CombatFormulas.js';
+import { getCombatXpAward } from '../systems/combat/CombatFormulas.js';
 import { derivedTokenType } from '../config/registries/tokenTypeDerivation.js';
 
 /**

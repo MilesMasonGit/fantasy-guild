@@ -6,7 +6,7 @@ import {
     sheetPath, propSheetPath, getLook, bandOf, fringeOf, wearOf, propsOf
 } from '../config/registries/terrainRegistry.js';
 import { TERRAIN } from '../systems/atlas/TerrainMap.js';
-import { TUNABLES } from '../config/playmatTuning.js';
+import { TUNABLES } from '../ui/components/board/terrain/playmatTuning.js';
 
 /**
  * The ground's vocabulary: five looks over the owner's eight ground sheets and seven prop sheets.

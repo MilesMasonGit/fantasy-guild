@@ -12,7 +12,7 @@ import { syncFiles } from '../../cms/src/engine/recipeSync';
 import { doseKindsOf as CMS_DOSE_KINDS_OF } from '../../cms/src/utils/constants';
 import { doseKindsOf } from '../systems/core/consumableRule.js';
 import ItemEditor from '../../cms/src/components/editors/ItemEditor.jsx';
-import { slotsOf, slotsWithoutWords } from '../systems/effects/statementSlots.js';
+import { slotsOf, slotsWithoutWords } from '../../cms/src/engine/ledger/statementSlots.js';
 import { renderSegments } from '../systems/effects/statementText.js';
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 

@@ -102,8 +102,6 @@ export const ENGINE_EVENTS = Object.freeze({
 
     /** Payload: `{ upgradeId, rank }`. */
     GUILD_UPGRADES_UPDATED: 'guild_upgrades_updated',
-    /** Payload: `{ type: 'item' | 'enemy', id }`. */
-    REGISTRY_UPDATED: 'registry_updated',
     /** First time an item was seen. Payload: `{ itemId, itemName }`. */
     ITEM_DISCOVERED: 'item_discovered',
     /** First time an enemy was seen. Payload: `{ enemyId, enemyName }`. */
@@ -154,13 +152,11 @@ export const ENGINE_EVENTS = Object.freeze({
     COMBAT_HERO_ATTACK: 'combat_hero_attack',
     /** Payload: `{ cardId, instanceId, heroId, enemyId, damage, hit, crit, heroHpRemaining }` (`instanceId`: the enemy Token). */
     COMBAT_ENEMY_ATTACK: 'combat_enemy_attack',
-    /** Payload: `{ cardId, heroId, traitId, damage }`. */
-    COMBAT_ENEMY_TRAIT_TRIGGER: 'combat_enemy_trait_trigger',
     /** Payload: `{ cardId, heroId, itemId, healed }`. */
     COMBAT_HERO_ATE: 'combat_hero_ate',
-    /** Payload: `{ cardId, heroId, instanceId, areaId, enemyId, enemyName, drops }`. */
+    /** Payload: `{ cardId, heroId, instanceId, enemyId, enemyName, drops }`. */
     COMBAT_VICTORY: 'combat_victory',
-    /** Payload: `{ cardId, heroId, enemyId, enemyName, instanceId?, areaId?, drops }`. */
+    /** Payload: `{ cardId, heroId, enemyId, enemyName, instanceId?, drops }`. */
     LOOT_GENERATED: 'loot_generated',
 
     /**
@@ -234,37 +230,14 @@ export const UI_EVENTS = Object.freeze({
 });
 
 /**
- * Names subscribed somewhere with **no publisher** — dead listeners owned by
- * other tickets. They are declared (so the subscriptions name a constant) and
- * pinned here so the list can only shrink. Kept in a separate object so no
- * live code is tempted to publish them.
- */
-export const ORPHAN_EVENTS = Object.freeze({
-    /** ⚠ No publisher: the dock and inspection sheet list it. Statuses announce through `heroes_updated`. */
-    HERO_STATUS_CHANGED: 'hero:status_changed',
-    /** ⚠ No publisher: `AudioSystem` listens. */
-    COMBAT_DEFEAT: 'combat_defeat',
-    /** ⚠ No publisher: `AudioSystem` listens. */
-    INVASION_STARTED: 'invasion_started',
-    /** ⚠ No publisher: `AudioSystem` listens. */
-    HERO_ASSIGNED: 'hero_assigned',
-    /** ⚠ No publisher: `AudioSystem` listens. */
-    SKILL_LEVELED: 'skill_leveled',
-    /** ⚠ No publisher: the On Tick trigger's bus name. `LiveEffects` fires its statements directly, so `TriggerSystem`'s subscription to it is inert. */
-    EFFECT_TICK: 'effect_tick',
-});
-
-/**
  * Engine events published with **no subscriber**, and why each is kept rather
  * than deleted: each marks a moment a rule, the Perf HUD or the console
  * (`Game.EventBus.setLogging(true)`) can hook without touching the engine.
  */
 export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.STATE_CHANGED]: 'retired: every surface listens to a specific event and GAME_RESET; one Atlas publish remains',
-    [ENGINE_EVENTS.REGISTRY_UPDATED]: 'console affordance; the discovery events below are the specific ones',
     [ENGINE_EVENTS.ENEMY_DISCOVERED]: 'first-seen moment, for a future bestiary notice',
     [ENGINE_EVENTS.TOKEN_RESTOCKED]: 'player action moment; the board events carry the redraw',
     [ENGINE_EVENTS.HERO_RECOVERED]: 'combat moment; HEROES_UPDATED carries the redraw',
-    [ENGINE_EVENTS.COMBAT_ENEMY_TRAIT_TRIGGER]: 'combat moment, for a future floating-text cue',
     [ENGINE_EVENTS.BGM_TRACK_CHANGED]: 'console affordance for the music system',
 });

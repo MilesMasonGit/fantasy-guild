@@ -4,12 +4,6 @@
  * The numbers that decide how the playmat *looks*, in one place, adjustable
  * while the game runs.
  *
- * ## ⚠️ Why this is in `config/` and not `ui/dev/`
- *
- * `src/systems/` is React-agnostic and must not import out of the UI tree,
- * and the ground plan's modules are systems. Config is the one place both
- * they and the panel can reach.
- *
  * ## This is a developer tool, not a player setting
  *
  * Values live in `localStorage`, per device. They are

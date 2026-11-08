@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TEMPO_NAMES as GAME_TEMPOS, bandFor as gameBandFor } from '../config/registries/tempoBands.js';
+import { TEMPO_NAMES as GAME_TEMPOS, bandFor as gameBandFor } from '../../cms/src/engine/ledger/tempoBands.js';
 import { TEMPO_NAMES, bandFor, isTempo } from '../../cms/src/utils/constants.js';
 import { runTempoPass, bandMiddleMs } from '../../cms/src/engine/sim/tempoPass.js';
 import { cycleCandidates } from '../../cms/src/engine/sim/tuningPass.js';

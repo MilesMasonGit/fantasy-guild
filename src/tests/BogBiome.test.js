@@ -6,7 +6,7 @@ import { planWater, WATER_KIND, SMALL_WATER, SHAPE } from '../systems/atlas/Wate
 import { mulberry32, seedFromText } from '../systems/atlas/seededRandom.js';
 import { looksForGround } from '../systems/atlas/regionGround.js';
 import { LOOKS, generatedOf, propsOf } from '../config/registries/terrainRegistry.js';
-import { CLEAN_LOOKS } from '../config/playmatTuning.js';
+import { CLEAN_LOOKS } from '../ui/components/board/terrain/playmatTuning.js';
 import { defaultBannerFor } from '../config/areaBanners.js';
 import { DEV_MAPS } from '../systems/atlas/devMaps.js';
 import { TERRAIN_DEV_REGIONS } from '../ui/dev/terrainDev.js';

@@ -21,7 +21,7 @@ import { recipeOf, preview, regionBoard, rulesOf } from './Cartography.js';
 import { DEV_MAPS, asciiLayout } from './devMaps.js';
 import { layOnLiveBoard, starterCampTerrain } from './StarterCamp.js';
 
-export { recipeOf, preview, reroll } from './Cartography.js';
+export { recipeOf, preview } from './Cartography.js';
 
 /**
  * The Atlas: every Region the guild has settled, and moving the guild between them.
@@ -115,7 +115,6 @@ function addRecord(atlas, {
     region.terrain = terrain;
     region.rules = Array.isArray(rules) ? [...rules] : [];
     region.cellId = typeof cellId === 'string' && cellId ? cellId : null;
-    region.settledAt = GameState.state?.time?.gameTimeMs || 0;
     region.board = board;
     atlas.regions[region.id] = region;
     return region;
@@ -323,14 +322,13 @@ function devRecipes(names) {
 /**
  * Dev console: what `names` would write
  * (`Game.Atlas.devPreview(['mountain_camp'])`): the Node Summary in words and the layout
- * drawn in text. `preview` is the plan for `Game.Atlas.reroll(...)`; `devSettle(names, seed)`
- * settles exactly this layout.
+ * drawn in text. `devSettle(names, seed)` settles exactly this layout.
  */
 export function devPreview(names = ['forest'], seed) {
     const plan = preview(devRecipes(names), { seed });
     const summary = describeSummary(plan.summary).text;
     const picture = asciiLayout(plan.layout, { artRadius: artRadiusOf });
-    logger.info('Atlas', `Seed ${plan.seed}${plan.fits ? '' : ' (some Tokens found no room: reroll)'}\n${summary}\n${picture}`);
+    logger.info('Atlas', `Seed ${plan.seed}${plan.fits ? '' : ' (some Tokens found no room: try another seed)'}\n${summary}\n${picture}`);
     return { seed: plan.seed, fits: plan.fits, summary, picture, preview: plan };
 }
 

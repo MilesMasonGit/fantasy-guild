@@ -105,7 +105,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose }) => {
         state => {
             const h = (state.heroes || []).find(x => x.id === heroId);
             return h ? {
-                id: h.id, name: h.name, spriteId: h.spriteId, classId: h.classId,
+                id: h.id, name: h.name, spriteId: h.spriteId,
                 flagColour: isFlagColour(h.flagColour) ? h.flagColour : null
             } : null;
         },
@@ -123,7 +123,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose }) => {
     useEffect(() => {
         if (!isOpen || !hero) return;
         setName(hero.name);
-        setSpriteId(hero.spriteId || hero.classId);
+        setSpriteId(hero.spriteId);
         openingColour.current = hero.flagColour;
     }, [isOpen, heroId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -137,7 +137,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose }) => {
     const trimmed = name.trim();
     const flagColour = hero.flagColour;
     const dirty = trimmed !== hero.name
-        || spriteId !== (hero.spriteId || hero.classId)
+        || spriteId !== hero.spriteId
         || flagColour !== openingColour.current;
     const canSave = trimmed.length > 0 && dirty;
 

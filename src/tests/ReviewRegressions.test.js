@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Flags from '../systems/board/Flags.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -17,7 +18,7 @@ import { registerEffects } from '../config/registries/effectRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
-import { slotsOf } from '../systems/effects/statementSlots.js';
+import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
 
@@ -278,7 +279,7 @@ describe('⭐ a hero leaving switches a state filter back off', () => {
         const buffed = TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2, 'forestry');
         expect(buffed).toBe(4);
 
-        Placement.recallHeroById('hero_1');
+        Flags.furl('hero_1');
 
         expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2, 'forestry')).toBe(2);
     });

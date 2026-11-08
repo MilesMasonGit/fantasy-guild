@@ -6,9 +6,8 @@ import * as Orders from '../../../systems/board/Orders.js';
 import { isGuildHall } from '../../../systems/board/MatCap.js';
 import { setWorkable, setJob } from './orderLit.js';
 
-/** Whether a drag carries a hero (their figure, their flag or their roster tab). */
-const carriesHero = (payload) => !!payload?.heroId
-    && (payload.kind === DRAG_KIND.HERO || payload.kind === DRAG_KIND.FLAG);
+/** Whether a drag carries a hero (their flag, picked up by itself, their figure or their roster tab). */
+const carriesHero = (payload) => !!payload?.heroId && payload.kind === DRAG_KIND.FLAG;
 
 /**
  * Every Token on the mat `heroId` could be ordered onto to work (`Orders.canOrderOnto`). The Guild

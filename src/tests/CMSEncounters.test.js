@@ -11,7 +11,7 @@ import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
 import { isBossEnemy } from '../config/registries/enemyProfile.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
-import { slotsOf } from '../systems/effects/statementSlots.js';
+import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 

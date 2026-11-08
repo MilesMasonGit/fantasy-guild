@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach, beforeAll } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { FLAG_COLOURS } from '../systems/board/FlagColours.js';
-import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { migrateState, IncompatibleSaveError } from '../systems/core/SaveMigration.js';
+import { migrateState, IncompatibleSaveError, RETIRED_SECTIONS, RETIRED_FIELDS } from '../systems/core/SaveMigration.js';
 import { GAME_VERSION, validateSaveData } from '../state/StateSchema.js';
 
 // CR-053: serialization integrity net (review objective 4). Session 7
@@ -71,8 +71,6 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         // An unlimited-use Token stores null charges and must not come back as
         // 0, which would read as depleted.
         expect(migrated.board.tokens.tok_b.usesRemaining).toBeNull();
-        // (It also round-tripped the Token Vault and the Tray, which went in
-        // Token Lifecycle 9.3 — see the old-save suite below.)
     });
 
     it('refuses saves from a different schema version (locked no-migration rule)', () => {
@@ -99,52 +97,54 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
 });
 
 /**
- * ⭐ Token Lifecycle 9.3: the Token Vault and the dormant Tray are retired. A
- * save written before that still loads; their fields, its Token loot on the
- * floor and its ranks in the two Vault upgrade tracks are dropped. Item loot,
- * the Tokens on the mat and every other upgrade rank are kept.
+ * ⭐ A save an earlier build of this version wrote still loads: the sections and fields read by
+ * nothing are dropped, the ranks of retired upgrade tracks too, and the Tokens on the mat and every
+ * other rank are kept.
  */
-describe('A save from before the Vault went still loads (Token Lifecycle 9.3)', () => {
-    /** The pre-9.3 shape, built by hand the way such a save sits in storage. */
+describe('A save an earlier build of this version wrote still loads', () => {
+    /** The earlier shape, built by hand the way such a save sits in storage. */
     function oldSave() {
         GameState.initNew();
         const data = JSON.parse(JSON.stringify(GameState.serialize()));
-        const board = data.state.board;
-        board.tokens = {
+        const s = data.state;
+        s.board.tokens = {
             tok_a: { id: 'tok_a', typeId: 'token_oak_forest', x: 400, y: 300, placedAt: 0, usesRemaining: 10, cycleElapsedMs: 0 }
         };
-        board.tokenBank = { token_copper_pickaxe: [{ usesRemaining: 20 }, { usesRemaining: 7 }] };
-        board.tray = [{ typeId: 'token_coast', usesRemaining: 12, x: 0.5, y: 0.5, z: 3 }];
-        board.nextTrayZ = 3;
-        board.tokenBankSlots = 96;
-        board.tokenTabsUnlocked = 2;
-        board.tokenGroups = { groupOrder: ['vault-tab-1'], groupDefs: {}, overrides: {} };
-        board.sprites = [
-            { id: 's1', kind: 'item', refId: 'item_oak_wood', quantity: 3, x: 10, y: 10, bornAt: 0 },
-            { id: 's2', kind: 'token', refId: 'token_copper_woodaxe', quantity: 1, x: 20, y: 20, usesRemaining: 20, bornAt: 0 }
-        ];
-        data.state.progress.guildUpgrades = { roster_size: 2, token_bank_slots: 1, token_bank_tabs: 1, bank_slots: 1 };
+        s.recruitment = { candidates: [] };
+        s.cards = { idCounter: 1 };
+        s.inventory.slots = { max: 20, used: 0 };
+        s.inventory.maxStack = 1e12;
+        s.inventory.maxStackBonus = 0;
+        s.inventory.groupDefs['default-loot'].isCustom = false;
+        s.progress.unlockedRarities = ['common', 'uncommon'];
+        s.progress.discoveredTasksByBiome = {};
+        s.quests.active = [];
+        s.quests.nextQuestAt = null;
+        s.collection.provenance = { token_oak_forest: { item_oak_wood: true } };
+        s.ui.newDiscoveries = { item_oak_wood: true };
+        s.atlas.regions = { region_1: { id: 'region_1', kind: 'starter', settledAt: 0, ingredients: [], board: null } };
+        s.progress.guildUpgrades = { roster_size: 2, bank_slots: 1 };
         return data;
     }
 
-    it('migrates without complaint and passes the validator', () => {
+    it('migrates without complaint and passes the validator, with no cards section required', () => {
         const data = oldSave();
         const migrated = migrateState(data.state, data.version);
         expect(validateSaveData({ version: GAME_VERSION, state: migrated }).errors).toEqual([]);
+        const { cards: _cards, ...withoutCards } = migrated;
+        expect(validateSaveData({ version: GAME_VERSION, state: withoutCards }).errors).toEqual([]);
     });
 
-    it('drops every Vault and Tray field from the board', () => {
+    it('drops every retired section and field', () => {
         const data = oldSave();
         const migrated = migrateState(data.state, data.version);
-        for (const field of ['tokenBank', 'tray', 'nextTrayZ', 'tokenBankSlots', 'tokenTabsUnlocked', 'tokenGroups']) {
-            expect(migrated.board).not.toHaveProperty(field);
+        for (const key of RETIRED_SECTIONS) expect(migrated).not.toHaveProperty(key);
+        for (const [key, fields] of Object.entries(RETIRED_FIELDS)) {
+            for (const f of fields) expect(migrated[key], `${key}.${f}`).not.toHaveProperty(f);
         }
-    });
-
-    it('drops Token loot from the floor and keeps item loot', () => {
-        const data = oldSave();
-        const migrated = migrateState(data.state, data.version);
-        expect(migrated.board.sprites.map(s => s.id)).toEqual(['s1']);
+        expect(migrated.inventory.groupDefs['default-loot']).not.toHaveProperty('isCustom');
+        expect(migrated.atlas.regions.region_1).not.toHaveProperty('settledAt');
+        expect(migrated.atlas.regions.region_1.ingredients).toEqual([]);
     });
 
     it('keeps the Tokens on the mat exactly as they were', () => {
@@ -153,7 +153,7 @@ describe('A save from before the Vault went still loads (Token Lifecycle 9.3)', 
         expect(migrated.board.tokens.tok_a).toEqual(data.state.board.tokens.tok_a);
     });
 
-    it('drops the two Vault upgrade ranks and the retired Bank Slots ranks, and keeps the rest', () => {
+    it('drops the retired Bank Slots ranks, and keeps the rest', () => {
         const data = oldSave();
         const migrated = migrateState(data.state, data.version);
         expect(migrated.progress.guildUpgrades).toEqual({ roster_size: 2 });
@@ -168,7 +168,7 @@ describe('A save from before the Vault went still loads (Token Lifecycle 9.3)', 
         expect(migrated.progress).not.toHaveProperty('flagRadiusBonus');
         expect(validateSaveData({ version: GAME_VERSION, state: migrated }).errors).toEqual([]);
         // And loaded, nothing brings it back.
-        await GameState.initFromSave(migrated);
+        loadSavedState(migrated);
         expect(GameState.state.progress.guildUpgrades).not.toHaveProperty('flag_radius');
         expect(GameState.state.progress).not.toHaveProperty('flagRadiusBonus');
     });
@@ -180,12 +180,13 @@ describe('A save from before the Vault went still loads (Token Lifecycle 9.3)', 
         expect(JSON.stringify(data.state)).toBe(before);
     });
 
-    it('loads into a live game', async () => {
+    it('loads into a live game, and nothing brings the retired fields back', async () => {
         const data = oldSave();
-        await GameState.initFromSave(migrateState(data.state, data.version));
+        loadSavedState(migrateState(data.state, data.version));
         expect(GameState.state.board.tokens.tok_a.typeId).toBe('token_oak_forest');
-        expect(GameState.state.board.tokenBank).toBeUndefined();
-        expect(GameState.state.board.tray).toBeUndefined();
+        expect(GameState.state).not.toHaveProperty('cards');
+        expect(GameState.state.quests).not.toHaveProperty('active');
+        expect(GameState.serialize().state.inventory).not.toHaveProperty('maxStackBonus');
     });
 });
 
@@ -211,7 +212,7 @@ describe('a hero round-trips through a save (CR3-266)', () => {
     /** Save the live game and load it back the way a slot does. */
     async function saveAndLoad() {
         const revived = JSON.parse(JSON.stringify(GameState.serialize()));
-        await GameState.initFromSave(migrateState(revived.state, revived.version));
+        loadSavedState(migrateState(revived.state, revived.version));
         return GameState.state;
     }
 
@@ -225,13 +226,10 @@ describe('a hero round-trips through a save (CR3-266)', () => {
         GameState.initNew();
     });
 
-    // Rewritten with classless heroes: a banked skill comes back onto the sheet at load.
-    it('brings banked skills back, keeps the wound timer and the flag colour; drops the old status engine statuses', async () => {
-        const banked = COMBAT_SKILL_IDS[1];
+    it('keeps the wound timer and the flag colour; drops the old status engine statuses and the retired hero fields', async () => {
         const a = hero('hero_rt_a');
         a.statuses = [{ id: 'poison', stacks: 2, remaining: 3 }, { id: 'well_fed', stacks: 1 }];
-        delete a.skills[banked];
-        a.bankedSkills = { [banked]: { level: 7, xp: 123 } };
+        Object.assign(a, { classId: null, traitId: null, createdAt: 0 });
         a.flagColour = FLAG_COLOURS[3];
         const b = hero('hero_rt_b');
         b.status = 'wounded';
@@ -243,8 +241,7 @@ describe('a hero round-trips through a save (CR3-266)', () => {
 
         // Statuses ride on `effects` now and end with their fight; an older save's outlasted it.
         expect(la.statuses).toEqual([]);
-        expect(la.skills[banked]).toEqual({ level: 7, xp: 123 });
-        expect(la).not.toHaveProperty('bankedSkills');
+        for (const field of ['classId', 'traitId', 'createdAt']) expect(la).not.toHaveProperty(field);
         expect(la.flagColour).toBe(FLAG_COLOURS[3]);
         expect(lb.status).toBe('wounded');
         expect(lb.woundedRemainingMs).toBe(12345);

@@ -30,7 +30,7 @@ import { ROLE, ROLES, getRole } from '../config/registries/roleRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { KEYWORD, makeStatement, rolesForKeyword } from '../systems/effects/statements.js';
-import { slotsOf } from '../systems/effects/statementSlots.js';
+import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
 
@@ -336,7 +336,7 @@ describe('6. Heals, Removes and Applies-with-role reach the fight', () => {
     it('Removes takes a live effect off the enemy, not the hero', () => {
         const fight = engage();
         registerEffects({ fixture_v10a_ward: { id: 'fixture_v10a_ward', name: 'Ward', statements: [{ ...makeStatement(KEYWORD.PROVIDES), id: 'stm_v10a_ward', payload: { type: 'ARMOR', bucket: 'flat', value: 1 } }] } });
-        LiveEffects.applyTo(BoardCombat.enemyBearerOfHero('hero_1'), { effectId: 'fixture_v10a_ward', durationMs: 60000 });
+        LiveEffects.applyTo(BoardCombat.enemyBearerOfToken(idAt(MONSTER)), { effectId: 'fixture_v10a_ward', durationMs: 60000 });
         LiveEffects.applyToHero('hero_1', { effectId: 'fixture_v10a_ward', durationMs: 60000 });
         expect(fight.effects).toHaveLength(1);
 

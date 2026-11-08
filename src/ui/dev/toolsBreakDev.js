@@ -19,7 +19,7 @@ import { getTokenType, registerTokenTypes, tokenStartingUses, tokenName } from '
 import { getItem, registerItems } from '../../config/registries/itemRegistry.js';
 import { getGrid } from '../../config/registries/equipmentConstants.js';
 import { breakChanceOf } from '../../config/registries/itemBreak.js';
-import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
+import { heroMaxHpFromSkills } from '../../systems/combat/CombatFormulas.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import { qaOrder } from './qaOrders.js';
 

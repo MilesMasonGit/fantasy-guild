@@ -20,7 +20,7 @@ import { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
 import { makeStatement, KEYWORD } from '../../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../../systems/effects/constants.js';
-import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
+import { heroMaxHpFromSkills } from '../../systems/combat/CombatFormulas.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 
 /**

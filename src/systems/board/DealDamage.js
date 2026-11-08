@@ -2,12 +2,12 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
-import { resolveMagnitude, usesCountedSelector } from '../../config/registries/magnitudeRegistry.js';
-import * as TileModifiers from './TileModifiers.js';
+import { resolveMagnitude } from '../../config/registries/magnitudeRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
+import { countMatches } from './EffectActions.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -27,25 +27,6 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * (for `isEnemyToken`/`getFight`); that is not a cycle as long as `BoardCombat` does not import
  * back.
  */
-
-/**
- * How many things the statement's second, `counted` selector matched.
- *
- * ⚠️ Counted from the bearer, not the target: 1 damage per nearby Coast Token on a monster means
- * the Tokens beside the monster.
- *
- * By instance id, measured from the bearer's point if it has left. Zero when the rule does not use
- * a count, so the multiply is harmless.
- */
-function countMatches(statement, roles) {
-    if (!usesCountedSelector(statement?.payload)) return 0;
-    if (roles?.self == null) return 0;
-    // The counted selector carries its own reach, so "per Coast Token on the
-    // board" is as sayable as "per nearby Coast Token".
-    return TileModifiers.filterTargets(roles.self, {
-        to: statement.counted, reach: statement.counted?.reach
-    }, roles.selfPoint || null).length;
-}
 
 /** The entity a role points at, as something damage can be applied to. */
 function targetOf(role, roles, statement) {

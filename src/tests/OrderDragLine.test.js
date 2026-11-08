@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, act } from '@testing-library/react';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
-import { DRAG_KIND, DND_SURFACE } from '../ui/dnd/dragConstants.js';
+import { DRAG_KIND, DND_SURFACE, rosterFlagPayload } from '../ui/dnd/dragConstants.js';
 import { matW } from '../config/matGeometry.js';
 import { lineCells, dashedLinePath, DASH_PX, GAP_PX } from '../ui/components/board/orderLine.js';
 
@@ -79,8 +79,11 @@ describe('on the mat', () => {
         expect(mount({ isDragging: true, activePayload: { kind: DRAG_KIND.TOKEN, typeId: 'x' } }).container.querySelector('svg')).toBeNull();
     });
 
-    it.each([DRAG_KIND.HERO, DRAG_KIND.FLAG])('while a hero is carried (%s), one svg whose dashes run from the hero to the pointer', async (kind) => {
-        const { container } = mount({ isDragging: true, activePayload: { kind, heroId: 'h1' } });
+    it.each([
+        ['their roster tab', rosterFlagPayload('h1', 'A')],
+        ['their flag', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }]
+    ])('while a hero is carried (%s), one svg whose dashes run from the hero to the pointer', async (_label, payload) => {
+        const { container } = mount({ isDragging: true, activePayload: payload });
         const svg = container.querySelector('svg[data-order-line="h1"]');
         expect(svg).toBeTruthy();
         expect(svg.getAttribute('class')).toContain('pointer-events-none');
@@ -115,7 +118,7 @@ describe('on the mat', () => {
     });
 
     it('a hero with no figure on the mat draws no dashes', async () => {
-        const { container } = mount({ isDragging: true, activePayload: { kind: DRAG_KIND.HERO, heroId: 'nobody' } });
+        const { container } = mount({ isDragging: true, activePayload: rosterFlagPayload('nobody') });
         await act(async () => {
             window.dispatchEvent(new PointerEvent('pointermove', { clientX: 500, clientY: 300 }));
             await new Promise(r => setTimeout(r, 60));

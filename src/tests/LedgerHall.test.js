@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
-import { buildRateBook, FACTOR } from '../systems/progression/ledger/rates.js';
-import { buildPace, roundDown, roundUp } from '../systems/progression/ledger/pace.js';
-import { settingsOf } from '../systems/progression/ledger/settings.js';
-import { PROFILE, BEFORE_HALL } from '../systems/progression/ledger/profiles.js';
-import { hallGraph, openingPath, hallTracksOf } from '../systems/progression/ledger/hall.js';
-import { CHECKS } from '../systems/progression/ledger/checks.js';
+import { buildRateBook, FACTOR } from '../../cms/src/engine/ledger/rates.js';
+import { buildPace, roundDown, roundUp } from '../../cms/src/engine/ledger/pace.js';
+import { settingsOf } from '../../cms/src/engine/ledger/settings.js';
+import { PROFILE, BEFORE_HALL } from '../../cms/src/engine/ledger/profiles.js';
+import { hallGraph, openingPath, hallTracksOf } from '../../cms/src/engine/ledger/hall.js';
+import { CHECKS } from '../../cms/src/engine/ledger/checks.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { tierOf } from '../config/hallStars.js';
 import { paceContent } from './fixtures/paceWorld.js';

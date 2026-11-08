@@ -4,7 +4,7 @@ import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { renderSegments } from '../systems/effects/statementText.js';
 import {
     slotsOf, filterOptions, nearestOptions, slotsWithoutWords, SLOT_KIND
-} from '../systems/effects/statementSlots.js';
+} from '../../cms/src/engine/ledger/statementSlots.js';
 import { buildCorpus } from './fixtures/renderCorpus.js';
 
 /**

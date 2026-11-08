@@ -165,8 +165,7 @@ export function enemyProfileOf(def) {
         ...(filled.onHit.length ? { onHit: filled.onHit } : {}),
         // The moves it picks from each swing (`enemyMoves.js`); without any, a plain Physical hit.
         ...(moves.length ? { moves } : {}),
-        // `traits` is read by the attack processor's thorns branch and must be
-        // present. Enemy traits are not authorable yet; an empty array is the
+        // Enemy traits are not authorable yet and nothing reads them; an empty array is the
         // right value.
         traits: []
     };

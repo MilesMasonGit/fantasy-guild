@@ -4,7 +4,7 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { getGrid, categoryOfItem, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
 import { arrowOf } from '../../config/registries/damageTypes.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
-import { getHeroCombatStyle } from '../../utils/CombatFormulas.js';
+import { getHeroCombatStyle } from './CombatFormulas.js';
 
 /**
  * A hero fighting with a Ranged weapon shoots one arrow per shot from

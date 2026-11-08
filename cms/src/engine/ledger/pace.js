@@ -4,14 +4,14 @@ import { buildRateBook, LIFECYCLE, WORK } from './rates.js';
 import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL } from './profiles.js';
 import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes } from './settings.js';
-import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, LEDGER_ENGINE_TEXT } from './engine.js';
-import { ringOfStar } from '../../world/ringStars.js';
-import { HALL_NODE } from '../../../config/guildUpgrades.js';
-import { planOf, PLAN_STATUS, tierLabel } from './plan.js';
-import { xpForLevel, MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
-import { turnTiming } from '../../../config/registries/tokenConstants.js';
-import { SKILLS, SKILL_LAYERS } from '../../../config/registries/skillRegistry.js';
-import { STRICT_RINGS } from '../../../config/worldTablesShape.js';
+import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, LEDGER_ENGINE_TEXT } from '../../../../src/systems/progression/ledger/engine.js';
+import { ringOfStar } from '../../../../src/systems/world/ringStars.js';
+import { HALL_NODE } from '../../../../src/config/guildUpgrades.js';
+import { planOf, PLAN_STATUS, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
+import { xpForLevel, MAX_SKILL_LEVEL } from '../../../../src/utils/XPCurve.js';
+import { turnTiming } from '../../../../src/config/registries/tokenConstants.js';
+import { SKILLS, SKILL_LAYERS } from '../../../../src/config/registries/skillRegistry.js';
+import { STRICT_RINGS } from '../../../../src/config/worldTablesShape.js';
 
 /**
  * How the game is paced for the target player, worked out statically from the content at the three

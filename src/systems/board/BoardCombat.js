@@ -17,7 +17,7 @@ import * as FightRoom from './FightRoom.js';
 import { momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { ROLE, opponentSeekerOf } from '../../config/registries/roleRegistry.js';
 import { logger } from '../../utils/Logger.js';
-import * as CombatFormulas from '../../utils/CombatFormulas.js';
+import * as CombatFormulas from '../combat/CombatFormulas.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -217,12 +217,6 @@ export function fightOfHero(heroId) {
         if (fight.assignedHeroId === heroId) return fight;
     }
     return null;
-}
-
-/** The bearer for the enemy `heroId` is fighting, or null. */
-export function enemyBearerOfHero(heroId) {
-    const fight = fightOfHero(heroId);
-    return fight ? enemyBearer(fight.instanceId, fight) : null;
 }
 
 /**

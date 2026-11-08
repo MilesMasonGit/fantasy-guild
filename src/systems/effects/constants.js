@@ -1,6 +1,5 @@
 export const EFFECT_TYPES = {
     DAMAGE: 'DAMAGE',         // Melee, Ranged, Magic damage
-    DEFENSE: 'DEFENSE',       // ⚠️ Retired: an older name for flat armour, read by nothing
 
     // Combat axes read as flat sums by `ModifierAggregator.query` (percentage and
     // multiplier buckets are skipped), so the palette offers only the flat bucket.
@@ -36,13 +35,11 @@ export const EFFECT_TYPES = {
     FOOD_HEALING: 'FOOD_HEALING',
     FAIL_CHANCE: 'FAIL_CHANCE', // Chance for failure/debuff
     HP_REGEN: 'HP_REGEN',
-    THORNS_REFLECT: 'THORNS_REFLECT',
 
     // Blocks NEW applications of the named status (its id is the aggregator category);
     // never strips stacks already carried.
     STATUS_IMMUNITY: 'STATUS_IMMUNITY',
     STAT_BONUS: 'STAT_BONUS',
-    LOGIC_OVERRIDE: 'LOGIC_OVERRIDE', // Complex logic triggers (e.g., ignore_defense)
 
     // WORK_TIME is an amount of time, not a rate: more is slower.
     YIELD: 'YIELD',           // units of output a Token produces
@@ -85,49 +82,5 @@ export const EFFECT_TYPES = {
 
 export const TARGET_CATEGORIES = {
     ALL: 'ALL',
-    // Parent Categories / Skills (15-skill system)
-    LABOR: 'labor',
-    FORGE: 'forge',
-    AQUATIC: 'aquatic',
-    NATURE: 'nature',
-    COOKING: 'cooking',
-    ALCHEMY: 'alchemy',
-    SCIENCE: 'science',
-    OCCULT: 'occult',
-    CRIME: 'crime',
-    SOCIAL: 'social',
-    COMBAT: 'combat',
-
-    // Legacy parent ids (pre-15-skill content may still reference these)
-    INDUSTRY: 'industry',
-    NAUTICAL: 'nautical',
-    CRAFTING: 'crafting',
-    CULINARY: 'culinary',
-
-    // Combat Specifics
-    MELEE: 'melee',
-    RANGED: 'ranged',
-    MAGIC: 'magic',
-    DEFENSE: 'defense',
-
-    // Gathering Specifics
-    MINING: 'mining',
-    SMELTING: 'smelting',
-    SMITHING: 'smithing',
-    FORESTRY: 'forestry',
-    FORAGING: 'foraging',
-    HERBALISM: 'herbalism',
-    HARVESTING: 'harvesting',
-    HUNTING: 'hunting',
-    FISHING: 'fishing',
-
-    // special specifics
-    INTRIGUE: 'intrigue'
+    COMBAT: 'combat'
 };
-
-export const SCOPES = {
-    SELF: 'SELF',
-    NEARBY: 'NEARBY',
-    GLOBAL: 'GLOBAL'
-};
-

@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AlphaPointerSensor } from '../ui/dnd/DndKit.jsx';
 import { matAccepts } from '../ui/components/board/Board.jsx';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { DRAG_KIND, rosterFlagPayload } from '../ui/dnd/dragConstants.js';
 import {
     isMatBankLocked, setMatBankLocked
 } from '../ui/hooks/useMatBankLock.js';
@@ -60,7 +60,7 @@ describe('⭐ while the Bank is open, no mat drag can start (CR3-402)', () => {
 describe('⭐ while the Bank is open, nothing can be dropped onto the mat (CR3-402)', () => {
     const token = { kind: DRAG_KIND.TOKEN, typeId: 'x', from: { instanceId: 't1' } };
     const flagWithHero = { kind: DRAG_KIND.FLAG, heroId: 'hero_1' };
-    const heroFromDock = { kind: DRAG_KIND.HERO, heroId: 'hero_1' };
+    const heroFromDock = rosterFlagPayload('hero_1');
 
     it('a Token, a flag and a hero are all accepted with the Bank closed', () => {
         expect(matAccepts(token)).toBe(true);

@@ -3,7 +3,7 @@ import { EventBus } from '../core/EventBus.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import {
-    GUILD_UPGRADES, getUpgradeDef, getUpgradePrice, totalPrice, isUpgradeAccessible, getLockReason,
+    getUpgradeDef, getUpgradePrice, totalPrice, isUpgradeAccessible, getLockReason,
     rosterLimitForRank, BANK_TAB_SLOTS, BANK_TAB_CAP
 } from '../../config/guildUpgrades.js';
 // Loads the authored stars into the sky (`data/hallStars.json`) before anything reads it.
@@ -40,13 +40,6 @@ export const GuildUpgradeManager = {
             return ranks.wishing_well ?? ranks.guildmasters_banner ?? 0;
         }
         return ranks[upgradeId] || 0;
-    },
-
-    /** Whether an upgrade's node is open on the web: a linked node bought, or linked to the Hall. */
-    isAccessible(upgradeId) {
-        const def = getUpgradeDef(upgradeId);
-        if (!def) return false;
-        return isUpgradeAccessible(def.id, this.getRanks());
     },
 
     /**
@@ -170,29 +163,9 @@ export const GuildUpgradeManager = {
             n += 1;
             const id = `bank-tab-${n}`;
             if (inv.groupOrder.includes(id) || inv.groupDefs[id]) continue;
-            inv.groupDefs[id] = { id, title: `Tab ${inv.groupOrder.length + 1}`, isCustom: false, orderedItems: [] };
+            inv.groupDefs[id] = { id, title: `Tab ${inv.groupOrder.length + 1}`, orderedItems: [] };
             inv.groupOrder.push(id);
         }
-    },
-
-    getDisplayList() {
-        return GUILD_UPGRADES.map(def => {
-            const rank = this.getRank(def.id);
-            const accessible = isUpgradeAccessible(def.id, this.getRanks());
-            return {
-                id: def.id,
-                name: def.name,
-                description: def.description,
-                rank,
-                maxRank: def.maxRank,
-                maxed: rank >= def.maxRank,
-                accessible,
-                cost: getUpgradePrice(def, rank),
-                canAfford: this.canAfford(def.id),
-                statLabel: typeof def.statLabel === 'function' ? def.statLabel(rank) : null,
-                sprite: def.sprite
-            };
-        });
     }
 };
 

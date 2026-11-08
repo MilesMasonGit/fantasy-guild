@@ -1,4 +1,4 @@
-// writing a Region from recipes: the preview, reroll, and a Region's board
+// writing a Region from recipes: the preview and a Region's board
 
 import { GameState } from '../../state/GameState.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
@@ -12,7 +12,7 @@ import { nextSeed, seedFromText } from './seededRandom.js';
 /**
  * Writing a Region from recipes (`Budget.js`'s shape), up to the moment `Atlas.settle` makes it real:
  * - {@link recipeOf}: an ingredient checked to be a recipe;
- * - {@link preview} and {@link reroll}: the Node Summary and the layout a seed gives;
+ * - {@link preview}: the Node Summary and the layout a seed gives;
  * - {@link regionBoard} and {@link rulesOf}: what a settled Region is made of.
  *
  * The world map's settling writes its Regions through here, and so do the dev tools. Nothing here
@@ -91,30 +91,12 @@ function planOf(recipes, summary, seed) {
  * @param {{seed?: number}} [options]  a seed to lay out with; else a fresh {@link previewSeed}
  * @returns {{seed: number, recipes: object[], ingredients: string[], summary: object,
  *   layout: object, fits: boolean}} `fits` is false when a Token found no legal spot
- *   (`layout.unplaced`): Settle refuses that layout, and a reroll may find room.
+ *   (`layout.unplaced`): Settle refuses that layout, and a different seed may find room.
  */
 export function preview(ingredients, { seed } = {}) {
     const recipes = (Array.isArray(ingredients) ? ingredients : []).map(recipeOf);
     const summary = budget(recipes, { cap: matCap() });
     return planOf(recipes, summary, Number.isFinite(seed) ? seed >>> 0 : previewSeed());
-}
-
-/**
- * The next layout of a preview: the seed after its seed, and the same Node Summary (the very
- * object; a reroll never re-reads the cap or the ingredients). Changes nothing but the guild seed,
- * which moves on to the seed shown: the next preview then starts past every layout already shown,
- * so a Region settled after a reroll never shares its seed (or its flavour name) with the next.
- *
- * @param {object} plan  a {@link preview} or an earlier reroll
- */
-export function reroll(plan) {
-    if (!isPlainObject(plan) || !isPlainObject(plan.summary) || !Array.isArray(plan.recipes) || !isSeed(plan.seed)) {
-        throw new TypeError('Atlas.reroll takes a preview: the result of Atlas.preview or of an earlier reroll');
-    }
-    const seed = nextSeed(plan.seed);
-    const atlas = GameState.state?.atlas;
-    if (isPlainObject(atlas)) atlas.seed = seed;
-    return planOf(plan.recipes, plan.summary, seed);
 }
 
 // ---------------------------------------------------------------------------

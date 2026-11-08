@@ -5,7 +5,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import {
   settingsOf, minutesToReach, formatMinutes, DEFAULT_LEDGER_SETTINGS, RULES_VERSIONS, BOOST_TARGET_KINDS,
-} from '../../../../src/systems/progression/ledger/settings.js';
+} from '../../engine/ledger/settings.js';
 
 /**
  * The Ledger settings (`ledger/settings.js`): stage budgets, the tolerance, the target player, the

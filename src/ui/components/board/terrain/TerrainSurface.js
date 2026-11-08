@@ -7,9 +7,9 @@ import { propsForGround } from './TerrainProps.js';
 import { buildShadePattern, buildWearEdges, composeShades } from './TerrainShade.js';
 import { buildGrassPlan, drawsGenerated, shadeRatio } from './TerrainGrass.js';
 import { blendBorders, groundTone, FADE_TINT } from './TerrainBlend.js';
-import { getLook, LOOKS, DEFAULT_LOOK } from '../../config/registries/terrainRegistry.js';
-import { hallSpot, HALL_CLEARING } from '../atlas/Layout.js';
-import { tuning } from '../../config/playmatTuning.js';
+import { getLook, LOOKS, DEFAULT_LOOK } from '../../../../config/registries/terrainRegistry.js';
+import { hallSpot, HALL_CLEARING } from '../../../../systems/atlas/Layout.js';
+import { tuning } from './playmatTuning.js';
 
 /**
  * Built in two stages, never per frame: this plan (which ground, wear, band and scatter at every

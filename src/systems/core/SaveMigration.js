@@ -25,6 +25,8 @@ export function migrateState(state, savedVersion) {
     // Saves from any other version (e.g. the pre-rework '1.0.0' schema) use
     // structures the current code no longer reads — refuse to load them
     // rather than attempting a structural merge over stale nested shapes.
+    // So a field removed before GAME_VERSION was set can be in no save that
+    // loads, and needs no step below.
     if (savedVersion !== GAME_VERSION) {
         throw new IncompatibleSaveError(savedVersion);
     }
@@ -62,41 +64,8 @@ export function migrateState(state, savedVersion) {
         migrated[key] = section;
     }
 
-    // Retired: the `currency` section an older save still carries is dropped, not kept.
-    if ('currency' in migrated) delete migrated.currency;
-
-    // Retired Map bursts and Map purchase: an older save's unopened Maps on the
-    // mat, its purchase list and its burst bookkeeping are dropped, not kept.
-    if ('cartographer' in migrated) delete migrated.cartographer;
-    if (isPlainObject(migrated.board) && 'maps' in migrated.board) {
-        migrated.board = { ...migrated.board };
-        delete migrated.board.maps;
-    }
-    if (isPlainObject(migrated.progress) && ('mapDiscoveries' in migrated.progress || 'guildHallMapOpens' in migrated.progress)) {
-        migrated.progress = { ...migrated.progress };
-        delete migrated.progress.mapDiscoveries;
-        delete migrated.progress.guildHallMapOpens;
-    }
-    if (isPlainObject(migrated.progress) && RETIRED_PROGRESS_FIELDS.some(f => f in migrated.progress)) {
-        migrated.progress = { ...migrated.progress };
-        for (const f of RETIRED_PROGRESS_FIELDS) delete migrated.progress[f];
-    }
-
-    // Retired Token Vault and Tray: an older save's Vault and Tray contents, tab
-    // and cap fields, Token loot on the floor and ranks in the two Vault upgrade
-    // tracks are dropped, not kept. Item loot stays.
-    if (isPlainObject(migrated.board)) {
-        const board = { ...migrated.board };
-        let changed = false;
-        for (const field of RETIRED_BOARD_FIELDS) {
-            if (field in board) { delete board[field]; changed = true; }
-        }
-        if (Array.isArray(board.sprites) && board.sprites.some(isTokenSprite)) {
-            board.sprites = board.sprites.filter(s => !isTokenSprite(s));
-            changed = true;
-        }
-        if (changed) migrated.board = board;
-    }
+    // Retired sections and fields, read by nothing, are dropped, not kept.
+    migrated = withoutRetiredFields(migrated);
     // Retired Disallow: a Token an older save marked "heroes may not work this" loses the mark,
     // on the live board and every Region's, and heroes may work it again.
     migrated = withoutDisallowMarks(migrated);
@@ -215,29 +184,71 @@ function hasOldSpriteName(hero) {
     return isPlainObject(hero) && (currentSpriteName(hero.spriteId) !== hero.spriteId || currentSpriteName(hero.icon) !== hero.icon);
 }
 
-/** Board fields of the Token Vault and the Tray. */
-export const RETIRED_BOARD_FIELDS = Object.freeze([
-    'tokenBank', 'tray', 'nextTrayZ', 'tokenBankSlots', 'tokenTabsUnlocked', 'tokenGroups'
-]);
-
 /**
  * Retired Guild Hall upgrade tracks, whose bought ranks an older save drops silently (no refund):
- * the two that only ever served the Token Vault, Scouting Flags (`flag_radius`), which widened
+ * Scouting Flags (`flag_radius`), which widened
  * the area flags that orders and camps replaced, Bank Slots (`bank_slots`), now that each Bank
  * tab holds 64 kinds (the items stay in their tabs; `InventoryManager.spillOverfullTabs`), and the
  * Compass's three: the Token Cap (the cap is fixed at 128; Tokens over it stay, and adding waits),
  * the Cartography Table (4 slots) and the Notice Board (2 bounties).
  */
 export const RETIRED_UPGRADES = Object.freeze([
-    'token_bank_slots', 'token_bank_tabs', 'flag_radius', 'bank_slots', 'token_cap', 'cartography_slots', 'notice_board'
+    'flag_radius', 'bank_slots', 'token_cap', 'cartography_slots', 'notice_board'
 ]);
 
-/** Retired `progress` fields an older save still carries: the Scouting Flags radius bonus. */
-export const RETIRED_PROGRESS_FIELDS = Object.freeze(['flagRadiusBonus']);
+/** Retired top-level sections a save of this version may still carry: hero recruitment, cards. */
+export const RETIRED_SECTIONS = Object.freeze(['recruitment', 'cards']);
 
-/** A loose Token lying on the floor — the retired Token loot. */
-function isTokenSprite(sprite) {
-    return sprite?.kind === 'token';
+/**
+ * Retired fields a save of this version may still carry, by section: the inert Bank slot count and
+ * stack caps, the Scouting Flags radius bonus, rarities and per-biome tasks, the sidebar quests and
+ * their timer, which Token or enemy produced an item, and the item ids marked New!.
+ */
+export const RETIRED_FIELDS = Object.freeze({
+    inventory: Object.freeze(['slots', 'maxStack', 'maxStackBonus']),
+    progress: Object.freeze(['flagRadiusBonus', 'unlockedRarities', 'discoveredTasksByBiome']),
+    quests: Object.freeze(['active', 'nextQuestAt']),
+    collection: Object.freeze(['provenance']),
+    ui: Object.freeze(['newDiscoveries'])
+});
+
+/**
+ * A saved state without the retired sections and fields, a Bank tab's `isCustom` or a Region's
+ * `settledAt`. Returns the same object when nothing needed changing.
+ */
+export function withoutRetiredFields(state) {
+    let out = state;
+    const edit = () => (out === state ? (out = { ...state }) : out);
+    for (const key of RETIRED_SECTIONS) {
+        if (key in out) delete edit()[key];
+    }
+    for (const [key, fields] of Object.entries(RETIRED_FIELDS)) {
+        const section = out[key];
+        if (!isPlainObject(section) || !fields.some(f => f in section)) continue;
+        const kept = { ...section };
+        for (const f of fields) delete kept[f];
+        edit()[key] = kept;
+    }
+    const defs = out.inventory?.groupDefs;
+    if (isPlainObject(defs) && Object.values(defs).some(d => isPlainObject(d) && 'isCustom' in d)) {
+        const next = {};
+        for (const [id, d] of Object.entries(defs)) next[id] = withoutKey(d, 'isCustom');
+        edit().inventory = { ...out.inventory, groupDefs: next };
+    }
+    const regions = out.atlas?.regions;
+    if (isPlainObject(regions) && Object.values(regions).some(r => isPlainObject(r) && 'settledAt' in r)) {
+        const next = {};
+        for (const [id, r] of Object.entries(regions)) next[id] = withoutKey(r, 'settledAt');
+        edit().atlas = { ...out.atlas, regions: next };
+    }
+    return out;
+}
+
+/** `obj` without `key`, or the same object when it has none. */
+function withoutKey(obj, key) {
+    if (!isPlainObject(obj) || !(key in obj)) return obj;
+    const { [key]: _dropped, ...rest } = obj;
+    return rest;
 }
 
 /** An object we can merge field-by-field — not an array, not null. */

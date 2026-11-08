@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
-import { buildPace } from '../systems/progression/ledger/pace.js';
-import { proposeBalance, applyProposals, LEVER, CANT_FIX } from '../systems/progression/ledger/balance.js';
+import { buildPace } from '../../cms/src/engine/ledger/pace.js';
+import { proposeBalance, applyProposals, LEVER, CANT_FIX } from '../../cms/src/engine/ledger/balance.js';
 import { balanceContent, calmContent } from './fixtures/balanceWorld.js';
 
 /**

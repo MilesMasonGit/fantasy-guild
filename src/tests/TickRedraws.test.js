@@ -275,7 +275,6 @@ describe('⭐ a charge spent: the Token and its plate redraw, its art does not, 
         renders.stop();
         // No ring comes up by itself (brief 120) and no -1 floats: the plate counts down.
         expect(view.container.querySelector(`[data-bubble="charges"][data-bubble-of="${t.id}"]`)).toBeNull();
-        expect(view.container.querySelector('[data-charge-floater]')).toBeNull();
         expect(view.container.querySelector(`[data-work-plate="${t.id}"] [data-plate-cell="charges"]`).textContent).toBe(chargesText(t.usesRemaining));
         const all = JSON.stringify(renders.all());
         expect(renders.of('MatToken'), all).toBe(1);
@@ -298,11 +297,9 @@ describe('⭐ a charge spent: the Token and its plate redraw, its art does not, 
         await act(async () => { view.rerender(tree(9)); });
         renders.stop();
         expect(view.container.querySelector('[data-bubble="charges"]')).toBeNull();
-        expect(view.container.querySelector('[data-charge-floater]')).toBeNull();
         const all = JSON.stringify(renders.all());
         expect(renders.commits().length, all).toBe(1);
         expect(renders.of('Bubble'), all).toBe(0);
-        expect(renders.of('RingBadge'), all).toBe(0);
     });
 });
 

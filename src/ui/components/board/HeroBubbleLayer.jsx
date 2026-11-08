@@ -96,7 +96,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
     const [, setFloatTick] = useState(0);
     useEffect(() => subscribeFloats(() => setFloatTick(n => n + 1)), []);
 
-    // Depletions, arrivals and refused pins arrive as events.
+    // Depletions and refused pins arrive as events.
     useEffect(() => {
         const unsubs = [
             // The hero whose work spent a Token's last charge says so.
@@ -107,13 +107,6 @@ export const HeroBubbleLayer = ({ heroes }) => {
                 const name = def?.name || tokenName(p.typeId) || p.typeId;
                 const kind = isEnemyDef(def) ? 'beaten' : 'depleted';
                 sayRef.current(p.exhaustedBy, kind, { key: `depleted:${p.typeId}`, text: momentText[kind](name) }, DEPLETED_TTL_MS);
-            }, UI_LISTENER),
-            EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (p) => {
-                if (p?.reason !== 'arrived' || !p.heroId || !p.instanceId) return;
-                const token = BoardState.getTokenById(p.instanceId);
-                if (!token) return;
-                const name = getTokenType(token.typeId)?.name || tokenName(token.typeId) || token.typeId;
-                sayRef.current(p.heroId, 'arrived', { key: 'arrived', text: momentText.arrived(name) });
             }, UI_LISTENER),
             // A status landing on a fighting hero ("Venom!"), over their bar, as briefly as a callout.
             EventBus.subscribe(ENGINE_EVENTS.STATUS_APPLIED, (p) => {

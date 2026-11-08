@@ -11,7 +11,7 @@ import {
   ledgerRows, filterLedgerRows, stubPlan, reachText, LEDGER_KINDS, LEDGER_KIND_TEXT,
 } from '../../engine/ledgerRows';
 import { workspaceReport } from '../../engine/ledgerReport';
-import { findingsByKey } from '../../../../src/systems/progression/ledger/checks.js';
+import { findingsByKey } from '../../engine/ledger/checks.js';
 import LedgerSettings from './LedgerSettings';
 import LedgerProblems, { SEVERITY_COLOR } from './LedgerProblems';
 import LedgerItemPage from './LedgerItemPage';
@@ -22,7 +22,7 @@ import LedgerWorld from './LedgerWorld';
 import LedgerBalance from './LedgerBalance';
 import { openInEditor, writePlan } from './ledgerActions';
 import { originPlaces, wedgeChoices } from '../../engine/ledgerWorld';
-import { WORLD_F } from '../../../../src/systems/progression/ledger/world.js';
+import { WORLD_F } from '../../engine/ledger/world.js';
 
 /** The reach engine and every check over the workspace as it stands, stamped with the time. */
 function workOutReport() {

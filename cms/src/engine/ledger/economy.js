@@ -1,9 +1,9 @@
 // the progression ledger's checks E: the economy (one-source hubs, stocks with no sink, spawner upkeep, value per effort)
 
-import { HOW, LUCK_BELOW, parseKey, itemKey, tokenKey } from './engine.js';
+import { HOW, LUCK_BELOW, parseKey, itemKey, tokenKey } from '../../../../src/systems/progression/ledger/engine.js';
 import { ruleIndex, ruleTier } from './checks.js';
 import { buildRateBook, LIFECYCLE } from './rates.js';
-import { planOf, tierLabel } from './plan.js';
+import { planOf, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 
 /**
  * Checks E, worked out from the ledger and the content and handed to `runChecks` as `extra`

@@ -17,7 +17,7 @@ import { DEV_MAPS } from '../systems/atlas/devMaps.js';
 import { HALL_TYPE_ID } from '../systems/atlas/Layout.js';
 import { shippedMat } from '../systems/atlas/layoutInputs.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
-import * as TerrainSurface from '../systems/board/TerrainSurface.js';
+import * as TerrainSurface from '../ui/components/board/terrain/TerrainSurface.js';
 import { buildScreenPass } from '../ui/components/board/groundScreen.js';
 import { primeGroundSheets, resetGroundSheets, mutedSheet, drawnSheet } from '../ui/components/board/groundSheets.js';
 import {
@@ -214,7 +214,7 @@ describe('⭐ the picture is the mat\'s own', () => {
         expect(picture.tokens).toBe(0);
         expect(Buffer.from(picture.data).equals(Buffer.from(mine.data))).toBe(true);
         // Another seed is another picture.
-        const other = previewPicture(Atlas.reroll(plan), fit, mat);
+        const other = previewPicture(Atlas.preview(recipes, { seed: 4243 }), fit, mat);
         expect(Buffer.from(other.data).equals(Buffer.from(picture.data))).toBe(false);
     });
 

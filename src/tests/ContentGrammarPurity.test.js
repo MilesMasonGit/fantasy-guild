@@ -12,7 +12,7 @@ const CONTENT_GRAMMAR = [
     'systems/effects/effectLibrary.js',
     'systems/effects/effectMigration.js',
     'systems/effects/statementText.js',
-    'systems/effects/statementSlots.js',
+    '../cms/src/engine/ledger/statementSlots.js',
     'systems/effects/constants.js',
     'systems/core/lifecycleAudit.js',
     'systems/core/workSkillRule.js',

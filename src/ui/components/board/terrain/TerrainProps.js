@@ -1,8 +1,8 @@
 // scatter: small flat bits on the ground in groups, cut from the prop sheets
 
 import { hash01 } from './TerrainLattice.js';
-import { PROP_PX, PROP_SHEET_CELLS, propsOf } from '../../config/registries/terrainRegistry.js';
-import { tuning } from '../../config/playmatTuning.js';
+import { PROP_PX, PROP_SHEET_CELLS, propsOf } from '../../../../config/registries/terrainRegistry.js';
+import { tuning } from './playmatTuning.js';
 
 /**
  * Where every prop stands, worked out from the Region's ground. Pure data, not drawing, so it can

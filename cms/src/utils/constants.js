@@ -64,7 +64,7 @@ export {
   slotDisplay,
   slotIsOrphaned,
   filterOptions,
-} from '../../../src/systems/effects/statementSlots.js';
+} from '../engine/ledger/statementSlots.js';
 
 // The named effect library. A statement lives in a named entry and bearers reference that entry by id; the shape is declared in the game.
 export {
@@ -307,7 +307,7 @@ export {
   isTempo,
   bandFor,
   isInBand,
-} from '../../../src/config/registries/tempoBands.js';
+} from '../engine/ledger/tempoBands.js';
 
 /** The types an item can take. */
 export const ITEM_TYPES = Object.values(GAME_ITEM_TYPES);

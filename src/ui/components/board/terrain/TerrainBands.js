@@ -1,8 +1,8 @@
 // shore bands: a look shading differently near its own edge
 
 import { distanceFields, PLAN_PIXEL_U } from './TerrainLattice.js';
-import { bandOf } from '../../config/registries/terrainRegistry.js';
-import { tuning } from '../../config/playmatTuning.js';
+import { bandOf } from '../../../../config/registries/terrainRegistry.js';
+import { tuning } from './playmatTuning.js';
 
 /**
  * The shallows at the edge of the sea, and the wet sand at the edge of a beach. Each look shades

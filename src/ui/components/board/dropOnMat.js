@@ -53,7 +53,7 @@ export const announce = (result, at = null) => {
 
 const refuse = (reason, extra = {}) => ({ success: false, reason, ...extra });
 
-const isHeroDrop = (payload) => payload?.kind === DRAG_KIND.HERO || payload?.kind === DRAG_KIND.FLAG;
+const isHeroDrop = (payload) => payload?.kind === DRAG_KIND.FLAG;
 
 /**
  * A drop with nowhere to go flies back.

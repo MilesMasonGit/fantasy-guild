@@ -136,10 +136,9 @@ function questState() {
     const state = GameState.state;
     if (!state) return null;
     if (!state.quests || typeof state.quests !== 'object') {
-        state.quests = { active: [], completedTutorials: [], tutorialStep: 0, clockMs: 0 };
+        state.quests = { completedTutorials: [], tutorialStep: 0, clockMs: 0 };
     }
     const q = state.quests;
-    if (!Array.isArray(q.active)) q.active = [];
     if (!Array.isArray(q.completedTutorials)) q.completedTutorials = [];
     if (!Number.isFinite(q.clockMs)) q.clockMs = 0;
     return q;
@@ -194,11 +193,7 @@ function tutorialQuest(template, from = null) {
     return quest;
 }
 
-/**
- * A quest object from one of QuestManager's bounties, or a saved sidebar
- * bounty. The sidebar's bookkeeping (`status`, `createdAt`, `isTutorial`, an
- * old reward Map) is left behind.
- */
+/** A quest object from one of QuestManager's bounties. */
 function bountyQuest(source) {
     const quest = {
         id: source.id,
@@ -283,7 +278,7 @@ export function ensureTutorial() {
 }
 
 // ---------------------------------------------------------------------------
-// Saves: the sidebar's quests become Tokens
+// Saves: tutorial copies re-read from their templates
 // ---------------------------------------------------------------------------
 
 /**
@@ -309,50 +304,11 @@ export function refreshTutorialTokens() {
     if (changed) publishChanged();
 }
 
-/**
- * **Convert a save's sidebar quests into quest Tokens.** Each active quest in
- * `state.quests.active`, tutorial or bounty, lands beside the Hall as a quest
- * Token **with its progress**; an abandoned slot (a cooldown placeholder) is
- * dropped, and so is a tutorial step the chain no longer has. A quest that
- * finds no room stays in `active` and is tried again later.
- *
- * A save made mid-tutorial carries every step the sidebar had offered onto the
- * mat. Claiming them does not bring a new step until the last one is claimed,
- * so the chain settles back to one at a time.
- *
- * @returns {boolean} true once `active` is empty
- */
-export function migrateSidebarQuests() {
-    const q = questState();
-    if (!q || !q.active.length) return true;
-    if (!guildHall()) return false;
-    const onMat = new Set(questTokens().map(t => t.quest.id));
-    const done = new Set(q.completedTutorials);
-    const left = [];
-    for (const old of q.active) {
-        if (!old || old.status === 'abandoned') continue;
-        if (onMat.has(old.id)) continue;
-        let quest = null;
-        if (old.isTutorial) {
-            const template = tutorialTemplate(old.id);
-            if (!template || done.has(old.id)) continue;
-            quest = tutorialQuest(template, old);
-        } else if (old.targetType) {
-            quest = bountyQuest(old);
-        }
-        if (!quest) continue;
-        if (spawnQuest(quest)) onMat.add(quest.id);
-        else left.push(old);
-    }
-    q.active = left;
-    return left.length === 0;
-}
-
 // ---------------------------------------------------------------------------
 // The check (load, new game, claim) and the tick
 // ---------------------------------------------------------------------------
 
-/** Set when something may be owed (a tutorial step, a migration); cleared once met. */
+/** Set when something may be owed (a tutorial step); cleared once met. */
 let pending = true;
 /** The state the last check ran against: a load or a new game swaps it. */
 let checkedState = null;
@@ -378,8 +334,8 @@ function boardUnchangedSince(at) {
 }
 
 /**
- * Bring the mat up to what is owed: migrate a save's sidebar quests, refresh
- * tutorial copies, and make sure the tutorial chain has its quest out.
+ * Bring the mat up to what is owed: refresh tutorial copies, and make sure the
+ * tutorial chain has its quest out.
  * Idempotent. Returns true when nothing is left owing.
  */
 export function ensure() {
@@ -387,10 +343,9 @@ export function ensure() {
     if (!q) return false;
     checkedState = GameState.state;
     q.tutorialStep = q.completedTutorials.filter(id => tutorialTemplate(id)).length;
-    const migrated = migrateSidebarQuests();
     refreshTutorialTokens();
     const tutorial = ensureTutorial();
-    pending = !(migrated && tutorial);
+    pending = !tutorial;
     return !pending;
 }
 

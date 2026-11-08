@@ -1,6 +1,6 @@
 /**
  * The simulator's authoring vocabulary that the game does not declare.
- * ⚠️ Tempo lives game-side (`src/config/registries/tempoBands.js`) and is re-exported from `constants.js`; Purpose does not, deliberately: nothing in the game reads a purpose, it is an input to the balancing engine, which lives in `cms/`. The passes import this list; if the engine ever moves game-side, this moves with it.
+ * ⚠️ Tempo has its own file (`cms/src/engine/ledger/tempoBands.js`) and is re-exported from `constants.js`; Purpose stays here, deliberately: nothing in the game reads a purpose, it is an input to the balancing engine. The passes import this list.
  */
 
 /** What a producer is for, in three shapes. The captions are the meanings written as sentences a designer reads. The purpose factors are deliberately not shown: they are the engine's dial, and printing them invites authoring against the number instead of the intent. */

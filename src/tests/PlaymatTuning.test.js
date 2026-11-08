@@ -1,16 +1,16 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import {
     TUNABLES, tuning, setTuning, resetTuning, isTuned, tuningDefault, tuningReport
-} from '../config/playmatTuning.js';
-import { edgeProfile, resolveArtPixels } from '../systems/board/TerrainLattice.js';
-import { propsForGround } from '../systems/board/TerrainProps.js';
-import { buildWearMask } from '../systems/board/TerrainPatches.js';
-import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js';
-import { muteTexels, buildGroundPlan } from '../systems/board/TerrainSurface.js';
-import { drawGrass, grassColours, grassTable } from '../systems/board/TerrainGrass.js';
+} from '../ui/components/board/terrain/playmatTuning.js';
+import { edgeProfile, resolveArtPixels } from '../ui/components/board/terrain/TerrainLattice.js';
+import { propsForGround } from '../ui/components/board/terrain/TerrainProps.js';
+import { buildWearMask } from '../ui/components/board/terrain/TerrainPatches.js';
+import { buildBandMasks, bandAppearance } from '../ui/components/board/terrain/TerrainBands.js';
+import { muteTexels, buildGroundPlan } from '../ui/components/board/terrain/TerrainSurface.js';
+import { drawGrass, grassColours, grassTable } from '../ui/components/board/terrain/TerrainGrass.js';
 import { generatedOf } from '../config/registries/terrainRegistry.js';
 import { buildScreenPass, groundPixel } from '../ui/components/board/groundScreen.js';
-import { CLEAN_LOOKS, cleanKeys } from '../config/playmatTuning.js';
+import { CLEAN_LOOKS, cleanKeys } from '../ui/components/board/terrain/playmatTuning.js';
 import { groundWith, flat } from './fixtures/ground.js';
 import { ambientSettings } from '../ui/components/board/ambientSettings.js';
 import { groundLife, createShimmer, createGust, ambientRandom } from '../ui/components/board/ambientGround.js';

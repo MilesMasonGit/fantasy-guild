@@ -10,8 +10,8 @@ import {
 } from '../systems/atlas/WaterShapes.js';
 import { mulberry32, seedFromText } from '../systems/atlas/seededRandom.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
-import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
-import { PLAN_PIXEL_U } from '../systems/board/TerrainLattice.js';
+import { buildGroundPlan } from '../ui/components/board/terrain/TerrainSurface.js';
+import { PLAN_PIXEL_U } from '../ui/components/board/terrain/TerrainLattice.js';
 
 /**
  * A Region's water as shapes (the owner's settled world rounds): lakes, ponds,

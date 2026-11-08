@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { validateSaveData } from '../state/StateSchema.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
@@ -280,7 +281,7 @@ describe('a settled place afterwards', () => {
         const data = JSON.parse(GameState.serializeJson());
         const state = migrateState(data.state, data.version);
         expect(validateSaveData({ version: data.version, state }).errors).toEqual([]);
-        await GameState.initFromSave(state);
+        loadSavedState(state);
         expect(Atlas.getRegion(region.id).cellId).toBe(cell.id);
         expect(World.activeCellId()).toBe(cell.id);
         expect(World.cellStatesNow().get(cell.id)).toBe(CELL_STATE.SETTLED);

@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 
 import { buildLedger, tokenKey, itemKey, wedgeKey, ringKey, starKey, HOW } from '../systems/progression/ledger/engine.js';
-import { buildPace, PROFILE, ringBudgetTier } from '../systems/progression/ledger/pace.js';
-import { worldPlan, sweepWorlds, WORLD_F } from '../systems/progression/ledger/world.js';
-import { CHECKS } from '../systems/progression/ledger/checks.js';
+import { buildPace, PROFILE, ringBudgetTier } from '../../cms/src/engine/ledger/pace.js';
+import { worldPlan, sweepWorlds, WORLD_F } from '../../cms/src/engine/ledger/world.js';
+import { CHECKS } from '../../cms/src/engine/ledger/checks.js';
 import { WORLD_FIXTURE_TABLES, worldWorkspace, contentOf } from './fixtures/ledgerWorldMap.js';
 
 /**

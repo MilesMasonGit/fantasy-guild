@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js';
-import { resolveArtPixels, distanceFromSeeds, PLAN_PIXEL_U } from '../systems/board/TerrainLattice.js';
+import { buildBandMasks, bandAppearance } from '../ui/components/board/terrain/TerrainBands.js';
+import { resolveArtPixels, distanceFromSeeds, PLAN_PIXEL_U } from '../ui/components/board/terrain/TerrainLattice.js';
 import { LOOKS, bandOf } from '../config/registries/terrainRegistry.js';
-import { tuning, setTuning, resetTuning } from '../config/playmatTuning.js';
+import { tuning, setTuning, resetTuning } from '../ui/components/board/terrain/playmatTuning.js';
 import { groundWith, flat } from './fixtures/ground.js';
 
 /**

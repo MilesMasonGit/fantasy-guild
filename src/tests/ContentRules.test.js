@@ -8,7 +8,7 @@ import { RPS_RULES } from '../config/FormulaRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { STARTING_SKILL_IDS, getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { isTokenType, isTokenRarity } from '../config/registries/tokenConstants.js';
-import { isTempo, bandFor, isInBand } from '../config/registries/tempoBands.js';
+import { isTempo, bandFor, isInBand } from '../../cms/src/engine/ledger/tempoBands.js';
 import { openingMat } from '../systems/core/EngineBootstrap.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';

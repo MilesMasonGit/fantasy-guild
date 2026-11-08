@@ -157,9 +157,9 @@ describe('taking one off again', () => {
         expect(carried().map(e => e.effectId)).toEqual(['fixture_burning']);
     });
 
-    it('clears the lot — the defeat cleanse', () => {
+    it('clears the lot when no name is given', () => {
         LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 60000 });
-        expect(LiveEffects.clearHero('hero_1')).toBe(1);
+        expect(LiveEffects.removeFromHero('hero_1')).toBe(1);
         expect(carried()).toEqual([]);
     });
 

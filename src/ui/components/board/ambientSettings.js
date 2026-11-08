@@ -1,6 +1,6 @@
 // the ambient life's switches and amounts, as the Ground tuner and the drawing switches set them
 
-import { tuning } from '../../../config/playmatTuning.js';
+import { tuning } from './terrain/playmatTuning.js';
 import { FRAME_MS } from './ambientGround.js';
 
 /** Each effect's Ground tuner toggle, which is also the name of its drawing switch. */

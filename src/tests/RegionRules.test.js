@@ -7,6 +7,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { GameState } from '../state/GameState.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -81,7 +82,7 @@ function settleRegion(ingredients, seed = 1) {
 
 async function reload(json) {
     const data = JSON.parse(json);
-    await GameState.initFromSave(migrateState(data.state, data.version));
+    loadSavedState(migrateState(data.state, data.version));
     EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0, savedAt: data.savedAt });
 }
 
@@ -190,7 +191,6 @@ describe('how they register', () => {
         expect(forest.rules).toHaveLength(2);
         Atlas.travel(forest.id);
         expect(guildYield('forestry')).toEqual([0.1, 0.1]);
-        expect(RegionRules.installedSources()).toHaveLength(2);
         expect(yieldOf(nodeOf(OAK).id, 'forestry')).toBeCloseTo(120);
     });
 

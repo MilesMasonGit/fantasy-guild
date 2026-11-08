@@ -124,7 +124,7 @@ describe('Every drop line rolls on its own (TL-10)', () => {
         const N = 2000;
         let always = 0, sometimes = 0;
         for (let i = 0; i < N; i++) {
-            const got = LootSystem.rollEachLine(drops, 'area').map(d => d.itemId);
+            const got = LootSystem.rollEachLine(drops).map(d => d.itemId);
             if (got.includes('item_blackberry')) always++;
             if (got.includes('fixture_oak_wood')) sometimes++;
         }
@@ -139,7 +139,7 @@ describe('Every drop line rolls on its own (TL-10)', () => {
         const seen = new Set();
         for (let i = 0; i < 200; i++) {
             const [d] = LootSystem.rollEachLine(
-                [{ itemId: 'item_blackberry', chance: 100, minQty: 1, maxQty: 3 }], 'area');
+                [{ itemId: 'item_blackberry', chance: 100, minQty: 1, maxQty: 3 }]);
             seen.add(d.quantity);
         }
         expect([...seen].sort()).toEqual([1, 2, 3]);
@@ -147,7 +147,7 @@ describe('Every drop line rolls on its own (TL-10)', () => {
 
     it('a kill off the board banks every line that landed', () => {
         LootSystem.handleCombatVictory({
-            enemyId: 'fixture_enemy_two_lines', instanceId: null, areaId: 'area',
+            enemyId: 'fixture_enemy_two_lines', instanceId: null,
             drops: [
                 { itemId: 'item_blackberry', chance: 100, minQty: 1, maxQty: 1 },
                 { itemId: 'fixture_oak_wood', chance: 100, minQty: 2, maxQty: 2 }
@@ -179,7 +179,7 @@ describe('Kill loot follows the yield, double-loot and bonus-drop rules', () => 
         const seen = [];
         const unsub = EventBus.subscribe('loot_generated', p => seen.push(p));
         LootSystem.handleCombatVictory({
-            enemyId: 'fixture_enemy_two_lines', instanceId: enemy.id, areaId: 'area',
+            enemyId: 'fixture_enemy_two_lines', instanceId: enemy.id,
             drops: [
                 { itemId: 'item_blackberry', chance: 100, minQty: 1, maxQty: 1 },
                 { itemId: 'fixture_oak_wood', chance: 100, minQty: 2, maxQty: 2 }

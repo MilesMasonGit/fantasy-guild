@@ -231,7 +231,7 @@ describe('⭐ leaving resets progress; a moved Token keeps it (FP-68)', () => {
         const forest = put(14, 'fixture_producer');
         sendTo('h1', 14);
         run(5000);
-        Placement.recallHeroById('h1');
+        Flags.furl('h1');
         expect(forest.cycleElapsedMs).toBe(0);
     });
 

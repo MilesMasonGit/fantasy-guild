@@ -30,17 +30,21 @@ export function formatPlaytime(ms) {
     return `${mins}m`;
 }
 
-/** The newest plain message ("Slot 2 deleted", a save that could not be loaded), or null. */
-function useSlotMessage() {
+/**
+ * The newest plain message ("Slot 2 deleted", a save that could not be loaded), or null. Listens
+ * only while the screen is up (`active`): the modal stays mounted all game.
+ */
+function useSlotMessage(active) {
     const latest = () => NotificationSystem.getQueue().at(-1) || null;
     const [message, setMessage] = useState(latest);
     useEffect(() => {
+        if (!active) return undefined;
         const sync = () => setMessage(latest());
         const offs = [ENGINE_EVENTS.NOTIFICATION_ADDED, ENGINE_EVENTS.NOTIFICATION_DISMISSED]
             .map(e => EventBus.subscribe(e, sync, UI_LISTENER));
         sync();
         return () => offs.forEach(off => off());
-    }, []);
+    }, [active]);
     return message;
 }
 
@@ -77,7 +81,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
     const [slots, setSlots] = useState([]);
     const [deleteAttemptIndex, setDeleteAttemptIndex] = useState(null);
     const [newGameSlot, setNewGameSlot] = useState(null);
-    const message = useSlotMessage();
+    const message = useSlotMessage(!!isOpen);
     const now = useMinuteClock(!!isOpen);
     // Nothing lies under the title screen for Escape to close.
     useEscapeLayer(!!isOpen, null);

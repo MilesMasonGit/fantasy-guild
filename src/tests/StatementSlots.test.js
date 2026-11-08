@@ -3,7 +3,7 @@ import './fixtures/testTokens.js';
 import { KEYWORD, KEYWORDS, WHEN, getKeyword, makeStatement } from '../systems/effects/statements.js';
 import {
     slotsOf, slotIsOrphaned, slotDisplay, filterOptions, SLOT_KIND
-} from '../systems/effects/statementSlots.js';
+} from '../../cms/src/engine/ledger/statementSlots.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
 import { REACH } from '../config/registries/reachRegistry.js';
 
