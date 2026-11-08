@@ -262,6 +262,17 @@ function restock(instance, decision) {
     EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'quest_claim' });
 
     if (decision.absorbed) {
+        // ⚠️ A Token moved on the mat is still standing at its old point with nothing left: it goes,
+        // as a spent one does, or it stays as a zero-charge ghost the runner marks "Out of charges".
+        // Its hero's claim now names a Token that is gone, so their flag lets go on its next pass.
+        const moved = BoardState.getTokenById(instance.id);
+        const from = pointOf(moved);
+        if (moved) {
+            forfeitCycle(moved);
+            BoardState.removeToken(moved.id);
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: moved.id, ...(from || {}), typeId: null });
+            markAdjacencyDirty([from, pointOf(target)]);
+        }
         return { success: true, restocked: true, absorbed: true, addedCharges: decision.transferred };
     }
 
@@ -306,7 +317,10 @@ export function moveTokenTo(id, point) {
     const result = placeTokenAt(moving, point, { excludeId: id, keepCycle: true });
     if (!result.success) return result;
 
-    if (from) EventBus.publish(BOARD_EVENTS.TILE_CHANGED, vacated(from));
+    // An absorbed Token has already said its point is empty (`restock`).
+    const now = pointOf(BoardState.getTokenById(id));
+    const left = from && now && (now.x !== from.x || now.y !== from.y);
+    if (left) EventBus.publish(BOARD_EVENTS.TILE_CHANGED, vacated(from));
     announceHeroMoved(heroId);
     return result;
 }
