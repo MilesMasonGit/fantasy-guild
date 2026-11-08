@@ -367,6 +367,15 @@ function tableTop(map, n, valueOf = (v) => v) {
     return [...map.entries()].sort((a, b) => valueOf(b[1]) - valueOf(a[1])).slice(0, n);
 }
 
+/** The boot steps `src/main.jsx` marked, in ms since the navigation started: `{ pageReady: 120.4, ... }`. */
+export function bootMarks() {
+    const out = {};
+    for (const m of performance.getEntriesByType('mark')) {
+        if (m.name.startsWith('fg:boot:')) out[m.name.slice('fg:boot:'.length)] = round(m.startTime, 1);
+    }
+    return out;
+}
+
 export function report() {
     const seconds = (performance.now() - windowStart) / 1000;
     const perS = (n) => (seconds > 0 ? round(n / seconds, 2) : null);
@@ -418,6 +427,7 @@ export function report() {
             focused: typeof document.hasFocus === 'function' ? document.hasFocus() : null
         },
         census,
+        boot: bootMarks(),
         frames: {
             ...frames.summary(THRESHOLDS),
             // Frames whose interval was over 1.5 refreshes: a vsync was missed.
@@ -545,6 +555,7 @@ export async function installPerf() {
         stop,
         reset,
         report,
+        bootMarks,
         snapshot,
         copyReport,
         showHud,

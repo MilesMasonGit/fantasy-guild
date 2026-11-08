@@ -5,6 +5,8 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Bench instruments for the code review's measurements** (bench and tooling only, no change to the game): the memory soak takes a heap snapshot at the last hidden sample and compares the page task time and style passes with its baseline, `bench:soak -- --readable` soaks an unminified build, the game marks its boot steps (read by `bench:draw`), dev builds log each save's size and stringify time, and a new micro-bench times `Atlas.settle` and `worldView()`.
+
 - **The CMS refuses a Sync from a stale tab or off `main`, and says why** (CMS only): Sync to
   Game now sends the workspace revision the tab holds, and a tab that missed a later save (another
   tab, the command line) is refused with "This Sync was made from an out-of-date copy of the

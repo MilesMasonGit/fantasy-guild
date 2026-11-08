@@ -234,7 +234,11 @@ export const SaveManager = {
         try {
             // The same bytes as `JSON.stringify(GameState.serialize())`, without
             // deep-copying the state first.
+            const stringifyStart = import.meta.env.DEV ? performance.now() : 0;
             const json = GameState.serializeJson();
+            if (import.meta.env.DEV) {
+                logger.info('SaveManager', `save size ${json.length} chars, serializeJson ${(performance.now() - stringifyStart).toFixed(1)} ms`);
+            }
             const slot = this.currentSlot;
             const rollBackup = this.keepBackupSlot !== slot;
 

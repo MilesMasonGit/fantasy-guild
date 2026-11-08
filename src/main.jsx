@@ -22,9 +22,16 @@ import { logger } from './utils/Logger.js';
 import { ENGINE_EVENTS } from './systems/core/engineEvents.js';
 
 /**
+ * Boot timings for the perf harness (`__perf.report().boot`): `performance.mark`s named
+ * `fg:boot:<step>`, in milliseconds since the navigation started.
+ */
+const bootMark = (step) => performance.mark(`fg:boot:${step}`);
+
+/**
  * Fantasy Guild Idle - Bootstrap Lifecycle
  */
 document.addEventListener('DOMContentLoaded', async () => {
+    bootMark('pageReady');
     const app = document.getElementById('app');
     if (!app) {
         console.error('Critical Error: #app element not found');
@@ -56,6 +63,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // SettingsManager must load stored settings BEFORE SaveManager reads the
     // autosave interval from it (CR-004).
     SettingsManager.init();
+    bootMark('settings');
     SaveManager.init();
     // The desktop build's save files, read before the slot screen shows them.
     const savesReady = SaveManager.loadSaveFiles();
@@ -89,12 +97,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 6. Initialize Interaction & Registry Overlays
     EngineBootstrap.init();
+    bootMark('engineInit');
 
     // A hidden or minimised window stops drawing the mat; the game keeps ticking.
     installDrawingPause();
 
     // 7. Mount the React UI Engine (gated on critical art being warm)
     await Promise.all([artReady, fxReady, savesReady]);
+    bootMark('artReady');
     const reactRootEl = document.getElementById('react-root');
     if (reactRootEl) {
         const root = createRoot(reactRootEl);
@@ -106,6 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <ReactRoot />
             </ErrorBoundary>
         );
+        bootMark('reactMounted');
         logger.info('main', 'React UI Engine online.');
     }
 
@@ -120,7 +131,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const splash = document.getElementById('boot-splash');
     if (splash) {
         splash.style.opacity = '0';
-        setTimeout(() => splash.remove(), 350);
+        setTimeout(() => {
+            splash.remove();
+            bootMark('splashGone');
+        }, 350);
     }
 
     logger.info('main', 'Bootstrap complete. Waiting for user interaction.');
