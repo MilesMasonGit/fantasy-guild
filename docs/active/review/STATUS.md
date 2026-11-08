@@ -58,6 +58,16 @@ deletions, by folder, from R9's lists and the areas' cleanup findings (R9's Note
 
 ## Questions for the owner
 
+**Answered by the owner, 2026-11-07** (interview in the reviewer's session; the planning agent records them in the tickets):
+
+- **Keyboard drag (CR4-063): (b).** Remove the Tab stops and the false announcement; drag sources stay pointer-only. Nothing a mouse player sees changes.
+- **Playtime (CR4-013): the guild's whole time, including the away time the player accepted.** The catch-up keeps adding to it (an undone catch-up never counts: it reloads the earlier save). The word "Playtime" stays; the field's comment and the ticket change, not the code's behaviour.
+- **Sounds that never play (CR4-014): (b).** Drop both sounds and their dead hooks.
+- **XP bonuses on kills (CR4-037): every XP bonus is skill-specific**, and that includes the four combat skills: a bonus aimed at Melee, Ranged, Magic or Stealth applies to the XP a kill awards in that style, a bonus aimed at a work skill to that skill's cycles. The hero-side multiplier that reads nothing is replaced by that rule, not deleted. **Content to follow: four Guild Hall stars, one per combat style, raising that style's kill XP.** The owner wants a brief straight away (no concept interview): the planning agent writes it, the content agent makes the pack.
+
+The questions as asked:
+
+
 - **Keyboard drag (CR4-063).** Every hero, flag, Bank item and Shop row is a Tab stop that tells a screen reader it can be lifted with the space bar, and nothing happens when it is. (a) Add keyboard drag for real (a feature: a sensor plus a rule for where a keyboard drop lands on the free mat). (b) Remove the Tab stops and the text; drag sources stay pointer-only (the reviewer's recommendation for now: honest, small, and nothing a mouse player sees). (c) Leave it until a keyboard or screen-reader player asks.
 
 - **"Playtime" on the slot screen** (CR4-013): today it grows while the catch-up plays the time you were away. Should it mean (a) time the game was open, so the catch-up stops adding to it (recommended: that is what the label and the field's comment say), or (b) the guild's whole life including time away, so the label changes and nothing else does?
