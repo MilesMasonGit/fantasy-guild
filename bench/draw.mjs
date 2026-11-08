@@ -30,7 +30,7 @@ import { startDevServer, startPerfServer, buildPerf, perfBuildInfo } from './bro
 import { SCENES, sceneFor, sceneUrl, openBoard, deliveredSlowdown, envelopeNote } from './browser/scenes.mjs';
 import {
     parseArgs, SCENE_IDS, DRAW_SWITCHES, metricsOf, rejectReason, aggregate, costTable, compareToBaseline,
-    baselineEntry, abOrder, conditionKey, sceneTable, costTableText, table, EXIT, TOLERANCE, settingsMismatch
+    baselineEntry, abOrder, conditionKey, sceneTable, costTableText, table, EXIT, TOLERANCE, settingsMismatch, bootNote
 } from './browser/drawLib.mjs';
 import { slowdownReject, slowdownNote } from './browser/slowdown.mjs';
 
@@ -209,7 +209,7 @@ async function main() {
                     for (let r = 0; r < args.repeats; r++) {
                         process.stdout.write(`  ${scene.name}${args.repeats > 1 ? ` ${r + 1}/${args.repeats}` : ''}…`);
                         const m = await measureWithRetry(chrome, baseUrl, scene, cpu, args);
-                        console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m.slowdown, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}${m.how ? ` · ${m.how}` : ''}`);
+                        console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m.slowdown, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}${bootNote(m)}${m.how ? ` · ${m.how}` : ''}`);
                         if (m.reject) failed = true;
                         runs.push(m);
                     }

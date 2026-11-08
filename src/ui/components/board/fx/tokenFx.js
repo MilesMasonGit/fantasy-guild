@@ -1,6 +1,7 @@
 import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
 import { spriteOf, makeCopy } from './spriteCopy.js';
-import { onDue } from '../frameClock.js';
+import { onDue, isDrawingPaused } from '../frameClock.js';
+import { whenOver } from './oneShot.js';
 import { outlineLayer } from '../../../utils/spriteFx.js';
 import { TRAIL_TINT } from '../../../../config/spriteFx.js';
 
@@ -24,19 +25,21 @@ export function playIn(wrapper, el, keyframes, timing, { under = false } = {}) {
         el.remove();
         return null;
     }
-    const anim = el.animate(keyframes, { fill: 'none', ...timing });
-    const done = () => el.remove();
-    anim.onfinish = done;
-    anim.oncancel = done;
+    const t = { fill: 'none', ...timing };
+    const anim = el.animate(keyframes, t);
+    whenOver(anim, (t.delay || 0) + (Number(t.duration) || 0) * (t.iterations ?? 1), () => el.remove());
     return anim;
 }
 
 /**
  * Run `fn` once, in the first frame `ms` from now, on the mat's shared clock (`frameClock.js`).
  * For an effect that has to read the art as it is then (a sheet's frame at the strike).
+ * ⚠️ Asked for while drawing is paused (a hidden window), it never runs: on the paused clock it
+ * would wait for the window to come back and run then with every other one.
  * @returns {() => void} cancel
  */
 export function later(ms, fn) {
+    if (isDrawingPaused()) return () => {};
     let off = null;
     const run = () => {
         off?.();

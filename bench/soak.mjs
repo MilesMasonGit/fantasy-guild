@@ -9,7 +9,8 @@
 //   npm run bench:soak -- --every=30                 seconds between samples (at least 10)
 //   npm run bench:soak -- --hidden=0                 no hidden phase
 //   npm run bench:soak -- --warmup=3                 minutes left out of the fit (default a tenth of the run, at most 5)
-//   npm run bench:soak -- --snapshot                 heap snapshots at the start and end of the fit, diffed by class
+//   npm run bench:soak -- --snapshot                 heap snapshots, diffed by class: start of the fit, the last hidden sample (while still hidden), end of the fit
+//   npm run bench:soak -- --readable                 an unminified perf build with source maps (dist-perf-prof/), so a snapshot names the game's functions; never a baseline
 //   npm run bench:soak -- --compare                  compare with bench/soak-baseline.json
 //   npm run bench:soak -- --save-baseline            write this run as bench/soak-baseline.json
 //   npm run bench:soak -- --no-build --settle=60     reuse dist-perf/; seconds before the first sample
@@ -30,11 +31,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
-import { startPerfServer, buildPerf, perfBuildInfo } from './browser/servers.mjs';
+import { startPerfServer, buildPerf, perfBuildInfo, PROFILE_OUT_DIR } from './browser/servers.mjs';
 import { sceneFor, sceneUrl, openBoard } from './browser/scenes.mjs';
 import {
     CONFIG, CDP_METRICS, EXIT, parseArgs, soakPlan, analyse, intervalsOf, hiddenCheck, compareToBaseline,
-    baselineOf, baselineRefusal, settingsOf, sampleHeader, sampleRow, slopesTable, hiddenText, table, fmt, round
+    baselineOf, baselineRefusal, fittedRates, settingsOf, sampleHeader, sampleRow, slopesTable, hiddenText, table, fmt, round
 } from './browser/soakLib.mjs';
 import { classSummary, diffClasses } from './browser/heapSnapshot.mjs';
 
@@ -104,6 +105,20 @@ const PAGE_PROBE = `(() => {
     }
     for (const k of ['__envSamples', '__envFlows', '__envBanners']) if (Array.isArray(window[k])) window[k].length = 0;
     return out;
+})()`;
+
+// The save the game would write now: its length and the time `GameState.serializeJson` takes
+// (median of five). Read once, after the last sample; null where the page has no game handle.
+const SAVE_PROBE = `(() => {
+    try {
+        const GS = window.__perf?.game?.GameState;
+        if (!GS) return null;
+        const times = [];
+        let chars = 0;
+        for (let i = 0; i < 5; i++) { const t0 = performance.now(); chars = GS.serializeJson().length; times.push(performance.now() - t0); }
+        times.sort((a, b) => a - b);
+        return { chars, serializeMs: times[2], runs: times.length };
+    } catch { return null; }
 })()`;
 
 // ---------------------------------------------------------------------------
@@ -223,6 +238,12 @@ async function main() {
     const hiddenNote = plan.hiddenStartS === null ? 'no hidden phase' : `hidden ${fmt(plan.hiddenStartS / 60, 1)}–${fmt(plan.hiddenEndS / 60, 1)} min`;
     console.log(`${scene.name} · ${args.minutes} min, a sample every ${args.every} s (${plan.steps.length} samples) · ${hiddenNote} · fit from ${fmt(args.warmup, 1)} min · settle ${args.settle} s${args.snapshot ? ' · heap snapshots' : ''}`);
 
+    if (args.snapshot) {
+        console.log(`Heap snapshots (--snapshot): start = the first fitted sample (${fmt(args.warmup, 1)} min)${plan.hiddenStartS === null ? '' : `, hidden = the last hidden sample (${fmt(plan.hiddenEndS / 60, 1)} min, taken before the window is restored)`}, end = the last sample (${fmt(plan.totalS / 60, 1)} min); each after two forced collections.`);
+    }
+    if (args.readable) console.log('--readable: an unminified build (dist-perf-prof/); its numbers are not comparable with the minified build\'s and are never saved as a baseline.');
+
+    const outDir = args.readable ? PROFILE_OUT_DIR : 'dist-perf';
     let server = null;
     let chrome = null;
     let failed = null;
@@ -231,13 +252,13 @@ async function main() {
     const writePartial = () => fs.writeFileSync(file, JSON.stringify({ partial: true, meta, samples, snapshots }, null, 1));
     try {
         if (args.build) {
-            process.stdout.write('Building the perf build (vite build --mode perf)…\n');
-            meta.perfBuildS = buildPerf();
+            process.stdout.write(`Building the ${args.readable ? 'readable ' : ''}perf build (vite build --mode perf${args.readable ? ', unminified' : ''})…\n`);
+            meta.perfBuildS = buildPerf({ profile: args.readable });
         } else {
-            meta.perfBuiltAt = perfBuildInfo()?.builtAt ?? null;
-            console.log(`--no-build: using dist-perf/ built ${meta.perfBuiltAt?.toISOString?.() ?? '(missing)'}`);
+            meta.perfBuiltAt = perfBuildInfo(outDir)?.builtAt ?? null;
+            console.log(`--no-build: using ${outDir}/ built ${meta.perfBuiltAt?.toISOString?.() ?? '(missing)'}`);
         }
-        server = await startPerfServer({ port: args.port });
+        server = await startPerfServer({ port: args.port, outDir });
         chrome = await launchChrome({ width: 1600, height: 1000 });
         meta.chrome = { product: chrome.info.product, gpu: chrome.info.gpu };
         console.log(`Chrome ${chrome.info.product} headless · GPU ${chrome.info.gpu?.device ?? '?'} · 1600×1000 at DPR 1`);
@@ -286,6 +307,8 @@ async function main() {
             }
             writePartial();
         }
+        meta.save = await page.evaluate(SAVE_PROBE);
+        if (meta.save) console.log(`\nSave size at the end: ${fmt(meta.save.chars / 1024, 0)} KB (${meta.save.chars} chars), GameState.serializeJson ${fmt(meta.save.serializeMs, 1)} ms (median of ${meta.save.runs}).`);
         meta.pageErrors = page.consoleErrors.slice(0, 10);
         meta.pageErrorCount = page.consoleErrors.length;
         await page.close();
@@ -314,24 +337,38 @@ async function main() {
     const busTop = samples.at(-1)?.page?.bus?.top;
     if (busTop?.length) console.log(`\nEventBus subscribers at the end: ${samples.at(-1).page.bus.total} on ${samples.at(-1).page.bus.events} events (engine ${samples.at(-1).page.bus.engine}); most: ${busTop.slice(0, 6).map(([n, c]) => `${n} ${c}`).join(', ')}`);
 
+    // The snapshots' diffs: start → end (the visible growth) and start → hidden (what the hidden
+    // phase holds at its last sample, before the window is restored and the pile-up released).
     let snapshotDiff = null;
-    if (snapshots.start && snapshots.end) {
+    const readSnapshots = () => {
+        const cache = {};
+        return (name) => (cache[name] ||= classSummary(JSON.parse(fs.readFileSync(snapshots[name].file, 'utf8'))));
+    };
+    const summary = readSnapshots();
+    const printDiff = (from, to) => {
+        const a = summary(from);
+        const b = summary(to);
+        const rows = diffClasses(a, b, 15);
+        console.log(`Reachable objects ${a.reachable} → ${b.reachable}, ${fmt(a.totalSelf / 1048576, 2)} → ${fmt(b.totalSelf / 1048576, 2)} MB.`);
+        console.log(`Top 15 classes by retained-size growth, ${from} (sample ${snapshots[from].atSample}) → ${to} (sample ${snapshots[to].atSample}):`);
+        console.log(table(['class', 'count', 'Δ count', 'Δ self KB', 'Δ retained KB', 'retained KB at end'],
+            rows.map((r) => [r.name.length > 60 ? r.name.slice(0, 57) + '…' : r.name, `${r.countA} → ${r.countB}`, r.dCount, fmt(r.dSelf / 1024, 1), fmt(r.dRetained / 1024, 1), fmt(r.retainedB / 1024, 1)])));
+        return { start: { reachable: a.reachable, totalSelf: a.totalSelf }, end: { reachable: b.reachable, totalSelf: b.totalSelf }, top: rows };
+    };
+    for (const [from, to] of [['start', 'end'], ['start', 'hidden']]) {
+        if (!snapshots[from] || !snapshots[to]) continue;
         try {
             process.stdout.write('\nReading the heap snapshots…');
             const t = Date.now();
-            const a = classSummary(JSON.parse(fs.readFileSync(snapshots.start.file, 'utf8')));
-            const b = classSummary(JSON.parse(fs.readFileSync(snapshots.end.file, 'utf8')));
-            const rows = diffClasses(a, b, 15);
-            console.log(` ${fmt((Date.now() - t) / 1000, 1)} s. Reachable objects ${a.reachable} → ${b.reachable}, ${fmt(a.totalSelf / 1048576, 2)} → ${fmt(b.totalSelf / 1048576, 2)} MB.`);
-            console.log(`Top 15 classes by retained-size growth, sample ${snapshots.start.atSample} → ${snapshots.end.atSample}:`);
-            console.log(table(['class', 'count', 'Δ count', 'Δ self KB', 'Δ retained KB', 'retained KB at end'],
-                rows.map((r) => [r.name.length > 60 ? r.name.slice(0, 57) + '…' : r.name, `${r.countA} → ${r.countB}`, r.dCount, fmt(r.dSelf / 1024, 1), fmt(r.dRetained / 1024, 1), fmt(r.retainedB / 1024, 1)])));
-            console.log(`Snapshots (open in DevTools → Memory): ${path.relative(root, snapshots.start.file)}, ${path.relative(root, snapshots.end.file)}`);
-            snapshotDiff = { start: { reachable: a.reachable, totalSelf: a.totalSelf }, end: { reachable: b.reachable, totalSelf: b.totalSelf }, top: rows };
+            summary(from);
+            summary(to);
+            console.log(` ${fmt((Date.now() - t) / 1000, 1)} s.`);
+            (snapshotDiff ||= {})[`${from}To${to[0].toUpperCase()}${to.slice(1)}`] = printDiff(from, to);
         } catch (err) {
             console.log(`\n⚠ Could not read the heap snapshots: ${err.message}`);
         }
     }
+    if (Object.keys(snapshots).length) console.log(`Snapshots (open in DevTools → Memory): ${Object.values(snapshots).map((x) => path.relative(root, x.file)).join(', ')}`);
 
     let comparison = null;
     if (args.compare) {
@@ -340,7 +377,8 @@ async function main() {
             failed ||= 'no baseline';
         } else {
             const baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
-            comparison = compareToBaseline(analysis, args, baseline);
+            comparison = compareToBaseline(analysis, args, baseline, undefined, fittedRates(intervals));
+            if (args.readable) comparison.notes.push('this run is the readable (unminified) build; the baseline is the minified one');
             if (!comparison.comparable) {
                 console.log(`\n--compare: not comparable: ${comparison.reason}.`);
                 failed ||= `not comparable: ${comparison.reason}`;
@@ -370,11 +408,11 @@ async function main() {
     console.log(`Wrote ${path.relative(root, file)} (${fmt(elapsedS, 0)} s).`);
 
     if (args.saveBaseline) {
-        const refusal = baselineRefusal({ failed, analysis });
+        const refusal = args.readable ? 'the readable build is not the build to measure against' : baselineRefusal({ failed, analysis });
         if (refusal) {
             console.log(`✗ Not saving bench/soak-baseline.json: ${refusal}.`);
         } else {
-            fs.writeFileSync(baselineFile, JSON.stringify(baselineOf(analysis, args, { commit: meta.commit, date: meta.date, machine: meta.machine, chrome: meta.chrome?.product }), null, 2) + '\n');
+            fs.writeFileSync(baselineFile, JSON.stringify(baselineOf(analysis, args, { commit: meta.commit, date: meta.date, machine: meta.machine, chrome: meta.chrome?.product }, fittedRates(intervals)), null, 2) + '\n');
             console.log(`Wrote bench/soak-baseline.json (${JSON.stringify(settingsOf(args))}).`);
         }
     }

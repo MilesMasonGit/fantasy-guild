@@ -8,7 +8,7 @@
  * frame. The hero and enemy sprites step here.
  * Each runs only while something is subscribed: the last unsubscribe cancels what is pending,
  * and the next subscribe starts it again. While drawing is paused ({@link setDrawingPaused}: a
- * hidden or minimised window) none of them asks for a frame.
+ * hidden or minimised window) none of them asks for a frame, and the poll clock sets no timer.
  */
 
 let paused = false;
@@ -178,12 +178,96 @@ export function onDue(fn, dueAt) {
 }
 
 
+/** Subscriber → `{ every, next }`: its period, and when it is next due (`Date.now()` ms). */
+const pollSubs = new Map();
+let pollTimer = null;
+let pollTimerAt = Infinity;
+
+/** The first multiple of `every` after `now`: pollers of one period fall due together. */
+const nextOnGrid = (now, every) => (Math.floor(now / every) + 1) * every;
+
+function callPoll(fn, now) {
+    try {
+        fn(now);
+    } catch (err) {
+        // One poller that throws must not stop the others.
+        console.error('[frameClock] poll subscriber threw', err);
+    }
+}
+
+/** One timer, for the soonest poller due. */
+function schedulePoll() {
+    if (paused) return;
+    let at = Infinity;
+    for (const s of pollSubs.values()) if (s.next < at) at = s.next;
+    if (pollTimer !== null) {
+        if (pollTimerAt === at) return;
+        clearTimeout(pollTimer);
+        pollTimer = null;
+    }
+    pollTimerAt = at;
+    if (at === Infinity) return;
+    pollTimer = setTimeout(runPoll, Math.max(0, Math.ceil(at - Date.now())));
+}
+
+function runPoll() {
+    // One `now` for the whole poll, so two readouts of the same clock agree. Never before the time
+    // the timer was set for: a clock that reads a hair early must not find nobody due and re-arm.
+    const now = Math.max(Date.now(), pollTimerAt);
+    pollTimer = null;
+    pollTimerAt = Infinity;
+    for (const [fn, s] of [...pollSubs]) {
+        if (pollSubs.get(fn) !== s || s.next > now) continue;
+        s.next = nextOnGrid(now, s.every);
+        callPoll(fn, now);
+    }
+    schedulePoll();
+}
+
+/**
+ * Call `fn(now)` every `everyMs` until the returned function is called, on the clock every other
+ * poller shares: one timer for all of them, set for whoever is due soonest, and no animation
+ * frame (a poll re-reads the game; React draws what changed). Due times fall on a grid of
+ * `everyMs` (`Date.now()`), so pollers of the same period are called together; the first
+ * call is within `everyMs` of subscribing, not on it, so read once yourself when you mount.
+ * `now` is `Date.now()` at the poll, the same for every subscriber called in it: the wall clock,
+ * which the readouts that poll count their timers in, and which tests fake with the timers.
+ * While drawing is paused nobody is called; on resume every subscriber is called once at once,
+ * so what was on screen is current the moment the window is back. Subscribing the same function
+ * twice is one subscription (the later `everyMs` wins).
+ * @param {(now: number) => void} fn
+ * @param {number} everyMs
+ * @returns {() => void} unsubscribe
+ */
+export function onPoll(fn, everyMs) {
+    const every = Math.max(1, Number(everyMs) || 0);
+    pollSubs.set(fn, { every, next: nextOnGrid(Date.now(), every) });
+    schedulePoll();
+    return () => {
+        if (!pollSubs.delete(fn)) return;
+        schedulePoll();
+    };
+}
+
+/** Every poller, once, now; then each on its grid again. */
+function resumePolls() {
+    const now = Date.now();
+    for (const [fn, s] of [...pollSubs]) {
+        if (pollSubs.get(fn) !== s) continue;
+        s.next = nextOnGrid(now, s.every);
+        callPoll(fn, now);
+    }
+    schedulePoll();
+}
+
+
 /**
  * Stop every clock asking for frames (`true`), or start them again (`false`). Paused, whatever
  * is pending is cancelled and nothing is scheduled; subscribing and unsubscribing still work.
  * Resumed, each clock asks for one frame: {@link onFrame}'s subscribers run in it, a step falls
  * on the next {@link STEP_MS} as usual, and every {@link onDue} subscriber due by then is called
- * once in it, so the window coming back draws one frame, not the ones it missed.
+ * once in it, so the window coming back draws one frame, not the ones it missed; every
+ * {@link onPoll} subscriber is called once at once, so the readouts are current.
  * ⚠️ Only drawing: the game's tick (`GameLoop`) is a timer of its own and keeps running.
  * @param {boolean} on
  */
@@ -197,13 +281,15 @@ export function setDrawingPaused(on) {
         if (stepRaf !== null) cancelAnimationFrame(stepRaf);
         if (dueTimer !== null) clearTimeout(dueTimer);
         if (dueRaf !== null) cancelAnimationFrame(dueRaf);
-        raf = stepTimer = stepRaf = dueTimer = dueRaf = null;
-        dueTimerAt = Infinity;
+        if (pollTimer !== null) clearTimeout(pollTimer);
+        raf = stepTimer = stepRaf = dueTimer = dueRaf = pollTimer = null;
+        dueTimerAt = pollTimerAt = Infinity;
         return;
     }
     if (subs.size && raf === null) raf = requestAnimationFrame(run);
     scheduleStep();
     scheduleDue();
+    resumePolls();
 }
 
 /** Whether drawing is paused ({@link setDrawingPaused}). */

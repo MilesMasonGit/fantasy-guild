@@ -14,6 +14,7 @@ import { NewGameScreen } from '../components/title/NewGameScreen.jsx';
 import { slotAwayText } from '../components/title/slotAway.js';
 import { SaveFolderButton, useSaveFilesWatch } from '../components/title/SaveFolderButton.jsx';
 import { t } from '../../i18n/index.js';
+import { onPoll } from '../components/board/frameClock.js';
 
 /** A save slot's row: no box (UI_STYLE "rows are never boxed"); the list draws faint lines between. */
 const ROW = 'relative flex justify-between items-center px-2 py-3 w-full';
@@ -55,8 +56,7 @@ function useMinuteClock(active) {
     useEffect(() => {
         if (!active) return undefined;
         setNow(Date.now());
-        const id = setInterval(() => setNow(Date.now()), 30000);
-        return () => clearInterval(id);
+        return onPoll(() => setNow(Date.now()), 30000);
     }, [active]);
     return now;
 }

@@ -20,6 +20,7 @@ import { FloatingTip } from '../base/Tooltip.jsx';
 import { useMatFit } from './MatFitContext.jsx';
 import { markerBox, markerCornerOffset, fanStep } from './flagGeometry.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { onPoll } from './frameClock.js';
 
 /**
  * FlagLayer: the flag that marks each hero's order (`FlagMark`, in the hero's own colour), an
@@ -259,8 +260,7 @@ export const STATE_TONE = {
 export const FlagTooltip = ({ anchor, heroId }) => {
     const [, refresh] = useState(0);
     useEffect(() => {
-        const timer = setInterval(() => refresh(n => n + 1), 500);
-        return () => clearInterval(timer);
+        return onPoll(() => refresh(n => n + 1), 500);
     }, []);
     const tip = flagTooltip(heroId);
     return (

@@ -8,13 +8,14 @@ import {
 } from '../effects/effectLibrary.js';
 import { KEYWORD } from '../effects/statements.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
-import { isWeapon, meetsGearRequirements } from '../../config/registries/weaponStyles.js';
+import { isWeapon, meetsGearRequirements, gearRequirements } from '../../config/registries/weaponStyles.js';
 import { arrowOf } from '../../config/registries/damageTypes.js';
 import { gearResistancesOf, gearDamageCutOf } from '../../config/registries/gearDefence.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { getHeroWeaponSlot } from '../combat/CombatFormulas.js';
 import { isSpentCategory, isAlwaysOn } from '../core/consumableRule.js';
 import { earnedPerkRefs } from './HeroPerks.js';
+import { skillsWithPerks, perkRowsFor } from '../../config/registries/perkRegistry.js';
 
 /**
  * A hero's equipped items are bearers, like a Token: the same grammar and effect
@@ -109,10 +110,113 @@ export function loadoutRefs(hero) {
  * hero carries (work, fights, moments, the combat numbers) reads them through this one door.
  */
 export function loadoutStatements(hero) {
+    if (!hero || typeof hero !== 'object') return expandLoadout(hero, null);
+    let entry = kept.get(hero);
+    if (!entry || !stillStands(entry, hero)) {
+        entry = keepLoadout(hero);
+        kept.set(hero, entry);
+    }
+    return entry.statements;
+}
+
+/**
+ * ⚠️ Kept per hero, not expanded on every read: the work time reads the loadout of every worked
+ * Token's hero on every tick, and a catch-up plays a day as 86,400 ticks. A kept answer is handed
+ * back only while everything it was built from still reads the same, checked on every call
+ * ({@link stillStands}): each slot's item, that item's definition and whether the slot lends
+ * (`slotBacked`: a copy held, or a Bank holding one), the levels the perks and the items'
+ * requirements read, the perk tables, every library entry expanded, and the villager mark. So it is
+ * exactly as fresh as expanding every time, whoever made the change (the equip rules, a level-up, a
+ * load, a dev button or a test writing the state straight), and nothing has to remember to say so.
+ * The Bank is read as `slotBacked` reads it, for the slots alone, so loot coming in keeps the answer.
+ * Content is compared by identity: an item, library entry or perk table registered again is seen,
+ * one edited in place is not (content only ever arrives by registering).
+ *
+ * The answer is shared between callers, so it is frozen: a caller copies before it changes anything.
+ */
+const kept = new WeakMap();
+
+/** A skill record's `level`; undefined for a bare number, which is its own level and compared as the record. */
+function levelField(record) {
+    return record !== null && typeof record === 'object' ? record.level : undefined;
+}
+
+function keepLoadout(hero) {
+    const grid = getGrid(hero);
+    const slots = grid.slice();
+    const defs = new Array(grid.length).fill(null);
+    const backed = new Array(grid.length).fill(false);
+    const perkSkills = skillsWithPerks();
+    const skillIds = [...perkSkills];
+    for (let slot = 0; slot < grid.length; slot++) {
+        const itemId = grid[slot];
+        if (!itemId) continue;
+        defs[slot] = getItem(itemId);
+        backed[slot] = slotBacked(hero, slot);
+        for (const { skill } of gearRequirements(defs[slot])) {
+            if (!skillIds.includes(skill)) skillIds.push(skill);
+        }
+    }
+    const skillRecords = skillIds.map(id => hero.skills?.[id]);
+
+    const library = new Map();
+    const statements = expandLoadout(hero, library);
+    for (const statement of statements) {
+        Object.freeze(statement.sourceItemIds);
+        Object.freeze(statement);
+    }
+    Object.freeze(statements);
+
+    return {
+        villager: hero.isVillager,
+        slots, defs, backed,
+        skillIds, skillRecords, skillLevels: skillRecords.map(levelField),
+        perkSkills, perkTables: perkSkills.map(perkRowsFor),
+        effectIds: [...library.keys()], effectEntries: [...library.values()],
+        statements
+    };
+}
+
+/** Whether everything a kept loadout was built from still reads the same. */
+function stillStands(entry, hero) {
+    if (hero.isVillager !== entry.villager) return false;
+
+    const grid = getGrid(hero);
+    const { slots, defs, backed } = entry;
+    if (grid.length !== slots.length) return false;
+    for (let slot = 0; slot < slots.length; slot++) {
+        const itemId = grid[slot];
+        if (itemId !== slots[slot]) return false;
+        if (!itemId) continue;
+        if (getItem(itemId) !== defs[slot] || slotBacked(hero, slot) !== backed[slot]) return false;
+    }
+
+    const { skillIds, skillRecords, skillLevels } = entry;
+    for (let i = 0; i < skillIds.length; i++) {
+        const record = hero.skills?.[skillIds[i]];
+        if (record !== skillRecords[i] || levelField(record) !== skillLevels[i]) return false;
+    }
+
+    const { perkSkills, perkTables } = entry;
+    if (skillsWithPerks() !== perkSkills) return false;
+    for (let i = 0; i < perkSkills.length; i++) {
+        if (perkRowsFor(perkSkills[i]) !== perkTables[i]) return false;
+    }
+
+    const { effectIds, effectEntries } = entry;
+    for (let i = 0; i < effectIds.length; i++) {
+        if (EFFECTS[effectIds[i]] !== effectEntries[i]) return false;
+    }
+    return true;
+}
+
+/** The loadout's statements expanded afresh; `library`, when given, records each entry looked up. */
+function expandLoadout(hero, library) {
     const out = [];
 
     for (const [effectId, { scale, itemIds, worn }] of loadoutRefs(hero)) {
         const entry = EFFECTS[effectId];
+        library?.set(effectId, entry);
         if (!entry) continue;                       // ContentAudit reports it by name
         const allWorn = worn.itemIds.length === itemIds.length;
         // Only when some, not all, of the items are worn: the always-on rules at the worn scale.
@@ -127,7 +231,7 @@ export function loadoutStatements(hero) {
         });
     }
 
-    const perks = perkStatements(hero);
+    const perks = expandPerks(hero, library);
     return perks.length ? out.concat(perks) : out;
 }
 
@@ -140,11 +244,16 @@ export function loadoutStatements(hero) {
  * no item (`sourceItemIds` empty), so no dose ever stands in for it.
  */
 export function perkStatements(hero) {
+    return expandPerks(hero, null);
+}
+
+function expandPerks(hero, library) {
     const refs = earnedPerkRefs(hero);
     if (!refs.length) return refs;
     const out = [];
     for (const ref of refs) {
         const entry = EFFECTS[ref.effectId];
+        library?.set(ref.effectId, entry);
         if (!entry) continue;                       // ContentAudit reports it by name
         for (const statement of statementsFromEntry(entry, ref)) {
             out.push({ ...statement, chargeDelta: 0, sourceItemIds: [], perk: true });

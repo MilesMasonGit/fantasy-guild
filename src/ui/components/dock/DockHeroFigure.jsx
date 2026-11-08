@@ -26,6 +26,7 @@ import {
 } from './dockHeroView.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { HeroDragMarks, MARK_SCREEN_PX } from '../board/DragMarks.jsx';
+import { onPoll } from '../board/frameClock.js';
 
 /**
  * One hero standing on the roster.
@@ -377,8 +378,7 @@ const STATUS_BUBBLE_REFRESH_MS = 1000;
 const StatusBubble = ({ heroId, alert, tail }) => {
     const [line, setLine] = useState(() => rosterBubbleLine(heroId));
     useEffect(() => {
-        const timer = setInterval(() => setLine(rosterBubbleLine(heroId)), STATUS_BUBBLE_REFRESH_MS);
-        return () => clearInterval(timer);
+        return onPoll(() => setLine(rosterBubbleLine(heroId)), STATUS_BUBBLE_REFRESH_MS);
     }, [heroId]);
     return (
         <SpeechFrame

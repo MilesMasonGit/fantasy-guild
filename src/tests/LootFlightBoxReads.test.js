@@ -15,6 +15,7 @@ import { ItemStubColumn } from '../ui/components/notifications/ItemStubColumn.js
 import { resetCopies } from '../ui/components/notifications/stubLanding.js';
 import { STUB_PX, HEADER_PX, SPRITE_INSET_PX } from '../ui/components/notifications/stubGeometry.js';
 import './fixtures/fixtureItems.js';
+import { setDrawingPaused } from '../ui/components/board/frameClock.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -42,10 +43,15 @@ const FIT = 0.5;
 
 let matBox;
 let reads;
+/** Reads of the mat's own box. */
+let boardReads;
 
 function fakeRect() {
     reads++;
-    if (this.matches?.('[data-board-origin]')) return matBox;
+    if (this.matches?.('[data-board-origin]')) {
+        boardReads++;
+        return matBox;
+    }
     if (this.matches?.('[data-item-stubs]')) return box(COLUMN.left, COLUMN.top, COLUMN.width, COLUMN.height);
     if (this.matches?.('[data-guild-hall="true"]')) return HALL;
     if (this.matches?.('[data-dock-hero-id]')) return DOCK_HERO;
@@ -161,6 +167,7 @@ beforeEach(() => {
     landed = [];
     drawn = [];
     reads = 0;
+    boardReads = 0;
     matBox = box(100, 50, 800, 500);
     GameState.initNew();
     SpriteLayer.init();
@@ -304,5 +311,37 @@ describe('a flight that cannot fly, found out at the frame', () => {
         expect(landed).toEqual([]);
         expect(drawn).toEqual([]);
         expect(queue.length).toBe(0);
+    });
+});
+
+describe('a batch of flights, and a hidden window', () => {
+    it('the flights booked since the last frame read the mat’s box once between them', async () => {
+        SettingsManager.set('notifications.itemStubs', false);
+        mountGame();
+        pile('fixture_oak_wood', 1, 300, 600);
+        pile('fixture_oak_wood', 1, 300, 900);
+        pile('fixture_copper_ore', 1, 500, 300);
+        await act(async () => { SpriteLayer.tick(100); });
+        boardReads = 0;
+        drawn = [];
+        frame();
+        expect(boardReads).toBe(1);
+        expect(drawn.length).toBe(1);
+    });
+
+    it('⭐ collected while drawing is paused: nothing is booked, its count shows at once, nothing lands later', async () => {
+        const view = mountGame();
+        setDrawingPaused(true);
+        try {
+            await act(async () => { SpriteLayer.collectSprite(pile('fixture_oak_wood', 2, 300, 600).id); });
+            act(() => ItemStubs.flush());
+            expect(shownOn(stubEl(view, 'fixture_oak_wood'))).toBe('2');
+        } finally {
+            setDrawingPaused(false);
+        }
+        while (queue.length) frame();
+        expect(landed).toEqual([]);
+        expect(drawn).toEqual([]);
+        expect(shownOn(stubEl(view, 'fixture_oak_wood'))).toBe('2');
     });
 });

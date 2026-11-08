@@ -25,6 +25,7 @@ layout/paint cost are Tier B (the in-game Perf HUD). `npm run bench:draw` and
 | `npm run bench -- --cpu-prof` | also write one V8 `.cpuprofile` per run to `bench/results/prof/`, named `<scenario>-<mode>-<run>-<time>.cpuprofile` (open in Chrome DevTools → Performance). Each run profiles into its own folder and only the main thread's file (the engine's) is kept; on Node 24 the module loader's thread writes a second, idle profile, which is dropped (`bench/lib/cpuprof.mjs`) | |
 | `npm run bench -- --inject-slow=0.5` | add a tick handler that busy-waits 0.5 ms — for proving `--compare` catches a slowdown | |
 | `npm run bench:micro` | micro-benchmarks at 40 / 150 / 300 Tokens (Vitest `bench`, node environment) | ~15 s |
+| `npm run bench:micro -- bench/micro/atlasWorld.bench.js` | what a player waits on at the world map: `Atlas.settle` for the first Region on an empty Atlas and for the sixth with five settled (medians over five fresh worlds, two dev recipes each), and `worldView()` on a fresh world and with the whole first ring settled (the lines print as `Atlas.settle, first Region …: median N ms`) | ~10 s |
 
 Results go to `bench/results/` (git-ignored) as JSON, tagged with the commit,
 whether `src/`, `data/` or `bench/` had uncommitted changes, the Node version,
@@ -254,7 +255,8 @@ scenarios). Only S8 carries a timing.
   board-reach aura, each at 40, 150 and 300 Tokens; and the terrain's ground plan
   for the three dev hybrids on the shipped mat (`groundPlan.bench.js`, which also
   prints the first build of a cold module), and its screen pass at fits 0.74, 0.8
-  and 1 (`groundScreen.bench.js`).
+  and 1 (`groundScreen.bench.js`); and `Atlas.settle` and `worldView()` on a fresh world and one
+  with six settled Regions (`atlasWorld.bench.js`).
 
 ### How fixtures are registered
 
@@ -458,6 +460,15 @@ and dock subtrees), **Tokens** on the mat, **DOM** nodes and JS **heap**.
 | `npm run bench:draw -- --no-build` | reuse `dist-perf/` as it is | saves ~20 s |
 | `--settle=20 --window=20` | seconds | |
 | `npm run bench:draw -- --cpu=3.2 --slowdown-target=4` | ask Chrome for one slowdown, judge the delivered one against another: a window is kept when Chrome delivered within 25 % of the target. On the owner's PC on 2026-10-21, 4× asked delivered 4.1–5.2× and 3.2× asked 3.0–4.9×, so the Envelope asked 3.2× and kept windows delivered at 3–5× | |
+
+**Boot marks.** `src/main.jsx` marks its steps with `performance.mark('fg:boot:<step>')`: `pageReady`
+(DOMContentLoaded), `settings`, `engineInit`, `artReady` (art, the sprite-fx manifest and the saves
+are in), `reactMounted` (`render` called) and `splashGone` (the splash removed, 350 ms after its
+fade starts), in milliseconds since the navigation started. The Perf HUD's report carries them as
+`boot` (and `__perf.bootMarks()`), and every `bench:draw` window prints them in its line
+(`· boot ms: pageReady 41, settings 44, engineInit 310, …`) and keeps them in the results JSON
+(`runs[…].boot`). Each window opens a fresh page, so a run's first window is the cold boot and the
+later ones are warm (the HTTP cache and Chrome's code cache are filled).
 
 Results go to `bench/results/draw/` (git-ignored) as JSON, tagged with the
 commit, which of `src/` `data/` `bench/` `public/` had uncommitted changes, the
@@ -680,15 +691,34 @@ slope** by the same limits (from 3 samples over 2 minutes): a game left in a bac
 hours must not pile up what it lets go of on return. Page task time is Chrome's `TaskDuration` less
 `DevToolsCommandDuration` (the bench's own GCs, probes and snapshots).
 
-**`--snapshot`**: a heap snapshot (`HeapProfiler.takeHeapSnapshot`) at the first fitted sample and
-at the last, saved as `bench/results/soak-<time>-start.heapsnapshot` and `-end` (git-ignored; open
-them in DevTools → Memory), and the 15 classes whose retained size grew most between them, with
+**`--snapshot`**: a heap snapshot (`HeapProfiler.takeHeapSnapshot`) at the first fitted sample
+(`start`), at the last hidden sample (`hidden`, taken while the window is still minimised, before
+the pile-up of the one-shot effects is released; only with a hidden phase) and at the last sample
+(`end`), saved as `bench/results/soak-<time>-start.heapsnapshot`, `-hidden` and `-end` (git-ignored; open
+them in DevTools → Memory), and the 15 classes whose retained size grew most from `start` to `end`
+and from `start` to `hidden`, with
 their counts (`bench/browser/heapSnapshot.mjs`: the dominator tree from the root through every edge
 but weak ones, a class's objects counted once when one dominates another, as DevTools does; DOM
 elements grouped by tag, `Detached <img>`). About 45 MB and 2–3 s each on `cap128`; the time is
 DevTools time, left out of the page's task time. ⚠️ Taking a snapshot leaves the renderer's private
 memory higher for the rest of the run (+30 MB after the first, measured): read renderer memory from
-a run without `--snapshot`.
+a run without `--snapshot`. The run prints a header line saying at which minutes the snapshots are
+taken.
+
+**`--readable`**: builds the perf build unminified with source maps into `dist-perf-prof/` (what
+`bench:profile` builds, never replacing `dist-perf/`) and soaks that, so a snapshot names the game's
+own functions and closures instead of one-letter names. ⚠️ Its numbers are not the minified build's:
+`--compare` says so and `--save-baseline` refuses it. With `--no-build` it reuses `dist-perf-prof/`.
+
+**Compared rates.** Besides the slopes and levels, `--compare` and `--save-baseline` keep two rates
+of the visible, fitted intervals: **page task time** (ms/s, floor 25 and 25 %) and **style passes**
+(per second, floor 25 and 25 %); they are the idle page's cost, not its growth. A baseline taken
+before they existed prints them as `no baseline`: take it again.
+
+**Save size.** After the last sample the report prints `Save size at the end: N KB (… chars),
+GameState.serializeJson N ms (median of 5)` and keeps it in the results JSON (`meta.save`). A dev
+build (`npm run dev`) also logs `[SaveManager] save size N chars, serializeJson N ms` in the
+console at every save; the shipped and perf builds carry no such log.
 
 | Command | What it does | Time |
 |---|---|---|
@@ -696,7 +726,8 @@ a run without `--snapshot`.
 | `npm run bench:soak -- --minutes=480 --hidden=30` | an 8-hour session | |
 | `npm run bench:soak -- --scene=notify --every=30` | another board (a burst scene too); samples every 30 s (at least 10) | |
 | `npm run bench:soak -- --hidden=0` | no hidden phase | |
-| `npm run bench:soak -- --snapshot` | heap snapshots at both ends of the fit, diffed by class | +10 s |
+| `npm run bench:soak -- --snapshot` | heap snapshots at the start of the fit, at the last hidden sample and at the end, diffed by class | +15 s |
+| `npm run bench:soak -- --readable` | the unminified perf build (`dist-perf-prof/`), so snapshots name the game's functions; never a baseline | build +20 s |
 | `npm run bench:soak -- --compare` | compare with `bench/soak-baseline.json`: each judged metric's slope (worse by more than its floor and 50 %: heap 100 KB/min, nodes 10/min, listeners 2/min, subscribers 1/min) and level (the median of the fitted samples, worse by more than its floor and 20 %: heap 5 MB, nodes 500, listeners 100, subscribers 20); another board is not comparable; a run too short to judge compares levels only | |
 | `npm run bench:soak -- --save-baseline` | write this run as `bench/soak-baseline.json`; refused from a run that failed, is too short to judge or FAILED a metric | |
 | `--no-build --settle=60 --warmup=3 --port=5400` | reuse `dist-perf/`; seconds before the first sample; minutes left out of the fit; the server's port | |

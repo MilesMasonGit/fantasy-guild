@@ -175,8 +175,15 @@ export function metricsOf(report) {
         domNodes: report?.dom?.nodes ?? null,
         heapMb: report?.heap?.usedMb ?? null,
         tokens: report?.census?.tokens ?? null,
-        build: report?.env?.build ?? null
+        build: report?.env?.build ?? null,
+        boot: report?.boot ?? null
     };
+}
+
+/** The boot marks of one run (`src/main.jsx`), in ms since the navigation: `· boot ms: settings 40, engineInit 310, ...`. */
+export function bootNote(m) {
+    const entries = Object.entries(m?.boot || {}).sort((x, y) => x[1] - y[1]);
+    return entries.length ? ` · boot ms: ${entries.map(([k, v]) => `${k} ${Math.round(v)}`).join(', ')}` : '';
 }
 
 /** Why a measured window cannot be trusted, or null. */
