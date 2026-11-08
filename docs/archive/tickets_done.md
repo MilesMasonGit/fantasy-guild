@@ -245,3 +245,4 @@ T-210 — Remove the description bridge — 0862280d — 2026-11-06
 T-339 — The CMS Sync refuses a stale tab (workspace revision) and, from the page, any branch but main (the command line warns); the confirm lists changed entries beside removed ones; files go to temp names and are renamed together — fix/cms-sync-guard — 2026-11-07
 T-342 — Moving a Token onto a half-used copy it fits into no longer leaves a zero-charge ghost at its old spot — fix/zero-charge-ghost — 2026-11-07
 T-340 — The last-harvest farming test pins its random rolls, so it passes under the second test seed; the full second-seed suite is green — fix/farming-seed-test — 2026-11-07
+T-373 — The import cycle is cut (loading a save rebuilds heroes in systems/core/LoadedState.js; cycles 0), CombatFormulas moved to systems/combat, the ground painters and playmatTuning to ui/components/board/terrain; pure moves otherwise — cleanup/folder-moves — 2026-11-07

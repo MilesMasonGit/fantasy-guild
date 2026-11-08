@@ -5,6 +5,13 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Code folders tidied, nothing a player sees changes**: rebuilding heroes after a load moved
+  out of the save store into the load path (`src/systems/core/LoadedState.js`), which ends the
+  game's one import loop (`npm run cycles` reads 0 groups, was 1 of 16 modules); the combat maths
+  (`CombatFormulas.js`) moved to `src/systems/combat/`; the ground painters (`Terrain*.js`) and
+  their dev tuner (`playmatTuning.js`) moved beside the drawing code in
+  `src/ui/components/board/terrain/`. Saves, the ground picture and the tuner's stored values are
+  unchanged.
 - **The CMS refuses a Sync from a stale tab or off `main`, and says why** (CMS only): Sync to
   Game now sends the workspace revision the tab holds, and a tab that missed a later save (another
   tab, the command line) is refused with "This Sync was made from an out-of-date copy of the
