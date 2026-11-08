@@ -14,6 +14,14 @@ project's first tagged baseline — everything before it was untagged developmen
   rebuilding them for every worked Token on every tick. On the realistic board's 6-hour catch-up,
   measured back to back on a shared machine, this work fell from about 10 % of the time to 2 %,
   and the catch-up from about 26.5 s to 23.2 s, ending with the same board, Bank and XP.
+- **The game's readouts share one clock that rests while the window is hidden** (no change
+  while you watch): the tooltips, timers, bubbles, the open Token card, the stubs' live rates and
+  the fight-window check re-read the game on one shared timer instead of a dozen of their own,
+  and it stops while the page is in a background tab or the desktop app is minimised; coming back,
+  every readout is brought up to date at once. The Upkeep badge and its summary no longer poll:
+  they work out again only when something that changes them happens (the badge no longer on every
+  item into or out of the Bank, which cannot change its total), and redraw only when what they
+  show has changed. The Token card's art no longer measures itself every second.
 - **The CMS refuses a Sync from a stale tab or off `main`, and says why** (CMS only): Sync to
   Game now sends the workspace revision the tab holds, and a tab that missed a later save (another
   tab, the command line) is refused with "This Sync was made from an out-of-date copy of the

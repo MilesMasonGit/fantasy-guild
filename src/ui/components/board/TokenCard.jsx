@@ -26,6 +26,7 @@ import { StatCell } from '../base/StatCell.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { lookUpRibbon, lookUpToken, lookUpRecipe, lookUpItem } from '../encyclopedia/encyclopediaLink.js';
 import { t } from '../../../i18n/index.js';
+import { onPoll } from './frameClock.js';
 
 /** The activity scenes are 256 px square; they only ever draw at whole multiples of it. */
 export const CARD_ART_PX = 256;
@@ -459,8 +460,7 @@ const DrivesLine = ({ def }) => {
 function useCardClock(instanceId, enemy) {
     const [, setNow] = useState(0);
     useEffect(() => {
-        const timer = setInterval(() => setNow(n => n + 1), CARD_REFRESH_MS);
-        return () => clearInterval(timer);
+        return onPoll(() => setNow(n => n + 1), CARD_REFRESH_MS);
     }, []);
     useEffect(() => {
         if (!enemy || instanceId == null) return undefined;
@@ -514,8 +514,9 @@ const ArtWindow = ({ art, className, style, children }) => {
         const next = artPlacement(el.offsetWidth, el.offsetHeight);
         setPlace(prev => (prev.scale === next.scale && prev.left === next.left && prev.top === next.top ? prev : next));
     }, []);
-    // No deps on purpose: the size follows the card's content; `fit` settles in one extra render.
-    useLayoutEffect(fit);
+    // Measured once before the first paint; after that the observer below follows the size, which
+    // changes with the card's content, so the card's clock re-rendering it measures nothing.
+    useLayoutEffect(fit, [fit]);
     useEffect(() => {
         const el = ref.current;
         if (!el || typeof ResizeObserver === 'undefined') return undefined;

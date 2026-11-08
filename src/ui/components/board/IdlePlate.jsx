@@ -8,6 +8,7 @@ import { timerCellOf } from './idlePlate.js';
 import { TURN_COUNTDOWN_REFRESH_MS } from './ringRow.js';
 import { artRadiusOf } from '../../../config/matGeometry.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
+import { onPoll } from './frameClock.js';
 
 const sameTimer = (a, b) => a === b || (!!a && !!b && a.text === b.text && a.tip === b.tip && a.glyph === b.glyph);
 
@@ -47,8 +48,7 @@ export const IdlePlate = memo(function IdlePlate({ host, tokenId, typeId, x, y, 
             setTimer(prev => (sameTimer(prev, next) ? prev : next));
         };
         refresh();
-        const id = setInterval(refresh, TURN_COUNTDOWN_REFRESH_MS);
-        return () => clearInterval(id);
+        return onPoll(refresh, TURN_COUNTDOWN_REFRESH_MS);
     }, [readTimer]);
     const cellTip = useCallback((cell) => (cell.tip ?? tip?.(cell) ?? null), [tip]);
 

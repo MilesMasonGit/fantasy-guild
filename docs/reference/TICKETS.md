@@ -102,7 +102,6 @@ The findings' full write-ups are in `docs/active/review/R*_*.md` (search the CR4
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-343 | P3 | brief 510 | **Fifteen UI timers tick whether or not anything changed, and none pauses while hidden** (`MatUpkeepBadge`, `UpkeepSummaryPanel`, `FightPanelPopup` and twelve more): one shared poll clock in `frameClock.js` that honours the drawing pause; the upkeep badge and panel recompute only when their summary's signature changes; `TokenCard`'s `ArtWindow` layout effect gets its dependencies. Readouts show the same | CR4-050 |
 | T-344 | P3 | brief 510, after 520 M7 | **A minimised desktop app keeps the visible page's idle cost** (WebView2 never hides the page; `src/ui/drawingPause.js` pauses only the frame clocks): measure first (brief 520 M7), then under `fg-window-minimised` also pause the CSS loops (`data-paused` on the body), the pollers (T-343) and the per-tick React commits, reading once on restore. Engine ticks and saves keep running | CR4-098 |
 
 **Combat XP stars (brief 530; owner ruling 2026-11-07)**

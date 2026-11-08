@@ -24,6 +24,7 @@ import { clearOfFight } from './healthBar.js';
 import { momentTone } from './speechTone.js';
 import { plateUnit } from './workPlate.js';
 import { subscribeHints, hintsShowing } from './dragHints.js';
+import { onPoll } from './frameClock.js';
 
 /** How often lines are re-read and expired ones cleared. */
 const REFRESH_MS = 500;
@@ -198,11 +199,10 @@ export const HeroBubbleLayer = ({ heroes }) => {
     const busy = momentsRef.current.size > 0 || anyFloats(t);
     useEffect(() => {
         if (!busy) return undefined;
-        const timer = setInterval(() => {
+        return onPoll(() => {
             const at = Date.now();
             if (speechKeyOf(speechAtRef.current(heroesRef.current, at)) !== drawnKeyRef.current) setNow(at);
         }, REFRESH_MS);
-        return () => clearInterval(timer);
     }, [busy]);
 
     // What each hero says now, then where every stack goes so none crowd.

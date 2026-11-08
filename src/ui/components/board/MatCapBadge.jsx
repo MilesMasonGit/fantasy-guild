@@ -19,6 +19,7 @@ import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { TOP_BAR_ICON, TopBarIcon } from './MatTopBar.jsx';
 import { useHoverOpen } from '../../hooks/useHoverOpen.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { onPoll } from './frameClock.js';
 
 /**
  * What changes the badge's number. Every route a Token takes onto or off the mat publishes
@@ -233,10 +234,10 @@ export const MatCapBadge = ({ readSummary = liveMatSummary }) => {
             if (panelRef.current?.contains(e.target) || ref.current?.contains(e.target)) return;
             close();
         };
-        const timer = setInterval(() => tickRefresh(n => n + 1), PANEL_REFRESH_MS);
+        const stopPoll = onPoll(() => tickRefresh(n => n + 1), PANEL_REFRESH_MS);
         document.addEventListener('pointerdown', onDown, true);
         return () => {
-            clearInterval(timer);
+            stopPoll();
             document.removeEventListener('pointerdown', onDown, true);
         };
     }, [open, close]);

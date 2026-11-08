@@ -16,6 +16,7 @@ import { TONE_COLOUR, rateText, signedAmount, toneOf } from './stubText.js';
 import { useStubGlide, glideShift } from './stubGlide.js';
 import { getCopies, getCopiesVersion, subscribeCopies } from './stubLanding.js';
 import { GAP_PX, HEADER_PX, PAD_LEFT_PX, PAD_RIGHT_PX, PITCH_PX, ROW_GAP_PX, SPRITE_PX, STUB_PX } from './stubGeometry.js';
+import { onPoll } from '../board/frameClock.js';
 
 /**
  * The item stubs: a column flush against the right edge of the mat, under the top bar, like tabs
@@ -38,6 +39,8 @@ import { GAP_PX, HEADER_PX, PAD_LEFT_PX, PAD_RIGHT_PX, PITCH_PX, ROW_GAP_PX, SPR
 
 /** How long the open stub waits before closing, so the pointer can cross onto it from its stub. */
 const OPEN_CLOSE_MS = 120;
+/** How often an open or pinned stub re-reads its live rate. */
+const STUB_REFRESH_MS = 1000;
 
 function useSetting(path) {
     const [value, setValue] = useState(() => SettingsManager.get(path));
@@ -132,8 +135,7 @@ export const Stub = memo(function Stub({ stub, onHover, onLeave, onCleared, inte
 const PinnedStub = memo(function PinnedStub({ stub, onCleared }) {
     const [, tick] = useState(0);
     useEffect(() => {
-        const t = setInterval(() => tick(n => n + 1), 1000);
-        return () => clearInterval(t);
+        return onPoll(() => tick(n => n + 1), STUB_REFRESH_MS);
     }, []);
     return <Stub stub={stub} onCleared={onCleared} openRate={ItemRateTracker.getFlow(stub.itemId).perHour} />;
 });
@@ -150,8 +152,7 @@ export function OpenStub({ itemId, top, startPx, onEnter, onLeave, onCleared, on
     const opened = useRef(false);
     const [, tick] = useState(0);
     useEffect(() => {
-        const t = setInterval(() => tick(n => n + 1), 1000);
-        return () => clearInterval(t);
+        return onPoll(() => tick(n => n + 1), STUB_REFRESH_MS);
     }, []);
     // The width follows the line (the amount and rate change while open). The first time it
     // starts from the stub's width so the box visibly grows; the transition is in tailwind.css.
