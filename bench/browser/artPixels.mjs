@@ -92,12 +92,13 @@ export function judgeArtPixels(shot, box) {
     // texel all the way (nearest sampling); a pixel that disagrees is another Token's colour that
     // happens to decode, and counts as covered.
     // A pixel is trusted when it and its four neighbours are all this picture, drawn pixel for texel:
-    // left and right one texel column apart at most on the same row, up and down the other way.
+    // left and right at most two texel columns apart (one dropped between) on the same row, up and
+    // down the other way.
     const W = x1 - x0 + 1, H = y1 - y0 + 1;
     const grid = new Array(W * H);
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const v = at(x, y); grid[(y - y0) * W + (x - x0)] = v && !v.blend ? v : null; }
     const cell = (x, y) => (x < x0 || y < y0 || x > x1 || y > y1 ? undefined : grid[(y - y0) * W + (x - x0)]);
-    const near = (a, b, along) => b && (along === 'x' ? b.ty === a.ty && Math.abs(b.tx - a.tx) <= 1 : b.tx === a.tx && Math.abs(b.ty - a.ty) <= 1);
+    const near = (a, b, along) => b && (along === 'x' ? b.ty === a.ty && Math.abs(b.tx - a.tx) <= 2 : b.tx === a.tx && Math.abs(b.ty - a.ty) <= 2);
     const trusted = (x, y) => {
         const v = cell(x, y);
         if (!v) return null;
