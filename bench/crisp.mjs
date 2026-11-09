@@ -12,7 +12,10 @@
 //   npm run bench:crisp -- --window=1920x1080   another window (1600×1000 by default); the mat's fit
 //                                        follows (S2: 1200x770 fit 0.55, 1600x1000 0.76,
 //                                        1920x1080 0.83, 2060x1266 1.00)
-//   --verbose                            each judged Token's share of exact pixels at rest
+//   --verbose                            each judged Token's share of exact pixels at rest, and per
+//                                        case the still Tokens it changed or left no longer exact
+//   --art-only                           only the art-pixel check (every art pixel the same whole
+//                                        number of screen pixels); --neuter=zoom shows it failing
 //
 // How: the board is built, settled and FROZEN (the game loop stopped, the running animations
 // left to finish), so nothing moves on its own. Screenshots for 2 s pick the still Tokens: those
@@ -33,8 +36,9 @@
 // reduced motion (`hold`). The art must keep one shape (the same pixels off its picture in every
 // shot), the shadow stay in one place, 2 art pixels right of the art, and the art stand 1 to 4
 // whole art pixels above where it rests (held 3 with reduced motion).
-// Exit codes: 0 every still Token exact and unchanged, the loot as it should float · 1 a case changed
-// them, one is soft, or the loot is not · 3 the check failed.
+// Exit codes: 0 every art pixel even, every still Token exact and unchanged, the loot as it should
+// float · 1 an art row thin or thick, a case changed them, one is soft, or the loot is not · 3 the
+// check failed.
 // ⚠️ Pixels compare only within one run (one machine, one Chrome); nothing is kept between runs.
 
 import fs from 'node:fs';
@@ -778,6 +782,10 @@ async function main() {
             const clear = judged.filter(({ t }) => !(moved && overlaps(t, moved)));
             const exactBefore = clear.filter(({ t }) => exactAtRest.has(t.id)).length;
             rows.push({ id: c.id, what: c.what, changed: changed.length, exact: exactIn(shot), softened: exactBefore - exactIn(shot, clear.filter(({ t }) => exactAtRest.has(t.id))), layers: caseLayers, mainThread: !!c.mainThread, hero });
+            if (args.verbose) {
+                const soft = clear.filter(({ t, pic }) => exactAtRest.has(t.id) && (exactShare(shot, t, pic) ?? 0) < EXACT).map(({ t }) => `${t.id}@${t.x},${t.y}`);
+                console.log(`  ${c.id}: changed ${changed.map(t => `${t.id}@${t.x},${t.y}`).join(' ') || '-'}; no longer exact ${soft.join(' ') || '-'}`);
+            }
             await sleep(700 + (c.settleMs || 0));
         };
         for (const c of CASES) await runCase(c);

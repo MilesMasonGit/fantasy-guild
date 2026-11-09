@@ -692,13 +692,13 @@ common screens: 1366x705 is 0.50, 1920x1017 0.77, 2560x1377 1.09.
 
 | Command | What it does | Exit |
 |---|---|---|
-| `npm run bench:crisp` | perf build, S2, every case | 0 all crisp, 1 a case changed them, the rest is soft or the loot does not float as it should, 3 failed |
+| `npm run bench:crisp` | perf build, S2, every case | 0 all crisp, 1 an art row is thin or thick, a case changed them, the rest is soft or the loot does not float as it should, 3 failed |
 | `--window=1920x1080` | another window, so another fit (above) | |
 | `npm run bench:crisp -- --neuter` | both guards switched off in the page (every `will-change` on the mat back to auto, labels painted): shows the fault (2026-10-14, perf build, S2: the cases among the resting Tokens changed 62 of 69 still Tokens, 0 of 15 exact even at rest; with the guards on 0–2 of 67 and 14 of 14) | 1 |
 | `--art-only` | only the art-pixel check (exit 1 on any thin or thick art row) | 0 or 1 |
 | `--neuter=zoom` | the mat scaled by a transform again, in the page: shows the uneven art rows (`ART`) | 1 |
 | `--neuter=anims`, `--neuter=labels` | one guard off (anims: the cases among the resting Tokens change 13 of 68; labels: 2 of 14 soft at rest, 26 layers at rest against 9) | 1 |
-| `--dev --no-build --scene=cap128 --keep=<dir> --settle=10 --verbose` | the dev build; reuse `dist-perf/`; another board; keep the screenshots; each Token's exact share | |
+| `--dev --no-build --scene=cap128 --keep=<dir> --settle=10 --verbose` | the dev build; reuse `dist-perf/`; another board; keep the screenshots; each Token's exact share, and per case the Tokens it changed or left no longer exact | |
 | `--scene=heroes12`, `--scene=floor60` | a plain board (`S1`, `S2`, `S3`, `cap128`, `camp128`, `cap256`) or an envelope scene, whose page timers stop when the board is frozen. Not the scenes that open a drawer or a sheet | |
 
 ### `npm run bench:soak`: does the page grow over hours? (Memory soak)
