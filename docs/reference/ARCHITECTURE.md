@@ -330,6 +330,16 @@ The mat is a **free playmat**: Tokens stand at points in mat units, no grid, no 
 (12 × 6.5 steps of 160 u, 1920 × 1040 u by default; resizable by the dev Mat Tuner), so code
 must call `matW()`/`matH()` rather than cache them (`matGeometry.js:16-30`).
 
+The mat is fitted to the window by **CSS `zoom`** (`Board.jsx` `matZoomStyle`, the fit from
+`useBoardScale`), not a transform: Chrome lays it out at screen size, so every sprite, sized in
+mat units by `boardScaleAt(fit)`, lands on exactly its whole multiple of the art and outlines
+line up; under `transform: scale` Chrome rounded each sprite to whole mat units first and one art
+row came out a pixel thin or thick. Sprites keep whole-step sizes while only the distances between
+things shrink with the window, so reach and every rule are the same at any size.
+`isolation: isolate` keeps the mat a stacking context. Screen-to-mat conversions read the mat's
+`getBoundingClientRect()` and divide by `rect.width / matW()` (`matPoint.js`), as before.
+`bench:crisp` checks every art pixel (`bench/browser/artPixels.mjs`).
+
 `MatBoard.jsx` (`src/ui/components/board/MatBoard.jsx:62-…`, memoised) draws every Token
 (`MatToken.jsx`), hero (`MatHero.jsx`) and flag (`FlagLayer.jsx`) as **positioned DOM elements**
 keyed by instance id, in the z-layers set out in `matLayers.js` (`MAT_Z`: surface, ground,
