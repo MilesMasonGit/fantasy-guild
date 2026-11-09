@@ -25,7 +25,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-395**
+**Next free number: T-396**
 
 ---
 
@@ -242,3 +242,4 @@ first, when content that uses it is authored.*
 | T-189 | P3 | open | **Retire `data/palettes/materials_library.json`** (found 2026-10-16): 12 lower-case ramps the Studio only reads (a GET in `RecolorEditor.jsx`), looked up only when a swap target matches a lower-case key exactly, which the dropdown never offers. Confirm nothing needs it, then remove the read and have the owner delete the file through the Studio/CMS. builder-lite. | T-180 palette bake |
 | T-392 | P3 | open | **Two enemy camps of one kind give duplicate React keys** (found 2026-11-08, brief 510 F7): `SpawnerSystem.familyCounts()` labels every enemy camp's own row `<name> (its own)`, so a board with several camps of the same name (S2's Bench Camps) logs two children with the same key where a dev view keys rows by that label. Key by the camp's instance id | brief 510 F7 |
 | T-394 | P2 | open | **A spawn pop blurs the Tokens around it** (found 2026-11-08, brief 550 X1, `bench:crisp`'s spawn pop case): at fits 0.76 and 0.83, 14 to 61 still Tokens change and 11 to 26 composited layers appear while a new Token pops in, on main and on the brief 550 branch alike. Likely the same cause as the flag fade (an opacity or transform animation pushing later Tokens onto layers): measure, then `will-change: contents` or a stepped pop. Also: `bench:crisp` often exits 3 because heroes' idle frames and worked trees move at rest; the `floorstill<N>` scene stops a CSS animation that no longer exists | brief 550 X1 |
+| T-395 | P2 | open | **The draw baseline cannot be retaken: one rejected repeat refuses the whole save** (2026-11-09, two quiet-window tries): at the 4x CPU setting Chrome on this PC often delivers 5 to 6x; `bench:draw` re-measures twice, and if one repeat of one scene still misses (S2 + notification burst 1/3), `--save-baseline` refuses even with the other repeats valid. The 7 Nov baseline (a lucky run) stays in place, so 1x p99 verdicts read REGRESSED for nothing. Save when at least 2 of 3 repeats per scene are valid (median of the valid ones), or retry the rejected repeat up to N times | brief 520 |
