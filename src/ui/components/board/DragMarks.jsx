@@ -18,7 +18,7 @@ export const MARK_SCREEN_PX = MARK_ART_PX;
  */
 export const markArtSteps = (fit = 1) => Math.max(1, Math.floor(boardArtSteps(fit) / 2));
 
-/** A mark's size in MAT UNITS at fit `fit`: through the mat's transform, exactly `markArtSteps` x 32 screen px. */
+/** A mark's size in MAT UNITS at fit `fit`: through the mat's zoom, exactly `markArtSteps` x 32 screen px. */
 export const markMatPx = (fit = 1) => {
     const f = Number.isFinite(fit) && fit > 0 ? fit : 1;
     return (MARK_ART_PX * markArtSteps(f)) / f;

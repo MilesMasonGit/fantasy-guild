@@ -178,7 +178,7 @@ export const MatToken = React.memo(function MatToken({
     const small = isSmallToken(typeId);
 
     /**
-     * How big this Token's art is drawn, in mat units. The mat's transform turns `artPx` mat
+     * How big this Token's art is drawn, in mat units. The mat's zoom turns `artPx` mat
      * units into exactly `boardArtSteps(fit) × ART_PX` screen pixels, so the sprite is always
      * a whole multiple of its 64px art and never resampled.
      * The box grows to hold the art when the art is the larger of the two, so the spill the

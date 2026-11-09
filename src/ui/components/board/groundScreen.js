@@ -12,10 +12,10 @@ import { tuning } from './terrain/playmatTuning.js';
  * the decoded sheets in; RGBA bytes out, one per ground pixel, for one `putImageData`.
  *
  * ⭐ **One ground pixel is a whole number of Token pixels on screen**: `pixel` of them across (the
- * Ground pixel size slider, {@link groundPixel}; 2 ships). The mat is scaled to the window by a CSS
- * transform, and Token art steps to a whole number of screen pixels per art pixel through it
+ * Ground pixel size slider, {@link groundPixel}; 2 ships). The mat is scaled to the window by CSS
+ * zoom, and Token art steps to a whole number of screen pixels per art pixel through it
  * (`boardScaleAt`, `TokenSprite.jsx`). The caller passes `unit = pixel × boardScaleAt(fit)`: a
- * ground pixel is that many mat units, so the transform lands it on exactly
+ * ground pixel is that many mat units, so the zoom lands it on exactly
  * `pixel × boardArtSteps(fit)` screen pixels. The 2-unit plan is read at each ground pixel's
  * centre; the details are drawn for the pixel's size (`TerrainGrass.detailRules`), and the props
  * keep their size in Token pixels, drawn at the ground's pixel ({@link propCell}).

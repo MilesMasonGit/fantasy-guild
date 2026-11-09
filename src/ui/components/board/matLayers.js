@@ -29,8 +29,8 @@ const TOKEN_TOP = HERO_BASE + HERO_ROWS;
  * others (no wrapper with its own z-index), which is what lets a flag slot in between two
  * Tokens.
  * ⚠️ The numbers run to about thirty-four million. They stay inside the mat only because the board's
- * scaled box (`Board.jsx`, `data-board-origin`, its `transform`) is a stacking context; without
- * one, every Token would draw over the rest of the game's screens.
+ * scaled box (`Board.jsx`, `data-board-origin`, its `isolation: isolate`) is a stacking context;
+ * without one, every Token would draw over the rest of the game's screens.
  */
 export const MAT_Z = Object.freeze({
     /** The playmat surface itself. */

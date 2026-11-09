@@ -34,6 +34,21 @@ export function matAccepts(p) {
     return false;
 }
 
+/**
+ * How the mat is fitted to the window: CSS `zoom`, never `transform: scale`.
+ * Under a transform Chrome lays the mat out in mat units and rounds every picture's box to whole
+ * mat units before the scale, so a 166.23-unit Token lands 127.8 or 128.6 px wide and one row of
+ * its art pixels is drawn a pixel thin or thick (and its outline slips against it). Zoomed, the mat
+ * is laid out at screen size and rounded in screen pixels, so every sprite `boardScaleAt` sizes is
+ * exactly its whole multiple of the art. `getBoundingClientRect()` answers in screen pixels and
+ * `offsetWidth` in mat units, as they did under the transform.
+ * ⚠️ `isolation`: the mat must stay a stacking context (`matLayers.js`: its z-values run to tens of
+ * millions); a transform made one, zoom does not.
+ */
+export function matZoomStyle(w, h, fit) {
+    return { width: w, height: h, zoom: fit, isolation: 'isolate' };
+}
+
 export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, inspectedTokenId = null }) => {
     // How big the mat is (the Mat Tuner can change it live), and how much it is then shrunk to
     // fit this window.
@@ -131,18 +146,12 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
                     data-natural-width={mat.w}
                     data-board-scale={fit.scale}
                     className="relative shrink-0"
-                    style={{
-                        width: mat.w,
-                        height: mat.h,
-                        transform: `scale(${fit.scale})`,
-                        transformOrigin: 'top left'
-                    }}
+                    style={matZoomStyle(mat.w, mat.h, fit.scale)}
                 >
                     {/**
-                     * The sprites on the mat need to know what this transform is about to do
-                     * to them (`MatFitProvider`), so they can step to a whole multiple of
-                     * ART_PX through it. Nothing else on the mat cares: the transform handles
-                     * the rest.
+                     * The sprites on the mat need to know what this zoom is about to do to
+                     * them (`MatFitProvider`), so they can step to a whole multiple of ART_PX
+                     * through it. Nothing else on the mat cares: the zoom handles the rest.
                      */}
                     {matContents}
                 </div>
