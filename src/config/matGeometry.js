@@ -84,7 +84,7 @@ export function clampToMat(point, inset = 0) {
  *
  * ⚠️ The 2× is an integer ratio on purpose. Deriving either number from the
  * space available breaks it and makes every sprite blurry — the mat is scaled
- * with a CSS transform instead (`useBoardScale`).
+ * with CSS zoom instead (`useBoardScale`, `Board.matZoomStyle`).
  */
 export const ART_PX = 64;
 export const TOKEN_SCALE = 2;

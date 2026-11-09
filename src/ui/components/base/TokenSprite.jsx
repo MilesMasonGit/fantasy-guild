@@ -55,17 +55,17 @@ export const TOKEN_SCALE = {
 
 /**
  * Stepped art, smooth spacing: the board surface only.
- * The mat is drawn at its natural size and fitted into the window with one CSS transform
- * (`useBoardScale`), so positions, the surface, rings, flags and the drop target all scale
+ * The mat is drawn at its natural size and fitted into the window with CSS zoom
+ * (`useBoardScale`, `Board.matZoomStyle`), so positions, the surface, rings, flags and the drop target all scale
  * smoothly. A sprite must not: at a fit of 0.21 a 128 u Token lands on screen as 26.88 px, a
  * fractional sample of 64 px art, which blurs. So the board's scale is chosen from the live
  * fit so that what the player sees is always a whole multiple of `ART_PX`.
  * `boardArtSteps` rounds the natural 2× times the fit to the nearest whole number, never below
  * 1. `boardScaleAt` divides that back by the fit, giving the size in MAT UNITS that the
- * transform lands on exactly `steps × ART_PX` screen pixels.
+ * zoom lands on exactly `steps × ART_PX` screen pixels.
  * ⚠️ The mat-unit scale is deliberately fractional. The whole-number contract is about the
  * rendered pixel size, not the mat-unit number: `boardScaleAt(0.21)` is ~4.76 mat units and
- * exactly 64 px on screen. At a fit of 1 it is 2, so every caller outside the mat's transform
+ * exactly 64 px on screen. At a fit of 1 it is 2, so every caller outside the mat's zoom
  * is unchanged.
  * ⚠️ Below 1× the art is bigger than the Token's circle, and that is intended: the art steps
  * while spacing glides, so sprites spill over their neighbours on a small mat. This is a
@@ -86,7 +86,7 @@ export const boardScaleAt = (fit = 1) => {
 /**
  * Displayed size for a surface, accounting for 1x1 vs 2x2 large tokens. `scale` defaults to
  * the surface's own entry in `TOKEN_SCALE`; the board passes `boardScaleAt(fit)` instead so
- * its sprites land on whole pixels through the mat's transform.
+ * its sprites land on whole pixels through the mat's zoom.
  */
 export const tokenSizeFor = (surface, typeIdOrSize = 1, scale = TOKEN_SCALE[surface] ?? 1) => {
     let sizeMultiplier = 1;

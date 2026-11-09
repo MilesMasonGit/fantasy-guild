@@ -13,7 +13,7 @@ export const lootSpriteMatPx = (fit = 1) => FLOOR_ITEM_PX * (boardScaleAt(fit) /
 
 /**
  * A loot sprite's size in SCREEN PIXELS at a mat fit: the mat-unit size through
- * the mat's transform. Always a whole multiple of 32, so a flying item
+ * the mat's zoom. Always a whole multiple of 32, so a flying item
  * is exactly as big as the one that lay on the floor.
  */
 export const lootSpriteScreenPx = (fit = 1) => {

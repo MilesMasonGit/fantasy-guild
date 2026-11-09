@@ -13,12 +13,13 @@ export const MIN_BOARD_SCALE = 0.1;
 
 /**
  * How much the board scales to fit the space it has been given.
- * The board is drawn at its natural size and then CSS-transformed to fit, rather than
- * recomputing Token sizes: sprite sizes are a whole multiple of `ART_PX`, and recomputing from
- * the available space would break that ratio and blur every sprite. A transform leaves every
- * layout decision, constant and stored coordinate in the natural space untouched.
+ * The board is drawn at its natural size and then scaled to fit (the playmat by CSS zoom,
+ * `Board.matZoomStyle`), rather than recomputing Token sizes: sprite sizes are a whole multiple
+ * of `ART_PX`, and recomputing from the available space would break that ratio and blur every
+ * sprite. Scaling leaves every layout decision, constant and stored coordinate in the natural
+ * space untouched.
  * Drop targeting comes along for free, mostly: `getBoundingClientRect()` reports the
- * transformed box and dnd-kit measures its droppables that way. Code converting a screen
+ * scaled box and dnd-kit measures its droppables that way. Code converting a screen
  * pointer position back into board coordinates must divide by `scale`.
  * Two boards, two natural sizes: the Guild Hall upgrade web is a different size from the
  * playmat, so every caller passes its own natural size (the mat its live size via

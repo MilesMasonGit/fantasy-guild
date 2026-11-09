@@ -671,16 +671,34 @@ so the item is thrown again elsewhere, up to four times, until one rests with no
 picture (the line says how many throws it took). `--keep` saves one clip
 of each way the item was drawn (`bob-<n>_art<x>_<y>_shadow<x>_<y>.png`, in clip pixels).
 
+**Every art pixel, at rest** (T-393's second half: uneven rows and slipping outlines). Before
+anything else, each Token's picture is swapped in place for a 64 × 64 test picture in which every
+pixel says where it is (red and green) and which Token it belongs to (blue), and the rest of the
+mat is hidden meanwhile (`visibility`, so nothing moves and no badge or hero lies over the art). A
+screen pixel counts only where it and its four neighbours are all that Token's picture, so what the
+page draws over the mat (the top bar, the hero bar's names) never reads as art.
+The screenshot is read along every screen row and column of each sprite: a run of one art pixel
+bounded by its own neighbours must be exactly the sprite's whole step (its width / 64), so a thin,
+thick or dropped row or column fails (`ART`). This is what caught the mat scaled by
+`transform: scale(fit)`, which Chrome rounded to whole mat units before the scale (2026-11-08,
+1920 × 1017: 22 of 106 Tokens uneven); the mat is now zoomed, and every Token passes.
+`--neuter=zoom` swaps the transform back in the page and shows the fault; `--art-only` runs this
+check alone (about a minute with `--dev`). A Token drawn resampled, or under a shadow from outside
+the mat, reads "blended": said, not judged (the other checks judge softness).
+
 The mat's fit follows the window: `--window=WxH`. On S2 (2026-11-08): 1200x770 is fit 0.55
-(art 1×), 1600x1000 0.76, 1920x1080 0.83, 2060x1266 1.00 (art 2×).
+(art 1×), 1600x1000 0.76, 1920x1080 0.83, 2060x1266 1.00 (art 2×); the maximised windows of the
+common screens: 1366x705 is 0.50, 1920x1017 0.77, 2560x1377 1.09.
 
 | Command | What it does | Exit |
 |---|---|---|
-| `npm run bench:crisp` | perf build, S2, every case | 0 all crisp, 1 a case changed them, the rest is soft or the loot does not float as it should, 3 failed |
+| `npm run bench:crisp` | perf build, S2, every case | 0 all crisp, 1 an art row is thin or thick, a case changed them, the rest is soft or the loot does not float as it should, 3 failed |
 | `--window=1920x1080` | another window, so another fit (above) | |
 | `npm run bench:crisp -- --neuter` | both guards switched off in the page (every `will-change` on the mat back to auto, labels painted): shows the fault (2026-10-14, perf build, S2: the cases among the resting Tokens changed 62 of 69 still Tokens, 0 of 15 exact even at rest; with the guards on 0–2 of 67 and 14 of 14) | 1 |
+| `--art-only` | only the art-pixel check (exit 1 on any thin or thick art row) | 0 or 1 |
+| `--neuter=zoom` | the mat scaled by a transform again, in the page: shows the uneven art rows (`ART`) | 1 |
 | `--neuter=anims`, `--neuter=labels` | one guard off (anims: the cases among the resting Tokens change 13 of 68; labels: 2 of 14 soft at rest, 26 layers at rest against 9) | 1 |
-| `--dev --no-build --scene=cap128 --keep=<dir> --settle=10 --verbose` | the dev build; reuse `dist-perf/`; another board; keep the screenshots; each Token's exact share | |
+| `--dev --no-build --scene=cap128 --keep=<dir> --settle=10 --verbose` | the dev build; reuse `dist-perf/`; another board; keep the screenshots; each Token's exact share, and per case the Tokens it changed or left no longer exact | |
 | `--scene=heroes12`, `--scene=floor60` | a plain board (`S1`, `S2`, `S3`, `cap128`, `camp128`, `cap256`) or an envelope scene, whose page timers stop when the board is frozen. Not the scenes that open a drawer or a sheet | |
 
 ### `npm run bench:soak`: does the page grow over hours? (Memory soak)

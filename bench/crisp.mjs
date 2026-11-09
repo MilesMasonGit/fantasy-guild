@@ -12,7 +12,10 @@
 //   npm run bench:crisp -- --window=1920x1080   another window (1600×1000 by default); the mat's fit
 //                                        follows (S2: 1200x770 fit 0.55, 1600x1000 0.76,
 //                                        1920x1080 0.83, 2060x1266 1.00)
-//   --verbose                            each judged Token's share of exact pixels at rest
+//   --verbose                            each judged Token's share of exact pixels at rest, and per
+//                                        case the still Tokens it changed or left no longer exact
+//   --art-only                           only the art-pixel check (every art pixel the same whole
+//                                        number of screen pixels); --neuter=zoom shows it failing
 //
 // How: the board is built, settled and FROZEN (the game loop stopped, the running animations
 // left to finish), so nothing moves on its own. Screenshots for 2 s pick the still Tokens: those
@@ -33,8 +36,9 @@
 // reduced motion (`hold`). The art must keep one shape (the same pixels off its picture in every
 // shot), the shadow stay in one place, 2 art pixels right of the art, and the art stand 1 to 4
 // whole art pixels above where it rests (held 3 with reduced motion).
-// Exit codes: 0 every still Token exact and unchanged, the loot as it should float · 1 a case changed
-// them, one is soft, or the loot is not · 3 the check failed.
+// Exit codes: 0 every art pixel even, every still Token exact and unchanged, the loot as it should
+// float · 1 an art row thin or thick, a case changed them, one is soft, or the loot is not · 3 the
+// check failed.
 // ⚠️ Pixels compare only within one run (one machine, one Chrome); nothing is kept between runs.
 
 import fs from 'node:fs';
@@ -45,13 +49,14 @@ import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
 import { startDevServer, startPerfServer, buildPerf } from './browser/servers.mjs';
 import { sceneFor, sceneUrl, openBoard } from './browser/scenes.mjs';
 import { ENVELOPE_SCENE_NAMES } from './browser/drawLib.mjs';
+import { ART_BATCH, ART_PICTURES_ON, ART_PICTURES_OFF, judgeArtPixels } from './browser/artPixels.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const require = createRequire(path.join(root, 'package.json'));
 
 function parseArgs(argv) {
-    const a = { dev: false, build: true, neuter: [], scene: 'S2', settleS: 10, keep: null, verbose: false, width: 1600, height: 1000 };
+    const a = { dev: false, build: true, neuter: [], scene: 'S2', settleS: 10, keep: null, verbose: false, width: 1600, height: 1000, artOnly: false };
     for (const arg of argv) {
         const [k, ...rest] = arg.replace(/^--/, '').split('=');
         const v = rest.join('=');
@@ -60,7 +65,7 @@ function parseArgs(argv) {
             case 'no-build': a.build = false; break;
             case 'neuter': {
                 const parts = v ? v.split(',') : ['anims', 'labels'];
-                for (const n of parts) if (!['anims', 'labels'].includes(n)) throw new Error(`--neuter: anims, labels or both, not ${n}`);
+                for (const n of parts) if (!['anims', 'labels', 'zoom'].includes(n)) throw new Error(`--neuter: anims, labels, zoom or a list, not ${n}`);
                 a.neuter = parts;
                 break;
             }
@@ -80,6 +85,7 @@ function parseArgs(argv) {
             }
             case 'keep': a.keep = path.resolve(v); break;
             case 'verbose': a.verbose = true; break;
+            case 'art-only': a.artOnly = true; break;
             default: throw new Error(`unknown option --${k}`);
         }
     }
@@ -617,6 +623,34 @@ function judgeLoot(seen, { art, hold = null }) {
 
 // ---------------------------------------------------------------------------
 
+/**
+ * Every Token's art pixels at rest: each must be drawn the same whole number of screen pixels
+ * (`browser/artPixels.mjs`). The pictures are swapped and the rest of the mat hidden only while
+ * the shots are taken; all is put back before anything else is judged.
+ */
+async function checkArtPixels(page, args) {
+    const out = { judged: 0, exact: 0, blended: 0, blendedAt: [], unseen: 0, uneven: [], steps: [] };
+    const steps = new Set();
+    for (let from = 0, total = 1; from < total; from += ART_BATCH) {
+        const { total: all, boxes } = await page.evaluate(ART_PICTURES_ON(from));
+        total = all;
+        await sleep(300);
+        const shot = await screenshot(page, args.keep && path.join(args.keep, `art-${from}.png`));
+        for (const box of boxes) {
+            if (box.left < 0 || box.top < 0 || box.left + box.width > shot.width || box.top + box.height > shot.height) continue;
+            const v = judgeArtPixels(shot, box);
+            if (v.verdict === 'unseen') { out.unseen++; continue; }
+            out.judged++;
+            if (v.verdict === 'exact') { out.exact++; steps.add(v.step); } else if (v.verdict === 'blended') { out.blended++; out.blendedAt.push(`${box.left.toFixed(1)},${box.top.toFixed(1)}`); }
+            else out.uneven.push({ id: box.id, at: `${box.left.toFixed(1)},${box.top.toFixed(1)}`, step: v.step, faults: v.faults });
+        }
+    }
+    await page.evaluate(ART_PICTURES_OFF);
+    await sleep(1200);
+    out.steps = [...steps].sort((p, q) => p - q);
+    return out;
+}
+
 async function main() {
     const args = parseArgs(process.argv.slice(2));
     if (args.keep) fs.mkdirSync(args.keep, { recursive: true });
@@ -650,6 +684,19 @@ async function main() {
         // An envelope scene's page timers would keep changing the screen on a frozen board.
         await page.evaluate('(window.__perf.game.GameLoop.stop(), clearInterval(window.__benchTimer), clearInterval(window.__envSampler), true)');
         await sleep(4500);   // a floater lasts 3 s; slides, hops and flashes less
+
+        // The mat scaled by a transform again, as it was before CSS zoom: the art pixel check fails.
+        if (args.neuter.includes('zoom')) {
+            await page.evaluate(`(() => { const m = document.querySelector('[data-board-origin]'); m.style.zoom = ''; m.style.transform = 'scale(' + m.dataset.boardScale + ')'; m.style.transformOrigin = 'top left'; return true; })()`);
+            await sleep(1500);
+        }
+        const art = await checkArtPixels(page, args);
+        console.log(`art pixels: ${art.judged} Tokens judged (${art.unseen} hidden behind others), ${art.exact} with every art pixel ${art.steps.join(' or ') || '-'} screen px, ${art.uneven.length} with a thin or thick art row or column, ${art.blended} blended${art.blended ? ` (at ${art.blendedAt.join(' ')})` : ''}`);
+        for (const u of art.uneven.slice(0, 8)) console.log(`          ${u.id} at ${u.at}: ${u.faults.slice(0, 6).join(' ')} (art pixels ${u.step} px)`);
+        if (args.artOnly) {
+            console.log(art.uneven.length ? `\nART: ${art.uneven.length} Tokens drawn with a thin or thick art row or column` : '\nok: every art pixel of every Token is the same whole number of screen pixels');
+            return art.uneven.length ? 1 : 0;
+        }
 
         // The hero the walking case judges: from the back, the first that, given a still portrait,
         // is drawn crisp at rest with nothing over its middle (no bubble, no hero in front).
@@ -735,6 +782,10 @@ async function main() {
             const clear = judged.filter(({ t }) => !(moved && overlaps(t, moved)));
             const exactBefore = clear.filter(({ t }) => exactAtRest.has(t.id)).length;
             rows.push({ id: c.id, what: c.what, changed: changed.length, exact: exactIn(shot), softened: exactBefore - exactIn(shot, clear.filter(({ t }) => exactAtRest.has(t.id))), layers: caseLayers, mainThread: !!c.mainThread, hero });
+            if (args.verbose) {
+                const soft = clear.filter(({ t, pic }) => exactAtRest.has(t.id) && (exactShare(shot, t, pic) ?? 0) < EXACT).map(({ t }) => `${t.id}@${t.x},${t.y}`);
+                console.log(`  ${c.id}: changed ${changed.map(t => `${t.id}@${t.x},${t.y}`).join(' ') || '-'}; no longer exact ${soft.join(' ') || '-'}`);
+            }
             await sleep(700 + (c.settleMs || 0));
         };
         for (const c of CASES) await runCase(c);
@@ -803,8 +854,9 @@ async function main() {
         if (softHero.length) console.log(`\nHERO: ${softHero.map(r => r.id).join(', ')} drew the walking hero resampled`);
         if (layered.length) console.log(`\nLAYERED: ${layered.map(r => r.id).join(', ')} ran on the compositor (a composited layer more than at rest)`);
         if (lootFailed.length) console.log(`\nLOOT: ${lootFailed.map(r => r.id).join(', ')} not drawn as an item floats`);
-        if (!failed.length && !layered.length && !softHero.length && !softAtRest && !lootFailed.length) console.log('\nok: still Tokens are drawn exactly to their art, no animation changes that, and floor loot floats in one shape over a still shadow');
-        return failed.length || layered.length || softHero.length || softAtRest || lootFailed.length ? 1 : 0;
+        if (art.uneven.length) console.log(`\nART: ${art.uneven.length} Tokens drawn with a thin or thick art row or column`);
+        if (!failed.length && !layered.length && !softHero.length && !softAtRest && !lootFailed.length && !art.uneven.length) console.log('\nok: every art pixel is whole and even, still Tokens are drawn exactly to their art, no animation changes that, and floor loot floats in one shape over a still shadow');
+        return failed.length || layered.length || softHero.length || softAtRest || lootFailed.length || art.uneven.length ? 1 : 0;
     } finally {
         if (chrome) await chrome.close();
         if (server) await server.close();

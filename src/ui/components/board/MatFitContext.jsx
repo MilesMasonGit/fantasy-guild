@@ -3,11 +3,11 @@ import React from 'react';
 
 /**
  * The mat's live fit, for the things drawn on it.
- * `Board` measures the space it has been given and scales the whole mat into it with one CSS
- * transform. Almost nothing on the mat needs to know that number: the transform handles
- * positions, the surface, rings and flags for free.
+ * `Board` measures the space it has been given and scales the whole mat into it with CSS zoom.
+ * Almost nothing on the mat needs to know that number: the zoom handles positions, the
+ * surface, rings and flags for free.
  * **Sprites are the exception.** A Token's art must land on a whole multiple of `ART_PX` AFTER
- * the transform, so `MatToken` has to know what the transform is about to do to it
+ * the zoom, so `MatToken` has to know what the zoom is about to do to it
  * (`boardScaleAt`, `TokenSprite`). Passing it down would mean threading a prop through
  * `MatBoard` and into every Token, hero and ghost; a context keeps the plumbing to the two
  * files that actually care.
