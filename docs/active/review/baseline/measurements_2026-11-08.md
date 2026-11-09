@@ -71,3 +71,5 @@ a cost here.
 
 **The largest costs no ticket covers**: heroes choosing work through the camp checks (rank 2, 15 %), the quest
 Token scan (rank 7, 5 %), `workerOf` and `heroOfInstance` (8 %), and the spawner alert sweep (3.4 %).
+
+| M6 (atlas) | `Atlas.settle`: first Region 4.5 ms median (4.4 to 20.9, 5 worlds), sixth Region 5.9 ms (3.7 to 16.5); `worldView()`: fresh world 0.9 ms, six settled Regions 1.1 ms (vitest bench 0.88 ms mean, p99 1.47). `bench:micro -- bench/micro/atlasWorld.bench.js` on main 8423829a, 2026-11-09 02:00 window, quiet. T-354 closed as moot: a one-off settle of about 6 ms and a 1 ms world redraw per Bank change while the map is open are far under any frame budget |
