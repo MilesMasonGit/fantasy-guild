@@ -11,8 +11,9 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 550 X1: nothing blurs on hover or turn; floating items crisp (T-393) | engineer | `fix/sprite-sharpness` (`ss`) | ready d236bead: `bench:crisp` new cases fail on main and pass at all four fits (flag fade 25 to 48 Tokens soft and 6 to 11 extra layers, now 0 to 5 and none; bob one shape, shadow still; turn instant); limp fade fixed too; spawn pop blur found on main (T-394). Gate with X2 | Sun | |
-| 550 X2: walking heroes crisp (merge only if the draw and drag benches show no extra cost) | engineer | same branch, 5419c58d (X1 alone: d236bead) | **stopped on the cost rule**: walking hero own colours 33 to 69 % to 100 % at fits 0.55 to 0.83, no extra layers; provisional A/B (PC maybe in use) heroes16 frame work p50 1.50 to 1.70 ms (+0.2), S2 equal. Quiet retake queued tonight after the draw baseline (A/B with 3 repeats, then the full gate); then the owner chooses: accept the cost, or merge X1 alone | Sun | |
+| 550 X1: nothing blurs on hover or turn; floating items crisp (T-393) | engineer | `fix/sprite-sharpness` (`ss`) | **merged** 5cb5a6b3 with X2 (637 files green, lint 0 errors, cycles 0, depcruise clean, build, engine work same; owner eye-check in the built app: most fixed) | Sun | Sun |
+| 550 X2: walking heroes crisp | engineer | same branch | **merged** 5cb5a6b3; the owner accepted the cost (heroes16 +0.2 ms p50 in a run taken while a video played) | Sun | Sun |
+| 550 follow-up: uneven outlines and the drag twitch | engineer | `fix/mat-zoom` (`mz`) | diagnosis merged 7e155e72 (sprite boxes rounded in mat units before `transform: scale`; 23 of 106 Tokens uneven at the owner window). **Owner chose D (2026-11-08): CSS zoom for the mat**, keeping the owner design (sprites at whole steps, only distances shrink). Building; then the gate, a draw cost check and a look in the built app | Sun | |
 
 ## Director, code review round 4 fixes (owner, 2026-11-07: all of briefs 510, 530, 520, 540 approved, in that order)
 
