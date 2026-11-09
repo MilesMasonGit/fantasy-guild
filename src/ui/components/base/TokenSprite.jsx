@@ -172,17 +172,34 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
     const shadow = (lifted || hovering) ? shadowLayer(src, size, fit) : null;
     const ring = outline ? outlineLayer(src, size, outline) : null;
     const artRef = useRef(null);
-    useLayoutEffect(() => (hovering ? startBob(artRef.current) : undefined), [hovering]);
+    const bobUnit = boardScaleAt(fit);
+    useLayoutEffect(() => (hovering ? startBob(artRef.current, bobUnit) : undefined), [hovering, bobUnit]);
 
-    // `lifted` is a held object: raised by a fixed transform. `hovering` is a floating one:
-    // raised by its bob (`lootBob.js`) instead. Either way the shadow rises with the art, always
-    // 2 art pixels down-right of it.
+    // `lifted` is a held object: raised by a fixed transform, and its shadow rises with it, 2 art
+    // pixels down-right of the art. `hovering` is a floating one: raised by its bob (`lootBob.js`)
+    // while its shadow stays on the ground, 2 art pixels down-right of where the art rests.
+    // ⚠️ The ground shadow is drawn as the art is, so the two round to the same screen pixels: an
+    // `<img>` (a background image is snapped to whole pixels, the art is not) placed by `translate`
+    // (left/top are snapped to whole mat units first). `translate`, not `transform`, so the loot's
+    // hop (`lootArc.js`) can move it without undoing it. Code looking for the art skips it
+    // (`[data-sprite-shadow]`).
     return (
         <span
             className={cn('relative inline-block pointer-events-none select-none', className)}
             style={{ width: size, height: size, ...style }}
             data-sprite-outline={outline || undefined}
         >
+            {shadow && hovering && (
+                <img
+                    src={shadow.url}
+                    alt=""
+                    aria-hidden="true"
+                    draggable={false}
+                    data-sprite-shadow="true"
+                    className="absolute left-0 top-0 pointer-events-none"
+                    style={spriteImgStyle(size, { translate: `${shadow.offset}px ${shadow.offset}px` })}
+                />
+            )}
             <span
                 ref={artRef}
                 className={cn('absolute left-0 top-0', hovering && 'gi-sprite-hover')}
@@ -192,7 +209,7 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
                     transform: lifted ? `translateY(-${LIFT_OFFSET_PX}px)` : undefined
                 }}
             >
-                {shadow && (
+                {shadow && !hovering && (
                     <span
                         aria-hidden="true"
                         data-sprite-shadow="true"

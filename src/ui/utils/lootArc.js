@@ -12,6 +12,9 @@ import { LOOT_HOP_AFTERIMAGES, LOOT_PILE_DISSOLVE } from './lootEffects.js';
  * with `transform` instead of being replaced by it. Nothing is held after the landing.
  */
 
+/** The loot's own picture: its ground shadow is an image too (`TokenSprite`). */
+const ART_IMG = 'img:not([data-sprite-shadow])';
+
 /** How long one pose of the hop holds. */
 export const HOP_POSE_MS = 40;
 /** Poses in the air, from the Token to the spot it lands on. */
@@ -60,7 +63,7 @@ export function playLootArc(element, fx, fy, { unit = 1 } = {}) {
         const ground = heldPoses(poses.map(({ ms, lift }) => ({ ms, x: 0, y: lift })), { unit });
         animateFx(shadow, ground.keyframes, { duration: ground.duration, fill: 'none' });
     }
-    const art = element.querySelector('img')?.parentElement;
+    const art = element.querySelector(ART_IMG)?.parentElement;
     if (art && LOOT_HOP_AFTERIMAGES) afterimages(art, poses.slice(0, HOP_POSES).map(({ ms, x, y }) => ({ ms, x, y })), { unit });
     return anim;
 }
@@ -93,13 +96,15 @@ export function playAbsorptionSlide(element, dx, dy, { unit = 1 } = {}) {
     }
     if (!anim) return null;
     if (!LOOT_PILE_DISSOLVE) return anim;
-    const art = element.querySelector('img')?.parentElement;
+    const art = element.querySelector(ART_IMG)?.parentElement;
     const sprite = spriteOf(art);
     const copies = [[50, 3], [25, 4]].map(([share, frame]) => [makeCopy(sprite, { dither: share }), frame]);
     if (copies.every(([c]) => c)) {
         // What it was drawn with goes as the dissolve starts: the picture, its shadow, its count.
         const gone = heldPoses([{ ms: 3 * FX_FRAME_MS, visibility: 'visible' }, { ms: 2 * FX_FRAME_MS, visibility: 'hidden' }], { rest: { visibility: 'hidden' } });
-        for (const el of [...art.children, ...[...element.children].filter(c => !c.contains(art))]) {
+        // The shadow stays on the ground, outside the art's box.
+        const drawn = new Set([...art.children, ...element.querySelectorAll('[data-sprite-shadow]'), ...[...element.children].filter(c => !c.contains(art))]);
+        for (const el of drawn) {
             animateFx(el, gone.keyframes, { duration: gone.duration, fill: 'forwards' });
         }
         for (const [copy, frame] of copies) {

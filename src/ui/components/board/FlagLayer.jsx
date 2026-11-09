@@ -224,13 +224,18 @@ const FlagBody = memo(function FlagBody({
                     down && 'opacity-0',
                     gone && 'invisible'
                 )}
+                // ⚠️ `will-change: contents`: the fade (a spot reached or left, the hero hovered, the
+                // 30 % in the hand) runs on the main thread. Flags sort in among the Tokens, and on
+                // the compositor it put every Token drawn after the flag on a layer of its own, soft
+                // and a pixel off until it ended (`tailwind.css`, at `.gi-token-land`).
                 style={{
                     left: box.left,
                     top: box.top,
                     width: flagPx,
                     height: flagPx,
                     zIndex: z,
-                    transitionDuration: `${FLAG_FADE_MS}ms`
+                    transitionDuration: `${FLAG_FADE_MS}ms`,
+                    willChange: 'contents'
                 }}
             >
                 <FlagMark

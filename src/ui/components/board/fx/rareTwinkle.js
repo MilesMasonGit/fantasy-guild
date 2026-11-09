@@ -58,7 +58,8 @@ function bar(w, h, unit) {
  * @param {{unit?: number, delay?: number}} [options] mat units per art pixel
  */
 export function playRareTwinkle(element, { unit = 1, delay = 0 } = {}) {
-    const art = element?.querySelector?.('img')?.parentElement;
+    // The loot's own picture, not its ground shadow (an image too).
+    const art = element?.querySelector?.('img:not([data-sprite-shadow])')?.parentElement;
     const sprite = spriteOf(art);
     if (!art || !sprite) return;
     const gold = makeCopy(sprite, { tint: 'gold' });

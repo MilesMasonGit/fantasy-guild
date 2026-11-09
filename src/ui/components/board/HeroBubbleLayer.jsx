@@ -17,7 +17,7 @@ import { getTokenType, tokenName } from '../../../config/registries/tokenRegistr
 import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { layoutStacks, bubbleAnchorY } from './bubbleLayout.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
-import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
+import { walkerGlide } from './walkerGlide.js';
 import { publishHeroColumns } from './speechColumns.js';
 import { SpeechFrame, tailInset, speechTailDrop } from './SpeechFrame.jsx';
 import { clearOfFight } from './healthBar.js';
@@ -51,7 +51,7 @@ const guessSize = (stack, floats, unit) => {
  * Speech bubbles, above every hero's head.
  * One layer over the whole mat, so a bubble is never hidden by a Token, a flag or another
  * hero. Each stack is placed from the same point `MatHero` uses and glides with it for one
- * tick while the hero walks, so it stays over the head. Bubbles are not clickable: the pointer
+ * tick while the hero walks, a screen pixel a jump as the hero does, so it stays over the head. Bubbles are not clickable: the pointer
  * passes straight through to whatever is beneath, so dragging a hero or their flag is never
  * blocked.
  * A hero who has just levelled a skill has its icon and number floating at the top of their
@@ -213,6 +213,28 @@ export const HeroBubbleLayer = ({ heroes }) => {
         mat
     );
 
+    // Each walking stack's glide for this step: from where it was last drawn to where it goes now
+    // (`walkerGlide`, as its hero's box). A render that does not move it keeps the glide it has,
+    // so a re-render mid-step never cuts the step short.
+    const drawnAtRef = useRef(new Map());   // heroId → { x, y, glide } as last drawn
+    const pxPerUnit = (fit || 1) * (globalThis.devicePixelRatio || 1);
+    const glideOf = (h, x, y) => {
+        if (!h.moving) return 'none';
+        const was = drawnAtRef.current.get(h.heroId);
+        if (!was) return 'none';
+        if (was.x === x && was.y === y) return was.glide;
+        return walkerGlide(x - was.x, y - was.y, pxPerUnit);
+    };
+    const placed = anchored.map(({ h, x, y }) => {
+        const { dx, dy } = offsets.get(h.heroId);
+        return { h, px: x + dx, py: y + dy, glide: glideOf(h, x + dx, y + dy) };
+    });
+    useLayoutEffect(() => {
+        const next = new Map();
+        for (const p of placed) next.set(p.h.heroId, { x: p.px, y: p.py, glide: p.glide });
+        drawnAtRef.current = next;
+    });
+
     // Where each stack standing at a Token is, so that Token's callouts go on top of it
     // (`speechColumns.js`). A walker's stack is not one: it moves on without this layer.
     useLayoutEffect(() => {
@@ -263,8 +285,9 @@ export const HeroBubbleLayer = ({ heroes }) => {
             className="absolute left-0 top-0 w-0 h-0 pointer-events-none"
             style={{ zIndex: MAT_Z.HERO_BUBBLE }}
         >
-            {anchored.map(({ h, stack, floats, x, y }) => {
-                const { dx, dy } = offsets.get(h.heroId);
+            {anchored.map(({ h, stack, floats }, i) => {
+                const { dx } = offsets.get(h.heroId);
+                const { px, py, glide } = placed[i];
                 return (
                     <div
                         key={h.heroId}
@@ -272,13 +295,14 @@ export const HeroBubbleLayer = ({ heroes }) => {
                         className="absolute flex flex-col items-center justify-end gap-1 pointer-events-none"
                         // Moved by `transform`, as its hero is; the second translate keeps the
                         // stack centred over the point, tail down.
+                        // ⚠️ `will-change: contents`, as its hero's box: on the compositor the
+                        // walking stack was drawn resampled.
                         style={{
                             left: 0,
                             top: 0,
-                            transform: `translate(${x + dx}px, ${y + dy}px) translate(-50%, -100%)`,
-                            transition: h.moving
-                                ? `transform ${TICK_INTERVAL_MS}ms linear`
-                                : 'none'
+                            transform: `translate(${px}px, ${py}px) translate(-50%, -100%)`,
+                            willChange: 'contents',
+                            transition: glide
                         }}
                     >
                         {floats.length > 0 && <LevelUpFloats floats={floats} unit={artUnit} fit={fit} />}

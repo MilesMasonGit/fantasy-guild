@@ -149,6 +149,25 @@ describe('⭐ joining a pile: no dissolve, no pulse', () => {
         expect([...box.querySelectorAll('[data-fx-copy]')].map(c => c.getAttribute('data-fx-copy'))).toEqual(['dither-50', 'dither-25']);
     });
 
+    it('switched on, with the shadow on the ground (an image outside the art\'s box): the copies are made from the art, and the shadow goes too', () => {
+        switches.on = true;
+        const box = document.createElement('button');
+        box.innerHTML = `<div><span><img data-sprite-shadow="true" src="/_gen/sprite-fx/sil/${ITEM}" style="width: 64px; height: 64px"><span><img src="/${ITEM}" style="width: 64px; height: 64px"></span></span></div><span>3</span>`;
+        document.body.appendChild(box);
+        const shadow = box.querySelector('[data-sprite-shadow]');
+        const art = box.querySelector('img:not([data-sprite-shadow])').parentElement;
+        playAbsorptionSlide(box, 30, 0, { unit: 2 });
+        const copies = [...box.querySelectorAll('[data-fx-copy]')];
+        expect(copies.map(c => c.getAttribute('data-fx-copy'))).toEqual(['dither-50', 'dither-25']);
+        expect(copies.every(c => c.parentElement === art)).toBe(true);
+        const gone = animations.filter(a => a.el === shadow);
+        expect(gone).toHaveLength(1);
+        expect(gone[0].keyframes.at(-1).visibility).toBe('hidden');
+        animations = [];
+        playLootArc(box, -120, 60, { unit: 2 });
+        expect([...box.querySelectorAll('[data-fx-copy^="white-dither"]')].every(c => c.parentElement === art)).toBe(true);
+    });
+
     async function pileJoined() {
         let view;
         let pile;

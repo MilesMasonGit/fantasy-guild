@@ -317,16 +317,14 @@
  * Applied to the sprite's IMAGE, never its button. `lootBob.js` writes it on the
  * sprite clock. ⚠️ Not a CSS animation: that is a composited layer per pile, and
  * more for what is drawn after it.
+ *
+ * ⚠️ Reduced motion must NOT flatten the two kinds back together, or the item
+ * vs Token distinction disappears for anyone who sets it. The bob stops; the
+ * RAISED OFFSET AND THE HARD SHADOW STAY (only floating loot has a shadow, so the
+ * shadow alone already says "floating"). `lootBob.js` holds it raised, in whole
+ * art pixels at the mat's live fit: no rule here, whose fixed px would be a
+ * fraction of an art pixel at most fits and draw the item resampled.
  */
-/* ⚠️ Reduced motion must NOT flatten the two kinds back together, or the item
-   vs Token distinction disappears for anyone who sets it. The bob stops; the
-   RAISED OFFSET AND THE HARD SHADOW STAY (Wave 5: only floating loot has a
-   shadow at all now, so the shadow alone already says "floating"). */
-@media (prefers-reduced-motion: reduce) {
-  .gi-sprite-hover {
-    transform: translateY(-6px);
-  }
-}
 
 /* A Token landing on a tile (D-230).
  *

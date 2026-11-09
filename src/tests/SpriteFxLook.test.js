@@ -109,12 +109,30 @@ describe('a dragged Token and floating loot cast the hard shadow', () => {
         expect(container.querySelector('[data-sprite-shadow]').style.backgroundImage).toContain(`/sil/${key}`);
     });
 
-    it('floating loot: shadow 2 art px away (32 px art at 64 px: 4 px), and the bob moves art and shadow together', () => {
+    it('floating loot: shadow 2 art px away (32 px art at 64 px: 4 px), on the ground while the art bobs (owner, 2026-11-08)', () => {
         const { container } = render(h(PixelArt, { src: ITEM_SRC, size: 64, hovering: true }));
         const sil = container.querySelector('[data-sprite-shadow]');
-        expect([sil.style.left, sil.style.top]).toEqual(['4px', '4px']);
-        expect(sil.parentElement.className).toContain('gi-sprite-hover');
-        expect(container.querySelector('img').parentElement).toBe(sil.parentElement);
+        const art = container.querySelector('img:not([data-sprite-shadow])');
+        // Drawn as the art is (an <img>, the silhouette), placed by `translate` as the art is moved
+        // by a transform, so both round to the same screen pixels.
+        expect(sil.tagName).toBe('IMG');
+        expect(sil.getAttribute('src')).toContain('/_gen/sprite-fx/sil/assets/items/item_look.png');
+        expect([sil.style.width, sil.style.height, sil.style.translate, sil.style.imageRendering]).toEqual(['64px', '64px', '4px 4px', 'pixelated']);
+        expect(sil.className).toMatch(/\babsolute left-0 top-0\b/);
+        expect(sil.getAttribute('aria-hidden')).toBe('true');
+        expect(sil.parentElement.className).not.toContain('gi-sprite-hover');
+        expect(art.parentElement.className).toContain('gi-sprite-hover');
+        expect(art.parentElement.contains(sil)).toBe(false);
+        // Under the art: before it in the box.
+        expect(sil.compareDocumentPosition(art) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('floating loot inside the mat: the ground shadow is whole screen pixels too, 2 art px at the art step', () => {
+        // Fit 0.83: the item is drawn 2× (64 px on screen, 77.1 u); 4 screen px is 4.82 u.
+        const { container } = render(withFit(0.83, h(PixelArt, { src: ITEM_SRC, size: 64 / 0.83, hovering: true })));
+        const [x, y] = container.querySelector('[data-sprite-shadow]').style.translate.split(' ').map(parseFloat);
+        expect(x * 0.83).toBeCloseTo(4, 9);
+        expect(y * 0.83).toBeCloseTo(4, 9);
     });
 
     it('inside the mat, offsets are whole SCREEN pixels: at fit 0.5 a 256 u sprite is 128 px, so 4 px = 8 u', () => {
