@@ -108,8 +108,8 @@ mat's transform for zoom in place.
 - `option_today_1920x1017.png` against `option_D_zoom_1920x1017.png`: a hero with the green work
   outline at the owner's size. Today the outline stands off the left hand by a column and the art's
   own black outline is uneven; with zoom the outline hugs the art.
-- `token_today_1920x1017.png` against `token_D_zoom_1920x1017.png`: a ring Token; today some art
-  rows are 3 px and some 5 px where all should be 4.
+- `token_today_1920x1017.png` against `token_D_zoom_1920x1017.png`: a ring Token (32-px art, 4 screen px
+  an art pixel); today an art row or column comes out 3 or 5 px where all should be 4.
 - `token_today_2560x1377.png` against `token_D_zoom_2560x1377.png`: the worst size measured.
 
 ## 2. The twitch
@@ -127,7 +127,7 @@ While a hero is carried:
   **"Nothing to work here" bubble** (`OrderDragLine.jsx` `AimedLabel`), whose `order-reason-pop`
   (`components.css`, 120 ms, `steps(2, end)`, a transform) has no `will-change: contents`, so Chrome
   runs it on the compositor: one more composited layer while it plays (reason
-  `ActiveTransformAnimation`; 9 → 10 at 1920 × 1017, 8 → 10 at 1920 × 1080);
+  `ActiveTransformAnimation`; 9 → 10 at 1920 × 1017 and at 1920 × 1080, counted while carrying);
 - after a refused drop, the **refusal callout** (`.callout-bubble`, 2.2 s, transform and opacity):
   also on the compositor (one more layer while it plays).
 
@@ -199,7 +199,7 @@ compositor (headless does not), and a composited layer whose sub-pixel offset ch
 does when a hero is picked up or a bubble reaches past its edge) may be shown for a frame from its old
 tiles at the new offset, resampled, until Chrome redraws it; that would shift or soften every Token on
 the mat for a frame. With D the mat is no longer a layer of its own, so that path is gone too; whether
-the twitch is gone is for the owner's eye in the built app (a check in the eye-check list, below).
+the twitch is gone is for the owner's eye in the built app (an eye-check item when D is built).
 
 ## 3. Options
 
@@ -250,9 +250,10 @@ exact (recommended)**; (b) A, clean fits only: exact, but the board 35 % smaller
   per-size table, today and zoom, by reload and by in-place swap; the outline alignment in a test page;
   layer counts and reasons at rest, dragging, with the bubble and callout; the bubble changing no Token
   at four fits; the dot and pick-up redraws; the spawn stand-ins; option A exact; zoom's layout readings.
-- **Reasoned**: the owner's window size (from Windows' metrics, not the running app); why the
-  top-edge Tokens draw soft; why the bench missed it; the possible full-board twitch in WebView2;
+- **Reasoned**: the owner's window size (from Windows' metrics, not the running app); why the bench
+  missed it; the possible full-board twitch in WebView2;
   option B; option C (simulated from a screenshot, not drawn by Chrome); the build notes for D.
+- **Not traced**: why 4–5 Tokens draw soft today, and D's bottom-row leftovers at two sizes.
 - **Not verified**: the built app (WebView2 with Windows' compositor) at all; D's frame cost; D across
   the rest of the game (Hall, Atlas, drawers, CMS previews).
 
