@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useDndContext } from '@dnd-kit/core';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as Placement from '../../systems/board/Placement.js';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { DRAG_KIND } from './dragConstants.js';
@@ -112,7 +113,15 @@ const TokenGhost = ({ payload }) => {
         // its own the ghost inherits whatever that was and the carried Token changes size
         // depending on where it was picked up. Which is bloom, reintroduced by accident.
         <div className="flex items-center justify-center" style={{ width: size, height: size }}>
-            <TokenSprite typeId={payload.typeId} surface={TOKEN_SURFACE.CARRY} scale={artScale} lifted />
+            {/* An unbuilt Foundation floats in the hand as on the mat, its bob in the ghost's own art pixels. */}
+            <TokenSprite
+                typeId={payload.typeId}
+                surface={TOKEN_SURFACE.CARRY}
+                scale={artScale}
+                lifted
+                hovering={!!getTokenType(payload.typeId)?.foundation}
+                bobUnit={artScale}
+            />
         </div>
     );
 };

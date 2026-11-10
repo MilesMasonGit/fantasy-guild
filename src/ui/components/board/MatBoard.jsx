@@ -394,13 +394,14 @@ export const MatBoard = React.memo(function MatBoard({
 
 
 
-    // Only a Token that acts on or depends on its neighbours shows a ring (`showsNearRing`).
+    // Only a Token that uses reach shows a ring (`showsNearRing`): a Foundation, a camp, a Token
+    // that acts on or depends on its neighbours.
     const hoveredCentre = useMemo(() => {
         const t = rest.tokenId ? tokens.find(k => k.id === rest.tokenId) : null;
         if (!t || !showsNearRing(t.typeId)) return null;
         // A walker's own point is not in `tokens`: read it live.
         const at = t.x == null ? BoardState.getTokenById(t.id) : t;
-        return at ? { x: at.x, y: at.y } : null;
+        return at ? { x: at.x, y: at.y, id: t.id } : null;
     }, [rest.tokenId, tokens]);
 
     /** A work plate for each hero at work, not in a fight, its Token not in the hand. */
@@ -449,24 +450,21 @@ export const MatBoard = React.memo(function MatBoard({
     }, [heroes]);
 
     /**
-     * A camp's reach ring: the camp the pointer rests on; else the camp of the hero the pointer
-     * rests on (or the hero working the Token it rests on, who is outlined as hovered too), or of
-     * the lit hero (hovered on their roster tab, or their sheet open). Not while the camp itself is
-     * carried.
+     * A camp's reach ring, lit through a hero: the camp of the hero the pointer rests on (or the
+     * hero working the Token it rests on, who is outlined as hovered too), or of the lit hero
+     * (hovered on their roster tab, or their sheet open). None while a hovered Token shows its own
+     * ring (a camp hovered itself is one), nor for a camp in the hand: `MatRings` draws those.
      */
     const campRing = useMemo(() => {
-        const rested = rest.tokenId && rest.tokenId !== carriedId ? BoardState.getTokenById(rest.tokenId) : null;
-        let camp = rested && Camps.isCampLike(rested) ? rested : null;
-        if (!camp) {
-            const heroId = rest.heroId || (rest.tokenId ? workedBy.get(rest.tokenId) : null) || litHeroId || inspectedHeroId;
-            const jobId = heroId ? heroes.find(h => h.heroId === heroId)?.jobId : null;
-            const job = jobId && jobId !== carriedId ? BoardState.getTokenById(jobId) : null;
-            camp = job && Camps.isCampLike(job) ? job : null;
-        }
+        if (hoveredCentre) return null;
+        const heroId = rest.heroId || (rest.tokenId ? workedBy.get(rest.tokenId) : null) || litHeroId || inspectedHeroId;
+        const jobId = heroId ? heroes.find(h => h.heroId === heroId)?.jobId : null;
+        const job = jobId && jobId !== carriedId ? BoardState.getTokenById(jobId) : null;
+        const camp = job && Camps.isCampLike(job) ? job : null;
         const ring = camp ? Camps.reachRingOf(camp) : null;
         return ring ? { campId: camp.id, ...ring } : null;
     // `tokens`: a camp moved by the player moves its ring (the ring reads the camp's live point).
-    }, [rest.tokenId, rest.heroId, carriedId, litHeroId, inspectedHeroId, heroes, tokens, workedBy]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [hoveredCentre, rest.tokenId, rest.heroId, carriedId, litHeroId, inspectedHeroId, heroes, tokens, workedBy]); // eslint-disable-line react-hooks/exhaustive-deps
     // Keyed by value, so a hero's walking step does not redraw the ring.
     const campRingKey = campRing ? `${campRing.campId}|${campRing.x}|${campRing.y}|${campRing.r}` : '';
     const campRingShown = useMemo(() => campRing, [campRingKey]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -623,10 +621,10 @@ export const MatBoard = React.memo(function MatBoard({
             {/* `MAT_Z.RINGS`: and a marching dashed line from them to where they would be sent. */}
             <OrderDragLine matRef={rootRef} />
 
-            {/* `MAT_Z.RINGS`: the Near ring. A camp's reach ring is `CampReachRing`. */}
-            {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} matRef={rootRef} />}
+            {/* `MAT_Z.RINGS`: the reach ring of the Token hovered or in the hand, and its dots. */}
+            {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} boardTokens={tokens} matRef={rootRef} />}
             {ringsDrawn && <SupportLinkLayer matRef={rootRef} />}
-            {/* `MAT_Z.RINGS`: a camp's reach, while it or a hero working from it is hovered. */}
+            {/* `MAT_Z.RINGS`: a camp's reach, while a hero working from it is lit. */}
             {ringsDrawn && <CampReachRing ring={campRingShown} />}
 
             {/* `MAT_Z.GROUND_GRID`: with a Token in the hand, the cells it may stand on, under every Token. */}

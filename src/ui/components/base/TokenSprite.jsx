@@ -147,7 +147,9 @@ const spriteImgStyle = (size, extra) => ({
  * the `<img>`. Callers on the mat always pass `outline`, so the box stays put as the outline
  * comes and goes.
  * @param {boolean} lifted    held in the hand: hard shadow, art raised 4 px
- * @param {boolean} hovering  floating loot: hard shadow, art bobbing
+ * @param {boolean} hovering  floating loot (and an unbuilt Foundation): hard shadow on the ground, art bobbing
+ * @param {number}  [bobUnit] the bob's art pixel in this sprite's own units; defaults to the mat's
+ * (`boardScaleAt(fit)`). A sprite drawn outside the mat (the drag ghost) passes its own.
  * @param {'work'|'hover'|'alert'|'muted'|'danger'|null} [outline]
  */
 export const PixelArt = (props) => {
@@ -166,13 +168,13 @@ export const PixelArt = (props) => {
     );
 };
 
-function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, outline = null, className, style }) {
+function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, bobUnit: bobUnitProp, outline = null, className, style }) {
     useSpriteFxVersion();
     const fit = useMatFit();
     const shadow = (lifted || hovering) ? shadowLayer(src, size, fit) : null;
     const ring = outline ? outlineLayer(src, size, outline) : null;
     const artRef = useRef(null);
-    const bobUnit = boardScaleAt(fit);
+    const bobUnit = bobUnitProp ?? boardScaleAt(fit);
     useLayoutEffect(() => (hovering ? startBob(artRef.current, bobUnit) : undefined), [hovering, bobUnit]);
 
     // `lifted` is a held object: raised by a fixed transform, and its shadow rises with it, 2 art
@@ -206,7 +208,7 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
                 style={{
                     width: size,
                     height: size,
-                    transform: lifted ? `translateY(-${LIFT_OFFSET_PX}px)` : undefined
+                    transform: lifted && !hovering ? `translateY(-${LIFT_OFFSET_PX}px)` : undefined
                 }}
             >
                 {shadow && !hovering && (
@@ -257,8 +259,11 @@ function spritePathOf(sprite) {
  * `boardScaleAt(fit)`; nothing else sets it.
  * @param {string}  sprite    Draws this sprite id instead of the type's own art, at the type's
  * size: a resting vein's empty rock (`Respawn.restingSpriteOf`).
+ * @param {boolean} hovering  Floats as floor loot does (an unbuilt Foundation): the art bobs in
+ * whole art pixels, its hard shadow stays on the ground. Wins over `lifted`'s raise.
+ * @param {number}  bobUnit   See `PixelArt`.
  */
-export const TokenSprite = ({ typeId, sprite = null, surface = TOKEN_SURFACE.BOARD, size, scale, lifted = false, outline, alt, className, style }) => {
+export const TokenSprite = ({ typeId, sprite = null, surface = TOKEN_SURFACE.BOARD, size, scale, lifted = false, hovering = false, bobUnit, outline, alt, className, style }) => {
     const src = sprite ? spritePathOf(sprite) : tokenSpritePath(typeId);
     if (!src) return null;
 
@@ -268,6 +273,8 @@ export const TokenSprite = ({ typeId, sprite = null, surface = TOKEN_SURFACE.BOA
             alt={alt ?? tokenName(typeId)}
             size={size ?? tokenSizeFor(surface, typeId, scale)}
             lifted={lifted}
+            hovering={hovering}
+            bobUnit={bobUnit}
             outline={outline}
             className={className}
             style={style}

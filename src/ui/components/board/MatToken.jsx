@@ -194,6 +194,9 @@ export const MatToken = React.memo(function MatToken({
     const boxHalf = boxPx / 2;
 
     const def = getTokenType(typeId);
+    // An unbuilt Foundation floats as floor loot does: it can still be moved. Building on it makes a
+    // new Token of another type, which rests.
+    const floats = !!def?.foundation;
     const label = tokenName(typeId);
     const isGuildHallToken = typeId === 'token_guild_hall';
     const isPermanent = Placement.isPermanentToken(typeId);
@@ -525,6 +528,7 @@ export const MatToken = React.memo(function MatToken({
                         sprite={stateSprite}
                         surface={TOKEN_SURFACE.BOARD}
                         scale={artScale}
+                        hovering={floats}
                         alt={label}
                         outline={outline}
                         className={spriteClass}
@@ -532,7 +536,7 @@ export const MatToken = React.memo(function MatToken({
                 )}
             </TokenHitArt>
         );
-    }, [id, hitSkill, heroId, strikes, x, flashOnMount, enemyAnimSrc, walkFacing, label, artPx, outline, landing, typeId, artScale, stateSprite]);
+    }, [id, hitSkill, heroId, strikes, x, flashOnMount, enemyAnimSrc, walkFacing, label, artPx, outline, landing, typeId, artScale, stateSprite, floats]);
 
     return (
         <>
