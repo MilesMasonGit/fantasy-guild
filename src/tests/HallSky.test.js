@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // The Guild Hall's night sky: stars by state, tags, lines, constellations, the drifting
-// backdrop, the hover-filled details panel, and a web that cannot be scrolled.
+// backdrop, a click (never a hover) choosing a star, and a web that cannot be scrolled.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { readFileSync } from 'node:fs';
@@ -10,7 +10,6 @@ import {
     GuildHallBoard, STAR_SPRITES, STAR_SCALE, STAR_ART_PX, finishedConstellations, linkConstellation, starLook
 } from '../ui/components/board/GuildHallBoard.jsx';
 import { HallSky, SKY_TILE_PX, SKY_STARS_SRC, SKY_CLOUDS_SRC } from '../ui/components/board/HallSky.jsx';
-import { selectGuildInspectSelection } from '../ui/guildInspectSelection.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -245,34 +244,23 @@ describe('the Hall sky: constellations', () => {
     });
 });
 
-describe('the Hall sky: the details panel follows the pointer', () => {
-    it('reports the hovered star, and nothing once the pointer leaves', () => {
-        const onHoverUpgrade = vi.fn();
-        const { container } = renderWeb({ onHoverUpgrade });
+describe('the Hall sky: a click chooses a star, a hover does not', () => {
+    it('reports a clicked star, and nothing for a star under the pointer', () => {
+        const onSelectUpgrade = vi.fn();
+        const { container } = renderWeb({ onSelectUpgrade });
         const node = container.querySelector('[data-hall-node="wishing_well"]');
         fireEvent.mouseEnter(node);
-        expect(onHoverUpgrade).toHaveBeenLastCalledWith('wishing_well');
-        fireEvent.mouseLeave(node);
-        expect(onHoverUpgrade).toHaveBeenLastCalledWith(null);
+        fireEvent.focus(node);
+        expect(onSelectUpgrade).not.toHaveBeenCalled();
+        fireEvent.click(node);
+        expect(onSelectUpgrade).toHaveBeenCalledWith(getUpgradeDef('wishing_well'));
     });
 
-    it('shows the hovered star over the pinned one, and the pinned one again after', () => {
-        const pinned = { type: 'guild_upgrade', id: 'bank_tabs', pane: 'guild' };
-        const hovered = selectGuildInspectSelection({
-            hoveredUpgradeId: 'wishing_well', guildPaneSelection: pinned, getUpgradeDefFn: getUpgradeDef
-        });
-        expect(hovered.id).toBe('wishing_well');
-        expect(selectGuildInspectSelection({
-            hoveredUpgradeId: null, guildPaneSelection: pinned, getUpgradeDefFn: getUpgradeDef
-        })).toBe(pinned);
-    });
-
-    it('docks the details panel right of the web whichever side the nav is on', () => {
+    it('opens the Hall with its drawer closed, and no Return button', () => {
         const root = src('../ui/ReactRoot.jsx');
-        const details = [...root.matchAll(/data-hall-details/g)];
-        expect(details).toHaveLength(1);
-        expect(details[0].index).toBeGreaterThan(root.indexOf('<GuildHallBoard'));
-        expect(root).toContain('selection={guildShownSelection}');
+        expect(root).toContain('const [hallStarId, setHallStarId] = React.useState(null);');
+        expect(root).not.toMatch(/onHoverUpgrade|hoveredUpgradeId|returnToPlaymat|data-hall-return/);
+        expect(src('../i18n/en.json')).not.toContain('returnToPlaymat');
     });
 });
 

@@ -69,7 +69,12 @@ export const GuildUpgradeManager = {
 
     /** True when the next rank is buyable right now with what the Bank holds. */
     canAfford(upgradeId) {
-        const price = this.getNextCost(upgradeId);
+        return this.canAffordRanks(upgradeId, 1);
+    },
+
+    /** True when the next `count` ranks together are buyable right now with what the Bank holds. */
+    canAffordRanks(upgradeId, count = 1) {
+        const price = this.getRanksCost(upgradeId, count);
         return price != null && this.getShortfall(price).length === 0;
     },
 
