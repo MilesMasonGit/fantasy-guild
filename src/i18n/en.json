@@ -609,6 +609,8 @@
         "perkAt": "{level} {perk}",
         "close": "Close",
         "edit": "Edit hero",
+        "inventory": "Inventory",
+        "perkRow": "{name}: {rules}",
         "sendOut": "Drag onto the mat to send out",
         "tabSkills": "Skills",
         "tabCombat": "Combat",

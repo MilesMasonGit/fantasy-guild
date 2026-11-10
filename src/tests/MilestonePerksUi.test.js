@@ -167,13 +167,18 @@ describe('the Hero drawer\'s skill panel lists every perk, those held lit', () =
         const r = panel();
         fireEvent.click(r.container.querySelector('[data-skill-row="forestry"]'));
         const perks = r.container.querySelector('[data-hero-skill-panel="forestry"] [data-skill-perks]');
+        // The panel's second part: the perks in the one scrolling list, under the numbers.
+        expect(perks.hasAttribute('data-scroll-list')).toBe(true);
+        const numbers = r.container.querySelector('[data-hero-skill-panel="forestry"] [data-skill-detail]');
+        expect(numbers.compareDocumentPosition(perks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         const held = perks.querySelector('[data-skill-perk="k4ui_felling"]');
-        expect(held.textContent).toBe('10/99 Clean Felling×2 loot 5 % (Forestry)');
+        // `10/99  Name: what it gives`, the words the perk's own rule renders.
+        expect(held.textContent).toBe('10/99Clean Felling: ×2 loot 5 % (Forestry)');
         expect(held.getAttribute('data-skill-perk-earned')).toBe('true');
         expect(held.querySelector('.text-gi-gold')).not.toBeNull();
         const locked = perks.querySelector('[data-skill-perk="k4ui_seeds"]');
         expect(locked.getAttribute('data-skill-perk-earned')).toBe('false');
-        expect(locked.textContent).toContain('25/99 Seed Finder II');
+        expect(locked.textContent).toContain('25/99Seed Finder II: ');
         expect(locked.className.split(' ')).toContain('opacity-50');
         fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
         expect(r.container.querySelector('[data-hero-skill-panel="mining"] [data-skill-perks]').getAttribute('data-skill-perks')).toBe('none');

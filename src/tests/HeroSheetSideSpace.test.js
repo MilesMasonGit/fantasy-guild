@@ -19,6 +19,8 @@ import { heroSkillList } from '../ui/components/dock/heroPanelSkills.js';
 import { DOCK_STRIP_PX } from '../ui/components/dock/dockHeroView.js';
 import { SLOT_ORDER } from '../config/registries/equipmentConstants.js';
 import { t } from '../i18n/index.js';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const h = React.createElement;
 const hero = (id, name, extra = {}) => ({
@@ -67,7 +69,7 @@ describe('skill icons are pixel, never emoji', () => {
 });
 
 describe('the drawer\'s skills, in columns of four', () => {
-    it('flows the skills down columns of four, with the name only in the tip', () => {
+    it('flows the skills down columns of four, each with its large icon and its name', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
         const group = r.container.querySelector('[data-skill-group="held"]');
         expect(group.className.split(' ')).toEqual(expect.arrayContaining(['grid', 'grid-flow-col']));
@@ -75,7 +77,8 @@ describe('the drawer\'s skills, in columns of four', () => {
         // No section headers among the skills.
         expect([...group.children].every(el => el.querySelector('[data-skill-row]') || el.hasAttribute('data-skill-row'))).toBe(true);
         const row = group.querySelector('[data-skill-row="mining"]');
-        expect(row.textContent).toBe('1/99');
+        expect(row.textContent).toBe('Mining1/99');
+        expect(row.querySelector('img').style.width).toBe('48px');
         fireEvent.pointerEnter(row);
         const tip = document.body.querySelector('[data-tooltip]');
         expect(tip.textContent).toContain('Mining 1/99');
@@ -153,10 +156,16 @@ describe('nothing in the drawer scrolls', () => {
 describe('close and edit in the hero\'s block', () => {
     const controls = (r) => r.container.querySelector('[data-hero-panel-controls]');
 
-    it('stand in the summary block, beside the hero', () => {
+    it('stand in the summary block, on its right, beside the hero; the name and HP above the figure', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
         const summary = r.container.querySelector('[data-hero-drawer-block="summary"]');
         expect(summary.contains(controls(r))).toBe(true);
+        // The controls come after the hero in the block (its right side).
+        expect(summary.lastElementChild).toBe(controls(r));
+        const order = ['[data-hero-panel-name]', '[data-hero-panel-hp]', '[data-hero-panel-sprite]'].map(s => summary.querySelector(s));
+        expect(order[0].compareDocumentPosition(order[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(order[1].compareDocumentPosition(order[2]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(order[0].className).toContain('ui-text-display');
         expect(controls(r).querySelector('[data-hero-panel-close]')).not.toBeNull();
         expect(controls(r).querySelector('[data-hero-panel-edit]')).not.toBeNull();
     });
@@ -192,13 +201,32 @@ describe('no hero column: the heroes stay on the bar', () => {
         expect(r.container.querySelector('[data-hero-panel]')).toBeNull();
     });
 
-    it('stands on the hero bar\'s strip, keeps a band at its foot for the names, and holds no hero tabs', () => {
+    it('reaches the screen\'s bottom edge behind the bar, keeps a band at its foot for the strip and names, and holds no hero tabs', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
         const aside = r.container.querySelector('[data-hero-panel]');
-        expect(aside.style.bottom).toBe(`${DOCK_STRIP_PX}px`);
+        expect(aside.style.bottom).toBe('0px');
+        expect(parseFloat(aside.querySelector('[data-hero-drawer-foot]').style.height)).toBeGreaterThan(DOCK_STRIP_PX);
         expect(aside.className.split(' ')).not.toContain('top-0');
         expect(Number.parseFloat(aside.querySelector('[data-hero-drawer-foot]').style.height)).toBeGreaterThan(0);
         expect(r.container.querySelector('[data-hero-column], [data-hero-dock-tab]')).toBeNull();
+    });
+});
+
+describe('the Inventory label and the slide', () => {
+    it('names the loadout grid in one word over it', () => {
+        const r = render(panel({ selectedHeroId: 'h1' }));
+        const block = r.container.querySelector('[data-hero-drawer-block="equipment"]');
+        const label = block.querySelector('[data-hero-drawer-inventory]');
+        expect(label.textContent).toBe(t('heroPanel.inventory'));
+        expect(t('heroPanel.inventory')).toBe('Inventory');
+        expect(label.compareDocumentPosition(block.querySelector('[data-equip-slot]')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('slides as the side drawers do, still under reduced motion (source)', () => {
+        const code = fs.readFileSync(path.resolve(__dirname, '../ui/components/dock/HeroDrawer.jsx'), 'utf8');
+        expect(code.includes('<motion.aside')).toBe(true);
+        expect(code).toMatch(/prefersReducedMotion\(\) \? \{ duration: 0 \} : SIDE_DRAWER_TRANSITION/);
+        expect(code).toMatch(/initial=\{\{ y: heroDrawerY\(false\) \}\}/);
     });
 });
 

@@ -1,7 +1,9 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
+import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { CloseX } from '../base/CloseX.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
@@ -24,6 +26,17 @@ export const HeroSkillPanel = ({ heroId, row, onClose, onLookUp, style }) => {
     useEscapeLayer(true, onClose);
     const purpose = skillPurposeText(row.id);
     const perks = skillPerkTable(row.id, row.level);
+    // The perk list gives up height while the panel would run past the screen's top (a short window).
+    const headRef = useRef(null);
+    const [perkMaxPx, setPerkMaxPx] = useState(PERK_LIST_MAX_PX);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useLayoutEffect(() => {
+        const box = headRef.current?.closest('[data-hero-skill-panel]');
+        if (!box) return;
+        const room = box.getBoundingClientRect().top - SCREEN_MARGIN_PX;
+        const next = Math.max(PERK_LIST_MIN_PX, Math.min(PERK_LIST_MAX_PX, Math.round(perkMaxPx + room)));
+        if (next !== perkMaxPx) setPerkMaxPx(next);
+    });
     return (
         <PixelFrame
             kind={FRAME_KIND.CHAMFER}
@@ -32,7 +45,7 @@ export const HeroSkillPanel = ({ heroId, row, onClose, onLookUp, style }) => {
             style={{ width: SKILL_PANEL_W, ...style }}
             frameClassName="p-2 flex flex-col gap-2 bg-gi-surface"
         >
-            <div className="flex items-center gap-2">
+            <div ref={headRef} className="flex items-center gap-2">
                 <SkillIcon skillId={row.id} size={32} />
                 <span className="min-w-0 ui-text-title font-bold text-white">{row.name}</span>
                 <span data-hero-skill-panel-level className="ui-text-body font-bold tabular-nums text-white">{skillLevelText(row.level)}</span>
@@ -51,7 +64,8 @@ export const HeroSkillPanel = ({ heroId, row, onClose, onLookUp, style }) => {
             </div>
             {purpose && <p data-hero-skill-panel-purpose className="ui-text-body text-gi-text leading-snug">{purpose}</p>}
             <SkillNumbers heroId={heroId} row={row} />
-            <SkillPerkList perks={perks} />
+            <div className="border-t border-white/10" />
+            <SkillPerkList perks={perks} maxPx={perkMaxPx} />
         </PixelFrame>
     );
 };
@@ -78,28 +92,46 @@ const SkillNumbers = ({ heroId, row }) => {
     );
 };
 
-/** Every milestone perk, lowest first: held ones in gold with what they do, the rest dimmed. Rows never boxed. */
-const SkillPerkList = ({ perks }) => {
+/** The perk list's tallest, in screen px: about five rows, then it scrolls. */
+export const PERK_LIST_MAX_PX = 140;
+/** The least it shrinks to on a short screen: about two rows. */
+const PERK_LIST_MIN_PX = 48;
+/** How close to the screen's top edge the panel may come. */
+const SCREEN_MARGIN_PX = 8;
+
+/**
+ * The panel's second part: every milestone perk, lowest first, one row each, `10/99  Even Heat: +10 %
+ * Smithing XP`, its words the perk's own rule as the game renders it (`perkLines`). Held ones in
+ * gold, the rest dimmed. A list taller than `maxPx` scrolls with the arrow bars.
+ */
+const SkillPerkList = ({ perks, maxPx = PERK_LIST_MAX_PX }) => {
     if (!perks.length) {
         return <p data-skill-perks="none" className="ui-text-small text-gi-muted">{t('heroPanel.noPerks')}</p>;
     }
     return (
-        <div data-skill-perks className="flex flex-col gap-1 leading-tight">
-            {perks.map(p => (
-                <div
-                    key={`${p.level}:${p.effectId}`}
-                    data-skill-perk={p.effectId}
-                    data-skill-perk-earned={p.earned ? 'true' : 'false'}
-                    className={cn('flex flex-col', !p.earned && 'opacity-50')}
-                >
-                    <span className={cn('ui-text-body font-bold', p.earned ? 'text-gi-gold' : 'text-gi-muted')}>
-                        {t('heroPanel.perkAt', { level: skillLevelText(p.level), perk: p.title })}
-                    </span>
-                    {perkLines(p).map((line, i) => (
-                        <span key={i} className="ui-text-small text-white/80">{line}</span>
-                    ))}
-                </div>
-            ))}
+        <div className="flex flex-col min-h-0">
+            <ArrowScrollList
+                step={56}
+                compact
+                className="flex flex-col gap-1 leading-tight"
+                listProps={{ 'data-skill-perks': 'some', style: { maxHeight: maxPx } }}
+            >
+                {perks.map(p => (
+                    <div
+                        key={`${p.level}:${p.effectId}`}
+                        data-skill-perk={p.effectId}
+                        data-skill-perk-earned={p.earned ? 'true' : 'false'}
+                        className={cn('flex items-baseline gap-2 ui-text-body', !p.earned && 'opacity-50')}
+                    >
+                        <span className={cn('shrink-0 font-bold tabular-nums', p.earned ? 'text-gi-gold' : 'text-gi-muted')}>
+                            {skillLevelText(p.level)}
+                        </span>
+                        <span className={p.earned ? 'text-white' : 'text-gi-muted'}>
+                            {t('heroPanel.perkRow', { name: p.title, rules: perkLines(p).join(', ') })}
+                        </span>
+                    </div>
+                ))}
+            </ArrowScrollList>
         </div>
     );
 };

@@ -104,6 +104,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
     return (
         <div data-hero-panel-body={heroId} className="flex items-start gap-6 text-gi-text select-none">
             <section data-hero-drawer-block="summary" className="shrink-0 flex items-start gap-1">
+                <HeroSummary hero={hero} heroId={heroId} size={2 * ART_PX * boardArtSteps(fit)} />
                 <div data-hero-panel-controls className="flex flex-col items-center gap-1">
                     <CloseX data-hero-panel-close label={t('heroPanel.close')} onClick={(e) => { e.stopPropagation(); onClose?.(); }} />
                     <button
@@ -118,10 +119,14 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                         <Feather size={16} />
                     </button>
                 </div>
-                <HeroSummary hero={hero} heroId={heroId} size={2 * ART_PX * boardArtSteps(fit)} />
             </section>
 
-            <section data-hero-drawer-block="equipment" className="shrink-0 pt-1">
+            <section data-hero-drawer-block="equipment" className="shrink-0 flex flex-col gap-2">
+                <h4 data-hero-drawer-inventory className="flex items-center gap-1 pb-1 border-b-2 border-transparent ui-text-body font-bold text-gi-muted">
+                    {/* The glyph's height, so the label stands on the tabs' line. */}
+                    <span aria-hidden className="inline-block w-0 h-4" />
+                    {t('heroPanel.inventory')}
+                </h4>
                 <DockEquipmentGrid heroId={heroId} />
             </section>
 
@@ -180,14 +185,18 @@ const ViewTab = ({ id, glyph, label, view, onShow }) => {
     );
 };
 
-/** The hero at `size`, their name and their HP. */
+/** The hero's name and HP at the top, then the hero at `size`. */
+// The name in the display size: the owner asked for it larger than a panel title (2026-11-10).
 const HeroSummary = ({ hero, heroId, size }) => (
-    <div className="flex flex-col gap-1" style={{ width: size }}>
+    <div className="flex flex-col items-center gap-1" style={{ width: Math.max(size, SUMMARY_MIN_PX) }}>
+        <h3 data-hero-panel-name className="self-stretch ui-text-display font-bold text-white text-center break-words leading-none">{hero.name}</h3>
+        <VitalBar data-hero-panel-hp style={{ alignSelf: 'stretch' }} value={hero.hp} max={hero.hpMax} height={18} textClass="ui-text-body" />
         <HeroFigure hero={hero} heroId={heroId} size={size} />
-        <h3 className="ui-text-title font-bold text-white text-center break-words">{hero.name}</h3>
-        <VitalBar data-hero-panel-hp value={hero.hp} max={hero.hpMax} height={18} textClass="ui-text-body" />
     </div>
 );
+
+/** The hero block's narrowest, in screen px: room for a short name on one line at the display size. */
+const SUMMARY_MIN_PX = 176;
 
 /**
  * The hero idling at `size` (twice the mat's art), their flag standing behind their shoulder. The
@@ -247,8 +256,11 @@ const HeroFigure = ({ hero, heroId, size }) => {
     );
 };
 
+/** A skill's icon in the grid: its 16-pixel art at 3x. */
+export const SKILL_ICON_PX = 48;
+
 /**
- * `[icon] 25/99` over a thin XP bar. The icon alone says which skill: hovering gives the game's
+ * `[icon] Mining 25/99` over a thin XP bar, the icon large and the name on the cell: hovering gives the game's
  * tooltip with the name and level, the XP, what is left and the rate; a click opens the skill panel.
  */
 const SkillCell = ({ heroId, row, open = false, onToggle }) => {
@@ -261,14 +273,15 @@ const SkillCell = ({ heroId, row, open = false, onToggle }) => {
                 aria-expanded={open}
                 onClick={onToggle}
                 className={cn(
-                    'min-w-[84px] flex items-center gap-1 p-0.5 cursor-pointer hover:bg-white/5',
+                    'flex items-center gap-1.5 p-0.5 pr-1.5 cursor-pointer hover:bg-white/5',
                     row.tier && TIER_BG[row.tier],
                     open && 'bg-white/10'
                 )}
             >
-                <SkillIcon skillId={row.id} size={32} />
+                <SkillIcon skillId={row.id} size={SKILL_ICON_PX} />
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
-                    <span data-skill-level className="text-xs leading-none tabular-nums font-bold whitespace-nowrap">
+                    <span data-skill-name className="ui-text-small leading-none text-gi-muted whitespace-nowrap">{row.name}</span>
+                    <span data-skill-level className="ui-text-body leading-none tabular-nums font-bold whitespace-nowrap">
                         {skillLevelText(row.level)}
                     </span>
                     <div className="h-[3px] w-full bg-black/60 overflow-hidden">

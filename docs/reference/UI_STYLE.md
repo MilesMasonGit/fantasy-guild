@@ -149,23 +149,30 @@ normal text colour; a new meaning needs the owner's OK.
   callout for equipping. *New, unapproved.*
 - **One bottom panel at a time** over the bar: the Shop or the Hero drawer; opening one closes
   the other (`useOneBottomDrawer`).
-- **The Hero drawer** (brief 570 D2; *new, unapproved*): a click on a hero on the bar raises it
-  from behind the bar, across the screen like the Shop (studs frame, the teal backdrop), over the
-  side drawers and under the bar, whose names stand over a clear band at its foot. Three blocks
-  left to right, centred in the room beside the nav: **the hero** (the close X and the edit quill
-  at its top left, the figure at twice the mat's size with the job flag behind the shoulder, the
-  name, the HP `VitalBar`); **the loadout grid**, always in view; **Skills / Combat**, two tabs
-  (glyph and word, the open one over a gold line). **Skills**: the skills in columns of four,
-  combat, gathering, crafting, then specialist, no headers, no scrolling; hover gives a clean stat
-  block under the name and level (XP, to the next level, XP/h); a click opens the **skill panel**,
-  a chamfer panel standing over the drawer's top edge with its own X (Escape closes it first;
-  another skill switches it): icon, name and level, the book, what the skill is for (the
-  `skillPurpose` lines in `src/i18n/en.json`, the owner's to edit), the exact XP, and every
-  milestone perk, held ones in gold, the rest dimmed. **Combat**: one row a stat in columns of
-  five, a muted name and a bold value with its tooltip: style, hit, damage (the lowest and highest
-  landed hit against the four enemy styles; the tip lists each and a crit), swing, crit, accuracy,
-  dodge, resistances, style cuts, gear effects. The block keeps the skills grid's width, so the
-  switch never moves the blocks.
+- **The Hero drawer** (brief 570 D2, the owner's look 2026-11-10; *new, unapproved*): a click on a
+  hero on the bar slides it up from behind the bar (and down again as it closes: the side drawers'
+  250 ms, none under reduced motion), across the screen like the Shop (studs frame, the teal
+  backdrop), over the side drawers and **down to the screen's bottom edge behind the bar**: no gap
+  under it; the bar's strip, names and HP bars stand over a clear band at its foot. Three blocks
+  left to right, centred in the room beside the nav: **the hero** (the name at the top in the
+  display size, the owner's exception to the three panel sizes; the HP `VitalBar` under it; then
+  the figure at twice the mat's size with the job flag behind the shoulder; the close X and the
+  edit quill at the block's top right); **Inventory**, one muted word over the loadout grid, always
+  in view; **Skills / Combat**, two tabs (glyph and word, the open one over a gold line).
+  **Skills**: in columns of four, combat, gathering, crafting, then specialist, no headers, no
+  scrolling; each cell the skill's icon at 3x (48 px), its name, its level and the XP bar; hover
+  gives a clean stat block under the name and level (XP, to the next level, XP/h); a click opens
+  the **skill panel**, a chamfer panel standing over the drawer's top edge with its own X (Escape
+  closes it first; another skill switches it), in two parts: first the icon, name and level, the
+  book, what the skill is for (the `skillPurpose` lines in `src/i18n/en.json`, the owner's to
+  edit) and the exact XP; then, under a faint line, every milestone perk in one scrolling list
+  (`ArrowScrollList`), a row each, `10/99  Even Heat: +10 % XP (Smithing)`, the words the perk's
+  own rule renders; held ones in gold, the rest dimmed. On a short screen the list gives up
+  height so the panel stays on screen. **Combat**: one row a stat in columns of five, a muted name
+  and a bold value with its tooltip: style, hit, damage (the lowest and highest landed hit
+  against the four enemy styles; the tip lists each and a crit), swing, crit, accuracy, dodge,
+  resistances, style cuts, gear effects. The block keeps the skills grid's width, so the switch
+  never moves the blocks.
 
 ## The work plate (owner, 2026-10-24)
 
@@ -368,8 +375,9 @@ item held.
 ## The Shop (brief 410)
 
 - **A panel from the bottom** beside the nav, on whichever side the nav is: it rises from behind
-  the hero bar and stands on the bar's strip, the bar staying in front with its names and HP bars
-  over a clear band at the panel's foot (brief 570 D1; before, it covered the bar); studs frame,
+  the hero bar down to the screen's bottom edge, the bar staying in front with its strip, names and
+  HP bars over a clear band at the panel's foot, no gap under it (brief 570 D1, the owner's look
+  2026-11-10; before, it covered the bar); studs frame,
   the green backdrop. **Across the whole screen** (owner, 2026-11-06): from the
   screen's edge under the nav to the far edge, its rows padded for the nav as the Bank drawer's.
   The cards keep their size and sit from the nav's side (from the left beside a left nav, against

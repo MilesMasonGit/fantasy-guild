@@ -150,12 +150,12 @@ describe('the Shop panel', () => {
         expect(shopPanelTransform('lip', { foot: 48 })).toBe(`translateY(calc(100% - ${SHOP_LIP_PX + 48}px))`);
     });
 
-    it("stands on the hero bar's strip, its foot kept clear for the names over it", () => {
-        const foot = dockLabelOverhangPx(dockArtPx(getLiveMatFit()));
-        expect(foot).toBeGreaterThan(0);
+    it("reaches the screen's bottom edge behind the bar, its foot kept clear for the strip and the names over it", () => {
+        const foot = DOCK_STRIP_PX + dockLabelOverhangPx(dockArtPx(getLiveMatFit()));
+        expect(foot).toBeGreaterThan(DOCK_STRIP_PX);
         const el = mountDrawer().container.querySelector('[data-shop-drawer]');
-        expect(el.style.bottom).toBe(`${DOCK_STRIP_PX}px`);
-        expect(el.className.split(' ')).not.toContain('bottom-0');
+        // No gap between the panel and the screen's bottom edge, where the bar stands.
+        expect(el.style.bottom).toBe('0px');
         expect(el.querySelector('[data-shop-foot]').style.height).toBe(`${foot}px`);
     });
 
@@ -181,7 +181,7 @@ describe('the Shop panel', () => {
             const overBoard = mountDrawer({ carrying: shopDrag, surface: DND_SURFACE.BOARD });
             const lip = overBoard.container.querySelector('[data-shop-drawer]');
             expect(lip.getAttribute('data-shop-drawer-state')).toBe('lip');
-            const foot = dockLabelOverhangPx(dockArtPx(getLiveMatFit()));
+            const foot = DOCK_STRIP_PX + dockLabelOverhangPx(dockArtPx(getLiveMatFit()));
             expect(lip.style.transform).toBe(`translateY(calc(100% - ${SHOP_LIP_PX + foot}px))`);
             expect(lip.querySelector('[data-shop-lip]').className).toContain('opacity-100');
             cleanup();
@@ -195,7 +195,7 @@ describe('the Shop panel', () => {
         const view = mountDrawer();
         const el = view.container.querySelector('[data-shop-drawer]');
         expect(el.getAttribute('data-shop-drawer-state')).toBe('open');
-        expect(el.style.bottom).toBe(`${DOCK_STRIP_PX}px`);
+        expect(el.style.bottom).toBe('0px');
         expect(el.className).toMatch(/(^| )inset-x-0( |$)/);
         expect(el.className).toContain('[--nav-inset-l:84px]');
         expect(el.style.transform).toBe('translateY(0)');

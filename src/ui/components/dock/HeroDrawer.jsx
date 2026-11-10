@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
@@ -6,24 +7,21 @@ import { DND_SURFACE, DRAG_KIND } from '../../dnd/dragConstants.js';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
+import { SIDE_DRAWER_TRANSITION } from '../base/SideDrawer.jsx';
+import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
 import { DOCK_STRIP_PX, HERO_DRAWER_PAD_TOP_PX, dockArtPx, dockLabelOverhangPx } from './dockHeroView.js';
 
-/** The drawer's slide (`HERO_DRAWER_SLIDE`), plus a little slack. */
+/** The drawer's slide (`SIDE_DRAWER_TRANSITION`, 250 ms), plus a little slack before it unmounts. */
 const DRAWER_CLOSE_MS = 300;
-const HERO_DRAWER_SLIDE = 'transform 250ms cubic-bezier(0.16,1,0.3,1), opacity 200ms';
 
-/**
- * Where the drawer is moved to: up on the bar's strip when open, all the way down behind the bar
- * (`under`, the strip's height) when closed.
- */
-export function heroDrawerTransform(open, under = DOCK_STRIP_PX) {
-    return open ? 'translateY(0)' : `translateY(calc(100% + ${under}px))`;
-}
+/** Where the drawer stands: up when open, wholly below the screen's edge (behind the bar) when closed. */
+export const heroDrawerY = (open) => (open ? 0 : '100%');
 
 /**
  * The Hero drawer: a hero's panel, rising from behind the hero bar when a hero on it is clicked,
  * across the screen like the Shop (one bottom panel at a time: `useOneBottomDrawer`), over the side
- * drawers and under the bar, whose names and HP bars stand over a clear band at its foot. Its three
+ * drawers and under the bar. It reaches the screen's bottom edge behind the bar, whose strip, names
+ * and HP bars stand over a clear band at its foot; it slides up as it opens and down as it closes. Its three
  * blocks are the sheet's (`HeroInspectionSheet`). It closes on its X, Escape, or a press outside it
  * (not on the bar, a drawer, an item or the Bank's button, so a hero can be inspected and dressed
  * while the Bank is open).
@@ -93,7 +91,7 @@ export const HeroDrawer = ({
     const isOpen = Boolean(selectedHeroId);
 
     return (
-        <aside
+        <motion.aside
             ref={asideRef}
             data-hero-panel="true"
             data-hero-drawer-state={isOpen ? 'open' : 'closed'}
@@ -105,12 +103,10 @@ export const HeroDrawer = ({
                     : '[--nav-inset-l:84px] md:[--nav-inset-l:152px]',
                 isOpen ? 'pointer-events-auto' : 'pointer-events-none'
             )}
-            style={{
-                bottom: DOCK_STRIP_PX,
-                transform: heroDrawerTransform(isOpen),
-                opacity: isOpen ? 1 : 0,
-                transition: HERO_DRAWER_SLIDE
-            }}
+            style={{ bottom: 0 }}
+            initial={{ y: heroDrawerY(false) }}
+            animate={{ y: heroDrawerY(isOpen) }}
+            transition={prefersReducedMotion() ? { duration: 0 } : SIDE_DRAWER_TRANSITION}
         >
             <div
                 ref={recall.setNodeRef}
@@ -126,11 +122,11 @@ export const HeroDrawer = ({
                     <div className="gi-drawer-pad-x flex justify-center" style={{ paddingTop: HERO_DRAWER_PAD_TOP_PX }}>
                         <HeroInspectionSheet heroId={shownHeroId} onClose={onCloseHero} onEdit={onEditHero} />
                     </div>
-                    {/* The clear band the bar's names and HP bars stand over. */}
-                    <div aria-hidden data-hero-drawer-foot className="shrink-0" style={{ height: foot + HERO_DRAWER_PAD_TOP_PX }} />
+                    {/* The clear band the bar's strip, names and HP bars stand over. */}
+                    <div aria-hidden data-hero-drawer-foot className="shrink-0" style={{ height: DOCK_STRIP_PX + foot + HERO_DRAWER_PAD_TOP_PX }} />
                 </PixelFrame>
             </div>
-        </aside>
+        </motion.aside>
     );
 };
 

@@ -21,8 +21,8 @@ import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { DOCK_STRIP_PX, dockArtPx, dockLabelOverhangPx } from '../dock/dockHeroView.js';
 
 /**
- * The Shop: a panel that rises from behind the hero bar and stands on the bar's strip, beside the
- * nav on whichever side the nav is; the bar stays in front, its names and HP bars over the
+ * The Shop: a panel that rises from behind the hero bar, down to the screen's bottom edge, beside the
+ * nav on whichever side the nav is; the bar stays in front, its strip, names and HP bars over the
  * panel's foot, which is kept clear for them. One bottom panel at a time: it and a hero's panel
  * close each other (`useOneBottomDrawer`). Opened and closed by the nav's Shop bubble
  * (`ui.nav.toggle('shop')`) or its own Close.
@@ -123,7 +123,8 @@ export const ShopPanel = ({ isOpen, onClose, menuRight = false }) => {
     const { activePayload } = useActiveDrag();
     const surface = useDragSurface();
     const state = shopPanelState(isOpen, activePayload, surface);
-    const foot = dockLabelOverhangPx(dockArtPx(useLiveMatFit()));
+    // The band at the panel's foot the bar stands over: its strip, and the names and HP bars above it.
+    const foot = DOCK_STRIP_PX + dockLabelOverhangPx(dockArtPx(useLiveMatFit()));
 
     return (
         <aside
@@ -142,8 +143,9 @@ export const ShopPanel = ({ isOpen, onClose, menuRight = false }) => {
                 state === 'closed' ? 'pointer-events-none' : 'pointer-events-auto'
             )}
             style={{
-                bottom: DOCK_STRIP_PX,
-                transform: shopPanelTransform(state, { under: DOCK_STRIP_PX, foot }),
+                // To the screen's bottom edge, behind the bar: no gap under the panel.
+                bottom: 0,
+                transform: shopPanelTransform(state, { foot }),
                 opacity: state === 'closed' ? 0 : 1,
                 visibility: state === 'closed' ? 'hidden' : 'visible',
                 transition: state === 'closed'

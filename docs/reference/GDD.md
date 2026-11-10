@@ -1469,16 +1469,18 @@ drawers**. The menu can be flipped to the right.
   player must act; hover for what they are doing; drag a figure onto the mat
   to give that hero a job; drop an item on a figure to equip it, answered by a speech bubble
   over that hero for about 3 s (what was equipped, or why not, with the numbers). Click →
-  **Hero drawer**, rising from behind the bar across the screen, three blocks left to right:
-  the hero at twice the mat's size with their flag behind the shoulder, name, HP, the close X
-  and the edit quill; the loadout grid, always in view; and a switch between **Skills** (every
-  skill as icon, level and XP bar in columns of four: combat, gathering, crafting, specialist;
-  hover for the XP, what is left and the rate; click for the skill panel over the drawer: what
-  the skill is for, its exact XP, every milestone perk, those held in gold) and **Combat** (the
+  **Hero drawer**, sliding up from behind the bar across the screen down to its bottom edge,
+  three blocks left to right: the name and HP at the top, the hero at twice the mat's size with
+  their flag behind the shoulder, the close X and the edit quill at the top right; the loadout
+  grid under the word Inventory, always in view; and a switch between **Skills** (every skill as
+  a large icon, name, level and XP bar in columns of four: combat, gathering, crafting,
+  specialist; hover for the XP, what is left and the rate; click for the skill panel over the
+  drawer: what the skill is for and its exact XP, then every milestone perk in a scrolling list,
+  those held in gold) and **Combat** (the
   style, the hit, its range against each enemy style and a critical hit, the swing, crit,
   accuracy and dodge, resistances, the cuts worn gear makes to each style, and what the loadout
   lends, all read from the fight's own numbers) → Edit (rename, portrait, flag colour). Nothing
-  in it scrolls. The Shop and the Hero drawer close each other: one panel over the bar at a time.
+  in it scrolls but the perk list. The Shop and the Hero drawer close each other: one panel over the bar at a time.
 - **Bank drawer**: tabbed item lists, search, reorder; drag an item onto a hero
   on the hero bar to equip. While open, the mat is locked; the hero bar stays in front of it.
 - **Shop**: a panel that rises from behind the hero bar beside the nav (on either side) and

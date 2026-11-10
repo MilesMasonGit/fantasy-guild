@@ -63,14 +63,16 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); });
 
 describe('H2: one hero drawer, in one place', () => {
-    it('rises across the screen from behind the bar, standing on its strip, its three blocks left to right', () => {
+    it('rises across the screen from behind the bar, down to the screen bottom edge, its three blocks left to right', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
         const box = r.container.querySelector('[data-hero-panel]');
         expect(box.querySelector('[data-hero-panel-body="h1"]')).not.toBeNull();
         expect(box.className.split(' ')).toEqual(expect.arrayContaining(['absolute', 'inset-x-0']));
         expect(box.className.split(' ')).not.toContain('top-0');
-        expect(box.style.bottom).toBe(`${DOCK_STRIP_PX}px`);
-        expect(box.style.transform).toBe('translateY(0)');
+        // To the screen's bottom edge, behind the bar: no gap under the drawer.
+        expect(box.style.bottom).toBe('0px');
+        expect(box.getAttribute('data-hero-drawer-state')).toBe('open');
+        expect(parseFloat(box.querySelector('[data-hero-drawer-foot]').style.height)).toBeGreaterThan(DOCK_STRIP_PX);
         const blocks = [...box.querySelectorAll('[data-hero-drawer-block]')].map(el => el.getAttribute('data-hero-drawer-block'));
         expect(blocks).toEqual(['summary', 'equipment', 'detail']);
     });
@@ -206,7 +208,9 @@ describe('H2: skills', () => {
     it('draws each skill as icon and n/99 with a thin bar, the name and XP in the game\'s own tooltip', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
         const row = r.container.querySelector('[data-skill-row="melee"]');
-        expect(row.textContent).toBe('25/99');
+        // The skill's name on the cell, then its level (owner, 2026-11-10).
+        expect(row.textContent).toBe('Melee25/99');
+        expect(row.querySelector('[data-skill-name]').textContent).toBe('Melee');
         expect(row.querySelector('[data-skill-level]').textContent).toBe('25/99');
         expect(r.container.textContent).not.toMatch(/Lv\.|LVL|Level/);
         // Never the browser's own title tooltip.
