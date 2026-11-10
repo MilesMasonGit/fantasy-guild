@@ -38,6 +38,8 @@ import { pixelRingPath } from '../components/board/pixelRing.js';
 import { itemTintStyle } from '../components/base/itemTint.js';
 import { ItemTipContent } from '../components/drawer/ItemTip.jsx';
 import { BankSortButton } from '../components/drawer/BankTab.jsx';
+import { ItemDrawerBody } from '../components/drawer/ItemDrawer.jsx';
+import { NOTIFICATION_COLUMN } from '../components/board/boardConstants.js';
 import { TokenCard } from '../components/board/TokenCard.jsx';
 import { RecipeList } from '../components/board/RecipeList.jsx';
 import { listSkillOf } from '../../systems/board/RecipeList.js';
@@ -600,6 +602,19 @@ const KitControlsDemo = () => {
     );
 };
 
+/** The side drawer at its narrowest width, holding the Item drawer's parts for a sample item. */
+const SideDrawerDemo = () => {
+    const id = TINT_SAMPLES.map(s => s.id).find(sid => sid && getItem(sid));
+    const template = (id && getItem(id)) || { id: 'sample', name: 'Sample item', type: 'material', tags: ['Material'] };
+    return (
+        <div data-kit-side-drawer style={{ width: NOTIFICATION_COLUMN.min, height: 560 }}>
+            <PixelFrame kind="studs" backdrop="bank" className="h-full" frameClassName="flex flex-col overflow-hidden">
+                <ItemDrawerBody entry={{ id: template.id, count: 4600, template }} />
+            </PixelFrame>
+        </div>
+    );
+};
+
 /** Bank tiles on their type's surface; hover one for the lighter surface and its tooltip. */
 const ItemTilesDemo = () => (
     <div className="flex items-end gap-3 flex-wrap">
@@ -962,8 +977,14 @@ export const KIT_SECTIONS = [
     {
         id: 'item-tiles', title: 'Item tiles and their tooltip', status: 'unapproved',
         source: 'ui-item-tile + itemTint.js (the Bank’s tiles, a hero’s loadout slots); ItemTip (the Bank’s tooltip)',
-        rule: 'Each tile is square, with the frames’ 1-art-pixel line, and sits on a dark, low-colour surface chosen by the item’s type (material, tool, food, drink, potion, map; anything else plain); on hover the surface is a little lighter and the line white, so a sprite’s dark outline reads. A surface, not a colour meaning. Hover shows everything about the item: name, type and count, Equippable: <slot>, its tool or what it restores, tags, description, and for a map what it writes.',
+        rule: 'Each tile is square, with the frames’ 1-art-pixel line, and sits on a dark, low-colour surface chosen by the item’s type (material, tool, food, drink, potion, map; anything else plain); on hover the surface is a little lighter and the line white, so a sprite’s dark outline reads. A surface, not a colour meaning. Hover shows the item: its name, the count, its tool and break chance, its tags (no type or Equippable line); the Bank leaves the rest to its Item drawer, the Encyclopedia shows it all.',
         Demo: ItemTilesDemo
+    },
+    {
+        id: 'side-drawer', title: 'Side drawer and the Item drawer', status: 'unapproved',
+        source: 'SideDrawer (base/SideDrawer.jsx); ItemDrawer (the Bank)',
+        rule: 'New, unapproved (brief 570 D3). One drawer for inspecting the world, items and upgrades: flush to the screen edge away from the nav, full height, the hero column wide, studs frame with the screen’s backdrop. The Item drawer opens and closes with the Bank, no X: the name with the book, the sprite at 4×, the count, the tags as pills that explain themselves on hover, what it does, the actions, and Collected this run at the foot.',
+        Demo: SideDrawerDemo
     },
     {
         id: 'bank-sort', title: 'Bank Sort button and its menu', status: 'unapproved',

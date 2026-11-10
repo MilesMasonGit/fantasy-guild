@@ -286,15 +286,25 @@ item held.
 [Upgrade  [oak]3/10 [stone]5/5]  <- pills inside a button
 ```
 
-## The item tooltip and the Bank's window (brief 400)
+## The item tooltip and the Item drawer (briefs 400, 570)
 
-- **The item tooltip**: the name as its header, the count right under it, then the type
-  lines (type, what it equips as, its tool) and the tags. Where there is no inspection window
-  (the Encyclopedia's card) the details follow; in the Bank they are the window's.
-- **The Bank's inspection window** sits along the Bank's foot under a divider (part of the
-  panel, not a frame inside it): the sprite at 4× on its kind's tile surface, name, count,
-  kind, details, collected this run, then the book and the X at its top right. The tile it
-  shows has the white selection line. *New, unapproved.*
+- **The item tooltip**: the name as its header, the count right under it, then its tool and break
+  chance and the tags. **No type line and no "Equippable" line** anywhere (brief 570): the tags say
+  what kind of item it is. Where there is no Item drawer (the Encyclopedia's card) the details
+  follow; in the Bank they are the drawer's.
+- **The side drawer** (`SideDrawer`): the one drawer for inspecting the world, items and upgrades.
+  Flush to the screen's edge on the side away from the nav (Menu on Right Side flips it), the full
+  height, the hero column wide (`NOTIFICATION_COLUMN`), the studs frame with the screen's backdrop;
+  it slides in from its edge with the Bank's timing. *New, unapproved.*
+- **The Item drawer**: the side drawer in the Bank's gold, opened and closed with the Bank, no X.
+  It shows the item last clicked in the Bank this session, else the open tab's first item, else a
+  calm empty line; the tile it shows has the white selection line. Top to bottom: the **name** (title
+  size, gold) with the **book** in the top corner; the **sprite at 4×** on its kind's tile surface;
+  the **count**; the **tags as pills**, each explaining itself on hover (one line a tag, in the
+  strings file's `itemTags` section; an item with no tags shows its kind); **what it does** (tool,
+  break chance, weapon stats, arrow, resists and cuts, what it restores, the description); then the
+  **actions** (Use, later Sell and Discard) and **Collected this run** small at the foot. The mat
+  stays put while the Bank and the drawer lie over it. *New, unapproved.*
 
 ## The Shop (brief 410)
 

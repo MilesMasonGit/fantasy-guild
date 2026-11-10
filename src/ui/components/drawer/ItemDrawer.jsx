@@ -34,7 +34,8 @@ export const ItemDrawer = ({ open, menuRight = false }) => {
     );
 };
 
-const ItemDrawerBody = ({ entry }) => {
+/** The drawer's six parts for one Bank entry `{ id, count, template }` (the style sheet page shows it alone). */
+export const ItemDrawerBody = ({ entry }) => {
     const { template, count } = entry;
     const facts = itemTipFacts(template);
     const pills = itemTagPills(template);
