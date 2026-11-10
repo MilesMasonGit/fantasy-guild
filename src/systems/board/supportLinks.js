@@ -9,7 +9,7 @@ import { KEYWORD, statementsOf, stationSkillOf } from '../effects/statements.js'
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../effects/constants.js';
 import { MAX_SPEED_UP_CUT } from '../../config/loopConstants.js';
 import { isStatementPaid } from './BlockUpkeep.js';
-import { nearRadius, tokensWithin, centreOf, distanceSq } from './nearby.js';
+import { reachRadius, tokensWithin, centreOf, distanceSq } from './nearby.js';
 import * as BoardState from './BoardState.js';
 import * as TileModifiers from './TileModifiers.js';
 
@@ -98,7 +98,7 @@ export function boosts(instanceId) {
     const self = BoardState.getTokenById(instanceId);
     if (!self || !statementsOf(getTokenType(self.typeId)).some(supportPayloadOf)) return [];
     const pairs = [];
-    for (const id of tokensWithin(centreOf(self), nearRadius(), instanceId)) {
+    for (const id of tokensWithin(centreOf(self), reachRadius(), instanceId)) {
         const def = getTokenType(BoardState.getTokenById(id)?.typeId);
         for (const { sourceId, statement } of TileModifiers.inboundSupports(id)) {
             if (sourceId !== instanceId) continue;
@@ -162,7 +162,7 @@ export function placementCandidates(typeId, movingId = null) {
     const moving = movingId ? BoardState.getTokenById(movingId) : null;
     const heldRules = statementsOf(heldDef).filter(s => supportPayloadOf(s) && reachesNear(s)
         && (!moving || isStatementPaid(moving, s.id)));
-    const radiusSq = nearRadius() ** 2;
+    const radiusSq = reachRadius() ** 2;
     const all = BoardState.tokens();
     const out = [];
     for (const other of all) {
@@ -196,7 +196,7 @@ export function placementCandidates(typeId, movingId = null) {
 }
 
 /** The candidates within reach of where the held Token would land. */
-export function linksAt(candidates, point, radius = nearRadius()) {
+export function linksAt(candidates, point, radius = reachRadius()) {
     if (!point || !candidates?.length) return [];
     const r2 = radius * radius;
     return candidates.filter(c => distanceSq(point, c) <= r2);

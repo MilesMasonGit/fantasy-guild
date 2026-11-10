@@ -4,7 +4,7 @@ import { ModifierAggregator, applyThreeBucket, combineMultipliers, combinePercen
 import { getGlobalAggregator, aimedModifiers } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES, EFFECT_TYPES } from '../effects/constants.js';
 import { floorSpeedUp, MIN_WORK_CYCLE_MS, flooredWorkTime } from './workTime.js';
-import { nearby, reachFrom, tokensAround, nearRadius, centreOf, distanceSq, neighbourIds } from './nearby.js';
+import { nearby, reachFrom, tokensAround, reachRadius, centreOf, distanceSq, neighbourIds } from './nearby.js';
 import { onMatTuningChanged } from '../../config/matTuning.js';
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
@@ -380,7 +380,7 @@ function* applicableStatements(selfId) {
     // centre. Measured per source below with exactly `tokensWithin`'s test: both centres present
     // and `distanceSq <= radius²`.
     const selfCentre = centreOf(self);
-    const radius = nearRadius();
+    const radius = reachRadius();
     const radiusSq = radius * radius;
 
     // Only the Tokens that can be ambient sources, in arrival order. Every other Token was
@@ -661,7 +661,7 @@ function rememberWholeRebuild(index, signature) {
     lastRebuild = {
         tokens: BoardState.membershipVersion().tokens,
         regVersion: registryVersion(),
-        radius: nearRadius(),
+        radius: reachRadius(),
         signature,
         layout,
         gen: 0
@@ -749,7 +749,7 @@ export function rebuildTokens(ids) {
     if (index.stateFilters || !last
         || last.tokens !== BoardState.membershipVersion().tokens
         || last.regVersion !== registryVersion()
-        || last.radius !== nearRadius()
+        || last.radius !== reachRadius()
         || !sameSignature(last.signature, signature)) {
         for (const instance of BoardState.tokens()) rebuildToken(instance.id);
         rememberWholeRebuild(index, signature);

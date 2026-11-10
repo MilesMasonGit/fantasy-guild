@@ -14,7 +14,7 @@ import { getSpawnerKindCounts } from '../systems/core/DevTools.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { nearRadius } from '../systems/board/nearby.js';
+import { reachRadius } from '../systems/board/nearby.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
@@ -60,7 +60,7 @@ const run = (ms, step = 1000) => { for (let t = 0; t < ms; t += step) BoardRunne
 const FAMILY = new Set(['wr_sapling', 'wr_tree', 'wr_stump']);
 const family = () => BoardState.tokens().filter(t => FAMILY.has(t.typeId));
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-const near = (forest) => family().filter(t => dist(t, forest) <= nearRadius());
+const near = (forest) => family().filter(t => dist(t, forest) <= reachRadius());
 const seeds = () => InventoryManager.getItemCount(SEED);
 
 beforeEach(() => {
@@ -89,7 +89,7 @@ describe('⭐ a Forest that plants within its reach', () => {
         const forest = placeAt('wr_forest', 800, 500);
         run(10 * 60000);
         expect(family()).toHaveLength(3);
-        for (const t of family()) expect(dist(t, forest)).toBeLessThanOrEqual(nearRadius());
+        for (const t of family()) expect(dist(t, forest)).toBeLessThanOrEqual(reachRadius());
         expect(seeds()).toBe(7);
         expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ state: 'at_cap', count: 3, cap: 3 });
         expect(SpawnerSystem.spawnerCounts(forest.id)).toEqual({ count: 3, cap: 3 });
@@ -145,7 +145,7 @@ describe('⭐ a Forest that plants within its reach', () => {
                 placeAt('fixture_kitchen', x, y);
             }
         }
-        expect(MatPlacement.findSpot('wr_sapling', { x: 800, y: 500 }, { reach: nearRadius() })).toBeNull();
+        expect(MatPlacement.findSpot('wr_sapling', { x: 800, y: 500 }, { reach: reachRadius() })).toBeNull();
         expect(MatPlacement.findSpot('wr_sapling', { x: 200, y: 900 })).not.toBeNull();
         TileModifiers.rebuildAll();
         run(15000);

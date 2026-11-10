@@ -4,7 +4,7 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import {
-    nearby, tokensWithin, tokensAround, nearRadius
+    nearby, tokensWithin, tokensAround, reachRadius
 } from '../systems/board/nearby.js';
 import { setMatTuning, resetMatTuning, matTuning, matTuningDefault } from '../config/matTuning.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
@@ -128,7 +128,7 @@ afterEach(() => {
 describe('the Near radius', () => {
     it('defaults to 164 u (FP-75, was 272 u under FP-65)', () => {
         resetMatTuning();
-        expect(nearRadius()).toBe(164);
+        expect(reachRadius()).toBe(164);
         expect(matTuningDefault('nearRadius')).toBe(164);
     });
 });

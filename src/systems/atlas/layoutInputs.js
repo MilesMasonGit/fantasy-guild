@@ -4,7 +4,7 @@ import { MAT_STEP_U, MAT_STEPS, MAT_ASPECT, artRadiusOf } from '../../config/mat
 import { matTuningDefault } from '../../config/matTuning.js';
 import { getTokenType, standsOnOf } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
-import { isWithin, nearRadius } from '../board/nearby.js';
+import { isWithin, reachRadius } from '../board/nearby.js';
 import * as Restrictions from '../board/Restrictions.js';
 import { HALL_TYPE_ID, AFFINITY } from './Layout.js';
 import { allowsTerrain } from './TerrainMap.js';
@@ -46,7 +46,7 @@ export function cannotCheck(typeIds) {
     return (typeId, point, placed) => {
         // A rule is broken by what is Near a Token, and only Tokens Near the newcomer can be
         // newly broken, so nothing further than two Near radii can change the answer.
-        const reach = 2 * nearRadius();
+        const reach = 2 * reachRadius();
         const view = new Map();
         placed.forEach((p, i) => {
             if (isWithin(point, p, reach)) view.set(`n${i}`, { typeId: p.typeId, x: p.x, y: p.y });

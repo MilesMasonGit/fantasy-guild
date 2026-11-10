@@ -8,7 +8,7 @@ import { statementsOf, firingChanceOf } from '../effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
-import { centreOf, distanceSq, nearRadius, tokensWithin } from './nearby.js';
+import { centreOf, distanceSq, reachRadius, tokensWithin } from './nearby.js';
 import { matchesTokenTarget, filterTargets } from './TileModifiers.js';
 import { KEYWORD } from '../effects/statements.js';
 import * as MatCap from './MatCap.js';
@@ -470,7 +470,7 @@ function handleNearby(triggerId, payload) {
 
     const definition = getTriggerEvent(triggerId);
 
-    for (const id of tokensWithin(origin, nearRadius(), sourceId)) {
+    for (const id of tokensWithin(origin, reachRadius(), sourceId)) {
         const instance = BoardState.getTokenById(id);
         if (!instance) continue;
 

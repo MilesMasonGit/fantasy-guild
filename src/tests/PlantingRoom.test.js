@@ -6,7 +6,7 @@ import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as EffectActions from '../systems/board/EffectActions.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
-import { nearRadius } from '../systems/board/nearby.js';
+import { reachRadius } from '../systems/board/nearby.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { clearMat, placeAt } from './fixtures/mat.js';
 
@@ -50,7 +50,7 @@ const plant = (planter) => EffectActions.spawn(
     { payload: { typeId: getTokenType(planter.typeId).spawner.spawns[0].typeId } },
     { self: planter.id },
     Math.random,
-    { within: nearRadius() }
+    { within: reachRadius() }
 );
 const gapTo = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const grow = (t) => EffectActions.transformInstance(t, getTokenType(t.typeId).grows.into, { fixPlaced: true, cause: 'grow' });
@@ -76,7 +76,7 @@ describe('⭐ a Sapling is planted with room for its tree', () => {
         const stump = placeAt(STUMP, 1050, 500);
         const landed = plant(forest);
         expect(gapTo(landed, stump)).toBeGreaterThanOrEqual(MatPlacement.minGap(TREE, TREE) - 1e-6);
-        expect(gapTo(landed, forest)).toBeLessThanOrEqual(nearRadius());
+        expect(gapTo(landed, forest)).toBeLessThanOrEqual(reachRadius());
     });
 
     it('⭐ the tree in line behind it stays in reach when both have grown: nothing moves', () => {
@@ -89,7 +89,7 @@ describe('⭐ a Sapling is planted with room for its tree', () => {
         // Growing rounds a point to whole units, and moves it no further.
         expect(gapTo(grownPlanted, planted)).toBeLessThanOrEqual(1);
         expect({ x: grownBehind.x, y: grownBehind.y }).toEqual({ x: 1050, y: 500 });
-        expect(gapTo(grownBehind, forest)).toBeLessThanOrEqual(nearRadius());
+        expect(gapTo(grownBehind, forest)).toBeLessThanOrEqual(reachRadius());
     });
 
     it('with no room for a tree in reach it still plants, at the Sapling\'s gap', () => {
@@ -106,7 +106,7 @@ describe('⭐ a Sapling is planted with room for its tree', () => {
 
     it('a Token that does not grow plants as it always did: nearest, at its own gap', () => {
         const thicket = placeAt(THICKET, 900, 500);
-        const plain = MatPlacement.findSpot(BUSH, thicket, { reach: nearRadius() });
+        const plain = MatPlacement.findSpot(BUSH, thicket, { reach: reachRadius() });
         const landed = plant(thicket);
         expect({ x: landed.x, y: landed.y }).toEqual({ x: plain.x, y: plain.y });
         expect(gapTo(landed, thicket)).toBeLessThan(MatPlacement.minGap(TREE, THICKET));

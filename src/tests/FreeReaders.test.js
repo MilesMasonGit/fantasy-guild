@@ -12,7 +12,7 @@ import * as Charges from '../systems/board/Charges.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { nearby, neighbourIds, centreOf, tokensAround, nearRadius } from '../systems/board/nearby.js';
+import { nearby, neighbourIds, centreOf, tokensAround, reachRadius } from '../systems/board/nearby.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
@@ -314,7 +314,7 @@ describe('⭐ the per-instance neighbour cache drops on add, move, remove and a 
 
     it('a provider exactly on the Near radius counts; one unit further does not (CR3-200)', () => {
         const station = at('fixture_tool_gated', P(2, 2));
-        const r = nearRadius();
+        const r = reachRadius();
         const tool = at('fixture_tool', { x: P(2, 2).x + r, y: P(2, 2).y });
         const tiers = () => RecipeResolver.contextTiersAround(station.id);
         expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
