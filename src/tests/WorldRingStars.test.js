@@ -20,7 +20,7 @@ import { starSentence, starAmount, RING_STAR_TEXT } from '../systems/progression
 import { outlineSpriteName } from '../ui/components/board/hallStarOutline.js';
 import { worldView } from '../ui/components/atlas/worldView.js';
 import { CELL_LOOK } from '../ui/components/atlas/worldMapLayout.js';
-import { lockWords } from '../ui/components/atlas/WorldPanel.jsx';
+import { lockWords } from '../ui/components/atlas/WorldPrice.jsx';
 import { resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

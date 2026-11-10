@@ -620,6 +620,17 @@
         "travel": "Travel",
         "short": "Short of {what}",
         "ringLocked": "Light the Guild Hall's {star} star to settle here",
-        "pickCell": "Pick a place on the map."
+        "pickCell": "Pick a place on the map.",
+        "ground": {
+            "water": "Water",
+            "grass": "Grass",
+            "stone": "Stone",
+            "waterTip": "How much of this place's mat is water.",
+            "grassTip": "How much of this place's mat is open land, whatever its ground: grass, rock or sand.",
+            "stoneTip": "How much of this place's mat is bare Stone: outcrops of rock."
+        },
+        "playtime": "Time here",
+        "playtimeTip": "How long the guild has spent here, time away included.",
+        "tokensTip": "Tokens on this place's mat, of the Token cap"
     }
 }

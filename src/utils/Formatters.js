@@ -132,3 +132,13 @@ export function formatClock(ms) {
     const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
+
+/** Playtime, kept in milliseconds (the game clock's tick deltas), as `2h 5m`; under a minute `< 1 min`. */
+export function formatPlaytime(ms) {
+    const seconds = Math.floor((ms || 0) / 1000);
+    if (seconds < 60) return '< 1 min';
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) return `${hours}h ${mins}m`;
+    return `${mins}m`;
+}

@@ -19,6 +19,7 @@ import Board from './components/board/Board.jsx';
 import BankDrawer from './components/drawer/BankDrawer.jsx';
 import ShopPanel from './components/drawer/ShopPanel.jsx';
 import WorldScreen from './components/atlas/WorldScreen.jsx';
+import WorldDrawer from './components/atlas/WorldDrawer.jsx';
 import WorldCamera from './components/atlas/WorldCamera.jsx';
 import ArrivalCard from './components/atlas/ArrivalCard.jsx';
 import EncyclopediaScreen from './components/encyclopedia/EncyclopediaScreen.jsx';
@@ -288,7 +289,7 @@ const ReactRoot = () => {
                         <WorldCamera
                             open={isAtlasOpen}
                             away={!isAtlasOpen && (ui.fullscreen.view !== null || isBankOpen || ui.shop.isOpen || ui.settings.isOpen)}
-                            world={<ErrorBoundary label="WorldScreen"><WorldScreen onClose={ui.fullscreen.close} /></ErrorBoundary>}
+                            world={<ErrorBoundary label="WorldScreen"><WorldScreen onClose={ui.fullscreen.close} menuRight={menuRight} /></ErrorBoundary>}
                             table={tableBackground}
                             tableAnchor={tableRef}
                         >
@@ -398,6 +399,13 @@ const ReactRoot = () => {
                         <PerfProfiler id="Drawer">
                             <BankDrawer drawer={ui.drawer} menuRight={menuRight} />
                         </PerfProfiler>
+                    </ErrorBoundary>}
+                    {/**
+                     * The World Map drawer: the side drawer, beside the Bank's, while the world map is
+                     * open. Its screen, under the camera, hands it the chosen place.
+                     */}
+                    {drawersDrawn && <ErrorBoundary label="WorldDrawer">
+                        <WorldDrawer open={isAtlasOpen} menuRight={menuRight} onClose={ui.fullscreen.close} />
                     </ErrorBoundary>}
                     {/**
                      * The Shop, rising from the bottom beside the nav. A crash here stays local

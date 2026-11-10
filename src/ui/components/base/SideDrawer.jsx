@@ -3,6 +3,7 @@ import { cn } from '../../utils/cn.js';
 import { PixelFrame, FRAME_KIND } from './PixelFrame.jsx';
 import { NOTIFICATION_COLUMN, columnWidthCss } from '../board/boardConstants.js';
 import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
+import { DOCK_STRIP_PX } from '../dock/dockHeroView.js';
 
 /** The drawers' slide: the Bank drawer's own duration and easing, so the two arrive together. */
 export const SIDE_DRAWER_TRANSITION = Object.freeze({ duration: 0.25, ease: [0.16, 1, 0.3, 1] });
@@ -18,7 +19,9 @@ export const sideDrawerEdge = (menuRight) => (menuRight ? 'left' : 'right');
  *
  * The shell holds no header and no X: what it shows decides (the Item drawer has none, it opens
  * and closes with the Bank). Lay the content out in a column: the framed box is `flex flex-col`
- * with its overflow hidden, so a long body scrolls in an `ArrowScrollList` of its own.
+ * with its overflow hidden, so a long body scrolls in an `ArrowScrollList` of its own. The frame
+ * runs the full height, but its content keeps the hero bar's strip (`DOCK_STRIP_PX`) clear at
+ * the foot, where the bar stands in front of the drawer.
  *
  * ⚠️ `absolute inset-y-0`: mount it in the screen-wide overlay (ReactRoot's table, beside the Bank
  * drawer), not inside a camera's moving side, or it measures from the wrong box.
@@ -57,6 +60,8 @@ export const SideDrawer = ({ open, menuRight = false, backdrop, label, frameClas
                         backdrop={backdrop}
                         className="h-full"
                         frameClassName={cn('flex flex-col overflow-hidden', frameClassName)}
+                        // ⚠️ The hero bar's strip stands over the drawer's foot: the content stops above it.
+                        frameStyle={{ paddingBottom: DOCK_STRIP_PX }}
                     >
                         {children}
                     </PixelFrame>
