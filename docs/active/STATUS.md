@@ -7,6 +7,22 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, briefs 560 and 570 (owner, 2026-11-10: first batch 560 R1 + 570 D1 + D3; three builders at once this week; Tab stops on draggable buttons kept)
+
+*Tue 10 Nov. Where we are: briefs 510, 520, 530, 540 and 550 are on main. Building: one standard reach (560 R1, expect WORK CHANGED), the hero bar everywhere (570 D1), the right-side Item drawer (570 D3). Next: 560 R2 (floating Foundations, ring and dots, after the owner's dot pick), 570 D2, D4, D5, then 480 L3. Owner: after R1, delete the two Camp Reach stars in the CMS and Sync; the dot pick; two drawer looks. Blockers: none.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 560 R1: one standard reach, about 240; Camp Reach goes | engineer | `feat/one-reach` (`r1`) | ready ef9a876f: `STANDARD_REACH_U = 240` through `reachRadius()` (Mat Tuner keeps a dev override under a new key); ledger unchanged at every stage; four Camp Reach stars flagged (owner 2026-11-10: delete all four after the merge); predicted WORK CHANGED on S2 to S6, S8 family, C240, C256 (support rules reach more; no bench scene has a work camp). Gate and bench queued for the 14:00 window | Tue | |
+| 570 D1: the hero bar everywhere, equip bubbles | builder | `feat/hero-bar-everywhere` (`d1`) | ready 09a4545f (one test moved to the bubble); in `feat/drawers-570` | Tue | |
+| 570 D3: the right-side drawer and the Item drawer | builder | `feat/item-drawer` (`d3`) | ready b1ec1830; in `feat/drawers-570` | Tue | |
+| 560 R2: floating Foundations, the ring and in-range dots | builder | | queued (after R1; dot pick first) | | |
+| 570 D2: the Hero drawer | builder | `feat/hero-drawer` (`d2`) | ready 7bd9ff5b; in `feat/drawers-570` | Tue | |
+| 570 D4: World Map drawer | engineer | `feat/world-drawer` (`d4`) | ready a51f8e80 (dials read the layout first step, 2 ms a cell, exact; `region.playtimeMs`); owner question on the middle dial at the look; in `feat/drawers-570` | Tue | |
+| 570 D5: Upgrade drawer | builder | `feat/upgrade-drawer` (`d5`) | ready 22286731 (multi-rank buy equals N single buys, tested; Archer’s Lore nudged 27 px); in `feat/drawers-570` | Tue | |
+| 570 combined: D1 to D5 | director | `feat/drawers-570` (`i570`) 2a5c617a | **eye-check**: 641 files green, lint 0 errors, cycles 0, depcruise clean, build; desktop build `_builds/2026-11-10-drawers`; engine work check queued after R1 in the 14:00 window | Tue | |
+| 480 L3: Limes framework | builder | | queued (after 570) | | |
+
 ## Director, brief 550 sharp sprites (owner, 2026-11-08: the owner's main problem with the production build)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
@@ -243,7 +259,7 @@ None open.
 
 ## Questions for the owner
 
-- **Native buttons that can be dragged are still Tab stops** (brief 540 C6, 2026-11-08): the mat hero, flags and Bank item tiles are buttons with a real click (the hero opens its sheet), so the keyboard ruling left them as Tab stops. A) keep them (recommended: keyboard players keep the click); B) take them out of the Tab order too.
+- ~~Native buttons that can be dragged are still Tab stops~~ answered 2026-11-10: keep them (A).
 
 
 - ~~Ring star pricing~~ **Answered 2026-11-06 evening: A** (the owner accepted the pack as built and synced it, 51a648da).
