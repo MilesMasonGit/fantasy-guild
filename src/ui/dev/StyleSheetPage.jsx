@@ -35,6 +35,7 @@ import { PixelGlyph, GLYPHS } from '../components/base/PixelGlyph.jsx';
 import { SLOT_ICONS, SLOT_ICON_UNKNOWN } from '../components/base/slotIcons.js';
 import { SkillIcon } from '../components/base/SkillIcon.jsx';
 import { pixelRingPath } from '../components/board/pixelRing.js';
+import { REACH_DOT_PATHS, REACH_DOT_COLOUR } from '../components/board/reachDot.js';
 import { itemTintStyle } from '../components/base/itemTint.js';
 import { ItemTipContent } from '../components/drawer/ItemTip.jsx';
 import { BankSortButton } from '../components/drawer/BankTab.jsx';
@@ -485,6 +486,12 @@ const CampRingDemo = () => {
             <svg width={size} height={size} shapeRendering="crispEdges">
                 <path d={d} transform={`translate(${at + scale} ${at + scale}) scale(${scale})`} fill="#000" />
                 <path d={d} transform={`translate(${at} ${at}) scale(${scale})`} fill="var(--color-gi-gold)" />
+                <path d={REACH_DOT_PATHS.shape} transform={`translate(${at - 2 * scale} ${at - 2 * scale}) scale(${scale})`} fill={REACH_DOT_COLOUR.shadow} />
+                <g transform={`translate(${at - 3 * scale} ${at - 3 * scale}) scale(${scale})`}>
+                    <path d={REACH_DOT_PATHS.X} fill={REACH_DOT_COLOUR.X} />
+                    <path d={REACH_DOT_PATHS.o} fill={REACH_DOT_COLOUR.o} />
+                    <path d={REACH_DOT_PATHS.w} fill={REACH_DOT_COLOUR.w} />
+                </g>
             </svg>
         </div>
     );
@@ -942,9 +949,9 @@ export const KIT_SECTIONS = [
         Demo: HeroOrdersDemo
     },
     {
-        id: 'camp-ring', title: 'Camp reach ring', status: 'unapproved',
-        source: 'CampReachRing (the mat), pixelRing.js',
-        rule: 'New, unapproved (brief 260 O2). The reach of a camp, shown while the pointer rests on the camp, on a hero working from it (on the mat, their Token or their figure on the hero bar) or while their sheet is open: the old flag ring’s look, one art pixel of gold over a hard black copy, centred on the camp. An enemy camp’s ring is where its enemies roam. The card’s line for a camp uses the new reach icon (Card icons).',
+        id: 'camp-ring', title: 'Reach ring and in-reach dots', status: 'unapproved',
+        source: 'MatRings + CampReachRing (the mat), pixelRing.js, reachDot.js',
+        rule: 'The one standard reach (brief 560 R2), shown while the pointer rests on a Token that uses reach (a Foundation, a work camp, a Token with a nearby rule) or while one is carried, from the Shop or across the mat; a camp also while a hero working from it is hovered or has their sheet open: the old flag ring’s look, one art pixel of gold over a hard black copy. While hovered or carried, every Token inside it wears the owner’s pick (look A, 2026-11-10): a cream dot seven art pixels across on the Token’s centre, dark edge, one white highlight pixel, a black shadow one pixel down-right. The card’s line for a camp uses the new reach icon (Card icons).',
         Demo: CampRingDemo
     },
     {

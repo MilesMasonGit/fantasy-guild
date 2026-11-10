@@ -9,8 +9,8 @@ import { reachRadius, tokensWithin } from './nearby.js';
 import * as BoardState from './BoardState.js';
 
 /**
- * Whether a Token shows its Near ring when hovered or dragged: whenever it acts on or depends on
- * what is near it. A plain resource, a Map or the Guild Hall shows none, and nor does an enemy
+ * Whether a Token shows the reach ring (and its dots) when hovered or dragged: an unbuilt
+ * Foundation, a work camp, or a Token that acts on or depends on what is near it. A plain resource, a Map or the Guild Hall shows none, and nor does an enemy
  * camp (a spawner of enemies), whatever its rules: no enemy acts on what is near its camp.
  *
  * Four places say a Token cares, because content carries two generations of fields:

@@ -214,6 +214,19 @@ plants and what it counts, a growth or rest that needs a Token in reach, and a
 retired. There is no Close/Far. In a dev build the Mat Tuner's **Reach** row
 overrides it on that device; a shipped build always uses 240.
 *(`reachRegistry.js` `STANDARD_REACH_U`, `nearby.reachRadius`)*
+- **Seeing reach** (brief 560 R2): hovering or dragging a Token that uses reach
+  (a Foundation, a work camp, a Token with a `nearby` rule or a need of a Token
+  near it) draws the one **reach ring** round it, one art pixel of gold over a
+  black copy, from the Shop or across the mat, carried camps too; while carried
+  it sits where the Token would really land. **Every Token inside the ring wears
+  a small cream dot** on its centre (the owner's pick, 2026-11-10: seven art
+  pixels, dark edge, a white highlight pixel, a black shadow one pixel
+  down-right); heroes and floor loot never do. The dots come from the engine's
+  own distance test, so a dotted Token is exactly one the camp works or the rule
+  reaches. They are worked out when the ring moves to a new spot, not every
+  frame, and nothing is drawn or worked out while nothing is hovered or carried.
+  A camp lit through its hero (hovering the hero or their tab, or their sheet
+  open) shows its ring without dots. *(`MatRings.jsx`, `reachDisplay.reachDotsAt`, `reachDot.js`)*
 
 ### Spawners — Built
 A spawner puts new Tokens beside itself on an interval, up to a **family cap**:
@@ -341,6 +354,11 @@ mines) keeps counting while full and replaces a loss on the next tick.
 ### Foundations — Built
 Buy a Foundation, pick a build recipe on it, and a hero builds it into a
 station in place (30 s, level 1). *(`Foundations.js`)*
+An **unbuilt Foundation floats** as floor loot does (brief 560 R2): its art bobs
+in whole art pixels with its hard shadow still on the ground, on the mat and in
+the hand; the building made on it rests. Hovering or carrying one shows the
+reach ring and its dots (§Reach), so the player can judge a spot before choosing
+what to build.
 
 Each kind of Foundation is for its own kind of building (owner, 2026-11-03; brief 410).
 The Shop sells only Foundations, in the order below; each shows skill icons that
@@ -440,7 +458,8 @@ ripe Field holds; 10 by default) and its **ripe picture**.
   lights the Tokens within reach of where it would land that it would help or
   be helped by (their white outline) and tags each with what passes, gold over
   a Token it helps ("−50 % grow"), plain over one that helps it ("gives ×2
-  Wheat 25 %"); mat-wide rules never light. A Token's card lists **Boosted by**
+  Wheat 25 %"); mat-wide rules never light. The reach ring and its dots show
+  at the same time (§Reach): every Token it would help wears a dot. A Token's card lists **Boosted by**
   and **Boosts** (each Token in reach and its effects) and notes when its
   speed-ups are held at the floor. A doubled item and a Composter's extra
   harvests pop quietly over the Token (a spark from the support and a rising
@@ -763,8 +782,9 @@ less micromanagement than area flags).
   silently by the camp; with everything taken they say "Nothing to work near
   Logging Camp". **Any number of heroes** may work from one camp, one hero per
   Token. A drop on a camp whose Tokens the hero can work none of says why; an
-  empty camp takes the order. Hovering a camp, or a hero working from one,
-  shows its **reach ring** (an enemy camp shows none).
+  empty camp takes the order. Hovering or carrying a camp, or hovering a hero
+  working from one, shows its **reach ring** (an enemy camp shows none); a camp
+  hovered or carried dots every Token in its reach (§Reach).
 - **Enemy camps** (a Goblin Camp, a boss's den) take the same order: the hero
   hunts what the camp spawns, one at a time, and waits beside it for the next.
 - **Walking costs time**: heroes walk at 120 u/s (≈15 s across the mat) in
