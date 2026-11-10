@@ -14,12 +14,13 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | 560 R1: one standard reach, about 240; Camp Reach goes | engineer | `feat/one-reach` (`r1`) | ready ef9a876f: `STANDARD_REACH_U = 240` through `reachRadius()` (Mat Tuner keeps a dev override under a new key); ledger unchanged at every stage; four Camp Reach stars flagged (owner 2026-11-10: delete all four after the merge); predicted WORK CHANGED on S2 to S6, S8 family, C240, C256 (support rules reach more; no bench scene has a work camp). Gate and bench queued for the 14:00 window | Tue | |
-| 570 D1: the hero bar everywhere, equip bubbles | builder | `feat/hero-bar-everywhere` (`d1`) | ready d79fa65e; the Shop now stands on the bar (about 300 px of mat at 1366 with the Shop open: owner to judge); gate running; look with D2 | Tue | |
-| 570 D3: the right-side drawer and the Item drawer | builder | `feat/item-drawer` (`d3`) | ready b1ec1830; shared `SideDrawer`; Use not built (brief 400 B4 never was): empty actions row; gate running; look with D4 and D5 | Tue | |
+| 570 D1: the hero bar everywhere, equip bubbles | builder | `feat/hero-bar-everywhere` (`d1`) | ready 09a4545f (one test moved to the bubble); in `feat/drawers-570` | Tue | |
+| 570 D3: the right-side drawer and the Item drawer | builder | `feat/item-drawer` (`d3`) | ready b1ec1830; in `feat/drawers-570` | Tue | |
 | 560 R2: floating Foundations, the ring and in-range dots | builder | | queued (after R1; dot pick first) | | |
-| 570 D2: the Hero drawer | builder | `feat/hero-drawer` (`d2`, from D1) | building | Tue | |
-| 570 D4: World Map drawer | engineer | `feat/world-drawer` (`d4`, from D3) | building | Tue | |
-| 570 D5: Upgrade drawer | builder | | queued (after D4 or beside it) | | |
+| 570 D2: the Hero drawer | builder | `feat/hero-drawer` (`d2`) | ready 7bd9ff5b; in `feat/drawers-570` | Tue | |
+| 570 D4: World Map drawer | engineer | `feat/world-drawer` (`d4`) | ready a51f8e80 (dials read the layout first step, 2 ms a cell, exact; `region.playtimeMs`); owner question on the middle dial at the look; in `feat/drawers-570` | Tue | |
+| 570 D5: Upgrade drawer | builder | `feat/upgrade-drawer` (`d5`) | ready 22286731 (multi-rank buy equals N single buys, tested; Archer’s Lore nudged 27 px); in `feat/drawers-570` | Tue | |
+| 570 combined: D1 to D5 | director | `feat/drawers-570` (`i570`) 2a5c617a | **eye-check**: 641 files green, lint 0 errors, cycles 0, depcruise clean, build; desktop build `_builds/2026-11-10-drawers`; engine work check queued after R1 in the 14:00 window | Tue | |
 | 480 L3: Limes framework | builder | | queued (after 570) | | |
 
 ## Director, brief 550 sharp sprites (owner, 2026-11-08: the owner's main problem with the production build)
