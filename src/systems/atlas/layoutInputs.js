@@ -4,7 +4,7 @@ import { MAT_STEP_U, MAT_STEPS, MAT_ASPECT, artRadiusOf } from '../../config/mat
 import { matTuningDefault } from '../../config/matTuning.js';
 import { getTokenType, standsOnOf } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
-import { isWithin, nearRadius } from '../board/nearby.js';
+import { isWithin, reachRadius } from '../board/nearby.js';
 import * as Restrictions from '../board/Restrictions.js';
 import { HALL_TYPE_ID, AFFINITY } from './Layout.js';
 import { allowsTerrain } from './TerrainMap.js';
@@ -38,15 +38,15 @@ const hasCannot = (typeId) => statementsWith(getTokenType(typeId), KEYWORD.CANNO
  * ordinary layout never pays for it. Without it a generated board could break a rule, and
  * `Restrictions.reconcile` would move map fixtures on the next load.
  *
- * ⚠️ Near is the live Near radius (`Restrictions` reads no other), so this one input is still a
- * per-device value.
+ * ⚠️ Near is `nearby.reachRadius()` (`Restrictions` reads no other): the standard reach, which a
+ * dev build's Mat Tuner may override, so on a dev device this one input can differ from a player's.
  */
 export function cannotCheck(typeIds) {
     if (![...typeIds, HALL_TYPE_ID].some(hasCannot)) return null;
     return (typeId, point, placed) => {
         // A rule is broken by what is Near a Token, and only Tokens Near the newcomer can be
-        // newly broken, so nothing further than two Near radii can change the answer.
-        const reach = 2 * nearRadius();
+        // newly broken, so nothing further than twice the reach can change the answer.
+        const reach = 2 * reachRadius();
         const view = new Map();
         placed.forEach((p, i) => {
             if (isWithin(point, p, reach)) view.set(`n${i}`, { typeId: p.typeId, x: p.x, y: p.y });

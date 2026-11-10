@@ -284,6 +284,24 @@ describe('Nearby context Tokens are needed, and never paid', () => {
         expect(plan.debits).toEqual([]);
     });
 
+    it('⭐ a cycle needing no context tag never reads its neighbours (asked every tick for every Token at work)', () => {
+        place(CONTEXT, NODE);
+        place(CONTEXT_2, 'fixture_charged_context_unlimited');
+        place(STATION, 'fixture_charge_station');
+        const looks = vi.spyOn(BoardState, 'getTokenById');
+        try {
+            for (const none of [undefined, null, []]) {
+                expect(Charges.planContextCharges(idAt(STATION), none)).toEqual({ ok: true, debits: [], missing: [] });
+            }
+            expect(looks).not.toHaveBeenCalled();
+            // The guard bites: with a tag to find, the neighbours are read.
+            expect(Charges.planContextCharges(idAt(STATION), ['ctx_fixture_charged']).ok).toBe(true);
+            expect(looks).toHaveBeenCalled();
+        } finally {
+            looks.mockRestore();
+        }
+    });
+
     it('one context Token serves several stations, for nothing', () => {
         InventoryManager.addItem('item_coal', 20);
         place(STATION, 'fixture_charge_station', 'hero_1');

@@ -88,7 +88,7 @@ beforeEach(() => {
     // ⚠️ The Coast layouts count diagonal neighbours, so Near is pinned at the
     // 8-tile ring (272 u); the shipped default is 164 u.
     resetMatTuning();
-    setMatTuning('nearRadius', 272);
+    setMatTuning('reach', 272);
 });
 
 describe('A `Cannot` refuses the placement, and says why', () => {

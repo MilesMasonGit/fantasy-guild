@@ -9,16 +9,18 @@ import { render, cleanup, fireEvent, within } from '@testing-library/react';
 import { useEntityStore, makeLifecycleBlock, TOKEN_LIFECYCLE_BLOCKS } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
-import { CAMP_REACH_DEFAULT as CMS_CAMP_REACH_DEFAULT, campOf as cmsCampOf } from '../../cms/src/utils/constants';
+import { STANDARD_REACH_U as CMS_STANDARD_REACH_U, campOf as cmsCampOf } from '../../cms/src/utils/constants';
 import { composeTokenDescription } from '../../cms/src/engine/descriptionDictionary';
-import { CAMP_REACH_DEFAULT, campOf } from '../config/registries/tokenConstants.js';
+import { campOf } from '../config/registries/tokenConstants.js';
+import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 
 /**
- * Brief 260 O2 in the CMS: a Token's Camp block (the skill whose Tokens its heroes work, and its
- * reach), carried through Recalculate, Sync and a reload exactly as written, filed as a camp, and
- * gone without a trace when removed. The content audit checks it.
+ * Brief 260 O2 in the CMS: a Token's Camp block (the skill whose Tokens its heroes work), carried
+ * through Recalculate, Sync and a reload exactly as written, filed as a camp, and gone without a
+ * trace when removed. The content audit checks it. Every camp works the game's one standard reach
+ * (brief 560 R1): the block has no Reach field, and a reach an older block carries is not read.
  *
  * ⚠️ No real workspace: the store's persistence is a no-op here (TESTING, "The CMS").
  */
@@ -64,8 +66,8 @@ function openToken(id) {
 describe('the vocabulary comes from the game', () => {
     it('the Camp block is a lifecycle block that starts with no skill at the game\'s reach', () => {
         expect(TOKEN_LIFECYCLE_BLOCKS).toContain('camp');
-        expect(makeLifecycleBlock('camp')).toEqual({ skill: '', reach: CAMP_REACH_DEFAULT });
-        expect(CMS_CAMP_REACH_DEFAULT).toBe(CAMP_REACH_DEFAULT);
+        expect(makeLifecycleBlock('camp')).toEqual({ skill: '' });
+        expect(CMS_STANDARD_REACH_U).toBe(STANDARD_REACH_U);
         expect(cmsCampOf).toBe(campOf);
     });
 });
@@ -75,19 +77,20 @@ describe('⭐ the Camp block', () => {
         const id = useEntityStore.getState().addToken({ name: 'Fixture Logging Camp' });
         const { block } = openToken(id);
         fireEvent.click(within(block()).getByText('Add'));
-        expect(useEntityStore.getState().tokens[id].camp).toEqual({ skill: '', reach: CAMP_REACH_DEFAULT });
+        expect(useEntityStore.getState().tokens[id].camp).toEqual({ skill: '' });
         expect(within(block()).getByText(/Pick the skill/)).toBeTruthy();
+        // No Reach field: every camp works the one standard reach.
+        expect(within(block()).queryByLabelText('Reach (u)')).toBe(null);
 
         fireEvent.change(block().querySelector('[data-field="camp-skill"] select'), { target: { value: 'forestry' } });
-        fireEvent.change(within(block()).getByLabelText('Reach (u)'), { target: { value: '360' } });
-        expect(useEntityStore.getState().tokens[id].camp).toEqual({ skill: 'forestry', reach: 360 });
+        expect(useEntityStore.getState().tokens[id].camp).toEqual({ skill: 'forestry' });
         // It names what its heroes would work from today's content: trees, never a station.
         const note = block().querySelector('[data-field="camp-note"]').textContent;
         expect(note).toMatch(/Birch Tree, Cedar Tree/);
-        expect(note).toMatch(/within 360 u/);
+        expect(note).toMatch(new RegExp(`within ${STANDARD_REACH_U} u`));
 
         const first = syncPayload();
-        expect(first['tokens.json'][id].camp).toEqual({ skill: 'forestry', reach: 360 });
+        expect(first['tokens.json'][id].camp).toEqual({ skill: 'forestry' });
         expect(first['tokens.json'][id].tokenType).toBe('camp');
         const text = serialise(first);
         reload(text);
@@ -103,7 +106,7 @@ describe('⭐ the Camp block', () => {
 
     it('its description says what its heroes work; a camp is never "passive"', () => {
         const text = composeTokenDescription({ name: 'X', requiresHero: false, config: null, camp: { skill: 'mining', reach: 280 } });
-        expect(text).toBe('A camp: heroes sent here work the Mining Tokens within 280 u, one hero each.');
+        expect(text).toBe(`A camp: heroes sent here work the Mining Tokens within ${STANDARD_REACH_U} u, one hero each.`);
         expect(text).not.toMatch(/passively/);
     });
 });
@@ -113,18 +116,18 @@ describe('⭐ the content audit checks a camp', () => {
     const audit = (camp, extra = {}) => auditLifecycleBlocks({ tokens: { t_camp: { id: 't_camp', name: 'Camp', camp, ...extra } }, skills })
         .filter((f) => f.entityId === 't_camp');
 
-    it('a good block says nothing; no skill, a skill that is not one, and a bad reach are errors', () => {
-        expect(audit({ skill: 'forestry', reach: 300 })).toEqual([]);
+    it('a good block says nothing; no skill and a skill that is not one are errors; a reach is not read, so never one', () => {
         expect(audit({ skill: 'forestry' })).toEqual([]);
-        expect(audit({ skill: '', reach: 300 })[0]).toMatchObject({ severity: 'error', field: 'camp.skill' });
-        expect(audit({ skill: 'basket_weaving', reach: 300 })[0]).toMatchObject({ severity: 'error', field: 'camp.skill' });
-        expect(audit({ skill: 'mining', reach: 0 })[0]).toMatchObject({ severity: 'error', field: 'camp.reach' });
-        expect(audit({ skill: 'mining', reach: 'far' })[0]).toMatchObject({ severity: 'error', field: 'camp.reach' });
+        expect(audit({ skill: 'forestry', reach: 300 })).toEqual([]);
+        expect(audit({ skill: '' })[0]).toMatchObject({ severity: 'error', field: 'camp.skill' });
+        expect(audit({ skill: 'basket_weaving' })[0]).toMatchObject({ severity: 'error', field: 'camp.skill' });
+        expect(audit({ skill: 'mining', reach: 0 })).toEqual([]);
+        expect(audit({ skill: 'mining', reach: 'far' })).toEqual([]);
         expect(audit('yes')[0]).toMatchObject({ severity: 'error', field: 'camp' });
     });
 
     it('a camp with its own work cycle is warned: no hero works a camp itself', () => {
-        const found = audit({ skill: 'mining', reach: 300 }, { config: { skill: 'mining', cycleTimeMs: 1000, outputs: [] } });
+        const found = audit({ skill: 'mining' }, { config: { skill: 'mining', cycleTimeMs: 1000, outputs: [] } });
         expect(found).toEqual([expect.objectContaining({ severity: 'warning', field: 'camp' })]);
     });
 });

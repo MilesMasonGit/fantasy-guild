@@ -3,6 +3,7 @@
 import { KEYWORD } from '../effects/statements.js';
 import { auraSourceId } from '../effects/GuildModifiers.js';
 import { filtersOf, getFilterKind, FILTER_NEEDS } from '../../config/registries/filterRegistry.js';
+import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { rankOf } from '../../config/hallStars.js';
 
 /**
@@ -17,9 +18,13 @@ import { rankOf } from '../../config/hallStars.js';
  *   added to each matching Token's own aggregator ("−20 % Grow Time to Copper Veins").
  *
  * A rule's reach means nothing here: a star reaches the whole guild. A rule the guild cannot carry
- * is skipped and reported, never widened: another keyword, a triggered rule, no number, or a filter
- * that reads live state (charges, who works it), which nothing would ever refresh.
+ * is skipped and reported, never widened: another keyword, a triggered rule, no number, a retired
+ * axis (Camp Reach), or a filter that reads live state (charges, who works it), which nothing would
+ * ever refresh.
  */
+
+/** Why `hallRulesOf` leaves out a rule on an axis the game no longer reads (`modifierPalette` `retired`). */
+export const RETIRED_AXIS = 'an axis the game no longer reads';
 
 /** A rule's Token selector when it names only some Tokens, else null. */
 function aimOf(statement) {
@@ -60,6 +65,7 @@ export function hallRulesOf(stars, ranks) {
             const payload = statement.payload;
             const value = Number(payload?.value);
             if (!payload?.type || !Number.isFinite(value)) return skip('no axis or value');
+            if (getPaletteEntry(payload.type)?.retired) return skip(RETIRED_AXIS);
             const to = aimOf(statement);
             if (to && !readsDefinitionOnly(to)) return skip('a filter that reads live state');
             held.push({ starId: star.id, rank, statement });

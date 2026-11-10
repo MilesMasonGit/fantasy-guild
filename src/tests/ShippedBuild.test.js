@@ -17,7 +17,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
  */
 
 const TUNING_KEY = 'fantasy_guild_mat_tuning';
-const TUNED = { matSteps: 6, matAspect: 0.5, questCap: 9, questCapMax: 9, questEverySec: 30, nearRadius: 500 };
+const TUNED = { matSteps: 6, matAspect: 0.5, questCap: 9, questCapMax: 9, questEverySec: 30, reach: 500 };
 
 /** The tuning, geometry and quest modules as a build of `mode` loads them, with `TUNED` stored. */
 async function loadAs(mode) {
@@ -29,7 +29,9 @@ async function loadAs(mode) {
     const tuning = await import('../config/matTuning.js');
     const geometry = await import('../config/matGeometry.js');
     const quests = await import('../systems/quests/QuestTokens.js');
-    return { tuning, geometry, quests };
+    const reach = await import('../config/registries/reachRegistry.js');
+    const nearby = await import('../systems/board/nearby.js');
+    return { tuning, geometry, quests, reach, nearby };
 }
 
 afterEach(() => {
@@ -40,8 +42,10 @@ afterEach(() => {
 
 describe('the game values', () => {
     it('are today’s shipped numbers, and the Mat Tuner starts at them', async () => {
-        const { tuning, geometry, quests } = await loadAs('development');
+        const { tuning, geometry, quests, reach } = await loadAs('development');
         expect(geometry.MAT_STEPS).toBe(12);
+        expect(reach.STANDARD_REACH_U).toBe(240);
+        expect(tuning.matTuningDefault('reach')).toBe(reach.STANDARD_REACH_U);
         expect(geometry.MAT_ASPECT).toBe(13 / 24);
         expect(quests.QUEST_CAP_BASE).toBe(2);
         expect(quests.QUEST_CAP_MAX).toBe(5);
@@ -56,24 +60,26 @@ describe('the game values', () => {
 
 describe('a shipped build uses the game values whatever the tuner once stored', () => {
     it('the mat is MAT_STEPS, the bounties the quest game values, every other tuner number its default', async () => {
-        const { tuning, geometry, quests } = await loadAs('production');
+        const { tuning, geometry, quests, reach, nearby } = await loadAs('production');
         expect(geometry.matSteps()).toBe(12);
         expect(geometry.matW()).toBe(1920);
         expect(geometry.matH()).toBe(1040);
         expect(quests.questCap()).toBe(2);
         expect(quests.questIntervalMs()).toBe(180_000);
-        expect(tuning.matTuning('nearRadius')).toBe(tuning.matTuningDefault('nearRadius'));
+        expect(tuning.matTuning('reach')).toBe(tuning.matTuningDefault('reach'));
+        expect(nearby.reachRadius()).toBe(reach.STANDARD_REACH_U);
         expect(tuning.setMatTuning('matSteps', 8)).toBe(false);
         expect(geometry.matSteps()).toBe(12);
     });
 
     it('a dev build still takes the tuner’s numbers', async () => {
-        const { tuning, geometry, quests } = await loadAs('development');
+        const { tuning, geometry, quests, nearby } = await loadAs('development');
         expect(geometry.matSteps()).toBe(6);
         expect(geometry.matH()).toBe(480);
         expect(quests.questCap()).toBe(9);
         expect(quests.questIntervalMs()).toBe(30_000);
-        expect(tuning.matTuning('nearRadius')).toBe(500);
+        expect(tuning.matTuning('reach')).toBe(500);
+        expect(nearby.reachRadius()).toBe(500);
     });
 
     it('so does a perf build (the measuring build, never shipped)', async () => {

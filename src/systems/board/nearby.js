@@ -1,8 +1,8 @@
 // distance on the playmat
 
 import { LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
-import { REACH } from '../../config/registries/reachRegistry.js';
-import { matTuning } from '../../config/matTuning.js';
+import { REACH, STANDARD_REACH_U } from '../../config/registries/reachRegistry.js';
+import { tunedOr } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -10,7 +10,7 @@ import * as BoardState from './BoardState.js';
  *
  * There are no Tiles. Every Token on the mat has a centre (`instance.x`, `instance.y`), and every
  * question here is asked of an instance id or a mat point and answers with instance ids. Near is
- * the Mat Tuner's Near radius.
+ * the one standard reach ({@link reachRadius}), which camps read too.
  *
  * Where an ordering is needed, ids come back in arrival order (`placedAt` ascending). `nearby` is
  * the stored reach id and means Near; `self_and_nearby` likewise; `self` and `board` are unchanged.
@@ -20,9 +20,12 @@ import * as BoardState from './BoardState.js';
  * point with {@link tokensWithin} or {@link isWithin}.
  */
 
-/** The live Near radius, in mat units. */
-export function nearRadius() {
-    return matTuning('nearRadius');
+/**
+ * The one standard reach, in mat units: `STANDARD_REACH_U`, or a dev build's Mat Tuner override.
+ * Every `nearby` rule, camp, within-reach spawner and "Stands near" or `Cannot` check reads this.
+ */
+export function reachRadius() {
+    return tunedOr('reach', STANDARD_REACH_U);
 }
 
 /**
@@ -43,7 +46,7 @@ function within(a, b, radius) {
 }
 
 /** Whether two mat points are within `radius` of each other (inclusive). */
-export function isWithin(a, b, radius = nearRadius()) {
+export function isWithin(a, b, radius = reachRadius()) {
     return !!a && !!b && within(a, b, radius);
 }
 
@@ -57,7 +60,7 @@ export function centreOf(instance) {
  * Every Token on the mat whose centre lies within `radius` of `point`, as
  * instance ids in arrival order, skipping `excludeId`.
  */
-export function tokensWithin(point, radius = nearRadius(), excludeId = null) {
+export function tokensWithin(point, radius = reachRadius(), excludeId = null) {
     if (!point) return [];
     const out = [];
     for (const instance of BoardState.tokens()) {
@@ -72,7 +75,7 @@ export function tokensWithin(point, radius = nearRadius(), excludeId = null) {
  * The Tokens a rule at `reach` carries to, measured from a point (with an
  * optional id standing there as "self"). The shared core of {@link nearby}.
  */
-export function reachFrom(point, selfId, reach = REACH.NEARBY, radius = nearRadius()) {
+export function reachFrom(point, selfId, reach = REACH.NEARBY, radius = reachRadius()) {
     if (reach === REACH.SELF) return selfId ? [selfId] : [];
     if (reach === REACH.BOARD) return BoardState.tokens().map(t => t.id);
     if (!point) return [];
@@ -97,7 +100,7 @@ export function reachFrom(point, selfId, reach = REACH.NEARBY, radius = nearRadi
  * @param {number} [radius] override, mainly for tests; defaults to the live Near
  * @returns {string[]}
  */
-export function nearby(instanceId, reach = REACH.NEARBY, radius = nearRadius()) {
+export function nearby(instanceId, reach = REACH.NEARBY, radius = reachRadius()) {
     const self = BoardState.getTokenById(instanceId);
     if (!self) return [];
     return reachFrom(centreOf(self), self.id, reach, radius);
@@ -116,7 +119,7 @@ export function nearby(instanceId, reach = REACH.NEARBY, radius = nearRadius()) 
  * @param {Array<{x:number,y:number}|null>} points
  * @returns {string[]}
  */
-export function tokensAround(points, radius = nearRadius()) {
+export function tokensAround(points, radius = reachRadius()) {
     const origins = (points || []).filter(p => p && Number.isFinite(p.x) && Number.isFinite(p.y));
     if (!origins.length) return [];
     const reachU = radius + LARGEST_ART_RADIUS;
@@ -129,14 +132,14 @@ export function tokensAround(points, radius = nearRadius()) {
 }
 
 /**
- * `nearby(id)` at the live Near radius, cached per instance. `RecipeResolver` and `Charges` ask for
+ * `nearby(id)` at the live reach ({@link reachRadius}), cached per instance. `RecipeResolver` and `Charges` ask for
  * a station's neighbours several times per station per tick, which would otherwise be the one
  * per-tick O(n²) cost.
  *
  * What drops it: the whole cache when a Token is put on or taken off the mat
- * (`BoardState.membershipVersion`), the board is swapped (a load), or the Near radius changes. On a
+ * (`BoardState.membershipVersion`), the board is swapped (a load), or the reach changes (a dev Mat Tuner override). On a
  * move (`setTokenPoint`), only the entries it can change, read back from `BoardState`'s move
- * journal: the moved Token's own entry and that of every Token within `nearRadius() + 1` of where
+ * journal: the moved Token's own entry and that of every Token within `reachRadius() + 1` of where
  * it left or arrived (the same both-ends rule as {@link tokensAround}). The `+ 1` is slack:
  * dropping an extra entry is harmless, keeping a stale one is a silently wrong recipe or tool
  * answer.
@@ -180,7 +183,7 @@ function forgetAroundMove(movedId, fx, fy, tx, ty) {
 
 export function neighbourIds(instanceId) {
     const { tokens, version } = BoardState.membershipVersion();
-    const radius = nearRadius();
+    const radius = reachRadius();
     const moves = BoardState.moveCount();
     if (neighbourCache.tokens !== tokens || neighbourCache.version !== version || neighbourCache.radius !== radius) {
         neighbourCache = { tokens, version, radius, moves, byId: new Map() };

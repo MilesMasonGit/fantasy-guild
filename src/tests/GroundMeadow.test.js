@@ -12,6 +12,8 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
+import { reachRadius } from '../systems/board/nearby.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { mulberry32, seedFromText } from '../systems/atlas/seededRandom.js';
@@ -191,10 +193,15 @@ function dryRegion() {
 
 /**
  * Recorded on `main` at fe151c8e, before the ground rule existed, with this script unchanged, and
- * again when the shipped Token hitbox grew from 80% to 90%. Only a deliberate change to how a
- * meadow places Tokens may change it, and then the engine bench reports WORK CHANGED too.
+ * again when the shipped Token hitbox grew from 80% to 90%, and when the Near radius (164 u) became
+ * the one standard reach. Only a deliberate change to how a meadow places Tokens may change it.
+ *
+ * ⚠️ The script's rocks keep apart by a `Cannot` rule, which counts what stands within the standard
+ * reach (`STANDARD_REACH_U`), so a new reach changes where they may go and this fingerprint with
+ * it, though the ground has no say. The engine bench's boards carry no `Cannot` rule and do not
+ * see such a change.
  */
-const MEADOW_FINGERPRINT = 'd80b0139';
+const MEADOW_FINGERPRINT = '6aff0f28';
 
 describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
     // On the 11-step, 0.64 mat the script was recorded on: what it guards is how a meadow places
@@ -215,6 +222,8 @@ describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
     for (const [label, setUp] of Object.entries(grounds)) {
         it(`same spots for the same calls: ${label}`, () => {
             setUp();
+            // The fingerprint is of the standard reach (see above).
+            expect(reachRadius()).toBe(STANDARD_REACH_U);
             const { log, board } = runScript();
             // The script exercised every outcome it is meant to.
             expect(log.some(e => e[0] === 'drop' && e[7] === true)).toBe(true);

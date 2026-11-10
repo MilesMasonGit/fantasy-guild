@@ -11,6 +11,7 @@ import { fingerprint } from '../../cms/src/engine/changePacks.js';
 import { recalculateWorkspace } from '../../cms/src/engine/recalculate.js';
 import { seedStoredWorkspace } from '../../cms/src/engine/workspaceSeeds.js';
 import { DEFAULT_GLOBALS } from '../../cms/src/utils/constants.js';
+import { asLoaded } from './fixtures/shippedAsLoaded.js';
 
 /**
  * The CMS's command line (`npm run cms -- <command>`, `cms/cliCommands.mjs`). Every command runs
@@ -116,8 +117,9 @@ describe('restore, recalc and sync', () => {
         const r = await cms(dir, 'sync');
         expect(r.code, r.err).toBe(0);
         expect(r.out).toMatch(/Not committed: data folder overridden/);
+        // As loaded: what the next Sync rewrites by itself (`shippedAsLoaded.js`); byte for byte otherwise.
         for (const name of fs.readdirSync(path.join(root, 'data')).filter((f) => f.endsWith('.json'))) {
-            expect(textOf(path.join(dir, 'data', name)), name).toBe(textOf(path.join(root, 'data', name)));
+            expect(textOf(path.join(dir, 'data', name)), name).toBe(asLoaded(name, textOf(path.join(root, 'data', name))));
         }
         expect(textOf(path.join(dir, 'plan', 'plan.json'))).toBe(textOf(path.join(root, 'cms', 'plan', 'plan.json')));
     });

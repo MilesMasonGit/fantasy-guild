@@ -119,8 +119,9 @@ export { RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS } from '../../../src/co
 // A Field grows its own crop: its block's terms, and each crop recipe's grow time, load and ripe sprite with the game's defaults.
 export { fieldOf, cropTermsOf, CROP_DEFAULTS, CROP_MIN_GROW_MS } from '../../../src/config/registries/tokenConstants.js';
 
-// A camp's terms (`camp: { skill, reach }`) and the reach a block without one has, read from the game.
-export { campOf, CAMP_REACH_DEFAULT } from '../../../src/config/registries/tokenConstants.js';
+// A camp's terms (`camp: { skill }`), read from the game. Every camp works the one standard reach, the game's too.
+export { campOf } from '../../../src/config/registries/tokenConstants.js';
+export { STANDARD_REACH_U } from '../../../src/config/registries/reachRegistry.js';
 
 // An enemy is a Token: it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the Style dropdown and `enemyProfileOf` powers the editor's read-only stat preview, imported from the game so the numbers shown are the numbers the fight uses.
 export { ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_OVERRIDE_FIELDS, RETIRED_ENEMY_FIELDS } from '../../../src/config/registries/enemyProfile.js';
@@ -165,6 +166,8 @@ export { auditLifecycleBlocks } from '../../../src/systems/core/lifecycleAudit.j
 export { findUnknownRefs } from '../../../src/systems/core/unknownRefRule.js';
 // Gear's defence: field problems on a piece, and the best stack the content allows reaching 100 % in a type. The game's own rule and wording.
 export { gearDefenceFindings } from '../../../src/systems/core/gearDefenceRule.js';
+// Guild Hall stars that cannot open, name what is gone, or carry a rule the guild cannot hold (a retired Camp Reach star). The game's own rule and wording.
+export { hallStarFindings } from '../../../src/systems/core/hallStarRule.js';
 
 // Gathering tools: the kinds an item's Tool and a Token's Needs tool may name, and the content checks for them. The game's own vocabulary, rule and wording.
 export {

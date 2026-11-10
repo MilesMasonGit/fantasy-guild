@@ -75,7 +75,7 @@ beforeEach(() => {
     // (diagonal neighbours), so Near is pinned at 272 u. The shipped default has
     // been 164 u — side neighbours only.
     resetMatTuning();
-    setMatTuning('nearRadius', 272);
+    setMatTuning('reach', 272);
     GameState.state.heroes = [makeHero('hero_1'), makeHero('hero_2'), makeHero('hero_3')];
     GameState.state.inventory.maxSlots = 50;
 });

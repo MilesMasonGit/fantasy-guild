@@ -23,9 +23,12 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
+import { EFFECT_TYPES } from '../systems/effects/constants.js';
+import { hallRulesOf, RETIRED_AXIS } from '../systems/progression/hallModifiers.js';
 import { deriveTokenType } from '../config/registries/tokenTypeDerivation.js';
-import { TOKEN_TYPES, CAMP_REACH_DEFAULT } from '../config/registries/tokenConstants.js';
+import { TOKEN_TYPES } from '../config/registries/tokenConstants.js';
+import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
 import { flagStatusLine, dockStatusLine } from '../ui/components/board/flagText.js';
 import { idleMomentOf } from '../ui/components/board/heroSpeech.js';
 import * as fixtures from '../../bench/fixtures.mjs';
@@ -69,16 +72,18 @@ const work = (skill, ms = 1000, extra = {}) => ({
     skill, skillRequired: 1, cycleTimeMs: ms, xp: 1, inputs: [],
     outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }], ...extra
 });
-const camp = (id, name, skill, reach) => ({
+const camp = (id, name, skill, extra = {}) => ({
     id, name, tokenType: 'camp', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
-    requiresHero: false, config: null, camp: { skill, reach }
+    requiresHero: false, config: null, camp: { skill, ...extra }
 });
 const enemyConfig = { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] };
 
 registerTokenTypes({
-    hc_logging: camp('hc_logging', 'HC Logging Camp', 'forestry', 300),
-    hc_mining: camp('hc_mining', 'HC Mining Camp', 'mining', 300),
-    hc_farmstead: camp('hc_farmstead', 'HC Farmstead', 'farming', 300),
+    hc_logging: camp('hc_logging', 'HC Logging Camp', 'forestry'),
+    hc_mining: camp('hc_mining', 'HC Mining Camp', 'mining'),
+    hc_farmstead: camp('hc_farmstead', 'HC Farmstead', 'farming'),
+    /** A camp whose block still carries an old authored reach, which is not read. */
+    hc_wide: camp('hc_wide', 'HC Wide Camp', 'forestry', { reach: 999 }),
     hc_tree: plain('hc_tree', 'HC Tree', { uses: 3, requiresHero: true, config: work('forestry') }),
     hc_berry: plain('hc_berry', 'HC Berry', {
         uses: 1, requiresHero: true, respawn: { mode: 'refill', afterMs: 5000 }, config: work('forestry')
@@ -165,9 +170,10 @@ afterAll(() => {
 });
 
 describe('a camp is a Token type', () => {
-    it('reads its block (skill and reach, a missing reach at the default) and files as a camp', () => {
-        expect(Camps.campOf(getTokenType('hc_logging'))).toEqual({ skill: 'forestry', reach: 300 });
-        expect(Camps.campOf({ camp: { skill: 'mining' } })).toEqual({ skill: 'mining', reach: CAMP_REACH_DEFAULT });
+    it('reads its block (its skill; an authored reach is not read) and files as a camp', () => {
+        expect(Camps.campOf(getTokenType('hc_logging'))).toEqual({ skill: 'forestry' });
+        expect(Camps.campOf({ camp: { skill: 'mining' } })).toEqual({ skill: 'mining' });
+        expect(Camps.campOf(getTokenType('hc_wide'))).toEqual({ skill: 'forestry' });
         expect(Camps.campOf({ camp: { skill: '' } })).toBe(null);
         expect(Camps.campOf(getTokenType('hc_tree'))).toBe(null);
         expect(deriveTokenType(getTokenType('hc_logging')).type).toBe('camp');
@@ -197,9 +203,51 @@ describe('a camp is a Token type', () => {
         newBoard();
         const c = fixtures.placeAt('hc_logging', 400, 300);
         const den = fixtures.placeAt('hc_den', 900, 300);
-        expect(Camps.reachRingOf(c)).toEqual({ x: 400, y: 300, r: 300 });
+        expect(Camps.reachRingOf(c)).toEqual({ x: 400, y: 300, r: STANDARD_REACH_U });
         expect(Camps.reachRingOf(den)).toBe(null);
         expect(Camps.reachRingOf(fixtures.placeAt('hc_tree', 1200, 300))).toBe(null);
+    });
+});
+
+describe('⭐ every camp works the one standard reach (owner, 2026-11-10)', () => {
+    it('a Token exactly at the reach is its work; one a unit further is not, whatever reach the block once carried', () => {
+        newBoard();
+        expect(STANDARD_REACH_U).toBe(240);
+        for (const typeId of ['hc_logging', 'hc_wide']) {
+            const c = fixtures.placeAt(typeId, 600, 500);
+            const edge = fixtures.placeAt('hc_tree', 600 + STANDARD_REACH_U, 500);
+            const past = fixtures.placeAt('hc_tree', 600, 500 + STANDARD_REACH_U + 1);
+            expect(Camps.isCampWork(c, edge), typeId).toBe(true);
+            expect(Camps.isCampWork(c, past), typeId).toBe(false);
+            expect(Camps.campWork(c).map(t => t.id), typeId).toEqual([edge.id]);
+            expect(Camps.reachRingOf(c).r, typeId).toBe(STANDARD_REACH_U);
+            for (const t of [c, edge, past]) BoardState.removeToken(t.id);
+        }
+    });
+
+    it('a dev build Mat Tuner override moves every camp with every nearby rule', () => {
+        newBoard();
+        const c = fixtures.placeAt('hc_logging', 600, 500);
+        const far = fixtures.placeAt('hc_tree', 600 + 300, 500);
+        expect(Camps.isCampWork(c, far)).toBe(false);
+        setMatTuning('reach', 320);
+        expect(Camps.isCampWork(c, far)).toBe(true);
+        expect(Camps.reachRingOf(c).r).toBe(320);
+        resetMatTuning();
+        expect(Camps.isCampWork(c, far)).toBe(false);
+    });
+
+    it('a Hall star Camp Reach rule widens nothing: it is retired', () => {
+        newBoard();
+        const c = fixtures.placeAt('hc_logging', 600, 500);
+        const far = fixtures.placeAt('hc_tree', 600 + 300, 500);
+        const rule = { id: 'stm_hc_rails', keyword: 'provides', to: { mode: 'id', value: 'hc_logging' }, reach: 'board',
+            payload: { type: EFFECT_TYPES.CAMP_REACH, bucket: 'percentage', value: 1 } };
+        const out = hallRulesOf([{ id: 'hc_rails', ranks: [{ price: [], rules: [rule], lines: [] }] }], { hc_rails: 1 });
+        expect(out.aimed).toEqual([]);
+        expect(out.modifiers).toEqual([]);
+        expect(out.ignored).toEqual([{ starId: 'hc_rails', rank: 1, index: 0, reason: RETIRED_AXIS }]);
+        expect(Camps.isCampWork(c, far)).toBe(false);
     });
 });
 
@@ -209,7 +257,7 @@ describe('⭐ heroes sent to a camp work its Tokens, one hero per Token', () => 
         const c = fixtures.placeAt('hc_logging', 600, 500);
         const near = fixtures.placeAt('hc_tree', 700, 500);
         const next = fixtures.placeAt('hc_tree', 600, 700);
-        const beyond = fixtures.placeAt('hc_tree', 1000, 500);    // 400 u from the camp, its reach 300
+        const beyond = fixtures.placeAt('hc_tree', 1000, 500);    // 400 u from the camp, its reach 240
         expect(Orders.orderAt(a.id, { x: c.x, y: c.y })).toMatchObject({ success: true, order: 'token', instanceId: c.id });
         expect(Orders.orderAt(b.id, { x: c.x, y: c.y })).toMatchObject({ success: true, order: 'token', instanceId: c.id });
         run(500);
@@ -262,7 +310,7 @@ describe('⭐ heroes sent to a camp work its Tokens, one hero per Token', () => 
         const [h] = newBoard();
         const c = fixtures.placeAt('hc_logging', 600, 500);
         const saw = fixtures.placeAt('hc_saw', 700, 500);
-        const tree = fixtures.placeAt('hc_tree', 600, 750);
+        const tree = fixtures.placeAt('hc_tree', 600, 720);
         Orders.orderAt(h.id, { x: c.x, y: c.y });
         run(300);
         expect(BoardState.workTokenOf(h.id)).toBe(tree.id);

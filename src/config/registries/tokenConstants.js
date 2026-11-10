@@ -326,21 +326,21 @@ export function growsTermsOf(def) {
 }
 
 /**
- * ⭐ **A camp** (brief 260 O2): `camp: { skill, reach }` on a Token built like a station. A hero sent
- * to it works the Tokens of `skill` within `reach` mat units of its centre, centre to centre
- * (`systems/board/Camps.js`). For scale: Near is 164 u (the four side neighbours) and 240 u reaches
- * all eight neighbours. A block with no reach (or a bad one) reaches {@link CAMP_REACH_DEFAULT}.
+ * ⭐ **A camp** (brief 260 O2): `camp: { skill }` on a Token built like a station. A hero sent to it
+ * works the Tokens of `skill` within the one standard reach of its centre, centre to centre
+ * (`systems/board/Camps.js`, `reachRegistry.STANDARD_REACH_U`).
+ *
+ * ⚠️ A `reach` key some blocks still carry in `data/` is not read: every camp works the standard
+ * reach.
+ *
+ * A Token type's camp terms, `{ skill }`, or null for a type that is not a camp (no block, or no skill).
  */
-export const CAMP_REACH_DEFAULT = 320;
-
-/** A Token type's camp terms, `{ skill, reach }`, or null for a type that is not a camp (no block, or no skill). */
 export function campOf(def) {
     const block = def?.camp;
     if (!block || typeof block !== 'object' || Array.isArray(block)) return null;
     const skill = typeof block.skill === 'string' ? block.skill.trim() : '';
     if (!skill) return null;
-    const reach = Number(block.reach);
-    return { skill, reach: Number.isFinite(reach) && reach > 0 ? reach : CAMP_REACH_DEFAULT };
+    return { skill };
 }
 
 /**

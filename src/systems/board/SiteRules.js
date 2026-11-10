@@ -6,7 +6,7 @@ import { recipesForFoundation } from '../../config/registries/recipePoolRegistry
 import { withArticle } from '../effects/toolNames.js';
 import * as BoardState from './BoardState.js';
 import * as GroundRules from './GroundRules.js';
-import { nearRadius } from './nearby.js';
+import { reachRadius } from './nearby.js';
 
 /**
  * A Token type's site: the ground under its centre (its "Stands on", `GroundRules`) and, for a type
@@ -46,7 +46,7 @@ export function anchorsFor(rules, excludeId = null) {
 }
 
 /** Whether one of `anchors` stands within `radius` of `(x, y)`. */
-export function nearMetAt(anchors, x, y, radius = nearRadius()) {
+export function nearMetAt(anchors, x, y, radius = reachRadius()) {
     const r2 = radius * radius;
     for (const a of anchors) {
         const dx = a.x - x;

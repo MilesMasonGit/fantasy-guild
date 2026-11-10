@@ -3,6 +3,8 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import { nudgeReach } from '../systems/board/MatPlacement.js';
+import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
@@ -109,7 +111,6 @@ const MAP = encodeTerrain(GRID, Array.from({ length: GRID.cols * GRID.rows }, (_
 const SHORE = { x: 336, y: 560 };
 const STONE = { x: 816, y: 560 };
 const GRASS = { x: 1456, y: 560 };
-const FAR_GRASS = { x: 1456, y: 200 };
 
 function standOn(map) {
     const region = createRegionRecord('region_7');
@@ -302,7 +303,11 @@ describe('an Arcane node stands within reach of an Arcane node', () => {
     it('a built crystal may move only within reach of a Leyline', () => {
         const leyline = placeAt('bn_leyline', GRASS.x + 120, GRASS.y);
         const crystal = put('bn_crystal', GRASS);
-        const away = Placement.placeTokenAt(crystal, FAR_GRASS, { excludeId: crystal.id });
+        // Further from the Leyline than the standard reach plus the furthest a drop is nudged, so
+        // no nudge can carry it into reach.
+        const farGrass = { x: leyline.x - (STANDARD_REACH_U + nudgeReach() + 32), y: leyline.y };
+        expect(terrainAt(MAP, farGrass.x, farGrass.y)).toBe(TERRAIN.GRASS);
+        const away = Placement.placeTokenAt(crystal, farGrass, { excludeId: crystal.id });
         expect(away.success).toBe(false);
         expect(away.reason).toBe('Needs a BN Leyline nearby.');
         expect(Placement.placeTokenAt(crystal, { x: leyline.x, y: leyline.y + 120 }, { excludeId: crystal.id }).success).toBe(true);

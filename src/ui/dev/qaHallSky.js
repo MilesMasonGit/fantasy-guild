@@ -25,7 +25,8 @@ const ore = (n) => [{ itemId: 'item_copper_ore', quantity: n }];
  * The fixture sky: a Mining and a Forestry constellation linked to the Hall, two stars joining the
  * Hearth and two the Well. Every kind the machinery holds, at small numbers so each shows at once:
  * XP, yield and work speed for a skill; a vein's rest and a tree's regrowth (Grow Time aimed at a
- * Token and at a tag); a camp's reach; the Well's Copper Ore and Coal; the Infirmary; a second Food.
+ * Token and at a tag); the Well's Copper Ore and Coal; the Infirmary; a second Food. No star widens a
+ * camp: every camp works the one standard reach.
  */
 export function qaHallSky() {
     ruleSeq = 0;
@@ -50,10 +51,6 @@ export function qaHallSky() {
         star('qa_vein_rest', 'qa_mining', 'Deep Veins', 'A Copper Ore Vein rests for less time.', { x: 1.3, y: -0.3 }, ['qa_mining_yield'], ranks([
             [1, ore(20), [provides(EFFECT_TYPES.GROW_TIME, -0.25, { to: { mode: 'id', value: QA_VEIN } })]],
             [2, ore(40), [provides(EFFECT_TYPES.GROW_TIME, -0.5, { to: { mode: 'id', value: QA_VEIN } })]]
-        ]), 'right'),
-        star('qa_mining_camp_reach', 'qa_mining', 'Long Rails', 'A Mining Camp hands out work further away.', { x: 1.3, y: 0.05 }, ['qa_mining_speed'], ranks([
-            [1, ore(20), [provides(EFFECT_TYPES.CAMP_REACH, 0.25, { to: { mode: 'id', value: QA_MINING_CAMP } })]],
-            [2, ore(40), [provides(EFFECT_TYPES.CAMP_REACH, 0.5, { to: { mode: 'id', value: QA_MINING_CAMP } })]]
         ]), 'right'),
         star('qa_forestry_xp', 'qa_forestry', 'Woodsman’s Lore', 'Forestry teaches more.', { x: -0.72, y: -0.3 }, ['hall'], ranks([
             [1, oak(10), [provides(EFFECT_TYPES.XP_BONUS, 0.5, { category: 'forestry' })]],

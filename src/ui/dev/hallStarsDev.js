@@ -170,7 +170,7 @@ export function hallReadout() {
     }
     const camp = scene && BoardState.getTokenById(scene.camp);
     if (camp) {
-        out.push(`Mining Camp reach: ${Camps.campOf(getTokenType(camp.typeId))?.reach} authored, ${Math.round(Camps.campOfInstance(camp)?.reach ?? 0)} now (Long Rails ${ranks.qa_mining_camp_reach || 0})`);
+        out.push(`Mining Camp reach: ${Math.round(Camps.reachRingOf(camp)?.r ?? 0)} u, the one standard reach (no star widens it)`);
     }
     out.push(`A wound lasts ${secs(woundTimeMs())} (Infirmary ${ranks.qa_infirmary || 0})`);
     out.push(`Food a hero may carry: ${loadoutCapOf('food')} (Larder ${ranks.qa_food_slot || 0})`);

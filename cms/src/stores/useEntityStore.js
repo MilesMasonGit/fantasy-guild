@@ -5,7 +5,7 @@ import { useSimulationStore } from './useSimulationStore';
 import {
     statementsOf, makeStatement, KEYWORD,
     effectRefsOf, provisionalName,
-    normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_DEFAULTS, CAMP_REACH_DEFAULT,
+    normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_DEFAULTS,
 } from '../utils/constants';
 import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
 import { withPerkRow, withoutPerkRow } from '../engine/skillPerks';
@@ -474,8 +474,8 @@ export function makeLifecycleBlock(key) {
             // A Field with no pictures of its own (its own art) that starts empty.
             return {};
         case 'camp':
-            // A camp of no skill yet (the audit reports it) at the game's default reach.
-            return { skill: '', reach: CAMP_REACH_DEFAULT };
+            // A camp of no skill yet (the audit reports it); every camp works the game's one standard reach.
+            return { skill: '' };
         default:
             return undefined;
     }

@@ -32,8 +32,20 @@
  * `restrictionPalette.js` already refuses in as many words.
  */
 
+/**
+ * ⭐ **The one standard reach**, in mat units centre to centre: a game value,
+ * the same for every Token and never changed by anything in play. How far a `nearby` rule carries,
+ * how far a camp hands out work, where a Forest plants and what a "Stands near" or `Cannot` rule
+ * counts. 240 takes in all eight neighbours of a small Token one step away (diagonals 226 u).
+ *
+ * Read it live through `systems/board/nearby.reachRadius()`, which a dev build's Mat Tuner may
+ * override (`matTuning.js`, kept in step by `ShippedBuild.test.js`). Here, in a file that imports
+ * nothing, so the CMS can name it too.
+ */
+export const STANDARD_REACH_U = 240;
+
 export const REACH = Object.freeze({
-    /** Every Token within the Near radius, not the Token carrying the rule. */
+    /** Every Token within the standard reach ({@link STANDARD_REACH_U}), not the Token carrying the rule. */
     NEARBY: 'nearby',
     /** The Token carrying the rule, and nothing else. */
     SELF: 'self',

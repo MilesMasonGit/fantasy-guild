@@ -1,7 +1,7 @@
 import React from 'react';
 import { clampToMat } from '../../../config/matGeometry.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
-import { nearRadius } from '../../../systems/board/nearby.js';
+import { reachRadius } from '../../../systems/board/nearby.js';
 import * as MatPlacement from '../../../systems/board/MatPlacement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { siteTypeOf } from '../../../systems/board/SiteRules.js';
@@ -24,10 +24,10 @@ import { showsNearRing } from '../../../systems/board/reachDisplay.js';
  * A camp's reach ring is `CampReachRing`'s.
  */
 
-/** The live Near radius, following the Mat Tuner. */
-function useNearRadius() {
-    const [radius, setRadius] = React.useState(() => nearRadius());
-    React.useEffect(() => onMatTuningChanged(() => setRadius(nearRadius())), []);
+/** The live standard reach, following a dev build's Mat Tuner override of it. */
+function useReachRadius() {
+    const [radius, setRadius] = React.useState(() => reachRadius());
+    React.useEffect(() => onMatTuningChanged(() => setRadius(reachRadius())), []);
     return radius;
 }
 
@@ -90,7 +90,7 @@ export function useTokenDragLanding(matRef) {
 }
 
 export const MatRings = React.memo(function MatRings({ hoveredCentre = null, matRef = null }) {
-    const radius = useNearRadius();
+    const radius = useReachRadius();
     const mat = useMatSize();
     const { isDragging } = useActiveDrag();
     const landing = useTokenDragLanding(matRef);

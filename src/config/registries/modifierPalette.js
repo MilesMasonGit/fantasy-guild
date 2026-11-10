@@ -217,10 +217,12 @@ export const MODIFIER_PALETTE = [
     },
     {
         /**
-         * Read by `Camps.reachOf` off the camp's own aggregator (its neighbours, a Guild Hall star
-         * aimed at it) and the guild-wide one, narrowed to the camp's skill.
+         * Retired: every camp works the one standard reach and nothing widens
+         * it, so no code reads this axis. Kept so a Guild Hall star still carrying it reads as a
+         * sentence and the audits can name it (`hallStarRule.js`); `hallRulesOf` leaves it out.
          */
         type: EFFECT_TYPES.CAMP_REACH,
+        retired: true,
         reads: { up: (n) => `hand out work ${n} further away`, down: (n) => `hand out work ${n} less far away` },
         label: 'Camp Reach',
         when: 'never',
@@ -229,7 +231,7 @@ export const MODIFIER_PALETTE = [
         categories: 'skill',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
-        hint: 'How far a camp hands out work: a percentage on its reach (+20% reaches a fifth further).'
+        hint: 'Retired: every camp works the one standard reach, so this does nothing.'
     },
 
     // --- The guild (Guild Hall stars) -----------------------------------------

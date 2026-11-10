@@ -36,6 +36,7 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { rehydrateHero } from '../systems/hero/logic/HeroRehydration.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
+import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
 import {
     GUILD_UPGRADES, CONSTELLATIONS, BUILT_IN_UPGRADE_IDS, HALL_NODE, getUpgradeDef, isUpgradeAccessible,
     authoredStars, skyVersion, setHallSky
@@ -83,11 +84,11 @@ registerTokenTypes({
     },
     [CAMP]: {
         id: CAMP, name: 'H1 Camp', tokenType: 'station', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_industry',
-        requiresHero: false, camp: { skill: 'mining', reach: 200 }
+        requiresHero: false, camp: { skill: 'mining' }
     },
     [OTHER_CAMP]: {
         id: OTHER_CAMP, name: 'H1 Other Camp', tokenType: 'station', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_industry',
-        requiresHero: false, camp: { skill: 'mining', reach: 200 }
+        requiresHero: false, camp: { skill: 'mining' }
     }
 });
 registerItems({
@@ -317,19 +318,19 @@ describe('Token upgrades: aimed at a Token kind or a tag', () => {
         expect(TimedChanges.growMsOf(BoardState.getTokenById(stump.id))).toBe(50000);
     });
 
-    it('widens a named camp\'s reach and no other camp\'s', () => {
+    it('a Camp Reach star (retired) widens no camp: every camp keeps the one standard reach', () => {
         const camp = place({ x: 300, y: 300 }, CAMP);
         const other = place({ x: 900, y: 300 }, OTHER_CAMP);
-        expect(Camps.campOfInstance(camp).reach).toBe(200);
+        expect(Camps.reachRingOf(camp).r).toBe(STANDARD_REACH_U);
         buy('m_xp');
         buy('m_speed');
         buy('m_camp');
-        expect(Camps.campOfInstance(camp).reach).toBe(300);
-        expect(Camps.campOfInstance(other).reach).toBe(200);
-        expect(Camps.reachRingOf(camp).r).toBe(300);
-        // A Token that arrives after the purchase gets it too.
-        const late = place({ x: 600, y: 700 }, CAMP);
-        expect(Camps.campOfInstance(late).reach).toBe(300);
+        expect(GuildUpgradeManager.getRanks().m_camp).toBe(1);
+        expect(Camps.reachRingOf(camp).r).toBe(STANDARD_REACH_U);
+        expect(Camps.reachRingOf(other).r).toBe(STANDARD_REACH_U);
+        // Nothing of it reaches the camp's own modifiers or the guild's either.
+        expect([...TileModifiers.getTokenAggregator(camp.id).modifiers].some(m => m.type === EFFECT_TYPES.CAMP_REACH)).toBe(false);
+        expect(aimedModifiers().some(a => a.modifier.type === EFFECT_TYPES.CAMP_REACH)).toBe(false);
     });
 });
 
@@ -395,7 +396,8 @@ describe('the Hearth: the Infirmary and loadout slots', () => {
         const offered = paletteForKeyword(KEYWORD.PROVIDES).map(e => e.type);
         expect(offered).not.toContain(EFFECT_TYPES.WOUND_TIME);
         expect(offered).not.toContain(EFFECT_TYPES.LOADOUT_SLOTS);
-        expect(offered).toContain(EFFECT_TYPES.CAMP_REACH);
+        // Nor the retired Camp Reach: every camp works the one standard reach.
+        expect(offered).not.toContain(EFFECT_TYPES.CAMP_REACH);
     });
 });
 
@@ -472,9 +474,28 @@ describe('a star in words, and the audit', () => {
         expect(getUpgradeDef('m_xp').nextStatLabel(1)).toContain('200% more XP');
     });
 
-    it('finds nothing wrong with the test sky or the QA fixture sky', () => {
-        expect(hallStarFindings({ sky: testSky(), items: ITEMS, tokens: TOKENS })).toEqual([]);
+    it('finds nothing wrong with the QA fixture sky, and in the test sky only its retired Camp Reach star, to delete', () => {
         expect(hallStarFindings({ sky: qaHallSky(), items: ITEMS, tokens: TOKENS })).toEqual([]);
+        expect(hallStarFindings({ sky: testSky(), items: ITEMS, tokens: TOKENS }).map(f => `${f.entityId}: ${f.message}`)).toEqual([
+            'm_camp: carries only Camp Reach rules, retired: every camp works the one standard reach, so the star gives nothing. Delete the star in the CMS.'
+        ]);
+    });
+
+    it('names a retired rule beside live ones by itself, and never calls a ring star first rank empty', () => {
+        const findings = hallStarFindings({
+            sky: { stars: {
+                mixed: { id: 'mixed', constellation: 'well', links: [HALL_NODE], ranks: [{ price: ore(5), rules: [
+                    provides(EFFECT_TYPES.XP_BONUS, 0.1, { category: 'mining' }),
+                    provides(EFFECT_TYPES.CAMP_REACH, 0.5, { to: { mode: 'id', value: CAMP } })
+                ] }] },
+                ring: { id: 'ring', constellation: 'well', links: [HALL_NODE], opensRing: 2, ranks: [{ price: ore(5) }, { price: ore(5) }] }
+            } },
+            items: ITEMS, tokens: TOKENS
+        }).map(f => `${f.entityId}: ${f.message}`);
+        expect(findings).toEqual([
+            'mixed: rank 1 has a Camp Reach rule, retired: every camp works the one standard reach, so the rule does nothing. Delete the rule in the CMS.',
+            'ring: rank 2 gives nothing: no rule and no Passive Production line.'
+        ]);
     });
 
     it('names a star that cannot open, costs a missing item, or takes a built-in id', () => {

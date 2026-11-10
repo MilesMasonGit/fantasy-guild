@@ -44,7 +44,6 @@ describe('a star\'s sentence, built from its rules', () => {
         expect(starSentence(def('qa_mining_xp'))).toBe('Every Mining Token awards more XP.');
         expect(starSentence(def('qa_mining_yield'))).toBe('Every Mining Token gives more yield.');
         expect(starSentence(def('qa_mining_speed'))).toBe('Every Mining Token works faster.');
-        expect(starSentence(def('qa_mining_camp_reach'))).toBe('Every Mining Camp hands out work further away.');
         expect(starSentence(def('qa_infirmary'))).toBe('Every hero recovers from a wound faster.');
         expect(starSentence(def('qa_food_slot'))).toBe('Every hero gets more Food slots.');
         expect(starSentence(def('qa_well_copper'))).toBe('The Guild Hall draws Copper Ore every lap, no hero needed.');
@@ -75,6 +74,22 @@ describe('a star\'s sentence, built from its rules', () => {
         expect(starSentence(def('twin'))).toBe('Every Oak and Fir Token grows and refills faster.');
         expect(starAmount(def('twin'), 1)).toBe('10% faster');
     });
+
+    it('still reads a retired Camp Reach star, until the owner deletes it in the CMS', () => {
+        const rails = {
+            id: 'rails', constellation: 'qa_mining', name: 'Long Rails', node: { x: 0, y: 0 }, links: ['hall'],
+            ranks: [{
+                price: [],
+                rules: [{
+                    keyword: 'provides', to: { mode: 'id', value: 'token_mining_camp' }, reach: 'board',
+                    payload: { type: 'CAMP_REACH', bucket: 'percentage', value: 0.25 }
+                }]
+            }]
+        };
+        registerHallSky({ ...qaHallSky(), stars: { ...qaHallSky().stars, rails } });
+        expect(starSentence(def('rails'))).toBe('Every Mining Camp hands out work further away.');
+        expect(outlineSpriteName(def('rails'))).toBe('i_torch');
+    });
 });
 
 describe('a star\'s brief numbers', () => {
@@ -95,7 +110,6 @@ describe('the item outline over each star', () => {
         expect(outlineSpriteName(def('qa_mining_speed'))).toBe('i_pick_copper');
         expect(outlineSpriteName(def('qa_mining_yield'))).toBe('i_ore_copper');
         expect(outlineSpriteName(def('qa_mining_xp'))).toBe('i_feather');
-        expect(outlineSpriteName(def('qa_mining_camp_reach'))).toBe('i_torch');
         expect(outlineSpriteName(def('qa_vein_rest'))).toBe('i_ore_iron');
         expect(outlineSpriteName(def('qa_oak_regrow'))).toBe('i_seedling_oak');
         expect(outlineSpriteName(def('qa_infirmary'))).toBe('i_potion_round_red');

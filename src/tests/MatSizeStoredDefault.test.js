@@ -29,7 +29,7 @@ afterEach(() => {
 
 describe('a dev device that stored the old mat width', () => {
     it('a stored 11 steps loads as the game’s 12: 1920 × 1040', async () => {
-        const { tuning, geometry } = await loadWith({ matSteps: 11, nearRadius: 164 });
+        const { tuning, geometry } = await loadWith({ matSteps: 11, reach: 240 });
         expect(geometry.matSteps()).toBe(12);
         expect([geometry.matW(), geometry.matH()]).toEqual([1920, 1040]);
         expect(tuning.isMatTuned()).toBe(false);

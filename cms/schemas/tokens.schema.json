@@ -188,7 +188,7 @@
           "type": "object",
           "properties": {
             "skill": { "type": "string" },
-            "reach": { "type": "number", "minimum": 0, "description": "In mat units, default 320." }
+            "reach": { "type": "number", "minimum": 0, "description": "Not read: every camp works the one standard reach (reachRegistry.js STANDARD_REACH_U). Kept so older content still validates." }
           }
         },
         "standsOn": {

@@ -23,7 +23,7 @@ import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /** How far a trigger listens. Chosen per Token, not fixed once. */
 export const TRIGGER_SCOPES = {
-    /** React only to Tokens within the Near radius — the Wheelbarrow's Ore Vein. */
+    /** React only to Tokens within the standard reach — the Wheelbarrow's Ore Vein. */
     NEARBY: 'nearby',
     /** React to a condition anywhere (the global supply). */
     GLOBAL: 'global',

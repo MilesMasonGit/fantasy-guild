@@ -1,10 +1,22 @@
 // Guild Hall stars that cannot open, name what is gone, or carry a rule the guild cannot hold.
 
-import { normaliseHallSky, normaliseStar } from '../../config/hallStars.js';
+import { normaliseHallSky, normaliseStar, opensRingOf } from '../../config/hallStars.js';
 import { BUILT_IN_CONSTELLATIONS, BUILT_IN_UPGRADE_IDS, HALL_NODE } from '../../config/guildUpgrades.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { KEYWORD } from '../effects/statements.js';
-import { hallRulesOf } from '../progression/hallModifiers.js';
+import { EFFECT_TYPES } from '../effects/constants.js';
+import { hallRulesOf, RETIRED_AXIS } from '../progression/hallModifiers.js';
+
+/** A Provides rule's palette row when its axis is retired (Camp Reach), else null. */
+function retiredEntryOf(statement) {
+    const entry = statement?.keyword === KEYWORD.PROVIDES ? getPaletteEntry(statement.payload?.type) : null;
+    return entry?.retired ? entry : null;
+}
+
+/** Why a retired axis went, in words. */
+function retiredWhy(entry) {
+    return entry.type === EFFECT_TYPES.CAMP_REACH ? 'every camp works the one standard reach' : 'nothing reads it';
+}
 
 /**
  * The rule behind the Guild Hall lines of the game's boot audit (`ContentAudit`). It only reports:
@@ -39,6 +51,13 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
                 ? `names the constellation "${star.constellation}", which does not exist, so it belongs to no picture.`
                 : 'names no constellation, so it belongs to no picture.');
         }
+        // A star whose every rule is on a retired axis gives nothing at all: one line, to delete it.
+        const rules = star.ranks.flatMap(rank => rank.rules);
+        const retiredOnly = rules.length > 0 && star.ranks.every(rank => !rank.lines.length) && rules.every(retiredEntryOf);
+        if (retiredOnly) {
+            const entry = retiredEntryOf(rules[0]);
+            push(star, 'ranks', `carries only ${entry.label} rules, retired: ${retiredWhy(entry)}, so the star gives nothing. Delete the star in the CMS.`);
+        }
         if (!star.links.length) push(star, 'links', 'is linked to nothing, so it never opens. Link it to the Hall ("hall") or another star.');
         for (const to of star.links) {
             if (to !== HALL_NODE && !starIds.has(to)) push(star, 'links', `is linked to "${to}", which is not a star, so that line is not drawn and does not open it.`);
@@ -51,7 +70,9 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
             for (const line of rank.lines) {
                 if (!items[line.itemId]) push(star, 'ranks', `rank ${r} pays the item "${line.itemId}", which does not exist.`);
             }
-            if (!rank.rules.length && !rank.lines.length) push(star, 'ranks', `rank ${r} gives nothing: no rule and no Passive Production line.`);
+            // A ring star's first rank opens its ring of the world map: that is what it gives.
+            const opensRing = r === 1 && opensRingOf(star.opensRing) !== null;
+            if (!rank.rules.length && !rank.lines.length && !opensRing) push(star, 'ranks', `rank ${r} gives nothing: no rule and no Passive Production line.`);
             for (const statement of rank.rules) {
                 const to = statement?.to;
                 if (to?.mode === 'id' && to.value && !tokens[to.value]) {
@@ -59,8 +80,10 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
                 }
                 const entry = statement?.keyword === KEYWORD.PROVIDES ? getPaletteEntry(statement.payload?.type) : null;
                 if (entry?.heroOnly) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, which only reaches a hero from what they carry, so it does nothing from the Hall.`);
+                if (entry?.retired && !retiredOnly) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, retired: ${retiredWhy(entry)}, so the rule does nothing. Delete the rule in the CMS.`);
             }
             for (const skipped of hallRulesOf([star], { [star.id]: r }).ignored) {
+                if (skipped.reason === RETIRED_AXIS) continue;
                 push(star, 'ranks', `rank ${r}'s rule ${skipped.index + 1} is left out: ${skipped.reason}. A star holds standing Provides rules only.`);
             }
         });

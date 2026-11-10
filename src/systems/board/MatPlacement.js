@@ -4,7 +4,7 @@ import { getTokenType, registryVersion, isLandmarkType } from '../../config/regi
 import { artRadiusOf, matW, matH, clampToMat, LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
-import { distanceSq, nearRadius } from './nearby.js';
+import { distanceSq, reachRadius } from './nearby.js';
 import * as BoardState from './BoardState.js';
 import * as Restrictions from './Restrictions.js';
 import * as GroundRules from './GroundRules.js';
@@ -175,7 +175,7 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
 
     // The `Cannot` gate looks further: a rule is broken by what is NEAR a
     // candidate, and Near is its own (larger) radius.
-    const cannotSpan = reach + nearRadius() + LARGEST_ART_RADIUS;
+    const cannotSpan = reach + reachRadius() + LARGEST_ART_RADIUS;
     const cannotSpanSq = cannotSpan * cannotSpan;
 
     // The mat edge, read once per search rather than once per candidate: `insideBounds` below uses
@@ -201,7 +201,7 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
     const siteType = siteOf || typeId;
     const ground = GroundRules.rulesFor(siteType);
     const nearRules = SiteRules.nearRulesFor(siteType);
-    const near = nearRules ? { ...nearRules, anchors: SiteRules.anchorsFor(nearRules, excludeId), radius: nearRadius() } : null;
+    const near = nearRules ? { ...nearRules, anchors: SiteRules.anchorsFor(nearRules, excludeId), radius: reachRadius() } : null;
     return {
         typeId, neighbours, buckets, cell: largestGap, cannotMatters, ground, near, plan, excludeId, reach, bounds,
         // `clearAt`'s neighbours round the cell it last looked in, and every cell it has looked in.

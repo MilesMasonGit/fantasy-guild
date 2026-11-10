@@ -132,6 +132,10 @@ export function recalculateWorkspace(workspace, dials = {}, { previousChurn = nu
         // For the skill check, which must expand a Token to recognise a Promotion Token. Read-only; nothing is written.
         effects: library,
         skillPerks: state.skillPerks,
+        // The Guild Hall's sky, for its stars' checks; none when the workspace never held one.
+        hallSky: state.hallStars || state.hallConstellations
+            ? { constellations: state.hallConstellations || {}, stars: state.hallStars || {} }
+            : null,
     }, sim.rows.map(describeRow));
 
     // The churn report diffs against the previous report's refusal keys, and `state.items` is the only record of every value before this run wrote over it, so both are read here.

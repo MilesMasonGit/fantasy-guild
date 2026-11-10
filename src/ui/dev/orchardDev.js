@@ -80,7 +80,7 @@ function registerQaTypes() {
 /**
  * Where the scene stands: the top of the mat, between the Starter Camp's Oak Forest and the
  * Forestry scene (upper right), above the Guild Hall, clear of the waiting scene (lower left) and
- * Mining (lower right). Both trees stand 150 from the Orchard (within its reach, 164); the lone
+ * Mining (lower right). Both trees stand 150 from the Orchard (within the standard reach); the lone
  * tree stands out of the Orchard's reach and the picker's flag (240).
  */
 export const ORCHARD_SPOTS = Object.freeze({

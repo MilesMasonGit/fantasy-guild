@@ -4,11 +4,11 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import {
-    nearby, tokensWithin, tokensAround, nearRadius
+    nearby, tokensWithin, tokensAround, reachRadius
 } from '../systems/board/nearby.js';
 import { setMatTuning, resetMatTuning, matTuning, matTuningDefault } from '../config/matTuning.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
-import { REACH } from '../config/registries/reachRegistry.js';
+import { REACH, STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -116,8 +116,8 @@ beforeEach(() => {
     TileModifiers.clearAll();
     resetMatTuning();
     // ⚠️ This file pins the geometry of the 8-spot ring, so Near is set to 272 u
-    // explicitly. It has shipped at 164 u — see block below.
-    setMatTuning('nearRadius', 272);
+    // explicitly. It ships at the standard reach, 240 u (164 u before) — see block below.
+    setMatTuning('reach', 272);
 });
 
 afterEach(() => {
@@ -125,47 +125,42 @@ afterEach(() => {
     resetMatTuning();
 });
 
-describe('the Near radius', () => {
-    it('defaults to 164 u (FP-75, was 272 u under FP-65)', () => {
+describe('the reach', () => {
+    it('is the one standard reach, 240 u (owner, 2026-11-10; 164 u before, 272 u under FP-65)', () => {
         resetMatTuning();
-        expect(nearRadius()).toBe(164);
-        expect(matTuningDefault('nearRadius')).toBe(164);
+        expect(STANDARD_REACH_U).toBe(240);
+        expect(reachRadius()).toBe(STANDARD_REACH_U);
+        expect(matTuningDefault('reach')).toBe(STANDARD_REACH_U);
     });
 });
 
-describe('⭐ at the shipped 164 u Near is the four side neighbours (FP-75)', () => {
+describe('⭐ at the shipped 240 u a small Token reaches its eight neighbours one step away', () => {
     beforeEach(() => resetMatTuning());
 
-    it('Near ships at 164 u', () => {
-        expect(matTuningDefault('nearRadius')).toBe(164);
-    });
-
-    it('on a mat full of 1×1 Tokens — corners 2, edges 3, centre 4, never a diagonal', () => {
+    it('on a mat full of 1×1 Tokens — corners 3, edges 5, centre 8, diagonals (226 u) in, two steps (320 u) out', () => {
         fillAround();
         const counts = new Set();
         for (let i = 0; i < SPOTS; i++) {
-            const col = i % COLS;
-            const sides = [i - COLS, i + COLS, col > 0 ? i - 1 : -1, col < COLS - 1 ? i + 1 : -1]
-                .filter(t => t >= 0 && t < SPOTS);
-            expect(sorted(near(i)), `spot ${i}`).toEqual(sorted(sides));
-            counts.add(sides.length);
+            const ring = near(i);
+            expect(sorted(ring), `spot ${i}`).toEqual(sorted(ringOf(i)));
+            counts.add(ring.length);
         }
-        expect(sorted(counts)).toEqual([2, 3, 4]);
+        expect(sorted(counts)).toEqual([3, 5, 8]);
     });
 
-    it('a 2×2 Token reaches nothing and nothing reaches it', () => {
+    it('a 2×2 Token reaches nothing one step from its footprint (253 u) and nothing reaches it', () => {
         put(7, LARGE_BUFF);
         fillAround(footprintOf(7));
         expect(near(7)).toEqual([]);
         for (const t of [1, 2, 6, 9, 12, 15, 19, 20]) expect(near(t)).not.toContain(7);
     });
 
-    it('a Provides buff from a 1×1 Token reaches its side neighbours, not its diagonals', () => {
+    it('a Provides buff from a 1×1 Token reaches its side and diagonal neighbours, not two steps away', () => {
         put(14, BUFF);
         fillAround([14]);
         TileModifiers.rebuildAll();
-        for (const t of [8, 13, 15, 20]) expect(yieldAt(t), `spot ${t}`).toBeCloseTo(105);
-        for (const t of [7, 9, 19, 21]) expect(yieldAt(t), `spot ${t}`).toBeCloseTo(100);
+        for (const t of [8, 13, 15, 20, 7, 9, 19, 21]) expect(yieldAt(t), `spot ${t}`).toBeCloseTo(105);
+        for (const t of [2, 12, 16, 26]) expect(yieldAt(t), `spot ${t}`).toBeCloseTo(100);
     });
 });
 
@@ -247,12 +242,12 @@ describe('a larger radius widens the set', () => {
 
     it('follows the live Mat Tuner value, clamped to its range', () => {
         fillAround();
-        setMatTuning('nearRadius', 400);
+        setMatTuning('reach', 400);
         expect(near(14)).toHaveLength(20);
-        setMatTuning('nearRadius', 5000);
-        expect(matTuning('nearRadius')).toBe(600);
+        setMatTuning('reach', 5000);
+        expect(matTuning('reach')).toBe(600);
         resetMatTuning();
-        expect(near(14)).toHaveLength(4);      // the shipped 164 u
+        expect(near(14)).toHaveLength(8);      // the shipped 240 u
     });
 });
 
@@ -288,7 +283,7 @@ describe('⭐ a Provides buff reaches exactly the Near set', () => {
         clearBoard();
         fillAround();
         expect(sorted(spotsOf(TileModifiers.filterTargets(idAt(14), statement)))).toEqual(sorted(ringOf(14)));
-        setMatTuning('nearRadius', 400);
+        setMatTuning('reach', 400);
         expect(TileModifiers.filterTargets(idAt(14), statement)).toHaveLength(20);
     });
 });
@@ -318,7 +313,7 @@ describe('rebuild coverage follows the radius', () => {
     });
 
     it('at 400 u, placing a buff reaches a Token two steps away with only rebuildAround', () => {
-        setMatTuning('nearRadius', 400);
+        setMatTuning('reach', 400);
         put(12, SMALL);
         TileModifiers.rebuildAll();
         expect(yieldAt(12)).toBeCloseTo(100);
@@ -354,7 +349,7 @@ describe('rebuild coverage follows the radius', () => {
         TileModifiers.rebuildAll();
         expect(yieldAt(12)).toBeCloseTo(100);
 
-        setMatTuning('nearRadius', 400);
+        setMatTuning('reach', 400);
         expect(yieldAt(12)).toBeCloseTo(105);
 
         resetMatTuning();

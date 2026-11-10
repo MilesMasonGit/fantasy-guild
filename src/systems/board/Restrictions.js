@@ -3,7 +3,7 @@
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import { getRestrictionKind, limitOf } from '../../config/registries/restrictionPalette.js';
-import { isWithin, nearRadius } from './nearby.js';
+import { isWithin, reachRadius } from './nearby.js';
 import { matchesTokenTarget } from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
 import { renderStatement } from '../effects/statementText.js';
@@ -91,7 +91,7 @@ export function project(plan = {}) {
  * Near is measured on the view, not on the live board: every check here is about the board as it
  * would be. Only for Tokens that carry a `Cannot`, which is cheap enough to run on every drop.
  */
-function nearIds(view, id, radius = nearRadius()) {
+function nearIds(view, id, radius = reachRadius()) {
     const origin = view.get(id);
     if (!origin) return [];
     const out = [];

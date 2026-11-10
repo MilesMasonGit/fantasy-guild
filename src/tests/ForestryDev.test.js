@@ -9,7 +9,7 @@ import * as Growth from '../systems/board/Growth.js';
 import * as Demolition from '../systems/board/Demolition.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { ALERT } from '../systems/board/boardEvents.js';
-import { nearRadius } from '../systems/board/nearby.js';
+import { reachRadius } from '../systems/board/nearby.js';
 import { setUpForestryScene, giveBirchSeedling, forestryReadout, QA_FOREST_TYPES as T, FOREST_SPOTS } from '../ui/dev/forestryDev.js';
 import { clearMat } from './fixtures/mat.js';
 
@@ -57,7 +57,7 @@ describe('the Forestry scene', () => {
         run(15000);
         const planted = BoardState.tokens().filter(t => t.typeId === T.OAK_SAPLING && !FOREST_SPOTS.oaks.some(p => p.x === t.x && p.y === t.y));
         expect(planted).toHaveLength(1);
-        expect(dist(planted[0], FOREST_SPOTS.oakForest)).toBeLessThanOrEqual(nearRadius());
+        expect(dist(planted[0], FOREST_SPOTS.oakForest)).toBeLessThanOrEqual(reachRadius());
 
         // The wild Stump never moves on; the Birch Stump has stopped for its seedling.
         expect(at(FOREST_SPOTS.wildStump).typeId).toBe(T.OAK_STUMP);

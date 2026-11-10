@@ -102,7 +102,7 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('nearRadius', 272);
+    setMatTuning('reach', 272);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();

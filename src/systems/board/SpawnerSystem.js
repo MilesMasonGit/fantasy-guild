@@ -16,7 +16,7 @@ import * as MatCap from './MatCap.js';
 import * as Occupation from './Occupation.js';
 import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
-import { neighbourIds, nearRadius } from './nearby.js';
+import { neighbourIds, reachRadius } from './nearby.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -384,7 +384,7 @@ function tryToSpawn(instance, def, random, ctx) {
         { payload: { typeId, placement: PLACEMENT.NEAREST_FREE } },
         { self: instance.id },
         random,
-        plantsWithinReach(def) ? { within: nearRadius() } : {}
+        plantsWithinReach(def) ? { within: reachRadius() } : {}
     );
     if (!landed) {
         // Nowhere to go. Nothing was paid.
