@@ -209,7 +209,7 @@ export const GuildHallBoard = ({
     const [glowing, setGlowing] = useState([]);
     const ceremonySeq = useRef(0);
     useEffect(() => EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, (data) => {
-        const c = ceremonyFor(data?.upgradeId, data?.rank, GuildUpgradeManager.getRanks());
+        const c = ceremonyFor(data?.upgradeId, data?.rank, GuildUpgradeManager.getRanks(), data?.fromRank);
         if (!c) return;
         ceremonySeq.current += 1;
         setCeremony({ ...c, seq: ceremonySeq.current });

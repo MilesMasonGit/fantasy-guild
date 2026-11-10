@@ -169,9 +169,11 @@ export const QuestManager = {
             EventBus.subscribe(ENGINE_EVENTS.INVENTORY_UPDATED, () => this.syncInventoryQuests()),
             EventBus.subscribe(ENGINE_EVENTS.HERO_RECRUITED, () => this.reportProgress('hero_recruited')),
             EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, (data) => {
-                this.reportProgress('guild_upgrade_purchased');
+                // A buy of several ranks at once counts each rank, as that many single buys would.
+                const ranks = data?.count || 1;
+                this.reportProgress('guild_upgrade_purchased', ranks);
                 if (data?.upgradeId === 'wishing_well') {
-                    this.reportProgress('wishing_well_upgraded');
+                    this.reportProgress('wishing_well_upgraded', ranks);
                 }
             }),
             // ⚠️ `ui_modal:opened` comes from the React layer, not the engine: its only
