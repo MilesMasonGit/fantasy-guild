@@ -134,7 +134,7 @@ beforeEach(() => {
     // ⚠️ The "every match" case counts diagonal neighbours, so Near is pinned at
     // the old 8-neighbour ring (272 u); the shipped default is 164 u.
     resetMatTuning();
-    setMatTuning('nearRadius', 272);
+    setMatTuning('reach', 272);
     GameState.state.heroes = [makeHero('hero_1')];
     GameState.state.inventory.maxSlots = 50;
     addSprite = vi.spyOn(SpriteLayer, 'addSprite');

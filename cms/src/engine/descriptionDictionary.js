@@ -1,4 +1,4 @@
-import { statementsOf, stationSkillOf, renderStatement, derivedTokenType, toolNamer, neededToolOf, toolNeedPhrase, campOf, SKILLS } from '../utils/constants';
+import { statementsOf, stationSkillOf, renderStatement, derivedTokenType, toolNamer, neededToolOf, toolNeedPhrase, campOf, STANDARD_REACH_U, SKILLS } from '../utils/constants';
 
 /** Description Dictionary Engine: composes mechanical descriptions for Tokens from their production, recipes, effects, triggers and lifecycle. */
 
@@ -160,12 +160,12 @@ export function getTraitClauses(token) {
   return clauses;
 }
 
-/** A camp's clause: what the heroes sent to it work, and how far it reaches. Empty for a Token that is not a camp. */
+/** A camp's clause: what the heroes sent to it work, and how far it reaches (the one standard reach). Empty for a Token that is not a camp. */
 export function getCampClause(token) {
   const camp = campOf(token);
   if (!camp) return '';
   const skill = SKILLS.find((s) => s.id === camp.skill)?.name || camp.skill;
-  return `A camp: heroes sent here work the ${skill} Tokens within ${Math.round(camp.reach)} u, one hero each.`;
+  return `A camp: heroes sent here work the ${skill} Tokens within ${STANDARD_REACH_U} u, one hero each.`;
 }
 
 /**

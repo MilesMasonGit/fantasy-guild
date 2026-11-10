@@ -448,9 +448,6 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 if (!hasValue(c.skill) || !skillIds.has(c.skill)) {
                     err('camp.skill', `camp skill is ${show(c.skill ?? 'blank')}, which is not a real skill; heroes sent to it would have nothing to work.`);
                 }
-                if (c.reach !== undefined && !(typeof c.reach === 'number' && Number.isFinite(c.reach) && c.reach > 0)) {
-                    err('camp.reach', `camp reach is ${show(c.reach)}; it must be a number of mat units above 0.`);
-                }
                 if (def.spawner) {
                     warn('camp', 'is a camp and a spawner; a hero sent to it works the Tokens of its skill, never what it spawns (allowed, but likely a left-over spawner block).');
                 }

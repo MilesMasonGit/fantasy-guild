@@ -23,14 +23,14 @@ import { heroMaxHpFromSkills } from '../../systems/combat/CombatFormulas.js';
 
 /**
  * The four camps of the change pack (`token_logging_camp` and the rest), as QA test types: the same
- * skill, reach and placeholder art, under `qa_` ids so a save never holds a type the content lacks.
- * Gone on reload.
+ * skill and placeholder art, under `qa_` ids so a save never holds a type the content lacks. Each
+ * works the one standard reach. Gone on reload.
  */
 export const QA_CAMPS = Object.freeze([
-    { id: 'qa_camp_logging', name: 'QA Logging Camp', sprite: 't_sawmill', skill: 'forestry', reach: 360 },
-    { id: 'qa_camp_mining', name: 'QA Mining Camp', sprite: 't_mineshaft_iron', skill: 'mining', reach: 280 },
-    { id: 'qa_camp_fishing', name: 'QA Fishing Hut', sprite: 't_market_fish', skill: 'fishing', reach: 280 },
-    { id: 'qa_camp_farmstead', name: 'QA Farmstead', sprite: 't_windmill', skill: 'farming', reach: 320 }
+    { id: 'qa_camp_logging', name: 'QA Logging Camp', sprite: 't_sawmill', skill: 'forestry' },
+    { id: 'qa_camp_mining', name: 'QA Mining Camp', sprite: 't_mineshaft_iron', skill: 'mining' },
+    { id: 'qa_camp_fishing', name: 'QA Fishing Hut', sprite: 't_market_fish', skill: 'fishing' },
+    { id: 'qa_camp_farmstead', name: 'QA Farmstead', sprite: 't_windmill', skill: 'farming' }
 ]);
 
 /** What each camp's scene lays in its reach (shipped Tokens), and the tool its hero holds. */
@@ -63,7 +63,7 @@ function registerCampTypes() {
     for (const c of QA_CAMPS) {
         defs[c.id] = {
             id: c.id, name: c.name, tokenType: 'camp', rarity: 'common', theme: 'fixture', sprite: c.sprite,
-            size: 1, uses: null, requiresHero: false, config: null, camp: { skill: c.skill, reach: c.reach }
+            size: 1, uses: null, requiresHero: false, config: null, camp: { skill: c.skill }
         };
     }
     registerTokenTypes(defs);

@@ -4,7 +4,7 @@ import { useEntityStore, makeLifecycleBlock, makeWeightedTokenEntry, makeTrickle
 import {
   FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer,
   expandBearer, stationSkillOf, stationKindOf, stationKindOffers, stationKindLabel, cropTermsOf,
-  fieldOf, CAMP_REACH_DEFAULT, SKILLS,
+  fieldOf, STANDARD_REACH_U, SKILLS,
 } from '../../utils/constants';
 import { Section, Field } from '../shared/EditorLayout';
 import { ItemPicker, ItemList } from './Statements';
@@ -567,12 +567,12 @@ function campWorkNames(skill, selfId, tokens, effects) {
 }
 
 /**
- * A camp: the skill whose Tokens it hands out and how far it reaches, in mat units centre to centre. Both keys are always
- * written; the game reads a missing or bad reach as its default.
+ * A camp: the skill whose Tokens it hands out. It reaches the game's one standard reach, which no camp sets: a `reach`
+ * an older block still carries is not read by the game.
  */
 function CampBlock({ block, selfId, tokens, effects, onChange }) {
   const patch = (p) => onChange({ ...block, ...p });
-  const reach = Number.isFinite(block.reach) && block.reach > 0 ? block.reach : CAMP_REACH_DEFAULT;
+  const reach = STANDARD_REACH_U;
   const names = campWorkNames(block.skill, selfId, tokens, effects);
   const skillName = SKILLS.find((s) => s.id === block.skill)?.name || block.skill;
   let note;
@@ -585,10 +585,9 @@ function CampBlock({ block, selfId, tokens, effects, onChange }) {
         <Field label="Works">
           <div data-field="camp-skill"><SkillSelect value={block.skill} onChange={(skill) => patch({ skill })} /></div>
         </Field>
-        <IntField label="Reach (u)" min={1} step={10} value={reach} onChange={(next) => patch({ reach: next })} />
       </div>
       <p className="text-[10px] text-gray-600" data-field="camp-note">
-        {note} For scale: Near is 164 u (the four side neighbours); 240 u reaches all eight; the mat is 160 u a step.
+        {note} Every camp, like every nearby rule, reaches the game&apos;s one standard reach, {reach} u centre to centre (the mat is 160 u a step).
       </p>
     </div>
   );

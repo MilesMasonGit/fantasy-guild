@@ -85,9 +85,16 @@ describe('the hitbox ships at its new default', () => {
     });
 
     it('a stored old default (80%) gives way to the new one', async () => {
-        const tuning = await loadWith({ hitboxPct: 80, nearRadius: 164 });
+        const tuning = await loadWith({ hitboxPct: 80 });
         expect(tuning.matTuning('hitboxPct')).toBe(90);
-        expect(tuning.matTuning('nearRadius')).toBe(164);
+        expect(tuning.isMatTuned()).toBe(false);
+    });
+
+    it('the retired Near radius row is ignored: a stored 164 never stands in for the standard reach', async () => {
+        const tuning = await loadWith({ nearRadius: 164 });
+        expect(tuning.MAT_TUNABLES.some(t => t.key === 'nearRadius')).toBe(false);
+        expect(tuning.matTuning('nearRadius')).toBeUndefined();
+        expect(tuning.matTuning('reach')).toBe(240);
         expect(tuning.isMatTuned()).toBe(false);
     });
 

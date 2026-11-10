@@ -73,20 +73,11 @@ export function getTokenAggregator(instanceId) {
     return agg;
 }
 
-/**
- * Each camp's reach after Camp Reach, keyed by instance id ({@link campReachOf}); kept like
- * {@link growTimes}.
- *
- * @type {Map<string, {agg: ModifierAggregator, aggVersion: number, guildVersion: number, base: number, skill: string, reach: number}>}
- */
-const campReaches = new Map();
-
 /** Drop every Token aggregator (before a rehydrate, and in tests). */
 export function clearAll() {
     aggregators.clear();
     growTimes.clear();
     gates.clear();
-    campReaches.clear();
     lastWorkOf.clear();
     // Every Token's buffs are gone, so the next board-reach rebuild is whole.
     lastRebuild = null;
@@ -149,11 +140,11 @@ export function init() {
         rebuildAround([left, now]);
     }));
 
-    // ⚠️ A new Near radius changes what every tile reaches. Nothing on the board moves when the Mat
-    // Tuner's radius does, so no board event would ever refresh the aggregators. Rebuilding all of
-    // them is one pass over the Tokens, once per slider change, never per frame.
+    // ⚠️ A new reach changes what every tile reaches. Nothing on the board moves when the Mat
+    // Tuner's dev override of it does, so no board event would ever refresh the aggregators.
+    // Rebuilding all of them is one pass over the Tokens, once per slider change, never per frame.
     unsubscribers.push(onMatTuningChanged((key) => {
-        if (key == null || key === 'nearRadius') rebuildAll();
+        if (key == null || key === 'reach') rebuildAll();
     }));
 }
 
@@ -454,7 +445,6 @@ export function rebuildToken(instanceId) {
         aggregators.delete(instanceId);
         growTimes.delete(instanceId);
         gates.delete(instanceId);
-        campReaches.delete(instanceId);
         return;
     }
     const agg = getTokenAggregator(instanceId);
@@ -930,40 +920,6 @@ export function growTimeOf(instance, baseMs) {
         entry.ms = floorSpeedUp(base, (base + entry.flat) * entry.multiplier * entry.percentage);
     }
     return entry.ms;
-}
-
-/**
- * How far a camp hands out work, given its authored reach: the Camp Reach its neighbours and the
- * guild's rules give it (a Guild Hall star aimed at it, or one for its skill), never below 0. No
- * hero scope: nobody works a camp itself.
- *
- * ⚠️ Cached per camp like {@link growTimeOf}, for the same reason: `Camps.campOfInstance` is asked
- * for every Token a hero's camp order looks over. Kept while the camp's aggregator and the guild's
- * stand at the versions read; a camp with no Camp Reach rule gets its authored reach exactly.
- *
- * @param {object} instance the camp on the mat
- * @param {number} baseReach the authored reach, mat units
- * @param {string} [skill] the camp's skill, which a rule may narrow to
- */
-export function campReachOf(instance, baseReach, skill = TARGET_CATEGORIES.ALL) {
-    const id = instance?.id;
-    if (id == null) return baseReach;
-    const guild = getGlobalAggregator();
-    let entry = campReaches.get(id);
-    if (!entry || entry.agg.version !== entry.aggVersion || entry.guildVersion !== guild.version
-        || entry.base !== baseReach || entry.skill !== skill) {
-        if (!BoardState.getTokenById(id)) return baseReach;
-        const agg = getTokenAggregator(id);
-        const type = EFFECT_TYPES.CAMP_REACH;
-        const reach = applyThreeBucket(baseReach, {
-            flat: [agg.getFlat(type, skill), guild.getFlat(type, skill)],
-            multipliers: [...agg.collectMultipliers(type, skill), ...guild.collectMultipliers(type, skill)],
-            percentages: [...agg.collectPercentages(type, skill), ...guild.collectPercentages(type, skill)]
-        });
-        entry = { agg, aggVersion: agg.version, guildVersion: guild.version, base: baseReach, skill, reach: Math.max(0, reach) };
-        campReaches.set(id, entry);
-    }
-    return entry.reach;
 }
 
 /**

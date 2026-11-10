@@ -1,8 +1,8 @@
 // distance on the playmat
 
 import { LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
-import { REACH } from '../../config/registries/reachRegistry.js';
-import { matTuning } from '../../config/matTuning.js';
+import { REACH, STANDARD_REACH_U } from '../../config/registries/reachRegistry.js';
+import { tunedOr } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -10,7 +10,7 @@ import * as BoardState from './BoardState.js';
  *
  * There are no Tiles. Every Token on the mat has a centre (`instance.x`, `instance.y`), and every
  * question here is asked of an instance id or a mat point and answers with instance ids. Near is
- * the Mat Tuner's Near radius.
+ * the one standard reach ({@link reachRadius}), which camps read too.
  *
  * Where an ordering is needed, ids come back in arrival order (`placedAt` ascending). `nearby` is
  * the stored reach id and means Near; `self_and_nearby` likewise; `self` and `board` are unchanged.
@@ -20,9 +20,12 @@ import * as BoardState from './BoardState.js';
  * point with {@link tokensWithin} or {@link isWithin}.
  */
 
-/** The live Near radius, in mat units. */
+/**
+ * The one standard reach, in mat units: `STANDARD_REACH_U`, or a dev build's Mat Tuner override.
+ * Every `nearby` rule, camp, within-reach spawner and "Stands near" or `Cannot` check reads this.
+ */
 export function reachRadius() {
-    return matTuning('nearRadius');
+    return tunedOr('reach', STANDARD_REACH_U);
 }
 
 /**

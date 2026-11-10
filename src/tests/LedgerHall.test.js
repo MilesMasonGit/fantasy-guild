@@ -63,7 +63,7 @@ describe('the rate calculator reads a star the setup holds', () => {
         expect(b.rateOf({ token: 'token_oak' }, { hallRanks: { ph_deep: 1 } }).factors.find(f => f.id === 'hall:ph_deep').axes).toEqual([]);
     });
 
-    it('the Well\'s line pays at the Hall each lap, and a wider camp is named as taken, not read', () => {
+    it('the Well\'s line pays at the Hall each lap, and a held Camp Reach star (retired) is neither read nor named', () => {
         const b = book();
         const hall = b.rateOf({ token: 'token_guild_hall' }, { hallRanks: { wishing_well: 1, ph_spring: 2 } });
         // Six 10-minute laps an hour with no lap star (`DropLap.test.js` buys it).
@@ -74,7 +74,8 @@ describe('the rate calculator reads a star the setup holds', () => {
 
         const camped = b.rateOf(VEIN, { camp: { id: 'token_mining_camp', members: 3 }, hallRanks: { ph_rails: 1 } });
         expect(camped.cyclesPerHour).toBeCloseTo(720);
-        expect(camped.assumptions).toContainEqual(expect.objectContaining({ source: 'hall:ph_rails', what: 'camp reach' }));
+        expect(camped.assumptions.some(a => a.source === 'hall:ph_rails')).toBe(false);
+        expect(camped.factors.find(f => f.id === 'hall:ph_rails')?.axes ?? []).toEqual([]);
     });
 
     it('content with no sky rates as before, and a tier written as null is not set', () => {

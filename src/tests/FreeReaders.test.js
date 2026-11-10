@@ -209,7 +209,7 @@ describe('⭐ a tokens() list can be walked while Tokens are removed (CR3-001)',
 // ---------------------------------------------------------------------------
 
 describe('⭐ Restrictions on a projected view (place / remove / move) give today\'s refusals', () => {
-    /** The restricted Coast at P(2,2), exactly at its limit of 2 Coasts within Near (164 u). */
+    /** The restricted Coast at P(2,2), exactly at its limit of 2 Coasts within the standard reach (240 u). */
     function atLimit() {
         const coast = at('fixture_coast', P(2, 2));
         const left = at('fixture_plain_coast', P(1, 2));
@@ -231,8 +231,9 @@ describe('⭐ Restrictions on a projected view (place / remove / move) give toda
         expect(res.nudged).toBe(true);
         expect(Restrictions.violations()).toEqual([]);
 
-        // A diagonal (226 u) is not near at the shipped 164 u.
-        expect(Restrictions.checkPlacement(P(3, 3), 'fixture_plain_coast').ok).toBe(true);
+        // At the shipped 240 u a diagonal (226 u) is near; two steps (320 u) is not.
+        expect(Restrictions.checkPlacement(P(3, 3), 'fixture_plain_coast').ok).toBe(false);
+        expect(Restrictions.checkPlacement(P(4, 2), 'fixture_plain_coast').ok).toBe(true);
     });
 
     it('remove: a Token leaving does not count', () => {
@@ -276,11 +277,11 @@ describe('⭐ the per-instance neighbour cache drops on add, move, remove and a 
         expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
         expect(RecipeResolver.resolveRecipe(station.id, station).status).toBe(RecipeResolver.RECIPE.OK);
 
-        BoardState.setTokenPoint(tool.id, P(3, 3).x, P(3, 3).y);        // move to a diagonal, 226 u
+        BoardState.setTokenPoint(tool.id, P(4, 2).x, P(4, 2).y);        // move two steps away, 320 u
         expect(tiers()).toEqual({});
         expect(RecipeResolver.resolveRecipe(station.id, station).status).toBe(RecipeResolver.RECIPE.NONE);
 
-        setMatTuning('nearRadius', 272);                                // Near change
+        setMatTuning('reach', 400);                                     // reach change
         expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
 
         BoardState.removeToken(tool.id);                                // remove

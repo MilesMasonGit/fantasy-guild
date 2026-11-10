@@ -879,7 +879,7 @@ function growingFor(heroId) {
     if (!camp) return pinnedGrowing(heroId, BoardState.getTokenById(flag.pinnedTo));
     const block = Camps.campOfInstance(camp);
     if (!block) return null;
-    const inReach = (centre, toward) => Camps.worksType(block, toward) && Camps.reaches(camp, block, centre);
+    const inReach = (centre, toward) => Camps.worksType(block, toward) && Camps.reaches(camp, centre);
     const from = anchorOf(heroId, flag);
     const canWork = new Map();
     let best = null;

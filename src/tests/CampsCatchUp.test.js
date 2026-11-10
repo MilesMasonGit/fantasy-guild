@@ -75,7 +75,7 @@ registerRecipePools({
 const plain = (id, name, extra) => ({ id, name, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', ...extra });
 const camp = (id, name, skill) => ({
     id, name, tokenType: 'camp', rarity: 'common', theme: 'fixture', uses: null,
-    sprite: 's_nature', requiresHero: false, config: null, camp: { skill, reach: 320 }
+    sprite: 's_nature', requiresHero: false, config: null, camp: { skill }
 });
 const chop = (ms) => ({ skill: 'forestry', skillRequired: 1, cycleTimeMs: ms, xp: 1, inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }] });
 registerTokenTypes({
@@ -124,7 +124,7 @@ function motionRandom() {
 }
 
 const LOGGING = { x: 600, y: 500 };
-const TREES = [{ x: 720, y: 500 }, { x: 600, y: 680 }, { x: 440, y: 560 }, { x: 760, y: 680 }, { x: 600, y: 340 }];
+const TREES = [{ x: 720, y: 500 }, { x: 600, y: 680 }, { x: 440, y: 560 }, { x: 740, y: 660 }, { x: 600, y: 340 }];
 const FARMSTEAD = { x: 1300, y: 500 };
 const FIELDS = [{ x: 1430, y: 500 }, { x: 1300, y: 690 }];
 const DEN = { x: 1300, y: 250 };

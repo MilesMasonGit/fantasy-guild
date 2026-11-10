@@ -42,13 +42,18 @@ const ASPECT = 13 / 24;
  */
 const SMALL_ART_R = 64;
 
+/** The one standard reach, repeated here for the same reason. Kept in step with `STANDARD_REACH_U` in `reachRegistry.js` (`ShippedBuild.test.js`). */
+const REACH = 240;
+
 export const MAT_TUNABLES = Object.freeze([
     {
-        key: 'nearRadius',
+        // ⚠️ A new key on purpose: the old Near radius row (`nearRadius`, 164) is still stored on
+        // devices that ever opened this panel, and must not stand in for the standard reach.
+        key: 'reach',
         group: 'Reach',
-        label: 'Near radius',
-        hint: 'How far an "nearby" rule reaches, centre to centre. 164 reaches the four side neighbours (160 u) but not the diagonals (226 u); a 2×2 Token reaches nothing below 253 u. 272 was the old 8-tile ring.',
-        min: 100, max: 600, step: 1, def: 164,
+        label: 'Reach',
+        hint: `Dev override of the one standard reach (STANDARD_REACH_U, the game value: ${REACH} u): how far a "nearby" rule carries, a camp hands out work and a Forest plants, centre to centre. 240 takes in a small Token's eight neighbours one step away (diagonals 226 u); 164 was the old Near radius. A shipped build always uses the game value.`,
+        min: 100, max: 600, step: 1, def: REACH,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     },
     {

@@ -1055,7 +1055,6 @@ function rateOf(book, target = {}, setup = {}) {
     note(EFFECT_TYPES.CROP_LOAD, life.kind === LIFECYCLE.REFILL && kind === WORK.FIELD ? life.used : []);
     const camp = campOfSetup(book, setup, skill);
     if (camp && life.members > 1) note('family', [`${FACTOR.SUPPORT}:${camp.id}`]);
-    if (camp) campReachNotes(book, setup, camp.id, skill, notes);
     const heroes = Math.max(1, Math.floor(Number(setup.heroes) || 1));
     const heroPerHour = gates.ok ? heroes * HOUR_MS / cycleMs : 0;
     const supplyPerHour = gates.ok ? life.supplyPerHour : 0;
@@ -1092,22 +1091,6 @@ function rateOf(book, target = {}, setup = {}) {
         unmodelled: dedupe(notes.unmodelled),
         assumptions: dedupe(notes.assumptions)
     };
-}
-
-/**
- * A held star that widens the setup's camp: the calculator takes the camp's members from the setup,
- * not from how far it reaches, so the star is named as an assumption rather than read.
- */
-function campReachNotes(book, setup, campId, skill, notes) {
-    const campDef = book.token(campId);
-    const { guild, aimed } = hallRules(book, setup);
-    const reaching = [
-        ...guild.filter(g => g.modifier.type === EFFECT_TYPES.CAMP_REACH && (!g.modifier.target?.category || g.modifier.target.category === skill)),
-        ...aimed.filter(a => a.modifier.type === EFFECT_TYPES.CAMP_REACH && targetModeMatches(a.to, campDef))
-    ];
-    for (const { factorId } of reaching) {
-        notes.assumptions.push({ source: factorId, what: 'camp reach', why: `a wider camp is not read: ${campDef?.name || campId} hands out the setup's copies` });
-    }
 }
 
 /** Every factor that was on the table, whether it moved anything, and which axes it moved. */

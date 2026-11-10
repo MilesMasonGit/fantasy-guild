@@ -8,16 +8,18 @@ import * as BoardState from './BoardState.js';
 import * as SpawnerSystem from './SpawnerSystem.js';
 import * as Demolition from './Demolition.js';
 import { isGuildHall } from './MatCap.js';
-import { centreOf, distanceSq } from './nearby.js';
-import { campReachOf } from './TileModifiers.js';
+import { centreOf, distanceSq, reachRadius } from './nearby.js';
 
 /**
- * A **camp** is a Token type with a `camp` block, `{ skill, reach }` (the CMS Token editor's Camp
- * block), built on a Foundation like a station: the Logging Camp, the Mining Camp, the Fishing Hut,
- * the Farmstead. A hero ordered onto one works, one at a time, the Tokens of its skill within
- * `reach` mat units of its centre (centre to centre); any number of heroes may work from one camp,
- * one hero per Token. Which one, and when they move on, is `Flags`' business; this file says what a
- * camp hands out.
+ * A **camp** is a Token type with a `camp` block, `{ skill }` (the CMS Token editor's Camp block),
+ * built on a Foundation like a station: the Logging Camp, the Mining Camp, the Fishing Hut, the
+ * Farmstead. A hero ordered onto one works, one at a time, the Tokens of its skill within the one
+ * standard reach of its centre (`nearby.reachRadius`, centre to centre); any number of heroes may
+ * work from one camp, one hero per Token. Which one, and when they move on, is `Flags`' business;
+ * this file says what a camp hands out.
+ *
+ * ⚠️ A `reach` left in a camp's block in `data/` is not read: every camp works the standard reach,
+ * and nothing in play widens it.
  *
  * A camp's work is a Token whose own work names the camp's skill: a tree, a vein, water, a berry
  * bush. Never a station, which takes a recipe and its inputs (a Windmill, a Furnace), except a
@@ -33,19 +35,13 @@ import { campReachOf } from './TileModifiers.js';
  * comes off.
  */
 
-/** A Token type's camp terms, `{ skill, reach }`, or null (`tokenConstants.campOf`). */
+/** A Token type's camp terms, `{ skill }`, or null (`tokenConstants.campOf`). */
 export { campOf };
 
-/**
- * The camp a Token on the mat is (`{ skill, reach }`), or null: not a camp, or marked for
- * demolition. Its reach is the authored one widened by Camp Reach (`TileModifiers.campReachOf`).
- */
+/** The camp a Token on the mat is (`{ skill }`), or null: not a camp, or marked for demolition. */
 export function campOfInstance(instance) {
     if (!instance?.typeId || Demolition.isMarked(instance)) return null;
-    const block = campOf(getTokenType(instance.typeId));
-    if (!block) return null;
-    const reach = campReachOf(instance, block.reach, block.skill);
-    return reach === block.reach ? block : { ...block, reach };
+    return campOf(getTokenType(instance.typeId));
 }
 
 /** Each spawner type's enemies, memoised per type id on the registry's version (`SpawnerSystem.familyOf`). */
@@ -91,10 +87,11 @@ export function worksType(block, def) {
     return !stationSkillOf(def) || fieldOf(def) != null;
 }
 
-/** Whether a mat point lies within a work camp's reach (centre to centre, inclusive). */
-export function reaches(camp, block, point) {
+/** Whether a mat point lies within a camp's reach, the standard one (centre to centre, inclusive). */
+export function reaches(camp, point) {
     const centre = centreOf(camp);
-    return !!centre && !!point && distanceSq(centre, point) <= block.reach * block.reach;
+    const r = reachRadius();
+    return !!centre && !!point && distanceSq(centre, point) <= r * r;
 }
 
 /**
@@ -107,7 +104,7 @@ export function isCampWork(camp, instance) {
     const block = campOfInstance(camp);
     if (block) {
         if (Demolition.isMarked(instance) || isGuildHall(instance)) return false;
-        return worksType(block, getTokenType(instance.typeId)) && reaches(camp, block, centreOf(instance));
+        return worksType(block, getTokenType(instance.typeId)) && reaches(camp, centreOf(instance));
     }
     return isEnemyCamp(camp) && instance.tether === camp.id && isEnemyDef(getTokenType(instance.typeId));
 }
@@ -126,14 +123,14 @@ export function campWork(camp) {
 }
 
 /**
- * The ring a camp shows on hover, `{ x, y, r }` in mat units: a work camp's reach. Null for any
- * other Token, an enemy camp included: its enemies stand where they spawned, so it has no ground.
+ * The ring a camp shows on hover, `{ x, y, r }` in mat units: a work camp's reach, the standard
+ * one. Null for any other Token, an enemy camp included: its enemies stand where they spawned, so
+ * it has no ground.
  */
 export function reachRingOf(instance) {
     const centre = centreOf(instance);
     if (!centre) return null;
-    const block = campOfInstance(instance);
-    if (block) return { ...centre, r: block.reach };
+    if (campOfInstance(instance)) return { ...centre, r: reachRadius() };
     return null;
 }
 

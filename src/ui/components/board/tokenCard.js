@@ -28,6 +28,7 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { formatClock } from '../drawer/lifecycleLines.js';
 import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
+import { reachRadius } from '../../../systems/board/nearby.js';
 import { supportTag, FLOOR_NOTE } from './supportTags.js';
 
 /**
@@ -367,13 +368,14 @@ export function cardLifecycle(instance, def, src) {
         }
     }
 
-    // A camp: what its heroes work and how far it reaches.
+    // A camp: what its heroes work and how far it reaches (the one standard reach).
     const camp = campOf(def);
     if (camp) {
         const skill = getSkill(camp.skill)?.name || camp.skill;
+        const reach = Math.round(reachRadius());
         out.push({
-            icon: 'reach', label: 'Camp', text: `${skill} · ${Math.round(camp.reach)} u`,
-            tip: `A camp: heroes sent here work the ${skill} Tokens within ${Math.round(camp.reach)} u, one hero each`
+            icon: 'reach', label: 'Camp', text: `${skill} · ${reach} u`,
+            tip: `A camp: heroes sent here work the ${skill} Tokens within ${reach} u, one hero each`
         });
     }
 

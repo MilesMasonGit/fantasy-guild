@@ -144,7 +144,7 @@ beforeEach(() => {
     // shipped default: Near has started at 164 u, which reaches no diagonal
     // and lets a 2×2 reach nothing. The shipped default is pinned in
     // Nearby.test.js.
-    setMatTuning('nearRadius', 272);
+    setMatTuning('reach', 272);
     GameState.state.inventory.maxSlots = 50;
 });
 
@@ -206,7 +206,7 @@ describe('RecipeResolver: a tool near a station', () => {
         put(S16, 'fixture_tool');                      // 320 u
         expect(statusOf(S14)).toBe(RecipeResolver.RECIPE.NONE);
 
-        setMatTuning('nearRadius', 400);
+        setMatTuning('reach', 400);
         expect(statusOf(S14)).toBe(RecipeResolver.RECIPE.OK);
         expect(RecipeResolver.servesFrom(idAt(S16))).toEqual([idAt(S14)]);
 
@@ -236,7 +236,7 @@ describe('Charges: context providers are the Tokens within Near (D-113/D-157)', 
         put(S14, 'fixture_tool');
         put(S16, 'fixture_tool_gated');
         expect(Charges.contextProvidersAround(idAt(S16))).toEqual([]);
-        setMatTuning('nearRadius', 400);
+        setMatTuning('reach', 400);
         expect(Charges.contextProvidersAround(idAt(S16)).map(p => p.id)).toEqual([idAt(S14)]);
     });
 });
@@ -302,7 +302,7 @@ describe('TriggerSystem: neighbour triggers listen within Near', () => {
     it('a larger radius widens it: at 400 u a listener two steps away hears it', () => {
         put(S15, 'fixture_producer');
         put(S17, 'fixture_trigger_any');
-        setMatTuning('nearRadius', 400);
+        setMatTuning('reach', 400);
         cycleAt(S15, 'fixture_producer');
         expect(bones()).toBe(1);
     });
@@ -391,7 +391,7 @@ describe('Restrictions: "Cannot be nearby to more than 2 Coast" counts within Ne
     it('a larger radius widens it: at 400 u a Coast two steps away counts, on a drop and on a shift', () => {
         atLimit();
         const shoved = put(S3, 'fixture_plain_coast');
-        setMatTuning('nearRadius', 400);
+        setMatTuning('reach', 400);
 
         expect(Restrictions.checkPlacement(S17, 'fixture_plain_coast').ok).toBe(false);   // 358 u
         expect(Restrictions.checkPlacement(big(0, 0), 'fixture_large_tool', { move: [{ id: shoved.id, ...S9 }] }).ok).toBe(false);
@@ -424,7 +424,7 @@ describe('Placement publishes one dirty event per change, covering the Near radi
     });
 
     it('at 400 u a dropped buff reaches a Token two steps away, and lifting it clears it', () => {
-        setMatTuning('nearRadius', 400);
+        setMatTuning('reach', 400);
         put(S12, 'fixture_producer');
         TileModifiers.rebuildAll();
 

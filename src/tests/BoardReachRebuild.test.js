@@ -156,7 +156,7 @@ describe('⭐ a board-reach aura on the mat: an unrelated change rebuilds only i
     it('a Near buff moving: its old neighbours lose it, its new ones gain it, a far Token keeps the aura', () => {
         const { producers, near, far, total } = board();
         const from = centreOf(near);
-        const to = P(6.5, 1);
+        const to = P(5.5, 1.5);
         BoardState.setTokenPoint(near.id, to.x, to.y);
         const expected = tokensAround([from, to]);
 

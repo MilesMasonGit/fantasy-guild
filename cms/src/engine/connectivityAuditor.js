@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds, perkFindings, gearDefenceFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds, perkFindings, gearDefenceFindings, hallStarFindings } from '../utils/constants';
 
 /** Connectivity & Graph Auditor: audits the Token, Recipe and Item graph in three pillars: Data Integrity (missing references, invalid IDs, solver refusals), Economic Blockers (orphaned inputs, unreachable items, dead ends) and Pacing Gaps (level gaps in skills). */
 
@@ -10,7 +10,7 @@ const tokenSkill = (token) => token?.config?.skill ?? token?.skill ?? token?.ski
 const tokenLevel = (token) => token?.config?.skillRequired ?? token?.skillRequirement ?? 1;
 
 export function auditConnectivity(entities, solverRefusals = []) {
-  const { items = {}, tokens = {}, recipes = {}, enemies = {}, effects = {}, skillPerks = null } = entities;
+  const { items = {}, tokens = {}, recipes = {}, enemies = {}, effects = {}, skillPerks = null, hallSky = null } = entities;
   const issues = [];
 
   const allItems = Object.values(items || {});
@@ -166,6 +166,20 @@ export function auditConnectivity(entities, solverRefusals = []) {
       severity: 'Warning',
       details: f.message.charAt(0).toUpperCase() + f.message.slice(1),
     });
+  }
+
+  // Guild Hall stars: one that cannot open, names what is gone, or carries a rule the guild cannot hold (a retired Camp Reach star, to delete). The game's own rule (`hallStarRule.js`), so this tab and the boot audit say the same thing. Only when the workspace holds a sky.
+  if (hallSky) {
+    for (const f of hallStarFindings({ sky: hallSky, items, tokens })) {
+      issues.push({
+        entityId: f.entityId,
+        entityName: f.entityName,
+        entityType: f.entityType,
+        issueType: 'Data Integrity',
+        severity: 'Warning',
+        details: f.message.charAt(0).toUpperCase() + f.message.slice(1),
+      });
+    }
   }
 
   // Gathering tools: a tool no hero can hold, a need no tool answers, content still written as tool Tokens. The game's own rule (`toolRule.js`), so this tab and the boot audit say the same thing. Expanded Tokens, so a tool Token's Acts as is seen.
