@@ -163,3 +163,29 @@ describe('CMS connectivity auditor — Pacing Gaps reads the real skill fields',
         expect(issues.filter((i) => i.issueType === 'Pacing Gap').length).toBeGreaterThan(0);
     });
 });
+
+describe('CMS connectivity auditor — Guild Hall stars, by the game\'s own rule', () => {
+    const items = { fx_ore: { id: 'fx_ore', name: 'Fixture Ore', type: 'material' } };
+    const tokens = { fx_camp: { id: 'fx_camp', name: 'Fixture Camp', camp: { skill: 'mining' } } };
+    const rule = (type, value) => ({
+        id: `stm_fx_${type}`, keyword: 'provides', to: { mode: 'id', value: 'fx_camp' }, reach: 'board',
+        payload: { type, bucket: 'percentage', value }
+    });
+    const sky = (stars) => ({ constellations: {}, stars });
+    const star = (id, rules) => ({ id, name: id, constellation: 'well', links: ['hall'], ranks: [{ price: [{ itemId: 'fx_ore', quantity: 5 }], rules }] });
+
+    it('names a star carrying only the retired Camp Reach, to delete in the CMS', () => {
+        const issues = auditConnectivity({ items, tokens, hallSky: sky({ fx_rails: star('fx_rails', [rule('CAMP_REACH', 0.15)]) }) }, []);
+        const hall = issues.filter((i) => i.entityType === 'Hall star');
+        expect(hall).toEqual([expect.objectContaining({
+            entityId: 'fx_rails', issueType: 'Data Integrity', severity: 'Warning',
+            details: 'Carries only Camp Reach rules, retired: every camp works the one standard reach, so the star gives nothing. Delete the star in the CMS.',
+        })]);
+    });
+
+    it('says nothing of a sound star, nor of the Hall when the workspace holds no sky', () => {
+        expect(auditConnectivity({ items, tokens, hallSky: sky({ fx_lore: star('fx_lore', [rule('XP_BONUS', 0.1)]) }) }, [])
+            .filter((i) => i.entityType === 'Hall star')).toEqual([]);
+        expect(auditConnectivity({ items, tokens }, []).filter((i) => i.entityType === 'Hall star')).toEqual([]);
+    });
+});

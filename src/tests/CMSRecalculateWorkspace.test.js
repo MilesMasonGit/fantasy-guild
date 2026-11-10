@@ -72,3 +72,17 @@ describe('recalculateWorkspace', () => {
         }
     });
 });
+
+describe('the Audit tab hears the Guild Hall', () => {
+    it('lists every finding the game\'s own Hall star rule makes of the workspace\'s sky', async () => {
+        const { hallStarFindings } = await import('../systems/core/hallStarRule.js');
+        const { report } = recalculateWorkspace(workspace, DEFAULT_DIALS, { now: () => 1 });
+        const expected = hallStarFindings({
+            sky: { constellations: workspace.hallConstellations || {}, stars: workspace.hallStars || {} },
+            items: report.items, tokens: report.tokens,
+        }).map((f) => `${f.entityId}: ${f.message}`);
+        const listed = report.auditIssues.filter((i) => i.entityType === 'Hall star')
+            .map((i) => `${i.entityId}: ${i.details.charAt(0).toLowerCase()}${i.details.slice(1)}`);
+        expect(listed).toEqual(expected);
+    });
+});

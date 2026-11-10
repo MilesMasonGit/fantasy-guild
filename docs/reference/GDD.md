@@ -204,8 +204,16 @@ Token.
 
 ### Reach — Built
 Rules reach `nearby` (default), `self`, `self_and_nearby` or `board`.
-**Near = 164 u centre to centre**: the four side neighbours of a 1×1, not the
-diagonals. There is no Close/Far. *(`reachRegistry.js`, `matTuning.js:46-52`)*
+**One standard reach: 240 u centre to centre** (owner, 2026-11-10; it was
+164 u for rules and 280 to 360 u for camps): a small Token's eight neighbours
+one step away (the diagonals are 226 u), not two steps (320 u). It is the same
+for everything that reaches: a `nearby` rule (the supports: a Mine, Minecart,
+Well, Composter, Beehive, Dock), a camp's work, where a Forest or Orchard
+plants and what it counts, a growth or rest that needs a Token in reach, and a
+"Stands near" or `Cannot` rule. Nothing in play changes it: Camp Reach is
+retired. There is no Close/Far. In a dev build the Mat Tuner's **Reach** row
+overrides it on that device; a shipped build always uses 240.
+*(`reachRegistry.js` `STANDARD_REACH_U`, `nearby.reachRadius`)*
 
 ### Spawners — Built
 A spawner puts new Tokens beside itself on an interval, up to a **family cap**:
@@ -217,12 +225,12 @@ full camp comes back one whole interval later; every other spawner (forests,
 mines) keeps counting while full and replaces a loss on the next tick.
 - **Planting within its reach** (brief 230 S2a; `spawner.withinReach`, a box in
   the CMS Spawner block, for Forests): the spawner lands each Token only within
-  its reach (Near), at the free spot nearest it, never pushing (nowhere free
+  its reach (the standard reach, 240 u), at the free spot nearest it, never pushing (nowhere free
   there: it waits, says no room, pays nothing), and its allowance counts its
   family standing **in its reach** (Saplings, Trees and Stumps, a map's
   included) against its own allowance, not the mat-wide cap; two such Forests
   far apart each fill their own. Its allowance adds nothing to a mat-wide
-  family's cap. No shipped spawner uses it yet.
+  family's cap. The Oak and Fir Forests and the Apple Orchard use it.
 - **An enemy camp counts its own** (owner, 2026-10-29; T-266): a spawner whose
   family holds an enemy counts only what it spawned (the Tokens tethered to
   it) against its own allowance, so goblins standing at one camp never keep
@@ -744,9 +752,11 @@ less micromanagement than area flags).
   the progress of the Token left behind; a moved Token keeps its hero and its
   progress (the hero walks after it).
 - **Camps** (brief 260 O2) are Tokens built on a Foundation, each naming a
-  skill and a reach (CMS: the Camp block): **Logging Camp** (Forestry),
+  skill (CMS: the Camp block): **Logging Camp** (Forestry),
   **Mining Camp** (Mining), **Fishing Hut** (Fishing), **Farmstead** (Farming:
-  it harvests the ripe Fields and picks the bushes in its reach). A hero sent
+  it harvests the ripe Fields and picks the bushes in its reach). **Every camp
+  works the one standard reach, 240 u** (§Reach; owner, 2026-11-10): a camp no
+  longer has a reach of its own, and nothing widens it. A hero sent
   to a camp works the **nearest free Token of its skill they can work within
   its reach**, finishes each cycle and keeps the Token while it can run, then
   moves to the next; with only resting or growing Tokens left they wait
@@ -1258,8 +1268,9 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   double loot, **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the
   Cleaver's Raw Beef), **catch weight** (a percentage on one fish's weight in a
-  water's catch pool: a better rod's bonus, §3 Fishing), fail chance, **camp reach** (a camp's,
-  as a percentage) (Tokens); **wound time** and **loadout slots** (guild-only: read from
+  water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens; **camp reach** is
+  retired: every camp works the standard reach, so a rule carrying it does nothing, the editors no
+  longer offer it and the audits name it); **wound time** and **loadout slots** (guild-only: read from
   Guild Hall stars, §8, never offered on a Token or item); accuracy,
   damage, **dodge, crit chance**, **Type Damage %** (the bearer's hits of a
   type or group, or every type: "Poisoner's Cloak: Poison 15"), **Type
@@ -1344,7 +1355,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   the rank is held, in every Region and wherever the Hall stands (a skill's XP, Yield or
   Double Loot and Work Time narrowed to that skill, a combat skill's XP reaching the kills won in
   that style; Token upgrades aimed at a Token or tag:
-  Grow Time for a vein's rest or a tree's regrowth, Camp Reach; the guild-only Wound Time
+  Grow Time for a vein's rest or a tree's regrowth (a star's Camp Reach rule is retired and left
+  out: the boot audit and the CMS Audit tab name a star carrying one, to delete); the guild-only Wound Time
   for the Infirmary, Loadout Slots for one more of a loadout kind, and Lap Time for the
   Passive Production lap), and **lines** of
   Passive Production the Hall pays each lap beside the Wishing Well's Water. The sky grows to
@@ -1781,7 +1793,7 @@ the Token count.
 | **Charges / uses** | A Token's wear; one per cycle; 0 removes it, unless it respawns; `null` is unlimited; stations and supports never wear. |
 | **Resting / respawn** | A Token at 0 charges whose type respawns: unworkable until it refills, or becomes the Token it regrows from. |
 | **Cycle** | One unit of work on a Token (or one kill). |
-| **Near / reach** | 164 u centre to centre; how far a rule carries. |
+| **Near / reach** | The one standard reach, 240 u centre to centre: how far a rule carries, a camp works and a Forest plants. |
 | **Spawner, family, allowance** | A Token that makes Tokens; the types it makes and what they grow into; how many it allows alive. |
 | **Upkeep** | Items a spawner (or rule) pays to keep running. Unpaid = it waits. |
 | **Passive Production** | Free items the Hall drops once a lap, 10 minutes shortened to 5 by a Guild Hall star (formerly "trickle"). |
@@ -1790,7 +1802,7 @@ the Token count.
 | **Context Token** | A tool or support Token used by nearby work. |
 | **Order / job** | Where the player sent a hero: a Token (they work only it), a camp (they work its kind of Token in its reach), a spot (they wait there) or home. |
 | **Job flag** | The small flag in the hero's colour marking their job, behind the top-left of the job's Token (or on the spot). Dragging it gives the hero a new job. |
-| **Camp** | A Token built on a Foundation that names a skill and a reach: a hero sent to it works every Token of that skill in its reach, one at a time. An enemy camp is a spawner of enemies; a hero sent to it hunts them. |
+| **Camp** | A Token built on a Foundation that names a skill: a hero sent to it works every Token of that skill within the standard reach, one at a time. An enemy camp is a spawner of enemies; a hero sent to it hunts them. |
 | **Needs a job** | A hero whose job's Token is gone for good, waiting where it stood for a new order. |
 | **Rules (Token) / effect / statement** | A Token's behaviours, written as sentences in the CMS. |
 | **Bank** | The guild's item store; one slot per kind. |
