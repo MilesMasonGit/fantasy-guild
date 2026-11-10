@@ -26,3 +26,8 @@ once".
    you want changed. Verdict: ok / change: ___
 
 **After the look:** tell the director "ok" or your changes. On ok all five pieces merge to `main`; no CMS steps.
+
+## Owner's verdicts, 2026-11-10
+
+- 1 to 4: ok. World Map middle dial: A, keep "Grass" for all open land.
+- Merged to `main` e042229c with the Hero drawer changes.

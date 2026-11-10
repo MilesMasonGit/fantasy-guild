@@ -35,3 +35,12 @@ each side (Settings, Menu on Right Side).
   each with its level and what it gives (e.g. "Even Heat: +10% Smithing XP").
 - The Hero drawer pops in: every drawer must slide smoothly in and out.
 - World map dials: keep A ("Grass" = all open land).
+
+## Owner's later rounds and verdict, 2026-11-10
+
+- Second look: a header row (name above the portrait, HP bar across Inventory and Skills), X and quill in the drawer's
+  top-right corner, hero HP the light red, an item handed hero to hero keeps the open hero with bubbles for both,
+  white skill names, the skill panel's two sections side by side, perk levels as "10", one-line milestones, the teal
+  backdrop. All built.
+- Third look: enemy HP bars the same red. Built. Verdict: ok, merge.
+- Merged to `main` e042229c.
