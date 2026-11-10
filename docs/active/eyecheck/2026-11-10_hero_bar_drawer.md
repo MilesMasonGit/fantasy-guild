@@ -1,6 +1,6 @@
 # Eye-check 2026-11-10: the hero bar everywhere and the Hero drawer (brief 570 D1, D2)
 
-**What to open:** `_builds/2026-11-10-hero-drawer/Fantasy Guild.exe` in your project folder (double-click; nothing
+**What to open:** `_builds/2026-11-10-hero-drawer/Fantasy Guild.exe` (or the combined `_builds/2026-11-10-drawers/Fantasy Guild.exe`, which holds this and the side drawers) in your project folder (double-click; nothing
 to install). Built from branch `feat/hero-drawer` (hero bar and Hero drawer together), not on `main` yet. It uses
 your normal desktop save files.
 
