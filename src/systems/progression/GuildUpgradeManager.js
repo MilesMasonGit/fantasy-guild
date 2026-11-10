@@ -69,7 +69,12 @@ export const GuildUpgradeManager = {
 
     /** True when the next rank is buyable right now with what the Bank holds. */
     canAfford(upgradeId) {
-        const price = this.getNextCost(upgradeId);
+        return this.canAffordRanks(upgradeId, 1);
+    },
+
+    /** True when the next `count` ranks together are buyable right now with what the Bank holds. */
+    canAffordRanks(upgradeId, count = 1) {
+        const price = this.getRanksCost(upgradeId, count);
         return price != null && this.getShortfall(price).length === 0;
     },
 
@@ -99,31 +104,63 @@ export const GuildUpgradeManager = {
 
     /** Buy the next rank of an upgrade. Returns { success, error? }. */
     purchase(upgradeId) {
+        return this.purchaseRanks(upgradeId, 1);
+    },
+
+    /**
+     * The combined price of the next `count` ranks, merged per item, or null when fewer than
+     * `count` ranks are left. `count` 1 is the next rank's own price.
+     */
+    getRanksCost(upgradeId, count = 1) {
+        const def = getUpgradeDef(upgradeId);
+        const n = Math.floor(Number(count) || 0);
+        if (!def || n < 1) return null;
+        const rank = this.getRank(upgradeId);
+        if (rank + n > def.maxRank) return null;
+        const parts = [];
+        for (let r = rank; r < rank + n; r++) parts.push(...(getUpgradePrice(def, r) || []));
+        return totalPrice(parts);
+    },
+
+    /**
+     * Buy the next `count` ranks of an upgrade at once, all or nothing: the same Bank, ranks and
+     * rules as `count` single buys, paid as one price, written as one rank change and announced
+     * by one `GUILD_UPGRADES_UPDATED` ({ upgradeId, rank, fromRank, count }), so the sky plays
+     * one ceremony and listeners that count purchases read `count`. Returns { success, error? }.
+     */
+    purchaseRanks(upgradeId, count = 1) {
         const def = getUpgradeDef(upgradeId);
         if (!def) return { success: false, error: 'Unknown upgrade' };
+        const n = Math.floor(Number(count) || 0);
+        if (n < 1) return { success: false, error: 'No ranks to buy' };
 
         const ranks = this.getRanks();
-        if (!isUpgradeAccessible(def.id, ranks)) {
-            const reason = getLockReason(def.id, ranks);
-            return { success: false, error: reason || 'That upgrade is locked' };
+        const rank = this.getRank(upgradeId);
+        // Each step is asked as a single buy would ask it: a gate may read the star's own rank.
+        for (let r = rank; r < rank + n && r < def.maxRank; r++) {
+            const at = { ...ranks, [def.id]: r };
+            if (!isUpgradeAccessible(def.id, at)) {
+                const reason = getLockReason(def.id, at);
+                return { success: false, error: reason || 'That upgrade is locked' };
+            }
         }
 
-        const rank = this.getRank(upgradeId);
         if (rank >= def.maxRank) return { success: false, error: 'Already at max rank' };
+        if (rank + n > def.maxRank) return { success: false, error: `Only ${def.maxRank - rank} ranks left` };
 
-        const price = getUpgradePrice(def, rank) || [];
+        const price = this.getRanksCost(upgradeId, n) || [];
         const paid = this._payItems(price);
         if (!paid.success) return paid;
 
-        const newRank = rank + 1;
+        const newRank = rank + n;
         ranks[upgradeId] = newRank;
         this.recompute();
 
-        // Roster size upgrade immediately recruits a new hero
-        if (upgradeId === 'roster_size') createHero();
+        // Each Roster Size rank immediately recruits a new hero.
+        if (upgradeId === 'roster_size') for (let i = 0; i < n; i++) createHero();
 
-        EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId, rank: newRank });
-        logger.info('GuildUpgradeManager', `Purchased ${upgradeId} rank ${newRank} for ${price.map(p => `${p.quantity}x ${p.itemId}`).join(', ') || 'free'}`);
+        EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId, rank: newRank, fromRank: rank, count: n });
+        logger.info('GuildUpgradeManager', `Purchased ${upgradeId} rank ${n > 1 ? `${rank + 1}-` : ''}${newRank} for ${price.map(p => `${p.quantity}x ${p.itemId}`).join(', ') || 'free'}`);
         return { success: true };
     },
 

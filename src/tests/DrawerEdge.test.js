@@ -95,11 +95,9 @@ describe('the drawers reach the screen edge under the nav, as one panel', () => 
 });
 
 describe('opening the Bank leaves the mat side where it is', () => {
-    it('the Bank takes no column beside the mat: the only <aside> left in ReactRoot is the Hall details', () => {
+    it('the Bank takes no column beside the mat, nor the Hall: ReactRoot lays no <aside> of its own', () => {
         const code = codeOf(fs.readFileSync(`${SRC}/ui/ReactRoot.jsx`, 'utf8'));
-        const asides = code.match(/<aside[\s\S]*?>/g) || [];
-        expect(asides.length).toBe(1);
-        expect(asides[0]).toContain('data-hall-details');
+        expect(code.match(/<aside[\s\S]*?>/g) || []).toEqual([]);
     });
 
     it('nothing moves the mat side for the Bank: no shift wrapper, no shift rules', () => {

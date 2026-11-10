@@ -20,9 +20,6 @@ import { useUIModals } from '../ui/hooks/useUIModals.js';
 
 // The Bank drawer's panes are stood in: this checks which panes the drawer
 // lays out, not what the Bank draws inside them.
-vi.mock('../ui/components/drawer/InspectionPanel.jsx', () => ({
-    default: () => React.createElement('div', { 'data-testid': 'inspect-column' })
-}));
 vi.mock('../ui/components/drawer/BankTab.jsx', () => ({
     default: () => React.createElement('div', { 'data-testid': 'bank-pane' })
 }));

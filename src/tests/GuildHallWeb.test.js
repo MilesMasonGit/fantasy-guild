@@ -10,7 +10,7 @@ import { render, fireEvent, act } from '@testing-library/react';
 import { GuildHallBoard } from '../ui/components/board/GuildHallBoard.jsx';
 import { effectsPopoverPlace, EFFECTS_POPOVER_W } from '../ui/components/board/GuildHallEffectsPopover.jsx';
 import { escapeLayerCount } from '../ui/utils/escapeLayers.js';
-import { InspectionPanel } from '../ui/components/drawer/InspectionPanel.jsx';
+import { GuildUpgradeInspection } from '../ui/components/drawer/GuildUpgradeInspection.jsx';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
@@ -105,7 +105,7 @@ describe('the Guild Hall upgrade web', () => {
         InventoryManager.addItem('item_oak_wood', 10);
         const { container } = render((React.createElement(React.Fragment, null,
             React.createElement(GuildHallBoard, {}),
-            React.createElement(InspectionPanel, { selection: { type: 'guild_upgrade', id: 'bank_tabs', pane: 'guild' } })
+            React.createElement(GuildUpgradeInspection, { upgradeDef: getUpgradeDef('bank_tabs') })
         )));
         expect(container.textContent).toContain('Bank Tabs');
         expect(stateOf(container, OUTER)).toBe('locked');
@@ -183,10 +183,10 @@ describe('the Hall star shows the Effects as a popover', () => {
         const src = readFileSync(resolve(__dirname, '../ui/ReactRoot.jsx'), 'utf8');
         expect(src).not.toMatch(/GuildHallEffects/);
         // The Hall's screen, which the camera lays only while it is off the mat, holds the web and
-        // its details column, and nothing else beside the web.
+        // nothing beside it: the Upgrade drawer is the screen's overlay's.
         const hall = hallCameraSides().hall;
         expect(hall).toContain('<GuildHallBoard');
-        expect(hall).toContain('<GuildHallDetails');
-        expect(hall.indexOf('<GuildHallBoard')).toBeLessThan(hall.indexOf('<GuildHallDetails'));
+        expect(hall).not.toContain('HallUpgradeDrawer');
+        expect(src).toContain('<HallUpgradeDrawer');
     });
 });

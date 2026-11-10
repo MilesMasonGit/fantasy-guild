@@ -1360,13 +1360,22 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   left of the Hall past the Vault, priced by the ledger). *(`world/ringStars.js`, `Settling.js`)*
 - **The sky's look** (brief 390): stars spread 1.4 times their authored places apart, each with
   an item's outline over it (by the star's kind, or the star's own `outline`), its title under
-  it and its rank only under the pointer; the web runs on under the nav and the details panel.
-  The **details panel** (purple frames) gives a star's name, one sentence of what it does (built
-  from its rules), its rank, what it gives now and next and at its top rank, its price as item
-  ribbons with have/need, and the Upgrade button. The Hall star's **Effects** list the outputs
+  it and its rank only under the pointer; the web runs on under the nav and the drawer. Titles
+  never overlap: stars side by side whose titles would touch are staggered when drawn (brief 570).
+  The **Upgrade drawer** (brief 570; the side drawer in purple) is closed when the Hall opens and
+  opens on a click on a star (a hover changes nothing); its X or Escape closes it, and there is no
+  Return button. It gives the star's icon (large, grey), its title, one sentence of what it does
+  (built from its rules), and a list of every rank in Roman numerals (Arabic under the pointer),
+  each with what it gives, opened on the last bought and the next rank. Clicking a later rank
+  chooses it: the foot shows that rank's price (short numbers), the total for every rank up to it
+  while the Upgrade button is hovered, and **"Upgrade (+3 Ranks)" buys them all at once**, all or
+  nothing (`GuildUpgradeManager.purchaseRanks`: the same Bank, ranks and rules as that many single
+  buys, one rank change, one ceremony; a quest counting purchases counts each rank). Greyed with
+  what the Bank is short of when it cannot pay. The Hall star's **Effects** list the outputs
   each lap and, as boosts, the lap itself ("Outputs arrive once a lap: every 10:00", the live
   lap) and every other rule held (a Lap Time rule is said by the lap's line).
-  *(`GuildHallBoard.jsx`, `hallStarOutline.js`, `GuildUpgradeInspection.jsx`, `hallStarText.js`)*
+  *(`GuildHallBoard.jsx`, `hallStarStagger.js`, `hallStarOutline.js`, `HallUpgradeDrawer.jsx`,
+  `GuildUpgradeInspection.jsx`, `hallStarText.js`)*
 - **The upgrade ceremony** (brief 390 G4): a rank bought while the sky is open plays once: the
   star bursts in hard pixels with a chime; light hops along its lines to the stars that rank
   opened; finishing a constellation (its every star lit) bursts bigger, sparkles its stars in
@@ -1481,7 +1490,8 @@ drawers**. The menu can be flipped to the right.
   dims its Token and shows the short counts in red; a full Token cap says so on
   the card. Hover a skill icon for its name, a card for what it builds.
   *(`ShopPanel.jsx`)*
-- **Guild Hall view**: the upgrade web, Hall effects panel, upgrade inspector.
+- **Guild Hall view**: the upgrade web, the Hall effects popover, and the Upgrade drawer on a
+  clicked star (§8).
 - **On the mat**: click a Token to inspect it; a station's gear badge opens the
   recipe picker; a job flag is only dragged, to give its hero a new job (hover
   shows its hero and what they are doing);

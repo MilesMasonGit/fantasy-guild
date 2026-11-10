@@ -31,10 +31,8 @@ import HeroDrawer from './components/dock/HeroDrawer.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import HallSky from './components/board/HallSky.jsx';
 import HallCamera from './components/board/HallCamera.jsx';
-import { GuildHallDetails } from './components/board/GuildHallDetails.jsx';
-import { NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardConstants.js';
+import { HallUpgradeDrawer, HERO_BAR_CLEAR_PX } from './components/drawer/HallUpgradeDrawer.jsx';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
-import { selectGuildInspectSelection } from './guildInspectSelection.js';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 import { FightPanelPopup } from './components/combat/FightPanelPopup.jsx';
 import { FightTabStrip } from './components/combat/FightTab.jsx';
@@ -129,10 +127,8 @@ const ReactRoot = () => {
         return EventBus.subscribe(UI_EVENTS.DEV_STRESS_STARTED, () => closeSlotSelection(), UI_LISTENER);
     }, [closeSlotSelection]);
 
-    // The Hall's upgrade web selects by upgrade id; it has no tiles.
-    const [selectedUpgradeId, setSelectedUpgradeId] = React.useState('roster_size');
-    // The star under the pointer: the details panel shows it until the pointer leaves.
-    const [hoveredUpgradeId, setHoveredUpgradeId] = React.useState(null);
+    // The Hall star in the Upgrade drawer, by id: none (the drawer closed) until a star is clicked.
+    const [hallStarId, setHallStarId] = React.useState(null);
     const isGuildView = ui.fullscreen.view === 'guild';
     const isAtlasOpen = ui.fullscreen.view === 'atlas';
     const isEncyclopediaOpen = ui.fullscreen.view === 'encyclopedia';
@@ -145,13 +141,8 @@ const ReactRoot = () => {
 
     const handleOpenGuildHall = React.useCallback(() => {
         ui.fullscreen.open('guild');
-        setSelectedUpgradeId('roster_size');
-        setHoveredUpgradeId(null);
-        const def = getUpgradeDef('roster_size');
-        if (def) {
-            ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
-        }
-    }, [ui.fullscreen, ui.inspect]);
+        setHallStarId(null);
+    }, [ui.fullscreen]);
 
     // The top bar's Region name opens the Atlas the way its bubble does; a click while it is
     // already open leaves it open.
@@ -169,9 +160,9 @@ const ReactRoot = () => {
 
     const handleCloseGuildHall = useCallback(() => {
         ui.fullscreen.close();
-        setHoveredUpgradeId(null);
-        ui.inspect.clear('guild');
-    }, [ui.fullscreen, ui.inspect]);
+        setHallStarId(null);
+    }, [ui.fullscreen]);
+    const closeHallStar = useCallback(() => setHallStarId(null), []);
 
     // Escape closes the open view (the Guild Hall, the Bank, the Shop, the Atlas, the Encyclopedia) as one layer;
     // a stray click never does.
@@ -193,25 +184,6 @@ const ReactRoot = () => {
     const openAtlas = ui.fullscreen.open;
     const openWorldMap = React.useCallback(() => openAtlas('atlas'), [openAtlas]);
     useWorldMapRequests(openWorldMap);
-
-    const guildPaneSelection = ui.inspect.getByPane ? ui.inspect.getByPane('guild') : null;
-    const guildInspectSelection = selectGuildInspectSelection({
-        guildPaneSelection,
-        globalSelection: ui.inspect.selection,
-        selectedUpgradeId,
-        getUpgradeDefFn: getUpgradeDef
-    });
-    const guildShownSelection = hoveredUpgradeId
-        ? selectGuildInspectSelection({ hoveredUpgradeId, getUpgradeDefFn: getUpgradeDef })
-        : guildInspectSelection;
-
-    // Close must clear BOTH the pane's explicit selection and the web's own 'last picked' id:
-    // clearing only the pane left the fallback chain above re-deriving the same selection on
-    // the next render, so the panel looked like it never closed.
-    const handleClearGuildInspect = React.useCallback(() => {
-        ui.inspect.clear('guild');
-        setSelectedUpgradeId(null);
-    }, [ui.inspect]);
 
     return (
         <DeckDndProvider>
@@ -254,31 +226,13 @@ const ReactRoot = () => {
                             tableAnchor={tableRef}
                             hall={
                                 <>
-                                    <div className="flex-1 min-w-0 min-h-0 relative pointer-events-auto">
+                                    {/* Clear of the hero bar at the screen's foot, so no star's title is under it. */}
+                                    <div className="flex-1 min-w-0 min-h-0 relative pointer-events-auto" style={{ paddingBottom: HERO_BAR_CLEAR_PX }}>
                                         <GuildHallBoard
-                                            selectedUpgradeId={guildInspectSelection?.id ?? selectedUpgradeId}
-                                            onSelectUpgrade={(def) => {
-                                                setSelectedUpgradeId(def.id);
-                                                ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
-                                            }}
-                                            onHoverUpgrade={setHoveredUpgradeId}
+                                            selectedUpgradeId={hallStarId}
+                                            onSelectUpgrade={(def) => setHallStarId(def.id)}
                                         />
                                     </div>
-                                    {/**
-                                     * The Hall's details panel: always RIGHT of the upgrade web, whichever
-                                     * side the nav is on.
-                                     */}
-                                    <aside
-                                        data-hall-details
-                                        style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                        className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10"
-                                    >
-                                        <GuildHallDetails
-                                            selection={guildShownSelection}
-                                            onClear={handleClearGuildInspect}
-                                            onReturn={handleCloseGuildHall}
-                                        />
-                                    </aside>
                                 </>
                             }
                         >
@@ -366,6 +320,14 @@ const ReactRoot = () => {
                         )}
                     </div>
                     {menuRight && <BubbleMenu ui={ui} side="right" />}
+                    {/* The Guild Hall's Upgrade drawer, opened by a click on a star. */}
+                    <ErrorBoundary label="HallUpgradeDrawer">
+                        <HallUpgradeDrawer
+                            upgradeDef={isGuildView && hallStarId ? getUpgradeDef(hallStarId) : null}
+                            menuRight={menuRight}
+                            onClose={closeHallStar}
+                        />
+                    </ErrorBoundary>
                     {/**
                      * Loot flying off the mat: over the mat, under the drawers, the hero panel and
                      * the nav. ⚠️ Inside this overlay so its layer is compared with theirs; outside
