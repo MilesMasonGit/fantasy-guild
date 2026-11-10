@@ -13,12 +13,13 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 560 R1: one standard reach, about 240; Camp Reach goes | engineer | `feat/one-reach` (`r1`) | building | Tue | |
-| 570 D1: the hero bar everywhere, equip bubbles | builder | `feat/hero-bar-everywhere` (`d1`) | building | Tue | |
-| 570 D3: the right-side drawer and the Item drawer | builder | `feat/item-drawer` (`d3`) | building | Tue | |
+| 560 R1: one standard reach, about 240; Camp Reach goes | engineer | `feat/one-reach` (`r1`) | ready ef9a876f: `STANDARD_REACH_U = 240` through `reachRadius()` (Mat Tuner keeps a dev override under a new key); ledger unchanged at every stage; four Camp Reach stars flagged (owner 2026-11-10: delete all four after the merge); predicted WORK CHANGED on S2 to S6, S8 family, C240, C256 (support rules reach more; no bench scene has a work camp). Gate and bench queued for the 14:00 window | Tue | |
+| 570 D1: the hero bar everywhere, equip bubbles | builder | `feat/hero-bar-everywhere` (`d1`) | ready d79fa65e; the Shop now stands on the bar (about 300 px of mat at 1366 with the Shop open: owner to judge); gate running; look with D2 | Tue | |
+| 570 D3: the right-side drawer and the Item drawer | builder | `feat/item-drawer` (`d3`) | ready b1ec1830; shared `SideDrawer`; Use not built (brief 400 B4 never was): empty actions row; gate running; look with D4 and D5 | Tue | |
 | 560 R2: floating Foundations, the ring and in-range dots | builder | | queued (after R1; dot pick first) | | |
-| 570 D2: the Hero drawer | builder | | queued (after D1) | | |
-| 570 D4, D5: World Map and Upgrade drawers | engineer, builder | | queued (after D3) | | |
+| 570 D2: the Hero drawer | builder | `feat/hero-drawer` (`d2`, from D1) | building | Tue | |
+| 570 D4: World Map drawer | engineer | `feat/world-drawer` (`d4`, from D3) | building | Tue | |
+| 570 D5: Upgrade drawer | builder | | queued (after D4 or beside it) | | |
 | 480 L3: Limes framework | builder | | queued (after 570) | | |
 
 ## Director, brief 550 sharp sprites (owner, 2026-11-08: the owner's main problem with the production build)
