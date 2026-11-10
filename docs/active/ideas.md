@@ -242,6 +242,8 @@ mods via the CMS after release.
 
 ## Moved on
 
+- **Inspection drawers rework: bottom hero drawer, right-side Item, World Map and Guild Hall Upgrade drawers** (owner, 2026-11-09) → [concept_inspection_drawers.md](concept_inspection_drawers.md), approved 2026-11-09.
+
 - **A Tailor skill** (owner, 2026-11-04) → [concept_content_roadmap.md](concept_content_roadmap.md), T-304.
 
 - **The very early game and a new tutorial** (owner, 2026-11-04) → [concept_tutorial_npc.md](concept_tutorial_npc.md), brief 480.
