@@ -3,7 +3,7 @@
 // ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
 
 import { useState } from 'react';
-import { placeCamps, sendCampHands, huntAtGoblinCamp } from './campsDev.js';
+import { placeCamps, sendCampHands, huntAtGoblinCamp, placeReachEdge } from './campsDev.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
@@ -51,6 +51,19 @@ export function CampsDevSection() {
                     }}
                 >
                     Hunt at the Goblin Camp (a hunter sent to the camp)
+                </button>
+                <button
+                    type="button"
+                    data-qa-camps-edge
+                    className={buttonClass}
+                    onClick={() => {
+                        const r = placeReachEdge();
+                        setStatus(r.ok
+                            ? `A QA Edge Camp ${r.where}, with an Oak Tree ${r.inside} u to its right (inside its ${r.reach} u reach) and one ${r.outside} u to its left (outside), and ${r.name} sent to it. The hand fells the right tree and never the left one. Hover the camp for its ring.`
+                            : r.error);
+                    }}
+                >
+                    Reach edge: a camp with a tree just inside and one just outside (test Tokens)
                 </button>
             </div>
             {status && <div className="ui-text-body text-gi-muted" data-qa-camps-status>{status}</div>}
