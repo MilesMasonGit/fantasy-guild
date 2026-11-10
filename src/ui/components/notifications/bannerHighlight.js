@@ -4,7 +4,7 @@ export const BANNER_OUTLINE_ATTR = 'data-banner-outline';
 /** Where a subject is drawn: a hero on the mat and in the dock, a Token's art on the mat. */
 export function subjectSelectors({ type, id }) {
     const v = String(id).replace(/["\\]/g, '\\$&');
-    if (type === 'hero') return [`[data-board-hero="${v}"]`, `[data-dock-hero-id="${v}"] [data-hero-tab-face]`];
+    if (type === 'hero') return [`[data-board-hero="${v}"]`, `[data-dock-hero="${v}"] [data-dock-art]`];
     if (type === 'token') return [`[data-token-art="true"][data-token-id="${v}"]`];
     return [];
 }

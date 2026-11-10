@@ -73,7 +73,7 @@ top folders by import count from `npm run depcruise` (JSON output, 604 modules, 
 | `src/systems/progression/` | 8 / 1,955 | Guild Hall upgrades (`GuildUpgradeManager.js`), discoveries and the collection log, and **`ledger/`** (`engine.js`, `plan.js`): the Encyclopedia's reach engine, which the CMS's economy simulator (`cms/src/engine/ledger/`) also uses (§2.1). | `GuildUpgradeManager.js`, `ledger/engine.js` | config, effects, core, world |
 | `src/systems/quests/` | 5 / 1,116 | Tutorial chain and bounty quests, which are Tokens on the mat (`QuestTokens.js`). | `QuestManager.js` | config, board |
 | `src/systems/notifications/` | 6 / 1,015 | Banners and item stubs as small module stores; `routing.js` decides where each engine event goes. | `routing.js` (wired by `core/NotificationSubscriptions.js`) | config, core, state |
-| `src/ui/ReactRoot.jsx` + root files | 3 / 528 | Root component; `drawingPause.js`; `guildInspectSelection.js`. | `ReactRoot.jsx` | ui/components (32), hooks |
+| `src/ui/ReactRoot.jsx` + root files | 3 / 528 | Root component; `drawingPause.js`. | `ReactRoot.jsx` | ui/components (32), hooks |
 | `src/ui/components/board/` | 133 / 23,102 | The mat as drawn: `MatBoard.jsx`, `MatToken.jsx`, `MatHero.jsx`, `TerrainCanvas.jsx`, `AmbientLife.jsx`, the frame clocks, flags, bubbles, fx; the ground-picture painters and their dev tuner (`terrain/`, §5.3); also the Guild Hall sky (`GuildHallBoard.jsx`, `HallSky.jsx`). | `Board.jsx`, `MatBoard.jsx` | systems/board, config |
 | `src/ui/components/` (other) | 105 / 18,194 | `atlas/` (Atlas and world map, 3,054), `base/` (shared widgets, 2,615), `combat/` (2,410), `encyclopedia/` (2,485), `drawer/` (Bank, 2,373), `dock/` (hero bar, 1,955), `notifications/` (923), `hud/`, `nav/`, `title/`, `dev/` (788), `TestDashboard.jsx` (the QA panel host, 439). | — | config (201 edges), systems/board (170), systems/core (92) |
 | `src/ui/dev/` | 73 / 9,716 | QA panel sections and fixtures, the Perf HUD and stress boards (`perf/`). Rendered only in dev or perf builds (`src/ui/ReactRoot.jsx:427-436`, `src/main.jsx:121-123`). | `perf/perfHarness.js` | systems/board, config, core |
@@ -134,7 +134,7 @@ Order is pinned by `src/tests/TickHandlerOrder.test.js`.
 
 | Pri | Handler | What it does |
 |---|---|---|
-| 10 | `time_tracking` | `gameTimeMs += delta`, `meta.totalPlaytime += delta` (`EngineBootstrap.js:166-172`). |
+| 10 | `time_tracking` | `gameTimeMs += delta`, `meta.totalPlaytime += delta`, and the active Region's `playtimeMs` (`Atlas.addPlaytime`), so the catch-up counts time away to the place the guild was on (`EngineBootstrap.js:166-174`). |
 | 20 | `live_effects` | `LiveEffects.tick`: accumulates delta and fires statuses for all bearers once every 3 s (`src/systems/effects/LiveEffects.js:549-555`, `STATUS_TICK_INTERVAL_MS` at `src/config/FormulaRegistry.js:174`). |
 | 30 | `regen_system` | Hero regeneration (`src/systems/hero/RegenSystem.js:23`). |
 | 40 | `board_runner` | `BoardRunner.tick` (`src/systems/board/BoardRunner.js:469`), below. |
@@ -375,7 +375,7 @@ Hall's star web (`GuildHallBoard.jsx`, `HallSky.jsx`) and the Atlas with the hex
 | Ambient life (water, grass gusts, lava; clouds, leaves, birds) | `onDue` at 8 a second, small boxes only; off under reduced motion. | `AmbientLife.jsx:15-29,304` |
 | Loot particles | `requestAnimationFrame` only while particles fly; sleeps after. | `ParticleOverlay.jsx:150-193` |
 | World map picture | Painted in a Web Worker on a new world. | `atlas/worldPicture.worker.js`, `WorldMap.jsx:90-100` |
-| Map previews, portraits, star outlines, hit-testing | On demand. | `atlas/mapPreview.js`, `dock/heroPortrait.js`, `StarOutline.jsx`, `ui/utils/alphaHitTest.js` |
+| Map previews, star outlines, hit-testing | On demand. | `atlas/mapPreview.js`, `StarOutline.jsx`, `ui/utils/alphaHitTest.js` |
 
 The ground-picture pipeline lives in **`src/ui/components/board/terrain/`** (8 files, ~4,260 lines:
 `TerrainGrass`, `TerrainLattice`, `TerrainBlend`, `TerrainPatches`, `TerrainShade`,

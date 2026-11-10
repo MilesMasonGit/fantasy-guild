@@ -551,7 +551,7 @@ has none yet) and melee have content today.
   Work Start, the combat numbers), and it spends nothing. A work rule should be narrowed to its
   skill; the audits say when one is not.
 - **Shown**: the level-up number over the hero names the perk underneath, the hero bar gives it an
-  alert of its own, and the hero sheet's skill row lists the perks held and the next one.
+  alert of its own, and the Hero drawer's skill panel lists every perk of the skill, those held in gold.
 
 ### Classes and promotion — Retired (brief 270 K1, K5)
 The class jobs (Recruit, the basic and master classes), promotion, Promotion
@@ -802,15 +802,16 @@ less micromanagement than area flags).
   orders this tab or every tab in place by type, then the item's own tier
   (none last), then name; the dragged order holds until Sort is pressed.
   *(`bankSort.js`)*
-- **Looking at an item in the Bank** (brief 400): hovering a tile gives the
-  tooltip (name, count, type, tags). **Clicking it opens the inspection
-  window** along the Bank's foot: the sprite at 4×, the count, type and tags,
-  everything the tooltip leaves out (a weapon's stats, resists, what it
-  restores, the description), how many were collected this run, and a book to
-  its Encyclopedia page; its X, Escape or a second click closes it. A press
-  that moves 8 px is a drag instead, and the click that ends a drag opens
-  nothing; in Select mode a click selects. Nothing is discarded or sold there
-  (T-306). *(`BankItemWindow.jsx`)*
+- **Looking at an item in the Bank** (briefs 400, 570): hovering a tile gives the
+  tooltip (name, count, tool, tags; no type or Equippable line). **The Item drawer** opens and
+  closes with the Bank, on the screen's side away from the nav, the full height: it shows the item
+  last clicked this session (else the open tab's first item, else a calm empty line): its name and
+  a book to its Encyclopedia page, the sprite at 4×, the count, its tags as pills that explain
+  themselves on hover, everything it does (a weapon's stats, resists, what it restores, the
+  description), the actions, and how many were collected this run. A press that moves 8 px is a
+  drag instead, and the click that ends a drag picks nothing; in Select mode a click selects. The
+  mat stays where it is while the Bank is open. Nothing is discarded or sold there (T-306).
+  *(`ItemDrawer.jsx`, `SideDrawer.jsx`)*
 - **Supply is automatic**: Tokens take inputs from the Bank, then from loot on
   the mat. A cycle is all-or-nothing; first come, first served.
 - **Tools and weapons that break** — **Built (brief 480 L1); no content uses
@@ -1371,13 +1372,22 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   left of the Hall past the Vault, priced by the ledger). *(`world/ringStars.js`, `Settling.js`)*
 - **The sky's look** (brief 390): stars spread 1.4 times their authored places apart, each with
   an item's outline over it (by the star's kind, or the star's own `outline`), its title under
-  it and its rank only under the pointer; the web runs on under the nav and the details panel.
-  The **details panel** (purple frames) gives a star's name, one sentence of what it does (built
-  from its rules), its rank, what it gives now and next and at its top rank, its price as item
-  ribbons with have/need, and the Upgrade button. The Hall star's **Effects** list the outputs
+  it and its rank only under the pointer; the web runs on under the nav and the drawer. Titles
+  never overlap: stars side by side whose titles would touch are staggered when drawn (brief 570).
+  The **Upgrade drawer** (brief 570; the side drawer in purple) is closed when the Hall opens and
+  opens on a click on a star (a hover changes nothing); its X or Escape closes it, and there is no
+  Return button. It gives the star's icon (large, grey), its title, one sentence of what it does
+  (built from its rules), and a list of every rank in Roman numerals (Arabic under the pointer),
+  each with what it gives, opened on the last bought and the next rank. Clicking a later rank
+  chooses it: the foot shows that rank's price (short numbers), the total for every rank up to it
+  while the Upgrade button is hovered, and **"Upgrade (+3 Ranks)" buys them all at once**, all or
+  nothing (`GuildUpgradeManager.purchaseRanks`: the same Bank, ranks and rules as that many single
+  buys, one rank change, one ceremony; a quest counting purchases counts each rank). Greyed with
+  what the Bank is short of when it cannot pay. The Hall star's **Effects** list the outputs
   each lap and, as boosts, the lap itself ("Outputs arrive once a lap: every 10:00", the live
   lap) and every other rule held (a Lap Time rule is said by the lap's line).
-  *(`GuildHallBoard.jsx`, `hallStarOutline.js`, `GuildUpgradeInspection.jsx`, `hallStarText.js`)*
+  *(`GuildHallBoard.jsx`, `hallStarStagger.js`, `hallStarOutline.js`, `HallUpgradeDrawer.jsx`,
+  `GuildUpgradeInspection.jsx`, `hallStarText.js`)*
 - **The upgrade ceremony** (brief 390 G4): a rank bought while the sky is open plays once: the
   star bursts in hard pixels with a chime; light hops along its lines to the stars that rank
   opened; finishing a constellation (its every star lit) bursts bigger, sparkles its stars in
@@ -1465,18 +1475,31 @@ drawers**. The menu can be flipped to the right.
   any key skips it; under reduced motion it neither opens nor closes. Travel to
   a place settled before shows the plain arrival card instead.
   *(`atlas/SettleTitle.jsx`, `ArrivalCard.jsx`)*
-- **Hero bar** (bottom): the roster, heroes as standing figures with HP numbers
+- **Hero bar** (bottom, on every screen: the mat, the Bank, the Shop, the world map and the
+  Guild Hall, over the side drawers): the roster, heroes as standing figures with HP numbers
   over a smooth pixel bar, each with their job flag and an alert when wounded or the
   player must act; hover for what they are doing; drag a figure onto the mat
-  to give that hero a job. Click → **hero sheet** (loadout grid, every skill two side
-  by side as icon, level and XP bar; hover for its name, purpose and perks, click for its exact
-  XP and rate; scroll arrows when it does not fit; close and edit in the side space beside it, in
-  the same spot with the Bank open or shut) → Edit (rename, portrait, flag colour).
+  to give that hero a job; drop an item on a figure to equip it, answered by a speech bubble
+  over that hero for about 3 s (what was equipped, or why not, with the numbers); an item dragged
+  from one hero's loadout onto another hero is handed over, each saying so, the panel staying put.
+  Every HP bar, a hero's or an enemy's, is the light red. Click →
+  **Hero drawer**, sliding up from behind the bar across the screen down to its bottom edge,
+  the close X and the edit quill in its top right corner, a header across the top (the name over
+  the hero, the HP bar over the rest), then three blocks left to right: the hero at twice the
+  mat's size with their flag behind the shoulder; the loadout grid under the word Inventory,
+  always in view; and a switch between **Skills** (every skill as a large icon, name, level and
+  XP bar in columns of four: combat, gathering, crafting, specialist; hover for the XP, what is
+  left and the rate; click for the skill panel over the drawer: what the skill is for and its
+  exact XP beside every milestone perk in a scrolling list, one line each, those held in gold) and
+  **Combat** (the
+  style, the hit, its range against each enemy style and a critical hit, the swing, crit,
+  accuracy and dodge, resistances, the cuts worn gear makes to each style, and what the loadout
+  lends, all read from the fight's own numbers) → Edit (rename, portrait, flag colour). Nothing
+  in it scrolls but the perk list. The Shop and the Hero drawer close each other: one panel over the bar at a time.
 - **Bank drawer**: tabbed item lists, search, reorder; drag an item onto a hero
-  to equip. While open, the mat is locked and a vertical hero panel appears: large
-  portraits with the name on a dark plate over them and the hero bar's alerts; hover for what they are doing.
-- **Shop**: a panel that rises from the bottom beside the nav (on either side), over
-  the hero bar, with a row of same-size cards (name, the Token large, its skill
+  on the hero bar to equip. While open, the mat is locked; the hero bar stays in front of it.
+- **Shop**: a panel that rises from behind the hero bar beside the nav (on either side) and
+  stands on it, the bar in front, with a row of same-size cards (name, the Token large, its skill
   icons, the price as up to four have / need pills; arrows left and right when the
   row is longer than the screen). Drag a card onto the mat to buy; the panel drops
   to a lip while you carry it over the mat, rises again over the panel (a drop
@@ -1484,7 +1507,8 @@ drawers**. The menu can be flipped to the right.
   dims its Token and shows the short counts in red; a full Token cap says so on
   the card. Hover a skill icon for its name, a card for what it builds.
   *(`ShopPanel.jsx`)*
-- **Guild Hall view**: the upgrade web, Hall effects panel, upgrade inspector.
+- **Guild Hall view**: the upgrade web, the Hall effects popover, and the Upgrade drawer on a
+  clicked star (§8).
 - **On the mat**: click a Token to inspect it; a station's gear badge opens the
   recipe picker; a job flag is only dragged, to give its hero a new job (hover
   shows its hero and what they are doing);
@@ -1566,9 +1590,11 @@ drawers**. The menu can be flipped to the right.
   Region it has never stood in, and back in its old spot in one it has), and
   leaves each Region's flags behind: going back, every hero starts at the flag
   they left there, with no work claimed and no fight on; a place just settled
-  starts with no orders, its heroes walking in to the Hall (§10, the arrival). A settled place's panel on the world map shows
-  its Region (its mat drawn small, its facts) and renames it; travel is its
-  Travel button. Archive and abandon have no button since the Regions page
+  starts with no orders, its heroes walking in to the Hall (§10, the arrival). A settled place's World Map drawer shows
+  its Region (its mat drawn small with its Tokens over the cap, its ground, its playtime) and renames it; travel is its
+  Travel button. **Each Region keeps its playtime** (`region.playtimeMs`): every tick adds its time to the Region the guild
+  is in, so live play and time away (the catch-up plays it through the same tick) both count to the place the guild was
+  on (owner, 2026-11-10); a Region from an older save starts at 0. Archive and abandon have no button since the Regions page
   left (brief 380 M3); the engine keeps them. *(`src/systems/atlas/`)*
 - **The world** — **Built: generated (brief 330 W1) and on screen (W2)**: a new
   game generates its hex world from the seed rolled on the new-game screen (a
@@ -1601,13 +1627,25 @@ drawers**. The menu can be flipped to the right.
   pills with have/need in the 9.9k shorthand, red when short; no ring. A cell
   whose ring waits for its Guild Hall ring star (§8) says so under its price
   ("Light the Guild Hall's Charted Roads star to settle here"), in the hover and
-  the panel.
-  **The inspection panel** (thin, on the right) shows the chosen place's name,
-  the guild's flag drawn large where it is, what it yields and its price, and a
-  large **Settle** (frontier only, greyed with what is short or the ring star it
+  the drawer.
+  **The World Map drawer** (brief 570 D4) is the side drawer, flush to the
+  screen's edge away from the nav, full height, the world's blue, open with the
+  map; its X closes the map. It shows the chosen place: the guild's flag drawn
+  large where it is, the name (renamed behind the quill once settled), its land
+  and line; for a settled place its mat drawn small with its **Tokens over the
+  cap** in the corner (`28/128`: the guild's cap, the same in every place; the
+  place the guild is on counts as the cap does, any other its own frozen
+  board); **three ground dials**, Water, Grass and Stone, for every place,
+  settled or not (whole percent adding up to 100; Grass is the open land, grass,
+  rock or sand: a settled place reads the ground it stored, one not yet settled
+  the ground settling it writes, worked out from its cell without placing a
+  Token); for a settled place **the time spent there**, time away included;
+  what it yields; its price while not settled; and at the foot a large
+  **Settle** (frontier only, greyed with what is short or the ring star it
   waits for; settling refuses that ring until the star is bought), which pays the
-  whole price at once, writes the cell's Region and takes the guild there; a
-  settled place shows its mat drawn small, its facts, a rename, and **Travel**.
+  whole price at once, writes the cell's Region and takes the guild there, or
+  **Travel** to a settled place elsewhere. No Ground, Tokens or Heroes rows and
+  no Token list.
   A Region knows its
   cell (`region.cellId`); abandoning it returns the cell to the frontier.
 - **A place's mat** — **Built (brief 330 W3)**: settling writes the Region from
@@ -1657,7 +1695,7 @@ drawers**. The menu can be flipped to the right.
   waits for, to buy in the Hall), puts the ring stars' pack in the sky until it
   is synced, and shows a world in words. *(`src/systems/world/`,
   `worldTablesShape.js`, `ui/components/atlas/WorldScreen.jsx`, `WorldMap.jsx`,
-  `WorldPanel.jsx`, `WorldCamera.jsx`, `worldPicture.js`; the art it reads,
+  `WorldDrawer.jsx`, `GroundDials.jsx`, `world/placeGround.js`, `WorldCamera.jsx`, `worldPicture.js`; the art it reads,
   `config/worldMapArt.js`)*
 - **Desktop**: packaged with Tauri (Windows installers); the game runs in the
   webview, its settings stay in the webview's storage and its saves are files
@@ -1851,7 +1889,7 @@ crunch plan):
 
 | Terrain | Returns for the Atlas after a major rework, later in the crunch once the Atlas works. |
 | Atlas timing | Moves into the crunch, after deep optimization. |
-| Drops over a drawer | A mat Token or flag dropped over the Shop panel or the hero sheet lands on the mat underneath; intended (owner, certification 2026-10-07). |
+| Drops over a drawer | A mat Token or flag dropped over the Shop panel or the Hero drawer lands on the mat underneath; intended (owner, certification 2026-10-07). |
 | Token cap | 128, fixed (the Guild Hall's Token Cap star retired, brief 320); spawned Tokens and endgame sites count (D-1); the discard bin is gone (Atlas A3b), so nothing off the mat counts. |
 | Trickle | Renamed **Passive Production**, one timer; the Wishing Well joins it, 10 Water a lap per rank (T-099). The lap is 10 minutes, shortened to 5 by Guild Hall stars (owner 2026-11-03, brief 390 G5). |
 | Markets | **Cut for now**: items stay the only currency, no exchange rates; revisit if a real need appears (owner 2026-10-09, T-127). |

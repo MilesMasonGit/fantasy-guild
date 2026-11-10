@@ -3,7 +3,7 @@ import { SaveManager } from '../../systems/core/SaveManager.js';
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as NotificationSystem from '../../systems/core/NotificationSystem.js';
-import { formatTimeAgo } from '../../utils/Formatters.js';
+import { formatTimeAgo, formatPlaytime } from '../../utils/Formatters.js';
 import { cn } from '../utils/cn.js';
 import { useEscapeLayer } from '../utils/escapeLayers.js';
 import { Play, Plus, Trash2, AlertTriangle, Users, Clock, Save, Hourglass } from 'lucide-react';
@@ -19,16 +19,6 @@ import { onPoll } from '../components/board/frameClock.js';
 /** A save slot's row: no box (UI_STYLE "rows are never boxed"); the list draws faint lines between. */
 const ROW = 'relative flex justify-between items-center px-2 py-3 w-full';
 const HOVER_ROW = 'hover:outline-2 hover:outline-solid hover:-outline-offset-2 hover:outline-[var(--color-ui-white)]';
-
-/** Lifetime playtime, saved in milliseconds (the game clock's tick deltas), as `2h 5m`. */
-export function formatPlaytime(ms) {
-    const seconds = Math.floor((ms || 0) / 1000);
-    if (seconds < 60) return '< 1 min';
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) return `${hours}h ${mins}m`;
-    return `${mins}m`;
-}
 
 /**
  * The newest plain message ("Slot 2 deleted", a save that could not be loaded), or null. Listens

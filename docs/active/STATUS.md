@@ -9,18 +9,18 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Director, briefs 560 and 570 (owner, 2026-11-10: first batch 560 R1 + 570 D1 + D3; three builders at once this week; Tab stops on draggable buttons kept)
 
-*Tue 10 Nov. Where we are: briefs 510, 520, 530, 540 and 550 are on main. Building: one standard reach (560 R1, expect WORK CHANGED), the hero bar everywhere (570 D1), the right-side Item drawer (570 D3). Next: 560 R2 (floating Foundations, ring and dots, after the owner's dot pick), 570 D2, D4, D5, then 480 L3. Owner: after R1, delete the two Camp Reach stars in the CMS and Sync; the dot pick; two drawer looks. Blockers: none.*
+*Tue 10 Nov, afternoon. Where we are: brief 570 (all five drawers) is on main, owner ok. Dot pick: A, a small cream dot in the centre of each Token in range (owner 2026-11-10). One standard reach (560 R1) failed the gate: five tests and a work change that does not match the prediction; an engineer is diagnosing. Next: R1 merge, then 560 R2 with the cream dot, then 480 L3. Owner: after R1 merges, delete the four Camp Reach stars in the CMS and Sync on main. Blockers: R1 diagnosis.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 560 R1: one standard reach, about 240; Camp Reach goes | engineer | `feat/one-reach` (`r1`) | ready ef9a876f: `STANDARD_REACH_U = 240` through `reachRadius()` (Mat Tuner keeps a dev override under a new key); ledger unchanged at every stage; four Camp Reach stars flagged (owner 2026-11-10: delete all four after the merge); predicted WORK CHANGED on S2 to S6, S8 family, C240, C256 (support rules reach more; no bench scene has a work camp). Gate and bench queued for the 14:00 window | Tue | |
+| 560 R1: one standard reach, about 240; Camp Reach goes | engineer | `feat/one-reach` (`r1`) | ready ef9a876f: `STANDARD_REACH_U = 240` through `reachRadius()` (Mat Tuner keeps a dev override under a new key); ledger unchanged at every stage; four Camp Reach stars flagged (owner 2026-11-10: delete all four after the merge); predicted WORK CHANGED on S2 to S6, S8 family, C240, C256 (support rules reach more; no bench scene has a work camp). **gate failed** on d425251a (main merged in): five tests (BuildingNodes Leyline reach, GroundMeadow placement hash x3, HeroMotion HM-4 nearest); bench WORK CHANGED only on S3 and C240 (bankItems), not as predicted; engineer diagnosing | Tue | |
 | 570 D1: the hero bar everywhere, equip bubbles | builder | `feat/hero-bar-everywhere` (`d1`) | ready 09a4545f (one test moved to the bubble); in `feat/drawers-570` | Tue | |
 | 570 D3: the right-side drawer and the Item drawer | builder | `feat/item-drawer` (`d3`) | ready b1ec1830; in `feat/drawers-570` | Tue | |
-| 560 R2: floating Foundations, the ring and in-range dots | builder | | queued (after R1; dot pick first) | | |
+| 560 R2: floating Foundations, the ring and in-range dots | builder | | queued (after R1); owner dot pick 2026-11-10: A, a small cream dot in the centre of the Token (page `dot_pick.html`, scratchpad `dot_pick/make.py`) | | |
 | 570 D2: the Hero drawer | builder | `feat/hero-drawer` (`d2`) | ready 7bd9ff5b; in `feat/drawers-570` | Tue | |
 | 570 D4: World Map drawer | engineer | `feat/world-drawer` (`d4`) | ready a51f8e80 (dials read the layout first step, 2 ms a cell, exact; `region.playtimeMs`); owner question on the middle dial at the look; in `feat/drawers-570` | Tue | |
 | 570 D5: Upgrade drawer | builder | `feat/upgrade-drawer` (`d5`) | ready 22286731 (multi-rank buy equals N single buys, tested; Archer’s Lore nudged 27 px); in `feat/drawers-570` | Tue | |
-| 570 combined: D1 to D5 | director | `feat/drawers-570` (`i570`) 2a5c617a | **eye-check**: 641 files green, lint 0 errors, cycles 0, depcruise clean, build; desktop build `_builds/2026-11-10-drawers`; engine work check queued after R1 in the 14:00 window | Tue | |
+| 570 combined: D1 to D5 | director | `feat/drawers-570` (`i570`) b98d4eda | owner ok after three rounds of Hero drawer changes (enemy HP bars red too); 642 files green, lint 0 errors, cycles 0, depcruise clean, build; engine work same everywhere, identity and fidelity ok; **merged** e042229c (pushed) | Tue | Tue |
 | 480 L3: Limes framework | builder | | queued (after 570) | | |
 
 ## Director, brief 550 sharp sprites (owner, 2026-11-08: the owner's main problem with the production build)

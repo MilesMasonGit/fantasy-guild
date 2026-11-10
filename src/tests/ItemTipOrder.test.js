@@ -18,9 +18,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ **The item tooltip reads name, count, kind, tags.** The name is its header, the count right
- * under it, then the type lines and the tags; anything more comes after (or not at all, where
- * the Bank's inspection window says it). And the Bank's sheet keeps the icon rule: a pixel lock,
+ * ⭐ **The item tooltip reads name, count, tool, tags.** The name is its header, the count right
+ * under it, then its tool and the tags, with no type or "Equippable" line; anything more comes
+ * after (or not at all, where the Bank's Item drawer says it). And the Bank's sheet keeps the icon rule: a pixel lock,
  * a pixel "?" for an unknown item, no Lucide header icon.
  */
 
@@ -46,10 +46,12 @@ const order = (root) => [...root.querySelectorAll('[data-item-tip] > *')].map(el
     [...el.attributes].map(a => a.name).find(n => n.startsWith('data-item-tip-')) || el.textContent);
 
 describe('the item tooltip order', () => {
-    it('count first, then type, equips as, tool, tags; details after them', () => {
+    it('count first, then tool, tags, with no type or Equippable line; details after them', () => {
         const { container } = render(h(ItemTipContent, { item: { id: 'tip_order_pick', name: 'Order Pick', type: 'tool', equipSlot: 'hand', tags: ['metal'], tool: { kind: 'pickaxe', tier: 1 }, description: 'Digs.' }, count: 4321 }));
         const seen = order(container);
-        expect(seen.slice(0, 5)).toEqual(['data-item-tip-count', 'data-item-tip-type', 'data-item-tip-equip', 'data-item-tip-tool', 'data-item-tip-tags']);
+        expect(seen.slice(0, 3)).toEqual(['data-item-tip-count', 'data-item-tip-tool', 'data-item-tip-tags']);
+        expect(container.querySelector('[data-item-tip-type], [data-item-tip-equip]')).toBeNull();
+        expect(container.textContent).not.toMatch(/Equippable|Tool/);
         expect(seen.indexOf('data-item-tip-description')).toBeGreaterThan(seen.indexOf('data-item-tip-tags'));
         expect(container.querySelector('[data-item-tip-count]').textContent).toBe('×4,321');
     });
@@ -61,10 +63,11 @@ describe('the item tooltip order', () => {
         expect(container.textContent).not.toMatch(/Restores|Tasty/);
     });
 
-    it('with no count, the type leads (the Encyclopedia\'s card)', () => {
-        const { container } = render(h(ItemTipContent, { item: { id: 'x', name: 'X', type: 'material' } }));
+    it('with no count, the tags lead (the Encyclopedia\'s card), and no type line at all', () => {
+        const { container } = render(h(ItemTipContent, { item: { id: 'x', name: 'X', type: 'material', tags: ['Ore'] } }));
         expect(container.querySelector('[data-item-tip-count]')).toBeNull();
-        expect(order(container)[0]).toBe('data-item-tip-type');
+        expect(order(container)[0]).toBe('data-item-tip-tags');
+        expect(container.textContent).not.toContain('Material');
     });
 });
 

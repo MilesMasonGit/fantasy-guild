@@ -55,36 +55,33 @@ const tile = (view, id) => view.container.querySelector(`button[data-bank-item="
 const hover = (el) => act(() => { fireEvent.pointerEnter(el, { clientX: 10, clientY: 10, pointerType: 'mouse', buttons: 0 }); });
 const tipText = () => document.querySelector('[data-tooltip]')?.textContent || '';
 
-describe('the Bank tile tooltip names the item; its window says the rest', () => {
-    it('a tool: name, count, type, what it equips as, its tool and tier, tags; the description is in the window', () => {
+describe('the Bank tile tooltip names the item; its Item drawer says the rest', () => {
+    it('a tool: name, count, its tool and tier, tags; no type or Equippable line; the description is in the drawer', () => {
         InventoryManager.addItem('fixture_tile_pick', 1234);
         const view = mountBank();
         hover(tile(view, 'fixture_tile_pick'));
         const text = tipText();
-        for (const part of ['Tile Pickaxe', 'Tool', '×1,234', 'Equippable: Hand', 'Pickaxe, tier 2', 'metal', 'Click for details']) {
+        for (const part of ['Tile Pickaxe', '×1,234', 'Pickaxe, tier 2', 'metal', 'Click for details']) {
             expect(text).toContain(part);
         }
+        expect(text).not.toMatch(/Equippable|Tool/);
         expect(text).not.toContain('A sturdy pick.');
-        fireEvent.click(tile(view, 'fixture_tile_pick'));
-        expect(view.container.querySelector('[data-bank-item-window]').textContent).toContain('A sturdy pick.');
     });
 
-    it('food says it equips as Food; what it restores is in the window', () => {
+    it('food has no Equippable line; what it restores is in the drawer', () => {
         InventoryManager.addItem('fixture_tile_bread', 3);
         const view = mountBank();
         hover(tile(view, 'fixture_tile_bread'));
-        expect(tipText()).toContain('Equippable: Food');
+        expect(tipText()).not.toMatch(/Equippable|Food/);
         expect(tipText()).not.toContain('Restores 7 HP');
-        fireEvent.click(tile(view, 'fixture_tile_bread'));
-        expect(view.container.querySelector('[data-bank-item-window]').textContent).toContain('Restores 7 HP');
     });
 
-    it('a material equips as nothing, and no tile tells the player how to drag', () => {
+    it('a material has no type line, and no tile tells the player how to drag', () => {
         InventoryManager.addItem('fixture_tile_ore', 5);
         const view = mountBank();
         hover(tile(view, 'fixture_tile_ore'));
-        expect(tipText()).toContain('Material');
-        expect(tipText()).not.toContain('Equippable');
+        expect(tipText()).toContain('Tile Ore');
+        expect(tipText()).not.toMatch(/Material|Equippable/);
         expect(tipText()).not.toMatch(/Drag to sort/);
         expect(read('ui/components/drawer/BankTab.jsx')).not.toMatch(/Drag to sort/);
     });
@@ -121,17 +118,16 @@ describe('the Bank has no inspect column; its search is in its header', () => {
         expect(tile(view, 'fixture_tile_ore')).toBeNull();
     });
 
-    it('a plain click on a tile opens its window, not the Encyclopedia: the book in the window opens that', () => {
+    it('a plain click on a tile picks it for the Item drawer, not the Encyclopedia (the drawer\'s book opens that)', () => {
         InventoryManager.addItem('fixture_tile_ore', 3);
+        InventoryManager.addItem('fixture_tile_pick', 1);
         const view = mountBank();
         const heard = [];
         const off = EventBus.subscribe(UI_EVENTS.OPEN_ENCYCLOPEDIA, (d) => heard.push(d.key));
         fireEvent.click(tile(view, 'fixture_tile_ore'));
-        expect(heard).toEqual([]);
-        expect(view.container.querySelector('[data-bank-item-window="fixture_tile_ore"]')).not.toBeNull();
-        fireEvent.click(view.container.querySelector('[data-bank-item-window-look-up]'));
         off();
-        expect(heard).toEqual(['item:fixture_tile_ore']);
+        expect(heard).toEqual([]);
+        expect(tile(view, 'fixture_tile_ore').hasAttribute('data-bank-item-inspected')).toBe(true);
         hover(tile(view, 'fixture_tile_ore'));
         expect(tipText()).not.toMatch(/Encyclopedia/i);
     });

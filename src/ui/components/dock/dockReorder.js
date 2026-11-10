@@ -1,5 +1,4 @@
-// Reordering a hero within a dock-style strip of tabs/figures. Shared by BottomHeroDock and
-// BankHeroPanel so both wire a hero-on-hero drop to HeroManager.reorderHero the same way.
+// Reordering a hero on the hero bar: a hero dropped on another goes to HeroManager.reorderHero.
 
 /**
  * Move `sourceHeroId` to stand where `targetHeroId` currently is.

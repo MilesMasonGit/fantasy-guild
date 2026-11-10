@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import {
@@ -14,6 +14,7 @@ import { outlineSrc, OUTLINE_PX } from './hallStarOutline.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { HallCeremony, ConstellationPicture } from './HallCeremony.jsx';
 import { ceremonyFor, constellationStars, STAR_CHIME, CONSTELLATION_CHIME } from './hallCeremony.js';
+import { staggerStars } from './hallStarStagger.js';
 
 /**
  * The web's natural space, in pixels. Upgrade node positions are unit coordinates centred on
@@ -171,10 +172,9 @@ export function tagPlacement(box, starPx) {
  * Every upgrade is a pixel star whose sprite and size say its state, with its item's outline over
  * it (`hallStarOutline.js`) and its title under it; its rank shows only under the pointer. The Hall
  * is the pole star in the middle that every constellation starts from. Lines are faint until both
- * ends are lit. The sky behind is `HallSky` and the details panel sits over the right of it, both
+ * ends are lit. The sky behind is `HallSky` and the Upgrade drawer slides over one side of it, both
  * in `ReactRoot`; the web runs on under the panel and the nav.
- * Hovering a star reports it (`onHoverUpgrade`) so the details panel can show it; a click pins
- * it (`onSelectUpgrade`).
+ * A click on a star opens it in the Upgrade drawer (`onSelectUpgrade`); hovering only shows its rank.
  * The Hall star shows the Hall's Effects ({@link GuildHallEffectsPopover}): while hovered, or
  * pinned open by a click. A second click on the star, Escape, or a click anywhere else closes a
  * pinned one.
@@ -183,15 +183,14 @@ export function tagPlacement(box, starPx) {
  */
 export const GuildHallBoard = ({
     selectedUpgradeId,
-    onSelectUpgrade,
-    onHoverUpgrade
+    onSelectUpgrade
 }) => {
     const ranks = useGameState(
         state => state.progress?.guildUpgrades || {},
         [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     );
     // The authored sky can change under the screen (a QA scene); its version is read so it redraws.
-    useGameState(() => skyVersion(), [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]);
+    const skyVer = useGameState(() => skyVersion(), [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]);
     // Which upgrades the Bank can pay for right now (Hall upgrades cost items). A flat id list
     // as a string, per the useGameState selector contract.
     const affordableSignature = useGameState(
@@ -209,7 +208,7 @@ export const GuildHallBoard = ({
     const [glowing, setGlowing] = useState([]);
     const ceremonySeq = useRef(0);
     useEffect(() => EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, (data) => {
-        const c = ceremonyFor(data?.upgradeId, data?.rank, GuildUpgradeManager.getRanks());
+        const c = ceremonyFor(data?.upgradeId, data?.rank, GuildUpgradeManager.getRanks(), data?.fromRank);
         if (!c) return;
         ceremonySeq.current += 1;
         setCeremony({ ...c, seq: ceremonySeq.current });
@@ -226,9 +225,36 @@ export const GuildHallBoard = ({
     const scale = Math.max(fit.scale, MIN_SKY_SCALE);
     const boardW = Math.round(size.w * scale);
     const boardH = Math.round(size.h * scale);
-    const at = (nodeId) => {
+    const placed = (nodeId) => {
         const p = webPoint(nodeId, size);
         return { x: Math.round(p.x * scale), y: Math.round(p.y * scale) };
+    };
+
+    // Star titles never overlap: each title is measured once drawn, and stars whose titles would
+    // touch are moved down for drawing (`staggerStars`); the authored places stay as they are.
+    const titleRefs = useRef(new Map());
+    const [titleSizes, setTitleSizes] = useState('');
+    useLayoutEffect(() => {
+        const parts = [];
+        for (const def of GUILD_UPGRADES) {
+            const el = titleRefs.current.get(def.id);
+            if (el && el.offsetWidth > 0) parts.push(`${def.id}:${el.offsetWidth}:${el.offsetHeight}`);
+        }
+        const sig = parts.join(',');
+        if (sig !== titleSizes) setTitleSizes(sig);
+    }, [titleSizes, skyVer]);
+    const measured = new Map(titleSizes.split(',').filter(Boolean).map(part => {
+        const [id, w, h] = part.split(':');
+        return [id, { w: Number(w), h: Number(h) }];
+    }));
+    const nudges = staggerStars(GUILD_UPGRADES.filter(def => measured.has(def.id)).map(def => {
+        const p = placed(def.id);
+        return { id: def.id, x: p.x, y: p.y, px: drawnStarPx(def, nodeState(def.id, ranks)), ...measured.get(def.id) };
+    }));
+    const at = (nodeId) => {
+        const p = placed(nodeId);
+        const dy = nudges.get(nodeId) || 0;
+        return dy ? { x: p.x, y: p.y + dy } : p;
     };
 
     // Dragging the sky: only when it is bigger than its space.
@@ -265,7 +291,6 @@ export const GuildHallBoard = ({
     const links = getUpgradeWebLinks();
     const hall = at(HALL_NODE);
     const hallPx = STAR_ART_PX * HALL_STAR_SCALE;
-    const hover = (id) => onHoverUpgrade?.(id);
 
     const hallRef = useRef(null);
     const effectsRef = useRef(null);
@@ -290,7 +315,7 @@ export const GuildHallBoard = ({
     }, [effectsPinned]);
 
     return (
-        // ⚠️ Nothing here clips: the web runs on under the nav and the details panel to the screen's
+        // ⚠️ Nothing here clips: the web runs on under the nav and the Upgrade drawer to the screen's
         // edge, where the screen clips it (`ReactRoot`, an `overflow-clip` box, so focus moving to a
         // star past the edge cannot scroll anything). This box only centres the sky and limits its pan.
         <div className="w-full h-full min-w-0 min-h-0 flex select-none">
@@ -429,10 +454,11 @@ export const GuildHallBoard = ({
                         const starPx = STAR_ART_PX * scale;
                         const box = Math.max(starPx, HIT_PX);
                         const outline = outlineSrc(def);
-                        const drawnPx = outline ? Math.max(starPx, OUTLINE_PX) : starPx;
+                        const drawnPx = drawnStarPx(def, state);
                         return (
                             <div
                                 key={def.id}
+                                data-star-nudge={nudges.get(def.id) || undefined}
                                 className="absolute"
                                 style={{ left: p.x - box / 2, top: p.y - box / 2, width: box, height: box }}
                             >
@@ -447,10 +473,6 @@ export const GuildHallBoard = ({
                                     data-guild-roster-upgrade={def.id === 'roster_size' ? 'true' : undefined}
                                     data-guild-wishing-well-upgrade={def.id === 'wishing_well' ? 'true' : undefined}
                                     title={def.name}
-                                    onMouseEnter={() => hover(def.id)}
-                                    onMouseLeave={() => hover(null)}
-                                    onFocus={() => hover(def.id)}
-                                    onBlur={() => hover(null)}
                                     onClick={() => onSelectUpgrade?.(def)}
                                     className="gi-star-btn relative flex items-center justify-center cursor-pointer"
                                     style={{ width: box, height: box, '--star-px': `${scale}px` }}
@@ -470,6 +492,7 @@ export const GuildHallBoard = ({
                                     style={tagPlacement(box, drawnPx)}
                                 >
                                     <span
+                                        ref={(el) => { if (el) titleRefs.current.set(def.id, el); else titleRefs.current.delete(def.id); }}
                                         className={cn(
                                             'relative whitespace-nowrap ui-text-title leading-tight',
                                             state === 'locked' ? 'text-stone-400' : state === 'maxed' ? 'text-[#ffd84a]' : 'text-white'
@@ -503,6 +526,12 @@ function centreOf(points) {
     if (!points.length) return { x: 0, y: 0 };
     const sum = points.reduce((s, p) => ({ x: s.x + p.x, y: s.y + p.y }), { x: 0, y: 0 });
     return { x: Math.round(sum.x / points.length), y: Math.round(sum.y / points.length) };
+}
+
+/** A star's drawn size in its state: the star, or its item outline when that is bigger. */
+function drawnStarPx(def, state) {
+    const starPx = STAR_ART_PX * STAR_SCALE[state];
+    return outlineSrc(def) ? Math.max(starPx, OUTLINE_PX) : starPx;
 }
 
 /** A star's drawn half-size, bought or not: where the ceremony's light leaves it or reaches it. */

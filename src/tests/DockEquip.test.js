@@ -1,49 +1,128 @@
-// a refused equip must not look like a success: no equip sound, the drop
-// reported as a miss (so the ghost flies back), and a callout where the item was
-// let go saying why (never a notification). Full dnd-kit drag simulation is
-// unreliable in jsdom (master plan R7: "drag is unreliable to simulate — DnD
-// findings need the owner's own hands"), so this tests the shared
-// `equipOrAnnounce` helper every dock drop target now calls — exactly the seam
-// the three `onDrop`s used to skip.
+// A refused equip must not look like a success: no equip sound, the drop reported as a miss (so
+// the ghost flies back), and a speech bubble over that hero on the hero bar saying why, with the
+// numbers (never a notification, never the screen callout). A success says what was equipped.
+// Full dnd-kit drag simulation is unreliable in jsdom, so this tests the shared
+// `equipOrAnnounce` helper every equip drop target calls.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
-import { equipOrAnnounce } from '../ui/components/dock/dockEquip.js';
+import { equipOrAnnounce, equipRefusalText, equipSuccessText } from '../ui/components/dock/dockEquip.js';
+import {
+    equipBubbleOf, clearEquipBubbles, EQUIP_BUBBLE_MS, EQUIP_BUBBLE_FADE_MS
+} from '../ui/components/dock/equipBubbles.js';
+import { SPEECH_TONE } from '../ui/components/board/speechTone.js';
 
-let said;
+let callouts;
 let toasts;
 let offs;
 
 beforeEach(() => {
-    said = [];
+    callouts = [];
     toasts = [];
+    clearEquipBubbles();
     offs = [
-        EventBus.subscribe(UI_EVENTS.UI_SCREEN_CALLOUT, (p) => said.push(p.text)),
+        EventBus.subscribe(UI_EVENTS.UI_SCREEN_CALLOUT, (p) => callouts.push(p.text)),
         EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_ADDED, (n) => toasts.push(n))
     ];
 });
-afterEach(() => offs.forEach(off => off()));
+afterEach(() => {
+    offs.forEach(off => off());
+    clearEquipBubbles();
+    vi.useRealTimers();
+});
 
-describe('CR3-405: equipOrAnnounce reports a refused equip instead of hiding it', () => {
-    it('a refused equip (success:false) returns false and says the engine\'s reason as a callout', () => {
-        const engine = { EquipmentManager: { equipItem: vi.fn(() => ({ success: false, error: 'No free slot in the loadout' })) } };
-        const ok = equipOrAnnounce(engine.EquipmentManager, 'h1', 'item_copper_pickaxe');
+// A stand-in world for the words: an item, a hero and the Bank's count.
+const world = {
+    itemOf: (id) => ({
+        k1_mythril_scimitar: { name: 'Mythril Scimitar' },
+        food_shrimp: { name: 'Shrimp' },
+        tool_iron_woodaxe: { name: 'Iron Woodaxe' }
+    }[id] || null),
+    unmetOf: (heroId, itemId) => (itemId === 'k1_mythril_scimitar' ? { skill: 'melee', level: 40, have: 12 } : null),
+    skillName: (id) => ({ melee: 'Melee' }[id] || id),
+    isStack: (id) => id === 'food_shrimp',
+    bankCount: (id) => (id === 'food_shrimp' ? 4600 : 0)
+};
+
+describe('equip bubbles: the words', () => {
+    it('a level refusal names the item, the skill and both numbers', () => {
+        expect(equipRefusalText('h1', 'k1_mythril_scimitar', 'Needs Melee 40', world))
+            .toBe("Can't equip Mythril Scimitar. Melee skill too low. (12/40)");
+    });
+
+    it('any other refusal keeps the engine\'s reason, ending in a full stop', () => {
+        expect(equipRefusalText('h1', 'tool_iron_woodaxe', 'No free slot in the loadout', world))
+            .toBe("Can't equip Iron Woodaxe. No free slot in the loadout.");
+        expect(equipRefusalText('h1', 'tool_iron_woodaxe', 'Villagers cannot equip items.', world))
+            .toBe("Can't equip Iron Woodaxe. Villagers cannot equip items.");
+    });
+
+    it('a success names the item, and a stack linked to the Bank its short count', () => {
+        expect(equipSuccessText('tool_iron_woodaxe', world)).toBe('Equipped Iron Woodaxe');
+        expect(equipSuccessText('food_shrimp', world)).toBe('Equipped Shrimp x4.6k');
+    });
+});
+
+describe('equipOrAnnounce speaks over the hero on the bar', () => {
+    it('a refused equip returns false and puts the reason in a red bubble over that hero, not a callout', () => {
+        const equipment = { equipItem: vi.fn(() => ({ success: false, error: 'No free slot in the loadout' })) };
+        const ok = equipOrAnnounce(equipment, 'h1', 'tool_iron_woodaxe', null, null, world);
         expect(ok).toBe(false);
-        expect(said).toEqual(['No free slot in the loadout']);
+        expect(equipBubbleOf('h1')).toMatchObject({ text: "Can't equip Iron Woodaxe. No free slot in the loadout.", tone: SPEECH_TONE.CANT });
+        expect(callouts).toEqual([]);
         expect(toasts).toEqual([]);
     });
 
-    it('a mocked {success:false} with no error still says something, rather than silence', () => {
-        const engine = { EquipmentManager: { equipItem: vi.fn(() => ({ success: false })) } };
-        const ok = equipOrAnnounce(engine.EquipmentManager, 'h1', 'item_x');
-        expect(ok).toBe(false);
-        expect(said).toEqual(['Could not equip that']);
+    it('a refusal with no reason still says something', () => {
+        const equipment = { equipItem: vi.fn(() => ({ success: false })) };
+        expect(equipOrAnnounce(equipment, 'h1', 'tool_iron_woodaxe', null, null, world)).toBe(false);
+        expect(equipBubbleOf('h1').text).toBe("Can't equip Iron Woodaxe. Could not equip that.");
     });
 
-    it('a successful equip returns true and says nothing', () => {
-        const engine = { EquipmentManager: { equipItem: vi.fn(() => ({ success: true })) } };
-        const ok = equipOrAnnounce(engine.EquipmentManager, 'h1', 'item_copper_pickaxe');
+    it('a successful equip returns true and says so in a plain bubble', () => {
+        const equipment = { equipItem: vi.fn(() => ({ success: true })) };
+        expect(equipOrAnnounce(equipment, 'h1', 'tool_iron_woodaxe', null, null, world)).toBe(true);
+        expect(equipBubbleOf('h1')).toMatchObject({ text: 'Equipped Iron Woodaxe', tone: SPEECH_TONE.PLAIN });
+        expect(callouts).toEqual([]);
+    });
+
+    it('moving an item between a hero\'s own slots says nothing on success', () => {
+        const equipment = { moveItem: vi.fn(() => ({ success: true })), equipItem: vi.fn() };
+        const ok = equipOrAnnounce(equipment, 'h1', 'tool_iron_woodaxe', 3, { fromHeroId: 'h1', fromSlot: 0 }, world);
         expect(ok).toBe(true);
-        expect(said).toEqual([]);
+        expect(equipment.moveItem).toHaveBeenCalledWith('h1', 'tool_iron_woodaxe', 0, 3);
+        expect(equipBubbleOf('h1')).toBeNull();
+    });
+
+    it('handed from one hero to another: the taker says what was equipped, the giver what came off, and the panel is told to stay', async () => {
+        const { isHandingOver } = await import('../ui/components/dock/dockEquip.js');
+        let during = null;
+        const equipment = { equipItem: vi.fn(() => { during = isHandingOver(); return { success: true }; }) };
+        expect(equipOrAnnounce(equipment, 'h2', 'tool_iron_woodaxe', null, { fromHeroId: 'h1', fromSlot: 0 }, world)).toBe(true);
+        expect(equipment.equipItem).toHaveBeenCalledWith('h2', 'tool_iron_woodaxe', null, { heroId: 'h1', slot: 0 });
+        expect(during).toBe(true);
+        expect(isHandingOver()).toBe(false);
+        expect(equipBubbleOf('h2')).toMatchObject({ text: 'Equipped Iron Woodaxe', tone: SPEECH_TONE.PLAIN });
+        expect(equipBubbleOf('h1')).toMatchObject({ text: 'Unequipped Iron Woodaxe', tone: SPEECH_TONE.PLAIN });
+    });
+
+    it('a refused hand-over is said in red over the taker only', () => {
+        const equipment = { equipItem: vi.fn(() => ({ success: false, error: 'No free slot in the loadout' })) };
+        expect(equipOrAnnounce(equipment, 'h2', 'tool_iron_woodaxe', null, { fromHeroId: 'h1', fromSlot: 0 }, world)).toBe(false);
+        expect(equipBubbleOf('h2').tone).toBe(SPEECH_TONE.CANT);
+        expect(equipBubbleOf('h1')).toBeNull();
+    });
+
+    it('the bubble fades and is gone after about three seconds; a newer one replaces it', () => {
+        vi.useFakeTimers();
+        const equipment = { equipItem: vi.fn(() => ({ success: true })) };
+        equipOrAnnounce(equipment, 'h1', 'tool_iron_woodaxe', null, null, world);
+        equipOrAnnounce(equipment, 'h1', 'food_shrimp', null, null, world);
+        expect(equipBubbleOf('h1').text).toBe('Equipped Shrimp x4.6k');
+        vi.advanceTimersByTime(EQUIP_BUBBLE_MS - EQUIP_BUBBLE_FADE_MS);
+        expect(equipBubbleOf('h1').fading).toBe(true);
+        vi.advanceTimersByTime(EQUIP_BUBBLE_FADE_MS);
+        expect(equipBubbleOf('h1')).toBeNull();
+        expect(EQUIP_BUBBLE_MS).toBe(3000);
     });
 });

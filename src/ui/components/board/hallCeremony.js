@@ -37,11 +37,12 @@ const isLocked = (id, ranks) => rankOf(ranks, id) < 1 && !isUpgradeAccessible(id
  * @param {string} upgradeId the star bought
  * @param {number} rank its rank now
  * @param {object} ranksAfter every star's rank now
+ * @param {number} [fromRank] its rank before: one less for a single buy, lower for several ranks at once
  */
-export function ceremonyFor(upgradeId, rank, ranksAfter) {
+export function ceremonyFor(upgradeId, rank, ranksAfter, fromRank = rank - 1) {
     if (!upgradeId || !getUpgradeDef(upgradeId) || !(rank >= 1)) return null;
     const after = { ...(ranksAfter || {}), [upgradeId]: rank };
-    const before = { ...after, [upgradeId]: rank - 1 };
+    const before = { ...after, [upgradeId]: Math.max(0, Math.min(rank - 1, Number.isFinite(fromRank) ? fromRank : rank - 1)) };
     const opened = getUpgradeLinks(upgradeId)
         .filter(id => id !== HALL_NODE && isLocked(id, before) && !isLocked(id, after));
     const was = new Set(litConstellations(before));

@@ -104,10 +104,10 @@ describe('which panels wear one', () => {
         const wears = {
             'ui/components/drawer/BankDrawer.jsx': 'bank',
             'ui/components/drawer/ShopPanel.jsx': 'shop',
-            'ui/components/board/GuildHallDetails.jsx': 'hall',
-            'ui/components/atlas/WorldPanel.jsx': 'world',
+            'ui/components/drawer/HallUpgradeDrawer.jsx': 'hall',
+            'ui/components/atlas/WorldDrawer.jsx': 'world',
             'ui/modals/SettingsModal.jsx': 'settings',
-            'ui/components/dock/BankHeroPanel.jsx': 'hero',
+            'ui/components/dock/HeroDrawer.jsx': 'hero',
             'ui/components/hud/CatchUpOverlay.jsx': 'away'
         };
         for (const [file, tone] of Object.entries(wears)) expect(read(file), file).toMatch(new RegExp(`backdrop="${tone}"`));

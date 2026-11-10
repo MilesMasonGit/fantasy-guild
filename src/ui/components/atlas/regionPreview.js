@@ -1,13 +1,9 @@
-// what the Region page shows of a settled Region: its ground as a preview plan, and its facts
+// a settled Region as the world map drawer's preview draws it: its ground and its Tokens
 
 import * as Atlas from '../../../systems/atlas/Atlas.js';
 import { GameState } from '../../../state/GameState.js';
 import { isGuildHall } from '../../../systems/board/MatCap.js';
-import { flagCountOn } from '../../../systems/board/BoardState.js';
 import { isQuestToken } from '../../../systems/quests/QuestTokens.js';
-import { isLandmarkType, tokenName } from '../../../config/registries/tokenRegistry.js';
-import { getLook } from '../../../config/registries/terrainRegistry.js';
-import { STARTER_CAMP_BIOME } from '../../../config/areaBanners.js';
 
 /**
  * The board Region `region` keeps: the live board for the one the guild is in (its record holds
@@ -49,56 +45,5 @@ export function regionPlan(region) {
         seed: region.seed,
         layout: { terrain: region.terrain || null, nodes, ...(hall ? { hallAt: hall } : {}) },
         summary: { ground: region.ground || null }
-    };
-}
-
-/** A biome's name as the ground's look calls it ("flower_meadow" → "Flower meadow"). */
-export function biomeName(id) {
-    const name = getLook(id)?.name;
-    if (name) return name;
-    const words = String(id || '').replace(/_/g, ' ').trim();
-    return words ? words[0].toUpperCase() + words.slice(1) : '';
-}
-
-/**
- * The biomes of Region `region`'s ground, main first: its maps' biomes, else meadow, the ground a
- * Region with no stored map is drawn with (`regionGround`).
- */
-export function regionBiomes(region) {
-    if (!region) return [];
-    const main = region.ground?.main || null;
-    const weights = region.biome && typeof region.biome === 'object' ? Object.keys(region.biome) : [];
-    const ids = [...new Set([main, ...weights].filter(Boolean))];
-    if (!ids.length) ids.push(STARTER_CAMP_BIOME);
-    return ids;
-}
-
-/**
- * What the Region page says of Region `region`: its biomes, how many of its own Tokens stand on it,
- * how many heroes have a flag there, its landmarks (one entry per landmark type, with a count), and
- * its other Tokens by type, biggest count first (`contents`).
- */
-export function regionFacts(region) {
-    const board = boardOf(region);
-    const tokens = ownTokens(board);
-    const landmarks = new Map();
-    const held = new Map();
-    for (const t of tokens) {
-        if (!isLandmarkType(t.typeId)) {
-            held.set(t.typeId, (held.get(t.typeId) || 0) + 1);
-            continue;
-        }
-        const entry = landmarks.get(t.typeId) || { typeId: t.typeId, name: tokenName(t.typeId) || t.typeId, count: 0 };
-        entry.count++;
-        landmarks.set(t.typeId, entry);
-    }
-    return {
-        biomes: regionBiomes(region).map(biomeName),
-        tokens: tokens.length,
-        heroes: flagCountOn(board),
-        landmarks: [...landmarks.values()],
-        contents: [...held].map(([typeId, count], i) => ({ typeId, count, i }))
-            .sort((a, b) => b.count - a.count || a.i - b.i)
-            .map(({ typeId, count }) => ({ typeId, count }))
     };
 }

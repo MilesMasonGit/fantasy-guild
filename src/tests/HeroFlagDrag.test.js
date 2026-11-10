@@ -9,7 +9,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { HeroManager } from '../systems/hero/HeroManager.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
-import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
+import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
 import { DOCK_SLOT_PX, DOCK_NAME_TEXT_CLASS } from '../ui/components/dock/dockHeroView.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -18,8 +18,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * Dragging a hero off the mat, from the bar, the Bank's column or their sheet, is the mat's own
- * flag drag: only the flag in the hand. Dropped on another hero in the bar or the column it still
+ * Dragging a hero off the mat, from the bar (on every screen) or their sheet, is the mat's own
+ * flag drag: only the flag in the hand. Dropped on another hero in the bar it still
  * reorders them; a flag picked up on the mat does not.
  */
 
@@ -80,17 +80,8 @@ describe('only the flag is carried', () => {
         expect(container.querySelector('[data-dock-flag="h2"]').className).not.toContain('invisible');
     });
 
-    it('from the Bank\'s column', () => {
-        const view = render(h(DeckDndProvider, null, h(BankHeroPanel, { selectedHeroId: null, showTabs: true })));
-        const tab = view.container.querySelector('[data-dock-hero-id="h2"] [data-hero-tab-face]');
-        tab.getBoundingClientRect = () => box(0, 100, 80, 72);
-        start(tab, 40, 130);
-        expectOnlyTheFlag('h2');
-        expect(flights).toEqual([]);
-    });
-
     it('from the sheet\'s large figure, and the sheet\'s flag leaves it while it is in the hand', () => {
-        const view = render(h(DeckDndProvider, null, h(BankHeroPanel, { selectedHeroId: 'h3', showTabs: false })));
+        const view = render(h(DeckDndProvider, null, h(HeroDrawer, { selectedHeroId: 'h3' })));
         const figure = view.container.querySelector('[data-hero-panel-figure]');
         figure.getBoundingClientRect = () => box(0, 0, 256, 256);
         start(figure, 128, 128);

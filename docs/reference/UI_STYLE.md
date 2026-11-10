@@ -17,9 +17,11 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **XP is a thin bar**; the exact number (`1,154 / 1,500 XP`) shows on hover.
 - **A hero's HP on the hero bar and sheet: the numbers over a stepped pixel bar**
   (`VitalBar`; owner, 2026-11-02): a smooth fill on a plain black edge, no ticks
-  (owner's pick, 2026-11-05).
+  (owner's pick, 2026-11-05). **Every HP bar is the mat's light red** (`HP_COLOUR`, `HP_TONE`;
+  owner, 2026-11-05 and 2026-11-10, T-317), whatever the health, a hero's and an enemy's alike: on
+  the hero bar, the Hero drawer, the fight window and its tabs, and over the fighters on the mat.
 - **HP elsewhere is a bar**; the exact number shows on hover, except on the mat, where a fighter's bar is a small
-  edition of the hero bar's, the same tones on a stepped black edge, its numbers written on it, `17/30` (owner's pick F,
+  edition of the hero bar's, the same light red on a stepped black edge, its numbers written on it, `17/30` (owner's pick F,
   2026-11-05).
 - Times read `0:34` / `4:05`; thousands get separators (`1,154`).
 
@@ -30,11 +32,11 @@ clunky labels like "LVL 03" where "3/99" says it better.
   faint divider line, not borders.
 - No thick borders, no frames inside frames.
 - **Full panels have a coloured pixel backdrop** (owner, 2026-11-05; brief 400): the Bank,
-  Shop, the Hall's star panel, world panels, Settings, the hero sheet, fight windows and the
+  Shop, the Hall's star panel, world panels, Settings, the Hero drawer, fight windows and the
   away summary. Hard bands from the panel's colour at the top down to the frame's dark fill,
   each step dithered in whole art pixels, never a smooth gradient; text keeps its contrast on
   every band. Each starts from its nav bubble's colour: Bank gold, Shop green, Atlas and world
-  blue, Settings red, Hall purple; the hero sheet teal, fight windows rust, the away summary
+  blue, Settings red, Hall purple; the Hero drawer teal, fight windows rust, the away summary
   indigo. One shared piece: `PixelFrame`'s `backdrop` (colours in `panelBackdrop.js`).
   Tooltips, the Token card, the top bar, bubbles and buttons have none.
 - **Pixel frames: nine-slice pictures** (owner, 2026-10-09; research in
@@ -47,9 +49,9 @@ clunky labels like "LVL 03" where "3/99" says it better.
   under every panel**: a solid black copy 2 art pixels down-right, like a
   carried Token's. The demo's chamfer and stud pictures are the shipping art,
   not placeholders (owner). The drawn line stays 1 pixel (no thick borders).
-  **One exception**: the Guild Hall's own panel and its Return button wear the same two shapes
-  **drawn in purple** (`ui-frame-studs-purple`, `ui-frame-chamfer-purple`; owner's pick F,
-  2026-11-06), so the night sky's screen reads as its own place.
+  **One exception**: the Guild Hall's Upgrade drawer wears the studs **drawn in purple**
+  (`ui-frame-studs-purple`; `ui-frame-chamfer-purple` stays for a small Hall pop-up; owner's
+  pick F, 2026-11-06), so the night sky's screen reads as its own place.
 
 ```
 +--------------------------+
@@ -66,9 +68,8 @@ clunky labels like "LVL 03" where "3/99" says it better.
 
 - **Icon + name + number**: `[pickaxe] Mining 25/99`. The icon is for
   scanning, the name so nobody has to guess.
-  **One exception**: the hero sheet's skills are icon and level, two side by
-  side, with the name in the hover tip (owner, 2026-11-02). In a narrow window
-  there the level drops its `/99`, which the tip keeps.
+  **One exception**: the Hero drawer's skills are icon and level in columns of
+  four, with the name in the hover tip (owner, 2026-11-02; brief 570 D2).
 - Icons are drawn crisp at whole-pixel scales (the owner noticed fuzzy skill
   icons in the Token inspection).
 
@@ -139,6 +140,48 @@ normal text colour; a new meaning needs the owner's OK.
   with its hard shadow and a stepped pixel tail, white words; the frame is
   bronze for news, gold for attention, red for "can't". They rise and fade
   but never scale.
+- **The hero bar** (brief 570 D1): a strip along the bottom of **every screen** (the mat, the
+  Bank, the Shop, the world map, the Guild Hall), no line and no fill, drawn **over the side
+  drawers and the Hero drawer** (layer `--z-hero-bar`, under the nav). The Bank's vertical hero
+  tabs are gone: items are dropped on the bar's heroes, and a hero's flag is dragged from it.
+  **Equip bubbles**: an item dropped on a hero, or on a slot of their loadout, is answered by a
+  `SpeechFrame` over that hero on the bar for about 3 s, plain for "Equipped Iron Woodaxe" (a
+  stack linked to the Bank with its short count, "Equipped Shrimp x4.6k"), red for a refusal with
+  its reason and numbers, "Can't equip Mythril Scimitar. Melee skill too low. (12/40)". No screen
+  callout for equipping. *New, unapproved.*
+- **One bottom panel at a time** over the bar: the Shop or the Hero drawer; opening one closes
+  the other (`useOneBottomDrawer`).
+- **The Hero drawer** (brief 570 D2, the owner's looks 2026-11-10; *new, unapproved*): a click on a
+  hero on the bar slides it up from behind the bar (and down again as it closes: the side drawers'
+  250 ms, none under reduced motion), across the screen like the Shop (studs frame, the teal
+  backdrop), over the side drawers and **down to the screen's bottom edge behind the bar**: no gap
+  under it; the bar's strip, names and HP bars stand over a clear band at its foot. **The edit
+  quill and the close X** stand in the drawer's own top right corner, clear of a nav on that side.
+  **A header** runs above the blocks: the hero's name in the display size over the hero's column
+  (the owner's exception to the three panel sizes), the HP `VitalBar` across the rest, over the
+  inventory and the skills (it stops short of the corner's X where the blocks reach that far).
+  Then three blocks left to right, centred in the room beside the nav: **the hero** at twice the
+  mat's size with the job flag behind the shoulder; **Inventory**, one muted word over the loadout
+  grid, always in view; **Skills / Combat**, two tabs (glyph and word, the open one over a gold
+  line). **Skills**: in columns of four, combat, gathering, crafting, then specialist, no headers,
+  no scrolling; each cell the skill's icon at 3x (48 px), its name in white, its level and the XP
+  bar; hover gives a clean stat block under the name and level (XP, to the next level, XP/h); a
+  click opens the **skill panel**, a chamfer panel on the drawer's teal backdrop standing over the
+  drawer's top edge, its right on the blocks' right, with its own X (Escape closes it first;
+  another skill switches it), in two parts side by side: on the left the icon, name and level, the
+  book, what the skill is for (the `skillPurpose` lines in `src/i18n/en.json`, the owner's to
+  edit) and the exact XP; on the right, under the word Milestones, every milestone perk in one
+  scrolling list (`ArrowScrollList`) as tall as the left part, a row each on one line, the level
+  alone right-aligned in a column of its own, then `Even Heat: +10 % XP (Smithing)`, the words the
+  perk's own rule renders; held ones in gold, the rest dimmed. **Combat**: one row a stat in
+  columns of five, a muted name and a bold value with its tooltip: style, hit, damage (the lowest
+  and highest landed hit against the four enemy styles; the tip lists each and a crit), swing,
+  crit, accuracy, dodge, resistances, style cuts, gear effects. The block keeps the skills grid's
+  width, so the switch never moves the blocks.
+- **An item handed from one hero to another** (from one hero's grid onto another hero on the bar)
+  keeps the Hero drawer on the hero it shows: the taker says "Equipped …" and the giver
+  "Unequipped …", each in the plain frame over them on the bar; a refusal is the red bubble over the
+  taker only.
 
 ## The work plate (owner, 2026-10-24)
 
@@ -193,9 +236,8 @@ normal text colour; a new meaning needs the owner's OK.
 - **The view pans down from the mat** to the map, as the Guild Hall's glides up; no book. The
   top bar leaves with the mat; the hero bar and the nav stay.
 - **Under the whole screen**, as the Guild Hall's sky (owner, 2026-11-06): the painted world and
-  the hexes run to the screen's edges under the nav, the hero bar and the place panel, with no
-  edge at the mat's column. The map centres in the mat's room between them, and the panel stays
-  in that room. The pan moves the whole screen as one: the mat and the table up, the map up from
+  the hexes run to the screen's edges under the nav, the hero bar and the World Map drawer, with no
+  edge at the mat's column. The map centres in the room they leave. The pan moves the whole screen as one: the mat and the table up, the map up from
   below the hero bar.
 - **A painted world beneath** (pick D): a colour field per kind of land, wobbly borders, a
   darker ink line where lands meet, sand on shores, tiny pixel symbols; past the rings shown it
@@ -210,16 +252,21 @@ normal text colour; a new meaning needs the owner's OK.
   dear, or behind a ring star: darkened; further out: black and white. The pointer over any cell
   shows it in full colour with the 1-art-pixel white outline; the chosen cell keeps it.
 - **The guild's place** carries the hero job flag (`FlagMark`), drawn at 48 px, on the map and
-  in the panel's header; no "the guild is here" words.
+  in the drawer's header; no "the guild is here" words.
 - **The hover tip**: the place's name as its title, its land and line under it, then the price
   as pills (sprite, have/need in the 9.9k shorthand, red when short). No ring, no yields. A cell
   behind a ring star adds one small line naming the Guild Hall star ("Light the Guild Hall's
   Charted Roads star to settle here"), never the ring's number (brief 380 M4).
-- **The inspection panel**: one studs frame, thin (336 px), over the right edge of the mat's room: the name
-  (a rename once settled), the land and line, the close X; then what it yields as ribbons, its
-  price as rows, and a large main **Settle** across the panel's width (greyed with what is short
-  under it, or with the ring star's line when its ring waits for one), or, once settled, its mat
-  drawn small, its facts and a large **Travel**.
+- **The World Map drawer** (brief 570 D4; *new, unapproved*): the side drawer in the world's blue,
+  open with the map, its own X closing the map. The header: the flag, the name with the **quill**
+  to rename it once settled, the land and line. A settled place's mat drawn small with its
+  **Tokens over the cap** in its bottom-right corner (`28/128`, no label); **three ground dials**,
+  Water, Grass and Stone, on every place: a ring of whole art pixels at 2× filling clockwise from
+  twelve in the world map's own paint for that land, the whole percent under it and the ground's
+  name, hover saying what it counts; a settled place's **time there** (the clock glyph, `1h 24m`).
+  Then what it yields as ribbons, its price as rows, and a large main **Settle** across the drawer
+  (greyed with what is short under it, or with the ring star's line when its ring waits for one),
+  or **Travel**. No Ground, Tokens or Heroes rows and no Token list.
 - **Settling's title** (brief 380 M5; *new, unapproved*): after the gold banner, a dark band across
   the mat above the Guild Hall, under the banners, opening from its middle line in four held
   frames; the place's banner at the top bar's 3× fading out at both ends; a 2 px gold line at its
@@ -286,20 +333,61 @@ item held.
 [Upgrade  [oak]3/10 [stone]5/5]  <- pills inside a button
 ```
 
-## The item tooltip and the Bank's window (brief 400)
+## The item tooltip and the Item drawer (briefs 400, 570)
 
-- **The item tooltip**: the name as its header, the count right under it, then the type
-  lines (type, what it equips as, its tool) and the tags. Where there is no inspection window
-  (the Encyclopedia's card) the details follow; in the Bank they are the window's.
-- **The Bank's inspection window** sits along the Bank's foot under a divider (part of the
-  panel, not a frame inside it): the sprite at 4× on its kind's tile surface, name, count,
-  kind, details, collected this run, then the book and the X at its top right. The tile it
-  shows has the white selection line. *New, unapproved.*
+- **The item tooltip**: the name as its header, the count right under it, then its tool and break
+  chance and the tags. **No type line and no "Equippable" line** anywhere (brief 570): the tags say
+  what kind of item it is. Where there is no Item drawer (the Encyclopedia's card) the details
+  follow; in the Bank they are the drawer's.
+- **The side drawer** (`SideDrawer`): the one drawer for inspecting the world, items and upgrades.
+  Flush to the screen's edge on the side away from the nav (Menu on Right Side flips it), the full
+  height, the hero column wide (`NOTIFICATION_COLUMN`), the studs frame with the screen's backdrop;
+  it slides in from its edge with the Bank's timing. Its content stops above the hero bar's strip
+  (64 px), which stands in front of its foot. *New, unapproved.*
+- **The Item drawer**: the side drawer in the Bank's gold, opened and closed with the Bank, no X.
+  It shows the item last clicked in the Bank this session, else the open tab's first item, else a
+  calm empty line; the tile it shows has the white selection line. Top to bottom: the **name** (title
+  size, gold) with the **book** in the top corner; the **sprite at 4×** on its kind's tile surface;
+  the **count**; the **tags as pills**, each explaining itself on hover (one line a tag, in the
+  strings file's `itemTags` section; an item with no tags shows its kind); **what it does** (tool,
+  break chance, weapon stats, arrow, resists and cuts, what it restores, the description); then the
+  **actions** (Use, later Sell and Discard) and **Collected this run** small at the foot. The mat
+  stays put while the Bank and the drawer lie over it. *New, unapproved.*
+
+## The Upgrade drawer and the Hall's star titles (brief 570)
+
+- **The Upgrade drawer**: the side drawer in the Hall's purple studs over the sky's backdrop. The
+  Hall opens with it **closed**; a **click** on a star opens it (a hover only shows the star's
+  rank, it never changes the drawer); its X or Escape closes it (Escape closes the drawer first,
+  the Hall on the next press). No Return button: the nav bubble or Escape leaves the Hall.
+- **Top to bottom**: the X in the top corner; the star's **icon large and always grey** (the
+  biggest whole multiple of its art up to 96 px); the **title** in display size, centred; the
+  sentence of what it does; then **Ranks**, a scrolling list (`ArrowScrollList`) of every rank,
+  opened on the last bought rank with the next one under it (again after a buy). A rank's badge is
+  its **Roman numeral** (I, II, IV) and turns into the **Arabic number** while the row is under
+  the pointer; beside it one short line of what that rank gives ("+12% XP", "4 tabs"). Bought
+  ranks in gold; the chosen rank in a gold line, the ranks up to it in a faint band; later ranks
+  muted.
+- **Choosing and buying**: the next rank is chosen by default; a click on any later rank chooses
+  it. The foot shows **"Rank IV price"** as item ribbons with the Bank's count against it in short
+  numbers ("3.6k/30"); while the pointer is on the Upgrade button and more than one rank is chosen
+  it shows **"Total, ranks II to IV"** instead. The button reads **"Upgrade (+3 Ranks)"** and buys
+  them all at once (one purchase, one ceremony). When the Bank cannot pay, the button is greyed and
+  a red line says what is short, in short numbers ("Short: 1.1k Oak Wood"). The drawer's last line
+  stops 64 px above the screen's foot, where the hero bar lies over it.
+- **Star titles never overlap** (a drawing rule, `hallStarStagger.js`): once drawn, every title
+  is measured; stars standing side by side whose titles would touch are staggered, every second
+  one of the row dropped just far enough to clear, and a star under another's title moves down
+  clear of it. Only the drawing moves: the authored places stay. The sky's view stops 64 px above
+  the foot, so every title can be panned clear of the hero bar. *New, unapproved.*
 
 ## The Shop (brief 410)
 
-- **A panel from the bottom** beside the nav, on whichever side the nav is, over the hero bar;
-  studs frame, the green backdrop. **Across the whole screen** (owner, 2026-11-06): from the
+- **A panel from the bottom** beside the nav, on whichever side the nav is: it rises from behind
+  the hero bar down to the screen's bottom edge, the bar staying in front with its strip, names and
+  HP bars over a clear band at the panel's foot, no gap under it (brief 570 D1, the owner's look
+  2026-11-10; before, it covered the bar); studs frame,
+  the green backdrop. **Across the whole screen** (owner, 2026-11-06): from the
   screen's edge under the nav to the far edge, its rows padded for the nav as the Bank drawer's.
   The cards keep their size and sit from the nav's side (from the left beside a left nav, against
   a right one); the arrows show only when the row overflows. The header: title, one muted hint
@@ -337,10 +425,8 @@ item held.
 - **Title on the left** (with an optional sprite), **the red pixel close X at
   the top right**: `ui_cancel_red.png` (16 px) at 2×. Same on every panel,
   drawer and modal. Small floating pop-ups (tooltips) have no header and no X.
-  **One exception**: the hero sheet's close and edit stand in the side space
-  beside it, where the Bank's hero column stands (owner, 2026-11-02). In that
-  column a hero's name sits on a dark stepped plate over the portrait's foot
-  (owner's pick, 2026-11-05).
+  **One exception**: the Hero drawer's close and edit stand at the top left of
+  its hero block (brief 570 D2).
 
 ## Buttons
 

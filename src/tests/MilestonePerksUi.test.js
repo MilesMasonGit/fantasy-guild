@@ -21,7 +21,7 @@ import { registerSkillPerks } from '../config/registries/perkRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
+import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { bubblesOf, clearAllHeroBubbles, addPerks } from '../ui/components/dock/heroBarBubbles.js';
@@ -35,7 +35,7 @@ withoutShippedPerks();
 
 /**
  * The milestone perk on screen: the level-up float names it under the number, the hero bar gives it
- * an alert of its own, and the hero sheet's skill row lists the perks held and the next one.
+ * an alert of its own, and the Hero drawer's skill panel lists every perk, those held lit.
  */
 
 const h = React.createElement;
@@ -150,26 +150,48 @@ describe('the level-up float names a perk under its number', () => {
     });
 });
 
-describe('the hero sheet\'s skill row lists the perks held and the next one', () => {
-    const panel = () => render(h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false, selectedHeroId: 'h1', showTabs: false })));
+describe('the Hero drawer\'s skill panel lists every perk, those held lit', () => {
+    const panel = () => render(h(DeckDndProvider, null, h(HeroDrawer, { menuRight: false, selectedHeroId: 'h1' })));
 
-    it('says them on hover', () => {
+    it('keeps the hover to the XP numbers: no perks there', () => {
         const r = panel();
         const row = r.container.querySelector('[data-skill-row="forestry"]');
         fireEvent.pointerEnter(row);
         const tip = document.body.querySelector('[data-tooltip]').textContent;
-        expect(tip).toContain('10/99 Clean Felling');
-        expect(tip).toContain('Next perk: 25/99 Seed Finder II');
+        expect(tip).toContain('Forestry 12/99');
+        expect(tip).not.toContain('Clean Felling');
         fireEvent.pointerLeave(row);
     });
 
-    it('opens to each perk held with what it does, then the next; a skill with no table shows none', () => {
+    it('opens to every perk with what it does, held in gold and the rest dimmed; a skill with no table says so', () => {
         const r = panel();
         fireEvent.click(r.container.querySelector('[data-skill-row="forestry"]'));
-        const perks = r.container.querySelector('[data-skill-opened="forestry"] [data-skill-perks]');
-        expect(perks.querySelector('[data-skill-perk="k4ui_felling"]').textContent).toBe('10/99 Clean Felling×2 loot 5 % (Forestry)');
-        expect(perks.querySelector('[data-skill-next-perk="k4ui_seeds"]').textContent).toBe('Next perk: 25/99 Seed Finder II');
+        const perks = r.container.querySelector('[data-hero-skill-panel="forestry"] [data-skill-perks]');
+        // The panel's second part: the perks in the one scrolling list, under the numbers.
+        expect(perks.hasAttribute('data-scroll-list')).toBe(true);
+        // Side by side: the skill and its numbers on the left, the milestones on the right, on the drawer's backdrop.
+        const panelEl = r.container.querySelector('[data-hero-skill-panel="forestry"]');
+        const info = panelEl.querySelector('[data-hero-skill-panel-info]');
+        const milestones = panelEl.querySelector('[data-hero-skill-panel-milestones]');
+        expect(info.parentElement).toBe(milestones.parentElement);
+        expect(info.contains(panelEl.querySelector('[data-skill-detail]'))).toBe(true);
+        expect(milestones.contains(perks)).toBe(true);
+        expect(panelEl.querySelector('[data-panel-backdrop="hero"]')).not.toBeNull();
+        const numbers = r.container.querySelector('[data-hero-skill-panel="forestry"] [data-skill-detail]');
+        expect(numbers.compareDocumentPosition(perks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        const held = perks.querySelector('[data-skill-perk="k4ui_felling"]');
+        // `10  Name: what it gives` on one line, the level alone in its own column, the words the
+        // perk's own rule renders.
+        expect(held.textContent).toBe('10Clean Felling: ×2 loot 5 % (Forestry)');
+        expect(held.querySelector('[data-skill-perk-level]').textContent).toBe('10');
+        expect(held.className.split(' ')).toContain('whitespace-nowrap');
+        expect(held.getAttribute('data-skill-perk-earned')).toBe('true');
+        expect(held.querySelector('.text-gi-gold')).not.toBeNull();
+        const locked = perks.querySelector('[data-skill-perk="k4ui_seeds"]');
+        expect(locked.getAttribute('data-skill-perk-earned')).toBe('false');
+        expect(locked.textContent).toContain('25Seed Finder II: ');
+        expect(locked.className.split(' ')).toContain('opacity-50');
         fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
-        expect(r.container.querySelector('[data-skill-opened="mining"] [data-skill-perks]')).toBeNull();
+        expect(r.container.querySelector('[data-hero-skill-panel="mining"] [data-skill-perks]').getAttribute('data-skill-perks')).toBe('none');
     });
 });

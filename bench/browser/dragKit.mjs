@@ -615,12 +615,9 @@ export function installDragKit() {
             const tiles = [...document.querySelectorAll('button[data-bank-item]')]
                 .map(el => ({ el, itemId: el.getAttribute('data-bank-item') }))
                 .filter(t => kit.equipStock?.has(t.itemId) && visibleCentre(t.el));
-            // A hero takes an item on their figure in the hero bar or on their portrait tab beside the Bank,
-            // where it is drawn on top at the drop point. A figure the open Bank is drawn over takes no
-            // drop by design (`beneathDrawers`, DndKit.jsx): nobody can aim at what they cannot see.
+            // A hero takes an item on their figure in the hero bar, which is drawn over the open Bank.
             const targetsOf = (h) => [
-                { on: 'dock figure', el: document.querySelector(`[data-dock-hero="${h}"]`) },
-                { on: 'Bank hero tab', el: document.querySelector(`[data-dock-hero-id="${h}"] [data-hero-tab-face]`) }
+                { on: 'dock figure', el: document.querySelector(`[data-dock-hero="${h}"]`) }
             ].filter(t => seenAtCentre(t.el));
             const pairs = [];
             for (const t of tiles) for (const h of heroes) {
