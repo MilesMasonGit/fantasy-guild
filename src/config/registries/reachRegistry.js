@@ -33,7 +33,7 @@
  */
 
 /**
- * ⭐ **The one standard reach**, in mat units centre to centre: a game value (owner, 2026-11-10),
+ * ⭐ **The one standard reach**, in mat units centre to centre: a game value,
  * the same for every Token and never changed by anything in play. How far a `nearby` rule carries,
  * how far a camp hands out work, where a Forest plants and what a "Stands near" or `Cannot` rule
  * counts. 240 takes in all eight neighbours of a small Token one step away (diagonals 226 u).

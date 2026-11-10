@@ -331,7 +331,7 @@ export function growsTermsOf(def) {
  * (`systems/board/Camps.js`, `reachRegistry.STANDARD_REACH_U`).
  *
  * ⚠️ A `reach` key some blocks still carry in `data/` is not read: every camp works the standard
- * reach (owner, 2026-11-10).
+ * reach.
  *
  * A Token type's camp terms, `{ skill }`, or null for a type that is not a camp (no block, or no skill).
  */

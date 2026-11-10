@@ -217,7 +217,7 @@ export const MODIFIER_PALETTE = [
     },
     {
         /**
-         * Retired (owner, 2026-11-10): every camp works the one standard reach and nothing widens
+         * Retired: every camp works the one standard reach and nothing widens
          * it, so no code reads this axis. Kept so a Guild Hall star still carrying it reads as a
          * sentence and the audits can name it (`hallStarRule.js`); `hallRulesOf` leaves it out.
          */
