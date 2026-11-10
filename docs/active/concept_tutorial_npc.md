@@ -1,4 +1,4 @@
-Status: approved 2026-11-09 (updated from 2026-11-04; [brief 480](briefs/480_early_game_slurm.md) needs updating for the playmat NPC & hover blurbs framework)
+Status: briefed 2026-11-10 (approved 2026-11-09, updated from 2026-11-04; [brief 480](briefs/480_early_game_slurm.md) L3 rewritten for the playmat Limes and hover blurbs)
 
 # The very early game, and Limes the guide
 
@@ -14,6 +14,12 @@ agent filled in.*
 - **Lives on the Starter Camp playmat**: Limes (`public/assets/enemies/slime/e_slurm.png`) sits directly on the **Starter Camp playmat**, starting in the **bottom-left hand corner** as an interactive helper NPC.
 - **Click to initiate dialogue**: clicking Limes on the playmat opens a **speech bubble above Limes** with a simple conversation flow (**Next / Close**).
 - **Framework first, placeholder dialogue for now**: set up the basic clickable NPC and multi-step conversation flow using **placeholder dialogue text** for now. The exact wording and step-by-step progression of Limes' dialogue will be authored in a later pass.
+
+### Rulings (owner, 2026-11-10)
+- **A lesson step opens Limes's bubble by itself**; it stays until the step is done and **collapses to a small "…" bubble**.
+- **Limes can be moved** around the mat, like a Token though it is not one.
+- **Limes stays at the Starter Camp** when the guild goes elsewhere.
+- **Off the mat**, a lesson speaks through that screen's small hover-blurb Limes.
 
 ### 2. Limes' Mechanic Hover Blurbs on UI Screens
 - **Small Limes sprites at key UI points**: place Limes' sprite at key locations across the UI (such as the Bank, Shop, World Map, Guild Hall upgrades, and Hero Inspection Drawer) where new or core mechanics live.

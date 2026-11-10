@@ -1,4 +1,4 @@
-Status: approved 2026-11-09
+Status: briefed 2026-11-10 (approved 2026-11-09; [brief 570](briefs/570_inspection_drawers.md))
 
 # Inspection drawers: heroes at the bottom, world and items on the right
 
@@ -225,3 +225,8 @@ home on the screen so they never fight for the same edge:
   titles overlap when two stars sit directly side by side. A vertical stagger
   rule shifts stars that share nearly the same horizontal band so two stars are
   never directly side by side and their titles never overlap.
+
+
+## Ruling (owner, 2026-11-10)
+
+- A region's **playtime counts time away too**, added to the place the guild was on.

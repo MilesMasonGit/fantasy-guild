@@ -1,4 +1,4 @@
-Status: approved 2026-11-09
+Status: briefed 2026-11-10 (approved 2026-11-09; [brief 560](briefs/560_foundation_reach.md))
 
 # Floating Foundations, standardized reach, and in-range dot markers
 
@@ -44,3 +44,10 @@ every token inside the reach circle with a dot icon during drag.*
   radius gets the dot marker above it so the player never has to guess whether a
   borderline tree, ore vein or station is inside or outside the ring before
   releasing the drag.
+
+
+## Rulings (owner, 2026-11-10)
+
+- The standard reach is **about 240** mat units (camps were 280 to 360, neighbour rules 164).
+- **Camp Reach upgrades are removed**: reach never changes (the two Hall stars go).
+- **Dots on every Token inside the ring**, not heroes or floating loot.
