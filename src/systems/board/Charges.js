@@ -220,11 +220,15 @@ export function contextProvidersAround(instanceId) {
  * @returns {{ok: boolean, debits: [], missing: Array<{tag: string, reason: 'absent'}>}}
  */
 export function planContextCharges(instanceId, requirements) {
-    const providers = contextProvidersAround(instanceId);
-    const missing = [];
     // Normalised through the one reader, so a bare-string entry (what the CMS
     // writes before a tier is picked) is a tier-1 tag rather than skipped.
-    for (const req of contextRequirementsOf({ requiresContext: requirements })) {
+    const required = contextRequirementsOf({ requiresContext: requirements });
+    const missing = [];
+    // ⚠️ Asked every tick for every Token at work (`BoardRunner.tick` → `WorkCheck`): with nothing
+    // required, the neighbours (a dozen within the standard reach on a crowded mat) are not read.
+    if (!required.length) return { ok: true, debits: [], missing };
+    const providers = contextProvidersAround(instanceId);
+    for (const req of required) {
         if (!providers.some(p => (p.tiers[req.tag] || 0) >= req.minTier)) {
             missing.push({ tag: req.tag, reason: 'absent' });
         }
