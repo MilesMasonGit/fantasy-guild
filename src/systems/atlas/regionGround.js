@@ -24,6 +24,24 @@ export function decodedTerrain(map) {
 }
 
 /**
+ * How Region `region`'s stored ground divides: how many of its cells are water, Stone, and the dry
+ * land left, `{ water, stone, land, cells }`. A Region with no stored map is all meadow: all land.
+ */
+export function regionGroundCounts(region) {
+    const map = decodedTerrain(region?.terrain);
+    if (!map) return { water: 0, stone: 0, land: 1, cells: 1 };
+    const waterAt = map.legend.indexOf(TERRAIN.WATER);
+    const stoneAt = map.legend.indexOf(TERRAIN.STONE);
+    let water = 0;
+    let stone = 0;
+    for (let i = 0; i < map.cells.length; i++) {
+        if (map.cells[i] === waterAt) water++;
+        else if (map.cells[i] === stoneAt) stone++;
+    }
+    return { water, stone, land: map.cells.length - water - stone, cells: map.cells.length };
+}
+
+/**
  * The look each terrain takes in a Region: the look of the biome that owns that terrain
  * (`ground.terrains`, biome → terrain), when that look draws that terrain; else the terrain's
  * default look (grass no biome owns is meadow). A terrain no look draws reads as meadow.

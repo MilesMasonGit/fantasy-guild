@@ -12,7 +12,7 @@ import {
     cellMiddle, cellCentreArt, tilePoints, mapBounds, clampView, viewOn
 } from './worldMapLayout.js';
 import { paintWorld, paintRope, ringEdges, tileStandIn, pictureFrame, landOf, FOG_CSS } from './worldPicture.js';
-import { CellTip } from './WorldPanel.jsx';
+import { CellTip } from './WorldPrice.jsx';
 import { panDrag } from '../../utils/panDrag.js';
 
 /**

@@ -81,9 +81,11 @@
         "sharedGearLoss": "{hero} lost {item}"
     },
     "bank": {
-        "window": {
+        "drawer": {
+            "label": "Item",
             "collected": "Collected this run: {count}",
-            "close": "Close the item window"
+            "empty": "The Bank is empty",
+            "emptyHint": "Items the guild collects land here."
         },
         "searchPlaceholder": "Search items…",
         "clearSearch": "Clear search",
@@ -118,7 +120,6 @@
     },
     "itemTip": {
         "count": "×{count}",
-        "equippable": "Equippable: {slot}",
         "tool": "{kind}, tier {tier}",
         "restores": "Restores {amount} HP",
         "stat": {
@@ -157,6 +158,62 @@
             "currency": "Currency",
             "drop": "Loot"
         }
+    },
+    "itemTags": {
+        "ore": "Dug up by Mining; smelt it into ingots.",
+        "metal": "Metalwork: smelted and smithed into bars, tools and weapons.",
+        "ingot": "A smelted bar; Smithing turns it into tools, weapons and parts.",
+        "wood": "Cut from trees; used for building and crafting.",
+        "fuel": "Burned to keep a furnace or a fire going.",
+        "food": "Heroes eat this to restore HP when their health runs low.",
+        "drink": "Carried in the drink slot; drunk as work starts, one lasts 10 work cycles. Drinks never heal.",
+        "seafood": "Comes from the water.",
+        "fish": "Caught by Fishing.",
+        "raw": "Uncooked: Cooking makes it into a meal.",
+        "cooked": "Made by Cooking.",
+        "meat": "From animals; cook it before eating.",
+        "grain": "A crop grown on Fields, for baking.",
+        "baking": "Used in baking.",
+        "baked": "Made in an oven.",
+        "fruit": "Picked from trees and bushes; eaten or pressed into drinks.",
+        "berry": "A small fruit picked from bushes.",
+        "citrus": "A sour fruit.",
+        "juice": "Pressed from fruit; a drink.",
+        "alcohol": "A brewed drink.",
+        "potion": "Brewed by Alchemy; carried as a consumable and drunk when its moment comes.",
+        "elixir": "Drunk as a fight starts; one lasts 10 fights, and different elixirs stack.",
+        "herb": "A plant used in Alchemy.",
+        "ingredient": "Used in cooking or brewing.",
+        "bee": "Comes from bees.",
+        "material": "Used to make other things or to pay for building.",
+        "gem": "A rare stone found while mining.",
+        "stone": "Quarried stone, used in building.",
+        "construction": "Used to build stations and buildings.",
+        "light": "Gives light.",
+        "currency": "Money.",
+        "seed": "Planted to grow a crop or a tree; it is spent when sown.",
+        "tree": "Grows into a tree.",
+        "tool": "Held in a hand so a hero can work a Token that needs it.",
+        "mining": "A tool for Mining.",
+        "woodcutting": "A tool for Forestry.",
+        "fishing": "A tool for Fishing.",
+        "farming": "A tool for Farming.",
+        "trap": "Set to catch things while the hero works.",
+        "bait": "Carried in a consumable slot; one is spent per catch, and it changes what bites.",
+        "weapon": "Held in a hand for fighting; the weapon decides the combat skill used.",
+        "sword": "A kind of weapon.",
+        "dagger": "A kind of weapon.",
+        "cleaver": "A kind of weapon.",
+        "greatsword": "A kind of weapon.",
+        "bow": "Shoots arrows, carried as a consumable.",
+        "wand": "A kind of weapon.",
+        "arrow": "Shot from a bow; one is spent per shot.",
+        "ammo": "Spent by a weapon as it fires.",
+        "armour": "Worn for protection: it resists some kinds of damage.",
+        "hat": "Worn on the head.",
+        "helmet": "Worn on the head.",
+        "chestplate": "Worn on the body.",
+        "shield": "Held in the off hand beside a weapon, never swung."
     },
     "encyclopedia": {
         "title": "Encyclopedia",
@@ -627,6 +684,17 @@
         "travel": "Travel",
         "short": "Short of {what}",
         "ringLocked": "Light the Guild Hall's {star} star to settle here",
-        "pickCell": "Pick a place on the map."
+        "pickCell": "Pick a place on the map.",
+        "ground": {
+            "water": "Water",
+            "grass": "Grass",
+            "stone": "Stone",
+            "waterTip": "How much of this place's mat is water.",
+            "grassTip": "How much of this place's mat is open land, whatever its ground: grass, rock or sand.",
+            "stoneTip": "How much of this place's mat is bare Stone: outcrops of rock."
+        },
+        "playtime": "Time here",
+        "playtimeTip": "How long the guild has spent here, time away included.",
+        "tokensTip": "Tokens on this place's mat, of the Token cap"
     }
 }

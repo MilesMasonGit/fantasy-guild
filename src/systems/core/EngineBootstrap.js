@@ -166,8 +166,10 @@ export const EngineBootstrap = {
             if (GameState.getIsInitialized()) {
                 GameState.updateTime({ gameTimeMs: GameState.time.gameTimeMs + delta });
                 // The save-slot screen's playtime is the guild's whole time: the catch-up runs this
-                // handler for accepted time away, so that counts too.
+                // handler for accepted time away, so that counts too, as it does to the place the
+                // guild was on (the world map's playtime per place).
                 GameState.state.meta.totalPlaytime = (GameState.state.meta.totalPlaytime || 0) + delta;
+                Atlas.addPlaytime(delta);
             }
         }, 10);
 

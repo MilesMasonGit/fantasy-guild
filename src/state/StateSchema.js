@@ -120,6 +120,9 @@ export function createRegionRecord(id = null) {
         cellId: null,
         // Hidden from the Region list.
         archived: false,
+        // Milliseconds the guild has spent here, time away included (`Atlas.addPlaytime`, every tick).
+        // A Region from an older save has none and reads 0.
+        playtimeMs: 0,
         // ⚠️ Null for the Region the guild is in: its board is the live `state.board`. Every other
         // Region keeps its whole board here, frozen, as a save would write it.
         board: null,

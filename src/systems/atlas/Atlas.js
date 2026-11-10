@@ -10,7 +10,7 @@ import * as BoardState from '../board/BoardState.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
 import * as MatPlacement from '../board/MatPlacement.js';
 import * as MatResize from '../board/MatResize.js';
-import { isGuildHall } from '../board/MatCap.js';
+import { isGuildHall, countsTowardCap, tokenCount, matCap } from '../board/MatCap.js';
 import { isQuestToken } from '../quests/QuestTokens.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { matW, matH, artRadiusOf } from '../../config/matGeometry.js';
@@ -152,6 +152,41 @@ export function activeRegion() {
 /** Tokens that belong to the Region: everything on its board but the Hall and the quests. */
 function regionTokenCount(board) {
     return Object.values(board?.tokens || {}).filter(t => t?.typeId && !isGuildHall(t) && !isQuestToken(t)).length;
+}
+
+/**
+ * Region `id`'s Tokens against the cap, `{ count, cap }`, or null for no such Region. The cap is the
+ * guild's, the same in every Region (`MatCap.matCap`). The Region the guild is in counts as the cap
+ * itself does (`MatCap.tokenCount`, what the Shop shows); any other counts the Tokens on its frozen
+ * board that would count toward the cap there.
+ */
+export function capStatusOf(id) {
+    const region = getRegion(id);
+    if (!region) return null;
+    let count = 0;
+    if (id === activeRegionId()) {
+        count = tokenCount();
+    } else {
+        for (const t of Object.values(region.board?.tokens || {})) if (countsTowardCap(t)) count++;
+    }
+    return { count, cap: matCap() };
+}
+
+/** How long the guild has spent in Region `id`, in milliseconds, time away included; 0 for none. */
+export function playtimeOf(id) {
+    return Number(getRegion(id)?.playtimeMs) || 0;
+}
+
+/**
+ * Count `delta` ms of play to the Region the guild is in: called by the tick (`time_tracking`), which
+ * the catch-up also plays, so time away counts to the place the guild was on. A Region from an older
+ * save starts its count here.
+ */
+export function addPlaytime(delta) {
+    const atlas = atlasOf();
+    const region = atlas?.regions[atlas.activeRegionId];
+    if (!region || !(delta > 0)) return;
+    region.playtimeMs = (Number(region.playtimeMs) || 0) + delta;
 }
 
 /**

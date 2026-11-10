@@ -792,15 +792,16 @@ less micromanagement than area flags).
   orders this tab or every tab in place by type, then the item's own tier
   (none last), then name; the dragged order holds until Sort is pressed.
   *(`bankSort.js`)*
-- **Looking at an item in the Bank** (brief 400): hovering a tile gives the
-  tooltip (name, count, type, tags). **Clicking it opens the inspection
-  window** along the Bank's foot: the sprite at 4×, the count, type and tags,
-  everything the tooltip leaves out (a weapon's stats, resists, what it
-  restores, the description), how many were collected this run, and a book to
-  its Encyclopedia page; its X, Escape or a second click closes it. A press
-  that moves 8 px is a drag instead, and the click that ends a drag opens
-  nothing; in Select mode a click selects. Nothing is discarded or sold there
-  (T-306). *(`BankItemWindow.jsx`)*
+- **Looking at an item in the Bank** (briefs 400, 570): hovering a tile gives the
+  tooltip (name, count, tool, tags; no type or Equippable line). **The Item drawer** opens and
+  closes with the Bank, on the screen's side away from the nav, the full height: it shows the item
+  last clicked this session (else the open tab's first item, else a calm empty line): its name and
+  a book to its Encyclopedia page, the sprite at 4×, the count, its tags as pills that explain
+  themselves on hover, everything it does (a weapon's stats, resists, what it restores, the
+  description), the actions, and how many were collected this run. A press that moves 8 px is a
+  drag instead, and the click that ends a drag picks nothing; in Select mode a click selects. The
+  mat stays where it is while the Bank is open. Nothing is discarded or sold there (T-306).
+  *(`ItemDrawer.jsx`, `SideDrawer.jsx`)*
 - **Supply is automatic**: Tokens take inputs from the Bank, then from loot on
   the mat. A cycle is all-or-nothing; first come, first served.
 - **Tools and weapons that break** — **Built (brief 480 L1); no content uses
@@ -1562,9 +1563,11 @@ drawers**. The menu can be flipped to the right.
   Region it has never stood in, and back in its old spot in one it has), and
   leaves each Region's flags behind: going back, every hero starts at the flag
   they left there, with no work claimed and no fight on; a place just settled
-  starts with no orders, its heroes walking in to the Hall (§10, the arrival). A settled place's panel on the world map shows
-  its Region (its mat drawn small, its facts) and renames it; travel is its
-  Travel button. Archive and abandon have no button since the Regions page
+  starts with no orders, its heroes walking in to the Hall (§10, the arrival). A settled place's World Map drawer shows
+  its Region (its mat drawn small with its Tokens over the cap, its ground, its playtime) and renames it; travel is its
+  Travel button. **Each Region keeps its playtime** (`region.playtimeMs`): every tick adds its time to the Region the guild
+  is in, so live play and time away (the catch-up plays it through the same tick) both count to the place the guild was
+  on (owner, 2026-11-10); a Region from an older save starts at 0. Archive and abandon have no button since the Regions page
   left (brief 380 M3); the engine keeps them. *(`src/systems/atlas/`)*
 - **The world** — **Built: generated (brief 330 W1) and on screen (W2)**: a new
   game generates its hex world from the seed rolled on the new-game screen (a
@@ -1597,13 +1600,25 @@ drawers**. The menu can be flipped to the right.
   pills with have/need in the 9.9k shorthand, red when short; no ring. A cell
   whose ring waits for its Guild Hall ring star (§8) says so under its price
   ("Light the Guild Hall's Charted Roads star to settle here"), in the hover and
-  the panel.
-  **The inspection panel** (thin, on the right) shows the chosen place's name,
-  the guild's flag drawn large where it is, what it yields and its price, and a
-  large **Settle** (frontier only, greyed with what is short or the ring star it
+  the drawer.
+  **The World Map drawer** (brief 570 D4) is the side drawer, flush to the
+  screen's edge away from the nav, full height, the world's blue, open with the
+  map; its X closes the map. It shows the chosen place: the guild's flag drawn
+  large where it is, the name (renamed behind the quill once settled), its land
+  and line; for a settled place its mat drawn small with its **Tokens over the
+  cap** in the corner (`28/128`: the guild's cap, the same in every place; the
+  place the guild is on counts as the cap does, any other its own frozen
+  board); **three ground dials**, Water, Grass and Stone, for every place,
+  settled or not (whole percent adding up to 100; Grass is the open land, grass,
+  rock or sand: a settled place reads the ground it stored, one not yet settled
+  the ground settling it writes, worked out from its cell without placing a
+  Token); for a settled place **the time spent there**, time away included;
+  what it yields; its price while not settled; and at the foot a large
+  **Settle** (frontier only, greyed with what is short or the ring star it
   waits for; settling refuses that ring until the star is bought), which pays the
-  whole price at once, writes the cell's Region and takes the guild there; a
-  settled place shows its mat drawn small, its facts, a rename, and **Travel**.
+  whole price at once, writes the cell's Region and takes the guild there, or
+  **Travel** to a settled place elsewhere. No Ground, Tokens or Heroes rows and
+  no Token list.
   A Region knows its
   cell (`region.cellId`); abandoning it returns the cell to the frontier.
 - **A place's mat** — **Built (brief 330 W3)**: settling writes the Region from
@@ -1653,7 +1668,7 @@ drawers**. The menu can be flipped to the right.
   waits for, to buy in the Hall), puts the ring stars' pack in the sky until it
   is synced, and shows a world in words. *(`src/systems/world/`,
   `worldTablesShape.js`, `ui/components/atlas/WorldScreen.jsx`, `WorldMap.jsx`,
-  `WorldPanel.jsx`, `WorldCamera.jsx`, `worldPicture.js`; the art it reads,
+  `WorldDrawer.jsx`, `GroundDials.jsx`, `world/placeGround.js`, `WorldCamera.jsx`, `worldPicture.js`; the art it reads,
   `config/worldMapArt.js`)*
 - **Desktop**: packaged with Tauri (Windows installers); the game runs in the
   webview, its settings stay in the webview's storage and its saves are files
