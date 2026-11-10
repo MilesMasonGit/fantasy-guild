@@ -1,24 +1,23 @@
-import { getSkill, getSkillIdsByLayer, SKILL_LAYERS } from '../../../config/registries/skillRegistry.js';
+import { getSkill, heroSheetSkillIds, SKILL_LAYERS } from '../../../config/registries/skillRegistry.js';
 import { getXpProgress, xpForLevel, MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
-
-/** The panel's one list: combat, then the Starting skills, then the specialist ones. */
-const LIST_LAYERS = [SKILL_LAYERS.COMBAT, SKILL_LAYERS.STARTING, SKILL_LAYERS.SPECIALIST];
+import { t } from '../../../i18n/index.js';
 
 /** Layers whose rows get their own background colour. */
 export const TIER_LAYERS = new Set([SKILL_LAYERS.SPECIALIST]);
 
-const orderedIds = (layers) => layers.flatMap(layer => getSkillIdsByLayer(layer));
+/** How many skills stand in one column of the hero drawer's grid. */
+export const SKILLS_PER_COLUMN = 4;
 
 /**
- * A hero's skills as the hero panel lists them: every skill, combat first, then Starting, then
- * specialist, each layer in the registry's order. A skill the record lacks (a hero not yet
+ * A hero's skills as the hero drawer lists them: every skill, in the sheet's order (combat, then
+ * gathering, crafting and specialist, `heroSheetSkillIds`). A skill the record lacks (a hero not yet
  * settled by a load) reads level 1.
  * @param {{ skills?: object }} hero
  * @returns {{ rows: Array<{ id: string, name: string, layer: string|null, tier: string|null, level: number, xp: number }> }}
  */
 export function heroSkillList(hero) {
     const held = hero?.skills || {};
-    const rows = orderedIds(LIST_LAYERS).map(id => {
+    const rows = heroSheetSkillIds().map(id => {
         const layer = getSkill(id)?.layer || null;
         const state = held[id];
         return {
@@ -87,4 +86,29 @@ export function skillDetail(xp, ratePerHour = 0) {
         rate: rate > 0 ? `+${Math.round(rate).toLocaleString('en-US')}` : null,
         eta: rate > 0 ? formatEta((left / rate) * 3600) : null
     };
+}
+
+/**
+ * What a skill is for and what it feeds, one line from the strings file (`skillPurpose` in
+ * `src/i18n/en.json`, where the owner edits them), or null for a skill with no line yet.
+ */
+export function skillPurposeText(skillId) {
+    const key = `skillPurpose.${skillId}`;
+    const text = t(key);
+    return text === key ? null : text;
+}
+
+/**
+ * A skill's hover tip, as display strings: this level's XP (`1,154`), what is left to the next
+ * level, and the XP an hour (`+1,234`, or null when it is not being trained). At the top level only
+ * the total XP and no next level.
+ * @param {number} xp the skill's total XP
+ * @param {number} ratePerHour from `XpRateTracker.getRate`
+ */
+export function skillTipView(xp, ratePerHour = 0) {
+    const total = Math.max(0, Math.floor(xp || 0));
+    const prog = getXpProgress(total);
+    const rate = Number(ratePerHour) > 0 ? `+${Math.round(Number(ratePerHour)).toLocaleString('en-US')}` : null;
+    if (prog.level >= MAX_SKILL_LEVEL) return { xp: n(total), toNext: null, rate };
+    return { xp: n(prog.currentXp), toNext: n(Math.max(0, xpForLevel(prog.level + 1) - total)), rate };
 }

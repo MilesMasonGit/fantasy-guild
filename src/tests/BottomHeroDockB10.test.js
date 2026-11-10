@@ -18,7 +18,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
-import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
+import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
 import {
     DOCK_STRIP_PX, dockArtPx, dockArtOffset, hpPercent, hpTone,
     ROSTER_FLAG_PX, rosterFlagPlace, rosterAlertPlace, rosterAlertPx
@@ -203,7 +203,7 @@ describe('B10 horizontal hero dock', () => {
     });
 
     it('no hero panel draws hero tabs: the heroes are only on the bar', () => {
-        const view = render(h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false, selectedHeroId: 'h1' })));
+        const view = render(h(DeckDndProvider, null, h(HeroDrawer, { menuRight: false, selectedHeroId: 'h1' })));
         expect(view.container.querySelector('[data-hero-dock-tab], [data-hero-column]')).toBeNull();
     });
 });

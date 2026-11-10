@@ -12,7 +12,7 @@ vi.mock('../systems/board/Flags.js', () => ({
 import { GameState } from '../state/GameState.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
-import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
+import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
 import { DOCK_STRIP_PX } from '../ui/components/dock/dockHeroView.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import {
@@ -47,7 +47,7 @@ const master = (id, name) => ({
 const wrap = (...children) =>
     h(DeckDndProvider, null, ...children);
 
-const panel = (props) => wrap(h(BankHeroPanel, { menuRight: false, ...props }));
+const panel = (props) => wrap(h(HeroDrawer, { menuRight: false, ...props }));
 
 const rowIds = (root, group) =>
     [...root.querySelectorAll(`[data-skill-group="${group}"] [data-skill-row]`)].map(el => el.getAttribute('data-skill-row'));
@@ -62,21 +62,25 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); });
 
-describe('H2: one hero panel, in one place', () => {
-    it('opens in one box on the side opposite the nav, from the top down to the hero bar', () => {
+describe('H2: one hero drawer, in one place', () => {
+    it('rises across the screen from behind the bar, standing on its strip, its three blocks left to right', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
         const box = r.container.querySelector('[data-hero-panel]');
         expect(box.querySelector('[data-hero-panel-body="h1"]')).not.toBeNull();
-        expect(box.className.split(' ')).toEqual(expect.arrayContaining(['absolute', 'top-0', 'right-0']));
+        expect(box.className.split(' ')).toEqual(expect.arrayContaining(['absolute', 'inset-x-0']));
+        expect(box.className.split(' ')).not.toContain('top-0');
         expect(box.style.bottom).toBe(`${DOCK_STRIP_PX}px`);
+        expect(box.style.transform).toBe('translateY(0)');
+        const blocks = [...box.querySelectorAll('[data-hero-drawer-block]')].map(el => el.getAttribute('data-hero-drawer-block'));
+        expect(blocks).toEqual(['summary', 'equipment', 'detail']);
     });
 
-    it('clicking a hero in the bar opens the side panel; nothing rises from the bar', () => {
+    it('clicking a hero in the bar opens the drawer, outside the bar', () => {
         const Host = () => {
             const [sel, setSel] = React.useState(null);
             return wrap(
                 h(BottomHeroDock, { selectedHeroId: sel, onSelectHero: id => setSel(p => (p === id ? null : id)) }),
-                h(BankHeroPanel, { menuRight: false, selectedHeroId: sel, onCloseHero: () => setSel(null) })
+                h(HeroDrawer, { menuRight: false, selectedHeroId: sel, onCloseHero: () => setSel(null) })
             );
         };
         const view = render(h(Host));
@@ -92,7 +96,7 @@ describe('H2: one hero panel, in one place', () => {
         const onCloseHero = vi.fn();
         const view = render(wrap(
             h(BottomHeroDock, { selectedHeroId: 'h1' }),
-            h(BankHeroPanel, { menuRight: false, selectedHeroId: 'h1', onCloseHero }),
+            h(HeroDrawer, { menuRight: false, selectedHeroId: 'h1', onCloseHero }),
             h('div', { 'data-testid': 'mat' }, 'mat')
         ));
         fireEvent.pointerDown(view.container.querySelector('[data-hero-panel-body] [data-skill-row="mining"]'));
@@ -110,13 +114,13 @@ describe('H2: the panel stays open when the Bank opens', () => {
         const onCloseHero = vi.fn();
         const bankButton = h('div', { id: 'bank-bubble-target' }, h('button', { 'data-testid': 'bank' }, 'Bank'));
         const r = render(wrap(
-            h(BankHeroPanel, { menuRight: false, selectedHeroId: 'h1', onCloseHero }),
+            h(HeroDrawer, { menuRight: false, selectedHeroId: 'h1', onCloseHero }),
             bankButton
         ));
         fireEvent.pointerDown(r.getByTestId('bank'));
         expect(onCloseHero).not.toHaveBeenCalled();
         r.rerender(wrap(
-            h(BankHeroPanel, { menuRight: false, selectedHeroId: 'h1', onCloseHero }),
+            h(HeroDrawer, { menuRight: false, selectedHeroId: 'h1', onCloseHero }),
             bankButton
         ));
         act(() => { vi.advanceTimersByTime(1000); });
@@ -139,14 +143,17 @@ describe('H2: a closed panel registers no drop targets (T-104)', () => {
 
 });
 
-// Rewritten with classless heroes: every hero holds every skill, so the panel lists all of them in
-// one list; the set-aside and locked lists are gone.
+// Every hero holds every skill, so the drawer lists all of them in one grid, in the concept's order
+// (brief 570 D2): combat, gathering, crafting, then the specialist skills.
 describe('H2: skills', () => {
     const ALL = [
-        ...getSkillIdsByLayer(SKILL_LAYERS.COMBAT), ...STARTING, ...getSkillIdsByLayer(SKILL_LAYERS.SPECIALIST)
+        'melee', 'ranged', 'magic', 'stealth',
+        'mining', 'forestry', 'fishing', 'farming',
+        'smithing', 'crafting', 'cooking', 'alchemy', 'construction',
+        ...getSkillIdsByLayer(SKILL_LAYERS.SPECIALIST)
     ];
 
-    it('lists every skill in one list: combat, then the Starting nine, then the specialist ones', () => {
+    it('lists every skill in one list: combat, gathering, crafting, then the specialist ones', () => {
         const g = heroSkillList(master('x', 'X'));
         expect(g.rows.map(r => r.id)).toEqual(ALL);
         expect(ALL).toHaveLength(20);
@@ -207,8 +214,11 @@ describe('H2: skills', () => {
         expect(document.body.querySelector('[data-tooltip]')).toBeNull();
         fireEvent.pointerEnter(row);
         const tip = document.body.querySelector('[data-tooltip]');
-        expect(tip.textContent).toContain('Melee');
-        expect(tip.textContent).toMatch(/10 \/ [\d,]+ XP/);
+        expect(tip.textContent).toContain('Melee 25/99');
+        // A clean stat block: this level's XP, what is left, the rate.
+        const block = tip.querySelector('[data-skill-tip="melee"]');
+        const left = (xpForLevel(26) - xpForLevel(25) - 10).toLocaleString('en-US');
+        expect(block.textContent).toBe(`XP10To next level${left}XP/h–`);
         fireEvent.pointerLeave(row);
         expect(document.body.querySelector('[data-tooltip]')).toBeNull();
     });
@@ -240,13 +250,13 @@ describe('H2: skills', () => {
         expect(r.container.textContent).not.toContain('★');
     });
 
-    it('opens a skill on click to its exact XP numbers and rate, and folds it on a second click', () => {
+    it('opens a skill on click to its exact XP numbers and rate in the skill panel, and folds it on a second click', () => {
         XpRateTracker.recordGain('h1', 'melee', 1000);
         const r = render(panel({ selectedHeroId: 'h1' }));
         const row = () => r.container.querySelector('[data-skill-row="melee"]');
         expect(r.container.querySelector('[data-skill-detail]')).toBeNull();
         fireEvent.click(row());
-        const detail = r.container.querySelector('[data-skill-opened="melee"] [data-skill-detail]');
+        const detail = r.container.querySelector('[data-hero-skill-panel="melee"] [data-skill-detail]');
         expect(row().getAttribute('aria-expanded')).toBe('true');
         const d = skillDetail(GameState.state.heroes[0].skills.melee.xp, 1000 / (15 / 3600));
         expect(detail.textContent).toContain(d.level);
@@ -254,9 +264,10 @@ describe('H2: skills', () => {
         expect(detail.textContent).toContain('XP/h+240,000');
         expect(detail.textContent).toContain(d.eta);
         expect(detail.textContent).toMatch(/\d+:\d\d/);
-        // Only one open at a time.
+        // Only one open at a time: another skill switches the panel.
         fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
-        expect(r.container.querySelector('[data-skill-opened="melee"]')).toBeNull();
+        expect(r.container.querySelector('[data-hero-skill-panel="melee"]')).toBeNull();
+        expect(r.container.querySelector('[data-hero-skill-panel="mining"]')).not.toBeNull();
         fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
         expect(r.container.querySelector('[data-skill-detail]')).toBeNull();
     });

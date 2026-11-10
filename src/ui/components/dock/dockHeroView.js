@@ -34,6 +34,9 @@ export const DOCK_LABEL_GAP_PX = 2;
 /** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of them. */
 export const DOCK_LABEL_PX = 46;
 
+/** The Hero drawer's padding above its blocks, in screen px (the skill panel stands clear of it). */
+export const HERO_DRAWER_PAD_TOP_PX = 8;
+
 /**
  * How far the names and HP bars stand above the strip's top edge, in screen px: what a panel
  * rising from behind the bar (the Shop) keeps clear at its foot.

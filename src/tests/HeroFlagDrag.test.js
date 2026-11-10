@@ -9,7 +9,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { HeroManager } from '../systems/hero/HeroManager.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
-import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
+import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
 import { DOCK_SLOT_PX, DOCK_NAME_TEXT_CLASS } from '../ui/components/dock/dockHeroView.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -81,7 +81,7 @@ describe('only the flag is carried', () => {
     });
 
     it('from the sheet\'s large figure, and the sheet\'s flag leaves it while it is in the hand', () => {
-        const view = render(h(DeckDndProvider, null, h(BankHeroPanel, { selectedHeroId: 'h3' })));
+        const view = render(h(DeckDndProvider, null, h(HeroDrawer, { selectedHeroId: 'h3' })));
         const figure = view.container.querySelector('[data-hero-panel-figure]');
         figure.getBoundingClientRect = () => box(0, 0, 256, 256);
         start(figure, 128, 128);

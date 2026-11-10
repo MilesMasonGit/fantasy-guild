@@ -30,11 +30,11 @@ clunky labels like "LVL 03" where "3/99" says it better.
   faint divider line, not borders.
 - No thick borders, no frames inside frames.
 - **Full panels have a coloured pixel backdrop** (owner, 2026-11-05; brief 400): the Bank,
-  Shop, the Hall's star panel, world panels, Settings, the hero sheet, fight windows and the
+  Shop, the Hall's star panel, world panels, Settings, the Hero drawer, fight windows and the
   away summary. Hard bands from the panel's colour at the top down to the frame's dark fill,
   each step dithered in whole art pixels, never a smooth gradient; text keeps its contrast on
   every band. Each starts from its nav bubble's colour: Bank gold, Shop green, Atlas and world
-  blue, Settings red, Hall purple; the hero sheet teal, fight windows rust, the away summary
+  blue, Settings red, Hall purple; the Hero drawer teal, fight windows rust, the away summary
   indigo. One shared piece: `PixelFrame`'s `backdrop` (colours in `panelBackdrop.js`).
   Tooltips, the Token card, the top bar, bubbles and buttons have none.
 - **Pixel frames: nine-slice pictures** (owner, 2026-10-09; research in
@@ -66,9 +66,8 @@ clunky labels like "LVL 03" where "3/99" says it better.
 
 - **Icon + name + number**: `[pickaxe] Mining 25/99`. The icon is for
   scanning, the name so nobody has to guess.
-  **One exception**: the hero sheet's skills are icon and level, two side by
-  side, with the name in the hover tip (owner, 2026-11-02). In a narrow window
-  there the level drops its `/99`, which the tip keeps.
+  **One exception**: the Hero drawer's skills are icon and level in columns of
+  four, with the name in the hover tip (owner, 2026-11-02; brief 570 D2).
 - Icons are drawn crisp at whole-pixel scales (the owner noticed fuzzy skill
   icons in the Token inspection).
 
@@ -141,15 +140,32 @@ normal text colour; a new meaning needs the owner's OK.
   but never scale.
 - **The hero bar** (brief 570 D1): a strip along the bottom of **every screen** (the mat, the
   Bank, the Shop, the world map, the Guild Hall), no line and no fill, drawn **over the side
-  drawers and the hero panel** (layer `--z-hero-bar`, under the nav). The Bank's vertical hero
+  drawers and the Hero drawer** (layer `--z-hero-bar`, under the nav). The Bank's vertical hero
   tabs are gone: items are dropped on the bar's heroes, and a hero's flag is dragged from it.
   **Equip bubbles**: an item dropped on a hero, or on a slot of their loadout, is answered by a
   `SpeechFrame` over that hero on the bar for about 3 s, plain for "Equipped Iron Woodaxe" (a
   stack linked to the Bank with its short count, "Equipped Shrimp x4.6k"), red for a refusal with
   its reason and numbers, "Can't equip Mythril Scimitar. Melee skill too low. (12/40)". No screen
   callout for equipping. *New, unapproved.*
-- **One bottom panel at a time** over the bar: the Shop or a hero's panel; opening one closes
+- **One bottom panel at a time** over the bar: the Shop or the Hero drawer; opening one closes
   the other (`useOneBottomDrawer`).
+- **The Hero drawer** (brief 570 D2; *new, unapproved*): a click on a hero on the bar raises it
+  from behind the bar, across the screen like the Shop (studs frame, the teal backdrop), over the
+  side drawers and under the bar, whose names stand over a clear band at its foot. Three blocks
+  left to right, centred in the room beside the nav: **the hero** (the close X and the edit quill
+  at its top left, the figure at twice the mat's size with the job flag behind the shoulder, the
+  name, the HP `VitalBar`); **the loadout grid**, always in view; **Skills / Combat**, two tabs
+  (glyph and word, the open one over a gold line). **Skills**: the skills in columns of four,
+  combat, gathering, crafting, then specialist, no headers, no scrolling; hover gives a clean stat
+  block under the name and level (XP, to the next level, XP/h); a click opens the **skill panel**,
+  a chamfer panel standing over the drawer's top edge with its own X (Escape closes it first;
+  another skill switches it): icon, name and level, the book, what the skill is for (the
+  `skillPurpose` lines in `src/i18n/en.json`, the owner's to edit), the exact XP, and every
+  milestone perk, held ones in gold, the rest dimmed. **Combat**: one row a stat in columns of
+  five, a muted name and a bold value with its tooltip: style, hit, damage (the lowest and highest
+  landed hit against the four enemy styles; the tip lists each and a crit), swing, crit, accuracy,
+  dodge, resistances, style cuts, gear effects. The block keeps the skills grid's width, so the
+  switch never moves the blocks.
 
 ## The work plate (owner, 2026-10-24)
 
@@ -350,8 +366,8 @@ item held.
 - **Title on the left** (with an optional sprite), **the red pixel close X at
   the top right**: `ui_cancel_red.png` (16 px) at 2×. Same on every panel,
   drawer and modal. Small floating pop-ups (tooltips) have no header and no X.
-  **One exception**: the hero sheet's close and edit stand in the side space
-  beside it (owner, 2026-11-02).
+  **One exception**: the Hero drawer's close and edit stand at the top left of
+  its hero block (brief 570 D2).
 
 ## Buttons
 

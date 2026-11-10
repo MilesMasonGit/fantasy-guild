@@ -39,7 +39,7 @@ const STEP_MS = 16;          // one pointer move per frame, roughly
 const HOVER_MS = 80;         // the pointer rests on the source before the press, as a hand does
 const QUIET_MS = 50;         // still, between the bench's reads and the release, so the drop's frames are the game's
 const SETTLE_MS = 450;       // after the release: the drop handler, the state, the re-render
-// The hero sheet beside the Bank (`BankHeroPanel.jsx`): its box takes presses only while a hero is shown.
+// The Hero drawer (`HeroDrawer.jsx`): its box takes presses only while a hero is shown.
 const HERO_SHEET_OPEN = `[...document.querySelectorAll('[data-hero-panel] [data-dnd-region]')].some(e => getComputedStyle(e).pointerEvents !== 'none')`;
 
 function gitInfo() {

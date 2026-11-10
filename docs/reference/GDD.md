@@ -543,7 +543,7 @@ has none yet) and melee have content today.
   Work Start, the combat numbers), and it spends nothing. A work rule should be narrowed to its
   skill; the audits say when one is not.
 - **Shown**: the level-up number over the hero names the perk underneath, the hero bar gives it an
-  alert of its own, and the hero sheet's skill row lists the perks held and the next one.
+  alert of its own, and the Hero drawer's skill panel lists every perk of the skill, those held in gold.
 
 ### Classes and promotion — Retired (brief 270 K1, K5)
 The class jobs (Recruit, the basic and master classes), promotion, Promotion
@@ -1459,11 +1459,16 @@ drawers**. The menu can be flipped to the right.
   player must act; hover for what they are doing; drag a figure onto the mat
   to give that hero a job; drop an item on a figure to equip it, answered by a speech bubble
   over that hero for about 3 s (what was equipped, or why not, with the numbers). Click →
-  **hero sheet** (loadout grid, every skill two side
-  by side as icon, level and XP bar; hover for its name, purpose and perks, click for its exact
-  XP and rate; scroll arrows when it does not fit; close and edit in the side space beside it,
-  down to the bar) → Edit (rename, portrait, flag colour). The Shop and the hero sheet close
-  each other: one panel over the bar at a time.
+  **Hero drawer**, rising from behind the bar across the screen, three blocks left to right:
+  the hero at twice the mat's size with their flag behind the shoulder, name, HP, the close X
+  and the edit quill; the loadout grid, always in view; and a switch between **Skills** (every
+  skill as icon, level and XP bar in columns of four: combat, gathering, crafting, specialist;
+  hover for the XP, what is left and the rate; click for the skill panel over the drawer: what
+  the skill is for, its exact XP, every milestone perk, those held in gold) and **Combat** (the
+  style, the hit, its range against each enemy style and a critical hit, the swing, crit,
+  accuracy and dodge, resistances, the cuts worn gear makes to each style, and what the loadout
+  lends, all read from the fight's own numbers) → Edit (rename, portrait, flag colour). Nothing
+  in it scrolls. The Shop and the Hero drawer close each other: one panel over the bar at a time.
 - **Bank drawer**: tabbed item lists, search, reorder; drag an item onto a hero
   on the hero bar to equip. While open, the mat is locked; the hero bar stays in front of it.
 - **Shop**: a panel that rises from behind the hero bar beside the nav (on either side) and
@@ -1842,7 +1847,7 @@ crunch plan):
 
 | Terrain | Returns for the Atlas after a major rework, later in the crunch once the Atlas works. |
 | Atlas timing | Moves into the crunch, after deep optimization. |
-| Drops over a drawer | A mat Token or flag dropped over the Shop panel or the hero sheet lands on the mat underneath; intended (owner, certification 2026-10-07). |
+| Drops over a drawer | A mat Token or flag dropped over the Shop panel or the Hero drawer lands on the mat underneath; intended (owner, certification 2026-10-07). |
 | Token cap | 128, fixed (the Guild Hall's Token Cap star retired, brief 320); spawned Tokens and endgame sites count (D-1); the discard bin is gone (Atlas A3b), so nothing off the mat counts. |
 | Trickle | Renamed **Passive Production**, one timer; the Wishing Well joins it, 10 Water a lap per rank (T-099). The lap is 10 minutes, shortened to 5 by Guild Hall stars (owner 2026-11-03, brief 390 G5). |
 | Markets | **Cut for now**: items stay the only currency, no exchange rates; revisit if a real need appears (owner 2026-10-09, T-127). |

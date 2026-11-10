@@ -26,7 +26,7 @@ import EncyclopediaScreen from './components/encyclopedia/EncyclopediaScreen.jsx
 
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import BottomHeroDock from './components/dock/BottomHeroDock.jsx';
-import BankHeroPanel from './components/dock/BankHeroPanel.jsx';
+import HeroDrawer from './components/dock/HeroDrawer.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import HallSky from './components/board/HallSky.jsx';
 import HallCamera from './components/board/HallCamera.jsx';
@@ -385,11 +385,11 @@ const ReactRoot = () => {
                      */}
                     {particlesDrawn && <ParticleOverlay disabled={ui.isAnyModalOpen || isBankOpen} />}
                     {/**
-                     * The hero panel: a panel on the notification side down to the hero bar,
-                     * opened from the bar. A crash in it stays local.
+                     * The Hero drawer: a hero's panel rising from behind the hero bar, opened from
+                     * the bar. A crash in it stays local.
                      */}
-                    <ErrorBoundary label="BankHeroPanel">
-                        <BankHeroPanel
+                    <ErrorBoundary label="HeroDrawer">
+                        <HeroDrawer
                             menuRight={menuRight}
                             selectedHeroId={inspectHeroId}
                             onCloseHero={closeInspectHero}

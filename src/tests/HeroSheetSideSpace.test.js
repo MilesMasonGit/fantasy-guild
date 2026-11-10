@@ -10,7 +10,7 @@ vi.mock('../systems/board/Flags.js', () => ({
 
 import { GameState } from '../state/GameState.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
+import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { SkillIcon, skillArt, SKILL_PLACEHOLDER_SPRITE } from '../ui/components/base/SkillIcon.jsx';
 import { resolveSpritePath } from '../utils/AssetManager.js';
@@ -18,19 +18,13 @@ import { getSkill } from '../config/registries/skillRegistry.js';
 import { heroSkillList } from '../ui/components/dock/heroPanelSkills.js';
 import { DOCK_STRIP_PX } from '../ui/components/dock/dockHeroView.js';
 import { SLOT_ORDER } from '../config/registries/equipmentConstants.js';
+import { t } from '../i18n/index.js';
 
 const h = React.createElement;
 const hero = (id, name, extra = {}) => ({
     id, name, spriteId: 'hn_recruit_por', hp: { current: 80, max: 100 }, status: 'idle', equipment: {}, skills: {}, ...extra
 });
-const panel = (props) => h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false, ...props }));
-
-/** `ArrowScrollList` draws its bars only when its content is taller than its box. */
-function fakeOverflow(list) {
-    Object.defineProperty(list, 'clientHeight', { value: 100, configurable: true });
-    Object.defineProperty(list, 'scrollHeight', { value: 1000, configurable: true });
-    act(() => { window.dispatchEvent(new Event('resize')); });
-}
+const panel = (props) => h(DeckDndProvider, null, h(HeroDrawer, { menuRight: false, ...props }));
 
 beforeEach(() => {
     vi.useFakeTimers();
@@ -72,69 +66,102 @@ describe('skill icons are pixel, never emoji', () => {
     });
 });
 
-describe('the sheet\'s skills, two side by side', () => {
-    it('lays the skills in two columns with the name only in the tip', () => {
+describe('the drawer\'s skills, in columns of four', () => {
+    it('flows the skills down columns of four, with the name only in the tip', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
         const group = r.container.querySelector('[data-skill-group="held"]');
-        expect(group.className.split(' ')).toEqual(expect.arrayContaining(['grid', 'grid-cols-2']));
+        expect(group.className.split(' ')).toEqual(expect.arrayContaining(['grid', 'grid-flow-col']));
+        expect(group.style.gridTemplateRows).toBe('repeat(4, auto)');
+        // No section headers among the skills.
+        expect([...group.children].every(el => el.querySelector('[data-skill-row]') || el.hasAttribute('data-skill-row'))).toBe(true);
         const row = group.querySelector('[data-skill-row="mining"]');
         expect(row.textContent).toBe('1/99');
         fireEvent.pointerEnter(row);
         const tip = document.body.querySelector('[data-tooltip]');
-        expect(tip.textContent).toContain('Mining');
+        expect(tip.textContent).toContain('Mining 1/99');
         fireEvent.pointerLeave(row);
     });
 
-    it('a click opens the numbers across both columns, under the pair the skill stands in', () => {
-        const r = render(panel({ selectedHeroId: 'h1' }));
+    it('a click opens the skill panel over the drawer; another switches it; its X and Escape close it first', () => {
+        const onCloseHero = vi.fn();
+        const r = render(panel({ selectedHeroId: 'h1', onCloseHero }));
         const group = r.container.querySelector('[data-skill-group="held"]');
-        const order = () => [...group.children].map(el => el.getAttribute('data-skill-row') || `open:${el.getAttribute('data-skill-opened')}`);
-        const [a, b, c] = order();
+        const [a, b] = [...group.querySelectorAll('[data-skill-row]')].map(el => el.getAttribute('data-skill-row'));
 
         fireEvent.click(group.querySelector(`[data-skill-row="${a}"]`));
-        expect(order().slice(0, 4)).toEqual([a, b, `open:${a}`, c]);
-        const opened = group.querySelector(`[data-skill-opened="${a}"]`);
-        expect(opened.className.split(' ')).toContain('col-span-2');
+        const opened = r.container.querySelector(`[data-hero-skill-panel="${a}"]`);
+        expect(opened).not.toBeNull();
+        // Over the drawer's top edge, not inside the grid.
+        expect(group.contains(opened)).toBe(false);
+        expect(opened.style.bottom).toMatch(/^calc\(100% \+ \d+px\)$/);
         expect(opened.querySelector('[data-skill-detail]')).not.toBeNull();
         expect(opened.textContent).toContain(getSkill(a).name);
+        expect(opened.querySelector('[data-hero-skill-panel-book]')).not.toBeNull();
 
-        // The second of a pair opens in the same place.
         fireEvent.click(group.querySelector(`[data-skill-row="${b}"]`));
-        expect(order().slice(0, 4)).toEqual([a, b, `open:${b}`, c]);
+        expect(r.container.querySelector(`[data-hero-skill-panel="${a}"]`)).toBeNull();
+        expect(r.container.querySelector(`[data-hero-skill-panel="${b}"]`)).not.toBeNull();
+
+        act(() => fireEvent.keyDown(document, { key: 'Escape' }));
+        expect(r.container.querySelector('[data-hero-skill-panel]')).toBeNull();
+        expect(onCloseHero).not.toHaveBeenCalled();
+
+        fireEvent.click(group.querySelector(`[data-skill-row="${a}"]`));
+        fireEvent.click(r.container.querySelector('[data-hero-skill-panel-close]'));
+        expect(r.container.querySelector('[data-hero-skill-panel]')).toBeNull();
+        expect(onCloseHero).not.toHaveBeenCalled();
+    });
+
+    it('a skill\'s panel says what the skill is for, from the strings file', () => {
+        const r = render(panel({ selectedHeroId: 'h1' }));
+        fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
+        expect(r.container.querySelector('[data-hero-skill-panel-purpose]').textContent)
+            .toBe(t('skillPurpose.mining'));
     });
 });
 
-describe('the sheet scrolls with arrows', () => {
-    it('has no bars when it fits, both when it overflows, and no scroll bar class', () => {
+describe('Skills and Combat', () => {
+    it('switches the right-hand block between the skills grid and the combat numbers, the loadout staying', () => {
+        const r = render(panel({ selectedHeroId: 'h1' }));
+        const tab = (id) => r.container.querySelector(`[data-hero-view-tab="${id}"]`);
+        expect(tab('skills').getAttribute('aria-selected')).toBe('true');
+        expect(r.container.querySelector('[data-hero-combat]')).toBeNull();
+        fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
+        fireEvent.click(tab('combat'));
+        expect(tab('combat').getAttribute('aria-selected')).toBe('true');
+        expect(r.container.querySelector('[data-skill-group]')).toBeNull();
+        // The skill panel belongs to the skills: it goes with them.
+        expect(r.container.querySelector('[data-hero-skill-panel]')).toBeNull();
+        const stats = [...r.container.querySelectorAll('[data-hero-combat-stat]')].map(el => el.getAttribute('data-hero-combat-stat'));
+        expect(stats).toEqual(['style', 'hit', 'range', 'swing', 'crit', 'accuracy', 'dodge', 'resists', 'cuts', 'effects']);
+        expect(r.container.querySelectorAll('[data-hero-drawer-block="equipment"] [data-equip-slot]').length).toBe(SLOT_ORDER.length);
+        fireEvent.click(tab('skills'));
+        expect(r.container.querySelector('[data-skill-group="held"]')).not.toBeNull();
+    });
+});
+
+describe('nothing in the drawer scrolls', () => {
+    it('has no scroll list, arrow bars or scroll bar', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
         const body = r.container.querySelector('[data-hero-panel-body]');
+        expect(body.querySelector('[data-scroll-list]')).toBeNull();
         expect(body.querySelector('[data-scroll-arrow]')).toBeNull();
         expect(body.querySelector('.gi-scrollbar')).toBeNull();
-        fakeOverflow(body.querySelector('[data-scroll-list]'));
-        expect(body.querySelector('[data-scroll-arrow="up"]')).not.toBeNull();
-        expect(body.querySelector('[data-scroll-arrow="down"]')).not.toBeNull();
     });
 });
 
-describe('close and edit in the side space', () => {
+describe('close and edit in the hero\'s block', () => {
     const controls = (r) => r.container.querySelector('[data-hero-panel-controls]');
 
-    it('stand outside the sheet', () => {
+    it('stand in the summary block, beside the hero', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
-        expect(r.container.querySelector('[data-hero-panel-body] [data-hero-panel-close]')).toBeNull();
+        const summary = r.container.querySelector('[data-hero-drawer-block="summary"]');
+        expect(summary.contains(controls(r))).toBe(true);
         expect(controls(r).querySelector('[data-hero-panel-close]')).not.toBeNull();
         expect(controls(r).querySelector('[data-hero-panel-edit]')).not.toBeNull();
     });
 
-    it('are on the outer edge, on whichever side the panel sits', () => {
-        const right = render(panel({ selectedHeroId: 'h1', menuRight: false }));
-        expect(controls(right).className.split(' ')).toContain('right-0');
-        cleanup();
-        const left = render(panel({ selectedHeroId: 'h1', menuRight: true }));
-        expect(controls(left).className.split(' ')).toContain('left-0');
-    });
-
-    it('the Edit and close controls still work from there', () => {
+    it('the Edit and close controls work', () => {
         const onEditHero = vi.fn();
         const onCloseHero = vi.fn();
         const r = render(panel({ selectedHeroId: 'h1', onEditHero, onCloseHero }));
@@ -146,11 +173,15 @@ describe('close and edit in the side space', () => {
 });
 
 describe('the flag on the sheet', () => {
-    it('stands on the hero\'s other side, drawn behind them', () => {
+    it('stands behind the hero\'s shoulder, farther out than beside the head, drawn behind them', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
+        const box = r.container.querySelector('[data-hero-panel-sprite]');
+        const size = Number(box.getAttribute('data-hero-panel-sprite-px'));
         const flag = r.container.querySelector('[data-hero-panel-flag]');
         const figure = r.container.querySelector('[data-hero-panel-figure]');
-        expect(flag.style.left).toMatch(/^calc\(50% - \d+px\)$/);
+        const flagPx = parseFloat(flag.style.width);
+        // Its near edge 12 % of the art left of the hero's middle (the bar's shoulder), not 4 %.
+        expect(parseFloat(flag.style.left) + flagPx).toBe(Math.round(size / 2 - size * 0.12));
         expect(flag.compareDocumentPosition(figure) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 });
@@ -161,11 +192,12 @@ describe('no hero column: the heroes stay on the bar', () => {
         expect(r.container.querySelector('[data-hero-panel]')).toBeNull();
     });
 
-    it('stops at the hero bar, which is drawn over the side drawers, and holds no hero tabs', () => {
+    it('stands on the hero bar\'s strip, keeps a band at its foot for the names, and holds no hero tabs', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
         const aside = r.container.querySelector('[data-hero-panel]');
         expect(aside.style.bottom).toBe(`${DOCK_STRIP_PX}px`);
-        expect(aside.className.split(' ')).toContain('top-0');
+        expect(aside.className.split(' ')).not.toContain('top-0');
+        expect(Number.parseFloat(aside.querySelector('[data-hero-drawer-foot]').style.height)).toBeGreaterThan(0);
         expect(r.container.querySelector('[data-hero-column], [data-hero-dock-tab]')).toBeNull();
     });
 });

@@ -20,7 +20,7 @@ vi.mock('../ui/components/drawer/HeroInspectionSheet.jsx', () => ({
 import { GameState } from '../state/GameState.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
-import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
+import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
 
 const h = React.createElement;
 
@@ -30,7 +30,7 @@ const hero = (id, name, hp = 100) => (
 
 
 /**
- * Both `BottomHeroDock` and `BankHeroPanel` are mounted together, as they are
+ * Both `BottomHeroDock` and `HeroDrawer` are mounted together, as they are
  * on screen with the Bank open: the bottom dock never unmounts just because
  * the Bank drawer is covering it ( finding), so its outside-click listener is
  * live the whole time.
@@ -41,7 +41,7 @@ function mount({ onCloseHero } = {}) {
                 h('div', null,
                     h(BottomHeroDock, { selectedHeroId: 'h1', onCloseHero }),
                     h('div', { 'data-testid': 'bank-panel-wrapper' },
-                        h(BankHeroPanel, { selectedHeroId: 'h1', onCloseHero, menuRight: false })),
+                        h(HeroDrawer, { selectedHeroId: 'h1', onCloseHero, menuRight: false })),
                     h('div', { 'data-testid': 'playmat' }, 'the playmat')
                 )
             )
