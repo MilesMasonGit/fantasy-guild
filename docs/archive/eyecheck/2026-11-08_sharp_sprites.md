@@ -1,4 +1,6 @@
-# Eye-check 2026-11-08: sharp sprites (brief 550)
+# Eye-check 2026-11-08: sharp sprites (brief 550) — looked at, merged 5cb5a6b3
+
+**Owner, 2026-11-08:** "This fixed the majority of the issues." Merged on the owner's word. Two faults remain, under investigation (`docs/active/research/sprite_sharpness_2_2026-11-08.md` when written): every Token twitches slightly during a hero drag when the "Nothing to work here" bubble appears (with or without items on the mat); on some Tokens outlines do not line up or are uneven row to row, changing with the window size (display scale 100 %, window maximised).
 
 **What to open:** `_builds/2026-11-08-sharp/Fantasy Guild.exe` in your project folder (double-click; nothing to
 install). It is the desktop app built from branch `fix/sprite-sharpness`, which is not on `main` yet. It uses your

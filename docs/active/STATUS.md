@@ -13,7 +13,7 @@ build green) · bench-queued · eye-check · merged.*
 |---|---|---|---|---|---|
 | 550 X1: nothing blurs on hover or turn; floating items crisp (T-393) | engineer | `fix/sprite-sharpness` (`ss`) | **merged** 5cb5a6b3 with X2 (637 files green, lint 0 errors, cycles 0, depcruise clean, build, engine work same; owner eye-check in the built app: most fixed) | Sun | Sun |
 | 550 X2: walking heroes crisp | engineer | same branch | **merged** 5cb5a6b3; the owner accepted the cost (heroes16 +0.2 ms p50 in a run taken while a video played) | Sun | Sun |
-| 550 follow-up: uneven outlines and the drag twitch | engineer | `fix/mat-zoom` (`mz`) 32cafaa0 | **ready, waiting for the owner look** in `_builds/2026-11-08-zoom` (eye-check file). Gate: 638 files green, lint 0 errors, cycles 0, depcruise clean, build, engine work same. Art-pixel check: uneven Tokens 11 to 75 on main by size, 0 on the branch at all six. Draw A/B vs main (quiet, A,B,B,A, 2 repeats): fps equal at 1x; work p50 mostly equal, S3 torture at 4x 13.2 to 7.5 ms and 72 to 101 fps (mat no longer its own layer), hero sheet open 0.71 to 0.95 ms at 1x and Bank open 0.71 to 0.81 (small extra cost); drag bench: success 98 % vs 96 %, carry equal, pickup frames over 16.7 ms 40 vs 28 of about 1,250 | Sun | |
+| 550 follow-up: uneven outlines and the drag twitch | engineer | `fix/mat-zoom` (`mz`) | **merged** 3500ed36 after the owner look (all ok): CSS zoom for the mat, every sprite on whole pixels; gate green, engine work same; draw about even, S3 at 4x 13.2 to 7.5 ms; T-393 and T-394 closed | Sun | Mon |
 
 ## Director, code review round 4 fixes (owner, 2026-11-07: all of briefs 510, 530, 520, 540 approved, in that order)
 
