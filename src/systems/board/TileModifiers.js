@@ -367,7 +367,7 @@ function* applicableStatements(selfId) {
     const selfDef = getTokenType(self.typeId);
     const seenTypes = new Set();
 
-    // `nearby` means Near: every other Token whose centre is within the Near radius of this Token's
+    // `nearby` means Near: every other Token whose centre is within the standard reach of this Token's
     // centre. Measured per source below with exactly `tokensWithin`'s test: both centres present
     // and `distanceSq <= radius²`.
     const selfCentre = centreOf(self);

@@ -24,7 +24,7 @@ import { showsNearRing } from '../../../systems/board/reachDisplay.js';
  * A camp's reach ring is `CampReachRing`'s.
  */
 
-/** The live Near radius, following the Mat Tuner. */
+/** The live standard reach, following a dev build's Mat Tuner override of it. */
 function useReachRadius() {
     const [radius, setRadius] = React.useState(() => reachRadius());
     React.useEffect(() => onMatTuningChanged(() => setRadius(reachRadius())), []);

@@ -95,7 +95,7 @@ export const ART_RADIUS_BY_SIZE = Object.freeze({ 1: 64, 2: 144 });
 
 /**
  * The largest art radius any Token has (a 2×2's 144 u). Rebuild coverage adds
- * it to the Near radius, so a Token of any shape near a changed point is found
+ * it to the standard reach, so a Token of any shape near a changed point is found
  * (`nearby.tokensAround`).
  */
 export const LARGEST_ART_RADIUS = Math.max(...Object.values(ART_RADIUS_BY_SIZE));

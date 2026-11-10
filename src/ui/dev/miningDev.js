@@ -69,7 +69,8 @@ function registerQaTypes() {
 /**
  * Where the scene stands: the mat's lower right, clear of the Starter Camp's Copper Mine, the
  * Hall's scenes and the waiting and Forestry scenes. The Mines and the Minecart stand 150 from the
- * copper vein (within its reach, 164); the iron vein stands apart.
+ * copper vein, within the standard reach; they name only the copper vein, so the iron vein beside
+ * them gets nothing from them.
  */
 export const MINING_SPOTS = Object.freeze({
     copper: { x: 1600, y: 780 },

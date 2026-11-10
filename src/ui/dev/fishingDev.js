@@ -9,6 +9,7 @@ import * as Placement from '../../systems/board/Placement.js';
 import { qaOrder } from './qaOrders.js';
 import * as MatPlacement from '../../systems/board/MatPlacement.js';
 import * as TileModifiers from '../../systems/board/TileModifiers.js';
+import { reachRadius } from '../../systems/board/nearby.js';
 import * as Fishing from '../../systems/board/Fishing.js';
 import * as EquipmentManager from '../../systems/equipment/EquipmentManager.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
@@ -141,8 +142,8 @@ export function setUpFishingScene() {
     const river = put(QA_FISHING.RIVER, { x: c.x - 120, y: c.y + 290 });
     const sea = put(QA_FISHING.SEA, { x: c.x + 240, y: c.y + 290 });
     if (!lake || !dock || !river || !sea) return { ok: false, error: 'No room below the Guild Hall for the scene' };
-    // The Dock must stand within reach of the lake (164 u): a nudge could carry it out.
-    if (Math.hypot(dock.x - lake.x, dock.y - lake.y) > 160) return { ok: false, error: 'The QA Dock landed out of the lake’s reach' };
+    // The Dock must stand within reach of the lake: a nudge could carry it out.
+    if (Math.hypot(dock.x - lake.x, dock.y - lake.y) > reachRadius()) return { ok: false, error: 'The QA Dock landed out of the lake’s reach' };
     TileModifiers.rebuildAll();
 
     InventoryManager.addItem(QA_FISHING.WORM, 5);

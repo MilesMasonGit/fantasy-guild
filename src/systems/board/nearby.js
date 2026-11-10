@@ -132,12 +132,12 @@ export function tokensAround(points, radius = reachRadius()) {
 }
 
 /**
- * `nearby(id)` at the live Near radius, cached per instance. `RecipeResolver` and `Charges` ask for
+ * `nearby(id)` at the live reach ({@link reachRadius}), cached per instance. `RecipeResolver` and `Charges` ask for
  * a station's neighbours several times per station per tick, which would otherwise be the one
  * per-tick O(n²) cost.
  *
  * What drops it: the whole cache when a Token is put on or taken off the mat
- * (`BoardState.membershipVersion`), the board is swapped (a load), or the Near radius changes. On a
+ * (`BoardState.membershipVersion`), the board is swapped (a load), or the reach changes (a dev Mat Tuner override). On a
  * move (`setTokenPoint`), only the entries it can change, read back from `BoardState`'s move
  * journal: the moved Token's own entry and that of every Token within `reachRadius() + 1` of where
  * it left or arrived (the same both-ends rule as {@link tokensAround}). The `+ 1` is slack:

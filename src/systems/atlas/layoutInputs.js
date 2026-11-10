@@ -38,14 +38,14 @@ const hasCannot = (typeId) => statementsWith(getTokenType(typeId), KEYWORD.CANNO
  * ordinary layout never pays for it. Without it a generated board could break a rule, and
  * `Restrictions.reconcile` would move map fixtures on the next load.
  *
- * ⚠️ Near is the live Near radius (`Restrictions` reads no other), so this one input is still a
- * per-device value.
+ * ⚠️ Near is `nearby.reachRadius()` (`Restrictions` reads no other): the standard reach, which a
+ * dev build's Mat Tuner may override, so on a dev device this one input can differ from a player's.
  */
 export function cannotCheck(typeIds) {
     if (![...typeIds, HALL_TYPE_ID].some(hasCannot)) return null;
     return (typeId, point, placed) => {
         // A rule is broken by what is Near a Token, and only Tokens Near the newcomer can be
-        // newly broken, so nothing further than two Near radii can change the answer.
+        // newly broken, so nothing further than twice the reach can change the answer.
         const reach = 2 * reachRadius();
         const view = new Map();
         placed.forEach((p, i) => {

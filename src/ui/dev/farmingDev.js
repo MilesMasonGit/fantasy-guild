@@ -123,8 +123,9 @@ function registerQaContent() {
 
 /**
  * Where the scene stands: the band above the Guild Hall, clear of the Starter Camp's Oak Forest
- * (upper left), the Forestry scene (upper right) and the scenes below the Hall. Supports stand 150
- * or 160 from the Field they serve (within reach, 164) and further from the others.
+ * (upper left), the Forestry scene (upper right) and the scenes below the Hall. Each support stands
+ * 160 below the Field it is for. The diagonal, 219 u, is inside the standard reach too, so the Well
+ * also speeds the ripe Field's regrowth and the Composter also loads the growing Field.
  */
 export const FARMING_SPOTS = Object.freeze({
     wild: { x: 560, y: 140 },
