@@ -16,6 +16,7 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
 import { artRadius, artRadiusOf, matW, matH } from '../config/matGeometry.js';
 import { dockStatusLine } from '../ui/components/board/flagText.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
@@ -63,7 +64,7 @@ function sendFrom(heroId, from, tok) {
 registerTokenTypes({
     hm_camp: {
         id: 'hm_camp', name: 'HM Logging Camp', tokenType: 'camp', rarity: 'common', theme: 'fixture', uses: null,
-        sprite: 's_nature', requiresHero: false, config: null, camp: { skill: 'forestry', reach: 400 }
+        sprite: 's_nature', requiresHero: false, config: null, camp: { skill: 'forestry' }
     }
 });
 
@@ -191,8 +192,12 @@ describe('claims, moves and choices while walking', () => {
 
     it('⭐ a camp hero\'s "nearest" is measured from the hero, not the camp (HM-4)', () => {
         const camp = put({ x: 600, y: 700 }, 'hm_camp');
-        const nearCamp = put({ x: 450, y: 600 });     // 180 u from the camp
-        const nearHero = put({ x: 780, y: 500 });     // 269 u from the camp, 120 from the hero
+        const nearCamp = put({ x: 450, y: 600 });     // 180 u from the camp, 461 from the hero
+        const nearHero = put({ x: 780, y: 570 });     // 222 u from the camp, 139 from the hero
+        const fromCamp = (t) => Math.hypot(t.x - camp.x, t.y - camp.y);
+        // Both are the camp's work, and the camp's own nearest is the other one.
+        expect(fromCamp(nearHero)).toBeLessThanOrEqual(STANDARD_REACH_U);
+        expect(fromCamp(nearCamp)).toBeLessThan(fromCamp(nearHero));
         Orders.orderAt('h1', { x: 1500, y: 900 });       // somewhere with nothing to do
         body('h1').x = 900;                            // the hero stands here…
         body('h1').y = 500;
