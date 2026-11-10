@@ -242,6 +242,10 @@ mods via the CMS after release.
 
 ## Moved on
 
+- **Floating Foundations, standardized reach across all reach features, and in-range dot icons during drag** (owner, 2026-11-09) → [concept_foundation_reach.md](concept_foundation_reach.md), approved 2026-11-09.
+- **Limes the Slime playmat NPC conversation framework & UI mechanic hover blurbs** (owner, 2026-11-09) → [concept_tutorial_npc.md](concept_tutorial_npc.md), approved 2026-11-09.
+- **Default font updated to Silkscreen** (owner, 2026-11-09) → **T-396** in [TICKETS](../reference/TICKETS.md).
+- **Flashy travel animation for flying items (trail/flourish experiment with planning agent)** (owner, 2026-11-09) → **T-295** in [TICKETS](../reference/TICKETS.md).
 - **Inspection drawers rework: bottom hero drawer, right-side Item, World Map and Guild Hall Upgrade drawers** (owner, 2026-11-09) → [concept_inspection_drawers.md](concept_inspection_drawers.md), approved 2026-11-09.
 
 - **A Tailor skill** (owner, 2026-11-04) → [concept_content_roadmap.md](concept_content_roadmap.md), T-304.

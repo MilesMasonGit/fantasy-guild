@@ -1,10 +1,28 @@
-Status: briefed (approved 2026-11-04; [brief 480](briefs/480_early_game_slurm.md))
+Status: approved 2026-11-09 (updated from 2026-11-04; [brief 480](briefs/480_early_game_slurm.md) needs updating for the playmat NPC & hover blurbs framework)
 
 # The very early game, and Limes the guide
 
-*Owner interview, 2026-11-04, from the detail pass's section 13. Replaces the cartographer's quest Tokens in
+*Owner interviews, 2026-11-04 and 2026-11-09. Replaces the cartographer's quest Tokens in
 [concept_quests_tutorial.md](concept_quests_tutorial.md). The owner's words are in quotes; "planning agent" marks what the
 agent filled in.*
+
+## 2026-11-09 Update: Limes on the Starter Playmat & Tutorial Hover Blurbs
+
+*This section supersedes the 2026-11-04 bottom-right corner portrait model where they conflict. Build the conversation and blurb framework first with placeholder text; the specific tutorial dialogue steps will be written later.*
+
+### 1. Limes on the Starter Camp Playmat (Click-to-Talk Framework)
+- **Lives on the Starter Camp playmat**: Limes (`public/assets/enemies/slime/e_slurm.png`) sits directly on the **Starter Camp playmat**, starting in the **bottom-left hand corner** as an interactive helper NPC.
+- **Click to initiate dialogue**: clicking Limes on the playmat opens a **speech bubble above Limes** with a simple conversation flow (**Next / Close**).
+- **Framework first, placeholder dialogue for now**: set up the basic clickable NPC and multi-step conversation flow using **placeholder dialogue text** for now. The exact wording and step-by-step progression of Limes' dialogue will be authored in a later pass.
+
+### 2. Limes' Mechanic Hover Blurbs on UI Screens
+- **Small Limes sprites at key UI points**: place Limes' sprite at key locations across the UI (such as the Bank, Shop, World Map, Guild Hall upgrades, and Hero Inspection Drawer) where new or core mechanics live.
+- **Hover to explain**: hovering over one of these Limes sprites opens a **tutorial blurb** that clearly explains the basic mechanic of that panel or feature to the player.
+- **Setting to turn off Limes' blurbs**: add a toggle in **Settings** to **hide/turn off Limes' tutorial blurbs**, so once the player understands the game's mechanics they can dismiss the helper icons across the UI.
+
+---
+
+## Earlier notes (2026-11-04)
 
 ## The guide
 
