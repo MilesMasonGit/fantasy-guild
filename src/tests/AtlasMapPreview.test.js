@@ -27,6 +27,7 @@ import {
 import { PREVIEW_SETTLE_MS } from '../ui/components/atlas/MapPreview.jsx';
 import { regionPlan } from '../ui/components/atlas/regionPreview.js';
 import { WorldScreen } from '../ui/components/atlas/WorldScreen.jsx';
+import { WorldDrawer } from '../ui/components/atlas/WorldDrawer.jsx';
 import * as World from '../systems/world/World.js';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { placeAt } from './fixtures/mat.js';
@@ -283,11 +284,14 @@ describe('⭐ the preview is drawn once per Region', () => {
     });
     afterEach(() => plans.mockRestore());
 
-    /** Wait out the settle, and the art loads that follow it. */
+    /**
+     * Wait out the settle, and the art loads that follow it. A bounded wait, not every timer: the
+     * World Map drawer re-reads a place's Token count and playtime every second while it is open.
+     */
     const settle = async (ms = PREVIEW_SETTLE_MS) => {
         await act(async () => {
             vi.advanceTimersByTime(ms);
-            await vi.runAllTimersAsync();
+            await vi.advanceTimersByTimeAsync(2000);
         });
     };
 
@@ -297,7 +301,8 @@ describe('⭐ the preview is drawn once per Region', () => {
         const two = Atlas.settle({ ingredients: [DEV_MAPS.coast], seed: 6, cellId: '0,1' }).region;
         const view = render(React.createElement(
             DeckDndContext.Provider, { value: { activePayload: null, isDragging: false } },
-            React.createElement(WorldScreen, { onClose: vi.fn() })
+            React.createElement(WorldScreen, { onClose: vi.fn() }),
+            React.createElement(WorldDrawer, { open: true, onClose: vi.fn() })
         ));
         const { container } = view;
         const canvas = () => q(container, '[data-world-preview] canvas[data-map-preview]');

@@ -193,9 +193,8 @@ normal text colour; a new meaning needs the owner's OK.
 - **The view pans down from the mat** to the map, as the Guild Hall's glides up; no book. The
   top bar leaves with the mat; the hero bar and the nav stay.
 - **Under the whole screen**, as the Guild Hall's sky (owner, 2026-11-06): the painted world and
-  the hexes run to the screen's edges under the nav, the hero bar and the place panel, with no
-  edge at the mat's column. The map centres in the mat's room between them, and the panel stays
-  in that room. The pan moves the whole screen as one: the mat and the table up, the map up from
+  the hexes run to the screen's edges under the nav, the hero bar and the World Map drawer, with no
+  edge at the mat's column. The map centres in the room they leave. The pan moves the whole screen as one: the mat and the table up, the map up from
   below the hero bar.
 - **A painted world beneath** (pick D): a colour field per kind of land, wobbly borders, a
   darker ink line where lands meet, sand on shores, tiny pixel symbols; past the rings shown it
@@ -210,16 +209,21 @@ normal text colour; a new meaning needs the owner's OK.
   dear, or behind a ring star: darkened; further out: black and white. The pointer over any cell
   shows it in full colour with the 1-art-pixel white outline; the chosen cell keeps it.
 - **The guild's place** carries the hero job flag (`FlagMark`), drawn at 48 px, on the map and
-  in the panel's header; no "the guild is here" words.
+  in the drawer's header; no "the guild is here" words.
 - **The hover tip**: the place's name as its title, its land and line under it, then the price
   as pills (sprite, have/need in the 9.9k shorthand, red when short). No ring, no yields. A cell
   behind a ring star adds one small line naming the Guild Hall star ("Light the Guild Hall's
   Charted Roads star to settle here"), never the ring's number (brief 380 M4).
-- **The inspection panel**: one studs frame, thin (336 px), over the right edge of the mat's room: the name
-  (a rename once settled), the land and line, the close X; then what it yields as ribbons, its
-  price as rows, and a large main **Settle** across the panel's width (greyed with what is short
-  under it, or with the ring star's line when its ring waits for one), or, once settled, its mat
-  drawn small, its facts and a large **Travel**.
+- **The World Map drawer** (brief 570 D4; *new, unapproved*): the side drawer in the world's blue,
+  open with the map, its own X closing the map. The header: the flag, the name with the **quill**
+  to rename it once settled, the land and line. A settled place's mat drawn small with its
+  **Tokens over the cap** in its bottom-right corner (`28/128`, no label); **three ground dials**,
+  Water, Grass and Stone, on every place: a ring of whole art pixels at 2× filling clockwise from
+  twelve in the world map's own paint for that land, the whole percent under it and the ground's
+  name, hover saying what it counts; a settled place's **time there** (the clock glyph, `1h 24m`).
+  Then what it yields as ribbons, its price as rows, and a large main **Settle** across the drawer
+  (greyed with what is short under it, or with the ring star's line when its ring waits for one),
+  or **Travel**. No Ground, Tokens or Heroes rows and no Token list.
 - **Settling's title** (brief 380 M5; *new, unapproved*): after the gold banner, a dark band across
   the mat above the Guild Hall, under the banners, opening from its middle line in four held
   frames; the place's banner at the top bar's 3× fading out at both ends; a 2 px gold line at its
@@ -295,7 +299,8 @@ item held.
 - **The side drawer** (`SideDrawer`): the one drawer for inspecting the world, items and upgrades.
   Flush to the screen's edge on the side away from the nav (Menu on Right Side flips it), the full
   height, the hero column wide (`NOTIFICATION_COLUMN`), the studs frame with the screen's backdrop;
-  it slides in from its edge with the Bank's timing. *New, unapproved.*
+  it slides in from its edge with the Bank's timing. Its content stops above the hero bar's strip
+  (64 px), which stands in front of its foot. *New, unapproved.*
 - **The Item drawer**: the side drawer in the Bank's gold, opened and closed with the Bank, no X.
   It shows the item last clicked in the Bank this session, else the open tab's first item, else a
   calm empty line; the tile it shows has the white selection line. Top to bottom: the **name** (title

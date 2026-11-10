@@ -134,7 +134,7 @@ Order is pinned by `src/tests/TickHandlerOrder.test.js`.
 
 | Pri | Handler | What it does |
 |---|---|---|
-| 10 | `time_tracking` | `gameTimeMs += delta`, `meta.totalPlaytime += delta` (`EngineBootstrap.js:166-172`). |
+| 10 | `time_tracking` | `gameTimeMs += delta`, `meta.totalPlaytime += delta`, and the active Region's `playtimeMs` (`Atlas.addPlaytime`), so the catch-up counts time away to the place the guild was on (`EngineBootstrap.js:166-174`). |
 | 20 | `live_effects` | `LiveEffects.tick`: accumulates delta and fires statuses for all bearers once every 3 s (`src/systems/effects/LiveEffects.js:549-555`, `STATUS_TICK_INTERVAL_MS` at `src/config/FormulaRegistry.js:174`). |
 | 30 | `regen_system` | Hero regeneration (`src/systems/hero/RegenSystem.js:23`). |
 | 40 | `board_runner` | `BoardRunner.tick` (`src/systems/board/BoardRunner.js:469`), below. |

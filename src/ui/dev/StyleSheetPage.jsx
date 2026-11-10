@@ -47,6 +47,7 @@ import { Stub } from '../components/notifications/ItemStubColumn.jsx';
 import { Banner } from '../components/notifications/BannerStack.jsx';
 import { bannerText } from '../../systems/notifications/bannerKinds.js';
 import { WorldCellDemo } from '../components/atlas/WorldMap.jsx';
+import { GroundDials } from '../components/atlas/GroundDials.jsx';
 import { WorkPlateDemo } from './WorkPlateDemo.jsx';
 import { CombatKit } from './CombatKit.jsx';
 import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
@@ -615,6 +616,15 @@ const SideDrawerDemo = () => {
     );
 };
 
+/** The World Map drawer's ground dials for three kinds of place, at the drawer's narrowest width. */
+const GroundDialsDemo = () => (
+    <div className="flex flex-col gap-3" style={{ width: NOTIFICATION_COLUMN.min }}>
+        {[{ water: 28, grass: 64, stone: 8 }, { water: 3, grass: 79, stone: 18 }, { water: 0, grass: 100, stone: 0 }].map((shares, i) => (
+            <div key={i} data-kit-ground-dials={i} className="p-2 bg-black/40"><GroundDials shares={shares} /></div>
+        ))}
+    </div>
+);
+
 /** Bank tiles on their type's surface; hover one for the lighter surface and its tooltip. */
 const ItemTilesDemo = () => (
     <div className="flex items-end gap-3 flex-wrap">
@@ -1029,6 +1039,12 @@ export const KIT_SECTIONS = [
         id: 'world-cells', title: 'World map cells (new)', status: 'unapproved', source: 'WorldMap (the world map screen)',
         rule: 'Board tiles standing on the painted world: the top in the land’s colours, the side in its earth, a hard shadow (code stand-ins until the owner’s tiles), the Token the place holds most of standing on it, its first three outputs as 32 px item sprites in a dark plate and "+N" for the rest. Settled and settle-able: full colour. Can be settled now: a 2-art-pixel gold outline pulsing between two golds. On the frontier but too dear: darkened. Further out: black and white. Under the pointer: full colour with a 1-art-pixel white outline; the chosen cell keeps the white outline. The guild’s place carries the pale job flag, large. Ring lines are a rope with a knot at each corner.',
         Demo: WorldCellDemo
+    },
+    {
+        id: 'world-drawer', title: 'World Map drawer and its ground dials', status: 'unapproved',
+        source: 'WorldDrawer, GroundDials (the world map screen)',
+        rule: 'New, unapproved (brief 570 D4). The side drawer in the world’s blue, open with the map, its own X closing the map. The header: the guild’s flag when the guild is there, the place’s name with the quill to rename it once settled, its land and line. A settled place’s mat drawn small, its Tokens over the guild’s cap in the bottom-right corner (28/128, no label). Three ground dials for every place, settled or not: Water, Grass and Stone, a ring of whole art pixels at 2× filling clockwise from twelve in the world map’s own paint for that land, the whole percent under it (the three add up to 100) and the ground’s name; hover says what each counts. A settled place then shows the time the guild has spent there (the clock glyph, 1h 24m), time away included. Then what it yields, its price while not settled, and a large Settle or Travel at the foot. No Ground, Tokens or Heroes rows and no Token list.',
+        Demo: GroundDialsDemo
     },
     {
         id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',
