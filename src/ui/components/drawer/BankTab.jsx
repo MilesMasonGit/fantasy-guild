@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -20,7 +20,7 @@ import { ItemTipContent } from './ItemTip.jsx';
 import { itemTintName, itemTintStyle } from '../base/itemTint.js';
 import { bankSearchMatches, sortForBank } from './bankSort.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
-import { BankItemWindow } from './BankItemWindow.jsx';
+import { pickBankItem, lastPickedBankItem, chooseShownEntry, setShownBankEntry } from './bankInspection.js';
 
 /**
  * Bank pane: the guild bank as user-sortable tabs of compact reorderable item lists. Tabs
@@ -28,7 +28,8 @@ import { BankItemWindow } from './BankItemWindow.jsx';
  * Tabs reuse the inventory group system (groupOrder/groupDefs/itemOverrides, persisted). An
  * item with no override lives in the FIRST tab. Drag a tile onto a tile to reorder, onto a tab
  * to file it there, onto a hero to equip (payload kind 'item'). Search matches ALL tabs. A
- * tile's hover tooltip names the item; a click opens its inspection window (`BankItemWindow`).
+ * tile's hover tooltip names the item; a click shows it in the Item drawer (`ItemDrawer`), which
+ * opens with the Bank.
  */
 export const BankTab = () => {
     const [activeTabId, setActiveTabId] = useState(null);
@@ -36,8 +37,8 @@ export const BankTab = () => {
     // Select mode: multi-select stacks to drag-move between tabs.
     const [selectMode, setSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState(() => new Set());
-    // The item open in the inspection window at the Bank's foot, by id; null when it is shut.
-    const [inspectedId, setInspectedId] = useState(null);
+    // The item last clicked, kept for the session (`bankInspection.js`); the Item drawer shows it.
+    const [pickedId, setPickedId] = useState(lastPickedBankItem);
 
     const bank = useGameState(
         state => {
@@ -162,9 +163,19 @@ export const BankTab = () => {
         });
     }, []);
 
-    const toggleInspected = useCallback((itemId) => setInspectedId(prev => (prev === itemId ? null : itemId)), []);
-    // The window shows an item while the Bank holds it; one used up closes it.
-    const inspectedEntry = inspectedId ? stocked.find(e => e.id === inspectedId) || null : null;
+    const pickInspected = useCallback((itemId) => {
+        pickBankItem(itemId);
+        setPickedId(itemId);
+    }, []);
+    // The drawer shows the item clicked while the Bank holds it, else the open tab's first item.
+    const shownEntry = useMemo(
+        () => chooseShownEntry(stocked, pickedId, tabItems[currentTabId]?.[0] || null),
+        [stocked, pickedId, tabItems, currentTabId]
+    );
+    const inspectedId = shownEntry?.id ?? null;
+    // Before paint, so the drawer opening beside the Bank never shows a stale frame. Kept as the
+    // Bank closes, so the drawer slides out still showing it.
+    useLayoutEffect(() => { setShownBankEntry(shownEntry); }, [shownEntry]);
 
     const exitSelectMode = () => {
         setSelectMode(false);
@@ -260,7 +271,7 @@ export const BankTab = () => {
                             <ItemTile
                                 key={entry.id}
                                 entry={entry}
-                                onPick={selectMode ? toggleSelected : toggleInspected}
+                                onPick={selectMode ? toggleSelected : pickInspected}
                                 checked={selectMode && selectedIds.has(entry.id)}
                                 inspected={!selectMode && entry.id === inspectedId}
                                 selectMode={selectMode}
@@ -282,8 +293,6 @@ export const BankTab = () => {
                     </div>
                 )}
             </DropTarget>
-
-            {inspectedEntry && <BankItemWindow entry={inspectedEntry} onClose={() => setInspectedId(null)} />}
             </div>
         </div>
     );
@@ -305,7 +314,7 @@ function moveOrAnnounce(itemId, tabId, targetIndex = -1) {
 
 /** One banked item — a native drag source (kind 'item') and a reorder drop target.
  *  In select mode a checked tile drags the WHOLE selection (payload.selection).
- *  A click picks it (selects it, or opens the inspection window); a press that moves 8 px is a
+ *  A click picks it (selects it, or shows it in the Item drawer); a press that moves 8 px is a
  *  drag instead, and dnd-kit swallows the click that ends it (`SENSOR_OPTIONS` in DndKit). */
 const ItemTile = ({ entry, onPick, checked = false, inspected = false, selectMode = false, selectionIds = null, canReorder = false, onReorderDrop }) => {
     const drag = useEntityDrag({

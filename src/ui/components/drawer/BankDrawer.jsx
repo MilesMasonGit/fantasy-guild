@@ -5,13 +5,15 @@ import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js'
 import { PanelHeader } from '../base/CloseX.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
+import { SIDE_DRAWER_TRANSITION } from '../base/SideDrawer.jsx';
+import { ItemDrawer } from './ItemDrawer.jsx';
 
 /**
  * BankDrawer: slides in from the side and holds the item Bank.
  * One pane: the item Bank (the Shop has its own panel from the bottom, `ShopPanel`).
  * Per-pane header: title + Close. Opening/closing is driven by the BubbleMenu (via `ui.nav`);
- * state lives in useUIModals (`ui.drawer.panes`). An item's details open in the Bank's own
- * window at its foot (`BankItemWindow`), so the drawer has no inspect column.
+ * state lives in useUIModals (`ui.drawer.panes`). The Item drawer (`ItemDrawer`) opens and closes
+ * with it, in the column it leaves free on the far side.
  */
 
 // Heroes live in the always-visible Hero Dock, not a drawer pane.
@@ -26,6 +28,7 @@ export const BankDrawer = ({ drawer, menuRight = false }) => {
     const slideOffset = menuRight ? '100%' : '-100%';
 
     return (
+        <>
         <AnimatePresence>
             {drawer.isOpen && (
                 <motion.div
@@ -35,14 +38,14 @@ export const BankDrawer = ({ drawer, menuRight = false }) => {
                     initial={{ x: slideOffset, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: slideOffset, opacity: 0 }}
-                    // ⚠️ In step with the mat's side moving aside (`.gi-bank-shift` in tailwind.css): same duration and easing.
-                    transition={prefersReducedMotion() ? { duration: 0 } : { duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    // In step with the Item drawer arriving from the far side.
+                    transition={prefersReducedMotion() ? { duration: 0 } : SIDE_DRAWER_TRANSITION}
                     // ⚠️ The drawer layer sits under the nav and over everything else (tailwind.css, the layers table).
                     className={cn(
                         'pointer-events-auto',
                         'absolute inset-y-0 z-(--z-drawer)',
                         // From the screen's edge under the nav, as one panel: its rows pad for the
-                        // nav (`.gi-drawer-pad-x`). It stops at the hero column, which stays in view.
+                        // nav (`.gi-drawer-pad-x`). It stops at the column the Item drawer takes.
                         menuRight
                             ? 'right-0 [--nav-inset-r:84px] md:[--nav-inset-r:152px]'
                             : 'left-0 [--nav-inset-l:84px] md:[--nav-inset-l:152px]'
@@ -72,6 +75,8 @@ export const BankDrawer = ({ drawer, menuRight = false }) => {
                 </motion.div>
             )}
         </AnimatePresence>
+        <ItemDrawer open={drawer.isOpen && drawer.panes.includes('bank')} menuRight={menuRight} />
+        </>
     );
 };
 

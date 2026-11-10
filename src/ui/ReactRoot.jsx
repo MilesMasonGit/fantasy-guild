@@ -61,9 +61,6 @@ import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 /** The nav's views that Escape closes; Settings is a window and closes itself. */
 const NAV_VIEWS = ['guild', 'bank', 'shop', 'atlas', 'encyclopedia'];
 
-/** How far the mat's side moves aside for the Bank: the hero column's width. */
-const BANK_SHIFT_STYLE = Object.freeze({ '--hero-col': columnWidthCss(NOTIFICATION_COLUMN) });
-
 /**
  * ReactRoot: the entry point for the React UI layer. Manages the top-level layout, provides
  * the DnD context, and orchestrates global modal overlays.
@@ -138,8 +135,6 @@ const ReactRoot = () => {
     const isAtlasOpen = ui.fullscreen.view === 'atlas';
     const isEncyclopediaOpen = ui.fullscreen.view === 'encyclopedia';
     const isBankOpen = ui.drawer.panes.includes('bank');
-    // Toward the nav: the Bank's hero column opens on the far side.
-    const bankShift = isBankOpen && !isGuildView ? (menuRight ? 'right' : 'left') : undefined;
 
     // While the Bank is open the mat is not interactive at all. `useMatBankLock` is the one
     // place that reaches outside React (the drag sensor) to enforce it, so this is its only
@@ -282,16 +277,10 @@ const ReactRoot = () => {
                             }
                         >
                         {/**
-                         * The mat's side moves aside for the Bank, by transforms only
-                         * (`.gi-bank-shift` in tailwind.css): the Bank's hero column takes no
-                         * width from the mat, so the mat keeps its fit and is never measured or
-                         * redrawn for the Bank; while open it is wholly under the drawer.
+                         * The mat's side stays put while the Bank is open: the Bank and its Item
+                         * drawer lie over it, so it is never measured or redrawn for them.
                          */}
-                        <div
-                            data-bank-shift={bankShift}
-                            className="gi-bank-shift flex-1 min-h-0 flex flex-col relative"
-                            style={BANK_SHIFT_STYLE}
-                        >
+                        <div className="flex-1 min-h-0 flex flex-col relative">
                         {/**
                          * The mat's room, under the camera that pans down from the mat to the world
                          * map (`WorldCamera`): the top bar goes with the mat, the hero bar below stays.
@@ -376,8 +365,7 @@ const ReactRoot = () => {
                      * Loot flying off the mat: over the mat, under the drawers, the hero panel and
                      * the nav. ⚠️ Inside this overlay so its layer is compared with theirs; outside
                      * it, it is compared with the overlay as a whole. Nothing flies while the Bank
-                     * is open: the mat is wholly under it and the stubs are off screen, so a flight
-                     * would only cross the hero column.
+                     * is open: the mat is wholly under it and its Item drawer.
                      */}
                     {particlesDrawn && <ParticleOverlay disabled={ui.isAnyModalOpen || isBankOpen} />}
                     {/**

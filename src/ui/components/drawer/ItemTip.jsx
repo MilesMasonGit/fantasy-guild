@@ -1,6 +1,6 @@
 import React from 'react';
 import { t } from '../../../i18n/index.js';
-import { categoryOfItem, getCategoryInfo } from '../../../config/registries/equipmentConstants.js';
+import { categoryOfItem } from '../../../config/registries/equipmentConstants.js';
 import { toolOf, toolKindLabel, handsOf, HANDS } from '../../../config/registries/toolKinds.js';
 import { weaponStyleOf, isOffHand } from '../../../config/registries/weaponStyles.js';
 import { weaponDamageTypeOf, arrowOf, DAMAGE_GROUPS, DAMAGE_TYPES } from '../../../config/registries/damageTypes.js';
@@ -76,7 +76,6 @@ export function itemTipFacts(item) {
     const arrow = arrowOf(item);
     return {
         type: itemTypeLabel(item),
-        equippable: category ? getCategoryInfo(category).label : null,
         tool: tool ? t('itemTip.tool', { kind: toolKindLabel(tool.kind), tier: tool.tier }) : null,
         // A tool breaks at the end of a work cycle, a weapon at a kill (`Breakage.js`).
         breaks: breakLine(item, tool),
@@ -98,10 +97,10 @@ export function itemTipFacts(item) {
 
 /**
  * The body of an item's hover tooltip; the name is the tooltip's title, its header. Under it the
- * count, then what kind of item it is (type, what it equips as, its tool) and its tags.
- * `details` adds everything else (weapon stats, arrow, resists, what it restores, description):
- * the Bank leaves them to its inspection window (`BankItemWindow`); the Encyclopedia, which has no
- * window, keeps them. `hint` is one extra muted line (select mode's click hint).
+ * count, then its tool, its chance to break and its tags. No type or "Equippable" line: the tags
+ * say the kind. `details` adds everything else (weapon stats, arrow, resists, what it restores,
+ * description): the Bank leaves them to its Item drawer (`ItemDrawer`); the Encyclopedia, which
+ * has no drawer, keeps them. `hint` is one extra muted line (select mode's click hint).
  */
 export const ItemTipContent = ({ item, count = null, hint = null, details = true }) => {
     const facts = itemTipFacts(item);
@@ -117,18 +116,21 @@ export const ItemTipContent = ({ item, count = null, hint = null, details = true
     );
 };
 
-/** What kind of item it is: type, what it equips as, its tool, its chance to break, then its tags. */
+/** What kind of item it is: its tool, its chance to break, then its tags. */
 export const ItemKindLines = ({ facts }) => (
     <>
-        <div data-item-tip-type className="text-white/70">{facts.type}</div>
-        {facts.equippable && (
-            <div data-item-tip-equip className="text-white">{t('itemTip.equippable', { slot: facts.equippable })}</div>
-        )}
-        {facts.tool && <div data-item-tip-tool className="text-white">{facts.tool}</div>}
-        {facts.breaks && <div data-item-tip-breaks className="text-white">{facts.breaks}</div>}
+        <ItemToolLines facts={facts} />
         {facts.tags.length > 0 && (
             <div data-item-tip-tags className="ui-text-small text-white/55">{facts.tags.join(' · ')}</div>
         )}
+    </>
+);
+
+/** Its tool and its chance to break (the Item drawer shows the tags as pills instead). */
+export const ItemToolLines = ({ facts }) => (
+    <>
+        {facts.tool && <div data-item-tip-tool className="text-white">{facts.tool}</div>}
+        {facts.breaks && <div data-item-tip-breaks className="text-white">{facts.breaks}</div>}
     </>
 );
 
