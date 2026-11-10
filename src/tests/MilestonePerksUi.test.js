@@ -169,16 +169,27 @@ describe('the Hero drawer\'s skill panel lists every perk, those held lit', () =
         const perks = r.container.querySelector('[data-hero-skill-panel="forestry"] [data-skill-perks]');
         // The panel's second part: the perks in the one scrolling list, under the numbers.
         expect(perks.hasAttribute('data-scroll-list')).toBe(true);
+        // Side by side: the skill and its numbers on the left, the milestones on the right, on the drawer's backdrop.
+        const panelEl = r.container.querySelector('[data-hero-skill-panel="forestry"]');
+        const info = panelEl.querySelector('[data-hero-skill-panel-info]');
+        const milestones = panelEl.querySelector('[data-hero-skill-panel-milestones]');
+        expect(info.parentElement).toBe(milestones.parentElement);
+        expect(info.contains(panelEl.querySelector('[data-skill-detail]'))).toBe(true);
+        expect(milestones.contains(perks)).toBe(true);
+        expect(panelEl.querySelector('[data-panel-backdrop="hero"]')).not.toBeNull();
         const numbers = r.container.querySelector('[data-hero-skill-panel="forestry"] [data-skill-detail]');
         expect(numbers.compareDocumentPosition(perks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         const held = perks.querySelector('[data-skill-perk="k4ui_felling"]');
-        // `10/99  Name: what it gives`, the words the perk's own rule renders.
-        expect(held.textContent).toBe('10/99Clean Felling: ×2 loot 5 % (Forestry)');
+        // `10  Name: what it gives` on one line, the level alone in its own column, the words the
+        // perk's own rule renders.
+        expect(held.textContent).toBe('10Clean Felling: ×2 loot 5 % (Forestry)');
+        expect(held.querySelector('[data-skill-perk-level]').textContent).toBe('10');
+        expect(held.className.split(' ')).toContain('whitespace-nowrap');
         expect(held.getAttribute('data-skill-perk-earned')).toBe('true');
         expect(held.querySelector('.text-gi-gold')).not.toBeNull();
         const locked = perks.querySelector('[data-skill-perk="k4ui_seeds"]');
         expect(locked.getAttribute('data-skill-perk-earned')).toBe('false');
-        expect(locked.textContent).toContain('25/99Seed Finder II: ');
+        expect(locked.textContent).toContain('25Seed Finder II: ');
         expect(locked.className.split(' ')).toContain('opacity-50');
         fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
         expect(r.container.querySelector('[data-hero-skill-panel="mining"] [data-skill-perks]').getAttribute('data-skill-perks')).toBe('none');

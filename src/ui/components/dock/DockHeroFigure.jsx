@@ -75,7 +75,8 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
                 if (!equipOrAnnounce(EquipmentManager, heroId, p.itemId, null, p)) return false;
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
-                EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId, afterDrop: true });
+                // An item handed over from another hero's grid keeps the panel on that hero (owner, 2026-11-10).
+                if (p.fromHeroId == null) EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId, afterDrop: true });
             } else if (isRosterFlag(p) && p.heroId && p.heroId !== heroId) {
                 onReorder?.(p.heroId, heroId);
             }

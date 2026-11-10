@@ -600,6 +600,7 @@
         "perk": "Perk: {perk}",
         "equipped": "Equipped {item}",
         "equippedStack": "Equipped {item} x{count}",
+        "unequipped": "Unequipped {item}",
         "cantEquip": "Can't equip {item}. {reason}",
         "skillTooLow": "{skill} skill too low. ({have}/{need})"
     },
@@ -610,6 +611,7 @@
         "close": "Close",
         "edit": "Edit hero",
         "inventory": "Inventory",
+        "milestones": "Milestones",
         "perkRow": "{name}: {rules}",
         "sendOut": "Drag onto the mat to send out",
         "tabSkills": "Skills",

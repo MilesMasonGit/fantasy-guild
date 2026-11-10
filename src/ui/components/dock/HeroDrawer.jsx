@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
@@ -6,6 +6,9 @@ import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE, DRAG_KIND } from '../../dnd/dragConstants.js';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
+import { CloseX } from '../base/CloseX.jsx';
+import { Feather } from 'lucide-react';
+import { t } from '../../../i18n/index.js';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { SIDE_DRAWER_TRANSITION } from '../base/SideDrawer.jsx';
 import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
@@ -13,6 +16,9 @@ import { DOCK_STRIP_PX, HERO_DRAWER_PAD_TOP_PX, dockArtPx, dockLabelOverhangPx }
 
 /** The drawer's slide (`SIDE_DRAWER_TRANSITION`, 250 ms), plus a little slack before it unmounts. */
 const DRAWER_CLOSE_MS = 300;
+
+/** The room kept between the header's HP bar and the corner's controls, in screen px. */
+const CONTROLS_GAP_PX = 12;
 
 /** Where the drawer stands: up when open, wholly below the screen's edge (behind the bar) when closed. */
 export const heroDrawerY = (open) => (open ? 0 : '100%');
@@ -76,6 +82,26 @@ export const HeroDrawer = ({
 
     useEscapeLayer(!!selectedHeroId, () => onCloseHero?.());
 
+    // The header's HP bar runs to the blocks' right edge, but stops short of the corner's X and
+    // quill where the blocks reach that far (a narrow window). Measured after every draw and on a
+    // resize; it sets only a changed value.
+    const [headerEndPx, setHeaderEndPx] = useState(0);
+    const [, redraw] = useReducer(n => n + 1, 0);
+    useEffect(() => {
+        window.addEventListener('resize', redraw);
+        return () => window.removeEventListener('resize', redraw);
+    }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useLayoutEffect(() => {
+        const aside = asideRef.current;
+        const controls = aside?.querySelector('[data-hero-panel-controls]');
+        const body = aside?.querySelector('[data-hero-panel-body]');
+        if (!controls || !body) return;
+        const clash = Math.ceil(body.getBoundingClientRect().right - (controls.getBoundingClientRect().left - CONTROLS_GAP_PX));
+        const next = Math.max(0, clash);
+        if (next !== headerEndPx) setHeaderEndPx(next);
+    });
+
     // The open drawer's whole box is a drawer target: a hero dropped on it is a miss (they keep
     // their order) rather than an order onto the mat hidden under it.
     const recall = useEntityDrop({
@@ -120,7 +146,26 @@ export const HeroDrawer = ({
                     frameClassName={cn('flex flex-col', recall.valid && 'outline-2 outline-gi-success/70')}
                 >
                     <div className="gi-drawer-pad-x flex justify-center" style={{ paddingTop: HERO_DRAWER_PAD_TOP_PX }}>
-                        <HeroInspectionSheet heroId={shownHeroId} onClose={onCloseHero} onEdit={onEditHero} />
+                        <HeroInspectionSheet heroId={shownHeroId} onClose={onCloseHero} headerEndPx={headerEndPx} />
+                    </div>
+                    {/* The drawer's top right corner, clear of a nav on that side. */}
+                    <div
+                        data-hero-panel-controls
+                        className="absolute top-2 flex items-center gap-1"
+                        style={{ right: 'calc(var(--nav-inset-r, 0px) + 0.75rem)' }}
+                    >
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); onEditHero?.(shownHeroId); }}
+                            data-hero-panel-edit
+                            aria-label={t('heroPanel.edit')}
+                            title={t('heroPanel.edit')}
+                            className="ui-icon-button w-8 h-8 flex items-center justify-center text-gi-muted hover:text-[var(--color-ui-white)] transition-colors cursor-pointer"
+                        >
+                            {/* ⚠️ Placeholder quill until the owner draws one. */}
+                            <Feather size={16} />
+                        </button>
+                        <CloseX data-hero-panel-close label={t('heroPanel.close')} onClick={(e) => { e.stopPropagation(); onCloseHero?.(); }} />
                     </div>
                     {/* The clear band the bar's strip, names and HP bars stand over. */}
                     <div aria-hidden data-hero-drawer-foot className="shrink-0" style={{ height: DOCK_STRIP_PX + foot + HERO_DRAWER_PAD_TOP_PX }} />

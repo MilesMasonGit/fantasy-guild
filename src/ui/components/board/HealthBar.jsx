@@ -1,6 +1,5 @@
 import { MAT_BAR, healthFraction, healthFillPx, matHealthText } from './healthBar.js';
-import { TONE_FILL } from '../base/VitalBar.jsx';
-import { hpTone } from '../dock/dockHeroView.js';
+import { hpFillTone } from '../base/VitalBar.jsx';
 import { SPEECH_FILL } from './speechTone.js';
 
 /** The frames' stepped corners, `s` mat units a step. */
@@ -21,7 +20,7 @@ export const HealthBar = ({ who, of = null, cur, max, style, u = 1, outward = 0,
     const fraction = healthFraction(cur, max);
     // The inside's width in plate pixels: the fill steps in whole art pixels of it.
     const wide = (Number.isFinite(style?.width) && u > 0 ? Math.round(style.width / u) : MAT_BAR.W) - 2 * MAT_BAR.EDGE;
-    const tone = TONE_FILL[hpTone(Math.round(fraction * 100))];
+    const tone = hpFillTone(who, Math.round(fraction * 100));
     const e = MAT_BAR.EDGE * u;
     return (
         <div

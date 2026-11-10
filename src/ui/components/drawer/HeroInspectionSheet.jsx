@@ -11,7 +11,6 @@ import { FlagMark } from '../board/FlagMark.jsx';
 import { MARKER_ART_PX } from '../board/flagGeometry.js';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { VitalBar } from '../base/VitalBar.jsx';
-import { CloseX } from '../base/CloseX.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE, rosterFlagPayload } from '../../dnd/dragConstants.js';
@@ -25,7 +24,6 @@ import { FRAME_BAND_PX } from '../base/PixelFrame.jsx';
 import { HERO_DRAWER_PAD_TOP_PX } from '../dock/dockHeroView.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { openEncyclopedia } from '../encyclopedia/encyclopediaLink.js';
-import { Feather } from 'lucide-react';
 import { t } from '../../../i18n/index.js';
 
 /** The specialist rows' own background. */
@@ -46,14 +44,16 @@ const SKILL_PANEL_GAP_PX = 6;
 export const SHEET_FLAG_OFFSET = 0.12;
 
 /**
- * The hero drawer's contents, three blocks left to right: the hero (idling at twice the mat's size
- * with their flag behind, name, HP, the close X and the edit quill); their loadout grid, always in
- * view; and a switch between the Skills grid (columns of four, in the sheet's order) and the Combat
- * view. Hovering a skill gives its XP; clicking it opens the skill panel over the drawer.
+ * The hero drawer's contents: a header across the top (the name over the hero's column, the HP bar
+ * over the rest), then three blocks left to right: the hero idling at twice the mat's size with
+ * their flag behind; their loadout grid, always in view; and a switch between the Skills grid
+ * (columns of four, in the sheet's order) and the Combat view. Hovering a skill gives its XP;
+ * clicking it opens the skill panel over the drawer. The close X and the edit quill stand in the
+ * drawer's own top right corner (`HeroDrawer`).
  */
 // Memoised: the drawer around it holds a drop target, which dnd-kit redraws at every drag start,
 // end and change of target.
-export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, onClose, onEdit }) {
+export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, onClose, headerEndPx = 0 }) {
     // Flat projection, per the useGameState selector contract: a string that changes only when
     // something drawn here changes.
     const signature = useGameState(
@@ -101,65 +101,70 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
         onClose?.();
     };
 
+    const figurePx = 2 * ART_PX * boardArtSteps(fit);
+    const summaryPx = Math.max(figurePx, SUMMARY_MIN_PX);
+
     return (
-        <div data-hero-panel-body={heroId} className="flex items-start gap-6 text-gi-text select-none">
-            <section data-hero-drawer-block="summary" className="shrink-0 flex items-start gap-1">
-                <HeroSummary hero={hero} heroId={heroId} size={2 * ART_PX * boardArtSteps(fit)} />
-                <div data-hero-panel-controls className="flex flex-col items-center gap-1">
-                    <CloseX data-hero-panel-close label={t('heroPanel.close')} onClick={(e) => { e.stopPropagation(); onClose?.(); }} />
-                    <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onEdit?.(heroId); }}
-                        data-hero-panel-edit
-                        aria-label={t('heroPanel.edit')}
-                        title={t('heroPanel.edit')}
-                        className="ui-icon-button w-8 h-8 flex items-center justify-center text-gi-muted hover:text-[var(--color-ui-white)] transition-colors cursor-pointer"
-                    >
-                        {/* ⚠️ Placeholder quill until the owner draws one. */}
-                        <Feather size={16} />
-                    </button>
-                </div>
-            </section>
+        // `relative`: the skill panel stands over the drawer's top edge, from this box's right.
+        <div data-hero-panel-body={heroId} className="relative flex flex-col gap-2 text-gi-text select-none">
+            {/* The header across the drawer: the name over the hero's column, the HP over the rest. */}
+            <header data-hero-drawer-header className="flex items-center gap-6" style={{ paddingRight: headerEndPx }}>
+                <h3
+                    data-hero-panel-name
+                    className="shrink-0 ui-text-display font-bold text-white text-center break-words leading-none"
+                    style={{ width: summaryPx }}
+                >
+                    {hero.name}
+                </h3>
+                <VitalBar data-hero-panel-hp style={{ flex: '1 1 0%' }} value={hero.hp} max={hero.hpMax} height={22} textClass="ui-text-body" />
+            </header>
 
-            <section data-hero-drawer-block="equipment" className="shrink-0 flex flex-col gap-2">
-                <h4 data-hero-drawer-inventory className="flex items-center gap-1 pb-1 border-b-2 border-transparent ui-text-body font-bold text-gi-muted">
-                    {/* The glyph's height, so the label stands on the tabs' line. */}
-                    <span aria-hidden className="inline-block w-0 h-4" />
-                    {t('heroPanel.inventory')}
-                </h4>
-                <DockEquipmentGrid heroId={heroId} />
-            </section>
+            <div className="flex items-start gap-6">
+                <section data-hero-drawer-block="summary" className="shrink-0 flex justify-center" style={{ width: summaryPx }}>
+                    <HeroFigure hero={hero} heroId={heroId} size={figurePx} />
+                </section>
 
-            <section data-hero-drawer-block="detail" className="relative shrink-0 flex flex-col gap-2" style={{ minWidth: detailMinPx || undefined }}>
-                <div role="tablist" className="flex items-end gap-4">
-                    <ViewTab id={HERO_VIEW.SKILLS} glyph="star" label={t('heroPanel.tabSkills')} view={view} onShow={showView} />
-                    <ViewTab id={HERO_VIEW.COMBAT} glyph="fight" label={t('heroPanel.tabCombat')} view={view} onShow={showView} />
-                </div>
-                {view === HERO_VIEW.SKILLS ? (
-                    <div
-                        ref={skillsRef}
-                        data-skill-group="held"
-                        className="grid grid-flow-col gap-x-2 gap-y-1"
-                        style={{ gridTemplateRows: `repeat(${SKILLS_PER_COLUMN}, auto)` }}
-                    >
-                        {rows.map(r => (
-                            <SkillCell key={r.id} heroId={heroId} row={r} open={openSkillId === r.id} onToggle={() => toggleSkill(r.id)} />
-                        ))}
+                <section data-hero-drawer-block="equipment" className="shrink-0 flex flex-col gap-2">
+                    <h4 data-hero-drawer-inventory className="flex items-center gap-1 pb-1 border-b-2 border-transparent ui-text-body font-bold text-gi-muted">
+                        {/* The glyph's height, so the label stands on the tabs' line. */}
+                        <span aria-hidden className="inline-block w-0 h-4" />
+                        {t('heroPanel.inventory')}
+                    </h4>
+                    <DockEquipmentGrid heroId={heroId} />
+                </section>
+
+                <section data-hero-drawer-block="detail" className="shrink-0 flex flex-col gap-2" style={{ minWidth: detailMinPx || undefined }}>
+                    <div role="tablist" className="flex items-end gap-4">
+                        <ViewTab id={HERO_VIEW.SKILLS} glyph="star" label={t('heroPanel.tabSkills')} view={view} onShow={showView} />
+                        <ViewTab id={HERO_VIEW.COMBAT} glyph="fight" label={t('heroPanel.tabCombat')} view={view} onShow={showView} />
                     </div>
-                ) : (
-                    <HeroCombatView heroId={heroId} />
-                )}
-                {openRow && (
-                    <HeroSkillPanel
-                        heroId={heroId}
-                        row={openRow}
-                        onClose={() => setOpenSkillId(null)}
-                        onLookUp={lookUp}
-                        // Over the drawer's top edge: the block's top is the frame's band and the padding below it.
-                        style={{ left: 0, bottom: `calc(100% + ${FRAME_BAND_PX + HERO_DRAWER_PAD_TOP_PX + SKILL_PANEL_GAP_PX}px)` }}
-                    />
-                )}
-            </section>
+                    {view === HERO_VIEW.SKILLS ? (
+                        <div
+                            ref={skillsRef}
+                            data-skill-group="held"
+                            className="grid grid-flow-col gap-x-2 gap-y-1"
+                            style={{ gridTemplateRows: `repeat(${SKILLS_PER_COLUMN}, auto)` }}
+                        >
+                            {rows.map(r => (
+                                <SkillCell key={r.id} heroId={heroId} row={r} open={openSkillId === r.id} onToggle={() => toggleSkill(r.id)} />
+                            ))}
+                        </div>
+                    ) : (
+                        <HeroCombatView heroId={heroId} />
+                    )}
+                </section>
+            </div>
+            {openRow && (
+                <HeroSkillPanel
+                    heroId={heroId}
+                    row={openRow}
+                    onClose={() => setOpenSkillId(null)}
+                    onLookUp={lookUp}
+                    // Over the drawer's top edge, its right on the blocks' right: this box's top is the
+                    // frame's band and the padding below it.
+                    style={{ right: 0, bottom: `calc(100% + ${FRAME_BAND_PX + HERO_DRAWER_PAD_TOP_PX + SKILL_PANEL_GAP_PX}px)` }}
+                />
+            )}
         </div>
     );
 });
@@ -185,16 +190,7 @@ const ViewTab = ({ id, glyph, label, view, onShow }) => {
     );
 };
 
-/** The hero's name and HP at the top, then the hero at `size`. */
 // The name in the display size: the owner asked for it larger than a panel title (2026-11-10).
-const HeroSummary = ({ hero, heroId, size }) => (
-    <div className="flex flex-col items-center gap-1" style={{ width: Math.max(size, SUMMARY_MIN_PX) }}>
-        <h3 data-hero-panel-name className="self-stretch ui-text-display font-bold text-white text-center break-words leading-none">{hero.name}</h3>
-        <VitalBar data-hero-panel-hp style={{ alignSelf: 'stretch' }} value={hero.hp} max={hero.hpMax} height={18} textClass="ui-text-body" />
-        <HeroFigure hero={hero} heroId={heroId} size={size} />
-    </div>
-);
-
 /** The hero block's narrowest, in screen px: room for a short name on one line at the display size. */
 const SUMMARY_MIN_PX = 176;
 
@@ -280,7 +276,7 @@ const SkillCell = ({ heroId, row, open = false, onToggle }) => {
             >
                 <SkillIcon skillId={row.id} size={SKILL_ICON_PX} />
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
-                    <span data-skill-name className="ui-text-small leading-none text-gi-muted whitespace-nowrap">{row.name}</span>
+                    <span data-skill-name className="ui-text-small leading-none text-white whitespace-nowrap">{row.name}</span>
                     <span data-skill-level className="ui-text-body leading-none tabular-nums font-bold whitespace-nowrap">
                         {skillLevelText(row.level)}
                     </span>

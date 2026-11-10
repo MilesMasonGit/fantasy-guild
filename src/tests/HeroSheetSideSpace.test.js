@@ -78,6 +78,8 @@ describe('the drawer\'s skills, in columns of four', () => {
         expect([...group.children].every(el => el.querySelector('[data-skill-row]') || el.hasAttribute('data-skill-row'))).toBe(true);
         const row = group.querySelector('[data-skill-row="mining"]');
         expect(row.textContent).toBe('Mining1/99');
+        // The name in the bright white of values, not muted.
+        expect(row.querySelector('[data-skill-name]').className.split(' ')).toContain('text-white');
         expect(row.querySelector('img').style.width).toBe('48px');
         fireEvent.pointerEnter(row);
         const tip = document.body.querySelector('[data-tooltip]');
@@ -153,19 +155,33 @@ describe('nothing in the drawer scrolls', () => {
     });
 });
 
-describe('close and edit in the hero\'s block', () => {
+describe('the header, and close and edit in the drawer\'s corner', () => {
     const controls = (r) => r.container.querySelector('[data-hero-panel-controls]');
 
-    it('stand in the summary block, on its right, beside the hero; the name and HP above the figure', () => {
+    it('a header runs above the blocks: the name over the hero\'s column, the HP bar over the rest', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
+        const header = r.container.querySelector('[data-hero-drawer-header]');
+        const name = header.querySelector('[data-hero-panel-name]');
+        const hp = header.querySelector('[data-hero-panel-hp]');
+        expect(name.className).toContain('ui-text-display');
+        expect(name.compareDocumentPosition(hp) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        // The HP bar takes the rest of the header's width.
+        expect(hp.style.flex).toBe('1 1 0%');
+        // The name's column is the hero's column below it.
         const summary = r.container.querySelector('[data-hero-drawer-block="summary"]');
-        expect(summary.contains(controls(r))).toBe(true);
-        // The controls come after the hero in the block (its right side).
-        expect(summary.lastElementChild).toBe(controls(r));
-        const order = ['[data-hero-panel-name]', '[data-hero-panel-hp]', '[data-hero-panel-sprite]'].map(s => summary.querySelector(s));
-        expect(order[0].compareDocumentPosition(order[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(order[1].compareDocumentPosition(order[2]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(order[0].className).toContain('ui-text-display');
+        expect(name.style.width).toBe(summary.style.width);
+        expect(header.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(summary.querySelector('[data-hero-panel-name], [data-hero-panel-hp]')).toBeNull();
+    });
+
+    it('stand in the drawer\'s own top right corner, outside the blocks, clear of a nav on that side', () => {
+        const r = render(panel({ selectedHeroId: 'h1' }));
+        const body = r.container.querySelector('[data-hero-panel-body]');
+        expect(body.contains(controls(r))).toBe(false);
+        expect(controls(r).className.split(' ')).toEqual(expect.arrayContaining(['absolute', 'top-2']));
+        expect(controls(r).style.right).toContain('--nav-inset-r');
+        // The quill first, the X at the very corner.
+        expect(controls(r).lastElementChild.hasAttribute('data-hero-panel-close')).toBe(true);
         expect(controls(r).querySelector('[data-hero-panel-close]')).not.toBeNull();
         expect(controls(r).querySelector('[data-hero-panel-edit]')).not.toBeNull();
     });

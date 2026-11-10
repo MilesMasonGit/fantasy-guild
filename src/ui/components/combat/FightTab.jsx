@@ -85,7 +85,7 @@ export const FightTabView = ({ heroId, tab, still, onOpen }) => {
                         </span>
                         <span className="flex items-center gap-1.5">
                             <VitalBar data-fight-tab-hp="hero" value={tab.hero.cur} max={tab.hero.max} height={TAB_BAR_H} style={{ width: TAB_BAR_W }} />
-                            <VitalBar data-fight-tab-hp="enemy" value={tab.enemy.cur} max={tab.enemy.max} height={TAB_BAR_H} style={{ width: TAB_BAR_W }} />
+                            <VitalBar data-fight-tab-hp="enemy" who="enemy" value={tab.enemy.cur} max={tab.enemy.max} height={TAB_BAR_H} style={{ width: TAB_BAR_W }} />
                         </span>
                     </div>
                     <Face>

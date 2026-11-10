@@ -17,7 +17,10 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **XP is a thin bar**; the exact number (`1,154 / 1,500 XP`) shows on hover.
 - **A hero's HP on the hero bar and sheet: the numbers over a stepped pixel bar**
   (`VitalBar`; owner, 2026-11-02): a smooth fill on a plain black edge, no ticks
-  (owner's pick, 2026-11-05).
+  (owner's pick, 2026-11-05). **A hero's bar is always the mat's light red** (`HP_COLOUR`,
+  `HERO_HP_TONE`; owner, 2026-11-05, T-317), whatever their health: on the hero bar, the Hero
+  drawer, the fight window and its tabs, and over a hero on the mat. An enemy's keeps green, amber
+  and red by its health.
 - **HP elsewhere is a bar**; the exact number shows on hover, except on the mat, where a fighter's bar is a small
   edition of the hero bar's, the same tones on a stepped black edge, its numbers written on it, `17/30` (owner's pick F,
   2026-11-05).
@@ -149,30 +152,37 @@ normal text colour; a new meaning needs the owner's OK.
   callout for equipping. *New, unapproved.*
 - **One bottom panel at a time** over the bar: the Shop or the Hero drawer; opening one closes
   the other (`useOneBottomDrawer`).
-- **The Hero drawer** (brief 570 D2, the owner's look 2026-11-10; *new, unapproved*): a click on a
+- **The Hero drawer** (brief 570 D2, the owner's looks 2026-11-10; *new, unapproved*): a click on a
   hero on the bar slides it up from behind the bar (and down again as it closes: the side drawers'
   250 ms, none under reduced motion), across the screen like the Shop (studs frame, the teal
   backdrop), over the side drawers and **down to the screen's bottom edge behind the bar**: no gap
-  under it; the bar's strip, names and HP bars stand over a clear band at its foot. Three blocks
-  left to right, centred in the room beside the nav: **the hero** (the name at the top in the
-  display size, the owner's exception to the three panel sizes; the HP `VitalBar` under it; then
-  the figure at twice the mat's size with the job flag behind the shoulder; the close X and the
-  edit quill at the block's top right); **Inventory**, one muted word over the loadout grid, always
-  in view; **Skills / Combat**, two tabs (glyph and word, the open one over a gold line).
-  **Skills**: in columns of four, combat, gathering, crafting, then specialist, no headers, no
-  scrolling; each cell the skill's icon at 3x (48 px), its name, its level and the XP bar; hover
-  gives a clean stat block under the name and level (XP, to the next level, XP/h); a click opens
-  the **skill panel**, a chamfer panel standing over the drawer's top edge with its own X (Escape
-  closes it first; another skill switches it), in two parts: first the icon, name and level, the
+  under it; the bar's strip, names and HP bars stand over a clear band at its foot. **The edit
+  quill and the close X** stand in the drawer's own top right corner, clear of a nav on that side.
+  **A header** runs above the blocks: the hero's name in the display size over the hero's column
+  (the owner's exception to the three panel sizes), the HP `VitalBar` across the rest, over the
+  inventory and the skills (it stops short of the corner's X where the blocks reach that far).
+  Then three blocks left to right, centred in the room beside the nav: **the hero** at twice the
+  mat's size with the job flag behind the shoulder; **Inventory**, one muted word over the loadout
+  grid, always in view; **Skills / Combat**, two tabs (glyph and word, the open one over a gold
+  line). **Skills**: in columns of four, combat, gathering, crafting, then specialist, no headers,
+  no scrolling; each cell the skill's icon at 3x (48 px), its name in white, its level and the XP
+  bar; hover gives a clean stat block under the name and level (XP, to the next level, XP/h); a
+  click opens the **skill panel**, a chamfer panel on the drawer's teal backdrop standing over the
+  drawer's top edge, its right on the blocks' right, with its own X (Escape closes it first;
+  another skill switches it), in two parts side by side: on the left the icon, name and level, the
   book, what the skill is for (the `skillPurpose` lines in `src/i18n/en.json`, the owner's to
-  edit) and the exact XP; then, under a faint line, every milestone perk in one scrolling list
-  (`ArrowScrollList`), a row each, `10/99  Even Heat: +10 % XP (Smithing)`, the words the perk's
-  own rule renders; held ones in gold, the rest dimmed. On a short screen the list gives up
-  height so the panel stays on screen. **Combat**: one row a stat in columns of five, a muted name
-  and a bold value with its tooltip: style, hit, damage (the lowest and highest landed hit
-  against the four enemy styles; the tip lists each and a crit), swing, crit, accuracy, dodge,
-  resistances, style cuts, gear effects. The block keeps the skills grid's width, so the switch
-  never moves the blocks.
+  edit) and the exact XP; on the right, under the word Milestones, every milestone perk in one
+  scrolling list (`ArrowScrollList`) as tall as the left part, a row each on one line, the level
+  alone right-aligned in a column of its own, then `Even Heat: +10 % XP (Smithing)`, the words the
+  perk's own rule renders; held ones in gold, the rest dimmed. **Combat**: one row a stat in
+  columns of five, a muted name and a bold value with its tooltip: style, hit, damage (the lowest
+  and highest landed hit against the four enemy styles; the tip lists each and a crit), swing,
+  crit, accuracy, dodge, resistances, style cuts, gear effects. The block keeps the skills grid's
+  width, so the switch never moves the blocks.
+- **An item handed from one hero to another** (from one hero's grid onto another hero on the bar)
+  keeps the Hero drawer on the hero it shows: the taker says "Equipped …" and the giver
+  "Unequipped …", each in the plain frame over them on the bar; a refusal is the red bubble over the
+  taker only.
 
 ## The work plate (owner, 2026-10-24)
 

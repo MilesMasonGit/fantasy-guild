@@ -94,6 +94,25 @@ describe('equipOrAnnounce speaks over the hero on the bar', () => {
         expect(equipBubbleOf('h1')).toBeNull();
     });
 
+    it('handed from one hero to another: the taker says what was equipped, the giver what came off, and the panel is told to stay', async () => {
+        const { isHandingOver } = await import('../ui/components/dock/dockEquip.js');
+        let during = null;
+        const equipment = { equipItem: vi.fn(() => { during = isHandingOver(); return { success: true }; }) };
+        expect(equipOrAnnounce(equipment, 'h2', 'tool_iron_woodaxe', null, { fromHeroId: 'h1', fromSlot: 0 }, world)).toBe(true);
+        expect(equipment.equipItem).toHaveBeenCalledWith('h2', 'tool_iron_woodaxe', null, { heroId: 'h1', slot: 0 });
+        expect(during).toBe(true);
+        expect(isHandingOver()).toBe(false);
+        expect(equipBubbleOf('h2')).toMatchObject({ text: 'Equipped Iron Woodaxe', tone: SPEECH_TONE.PLAIN });
+        expect(equipBubbleOf('h1')).toMatchObject({ text: 'Unequipped Iron Woodaxe', tone: SPEECH_TONE.PLAIN });
+    });
+
+    it('a refused hand-over is said in red over the taker only', () => {
+        const equipment = { equipItem: vi.fn(() => ({ success: false, error: 'No free slot in the loadout' })) };
+        expect(equipOrAnnounce(equipment, 'h2', 'tool_iron_woodaxe', null, { fromHeroId: 'h1', fromSlot: 0 }, world)).toBe(false);
+        expect(equipBubbleOf('h2').tone).toBe(SPEECH_TONE.CANT);
+        expect(equipBubbleOf('h1')).toBeNull();
+    });
+
     it('the bubble fades and is gone after about three seconds; a newer one replaces it', () => {
         vi.useFakeTimers();
         const equipment = { equipItem: vi.fn(() => ({ success: true })) };

@@ -1,5 +1,6 @@
 import { hpPercent, hpTone } from '../dock/dockHeroView.js';
 import { SPEECH_FILL } from '../board/speechTone.js';
+import { HP_COLOUR } from '../board/healthBar.js';
 
 /** Each tone's fill and the one-art-pixel lighter and darker rows along its top and foot. */
 export const TONE_FILL = Object.freeze({
@@ -7,6 +8,16 @@ export const TONE_FILL = Object.freeze({
     amber: { fill: '#d9962b', light: '#f2c14e', dark: '#9a6618' },
     red: { fill: '#c8322b', light: '#ee6a55', dark: '#8a1f1b' }
 });
+
+/**
+ * A hero's HP, whatever their health: the mat's light red (`HP_COLOUR`; owner, 2026-11-05, T-317),
+ * on the hero bar, the Hero drawer, the fight window and over a hero on the mat. Enemies keep the
+ * green, amber and red tones.
+ */
+export const HERO_HP_TONE = Object.freeze({ fill: HP_COLOUR, light: '#f8c4c4', dark: '#c25f5f' });
+
+/** The fill for a bar: a hero's is always {@link HERO_HP_TONE}, anyone else's by how hurt they are. */
+export const hpFillTone = (who, pct) => (who === 'hero' ? HERO_HP_TONE : TONE_FILL[hpTone(pct)]);
 
 /** One art pixel off each corner, so the bar has the frames' stepped corners and no rounding. */
 export const STEPPED = 'polygon(2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px), 0 2px, 2px 2px)';
@@ -18,11 +29,12 @@ export const STEPPED = 'polygon(2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px,
  * @param {number} max       maximum; guarded against 0 so the bar can't divide by zero
  * @param {number} height    in screen px
  * @param {string} textClass the kit's text size for the numbers
+ * @param {'hero'|'enemy'} who  a hero's bar is always the light red; an enemy's follows its health
  * Other props go on the outer box.
  */
-export const VitalBar = ({ value, max, height = 16, textClass = 'ui-text-small', style, ...rest }) => {
+export const VitalBar = ({ value, max, height = 16, textClass = 'ui-text-small', who = 'hero', style, ...rest }) => {
     const pct = hpPercent({ current: value, max });
-    const tone = TONE_FILL[hpTone(pct)];
+    const tone = hpFillTone(who, pct);
     return (
         <div {...rest} className="relative" style={{ height, ...style }}>
             <div className="absolute inset-0" style={{ background: '#000', clipPath: STEPPED }}>

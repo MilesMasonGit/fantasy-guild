@@ -46,6 +46,19 @@ export function equipSuccessText(itemId, game = GAME) {
         : t('heroBar.equipped', { item });
 }
 
+/** "Unequipped Iron Woodaxe": the hero an item was handed from. */
+export function unequipText(itemId, game = GAME) {
+    return t('heroBar.unequipped', { item: game.itemOf(itemId)?.name || itemId });
+}
+
+/**
+ * Whether an equip under way is a hand-over from one hero to another: the hero panel stays on the
+ * hero it shows rather than turning to the one who took the item (`useHeroSheetRequests`). True
+ * only inside the engine's equip call, whose events are published synchronously.
+ */
+let handingOver = false;
+export const isHandingOver = () => handingOver;
+
 /**
  * Equip through the engine and say what happened over that hero on the hero bar
  * (`equipBubbles.js`): what was equipped, or the refusal with the exact reason and numbers, never a
@@ -56,7 +69,8 @@ export function equipSuccessText(itemId, game = GAME) {
  * `payload`: the drag's own payload. Lifted from this hero's own slot and dropped on another of
  * theirs, it moves there and swaps with what is there (a success says nothing: nothing new is
  * equipped). Lifted from another hero's slot, it is handed over rather than another taken from the
- * Bank.
+ * Bank: the taker says what was equipped, the giver what was unequipped, and the hero panel stays
+ * where it is ({@link isHandingOver}).
  * @returns {boolean} whether the equip actually happened
  */
 export function equipOrAnnounce(equipment, heroId, itemId, preferredSlot = null, payload = null, game = GAME) {
@@ -64,9 +78,16 @@ export function equipOrAnnounce(equipment, heroId, itemId, preferredSlot = null,
         ? { heroId: payload.fromHeroId, slot: payload.fromSlot }
         : null;
     const isMove = from?.heroId === heroId && preferredSlot !== null;
-    const result = isMove
-        ? equipment.moveItem(heroId, itemId, from.slot, preferredSlot)
-        : equipment.equipItem(heroId, itemId, preferredSlot, from);
+    const isHandover = !!from && from.heroId !== heroId;
+    let result;
+    handingOver = isHandover;
+    try {
+        result = isMove
+            ? equipment.moveItem(heroId, itemId, from.slot, preferredSlot)
+            : equipment.equipItem(heroId, itemId, preferredSlot, from);
+    } finally {
+        handingOver = false;
+    }
     if (!result?.success) {
         const text = isMove
             ? t('heroBar.cantEquip', { item: game.itemOf(itemId)?.name || 'that', reason: withStop(result?.error || 'Could not move that') })
@@ -75,6 +96,8 @@ export function equipOrAnnounce(equipment, heroId, itemId, preferredSlot = null,
         return false;
     }
     if (!isMove) announceEquip(heroId, equipSuccessText(itemId, game), SPEECH_TONE.PLAIN);
+    // Handed over: the hero it came from says so too.
+    if (isHandover) announceEquip(from.heroId, unequipText(itemId, game), SPEECH_TONE.PLAIN);
     return true;
 }
 
