@@ -139,6 +139,17 @@ normal text colour; a new meaning needs the owner's OK.
   with its hard shadow and a stepped pixel tail, white words; the frame is
   bronze for news, gold for attention, red for "can't". They rise and fade
   but never scale.
+- **The hero bar** (brief 570 D1): a strip along the bottom of **every screen** (the mat, the
+  Bank, the Shop, the world map, the Guild Hall), no line and no fill, drawn **over the side
+  drawers and the hero panel** (layer `--z-hero-bar`, under the nav). The Bank's vertical hero
+  tabs are gone: items are dropped on the bar's heroes, and a hero's flag is dragged from it.
+  **Equip bubbles**: an item dropped on a hero, or on a slot of their loadout, is answered by a
+  `SpeechFrame` over that hero on the bar for about 3 s, plain for "Equipped Iron Woodaxe" (a
+  stack linked to the Bank with its short count, "Equipped Shrimp x4.6k"), red for a refusal with
+  its reason and numbers, "Can't equip Mythril Scimitar. Melee skill too low. (12/40)". No screen
+  callout for equipping. *New, unapproved.*
+- **One bottom panel at a time** over the bar: the Shop or a hero's panel; opening one closes
+  the other (`useOneBottomDrawer`).
 
 ## The work plate (owner, 2026-10-24)
 
@@ -298,8 +309,10 @@ item held.
 
 ## The Shop (brief 410)
 
-- **A panel from the bottom** beside the nav, on whichever side the nav is, over the hero bar;
-  studs frame, the green backdrop. **Across the whole screen** (owner, 2026-11-06): from the
+- **A panel from the bottom** beside the nav, on whichever side the nav is: it rises from behind
+  the hero bar and stands on the bar's strip, the bar staying in front with its names and HP bars
+  over a clear band at the panel's foot (brief 570 D1; before, it covered the bar); studs frame,
+  the green backdrop. **Across the whole screen** (owner, 2026-11-06): from the
   screen's edge under the nav to the far edge, its rows padded for the nav as the Bank drawer's.
   The cards keep their size and sit from the nav's side (from the left beside a left nav, against
   a right one); the arrows show only when the row overflows. The header: title, one muted hint
@@ -338,9 +351,7 @@ item held.
   the top right**: `ui_cancel_red.png` (16 px) at 2×. Same on every panel,
   drawer and modal. Small floating pop-ups (tooltips) have no header and no X.
   **One exception**: the hero sheet's close and edit stand in the side space
-  beside it, where the Bank's hero column stands (owner, 2026-11-02). In that
-  column a hero's name sits on a dark stepped plate over the portrait's foot
-  (owner's pick, 2026-11-05).
+  beside it (owner, 2026-11-02).
 
 ## Buttons
 

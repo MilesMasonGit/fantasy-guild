@@ -245,11 +245,11 @@ describe('the hero bar level-up bubbles', () => {
 });
 
 describe('the bar is laid out for eight heroes', () => {
-    it('has no backdrop: the mat\'s edge with one thin line', () => {
+    it('has no backdrop and no line', () => {
         const view = mount();
         const dock = view.container.querySelector('[data-bottom-hero-dock]');
         expect(dock.className.split(' ').filter(c => c.startsWith('bg-'))).toEqual([]);
-        expect(dock.className).toContain('border-t');
+        expect(dock.className).not.toContain('border');
     });
 
     it('gives every hero the same slot, and keeps each hero\'s bubbles inside it', () => {

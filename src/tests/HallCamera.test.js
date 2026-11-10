@@ -447,9 +447,9 @@ describe('the camera in the game\'s layout', () => {
         expect(code).toContain('sky={<HallSky />}');
     });
 
-    it('keeps the mat, its top bar, the hero dock and the notifications on the table', () => {
+    it('keeps the mat, its top bar and the notifications on the table (the hero bar is under both sides: DockVisibility.test.js)', () => {
         const { code, mat } = hallCameraSides();
-        for (const tag of ['Board', 'MatTopBar', 'BottomHeroDock', 'ItemStubColumn', 'BannerStack']) {
+        for (const tag of ['Board', 'MatTopBar', 'ItemStubColumn', 'BannerStack']) {
             expect(count(mat, tag), tag).toBe(1);
             expect(count(code, tag), tag).toBe(1);
         }
@@ -471,7 +471,9 @@ describe('the camera in the game\'s layout', () => {
 
     it('clips the column rather than hiding it, so focus on a moved side scrolls nothing', () => {
         const { code } = hallCameraSides();
-        const column = code.slice(code.lastIndexOf('<div', code.indexOf('<HallCamera')), code.indexOf('<HallCamera'));
+        // The column holds the box that gives the camera its layer, and the hero bar under it.
+        const box = code.lastIndexOf('<div', code.indexOf('<HallCamera'));
+        const column = code.slice(code.lastIndexOf('<div', box - 1), box);
         // Up and down always; sideways only off the Hall, whose web runs on under the nav.
         expect(column).toContain('overflow-y-clip');
         expect(column).toMatch(/isGuildView \? 'overflow-x-visible' : 'overflow-x-clip'/);

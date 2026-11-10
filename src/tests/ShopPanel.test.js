@@ -39,6 +39,8 @@ import {
     ShopPanel, ShopCard, shopPanelState, shopPanelTransform, shopCardPayload, pointerOverShopPanel,
     isShopPayload, SHOP_LIP_PX, SHOP_CARD_W, SHOP_CARD_H, SHOP_ART_PX
 } from '../ui/components/drawer/ShopPanel.jsx';
+import { DOCK_STRIP_PX, dockArtPx, dockLabelOverhangPx } from '../ui/components/dock/dockHeroView.js';
+import { getLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 
 const h = React.createElement;
 const WOOD = 'item_oak_wood';
@@ -146,6 +148,18 @@ describe('the Shop panel', () => {
         expect(shopPanelTransform('open')).toBe('translateY(0)');
         expect(shopPanelTransform('lip')).toBe(`translateY(calc(100% - ${SHOP_LIP_PX}px))`);
         expect(shopPanelTransform('closed')).toBe('translateY(100%)');
+        // Standing on the hero bar's strip: closed goes all the way down, the lip keeps the foot in sight.
+        expect(shopPanelTransform('closed', { under: 64 })).toBe('translateY(calc(100% + 64px))');
+        expect(shopPanelTransform('lip', { foot: 48 })).toBe(`translateY(calc(100% - ${SHOP_LIP_PX + 48}px))`);
+    });
+
+    it("stands on the hero bar's strip, its foot kept clear for the names over it", () => {
+        const foot = dockLabelOverhangPx(dockArtPx(getLiveMatFit()));
+        expect(foot).toBeGreaterThan(0);
+        const el = mountDrawer().container.querySelector('[data-shop-drawer]');
+        expect(el.style.bottom).toBe(`${DOCK_STRIP_PX}px`);
+        expect(el.className.split(' ')).not.toContain('bottom-0');
+        expect(el.querySelector('[data-shop-foot]').style.height).toBe(`${foot}px`);
     });
 
     describe('⭐ the drop to a lip tracks WHERE the card is carried, not just that it is', () => {
@@ -170,7 +184,8 @@ describe('the Shop panel', () => {
             const overBoard = mountDrawer({ carrying: shopDrag, surface: DND_SURFACE.BOARD });
             const lip = overBoard.container.querySelector('[data-shop-drawer]');
             expect(lip.getAttribute('data-shop-drawer-state')).toBe('lip');
-            expect(lip.style.transform).toBe(`translateY(calc(100% - ${SHOP_LIP_PX}px))`);
+            const foot = dockLabelOverhangPx(dockArtPx(getLiveMatFit()));
+            expect(lip.style.transform).toBe(`translateY(calc(100% - ${SHOP_LIP_PX + foot}px))`);
             expect(lip.querySelector('[data-shop-lip]').className).toContain('opacity-100');
             cleanup();
 
@@ -183,7 +198,7 @@ describe('the Shop panel', () => {
         const view = mountDrawer();
         const el = view.container.querySelector('[data-shop-drawer]');
         expect(el.getAttribute('data-shop-drawer-state')).toBe('open');
-        expect(el.className).toMatch(/(^| )bottom-0( |$)/);
+        expect(el.style.bottom).toBe(`${DOCK_STRIP_PX}px`);
         expect(el.className).toMatch(/(^| )inset-x-0( |$)/);
         expect(el.className).toContain('[--nav-inset-l:84px]');
         expect(el.style.transform).toBe('translateY(0)');

@@ -13,6 +13,7 @@ import { GameState } from '../state/GameState.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
+import { DOCK_STRIP_PX } from '../ui/components/dock/dockHeroView.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import {
     heroSkillList, skillLevelText, skillXpView, skillDetail, formatEta
@@ -62,28 +63,12 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); });
 
 describe('H2: one hero panel, in one place', () => {
-    it('opens in the same box from the bar (Bank shut) as from the Bank', () => {
-        const fromBar = render(panel({ selectedHeroId: 'h1', showTabs: false }));
-        const barBox = fromBar.container.querySelector('[data-hero-panel]');
-        expect(barBox).not.toBeNull();
-        expect(barBox.querySelector('[data-hero-panel-body="h1"]')).not.toBeNull();
-        const barPlace = { cls: barBox.className, style: barBox.getAttribute('style') };
-        cleanup();
-
-        const fromBank = render(panel({ selectedHeroId: 'h1', showTabs: true }));
-        const bankBox = fromBank.container.querySelector('[data-hero-panel]');
-        expect(bankBox.querySelector('[data-hero-panel-body="h1"]')).not.toBeNull();
-        expect({ cls: bankBox.className, style: bankBox.getAttribute('style') }).toEqual(barPlace);
-        // jsdom drops the `clamp()` width; the box is the Bank's hero column on the right.
-        expect(barPlace.cls.split(' ')).toEqual(expect.arrayContaining(['absolute', 'inset-y-0', 'right-0']));
-    });
-
-    it('shows the hero tabs only beside the Bank (the bar is under it)', () => {
-        const withBank = render(panel({ selectedHeroId: null, showTabs: true }));
-        expect(withBank.container.querySelectorAll('[data-hero-dock-tab]').length).toBe(2);
-        cleanup();
-        const shut = render(panel({ selectedHeroId: 'h1', showTabs: false }));
-        expect(shut.container.querySelectorAll('[data-hero-dock-tab]').length).toBe(0);
+    it('opens in one box on the side opposite the nav, from the top down to the hero bar', () => {
+        const r = render(panel({ selectedHeroId: 'h1' }));
+        const box = r.container.querySelector('[data-hero-panel]');
+        expect(box.querySelector('[data-hero-panel-body="h1"]')).not.toBeNull();
+        expect(box.className.split(' ')).toEqual(expect.arrayContaining(['absolute', 'top-0', 'right-0']));
+        expect(box.style.bottom).toBe(`${DOCK_STRIP_PX}px`);
     });
 
     it('clicking a hero in the bar opens the side panel; nothing rises from the bar', () => {
@@ -91,7 +76,7 @@ describe('H2: one hero panel, in one place', () => {
             const [sel, setSel] = React.useState(null);
             return wrap(
                 h(BottomHeroDock, { selectedHeroId: sel, onSelectHero: id => setSel(p => (p === id ? null : id)) }),
-                h(BankHeroPanel, { menuRight: false, showTabs: false, selectedHeroId: sel, onCloseHero: () => setSel(null) })
+                h(BankHeroPanel, { menuRight: false, selectedHeroId: sel, onCloseHero: () => setSel(null) })
             );
         };
         const view = render(h(Host));
@@ -107,7 +92,7 @@ describe('H2: one hero panel, in one place', () => {
         const onCloseHero = vi.fn();
         const view = render(wrap(
             h(BottomHeroDock, { selectedHeroId: 'h1' }),
-            h(BankHeroPanel, { menuRight: false, showTabs: false, selectedHeroId: 'h1', onCloseHero }),
+            h(BankHeroPanel, { menuRight: false, selectedHeroId: 'h1', onCloseHero }),
             h('div', { 'data-testid': 'mat' }, 'mat')
         ));
         fireEvent.pointerDown(view.container.querySelector('[data-hero-panel-body] [data-skill-row="mining"]'));
@@ -125,13 +110,13 @@ describe('H2: the panel stays open when the Bank opens', () => {
         const onCloseHero = vi.fn();
         const bankButton = h('div', { id: 'bank-bubble-target' }, h('button', { 'data-testid': 'bank' }, 'Bank'));
         const r = render(wrap(
-            h(BankHeroPanel, { menuRight: false, showTabs: false, selectedHeroId: 'h1', onCloseHero }),
+            h(BankHeroPanel, { menuRight: false, selectedHeroId: 'h1', onCloseHero }),
             bankButton
         ));
         fireEvent.pointerDown(r.getByTestId('bank'));
         expect(onCloseHero).not.toHaveBeenCalled();
         r.rerender(wrap(
-            h(BankHeroPanel, { menuRight: false, showTabs: true, selectedHeroId: 'h1', onCloseHero }),
+            h(BankHeroPanel, { menuRight: false, selectedHeroId: 'h1', onCloseHero }),
             bankButton
         ));
         act(() => { vi.advanceTimersByTime(1000); });
@@ -144,21 +129,14 @@ describe('H2: a closed panel registers no drop targets (T-104)', () => {
     const drops = (root) => root.querySelectorAll('[data-dnd-droppable-id]');
 
     it('has drop targets while open and none once closed (Bank shut)', () => {
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         expect(r.container.querySelectorAll('[data-dnd-droppable-id^="dock-slot-drop-"]').length).toBe(9);
-        r.rerender(panel({ selectedHeroId: null, showTabs: false }));
+        r.rerender(panel({ selectedHeroId: null }));
         act(() => { vi.advanceTimersByTime(1000); });
         expect(drops(r.container).length).toBe(0);
         expect(r.container.querySelector('[data-hero-panel]')).toBeNull();
     });
 
-    it('keeps only the hero tabs as targets beside the Bank once closed', () => {
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: true }));
-        r.rerender(panel({ selectedHeroId: null, showTabs: true }));
-        act(() => { vi.advanceTimersByTime(1000); });
-        const ids = [...drops(r.container)].map(el => el.getAttribute('data-dnd-droppable-id'));
-        expect(ids.sort()).toEqual(['bank-hero-drop-h1', 'bank-hero-drop-h2']);
-    });
 });
 
 // Rewritten with classless heroes: every hero holds every skill, so the panel lists all of them in
@@ -219,7 +197,7 @@ describe('H2: skills', () => {
     });
 
     it('draws each skill as icon and n/99 with a thin bar, the name and XP in the game\'s own tooltip', () => {
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         const row = r.container.querySelector('[data-skill-row="melee"]');
         expect(row.textContent).toBe('25/99');
         expect(row.querySelector('[data-skill-level]').textContent).toBe('25/99');
@@ -236,7 +214,7 @@ describe('H2: skills', () => {
     });
 
     it('shows one flat list with no Starting drawer, and nothing set aside or locked', () => {
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         const root = r.container;
         expect(root.querySelector('[data-starting-toggle]')).toBeNull();
         expect(rowIds(root, 'held')).toEqual(ALL);
@@ -248,7 +226,7 @@ describe('H2: skills', () => {
     });
 
     it('gives the specialist rows their own background and draws no mastered star', () => {
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         const row = (id) => r.container.querySelector(`[data-skill-group="held"] [data-skill-row="${id}"]`);
         expect(row('fletching').getAttribute('data-skill-tier')).toBe('specialist');
         expect(row('faith').getAttribute('data-skill-tier')).toBe('specialist');
@@ -264,7 +242,7 @@ describe('H2: skills', () => {
 
     it('opens a skill on click to its exact XP numbers and rate, and folds it on a second click', () => {
         XpRateTracker.recordGain('h1', 'melee', 1000);
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         const row = () => r.container.querySelector('[data-skill-row="melee"]');
         expect(r.container.querySelector('[data-skill-detail]')).toBeNull();
         fireEvent.click(row());
@@ -285,7 +263,7 @@ describe('H2: skills', () => {
 
     it('has an Edit control that opens the hero editor', () => {
         const onEditHero = vi.fn();
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false, onEditHero }));
+        const r = render(panel({ selectedHeroId: 'h1', onEditHero }));
         fireEvent.click(r.container.querySelector('[data-hero-panel-edit]'));
         expect(onEditHero).toHaveBeenCalledWith('h1');
     });
@@ -294,7 +272,7 @@ describe('H2: skills', () => {
 describe('H2: the panel header', () => {
     it('draws the hero at twice the mat size, idling, with their flag behind', () => {
         setLiveMatFit(1);
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         const box = r.container.querySelector('[data-hero-panel-sprite]');
         const size = 2 * ART_PX * boardArtSteps(1);
         expect(Number(box.getAttribute('data-hero-panel-sprite-px'))).toBe(size);
@@ -313,7 +291,7 @@ describe('H2: the panel header', () => {
 
     it('the flag is in the hero’s own colour', () => {
         GameState.state.heroes[0].flagColour = 'orange';
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         const mark = r.container.querySelector('[data-hero-panel-flag] [data-flag-mark]');
         expect(mark.getAttribute('data-flag-colour')).toBe('orange');
         const svgs = mark.querySelectorAll('svg');
@@ -321,44 +299,16 @@ describe('H2: the panel header', () => {
     });
 
     it('shows the HP numbers on the bar', () => {
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         expect(r.container.querySelector('[data-hero-panel-hp] [data-hp-numbers]').textContent).toBe('80/100');
     });
 
     it('closes with the game\'s red X icon', () => {
         const onCloseHero = vi.fn();
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false, onCloseHero }));
+        const r = render(panel({ selectedHeroId: 'h1', onCloseHero }));
         const close = r.container.querySelector('[data-hero-panel-close]');
         expect(close.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_cancel_red.png');
         fireEvent.click(close);
         expect(onCloseHero).toHaveBeenCalledTimes(1);
-    });
-});
-
-describe('H2: the hero tabs beside the Bank', () => {
-    it('hovering a tab grows nothing; the hero\'s name, job, status and HP show in the game\'s tooltip', () => {
-        const r = render(panel({ selectedHeroId: null, showTabs: true }));
-        const tab = r.container.querySelector('[data-dock-hero-id="h1"] [data-hero-tab-face]');
-        const before = tab.className;
-        const textBefore = tab.textContent;
-        fireEvent.mouseEnter(tab);
-        expect(tab.className).toBe(before);
-        expect(tab.textContent).toBe(textBefore);
-        const tip = document.body.querySelector('[data-top-bar-tip]');
-        expect(tip.textContent).toContain('Aldric');
-        expect(tip.textContent).toContain('80 / 100 HP');
-        fireEvent.mouseLeave(tab);
-        expect(document.body.querySelector('[data-top-bar-tip]')).toBeNull();
-    });
-
-    it('reads each tab as a portrait and the name, no bar or dot', () => {
-        const r = render(panel({ selectedHeroId: null, showTabs: true }));
-        const tab = r.container.querySelector('[data-dock-hero-id="h1"]');
-        expect(tab.textContent).toBe('Aldric');
-        expect(tab.querySelector('[data-hero-tab-portrait]')).not.toBeNull();
-        expect(tab.querySelector('[data-hero-tab-name]').textContent).toBe('Aldric');
-        // No HP bar and no status dot: those are in the tooltip and the hero panel.
-        expect(tab.querySelector('[data-hero-tab-hp]')).toBeNull();
-        expect(tab.querySelector('.rounded-full')).toBeNull();
     });
 });

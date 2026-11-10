@@ -17,11 +17,12 @@ import { VitalBar } from '../base/VitalBar.jsx';
 import { useDragSettleHover } from './useDragSettleHover.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { useHeroBarBubbles, clearHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from './heroBarBubbles.js';
+import { useEquipBubble, EQUIP_BUBBLE_FADE_MS } from './equipBubbles.js';
 import { BubbleText } from '../board/BubbleText.jsx';
 import { SpeechFrame } from '../board/SpeechFrame.jsx';
 import { SPEECH_TONE } from '../board/speechTone.js';
 import {
-    DOCK_STRIP_PX, DOCK_LABEL_GAP_PX, DOCK_NAME_TEXT_CLASS, ROSTER_FLAG_PX, DOCK_HP_BAR_PX, DOCK_HP_BAR_HEIGHT_PX,
+    DOCK_STRIP_PX, DOCK_LABEL_GAP_PX, DOCK_LABEL_PX, DOCK_NAME_TEXT_CLASS, ROSTER_FLAG_PX, DOCK_HP_BAR_PX, DOCK_HP_BAR_HEIGHT_PX,
     dockArtOffset, rosterFlagPlace, rosterAlertPlace, rosterAlertPx, hpPercent, hpTone
 } from './dockHeroView.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -35,7 +36,7 @@ import { onPoll } from '../board/frameClock.js';
  * every hero; the art lifts on hover. The hero's job flag, in their colour, stands at one shoulder
  * (`rosterFlagPlace`), lifting and lit with them on hover; at the other, an alert when they are
  * wounded or the player must act (`rosterAlertOf`). What they are doing is a speech bubble while
- * hovered.
+ * hovered; what an equip drop did is one for about three seconds (`equipBubbles.js`).
  * The sprite writes its frames straight to the element (the shared sprite clock), so an idle
  * frame re-renders nothing: not this figure, and not the slot, whose reorder animation would
  * measure its layout again.
@@ -66,7 +67,6 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
     const drop = useEntityDrop({
         id: `dock-hero-drop-${heroId}`,
         surface: DND_SURFACE.DRAWER,
-        beneathDrawers: true,
         // An item equips, another roster hero reorders.
         accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId)
             || (isRosterFlag(p) && p.heroId !== heroId),
@@ -171,6 +171,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
     ) || { state: 'idle', alert: null };
 
     const bubbles = useHeroBarBubbles(heroId);
+    const equipSaid = useEquipBubble(heroId);
 
     const isWounded = hero.status === 'wounded';
     const hp = Math.max(0, Math.round(hero.hp?.current ?? 0));
@@ -348,15 +349,16 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                 heroId={heroId}
                 size={MARK_SCREEN_PX}
                 className="absolute left-1/2 -translate-x-1/2"
-                style={{ bottom: labelBottom + LABEL_PX }}
-                fallback={(lifted || bubbles.length > 0) ? (
+                style={{ bottom: labelBottom + DOCK_LABEL_PX }}
+                fallback={(lifted || bubbles.length > 0 || equipSaid) ? (
                     <div
                         data-dock-speech={heroId}
                         className="absolute inset-x-0 flex flex-col items-center gap-1.5 pointer-events-none"
-                        style={{ bottom: labelBottom + LABEL_PX }}
+                        style={{ bottom: labelBottom + DOCK_LABEL_PX }}
                     >
-                        {lifted && <StatusBubble heroId={heroId} alert={roster.alert} tail={bubbles.length === 0} />}
-                        {bubbles.length > 0 && <BarBubbles heroId={heroId} bubbles={bubbles} />}
+                        {lifted && <StatusBubble heroId={heroId} alert={roster.alert} tail={bubbles.length === 0 && !equipSaid} />}
+                        {bubbles.length > 0 && <BarBubbles heroId={heroId} bubbles={bubbles} tailLast={!equipSaid} />}
+                        {equipSaid && <EquipBubble heroId={heroId} said={equipSaid} />}
                     </div>
                 ) : null}
             />
@@ -391,8 +393,26 @@ const StatusBubble = ({ heroId, alert, tail }) => {
     );
 };
 
-/** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of them. */
-const LABEL_PX = 46;
+/**
+ * What an equip drop did, nearest the head: plain for an item equipped, red (CANT) with the reason
+ * for a refusal. It may be wider than a slot, as the hover bubble is. Nothing to click; it fades by
+ * itself.
+ */
+const EquipBubble = ({ heroId, said }) => (
+    <SpeechFrame
+        data-dock-equip-bubble={heroId}
+        data-dock-equip-tone={said.tone}
+        tone={said.tone}
+        tail
+        className={cn(
+            'w-max max-w-[240px] ui-text-body font-bold leading-tight text-center transition-opacity ease-out',
+            said.fading ? 'opacity-0' : 'opacity-100'
+        )}
+        style={{ transitionDuration: `${EQUIP_BUBBLE_FADE_MS}ms` }}
+    >
+        {said.text}
+    </SpeechFrame>
+);
 
 /** A wheel turn this soon after the last one is the same flick: one page per flick. */
 const WHEEL_GAP_MS = 200;
@@ -404,7 +424,7 @@ const WHEEL_GAP_MS = 200;
  * a line may wrap to two. A click on an alert fades out and clears that one alert without opening
  * the hero; they let the pointer through while something is being dragged.
  */
-const BarBubbles = ({ heroId, bubbles }) => {
+const BarBubbles = ({ heroId, bubbles, tailLast = true }) => {
     const { isDragging: passive } = useActiveDrag();
     const [page, setPage] = useState(0);
     const [slide, setSlide] = useState(null);
@@ -507,7 +527,7 @@ const BarBubbles = ({ heroId, bubbles }) => {
                                 if (!isFading) fadeOut(b.key);
                             }}
                             tone={SPEECH_TONE.ATTENTION}
-                            tail={i === shown.length - 1}
+                            tail={tailLast && i === shown.length - 1}
                             className={cn(
                                 'max-w-full ui-text-body font-bold leading-tight text-center cursor-pointer transition-opacity ease-out',
                                 isFading ? 'opacity-0' : 'opacity-100'

@@ -31,6 +31,17 @@ export const DOCK_NAME_TEXT_CLASS = 'ui-text-title';
 /** Gap between the top of the sprite frame and the bottom of the name/HP block. */
 export const DOCK_LABEL_GAP_PX = 2;
 
+/** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of them. */
+export const DOCK_LABEL_PX = 46;
+
+/**
+ * How far the names and HP bars stand above the strip's top edge, in screen px: what a panel
+ * rising from behind the bar (the Shop) keeps clear at its foot.
+ */
+export function dockLabelOverhangPx(artPx) {
+    return Math.max(0, artPx / 2 + DOCK_LABEL_GAP_PX + DOCK_LABEL_PX - DOCK_STRIP_PX);
+}
+
 /**
  * The hero's art size in screen px: the same whole multiple of `ART_PX` the mat lands its
  * heroes on at this fit (`boardArtSteps`), so a hero in the dock is exactly as big as the same

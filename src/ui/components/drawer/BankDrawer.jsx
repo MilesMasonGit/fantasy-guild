@@ -5,6 +5,7 @@ import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js'
 import { PanelHeader } from '../base/CloseX.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
+import { DOCK_STRIP_PX } from '../dock/dockHeroView.js';
 
 /**
  * BankDrawer: slides in from the side and holds the item Bank.
@@ -42,7 +43,7 @@ export const BankDrawer = ({ drawer, menuRight = false }) => {
                         'pointer-events-auto',
                         'absolute inset-y-0 z-(--z-drawer)',
                         // From the screen's edge under the nav, as one panel: its rows pad for the
-                        // nav (`.gi-drawer-pad-x`). It stops at the hero column, which stays in view.
+                        // nav (`.gi-drawer-pad-x`). It stops at the hero panel's column on the far side.
                         menuRight
                             ? 'right-0 [--nav-inset-r:84px] md:[--nav-inset-r:152px]'
                             : 'left-0 [--nav-inset-l:84px] md:[--nav-inset-l:152px]'
@@ -62,7 +63,8 @@ export const BankDrawer = ({ drawer, menuRight = false }) => {
                                         className="gi-drawer-pad-x py-1.5 border-b border-gi-border/40 min-h-[44px]"
                                     />
 
-                                    <div className="flex-1 min-h-0">
+                                    {/* Clear of the hero bar's strip, which is drawn over the drawer. */}
+                                    <div className="flex-1 min-h-0" style={{ paddingBottom: DOCK_STRIP_PX }}>
                                         <Component />
                                     </div>
                                 </section>

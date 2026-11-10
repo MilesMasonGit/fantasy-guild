@@ -175,17 +175,17 @@ describe('⭐ nothing reads hero position except through the seam (Free Playmat 
 
     it('the scan actually sees the engine and UI files it guards', () => {
         const paths = FILES.map(f => f.path);
-        for (const p of ['systems/board/Placement.js', 'systems/board/Flags.js', 'ui/components/board/Board.jsx', 'ui/components/dock/HeroDockTab.jsx', 'systems/core/SaveMigration.js']) {
+        for (const p of ['systems/board/Placement.js', 'systems/board/Flags.js', 'ui/components/board/Board.jsx', 'ui/components/dock/DockHeroFigure.jsx', 'systems/core/SaveMigration.js']) {
             expect(paths).toContain(p);
         }
     });
 });
 
-describe('HeroDockTab listens only for board events something publishes', () => {
+describe('the hero bar figure listens only for board events something publishes', () => {
     const CODE = FILES.map(f => ({ ...f, text: stripComments(f.text) }));
-    const tab = CODE.find(f => f.path === 'ui/components/dock/HeroDockTab.jsx');
+    const tab = CODE.find(f => f.path === 'ui/components/dock/DockHeroFigure.jsx');
 
-    /** Every `board:` event the tab names, by literal or by BOARD_EVENTS key. */
+    /** Every `board:` event the figure names, by literal or by BOARD_EVENTS key. */
     function boardEventsNamedIn(text) {
         const literals = [...text.matchAll(/['"](board:[a-z_]+)['"]/g)].map(m => m[1]);
         const keys = [...text.matchAll(/BOARD_EVENTS\.([A-Z_]+)/g)].map(m => BOARD_EVENTS[m[1]] ?? `BOARD_EVENTS.${m[1]}`);

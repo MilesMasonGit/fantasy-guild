@@ -13,6 +13,7 @@ import { useEscapeLayer } from './utils/escapeLayers.js';
 import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
 import { useEncyclopediaBack } from './hooks/useEncyclopediaBack.js';
 import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
+import { useOneBottomDrawer } from './hooks/useOneBottomDrawer.js';
 import { useWorldMapRequests } from './hooks/useWorldMapRequests.js';
 
 import Board from './components/board/Board.jsx';
@@ -192,6 +193,7 @@ const ReactRoot = () => {
     const closeInspectHero = React.useCallback(() => setInspectHeroId(null), []);
 
     useHeroSheetRequests(setInspectHeroId);
+    useOneBottomDrawer({ shopOpen: ui.shop.isOpen, heroId: inspectHeroId, closeShop: ui.shop.close, closeHero: closeInspectHero });
     const openAtlas = ui.fullscreen.open;
     const openWorldMap = React.useCallback(() => openAtlas('atlas'), [openAtlas]);
     useWorldMapRequests(openWorldMap);
@@ -243,8 +245,11 @@ const ReactRoot = () => {
                      * scroll a hidden box to it; a clipped box is no scroll container. While the Hall
                      * is open it clips only up and down: its sky's web runs on sideways under the
                      * nav (which is over this column) to the screen's edge.
+                     * ⚠️ No layer of its own: the hero bar at its foot is drawn in the screen's
+                     * layers, over the side drawers; everything else in it is in the `z-10` box.
                      */}
-                    <div className={cn('flex-1 min-w-0 relative flex flex-col overflow-y-clip z-10', isGuildView ? 'overflow-x-visible' : 'overflow-x-clip')}>
+                    <div className={cn('flex-1 min-w-0 relative flex flex-col overflow-y-clip', isGuildView ? 'overflow-x-visible' : 'overflow-x-clip')}>
+                        <div className="flex-1 min-h-0 relative flex flex-col z-10">
                         <HallCamera
                             open={isGuildView}
                             away={!isGuildView && (ui.fullscreen.view !== null || isBankOpen || ui.shop.isOpen || ui.settings.isOpen)}
@@ -350,13 +355,15 @@ const ReactRoot = () => {
                             </div>
                         </div>
                         </WorldCamera>
-
+                        </div>
+                        </HallCamera>
+                        <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
+                        </div>
                         {/**
-                         * Bottom Hero Dock: horizontal sliding tabs. On the mat's side of the
-                         * camera, so never on the Guild Hall upgrade screen.
+                         * The hero bar, under both sides of the camera: on every screen, the
+                         * Guild Hall's included. A crash in it stays local to it.
                          */}
                         {dockDrawn && (
-                            // A crash in the bottom hero dock stays local to it.
                             <ErrorBoundary label="HeroDock">
                                 <PerfProfiler id="HeroDock">
                                     <BottomHeroDock
@@ -367,9 +374,6 @@ const ReactRoot = () => {
                                 </PerfProfiler>
                             </ErrorBoundary>
                         )}
-                        </div>
-                        </HallCamera>
-                        <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                     </div>
                     {menuRight && <BubbleMenu ui={ui} side="right" />}
                     {/**
@@ -381,22 +385,17 @@ const ReactRoot = () => {
                      */}
                     {particlesDrawn && <ParticleOverlay disabled={ui.isAnyModalOpen || isBankOpen} />}
                     {/**
-                     * The hero panel: one full-height panel on the notification side,
-                     * opened from the hero bar or from the Bank. A crash in it stays local.
+                     * The hero panel: a panel on the notification side down to the hero bar,
+                     * opened from the bar. A crash in it stays local.
                      */}
-                    {!isGuildView && (
-                        <ErrorBoundary label="BankHeroPanel">
-                            <BankHeroPanel
-                                menuRight={menuRight}
-                                showTabs={isBankOpen}
-                                selectedHeroId={inspectHeroId}
-                                onSelectHero={toggleInspectHero}
-                                onDoubleClickHero={toggleInspectHero}
-                                onCloseHero={closeInspectHero}
-                                onEditHero={(id) => ui.dock.openEdit(id)}
-                            />
-                        </ErrorBoundary>
-                    )}
+                    <ErrorBoundary label="BankHeroPanel">
+                        <BankHeroPanel
+                            menuRight={menuRight}
+                            selectedHeroId={inspectHeroId}
+                            onCloseHero={closeInspectHero}
+                            onEditHero={(id) => ui.dock.openEdit(id)}
+                        />
+                    </ErrorBoundary>
                     {/**
                      * The bank drawer: a sibling of the nav rather than a child of the
                      * board column, because it has to reach across the notifications

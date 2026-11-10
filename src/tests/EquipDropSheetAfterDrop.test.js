@@ -11,7 +11,9 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
-import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
+import { clearEquipBubbles } from '../ui/components/dock/equipBubbles.js';
+import { SPEECH_TONE } from '../ui/components/board/speechTone.js';
+import { getItem } from '../config/registries/itemRegistry.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { useHeroSheetRequests } from '../ui/hooks/useHeroSheetRequests.js';
 
@@ -65,6 +67,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
     renders.stop();
+    clearEquipBubbles();
     // dnd-kit drops its after-drag click guard 50 ms after a drag ends.
     await new Promise(r => setTimeout(r, 80));
     cleanup();
@@ -107,17 +110,24 @@ describe('⭐ the hero sheet an equip drop opens', () => {
         expect(sheet).toBeGreaterThan(drop);
     });
 
-    it('a drop on a hero tab beside the Bank: the same', async () => {
-        const view = render(h(DeckDndProvider, null, h(Item), h(BankHeroPanel, { selectedHeroId: null, showTabs: true, menuRight: false }), h(SheetHost)));
-        const tab = view.container.querySelector('[data-dnd-droppable-id$="-drop-h2"]');
-        expect(tab).not.toBeNull();
-        await dropOn(view, tab);
+    it('a drop on a hero in the bar says what was equipped, in a plain bubble over that hero', async () => {
+        const view = render(h(DeckDndProvider, null, h(Item), h(BottomHeroDock, { selectedHeroId: null }), h(SheetHost)));
+        await dropOn(view, view.container.querySelector('[data-dock-hero="h2"]'));
+        const said = view.container.querySelector('[data-dock-hero="h2"] [data-dock-equip-bubble="h2"]');
+        expect(said).not.toBeNull();
+        expect(said.getAttribute('data-dock-equip-tone')).toBe(SPEECH_TONE.PLAIN);
+        expect(said.textContent).toBe(`Equipped ${getItem('item_copper_sword')?.name || 'item_copper_sword'}`);
+        expect(view.container.querySelector('[data-dock-equip-bubble="h1"]')).toBeNull();
+    });
 
-        expect(equipItem).toHaveBeenCalledWith('h2', 'item_copper_sword', null, null);
-        expect(view.getByTestId('sheet').getAttribute('data-hero')).toBe('h2');
-        const { drop, sheet } = order();
-        expect(drop).toBeGreaterThanOrEqual(0);
-        expect(sheet).toBeGreaterThan(drop);
+    it('a refused drop says why in the red bubble over that hero, and opens no sheet', async () => {
+        equipItem.mockImplementation(() => ({ success: false, error: 'No free slot in the loadout' }));
+        const view = render(h(DeckDndProvider, null, h(Item), h(BottomHeroDock, { selectedHeroId: null }), h(SheetHost)));
+        await dropOn(view, view.container.querySelector('[data-dock-hero="h1"]'));
+        const said = view.container.querySelector('[data-dock-equip-bubble="h1"]');
+        expect(said.getAttribute('data-dock-equip-tone')).toBe(SPEECH_TONE.CANT);
+        expect(said.textContent).toMatch(/^Can't equip .+\. No free slot in the loadout\.$/);
+        expect(view.queryByTestId('sheet')).toBeNull();
     });
 
     it('a click on a hero still opens the sheet in the click\'s own commit', () => {

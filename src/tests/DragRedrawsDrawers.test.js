@@ -149,13 +149,12 @@ describe('⭐ the drawers', () => {
         expect(renders.of('ItemIcon')).toBe(0);
     });
 
-    it('the hero column and the hero sheet: a drag elsewhere redraws no tab and not the sheet', () => {
+    it('the hero sheet: a drag elsewhere redraws not the sheet', () => {
         GameState.state.heroes = ['h1', 'h2', 'h3'].map(id => ({ id, name: id, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {}, skills: {} }));
         const view = render(
-            h(DeckDndProvider, null, h(Item), h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: true, menuRight: false }))
+            h(DeckDndProvider, null, h(Item), h(BankHeroPanel, { selectedHeroId: 'h1', menuRight: false }))
         );
         view.getByTestId('item').getBoundingClientRect = () => box(2000, 2000, 50, 50);
-        expect(view.container.querySelectorAll('[data-hero-dock-tab]').length).toBe(3);
         expect(view.container.querySelector('[data-hero-panel-body="h1"]')).not.toBeNull();
         drawCalls.tab = 0;
         drawCalls.slot = 0;
@@ -163,8 +162,6 @@ describe('⭐ the drawers', () => {
         dragAbout(view.getByTestId);
         expect(drawCalls.tab).toBe(0);
         expect(drawCalls.slot).toBe(0);
-        expect(renders.of('HeroDockTab')).toBeGreaterThan(0);
-        expect(renders.of('HeroDockTabBody')).toBe(0);
         expect(renders.of('HeroInspectionSheet')).toBe(0);
         expect(renders.of('EquipSlotBody')).toBe(0);
     });

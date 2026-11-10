@@ -52,7 +52,8 @@ describe('the drawers reach the screen edge under the nav, as one panel', () => 
 
     it('the Shop, nav on the left: at the foot, across the whole screen under the nav, its rows padded for it', () => {
         const el = shopPanel(false);
-        expect(classes(el)).toEqual(expect.arrayContaining(['bottom-0', 'inset-x-0', '[--nav-inset-l:84px]', 'md:[--nav-inset-l:152px]']));
+        // On the hero bar's strip rather than the screen's foot (`HeroBarEverywhere.test.js`).
+        expect(classes(el)).toEqual(expect.arrayContaining(['inset-x-0', '[--nav-inset-l:84px]', 'md:[--nav-inset-l:152px]']));
         // Never as wide as its cards: the panel spans the screen, whatever it holds.
         expect(classes(el)).not.toEqual(expect.arrayContaining(['w-max']));
         expect(el.className).not.toMatch(/(^| )max-w-/);
@@ -62,7 +63,7 @@ describe('the drawers reach the screen edge under the nav, as one panel', () => 
 
     it('the Shop, nav on the right: the same, mirrored', () => {
         const el = shopPanel(true);
-        expect(classes(el)).toEqual(expect.arrayContaining(['bottom-0', 'inset-x-0', '[--nav-inset-r:84px]', 'md:[--nav-inset-r:152px]']));
+        expect(classes(el)).toEqual(expect.arrayContaining(['inset-x-0', '[--nav-inset-r:84px]', 'md:[--nav-inset-r:152px]']));
         expect(classes(el)).not.toEqual(expect.arrayContaining(['w-max']));
         expect(el.className).not.toContain('[--nav-inset-l:');
     });
@@ -101,11 +102,11 @@ describe('opening the Bank moves the mat side by transforms only', () => {
         expect(asides[0]).toContain('data-hall-details');
     });
 
-    it('one wrapper carries the whole mat side: the board, its top bar, the stubs, the dock', () => {
+    it('one wrapper carries the whole mat side: the board, its top bar, the stubs', () => {
         const { mat } = hallCameraSides();
         const at = mat.indexOf('data-bank-shift={bankShift}');
         expect(at).toBeGreaterThan(-1);
-        for (const part of ['<MatTopBar', '<Board', '<ItemStubColumn', '<BottomHeroDock']) {
+        for (const part of ['<MatTopBar', '<Board', '<ItemStubColumn']) {
             expect(mat.indexOf(part), part).toBeGreaterThan(at);
         }
     });

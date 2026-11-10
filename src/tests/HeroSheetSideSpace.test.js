@@ -16,7 +16,7 @@ import { SkillIcon, skillArt, SKILL_PLACEHOLDER_SPRITE } from '../ui/components/
 import { resolveSpritePath } from '../utils/AssetManager.js';
 import { getSkill } from '../config/registries/skillRegistry.js';
 import { heroSkillList } from '../ui/components/dock/heroPanelSkills.js';
-import { PORTRAIT_PX, PORTRAIT_ART_PX } from '../ui/components/dock/heroPortrait.js';
+import { DOCK_STRIP_PX } from '../ui/components/dock/dockHeroView.js';
 import { SLOT_ORDER } from '../config/registries/equipmentConstants.js';
 
 const h = React.createElement;
@@ -74,7 +74,7 @@ describe('skill icons are pixel, never emoji', () => {
 
 describe('the sheet\'s skills, two side by side', () => {
     it('lays the skills in two columns with the name only in the tip', () => {
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         const group = r.container.querySelector('[data-skill-group="held"]');
         expect(group.className.split(' ')).toEqual(expect.arrayContaining(['grid', 'grid-cols-2']));
         const row = group.querySelector('[data-skill-row="mining"]');
@@ -86,7 +86,7 @@ describe('the sheet\'s skills, two side by side', () => {
     });
 
     it('a click opens the numbers across both columns, under the pair the skill stands in', () => {
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         const group = r.container.querySelector('[data-skill-group="held"]');
         const order = () => [...group.children].map(el => el.getAttribute('data-skill-row') || `open:${el.getAttribute('data-skill-opened')}`);
         const [a, b, c] = order();
@@ -106,7 +106,7 @@ describe('the sheet\'s skills, two side by side', () => {
 
 describe('the sheet scrolls with arrows', () => {
     it('has no bars when it fits, both when it overflows, and no scroll bar class', () => {
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         const body = r.container.querySelector('[data-hero-panel-body]');
         expect(body.querySelector('[data-scroll-arrow]')).toBeNull();
         expect(body.querySelector('.gi-scrollbar')).toBeNull();
@@ -119,33 +119,25 @@ describe('the sheet scrolls with arrows', () => {
 describe('close and edit in the side space', () => {
     const controls = (r) => r.container.querySelector('[data-hero-panel-controls]');
 
-    it('stand outside the sheet, in the same place with the Bank open or shut', () => {
-        const shut = render(panel({ selectedHeroId: 'h1', showTabs: false }));
-        expect(shut.container.querySelector('[data-hero-panel-body] [data-hero-panel-close]')).toBeNull();
-        const place = controls(shut).className;
-        expect(controls(shut).querySelector('[data-hero-panel-close]')).not.toBeNull();
-        expect(controls(shut).querySelector('[data-hero-panel-edit]')).not.toBeNull();
-        const framed = shut.container.querySelector('[data-pixel-frame] > .relative').className;
-        cleanup();
-
-        const open = render(panel({ selectedHeroId: 'h1', showTabs: true }));
-        expect(controls(open).className).toBe(place);
-        // The sheet is the same width: the side space is kept in both.
-        expect(open.container.querySelector('[data-pixel-frame] > .relative').className).toBe(framed);
+    it('stand outside the sheet', () => {
+        const r = render(panel({ selectedHeroId: 'h1' }));
+        expect(r.container.querySelector('[data-hero-panel-body] [data-hero-panel-close]')).toBeNull();
+        expect(controls(r).querySelector('[data-hero-panel-close]')).not.toBeNull();
+        expect(controls(r).querySelector('[data-hero-panel-edit]')).not.toBeNull();
     });
 
     it('are on the outer edge, on whichever side the panel sits', () => {
-        const right = render(panel({ selectedHeroId: 'h1', showTabs: false, menuRight: false }));
+        const right = render(panel({ selectedHeroId: 'h1', menuRight: false }));
         expect(controls(right).className.split(' ')).toContain('right-0');
         cleanup();
-        const left = render(panel({ selectedHeroId: 'h1', showTabs: false, menuRight: true }));
+        const left = render(panel({ selectedHeroId: 'h1', menuRight: true }));
         expect(controls(left).className.split(' ')).toContain('left-0');
     });
 
     it('the Edit and close controls still work from there', () => {
         const onEditHero = vi.fn();
         const onCloseHero = vi.fn();
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: true, onEditHero, onCloseHero }));
+        const r = render(panel({ selectedHeroId: 'h1', onEditHero, onCloseHero }));
         fireEvent.click(controls(r).querySelector('[data-hero-panel-edit]'));
         expect(onEditHero).toHaveBeenCalledWith('h1');
         fireEvent.click(controls(r).querySelector('[data-hero-panel-close]'));
@@ -155,7 +147,7 @@ describe('close and edit in the side space', () => {
 
 describe('the flag on the sheet', () => {
     it('stands on the hero\'s other side, drawn behind them', () => {
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         const flag = r.container.querySelector('[data-hero-panel-flag]');
         const figure = r.container.querySelector('[data-hero-panel-figure]');
         expect(flag.style.left).toMatch(/^calc\(50% - \d+px\)$/);
@@ -163,49 +155,24 @@ describe('the flag on the sheet', () => {
     });
 });
 
-describe('the Bank\'s hero column', () => {
-    it('draws portraits at a whole larger multiple of their art', () => {
-        expect(PORTRAIT_PX).toBeGreaterThan(48);
-        expect(PORTRAIT_PX % PORTRAIT_ART_PX).toBe(0);
+describe('no hero column: the heroes stay on the bar', () => {
+    it('draws nothing at all with no hero open', () => {
+        const r = render(panel({ selectedHeroId: null }));
+        expect(r.container.querySelector('[data-hero-panel]')).toBeNull();
     });
 
-    it('arrows appear only when the tabs outgrow the column', () => {
-        const r = render(panel({ selectedHeroId: null, showTabs: true }));
-        const column = r.container.querySelector('[data-hero-column]');
-        expect(column.querySelector('[data-scroll-arrow]')).toBeNull();
-        fakeOverflow(column.querySelector('[data-scroll-list]'));
-        expect(column.querySelector('[data-scroll-arrow="up"]')).not.toBeNull();
-        expect(column.querySelector('[data-scroll-arrow="down"]')).not.toBeNull();
-    });
-
-    it("wears the bar's alerts: red while healing, yellow with no job", () => {
-        GameState.state.heroes[0] = hero('h1', 'Aldric', { status: 'wounded', woundedRemainingMs: 5000 });
-        const r = render(panel({ selectedHeroId: null, showTabs: true }));
-        expect(r.container.querySelector('[data-dock-hero-id="h1"] [data-hero-tab-alert="wounded"]')).not.toBeNull();
-        // No order at all: the player must act.
-        expect(r.container.querySelector('[data-dock-hero-id="h2"] [data-hero-tab-alert="act"]')).not.toBeNull();
-    });
-
-    it('counts items out of however many slots there are', () => {
-        const r = render(panel({ selectedHeroId: null, showTabs: true }));
-        fireEvent.mouseEnter(r.container.querySelector('[data-dock-hero-id="h1"] [data-hero-tab-face]'));
-        expect(document.body.querySelector('[data-top-bar-tip]').textContent).toContain(`0/${SLOT_ORDER.length} items`);
-    });
-
-    it('every tab writes its name on the dark stepped plate', () => {
-        const r = render(panel({ selectedHeroId: null, showTabs: true }));
-        const names = [...r.container.querySelectorAll('[data-hero-tab-name]')];
-        expect(names.map(el => el.textContent)).toEqual(['Aldric', 'Brenna']);
-        for (const el of names) {
-            expect(el.style.background).toMatch(/^(#000|rgb\(0, 0, 0\))$/);
-            expect(el.style.clipPath).toContain('polygon(');
-        }
+    it('stops at the hero bar, which is drawn over the side drawers, and holds no hero tabs', () => {
+        const r = render(panel({ selectedHeroId: 'h1' }));
+        const aside = r.container.querySelector('[data-hero-panel]');
+        expect(aside.style.bottom).toBe(`${DOCK_STRIP_PX}px`);
+        expect(aside.className.split(' ')).toContain('top-0');
+        expect(r.container.querySelector('[data-hero-column], [data-hero-dock-tab]')).toBeNull();
     });
 });
 
 describe('the loadout can grow', () => {
     it('draws one slot per entry of the slot order, three to a row', () => {
-        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const r = render(panel({ selectedHeroId: 'h1' }));
         expect(r.container.querySelectorAll('[data-equip-slot]').length).toBe(SLOT_ORDER.length);
     });
 });

@@ -17,10 +17,14 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { PanelHeader } from '../base/CloseX.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
+import { useLiveMatFit } from '../board/MatFitContext.jsx';
+import { DOCK_STRIP_PX, dockArtPx, dockLabelOverhangPx } from '../dock/dockHeroView.js';
 
 /**
- * The Shop: a panel that rises from the bottom of the screen, beside the nav on whichever side
- * the nav is, over the hero bar. Opened and closed by the nav's Shop bubble
+ * The Shop: a panel that rises from behind the hero bar and stands on the bar's strip, beside the
+ * nav on whichever side the nav is; the bar stays in front, its names and HP bars over the
+ * panel's foot, which is kept clear for them. One bottom panel at a time: it and a hero's panel
+ * close each other (`useOneBottomDrawer`). Opened and closed by the nav's Shop bubble
  * (`ui.nav.toggle('shop')`) or its own Close.
  * - **A row of cards**, each the same size: the name (a dropdown for a group), the Token large,
  * its skill icons, and the price as up to four pills under them. Arrow bars left and right, no
@@ -74,10 +78,15 @@ export function shopPanelState(isOpen, activePayload, surface = DND_SURFACE.BOAR
     return surface === DND_SURFACE.DRAWER ? 'open' : 'lip';
 }
 
-export function shopPanelTransform(state) {
+/**
+ * Where the panel is moved to for `state`. `under`: how far above the screen's bottom the panel
+ * stands (the bar's strip), so a closed panel goes all the way down out of sight; `foot`: the
+ * clear band at its foot that the bar's names stand over, kept in sight with the lip.
+ */
+export function shopPanelTransform(state, { under = 0, foot = 0 } = {}) {
     if (state === 'open') return 'translateY(0)';
-    if (state === 'lip') return `translateY(calc(100% - ${SHOP_LIP_PX}px))`;
-    return 'translateY(100%)';
+    if (state === 'lip') return `translateY(calc(100% - ${SHOP_LIP_PX + foot}px))`;
+    return under ? `translateY(calc(100% + ${under}px))` : 'translateY(100%)';
 }
 
 export const shopCardPayload = (typeId) => ({ typeId, from: { shop: typeId } });
@@ -114,6 +123,7 @@ export const ShopPanel = ({ isOpen, onClose, menuRight = false }) => {
     const { activePayload } = useActiveDrag();
     const surface = useDragSurface();
     const state = shopPanelState(isOpen, activePayload, surface);
+    const foot = dockLabelOverhangPx(dockArtPx(useLiveMatFit()));
 
     return (
         <aside
@@ -125,14 +135,15 @@ export const ShopPanel = ({ isOpen, onClose, menuRight = false }) => {
             className={cn(
                 // Edge to edge, under the nav as one panel: its rows pad for the nav
                 // (`.gi-drawer-pad-x`, 84 / 152 px as the Bank drawer), the cards from the nav's side.
-                'absolute bottom-0 inset-x-0 z-(--z-drawer)',
+                'absolute inset-x-0 z-(--z-drawer)',
                 menuRight
                     ? '[--nav-inset-r:84px] md:[--nav-inset-r:152px]'
                     : '[--nav-inset-l:84px] md:[--nav-inset-l:152px]',
                 state === 'closed' ? 'pointer-events-none' : 'pointer-events-auto'
             )}
             style={{
-                transform: shopPanelTransform(state),
+                bottom: DOCK_STRIP_PX,
+                transform: shopPanelTransform(state, { under: DOCK_STRIP_PX, foot }),
                 opacity: state === 'closed' ? 0 : 1,
                 visibility: state === 'closed' ? 'hidden' : 'visible',
                 transition: state === 'closed'
@@ -142,6 +153,7 @@ export const ShopPanel = ({ isOpen, onClose, menuRight = false }) => {
         >
             <PixelFrame kind={FRAME_KIND.STUDS} backdrop="shop" frameClassName="flex flex-col">
                 <ShopContents isOpen={isOpen} onClose={onClose} menuRight={menuRight} />
+                <div aria-hidden data-shop-foot className="shrink-0" style={{ height: foot }} />
             </PixelFrame>
 
             {/* The lip: the strip left showing while a Shop Token is carried. */}

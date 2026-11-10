@@ -1453,18 +1453,21 @@ drawers**. The menu can be flipped to the right.
   any key skips it; under reduced motion it neither opens nor closes. Travel to
   a place settled before shows the plain arrival card instead.
   *(`atlas/SettleTitle.jsx`, `ArrivalCard.jsx`)*
-- **Hero bar** (bottom): the roster, heroes as standing figures with HP numbers
+- **Hero bar** (bottom, on every screen: the mat, the Bank, the Shop, the world map and the
+  Guild Hall, over the side drawers): the roster, heroes as standing figures with HP numbers
   over a smooth pixel bar, each with their job flag and an alert when wounded or the
   player must act; hover for what they are doing; drag a figure onto the mat
-  to give that hero a job. Click → **hero sheet** (loadout grid, every skill two side
+  to give that hero a job; drop an item on a figure to equip it, answered by a speech bubble
+  over that hero for about 3 s (what was equipped, or why not, with the numbers). Click →
+  **hero sheet** (loadout grid, every skill two side
   by side as icon, level and XP bar; hover for its name, purpose and perks, click for its exact
-  XP and rate; scroll arrows when it does not fit; close and edit in the side space beside it, in
-  the same spot with the Bank open or shut) → Edit (rename, portrait, flag colour).
+  XP and rate; scroll arrows when it does not fit; close and edit in the side space beside it,
+  down to the bar) → Edit (rename, portrait, flag colour). The Shop and the hero sheet close
+  each other: one panel over the bar at a time.
 - **Bank drawer**: tabbed item lists, search, reorder; drag an item onto a hero
-  to equip. While open, the mat is locked and a vertical hero panel appears: large
-  portraits with the name on a dark plate over them and the hero bar's alerts; hover for what they are doing.
-- **Shop**: a panel that rises from the bottom beside the nav (on either side), over
-  the hero bar, with a row of same-size cards (name, the Token large, its skill
+  on the hero bar to equip. While open, the mat is locked; the hero bar stays in front of it.
+- **Shop**: a panel that rises from behind the hero bar beside the nav (on either side) and
+  stands on it, the bar in front, with a row of same-size cards (name, the Token large, its skill
   icons, the price as up to four have / need pills; arrows left and right when the
   row is longer than the screen). Drag a card onto the mat to buy; the panel drops
   to a lip while you carry it over the mat, rises again over the panel (a drop

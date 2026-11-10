@@ -375,7 +375,7 @@ Hall's star web (`GuildHallBoard.jsx`, `HallSky.jsx`) and the Atlas with the hex
 | Ambient life (water, grass gusts, lava; clouds, leaves, birds) | `onDue` at 8 a second, small boxes only; off under reduced motion. | `AmbientLife.jsx:15-29,304` |
 | Loot particles | `requestAnimationFrame` only while particles fly; sleeps after. | `ParticleOverlay.jsx:150-193` |
 | World map picture | Painted in a Web Worker on a new world. | `atlas/worldPicture.worker.js`, `WorldMap.jsx:90-100` |
-| Map previews, portraits, star outlines, hit-testing | On demand. | `atlas/mapPreview.js`, `dock/heroPortrait.js`, `StarOutline.jsx`, `ui/utils/alphaHitTest.js` |
+| Map previews, star outlines, hit-testing | On demand. | `atlas/mapPreview.js`, `StarOutline.jsx`, `ui/utils/alphaHitTest.js` |
 
 The ground-picture pipeline lives in **`src/ui/components/board/terrain/`** (8 files, ~4,260 lines:
 `TerrainGrass`, `TerrainLattice`, `TerrainBlend`, `TerrainPatches`, `TerrainShade`,

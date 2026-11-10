@@ -151,7 +151,7 @@ describe('the level-up float names a perk under its number', () => {
 });
 
 describe('the hero sheet\'s skill row lists the perks held and the next one', () => {
-    const panel = () => render(h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false, selectedHeroId: 'h1', showTabs: false })));
+    const panel = () => render(h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false, selectedHeroId: 'h1' })));
 
     it('says them on hover', () => {
         const r = panel();

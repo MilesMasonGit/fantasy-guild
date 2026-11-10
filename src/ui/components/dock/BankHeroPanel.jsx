@@ -1,40 +1,26 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
-import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE, DRAG_KIND } from '../../dnd/dragConstants.js';
-import { HeroDockTab } from './HeroDockTab.jsx';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { CloseX } from '../base/CloseX.jsx';
-import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
-import { HeroManager } from '../../../systems/hero/HeroManager.js';
-import { reorderHeroInDock } from './dockReorder.js';
 import { NOTIFICATION_COLUMN, columnWidthCss } from '../board/boardConstants.js';
-import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { DOCK_STRIP_PX } from './dockHeroView.js';
 import { Feather } from 'lucide-react';
 
 /** The panel's fade/slide-out (`duration-200`), plus a little slack. */
 const PANEL_CLOSE_MS = 250;
 
-const NO_HEROES = Object.freeze([]);
-
-/** About two tabs. */
-const TAB_SCROLL_STEP_PX = 160;
-
 /**
- * The hero panel: one full-height side panel on the notification side, opened from the hero
- * bar or from the Bank, always in the same box (the Bank's hero column). Its outer edge is a side
- * space, Bank open or not: close and edit stand at its top and, while the Bank is open
- * (`showTabs`), the heroes stand under them as tabs, since the bar is under the Bank.
+ * The hero panel: a side panel on the notification side, opened from the hero bar, from the top
+ * of the screen down to the bar (which is drawn over the side drawers). Its outer edge is a side
+ * space where close and edit stand.
  */
 export const BankHeroPanel = ({
     menuRight,
-    showTabs = true,
     selectedHeroId,
-    onSelectHero,
-    onDoubleClickHero,
     onCloseHero,
     onEditHero
 }) => {
@@ -52,11 +38,6 @@ export const BankHeroPanel = ({
         const timer = setTimeout(() => setShownHeroId(null), PANEL_CLOSE_MS);
         return () => clearTimeout(timer);
     }, [selectedHeroId]);
-
-    const heroIds = useGameState(
-        state => (state.heroes || []).map(h => h.id),
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET]
-    ) || NO_HEROES;
 
     useEffect(() => {
         if (!selectedHeroId) return undefined;
@@ -94,10 +75,7 @@ export const BankHeroPanel = ({
         disabled: !shownHeroId
     });
 
-    const handleReorderHero = useCallback((sourceHeroId, targetHeroId) =>
-        reorderHeroInDock(HeroManager, heroIds, sourceHeroId, targetHeroId), [heroIds]);
-
-    if (!showTabs && !shownHeroId) return null;
+    if (!shownHeroId) return null;
 
     const isOpen = Boolean(selectedHeroId);
     // The panel sits on the side opposite the nav.
@@ -107,9 +85,9 @@ export const BankHeroPanel = ({
         <aside
             ref={asideRef}
             data-hero-panel="true"
-            style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
+            style={{ width: columnWidthCss(NOTIFICATION_COLUMN), bottom: DOCK_STRIP_PX }}
             className={cn(
-                'absolute inset-y-0 z-(--z-hero-panel) pointer-events-none',
+                'absolute top-0 z-(--z-hero-panel) pointer-events-none',
                 isLeft ? 'left-0' : 'right-0'
             )}
         >
@@ -154,53 +132,8 @@ export const BankHeroPanel = ({
                     </div>
                 </div>
             )}
-
-            {showTabs && (
-                <HeroColumn
-                    heroIds={heroIds}
-                    selectedHeroId={selectedHeroId}
-                    onSelectHero={onSelectHero}
-                    onDoubleClickHero={onDoubleClickHero}
-                    onReorder={handleReorderHero}
-                    isLeft={isLeft}
-                />
-            )}
         </aside>
     );
 };
-
-/**
- * The hero tabs down the side space, centred under close and edit (their room is kept whether or
- * not a hero is open, so the tabs never jump); arrows when they outgrow it.
- */
-// Memoised: the panel around it holds a drop target, which dnd-kit redraws at every drag start,
-// end and change of target, and the list measures itself at every redraw.
-const HeroColumn = memo(function HeroColumn({ heroIds, selectedHeroId, onSelectHero, onDoubleClickHero, onReorder, isLeft }) {
-    return (
-        <div
-            data-hero-column
-            className={cn('absolute inset-y-0 w-20 z-10 flex flex-col pt-11 pb-2', isLeft ? 'left-0' : 'right-0')}
-        >
-            <ArrowScrollList compact step={TAB_SCROLL_STEP_PX} className="flex-1 min-h-0 flex flex-col" barClassName="pointer-events-auto">
-                {/* ⚠️ Centred with auto margins: a centred flex list cuts off its first tabs once it scrolls. */}
-                <div className="my-auto flex flex-col gap-1">
-                    {heroIds.map((heroId, index) => (
-                        <HeroDockTab
-                            key={heroId}
-                            heroId={heroId}
-                            index={index}
-                            heroIds={heroIds}
-                            isSelected={selectedHeroId === heroId}
-                            onSelect={onSelectHero}
-                            onDoubleClick={onDoubleClickHero}
-                            onReorder={onReorder}
-                            isDockLeft={isLeft}
-                        />
-                    ))}
-                </div>
-            </ArrowScrollList>
-        </div>
-    );
-});
 
 export default BankHeroPanel;

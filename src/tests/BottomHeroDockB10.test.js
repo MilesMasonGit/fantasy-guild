@@ -18,7 +18,6 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
-import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import {
     DOCK_STRIP_PX, dockArtPx, dockArtOffset, hpPercent, hpTone,
@@ -197,30 +196,15 @@ describe('B10 horizontal hero dock', () => {
         expect(figure(view, 'h1').querySelector('[data-dock-hp]').getAttribute('data-dock-hp')).toBe('43');
     });
 
-    // On the table side of the Hall camera, which is gone while the camera rests on the sky.
-    it('is not shown on the Guild Hall screen (FB-47)', () => {
-        expect(hallCameraSides().mat).toContain('<BottomHeroDock');
+    it('draws no line along the strip, and stands in the screen’s hero-bar layer', () => {
+        const strip = mount().container.querySelector('[data-bottom-hero-dock]');
+        expect(strip.className).not.toMatch(/(^| )border/);
+        expect(strip.className.split(' ')).toContain('z-(--z-hero-bar)');
     });
 
-    it('leaves the vertical hero panel beside the Bank as it was', () => {
-        const view = render(
-            h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false }))
-        );
-        expect(view.container.querySelectorAll('[data-hero-dock-tab]').length).toBe(3);
-        expect(view.container.querySelector('[data-dock-hero]')).toBeNull();
-    });
-
-    it('the Bank hero tab\'s tooltip HP also updates on an in-place mutation (CR3-300)', async () => {
-        const view = render(
-            h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false }))
-        );
-        const face = view.container.querySelector('[data-dock-hero-id="h1"] [data-hero-tab-face]');
-        const h1 = GameState.state.heroes.find(h => h.id === 'h1');
-        h1.hp.current = 43;
-        await act(async () => { EventBus.publish('heroes_updated', {}); await Promise.resolve(); });
-        fireEvent.mouseEnter(face);
-        expect(document.body.querySelector('[data-top-bar-tip]').textContent).toContain('43 / 100 HP');
-        fireEvent.mouseLeave(face);
+    it('no hero panel draws hero tabs: the heroes are only on the bar', () => {
+        const view = render(h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false, selectedHeroId: 'h1' })));
+        expect(view.container.querySelector('[data-hero-dock-tab], [data-hero-column]')).toBeNull();
     });
 });
 

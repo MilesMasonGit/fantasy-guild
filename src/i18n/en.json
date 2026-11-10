@@ -543,7 +543,11 @@
         "gearBroke": "{item} broke!"
     },
     "heroBar": {
-        "perk": "Perk: {perk}"
+        "perk": "Perk: {perk}",
+        "equipped": "Equipped {item}",
+        "equippedStack": "Equipped {item} x{count}",
+        "cantEquip": "Can't equip {item}. {reason}",
+        "skillTooLow": "{skill} skill too low. ({have}/{need})"
     },
     "heroPanel": {
         "perks": "Perks",

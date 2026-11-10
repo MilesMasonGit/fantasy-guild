@@ -23,7 +23,7 @@ import { pointerOutsideList } from '../ui/components/dock/DockEquipmentGrid.jsx'
 const h = React.createElement;
 
 const view = (selectedHeroId) =>
-    h(DeckDndProvider, null, h(BankHeroPanel, { selectedHeroId, showTabs: false, menuRight: false }));
+    h(DeckDndProvider, null, h(BankHeroPanel, { selectedHeroId, menuRight: false }));
 
 const slotDrops = (container) =>
     container.querySelectorAll('[data-dnd-droppable-id^="dock-slot-drop-"]');

@@ -64,7 +64,7 @@ describe('Escape mid-drag only cancels the drag (CR3-409)', () => {
         const { container } = render(
             h(DeckDndProvider, null,
                     h(BottomHeroDock, { selectedHeroId: 'h1' }),
-                    h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: false, onCloseHero }))
+                    h(BankHeroPanel, { selectedHeroId: 'h1', onCloseHero }))
         );
 
         act(() => startRealDrag(container));
@@ -83,7 +83,7 @@ describe('Escape mid-drag only cancels the drag (CR3-409)', () => {
         render(
             h(DeckDndProvider, null,
                     h(BottomHeroDock, { selectedHeroId: 'h1' }),
-                    h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: false, onCloseHero }))
+                    h(BankHeroPanel, { selectedHeroId: 'h1', onCloseHero }))
         );
 
         act(() => fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }));
