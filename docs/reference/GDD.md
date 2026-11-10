@@ -1470,7 +1470,7 @@ drawers**. The menu can be flipped to the right.
   to give that hero a job; drop an item on a figure to equip it, answered by a speech bubble
   over that hero for about 3 s (what was equipped, or why not, with the numbers); an item dragged
   from one hero's loadout onto another hero is handed over, each saying so, the panel staying put.
-  Every hero's HP bar is the light red. Click →
+  Every HP bar, a hero's or an enemy's, is the light red. Click →
   **Hero drawer**, sliding up from behind the bar across the screen down to its bottom edge,
   the close X and the edit quill in its top right corner, a header across the top (the name over
   the hero, the HP bar over the rest), then three blocks left to right: the hero at twice the

@@ -796,15 +796,12 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar (the hero bar and the hero panel)',
-        rule: 'A hero’s HP: the numbers over a stepped pixel bar, always the light red; an enemy’s (the fight window) in the green, amber and red of its health.',
+        id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar (the hero bar, the Hero drawer, the fight window); HealthBar on the mat',
+        rule: 'HP: the numbers over a stepped pixel bar, always the light red, a hero’s and an enemy’s alike, at any health.',
         Demo: () => (
             <div className="w-48 flex flex-col gap-1">
                 {[[62, 100], [30, 100], [12, 100]].map(([value, max]) => (
                     <VitalBar key={value} value={value} max={max} />
-                ))}
-                {[[62, 100], [30, 100], [12, 100]].map(([value, max]) => (
-                    <VitalBar key={`e${value}`} who="enemy" value={value} max={max} />
                 ))}
             </div>
         )

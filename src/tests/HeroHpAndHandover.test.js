@@ -4,7 +4,7 @@ import React from 'react';
 import fs from 'node:fs';
 import path from 'node:path';
 import { render, cleanup } from '@testing-library/react';
-import { VitalBar, HERO_HP_TONE, TONE_FILL } from '../ui/components/base/VitalBar.jsx';
+import { VitalBar, HP_TONE } from '../ui/components/base/VitalBar.jsx';
 import { HealthBar } from '../ui/components/board/HealthBar.jsx';
 import { HP_COLOUR } from '../ui/components/board/healthBar.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -18,35 +18,30 @@ const hex = (rgb) => '#' + rgb.match(/\d+/g).slice(0, 3).map(n => Number(n).toSt
 
 afterEach(() => { cleanup(); clearEquipBubbles(); });
 
-describe('a hero\'s HP is the light red, whatever their health (T-317)', () => {
-    it('on the bar, the drawer and the fight window (VitalBar): the light red at any health; an enemy\'s follows its health', () => {
-        expect(HERO_HP_TONE.fill).toBe(HP_COLOUR);
+describe('every HP bar is the light red, whatever the health, a hero\'s or an enemy\'s (T-317)', () => {
+    it('the hero bar, the drawer, the fight window and its tabs (VitalBar): the light red at any health', () => {
+        expect(HP_TONE.fill).toBe(HP_COLOUR);
         for (const value of [90, 40, 10]) {
             const r = render(h(VitalBar, { value, max: 100 }));
             expect(hex(r.container.querySelector('[data-hp-fill]').style.background)).toBe(HP_COLOUR.toUpperCase());
             cleanup();
         }
-        const fills = [90, 40, 10].map(value => {
-            const r = render(h(VitalBar, { who: 'enemy', value, max: 100 }));
-            const f = hex(r.container.querySelector('[data-hp-fill]').style.background);
-            cleanup();
-            return f;
-        });
-        expect(fills).toEqual([TONE_FILL.green.fill, TONE_FILL.amber.fill, TONE_FILL.red.fill].map(c => c.toUpperCase()));
     });
 
-    it('over a hero on the mat (HealthBar) too; an enemy\'s keeps its tones', () => {
-        const hero = render(h(HealthBar, { who: 'hero', cur: 30, max: 30 }));
-        expect(hex(hero.container.querySelector('[data-health-fill]').style.background)).toBe(HP_COLOUR.toUpperCase());
-        cleanup();
-        const enemy = render(h(HealthBar, { who: 'enemy', cur: 30, max: 30 }));
-        expect(hex(enemy.container.querySelector('[data-health-fill]').style.background)).toBe(TONE_FILL.green.fill.toUpperCase());
+    it('over the fighters on the mat (HealthBar): a hero and an enemy alike, at any health', () => {
+        for (const who of ['hero', 'enemy']) {
+            for (const cur of [30, 12, 3]) {
+                const r = render(h(HealthBar, { who, cur, max: 30 }));
+                expect(hex(r.container.querySelector('[data-health-fill]').style.background)).toBe(HP_COLOUR.toUpperCase());
+                cleanup();
+            }
+        }
     });
 
-    it('the fight window and its tabs mark the enemy\'s bar as the enemy\'s (source)', () => {
-        const read = (f) => fs.readFileSync(path.resolve(__dirname, '../ui/components/combat', f), 'utf8');
-        expect(read('FightPanel.jsx')).toContain('<VitalBar data-fight-hp="enemy" who="enemy"');
-        expect(read('FightTab.jsx')).toContain('<VitalBar data-fight-tab-hp="enemy" who="enemy"');
+    it('no green, amber and red fills are left to pick from', async () => {
+        const bar = await import('../ui/components/base/VitalBar.jsx');
+        expect(bar.TONE_FILL).toBeUndefined();
+        expect(bar.HERO_HP_TONE).toBeUndefined();
     });
 });
 

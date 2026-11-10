@@ -1,5 +1,5 @@
 import { MAT_BAR, healthFraction, healthFillPx, matHealthText } from './healthBar.js';
-import { hpFillTone } from '../base/VitalBar.jsx';
+import { HP_TONE } from '../base/VitalBar.jsx';
 import { SPEECH_FILL } from './speechTone.js';
 
 /** The frames' stepped corners, `s` mat units a step. */
@@ -7,7 +7,7 @@ const stepped = (s) => `polygon(${s}px 0, calc(100% - ${s}px) 0, calc(100% - ${s
 
 /**
  * HealthBar: a fighter's health on the mat, a small edition of the hero bar's `VitalBar` (owner's
- * pick, 2026-11-05): the fill in the hero bar's tones on a stepped black edge, `19/24` written on
+ * pick, 2026-11-05): the fill in the hero bar's light red (`HP_TONE`) on a stepped black edge, `19/24` written on
  * it. The fill steps in whole art pixels and never animates, so a bar redraws only when its number
  * moves. `style` places the bar (`left`/`top`/`width`) inside whatever it hangs from; `u` is mat
  * units a plate pixel (`workPlate.plateUnit`). `outward` is the side the number may grow to when
@@ -20,7 +20,7 @@ export const HealthBar = ({ who, of = null, cur, max, style, u = 1, outward = 0,
     const fraction = healthFraction(cur, max);
     // The inside's width in plate pixels: the fill steps in whole art pixels of it.
     const wide = (Number.isFinite(style?.width) && u > 0 ? Math.round(style.width / u) : MAT_BAR.W) - 2 * MAT_BAR.EDGE;
-    const tone = hpFillTone(who, Math.round(fraction * 100));
+    const tone = HP_TONE;
     const e = MAT_BAR.EDGE * u;
     return (
         <div

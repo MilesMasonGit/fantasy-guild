@@ -17,12 +17,11 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **XP is a thin bar**; the exact number (`1,154 / 1,500 XP`) shows on hover.
 - **A hero's HP on the hero bar and sheet: the numbers over a stepped pixel bar**
   (`VitalBar`; owner, 2026-11-02): a smooth fill on a plain black edge, no ticks
-  (owner's pick, 2026-11-05). **A hero's bar is always the mat's light red** (`HP_COLOUR`,
-  `HERO_HP_TONE`; owner, 2026-11-05, T-317), whatever their health: on the hero bar, the Hero
-  drawer, the fight window and its tabs, and over a hero on the mat. An enemy's keeps green, amber
-  and red by its health.
+  (owner's pick, 2026-11-05). **Every HP bar is the mat's light red** (`HP_COLOUR`, `HP_TONE`;
+  owner, 2026-11-05 and 2026-11-10, T-317), whatever the health, a hero's and an enemy's alike: on
+  the hero bar, the Hero drawer, the fight window and its tabs, and over the fighters on the mat.
 - **HP elsewhere is a bar**; the exact number shows on hover, except on the mat, where a fighter's bar is a small
-  edition of the hero bar's, the same tones on a stepped black edge, its numbers written on it, `17/30` (owner's pick F,
+  edition of the hero bar's, the same light red on a stepped black edge, its numbers written on it, `17/30` (owner's pick F,
   2026-11-05).
 - Times read `0:34` / `4:05`; thousands get separators (`1,154`).
 

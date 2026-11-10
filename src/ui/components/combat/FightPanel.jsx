@@ -193,7 +193,7 @@ export const FightArena = ({ view }) => {
             </Tooltip>
             <Tooltip title={t('fight.tip.hp', { name: enemy.name, cur: enemy.hp.cur, max: enemy.hp.max })}>
                 <div className="absolute cursor-help" style={{ left: ENEMY_CX - BAR_W / 2, bottom: barBottom, width: BAR_W }}>
-                    <VitalBar data-fight-hp="enemy" who="enemy" value={enemy.hp.cur} max={enemy.hp.max} height={BAR_H} />
+                    <VitalBar data-fight-hp="enemy" value={enemy.hp.cur} max={enemy.hp.max} height={BAR_H} />
                 </div>
             </Tooltip>
             <Landed m={landed.hero} cx={heroCx} bottom={landedBottom} />
