@@ -30,5 +30,4 @@ export const HallUpgradeDrawer = ({ upgradeDef, menuRight = false, onClose }) =>
     );
 };
 
-export default HallUpgradeDrawer;
 export { HERO_BAR_CLEAR_PX } from './GuildUpgradeInspection.jsx';

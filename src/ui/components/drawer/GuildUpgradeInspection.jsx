@@ -22,7 +22,7 @@ const RANK_SCROLL_STEP_PX = 72;
 const UPGRADE_ICON_PX = 32;
 
 /** The star's icon at the head of the drawer: the biggest whole multiple of its art that fits this. */
-export const DRAWER_ICON_MAX_PX = 96;
+const DRAWER_ICON_MAX_PX = 96;
 
 /**
  * The hero bar's height at the screen's foot: the hero bar lies over the side drawers, so the
@@ -33,7 +33,7 @@ export const HERO_BAR_CLEAR_PX = 64;
 const ROMAN = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
 
 /** A rank in Roman numerals: 1 → "I", 4 → "IV", 14 → "XIV". */
-export function toRoman(n) {
+function toRoman(n) {
     let left = Math.floor(Number(n) || 0);
     if (left <= 0) return String(n);
     let out = '';
@@ -47,13 +47,13 @@ export function toRoman(n) {
 }
 
 /** The whole-pixel scale at which art `w`×`h` px fits `max` px (at least 1×). */
-export function iconScale(w, h, max = DRAWER_ICON_MAX_PX) {
+function iconScale(w, h, max = DRAWER_ICON_MAX_PX) {
     const side = Math.max(w || 0, h || 0);
     return side > 0 ? Math.max(1, Math.floor(max / side)) : 1;
 }
 
 /** "3.6k/30": a Bank count against a price, both in the inventory's short numbers. */
-export const haveOfPrice = (have, needed) => `${formatCompact(have, 1)}/${formatCompact(needed, 1)}`;
+const haveOfPrice = (have, needed) => `${formatCompact(have, 1)}/${formatCompact(needed, 1)}`;
 
 /** A rank badge: its Roman numeral, the Arabic number while its row is under the pointer. */
 const RankBadge = ({ rank }) => (
@@ -296,4 +296,3 @@ const DrawerIcon = ({ src }) => {
     );
 };
 
-export default GuildUpgradeInspection;

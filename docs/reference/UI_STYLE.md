@@ -47,9 +47,9 @@ clunky labels like "LVL 03" where "3/99" says it better.
   under every panel**: a solid black copy 2 art pixels down-right, like a
   carried Token's. The demo's chamfer and stud pictures are the shipping art,
   not placeholders (owner). The drawn line stays 1 pixel (no thick borders).
-  **One exception**: the Guild Hall's own panel and its Return button wear the same two shapes
-  **drawn in purple** (`ui-frame-studs-purple`, `ui-frame-chamfer-purple`; owner's pick F,
-  2026-11-06), so the night sky's screen reads as its own place.
+  **One exception**: the Guild Hall's Upgrade drawer wears the studs **drawn in purple**
+  (`ui-frame-studs-purple`; `ui-frame-chamfer-purple` stays for a small Hall pop-up; owner's
+  pick F, 2026-11-06), so the night sky's screen reads as its own place.
 
 ```
 +--------------------------+
@@ -305,6 +305,33 @@ item held.
   break chance, weapon stats, arrow, resists and cuts, what it restores, the description); then the
   **actions** (Use, later Sell and Discard) and **Collected this run** small at the foot. The mat
   stays put while the Bank and the drawer lie over it. *New, unapproved.*
+
+## The Upgrade drawer and the Hall's star titles (brief 570)
+
+- **The Upgrade drawer**: the side drawer in the Hall's purple studs over the sky's backdrop. The
+  Hall opens with it **closed**; a **click** on a star opens it (a hover only shows the star's
+  rank, it never changes the drawer); its X or Escape closes it (Escape closes the drawer first,
+  the Hall on the next press). No Return button: the nav bubble or Escape leaves the Hall.
+- **Top to bottom**: the X in the top corner; the star's **icon large and always grey** (the
+  biggest whole multiple of its art up to 96 px); the **title** in display size, centred; the
+  sentence of what it does; then **Ranks**, a scrolling list (`ArrowScrollList`) of every rank,
+  opened on the last bought rank with the next one under it (again after a buy). A rank's badge is
+  its **Roman numeral** (I, II, IV) and turns into the **Arabic number** while the row is under
+  the pointer; beside it one short line of what that rank gives ("+12% XP", "4 tabs"). Bought
+  ranks in gold; the chosen rank in a gold line, the ranks up to it in a faint band; later ranks
+  muted.
+- **Choosing and buying**: the next rank is chosen by default; a click on any later rank chooses
+  it. The foot shows **"Rank IV price"** as item ribbons with the Bank's count against it in short
+  numbers ("3.6k/30"); while the pointer is on the Upgrade button and more than one rank is chosen
+  it shows **"Total, ranks II to IV"** instead. The button reads **"Upgrade (+3 Ranks)"** and buys
+  them all at once (one purchase, one ceremony). When the Bank cannot pay, the button is greyed and
+  a red line says what is short, in short numbers ("Short: 1.1k Oak Wood"). The drawer's last line
+  stops 64 px above the screen's foot, where the hero bar lies over it.
+- **Star titles never overlap** (a drawing rule, `hallStarStagger.js`): once drawn, every title
+  is measured; stars standing side by side whose titles would touch are staggered, every second
+  one of the row dropped just far enough to clear, and a star under another's title moves down
+  clear of it. Only the drawing moves: the authored places stay. The sky's view stops 64 px above
+  the foot, so every title can be panned clear of the hero bar. *New, unapproved.*
 
 ## The Shop (brief 410)
 
