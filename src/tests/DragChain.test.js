@@ -44,10 +44,9 @@ describe('smallestWithin — which target gets the drop (CR3-413)', () => {
         expect(ids(smallestWithin(args([mat, drawer, slot], { x: 670, y: 120 })))).toEqual(['slot', 'drawer', 'mat']);
     });
 
-    it('a target drawers cover loses to the drawer, though it is smaller, and still beats the mat', () => {
+    it('the hero bar, drawn over a drawer, takes the drop there: it is the smaller drawer target', () => {
         const bar = container('bar', { left: 650, top: 90, width: 160, height: 64 }, DND_SURFACE.DRAWER);
-        bar.data.current.beneathDrawers = true;
-        expect(ids(smallestWithin(args([mat, drawer, bar], { x: 670, y: 120 })))).toEqual(['drawer', 'bar', 'mat']);
+        expect(ids(smallestWithin(args([mat, drawer, bar], { x: 670, y: 120 })))).toEqual(['bar', 'drawer', 'mat']);
         expect(ids(smallestWithin(args([mat, bar], { x: 670, y: 120 })))).toEqual(['bar', 'mat']);
     });
 

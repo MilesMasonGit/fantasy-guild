@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // The Bank and Shop drawers as one panel to the screen's edge under the nav, and the mat's side
-// moving aside for the Bank by transforms only (no column, no refit).
+// staying put while the Bank is open (no column, no refit, no move).
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import React from 'react';
@@ -52,7 +52,8 @@ describe('the drawers reach the screen edge under the nav, as one panel', () => 
 
     it('the Shop, nav on the left: at the foot, across the whole screen under the nav, its rows padded for it', () => {
         const el = shopPanel(false);
-        expect(classes(el)).toEqual(expect.arrayContaining(['bottom-0', 'inset-x-0', '[--nav-inset-l:84px]', 'md:[--nav-inset-l:152px]']));
+        // On the hero bar's strip rather than the screen's foot (`HeroBarEverywhere.test.js`).
+        expect(classes(el)).toEqual(expect.arrayContaining(['inset-x-0', '[--nav-inset-l:84px]', 'md:[--nav-inset-l:152px]']));
         // Never as wide as its cards: the panel spans the screen, whatever it holds.
         expect(classes(el)).not.toEqual(expect.arrayContaining(['w-max']));
         expect(el.className).not.toMatch(/(^| )max-w-/);
@@ -62,7 +63,7 @@ describe('the drawers reach the screen edge under the nav, as one panel', () => 
 
     it('the Shop, nav on the right: the same, mirrored', () => {
         const el = shopPanel(true);
-        expect(classes(el)).toEqual(expect.arrayContaining(['bottom-0', 'inset-x-0', '[--nav-inset-r:84px]', 'md:[--nav-inset-r:152px]']));
+        expect(classes(el)).toEqual(expect.arrayContaining(['inset-x-0', '[--nav-inset-r:84px]', 'md:[--nav-inset-r:152px]']));
         expect(classes(el)).not.toEqual(expect.arrayContaining(['w-max']));
         expect(el.className).not.toContain('[--nav-inset-l:');
     });
@@ -93,43 +94,23 @@ describe('the drawers reach the screen edge under the nav, as one panel', () => 
     });
 });
 
-describe('opening the Bank moves the mat side by transforms only', () => {
-    it('the Bank takes no column beside the mat: the only <aside> left in ReactRoot is the Hall details', () => {
+describe('opening the Bank leaves the mat side where it is', () => {
+    it('the Bank takes no column beside the mat, nor the Hall: ReactRoot lays no <aside> of its own', () => {
         const code = codeOf(fs.readFileSync(`${SRC}/ui/ReactRoot.jsx`, 'utf8'));
-        const asides = code.match(/<aside[\s\S]*?>/g) || [];
-        expect(asides.length).toBe(1);
-        expect(asides[0]).toContain('data-hall-details');
+        expect(code.match(/<aside[\s\S]*?>/g) || []).toEqual([]);
     });
 
-    it('one wrapper carries the whole mat side: the board, its top bar, the stubs, the dock', () => {
+    it('nothing moves the mat side for the Bank: no shift wrapper, no shift rules', () => {
         const { mat } = hallCameraSides();
-        const at = mat.indexOf('data-bank-shift={bankShift}');
-        expect(at).toBeGreaterThan(-1);
-        for (const part of ['<MatTopBar', '<Board', '<ItemStubColumn', '<BottomHeroDock']) {
-            expect(mat.indexOf(part), part).toBeGreaterThan(at);
-        }
+        expect(mat).not.toMatch(/bank-shift|bankShift|--hero-col/);
+        expect(rulesFor('bank-shift')).toEqual([]);
+        expect(codeOf(css)).not.toContain('--hero-col');
     });
 
-    it('only transforms move, with one duration and easing, and nothing is moved at rest', () => {
-        const rules = rulesFor('.gi-bank-shift');
-        const transition = rules.find(r => r.body.startsWith('transition') && !r.selector.includes('@media'));
-        expect(transition.body).toBe('transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);');
-        for (const part of ['.gi-bank-shift', '.gi-bank-shift [data-mat-top-bar]', '.gi-bank-shift [data-item-stubs]']) {
-            expect(transition.selector.split(/,\s*/)).toContain(part);
-        }
-        const moves = rules.filter(r => r.body.startsWith('transform'));
-        expect(moves.length).toBe(6);
-        for (const r of moves) {
-            // A move only while the Bank is open, and nothing but a transform: no layout property.
-            expect(r.selector).toMatch(/^\.gi-bank-shift\[data-bank-shift="(left|right)"\]/);
-            expect(r.body).toMatch(/^transform: [^;]+;$/);
-        }
-        const reduced = rules.find(r => r.body === 'transition: none;');
-        expect(reduced).toBeTruthy();
-    });
-
-    it('the drawer slides in step with the mat side, and not at all under reduced motion', () => {
+    it('the drawer slides in step with the Item drawer, and not at all under reduced motion', () => {
         const code = codeOf(fs.readFileSync(`${SRC}/ui/components/drawer/BankDrawer.jsx`, 'utf8'));
-        expect(code).toMatch(/prefersReducedMotion\(\) \? \{ duration: 0 \} : \{ duration: 0\.25, ease: \[0\.16, 1, 0\.3, 1\] \}/);
+        expect(code).toMatch(/prefersReducedMotion\(\) \? \{ duration: 0 \} : SIDE_DRAWER_TRANSITION/);
+        const shell = codeOf(fs.readFileSync(`${SRC}/ui/components/base/SideDrawer.jsx`, 'utf8'));
+        expect(shell).toMatch(/prefersReducedMotion\(\) \? \{ duration: 0 \} : SIDE_DRAWER_TRANSITION/);
     });
 });

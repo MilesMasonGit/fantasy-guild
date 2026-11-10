@@ -45,6 +45,13 @@ export function devGiveNextPrice(ids) {
     }
 }
 
+/** Put the next `count` ranks' price of an upgrade in the Bank, so they can be bought at once. */
+export function devGiveRanksPrice(id, count) {
+    for (const { itemId, quantity } of GuildUpgradeManager.getRanksCost(id, count) || []) {
+        InventoryManager.addItem(itemId, quantity);
+    }
+}
+
 export function GuildHallDevSection() {
     const [status, setStatus] = useState('');
     const apply = (ranks, text) => {
@@ -73,6 +80,22 @@ export function GuildHallDevSection() {
                 </button>
                 <button type="button" data-qa-sky-reset className={buttonClass} onClick={() => apply({}, 'Every upgrade at rank 0')}>
                     Reset the sky
+                </button>
+            </div>
+            <div className={labelClass}>Upgrade drawer (dev only)</div>
+            <div className="flex flex-wrap gap-2">
+                <button
+                    type="button"
+                    data-qa-multi-rank
+                    className={buttonClass}
+                    title="Bank Tabs at rank 0, and the price of its first three ranks in the Bank"
+                    onClick={() => {
+                        devSetGuildRanks({ ...GuildUpgradeManager.getRanks(), bank_tabs: 0 });
+                        devGiveRanksPrice('bank_tabs', 3);
+                        setStatus('Bank Tabs at rank 0, with its first three ranks paid for in the Bank. Open the Guild Hall, click Bank Tabs, click rank III, hover Upgrade for the total, then Upgrade (+3 Ranks). Rank IV after it is short.');
+                    }}
+                >
+                    Three ranks to buy at once
                 </button>
             </div>
             <div className={labelClass}>Upgrade ceremony (dev only)</div>

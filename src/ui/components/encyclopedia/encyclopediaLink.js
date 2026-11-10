@@ -24,6 +24,16 @@ export function lookUp(key, { back: backTo = null } = {}) {
     EventBus.publish(UI_EVENTS.OPEN_ENCYCLOPEDIA, { key });
 }
 
+/**
+ * Open the Encyclopedia at its opening page, with no entry asked for (a skill has no entry of its
+ * own). One already open stays where it is.
+ */
+export function openEncyclopedia() {
+    pending = null;
+    if (!isEncyclopediaOpen()) back = null;
+    EventBus.publish(UI_EVENTS.OPEN_ENCYCLOPEDIA, { key: null });
+}
+
 /** {@link lookUp} from a ribbon's `onInspect(kind, id)`: `kind` is 'item' or 'token' (an enemy is a Token). */
 export function lookUpRibbon(kind, id) {
     if (!id) return;

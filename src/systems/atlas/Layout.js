@@ -244,6 +244,71 @@ export function campBand(point, art, mat) {
 }
 
 /**
+ * The ground before any Token stands: the water (the sea, then the main biome's inland water, which
+ * goes again when the two together would cover more than {@link MAX_WATER_SHARE}), then the Stone,
+ * never on the water nor in the Hall's clearing.
+ *
+ * ⚠️ These are the first draws a layout takes from its generator, in this order, and {@link layout}
+ * starts with this very function: so {@link groundCounts} reads, from a seed alone, the cells a
+ * layout with that seed writes. Nothing is drawn for Stone when the budget asks for none, so a
+ * layout without Stone is as it always was.
+ *
+ * @param {object} ground  {@link groundOf}'s
+ * @returns {{cells: {cols: number, rows: number}, dryReach: number, keepDry: (i: number) => boolean,
+ *   record: object|null, sampled: object|null, water: Uint8Array, stoneRecord: object|null, stone: Uint8Array}}
+ */
+function firstGround(ground, random, mat) {
+    const hall = hallSpot(mat);
+    const cells = terrainGrid(mat);
+    const dryReach = HALL_CLEARING + DRY_MARGIN;
+    const clear = { x: hall.x, y: hall.y, r: dryReach };
+    const keepDry = (i) => {
+        const c = cellCentre(cells, i);
+        const dx = c.x - hall.x;
+        const dy = c.y - hall.y;
+        return dx * dx + dy * dy < dryReach * dryReach;
+    };
+    const sea = Math.min(MAX_WATER_SHARE, Math.max(0, ground.water));
+    let { record } = planWater({ sea, kinds: ground.inland }, random, mat, clear);
+    let sampled = record ? sampleWater(readWater(record), cells, TERRAIN_CELL, keepDry) : null;
+    const share = (w) => w.reduce((n, v) => n + v, 0) / w.length;
+    // Over the most a mat may hold: the inland water goes, the sea stays.
+    if (sampled && share(sampled.water) > MAX_WATER_SHARE + 0.01) {
+        record = withoutInland(record);
+        sampled = record ? sampleWater(readWater(record), cells, TERRAIN_CELL, keepDry) : null;
+    }
+    const water = sampled ? sampled.water.slice() : new Uint8Array(cells.cols * cells.rows);
+    const stoneRecord = ground.stone ? planStone(ground.stone, random, mat, clear) : null;
+    const stone = stoneRecord
+        ? sampleStone(readStone(stoneRecord), cells, TERRAIN_CELL, (i) => water[i] === 1 || keepDry(i))
+        : new Uint8Array(cells.cols * cells.rows);
+    return { cells, dryReach, keepDry, record, sampled, water, stoneRecord, stone };
+}
+
+/**
+ * How the ground of a layout with this seed divides, worked out without placing a Token: how many of
+ * its terrain cells are water, Stone, and the dry land left. Exact for a budget of one biome (every
+ * world cell's): only another biome's small water, the layout's last step, waits for the Tokens to
+ * stand, and is not counted.
+ *
+ * @param {object|object[]} summary  as {@link layout} takes it
+ * @param {{seed: number, mat: {w: number, h: number}}} options
+ * @returns {{water: number, stone: number, land: number, cells: number}}
+ */
+export function groundCounts(summary, { seed, mat } = {}) {
+    if (!mat || !(mat.w > 0) || !(mat.h > 0)) throw new TypeError('groundCounts() needs the mat size: { mat: { w, h } }');
+    const random = mulberry32((Number(seed) || 0) >>> 0);
+    const { water, stone } = firstGround(groundOf(summary), random, mat);
+    let wet = 0;
+    let rock = 0;
+    for (let i = 0; i < water.length; i++) {
+        if (water[i]) wet++;
+        else if (stone[i]) rock++;
+    }
+    return { water: wet, stone: rock, land: water.length - wet - rock, cells: water.length };
+}
+
+/**
  * Lay a budget out on the mat.
  *
  * @param {object|object[]} summary  a `Budget.budget()` result, or its `entries` (then no water,
@@ -299,25 +364,10 @@ export function layout(summary, {
     const terrainOf = (biome) => (biome && ground.terrains[biome]) || DEFAULT_TERRAIN;
     const mainGround = { terrain: terrainOf(ground.main), biome: ground.main };
 
-    // The ground first: water is where nothing dry may stand.
-    const cells = terrainGrid(mat);
-    const dryReach = HALL_CLEARING + DRY_MARGIN;
-    const keepDry = (i) => {
-        const c = cellCentre(cells, i);
-        const dx = c.x - hall.x;
-        const dy = c.y - hall.y;
-        return dx * dx + dy * dy < dryReach * dryReach;
-    };
-    const sea = Math.min(MAX_WATER_SHARE, Math.max(0, ground.water));
-    let { record } = planWater({ sea, kinds: ground.inland }, random, mat, { x: hall.x, y: hall.y, r: dryReach });
-    let sampled = record ? sampleWater(readWater(record), cells, TERRAIN_CELL, keepDry) : null;
-    const share = (w) => w.reduce((n, v) => n + v, 0) / w.length;
-    // Over the most a mat may hold: the inland water goes, the sea stays.
-    if (sampled && share(sampled.water) > MAX_WATER_SHARE + 0.01) {
-        record = withoutInland(record);
-        sampled = record ? sampleWater(readWater(record), cells, TERRAIN_CELL, keepDry) : null;
-    }
-    const water = sampled ? sampled.water.slice() : new Uint8Array(cells.cols * cells.rows);
+    // The ground first: water is where nothing dry may stand, then the Stone.
+    const first = firstGround(ground, random, mat);
+    const { cells, dryReach, keepDry, sampled, water, stoneRecord, stone } = first;
+    let { record } = first;
     const drawnAt = sampled ? (x, y) => fieldAt(sampled.sample, x, y) : null;
     const waterCells = water.reduce((n, v) => n + v, 0);
     const shore = waterCells > 0 ? shoreDistance(cells, water) : null;
@@ -327,12 +377,6 @@ export function layout(summary, {
     const inland = sampled ? water.map((v, i) => (v && !sampled.sea[i] ? 1 : 0)) : null;
     const nearWater = inland?.some(Boolean) ? shoreDistance(cells, inland) : null;
     const shoreBiomes = new Set(ground.shore);
-    // Stone after the water, never on it nor in the Hall's clearing. Nothing is drawn from the
-    // generator for a budget with none, so its layout is as it always was.
-    const stoneRecord = ground.stone ? planStone(ground.stone, random, mat, { x: hall.x, y: hall.y, r: dryReach }) : null;
-    const stone = stoneRecord
-        ? sampleStone(readStone(stoneRecord), cells, TERRAIN_CELL, (i) => water[i] === 1 || keepDry(i))
-        : new Uint8Array(cells.cols * cells.rows);
     const stoneCells = stone.reduce((n, v) => n + v, 0);
     const isRockKind = (typeId) => Boolean(affinity) && affinity(typeId) === AFFINITY.ROCK;
     const cellAt = (x, y) => cellIndex(cells, x, y);

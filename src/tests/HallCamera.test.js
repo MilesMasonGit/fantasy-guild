@@ -434,22 +434,21 @@ describe('the camera, worked out', () => {
 describe('the camera in the game\'s layout', () => {
     const count = (code, tag) => [...code.matchAll(new RegExp(`<${tag}\\b`, 'g'))].length;
 
-    it('lays the Hall screen in the sky: the upgrade web (with the Effects on its Hall star) and the details panel', () => {
+    it('lays the Hall screen in the sky: the upgrade web (with the Effects on its Hall star)', () => {
         const { code, hall } = hallCameraSides();
-        for (const tag of ['GuildHallBoard', 'GuildHallDetails']) {
-            expect(count(hall, tag), tag).toBe(1);
-            expect(count(code, tag), tag).toBe(1);
-        }
-        expect(hall).toContain('data-hall-details');
-        expect([...code.matchAll(/data-hall-details/g)]).toHaveLength(1);
+        expect(count(hall, 'GuildHallBoard')).toBe(1);
+        expect(count(code, 'GuildHallBoard')).toBe(1);
+        // The Upgrade drawer stands in the screen's overlay, never on the camera's moving side.
+        expect(count(hall, 'HallUpgradeDrawer')).toBe(0);
+        expect(count(code, 'HallUpgradeDrawer')).toBe(1);
         // The sky under the whole screen, laid by the camera only while it is off the mat.
         expect(count(code, 'HallSky')).toBe(1);
         expect(code).toContain('sky={<HallSky />}');
     });
 
-    it('keeps the mat, its top bar, the hero dock and the notifications on the table', () => {
+    it('keeps the mat, its top bar and the notifications on the table (the hero bar is under both sides: DockVisibility.test.js)', () => {
         const { code, mat } = hallCameraSides();
-        for (const tag of ['Board', 'MatTopBar', 'BottomHeroDock', 'ItemStubColumn', 'BannerStack']) {
+        for (const tag of ['Board', 'MatTopBar', 'ItemStubColumn', 'BannerStack']) {
             expect(count(mat, tag), tag).toBe(1);
             expect(count(code, tag), tag).toBe(1);
         }
@@ -471,7 +470,9 @@ describe('the camera in the game\'s layout', () => {
 
     it('clips the column rather than hiding it, so focus on a moved side scrolls nothing', () => {
         const { code } = hallCameraSides();
-        const column = code.slice(code.lastIndexOf('<div', code.indexOf('<HallCamera')), code.indexOf('<HallCamera'));
+        // The column holds the box that gives the camera its layer, and the hero bar under it.
+        const box = code.lastIndexOf('<div', code.indexOf('<HallCamera'));
+        const column = code.slice(code.lastIndexOf('<div', box - 1), box);
         // Up and down always; sideways only off the Hall, whose web runs on under the nav.
         expect(column).toContain('overflow-y-clip');
         expect(column).toMatch(/isGuildView \? 'overflow-x-visible' : 'overflow-x-clip'/);

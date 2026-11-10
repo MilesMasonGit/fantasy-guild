@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 // The Guild Hall's sky with authored stars (brief 320 H1): a constellation per skill drawn from its
 // data positions, the sky growing to hold them and dragged when too big, a star's ranks in words in
-// the details panel, and the Hall's Effects listing what the stars give.
+// the Upgrade drawer, and the Hall's Effects listing what the stars give.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, act, cleanup } from '@testing-library/react';
+import { render, act, cleanup, fireEvent } from '@testing-library/react';
 import {
     GuildHallBoard, webSize, panLimit, clampPan, MIN_SKY_SCALE, WEB_W, WEB_H, WEB_UNIT_PX, SKY_SPACING
 } from '../ui/components/board/GuildHallBoard.jsx';
@@ -99,47 +99,96 @@ describe('the sky grows to hold its stars, and drags when too big', () => {
     });
 });
 
-describe('the details panel reads a star', () => {
+describe('the Upgrade drawer reads a star', () => {
     const sheet = (id) => render(React.createElement(GuildUpgradeInspection, { upgradeDef: getUpgradeDef(id) })).container;
     const text = (c, sel) => c.querySelector(sel)?.textContent;
+    const rows = (c) => [...c.querySelectorAll('[data-rank-row]')];
 
-    it('says what the star does in one sentence, then now, next and its top rank, the Mining scope said', () => {
+    it('says what the star does, then lists every rank in Roman numerals, Arabic underneath, with what it gives', () => {
         const c = sheet('qa_mining_xp');
         expect(text(c, '[data-star-sentence]')).toBe('Every Mining Token awards more XP.');
-        expect(text(c, '[data-star-rank]')).toBe('0/3');
-        expect(text(c, '[data-star-now]')).toBe('Nothing yet');
-        expect(text(c, '[data-star-next]')).toBe('50% more XP');
-        expect(text(c, '[data-star-top]')).toBe('At rank 3, the top: 200% more XP');
-        expect(c.querySelector('[data-rank-row]')).toBeNull();
+        expect(c.querySelector('[data-drawer-icon]').className).toMatch(/\bgrayscale\b/);
+        expect(rows(c).map(r => r.querySelector('[data-rank-roman]').textContent)).toEqual(['I', 'II', 'III']);
+        expect(rows(c).map(r => r.querySelector('[data-rank-arabic]').textContent)).toEqual(['1', '2', '3']);
+        // The Arabic number shows only while its row is under the pointer.
+        expect(rows(c)[0].className).toMatch(/\bgroup\b/);
+        expect(rows(c)[0].querySelector('[data-rank-roman]').className).toMatch(/group-hover:hidden/);
+        expect(rows(c)[0].querySelector('[data-rank-arabic]').className).toMatch(/\bhidden group-hover:inline/);
+        expect(text(c, '[data-rank-row="1"] [data-rank-amount]')).toBe('50% more XP');
+        expect(text(c, '[data-rank-row="3"] [data-rank-amount]')).toBe('200% more XP');
     });
 
     it('reads a Well star\'s line and a Hearth star\'s rule, with no time on the line', () => {
         GameState.state.progress.guildUpgrades = { qa_well_copper: 1, qa_infirmary: 1 };
         const well = sheet('qa_well_copper');
         expect(text(well, '[data-star-sentence]')).toBe('The Guild Hall draws Copper Ore every lap, no hero needed.');
-        expect(text(well, '[data-star-next]')).toBe('20 Copper Ore');
+        expect(text(well, '[data-rank-row="2"] [data-rank-amount]')).toBe('20 Copper Ore');
         const infirmary = sheet('qa_infirmary');
         expect(text(infirmary, '[data-star-sentence]')).toBe('Every hero recovers from a wound faster.');
-        expect(text(infirmary, '[data-star-now]')).toBe('20% faster');
+        expect(text(infirmary, '[data-rank-row="1"] [data-rank-amount]')).toBe('20% faster');
+        expect(infirmary.querySelector('[data-rank-row="1"]').getAttribute('data-rank-state')).toBe('bought');
     });
 
-    it('drops the top-rank line when the next rank is the top, and says so at the top', () => {
-        GameState.state.progress.guildUpgrades = { qa_mining_xp: 2 };
-        expect(sheet('qa_mining_xp').querySelector('[data-star-top]')).toBeNull();
+    it('has no button at the top rank, and says so', () => {
         GameState.state.progress.guildUpgrades = { qa_mining_xp: 3 };
         const top = sheet('qa_mining_xp');
-        expect(text(top, '[data-star-now]')).toBe('200% more XP');
-        expect(text(top, '[data-star-next]')).toBe('Top rank');
+        expect(top.querySelector('[data-star-maxed]')).toBeTruthy();
         expect(top.querySelector('#guild-upgrade-button')).toBeNull();
+        expect(rows(top).every(r => r.getAttribute('data-rank-state') === 'bought')).toBe(true);
     });
 
-    it('lists the price as ribbons with what the Bank holds, short in red, and greys the button', () => {
+    it('chooses the next rank by default; a later rank is chosen by a click, its price shown, the total while Upgrade is hovered', () => {
         const c = sheet('qa_mining_xp');
-        const ribbons = c.querySelectorAll('[data-upgrade-price-item]');
-        expect(ribbons.length).toBeGreaterThan(0);
-        expect(ribbons[0].textContent).toMatch(/0\/\d/);
+        expect(c.querySelector('[data-rank-row="1"]').getAttribute('data-rank-state')).toBe('chosen');
+        expect(text(c, '#guild-upgrade-button')).toMatch(/^Upgrade$/i);
+        const rankPrice = (r) => GuildUpgradeManager.getRanksCost('qa_mining_xp', r).length;
+        expect(rankPrice(1)).toBeGreaterThan(0);
+
+        fireEvent.click(c.querySelector('[data-rank-row="3"]'));
+        expect(c.querySelector('[data-rank-row="2"]').getAttribute('data-rank-state')).toBe('in-range');
+        expect(c.querySelector('[data-rank-row="3"]').getAttribute('data-rank-state')).toBe('chosen');
+        expect(text(c, '#guild-upgrade-button')).toBe('Upgrade (+3 Ranks)');
+        expect(c.querySelector('[data-card-block="price"]').getAttribute('data-price-shows')).toBe('rank');
+        expect(c.querySelector('[data-card-block="price"]').textContent).toContain('Rank III price');
+
+        fireEvent.mouseEnter(c.querySelector('[data-upgrade-hover]'));
+        const price = c.querySelector('[data-card-block="price"]');
+        expect(price.getAttribute('data-price-shows')).toBe('total');
+        expect(price.textContent).toContain('Total, ranks I to III');
+        const total = GuildUpgradeManager.getRanksCost('qa_mining_xp', 3);
+        for (const p of total) {
+            expect(price.querySelector(`[data-upgrade-price-item="${p.itemId}"]`).textContent).toContain(`0/${p.quantity}`);
+        }
+        fireEvent.mouseLeave(c.querySelector('[data-upgrade-hover]'));
+        expect(c.querySelector('[data-card-block="price"]').getAttribute('data-price-shows')).toBe('rank');
+    });
+
+    it('greys the button with what the Bank is short of, in short numbers', () => {
+        const c = sheet('qa_mining_xp');
         expect(c.querySelector('#guild-upgrade-button').disabled).toBe(true);
-        expect(c.querySelector('[data-upgrade-short]')).toBeTruthy();
+        const short = GuildUpgradeManager.getShortfall(GuildUpgradeManager.getRanksCost('qa_mining_xp', 1));
+        expect(short.length).toBeGreaterThan(0);
+        expect(text(c, '[data-upgrade-short]')).toBe(`Short: ${short.map(s => `${s.needed - s.have} ${s.name}`).join(', ')}`);
+    });
+
+    it('buys every rank up to the chosen one at once, and chooses the next rank after', async () => {
+        for (const p of GuildUpgradeManager.getRanksCost('qa_mining_xp', 2)) InventoryManager.addItem(p.itemId, p.quantity + 3600);
+        const c = sheet('qa_mining_xp');
+        // Short numbers: thousands read "3.6k".
+        expect(c.querySelector('[data-price-count]').textContent).toMatch(/^3\.\dk\//);
+        fireEvent.click(c.querySelector('[data-rank-row="2"]'));
+        expect(c.querySelector('#guild-upgrade-button').disabled).toBe(false);
+        const heard = [];
+        const off = EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, (d) => heard.push(d));
+        try {
+            await act(async () => { fireEvent.click(c.querySelector('#guild-upgrade-button')); });
+        } finally {
+            off();
+        }
+        expect(ranks().qa_mining_xp).toBe(2);
+        expect(heard).toEqual([{ upgradeId: 'qa_mining_xp', rank: 2, fromRank: 0, count: 2 }]);
+        expect(c.querySelector('[data-rank-row="3"]').getAttribute('data-rank-state')).toBe('chosen');
+        expect(text(c, '#guild-upgrade-button')).toMatch(/^Upgrade$/i);
     });
 });
 

@@ -32,6 +32,14 @@ import { renderStatement } from '../systems/effects/statementText.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
 import { equipOrAnnounce } from '../ui/components/dock/dockEquip.js';
+import { equipBubbleOf, clearEquipBubbles } from '../ui/components/dock/equipBubbles.js';
+import { SPEECH_TONE } from '../ui/components/board/speechTone.js';
+
+/** A hero's level in a skill, as the requirement check reads it (0 when they hold none). */
+const levelOfSkill = (hero, skillId) => {
+    const s = hero?.skills?.[skillId];
+    return !s ? 0 : (typeof s === 'number' ? s : (s.level || 0));
+};
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
 
 /**
@@ -203,14 +211,21 @@ describe('the equip paths: any hero, at the level the weapon asks in its style',
         expect(novice.equipment).not.toContain('t2_gated_sword');
     });
 
-    it('a dropped weapon below the level says why where it was let go (the dock callout)', () => {
+    it('a dropped weapon below the level says why over the hero it was dropped on (the bar\'s red bubble), with the numbers', () => {
         const novice = addHero('Pip');
         give('t2_gated_sword');
-        const said = [];
-        const off = EventBus.subscribe(UI_EVENTS.UI_SCREEN_CALLOUT, ({ text }) => said.push(text));
+        const callouts = [];
+        const off = EventBus.subscribe(UI_EVENTS.UI_SCREEN_CALLOUT, ({ text }) => callouts.push(text));
         expect(equipOrAnnounce(EquipmentManager, novice.id, 't2_gated_sword')).toBe(false);
         off();
-        expect(said).toEqual(['Needs Melee 15']);
+        expect(callouts).toEqual([]);
+        const have = levelOfSkill(novice, 'melee');
+        expect(have).toBeLessThan(15);
+        expect(equipBubbleOf(novice.id)).toMatchObject({
+            text: `Can't equip Gated Iron Sword. Melee skill too low. (${have}/15)`,
+            tone: SPEECH_TONE.CANT
+        });
+        clearEquipBubbles();
     });
 
     it('a tool is never refused here', () => {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-/** How long after a drag ends a hovered hero in the bar or the hero column stays down (the reorder animation). */
+/** How long after a drag ends a hovered hero on the bar stays down (the reorder animation). */
 export const DRAG_SETTLE_MS = 320;
 
 /**

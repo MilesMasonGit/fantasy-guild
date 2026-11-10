@@ -13,26 +13,26 @@ import { useEscapeLayer } from './utils/escapeLayers.js';
 import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
 import { useEncyclopediaBack } from './hooks/useEncyclopediaBack.js';
 import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
+import { useOneBottomDrawer } from './hooks/useOneBottomDrawer.js';
 import { useWorldMapRequests } from './hooks/useWorldMapRequests.js';
 
 import Board from './components/board/Board.jsx';
 import BankDrawer from './components/drawer/BankDrawer.jsx';
 import ShopPanel from './components/drawer/ShopPanel.jsx';
 import WorldScreen from './components/atlas/WorldScreen.jsx';
+import WorldDrawer from './components/atlas/WorldDrawer.jsx';
 import WorldCamera from './components/atlas/WorldCamera.jsx';
 import ArrivalCard from './components/atlas/ArrivalCard.jsx';
 import EncyclopediaScreen from './components/encyclopedia/EncyclopediaScreen.jsx';
 
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import BottomHeroDock from './components/dock/BottomHeroDock.jsx';
-import BankHeroPanel from './components/dock/BankHeroPanel.jsx';
+import HeroDrawer from './components/dock/HeroDrawer.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import HallSky from './components/board/HallSky.jsx';
 import HallCamera from './components/board/HallCamera.jsx';
-import { GuildHallDetails } from './components/board/GuildHallDetails.jsx';
-import { NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardConstants.js';
+import { HallUpgradeDrawer, HERO_BAR_CLEAR_PX } from './components/drawer/HallUpgradeDrawer.jsx';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
-import { selectGuildInspectSelection } from './guildInspectSelection.js';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 import { FightPanelPopup } from './components/combat/FightPanelPopup.jsx';
 import { FightTabStrip } from './components/combat/FightTab.jsx';
@@ -60,9 +60,6 @@ import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 
 /** The nav's views that Escape closes; Settings is a window and closes itself. */
 const NAV_VIEWS = ['guild', 'bank', 'shop', 'atlas', 'encyclopedia'];
-
-/** How far the mat's side moves aside for the Bank: the hero column's width. */
-const BANK_SHIFT_STYLE = Object.freeze({ '--hero-col': columnWidthCss(NOTIFICATION_COLUMN) });
 
 /**
  * ReactRoot: the entry point for the React UI layer. Manages the top-level layout, provides
@@ -130,16 +127,12 @@ const ReactRoot = () => {
         return EventBus.subscribe(UI_EVENTS.DEV_STRESS_STARTED, () => closeSlotSelection(), UI_LISTENER);
     }, [closeSlotSelection]);
 
-    // The Hall's upgrade web selects by upgrade id; it has no tiles.
-    const [selectedUpgradeId, setSelectedUpgradeId] = React.useState('roster_size');
-    // The star under the pointer: the details panel shows it until the pointer leaves.
-    const [hoveredUpgradeId, setHoveredUpgradeId] = React.useState(null);
+    // The Hall star in the Upgrade drawer, by id: none (the drawer closed) until a star is clicked.
+    const [hallStarId, setHallStarId] = React.useState(null);
     const isGuildView = ui.fullscreen.view === 'guild';
     const isAtlasOpen = ui.fullscreen.view === 'atlas';
     const isEncyclopediaOpen = ui.fullscreen.view === 'encyclopedia';
     const isBankOpen = ui.drawer.panes.includes('bank');
-    // Toward the nav: the Bank's hero column opens on the far side.
-    const bankShift = isBankOpen && !isGuildView ? (menuRight ? 'right' : 'left') : undefined;
 
     // While the Bank is open the mat is not interactive at all. `useMatBankLock` is the one
     // place that reaches outside React (the drag sensor) to enforce it, so this is its only
@@ -148,13 +141,8 @@ const ReactRoot = () => {
 
     const handleOpenGuildHall = React.useCallback(() => {
         ui.fullscreen.open('guild');
-        setSelectedUpgradeId('roster_size');
-        setHoveredUpgradeId(null);
-        const def = getUpgradeDef('roster_size');
-        if (def) {
-            ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
-        }
-    }, [ui.fullscreen, ui.inspect]);
+        setHallStarId(null);
+    }, [ui.fullscreen]);
 
     // The top bar's Region name opens the Atlas the way its bubble does; a click while it is
     // already open leaves it open.
@@ -172,9 +160,9 @@ const ReactRoot = () => {
 
     const handleCloseGuildHall = useCallback(() => {
         ui.fullscreen.close();
-        setHoveredUpgradeId(null);
-        ui.inspect.clear('guild');
-    }, [ui.fullscreen, ui.inspect]);
+        setHallStarId(null);
+    }, [ui.fullscreen]);
+    const closeHallStar = useCallback(() => setHallStarId(null), []);
 
     // Escape closes the open view (the Guild Hall, the Bank, the Shop, the Atlas, the Encyclopedia) as one layer;
     // a stray click never does.
@@ -192,28 +180,10 @@ const ReactRoot = () => {
     const closeInspectHero = React.useCallback(() => setInspectHeroId(null), []);
 
     useHeroSheetRequests(setInspectHeroId);
+    useOneBottomDrawer({ shopOpen: ui.shop.isOpen, heroId: inspectHeroId, closeShop: ui.shop.close, closeHero: closeInspectHero });
     const openAtlas = ui.fullscreen.open;
     const openWorldMap = React.useCallback(() => openAtlas('atlas'), [openAtlas]);
     useWorldMapRequests(openWorldMap);
-
-    const guildPaneSelection = ui.inspect.getByPane ? ui.inspect.getByPane('guild') : null;
-    const guildInspectSelection = selectGuildInspectSelection({
-        guildPaneSelection,
-        globalSelection: ui.inspect.selection,
-        selectedUpgradeId,
-        getUpgradeDefFn: getUpgradeDef
-    });
-    const guildShownSelection = hoveredUpgradeId
-        ? selectGuildInspectSelection({ hoveredUpgradeId, getUpgradeDefFn: getUpgradeDef })
-        : guildInspectSelection;
-
-    // Close must clear BOTH the pane's explicit selection and the web's own 'last picked' id:
-    // clearing only the pane left the fallback chain above re-deriving the same selection on
-    // the next render, so the panel looked like it never closed.
-    const handleClearGuildInspect = React.useCallback(() => {
-        ui.inspect.clear('guild');
-        setSelectedUpgradeId(null);
-    }, [ui.inspect]);
 
     return (
         <DeckDndProvider>
@@ -243,8 +213,11 @@ const ReactRoot = () => {
                      * scroll a hidden box to it; a clipped box is no scroll container. While the Hall
                      * is open it clips only up and down: its sky's web runs on sideways under the
                      * nav (which is over this column) to the screen's edge.
+                     * ⚠️ No layer of its own: the hero bar at its foot is drawn in the screen's
+                     * layers, over the side drawers; everything else in it is in the `z-10` box.
                      */}
-                    <div className={cn('flex-1 min-w-0 relative flex flex-col overflow-y-clip z-10', isGuildView ? 'overflow-x-visible' : 'overflow-x-clip')}>
+                    <div className={cn('flex-1 min-w-0 relative flex flex-col overflow-y-clip', isGuildView ? 'overflow-x-visible' : 'overflow-x-clip')}>
+                        <div className="flex-1 min-h-0 relative flex flex-col z-10">
                         <HallCamera
                             open={isGuildView}
                             away={!isGuildView && (ui.fullscreen.view !== null || isBankOpen || ui.shop.isOpen || ui.settings.isOpen)}
@@ -253,45 +226,21 @@ const ReactRoot = () => {
                             tableAnchor={tableRef}
                             hall={
                                 <>
-                                    <div className="flex-1 min-w-0 min-h-0 relative pointer-events-auto">
+                                    {/* Clear of the hero bar at the screen's foot, so no star's title is under it. */}
+                                    <div className="flex-1 min-w-0 min-h-0 relative pointer-events-auto" style={{ paddingBottom: HERO_BAR_CLEAR_PX }}>
                                         <GuildHallBoard
-                                            selectedUpgradeId={guildInspectSelection?.id ?? selectedUpgradeId}
-                                            onSelectUpgrade={(def) => {
-                                                setSelectedUpgradeId(def.id);
-                                                ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
-                                            }}
-                                            onHoverUpgrade={setHoveredUpgradeId}
+                                            selectedUpgradeId={hallStarId}
+                                            onSelectUpgrade={(def) => setHallStarId(def.id)}
                                         />
                                     </div>
-                                    {/**
-                                     * The Hall's details panel: always RIGHT of the upgrade web, whichever
-                                     * side the nav is on.
-                                     */}
-                                    <aside
-                                        data-hall-details
-                                        style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                        className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10"
-                                    >
-                                        <GuildHallDetails
-                                            selection={guildShownSelection}
-                                            onClear={handleClearGuildInspect}
-                                            onReturn={handleCloseGuildHall}
-                                        />
-                                    </aside>
                                 </>
                             }
                         >
                         {/**
-                         * The mat's side moves aside for the Bank, by transforms only
-                         * (`.gi-bank-shift` in tailwind.css): the Bank's hero column takes no
-                         * width from the mat, so the mat keeps its fit and is never measured or
-                         * redrawn for the Bank; while open it is wholly under the drawer.
+                         * The mat's side stays put while the Bank is open: the Bank and its Item
+                         * drawer lie over it, so it is never measured or redrawn for them.
                          */}
-                        <div
-                            data-bank-shift={bankShift}
-                            className="gi-bank-shift flex-1 min-h-0 flex flex-col relative"
-                            style={BANK_SHIFT_STYLE}
-                        >
+                        <div className="flex-1 min-h-0 flex flex-col relative">
                         {/**
                          * The mat's room, under the camera that pans down from the mat to the world
                          * map (`WorldCamera`): the top bar goes with the mat, the hero bar below stays.
@@ -299,7 +248,7 @@ const ReactRoot = () => {
                         <WorldCamera
                             open={isAtlasOpen}
                             away={!isAtlasOpen && (ui.fullscreen.view !== null || isBankOpen || ui.shop.isOpen || ui.settings.isOpen)}
-                            world={<ErrorBoundary label="WorldScreen"><WorldScreen onClose={ui.fullscreen.close} /></ErrorBoundary>}
+                            world={<ErrorBoundary label="WorldScreen"><WorldScreen onClose={ui.fullscreen.close} menuRight={menuRight} /></ErrorBoundary>}
                             table={tableBackground}
                             tableAnchor={tableRef}
                         >
@@ -350,13 +299,15 @@ const ReactRoot = () => {
                             </div>
                         </div>
                         </WorldCamera>
-
+                        </div>
+                        </HallCamera>
+                        <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
+                        </div>
                         {/**
-                         * Bottom Hero Dock: horizontal sliding tabs. On the mat's side of the
-                         * camera, so never on the Guild Hall upgrade screen.
+                         * The hero bar, under both sides of the camera: on every screen, the
+                         * Guild Hall's included. A crash in it stays local to it.
                          */}
                         {dockDrawn && (
-                            // A crash in the bottom hero dock stays local to it.
                             <ErrorBoundary label="HeroDock">
                                 <PerfProfiler id="HeroDock">
                                     <BottomHeroDock
@@ -367,36 +318,35 @@ const ReactRoot = () => {
                                 </PerfProfiler>
                             </ErrorBoundary>
                         )}
-                        </div>
-                        </HallCamera>
-                        <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                     </div>
                     {menuRight && <BubbleMenu ui={ui} side="right" />}
+                    {/* The Guild Hall's Upgrade drawer, opened by a click on a star. */}
+                    <ErrorBoundary label="HallUpgradeDrawer">
+                        <HallUpgradeDrawer
+                            upgradeDef={isGuildView && hallStarId ? getUpgradeDef(hallStarId) : null}
+                            menuRight={menuRight}
+                            onClose={closeHallStar}
+                        />
+                    </ErrorBoundary>
                     {/**
                      * Loot flying off the mat: over the mat, under the drawers, the hero panel and
                      * the nav. ⚠️ Inside this overlay so its layer is compared with theirs; outside
                      * it, it is compared with the overlay as a whole. Nothing flies while the Bank
-                     * is open: the mat is wholly under it and the stubs are off screen, so a flight
-                     * would only cross the hero column.
+                     * is open: the mat is wholly under it and its Item drawer.
                      */}
                     {particlesDrawn && <ParticleOverlay disabled={ui.isAnyModalOpen || isBankOpen} />}
                     {/**
-                     * The hero panel: one full-height panel on the notification side,
-                     * opened from the hero bar or from the Bank. A crash in it stays local.
+                     * The Hero drawer: a hero's panel rising from behind the hero bar, opened from
+                     * the bar. A crash in it stays local.
                      */}
-                    {!isGuildView && (
-                        <ErrorBoundary label="BankHeroPanel">
-                            <BankHeroPanel
-                                menuRight={menuRight}
-                                showTabs={isBankOpen}
-                                selectedHeroId={inspectHeroId}
-                                onSelectHero={toggleInspectHero}
-                                onDoubleClickHero={toggleInspectHero}
-                                onCloseHero={closeInspectHero}
-                                onEditHero={(id) => ui.dock.openEdit(id)}
-                            />
-                        </ErrorBoundary>
-                    )}
+                    <ErrorBoundary label="HeroDrawer">
+                        <HeroDrawer
+                            menuRight={menuRight}
+                            selectedHeroId={inspectHeroId}
+                            onCloseHero={closeInspectHero}
+                            onEditHero={(id) => ui.dock.openEdit(id)}
+                        />
+                    </ErrorBoundary>
                     {/**
                      * The bank drawer: a sibling of the nav rather than a child of the
                      * board column, because it has to reach across the notifications
@@ -410,6 +360,13 @@ const ReactRoot = () => {
                         <PerfProfiler id="Drawer">
                             <BankDrawer drawer={ui.drawer} menuRight={menuRight} />
                         </PerfProfiler>
+                    </ErrorBoundary>}
+                    {/**
+                     * The World Map drawer: the side drawer, beside the Bank's, while the world map is
+                     * open. Its screen, under the camera, hands it the chosen place.
+                     */}
+                    {drawersDrawn && <ErrorBoundary label="WorldDrawer">
+                        <WorldDrawer open={isAtlasOpen} menuRight={menuRight} onClose={ui.fullscreen.close} />
                     </ErrorBoundary>}
                     {/**
                      * The Shop, rising from the bottom beside the nav. A crash here stays local

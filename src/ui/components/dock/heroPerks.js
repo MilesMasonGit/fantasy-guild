@@ -16,6 +16,16 @@ import { supportTag } from '../board/supportTags.js';
  * scale.
  */
 
+/** The names the grammar's sentences use for a rule a hero carries (a perk, a piece of gear). */
+export function carriedRuleNames() {
+    return {
+        carried: true,
+        token: id => tokenName(id) || id,
+        item: id => getItem(id)?.name || id,
+        tool: toolNamer(getAllTokenTypes())
+    };
+}
+
 /** A perk's name: its effect's title, or the effect id while the effect is missing. */
 export function perkTitle(row) {
     const entry = EFFECTS[row?.effectId];
@@ -31,12 +41,7 @@ export function perkTitle(row) {
 export function perkLines(row) {
     const entry = EFFECTS[row?.effectId];
     if (!entry) return [];
-    const names = {
-        carried: true,
-        token: id => tokenName(id) || id,
-        item: id => getItem(id)?.name || id,
-        tool: toolNamer(getAllTokenTypes())
-    };
+    const names = carriedRuleNames();
     return statementsFromEntry(entry, row).map(statement => {
         if (statement.keyword !== KEYWORD.PROVIDES || statement.when?.event) return renderStatement(statement, names);
         const skill = getSkill(statement.payload?.category)?.name;
@@ -63,4 +68,13 @@ export function skillPerkView(skillId, level) {
 /** The perks a level-up from `fromLevel` to `toLevel` reached in one skill, lowest first. */
 export function perksReachedBy(skillId, fromLevel, toLevel) {
     return perksReached(perkRowsFor(skillId), fromLevel, toLevel).map(shown);
+}
+
+/**
+ * Every milestone perk of one skill, lowest first, each `{ level, effectId, title, earned }`:
+ * `earned` when a hero at `level` holds it. Empty when the skill has no table.
+ */
+export function skillPerkTable(skillId, level) {
+    const held = new Set(perksEarnedAt(perkRowsFor(skillId), level));
+    return perkRowsFor(skillId).map(row => ({ ...shown(row), scale: row.scale, earned: held.has(row) }));
 }

@@ -25,8 +25,11 @@ import { t } from '../i18n/index.js';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { WorldScreen } from '../ui/components/atlas/WorldScreen.jsx';
 import { WorldCamera } from '../ui/components/atlas/WorldCamera.jsx';
-import { PANEL_W, PANEL_GAP } from '../ui/components/atlas/WorldPanel.jsx';
-import { shortWords } from '../ui/components/atlas/WorldPanel.jsx';
+import { WorldDrawer } from '../ui/components/atlas/WorldDrawer.jsx';
+import { shortWords } from '../ui/components/atlas/WorldPrice.jsx';
+import { NOTIFICATION_COLUMN, columnWidthAt } from '../ui/components/board/boardConstants.js';
+import * as MatCap from '../systems/board/MatCap.js';
+import { formatPlaytime } from '../utils/Formatters.js';
 import {
     shownRings, cellLook, CELL_LOOK, cellMiddle, cellCentre, mapSize, hexPoints, cellCentreArt, clampView, viewOn, mapBounds, PAN_KEEP_PX,
     HEX_R, TILE_W, TILE_H, ART_SCALE
@@ -50,8 +53,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * ⭐ The world map: the run's hex world as board tiles over a painted world, below the mat. The
  * strict rings show from the start and a wild ring once the guild can reach into it; each cell's
  * look says whether it is settled, can be settled now, is too dear, or is out of reach. The hover
- * names the place and its land and gives its price in the 9.9k shorthand; the panel holds what it
- * yields, its price and a large Settle, or, once settled, its picture, facts, a rename and Travel.
+ * names the place and its land and gives its price in the 9.9k shorthand; the World Map drawer holds
+ * its ground dials and what it yields, its price and a large Settle, or, once settled, its picture
+ * with its Tokens over the cap, the time spent there, a rename behind the quill and Travel.
  */
 
 const q = (container, sel) => container.querySelector(sel);
@@ -66,10 +70,14 @@ function newGame() {
     GameState.state.progress.rosterLimit = 4;
 }
 
-const screen = (props = {}) => render(React.createElement(
+/** The screen and its drawer, as ReactRoot mounts them: the drawer beside, open while the map is. */
+const screen = ({ onClose = vi.fn(), menuRight = false } = {}) => render(React.createElement(
     DeckDndContext.Provider, { value: { activePayload: null, isDragging: false } },
-    React.createElement(WorldScreen, { onClose: vi.fn(), ...props })
+    React.createElement(WorldScreen, { onClose, menuRight }),
+    React.createElement(WorldDrawer, { open: true, onClose, menuRight })
 ));
+/** The drawer's width at this window's width, as the screen reserves it. */
+const drawerPx = () => columnWidthAt(window.innerWidth, NOTIFICATION_COLUMN);
 const cellOf = (id) => World.currentWorld().cells.find(c => c.id === id);
 const pickCell = (container, id) => fireEvent.click(q(container, `[data-world-cell="${id}"]`));
 const payFor = (id) => {
@@ -282,7 +290,7 @@ describe('⭐ the world map screen', () => {
         expect(q(container, `[data-world-outline="${far}"]`)).toBeNull();
     });
 
-    it('runs under the whole screen, centred in the mat\'s room, with the panel in the room over its right edge', () => {
+    it('runs under the whole screen, centred in the room the nav, the hero bar and the drawer leave', () => {
         // A 1366 x 768 screen, the nav 152 px on the left, the hero bar 100 px at the foot.
         const SCREEN = { left: 0, top: 0, right: 1366, bottom: 768, width: 1366, height: 768 };
         const ROOM = { left: 152, top: 0, right: 1366, bottom: 668, width: 1214, height: 668 };
@@ -309,16 +317,15 @@ describe('⭐ the world map screen', () => {
             expect(map).toBeTruthy();
             expect(container.querySelector('[data-world-map]')).toBeNull();
             expect(map.className).toContain('inset-0');
-            // The Hall's place in the middle of the room left clear between the nav, the hero bar and the panel.
-            const sight = { w: ROOM.width - (PANEL_W + 2 * PANEL_GAP), h: ROOM.height };
+            // The Hall's place in the middle of the room left clear between the nav, the hero bar and
+            // the drawer, flush to the screen's right edge.
+            const sight = { w: ROOM.width - drawerPx(), h: ROOM.height };
             const at = viewOn(World.currentWorld().cells.find(c => c.ring === 0), sight);
             expect(map.getAttribute('data-world-view')).toBe(`${at.x},${at.y}`);
             const drawn = map.firstElementChild.style.transform;
             expect(drawn).toBe(`translate3d(${at.x + ROOM.left}px, ${at.y + ROOM.top}px, 0)`);
-            // The panel stays in the room: at its right edge, and never down behind the hero bar.
-            const panel = q(anchor, '[data-world-panel]');
-            expect([panel.style.right, panel.style.top]).toEqual([`${PANEL_GAP}px`, `${PANEL_GAP}px`]);
-            expect(panel.style.maxHeight).toBe(`calc(100% - ${SCREEN.bottom - ROOM.bottom + 2 * PANEL_GAP}px)`);
+            // The place's panel is the drawer now, not a box over the map.
+            expect(q(anchor, '[data-world-panel]')).toBeNull();
         } finally {
             rect.mockRestore();
             cw.mockRestore();
@@ -328,7 +335,7 @@ describe('⭐ the world map screen', () => {
         }
     });
 
-    it('with the nav on the right, the room and so the panel sit left of it', () => {
+    it('with the nav on the right, the drawer stands at the left edge and the map centres right of it', () => {
         const SCREEN = { left: 0, top: 0, right: 1366, bottom: 768, width: 1366, height: 768 };
         const ROOM = { left: 0, top: 0, right: 1214, bottom: 668, width: 1214, height: 668 };
         const anchor = document.body.appendChild(document.createElement('div'));
@@ -337,17 +344,28 @@ describe('⭐ the world map screen', () => {
             if (this.hasAttribute('data-world-camera-room')) return ROOM;
             return { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
         });
+        const inMap = (el) => !!el.closest?.('[data-world-backdrop]');
+        const cw = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function () { return inMap(this) ? SCREEN.width : 0; });
+        const ch = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function () { return inMap(this) ? SCREEN.height : 0; });
         try {
-            render(React.createElement(
+            const { container } = render(React.createElement(
                 DeckDndContext.Provider, { value: { activePayload: null, isDragging: false } },
                 React.createElement(WorldCamera, {
                     open: true,
                     tableAnchor: { current: anchor },
-                    world: React.createElement(WorldScreen, { onClose: vi.fn() })
-                }, React.createElement('div'))
+                    world: React.createElement(WorldScreen, { onClose: vi.fn(), menuRight: true })
+                }, React.createElement('div')),
+                React.createElement(WorldDrawer, { open: true, menuRight: true, onClose: vi.fn() })
             ));
-            expect(q(anchor, '[data-world-panel]').style.right).toBe(`${SCREEN.right - ROOM.right + PANEL_GAP}px`);
+            const map = q(anchor, '[data-world-map]');
+            const sight = { w: SCREEN.width - drawerPx() - (SCREEN.right - ROOM.right), h: ROOM.height };
+            const at = viewOn(World.currentWorld().cells.find(c => c.ring === 0), sight);
+            expect(map.getAttribute('data-world-view')).toBe(`${at.x},${at.y}`);
+            expect(map.firstElementChild.style.transform).toBe(`translate3d(${at.x + drawerPx()}px, ${at.y}px, 0)`);
+            expect(q(container, '[data-world-panel]').getAttribute('data-side-drawer')).toBe('left');
         } finally {
+            cw.mockRestore();
+            ch.mockRestore();
             rect.mockRestore();
             cleanup();
             anchor.remove();
@@ -424,7 +442,9 @@ describe('⭐ the world map screen', () => {
         pickCell(container, '0,0');
         expect(q(container, '[data-world-facts]')).toBeTruthy();
         expect(q(container, '[data-world-preview]')).toBeTruthy();
-        expect(q(container, '[data-world-fact="tokens"]')).toBeTruthy();
+        expect(q(container, '[data-world-preview] [data-world-count]')).toBeTruthy();
+        expect(q(container, '[data-world-ground]')).toBeTruthy();
+        expect(q(container, '[data-world-playtime]')).toBeTruthy();
         await act(async () => { fireEvent.click(q(container, '[data-world-travel="0,0"]')); });
         expect(onClose).toHaveBeenCalledTimes(1);
         expect(World.activeCellId()).toBe('0,0');
@@ -469,6 +489,75 @@ describe('⭐ the world map screen', () => {
         const { container } = screen();
         expect(q(container, '[data-world-none]').textContent).toBe(t('worldMap.noWorld'));
         expect(q(container, '[data-world-map]')).toBeNull();
+    });
+});
+
+describe('⭐ the World Map drawer (brief 570 D4)', () => {
+    const dialsOf = (container) => Object.fromEntries([...container.querySelectorAll('[data-world-dial]')]
+        .map(d => [d.getAttribute('data-world-dial'), Number(d.getAttribute('data-world-dial-percent'))]));
+
+    it('⭐ the place the guild is on: its preview with Tokens over the cap in the corner, the three dials, its time there; no fact rows or Token list', () => {
+        const home = Atlas.activeRegionId();
+        GameState.state.atlas.regions[home].playtimeMs = (60 + 24) * 60_000;
+        const { container } = screen();
+        const drawer = q(container, '[data-world-panel]');
+        expect(drawer.getAttribute('data-side-drawer')).toBe('right');
+        expect(q(drawer, '[data-world-detail="0,0"]')).toBeTruthy();
+        expect(q(drawer, '[data-world-preview] [data-world-count]').textContent).toBe(`${MatCap.tokenCount()}/${MatCap.matCap()}`);
+        expect(Object.keys(dialsOf(drawer))).toEqual(['water', 'grass', 'stone']);
+        expect(dialsOf(drawer)).toEqual(World.placeGround('0,0'));
+        expect(q(drawer, '[data-world-playtime]').textContent).toBe('1h 24m');
+        expect(q(drawer, '[data-world-fact]')).toBeNull();
+        expect(q(drawer, '[data-world-holds]')).toBeNull();
+        expect(q(drawer, '[data-world-token]')).toBeNull();
+        // The rename is the quill, a bare icon button.
+        const quill = q(drawer, '[data-world-rename="0,0"]');
+        expect(quill.textContent).toBe('');
+        expect(quill.getAttribute('aria-label')).toBe('Rename');
+    });
+
+    it('a place not yet settled shows its dials, what it yields and its price; no picture, count or time', () => {
+        const { container } = screen();
+        pickCell(container, '1,0');
+        const drawer = q(container, '[data-world-panel]');
+        expect(dialsOf(drawer)).toEqual(World.placeGround('1,0'));
+        const { water, grass, stone } = dialsOf(drawer);
+        expect(water + grass + stone).toBe(100);
+        expect(q(drawer, '[data-world-yields]')).toBeTruthy();
+        expect(q(drawer, '[data-world-price]')).toBeTruthy();
+        expect(q(drawer, '[data-world-preview]')).toBeNull();
+        expect(q(drawer, '[data-world-count]')).toBeNull();
+        expect(q(drawer, '[data-world-playtime]')).toBeNull();
+        expect(q(drawer, '[data-world-rename]')).toBeNull();
+    });
+
+    it('a settled place the guild has left counts its own Tokens over the guild\'s cap, and keeps its time', () => {
+        const home = Atlas.activeRegionId();
+        payFor('0,1');
+        expect(World.settleCell('0,1').success).toBe(true);
+        GameState.state.atlas.regions[home].playtimeMs = 5 * 60_000;
+        const { container } = screen();
+        pickCell(container, '0,0');
+        const { count, cap } = Atlas.capStatusOf(home);
+        expect(count).toBeGreaterThan(0);
+        expect(q(container, '[data-world-count]').textContent).toBe(`${count}/${cap}`);
+        expect(q(container, '[data-world-playtime]').textContent).toBe(formatPlaytime(5 * 60_000));
+        // The place the guild moved to counts as the cap does.
+        pickCell(container, '0,1');
+        expect(q(container, '[data-world-count]').textContent).toBe(`${MatCap.tokenCount()}/${MatCap.matCap()}`);
+    });
+
+    it('stands on the left with the nav on the right; stays shut while the map is closed or shows no world', () => {
+        const left = screen({ menuRight: true });
+        expect(q(left.container, '[data-world-panel]').getAttribute('data-side-drawer')).toBe('left');
+        cleanup();
+        const shut = render(React.createElement(WorldDrawer, { open: false, onClose: vi.fn() }));
+        expect(q(shut.container, '[data-world-panel]')).toBeNull();
+        cleanup();
+        GameState.state.world = null;
+        const none = screen();
+        expect(q(none.container, '[data-world-panel]')).toBeNull();
+        expect(q(none.container, '[data-world-none]')).toBeTruthy();
     });
 });
 

@@ -48,21 +48,21 @@ describe('the Hall upgrade button: the engine decides affordability and says a r
         vi.restoreAllMocks();
     });
 
-    it('greys the button whenever GuildUpgradeManager.canAfford says no', () => {
-        vi.spyOn(GuildUpgradeManager, 'canAfford').mockReturnValue(false);
+    it('greys the button whenever GuildUpgradeManager.canAffordRanks says no', () => {
+        vi.spyOn(GuildUpgradeManager, 'canAffordRanks').mockReturnValue(false);
         const { container } = mount();
         expect(button(container).disabled).toBe(true);
     });
 
-    it('offers the button whenever GuildUpgradeManager.canAfford says yes', () => {
-        vi.spyOn(GuildUpgradeManager, 'canAfford').mockReturnValue(true);
+    it('offers the button whenever GuildUpgradeManager.canAffordRanks says yes', () => {
+        vi.spyOn(GuildUpgradeManager, 'canAffordRanks').mockReturnValue(true);
         const { container } = mount();
         expect(button(container).disabled).toBe(false);
     });
 
     it('a refused purchase is said on screen in the engine’s words', () => {
-        vi.spyOn(GuildUpgradeManager, 'canAfford').mockReturnValue(true);
-        const purchase = vi.spyOn(GuildUpgradeManager, 'purchase')
+        vi.spyOn(GuildUpgradeManager, 'canAffordRanks').mockReturnValue(true);
+        const purchase = vi.spyOn(GuildUpgradeManager, 'purchaseRanks')
             .mockReturnValue({ success: false, error: 'Not enough items: need 5 Oak Wood (have 2)' });
         const said = [];
         const off = EventBus.subscribe(UI_EVENTS.UI_SCREEN_CALLOUT, (p) => said.push(p.text));
@@ -72,13 +72,13 @@ describe('the Hall upgrade button: the engine decides affordability and says a r
         } finally {
             off();
         }
-        expect(purchase).toHaveBeenCalledWith('roster_size');
+        expect(purchase).toHaveBeenCalledWith('roster_size', 1);
         expect(said).toEqual(['Not enough items: need 5 Oak Wood (have 2)']);
     });
 
     it('a purchase that goes through says nothing', () => {
-        vi.spyOn(GuildUpgradeManager, 'canAfford').mockReturnValue(true);
-        vi.spyOn(GuildUpgradeManager, 'purchase').mockReturnValue({ success: true });
+        vi.spyOn(GuildUpgradeManager, 'canAffordRanks').mockReturnValue(true);
+        vi.spyOn(GuildUpgradeManager, 'purchaseRanks').mockReturnValue({ success: true });
         const said = [];
         const off = EventBus.subscribe(UI_EVENTS.UI_SCREEN_CALLOUT, (p) => said.push(p.text));
         try {

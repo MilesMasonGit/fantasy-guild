@@ -22,6 +22,7 @@ import { ROUTES, wireNotifications, unwireNotifications, pins, MAX_FIND_STUBS, B
 import * as Atlas from '../systems/atlas/Atlas.js';
 import { recipesUnlockedBy } from '../systems/notifications/recipeUnlocks.js';
 import { announce } from '../ui/components/board/dropOnMat.js';
+import { equipBubbleOf, clearEquipBubbles } from '../ui/components/dock/equipBubbles.js';
 import { equipOrAnnounce } from '../ui/components/dock/dockEquip.js';
 
 /**
@@ -250,13 +251,15 @@ describe('refusals are callouts, never notifications', () => {
         expect(toasts).toEqual([]);
     });
 
-    it('a refused equip is said where the item was let go', () => {
+    it('a refused equip is said over the hero on the hero bar, not as a callout', () => {
         const said = [];
         const off = EventBus.subscribe(UI_EVENTS.UI_SCREEN_CALLOUT, (p) => said.push(p.text));
         const engine = { EquipmentManager: { equipItem: () => ({ success: false, error: 'No free slot in the loadout' }) } };
         expect(equipOrAnnounce(engine.EquipmentManager, 'h1', 'item_sword')).toBe(false);
         off();
-        expect(said).toEqual(['No free slot in the loadout']);
+        expect(said).toEqual([]);
+        expect(equipBubbleOf('h1').text).toMatch(/No free slot in the loadout\.$/);
+        clearEquipBubbles();
         expect(toasts).toEqual([]);
     });
 });

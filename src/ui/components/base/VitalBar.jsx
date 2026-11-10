@@ -1,12 +1,14 @@
-import { hpPercent, hpTone } from '../dock/dockHeroView.js';
+import { hpPercent } from '../dock/dockHeroView.js';
 import { SPEECH_FILL } from '../board/speechTone.js';
+import { HP_COLOUR } from '../board/healthBar.js';
 
-/** Each tone's fill and the one-art-pixel lighter and darker rows along its top and foot. */
-export const TONE_FILL = Object.freeze({
-    green: { fill: '#3fa34d', light: '#7fd36b', dark: '#256b33' },
-    amber: { fill: '#d9962b', light: '#f2c14e', dark: '#9a6618' },
-    red: { fill: '#c8322b', light: '#ee6a55', dark: '#8a1f1b' }
-});
+/**
+ * Every HP bar's fill, whatever the health and whoever's it is: the mat's light red (`HP_COLOUR`;
+ * owner, 2026-11-05 and 2026-11-10, T-317), with the one-art-pixel lighter and darker rows along
+ * its top and foot. Heroes and enemies alike: the hero bar, the Hero drawer, the fight window and
+ * its tabs, and the fighters on the mat (`HealthBar`).
+ */
+export const HP_TONE = Object.freeze({ fill: HP_COLOUR, light: '#f8c4c4', dark: '#c25f5f' });
 
 /** One art pixel off each corner, so the bar has the frames' stepped corners and no rounding. */
 export const STEPPED = 'polygon(2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px), 0 2px, 2px 2px)';
@@ -22,7 +24,7 @@ export const STEPPED = 'polygon(2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px,
  */
 export const VitalBar = ({ value, max, height = 16, textClass = 'ui-text-small', style, ...rest }) => {
     const pct = hpPercent({ current: value, max });
-    const tone = TONE_FILL[hpTone(pct)];
+    const tone = HP_TONE;
     return (
         <div {...rest} className="relative" style={{ height, ...style }}>
             <div className="absolute inset-0" style={{ background: '#000', clipPath: STEPPED }}>

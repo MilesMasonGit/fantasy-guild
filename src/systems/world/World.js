@@ -20,6 +20,7 @@ export {
     settleCell, writePlace, arriveAt, settledCellIds, cellStatesNow, priceOf, ringLockOf, outputsOf, regionIdOfCell,
     activeCellId, cellName, placeName
 } from './Settling.js';
+export { placeGround } from './placeGround.js';
 
 /**
  * Each run has one world (brief 330): a hex grid of cells around the Guild Hall, generated from the

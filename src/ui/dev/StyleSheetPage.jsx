@@ -38,6 +38,8 @@ import { pixelRingPath } from '../components/board/pixelRing.js';
 import { itemTintStyle } from '../components/base/itemTint.js';
 import { ItemTipContent } from '../components/drawer/ItemTip.jsx';
 import { BankSortButton } from '../components/drawer/BankTab.jsx';
+import { ItemDrawerBody } from '../components/drawer/ItemDrawer.jsx';
+import { NOTIFICATION_COLUMN } from '../components/board/boardConstants.js';
 import { TokenCard } from '../components/board/TokenCard.jsx';
 import { RecipeList } from '../components/board/RecipeList.jsx';
 import { listSkillOf } from '../../systems/board/RecipeList.js';
@@ -45,6 +47,7 @@ import { Stub } from '../components/notifications/ItemStubColumn.jsx';
 import { Banner } from '../components/notifications/BannerStack.jsx';
 import { bannerText } from '../../systems/notifications/bannerKinds.js';
 import { WorldCellDemo } from '../components/atlas/WorldMap.jsx';
+import { GroundDials } from '../components/atlas/GroundDials.jsx';
 import { WorkPlateDemo } from './WorkPlateDemo.jsx';
 import { CombatKit } from './CombatKit.jsx';
 import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
@@ -600,6 +603,28 @@ const KitControlsDemo = () => {
     );
 };
 
+/** The side drawer at its narrowest width, holding the Item drawer's parts for a sample item. */
+const SideDrawerDemo = () => {
+    const id = TINT_SAMPLES.map(s => s.id).find(sid => sid && getItem(sid));
+    const template = (id && getItem(id)) || { id: 'sample', name: 'Sample item', type: 'material', tags: ['Material'] };
+    return (
+        <div data-kit-side-drawer style={{ width: NOTIFICATION_COLUMN.min, height: 560 }}>
+            <PixelFrame kind="studs" backdrop="bank" className="h-full" frameClassName="flex flex-col overflow-hidden">
+                <ItemDrawerBody entry={{ id: template.id, count: 4600, template }} />
+            </PixelFrame>
+        </div>
+    );
+};
+
+/** The World Map drawer's ground dials for three kinds of place, at the drawer's narrowest width. */
+const GroundDialsDemo = () => (
+    <div className="flex flex-col gap-3" style={{ width: NOTIFICATION_COLUMN.min }}>
+        {[{ water: 28, grass: 64, stone: 8 }, { water: 3, grass: 79, stone: 18 }, { water: 0, grass: 100, stone: 0 }].map((shares, i) => (
+            <div key={i} data-kit-ground-dials={i} className="p-2 bg-black/40"><GroundDials shares={shares} /></div>
+        ))}
+    </div>
+);
+
 /** Bank tiles on their type's surface; hover one for the lighter surface and its tooltip. */
 const ItemTilesDemo = () => (
     <div className="flex items-end gap-3 flex-wrap">
@@ -771,8 +796,8 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar (the hero bar and the hero panel)',
-        rule: 'A hero’s HP: the numbers over a stepped pixel bar.',
+        id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar (the hero bar, the Hero drawer, the fight window); HealthBar on the mat',
+        rule: 'HP: the numbers over a stepped pixel bar, always the light red, a hero’s and an enemy’s alike, at any health.',
         Demo: () => (
             <div className="w-48 flex flex-col gap-1">
                 {[[62, 100], [30, 100], [12, 100]].map(([value, max]) => (
@@ -962,8 +987,14 @@ export const KIT_SECTIONS = [
     {
         id: 'item-tiles', title: 'Item tiles and their tooltip', status: 'unapproved',
         source: 'ui-item-tile + itemTint.js (the Bank’s tiles, a hero’s loadout slots); ItemTip (the Bank’s tooltip)',
-        rule: 'Each tile is square, with the frames’ 1-art-pixel line, and sits on a dark, low-colour surface chosen by the item’s type (material, tool, food, drink, potion, map; anything else plain); on hover the surface is a little lighter and the line white, so a sprite’s dark outline reads. A surface, not a colour meaning. Hover shows everything about the item: name, type and count, Equippable: <slot>, its tool or what it restores, tags, description, and for a map what it writes.',
+        rule: 'Each tile is square, with the frames’ 1-art-pixel line, and sits on a dark, low-colour surface chosen by the item’s type (material, tool, food, drink, potion, map; anything else plain); on hover the surface is a little lighter and the line white, so a sprite’s dark outline reads. A surface, not a colour meaning. Hover shows the item: its name, the count, its tool and break chance, its tags (no type or Equippable line); the Bank leaves the rest to its Item drawer, the Encyclopedia shows it all.',
         Demo: ItemTilesDemo
+    },
+    {
+        id: 'side-drawer', title: 'Side drawer and the Item drawer', status: 'unapproved',
+        source: 'SideDrawer (base/SideDrawer.jsx); ItemDrawer (the Bank)',
+        rule: 'New, unapproved (brief 570 D3). One drawer for inspecting the world, items and upgrades: flush to the screen edge away from the nav, full height, the hero column wide, studs frame with the screen’s backdrop. The Item drawer opens and closes with the Bank, no X: the name with the book, the sprite at 4×, the count, the tags as pills that explain themselves on hover, what it does, the actions, and Collected this run at the foot.',
+        Demo: SideDrawerDemo
     },
     {
         id: 'bank-sort', title: 'Bank Sort button and its menu', status: 'unapproved',
@@ -1008,6 +1039,12 @@ export const KIT_SECTIONS = [
         id: 'world-cells', title: 'World map cells (new)', status: 'unapproved', source: 'WorldMap (the world map screen)',
         rule: 'Board tiles standing on the painted world: the top in the land’s colours, the side in its earth, a hard shadow (code stand-ins until the owner’s tiles), the Token the place holds most of standing on it, its first three outputs as 32 px item sprites in a dark plate and "+N" for the rest. Settled and settle-able: full colour. Can be settled now: a 2-art-pixel gold outline pulsing between two golds. On the frontier but too dear: darkened. Further out: black and white. Under the pointer: full colour with a 1-art-pixel white outline; the chosen cell keeps the white outline. The guild’s place carries the pale job flag, large. Ring lines are a rope with a knot at each corner.',
         Demo: WorldCellDemo
+    },
+    {
+        id: 'world-drawer', title: 'World Map drawer and its ground dials', status: 'unapproved',
+        source: 'WorldDrawer, GroundDials (the world map screen)',
+        rule: 'New, unapproved (brief 570 D4). The side drawer in the world’s blue, open with the map, its own X closing the map. The header: the guild’s flag when the guild is there, the place’s name with the quill to rename it once settled, its land and line. A settled place’s mat drawn small, its Tokens over the guild’s cap in the bottom-right corner (28/128, no label). Three ground dials for every place, settled or not: Water, Grass and Stone, a ring of whole art pixels at 2× filling clockwise from twelve in the world map’s own paint for that land, the whole percent under it (the three add up to 100) and the ground’s name; hover says what each counts. A settled place then shows the time the guild has spent there (the clock glyph, 1h 24m), time away included. Then what it yields, its price while not settled, and a large Settle or Travel at the foot. No Ground, Tokens or Heroes rows and no Token list.',
+        Demo: GroundDialsDemo
     },
     {
         id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',

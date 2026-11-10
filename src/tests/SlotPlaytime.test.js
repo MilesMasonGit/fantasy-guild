@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatPlaytime } from '../ui/modals/SlotSelectionModal.jsx';
+import { formatPlaytime } from '../utils/Formatters.js';
 
 // The saved playtime is the game clock's tick deltas summed: milliseconds.
 describe('the slot card reads playtime from milliseconds', () => {

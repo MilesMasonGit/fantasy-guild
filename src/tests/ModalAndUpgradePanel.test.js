@@ -5,14 +5,13 @@
 // plus its deliberately-silent lock-reason slot.
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { GIModal } from '../ui/components/base/GIModal.jsx';
 import { GuildUpgradeInspection } from '../ui/components/drawer/GuildUpgradeInspection.jsx';
-import { InspectionPanel } from '../ui/components/drawer/InspectionPanel.jsx';
+import { HallUpgradeDrawer } from '../ui/components/drawer/HallUpgradeDrawer.jsx';
 import {
     getUpgradeDef, getLockDetail, getLockReason, isUpgradeAccessible, LOCK_KIND, GUILD_UPGRADES
 } from '../config/guildUpgrades.js';
-import { selectGuildInspectSelection } from '../ui/guildInspectSelection.js';
 import { withOuterUpgrade } from './fixtures/outerUpgrade.js';
 
 // Every shipped upgrade joins the Hall, so the locked one is the test star beyond Bank Tabs.
@@ -68,12 +67,10 @@ describe('guildUpgrades — lock reasons carry their kind', () => {
 describe('GuildUpgradeInspection', () => {
     const def = getUpgradeDef('roster_size');
 
-    it('offers a way out of the panel', () => {
-        // The X sits in the Inspect panel's header. This only proves it calls whatever `onClear`
-        // it was given; ReactRoot's fallback chain is the block below.
+    it('offers a way out of the drawer', () => {
         const onClose = vi.fn();
         const { container } = render(
-            (React.createElement(InspectionPanel, { selection: { type: 'guild_upgrade', id: def.id, upgradeDef: def }, onClear: onClose }))
+            (React.createElement(GuildUpgradeInspection, { upgradeDef: def, onClose }))
         );
         const btn = closeButton(container);
         expect(btn).toBeTruthy();
@@ -97,72 +94,18 @@ describe('GuildUpgradeInspection', () => {
     });
 });
 
-describe('selectGuildInspectSelection — the Guild Hall panel\'s fallback chain (CR3-451)', () => {
-    it('returns null once every source is cleared', () => {
-        const sel = selectGuildInspectSelection({
-            guildPaneSelection: null,
-            globalSelection: null,
-            selectedUpgradeId: null,
-            getUpgradeDefFn: getUpgradeDef
-        });
-        expect(sel).toBeNull();
-    });
-
-    it('falls back to the web\'s last-picked id while it is still set', () => {
-        const sel = selectGuildInspectSelection({
-            guildPaneSelection: null,
-            globalSelection: null,
-            selectedUpgradeId: 'roster_size',
-            getUpgradeDefFn: getUpgradeDef
-        });
-        expect(sel?.id).toBe('roster_size');
-    });
-
-    it('prefers the pane\'s own explicit selection over the last-picked id', () => {
-        const explicit = { type: 'guild_upgrade', id: 'wishing_well', pane: 'guild' };
-        const sel = selectGuildInspectSelection({
-            guildPaneSelection: explicit,
-            globalSelection: null,
-            selectedUpgradeId: 'roster_size',
-            getUpgradeDefFn: getUpgradeDef
-        });
-        expect(sel).toBe(explicit);
-    });
-});
-
-describe('The Guild Hall panel actually closes on Close (CR3-451)', () => {
-
-    // A minimal stand-in for ReactRoot's own wiring: the `selectedUpgradeId`
-    // state, the pane-selection state `ui.inspect` would hold, and the same
-    // fallback chain and Close handler ReactRoot now uses. If Close only
-    // cleared the pane (the pre-fix behaviour), this chain would still pick
-    // `selectedUpgradeId` back up and the panel would reappear at once.
-    function GuildPaneHarness({ initialUpgradeId = 'roster_size' }) {
-        const [selectedUpgradeId, setSelectedUpgradeId] = React.useState(initialUpgradeId);
-        const [paneSelection, setPaneSelection] = React.useState(null);
-
-        const selection = selectGuildInspectSelection({
-            guildPaneSelection: paneSelection,
-            globalSelection: null,
-            selectedUpgradeId,
-            getUpgradeDefFn: getUpgradeDef
-        });
-
-        const handleClose = () => {
-            setPaneSelection(null);
-            setSelectedUpgradeId(null); // fix
-        };
-
-        return selection
-            ? React.createElement(InspectionPanel, { selection, onClear: handleClose })
-            : React.createElement('div', { 'data-testid': 'guild-panel-empty' }, 'nothing inspected');
+describe('The Upgrade drawer closes on its X', () => {
+    function HallHarness() {
+        const [id, setId] = React.useState('roster_size');
+        return React.createElement(HallUpgradeDrawer, { upgradeDef: id ? getUpgradeDef(id) : null, onClose: () => setId(null) });
     }
 
-    it('disappears after Close, instead of re-showing the same upgrade', () => {
-        const { container } = render((React.createElement(GuildPaneHarness)));
-        expect(closeButton(container)).toBeTruthy();
+    it('is gone after its X, and stays gone', async () => {
+        const { container } = render(React.createElement(HallHarness));
+        expect(container.querySelector('[data-hall-drawer="roster_size"]')).not.toBeNull();
         fireEvent.click(closeButton(container));
-        expect(container.querySelector('[data-testid="guild-panel-empty"]')).not.toBeNull();
-        expect(closeButton(container)).toBeFalsy();
+        // It slides out, then is gone.
+        await waitFor(() => expect(container.querySelector('[data-side-drawer]')).toBeNull());
+        expect(container.textContent).toBe('');
     });
 });

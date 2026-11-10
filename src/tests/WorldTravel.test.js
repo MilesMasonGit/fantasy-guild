@@ -21,6 +21,7 @@ import * as Atlas from '../systems/atlas/Atlas.js';
 import { TEXT } from '../systems/atlas/regionNames.js';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { WorldScreen } from '../ui/components/atlas/WorldScreen.jsx';
+import { WorldDrawer } from '../ui/components/atlas/WorldDrawer.jsx';
 import { BubbleMenu } from '../ui/components/nav/BubbleMenu.jsx';
 import * as World from '../systems/world/World.js';
 import { placeAt } from './fixtures/mat.js';
@@ -97,9 +98,11 @@ describe('the Token cap is fixed (brief 320 retired its star)', () => {
 });
 
 describe('travel from the world map', () => {
-    const screen = ({ dragging = false, ...props } = {}) => render(React.createElement(
+    // The screen and its drawer, as ReactRoot mounts them: the drawer holds the place and its Travel.
+    const screen = ({ dragging = false, onClose = vi.fn(), ...props } = {}) => render(React.createElement(
         DeckDndContext.Provider, { value: { activePayload: dragging ? { kind: 'token' } : null, isDragging: dragging } },
-        React.createElement(WorldScreen, { onClose: vi.fn(), ...props })
+        React.createElement(WorldScreen, { onClose, ...props }),
+        React.createElement(WorldDrawer, { open: true, onClose })
     ));
     /** A place settled on the world's cell 1,0, chosen on the map. */
     const settledPlace = () => {

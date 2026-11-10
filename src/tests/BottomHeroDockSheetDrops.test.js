@@ -16,14 +16,14 @@ vi.mock('../ui/components/drawer/HeroInspectionSheet.jsx', async () => {
 
 import { GameState } from '../state/GameState.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
+import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { pointerOutsideList } from '../ui/components/dock/DockEquipmentGrid.jsx';
 
 const h = React.createElement;
 
 const view = (selectedHeroId) =>
-    h(DeckDndProvider, null, h(BankHeroPanel, { selectedHeroId, showTabs: false, menuRight: false }));
+    h(DeckDndProvider, null, h(HeroDrawer, { selectedHeroId, menuRight: false }));
 
 const slotDrops = (container) =>
     container.querySelectorAll('[data-dnd-droppable-id^="dock-slot-drop-"]');
