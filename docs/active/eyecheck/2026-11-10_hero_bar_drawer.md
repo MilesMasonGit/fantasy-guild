@@ -22,3 +22,16 @@ each side (Settings, Menu on Right Side).
    edit them later in `src/i18n/en.json`, section `skillPurpose`). Verdict: ok / change: ___
 
 **After the look:** tell the director "ok" or your changes. On ok the two merge to `main`; no CMS steps.
+
+## Owner's notes, 2026-11-10 (first look, combined build)
+
+- The drawer should rise from behind the heroes: the hero bar sits over everything and drawers slide in behind it;
+  today there is a gap between the drawer's foot and the screen's bottom where the bar is.
+- The X and the quill on the right, for consistency.
+- The hero name larger; name and HP bar at the top.
+- "Inventory" as one word above the gear grid.
+- Skill icons bigger, with the skill's name on each.
+- The skill panel in two sections: description and stats (good as is), then a scrollable list of milestone perks,
+  each with its level and what it gives (e.g. "Even Heat: +10% Smithing XP").
+- The Hero drawer pops in: every drawer must slide smoothly in and out.
+- World map dials: keep A ("Grass" = all open land).
