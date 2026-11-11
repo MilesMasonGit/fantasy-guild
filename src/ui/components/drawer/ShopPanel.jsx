@@ -319,6 +319,8 @@ const ShopContents = memo(function ShopContents({ isOpen, onClose, menuRight }) 
     useShopRefresh(isOpen);
     const shop = isOpen ? Shop.catalogue() : [];
     const cap = Shop.capStatus();
+    // One small Limes on the first Foundation for sale, not on every one.
+    const limesOn = shop.find(item => Shop.buildsOf(item.typeId).length > 0);
 
     return (
         <>
@@ -349,7 +351,7 @@ const ShopContents = memo(function ShopContents({ isOpen, onClose, menuRight }) 
                     {isOpen && shop.length === 0 && (
                         <p className="ui-text-small text-gi-muted py-2">{t('shop.empty')}</p>
                     )}
-                    {shop.map(item => <ShopCard key={item.group ? `group:${item.group}` : item.typeId} item={item} />)}
+                    {shop.map(item => <ShopCard key={item.group ? `group:${item.group}` : item.typeId} item={item} limes={item === limesOn} />)}
                 </ArrowScrollList>
             </div>
         </>
@@ -373,7 +375,7 @@ const MAX_PRICE_LINES = 4;
  * bought dims its Token, shows its short counts in red, and does not start a drag. A group card
  * buys the option picked in its dropdown.
  */
-export const ShopCard = ({ item }) => {
+export const ShopCard = ({ item, limes = false }) => {
     const options = item.options || null;
     const [picked, setPicked] = useState(null);
     const chosen = options ? (options.find(o => o.typeId === picked) || options[0]) : item;
@@ -394,6 +396,7 @@ export const ShopCard = ({ item }) => {
             held={drag.isDragging}
             dragRef={drag.setNodeRef}
             dragProps={ok ? drag.handleProps : NO_HANDLE}
+            limes={limes}
         />
     );
 };
@@ -402,7 +405,7 @@ const NO_HANDLE = Object.freeze({});
 
 // ⚠️ Apart from its drag hook on purpose: dnd-kit redraws the hook's holder at every drag start,
 // end and change of target; the card is memoised on what it draws.
-const ShopCardBody = memo(function ShopCardBody({ item, chosen, ok, onPick, held, dragRef, dragProps }) {
+const ShopCardBody = memo(function ShopCardBody({ item, chosen, ok, onPick, held, dragRef, dragProps, limes }) {
     const options = item.options || null;
     const builds = useMemo(() => Shop.buildsOf(chosen.typeId), [chosen.typeId]);
     const capFull = !!chosen.affordability?.capFull;
@@ -417,7 +420,7 @@ const ShopCardBody = memo(function ShopCardBody({ item, chosen, ok, onPick, held
             data-shop-affordable={ok ? 'true' : 'false'}
             style={{ width: SHOP_CARD_W, height: SHOP_CARD_H }}
             className={cn(
-                'shrink-0 overflow-hidden p-2 flex flex-col gap-1 select-none transition-opacity',
+                'relative shrink-0 overflow-hidden p-2 flex flex-col gap-1 select-none transition-opacity',
                 ok ? 'cursor-grab touch-none hover:outline-2 hover:outline-solid hover:-outline-offset-2 hover:outline-[var(--color-ui-white)]' : 'cursor-not-allowed',
                 held && 'opacity-30'
             )}
@@ -465,6 +468,12 @@ const ShopCardBody = memo(function ShopCardBody({ item, chosen, ok, onPick, held
                 <div data-shop-price className="grid grid-cols-2 gap-1 content-start min-h-0">
                     {chosen.price.slice(0, MAX_PRICE_LINES).map(p => <PricePill key={p.itemId} line={p} />)}
                 </div>
+            )}
+            {limes && (
+                // Beside the card's Token, outside its tooltip; a press on Limes does not pick up the card.
+                <span className="absolute right-1 z-10 inline-flex" style={{ top: 8 + 24 + 4 }} onPointerDown={e => e.stopPropagation()}>
+                    <LimesBlurb spot="foundation" />
+                </span>
             )}
         </div>
     );

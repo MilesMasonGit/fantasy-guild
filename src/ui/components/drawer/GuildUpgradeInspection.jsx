@@ -11,6 +11,7 @@ import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { KitButton } from '../base/KitButton.jsx';
 import { CloseX } from '../base/CloseX.jsx';
+import { LimesBlurb } from '../limes/LimesBlurb.jsx';
 import { outlineSrc } from '../board/hallStarOutline.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { t } from '../../../i18n/index.js';
@@ -147,6 +148,9 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose = null }) => {
             style={{ paddingBottom: HERO_BAR_CLEAR_PX }}
         >
             {onClose && <CloseX data-hall-sheet-close onClick={onClose} className="absolute top-1 right-1 z-10" />}
+            <div className="absolute top-1 left-1 z-10">
+                <LimesBlurb spot="hallStar" />
+            </div>
 
             <header data-card-block="name" className="shrink-0 flex flex-col items-center gap-1 px-3 pt-3 pb-2 text-center">
                 {icon && <DrawerIcon src={icon} />}

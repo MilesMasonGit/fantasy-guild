@@ -6,6 +6,7 @@ import { GameState } from '../../../state/GameState.js';
 import { collectedOf } from '../../../systems/progression/collectionLog.js';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { CloseX } from '../base/CloseX.jsx';
+import { LimesBlurb } from '../limes/LimesBlurb.jsx';
 import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { ProgressBar } from '../base/ProgressBar.jsx';
@@ -387,6 +388,9 @@ export const EncyclopediaScreen = ({ onClose }) => {
                 )}
                 <ProgressStrip progress={progress} rect={at.progress} k={k} />
                 <CloseX onClick={() => onClose?.()} label={t('common.close')} data-codex-close className="absolute z-30" style={{ left: closeLeft, top: closeTop }} />
+                <div className="absolute z-30" style={{ left: closeLeft - 36, top: closeTop }}>
+                    <LimesBlurb spot="encyclopedia" />
+                </div>
             </motion.section>
         </div>
     );

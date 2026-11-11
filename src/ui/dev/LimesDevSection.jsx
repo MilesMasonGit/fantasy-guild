@@ -30,7 +30,12 @@ const STEPS = [
     { key: 'shop', label: 'Shop\'s Limes carries it, the Shop orb outlined', step: { spot: 'shop', target: { kind: LIMES_TARGET.NAV, id: 'shop' } } },
     { key: 'world', label: 'World map\'s Limes carries it', step: { spot: 'worldMap', target: { kind: LIMES_TARGET.NAV, id: 'atlas' } } },
     { key: 'guildHall', label: 'Guild Hall\'s Limes carries it, Bunk Beds outlined', step: { spot: 'guildHall', target: { kind: LIMES_TARGET.HALL_STAR, id: 'roster_size' } } },
-    { key: 'heroDrawer', label: 'Hero drawer\'s Limes carries it', step: { spot: 'heroDrawer' } }
+    { key: 'heroDrawer', label: 'Hero drawer\'s Limes carries it', step: { spot: 'heroDrawer' } },
+    { key: 'hallStar', label: 'Upgrade drawer\'s Limes carries it', step: { spot: 'hallStar' } },
+    { key: 'tokenCard', label: 'Token card\'s Limes carries it', step: { spot: 'tokenCard' } },
+    { key: 'fight', label: 'Fight window\'s Limes carries it', step: { spot: 'fight' } },
+    { key: 'encyclopedia', label: 'Encyclopedia\'s Limes carries it', step: { spot: 'encyclopedia' } },
+    { key: 'foundation', label: 'Foundation card\'s Limes carries it, the Shop orb outlined', step: { spot: 'foundation', target: { kind: LIMES_TARGET.NAV, id: 'shop' } } }
 ];
 
 export function LimesDevSection() {
