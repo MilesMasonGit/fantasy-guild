@@ -34,5 +34,7 @@ Screenshots of each, from the builder: `.claude/worktrees/l3/docs/active/researc
 **Further blurb spots the builder suggests but did not add:** the Hall upgrade drawer, the Encyclopedia, the Token
 card, the fight panel, the Shop's Foundation card. Say which you want: ___
 
+**Owner, 2026-11-11:** ok to merge; the lessons and tutorials come later.
+
 **After the look:** tell the director "ok" or your changes. On ok it merges to `main` after the engine check. No CMS
 steps.
