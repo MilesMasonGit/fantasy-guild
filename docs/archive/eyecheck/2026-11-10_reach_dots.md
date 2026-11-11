@@ -27,3 +27,9 @@ standard reach (every camp works out to 240) is already on `main` and in this bu
 
 **CMS steps (separate, any time, on `main`):** delete the four Camp Reach stars (Forestry, Mining, Fishing,
 Farming Camp Reach) in the CMS, then Sync to Game.
+
+## Owner's verdict, 2026-11-10
+
+All ok ("This is good, and we're able to merge"); questions answered by taking the recommendations: one ring look
+(A), no dots on a hero-lit camp ring (A). Follow-up asked for: rings end at the mat's edge (brief 580 S3). Camp
+Reach stars deleted and Synced. Merged to `main` 6fae5813.

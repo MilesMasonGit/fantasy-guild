@@ -25,7 +25,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-399**
+**Next free number: T-400**
 
 ---
 
@@ -241,5 +241,6 @@ first, when content that uses it is authored.*
 | T-189 | P3 | open | **Retire `data/palettes/materials_library.json`** (found 2026-10-16): 12 lower-case ramps the Studio only reads (a GET in `RecolorEditor.jsx`), looked up only when a swap target matches a lower-case key exactly, which the dropdown never offers. Confirm nothing needs it, then remove the read and have the owner delete the file through the Studio/CMS. builder-lite. | T-180 palette bake |
 | T-392 | P3 | open | **Two enemy camps of one kind give duplicate React keys** (found 2026-11-08, brief 510 F7): `SpawnerSystem.familyCounts()` labels every enemy camp's own row `<name> (its own)`, so a board with several camps of the same name (S2's Bench Camps) logs two children with the same key where a dev view keys rows by that label. Key by the camp's instance id | brief 510 F7 |
 | T-395 | P2 | open | **The draw baseline cannot be retaken: one rejected repeat refuses the whole save** (2026-11-09, two quiet-window tries): at the 4x CPU setting Chrome on this PC often delivers 5 to 6x; `bench:draw` re-measures twice, and if one repeat of one scene still misses (S2 + notification burst 1/3), `--save-baseline` refuses even with the other repeats valid. The 7 Nov baseline (a lucky run) stays in place, so 1x p99 verdicts read REGRESSED for nothing. Save when at least 2 of 3 repeats per scene are valid (median of the valid ones), or retry the rejected repeat up to N times | brief 520 |
+| T-399 | P2 | open | **A Field takes its seed when sown, not when harvested** (owner rule 2026-11-10, brief 580): every task's materials are checked when it starts and taken only at the end, when it is collected, so a player can lose and regain them meanwhile. Work cycles and builds already do this (`BoardRunner.completeCycle`); `Fields.sow` (`src/systems/board/Fields.js:206`) pays the seed at sowing. Pay at harvest instead (expect WORK CHANGED where a scenario farms); check growths (`TimedChanges.growInto` pays when it falls due: fine) and spawner upkeep (paid once the spawn has landed: fine) | owner 2026-11-10 |
 | T-398 | P3 | open | **A landing Token rebuilds every Token within reach + 144 u** (brief 560 R1, 2026-11-10): at the standard reach of 240 a drop rebuilds about 30 Tokens instead of 20, so the bench's S4 landedP50 went 0.28 to 0.35 ms (x1.24, well under the 8 ms target; accepted). A Token with no nearby rule could rebuild only itself when it lands or moves, but `TileModifiers.nearbyGateMet` relies on every arrival rebuilding the Tokens within reach: rework that cache first. Own brief, with an A/B | brief 560 R1 |
 | T-397 | P3 | open | **A skill page in the Encyclopedia** (brief 570 D2, 2026-11-10): the Hero drawer's skill panel has a book button, but the Encyclopedia has no skill entries, so it opens the front page. Add a page per skill (what it does, its recipes or kills, perks) and point the book at it | brief 570 D2 |
