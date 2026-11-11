@@ -23,3 +23,12 @@ desktop save files.
 
 **After the look:** tell the director "ok" or your changes. On ok it merges to `main` (after the night's engine and
 drag checks); no CMS steps.
+
+## Owner's first look, 2026-11-10
+
+Functions fine; no separate strip: the drawer itself only lowers to the top of the hero bar. Built (16191b62): the
+lowered Shop's top edge sits at the top of the bar's names and HP bars, the bar in front; hovering that edge raises
+it; dropping a Foundation there refunds it. Strip wording removed (check 5 falls away).
+
+**Second look:** `_builds/2026-11-10-shop-lowered/Fantasy Guild.exe`, checks 1 to 4 again with "the lowered Shop"
+in place of "the strip". Verdict: ok / change: ___
