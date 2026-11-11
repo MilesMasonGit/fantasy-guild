@@ -360,6 +360,17 @@ the hand; the building made on it rests. Hovering or carrying one shows the
 reach ring and its dots (§Reach), so the player can judge a spot before choosing
 what to build.
 
+**An unbuilt Foundation can go back to the Shop** (owner, 2026-11-10; brief 580):
+its whole Shop price returns to the Bank, and whatever the Bank has no slot for
+waits on the floor as loot, as all income does (nothing is lost). One part-way
+through a build is refundable too, for its Shop price only: a build, like every
+work cycle, checks its materials to start and takes them only when it completes,
+so a stopped build has paid nothing. The hero working it lets go as when any
+Token leaves the mat. Only a Foundation the player put there: never a built
+Token, a spawned one, or one laid down with the land (a map's node, a Starter
+Camp Token, a landmark). A quest that counted the purchase keeps it.
+*(`Shop.canRefund`, `Shop.refund`; the drag back to the Shop is S2.)*
+
 Each kind of Foundation is for its own kind of building (owner, 2026-11-03; brief 410).
 The Shop sells only Foundations, in the order below; each shows skill icons that
 hint at what it is good for. The icons and the place in the list are authored in
@@ -886,7 +897,8 @@ less micromanagement than area flags).
   like any speed-up and held to the whole second; one lap for every Token that pays.
   A star bought mid-lap keeps the time already run. *(`PassiveProduction.js`)*
 - **The Shop** sells the Foundations only (see §3, Foundations), all available
-  from the start; price is the only gate (*placeholder* prices). Coast and Goblin
+  from the start; price is the only gate (*placeholder* prices). An unbuilt
+  Foundation goes back for its full price (§3, Foundations). Coast and Goblin
   Camp come from the Starter Camp and the world map's tables instead. *(`Shop.js`)*
 
 ---
