@@ -35,4 +35,4 @@ in place of "the strip". Verdict: change: good, a little lower, just showing the
 
 **Third look:** `_builds/2026-11-11-shop-header/Fantasy Guild.exe` (a618a703): lowered, only the Shop's header row shows
 at the screen's bottom edge, the heroes standing over it; hover that row to raise the Shop, drop a Foundation on it to
-refund. Verdict: ok / change: ___
+refund. Verdict: ok (owner, 2026-11-11: ok to merge).

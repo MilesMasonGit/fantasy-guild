@@ -232,6 +232,13 @@ mods via the CMS after release.
 
 ## Being interviewed
 
+- **Star upgrades, effect families and Events** (owner, 2026-11-11): the
+  owner's marks on 117 Star ideas and four takeaways (families with
+  per-target versions; effect icons on the Token card; Stars tiny and global
+  vs Buildings big and in reach; an Events session) →
+  [star_ideas_review.md](star_ideas_review.md). Needs planning sessions:
+  Stars vs Buildings, effect icons, Events, Limes on the journey.
+
 - **Selling items instead of discarding** (owner, 2026-11-05: "I'm hoping to find a way to sell items instead"; T-306). Not designed; gold left the game, so it needs to say what a sale pays and what it buys. If Discard is kept, it always confirms.
 
 
