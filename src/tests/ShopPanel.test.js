@@ -39,7 +39,7 @@ import { BankDrawer } from '../ui/components/drawer/BankDrawer.jsx';
 import {
     ShopPanel, ShopCard, shopPanelState, shopPanelTransform, shopCardPayload, pointerOverShopPanel,
     isShopPayload, isStripDrag, isRefundablePayload, stripHoverStart, stripHoverAt,
-    SHOP_STRIP_PX, SHOP_CARD_W, SHOP_CARD_H, SHOP_ART_PX
+    SHOP_CARD_W, SHOP_CARD_H, SHOP_ART_PX
 } from '../ui/components/drawer/ShopPanel.jsx';
 import { DOCK_STRIP_PX, dockArtPx, dockLabelOverhangPx } from '../ui/components/dock/dockHeroView.js';
 import { getLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
@@ -108,19 +108,20 @@ function mountDrawer({ isOpen = true, carrying = null, menuRight = false } = {})
 }
 
 /**
- * jsdom has no layout: a 1000 x 800 screen with the strip standing at 600 to 636 and the risen
- * panel's top at 300 (its box 500 tall from the screen's bottom edge).
+ * jsdom has no layout: a 1000 x 800 screen, the panel's foot 200 tall, so the lowered Shop's top
+ * edge stands at 600, and the risen panel's top at 300 (its box 500 tall from the screen's bottom
+ * edge). Lowered, its live box is drawn mid-slide, still higher than where it comes to rest.
  */
 function fakeLayout() {
     const rect = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function box() {
         const r = (top, bottom) => ({ left: 0, right: 1000, top, bottom, width: 1000, height: bottom - top, x: 0, y: top });
-        if (this.hasAttribute?.('data-shop-strip')) return r(600, 636);
         if (this.hasAttribute?.('data-shop-drawer')) {
-            return this.getAttribute('data-shop-drawer-state') === 'open' ? r(300, 800) : r(800, 1300);
+            return this.getAttribute('data-shop-drawer-state') === 'open' ? r(300, 800) : r(450, 950);
         }
         return r(0, 800);
     });
     const height = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function h() {
+        if (this.hasAttribute?.('data-shop-foot')) return 200;
         return this.hasAttribute?.('data-shop-drawer') ? 500 : 0;
     });
     return () => { rect.mockRestore(); height.mockRestore(); };
@@ -166,7 +167,7 @@ describe('the Bank drawer keeps the Bank only (B4)', () => {
 });
 
 describe('the Shop panel', () => {
-    it('rises from the bottom: closed, open, and dropped to its strip during a Shop drag', () => {
+    it('rises from the bottom: closed, open, and lowered to the hero bar during a Shop drag', () => {
         const shopDrag = { kind: DRAG_KIND.TOKEN, ...shopCardPayload('fixture_sp_forest') };
         const matDrag = { kind: DRAG_KIND.TOKEN, typeId: 'x', from: { instanceId: 't1' } };
         expect(shopPanelState(false, null)).toBe('closed');
@@ -176,13 +177,13 @@ describe('the Shop panel', () => {
         expect(shopPanelState(true, shopDrag)).toBe('lip');
         expect(shopPanelState(true, shopDrag, { raised: true })).toBe('open');
         expect(shopPanelTransform('open')).toBe('translateY(0)');
-        // Dropped, the panel goes all the way down, as when closed: the strip stands in for it.
-        expect(shopPanelTransform('lip')).toBe('translateY(100%)');
+        // Lowered, only its foot stays up: its top edge at the top of the bar's names and HP bars.
+        expect(shopPanelTransform('lip', { foot: 112 })).toBe('translateY(calc(100% - 112px))');
         expect(shopPanelTransform('closed')).toBe('translateY(100%)');
         expect(shopPanelTransform('closed', { under: 64 })).toBe('translateY(calc(100% + 64px))');
     });
 
-    it("reaches the screen's bottom edge behind the bar, its foot kept clear for the strip and the names over it", () => {
+    it("reaches the screen's bottom edge behind the bar, its foot kept clear for the bar and the names over it", () => {
         const foot = DOCK_STRIP_PX + dockLabelOverhangPx(dockArtPx(getLiveMatFit()));
         expect(foot).toBeGreaterThan(DOCK_STRIP_PX);
         const view = mountDrawer();
@@ -190,23 +191,21 @@ describe('the Shop panel', () => {
         // No gap between the panel and the screen's bottom edge, where the bar stands.
         expect(el.style.bottom).toBe('0px');
         expect(el.querySelector('[data-shop-foot]').style.height).toBe(`${foot}px`);
-        // The strip stands on the bar, over its names and HP bars, not behind them.
-        const strip = view.container.querySelector('[data-shop-strip]');
-        expect(strip.style.bottom).toBe(`${foot}px`);
-        expect(strip.style.height).toBe(`${SHOP_STRIP_PX}px`);
+        // No separate strip: the drawer itself is what lowers.
+        expect(view.container.querySelector('[data-shop-strip]')).toBeNull();
     });
 
-    describe('⭐ the state machine: a Foundation from the mat drops the Shop to its strip too', () => {
+    describe('⭐ the state machine: a Foundation from the mat lowers the Shop too', () => {
         const foundationDrag = { kind: DRAG_KIND.TOKEN, typeId: 'fixture_sp_found', from: { instanceId: 'f1' } };
         const builtDrag = { kind: DRAG_KIND.TOKEN, typeId: 'x', from: { instanceId: 't1' } };
 
-        it('the Shop open: a strip, raised while hovered, open again after the drop', () => {
+        it('the Shop open: lowered, raised while hovered, open again after the drop', () => {
             expect(shopPanelState(true, foundationDrag, { refundable: true })).toBe('lip');
             expect(shopPanelState(true, foundationDrag, { refundable: true, raised: true })).toBe('open');
             expect(shopPanelState(true, null)).toBe('open');
         });
 
-        it('the Shop closed: the same strip, raised while hovered, and closed again after the drop', () => {
+        it('the Shop closed: lowered the same way, raised while hovered, and closed again after the drop', () => {
             expect(shopPanelState(false, foundationDrag, { refundable: true })).toBe('lip');
             expect(shopPanelState(false, foundationDrag, { refundable: true, raised: true })).toBe('open');
             expect(shopPanelState(false, null)).toBe('closed');
@@ -230,10 +229,10 @@ describe('the Shop panel', () => {
         });
     });
 
-    describe('⭐ the strip hover: judged by where the Token is carried, against the strip, not the drag-start snapshot', () => {
+    describe('⭐ the lowered Shop hover: judged by where the Token is carried, against its lowered edge, not the drag-start snapshot', () => {
         const geo = { stripTop: 600, openTop: 300 };
 
-        it('a Shop card starts on the risen panel, drops once carried above it, and rises again on the strip', () => {
+        it('a Shop card starts on the risen panel, drops once carried above it, and rises again on its lowered edge', () => {
             let h0 = stripHoverStart({ kind: DRAG_KIND.TOKEN, ...shopCardPayload('fixture_sp_forest') });
             expect(h0).toEqual({ raised: true, armed: true });
             h0 = stripHoverAt(h0, 400, geo);                  // still over the risen panel
@@ -246,7 +245,7 @@ describe('the Shop panel', () => {
             expect(h0.raised).toBe(true);
         });
 
-        it('a Token picked up where the strip appears is not armed until carried above it', () => {
+        it('a Token picked up where the lowered edge appears is not armed until carried above it', () => {
             let h0 = stripHoverStart({ kind: DRAG_KIND.TOKEN, typeId: 'x', from: { instanceId: 'f1' } });
             expect(h0).toEqual({ raised: false, armed: false });
             h0 = stripHoverAt(h0, 620, geo);
@@ -262,7 +261,7 @@ describe('the Shop panel', () => {
             expect(stripHoverAt(h0, 450, geo)).toBe(h0);
         });
 
-        it('mounted: the strip shows for a Foundation from the mat with the Shop closed, and rises on hover', () => {
+        it('mounted: the Shop lowers for a Foundation from the mat with the Shop closed, and rises on hover', () => {
             for (const { itemId, quantity } of FOUND_PRICE) InventoryManager.addItem(itemId, quantity);
             const f = Shop.buyAt('fixture_sp_found', { x: 560, y: 520 }).instance;
             const carried = { kind: DRAG_KIND.TOKEN, typeId: f.typeId, from: { instanceId: f.id } };
@@ -270,21 +269,19 @@ describe('the Shop panel', () => {
             try {
                 const view = mountDrawer({ isOpen: false, carrying: carried });
                 const panel = view.container.querySelector('[data-shop-drawer]');
-                const strip = view.container.querySelector('[data-shop-strip]');
+                const foot = DOCK_STRIP_PX + dockLabelOverhangPx(dockArtPx(getLiveMatFit()));
                 expect(panel.getAttribute('data-shop-drawer-state')).toBe('lip');
-                expect(panel.style.transform).toBe('translateY(100%)');
-                expect(strip.getAttribute('data-shop-strip')).toBe('refund');
-                expect(strip.className).toContain('opacity-100');
+                expect(panel.style.transform).toBe(`translateY(calc(100% - ${foot}px))`);
+                expect(panel.style.visibility).toBe('visible');
                 move(500);
                 move(610);
                 expect(panel.getAttribute('data-shop-drawer-state')).toBe('open');
-                expect(strip.className).toContain('opacity-0');
                 move(250);
                 expect(panel.getAttribute('data-shop-drawer-state')).toBe('lip');
             } finally { restore(); }
         });
 
-        it('mounted: a Shop card picked up is over the risen panel, and the strip shows once it leaves it upward', () => {
+        it('mounted: a Shop card picked up is over the risen panel, and the Shop lowers once it leaves it upward', () => {
             const carried = { kind: DRAG_KIND.TOKEN, ...shopCardPayload('fixture_sp_forest') };
             const restore = fakeLayout();
             try {
@@ -293,12 +290,11 @@ describe('the Shop panel', () => {
                 expect(panel.getAttribute('data-shop-drawer-state')).toBe('open');
                 move(250);
                 expect(panel.getAttribute('data-shop-drawer-state')).toBe('lip');
-                expect(view.container.querySelector('[data-shop-strip]').getAttribute('data-shop-strip')).toBe('shop');
             } finally { restore(); }
         });
     });
 
-    describe('⭐ the drop: a Foundation from the mat let go over the strip or the risen Shop goes back to it', () => {
+    describe('⭐ the drop: a Foundation from the mat let go over the lowered Shop or the risen Shop goes back to it', () => {
         const over = { x: 500, y: 620 };
         const above = { x: 500, y: 200 };
         const buy = () => {
@@ -307,15 +303,16 @@ describe('the Shop panel', () => {
         };
         const payloadOf = (f) => ({ kind: DRAG_KIND.TOKEN, typeId: f.typeId, from: { instanceId: f.id } });
 
-        it('over the strip, the Shop closed and not yet risen: refunded, put down, with the refund sound', () => {
+        it('over the lowered Shop\'s edge, the Shop closed and not yet risen: refunded, put down, with the refund sound', () => {
             const f = buy();
             expect(InventoryManager.getItemCount(WOOD)).toBe(0);
             Hand.setInHand(f.id, true);
             const restore = fakeLayout();
             try {
                 const view = mountDrawer({ isOpen: false, carrying: payloadOf(f) });
-                move(500);                                   // carried above the strip: armed
-                // Let go the moment it reaches the strip: judged on the strip's own box.
+                move(500);                                   // carried above the lowered edge: armed
+                // Let go the moment it reaches the edge: judged where the edge rests, not on the
+                // panel's box mid-slide (450 here) nor the drag-start snapshot.
                 expect(view.container.querySelector('[data-shop-drawer]').getAttribute('data-shop-drawer-state')).toBe('lip');
                 expect(interceptedDrop(payloadOf(f), { pointer: over })).toEqual({ success: true, sfx: DRAG_SFX.refund });
             } finally { restore(); }
@@ -339,7 +336,7 @@ describe('the Shop panel', () => {
             expect(BoardState.getTokenById(f.id)).toBeNull();
         });
 
-        it('picked up where the strip appears and let go there without leaving it: not taken (a plain put-down)', () => {
+        it('picked up where the lowered edge appears and let go there without leaving it: not taken (a plain put-down)', () => {
             const f = buy();
             const restore = fakeLayout();
             try {
@@ -350,13 +347,15 @@ describe('the Shop panel', () => {
             expect(BoardState.getTokenById(f.id)).toBeTruthy();
         });
 
-        it('let go over the mat, above the strip: not taken, the mat moves it as before', () => {
+        it('let go over the mat, above the lowered edge: not taken, the mat moves it as before', () => {
             const f = buy();
             const restore = fakeLayout();
             try {
                 mountDrawer({ isOpen: false, carrying: payloadOf(f) });
                 move(500);
                 expect(interceptedDrop(payloadOf(f), { pointer: above })).toBeNull();
+                // Just above where the edge comes to rest, though the sliding panel is still drawn there.
+                expect(interceptedDrop(payloadOf(f), { pointer: { x: 500, y: 520 } })).toBeNull();
             } finally { restore(); }
             expect(BoardState.getTokenById(f.id)).toBeTruthy();
         });
@@ -390,7 +389,7 @@ describe('the Shop panel', () => {
             expect(said[0]).toMatchObject({ instanceId: f.id, severity: 'disallow', title: 'Fixture Sp Foundation was not bought at the Shop' });
         });
 
-        it('a Shop card let go over the strip is not the Shop\'s to take: the mat cancels it as before', () => {
+        it('a Shop card let go over the lowered Shop is not the Shop\'s to take: the mat cancels it as before', () => {
             const card = { kind: DRAG_KIND.TOKEN, ...shopCardPayload('fixture_sp_forest') };
             const restore = fakeLayout();
             try {
@@ -420,14 +419,15 @@ describe('the Shop panel', () => {
     });
 
     it('stays a drop target for the mat\'s cancel check: a pointer over the open panel is over it', () => {
-        const view = mountDrawer();
-        const el = view.container.querySelector('[data-shop-drawer]');
-        el.getBoundingClientRect = () => ({ left: 100, right: 900, top: 500, bottom: 800, width: 800, height: 300 });
-        expect(pointerOverShopPanel({ x: 400, y: 600 })).toBe(true);
-        expect(pointerOverShopPanel({ x: 400, y: 300 })).toBe(false);
+        const restore = fakeLayout();
+        try {
+            mountDrawer();
+            expect(pointerOverShopPanel({ x: 400, y: 350 })).toBe(true);
+            expect(pointerOverShopPanel({ x: 400, y: 250 })).toBe(false);
+        } finally { restore(); }
     });
 
-    it('drops to its strip while a Shop Token is carried above it, and stays open after', () => {
+    it('lowers while a Shop Token is carried above it, and stays open after', () => {
         const carried = { kind: DRAG_KIND.TOKEN, ...shopCardPayload('fixture_sp_forest') };
         const restore = fakeLayout();
         try {
