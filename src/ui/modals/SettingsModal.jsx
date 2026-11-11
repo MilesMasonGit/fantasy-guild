@@ -113,6 +113,12 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                 {...bind('notifications.itemStubs')}
                                 value={getVal('notifications.itemStubs') !== false}
                             />
+                            <SettingToggle
+                                label={t('settings.limesBlurbs')}
+                                description={t('settings.limesBlurbsHint')}
+                                {...bind('ui.limesBlurbs')}
+                                value={getVal('ui.limesBlurbs') !== false}
+                            />
                         </div>
                     )}
 

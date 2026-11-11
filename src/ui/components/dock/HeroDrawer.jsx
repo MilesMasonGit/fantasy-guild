@@ -7,6 +7,7 @@ import { DND_SURFACE, DRAG_KIND } from '../../dnd/dragConstants.js';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { CloseX } from '../base/CloseX.jsx';
+import { LimesBlurb } from '../limes/LimesBlurb.jsx';
 import { Feather } from 'lucide-react';
 import { t } from '../../../i18n/index.js';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
@@ -154,6 +155,7 @@ export const HeroDrawer = ({
                         className="absolute top-2 flex items-center gap-1"
                         style={{ right: 'calc(var(--nav-inset-r, 0px) + 0.75rem)' }}
                     >
+                        <LimesBlurb spot="heroDrawer" />
                         <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); onEditHero?.(shownHeroId); }}

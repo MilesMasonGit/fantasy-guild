@@ -46,6 +46,8 @@ import { ScreenCalloutLayer } from './components/notifications/ScreenCalloutLaye
 import TestDashboard from './components/TestDashboard.jsx';
 import CatchUpOverlay from './components/hud/CatchUpOverlay.jsx';
 import MatTopBar from './components/board/MatTopBar.jsx';
+import { LimesBlurb } from './components/limes/LimesBlurb.jsx';
+import { LimesTargetMark } from './components/limes/LimesTargetMark.jsx';
 import MatRegionName from './components/board/MatRegionName.jsx';
 import MatCapBadge from './components/board/MatCapBadge.jsx';
 import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
@@ -188,6 +190,7 @@ const ReactRoot = () => {
     return (
         <DeckDndProvider>
             <ScreenCalloutLayer />
+            <LimesTargetMark />
             <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                 {/* ⚠️ `overflow-clip`: the Hall's web runs past the column to the screen's edge, and a
                     hidden box would scroll to a focused star out there. `min-h-0`: a clipped box, unlike a
@@ -232,6 +235,9 @@ const ReactRoot = () => {
                                             selectedUpgradeId={hallStarId}
                                             onSelectUpgrade={(def) => setHallStarId(def.id)}
                                         />
+                                        <div className="absolute left-3 top-3 z-10">
+                                            <LimesBlurb spot="guildHall" />
+                                        </div>
                                     </div>
                                 </>
                             }

@@ -79,8 +79,9 @@ gi-slot-label {
     .order-reason-bubble { animation: none; }
 }
 
-/* The Token Summary lights every Token of the hovered type: the gold attention outline. */
-[data-summary-highlight="true"] {
+/* The Token Summary lights every Token of the hovered type, and a Limes step its target
+   (`limesMark.js`): the gold attention outline. */
+[data-summary-highlight="true"], [data-limes-mark] {
     filter: drop-shadow(2px 0 0 #facc15) drop-shadow(-2px 0 0 #facc15) drop-shadow(0 2px 0 #facc15) drop-shadow(0 -2px 0 #facc15);
 }
 
@@ -120,3 +121,7 @@ gi-slot-label {
     .catch-up-sheen { animation: none; opacity: 0; }
     .catch-up-row-in { animation: none; }
 }
+
+/* Limes on the mat lets everything through while something is carried, so a Token or a hero's
+   flag can be put down where it stands. */
+body.gi-dnd-active [data-limes], body.gi-dnd-active [data-limes] .pointer-events-auto { pointer-events: none !important; }

@@ -55,6 +55,7 @@ import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { watchSpawns } from './spawnMotion.js';
 import { watchRegionSettle } from './fx/regionSettle.js';
 import { MatFxLayer } from './fx/MatFxLayer.jsx';
+import { MatLimes } from '../limes/MatLimes.jsx';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 
@@ -307,6 +308,12 @@ export const MatBoard = React.memo(function MatBoard({
         if (typeof document !== 'undefined' && document.body.classList.contains('gi-dnd-active')) return;
         const el = rootRef.current;
         if (!el) return;
+        // On Limes's drawn pixels or its bubble the pointer is Limes's: nothing under it lights.
+        if (e.target?.closest?.('[data-limes]')) {
+            setFlagsYield(prev => (prev === false ? prev : false));
+            setHoveredId(prev => (prev === null ? prev : null));
+            return;
+        }
         /**
          * Flags have no hitbox over Tokens, except their cloth. A point on a Token's art circle
          * is that Token's, even when a flag is drawn in front of it: the Token is hovered, and
@@ -673,6 +680,9 @@ export const MatBoard = React.memo(function MatBoard({
 
             {/* `MAT_Z.HERO_BUBBLE`: hero speech bubbles, above every hero. */}
             {speechDrawn && <HeroBubbleLayer heroes={heroes} />}
+
+            {/* `MAT_Z.LIMES` and `MAT_Z.LIMES_BUBBLE`: Limes and its bubble, on the Starter Camp only. */}
+            <MatLimes />
 
             {/**
              * A map mode's dashed edge in the mode's colour, above everything and never in the

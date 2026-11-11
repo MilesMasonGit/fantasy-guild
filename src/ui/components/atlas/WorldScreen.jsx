@@ -8,6 +8,7 @@ import { travelFromScreen, END_DRAG_MARK } from './travelFromScreen.js';
 import { worldView } from './worldView.js';
 import { WorldMap } from './WorldMap.jsx';
 import { CloseX } from '../base/CloseX.jsx';
+import { LimesBlurb } from '../limes/LimesBlurb.jsx';
 import { sideDrawerEdge } from '../base/SideDrawer.jsx';
 import { NOTIFICATION_COLUMN, columnWidthAt } from '../board/boardConstants.js';
 import { FOG_CSS } from './worldPicture.js';
@@ -121,14 +122,18 @@ export const WorldScreen = ({ onClose, menuRight = false }) => {
         if (id !== selectedId) setMessage(null);
         setChosen(id);
     };
+    const reserve = worldReserve(insets, menuRight, drawerPx);
     return (
         <section role="dialog" aria-label={t('worldMap.label')} data-world-page data-atlas-screen className="absolute inset-0 pointer-events-auto text-[12px] leading-snug">
             <WorldMap
                 view={view}
                 selectedId={selectedId}
                 onSelect={select}
-                reserve={worldReserve(insets, menuRight, drawerPx)}
+                reserve={reserve}
             />
+            <div className="absolute z-10" style={{ left: reserve.left + CLOSE_GAP, top: reserve.top + CLOSE_GAP }}>
+                <LimesBlurb spot="worldMap" />
+            </div>
         </section>
     );
 };

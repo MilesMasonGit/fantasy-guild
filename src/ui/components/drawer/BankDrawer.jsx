@@ -3,6 +3,7 @@ import { cn } from '../../utils/cn.js';
 import BankTab from './BankTab.jsx';
 import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js';
 import { PanelHeader } from '../base/CloseX.jsx';
+import { LimesBlurb } from '../limes/LimesBlurb.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
 import { DOCK_STRIP_PX } from '../dock/dockHeroView.js';
@@ -64,7 +65,9 @@ export const BankDrawer = ({ drawer, menuRight = false }) => {
                                         onClose={() => drawer.closePane(key)}
                                         closeLabel={`Close ${label}`}
                                         className="gi-drawer-pad-x py-1.5 border-b border-gi-border/40 min-h-[44px]"
-                                    />
+                                    >
+                                        {key === 'bank' && <LimesBlurb spot="bank" />}
+                                    </PanelHeader>
 
                                     {/* Clear of the hero bar's strip, which is drawn over the drawer. */}
                                     <div className="flex-1 min-h-0" style={{ paddingBottom: DOCK_STRIP_PX }}>

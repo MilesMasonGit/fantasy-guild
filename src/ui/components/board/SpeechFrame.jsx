@@ -1,11 +1,12 @@
 import { cn } from '../../utils/cn.js';
-import { SPEECH_TONE, SPEECH_LINE, SPEECH_FILL } from './speechTone.js';
+import { SPEECH_TONE, SPEECH_LINE, speechFillOf, LIMES_FILL_TOP, LIMES_FILL_FOOT } from './speechTone.js';
 
 /** The frame's edition per tone (`tailwind.css`). */
 const TONE_CLASS = Object.freeze({
     [SPEECH_TONE.PLAIN]: '',
     [SPEECH_TONE.ATTENTION]: ' ui-frame-chamfer-gold',
-    [SPEECH_TONE.CANT]: ' ui-frame-chamfer-red'
+    [SPEECH_TONE.CANT]: ' ui-frame-chamfer-red',
+    [SPEECH_TONE.LIMES]: ' ui-frame-chamfer-limes'
 });
 
 /** The tail in frame pixels: 7 across where it leaves the frame's foot, 4 down to its point. */
@@ -30,7 +31,7 @@ const tailUri = (tone) => {
     const edge = rows.map(([x, w], y) => (w === 1 ? px(x, y) : px(x, y) + px(x + w - 1, y))).join('');
     const fill = rows.filter(([, w]) => w > 2).map(([x, w], y) => px(x + 1, y, w - 2)).join('');
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${TAIL_W + TAIL_SHADOW}' height='${TAIL_H + TAIL_SHADOW}' shape-rendering='crispEdges'>`
-        + `<path fill='%23000' d='${shadow}'/><path fill='${line}' d='${edge}'/><path fill='${SPEECH_FILL.replace('#', '%23')}' d='${fill}'/></svg>`;
+        + `<path fill='%23000' d='${shadow}'/><path fill='${line}' d='${edge}'/><path fill='${speechFillOf(tone).replace('#', '%23')}' d='${fill}'/></svg>`;
     return `url("data:image/svg+xml,${svg}")`;
 };
 const TAIL_URI = Object.freeze(Object.fromEntries(Object.values(SPEECH_TONE).map(t => [t, tailUri(t)])));
@@ -39,8 +40,21 @@ const TAIL_URI = Object.freeze(Object.fromEntries(Object.values(SPEECH_TONE).map
 export const tailInset = (u = 1) => (3 + TAIL_W / 2) * 2 * u;
 
 /**
+ * Limes's fill: the lime gradient one art pixel inside the frame's edge, its corners cut one art
+ * pixel so it meets the chamfer's line (the line's picture has no fill of its own).
+ */
+const limesFillStyle = (art) => ({
+    inset: art,
+    background: `linear-gradient(to bottom, ${LIMES_FILL_TOP}, ${LIMES_FILL_FOOT})`,
+    clipPath: `polygon(${art}px 0, calc(100% - ${art}px) 0, calc(100% - ${art}px) ${art}px, 100% ${art}px, 100% calc(100% - ${art}px), `
+        + `calc(100% - ${art}px) calc(100% - ${art}px), calc(100% - ${art}px) 100%, ${art}px 100%, ${art}px calc(100% - ${art}px), `
+        + `0 calc(100% - ${art}px), 0 ${art}px, ${art}px ${art}px)`
+});
+
+/**
  * One line of speech in the pixel family, beside the work plate: the chamfer frame with its hard
- * shadow, in its bronze, or gold (`ATTENTION`) or red (`CANT`), and with `tail` a stepped pixel
+ * shadow, in its bronze, or gold (`ATTENTION`) or red (`CANT`), or Limes's green on its lime
+ * gradient with dark words (`LIMES`, Limes's bubbles only), and with `tail` a stepped pixel
  * point under it at `tailLeft` (a CSS length from the frame's left). `u` is one screen pixel in
  * the units it is drawn in (`plateUnit` on the mat, 1 off it), so the frame's art pixels land on
  * whole screen pixels. Props, `className` and `style` go on the outer box; the text sits inside
@@ -50,11 +64,12 @@ export function SpeechFrame({ tone = SPEECH_TONE.PLAIN, u = 1, tail = false, tai
     const band = 6 * u;
     const frame = { borderWidth: band, borderImageWidth: `${band}px` };
     const art = 2 * u;
+    const limes = tone === SPEECH_TONE.LIMES;
     return (
         <div
             data-speech-tone={tone}
             {...rest}
-            className={cn('relative text-white', className)}
+            className={cn('relative', limes ? 'ui-limes-ink' : 'text-white', className)}
             style={{ padding: `${band}px ${band + art}px`, ...style }}
         >
             <span
@@ -62,6 +77,7 @@ export function SpeechFrame({ tone = SPEECH_TONE.PLAIN, u = 1, tail = false, tai
                 className="ui-frame-shadow-chamfer absolute inset-0 pointer-events-none"
                 style={{ ...frame, transform: `translate(${4 * u}px, ${4 * u}px)` }}
             />
+            {limes && <span aria-hidden="true" data-limes-fill className="absolute pointer-events-none" style={limesFillStyle(art)} />}
             <span
                 aria-hidden="true"
                 className={`ui-frame-chamfer${TONE_CLASS[tone] || ''} absolute inset-0 pointer-events-none`}

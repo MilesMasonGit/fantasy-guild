@@ -50,7 +50,9 @@ const defaultSettings = {
         instantPackReveal: false,
         allCaps: true,
         backgroundTile: 'u_table_wood_spruce',
-        bubbleMenuRight: false
+        bubbleMenuRight: false,
+        // The small Limes on the screens and their hover blurbs; one carrying a lesson step still shows.
+        limesBlurbs: true
     },
     audio: {
         // Silent by default while the game is in development. Music and SFX keep
