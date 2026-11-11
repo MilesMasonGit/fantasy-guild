@@ -177,8 +177,8 @@ export function effectiveIO(instanceId, instance) {
         // per-cycle charge is zero, or a one-charge Foundation would be destroyed by the very cycle
         // that builds on it.
         recipe: def?.foundation && recipe ? { ...recipe, stationChargeCost: 0 } : recipe,
-        // A crop's inputs are its seed, paid once per sowing (`Fields.js`), never per harvest.
-        inputs: Fields.isField(def) ? [] : (recipe?.inputs ?? def?.config?.inputs ?? []),
+        // A crop's inputs are its seed, paid once per sowing by its first harvest (`Fields.js`).
+        inputs: Fields.isField(def) ? Fields.seedOwedOf(instance, def) : (recipe?.inputs ?? def?.config?.inputs ?? []),
         outputs: recipe?.outputs ?? def?.config?.outputs ?? [],
         cycleTimeMs: recipe?.durationMs ?? def?.config?.cycleTimeMs,
         xp: recipe?.xp ?? def?.config?.xp

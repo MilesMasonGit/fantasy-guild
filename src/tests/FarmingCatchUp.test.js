@@ -29,7 +29,8 @@ import * as fixtures from '../../bench/fixtures.mjs';
 /**
  * Time away beside a Field (brief 230 S4): a farmer is pinned to a Field sown with wheat (sown
  * before the time away: a pick sows on the next tick), with a Well (Grow Time −25 %), a Composter
- * (+2 to the load) and a Beehive (25 % to double the wheat) in reach, and one more seed in the Bank.
+ * (+2 to the load) and a Beehive (25 % to double the wheat) in reach, and one more seed in the Bank
+ * (each crop's seed stays in the Bank while it grows and is taken by its first harvest).
  * The crop grows about 45 minutes, ripens with twelve harvests of 2.35 s, is harvested over its load,
  * sows again with the last seed, grows and is harvested again, and then stops: no seed. Its times
  * fall part-way through ticks of either size. The Beehive's rolls draw from a seeded `Math.random`
@@ -233,6 +234,9 @@ describe('⭐ a catch-up beside a Field with a Well, a Composter and a Beehive i
         expect(small.first.cycles).toBe(12);
         expect(small.first.stage).toBe('growing');
         expect(small.first.clocks.fieldMs % 1000).not.toBe(0);
+        // The first crop's seed taken by its first harvest; the second crop's still in the Bank, owed.
+        expect(small.first.seeds).toBe(1);
+        expect(small.first.field).toEqual({ cropId: WHEAT, seedOwed: true });
         // At the end: two crops harvested, 2.35 s a harvest, sown twice, stopped with the Bank empty.
         expect(small.snap.cycles).toBe(24);
         expect([...small.seen.cycleMs]).toEqual([2350]);
@@ -244,4 +248,64 @@ describe('⭐ a catch-up beside a Field with a Well, a Composter and a Beehive i
         expect(small.snap.wheat).toBeGreaterThan(small.snap.cycles);
         expect(small.snap.wheat).toBeLessThan(2 * small.snap.cycles);
     }, 120_000);
+});
+
+/** The saved Token with this id, wherever the save keeps it. */
+function savedToken(node, id) {
+    if (!node || typeof node !== 'object') return null;
+    if (node.id === id && typeof node.typeId === 'string') return node;
+    for (const value of Object.values(node)) {
+        const found = savedToken(value, id);
+        if (found) return found;
+    }
+    return null;
+}
+
+/** Save to slot 1, let `edit` change the saved Field, and load it again without a catch-up. */
+async function saveAndLoad(fieldId, edit = null) {
+    SaveManager.currentSlot = 1;
+    expect(SaveManager.save(false)).toBeTruthy();
+    const key = SaveManager.getSlotKey(1);
+    const data = JSON.parse(localStorage.getItem(key));
+    const token = savedToken(data, fieldId);
+    expect(token?.field?.cropId).toBe(WHEAT);
+    if (edit) {
+        edit(token);
+        localStorage.setItem(key, JSON.stringify(data));
+    }
+    expect(await SaveManager.loadSlot(1, { catchUp: false })).toBe(true);
+    return BoardState.getTokenById(fieldId);
+}
+
+/** Play until the Field's first harvest of the crop in the ground has ended. */
+function untilHarvested(fieldId) {
+    let cycles = 0;
+    const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { if (p.instanceId === fieldId) cycles++; });
+    for (let t = 0; t < 50 * 60_000 && cycles === 0; t += 1000) GameLoop.runHandlers(1000);
+    off();
+    expect(cycles).toBe(1);
+}
+
+describe('⭐ a save taken while a crop grows', () => {
+    it('saved owing its seed, it loads owing it, and the first harvest takes it', async () => {
+        const id = buildBoard();
+        expect(InventoryManager.getItemCount(SEED)).toBe(2);
+        const field = await saveAndLoad(id);
+        expect(field.field).toEqual({ cropId: WHEAT, seedOwed: true });
+        expect(InventoryManager.getItemCount(SEED)).toBe(2);
+        untilHarvested(id);
+        expect(InventoryManager.getItemCount(SEED) + SpriteLayer.countOnBoard(SEED)).toBe(1);
+        expect(BoardState.getTokenById(id).field.seedOwed).toBeUndefined();
+    }, 60_000);
+
+    it('saved while seeds were paid at sowing (no seedOwed, the seed already gone), its harvest takes none', async () => {
+        const id = buildBoard();
+        // The save an older game wrote: the seed left the Bank as the crop was sown.
+        expect(InventoryManager.removeItem(SEED, 1)).toBe(true);
+        const field = await saveAndLoad(id, (token) => { delete token.field.seedOwed; });
+        expect(field.field).toEqual({ cropId: WHEAT });
+        untilHarvested(id);
+        expect(InventoryManager.getItemCount(SEED) + SpriteLayer.countOnBoard(SEED)).toBe(1);
+        expect(Fields.stageOf(BoardState.getTokenById(id))).toBe('ripe');
+    }, 60_000);
 });

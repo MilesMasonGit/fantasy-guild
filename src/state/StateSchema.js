@@ -221,7 +221,7 @@ export const INITIAL_STATE = {
     //                 turnedFrom? typeId  (Token Lifecycle 3.1 / 3.2, roadmap §3.1),
     //                 fixture? true and biome? string on a node a map wrote, fixture? 'camp' on a Token the Starter Camp laid (`BoardState.isFixture`),
     //                 demolish? true on a Token marked for demolition (`Demolition.js`; its progress is cycleElapsedMs),
-    //                 field? { cropId?, load?, full? } on a Field: the crop in its ground and the harvests left (`Fields.js`; its growth on clocks.fieldMs)
+    //                 field? { cropId?, load?, full?, seedOwed? } on a Field: the crop in its ground, the harvests left, the seed its first harvest still owes (`Fields.js`; its growth on clocks.fieldMs)
     //   nextTokenOrder number               the next Token's placedAt
     //   flags       { [heroId]: { x, y, plantedAt, pinnedTo?, spot?, needsJob? } }  each hero's order: pinnedTo = the Token instance id it
     //                 works; spot = a point to idle at (any record not pinned is one); needsJob = the ordered Token is gone for good
