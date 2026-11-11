@@ -124,4 +124,4 @@ gi-slot-label {
 
 /* Limes on the mat lets everything through while something is carried, so a Token or a hero's
    flag can be put down where it stands. */
-body.gi-dnd-active [data-limes], body.gi-dnd-active [data-limes] * { pointer-events: none !important; }
+body.gi-dnd-active [data-limes], body.gi-dnd-active [data-limes] .pointer-events-auto { pointer-events: none !important; }

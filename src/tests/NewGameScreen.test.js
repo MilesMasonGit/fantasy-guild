@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // The new-game screen: the Guild's name, the world's three strict rings with a free Reroll, and the
-// first hero with the hero edit window's own controls; Begin hands the choices on, Back keeps nothing.
+// first hero with the hero edit window's own controls, and Limes's lessons switch; Begin hands the
+// choices on, Back keeps nothing.
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent } from '@testing-library/react';
@@ -43,8 +44,19 @@ describe('the new-game screen', () => {
         expect(onBegin.mock.calls[0][0]).toEqual({
             guildName: 'Ash Hollow',
             worldSeed: shown,
+            lessons: true,
             hero: { name: 'Wren', spriteId: HERO_PORTRAITS[3], flagColour: 'orange' }
         });
+    });
+
+    it("Limes's lessons are on by default, and the switch turns them off for this game", () => {
+        const { onBegin } = open();
+        const box = q('[data-new-game-lessons]');
+        expect(box.getAttribute('data-new-game-lessons')).toBe('on');
+        fireEvent.click(box.querySelector('button[role="switch"]'));
+        expect(q('[data-new-game-lessons]').getAttribute('data-new-game-lessons')).toBe('off');
+        fireEvent.click(q('button[data-new-game-begin]'));
+        expect(onBegin.mock.calls[0][0].lessons).toBe(false);
     });
 
     it('a hero needs a name; a Guild left unnamed takes the default', () => {

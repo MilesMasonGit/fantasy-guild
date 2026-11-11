@@ -12,7 +12,6 @@ import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
 import { CloseX } from '../base/CloseX.jsx';
-import { LimesBlurb } from '../limes/LimesBlurb.jsx';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { FlagMark } from '../board/FlagMark.jsx';
@@ -207,7 +206,6 @@ export const WorldDrawerBody = ({ cell, note, version, message, onMessage, onSet
                         : <h2 className="font-pixel ui-text-title font-bold text-white">{t('worldMap.label')}</h2>}
                     {cell && <div data-world-terrain className="font-pixel ui-text-body text-white/70">{cell.terrain}</div>}
                 </div>
-                <LimesBlurb spot="worldMap" />
                 <CloseX data-world-close onClick={onClose} label={SCREEN_TEXT.CLOSE} />
             </header>
             {/* The arrow bars are siblings of the list: this column holds all three. */}

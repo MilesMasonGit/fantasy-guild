@@ -58,12 +58,18 @@ export function watchLimesMark(target) {
     const selector = limesTargetSelector(target);
     applyLimesMark(selector);
     if (!selector || typeof MutationObserver === 'undefined') return () => applyLimesMark(null);
-    let queued = false;
+    let frame = 0;
+    let stopped = false;
     const observer = new MutationObserver(() => {
-        if (queued) return;
-        queued = true;
-        requestAnimationFrame(() => { queued = false; applyLimesMark(selector); });
+        if (frame) return;
+        frame = requestAnimationFrame(() => { frame = 0; if (!stopped) applyLimesMark(selector); });
     });
     observer.observe(document.body, { childList: true, subtree: true });
-    return () => { observer.disconnect(); applyLimesMark(null); };
+    // ⚠️ A pass already queued for the next frame must not put the mark back after the stop.
+    return () => {
+        stopped = true;
+        if (frame) cancelAnimationFrame(frame);
+        observer.disconnect();
+        applyLimesMark(null);
+    };
 }

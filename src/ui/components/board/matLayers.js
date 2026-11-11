@@ -89,10 +89,10 @@ export const MAT_Z = Object.freeze({
     FLAGS: TOKEN_TOP + 170,
     /** Callouts: quick popups over a Token or a bare point, under the hero bubbles. */
     CALLOUT: TOKEN_TOP + 175,
+    /** Limes's speech bubble: over the callouts, under the heroes' bubbles. */
+    LIMES_BUBBLE: TOKEN_TOP + 178,
     /** Hero speech bubbles — above every hero, never in the way of the pointer. */
-    HERO_BUBBLE: TOKEN_TOP + 180,
-    /** Limes's speech bubble: over the heroes' bubbles, so its buttons are never covered. */
-    LIMES_BUBBLE: TOKEN_TOP + 190
+    HERO_BUBBLE: TOKEN_TOP + 180
 });
 
 /** The z of a Token or flag at `place` in the stack. A Token's badges are +1. */

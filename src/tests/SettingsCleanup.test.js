@@ -48,7 +48,8 @@ describe('the settings window has three tabs, and Dev Tools in a dev build', () 
     it('each tab holds the controls the brief lists', () => {
         mount();
         expect(settingKeys()).toEqual([
-            'ui.fontFamily', 'ui.allCaps', 'ui.bubbleMenuRight', 'ui.backgroundTile', 'ui.itemParticles', 'notifications.itemStubs'
+            'ui.fontFamily', 'ui.allCaps', 'ui.bubbleMenuRight', 'ui.backgroundTile', 'ui.itemParticles', 'notifications.itemStubs',
+            'ui.limesBlurbs'
         ]);
         expect(document.body.textContent).toContain('Typography Scale');
         openTab('game');
