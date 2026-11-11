@@ -152,7 +152,7 @@
   --font-silkscreen: "Silkscreen", cursive;
   --font-silkpixel: "SilkPixel", "Pixelify Sans", monospace;
   --font-pixel: "Pixelify Sans", monospace;
-  --font-base: var(--font-silkpixel);
+  --font-base: var(--font-silkscreen);
   /* Default identity */
   --font-mono: "JetBrains Mono", monospace;
   --font-inter: "Inter", sans-serif;

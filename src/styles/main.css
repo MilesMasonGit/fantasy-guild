@@ -292,8 +292,8 @@ html {
 }
 
 body {
-    /* Default to SilkPixel composite font */
-    font-family: var(--font-family-silkpixel);
+    /* Default font, before the saved choice is applied */
+    font-family: var(--font-family-silkscreen);
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-normal);
     line-height: var(--line-height-normal);

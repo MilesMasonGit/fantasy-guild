@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 5. Initialize UI / Typography / Sound Preferences
-    const fontPref = SettingsManager.get('ui.fontFamily') || 'silkpixel';
+    const fontPref = SettingsManager.get('ui.fontFamily') || 'silkscreen';
     document.body.dataset.font = fontPref;
     const allCapsPref = SettingsManager.get('ui.allCaps') !== false;
     document.body.dataset.allcaps = allCapsPref ? 'true' : 'false';
