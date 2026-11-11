@@ -500,7 +500,7 @@ export function familyCounts() {
         if (ownRow) {
             if (family.length) {
                 byKey.set(`own:${s.id}`, {
-                    kind: `${def?.name || s.typeId} (${ownRow})`, typeIds: family, ...countsOf(s, def)
+                    id: s.id, kind: `${def?.name || s.typeId} (${ownRow})`, typeIds: family, ...countsOf(s, def)
                 });
             }
             continue;

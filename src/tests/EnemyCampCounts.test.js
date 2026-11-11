@@ -170,11 +170,21 @@ describe('⭐ each enemy camp counts only what it spawned', () => {
     it('the QA panel lists each enemy camp as a row of its own', () => {
         const { a, b } = twoFullDens();
         for (const t of own(b)) BoardState.removeToken(t.id);
-        expect(getSpawnerKindCounts()).toEqual([
+        expect(getSpawnerKindCounts().map(({ kind, count, cap }) => ({ kind, count, cap }))).toEqual([
             { kind: 'Fixture Ec Den (its own)', count: 2, cap: 2 },
             { kind: 'Fixture Ec Den (its own)', count: 0, cap: 2 }
         ]);
         expect(a).toBeTruthy();
+    });
+
+    it('two camps of one kind give rows with distinct keys: the camps instance ids', () => {
+        const { a, b } = twoFullDens();
+        const rows = getSpawnerKindCounts();
+        expect(rows).toHaveLength(2);
+        expect(rows[0].kind).toBe(rows[1].kind);
+        const keys = rows.map(r => r.id ?? r.kind);
+        expect(new Set(keys).size).toBe(2);
+        expect(new Set(keys)).toEqual(new Set([a.id, b.id]));
     });
 });
 

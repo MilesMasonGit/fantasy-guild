@@ -389,8 +389,8 @@ export const TestDashboard = React.memo(() => {
                                     <div className="text-xs text-gi-muted">No spawners yet</div>
                                 ) : (
                                     <ul className="text-xs space-y-0.5">
-                                        {kindCounts.map(({ kind, count, cap }) => (
-                                            <li key={kind} className="flex justify-between">
+                                        {kindCounts.map(({ id, kind, count, cap }) => (
+                                            <li key={id ?? kind} className="flex justify-between">
                                                 <span>{kind}</span>
                                                 <span className="tabular-nums text-gi-primary">{count} / {cap}</span>
                                             </li>
