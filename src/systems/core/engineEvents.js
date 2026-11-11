@@ -116,6 +116,11 @@ export const ENGINE_EVENTS = Object.freeze({
 
     /** Payload: `{ typeId, instanceId, price }`. */
     TOKEN_PURCHASED: 'token_purchased',
+    /**
+     * An unbuilt Foundation went back to the Shop and its price to the Bank (`Shop.refund`).
+     * Payload: `{ typeId, instanceId, price, x, y, heroId }`; `heroId` is who was working it, or null.
+     */
+    TOKEN_REFUNDED: 'token_refunded',
     /** Payload: `{ instanceId, typeId, addedCharges, currentCharges }`. */
     TOKEN_RESTOCKED: 'token_restocked',
 

@@ -202,6 +202,29 @@ export function surfaceWithinRegions(x, y, regions) {
 
 
 /**
+ * Drops taken before any drop target is asked: each `fn(payload, { pointer })` returns null to
+ * pass, or `{ success, sfx? }` to take the drop. For a surface that moves during a drag, which
+ * dnd-kit's targets (measured at drag start) cannot follow: the Shop, which drops to its strip.
+ */
+const dropInterceptors = new Set();
+
+/** Add a drop interceptor; returns the call that removes it. */
+export function interceptDrops(fn) {
+    dropInterceptors.add(fn);
+    return () => { dropInterceptors.delete(fn); };
+}
+
+/** The first interceptor's answer for this drop, or null when none takes it. */
+export function interceptedDrop(payload, info) {
+    if (!payload) return null;
+    for (const fn of dropInterceptors) {
+        const taken = fn(payload, info);
+        if (taken) return taken;
+    }
+    return null;
+}
+
+/**
  * Static, so passing it to <DndContext> never counts as a changed prop.
  * ⚠️ The page itself never scrolls (`body` is `overflow: hidden`; panels scroll inside), yet
  * dnd-kit counts it among every target's scrolling boxes and asks it, on every pointer move,
@@ -448,8 +471,16 @@ export const DeckDndProvider = ({ children }) => {
         const { active, over } = event;
         const payload = startPayloadRef.current || active?.data?.current;
         let success = false;
+        let clip = null;
+        const intercepted = interceptedDrop(payload, { pointer: pointerRef.current });
 
-        if (payload && over) {
+        if (intercepted) {
+            success = intercepted.success !== false;
+            clip = intercepted.sfx || null;
+            // A taken drop: the ghost vanishes where it was let go (see `dropAnimation`); a refused
+            // one springs back to where it came from.
+            glideTargetRef.current = success ? { ...pointerRef.current } : null;
+        } else if (payload && over) {
             const data = over.data?.current;
             if (data?.accepts?.(payload)) {
                 const node = document.querySelector(`[data-dnd-droppable-id="${over.id}"]`);
@@ -469,7 +500,7 @@ export const DeckDndProvider = ({ children }) => {
         }
 
         if (success) {
-            sfx(DRAG_SFX.dropByKind[payload.kind] || DRAG_SFX.dropDefault);
+            sfx(clip || DRAG_SFX.dropByKind[payload.kind] || DRAG_SFX.dropDefault);
         } else {
             if (payload.onMiss) {
                 const target = payload.onMiss(payload);

@@ -1,4 +1,4 @@
-// the Shop: buying Tokens
+// the Shop: buying Tokens, and taking unbuilt Foundations back
 
 import { EventBus } from '../core/EventBus.js';
 import {
@@ -13,6 +13,9 @@ import * as BoardState from './BoardState.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as MatCap from './MatCap.js';
 import * as Placement from './Placement.js';
+import * as Foundations from './Foundations.js';
+import * as Landmarks from './Landmarks.js';
+import { InventoryManager } from '../inventory/InventoryManager.js';
 import { logger } from '../../utils/Logger.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
@@ -174,6 +177,63 @@ function purchase(typeId, place) {
     EventBus.publish(ENGINE_EVENTS.TOKEN_PURCHASED, { typeId, instanceId: instance.id, price });
     logger.info('Shop', `Bought ${tokenName(typeId)}`);
     return { success: true, instance, x: placed.x, y: placed.y, nudged: !!placed.nudged };
+}
+
+/**
+ * Whether the Token on the mat with this id can go back to the Shop: `{ ok: true }`, or `{ ok:
+ * false, reason }` with a sentence the UI can show.
+ *
+ * Only an unbuilt Foundation the player put there: one whose current type is a Foundation and is
+ * sold at the Shop, `placed`, and not laid down with the land (a map's node, a Starter Camp Token
+ * or a landmark). A built Token is no longer a Foundation and never comes back. Nothing records
+ * that a Token was bought; in today's content the Shop is the only route by which an unfixed
+ * Foundation reaches the mat (⚠️ a recipe or transform that ever makes one would make it
+ * refundable too).
+ */
+export function canRefund(instanceId) {
+    const no = (reason) => ({ ok: false, reason });
+    const instance = BoardState.getTokenById(instanceId);
+    if (!instance) return no('No Token there');
+    const name = tokenName(instance.typeId) || instance.typeId;
+    if (!Foundations.isFoundation(getTokenType(instance.typeId))) {
+        return no(instance.builtFrom ? `${name} is built and cannot go back to the Shop` : 'Only an unbuilt Foundation can go back to the Shop');
+    }
+    if (BoardState.originOf(instance) !== BoardState.ORIGIN.PLACED) return no(`${name} was not bought at the Shop`);
+    if (BoardState.isFixture(instance) || Landmarks.isLandmark(instance)) return no(`${name} came with the land, not from the Shop`);
+    if (!shopBlockOf(instance.typeId)) return no(`${name} is not sold at the Shop`);
+    return { ok: true };
+}
+
+/**
+ * Take an unbuilt Foundation off the mat and give its whole Shop price back ({@link canRefund}
+ * says which). A build in progress is simply stopped: a cycle takes its inputs only when it
+ * completes, so nothing of the build was ever paid. The Token leaves the mat by the one removal
+ * path (`Placement.removePlacedToken`), so a hero working it lets go as when any Token leaves.
+ *
+ * The price goes in through `InventoryManager.addItem`: what the Bank has no room for waits on the
+ * floor as loot, as all income does.
+ *
+ * @returns {{success: boolean, reason?: string, typeId?: string, price?: object[], heroId?: string|null}}
+ */
+export function refund(instanceId) {
+    const allowed = canRefund(instanceId);
+    if (!allowed.ok) return refuse(allowed.reason);
+    const instance = BoardState.getTokenById(instanceId);
+    const { typeId } = instance;
+    const at = { x: instance.x, y: instance.y };
+    const price = priceOf(typeId);
+
+    const removed = Placement.removePlacedToken(instanceId);
+    if (!removed?.success) return refuse(removed?.reason || 'It cannot leave the mat');
+    const heroId = removed.idledHeroId || null;
+
+    InventoryManager.batch(() => {
+        for (const { itemId, quantity } of price) InventoryManager.addItem(itemId, quantity);
+    });
+
+    EventBus.publish(ENGINE_EVENTS.TOKEN_REFUNDED, { typeId, instanceId, price, ...at, heroId });
+    logger.info('Shop', `Refunded ${tokenName(typeId)}: ${price.map(l => `${l.quantity}× ${getItem(l.itemId)?.name || l.itemId}`).join(', ') || 'nothing'}`);
+    return { success: true, typeId, price, heroId };
 }
 
 /** Total quantity of a price, used to order a group cheapest first. */

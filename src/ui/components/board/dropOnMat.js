@@ -3,6 +3,7 @@ import * as Placement from '../../../systems/board/Placement.js';
 import * as Orders from '../../../systems/board/Orders.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Shop from '../../../systems/board/Shop.js';
+import * as Hand from '../../../systems/board/Hand.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
@@ -99,4 +100,21 @@ export function dropOnMat(payload, point) {
         return announce(flownBack(Placement.placeTokenAt(instance, point)), point);
     }
     return null;
+}
+
+/**
+ * A Token from the mat let go over the Shop (its strip or the risen panel): handed back for its
+ * price (`Shop.refund`), or refused with the reason said over it, where it stays. A refunded
+ * Token is put down at once, as a drop does (`Hand.setInHand`), so nothing waits on it.
+ * @returns the refund's result, or null for a payload that is not a Token on the mat
+ */
+export function dropOnShop(payload) {
+    const id = payload?.kind === DRAG_KIND.TOKEN ? payload.from?.instanceId : null;
+    if (id == null) return null;
+    const result = Shop.refund(id);
+    if (result?.success) {
+        Hand.setInHand(id, false);
+        return result;
+    }
+    return announce(result, { instanceId: id });
 }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { surfaceAtPoint, snapshotDndRegions, surfaceWithinRegions } from '../ui/dnd/DndKit.jsx';
+import { surfaceAtPoint, snapshotDndRegions, surfaceWithinRegions, interceptDrops, interceptedDrop } from '../ui/dnd/DndKit.jsx';
 import { DND_SURFACE } from '../ui/dnd/dragConstants.js';
 
 /**
@@ -59,5 +59,20 @@ describe('a snapshot costs no DOM query to check (CR3-403)', () => {
         expect(surfaceWithinRegions(700, 300, regions)).toBe(DND_SURFACE.BOARD);
         // A fresh snapshot (as drag-start would take for the NEXT drag) does see it.
         expect(surfaceWithinRegions(700, 300, snapshotDndRegions())).toBe(DND_SURFACE.DRAWER);
+    });
+});
+
+describe('drop interceptors: a surface that moves during a drag takes its drops before any target', () => {
+    it('the first that takes a drop answers for it; one that passes (null) leaves it to the next; removed, it is not asked', () => {
+        const asked = [];
+        const offPass = interceptDrops(() => { asked.push('pass'); return null; });
+        const offTake = interceptDrops((p, info) => { asked.push('take'); return p.mine ? { success: true, sfx: 'x', at: info.pointer } : null; });
+        expect(interceptedDrop({ mine: true }, { pointer: { x: 1, y: 2 } })).toEqual({ success: true, sfx: 'x', at: { x: 1, y: 2 } });
+        expect(asked).toEqual(['pass', 'take']);
+        expect(interceptedDrop({ mine: false }, { pointer: null })).toBeNull();
+        expect(interceptedDrop(null, {})).toBeNull();
+        offTake();
+        offPass();
+        expect(interceptedDrop({ mine: true }, { pointer: null })).toBeNull();
     });
 });

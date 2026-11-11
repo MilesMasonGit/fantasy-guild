@@ -374,8 +374,9 @@ export function placeProduct(stationId, typeId) {
  * names an instance that no longer exists, so `Flags` releases it on its next assignment. Only
  * placed Tokens; the Guild Hall never leaves the mat.
  *
- * ⚠️ The player's route is demolition (`Demolition.mark`, a hero's work). Only the dev layout
- * tool's Remove button calls this (`LeaveMatControl`), so the owner can lift a misplaced landmark.
+ * ⚠️ The player's route is demolition (`Demolition.mark`, a hero's work). Two callers only: the dev
+ * layout tool's Remove button (`LeaveMatControl`), so the owner can lift a misplaced landmark, and
+ * `Shop.refund`, which sends an unbuilt Foundation back to the Shop.
  *
  * @returns {{success: boolean, reason?: string, idledHeroId?: string|null}}
  */

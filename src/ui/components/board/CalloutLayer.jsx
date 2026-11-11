@@ -146,6 +146,12 @@ export const CalloutLayer = memo(function CalloutLayer() {
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEMOLISHED, (p) => {
                 if (p?.typeId) say({ x: p.x, y: p.y, typeId: p.typeId, text: calloutText.demolished(tokenName(p.typeId)) });
             }, UI_LISTENER),
+            // A Foundation handed back to the Shop is gone too: what came back, said where it stood.
+            EventBus.subscribe(ENGINE_EVENTS.TOKEN_REFUNDED, (p) => {
+                if (!p?.typeId) return;
+                const lines = (p.price || []).map(l => `${l.quantity} ${getItem(l.itemId)?.name || l.itemId}`);
+                say({ x: p.x, y: p.y, typeId: p.typeId, text: calloutText.refunded(lines) });
+            }, UI_LISTENER),
             // A drop the mat refused names a point, not a Token: say why where it was aimed. A
             // Token a shrunk mat left crowded says so over itself.
             EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, (p) => {

@@ -360,6 +360,19 @@ the hand; the building made on it rests. Hovering or carrying one shows the
 reach ring and its dots (§Reach), so the player can judge a spot before choosing
 what to build.
 
+**An unbuilt Foundation can go back to the Shop** (owner, 2026-11-10; brief 580):
+its whole Shop price returns to the Bank, and whatever the Bank has no slot for
+waits on the floor as loot, as all income does (nothing is lost). One part-way
+through a build is refundable too, for its Shop price only: a build, like every
+work cycle, checks its materials to start and takes them only when it completes,
+so a stopped build has paid nothing. The hero working it lets go as when any
+Token leaves the mat. Only a Foundation the player put there: never a built
+Token, a spawned one, or one laid down with the land (a map's node, a Starter
+Camp Token, a landmark). A quest that counted the purchase keeps it.
+To refund one, drag it from the mat onto the lowered Shop's edge or the risen Shop
+(§UI, the Shop): a short bubble where it stood names what came back, with a coins
+sound. *(`Shop.canRefund`, `Shop.refund`, `dropOnShop`)*
+
 Each kind of Foundation is for its own kind of building (owner, 2026-11-03; brief 410).
 The Shop sells only Foundations, in the order below; each shows skill icons that
 hint at what it is good for. The icons and the place in the list are authored in
@@ -886,7 +899,8 @@ less micromanagement than area flags).
   like any speed-up and held to the whole second; one lap for every Token that pays.
   A star bought mid-lap keeps the time already run. *(`PassiveProduction.js`)*
 - **The Shop** sells the Foundations only (see §3, Foundations), all available
-  from the start; price is the only gate (*placeholder* prices). Coast and Goblin
+  from the start; price is the only gate (*placeholder* prices). An unbuilt
+  Foundation goes back for its full price (§3, Foundations). Coast and Goblin
   Camp come from the Starter Camp and the world map's tables instead. *(`Shop.js`)*
 
 ---
@@ -1521,9 +1535,19 @@ drawers**. The menu can be flipped to the right.
 - **Shop**: a panel that rises from behind the hero bar beside the nav (on either side) and
   stands on it, the bar in front, with a row of same-size cards (name, the Token large, its skill
   icons, the price as up to four have / need pills; arrows left and right when the
-  row is longer than the screen). Drag a card onto the mat to buy; the panel drops
-  to a lip while you carry it over the mat, rises again over the panel (a drop
-  there is a cancel), and stays open after a purchase. A card you can't afford
+  row is longer than the screen). Drag a card onto the mat to buy. Once the card
+  is carried up off the panel, **the Shop lowers** (owner, 2026-11-10; brief 580):
+  only its header row stays up at the screen's bottom edge, the hero bar drawn over
+  it as usual, so the whole mat is free. Bringing the card down onto that
+  edge (anywhere from it down to the screen's bottom edge) raises the Shop again, and
+  leaving the risen panel upward lowers it again. A card let go over the lowered or
+  the risen Shop is a cancel; the Shop stays open after a purchase. **Picking up an
+  unbuilt Foundation on the mat lowers the Shop the same way**, whether it was open
+  or not: let go over the lowered or the risen Shop, it is refunded (§3,
+  Foundations); a Shop raised only by that drag closes after the drop. A Foundation
+  picked up where the lowered edge then appears must be carried above it once before
+  the edge raises the Shop or takes it, so a pickup let go on the spot is a plain
+  put-down. A card you can't afford
   dims its Token and shows the short counts in red; a full Token cap says so on
   the card. Hover a skill icon for its name, a card for what it builds.
   *(`ShopPanel.jsx`)*
@@ -1909,7 +1933,7 @@ crunch plan):
 
 | Terrain | Returns for the Atlas after a major rework, later in the crunch once the Atlas works. |
 | Atlas timing | Moves into the crunch, after deep optimization. |
-| Drops over a drawer | A mat Token or flag dropped over the Shop panel or the Hero drawer lands on the mat underneath; intended (owner, certification 2026-10-07). |
+| Drops over a drawer | A mat Token or flag dropped over the Shop panel or the Hero drawer lands on the mat underneath; intended (owner, certification 2026-10-07). The one exception: an unbuilt Foundation dropped over the Shop, risen or lowered, is refunded (owner, 2026-11-10; brief 580). |
 | Token cap | 128, fixed (the Guild Hall's Token Cap star retired, brief 320); spawned Tokens and endgame sites count (D-1); the discard bin is gone (Atlas A3b), so nothing off the mat counts. |
 | Trickle | Renamed **Passive Production**, one timer; the Wishing Well joins it, 10 Water a lap per rank (T-099). The lap is 10 minutes, shortened to 5 by Guild Hall stars (owner 2026-11-03, brief 390 G5). |
 | Markets | **Cut for now**: items stay the only currency, no exchange rates; revisit if a real need appears (owner 2026-10-09, T-127). |

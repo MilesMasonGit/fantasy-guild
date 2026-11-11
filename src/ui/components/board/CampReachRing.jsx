@@ -3,6 +3,7 @@ import { useMatSize } from '../../hooks/useMatSize.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { boardScaleAt } from '../base/TokenSprite.jsx';
 import { MAT_Z } from './matLayers.js';
+import { MAT_EDGE } from './groundScreen.js';
 import { pixelRingPath } from './pixelRing.js';
 import { REACH_DOT_PATHS, REACH_DOT_COLOUR, REACH_DOT_MIDDLE, snapToArt } from './reachDot.js';
 
@@ -41,23 +42,30 @@ export const ReachRing = memo(function ReachRing({ ring = null, dots = null, att
     // Snapped to the art-pixel grid, so every cell lands on whole screen pixels.
     const ox = snapToArt(ring.x, artScale);
     const oy = snapToArt(ring.y, artScale);
+    // Clipped to the mat and its rounded corners, so a ring near an edge stops at it.
     return (
-        <svg
-            {...attrs}
-            data-r={ring.r}
-            data-cx={ring.x}
-            data-cy={ring.y}
-            className="absolute left-0 top-0 overflow-visible pointer-events-none"
-            width={mat.w}
-            height={mat.h}
-            style={{ zIndex: MAT_Z.RINGS }}
+        <div
+            data-reach-clip
+            aria-hidden="true"
+            className="absolute left-0 top-0 pointer-events-none overflow-hidden"
+            style={{ width: mat.w, height: mat.h, zIndex: MAT_Z.RINGS, borderRadius: MAT_EDGE.radius }}
         >
-            <g shapeRendering="crispEdges">
-                <path d={path} transform={`translate(${ox + artScale} ${oy + artScale}) scale(${artScale})`} fill={RING_SHADOW} />
-                <path d={path} transform={`translate(${ox} ${oy}) scale(${artScale})`} fill={RING_GOLD} />
-                {dots?.map(dot => <ReachDot key={dot.id} dot={dot} artScale={artScale} />)}
-            </g>
-        </svg>
+            <svg
+                {...attrs}
+                data-r={ring.r}
+                data-cx={ring.x}
+                data-cy={ring.y}
+                className="absolute left-0 top-0 overflow-visible pointer-events-none"
+                width={mat.w}
+                height={mat.h}
+            >
+                <g shapeRendering="crispEdges">
+                    <path d={path} transform={`translate(${ox + artScale} ${oy + artScale}) scale(${artScale})`} fill={RING_SHADOW} />
+                    <path d={path} transform={`translate(${ox} ${oy}) scale(${artScale})`} fill={RING_GOLD} />
+                    {dots?.map(dot => <ReachDot key={dot.id} dot={dot} artScale={artScale} />)}
+                </g>
+            </svg>
+        </div>
     );
 });
 

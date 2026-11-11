@@ -20,6 +20,8 @@ export const MAX_TOTAL = 24;
 export const calloutText = {
     spawned: (name) => `! Spawned ${name}`,
     demolished: (name) => `Demolished ${name}`,
+    // A Foundation handed back to the Shop: what came back, "Refunded 20 Oak Wood, 5 Stone".
+    refunded: (lines) => (lines.length ? `Refunded ${lines.join(', ')}` : 'Refunded'),
     effect: (title) => title,
     // Over a Token a hero would work but holds no tool for: "Needs Pickaxe".
     needsTool: (tool) => `Needs ${tool}`,

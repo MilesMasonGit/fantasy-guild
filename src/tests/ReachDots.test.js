@@ -10,6 +10,7 @@ import { tokensWithin } from '../systems/board/nearby.js';
 import * as ReachDisplay from '../systems/board/reachDisplay.js';
 import { showsNearRing, reachDotsAt } from '../systems/board/reachDisplay.js';
 import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
+import { CampReachRing } from '../ui/components/board/CampReachRing.jsx';
 import { MatRings } from '../ui/components/board/MatRings.jsx';
 import { DeckDndContext, DragPointerContext } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
@@ -111,6 +112,26 @@ describe('MatRings: the ring and its dots', () => {
         expect(Number(ring.getAttribute('data-cx'))).toBe(600);
         expect(Number(ring.getAttribute('data-r'))).toBe(R);
         expect(dotIds(container)).toEqual([inside.id]);
+    });
+
+    it('the ring and its dots are drawn inside a clip to the mat, so a ring at an edge stops there', () => {
+        const camp = placeAt('rdot_camp', 20, 20);
+        placeAt('rdot_tree', 60, 30);
+        const { container } = rings({ hoveredCentre: { x: camp.x, y: camp.y, id: camp.id } });
+        const clip = container.querySelector('[data-reach-clip]');
+        expect(clip).not.toBeNull();
+        expect(clip.className).toContain('overflow-hidden');
+        expect(clip.className).toContain('pointer-events-none');
+        expect(clip.style.borderRadius).not.toBe('');
+        expect(clip.querySelector('[data-near-ring]')).not.toBeNull();
+        expect(clip.querySelector('[data-reach-dot]')).not.toBeNull();
+    });
+
+    it('the hero-lit camp ring is clipped the same way', () => {
+        const { container } = render(h(CampReachRing, { ring: { campId: 'c1', x: 10, y: 10, r: R } }));
+        const clip = container.querySelector('[data-reach-clip]');
+        expect(clip.className).toContain('overflow-hidden');
+        expect(clip.querySelector('[data-camp-ring="c1"]')).not.toBeNull();
     });
 
     it('carrying a Foundation from the Shop: the ring and dots follow its landing, worked out once per new spot', () => {
