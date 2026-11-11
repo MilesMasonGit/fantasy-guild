@@ -25,7 +25,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-400**
+**Next free number: T-403**
 
 ---
 
@@ -40,6 +40,9 @@ here.
 | T-012 | **Decided (owner 2026-11-02): keep.** Transforms push neighbouring spawned Tokens, as they do today; nothing to build. | FMR |
 | T-014 | **Quest content is written in engine code** (the tutorial chain, `tutorialQuests.js`), not the CMS. Move it to content? (Design call, never asked; Atlas A8 rewrites the chain.) The opening half is closed: the Starter Camp is content (Atlas A7). | CR3-515 |
 | T-127 | **Markets are cut for now** (owner 2026-10-09, D2): the Shrimp Market Token runs but pays nothing. Retire or repurpose it in the CMS (it turns up from Shrimp Coast content). The GDD §16 question is closed. | concept_progression.md |
+| T-400 | **Retire the Lore stars** (owner 2026-11-11, [star_ideas_review.md](../active/star_ideas_review.md#stars-vs-buildings-the-owners-picks-2026-11-11)): the XP bonus becomes a Building effect only, so the 13 Hall stars giving `XP_BONUS` (Woodsman's, Miner's, Smith's, Angler's, Warrior's, Archer's, Mage's, Rogue's Lore, Farmer's Almanac, Family Recipes, Pattern Book, Builder's Lore, Alchemist's Notes) go. Owner: delete them in the CMS and Sync on `main`. Director first: grep `src/` and `cms/src/` for their ids (quests, tests, the ledger) and say what the Hall's star count and ring prices become, as with the Camp Reach stars (brief 560). `XP_BONUS` stays for drinks and buildings | star review |
+| T-401 | **Retire Restock neighbours** (owner 2026-11-11, same section): `effect_restocks_neighbours` is on no Token today. Owner: delete it in the CMS and Sync; then a builder-lite removes the `restocks` keyword from the engine and the CMS if nothing else uses it | star review |
+| T-402 | **Retire catch weight** (owner 2026-11-11, same section): the Fine Fishing Rod's Keen Line (`effect_keen_line`, `CATCH_WEIGHT`) goes and the rod gets another buff: the content agent proposes one, the owner edits it in the CMS and Syncs; then a builder-lite removes `CATCH_WEIGHT` (`Fishing.js`, `modifierPalette.js`, `statementText.js`, tests) | star review |
 
 ## 2. Open work
 

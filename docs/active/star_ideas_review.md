@@ -42,6 +42,32 @@ side (Star or Building), it is noted; the rest is open (takeaway 3).
 | **Combat sets** | Sets of combat buffs: damage, speed or a stat per style | combat styles and stats | Style Mastery, Quick Hands, Drill Yard |
 | **Hall well sets** | Hall productions in sets of items; upgrading the Star raises the rate of the whole set | item sets | New Wells |
 
+## Stars vs Buildings: the owner's picks (2026-11-11)
+
+Session 1 below, done. The owner placed each upgrade effect on a picker page
+(https://claude.ai/artifact/FGBR1LZ9XwGKy8VoBzxU1H). The rule: **Stars are
+permanent and global, in tiny steps (about 1 % a rank); Buildings reach only
+the Tokens near them, so their boosts are the big ones.** "Both" means a small
+Star version and a big Building version of the same effect.
+
+| Where | Effects |
+|---|---|
+| **Both** | Work speed; more output (yield); faster regrowth; double the outputs; keep the inputs; keep a charge; rare finds |
+| **Star only** | Giant harvest; double enemy loot; keep the ammo; damage, attack speed and combat stats per style (the combat sets); faster healing out of fights (the Infirmary stays a Star, no healing building); food heals more; drinks last longer; stronger drinks; loadout slots; XP for everyone; Hall wells; lap speed; world map reach |
+| **Building only** | **XP bonus** (owner: "an investment the player chooses, building up an area to make it suitable for powerlevelling"); fewer inputs; more charges; Neighbours |
+| **Neither** | Restock neighbours; heavier catches (catch weight) |
+
+**What this retires** (owner, 2026-11-11):
+- **The Lore stars** (the 13 Hall stars giving an XP bonus, one per skill and
+  combat style): retired; XP bonuses come from buildings (and drinks). T-400.
+- **Restock neighbours**: the effect is retired. T-401.
+- **Catch weight**: retired, the Fine Fishing Rod's Keen Line included; the
+  rod gets another buff. T-402.
+
+**Still open** (later sessions): the rank sizes per Star (about 1 % is the
+rule of thumb), each Building version's strength, and which building gives
+the XP bonus (the content agent, with the buildings, T-307).
+
 ## Approved (12)
 
 - **Lucky Finds**: rare drop tables per Token kind (see the family above).
@@ -117,7 +143,7 @@ Not raised again unless the owner brings them back.
 
 ## Planning sessions this needs
 
-1. **Stars vs Buildings**: for each family, is it a Star (tiny, global,
+1. ~~**Stars vs Buildings**~~ (done 2026-11-11, above; rank sizes still open): for each family, is it a Star (tiny, global,
    ranked) or a Building effect (big, in reach), or both at different
    sizes; and the rank sizes.
 2. **Effect icons on the Token card**: which effects get an icon, what the
