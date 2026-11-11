@@ -16,6 +16,7 @@ import { useEntityDrag, useActiveDrag, useDragSurface } from '../../dnd/DndKit.j
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { PanelHeader } from '../base/CloseX.jsx';
+import { LimesBlurb } from '../limes/LimesBlurb.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { DOCK_STRIP_PX, dockArtPx, dockLabelOverhangPx } from '../dock/dockHeroView.js';
@@ -191,6 +192,7 @@ const ShopContents = memo(function ShopContents({ isOpen, onClose, menuRight }) 
                 closeLabel={t('shop.close')}
                 className="gi-drawer-pad-x py-1.5 border-b border-gi-border/40 min-h-[44px] gap-4"
             >
+                <LimesBlurb spot="shop" />
                 <span className="ui-text-small text-gi-muted">{t('shop.hint')}</span>
                 <span data-shop-cap className="ui-text-small font-semibold text-gi-muted tabular-nums">
                     {t('shop.tokens', { count: cap.count, cap: cap.cap })}

@@ -264,6 +264,13 @@ export const INITIAL_STATE = {
         seed: null
     },
 
+    // === Limes, the guide (`quests/LimesGuide.js`) ===
+    // Not a Token: nothing works it and the engine never reads it.
+    guide: {
+        limesSpot: null,   // { x, y } Limes's middle on the Starter Camp's mat, mat units; null = its corner
+        lessons: true      // the new-game screen's lessons switch
+    },
+
     // === The world (brief 330) ===
     // The run's hex world around the Hall, generated whole at a new game and kept as it was made
     // (`world/World.js`; the shape is `world/generate.js`'s). Null in a save made before the world

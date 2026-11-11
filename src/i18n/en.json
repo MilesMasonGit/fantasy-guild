@@ -24,6 +24,8 @@
         "flyingItemsHint": "Show collected items flying from the mat to the item stubs or the Guild Hall",
         "itemStubs": "Item Stubs",
         "itemStubsHint": "Show items gained and spent at the top right of the mat",
+        "limesBlurbs": "Limes's Tips",
+        "limesBlurbsHint": "Show the little Limes on each screen, with a tip when you hover it",
         "autoSave": "Auto-Save Interval",
         "autoSave1": "1 Minute (Dev)",
         "autoSave10": "10 Minutes",
@@ -70,6 +72,8 @@
         "guildName": "Guild name",
         "defaultGuildName": "The Guild",
         "firstHero": "Your first hero",
+        "lessons": "Limes's lessons",
+        "lessonsHint": "Limes shows you the ropes",
         "begin": "Begin"
     },
     "equipment": {

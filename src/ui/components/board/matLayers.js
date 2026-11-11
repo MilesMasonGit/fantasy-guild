@@ -50,6 +50,11 @@ export const MAT_Z = Object.freeze({
     TOKEN_BASE: 10,
     /** Heroes standing still, above every Token and flag: this plus how far down the mat they stand. */
     STANDING_HERO: HERO_BASE,
+    /**
+     * Limes on the Starter Camp: over every Token and standing hero (it is moved, never covered),
+     * under the walking heroes and the hovered Token's badges.
+     */
+    LIMES: TOKEN_TOP + 14,
     /** Heroes on the move: above the standing ones too. */
     WALKING_HERO: TOKEN_TOP + 15,
     /**
@@ -85,7 +90,9 @@ export const MAT_Z = Object.freeze({
     /** Callouts: quick popups over a Token or a bare point, under the hero bubbles. */
     CALLOUT: TOKEN_TOP + 175,
     /** Hero speech bubbles — above every hero, never in the way of the pointer. */
-    HERO_BUBBLE: TOKEN_TOP + 180
+    HERO_BUBBLE: TOKEN_TOP + 180,
+    /** Limes's speech bubble: over the heroes' bubbles, so its buttons are never covered. */
+    LIMES_BUBBLE: TOKEN_TOP + 190
 });
 
 /** The z of a Token or flag at `place` in the stack. A Token's badges are +1. */

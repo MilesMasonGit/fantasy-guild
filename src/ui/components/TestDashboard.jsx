@@ -45,6 +45,7 @@ import { ClasslessDevSection } from '../dev/ClasslessDevSection.jsx';
 import { PerksDevSection } from '../dev/PerksDevSection.jsx';
 import { CampsDevSection } from '../dev/CampsDevSection.jsx';
 import { ToolsBreakDevSection } from '../dev/ToolsBreakDevSection.jsx';
+import { LimesDevSection } from '../dev/LimesDevSection.jsx';
 import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
@@ -311,6 +312,7 @@ export const TestDashboard = React.memo(() => {
                          */}
                         {(import.meta.env.DEV || import.meta.env.MODE === 'perf') && <PerfDevSection />}
                         {import.meta.env.DEV && <MatTunerDevSection />}
+                        {import.meta.env.DEV && <LimesDevSection />}
                         {import.meta.env.DEV && <StarterCampDevSection />}
                         {import.meta.env.DEV && <ClasslessDevSection />}
                         {import.meta.env.DEV && <PerksDevSection />}

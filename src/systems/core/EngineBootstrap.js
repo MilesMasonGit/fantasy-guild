@@ -39,6 +39,7 @@ import * as Demolition from '../board/Demolition.js';
 import { QuestManager } from '../quests/QuestManager.js';
 // Quest Tokens on the mat, exposed for console probes (`Game.QuestTokens`).
 import * as QuestTokens from '../quests/QuestTokens.js';
+import * as LimesGuide from '../quests/LimesGuide.js';
 // Enemies' tethers and their step to open space before a crowded fight (`Game.EnemyMotion`).
 import * as EnemyMotion from '../board/EnemyMotion.js';
 import * as SpawnerSystem from '../board/SpawnerSystem.js';
@@ -231,7 +232,7 @@ export const EngineBootstrap = {
     /**
      * Create the default game data for a new game.
      *
-     * @param {{guildName?: string, worldSeed?: number, hero?: {name?: string, spriteId?: string, flagColour?: string}}} [setup]
+     * @param {{guildName?: string, worldSeed?: number, lessons?: boolean, hero?: {name?: string, spriteId?: string, flagColour?: string}}} [setup]
      *   what the new-game screen chose; anything left out is made up (a run with no screen)
      */
     createDefaultGameData(setup = {}) {
@@ -254,6 +255,7 @@ export const EngineBootstrap = {
             state.heroes = [];
         }
         if (state.meta) state.meta.guildName = cleanGuildName(setup.guildName);
+        LimesGuide.setLessons(setup.lessons !== false);
 
         // The Starter Camp's Tokens stand on the mat, and it becomes the guild's first Region.
         Atlas.createStarterRegion(camp);

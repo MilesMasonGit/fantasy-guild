@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ArrowLeft, Dices, Play } from 'lucide-react';
 import { t } from '../../../i18n/index.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
-import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
+import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../base/KitButton.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { HeroLookFields } from '../../modals/HeroEditModal.jsx';
 import { WorldMap } from '../atlas/WorldMap.jsx';
@@ -58,7 +58,7 @@ const WorldPreview = ({ view }) => (
  *
  * @param {object} props
  * @param {number} props.slotIndex
- * @param {(setup: {guildName: string, worldSeed: number, hero: object}) => void} props.onBegin
+ * @param {(setup: {guildName: string, worldSeed: number, lessons: boolean, hero: object}) => void} props.onBegin
  * @param {() => void} props.onBack
  */
 export const NewGameScreen = ({ slotIndex, onBegin, onBack }) => {
@@ -67,6 +67,7 @@ export const NewGameScreen = ({ slotIndex, onBegin, onBack }) => {
     const [heroName, setHeroName] = useState(() => getRandomName());
     const [spriteId, setSpriteId] = useState(() => HERO_PORTRAITS[Math.floor(Math.random() * HERO_PORTRAITS.length)]);
     const [flagColour, setFlagColour] = useState(FLAG_COLOURS[0]);
+    const [lessons, setLessons] = useState(true);
     useEscapeLayer(true, onBack);
 
     const reroll = () => setWorld(w => roll(nextSeed(w.seed)));
@@ -76,6 +77,7 @@ export const NewGameScreen = ({ slotIndex, onBegin, onBack }) => {
         onBegin({
             guildName: cleanGuildName(guildName) || t('newGame.defaultGuildName'),
             worldSeed: world.seed,
+            lessons,
             hero: { name: heroName.trim(), spriteId, flagColour }
         });
     };
@@ -135,6 +137,13 @@ export const NewGameScreen = ({ slotIndex, onBegin, onBack }) => {
                     <KitButton tone={KIT_BUTTON_TONE.PLAIN} onClick={onBack} buttonClassName="gap-1 py-2 px-4 text-xs uppercase tracking-widest" data-new-game-back>
                         <ArrowLeft size={14} /> {t('newGame.back')}
                     </KitButton>
+                    <label className="flex items-center gap-3 cursor-pointer" data-new-game-lessons={lessons ? 'on' : 'off'}>
+                        <span className="flex flex-col items-end">
+                            <span className={LABEL}>{t('newGame.lessons')}</span>
+                            <span className="ui-text-small text-gi-muted">{t('newGame.lessonsHint')}</span>
+                        </span>
+                        <PixelToggle on={lessons} onClick={() => setLessons(v => !v)} aria-label={t('newGame.lessons')} />
+                    </label>
                     <KitButton onClick={begin} disabled={!canBegin} className="mr-1 mb-1" buttonClassName="gap-2 py-2 px-8 uppercase tracking-widest" data-new-game-begin>
                         <Play size={16} /> {t('newGame.begin')}
                     </KitButton>
