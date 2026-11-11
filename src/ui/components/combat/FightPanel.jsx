@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { CloseX, CLOSE_X_PX } from '../base/CloseX.jsx';
+import { LimesBlurb } from '../limes/LimesBlurb.jsx';
 import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
 import { ArrowScrollList, PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
@@ -590,7 +591,11 @@ export const FightPanelView = ({ view, fights, onClose, onMinimize = null, onDra
                     {onMinimize && <MinimizeButton onClick={onMinimize} data-fight-minimize={view.heroId} />}
                     {onClose && <CloseX onClick={onClose} data-fight-close={view.heroId} />}
                 </div>
-                <FightArena view={view} />
+                <div className="relative">
+                    <FightArena view={view} />
+                    {/* The arena's corner: the title bar has no room to spare for long names. */}
+                    {onClose && <div data-fight-limes className="absolute left-1 top-1 z-10"><LimesBlurb spot="fight" /></div>}
+                </div>
                 <div className="flex flex-col gap-1.5 px-1 pt-1.5 pb-0.5">
                     <FightStats view={view} />
                     {BREAK}

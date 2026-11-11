@@ -22,6 +22,7 @@ import { GameState } from '../../../state/GameState.js';
 import { RecipeList } from './RecipeList.jsx';
 import { takeRecipeListRequest, onRecipeListRequest } from './recipeFlip.js';
 import { CloseX } from '../base/CloseX.jsx';
+import { LimesBlurb } from '../limes/LimesBlurb.jsx';
 import { StatCell } from '../base/StatCell.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { lookUpRibbon, lookUpToken, lookUpRecipe, lookUpItem } from '../encyclopedia/encyclopediaLink.js';
@@ -88,10 +89,11 @@ const LookUpButton = ({ onClick }) => (
     </button>
 );
 
-/** The header: the Token's name on its band, the book and the X at its right. */
+/** The header: the Token's name on its band; on a card opened from the mat, Limes, the book and the X at its right. */
 const NameBlock = ({ name, onClose, onLookUp, className }) => (
     <header data-card-block="name" className={cn('flex items-center gap-1 pl-2 pr-1 py-1 bg-black/80 border-b-2 border-white/30', className)}>
         <h3 className="flex-1 min-w-0 ui-text-title font-bold text-white leading-tight select-text">{name}</h3>
+        {onClose && <LimesBlurb spot="tokenCard" />}
         {onLookUp && <LookUpButton onClick={onLookUp} />}
         {onClose && (
             <CloseX data-card-close onClick={(e) => { e.stopPropagation(); onClose(); }} />

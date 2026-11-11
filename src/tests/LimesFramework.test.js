@@ -25,6 +25,16 @@ import { limesTargetSelector, applyLimesMark, watchLimesMark, LIMES_TARGET, LIME
 import { boardArtSteps } from '../ui/components/base/TokenSprite.jsx';
 import { matW, matH } from '../config/matGeometry.js';
 import { LIMES_INK, LIMES_FILL_TOP, LIMES_FILL_FOOT } from '../ui/components/board/speechTone.js';
+import { GuildUpgradeInspection } from '../ui/components/drawer/GuildUpgradeInspection.jsx';
+import { getUpgradeDef } from '../config/guildUpgrades.js';
+import { TokenCard } from '../ui/components/board/TokenCard.jsx';
+import { FightPanelView } from '../ui/components/combat/FightPanel.jsx';
+import { KIT_FIGHTS, kitPanelView } from '../ui/dev/combatKit.js';
+import { EncyclopediaScreen } from '../ui/components/encyclopedia/EncyclopediaScreen.jsx';
+import { ShopPanel } from '../ui/components/drawer/ShopPanel.jsx';
+import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
+import * as Shop from '../systems/board/Shop.js';
+import { GUILD_HALL_TYPE } from '../systems/atlas/StarterCamp.js';
 
 const h = React.createElement;
 const q = (sel) => document.querySelector(sel);
@@ -86,7 +96,7 @@ describe('what Limes says (the store)', () => {
 
     it('every word is in the one words file: a talk, a blurb for each spot, the buttons', () => {
         expect(LIMES_TEXT.talk.length).toBeGreaterThan(1);
-        expect(LIMES_SPOTS).toEqual(['bank', 'shop', 'worldMap', 'guildHall', 'heroDrawer']);
+        expect(LIMES_SPOTS).toEqual(['bank', 'shop', 'worldMap', 'guildHall', 'heroDrawer', 'hallStar', 'tokenCard', 'fight', 'encyclopedia', 'foundation']);
         for (const spot of LIMES_SPOTS) expect(LIMES_TEXT.blurbs[spot].length).toBeGreaterThan(10);
         expect(LIMES_TEXT.buttons).toMatchObject({ next: 'Next', close: 'Close', more: '…' });
     });
@@ -241,6 +251,72 @@ describe('a screen\'s small Limes', () => {
         const over = blurbPlace({ left: 1300, top: 700, width: 32, height: 32, right: 1332, bottom: 732 }, 300, 80, 1366, 768);
         expect(over.above).toBe(true);
         expect(over.left + 300).toBeLessThanOrEqual(1366 - 8);
+    });
+});
+
+describe('the small Limes on the Upgrade drawer, the Token card, the fight window, the Encyclopedia and the Foundation card', () => {
+    const NEW_SPOTS = ['hallStar', 'tokenCard', 'fight', 'encyclopedia', 'foundation'];
+    const noop = () => {};
+
+    it('each shows its own blurb on hover, is hidden by the Settings switch, and can carry a step', () => {
+        for (const spot of NEW_SPOTS) {
+            render(h(LimesBlurb, { spot }));
+            fireEvent.pointerEnter(q(`[data-limes-blurb="${spot}"]`));
+            expect(q(`[data-limes-blurb-box="${spot}"]`).textContent).toBe(LIMES_TEXT.blurbs[spot]);
+            cleanup();
+            SettingsManager.set(LIMES_BLURBS_SETTING, false);
+            render(h(LimesBlurb, { spot }));
+            expect(q('[data-limes-blurb]')).toBeNull();
+            act(() => openLimesStep({ id: 'st', lines: ['Step words'], spot }));
+            expect(q(`[data-limes-blurb="${spot}"] img`).getAttribute(LIMES_MARK_ATTR)).toBe('glow');
+            expect(q(`[data-limes-blurb-box="${spot}"] [data-limes-words]`).textContent).toBe('Step words');
+            act(() => closeLimesStep('st'));
+            cleanup();
+            SettingsManager.set(LIMES_BLURBS_SETTING, true);
+        }
+    });
+
+    it('a step that makes a hidden small Limes appear places its bubble beside it, not off the screen', () => {
+        SettingsManager.set(LIMES_BLURBS_SETTING, false);
+        render(h(LimesBlurb, { spot: 'hallStar' }));
+        act(() => openLimesStep({ id: 'st', lines: ['Step words'], spot: 'hallStar' }));
+        expect(q('[data-limes-blurb-box="hallStar"]').style.transform).not.toContain('-9999');
+    });
+
+    it('the Upgrade drawer has one, in the corner opposite its X', () => {
+        render(h(GuildUpgradeInspection, { upgradeDef: getUpgradeDef('roster_size'), onClose: noop }));
+        expect(document.querySelectorAll('[data-limes-blurb="hallStar"]')).toHaveLength(1);
+    });
+
+    it('the Token card opened from the mat has one in its header; a card with no X (the style sheet) has none', () => {
+        render(h(TokenCard, { typeId: GUILD_HALL_TYPE, onClose: noop }));
+        expect(q('[data-card-block="name"] [data-limes-blurb="tokenCard"]')).not.toBeNull();
+        cleanup();
+        render(h(TokenCard, { typeId: GUILD_HALL_TYPE }));
+        expect(q('[data-token-card]')).not.toBeNull();
+        expect(q('[data-limes-blurb]')).toBeNull();
+    });
+
+    it('the fight window has one in its arena\'s corner, clear of the title bar', () => {
+        render(h(FightPanelView, { view: kitPanelView(), fights: KIT_FIGHTS, onClose: noop, onDragStart: noop, logOpen: false, onToggleLog: noop, tab: 'last', onTab: noop }));
+        const small = q('[data-fight-limes] [data-limes-blurb="fight"]');
+        expect(small).not.toBeNull();
+        expect(small.closest('[data-fight-titlebar]')).toBeNull();
+        expect(q('[data-fight-limes]').parentElement.querySelector('[data-fight-arena]')).not.toBeNull();
+    });
+
+    it('the Encyclopedia has one beside its close button', () => {
+        render(h(EncyclopediaScreen, { onClose: noop }));
+        expect(q('[data-codex-book] [data-limes-blurb="encyclopedia"]')).not.toBeNull();
+    });
+
+    it('the Shop has one on its first Foundation card only', () => {
+        const first = Shop.catalogue().find(item => Shop.buildsOf(item.typeId).length > 0);
+        expect(first).toBeTruthy();
+        render(h(DeckDndProvider, null, h(ShopPanel, { isOpen: true, onClose: noop })));
+        const all = document.querySelectorAll('[data-limes-blurb="foundation"]');
+        expect(all).toHaveLength(1);
+        expect(all[0].closest('[data-shop-item]').getAttribute('data-shop-item')).toBe(first.typeId);
     });
 });
 

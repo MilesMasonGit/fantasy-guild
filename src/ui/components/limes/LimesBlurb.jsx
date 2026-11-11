@@ -61,7 +61,9 @@ export function LimesBlurb({ spot, className }) {
     const limes = useLimes();
     const step = stepAt(spot, limes);
     const [hover, setHover] = useState(false);
-    const anchorRef = useRef(null);
+    // ⚠️ A state ref, not useRef: a child's layout effect runs before its parent's ref is set, so a
+    // bubble mounting with its Limes (a step on a Limes the setting hid) would measure nothing.
+    const [anchor, setAnchor] = useState(null);
     const words = LIMES_TEXT.blurbs[spot];
     if (!step && (!on || !words)) return null;
 
@@ -69,7 +71,7 @@ export function LimesBlurb({ spot, className }) {
     const size = LIMES_ART_PX * SMALL_SCALE;
     return (
         <span
-            ref={anchorRef}
+            ref={setAnchor}
             data-limes-blurb={spot}
             data-limes-step={step ? step.id : undefined}
             className={`inline-flex shrink-0 cursor-help ${className || ''}`}
@@ -84,24 +86,24 @@ export function LimesBlurb({ spot, className }) {
                 {...{ [LIMES_MARK_ATTR]: step ? 'glow' : undefined }}
                 style={{ width: size, height: size, maxWidth: 'none', imageRendering: 'pixelated' }}
             />
-            {(stepOpen || (hover && !step)) && (
-                <BlurbBox anchorRef={anchorRef} spot={spot} step={stepOpen ? step : null} words={words} />
+            {anchor && (stepOpen || (hover && !step)) && (
+                <BlurbBox anchor={anchor} spot={spot} step={stepOpen ? step : null} words={words} />
             )}
         </span>
     );
 }
 
 /** The blurb itself, on the page's top layer beside the small Limes. */
-function BlurbBox({ anchorRef, spot, step, words }) {
+function BlurbBox({ anchor, spot, step, words }) {
     const boxRef = useRef(null);
     const [place, setPlace] = useState(null);
     useLayoutEffect(() => {
-        const a = anchorRef.current?.getBoundingClientRect();
+        const a = anchor.getBoundingClientRect();
         const box = boxRef.current;
         if (!a || !box) return;
         const next = blurbPlace(a, box.offsetWidth, box.offsetHeight, window.innerWidth, window.innerHeight);
         setPlace(p => (p && p.left === next.left && p.top === next.top && p.above === next.above && p.tail === next.tail ? p : next));
-    }, [anchorRef, step?.id, step?.index, words]);
+    }, [anchor, step?.id, step?.index, words]);
     if (typeof document === 'undefined') return null;
     const talk = step ? { kind: 'step', lines: step.lines, index: step.index, collapsed: false } : null;
     return createPortal(
