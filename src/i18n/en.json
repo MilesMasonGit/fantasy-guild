@@ -106,7 +106,9 @@
         "hint": "Drag a Token onto the mat to buy it.",
         "empty": "Nothing is for sale yet.",
         "pick": "{name}: pick one",
-        "builds": "Builds: {list}"
+        "builds": "Builds: {list}",
+        "stripOpen": "Come down here to open the Shop",
+        "stripRefund": "Drop here to hand it back for its price"
     },
     "workPlate": {
         "skill": "{hero}: {skill} {level}",

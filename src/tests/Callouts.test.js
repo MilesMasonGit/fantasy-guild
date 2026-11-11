@@ -41,6 +41,22 @@ const later = () => act(() => { vi.advanceTimersByTime(10); });
 const stackOf = (container, heroId) =>
     [...container.querySelectorAll(`[data-hero-bubble-stack="${heroId}"] [data-hero-bubble]`)].map(n => n.textContent);
 
+describe('the refund callout', () => {
+    it('says what came back where the Foundation stood, in the plain look', () => {
+        const { container } = render(h(CalloutLayer));
+        act(() => {
+            EventBus.publish(ENGINE_EVENTS.TOKEN_REFUNDED, {
+                typeId: 'fixture_producer', instanceId: 'tok_gone', x: 400, y: 300, heroId: null,
+                price: [{ itemId: 'item_oak_wood', quantity: 15 }, { itemId: 'item_stone', quantity: 2 }]
+            });
+        });
+        const bubble = container.querySelector('[data-callout]');
+        expect(bubble.textContent).toBe('Refunded 15 Oak Wood, 2 Stone');
+        expect(bubble.parentElement.style.transform).toContain('translate(400px');
+        expect(calloutText.refunded([])).toBe('Refunded');
+    });
+});
+
 describe('the spawn callout', () => {
     it('says "! Spawned {name}" over the spawner as the new Token lands, and fades on its own', () => {
         const forest = placeAt('fixture_producer', 600, 500);

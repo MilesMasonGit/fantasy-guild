@@ -1,4 +1,4 @@
-import { memo, startTransition, useEffect, useMemo, useState } from 'react';
+import { memo, startTransition, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -12,8 +12,9 @@ import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { t } from '../../../i18n/index.js';
-import { useEntityDrag, useActiveDrag, useDragSurface } from '../../dnd/DndKit.jsx';
-import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { useEntityDrag, useActiveDrag, interceptDrops } from '../../dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE, DRAG_SFX } from '../../dnd/dragConstants.js';
+import { dropOnShop } from '../board/dropOnMat.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { PanelHeader } from '../base/CloseX.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
@@ -32,9 +33,15 @@ import { DOCK_STRIP_PX, dockArtPx, dockLabelOverhangPx } from '../dock/dockHeroV
  * - **Drag a card onto the mat to buy.** The card's payload is a `TOKEN` with `from.shop`;
  * `dropOnMat` hands it to `Shop.buyAt`, which pays on drop and places the Token at the drop
  * point. The panel stays open after a purchase.
- * - **While a card is carried, the panel drops to a lip** ({@link SHOP_LIP_PX} tall) whenever
- * the pointer is over the playmat, and rises again the moment it comes back over the panel. A
- * Shop Token let go over the lip (or the risen panel) is a plain cancel ({@link pointerOverShopPanel}).
+ * - **While a card is carried off the panel, the Shop drops to its strip**: a bar with its title
+ * ({@link SHOP_STRIP_PX} tall) standing on the hero bar, over its names and HP bars, so the whole
+ * mat is free. Coming down onto the strip raises the Shop again; leaving the risen panel upward
+ * drops it again ({@link stripHoverAt}). A Shop Token let go over the strip (or the risen panel) is
+ * a plain cancel ({@link pointerOverShopPanel}).
+ * - **An unbuilt Foundation picked up off the mat shows the same strip**, the Shop open or not:
+ * let go over the strip or the risen panel, it goes back to the Shop for its price
+ * (`dropOnShop`, `Shop.refund`). Any other Token from the mat let go over the open Shop lands
+ * on the mat under it, as before.
  * - **A card that cannot be bought** keeps its look but for a dimmed Token; the short counts are
  * red, and it cannot be picked up. A full Token cap says so on the card, since no price shows it.
  * Cards re-read on every Bank or cap change, and on a Mat Tuner cap change.
@@ -44,13 +51,16 @@ import { DOCK_STRIP_PX, dockArtPx, dockLabelOverhangPx } from '../dock/dockHeroV
  * keep them.
  */
 
-/** How much of the panel stays on screen while a Shop Token is carried. */
-export const SHOP_LIP_PX = 28;
+/** The strip's height: the Shop's title on a bar standing on the hero bar, tall enough to aim at. */
+export const SHOP_STRIP_PX = 36;
 
 /**
- * Whether a viewport pointer is over the Shop panel (or its lip), read from the panel's live box.
- * The mat's drop handler asks this before buying: a Shop Token let go over the panel is a plain
- * cancel even where the panel covers the mat.
+ * Whether a viewport pointer is over the Shop as it is drawn now: the strip and everything under
+ * it to the screen's bottom edge (the hero bar too) while the Shop is up or dropped, or the risen
+ * panel's own box. Read from the live boxes at the drop, never from the drag-start snapshot,
+ * which was taken with the panel fully up.
+ * The mat's drop handler asks this before buying (a Shop Token let go here is a plain cancel),
+ * and the Shop's own drop check before a refund.
  *
  * ⚠️ Deliberately NOT a droppable: dnd-kit measures droppables when a drag starts, when the
  * panel is still fully up, so a droppable panel would swallow drops on the strip of mat it has
@@ -59,33 +69,76 @@ export const SHOP_LIP_PX = 28;
 export function pointerOverShopPanel(pointer) {
     if (!pointer || typeof document === 'undefined') return false;
     const el = document.querySelector('[data-shop-drawer]');
-    if (!el || el.getAttribute('data-shop-drawer-state') === 'closed') return false;
+    const state = el?.getAttribute('data-shop-drawer-state');
+    if (!el || state === 'closed') return false;
+    const strip = document.querySelector('[data-shop-strip]');
+    if (strip) {
+        const s = strip.getBoundingClientRect();
+        if (pointer.x >= s.left && pointer.x <= s.right && pointer.y >= s.top) return true;
+    }
+    if (state !== 'open') return false;
     const r = el.getBoundingClientRect();
     return pointer.x >= r.left && pointer.x <= r.right && pointer.y >= r.top && pointer.y <= r.bottom;
 }
 
 export const isShopPayload = (p) => p?.kind === DRAG_KIND.TOKEN && !!p.from?.shop;
 
+/** A Token picked up off the mat. */
+export const isMatTokenPayload = (p) => p?.kind === DRAG_KIND.TOKEN && p.from?.instanceId != null;
+
+/** Whether the Token in the hand could go back to the Shop: an unbuilt Foundation on the mat (`Shop.canRefund`). */
+export const isRefundablePayload = (p) => isMatTokenPayload(p) && !!Shop.canRefund(p.from.instanceId).ok;
+
 /**
- * `'closed' | 'open' | 'lip'`: shut, up, or dropped to its lip during a Shop drag.
- * The drop tracks WHERE the card is being carried: a lip while the pointer is over the playmat,
- * up again the moment it is back over the panel, so the player can change their mind mid-drag.
- * The default for `surface` gives 'always a lip' for a caller that does not track position.
+ * Whether this drag drops the Shop to its strip: a Shop card carried from the open Shop, or a
+ * Token that can go back to the Shop (`refundable`, worked out once at pickup), whether the Shop
+ * is open or not, so there is always somewhere to hand it back.
  */
-export function shopPanelState(isOpen, activePayload, surface = DND_SURFACE.BOARD) {
-    if (!isOpen) return 'closed';
-    if (!isShopPayload(activePayload)) return 'open';
-    return surface === DND_SURFACE.DRAWER ? 'open' : 'lip';
+export function isStripDrag(isOpen, activePayload, refundable = false) {
+    return (isOpen && isShopPayload(activePayload)) || (refundable && isMatTokenPayload(activePayload));
+}
+
+/**
+ * `'closed' | 'open' | 'lip'`: shut, up, or dropped to its strip during a drag (`'lip'`).
+ * During a strip drag ({@link isStripDrag}) the Shop is up only while `raised`, which
+ * {@link stripHoverAt} works out from where the Token is carried; otherwise it is as the player
+ * left it. After the drop it is as the player left it again: a Shop raised by a refund drag
+ * closes.
+ */
+export function shopPanelState(isOpen, activePayload, { raised = false, refundable = false } = {}) {
+    if (!isStripDrag(isOpen, activePayload, refundable)) return isOpen ? 'open' : 'closed';
+    return raised ? 'open' : 'lip';
+}
+
+/**
+ * Where a strip drag starts: a Shop card is picked up off the risen panel; a Token off the mat
+ * starts with the Shop dropped, and not yet armed: a Token picked up where the strip then appears
+ * must be carried above it once before the strip raises the Shop or takes a drop, so a pickup
+ * there let go on the spot is a plain put-down, not a refund.
+ */
+export const stripHoverStart = (activePayload) => (isShopPayload(activePayload)
+    ? { raised: true, armed: true }
+    : { raised: false, armed: false });
+
+/**
+ * The strip's hover, one pointer move on: the pointer at viewport `y`, the strip's top at
+ * `stripTop`, the risen panel's top at `openTop`. Dropped, the Shop rises when the pointer comes
+ * down onto the strip (or the bar under it); risen, it drops again once the pointer leaves the
+ * panel upward. Returns `prev` itself when nothing changed.
+ */
+export function stripHoverAt(prev, y, { stripTop, openTop }) {
+    const armed = prev.armed || y < stripTop;
+    const raised = prev.raised ? y >= openTop : armed && y >= stripTop;
+    return raised === prev.raised && armed === prev.armed ? prev : { raised, armed };
 }
 
 /**
  * Where the panel is moved to for `state`. `under`: how far above the screen's bottom the panel
- * stands (the bar's strip), so a closed panel goes all the way down out of sight; `foot`: the
- * clear band at its foot that the bar's names stand over, kept in sight with the lip.
+ * stands, so a closed panel goes all the way down out of sight. Dropped (`'lip'`) it goes down
+ * out of sight as when closed, and the strip stands in for it.
  */
-export function shopPanelTransform(state, { under = 0, foot = 0 } = {}) {
+export function shopPanelTransform(state, { under = 0 } = {}) {
     if (state === 'open') return 'translateY(0)';
-    if (state === 'lip') return `translateY(calc(100% - ${SHOP_LIP_PX + foot}px))`;
     return under ? `translateY(calc(100% + ${under}px))` : 'translateY(100%)';
 }
 
@@ -119,64 +172,144 @@ function useShopRefresh(active) {
     }, [active]);
 }
 
+/**
+ * The strip's hover during a strip drag: whether the Shop is raised, from the pointer's height
+ * alone. ⚠️ No layout read per pointer move: the strip's top and the risen panel's top are
+ * measured from the live elements when the strip drag starts and again at each rise and drop (a
+ * Shop raised by a refund drag fills with its cards only then), and a move is two comparisons;
+ * the panel redraws only when the Shop rises or drops.
+ */
+function useStripHover(strip, activePayload, asideRef, stripRef) {
+    // Kept with the drag it belongs to, so a new drag starts where it starts (`stripHoverStart`).
+    const [hover, setHover] = useState({ payload: null, raised: false });
+    const hoverRef = useRef(null);
+    const geoRef = useRef(null);
+    const up = strip && (hover.payload === activePayload ? hover.raised : stripHoverStart(activePayload).raised);
+
+    useLayoutEffect(() => {
+        hoverRef.current = strip ? stripHoverStart(activePayload) : null;
+    }, [strip, activePayload]);
+
+    useLayoutEffect(() => {
+        if (!strip) { geoRef.current = null; return; }
+        const aside = asideRef.current;
+        const bar = stripRef.current;
+        if (!aside || !bar) return;
+        const bottom = (aside.offsetParent || document.documentElement).getBoundingClientRect().bottom;
+        geoRef.current = { stripTop: bar.getBoundingClientRect().top, openTop: bottom - aside.offsetHeight };
+    }, [strip, up, asideRef, stripRef]);
+
+    useEffect(() => {
+        if (!strip) return undefined;
+        const onMove = (e) => {
+            const geo = geoRef.current;
+            const prev = hoverRef.current;
+            if (!geo || !prev) return;
+            const next = stripHoverAt(prev, e.clientY, geo);
+            if (next === prev) return;
+            hoverRef.current = next;
+            if (next.raised !== prev.raised) setHover({ payload: activePayload, raised: next.raised });
+        };
+        window.addEventListener('pointermove', onMove, { passive: true });
+        return () => window.removeEventListener('pointermove', onMove);
+    }, [strip, activePayload]);
+
+    return { raised: up, hoverRef };
+}
+
 export const ShopPanel = ({ isOpen, onClose, menuRight = false }) => {
     const { activePayload } = useActiveDrag();
-    const surface = useDragSurface();
-    const state = shopPanelState(isOpen, activePayload, surface);
+    // Once per pickup: whether the Token in the hand could go back to the Shop.
+    const refundable = useMemo(() => isRefundablePayload(activePayload), [activePayload]);
+    const strip = isStripDrag(isOpen, activePayload, refundable);
+    const asideRef = useRef(null);
+    const stripRef = useRef(null);
+    const { raised, hoverRef } = useStripHover(strip, activePayload, asideRef, stripRef);
+    const state = shopPanelState(isOpen, activePayload, { raised, refundable });
     // The band at the panel's foot the bar stands over: its strip, and the names and HP bars above it.
     const foot = DOCK_STRIP_PX + dockLabelOverhangPx(dockArtPx(useLiveMatFit()));
 
-    return (
-        <aside
-            data-dnd-region="drawer"
-            data-shop-drawer
-            data-shop-drawer-state={state}
-            data-shop-side={menuRight ? 'right' : 'left'}
-            aria-hidden={state === 'closed'}
-            className={cn(
-                // Edge to edge, under the nav as one panel: its rows pad for the nav
-                // (`.gi-drawer-pad-x`, 84 / 152 px as the Bank drawer), the cards from the nav's side.
-                'absolute inset-x-0 z-(--z-drawer)',
-                menuRight
-                    ? '[--nav-inset-r:84px] md:[--nav-inset-r:152px]'
-                    : '[--nav-inset-l:84px] md:[--nav-inset-l:152px]',
-                state === 'closed' ? 'pointer-events-none' : 'pointer-events-auto'
-            )}
-            style={{
-                // To the screen's bottom edge, behind the bar: no gap under the panel.
-                bottom: 0,
-                transform: shopPanelTransform(state, { foot }),
-                opacity: state === 'closed' ? 0 : 1,
-                visibility: state === 'closed' ? 'hidden' : 'visible',
-                transition: state === 'closed'
-                    ? 'transform 250ms cubic-bezier(0.16,1,0.3,1), opacity 200ms, visibility 0s linear 250ms'
-                    : 'transform 250ms cubic-bezier(0.16,1,0.3,1), opacity 200ms'
-            }}
-        >
-            <PixelFrame kind={FRAME_KIND.STUDS} backdrop="shop" frameClassName="flex flex-col">
-                <ShopContents isOpen={isOpen} onClose={onClose} menuRight={menuRight} />
-                <div aria-hidden data-shop-foot className="shrink-0" style={{ height: foot }} />
-            </PixelFrame>
+    // A Foundation from the mat let go over the Shop goes back to it. Taken before any drop target
+    // is asked: the mat would otherwise move it to that spot under the Shop. Only a refund drag
+    // (one that showed the strip): any other Token let go over the Shop lands on the mat under
+    // it, as it always has (GDD, "Drops over a drawer").
+    useEffect(() => interceptDrops((payload, { pointer } = {}) => {
+        if (!isMatTokenPayload(payload)) return null;
+        const hover = hoverRef.current;
+        // A Token picked up where the strip then appeared, not yet carried above it, is put down.
+        if (!hover?.armed) return null;
+        if (!pointerOverShopPanel(pointer)) return null;
+        const result = dropOnShop(payload);
+        if (!result) return null;
+        return result.success ? { success: true, sfx: DRAG_SFX.refund } : { success: false };
+    }), [hoverRef]);
 
-            {/* The lip: the strip left showing while a Shop Token is carried. */}
-            <div
-                aria-hidden
-                data-shop-lip
+    const refundDrag = strip && !isShopPayload(activePayload);
+
+    return (
+        <>
+            <aside
+                ref={asideRef}
+                data-dnd-region="drawer"
+                data-shop-drawer
+                data-shop-drawer-state={state}
+                data-shop-side={menuRight ? 'right' : 'left'}
+                aria-hidden={state === 'closed'}
                 className={cn(
-                    'absolute inset-x-0 top-0 border-t-2 border-gi-gold/60 bg-gi-base/90 transition-opacity duration-200 pointer-events-none',
-                    state === 'lip' ? 'opacity-100' : 'opacity-0'
+                    // Edge to edge, under the nav as one panel: its rows pad for the nav
+                    // (`.gi-drawer-pad-x`, 84 / 152 px as the Bank drawer), the cards from the nav's side.
+                    'absolute inset-x-0 z-(--z-drawer)',
+                    menuRight
+                        ? '[--nav-inset-r:84px] md:[--nav-inset-r:152px]'
+                        : '[--nav-inset-l:84px] md:[--nav-inset-l:152px]',
+                    state === 'open' ? 'pointer-events-auto' : 'pointer-events-none'
                 )}
-                style={{ height: SHOP_LIP_PX }}
-            />
-        </aside>
+                style={{
+                    // To the screen's bottom edge, behind the bar: no gap under the panel.
+                    bottom: 0,
+                    transform: shopPanelTransform(state),
+                    opacity: state === 'closed' ? 0 : 1,
+                    visibility: state === 'closed' ? 'hidden' : 'visible',
+                    transition: state === 'closed'
+                        ? 'transform 250ms cubic-bezier(0.16,1,0.3,1), opacity 200ms, visibility 0s linear 250ms'
+                        : 'transform 250ms cubic-bezier(0.16,1,0.3,1), opacity 200ms'
+                }}
+            >
+                <PixelFrame kind={FRAME_KIND.STUDS} backdrop="shop" frameClassName="flex flex-col">
+                    {/* A Shop raised by a refund drag fills with its cards once it is up. */}
+                    <ShopContents isOpen={isOpen || state === 'open'} onClose={onClose} menuRight={menuRight} />
+                    <div aria-hidden data-shop-foot className="shrink-0" style={{ height: foot }} />
+                </PixelFrame>
+            </aside>
+
+            {/**
+             * The strip: what stands for the Shop while it is dropped, on top of the hero bar (over
+             * its names and HP bars), so the whole mat is free to drop on and the Shop is one hover
+             * away. Never pressed: the drag's pointer is measured against it.
+             */}
+            <div
+                ref={stripRef}
+                aria-hidden
+                data-shop-strip={refundDrag ? 'refund' : 'shop'}
+                className={cn(
+                    'absolute inset-x-0 z-(--z-drawer) flex items-center justify-center gap-3 px-4',
+                    'border-y-2 border-gi-gold/70 bg-gi-base/95 pointer-events-none transition-opacity duration-200',
+                    state === 'lip' ? 'opacity-100' : 'opacity-0 invisible'
+                )}
+                style={{ bottom: foot, height: SHOP_STRIP_PX }}
+            >
+                <span className="ui-text-title font-bold text-gi-gold">{t('shop.title')}</span>
+                <span className="ui-text-small text-gi-muted truncate">{t(refundDrag ? 'shop.stripRefund' : 'shop.stripOpen')}</span>
+            </div>
+        </>
     );
 };
 
 /**
  * What the panel shows: its header and the cards.
- * ⚠️ Apart from the panel on purpose: the panel redraws at every drag start, end and crossing
- * between the mat and a drawer (it drops to a lip for a Shop card), and the catalogue is worked
- * out afresh each time this draws.
+ * ⚠️ Apart from the panel on purpose: the panel redraws at every drag start, end, rise and drop
+ * (it drops to its strip for a Shop card), and the catalogue is worked out afresh each time this
+ * draws.
  */
 const ShopContents = memo(function ShopContents({ isOpen, onClose, menuRight }) {
     useShopRefresh(isOpen);
