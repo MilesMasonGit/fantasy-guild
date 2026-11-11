@@ -1,6 +1,5 @@
 import React from 'react';
 import { clampToMat } from '../../../config/matGeometry.js';
-import { useMatSize } from '../../hooks/useMatSize.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
 import * as MatPlacement from '../../../systems/board/MatPlacement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -9,19 +8,23 @@ import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { useActiveDrag, useDragPointer } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 import { pointerToMat, matRectForDrag } from './matPoint.js';
-import { MAT_Z } from './matLayers.js';
-import { showsNearRing } from '../../../systems/board/reachDisplay.js';
+import { showsNearRing, reachDotsAt } from '../../../systems/board/reachDisplay.js';
+import { ReachRing } from './CampReachRing.jsx';
+
+const NEAR_RING_ATTRS = Object.freeze({ 'data-near-ring': 'true' });
 
 /**
- * The Near ring: **hitboxes are never drawn**, so a Token at rest is just its art. The ring
- * appears only for a Token whose rules involve its neighbours (`showsNearRing`), and only
- * while the player is doing something with it:
+ * The reach ring and its dots: **hitboxes are never drawn**, so a Token at rest is just its art.
+ * The one standard ring appears only for a Token that uses reach (`showsNearRing`: a Foundation,
+ * a work camp, a Token whose rules involve its neighbours), and only while the player is doing
+ * something with it:
  * * **hovering** one: the ring sits on that Token's centre;
- * * **dragging** one: the ring sits where the Token would REALLY land. With free placement
- * that is the cursor itself when there is room, and the nudged spot when there is not, so the
- * ring is an honest preview of the drop rather than a copy of the pointer. When there is no
- * room within nudge reach the drop would fly back, and there is no ring to draw.
- * A camp's reach ring is `CampReachRing`'s.
+ * * **dragging** one, from the Shop or across the mat: the ring sits where the Token would REALLY
+ * land. With free placement that is the cursor itself when there is room, and the nudged spot
+ * when there is not, so the ring is an honest preview of the drop rather than a copy of the
+ * pointer. When there is no room within nudge reach the drop would fly back, and there is no ring.
+ * Every Token inside the ring wears a dot (`reachDisplay.reachDotsAt`, the engine's own test).
+ * The ring of a camp lit through its hero is `CampReachRing`'s.
  */
 
 /** The live standard reach, following a dev build's Mat Tuner override of it. */
@@ -31,10 +34,6 @@ function useReachRadius() {
     return radius;
 }
 
-/**
- * @param {{x:number,y:number}|null} hoveredCentre the hovered Token's centre
- * @param {{current: HTMLElement|null}} matRef the mat's own element
- */
 /**
  * Where the Token being dragged would land, as a mat point, or null when no Token is being
  * dragged, or it would fly back.
@@ -89,41 +88,35 @@ export function useTokenDragLanding(matRef) {
     return result;
 }
 
-export const MatRings = React.memo(function MatRings({ hoveredCentre = null, matRef = null }) {
+/**
+ * @param {{x:number,y:number,id:string}|null} hoveredCentre the hovered Token's centre and id
+ * @param {Array|null} boardTokens the mat's Token list: a new one (a Token arrived, left or moved)
+ * works the dots out again
+ * @param {{current: HTMLElement|null}} matRef the mat's own element
+ */
+export const MatRings = React.memo(function MatRings({ hoveredCentre = null, boardTokens = null, matRef = null }) {
     const radius = useReachRadius();
-    const mat = useMatSize();
-    const { isDragging } = useActiveDrag();
+    const { isDragging, activePayload } = useActiveDrag();
     const landing = useTokenDragLanding(matRef);
 
     let centre = null;
+    let selfId = null;
     if (isDragging) {
-        if (landing && showsNearRing(landing.typeId)) centre = landing;
+        if (landing && showsNearRing(landing.typeId)) {
+            centre = landing;
+            selfId = activePayload?.from?.instanceId || null;
+        }
     } else if (hoveredCentre) {
         centre = hoveredCentre;
+        selfId = hoveredCentre.id || null;
     }
 
-    if (!centre) return null;
+    // ⚠️ Worked out when the ring moves to a new spot (or the board changes under it), never per
+    // frame: a drag frame whose landing stays put reuses the last answer.
+    const key = centre ? `${centre.x}|${centre.y}|${selfId}|${radius}` : '';
+    const ring = React.useMemo(() => (centre ? { x: centre.x, y: centre.y, r: radius } : null), [key]); // eslint-disable-line react-hooks/exhaustive-deps
+    const dots = React.useMemo(() => (centre ? reachDotsAt(centre, selfId, radius) : null), [key, boardTokens]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    return (
-        <svg
-            data-mat-rings
-            className="absolute left-0 top-0 overflow-visible pointer-events-none"
-            width={mat.w}
-            height={mat.h}
-            style={{ zIndex: MAT_Z.RINGS }}
-        >
-            <circle
-                data-near-ring="true"
-                cx={centre.x}
-                cy={centre.y}
-                r={radius}
-                fill="none"
-                stroke="rgb(251, 191, 36)"
-                strokeOpacity={0.35}
-                strokeWidth={1}
-                strokeDasharray="6 5"
-                vectorEffect="non-scaling-stroke"
-            />
-        </svg>
-    );
+    if (!ring) return null;
+    return <ReachRing ring={ring} dots={dots} attrs={NEAR_RING_ATTRS} />;
 });

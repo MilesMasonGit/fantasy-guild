@@ -1,0 +1,266 @@
+{
+  "shop_token_wood_foundation": {
+    "ring": {
+      "cx": 460.0000292035605,
+      "cy": 399.99998174777465,
+      "r": 240
+    },
+    "dots": [
+      "tok_1794348400395_81gwv",
+      "tok_1794348400408_i6wr8",
+      "tok_1794348400415_gbgyp"
+    ],
+    "expect": [
+      "tok_1794348400395_81gwv",
+      "tok_1794348400408_i6wr8",
+      "tok_1794348400415_gbgyp"
+    ],
+    "same": true,
+    "ghostFloats": true
+  },
+  "shop_token_stone_foundation": {
+    "ring": {
+      "cx": 840.0000219026704,
+      "cy": 420.0000109513352,
+      "r": 240
+    },
+    "dots": [
+      "tok_1794348397895_lzn8v",
+      "tok_1794348398088_ber6k",
+      "tok_1794348400422_aqq43",
+      "tok_1794348400427_rzi74"
+    ],
+    "expect": [
+      "tok_1794348397895_lzn8v",
+      "tok_1794348398088_ber6k",
+      "tok_1794348400422_aqq43",
+      "tok_1794348400427_rzi74"
+    ],
+    "same": true,
+    "ghostFloats": true
+  },
+  "shop_token_farmland": {
+    "ring": {
+      "cx": 1100,
+      "cy": 420.0000109513352,
+      "r": 240
+    },
+    "dots": [
+      "tok_1794348398088_ber6k",
+      "tok_1794348400427_rzi74",
+      "tok_1794348400433_jzjic"
+    ],
+    "expect": [
+      "tok_1794348398088_ber6k",
+      "tok_1794348400427_rzi74",
+      "tok_1794348400433_jzjic"
+    ],
+    "same": true,
+    "ghostFloats": true
+  },
+  "shop_token_excavation": {
+    "ring": {
+      "cx": 1320,
+      "cy": 459.9999890486648,
+      "r": 240
+    },
+    "dots": [
+      "tok_1794348400433_jzjic",
+      "tok_1794348400439_w6o0u",
+      "tok_1794348406404_qv5u5"
+    ],
+    "expect": [
+      "tok_1794348400433_jzjic",
+      "tok_1794348400439_w6o0u",
+      "tok_1794348406404_qv5u5"
+    ],
+    "same": true,
+    "ghostFloats": true
+  },
+  "shop_token_battlefield": {
+    "ring": {
+      "cx": 699.9999780973296,
+      "cy": 199.99999087388733,
+      "r": 240
+    },
+    "dots": [
+      "tok_1794348400408_i6wr8"
+    ],
+    "expect": [
+      "tok_1794348400408_i6wr8"
+    ],
+    "same": true,
+    "ghostFloats": true
+  },
+  "bob": {
+    "n": 5,
+    "a": [
+      "translateY(-2.63158px)",
+      "translateY(-5.26316px)",
+      "translateY(-5.26316px)",
+      "translateY(-5.26316px)",
+      "translateY(-5.26316px)"
+    ],
+    "b": [
+      "translateY(-7.89474px)",
+      "translateY(-5.26316px)",
+      "translateY(-5.26316px)",
+      "translateY(-5.26316px)",
+      "translateY(-5.26316px)"
+    ]
+  },
+  "moveFoundation": {
+    "ring": {
+      "cx": 639.9999707964395,
+      "cy": 330,
+      "r": 240
+    },
+    "dots": [
+      "tok_1794348400408_i6wr8",
+      "tok_1794348400422_aqq43",
+      "tok_1794348404446_0m8rp",
+      "tok_1794348410275_f2rha"
+    ],
+    "expect": [
+      "tok_1794348400408_i6wr8",
+      "tok_1794348400422_aqq43",
+      "tok_1794348404446_0m8rp",
+      "tok_1794348410275_f2rha"
+    ],
+    "same": true
+  },
+  "borderline": {
+    "ring": {
+      "cx": 450,
+      "cy": 330,
+      "r": 240
+    },
+    "dots": [
+      "tok_1794348414164_nkglm",
+      "tok_1794348414173_5bfb0"
+    ],
+    "expect": [
+      "tok_1794348414164_nkglm",
+      "tok_1794348414173_5bfb0"
+    ],
+    "same": true,
+    "placedAt": {
+      "camp": {
+        "x": 450,
+        "y": 330
+      },
+      "tin": {
+        "x": 685,
+        "y": 330
+      },
+      "tout": {
+        "x": 205,
+        "y": 330
+      },
+      "tdiag": {
+        "x": 600,
+        "y": 180
+      },
+      "tfar": {
+        "x": 510,
+        "y": 630
+      }
+    },
+    "campWorks": [
+      "tok_1794348414164_nkglm",
+      "tok_1794348414173_5bfb0"
+    ],
+    "inId": "tok_1794348414164_nkglm",
+    "outId": "tok_1794348414168_l6uo6",
+    "diagId": "tok_1794348414173_5bfb0",
+    "farId": "tok_1794348414176_2ir21",
+    "dottedTrees": [
+      "tok_1794348414164_nkglm",
+      "tok_1794348414173_5bfb0"
+    ],
+    "treesDottedEqualWorked": true
+  },
+  "campCarried": {
+    "ring": {
+      "cx": 570.0000292035605,
+      "cy": 370.0000182522253,
+      "r": 240
+    },
+    "dots": [
+      "tok_1794348414164_nkglm",
+      "tok_1794348414173_5bfb0"
+    ],
+    "expect": [
+      "tok_1794348414164_nkglm",
+      "tok_1794348414173_5bfb0"
+    ],
+    "same": true
+  },
+  "campAfterDrop": {
+    "worked": [
+      "tok_1794348414164_nkglm",
+      "tok_1794348414173_5bfb0"
+    ],
+    "dottedTreesWhileCarried": [
+      "tok_1794348414164_nkglm",
+      "tok_1794348414173_5bfb0"
+    ]
+  },
+  "support": {
+    "ring": {
+      "cx": 1350.0000438053407,
+      "cy": 289.9999817477747,
+      "r": 240
+    },
+    "dots": [
+      "tok_1794348416595_rf9u0",
+      "tok_1794348416599_zmp8e",
+      "tok_1794348416603_sa9t6",
+      "tok_1794348416612_2x730"
+    ],
+    "expect": [
+      "tok_1794348416595_rf9u0",
+      "tok_1794348416599_zmp8e",
+      "tok_1794348416603_sa9t6",
+      "tok_1794348416612_2x730"
+    ],
+    "same": true,
+    "supportTags": [
+      "tok_1794348416595_rf9u0",
+      "tok_1794348416599_zmp8e",
+      "tok_1794348416603_sa9t6"
+    ],
+    "everyTagDotted": true,
+    "dottedVeins": [
+      "tok_1794348416595_rf9u0",
+      "tok_1794348416599_zmp8e",
+      "tok_1794348416603_sa9t6"
+    ],
+    "tagsEqualDottedVeins": true
+  },
+  "supportAfterDrop": [
+    "LINK",
+    "boostedBy",
+    "boosts",
+    "firstSupportOf",
+    "floorHits",
+    "linksAt",
+    "narrowingFits",
+    "placementCandidates",
+    "skillOfType",
+    "supportPayloadOf"
+  ],
+  "built": {
+    "res": true,
+    "foundationFloats": [
+      true
+    ],
+    "campFloats": [
+      false
+    ]
+  },
+  "idle": {
+    "ring": null,
+    "dots": []
+  }
+}

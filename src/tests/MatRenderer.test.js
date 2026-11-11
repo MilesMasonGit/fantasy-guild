@@ -45,6 +45,10 @@ registerTokenTypes({
         id: 'mat_large', name: 'Mat Large', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: 100, sprite: 's_nature',
         size: 2, requiresHero: false
+    },
+    mat_foundation: {
+        id: 'mat_foundation', name: 'Mat Foundation', tokenType: 'foundation', sprite: 's_nature',
+        requiresHero: false, foundation: { kind: 'wood', skill: 'construction' }
     }
 });
 
@@ -375,7 +379,18 @@ describe('⭐ which Token the pointer is on (overlapping art)', () => {
         restHover();
         const ring = container.querySelector('[data-near-ring]');
         expect(ring).not.toBeNull();
-        expect(Number(ring.getAttribute('cx'))).toBe(tool.x);
+        expect(Number(ring.getAttribute('data-cx'))).toBe(tool.x);
+    });
+
+    it('⭐ an unbuilt Foundation floats as floor loot does; any other Token rests', () => {
+        const f = placeAt('mat_foundation', 500, 500);
+        const plain = placeAt('fixture_producer', 900, 500);
+        const { container } = mount(h(MatBoard));
+        const floating = artOf(container, f.id).querySelector('.gi-sprite-hover');
+        expect(floating).not.toBeNull();
+        // A shadow, when the sprite has one, stays on the ground: never inside the bobbing art.
+        expect(floating.querySelector('[data-sprite-shadow]')).toBeNull();
+        expect(artOf(container, plain.id).querySelector('.gi-sprite-hover')).toBeNull();
     });
 
     it('nothing is hovered out on the bare mat', () => {
