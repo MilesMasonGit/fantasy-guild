@@ -64,6 +64,11 @@ Star version and a big Building version of the same effect.
 - **Catch weight**: retired, the Fine Fishing Rod's Keen Line included; the
   rod gets another buff. T-402.
 
+**Effect names** (owner, 2026-11-11): the common effects have one short
+name each, kept in [UI_STYLE.md](../reference/UI_STYLE.md#effect-names-owner-2026-11-11):
+Speed, Yield, Growth, XP, Double Loot, Double Item, Preservation, Refresh,
+Lucky, Efficiency, Abundance. The families above use them from now on.
+
 **Still open** (later sessions): the rank sizes per Star (about 1 % is the
 rule of thumb), each Building version's strength, and which building gives
 the XP bonus (the content agent, with the buildings, T-307).
@@ -147,7 +152,10 @@ Not raised again unless the owner brings them back.
    ranked) or a Building effect (big, in reach), or both at different
    sizes; and the rank sizes.
 2. **Effect icons on the Token card**: which effects get an icon, what the
-   hover says, how several stack.
+   hover says, how several stack. The owner's picture (2026-11-11): a badge
+   row on the Token inspection for whole-Token effects, each hoverable for a
+   breakdown of its sources; item effects (Double Item) as a badge on that
+   item's line of the drop table.
 3. **Events**: what an Event is (a short-lived special Token), how often,
    what it gives, and how Stars tilt them. Weather, the merchant and the
    fallen star are the first examples.

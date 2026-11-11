@@ -73,6 +73,33 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - Icons are drawn crisp at whole-pixel scales (the owner noticed fuzzy skill
   icons in the Token inspection).
 
+## Effect names (owner, 2026-11-11)
+
+Effects that come from many sources (Stars, Buildings, gear, drinks) have **one
+short name**, used the same way everywhere: Token and item badges, tooltips,
+the CMS, the Encyclopedia, Limes's lines and the docs. A source's own name
+(Keen Axes, Copper Mine) stays; the effect it gives is named here.
+
+| Name | What it does | Today's CMS label | Where its badge sits |
+|---|---|---|---|
+| **Speed** | A cycle takes less time | Work Time | the Token |
+| **Yield** | Each cycle gives a little more | Yield | the Token |
+| **Growth** | A resting Token refills sooner | Grow Time | the Token |
+| **XP** | More XP from the work | XP Bonus | the Token |
+| **Double Loot** | A chance the whole cycle's output comes out doubled | Double Loot Chance | the Token |
+| **Double Item** | A chance one named item comes out doubled | Double Item Chance | that item's line on the drop table |
+| **Preservation** | A chance a cycle uses none of its materials (ammo, Food, drinks, bait, recipe inputs) | none yet | the Token |
+| **Refresh** | A chance a cycle spends none of the Token's charges | none yet | the Token |
+| **Lucky** | A higher chance on the Token's own rare drop table (a Vein's Gem) | none yet | the Token |
+| **Efficiency** | A recipe needs fewer of an input | Input Cost | the recipe's input |
+| **Abundance** | A Token kind holds more charges before it rests | Crop Load | the Token |
+
+Bonus Drop (a source adds an item the Token does not make, such as
+Birdwatcher's bird nests) keeps its name. The badge row is the owner's
+picture, not yet designed: on the Token inspection, a row of badges for the
+effects on the whole Token, each hoverable for a breakdown of where it comes
+from; an item's effects sit beside that item on the drop table.
+
 ## Density
 
 - **Tight and game-like**: one line per skill or stat, small but readable
