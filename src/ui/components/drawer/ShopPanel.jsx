@@ -33,8 +33,8 @@ import { DOCK_STRIP_PX, dockArtPx, dockLabelOverhangPx } from '../dock/dockHeroV
  * - **Drag a card onto the mat to buy.** The card's payload is a `TOKEN` with `from.shop`;
  * `dropOnMat` hands it to `Shop.buyAt`, which pays on drop and places the Token at the drop
  * point. The panel stays open after a purchase.
- * - **While a card is carried off the panel, the Shop lowers** (`'lip'`): its top edge comes down to
- * the top of the hero bar's names and HP bars (the panel's `foot`), the bar drawn over it as ever,
+ * - **While a card is carried off the panel, the Shop lowers** (`'lip'`): only its header row stays
+ * up at the screen's bottom edge (its `peek`, {@link lowerPeekOf}), the bar drawn over it as ever,
  * so the whole mat is free. Coming down onto that edge raises the Shop again; leaving the risen
  * panel upward lowers it again ({@link stripHoverAt}). A Shop Token let go over the lowered edge (or
  * the risen panel) is a plain cancel ({@link pointerOverShopPanel}).
@@ -52,14 +52,25 @@ import { DOCK_STRIP_PX, dockArtPx, dockLabelOverhangPx } from '../dock/dockHeroV
  */
 
 /**
+ * How much of the lowered Shop stays up, in px: its frame's top and its header row, measured from
+ * the live panel (a slide moves both alike). Falls back to the panel's foot when there is no layout
+ * to measure (tests) or no header.
+ */
+export function lowerPeekOf(panel) {
+    const header = panel.querySelector('[data-panel-header]');
+    const peek = header ? header.getBoundingClientRect().bottom - panel.getBoundingClientRect().top : 0;
+    if (peek > 0) return Math.round(peek);
+    return panel.querySelector('[data-shop-foot]')?.offsetHeight || 0;
+}
+
+/**
  * Where the lowered Shop's top edge stands, in viewport px: its container's bottom (the screen's
- * bottom edge) less its foot, the band the hero bar and its names stand over. From the live layout,
- * which a slide does not move, so a drop mid-slide is judged where the edge comes to rest.
+ * bottom edge) less its peek. From the live layout, which a slide does not move, so a drop
+ * mid-slide is judged where the edge comes to rest.
  */
 export function loweredTopOf(panel) {
-    const foot = panel.querySelector('[data-shop-foot]')?.offsetHeight || 0;
     const bottom = (panel.offsetParent || document.documentElement).getBoundingClientRect().bottom;
-    return bottom - foot;
+    return bottom - lowerPeekOf(panel);
 }
 
 /**
@@ -138,12 +149,12 @@ export function stripHoverAt(prev, y, { stripTop, openTop }) {
 
 /**
  * Where the panel is moved to for `state`. `under`: how far above the screen's bottom the panel
- * stands, so a closed panel goes all the way down out of sight. Lowered (`'lip'`), only its `foot`
- * stays up: its top edge at the top of the hero bar's names and HP bars, the bar over the rest.
+ * stands, so a closed panel goes all the way down out of sight. Lowered (`'lip'`), only its `peek`
+ * stays up: its header row at the screen's bottom edge, the bar over it.
  */
-export function shopPanelTransform(state, { under = 0, foot = 0 } = {}) {
+export function shopPanelTransform(state, { under = 0, peek = 0 } = {}) {
     if (state === 'open') return 'translateY(0)';
-    if (state === 'lip') return `translateY(calc(100% - ${foot}px))`;
+    if (state === 'lip') return `translateY(calc(100% - ${peek}px))`;
     return under ? `translateY(calc(100% + ${under}px))` : 'translateY(100%)';
 }
 
@@ -221,6 +232,18 @@ function useStripHover(strip, activePayload, asideRef) {
     return { raised: up, hoverRef };
 }
 
+/** The lowered Shop's peek ({@link lowerPeekOf}), measured once laid out and again on a resize. */
+function useLowerPeek(asideRef, foot) {
+    const [peek, setPeek] = useState(foot);
+    useLayoutEffect(() => {
+        const measure = () => { if (asideRef.current) setPeek(lowerPeekOf(asideRef.current)); };
+        measure();
+        window.addEventListener('resize', measure);
+        return () => window.removeEventListener('resize', measure);
+    }, [asideRef, foot]);
+    return peek;
+}
+
 export const ShopPanel = ({ isOpen, onClose, menuRight = false }) => {
     const { activePayload } = useActiveDrag();
     // Once per pickup: whether the Token in the hand could go back to the Shop.
@@ -231,6 +254,7 @@ export const ShopPanel = ({ isOpen, onClose, menuRight = false }) => {
     const state = shopPanelState(isOpen, activePayload, { raised, refundable });
     // The band at the panel's foot the bar stands over: its strip, and the names and HP bars above it.
     const foot = DOCK_STRIP_PX + dockLabelOverhangPx(dockArtPx(useLiveMatFit()));
+    const peek = useLowerPeek(asideRef, foot);
 
     // A Foundation from the mat let go over the Shop goes back to it. Taken before any drop target
     // is asked: the mat would otherwise move it to that spot under the Shop. Only a refund drag
@@ -267,7 +291,7 @@ export const ShopPanel = ({ isOpen, onClose, menuRight = false }) => {
             style={{
                 // To the screen's bottom edge, behind the bar: no gap under the panel.
                 bottom: 0,
-                transform: shopPanelTransform(state, { foot }),
+                transform: shopPanelTransform(state, { peek }),
                 opacity: state === 'closed' ? 0 : 1,
                 visibility: state === 'closed' ? 'hidden' : 'visible',
                 transition: state === 'closed'

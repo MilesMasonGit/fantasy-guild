@@ -108,7 +108,7 @@ function mountDrawer({ isOpen = true, carrying = null, menuRight = false } = {})
 }
 
 /**
- * jsdom has no layout: a 1000 x 800 screen, the panel's foot 200 tall, so the lowered Shop's top
+ * jsdom has no layout: a 1000 x 800 screen, the panel's header row 200 below its top, so the lowered Shop's top
  * edge stands at 600, and the risen panel's top at 300 (its box 500 tall from the screen's bottom
  * edge). Lowered, its live box is drawn mid-slide, still higher than where it comes to rest.
  */
@@ -117,6 +117,11 @@ function fakeLayout() {
         const r = (top, bottom) => ({ left: 0, right: 1000, top, bottom, width: 1000, height: bottom - top, x: 0, y: top });
         if (this.hasAttribute?.('data-shop-drawer')) {
             return this.getAttribute('data-shop-drawer-state') === 'open' ? r(300, 800) : r(450, 950);
+        }
+        const drawer = this.closest?.('[data-shop-drawer]');
+        if (drawer && this.hasAttribute?.('data-panel-header')) {
+            const top = drawer.getAttribute('data-shop-drawer-state') === 'open' ? 300 : 450;
+            return r(top + 150, top + 200);
         }
         return r(0, 800);
     });
@@ -177,8 +182,8 @@ describe('the Shop panel', () => {
         expect(shopPanelState(true, shopDrag)).toBe('lip');
         expect(shopPanelState(true, shopDrag, { raised: true })).toBe('open');
         expect(shopPanelTransform('open')).toBe('translateY(0)');
-        // Lowered, only its foot stays up: its top edge at the top of the bar's names and HP bars.
-        expect(shopPanelTransform('lip', { foot: 112 })).toBe('translateY(calc(100% - 112px))');
+        // Lowered, only its header row stays up at the screen's bottom edge.
+        expect(shopPanelTransform('lip', { peek: 52 })).toBe('translateY(calc(100% - 52px))');
         expect(shopPanelTransform('closed')).toBe('translateY(100%)');
         expect(shopPanelTransform('closed', { under: 64 })).toBe('translateY(calc(100% + 64px))');
     });
@@ -269,9 +274,9 @@ describe('the Shop panel', () => {
             try {
                 const view = mountDrawer({ isOpen: false, carrying: carried });
                 const panel = view.container.querySelector('[data-shop-drawer]');
-                const foot = DOCK_STRIP_PX + dockLabelOverhangPx(dockArtPx(getLiveMatFit()));
                 expect(panel.getAttribute('data-shop-drawer-state')).toBe('lip');
-                expect(panel.style.transform).toBe(`translateY(calc(100% - ${foot}px))`);
+                // Its header row stays up (measured: 200 px from the panel's top here), not the whole foot.
+                expect(panel.style.transform).toBe('translateY(calc(100% - 200px))');
                 expect(panel.style.visibility).toBe('visible');
                 move(500);
                 move(610);

@@ -1537,8 +1537,8 @@ drawers**. The menu can be flipped to the right.
   icons, the price as up to four have / need pills; arrows left and right when the
   row is longer than the screen). Drag a card onto the mat to buy. Once the card
   is carried up off the panel, **the Shop lowers** (owner, 2026-11-10; brief 580):
-  its top edge comes down to the top of the hero bar's names and HP bars, the bar
-  drawn over it as usual, so the whole mat is free. Bringing the card down onto that
+  only its header row stays up at the screen's bottom edge, the hero bar drawn over
+  it as usual, so the whole mat is free. Bringing the card down onto that
   edge (anywhere from it down to the screen's bottom edge) raises the Shop again, and
   leaving the risen panel upward lowers it again. A card let go over the lowered or
   the risen Shop is a cancel; the Shop stays open after a purchase. **Picking up an
