@@ -21,10 +21,10 @@ build green) · bench-queued · eye-check · merged.*
 | 570 D4: World Map drawer | engineer | `feat/world-drawer` (`d4`) | ready a51f8e80 (dials read the layout first step, 2 ms a cell, exact; `region.playtimeMs`); owner question on the middle dial at the look; in `feat/drawers-570` | Tue | |
 | 570 D5: Upgrade drawer | builder | `feat/upgrade-drawer` (`d5`) | ready 22286731 (multi-rank buy equals N single buys, tested; Archer’s Lore nudged 27 px); in `feat/drawers-570` | Tue | |
 | 570 combined: D1 to D5 | director | `feat/drawers-570` (`i570`) b98d4eda | owner ok after three rounds of Hero drawer changes (enemy HP bars red too); 642 files green, lint 0 errors, cycles 0, depcruise clean, build; engine work same everywhere, identity and fidelity ok; **merged** e042229c (pushed) | Tue | Tue |
-| 480 L3: Limes framework | builder | | next: the Limes scale pick page first | | |
-| 580 S1: refund an unbuilt Foundation | builder | | queued | | |
-| 580 S2: the Shop strip and the refund drop | builder | | queued (after S1) | | |
-| 580 S3: rings clipped to the mat | builder-lite | | queued | | |
+| 480 L3: Limes framework | builder | | waiting for the owner's size pick (page sent 2026-11-10: A half a Token, matching pixels; B one Token) | | |
+| 580 S1: refund an unbuilt Foundation | builder | `feat/shop-refund` (`s1`) | ready e6602262: `Shop.canRefund`/`refund`, full price through `addItem` (a full Bank drops it as floor loot), hero let go by `removePlacedToken`, mid-build pays nothing; director: 645 files green, lint 0 errors, cycles 0, depcruise clean, build; engine work same everywhere | Tue | |
+| 580 S2: the Shop strip and the refund drop | builder | `feat/shop-strip` (`s2`, from S1) | building | Tue | |
+| 580 S3: rings clipped to the mat | builder-lite | `fix/ring-clip` (`s3`) | ready 726388de: ring and dots in a mat-sized clip with the rounded corners; director: 644 files green, lint 0 errors, cycles 0, depcruise clean, build; joins S2 for one look | Tue | |
 
 ## Director, brief 550 sharp sprites (owner, 2026-11-08: the owner's main problem with the production build)
 
