@@ -109,12 +109,12 @@ export function advanceTime(minutes, {
 }
 
 /**
- * Live Spawner family counts for the QA panel, as `[{ kind, count, cap }]` —
+ * Live Spawner family counts for the QA panel, as `[{ id, kind, count, cap }]` (`id` is the camp instance id on an own row) —
  * one row per family with a live spawner on the mat (`kind` is the family's
  * readable name, its first spawned type). Empty when there are no spawners,
  * and the panel shows "No spawners yet".
  * @returns {Array<{ kind: string, count: number, cap: number }>}
  */
 export function getSpawnerKindCounts() {
-    return SpawnerSystem.familyCounts().map(({ kind, count, cap }) => ({ kind, count, cap }));
+    return SpawnerSystem.familyCounts().map(({ id, kind, count, cap }) => ({ id, kind, count, cap }));
 }

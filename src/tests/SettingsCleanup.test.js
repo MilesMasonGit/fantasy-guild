@@ -181,3 +181,14 @@ describe('a settings file from an older build keeps working', () => {
         }
     });
 });
+
+describe('the default font', () => {
+    it('is Silkscreen, and the window marks it as the default', () => {
+        expect(SettingsManager.get('ui.fontFamily')).toBe('silkscreen');
+        mount();
+        const select = document.querySelector('[data-setting="ui.fontFamily"] select');
+        const label = [...select.options].find(o => o.value === 'silkscreen').textContent;
+        expect(label).toContain('(Default)');
+        expect([...select.options].filter(o => o.textContent.includes('(Default)'))).toHaveLength(1);
+    });
+});

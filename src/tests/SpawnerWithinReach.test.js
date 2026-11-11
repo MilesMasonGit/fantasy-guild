@@ -158,7 +158,7 @@ describe('⭐ a Forest that plants within its reach', () => {
         InventoryManager.addItem(SEED, 10);
         placeAt('wr_forest', 800, 500);
         run(10 * 60000);
-        expect(getSpawnerKindCounts()).toEqual([{ kind: 'wr_forest (its reach)', count: 3, cap: 3 }]);
+        expect(getSpawnerKindCounts()).toEqual([{ id: expect.any(String), kind: 'wr_forest (its reach)', count: 3, cap: 3 }]);
     });
 });
 

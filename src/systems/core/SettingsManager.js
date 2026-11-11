@@ -34,7 +34,7 @@ const defaultSettings = {
         tooltipsCardBadges: true,
         tooltipsBoostTiles: true,
         compactMode: false,
-        fontFamily: 'silkpixel', // Default to SilkPixel composite font
+        fontFamily: 'silkscreen',
         fontSizes: {
             '--font-size-xxs': 14,
             '--font-size-xs': 16,

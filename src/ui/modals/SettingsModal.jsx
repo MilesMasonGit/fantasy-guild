@@ -16,9 +16,9 @@ import { GameState } from '../../state/GameState.js';
 const AUTO_SAVE_LABEL = { 1: 'settings.autoSave1', 10: 'settings.autoSave10', 60: 'settings.autoSave60', 0: 'settings.autoSaveOff' };
 
 const FONT_OPTIONS = [
-    { value: 'silkpixel', label: 'SilkPixel (Default)' },
+    { value: 'silkpixel', label: 'SilkPixel' },
     { value: 'pixel', label: 'Pixelify Sans' },
-    { value: 'silkscreen', label: 'Silkscreen' },
+    { value: 'silkscreen', label: 'Silkscreen (Default)' },
     { value: 'dotgothic', label: 'DotGothic 16' },
     { value: 'inter', label: 'Modern Sans' }
 ];
