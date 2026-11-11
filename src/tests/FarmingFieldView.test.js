@@ -181,6 +181,8 @@ describe('the inspection rows', () => {
         expect(rows(field)).toContainEqual({ label: 'Each sowing', value: '1 View Wheat Seed from the Bank', tone: 'muted' });
         tick(60000);
         expect(rows(field)[0]).toEqual({ label: 'Ripe Wheat', value: '3 of 3 harvests left', tone: 'good' });
+        // The first harvest pays the seed in the game (`BoardRunner`); harvested bare here, it is taken by hand.
+        InventoryManager.removeItem(SEED, 1);
         for (let i = 0; i < 3; i++) Fields.harvested(field, getTokenType(field.typeId));
         expect(rows(field)[0]).toEqual({ label: 'Field', value: 'stopped: needs View Wheat Seed to sow Wheat', tone: 'warning' });
     });

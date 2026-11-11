@@ -37,7 +37,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * A farmer at a Field (brief 230 S4): they harvest a ripe Field cycle by cycle until its load is
- * gone; the last cycle sows it again for a seed and the farmer lets go, waiting silently for it to
+ * gone, the first cycle paying the seed the crop was sown with (and waiting for it while it is gone,
+ * as any work cycle waits for its inputs); the last cycle sows it again if a seed is there and the
+ * farmer lets go, waiting silently for it to
  * ripen ("Waiting for Test Field", not idle), and harvests it again the moment it is ripe. Without
  * a seed the Field stops, says so, and the farmer is idle as before (nothing is on its way). An
  * area flag with two Fields works the ripe one while the other grows. A Beehive's double chance
@@ -126,7 +128,7 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
 });
 
-/** A Field sown with wheat and grown ripe (one seed spent), a farmer flagged on it. */
+/** A Field sown with wheat and grown ripe (its seed owed to the first harvest), a farmer flagged on it. */
 function ripeField({ seeds = 0, typeId = 'fh_field', at = FIELD, farmer = true } = {}) {
     InventoryManager.addItem(SEED, 1 + seeds);
     const field = put(typeId, at.x, at.y);
@@ -147,7 +149,9 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         expect(cycles).toEqual(['farmer', 'farmer', 'farmer']);
         expect(wheat()).toBe(3);
         expect(Fields.stageOf(field)).toBe(Fields.STAGE.GROWING);
-        expect(InventoryManager.getItemCount(SEED)).toBe(0);
+        // The first crop's seed paid by its first harvest; the second crop's still in the Bank, owed.
+        expect(InventoryManager.getItemCount(SEED)).toBe(1);
+        expect(field.field.seedOwed).toBe(true);
 
         // Let go of the growing Field, waiting for it: not idle, nothing said.
         expect(Flags.statusOf('farmer').state).toBe('idle');
@@ -182,12 +186,12 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         expect(Flags.waitingOf('farmer')).toEqual({ instanceId: field.id, kind: 'node' });
     });
 
-    it('the last harvest can pay with the seed it dropped itself', () => {
+    it('the last harvest can sow with the seed it dropped itself', () => {
         InventoryManager.addItem(SEED, 1);
         const field = put('fh_field', FIELD.x, FIELD.y);
         expect(StationRecipe.setSelectedRecipe(field, SEEDY)).toBe(true);
         run(20200);
-        expect(InventoryManager.getItemCount(SEED)).toBe(0);
+        expect(InventoryManager.getItemCount(SEED)).toBe(1);
         Orders.orderAt('farmer', { x: FIELD.x, y: FIELD.y });
         // A chance roll can double this harvest (and its seed); a high roll misses every chance, so
         // the cycle pays exactly one wheat and one seed whatever the seed.
@@ -195,7 +199,9 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         try { run(1200); } finally { noLuck.mockRestore(); }
         expect(wheat()).toBe(1);
         expect(Fields.stageOf(field)).toBe(Fields.STAGE.GROWING);
-        expect(InventoryManager.getItemCount(SEED) + SpriteLayer.countOnBoard(SEED)).toBe(0);
+        // Its one harvest paid the Bank's seed; the one it dropped sowed it again and stays, owed.
+        expect(InventoryManager.getItemCount(SEED) + SpriteLayer.countOnBoard(SEED)).toBe(1);
+        expect(field.field.seedOwed).toBe(true);
         expect(Growth.growthAlertOf(field.id)).toBeNull();
     });
 
@@ -229,6 +235,54 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         run(2000);
         expect(wheat()).toBe(0);
         expect(Flags.statusOf('farmer').state).not.toBe('working');
+    });
+});
+
+describe('⭐ the seed is checked at sowing and taken at the first harvest', () => {
+    it('it stays in the Bank while the crop grows; the first harvest takes it, the others nothing', () => {
+        const field = ripeField({ seeds: 0 });
+        expect(InventoryManager.getItemCount(SEED)).toBe(1);
+        const seedsAt = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => {
+            if (p.instanceId === field.id) seedsAt.push(InventoryManager.getItemCount(SEED));
+        });
+        run(3500);
+        off();
+        expect(seedsAt).toEqual([0, 0, 0]);
+    });
+
+    it('the seed gone by harvest time: the harvest waits, saying so, and goes on the tick it is back', () => {
+        const field = ripeField({ seeds: 0 });
+        // Spent elsewhere while the crop grew.
+        expect(InventoryManager.removeItem(SEED, 1)).toBe(true);
+        run(3000);
+        expect(wheat()).toBe(0);
+        expect(Fields.stageOf(field)).toBe(Fields.STAGE.RIPE);
+        expect(Fields.fieldState(field).load).toBe(3);
+        expect(field.alert).toBe(ALERT.INPUTS);
+        expect(field.field.seedOwed).toBe(true);
+        // Back: harvested, the seed taken.
+        InventoryManager.addItem(SEED, 1);
+        run(3500);
+        expect(wheat()).toBeGreaterThanOrEqual(1);
+        expect(InventoryManager.getItemCount(SEED)).toBe(0);
+        expect(field.field.seedOwed).toBeUndefined();
+    });
+
+    it('lost part-way through the first harvest and back before it ends: the cycle holds its progress, then pays', () => {
+        const field = ripeField({ seeds: 0 });
+        run(500);
+        expect(field.cycleElapsedMs).toBeGreaterThan(0);
+        expect(InventoryManager.removeItem(SEED, 1)).toBe(true);
+        const held = field.cycleElapsedMs;
+        run(2000);
+        expect(field.cycleElapsedMs).toBe(held);
+        expect(wheat()).toBe(0);
+        InventoryManager.addItem(SEED, 1);
+        run(1000);
+        expect(wheat()).toBe(1);
+        expect(InventoryManager.getItemCount(SEED)).toBe(0);
+        expect(Fields.fieldState(field).load).toBe(2);
     });
 });
 

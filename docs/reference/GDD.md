@@ -433,20 +433,26 @@ crop list) with a **Field** block in the CMS (its shared empty and growing
 pictures). **Each crop is a Farming recipe** the Field offers (director's call,
 S0 Q4): the player picks it on the Field with the gear (**"Choose crop"**) and the
 same list as a station's recipes, crops unlock by Farming level, and the pick
-**sticks** for every sowing after. The recipe's **inputs are its seed**, paid
-once per sowing, never per harvest; its **Crop** row in the CMS sets how long it
+**sticks** for every sowing after. The recipe's **inputs are its seed**, one
+per sowing, never per harvest: **checked when it is sown and taken by the first
+harvest** (owner, 2026-11-10: every task checks its items to start and takes them
+only at the end, when it is collected); its **Crop** row in the CMS sets how long it
 **grows** (about an hour for wheat; 1 h by default), its **load** (harvests a
 ripe Field holds; 10 by default) and its **ripe picture**.
 - **Empty → growing → ripe.** Picking a crop on an empty Field sows it on the
-  next tick for one seed from the Bank (then the loot on the mat). Growing, it
+  next tick if a seed is in the Bank (or in the loot on the mat), taking nothing
+  yet: the seed is owed, and may be spent elsewhere meanwhile. Growing, it
   counts down (the timer bubble, the card, the inspection) and is drawn as the
   shared growing picture; ripe, as its crop's ripe picture. Its state is saved
-  on the Token (`field: { cropId, load, full }`, `clocks.fieldMs`).
+  on the Token (`field: { cropId, load, full, seedOwed }`, `clocks.fieldMs`).
 - **A ripe Field holds a load of harvest cycles**: a Farming hero harvests it like
   any work, each cycle making the crop's outputs (Yield, Double Item Chance and
-  bonus drops apply as anywhere). **The last cycle sows it again** with the
-  pick, its growth counting from the moment that cycle ended; a seed that cycle
-  dropped can pay. **No seed: the Field is stopped** (empty, the pick kept),
+  bonus drops apply as anywhere). **The first cycle takes the owed seed** as any
+  work cycle takes its inputs: with the seed gone it waits, holding its progress,
+  wears the "Out of item" mark and goes on the tick the seed is back (a crop
+  saved while seeds were paid at sowing, or a wild patch's first crop, owes
+  none). **The last cycle sows it again** with the pick, its growth counting from
+  the moment that cycle ended; a seed that cycle dropped counts. **No seed: the Field is stopped** (empty, the pick kept),
   wears the yellow mark, says "Needs Wheat Seed" as it stops (the "Needs Coal"
   look) and sows the tick one arrives.
 - **A change of pick** while a crop grows or stands ripe applies at the next

@@ -17,9 +17,9 @@ import * as SupportLinks from './supportLinks.js';
  * sow (`tokenConstants.cropTermsOf`); the player picks one on the Field with the station's recipe
  * picker, and the pick sticks for every sowing after.
  *
- * * **Empty**: nothing in the ground. With a crop picked it sows it on the next tick, paying the
- *   crop's seed (its recipe's `inputs`) from the Bank, then the mat. Without the seed it is
- *   **stopped**: tried again every tick, saying "Needs Wheat Seed" on the growth alert channel
+ * * **Empty**: nothing in the ground. With a crop picked it sows it on the next tick if the crop's
+ *   seed (its recipe's `inputs`) is in the Bank or on the mat, taking nothing yet: the seed is owed
+ *   and paid by the first harvest ({@link seedOwedOf}). Without the seed it is **stopped**: tried again every tick, saying "Needs Wheat Seed" on the growth alert channel
  *   (`Growth.setGrowthAlert`, `GROW_NEEDS_ITEM`). With nothing picked it waits for the player, as
  *   any station does ("Choose a recipe").
  * * **Growing**: its clock (`clocks.fieldMs`, a row of `TimedChanges.HANDLERS`) counts up to the
@@ -27,12 +27,15 @@ import * as SupportLinks from './supportLinks.js';
  *   floor (`TileModifiers.growTimeOf`, cached per Token).
  * * **Ripe**: it holds a load, a number of harvest cycles (the crop's `load`, plus Crop Load from
  *   Tokens in reach, a Composter, read once as it ripens). A Farming hero harvests it like any work:
- *   each cycle makes the crop's outputs, and **the last cycle sows again** with the pick
- *   ({@link harvested}, from `BoardRunner`), or stops without a seed.
+ *   each cycle makes the crop's outputs; the first also takes the seed the crop was sown with, as
+ *   any work cycle takes its inputs as it ends (it waits while the seed is gone); and **the last
+ *   cycle sows again** with the pick ({@link harvested}, from `BoardRunner`), or stops without a seed.
  *
- * Saved on the instance as `field: { cropId, load, full }`: `cropId` is the crop in the ground
- * (absent: empty), `load` the harvests left (0 or absent while growing), `full` the load it ripened
- * with. A change of pick while a crop grows or stands ripe applies at the next sowing: the crop in
+ * Saved on the instance as `field: { cropId, load, full, seedOwed }`: `cropId` is the crop in the
+ * ground (absent: empty), `load` the harvests left (0 or absent while growing), `full` the load it
+ * ripened with, `seedOwed` true until the first harvest has paid the seed.
+ * ⚠️ An absent `seedOwed` means nothing is owed: a crop saved while seeds were paid at sowing has
+ * paid already, and a wild patch never pays for the crop it starts with. A change of pick while a crop grows or stands ripe applies at the next sowing: the crop in
  * the ground is not dug up.
  *
  * A Field that has never been touched has no `field` yet: it reads as empty, or, when its type
@@ -191,8 +194,9 @@ function announce(instance) {
 }
 
 /**
- * Sow the pick: pay its seed and start it growing, its clock at `clockMs`. Short of the seed the
- * Field is stopped and says what it lacks; returns null then (and when nothing is picked).
+ * Sow the pick: with its seed in the Bank or on the mat, start it growing, its clock at `clockMs`,
+ * the seed owed to the first harvest. Short of the seed the Field is stopped and says what it lacks;
+ * returns null then (and when nothing is picked).
  */
 function sow(instance, def, clockMs = 0) {
     const crop = pickOf(instance, def);
@@ -203,9 +207,8 @@ function sow(instance, def, clockMs = 0) {
         Growth.setGrowthAlert(instance.id, ALERT.GROW_NEEDS_ITEM, short);
         return null;
     }
-    Growth.payCost(seeds);
     settle(instance, def);
-    instance.field = { cropId: crop.id };
+    instance.field = seeds.length ? { cropId: crop.id, seedOwed: true } : { cropId: crop.id };
     const clocks = instance.clocks && typeof instance.clocks === 'object' ? instance.clocks : (instance.clocks = {});
     clocks[CLOCK] = Math.max(0, clockMs);
     if (Growth.anyGrowthAlert()) Growth.setGrowthAlert(instance.id, null);
@@ -217,14 +220,26 @@ function sow(instance, def, clockMs = 0) {
 function ripen(instance, def) {
     const crop = plantedCrop(instance, def);
     if (!crop) return null;
-    settle(instance, def);
+    const { seedOwed } = settle(instance, def);
     const load = loadAtRipening(instance, def, crop);
-    instance.field = { cropId: crop.id, load, full: load };
+    instance.field = seedOwed ? { cropId: crop.id, load, full: load, seedOwed } : { cropId: crop.id, load, full: load };
     announce(instance);
     // Harvests a Composter added pop over the Field as it ripens.
     EffectFeedback.popBonus(instance.id, load - cropTermsOf(crop).load,
         () => SupportLinks.firstSupportOf(instance.id, EFFECT_TYPES.CROP_LOAD));
     return instance;
+}
+
+const NO_SEED = Object.freeze([]);
+
+/**
+ * What a harvest cycle on this Field takes as its inputs: the seed its crop was sown with while the
+ * crop stands ripe and the seed is still owed, otherwise nothing. `RecipeResolver.effectiveIO` makes
+ * this the Field's inputs, so the harvest is checked and paid like any work cycle.
+ */
+export function seedOwedOf(instance, def = getTokenType(instance?.typeId)) {
+    if (stageOf(instance, def) !== STAGE.RIPE || !stateOf(instance, def).seedOwed) return NO_SEED;
+    return cropTermsOf(plantedCrop(instance, def)).seeds;
 }
 
 /** Whether the Field's clock stands at zero: ripe, or empty with nothing picked to sow. */
@@ -258,17 +273,19 @@ export function clockFired(instance, def) {
 
 /**
  * A harvest cycle on this Field completed (`BoardRunner.completeCycle`, failed or not: a cycle
- * spent is a harvest spent). One fewer left; the last sows the pick again, its growth counting from
- * the moment the cycle ended (`overMs` of the tick after it), or stops the Field without a seed.
+ * spent is a harvest spent). The cycle has paid its inputs by then, an owed seed among them. One
+ * fewer left; the last sows the pick again, its growth counting from the moment the cycle ended
+ * (`overMs` of the tick after it), or stops the Field without a seed.
  */
 export function harvested(instance, def, { overMs = 0 } = {}) {
     if (stageOf(instance, def) !== STAGE.RIPE) return;
     const state = settle(instance, def);
+    delete state.seedOwed;
     state.load = Math.max(0, (Number(state.load) || 0) - 1);
     if (state.load > 0) return;
     instance.field = {};
     if (instance.clocks && CLOCK in instance.clocks) instance.clocks[CLOCK] = 0;
-    // The cycle's own outputs have already landed, so a seed it dropped can pay for the sowing.
+    // The cycle's own outputs have already landed, so a seed it dropped counts for the sowing.
     if (!sow(instance, def, overMs)) announce(instance);
 }
 

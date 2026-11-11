@@ -26,8 +26,9 @@ import { clearMat, placeAt } from './fixtures/mat.js';
 /**
  * Farming (brief 230 S4): a Field is one Token that grows itself, empty → growing → ripe. The crop
  * is a Farming recipe the Field offers (its station kind narrows the list), picked on the Field and
- * kept for every sowing; sowing pays the recipe's inputs (the seed) once. A ripe Field holds a load
- * of harvest cycles; the last sows again from the Bank, or the Field is stopped without a seed. A
+ * kept for every sowing; sowing checks the recipe's inputs (the seed) are there and takes nothing, the
+ * first harvest pays them. A ripe Field holds a load of harvest cycles; the last sows again from the
+ * Bank, or the Field is stopped without a seed. A
  * Well in reach shortens the growth (to the standard floor), a Composter adds to the load as it
  * ripens. A map's wild patch starts ripe with its crop picked.
  */
@@ -111,6 +112,11 @@ function arrive(typeId, x = AT.x, y = AT.y) {
 const def = (instance) => getTokenType(instance.typeId);
 const stage = (instance) => Fields.stageOf(instance, def(instance));
 const pick = (instance, recipeId) => expect(StationRecipe.setSelectedRecipe(instance, recipeId)).toBe(true);
+/** One harvest cycle as `BoardRunner.completeCycle` ends it: its inputs (an owed seed) paid, then the harvest. */
+function harvestOnce(instance, opts) {
+    expect(Growth.payCost(effectiveIO(instance.id, instance).inputs)).toBe(true);
+    Fields.harvested(instance, def(instance), opts);
+}
 
 beforeAll(() => TimedChanges.init());
 
@@ -173,38 +179,57 @@ describe('⭐ empty → growing → ripe', () => {
         expect(field.clocks?.fieldMs ?? 0).toBe(0);
     });
 
-    it('picking a crop sows it on the next tick for one seed; it ripens on time with its load', () => {
+    it('picking a crop sows it on the next tick, its seed checked but left in the Bank; it ripens on time with its load', () => {
         InventoryManager.addItem(SEED, 2);
         const field = arrive('fa_field');
         pick(field, WHEAT);
         expect(WorkCheck.fixableReason(field.id, field).reason).toBe(ALERT.GROWING);
         tick(100);
         expect(stage(field)).toBe(Fields.STAGE.GROWING);
-        expect(seeds()).toBe(1);
+        expect(seeds()).toBe(2);
+        expect(field.field).toEqual({ cropId: WHEAT, seedOwed: true });
         expect(Fields.nextRipening(field)).toMatchObject({ totalMs: 60000, cropId: WHEAT });
         tick(59900);
         expect(stage(field)).toBe(Fields.STAGE.GROWING);
         tick(100);
         expect(stage(field)).toBe(Fields.STAGE.RIPE);
         expect(Fields.fieldState(field).load).toBe(3);
-        expect(field.field).toEqual({ cropId: WHEAT, load: 3, full: 3 });
+        expect(field.field).toEqual({ cropId: WHEAT, load: 3, full: 3, seedOwed: true });
         expect(WorkCheck.fixableReason(field.id, field).reason).toBeNull();
         // Ripe, its clock stands at zero: nothing more happens until it is harvested.
         tick(120000);
         expect(Fields.fieldState(field).load).toBe(3);
-        expect(seeds()).toBe(1);
+        expect(seeds()).toBe(2);
     });
 
-    it('ripe, it is worked as its crop: no inputs per harvest, the crop\'s outputs and time', () => {
+    it('ripe, it is worked as its crop: the first harvest takes the seed, the rest nothing; the crop\'s outputs and time', () => {
         InventoryManager.addItem(SEED, 1);
         const field = arrive('fa_field');
         pick(field, WHEAT);
         tick(60100);
         const io = effectiveIO(field.id, field);
         expect(io.recipe.id).toBe(WHEAT);
-        expect(io.inputs).toEqual([]);
+        expect(io.inputs).toEqual([{ itemId: SEED, quantity: 1 }]);
         expect(io.outputs.map(o => o.itemId)).toEqual(['fixture_fa_wheat']);
         expect(io.cycleTimeMs).toBe(3000);
+        harvestOnce(field);
+        expect(seeds()).toBe(0);
+        expect(field.field).toEqual({ cropId: WHEAT, load: 2, full: 3 });
+        expect(effectiveIO(field.id, field).inputs).toEqual([]);
+    });
+
+    it('growing, the seed is owed but not asked for: none is needed until the crop is ripe', () => {
+        InventoryManager.addItem(SEED, 1);
+        const field = arrive('fa_field');
+        pick(field, WHEAT);
+        tick(100);
+        expect(Fields.seedOwedOf(field)).toEqual([]);
+        expect(InventoryManager.removeItem(SEED, 1)).toBe(true);
+        tick(60000);
+        expect(stage(field)).toBe(Fields.STAGE.RIPE);
+        expect(Fields.seedOwedOf(field)).toEqual([{ itemId: SEED, quantity: 1 }]);
+        // The harvest waits for it, as any work cycle waits for its inputs (FarmingHarvest).
+        expect(WorkCheck.fixableReason(field.id, field).reason).toBe(ALERT.INPUTS);
     });
 
     it('with no seed it is stopped: says what it needs, pays nothing, and sows the tick a seed arrives', () => {
@@ -224,18 +249,21 @@ describe('⭐ empty → growing → ripe', () => {
         InventoryManager.addItem(SEED, 1);
         tick(100);
         expect(stage(field)).toBe(Fields.STAGE.GROWING);
-        expect(seeds()).toBe(0);
+        expect(seeds()).toBe(1);
         expect(Growth.growthAlertOf(field.id)).toBeNull();
         expect(watch.at(-1)).toEqual({ alert: null, needs: [] });
         off();
     });
 
-    it('a seed lying on the mat pays as well as one in the Bank', () => {
+    it('a seed lying on the mat counts as well as one in the Bank, and pays the first harvest', () => {
         const field = arrive('fa_field');
         SpriteLayer.addSprite('item', SEED, 1, field.id);
         pick(field, WHEAT);
         tick(100);
         expect(stage(field)).toBe(Fields.STAGE.GROWING);
+        expect(SpriteLayer.countOnBoard(SEED)).toBe(1);
+        tick(60000);
+        harvestOnce(field);
         expect(SpriteLayer.countOnBoard(SEED)).toBe(0);
     });
 });
@@ -250,22 +278,25 @@ describe('⭐ harvesting the load; the last cycle sows again', () => {
         return field;
     }
 
-    it('each harvest spends one; the last sows the pick again, paying a seed, growing from when it ended', () => {
+    it('each harvest spends one, the first paying the seed; the last sows the pick again, owing a seed, growing from when it ended', () => {
         const field = ripeField(1);
-        Fields.harvested(field, def(field));
-        Fields.harvested(field, def(field));
+        expect(seeds()).toBe(2);
+        harvestOnce(field);
+        expect(seeds()).toBe(1);
+        harvestOnce(field);
         expect(Fields.fieldState(field).load).toBe(1);
         expect(seeds()).toBe(1);
-        Fields.harvested(field, def(field), { overMs: 400 });
+        harvestOnce(field, { overMs: 400 });
         expect(stage(field)).toBe(Fields.STAGE.GROWING);
-        expect(seeds()).toBe(0);
+        expect(seeds()).toBe(1);
+        expect(field.field).toEqual({ cropId: WHEAT, seedOwed: true });
         expect(field.clocks.fieldMs).toBe(400);
         expect(Fields.nextRipening(field).inMs).toBe(59600);
     });
 
     it('with no seed the last harvest leaves it empty and stopped, saying Needs the seed', () => {
         const field = ripeField(0);
-        for (let i = 0; i < 3; i++) Fields.harvested(field, def(field));
+        for (let i = 0; i < 3; i++) harvestOnce(field);
         expect(stage(field)).toBe(Fields.STAGE.EMPTY);
         expect(Fields.isStopped(field)).toBe(true);
         expect(Growth.growthAlertOf(field.id)).toEqual({ alert: ALERT.GROW_NEEDS_ITEM, needs: [SEED] });
@@ -284,7 +315,8 @@ describe('⭐ harvesting the load; the last cycle sows again', () => {
         tick(100);
         Fields.harvested(field, def(field));
         expect(stage(field)).toBe(Fields.STAGE.GROWING);
-        expect(seeds()).toBe(0);
+        expect(seeds()).toBe(1);
+        expect(field.field.seedOwed).toBe(true);
     });
 
     it('a change of pick while it grows keeps the crop in the ground; the next sowing is the new pick', () => {
@@ -298,9 +330,10 @@ describe('⭐ harvesting the load; the last cycle sows again', () => {
         expect(Fields.fieldState(field)).toMatchObject({ stage: 'growing', cropId: WHEAT, pickId: CARROT });
         tick(60000);
         expect(effectiveIO(field.id, field).recipe.id).toBe(WHEAT);
-        for (let i = 0; i < 3; i++) Fields.harvested(field, def(field));
+        for (let i = 0; i < 3; i++) harvestOnce(field);
         expect(Fields.plantedCrop(field).id).toBe(CARROT);
-        expect(seeds(CARROT_SEED)).toBe(0);
+        expect(seeds()).toBe(0);
+        expect(seeds(CARROT_SEED)).toBe(1);
         expect(Fields.nextRipening(field).totalMs).toBe(30000);
     });
 });
@@ -348,13 +381,17 @@ describe('a map\'s wild patch starts ripe with its crop picked', () => {
     it('its first harvest makes the state its own and the pick its starting crop; the last sows from the Bank', () => {
         InventoryManager.addItem(SEED, 1);
         const wild = arrive('fa_wild');
-        Fields.harvested(wild, def(wild));
+        // The crop it starts with owes no seed.
+        expect(effectiveIO(wild.id, wild).inputs).toEqual([]);
+        harvestOnce(wild);
         expect(wild.field).toEqual({ cropId: WHEAT, load: 2, full: 3 });
         expect(wild.selectedRecipeId).toBe(WHEAT);
-        Fields.harvested(wild, def(wild));
-        Fields.harvested(wild, def(wild));
+        expect(seeds()).toBe(1);
+        harvestOnce(wild);
+        harvestOnce(wild);
         expect(stage(wild)).toBe(Fields.STAGE.GROWING);
-        expect(seeds()).toBe(0);
+        expect(seeds()).toBe(1);
+        expect(wild.field.seedOwed).toBe(true);
     });
 
     it('with nothing to start with (none named, or not one of its crops) a new copy is empty', () => {
@@ -417,6 +454,26 @@ describe('old saves and changed content', () => {
         InventoryManager.addItem(SEED, 1);
         pick(field, WHEAT);
         tick(100);
-        expect(field.field).toEqual({ cropId: WHEAT });
+        expect(field.field).toEqual({ cropId: WHEAT, seedOwed: true });
+    });
+
+    it('a crop saved while seeds were paid at sowing (no seedOwed) is not charged again at harvest', () => {
+        InventoryManager.addItem(SEED, 1);
+        const growing = arrive('fa_field');
+        pick(growing, WHEAT);
+        growing.field = { cropId: WHEAT };
+        growing.clocks = { fieldMs: 30000 };
+        const ripe = arrive('fa_field', AT.x + 300);
+        pick(ripe, WHEAT);
+        ripe.field = { cropId: WHEAT, load: 3, full: 3 };
+        tick(30000);
+        expect(stage(growing)).toBe(Fields.STAGE.RIPE);
+        for (const field of [growing, ripe]) {
+            expect(effectiveIO(field.id, field).inputs).toEqual([]);
+            harvestOnce(field);
+            harvestOnce(field);
+        }
+        expect(seeds()).toBe(1);
+        expect(growing.field).toEqual({ cropId: WHEAT, load: 1, full: 3 });
     });
 });

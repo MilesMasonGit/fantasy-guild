@@ -276,3 +276,4 @@ T-394 — A spawn pop and redraws nudged the Tokens around them: gone with the m
 T-317 — Every HP bar is the mat's light red (HP_COLOUR, one HP_TONE) at any health: hero bar, Hero drawer, fight window and tabs, fighters on the mat, heroes and enemies alike (owner, 2026-11-10) — feat/drawers-570 — 2026-11-10
 T-396 — Default font is Silkscreen (setting default, Settings label, body fallback in CSS); a player who has changed any setting keeps the SilkPixel stored with it — fix/font-and-keys — 2026-11-11
 T-392 — QA panel Spawner kinds rows key by the enemy camp instance id, so two camps of one kind no longer give duplicate keys — fix/font-and-keys — 2026-11-11
+T-399 — A Field's seed is checked at sowing and taken by the crop's first harvest (through the harvest cycle's inputs, so it waits like any work cycle when the seed is gone); a crop saved under the old rule owes none (seedOwed flag) — fix/seed-at-harvest — 2026-11-11
