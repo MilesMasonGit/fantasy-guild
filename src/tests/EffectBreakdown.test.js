@@ -30,6 +30,9 @@ import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { HALL_NODE } from '../config/guildUpgrades.js';
 import { cropTermsOf } from '../config/registries/tokenConstants.js';
 import { clearMat, placeAt } from './fixtures/mat.js';
+import { exactInputQuantity } from '../systems/board/InputCost.js';
+import { preservationChance, chanceOf } from '../systems/board/CycleSavings.js';
+import { rareChanceAt } from '../systems/board/RareTables.js';
 
 /**
  * Brief 600 B2: the effect breakdown behind the Token card's badges. For one Token, each named
@@ -145,6 +148,7 @@ registerTokenTypes({
     eb_berry: support('eb_berry', 'Fixture Berry Patch', [provides('eb_berry', ALL, { type: EFFECT_TYPES.DOUBLE_DROP, bucket: 'flat', value: 25, category: 'item_blackberry' })]),
     eb_looter: support('eb_looter', 'Fixture Looter', [provides('eb_looter', ALL, { type: EFFECT_TYPES.LOOT_MULT, bucket: 'flat', value: 60 })]),
     eb_tutor: support('eb_tutor', 'Fixture Tutor', [provides('eb_tutor', ALL, { type: EFFECT_TYPES.XP_BONUS, bucket: 'percentage', value: 0.5 })]),
+    eb_hoard: support('eb_hoard', 'Fixture Hoard', [provides('eb_hoard', toId(SMITHY), { type: EFFECT_TYPES.INPUT_COST, bucket: 'flat', value: -12 })]),
     eb_rack: support('eb_rack', 'Fixture Rack', [provides('eb_rack', toId(SMITHY), { type: EFFECT_TYPES.INPUT_COST, bucket: 'percentage', value: -0.2 })]),
     eb_well: support('eb_well', 'Fixture Well', [provides('eb_well', toId(FIELD), { type: EFFECT_TYPES.GROW_TIME, bucket: 'percentage', value: -0.5 })]),
     eb_composter: support('eb_composter', 'Fixture Composter', [provides('eb_composter', toId(FIELD), { type: EFFECT_TYPES.CROP_LOAD, bucket: 'flat', value: 2 })]),
@@ -360,7 +364,7 @@ describe('a limit holds the total, and the badge says how much counts', () => {
 });
 
 describe('item badges sit on their item', () => {
-    it('Double Item on a made item; Efficiency on each need, rounded as the cycle pays it', () => {
+    it('Double Item on a made item; Efficiency on each need, the exact cost a cycle pays on average', () => {
         const vein = arrive(VEIN);
         arrive('eb_mine', NEAR);
         const out = effectBreakdown(vein.id);
@@ -373,14 +377,30 @@ describe('item badges sit on their item', () => {
         arrive('eb_rack', NEAR);
         const needs = effectBreakdown(smithy.id).inputs;
         const byItem = Object.fromEntries(needs.map(n => [n.itemId, n.effects[0]]));
-        // 10 coal at -20 % is 8: all of it counts.
-        expect(byItem[COAL]).toMatchObject({ key: EFFECT_KEY.EFFICIENCY, base: 10, final: 8, limit: null });
+        // 10 coal at -20 % is 8.
+        expect(byItem[COAL]).toMatchObject({ key: EFFECT_KEY.EFFICIENCY, base: 10, limit: null });
+        expect(byItem[COAL].final).toBeCloseTo(8);
         expect(byItem[COAL].total).toBeCloseTo(20);
-        // 3 ore is 2.4, paid as 2: rounding moves it.
-        expect(byItem[ORE]).toMatchObject({ base: 3, final: 2, limit: LIMIT.WHOLE });
-        expect(byItem[ORE].counted).toBeCloseTo(100 / 3);
-        // 1 flux is 0.8, paid as 1: nothing comes off.
-        expect(byItem[FLUX]).toMatchObject({ base: 1, final: 1, limit: LIMIT.WHOLE, counted: 0 });
+        // 3 ore is 2.4 and 1 flux is 0.8: no rounding and no minimum of one, all 20 % counts.
+        for (const [id, base, exact] of [[ORE, 3, 2.4], [FLUX, 1, 0.8]]) {
+            expect(byItem[id], id).toMatchObject({ base, limit: null, held: false });
+            expect(byItem[id].final, id).toBeCloseTo(exact);
+            expect(byItem[id].counted, id).toBeCloseTo(20);
+        }
+        for (const n of needs) {
+            const authored = getTokenType(SMITHY).config.inputs.find(i => i.itemId === n.itemId).quantity;
+            expect(n.effects[0].final, n.itemId).toBe(exactInputQuantity(smithy.id, authored, 'smithing'));
+        }
+    });
+
+    it('Efficiency past -100 % costs nothing, and says the cost stops at nothing', () => {
+        const smithy = arrive(SMITHY);
+        arrive('eb_hoard', NEAR);
+        // 10 coal less 12 is -2: the cost stops at nothing (a percentage alone stops at -100 % already).
+        const coal = effectBreakdown(smithy.id).inputs.find(n => n.itemId === COAL).effects[0];
+        expect(coal.total).toBeCloseTo(120);
+        expect(coal).toMatchObject({ final: 0, limit: LIMIT.NOTHING_LEFT, held: true });
+        expect(coal.counted).toBeCloseTo(100);
     });
 
     it('a Field: Growth on its crop and Abundance on its harvests', () => {
@@ -459,21 +479,35 @@ describe('the badges are what the engine does', () => {
         expect(new Set(lengths)).toEqual(new Set([badge(effectBreakdown(vein.id), EFFECT_KEY.SPEED).final]));
     });
 
-    it('the Efficiency badges are what a cycle takes from the Bank', () => {
+    it('the Efficiency badges are what a cycle takes from the Bank: their exact cost, rounded by chance either way', () => {
         hire({ equipment: [] });
         const smithy = arrive(SMITHY);
         arrive('eb_rack', NEAR);
         for (const id of [ORE, COAL, FLUX]) InventoryManager.addItem(id, 100);
-        const paid = Object.fromEntries(effectBreakdown(smithy.id).inputs.map(n => [n.itemId, n.effects[0].final]));
-        expect(paid).toEqual({ [ORE]: 2, [COAL]: 8, [FLUX]: 1 });
-
+        const exact = Object.fromEntries(effectBreakdown(smithy.id).inputs.map(n => [n.itemId, n.effects[0].final]));
         Orders.orderAt(HERO, AT);
-        let cycles = 0;
-        const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, ({ instanceId }) => { if (instanceId === smithy.id) cycles++; });
-        for (let i = 0; i < 101 && !cycles; i++) BoardRunner.tick(100);
-        off();
-        expect(cycles).toBe(1);
-        for (const id of [ORE, COAL, FLUX]) expect(100 - InventoryManager.getItemCount(id), id).toBe(paid[id]);
+
+        /** One cycle with every draw at `roll`: what it took from the Bank. */
+        const cycleAt = (roll) => {
+            const before = Object.fromEntries([ORE, COAL, FLUX].map(id => [id, InventoryManager.getItemCount(id)]));
+            vi.spyOn(Math, 'random').mockReturnValue(roll);
+            let cycles = 0;
+            const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, ({ instanceId }) => { if (instanceId === smithy.id) cycles++; });
+            for (let i = 0; i < 101 && !cycles; i++) BoardRunner.tick(100);
+            off();
+            vi.restoreAllMocks();
+            expect(cycles).toBe(1);
+            return Object.fromEntries([ORE, COAL, FLUX].map(id => [id, before[id] - InventoryManager.getItemCount(id)]));
+        };
+        // A roll at the top rounds every fraction down, a roll of 0 rounds it up; a whole cost never moves.
+        const down = cycleAt(0.999999);
+        const up = cycleAt(0);
+        for (const id of [ORE, COAL, FLUX]) {
+            expect(down[id], id).toBe(Math.floor(exact[id] + 1e-9));
+            expect(up[id], id).toBe(Math.ceil(exact[id] - 1e-9));
+        }
+        expect(down).toEqual({ [ORE]: 2, [COAL]: 8, [FLUX]: 0 });
+        expect(up).toEqual({ [ORE]: 3, [COAL]: 8, [FLUX]: 1 });
     });
 
     it('explainAxis resolves exactly as resolveAxis, every bucket and scope at once', () => {
@@ -533,38 +567,74 @@ describe('nothing at zero', () => {
     });
 });
 
-describe('brief 590\'s effects plug in by their EFFECT_TYPES key', () => {
-    /** Run `fn` with the named keys present, as brief 590 adds them; leaves EFFECT_TYPES as it was. */
-    function withTypes(keys, fn) {
-        const added = keys.filter(k => !(k in EFFECT_TYPES));
-        for (const k of added) EFFECT_TYPES[k] = k;
-        try {
-            fn();
-        } finally {
-            for (const k of added) delete EFFECT_TYPES[k];
-        }
-    }
+describe('brief 590\'s effects: Refresh, Preservation and Lucky', () => {
+    registerTokenTypes({
+        eb_spring: support('eb_spring', 'Fixture Fountain', [
+            provides('eb_spring_refresh', ALL, { type: EFFECT_TYPES.REFRESH, bucket: 'flat', value: 5 }),
+            provides('eb_spring_keep', ALL, { type: EFFECT_TYPES.PRESERVATION, bucket: 'flat', value: 7 }),
+            provides('eb_spring_luck', ALL, { type: EFFECT_TYPES.LUCKY, bucket: 'percentage', value: 0.5 })
+        ]),
+        eb_lucky_vein: {
+            id: 'eb_lucky_vein', name: 'Fixture Lucky Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null,
+            sprite: 't_ore_vein_copper', requiresHero: true,
+            config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [{ itemId: ORE, chance: 100, minQty: 1, maxQty: 1 }] },
+            rareTable: { chance: 2, entries: [{ itemId: BAR, weight: 1 }] }
+        },
+        eb_lucky_enemy: { ...getTokenType(ENEMY), id: 'eb_lucky_enemy', rareTable: { chance: 4, entries: [{ itemId: BAR, weight: 1 }] } },
+        eb_clover: support('eb_clover', 'Fixture Clover', [provides('eb_clover', ALL, { type: EFFECT_TYPES.LUCKY, bucket: 'flat', value: 99 })])
+    });
 
     it('Refresh on a Token with charges and Preservation on one with inputs, from a building; Lucky needs a rare table', () => {
-        withTypes(['REFRESH', 'PRESERVATION', 'LUCKY'], () => {
-            registerTokenTypes({
-                eb_spring: support('eb_spring', 'Fixture Fountain', [
-                    provides('eb_spring_refresh', ALL, { type: EFFECT_TYPES.REFRESH, bucket: 'flat', value: 5 }),
-                    provides('eb_spring_keep', ALL, { type: EFFECT_TYPES.PRESERVATION, bucket: 'flat', value: 7 }),
-                    provides('eb_spring_luck', ALL, { type: EFFECT_TYPES.LUCKY, bucket: 'percentage', value: 0.5 })
-                ])
-            });
-            const vein = arrive(VEIN);
-            const smithy = arrive(SMITHY, { x: 1100, y: 500 });
-            arrive('eb_spring', NEAR);
+        const vein = arrive(VEIN);
+        const smithy = arrive(SMITHY, { x: 1100, y: 500 });
+        arrive('eb_spring', NEAR);
 
-            const v = effectBreakdown(vein.id);
-            expect(v.effects.map(e => e.key)).toEqual([EFFECT_KEY.REFRESH]);
-            expect(badge(v, EFFECT_KEY.REFRESH)).toMatchObject({ name: 'Refresh', unit: UNIT.CHANCE, total: 5 });
+        const v = effectBreakdown(vein.id);
+        expect(v.effects.map(e => e.key)).toEqual([EFFECT_KEY.REFRESH]);
+        expect(badge(v, EFFECT_KEY.REFRESH)).toMatchObject({ name: 'Refresh', unit: UNIT.CHANCE, total: 5 });
+        expect(badge(v, EFFECT_KEY.REFRESH).final).toBe(chanceOf(vein.id, EFFECT_TYPES.REFRESH, 'mining'));
 
-            const s = effectBreakdown(smithy.id);
-            expect(s.effects.map(e => e.key)).toEqual([EFFECT_KEY.PRESERVATION]);
-            expect(badge(s, EFFECT_KEY.PRESERVATION).total).toBe(7);
-        });
+        const s = effectBreakdown(smithy.id);
+        expect(s.effects.map(e => e.key)).toEqual([EFFECT_KEY.PRESERVATION]);
+        expect(badge(s, EFFECT_KEY.PRESERVATION).total).toBe(7);
+        expect(badge(s, EFFECT_KEY.PRESERVATION).final).toBe(preservationChance(smithy.id, 'smithing'));
+    });
+
+    it('no Preservation when Efficiency leaves nothing to pay, as the cycle asks for none', () => {
+        const smithy = arrive(SMITHY);
+        arrive('eb_spring', NEAR);
+        expect(badge(effectBreakdown(smithy.id), EFFECT_KEY.PRESERVATION)).not.toBeNull();
+        arrive('eb_hoard', NEAR2);
+        expect(badge(effectBreakdown(smithy.id), EFFECT_KEY.PRESERVATION)).toBeNull();
+    });
+
+    it('Lucky widens the rare table\'s own chance, as the cycle rolls it', () => {
+        const vein = arrive('eb_lucky_vein');
+        arrive('eb_spring', NEAR);
+        const lucky = badge(effectBreakdown(vein.id), EFFECT_KEY.LUCKY);
+        // 2 % at +50 %: 3 %.
+        expect(lucky).toMatchObject({ name: 'Lucky', unit: UNIT.PERCENT, base: 2, limit: null });
+        expect(lucky.total).toBeCloseTo(50);
+        expect(lucky.final).toBeCloseTo(3);
+        expect(lucky.final).toBe(rareChanceAt(vein.id, getTokenType('eb_lucky_vein'), 'mining'));
+        expect(lucky.sources).toEqual([expect.objectContaining({ name: 'Fixture Fountain nearby' })]);
+    });
+
+    it('Lucky past 100 % is certain', () => {
+        const vein = arrive('eb_lucky_vein');
+        arrive('eb_clover', NEAR);
+        const lucky = badge(effectBreakdown(vein.id), EFFECT_KEY.LUCKY);
+        expect(lucky).toMatchObject({ resolved: 101, final: 100, limit: LIMIT.CERTAIN, held: true });
+        expect(lucky.final).toBe(rareChanceAt(vein.id, getTokenType('eb_lucky_vein'), 'mining'));
+    });
+
+    it('an enemy\'s rare table wears Lucky, on the skill its kill\'s loot reads', () => {
+        const enemy = arrive('eb_lucky_enemy');
+        arrive('eb_spring', NEAR);
+        const def = getTokenType('eb_lucky_enemy');
+        const lucky = badge(effectBreakdown(enemy.id), EFFECT_KEY.LUCKY);
+        expect(lucky.base).toBe(4);
+        expect(lucky.final).toBeCloseTo(6);
+        expect(lucky.final).toBe(rareChanceAt(enemy.id, def, def.config?.skill || ''));
     });
 });

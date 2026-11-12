@@ -7,6 +7,7 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { enemyProfileOf } from '../../config/registries/enemyProfile.js';
 import { respawnOf, cropTermsOf } from '../../config/registries/tokenConstants.js';
 import { authoredStars } from '../../config/guildUpgrades.js';
+import { rareTableChance } from '../../config/registries/rareTables.js';
 import { GameState } from '../../state/GameState.js';
 import { t } from '../../i18n/index.js';
 import { toRoman } from '../../utils/Formatters.js';
@@ -22,6 +23,8 @@ import * as Fields from './Fields.js';
 import * as Fishing from './Fishing.js';
 import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
+import * as Foundations from './Foundations.js';
+import { exactInputQuantity, costedInputs } from './InputCost.js';
 import { effectiveIO } from './RecipeResolver.js';
 import { workConfigOf } from './StationRecipe.js';
 import { flooredWorkTime, floorSpeedUp, authoredWorkMs } from './workTime.js';
@@ -117,9 +120,9 @@ export const LIMIT = Object.freeze({
     CERTAIN: 'certain',
     /** A chance at or under 0 % never happens. */
     NEVER: 'never',
-    /** Yield never takes a cycle below nothing. */
+    /** Yield never takes a cycle below nothing, nor Efficiency a need. */
     NOTHING_LEFT: 'nothingLeft',
-    /** A need or a load is never under one. */
+    /** A load is never under one. */
     AT_LEAST_ONE: 'atLeastOne',
     /** Rounded to whole items. */
     WHOLE: 'whole'
@@ -147,10 +150,7 @@ const EPS = 1e-9;
 /**
  * How each named effect reads off one Token: `measure(ctx)` gives the engine's numbers, or null
  * when the effect cannot apply to it (Speed on an enemy, Growth on a Token that never grows).
- *
- * ⚠️ Brief 590's three (Preservation, Refresh, Lucky) are rows already, looked up by their
- * `EFFECT_TYPES` key at each read: each stays off until that key exists. A new chance-type effect
- * the Token rolls on its cycle needs only a row like Refresh's (`chanceRow`).
+ * A new chance-type effect the Token rolls on its cycle needs only a row like Refresh's (`chanceRow`).
  */
 const ROWS = [
     { key: EFFECT_KEY.SPEED, typeKey: 'WORK_TIME', unit: UNIT.PERCENT, sign: -1, measure: measureSpeed },
@@ -158,10 +158,11 @@ const ROWS = [
     { key: EFFECT_KEY.GROWTH, typeKey: 'GROW_TIME', unit: UNIT.PERCENT, sign: -1, measure: measureGrowth },
     { key: EFFECT_KEY.XP, typeKey: 'XP_BONUS', unit: UNIT.PERCENT, sign: 1, measure: measureXp },
     { key: EFFECT_KEY.DOUBLE_LOOT, typeKey: 'LOOT_MULT', unit: UNIT.CHANCE, sign: 1, measure: measureDoubleLoot },
-    chanceRow(EFFECT_KEY.PRESERVATION, 'PRESERVATION', (ctx) => ctx.works && (ctx.io?.inputs || []).length > 0),
+    // As `completeCycle` asks it: only for a cycle with something to pay once Efficiency has counted.
+    chanceRow(EFFECT_KEY.PRESERVATION, 'PRESERVATION', (ctx) => ctx.works
+        && costedInputs(ctx.id, ctx.io?.inputs, ctx.skill).length > 0),
     chanceRow(EFFECT_KEY.REFRESH, 'REFRESH', (ctx) => ctx.works
         && (ctx.instance.usesRemaining != null || Fields.isField(ctx.def))),
-    // ⚠️ Off until rare tables exist: `luckyBase` gives the table's chance once they do.
     { key: EFFECT_KEY.LUCKY, typeKey: 'LUCKY', unit: UNIT.PERCENT, sign: 1, measure: measureLucky },
     { key: EFFECT_KEY.ABUNDANCE, typeKey: 'CROP_LOAD', unit: UNIT.COUNT, sign: 1, measure: measureAbundance }
 ];
@@ -262,17 +263,19 @@ function measureDoubleLoot(ctx, type) {
     return chance(ctx.id, type, ctx.lootSkill);
 }
 
-/** The Token's rare table's chance, in percent, or null for a Token without one. */
-function luckyBase() {
-    return null;
-}
-
+/**
+ * Lucky on the Token's rare table, from the table's own chance (`RareTables.luckyChance`): rolled
+ * after a cycle that is not a build (`completeCycle`) or after a kill (`LootSystem`), on the skill
+ * its loot reads. Null for a Token with no table.
+ */
 function measureLucky(ctx, type) {
-    const base = luckyBase(ctx);
+    const base = rareTableChance(ctx.def);
     if (!(base > 0)) return null;
-    const { resolved, contributions } = TileModifiers.explainAxis(ctx.id, type, base, ctx.skill);
+    if (!ctx.enemy && (!ctx.works || (Foundations.isFoundation(ctx.def) && Foundations.buildTargetOf(ctx.io)))) return null;
+    const { resolved, contributions } = TileModifiers.explainAxis(ctx.id, type, base, ctx.lootSkill);
     const final = Math.min(100, Math.max(0, resolved));
-    return { base, resolved, final, limit: resolved > 100 + EPS ? LIMIT.CERTAIN : null, contributions };
+    const limit = resolved > 100 + EPS ? LIMIT.CERTAIN : resolved < -EPS ? LIMIT.NEVER : null;
+    return { base, resolved, final, limit, contributions };
 }
 
 /** A Field's harvests as its crop ripens (`Fields.loadAtRipening`). */
@@ -365,12 +368,13 @@ export function effectBreakdown(instanceId) {
     if (efficiency && ctx.works) {
         for (const input of ctx.io?.inputs || []) {
             if (!input?.itemId) continue;
-            // ⚠️ As `BoardRunner.completeCycle` pays it, inline there: rounded to whole items, never
-            // under one. Keep the two the same (the test runs a cycle and checks the Bank).
+            // The exact cost (`InputCost`), what a cycle pays on average: it is made whole by chance
+            // only as the cycle pays, so no rounding here, and no minimum of one.
             const base = input.quantity || 1;
             const { resolved, contributions } = TileModifiers.explainAxis(ctx.id, efficiency, base, ctx.skill);
-            const final = Math.max(1, Math.round(resolved));
-            const badge = badgeOf(EFFICIENCY, { base, resolved, final, limit: wholeLimit(resolved, final), contributions }, ctx, input.itemId);
+            const final = exactInputQuantity(ctx.id, input.quantity, ctx.skill);
+            const limit = final > resolved + EPS ? LIMIT.NOTHING_LEFT : null;
+            const badge = badgeOf(EFFICIENCY, { base, resolved, final, limit, contributions }, ctx, input.itemId);
             if (badge) inputs.push({ itemId: input.itemId, quantity: base, effects: [badge] });
         }
     }
