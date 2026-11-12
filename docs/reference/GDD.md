@@ -1311,7 +1311,14 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   Cleaver's Raw Beef), **Refresh** (a chance a cycle spends none of the Token's
   charges, and a Field's harvest none of its load; a failed cycle still spends; rolled
   once per finished cycle, from a building in reach or a Hall star, aimed by the rule's
-  Token and narrowed by skill), **catch weight** (a percentage on one fish's weight in a
+  Token and narrowed by skill), **Preservation** (a chance a cycle uses none of its
+  materials: it still runs, makes its outputs and spends its charges, and a Field's owed
+  seed stays owed until a later harvest pays it; a failed cycle still pays and never rolls.
+  It also keeps a hero's ammo, Food, a drink's or work potion's new dose, a fight elixir's
+  or bait from being used up, read at the Token the hero works or the enemy they fight.
+  From a building in reach or a Hall star, aimed by the rule's Token; narrowed to a skill
+  (that work's materials), or to an item or a kind of carried thing: Ammo, Food, Drink,
+  Work potion, Fight elixir, Bait), **catch weight** (a percentage on one fish's weight in a
   water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens; **camp reach** is
   retired: every camp works the standard reach, so a rule carrying it does nothing, the editors no
   longer offer it and the audits name it); **wound time** and **loadout slots** (guild-only: read from

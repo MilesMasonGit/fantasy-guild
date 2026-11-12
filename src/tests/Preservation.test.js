@@ -119,6 +119,11 @@ registerItems({
 });
 
 registerRecipePools({
+    construction: [{
+        id: 'pv_build_vein', name: 'Build Vein', levelRequirement: 1, foundationKinds: ['wood'],
+        inputs: [{ itemId: ORE, quantity: 3 }],
+        outputs: [{ tokenId: 'pv_vein', chance: 100, minQty: 1, maxQty: 1 }], durationMs: 1000, xp: 1
+    }],
     farming: [{
         id: 'pv_recipe_wheat', name: 'Test Wheat', levelRequirement: 1, durationMs: 1000, xp: 2, stationKinds: ['field'],
         inputs: [{ itemId: SEED, quantity: 1 }],
@@ -190,6 +195,7 @@ registerTokenTypes({
     },
     pv_bait_keep: building('pv_bait_keep', [keeps(AT_LAKE, 100, CARRIED_KIND.BAIT)]),
     pv_bait_keep_0: building('pv_bait_keep_0', [keeps(AT_LAKE, 0, CARRIED_KIND.BAIT)]),
+    pv_foundation: { id: 'pv_foundation', name: 'Test Foundation', rarity: 'common', theme: 'fixture', uses: 1, foundation: { kind: 'wood', skill: 'construction' } },
     pv_field: {
         id: 'pv_field', name: 'Test Field', tokenType: 'station', rarity: 'common', theme: 'fixture', uses: null, sprite: 't_farmland',
         requiresHero: true, field: {},
@@ -556,6 +562,34 @@ describe('a Field\'s owed seed', () => {
         run(1100);
         expect(field.field.seedOwed).toBeUndefined();
         expect(InventoryManager.getItemCount(SEED)).toBe(0);
+    });
+});
+
+describe('a build', () => {
+    function build() {
+        InventoryManager.addItem(ORE, 10);
+        const builder = makeHero('builder');
+        const f = put('pv_foundation', HERE);
+        expect(StationRecipe.setSelectedRecipe(f, 'pv_build_vein')).toBe(true);
+        Orders.orderAt(builder.id, HERE);
+        for (let i = 0; i < 100 && BoardState.getTokenById(f.id); i++) run(100);
+        expect(BoardState.getTokenById(f.id)).toBeNull();
+        const built = BoardState.tokens().find(t => t.typeId === 'pv_vein');
+        expect(built).toBeTruthy();
+        return built;
+    }
+
+    it('that kept its materials stands, takes nothing from the Bank and remembers paying nothing', () => {
+        holdStar(100, { category: 'construction' });
+        const built = build();
+        expect(InventoryManager.getItemCount(ORE)).toBe(10);
+        expect(built.builtFrom).toEqual({ foundationTypeId: 'pv_foundation', buildCost: [] });
+    });
+
+    it('without the rule pays its materials and remembers them', () => {
+        const built = build();
+        expect(InventoryManager.getItemCount(ORE)).toBe(7);
+        expect(built.builtFrom).toEqual({ foundationTypeId: 'pv_foundation', buildCost: [{ itemId: ORE, quantity: 3 }] });
     });
 });
 
