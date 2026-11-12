@@ -1,5 +1,7 @@
 # Eye-check 2026-11-12: select and right-click, RTS-style controls (brief 610)
 
+**Owner verdict, 2026-11-12: accepted, all checks.** Rebuilt after the first look (no line or ghost while selected, a click again deselects; checks revised on the Guild Eye-checks page). Merged to main 109ab4e4.
+
 **What to open:** `_builds/2026-11-12-rts-controls/Fantasy Guild.exe` in your project folder (double-click; nothing to
 install). Built from branch `feat/rts-controls`, not on `main` yet. It uses your normal desktop save files.
 

@@ -139,7 +139,9 @@ owner's CMS steps; the director writes them into the page's data and reads
 the verdicts back from it. The owner checks a desktop test build, which
 carries the QA panel; only a ship build drops it. After the look, fixes go on
 the branch, it merges, the tab is marked looked at, and the checks with their
-verdicts are copied to `docs/archive/eyecheck/YYYY-MM-DD_<batch>.md`.
+verdicts are copied to `docs/archive/eyecheck/YYYY-MM-DD_<batch>.md`. The QA panel holds only the essentials (owner,
+2026-11-12): give items, heroes, place a Token or enemy. A QA scene built for
+one eye-check is deleted, with its tests, once that eye-check is accepted.
 
 **Handoffs.** A director session ends when the owner says so, when its
 context is getting full, or when its usage limit nears, whichever comes

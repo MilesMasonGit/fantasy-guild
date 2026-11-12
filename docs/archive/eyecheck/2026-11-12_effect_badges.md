@@ -1,5 +1,7 @@
 # Eye-check 2026-11-12: effect badges on the Token card and in the Hero drawer (brief 600)
 
+**Owner verdict, 2026-11-12: accepted, all checks.** Rebuilt with the QA panel so the Badge scene could be used. Merged to main 109ab4e4.
+
 **What to open:** `_builds/2026-11-12-effect-badges/Fantasy Guild.exe` in your project folder (double-click; nothing to
 install). Built from branch `feat/badge-card`, not on `main` yet. It uses your normal desktop save files.
 

@@ -87,7 +87,9 @@ say so and stop).
   The owner's answers arrive in `verdicts/<checkId>` (verdict ok|change|
   blocked, note): read them when the owner says they looked. After the look,
   set the batch to done and copy checks and verdicts to
-  `docs/archive/eyecheck/YYYY-MM-DD_<batch>.md`. Wording, placeholders and
+  `docs/archive/eyecheck/YYYY-MM-DD_<batch>.md`. A QA scene built only for that
+  eye-check is deleted with its tests once it is accepted; the QA panel keeps
+  only give items, heroes, and place a Token or enemy. Wording, placeholders and
   look-preserving work merge on the gate with a line in STATUS.
 - **Merging**: dry-run in the scratch worktree (`git merge --no-commit
   --no-ff`, then abort or commit); CHANGELOG, PERFORMANCE and bench/README
