@@ -25,7 +25,7 @@ import { EFFECT_TYPES } from '../../../../src/systems/effects/constants.js';
 export const RATE_AXES = Object.freeze(new Set([
     EFFECT_TYPES.WORK_TIME, EFFECT_TYPES.YIELD, EFFECT_TYPES.XP_BONUS, EFFECT_TYPES.LOOT_MULT, EFFECT_TYPES.DOUBLE_DROP,
     EFFECT_TYPES.INPUT_COST, EFFECT_TYPES.FAIL_CHANCE, EFFECT_TYPES.GROW_TIME, EFFECT_TYPES.BONUS_DROP,
-    EFFECT_TYPES.CROP_LOAD, EFFECT_TYPES.CATCH_WEIGHT
+    EFFECT_TYPES.CROP_LOAD, EFFECT_TYPES.CATCH_WEIGHT, EFFECT_TYPES.GIANT_HARVEST
 ]));
 
 /** Whether a star's rules move Passive Production's lap: a rate at the Guild Hall only, never on a hero's work. */

@@ -171,8 +171,8 @@ function hasRoomForTokenOutputs(id, io) {
 }
 
 /**
- * A Token output makes exactly what it rolled, beside the station: never widened by YIELD or
- * doubled by LOOT_MULT, because room was reserved for the recipe's authored maximum before the
+ * A Token output makes exactly what it rolled, beside the station: never widened by YIELD,
+ * doubled by LOOT_MULT or multiplied by GIANT_HARVEST, because room was reserved for the recipe's authored maximum before the
  * cycle paid, and a Token must never be made with nowhere to stand. It is not pushed to `produced`:
  * that list is matched against item ids (`TriggerSystem.producedMatches`).
  */
@@ -297,6 +297,11 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // YIELD and LOOT_MULT are the output rules a kill's loot follows too (`OutputRules`).
     const isGuildHall = instance.typeId === 'token_guild_hall';
     const doubled = (failed || isGuildHall) ? false : OutputRules.rollDoubleLoot(id, config.skill);
+    // GIANT_HARVEST: a gathering cycle's drops all come in at ten times, Double Loot's on top. ⚠️ Rolled
+    // after Double Loot and only for gathering work a rule reaches, so without one nothing is drawn.
+    const giant = (failed || isGuildHall) ? false : OutputRules.rollGiantHarvest(id, config.skill);
+    const times = (doubled ? 2 : 1) * (giant ? OutputRules.GIANT_HARVEST_TIMES : 1);
+    let giantLanded = false;
 
     // What this cycle actually made, for the `a neighbour produces X` trigger.
     // ⚠️ Only what genuinely landed: an output whose chance roll missed, or
@@ -323,7 +328,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         const rolled = isGuildHall
             ? OutputRules.roundUp(rollOutputQuantity(output))
             : OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
-        const widened = doubled ? rolled * 2 : rolled;
+        const widened = rolled * times;
         // A chance that this one item comes out doubled, after everything else (not at the Hall).
         const quantity = (isGuildHall || !output.itemId) ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
         if (quantity <= 0) return;
@@ -333,6 +338,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         if (output.itemId) {
             note(SpriteLayer.addSprite('item', output.itemId, quantity, id));
             produced.push(output.itemId);
+            giantLanded = giant;
         }
     };
 
@@ -357,6 +363,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         const find = RareTables.rollRareTable(id, def, config.skill);
         if (find) landLine(find.entry, (sprite) => RareDrops.noteRareFind(sprite, find.chance));
     }
+    // Celebrated only once something did come in at ten times (a line whose chance missed did not).
+    if (giantLanded) EffectFeedback.giantHarvest(id);
 
     // BONUS_DROP, skipped entirely on a failed cycle: nothing happened, so nothing drops.
     if (!failed && !isGuildHall) produced.push(...OutputRules.dropBonusGrants(id));

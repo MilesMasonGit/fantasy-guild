@@ -238,7 +238,9 @@ export const BOARD_EVENTS = {
     TOKEN_CHARGES_CHANGED: 'board:token_charges_changed',
 
     /**
-     * A named effect just did something on a Token — `{ instanceId, title }`.
+     * A named effect just did something on a Token — `{ instanceId, title }`. Also, untitled, a
+     * support's bonus landing (`{ instanceId, amount, bonus, fromTokenId? }`) and a Giant Harvest
+     * (`{ instanceId, giant: true }`), both from `EffectFeedback`.
      *
      * ⚠️ **Not an alert.** `TILE_EVENT_ALERT` is for problems a player has to
      * act on (no inputs, no charges, a refused placement). An effect firing is

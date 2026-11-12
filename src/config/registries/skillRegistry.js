@@ -244,6 +244,11 @@ export function isSkillId(skillId) {
     return Object.prototype.hasOwnProperty.call(SKILLS, skillId);
 }
 
+/** Whether `skillId` is a gathering skill: work that takes from the land (`SKILL_TRADES.GATHERING`). */
+export function isGatheringSkill(skillId) {
+    return typeof skillId === 'string' && isSkillId(skillId) && SKILLS[skillId].trade === SKILL_TRADES.GATHERING;
+}
+
 /** Whether `skillId` is one of the combat styles. */
 export function isCombatSkill(skillId) {
     return SKILLS[skillId]?.layer === SKILL_LAYERS.COMBAT;

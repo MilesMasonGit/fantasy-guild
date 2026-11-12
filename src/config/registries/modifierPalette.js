@@ -128,6 +128,9 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  *   with its kind (`carriedKinds.js`: ammo, Food…), which is how `PRESERVATION` names the work whose
  *   materials it keeps, or the things a hero carries it keeps.
  *
+ * A `'skill'` row may add `skillTrade` (a `SKILL_TRADES` id): its reader rolls it only for that
+ * trade's skills (Giant Harvest, gathering), so the CMS's picker lists those alone.
+ *
  * ## `retired` — still read as a sentence, never offered
  *
  * A row the game no longer reads (flat Armor, Resistance and Pierce, gone with
@@ -457,6 +460,34 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Support',
         hint: 'A higher chance on the Token\'s rare drop table. A percentage raises it in proportion (+10% turns 1% into 1.1%); a flat amount adds points (+1 turns 1% into 2%). Aim it at Tokens; one without a table ignores it.'
+    },
+    {
+        /**
+         * Read by `OutputRules.rollGiantHarvest` once per completed cycle, after Double Loot: on a hit
+         * every drop of the cycle (each line and the rare table's find) comes in at ten times, and
+         * Double Loot's doubling as well. Only a gathering skill's work rolls it (`skillTrade`), so the
+         * CMS's skill picker lists those alone; a failed cycle never rolls.
+         */
+        type: EFFECT_TYPES.GIANT_HARVEST,
+        reads: {
+            up: (n) => `have a ${n} chance a gathering cycle's drops come in at ten times`,
+            down: (n) => `have ${n} less chance a gathering cycle's drops come in at ten times`
+        },
+        heroReads: {
+            up: (n) => `a ${n} chance a gathering cycle's drops come in at ten times`,
+            down: (n) => `${n} less chance a gathering cycle's drops come in at ten times`
+        },
+        label: 'Giant Harvest',
+        when: 'never',
+        scales: 'value',
+        // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
+        buckets: ['flat'],
+        categories: 'skill',
+        // Narrows the skill picker to one trade (`skillRegistry.SKILL_TRADES`).
+        skillTrade: 'gathering',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'A chance a gathering cycle\'s drops come in at ten times: every drop, the rare table\'s find too, and with Double Loot both apply. In percent. Only gathering work (Mining, Forestry, Fishing, Farming) rolls it; pick one of those to narrow it.'
     },
     {
         /**

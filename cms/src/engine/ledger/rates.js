@@ -1,7 +1,7 @@
 // the progression ledger's rate calculator: cycle time, items and XP per hour for a Token or a recipe, factor by factor
 
 import { ModifierAggregator, applyThreeBucket } from '../../../../src/systems/effects/ModifierAggregator.js';
-import { EFFECT_TYPES, TARGET_CATEGORIES } from '../../../../src/systems/effects/constants.js';
+import { EFFECT_TYPES, TARGET_CATEGORIES, GIANT_HARVEST_TIMES } from '../../../../src/systems/effects/constants.js';
 import { KEYWORD, statementsOf, stationSkillOf, stationKindOf } from '../../../../src/systems/effects/statements.js';
 import { expandBearer, effectRefsOf, statementsFromEntry, normaliseScale, MAX_SCALE } from '../../../../src/systems/effects/effectLibrary.js';
 import { reachOf, reachCovers, RELATION } from '../../../../src/config/registries/reachRegistry.js';
@@ -21,6 +21,7 @@ import { ownCycleCost } from '../../../../src/systems/board/cycleCharges.js';
 import { applyXpBonus } from '../../../../src/systems/hero/xpBonus.js';
 import { perkRowsOf, perksEarnedAt } from '../../../../src/systems/hero/perkTable.js';
 import { neverWearsOut } from '../../../../src/systems/core/wearRule.js';
+import { isGatheringSkill } from '../../../../src/config/registries/skillRegistry.js';
 import { isSpentCategory, isAlwaysOn, isWorkMoment, workSkillMatches, doseKindsOf, DOSE, DOSE_LENGTH } from '../../../../src/systems/core/consumableRule.js';
 import { keyed } from '../../../../src/systems/progression/ledger/engine.js';
 import { modifiersOf as regionModifiersOf } from '../../../../src/systems/atlas/regionModifiers.js';
@@ -60,7 +61,8 @@ const AMBIENT = new Set([KEYWORD.PROVIDES, KEYWORD.GRANTS, KEYWORD.APPLIES]);
 const READ_AXES = new Set([
     EFFECT_TYPES.WORK_TIME, EFFECT_TYPES.YIELD, EFFECT_TYPES.XP_BONUS, EFFECT_TYPES.LOOT_MULT,
     EFFECT_TYPES.DOUBLE_DROP, EFFECT_TYPES.INPUT_COST, EFFECT_TYPES.FAIL_CHANCE, EFFECT_TYPES.GROW_TIME,
-    EFFECT_TYPES.BONUS_DROP, EFFECT_TYPES.CROP_LOAD, EFFECT_TYPES.CATCH_WEIGHT, EFFECT_TYPES.LUCKY
+    EFFECT_TYPES.BONUS_DROP, EFFECT_TYPES.CROP_LOAD, EFFECT_TYPES.CATCH_WEIGHT, EFFECT_TYPES.LUCKY,
+    EFFECT_TYPES.GIANT_HARVEST
 ]);
 
 /** Axes the board reads on some work this calculator does not model yet: reaching one is reported. */
@@ -1005,6 +1007,11 @@ function rateOf(book, target = {}, setup = {}) {
     const loot = resolve(EFFECT_TYPES.LOOT_MULT, 0, category);
     note(EFFECT_TYPES.LOOT_MULT, loot.used);
     const pDouble = loot.value > 0 ? clamp01(loot.value / 100) : 0;
+    // Giant Harvest: on gathering work only, every drop at ten times on a hit (`OutputRules`), so a
+    // cycle's drops are (1 + 9p) times as many on average, beside Double Loot's (1 + p).
+    const giant = isGatheringSkill(skill) ? resolve(EFFECT_TYPES.GIANT_HARVEST, 0, category) : { value: 0, used: [] };
+    note(EFFECT_TYPES.GIANT_HARVEST, giant.used);
+    const lootTimes = (1 + pDouble) * (giant.value > 0 ? 1 + (GIANT_HARVEST_TIMES - 1) * clamp01(giant.value / 100) : 1);
 
     const perCycle = {};
     const tokensPerCycle = {};
@@ -1021,7 +1028,7 @@ function rateOf(book, target = {}, setup = {}) {
         const dd = resolve(EFFECT_TYPES.DOUBLE_DROP, 0, output.itemId);
         note(EFFECT_TYPES.DOUBLE_DROP, dd.used);
         const pItem = dd.value > 0 ? clamp01(dd.value / 100) : 0;
-        const amount = (1 - pFail) * chance * y.value * (1 + pDouble) * (1 + pItem);
+        const amount = (1 - pFail) * chance * y.value * lootTimes * (1 + pItem);
         perCycle[output.itemId] = (perCycle[output.itemId] || 0) + amount;
     }
     // The Token's rare drop table, read as chance lines: rolled after its own lines at its chance
@@ -1037,7 +1044,7 @@ function rateOf(book, target = {}, setup = {}) {
             const dd = resolve(EFFECT_TYPES.DOUBLE_DROP, 0, entry.itemId);
             note(EFFECT_TYPES.DOUBLE_DROP, dd.used);
             const pItem = dd.value > 0 ? clamp01(dd.value / 100) : 0;
-            perCycle[entry.itemId] = (perCycle[entry.itemId] || 0) + (1 - pFail) * (chance / 100) * y.value * (1 + pDouble) * (1 + pItem);
+            perCycle[entry.itemId] = (perCycle[entry.itemId] || 0) + (1 - pFail) * (chance / 100) * y.value * lootTimes * (1 + pItem);
         }
     }
     for (const grant of [...tileGrants.map(g => ({ ...g, weight: 1 })), ...heroGrants(hero)]) {

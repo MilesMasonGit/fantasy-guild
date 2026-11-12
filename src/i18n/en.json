@@ -713,8 +713,12 @@
             "preservation": "Preservation",
             "refresh": "Refresh",
             "lucky": "Lucky",
+            "giantHarvest": "Giant Harvest",
             "efficiency": "Efficiency",
             "abundance": "Abundance"
+        },
+        "float": {
+            "giantHarvest": "Giant!"
         },
         "source": {
             "star": "Hall star {star} {rank}",

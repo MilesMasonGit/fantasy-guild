@@ -18,6 +18,7 @@ import * as BoardCombat from '../../../../systems/board/BoardCombat.js';
 import * as HeroManager from '../../../../systems/hero/HeroManager.js';
 import { isDrawingPaused } from '../frameClock.js';
 import { animateFx, whenOver } from './oneShot.js';
+import { t as i18n } from '../../../../i18n/index.js';
 
 /**
  * The mat's effects that stand on the mat rather than on one Token's art: numbers rising off a
@@ -86,6 +87,11 @@ const NUMBER_RISE = Object.freeze({
     ]),
     gain: Object.freeze([
         { ms: 3 * FX_FRAME_MS, y: 0 }, { ms: 3 * FX_FRAME_MS, y: -2 }, { ms: 3 * FX_FRAME_MS, y: -4 }, { ms: 6 * FX_FRAME_MS, y: -6 }
+    ]),
+    // A Giant Harvest's "Giant!": climbs higher and holds longer, about a second in all.
+    giant: Object.freeze([
+        { ms: 2 * FX_FRAME_MS, y: 0 }, { ms: 2 * FX_FRAME_MS, y: -3 }, { ms: 2 * FX_FRAME_MS, y: -6 },
+        { ms: 2 * FX_FRAME_MS, y: -8 }, { ms: 10 * FX_FRAME_MS, y: -10 }
     ])
 });
 
@@ -131,6 +137,41 @@ export function spark(fromId, toId) {
     }
     const { keyframes, duration } = heldPoses(poses, { unit, rest: { visibility: 'hidden' } });
     return playAt(pixel(SPARK_COLOUR), a.x, a.y - artRadiusOf(a.typeId) / 2, keyframes, duration);
+}
+
+/** A Giant Harvest's burst: eight gold sparks flying out from the Token, this many steps each. */
+export const BURST_STEPS = 4;
+const BURST_COLOUR = SPARK_COLOUR;
+const BURST_DIRS = Object.freeze([[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]]);
+
+/**
+ * How far out a burst spark stands at each step, in art pixels from the Token's middle, for a Token
+ * of art radius `radiusArt`: from inside its art to a little past its edge.
+ */
+export function burstReach(radiusArt) {
+    const r = Math.max(8, radiusArt);
+    return Array.from({ length: BURST_STEPS }, (_, i) => Math.round(r * (0.5 + 0.3 * i)));
+}
+
+/**
+ * A Giant Harvest's celebration over Token `instanceId`: eight two-pixel gold sparks burst out from
+ * its middle in {@link BURST_STEPS} whole art-pixel steps (`burstReach`) and are gone, and a gold
+ * "Giant!" rises off its top. The Token's own ring echoes too (`TokenHitArt`, on the same event).
+ * @returns {boolean} whether it played
+ */
+export function giantHarvestCelebration(instanceId) {
+    const t = BoardState.getTokenById(instanceId);
+    if (!t || !host || !Number.isFinite(t.x) || !Number.isFinite(t.y)) return false;
+    const reach = burstReach(artRadiusOf(t.typeId) / unit);
+    for (const [dx, dy] of BURST_DIRS) {
+        // A diagonal goes as far as a straight one, not √2 further.
+        const k = dx && dy ? Math.SQRT1_2 : 1;
+        const poses = reach.map(d => ({ ms: FX_FRAME_MS, x: dx * d * k, y: dy * d * k, visibility: 'visible' }));
+        const { keyframes, duration } = heldPoses(poses, { unit, rest: { visibility: 'hidden' } });
+        playAt(pixel(BURST_COLOUR, 2), t.x - unit, t.y - unit, keyframes, duration);
+    }
+    floatNumber(instanceId, i18n('effectBadges.float.giantHarvest'), 'giant');
+    return true;
 }
 
 const PUFF_COLOUR = '#d6d3d1';
@@ -386,7 +427,7 @@ export function usedBubble(heroId, itemId, text) {
 
 /**
  * The layer's listeners: a rule's number and its neighbour's spark when a rule fires (a fight's
- * numbers are `fightFloats.js`'), a hero's green flash when food heals them in
+ * numbers are `fightFloats.js`'), a Giant Harvest's celebration, a hero's green flash when food heals them in
  * a fight, the "used" bubble when a hero eats, drinks or drinks an elixir, the knockout when a
  * fight is won.
  * ⚠️ None while drawing is paused (a hidden window): it draws no frames, so each would stay on the
@@ -397,6 +438,10 @@ export function watchMatFx() {
     const offs = [
         EventBus.subscribe(BOARD_EVENTS.EFFECT_FIRED, (p) => {
             if (!p?.instanceId || !isDrawn('matFx') || isDrawingPaused()) return;
+            if (p.giant) {
+                giantHarvestCelebration(p.instanceId);
+                return;
+            }
             const from = p.fromTokenId && p.fromTokenId !== p.instanceId ? p.fromTokenId : null;
             if (from) spark(from, p.instanceId);
             const n = Number(p.amount);

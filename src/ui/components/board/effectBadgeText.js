@@ -17,6 +17,7 @@ export const EFFECT_GLYPH = Object.freeze({
     [EFFECT_KEY.PRESERVATION]: 'jar',
     [EFFECT_KEY.REFRESH]: 'regrow',
     [EFFECT_KEY.LUCKY]: 'sparkle',
+    [EFFECT_KEY.GIANT_HARVEST]: 'ten',
     [EFFECT_KEY.EFFICIENCY]: 'less',
     [EFFECT_KEY.ABUNDANCE]: 'charges'
 });

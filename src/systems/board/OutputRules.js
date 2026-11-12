@@ -4,7 +4,8 @@ import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
 import * as SupportLinks from './supportLinks.js';
 import * as CycleSavings from './CycleSavings.js';
-import { EFFECT_TYPES } from '../effects/constants.js';
+import { EFFECT_TYPES, GIANT_HARVEST_TIMES } from '../effects/constants.js';
+import { isGatheringSkill } from '../../config/registries/skillRegistry.js';
 
 /**
  * The output rules a finished cycle pays through: a station's cycle (`BoardRunner`) and a kill
@@ -21,6 +22,21 @@ import { EFFECT_TYPES } from '../effects/constants.js';
 export function rollDoubleLoot(instanceId, skill) {
     const chance = TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.LOOT_MULT, 0, skill);
     return chance > 0 && Math.random() * 100 < chance;
+}
+
+export { GIANT_HARVEST_TIMES };
+
+/**
+ * GIANT_HARVEST: whether this gathering cycle's drops all come in at {@link GIANT_HARVEST_TIMES}
+ * (every line and the rare table's find; with Double Loot as well, both apply). Rolled ONCE per
+ * cycle, like Double Loot. Work whose skill is not a gathering skill never rolls it, whatever rule
+ * reaches it.
+ *
+ * ⚠️ No draw unless a rule offers the chance to gathering work, so the stream is unchanged without one.
+ */
+export function rollGiantHarvest(instanceId, skill) {
+    if (!isGatheringSkill(skill)) return false;
+    return CycleSavings.procHits(instanceId, EFFECT_TYPES.GIANT_HARVEST, skill);
 }
 
 /**
