@@ -382,6 +382,76 @@ describe('⭐ a right-click on the job they already have stops them', () => {
     });
 });
 
+describe('⭐ a selected hero stopped by right-click (owner, 2026-11-11)', () => {
+    function mountMat() {
+        const view = render(h(DeckDndProvider, null, h(MatFitProvider, { value: 1 }, h(MatBoard))));
+        const mat = view.container.querySelector('[data-mat-board]');
+        mat.getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: matW(), height: matH(), right: matW(), bottom: matH() });
+        const move = (target, x, y) => act(async () => {
+            target.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: x, clientY: y }));
+            await new Promise(r => setTimeout(r, 50));
+        });
+        return { ...view, mat, move };
+    }
+    const hitOf = (c, id) => c.querySelector(`[data-token-hit="${id}"]`);
+
+    it('a right-click on their own figure stops them where they stand, as on their own job, and they stay selected', async () => {
+        const [hero] = newBoard();
+        const tree = BoardState.getTokenById(BoardState.workTokenOf(hero.id));
+        const { container } = mountMat();
+        const figure = container.querySelector(`[data-board-hero="${hero.id}"]`);
+        act(() => { fireEvent.click(figure); });
+        expect(selectedHeroId()).toBe(hero.id);
+        // Bare ground under the pointer: without the rule this would be a wait-there order.
+        await act(async () => { fireEvent.contextMenu(figure, { clientX: 600, clientY: 860 }); await Promise.resolve(); });
+        expect(BoardState.flagOf(hero.id)).toMatchObject({ spot: true, needsJob: true });
+        const body = BoardState.heroBodyOf(hero.id);
+        expect(HeroMotion.idleSpot(BoardState.flagOf(hero.id))).toEqual({ x: body.x, y: body.y });
+        expect(BoardState.claimOfHero(hero.id)).toBeNull();
+        expect(tree.cycleElapsedMs ?? 0).toBe(0);
+        expect(selectedHeroId()).toBe(hero.id);
+        // The same call with the figure named: the stop, not the drop on the ground below.
+        clearSelection();
+        const [other] = newBoard();
+        selectHero(other.id);
+        expect(rightClickAt({ x: 600, y: 860 }, { heroUnder: other.id })).toMatchObject({ order: 'stop' });
+        expect(BoardState.flagOf(other.id)).toMatchObject({ spot: true, needsJob: true });
+    });
+
+    it('another hero’s figure under the right-click is no stop of the selected one', () => {
+        const [hero, idle] = newBoard({ heroes: 2 });
+        selectHero(hero.id);
+        const result = rightClickAt({ x: 600, y: 860 }, { heroUnder: idle.id });
+        expect(result).toMatchObject({ success: true, order: 'spot' });
+        expect(Flags.needsJob(hero.id)).toBe(false);
+    });
+
+    it('after the stop the aim marks go out, so the yellow mark shows at once, until the pointer is on another Token', async () => {
+        const [hero] = newBoard();
+        const tree = BoardState.getTokenById(BoardState.workTokenOf(hero.id));
+        const other = fixtures.placeAt('rc_tree', 600, 300);
+        const { container, mat, move } = mountMat();
+        act(() => selectHero(hero.id));
+        const ground = mat;
+        await move(ground, tree.x, tree.y);
+        expect(container.querySelector(`[data-order-aim="${tree.id}"]`)).toBeTruthy();
+        expect(hintsOf(hero.id)).toBeTruthy();
+        await act(async () => { fireEvent.contextMenu(hitOf(container, tree.id), { clientX: tree.x, clientY: tree.y }); await Promise.resolve(); });
+        expect(Flags.needsJob(hero.id)).toBe(true);
+        expect(container.querySelector('[data-order-aim]')).toBeNull();
+        expect(hintsOf(hero.id)).toBeNull();
+        expect(container.querySelector('[data-needs-job-mark]')).toBeTruthy();
+        // Still on the same Token: still out.
+        await move(ground, tree.x + 2, tree.y + 1);
+        expect(container.querySelector('[data-order-aim]')).toBeNull();
+        expect(container.querySelector('[data-needs-job-mark]')).toBeTruthy();
+        // Onto another Token: the marks are back.
+        await move(ground, other.x, other.y);
+        expect(container.querySelector(`[data-order-aim="${other.id}"]`)).toBeTruthy();
+        expect(hintsOf(hero.id)).toBeTruthy();
+    });
+});
+
 describe('⭐ with nothing selected, a right-click on a working hero or their Token stops them', () => {
     function mount() {
         const view = render(h(DeckDndProvider, null, h(MatFitProvider, { value: 1 }, h(MatBoard))));

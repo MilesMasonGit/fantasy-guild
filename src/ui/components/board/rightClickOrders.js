@@ -15,7 +15,8 @@ import { getSelection, SELECTION_KIND } from '../../hooks/useMatSelection.js';
  * payload a carried hero has), so the order, the refusal and the red bubble it is said in are the
  * drop's own: work the Token, fight the enemy, hunt from an enemy camp, home on the Guild Hall,
  * wait on bare ground. On their **own job** (`Orders.ownJobAt`: the Token their order names, or
- * the one they work or fight) they stop instead (`Orders.stop`): a job cannot be given twice.
+ * the one they work or fight), or on their **own figure**, they stop instead (`Orders.stop`): a
+ * job cannot be given twice. A stop puts the pointer's hints out ({@link onSelectedStop}).
  * - **A Token selected**: its move ({@link moveSelectedToken}).
  * - **Nothing selected**: a right-click on a hero's drawn pixel, or on the Token a hero works,
  * stops that hero.
@@ -30,7 +31,7 @@ import { getSelection, SELECTION_KIND } from '../../hooks/useMatSelection.js';
 export function rightClickAt(point, { heroUnder = null } = {}) {
     if (getMapMode() || isMatBankLocked()) return null;
     const selection = getSelection();
-    if (selection?.kind === SELECTION_KIND.HERO) return orderSelectedHero(selection.id, point);
+    if (selection?.kind === SELECTION_KIND.HERO) return orderSelectedHero(selection.id, point, heroUnder);
     if (selection?.kind === SELECTION_KIND.TOKEN) return moveSelectedToken(selection.id, point);
     return stopUnder(point, heroUnder);
 }
@@ -38,11 +39,29 @@ export function rightClickAt(point, { heroUnder = null } = {}) {
 /** The payload a carried hero has, as far as a drop reads it. */
 const heroPayload = (heroId) => ({ kind: DRAG_KIND.FLAG, heroId });
 
-function orderSelectedHero(heroId, point) {
+function orderSelectedHero(heroId, point, heroUnder) {
     const payload = heroPayload(heroId);
     if (!matAccepts(payload)) return null;
-    if (Orders.ownJobAt(heroId, point)) return Orders.stop(heroId);
+    if (heroUnder === heroId || Orders.ownJobAt(heroId, point)) return stopSelected(heroId);
     return dropOnMat(payload, point);
+}
+
+const stopListeners = new Set();
+
+/**
+ * Hear a selected hero stopped by right-click: `fn(heroId)`. The selection's hints (`OrderDragLine`)
+ * put their marks out, so the hero's yellow "needs a job" mark shows at once.
+ * @returns {() => void} unsubscribe
+ */
+export function onSelectedStop(fn) {
+    stopListeners.add(fn);
+    return () => stopListeners.delete(fn);
+}
+
+function stopSelected(heroId) {
+    const result = Orders.stop(heroId);
+    for (const fn of [...stopListeners]) fn(heroId);
+    return result;
 }
 
 /**

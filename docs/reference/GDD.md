@@ -783,8 +783,8 @@ less micromanagement than area flags).
   enemy camp, work from a camp, home on the Guild Hall, wait on bare ground),
   with the drop's refusals in the same red bubble ("Needs Pickaxe"). A
   right-click on **the job they already have** (the Token their order names, a
-  camp too, or the Token or enemy they work or fight there) **stops them**: a
-  job can't be given twice. They wait where they stand with the yellow "needs a
+  camp too, or the Token or enemy they work or fight there), or on **their own
+  figure**, **stops them**: a job can't be given twice. They wait where they stand with the yellow "needs a
   job" mark; the Token they leave loses its progress and a fight ends at once,
   the enemy whole again for the next to engage it, as a recall leaves them.
   With **nothing selected**, a right-click on a hero, or on the Token a hero
@@ -799,7 +799,9 @@ less micromanagement than area flags).
   date while they stay selected), the dashed gold line runs from the hero to
   the pointer (its end on the centre of a Token they can work), and over a
   Token the drag hints and the drop's reason show as below. Off the mat (a
-  panel, the hero bar) they go; a drag takes their place while it lasts.
+  panel, the hero bar) they go; a drag takes their place while it lasts. After
+  a right-click stops the selected hero the marks go out until the pointer is
+  on another Token, so their yellow "needs a job" mark shows at once.
 - **While a hero is carried**, every Token they could work glows, a dashed gold
   line runs from the hero to the pointer, and the flag snaps onto a Token they
   can work; over one they cannot, a red bubble says why. **A drop on a Token

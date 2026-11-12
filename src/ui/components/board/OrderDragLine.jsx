@@ -20,6 +20,7 @@ import { opaqueBoundsOf } from '../../utils/alphaHitTest.js';
 import { onFrame } from './frameClock.js';
 import { useSelectedHeroId } from '../../hooks/useMatSelection.js';
 import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
+import { onSelectedStop } from './rightClickOrders.js';
 
 /** The line: one art pixel of gold over a black copy one art pixel down-right, as the camp ring. */
 const LINE_GOLD = 'var(--color-gi-gold)';
@@ -44,7 +45,9 @@ const carriesHero = (payload) => !!payload?.heroId && payload.kind === DRAG_KIND
  * animation frame (`frameClock.onFrame`, paused with the drawing), and the ghost moved, never
  * through React: only the bubble and marks are React's, redrawn as the Token under the pointer
  * changes (`orderAim.js`). A selected hero's loop is the same one, run only while the pointer is
- * on the mat, so a selection held with the pointer elsewhere costs no frame at all. A hero with no
+ * on the mat, so a selection held with the pointer elsewhere costs no frame at all. Once the selected
+ * hero is stopped by right-click their marks go out until the pointer moves onto another Token, so
+ * their yellow "needs a job" mark shows at once (`onSelectedStop`). A hero with no
  * figure on the mat (none today: every hero stands on it) draws no line. Under reduced motion the
  * dashes stand still.
  */
@@ -136,6 +139,8 @@ function MarchingLine({ heroId, session, matRef }) {
         // time the pointer comes back onto the mat or the window is resized, never per frame.
         let rectSession = session || {};
         let aimed = null;
+        // Put out by a stop, until the aim moves off the Token it was on.
+        let quiet = false;
         const aim = createOrderAim(heroId);
         const still = reducedMotion();
         const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -160,6 +165,12 @@ function MarchingLine({ heroId, session, matRef }) {
         };
         const onLeavePage = (e) => { if (!carried && !e.relatedTarget) pointer = null; };
         const onResize = () => { if (!carried) rectSession = {}; };
+        const offStop = carried ? null : onSelectedStop((id) => {
+            if (id !== heroId || quiet) return;
+            quiet = true;
+            setTarget(null);
+            setHintTarget(null);
+        });
         function draw(now) {
             const from = HeroMotion.heroPointOf(heroId);
             const matEl = matRef?.current || null;
@@ -172,6 +183,7 @@ function MarchingLine({ heroId, session, matRef }) {
             const aimNow = aim(at);
             if (aimNow !== aimed) {
                 aimed = aimNow;
+                quiet = false;
                 setTarget(aimed.instance ? { instance: aimed.instance, reason: aimed.reason } : null);
                 // Every hero's marks, worked out once per Token entered (`dragHints.js`).
                 setHintTarget(aimed.instance);
@@ -205,6 +217,7 @@ function MarchingLine({ heroId, session, matRef }) {
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerout', onLeavePage);
             window.removeEventListener('resize', onResize);
+            offStop?.();
             stop();
             ghost?.stop();
             setHintTarget(null);
