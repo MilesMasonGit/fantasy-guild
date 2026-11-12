@@ -72,6 +72,29 @@ export function applyThreeBucket(base, { flat = [], multipliers = [], percentage
     return flatTotal * combineMultipliers(multipliers) * combinePercentages(percentages);
 }
 
+/**
+ * What one modifier puts in each bucket, the rules every sum below and every trace share. Null when
+ * it puts nothing there.
+ *
+ * ⚠️ A bare entry (no `bucket`) counts in the flat bucket AND the percentage bucket: `query` reads it
+ * as a flat, `collectPercentages` as a fraction. That is how the engine has always summed, so a
+ * breakdown must count it twice too.
+ */
+function flatShareOf(mod) {
+    if (mod.bucket === 'multiplier' || mod.bucket === 'percentage') return null;
+    return mod.value || 0;
+}
+
+function multiplierShareOf(mod) {
+    return mod.bucket === 'multiplier' ? (mod.value || 0) : null;
+}
+
+function percentageShareOf(mod) {
+    if (mod.bucket === 'multiplier' || mod.bucket === 'flat' || mod.bucket === 'additive') return null;
+    const value = mod.value || 0;
+    return value === 0 ? null : value; // a neutral entry contributes nothing
+}
+
 export class ModifierAggregator {
     constructor(entityId) {
         this.entityId = entityId;
@@ -129,17 +152,25 @@ export class ModifierAggregator {
     /**
      * Calculate the raw sum of modifiers for a specific effect and category
      * Useful for flat bonuses (e.g. +8 defense)
-     * @param {string} effectType 
-     * @param {string} category 
+     *
+     * `trace`, here and on the two `collect` methods, is for the effect breakdown only: an array
+     * that receives `{ bucket, value, modifier }` for each modifier counted, from the same loop
+     * that sums it. The engine passes none.
+     *
+     * @param {string} effectType
+     * @param {string} category
+     * @param {Array<object>|null} [trace]
      * @returns {number} The sum of modifiers
      */
-    query(effectType, category = TARGET_CATEGORIES.ALL) {
+    query(effectType, category = TARGET_CATEGORIES.ALL, trace = null) {
         let sum = 0;
         this._forEachMatching(effectType, category, (mod) => {
-            if (mod.bucket === 'multiplier' || mod.bucket === 'percentage') return;
             // A BARE entry (no `bucket`) is ambiguous: a flat +5 or a 0.25 meaning +25%. The
             // method the caller uses disambiguates, and a caller asking for flats wants flats.
-            sum += (mod.value || 0);
+            const value = flatShareOf(mod);
+            if (value === null) return;
+            sum += value;
+            if (trace && value !== 0) trace.push({ bucket: 'flat', value, modifier: mod });
         });
         return sum;
     }
@@ -148,8 +179,8 @@ export class ModifierAggregator {
      * Flat-bucket sum. Alias of `query()` in Three-Bucket terminology.
      * @returns {number} Σ flat (NOT including Base — the caller supplies that)
      */
-    getFlat(effectType, category = TARGET_CATEGORIES.ALL) {
-        return this.query(effectType, category);
+    getFlat(effectType, category = TARGET_CATEGORIES.ALL, trace = null) {
+        return this.query(effectType, category, trace);
     }
 
     /**
@@ -161,12 +192,15 @@ export class ModifierAggregator {
      *
      * @returns {number[]} raw factors, e.g. [2, 1.25]
      */
-    collectMultipliers(effectType, category = TARGET_CATEGORIES.ALL) {
+    collectMultipliers(effectType, category = TARGET_CATEGORIES.ALL, trace = null) {
         const factors = [];
         this._forEachMatching(effectType, category, (mod) => {
             // ONLY explicit ×N factors; bare entries are percentages (see `collectPercentages`).
-            if (mod.bucket !== 'multiplier') return;
-            factors.push(mod.value || 0);
+            const value = multiplierShareOf(mod);
+            if (value === null) return;
+            factors.push(value);
+            // ⚠️ Even a ×0 is traced: it is not neutral, it empties the whole axis.
+            if (trace) trace.push({ bucket: 'multiplier', value, modifier: mod });
         });
         return factors;
     }
@@ -180,13 +214,13 @@ export class ModifierAggregator {
      *
      * @returns {number[]} raw fractions, e.g. [0.25, 0.5]
      */
-    collectPercentages(effectType, category = TARGET_CATEGORIES.ALL) {
+    collectPercentages(effectType, category = TARGET_CATEGORIES.ALL, trace = null) {
         const fractions = [];
         this._forEachMatching(effectType, category, (mod) => {
-            if (mod.bucket === 'multiplier' || mod.bucket === 'flat' || mod.bucket === 'additive') return;
-            const value = mod.value || 0;
-            if (value === 0) return; // a neutral entry contributes nothing
+            const value = percentageShareOf(mod);
+            if (value === null) return;
             fractions.push(value);
+            if (trace) trace.push({ bucket: 'percentage', value, modifier: mod });
         });
         return fractions;
     }

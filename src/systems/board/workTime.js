@@ -30,6 +30,18 @@ export function floorSpeedUp(baseMs, resolvedMs) {
 /** No work cycle is shorter than this, which the catch-up's 1 s steps rely on (`loopConstants.MAX_TICK_DELTA_MS`). */
 export const MIN_WORK_CYCLE_MS = 1000;
 
+/** A work cycle's authored length when neither its recipe nor its Token gives one. */
+const DEFAULT_WORK_MS = 10000;
+
+/**
+ * One round of work's authored length, before any rule: the active recipe's own time (`io`, from
+ * `RecipeResolver.effectiveIO`), else the work config's, else 10 s. ⚠️ `BoardRunner.tick` writes the
+ * same rule inline; keep the two the same.
+ */
+export function authoredWorkMs(io, config) {
+    return io?.cycleTimeMs || config?.cycleTimeMs || DEFAULT_WORK_MS;
+}
+
 /**
  * One round of work's length from its authored time and the time every rule resolved it to: floored
  * by {@link floorSpeedUp}, never under {@link MIN_WORK_CYCLE_MS}.

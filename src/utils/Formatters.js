@@ -142,3 +142,19 @@ export function formatPlaytime(ms) {
     if (hours > 0) return `${hours}h ${mins}m`;
     return `${mins}m`;
 }
+
+const ROMAN = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+
+/** A rank in Roman numerals: 1 → "I", 4 → "IV", 14 → "XIV". */
+export function toRoman(n) {
+    let left = Math.floor(Number(n) || 0);
+    if (left <= 0) return String(n);
+    let out = '';
+    for (const [value, letters] of ROMAN) {
+        while (left >= value) {
+            out += letters;
+            left -= value;
+        }
+    }
+    return out;
+}
