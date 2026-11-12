@@ -51,8 +51,8 @@ describe('staggering star titles', () => {
                 const p = webPoint(def.id, size);
                 return star(def.id, Math.round(p.x * scale), Math.round(p.y * scale), def.name.length * 11, 68, 20);
             });
-            // Some do clash as authored: the combat lores and the ring stars stand side by side.
-            if (scale === MIN_SKY_SCALE) expect(titleClashes(stars).length).toBeGreaterThan(0);
+            // Whether any clash as authored depends on the content; the staggering itself is pinned by
+            // the synthetic rows above.
             const moves = staggerStars(stars);
             expect(titleClashes(stars, moves), `scale ${scale}`).toEqual([]);
         }
