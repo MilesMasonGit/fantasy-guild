@@ -14,10 +14,10 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | QA panel in test builds (`QA_TOOLS`, `tauri:build:ship`) | builder | `fix/qa-in-builds` (`t1`) cc7588f0 | **merged** 109ab4e4, pushed | Thu | Thu |
-| QA panel slim: give items, heroes, place a Token or enemy, two owner tools | builder | `feat/qa-panel-slim` (`t2`) d570beff | ready (8326 green, agent); bench and desktop build running; eye-check next | Thu | |
-| T-336: the ledger judges rare finds by finds a day; rare-find boost targets (x3 at plan tier 6) | builder | `fix/rare-find-labels` (`b2`) 750d21b5 | ready; gate and work check running; merges on the gate (CMS ledger only) | Thu | |
-| 620 E1: Giant Harvest | engineer | `feat/giant-harvest` (`fx`) | building | Thu | |
-| 620 E2: XP for Everyone | engineer | `feat/xp-for-everyone` (`rt`) | building | Thu | |
+| QA panel slim: give items, heroes, place a Token or enemy, two owner tools | builder | `feat/qa-panel-slim` (`t2`) d570beff | **eye-check waiting** (page tab qa-slim, `_builds/2026-11-12-qa-panel`); work same | Thu | |
+| T-336: the ledger judges rare finds by finds a day; rare-find boost targets (x3 at plan tier 6) | builder | `fix/rare-find-labels` (`b2`) 750d21b5 | **merged** e75f1fbf, pushed (664 files green, work same) | Thu | Thu |
+| 620 E1: Giant Harvest | engineer | `feat/giant-harvest` (`fx`) bed8bd4b | **eye-check waiting** (page tab giant, `_builds/2026-11-12-giant-harvest` = slim panel + E1 + a scene button, scratch 6abfecbe in `s3`); 8389 green (agent), work same; owner question on building bonus drops in the tab. After the look: wire the button on the branch over the slim panel, merge, then delete the scene | Thu | |
+| 620 E2: XP for Everyone | engineer | `feat/xp-for-everyone` (`rt`) 7391ec09 | **merged** 0f2f3499, pushed (665 files green, work same; no eye-check until a star uses it). Owner question parked: one +N float and one alert per hero (built) | Thu | Thu |
 
 ## Director, briefs 590 and 600 (owner, 2026-11-11: both at once; effect renames T-403 after 590; retirements T-400 to T-402 checked now, owner deletes in the CMS)
 
