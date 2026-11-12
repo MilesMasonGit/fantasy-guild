@@ -1044,7 +1044,9 @@ function rateOf(book, target = {}, setup = {}) {
         if (!text(input.itemId)) continue;
         const ic = resolve(EFFECT_TYPES.INPUT_COST, input.quantity || 1, category);
         note(EFFECT_TYPES.INPUT_COST, ic.used);
-        inputsPerCycle[input.itemId] = (inputsPerCycle[input.itemId] || 0) + Math.max(1, Math.round(ic.value));
+        // A fractional cost is made whole by chance as the cycle pays, with no minimum of 1
+        // (`InputCost`), so a cycle pays the exact cost on average.
+        inputsPerCycle[input.itemId] = (inputsPerCycle[input.itemId] || 0) + Math.max(0, ic.value);
     }
     for (const c of hero.costs) inputsPerCycle[c.itemId] = (inputsPerCycle[c.itemId] || 0) + c.perCycle;
     // A catch with bait spends one; a failed cycle keeps it (`BoardRunner.completeCycle`).

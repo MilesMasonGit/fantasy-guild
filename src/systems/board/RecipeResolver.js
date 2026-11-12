@@ -4,7 +4,7 @@ import { neighbourIds } from './nearby.js';
 import { getTokenType, hasAdjacencyEffect, getProvidedTagsWithTiers, tokenName } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken, contextTagsOf, contextRequirementsOf } from '../../config/registries/recipePoolRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import * as InputAllocator from './InputAllocator.js';
+import * as InputCost from './InputCost.js';
 import * as StationRecipe from './StationRecipe.js';
 import * as Fields from './Fields.js';
 import * as BoardState from './BoardState.js';
@@ -296,7 +296,7 @@ export function getMissingRequirements(instanceId, instance) {
     // 3. Tokens are satisfied! Now check missing input Items
     const io = effectiveIO(instanceId, instance);
     if (io.inputs?.length) {
-        const check = InputAllocator.checkInputs(io.inputs);
+        const check = InputCost.checkCost(instance, io.inputs);
         if (!check.ok) {
             const missingItems = check.missing.map(m => {
                 const item = getItem(m.itemId);

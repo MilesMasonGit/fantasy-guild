@@ -3,7 +3,7 @@
 import { ALERT } from './boardEvents.js';
 import * as RecipeResolver from './RecipeResolver.js';
 import { RECIPE } from './RecipeResolver.js';
-import * as InputAllocator from './InputAllocator.js';
+import * as InputCost from './InputCost.js';
 import * as Charges from './Charges.js';
 import * as Respawn from './Respawn.js';
 import * as Fields from './Fields.js';
@@ -131,8 +131,9 @@ export function fixableReason(instanceId, instance) {
         return { reason: ALERT.BUILD_SITE, io };
     }
 
+    // The most a cycle can take once Efficiency is counted, as the cycle itself checks it.
     if (io.inputs?.length) {
-        const inputCheck = InputAllocator.checkInputs(io.inputs);
+        const inputCheck = InputCost.checkCost(instance, io.inputs);
         if (!inputCheck.ok) return { reason: ALERT.INPUTS, io, inputCheck };
     }
 

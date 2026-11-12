@@ -47,6 +47,7 @@ export function doubleItemDrop(instanceId, itemId, quantity) {
 /**
  * A fractional quantity rounded probabilistically, so a x1.5 yield is 1 plus a 50% chance of a
  * 2nd, rather than silently truncating every small buff to nothing.
+ * ⚠️ Not `RNG.roundByChance`: this one draws once even on a whole number, and the bench pins it.
  */
 export function roundUp(scaled) {
     const whole = Math.floor(scaled);

@@ -32,6 +32,7 @@ import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
 import * as OutputRules from './OutputRules.js';
 import * as CycleSavings from './CycleSavings.js';
+import * as InputCost from './InputCost.js';
 import * as Fishing from './Fishing.js';
 import * as Fields from './Fields.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
@@ -71,9 +72,9 @@ export { ALERT };
  *
  * Hero effects on the board: only Access, the skill gate in rule 3. ⚠️ A skill level deliberately
  * adds no work speed: an invisible per-level bonus was removed as one more number to balance.
- * Efficiency is not implemented: input cost is resolved in `completeCycle` through
- * `TileModifiers.resolveAxis(INPUT_COST)`, which reads tile, neighbour and guild-wide effects.
- * ⚠️ Deferred to the hero rework: do not quietly fill it in because it looks missing.
+ * Nor does a skill level save inputs: a cycle's input cost moves only by Efficiency rules
+ * (`INPUT_COST`: tile, neighbour, guild-wide and carried), resolved in `completeCycle` through
+ * `InputCost`. ⚠️ A per-level saving was deferred to the hero rework: do not quietly add one.
  */
 
 /** Tick counter, so progress events don't fire at full rate. */
@@ -231,14 +232,11 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         return;
     }
 
-    // INPUT_COST, widened to read the Token's neighbours: a Tool Rack beside a Forge makes it
-    // cheaper to run, so the Token's own aggregator is not the only one consulted.
-    const inputs = (io.inputs || []).map(input => ({
-        ...input,
-        quantity: Math.max(1, Math.round(TileModifiers.resolveAxis(
-            id, EFFECT_TYPES.INPUT_COST, input.quantity || 1, config.skill
-        )))
-    }));
+    // INPUT_COST (Efficiency), widened to read the Token's neighbours: a Tool Rack beside a Forge
+    // makes it cheaper to run. Each input carries its exact cost and the most it can take (the cost
+    // rounded up); it is made whole by chance only as the cycle pays (`InputCost`), so this check
+    // asks for the most and the roll can never make the cycle unaffordable.
+    const costed = InputCost.costedInputs(id, io.inputs, config.skill);
 
     // The atomic requirement check, in the order that makes it atomic: plan every charge debit
     // first, then spend the items, then commit the charges. A cycle needs 100% of its inputs (bank
@@ -260,14 +258,21 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // and never rolls: only checked here, then paid below unless the roll hits. Paying moves the Bank,
     // and an On Bank Holds rule fires (and may draw) the moment it moves, so the order without a
     // chance must stay pay-then-fail or the bench's work check would see a different stream.
-    const keepChance = inputs.length ? CycleSavings.preservationChance(id, config.skill) : 0;
-    const affordable = keepChance > 0 ? InputAllocator.checkInputs(inputs).ok : InputAllocator.consumeInputs(inputs);
-    if (!affordable) {
+    // Either way an Efficiency cost is rounded just before it is paid, and never for a cycle that
+    // keeps its materials: check, [failure, Preservation,] round, pay.
+    const keepChance = costed.length ? CycleSavings.preservationChance(id, config.skill) : 0;
+    if (!InputAllocator.checkInputs(costed).ok) {
         // Raced by another Token between the availability check and here.
         // Keep the progress and wait — the cycle is not lost, only delayed.
         setAlert(instance,ALERT.INPUTS);
         return;
     }
+    let paidInputs = [];
+    const pay = () => {
+        paidInputs = InputCost.rolledInputs(costed);
+        InputAllocator.consumeInputs(paidInputs);
+    };
+    if (!(keepChance > 0)) pay();
 
     instance.cycleElapsedMs = 0;
 
@@ -284,8 +289,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // The cycle still runs, makes its outputs and spends its charges; a Field's owed seed stays
     // owed, and a build that kept its materials remembers paying nothing.
     const preserved = keepChance > 0 && !failed && CycleSavings.rollChance(keepChance);
-    if (keepChance > 0 && !preserved) InputAllocator.consumeInputs(inputs);
-    const paidInputs = preserved ? [] : inputs;
+    if (keepChance > 0 && !preserved) pay();
 
     // Item output lands on the BOARD, not in the Bank: it is not banked until collected, and if the
     // Bank is full it simply waits there. A Token output stands on the mat beside the station.
@@ -416,8 +420,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // failed cycle.
     if (buildTypeId && !failed) {
         const fromTypeId = instance.typeId;
-        // The paid `inputs` go with it: the built Token remembers its Foundation and build cost for
-        // the discard refund.
+        // What it paid goes with it (`paidInputs`, after Efficiency): the built Token remembers its
+        // Foundation and build cost for the discard refund.
         const built = Foundations.buildInPlace(instance, buildTypeId, paidInputs);
         if (built) {
             noteTokenBuilt(buildTypeId);

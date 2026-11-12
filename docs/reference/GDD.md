@@ -1303,7 +1303,11 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   Deals, Heals and Removes (the editor offers it to no other verb), spends no
   charge and has no cooldown.
 - **Modifiers** that neighbours (or a hero's items) provide: yield, work
-  time, input cost, **grow time** (a growth or a refill's rest, from neighbours
+  time, input cost (**Efficiency**: a cost that comes out fractional is made whole by chance as
+  the cycle pays, so it averages the exact cost: 10 Coal at −12 % is 8.8, so 9 Coal four times in
+  five and 8 one time in five; increases round alike, and there is no minimum of 1, so 1 Coal at
+  −20 % is free one time in five. A cycle starts only with the cost rounded up in the Bank, and a
+  whole cost draws no chance; owner, 2026-11-11), **grow time** (a growth or a refill's rest, from neighbours
   and Region rules only), **crop load** (the harvests a Field's crop ripens with:
   a Composter, §3 Farming; read once as it ripens), XP bonus (a positive bonus always adds at least 1 XP),
   double loot, **double item chance** (a chance
