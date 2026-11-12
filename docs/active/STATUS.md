@@ -18,8 +18,8 @@ build green) · bench-queued · eye-check · merged.*
 | 590 P2: Refresh | builder | `feat/effects-590` (`fx`) | building | Wed | |
 | 590 P1: Preservation | engineer | same branch | queued after P2 | | |
 | 590 P3: Lucky and rare tables | engineer | same branch | queued after P1 | | |
-| 600 B1: badge look page | builder | `feat/badge-look` (`b1`) | building | Wed | |
-| 600 B2: the breakdown | engineer | tbd | queued after B1 | | |
+| 600 B1: badge look page | builder | `feat/badge-look` (`b1`) 2ef50210 | ready: three looks (A chips, B inline strip, C named list), screenshots sent to the owner; builder recommends A; open for B3: Lucky also in the main row or only on Rare finds | Wed | Wed |
+| 600 B2: the breakdown | engineer | `feat/effect-breakdown` (`b2`) | building | Wed | |
 | T-403: effect names | builder-lite | tbd | queued after 590 | | |
 | 600 B3, B4: the card, the Hero drawer badge | builder, builder-lite | tbd | queued after 590 and B2 | | |
 | T-400 to T-402 cleanup | builder-lite | tbd | waits for the owner's CMS deletions | | |
