@@ -6,7 +6,8 @@
 // reader in the running game and must not be deleted as dead code. `src/tests/CMSBoundary.test.js`
 // scans the CMS for these imports and fails if a named export goes missing.
 
-import { EFFECT_TYPES } from '../../systems/effects/constants.js';
+import { EFFECT_TYPES, TARGET_CATEGORIES } from '../../systems/effects/constants.js';
+import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 
 /**
  * Which effect axes content may be authored against, and in what shape.
@@ -111,8 +112,13 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * Declaring the vocabulary per row is what lets the CMS show a skill
  * picker on Yield and a status picker on Immunity without knowing either list.
  *
+ * * `'combatStyle'` — `CombatFormulas` passes the style the hero fights in (the weapon's; Melee
+ *   barehanded) when it reads Damage, Swing Time and Accuracy, which is how a Hall star names the
+ *   fighters it helps. These three are also the only combat axes a hero reads from the guild-wide
+ *   aggregator, so a star reaches them and no other combat axis.
+ *
  * A row without `categories` offers no narrowing at all, which is right for the
- * other combat axes — their readers call `query('ACCURACY')` with no category, so
+ * other combat axes — their readers call `query('DODGE')` with no category, so
  * anything but ALL would be registered and never matched.
  *
  * * `'equipCategory'` — `loadoutCaps.js` passes a loadout category's id
@@ -510,6 +516,7 @@ export const MODIFIER_PALETTE = [
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
+        categories: 'combatStyle',
         heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
@@ -530,6 +537,7 @@ export const MODIFIER_PALETTE = [
          * (*"+10% damage for a while"*) expressible as an ordinary effect.
          */
         buckets: ['flat', 'percentage'],
+        categories: 'combatStyle',
         heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
@@ -625,6 +633,7 @@ export const MODIFIER_PALETTE = [
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
+        categories: 'combatStyle',
         heroOnly: true,
         inverted: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
@@ -776,6 +785,16 @@ export function describeModifierDirection(entry, value, bucket = 'percentage') {
 /** Palette entry for an effect type, or null if it is not authorable. */
 export function getPaletteEntry(type) {
     return MODIFIER_PALETTE.find(e => e.type === type) || null;
+}
+
+/**
+ * Whether a `'combatStyle'` row's narrowing can match a fighter: none, every style (`combat`, `ALL`)
+ * or one combat style. Anything else (a work skill) matches nobody.
+ */
+export function isCombatStyleScope(category) {
+    if (!category || category === TARGET_CATEGORIES.ALL) return true;
+    const id = String(category).toLowerCase();
+    return id === TARGET_CATEGORIES.COMBAT || COMBAT_SKILL_IDS.includes(id);
 }
 
 /** Whether an effect type may be authored at all. */

@@ -3,7 +3,7 @@
 import { isSkillId, COMBAT_SKILL_IDS, getSkill } from '../../config/registries/skillRegistry.js';
 import { getEnemyKind, kindsClash, MAX_ENEMY_KINDS } from '../../config/registries/enemyKinds.js';
 import { isWeapon, authoredWeaponStyles, weaponStyleOf } from '../../config/registries/weaponStyles.js';
-import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
+import { getPaletteEntry, isCombatStyleScope } from '../../config/registries/modifierPalette.js';
 import { isDamageTypeId, isTypeOrGroupId, resistanceProblems } from '../../config/registries/damageTypes.js';
 import { RETIRED_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
 import { moveProblems } from '../../config/registries/enemyMoves.js';
@@ -61,6 +61,9 @@ function statementFindings(def, push, isItemId = null) {
         const vocabulary = hasValue(payload.category) ? getPaletteEntry(payload.type)?.categories : null;
         if (vocabulary === 'skill' && !isScopeCategory(payload.category)) {
             push('statements', `one of its rules is narrowed to the skill "${payload.category}", which does not exist — the rule matches nothing. Pick the skill again in the CMS.`);
+        }
+        if (vocabulary === 'combatStyle' && !isCombatStyleScope(payload.category)) {
+            push('statements', `one of its rules is narrowed to "${payload.category}", which is no combat style — the rule helps no fighter. Pick Melee, Ranged, Magic or Stealth, or no style, in the CMS.`);
         }
         if (vocabulary === 'skillOrCarried' && isItemId && !isScopeCategory(payload.category)
             && !isCarriedKind(payload.category) && !isItemId(payload.category)) {

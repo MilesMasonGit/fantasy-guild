@@ -20,6 +20,8 @@ import {
     weaponDamageTypeOf, BAREHANDED_DAMAGE_TYPE, PLAIN_ENEMY_HIT_TYPE, resistanceFor
 } from '../../config/registries/damageTypes.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
+import { getGlobalAggregator } from '../effects/GuildModifiers.js';
+import { combinePercentages } from '../effects/ModifierAggregator.js';
 import { roundByChance, WHOLE_EPSILON } from '../../utils/RNG.js';
 
 /** A hero's level in one skill, as saved; 0 when they hold none of it (a villager). */
@@ -116,18 +118,46 @@ export function swingTimeFactor(entity) {
     return Math.min(SWING_TIME_FACTOR_RANGE.max, Math.max(SWING_TIME_FACTOR_RANGE.min, factor));
 }
 
+/** {@link swingTimeFactor} for a hero: what they carry and the guild's stars for their style. */
+function heroSwingTimeFactor(hero) {
+    const factor = heroPercentBucket(hero, EFFECT_TYPES.SWING_TIME);
+    return Math.min(SWING_TIME_FACTOR_RANGE.max, Math.max(SWING_TIME_FACTOR_RANGE.min, factor));
+}
+
 /** How long a hero's swing takes: the weapon's speed, normal (3 s) barehanded. */
 export function heroAttackSpeedMs(hero) {
-    return Math.round(attackSpeedMs(getHeroWeapon(hero)?.speed) * swingTimeFactor(hero));
+    return Math.round(attackSpeedMs(getHeroWeapon(hero)?.speed) * heroSwingTimeFactor(hero));
 }
 
 // --- What a hero carries (all default to 0 when nothing provides them) ------------------------
 
 const axis = (entity, type, category) => entity?.aggregator?.query(type, category) || 0;
 
+/**
+ * A hero's flat total on a style axis (Damage, Accuracy: `categories: 'combatStyle'`): what they
+ * carry plus what the guild gives (Hall stars, a Region's rules), each read for the style they fight
+ * in, so a rule narrowed to Melee helps only a Melee fighter. Enemies never read the guild's.
+ */
+function heroStyleAxis(hero, type, style = getHeroCombatStyle(hero)) {
+    if (!hero) return 0;
+    return axis(hero, type, style) + getGlobalAggregator().query(type, style);
+}
+
+/**
+ * A hero's percentage bucket on a style axis, theirs and the guild's for their style summed into one
+ * bucket before it applies (resolving each apart and multiplying would compound them).
+ */
+function heroPercentBucket(hero, type, style = getHeroCombatStyle(hero)) {
+    if (!hero) return 1;
+    return combinePercentages([
+        ...(hero.aggregator?.collectPercentages ? hero.aggregator.collectPercentages(type, style) : []),
+        ...getGlobalAggregator().collectPercentages(type, style)
+    ]);
+}
+
 /** Percentage points taken off the hero's miss chance. */
 export function heroAccuracy(hero) {
-    return axis(hero, EFFECT_TYPES.ACCURACY);
+    return heroStyleAxis(hero, EFFECT_TYPES.ACCURACY);
 }
 
 /** Percentage points added to the miss chance of whoever attacks the hero. */
@@ -200,13 +230,21 @@ export function enemyMissChance(enemy, hero) {
 
 /**
  * The outgoing-damage multiplier a fighter carries: the `DAMAGE` percentage bucket that a lingering
- * library effect registers (Well Fed on a hero, a boss's heavy strike). Either side.
+ * library effect registers (a boss's heavy strike). A hero's is {@link heroDamageMultiplier}.
  */
 export function damageMultiplierOf(entity) {
     const fromEffects = entity?.aggregator?.getPercentageBucket
         ? entity.aggregator.getPercentageBucket(EFFECT_TYPES.DAMAGE) - 1
         : 0;
     return 1 + fromEffects;
+}
+
+/**
+ * A hero's outgoing-damage multiplier: the `DAMAGE` percentage bucket of what they carry (Well Fed)
+ * and the guild's stars, for the style they fight in.
+ */
+export function heroDamageMultiplier(hero, style = getHeroCombatStyle(hero)) {
+    return 1 + (heroPercentBucket(hero, EFFECT_TYPES.DAMAGE, style) - 1);
 }
 
 // --- Damage types ------------------------------------------------------------------------------
@@ -284,7 +322,7 @@ export function typeFactor(boostPct, resistPct) {
 export function heroBaseDamage(hero) {
     const weapon = getHeroWeapon(hero);
     const weaponDamage = weapon && Number(weapon.damage) > 0 ? Number(weapon.damage) : UNARMED_DAMAGE;
-    return weaponDamage + levelDamageBonus(getHeroCombatLevel(hero)) + axis(hero, EFFECT_TYPES.DAMAGE);
+    return weaponDamage + levelDamageBonus(getHeroCombatLevel(hero)) + heroStyleAxis(hero, EFFECT_TYPES.DAMAGE);
 }
 
 /**
@@ -327,7 +365,7 @@ function landedBlow(parts, multiplier, crit, boostOf, resistOf) {
  */
 export function heroBlow(hero, enemy, { crit = false, arrow = null } = {}) {
     const style = getHeroCombatStyle(hero);
-    const multiplier = damageMultiplierOf(hero) * matchupMultiplier(style, enemy?.combatType) * styleCutFactor(hero, style);
+    const multiplier = heroDamageMultiplier(hero, style) * matchupMultiplier(style, enemy?.combatType) * styleCutFactor(hero, style);
     return landedBlow(heroHitParts(hero, arrow), multiplier, crit,
         (type) => typeDamageBoost(hero, type),
         (type) => enemyTypeResistance(enemy, type));

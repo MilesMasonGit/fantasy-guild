@@ -13,7 +13,7 @@ import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 import { passiveLapMs } from '../board/workTime.js';
 import { rankOf } from '../../config/hallStars.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
-import { getSkill } from '../../config/registries/skillRegistry.js';
+import { getSkill, COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
 
 const ALL_TOKENS = Object.freeze({ mode: 'all', value: '' });
 
@@ -43,6 +43,10 @@ export function asGuildRule(statement) {
  * out of an axis that words its own sentence ("award 10% more XP"), and on a star it is the point.
  */
 export function hallRuleSentence(statement, names = hallNames()) {
+    if (isStyleRule(statement)) {
+        const parts = effectParts(asGuildRule(statement), names);
+        if (parts) return `Gives every ${styleSubject(statement)} ${`${parts.size} ${parts.after}`.trim()} in combat.`;
+    }
     const text = renderStatement(asGuildRule(statement), names);
     const category = statement?.payload?.category;
     if (!category || getPaletteEntry(statement.payload.type)?.categories !== 'skill') return text;
@@ -118,9 +122,28 @@ function andList(list) {
     return `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
 }
 
+/** Whether a rule is on a combat axis a star gives fighters (Damage, Swing Time, Accuracy). */
+function isStyleRule(statement) {
+    return getPaletteEntry(statement?.payload?.type)?.categories === 'combatStyle';
+}
+
+/** Who a combat star's rule helps: "Melee fighter", or "hero" when it names no style. */
+function styleSubject(statement) {
+    const id = String(statement?.payload?.category || '').toLowerCase();
+    return COMBAT_SKILL_IDS.includes(id) ? `${getSkill(id)?.name || id} fighter` : 'hero';
+}
+
+/** What a combat star's fighters do, by axis, when it helps them and when it hinders them. */
+const STYLE_PHRASES = {
+    [EFFECT_TYPES.DAMAGE]: ['hit harder', 'hit softer'],
+    [EFFECT_TYPES.SWING_TIME]: ['swing faster', 'swing slower'],
+    [EFFECT_TYPES.ACCURACY]: ['miss less', 'miss more']
+};
+
 /** Who a star's rule reaches, as a singular noun after "Every": "Forestry Token", "Logging Camp", "hero". */
 function ruleSubject(statement, names) {
     if (getPaletteEntry(statement?.payload?.type)?.guildOnly) return 'hero';
+    if (isStyleRule(statement)) return styleSubject(statement);
     const to = statement?.to || {};
     if (to.mode === 'tag' && to.value) return `${to.value} Token`;
     if (to.mode === 'id' && to.value) return names.token(to.value);
@@ -175,6 +198,11 @@ function ruleEffect(statement, names) {
     }
     const parts = effectParts(asGuildRule(statement), names);
     if (!parts) return null;
+    const style = STYLE_PHRASES[payload.type];
+    if (style && isStyleRule(statement)) {
+        const helps = (Number(payload.value) > 0) !== !!getPaletteEntry(payload.type)?.inverted;
+        return { phrase: helps ? style[0] : style[1], amount: `${parts.size} ${parts.after}`.trim() };
+    }
     if (parts.before) return { phrase: `${parts.before} ${parts.after}`.trim(), amount: `${parts.size} ${parts.after}`.trim() };
     // An axis with no verb of its own reads "7% more yield": the star "gives more yield".
     const direction = parts.size.split(' ').pop();

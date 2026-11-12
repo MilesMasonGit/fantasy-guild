@@ -256,12 +256,18 @@ describe('the palette declares both, rather than inferring them', () => {
         ]));
     });
 
-    it('offers NO category on the combat axes, whose reader passes none', () => {
+    it('offers NO category on the combat axes whose reader passes none', () => {
         // `query('ARMOR')` with no category would never match a scoped modifier,
         // so offering the field would offer something silently discarded.
-        for (const type of [EFFECT_TYPES.ARMOR, EFFECT_TYPES.ACCURACY,
-            EFFECT_TYPES.DAMAGE, EFFECT_TYPES.RESIST_FLAT]) {
+        for (const type of [EFFECT_TYPES.ARMOR, EFFECT_TYPES.DODGE,
+            EFFECT_TYPES.CRIT_CHANCE, EFFECT_TYPES.RESIST_FLAT]) {
             expect(getPaletteEntry(type).categories).toBeUndefined();
+        }
+    });
+
+    it('offers a combat style on Damage, Swing Time and Accuracy, whose reader passes the style the hero fights in', () => {
+        for (const type of [EFFECT_TYPES.ACCURACY, EFFECT_TYPES.DAMAGE, EFFECT_TYPES.SWING_TIME]) {
+            expect(getPaletteEntry(type).categories).toBe('combatStyle');
         }
     });
 

@@ -115,6 +115,12 @@ export function buildCorpus() {
         addS(`axis:${entry.type}:category-unknown`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'flat', value: 2, category: 'not_a_skill' } }));
         addS(`axis:${entry.type}:item`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'flat', value: 25, itemId: FIX.item2, quantity: 3 } }), shippedNames);
     }
+    // A combat style narrowing (Damage, Swing Time, Accuracy), one case a style.
+    for (const entry of MODIFIER_PALETTE.filter(e => e.categories === 'combatStyle')) {
+        for (const style of ['melee', 'ranged', 'magic', 'stealth']) {
+            addS(`axis:${entry.type}:style:${style}`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'percentage', value: 0.1, category: style } }));
+        }
+    }
     addS('axis:unknown-type', S(KEYWORD.PROVIDES, { payload: { type: 'NOT_AN_AXIS', value: 3 } }));
     addS('axis:no-payload', S(KEYWORD.PROVIDES, { payload: undefined }));
     // A status is a library effect with a status block, named by its effect id.
@@ -354,6 +360,9 @@ export function buildCorpus() {
             addS(`carried:axis:${entry.type}:${value}`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'percentage', value } }), carried);
         }
         addS(`carried:axis:${entry.type}:mining`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'flat', value: 2, category: 'mining' } }), carried);
+        if (entry.categories === 'combatStyle') {
+            addS(`carried:axis:${entry.type}:melee`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'flat', value: 2, category: 'melee' } }), carried);
+        }
     }
     for (const t of TRIGGER_EVENTS) {
         const when = { event: t.id, scope: t.scopes[0] };

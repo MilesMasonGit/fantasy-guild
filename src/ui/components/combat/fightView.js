@@ -226,14 +226,14 @@ export function heroSide(hero) {
     const weapon = CombatFormulas.getHeroWeapon(hero);
     // The cut worn gear makes to this style (a mage in an iron chestplate) is in the hit shown.
     const cut = CombatFormulas.styleDamageCut(hero, style);
-    const buffs = CombatFormulas.damageMultiplierOf(hero) * CombatFormulas.styleCutFactor(hero, style);
+    const buffs = CombatFormulas.heroDamageMultiplier(hero, style) * CombatFormulas.styleCutFactor(hero, style);
     const arrows = arrowsView(hero);
     const hitParts = CombatFormulas.heroHitParts(hero, arrows?.arrow || null)
         .map(p => ({ type: p.type, hit: Math.max(0, p.base * buffs), arrow: !!p.arrow }));
     const hit = hitParts.reduce((sum, p) => sum + p.hit, 0);
     const weaponDamage = weapon && Number(weapon.damage) > 0 ? Number(weapon.damage) : UNARMED_DAMAGE;
     const levelStep = levelDamageBonus(CombatFormulas.getHeroCombatLevel(hero));
-    const more = Math.round((CombatFormulas.heroBaseDamage(hero) * CombatFormulas.damageMultiplierOf(hero) - weaponDamage - levelStep) * 100) / 100;
+    const more = Math.round((CombatFormulas.heroBaseDamage(hero) * CombatFormulas.heroDamageMultiplier(hero, style) - weaponDamage - levelStep) * 100) / 100;
     const boosts = [...new Set(hitParts.map(p => p.type))]
         .map(type => ({ type, n: CombatFormulas.typeDamageBoost(hero, type) }))
         .filter(b => b.n);
