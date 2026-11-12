@@ -285,7 +285,7 @@ None open.
 
 ## Questions for the owner
 
-- **The empty War Camp** (T-400, 2026-11-11): deleting the four combat Lore stars leaves the War Camp constellation with no stars. A: delete the constellation too in the CMS (recommended; combat stars can bring it back later). B: keep the empty name on the Hall map as a placeholder for future combat stars.
+- ~~The empty War Camp~~ **Answered 2026-11-11: delete the constellation too** (owner, in the CMS with the 13 Lore stars, then Sync on main).
 
 - ~~Native buttons that can be dragged are still Tab stops~~ answered 2026-11-10: keep them (A).
 
