@@ -1,6 +1,7 @@
 // what the Guild Hall's stars register guild-wide, worked out from the stars and their ranks alone
 
 import { KEYWORD } from '../effects/statements.js';
+import { EFFECT_TYPES } from '../effects/constants.js';
 import { auraSourceId } from '../effects/GuildModifiers.js';
 import { filtersOf, getFilterKind, FILTER_NEEDS } from '../../config/registries/filterRegistry.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
@@ -95,6 +96,29 @@ export function hallRulesOf(stars, ranks) {
         });
     }
     return { modifiers, aimed, ignored, held };
+}
+
+/**
+ * The XP every hero holds in every skill from the held ranks' XP for Everyone rules: what a hero who
+ * joins now arrives with, and, from the ranks before and after a purchase, what that purchase gives
+ * the roster. Whole XP, never below 0. Read from the stars and the ranks alone, never the guild-wide
+ * aggregator, so a Region's rule on that axis gives nobody anything.
+ *
+ * @param {object[]} stars authored stars, normalised
+ * @param {Record<string, number>} ranks the guild's ranks
+ * @returns {number}
+ */
+export function xpForEveryoneOf(stars, ranks) {
+    let total = 0;
+    for (const star of stars || []) {
+        for (const statement of rankOf(star, ranks?.[star?.id])?.rules || []) {
+            if (statement?.keyword !== KEYWORD.PROVIDES || statement.when?.event) continue;
+            if (statement.payload?.type !== EFFECT_TYPES.XP_FOR_EVERYONE) continue;
+            const value = Number(statement.payload.value);
+            if (Number.isFinite(value)) total += value;
+        }
+    }
+    return Math.max(0, Math.round(total));
 }
 
 /**

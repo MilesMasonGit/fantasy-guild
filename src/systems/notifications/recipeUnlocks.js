@@ -39,6 +39,43 @@ export function othersBestLevel(heroes, heroId, skillId) {
 }
 
 /**
+ * The recipes a Guild Hall gift (`XP_FOR_EVERYONE_GIVEN`) unlocked for the guild, a row a hero:
+ * `[{ heroId, recipes }]`, heroes it unlocked nothing for left out. Every hero rose at once and
+ * `heroes` are read after it, so the guild's best before the gift is each hero's old level where the
+ * gift raised it and their level now where it did not.
+ *
+ * @param {object[]} recipes every recipe in the game
+ * @param {object[]} heroes the guild's heroes, after the gift
+ * @param {Array<{heroId: string, levelUps: Array<{skillId: string, oldLevel: number, newLevel: number}>}>} rows
+ */
+export function recipesUnlockedByGift(recipes, heroes, rows) {
+    const oldLevel = new Map();
+    for (const row of rows || []) {
+        for (const l of row?.levelUps || []) oldLevel.set(`${row.heroId}|${l.skillId}`, Number(l.oldLevel) || 0);
+    }
+    const bestBefore = (skillId) => {
+        let best = 0;
+        for (const hero of heroes || []) {
+            const level = oldLevel.get(`${hero?.id}|${skillId}`) ?? hero?.skills?.[skillId]?.level ?? 0;
+            if (level > best) best = level;
+        }
+        return best;
+    };
+    const out = [];
+    for (const row of rows || []) {
+        const found = [];
+        for (const l of row?.levelUps || []) {
+            const unlocked = recipesUnlockedBy(recipes, {
+                skillId: l.skillId, oldLevel: Number(l.oldLevel) || 0, newLevel: Number(l.newLevel) || 0, othersBest: bestBefore(l.skillId)
+            });
+            for (const recipe of unlocked) if (!found.includes(recipe)) found.push(recipe);
+        }
+        if (found.length) out.push({ heroId: row.heroId, recipes: found });
+    }
+    return out;
+}
+
+/**
  * The recipes a `HERO_LEVELED` event unlocks for the guild: the one reading the live banner and
  * the catch-up news both make. `heroes` are the guild's, for the others' best level.
  */

@@ -4,12 +4,14 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import {
     getUpgradeDef, getUpgradePrice, totalPrice, isUpgradeAccessible, getLockReason,
-    rosterLimitForRank, BANK_TAB_SLOTS, BANK_TAB_CAP
+    rosterLimitForRank, authoredStars, BANK_TAB_SLOTS, BANK_TAB_CAP
 } from '../../config/guildUpgrades.js';
 // Loads the authored stars into the sky (`data/hallStars.json`) before anything reads it.
 import '../../config/registries/hallStarRegistry.js';
 import { createHero } from '../hero/logic/HeroLifecycle.js';
+import { giveXpInEverySkill } from '../hero/SkillSystem.js';
 import * as HallRules from './HallRules.js';
+import { xpForEveryoneOf } from './hallModifiers.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -152,9 +154,15 @@ export const GuildUpgradeManager = {
         const paid = this._payItems(price);
         if (!paid.success) return paid;
 
+        const xpBefore = xpForEveryoneOf(authoredStars(), ranks);
         const newRank = rank + n;
         ranks[upgradeId] = newRank;
         this.recompute();
+
+        // ⚠️ Given here, at the purchase, and nowhere else: a rank lists the star's whole gift, so
+        // the roster gets the difference; a load or a re-read of the ranks gives nothing. Before any
+        // recruit below, who arrives with the whole instead (`HeroLifecycle`).
+        this._giveXpForEveryone(upgradeId, xpForEveryoneOf(authoredStars(), ranks) - xpBefore);
 
         // Each Roster Size rank immediately recruits a new hero.
         if (upgradeId === 'roster_size') for (let i = 0; i < n; i++) createHero();
@@ -162,6 +170,22 @@ export const GuildUpgradeManager = {
         EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId, rank: newRank, fromRank: rank, count: n });
         logger.info('GuildUpgradeManager', `Purchased ${upgradeId} rank ${n > 1 ? `${rank + 1}-` : ''}${newRank} for ${price.map(p => `${p.quantity}x ${p.itemId}`).join(', ') || 'free'}`);
         return { success: true };
+    },
+
+    /**
+     * XP for Everyone at a purchase: `amount` XP in every skill to every hero on the roster, their
+     * level-ups said once for the purchase (`XP_FOR_EVERYONE_GIVEN`), never once a skill.
+     */
+    _giveXpForEveryone(upgradeId, amount) {
+        if (!(amount >= 1)) return;
+        const heroes = [];
+        for (const hero of [...GameState.heroes]) {
+            const levelUps = giveXpInEverySkill(hero.id, amount);
+            if (levelUps) heroes.push({ heroId: hero.id, heroName: hero.name, levelUps });
+        }
+        if (!heroes.length) return;
+        EventBus.publish(ENGINE_EVENTS.XP_FOR_EVERYONE_GIVEN, { upgradeId, amount, heroes });
+        logger.info('GuildUpgradeManager', `${upgradeId} gave ${heroes.length} heroes ${amount} XP in every skill`);
     },
 
     /** Write every rank-derived stat. Idempotent; safe on load and rank 0. */

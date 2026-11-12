@@ -4,7 +4,9 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 /**
  * Every level-up the player should be shown, live or from time away, for the UI pieces that
  * show them (the hero bar's alerts, the number floating over the hero).
- * `onLevelUps(rows, { catchUp })` gets `{ heroId, skillId, skillName, oldLevel, newLevel }` rows;
+ * `onLevelUps(rows, { catchUp })` gets `{ heroId, skillId, skillName, oldLevel, newLevel }` rows,
+ * or for a Guild Hall gift (XP for Everyone) one `{ heroId, levelUps: [those rows' fields] }` row a
+ * hero who rose: said once for the hero, never once a skill.
  * `onReset()` is another save's heroes arriving, so what is up should go.
  * A catch-up plays with the bus quiet, so its level-ups never arrive as `HERO_LEVELED`: they are
  * read off its summary and handed on at the `GAME_RESET` that follows it. ⚠️ On that reset, not
@@ -20,6 +22,12 @@ export function subscribeLevelUps({ onLevelUps, onReset }) {
         EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, skillId, skillName, newLevel, oldLevel } = {}) => {
             if (!heroId || !skillName || !Number.isFinite(newLevel)) return;
             onLevelUps([{ heroId, skillId, skillName, oldLevel, newLevel }], { catchUp: null });
+        }, UI_LISTENER),
+        EventBus.subscribe(ENGINE_EVENTS.XP_FOR_EVERYONE_GIVEN, ({ heroes } = {}) => {
+            const rows = (heroes || [])
+                .filter(r => r?.heroId && r.levelUps?.length)
+                .map(r => ({ heroId: r.heroId, levelUps: r.levelUps }));
+            if (rows.length) onLevelUps(rows, { catchUp: null });
         }, UI_LISTENER),
         EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_FINISHED, ({ summary, show } = {}) => {
             const rows = (summary?.levelUps || []).filter(r => r.heroId && r.skillName && Number.isFinite(r.to));

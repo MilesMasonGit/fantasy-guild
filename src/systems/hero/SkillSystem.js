@@ -6,6 +6,7 @@ import { applyXpBonus } from './xpBonus.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { XpRateTracker } from './XpRateTracker.js';
+import { addXpToEverySkill } from './everySkillXp.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -144,6 +145,30 @@ export function addXP(heroId, skillId, amount) {
         granted,
         targetSkillId
     };
+}
+
+/**
+ * Give a hero `amount` XP in every skill they hold at once: the Guild Hall's XP for Everyone.
+ *
+ * ⚠️ Publishes no `HERO_LEVELED`: one a skill would be up to a score of level-ups for one hero.
+ * The caller says the level-ups once (`XP_FOR_EVERYONE_GIVEN`); this only keeps the hero's derived
+ * stats in step and says the sheet changed.
+ *
+ * @param {string} heroId
+ * @param {number} amount whole XP
+ * @returns {Array<{ skillId: string, skillName: string, oldLevel: number, newLevel: number }>|null}
+ *   the skills that gained a level, or null when the hero gained nothing (no such hero, a villager)
+ */
+export function giveXpInEverySkill(heroId, amount) {
+    const hero = HeroManager.getHero(heroId);
+    if (!hero || hero.isVillager || !(Math.round(amount) >= 1)) return null;
+    const levelUps = addXpToEverySkill(hero, amount);
+    if (levelUps.length) {
+        HeroManager.updateHeroFromSkills(hero);
+        EquipmentManager.recalculateEquipmentModifiers(hero);
+    }
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'xpForEveryone', heroId });
+    return levelUps;
 }
 
 /**

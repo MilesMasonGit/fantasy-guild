@@ -83,6 +83,10 @@ class AudioSystemClass {
         EventBus.subscribe(ENGINE_EVENTS.AUDIO_PLAY, (data) => this.playSfx(data.clip, data.options));
         
         EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, () => this.playSfx('levelup'));
+        // A Guild Hall gift's level-ups, every hero's, are one sound.
+        EventBus.subscribe(ENGINE_EVENTS.XP_FOR_EVERYONE_GIVEN, ({ heroes } = {}) => {
+            if ((heroes || []).some(h => h?.levelUps?.length)) this.playSfx('levelup');
+        });
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => this.playSfx('victory'));
         EventBus.subscribe(ENGINE_EVENTS.QUEST_CLAIMED, () => this.playSfx('quest_claim'));
         EventBus.subscribe(ENGINE_EVENTS.HERO_DEPLOYED, () => this.playSfx('hero_assign'));

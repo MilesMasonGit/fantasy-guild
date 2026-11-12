@@ -72,6 +72,10 @@ export const EFFECT_TYPES = {
     // How long Passive Production's one lap takes, as a percentage: negative is shorter. Guild-wide
     // only (a Guild Hall star) — PassiveProduction.lapMs.
     PASSIVE_LAP: 'PASSIVE_LAP',
+    // XP for Everyone: XP every hero gets in every skill, once, as a rank is bought; a hero who joins
+    // later arrives with the held ranks' whole gift. A Guild Hall star's only, read off its ranks,
+    // never an aggregator — hallModifiers.xpForEveryoneOf.
+    XP_FOR_EVERYONE: 'XP_FOR_EVERYONE',
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.

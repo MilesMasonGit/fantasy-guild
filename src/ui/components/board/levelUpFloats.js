@@ -6,7 +6,8 @@ import { perksReachedBy } from '../dock/heroPerks.js';
 /**
  * The level-up moment on the mat, as data: each hero's levelled skills, floating over their head
  * for `FLOAT_MS` as the skill's icon and a number that rolls from the old level to the new one.
- * One float per skill; several skills sit side by side, each on its own timer. A milestone perk
+ * One float per skill; several skills sit side by side, each on its own timer. A Guild Hall gift
+ * (XP for Everyone) is one float for the hero instead: the levels it gave in all. A milestone perk
  * the level-up reached is named under its number, for as long as the float is up. Drawn by
  * `HeroBubbleLayer` (`LevelUpFloat.jsx`), which reads this when it draws.
  * Kept here rather than in the layer so a catch-up's level-ups, which arrive before the mat is
@@ -55,9 +56,11 @@ export const rollMs = (values) => Math.min(ROLL_MAX_MS, Math.max(0, values.lengt
  *
  * @returns a new list; the input is untouched
  */
-export function addFloat(list, { skillId, skillName, oldLevel, newLevel }, now, held = false) {
-    const key = skillId || skillName;
+export function addFloat(list, row, now, held = false) {
     const kept = list.filter(f => f.held || f.at + FLOAT_MS > now);
+    if (row.levelUps) return addTogetherFloat(kept, row.levelUps, now, held);
+    const { skillId, skillName, oldLevel, newLevel } = row;
+    const key = skillId || skillName;
     const i = kept.findIndex(f => f.key === key);
     const earlier = i === -1 ? null : kept[i];
     const reachedFrom = Number.isFinite(oldLevel) ? oldLevel : newLevel - 1;
@@ -65,6 +68,27 @@ export function addFloat(list, { skillId, skillName, oldLevel, newLevel }, now, 
     if (earlier) from = (earlier.held || now - earlier.at < FLASH_MS) ? earlier.from : earlier.to;
     const perks = withPerks(earlier?.perks, perksReachedBy(skillId, reachedFrom, newLevel));
     const next = { key, skillId, skillName, from, to: newLevel, at: now, held, perks };
+    if (i === -1) return [...kept, next];
+    return kept.map((f, j) => (j === i ? next : f));
+}
+
+/** The key of the one float a Guild Hall gift (XP for Everyone) puts over a hero. */
+export const TOGETHER_KEY = 'xp_for_everyone';
+
+/**
+ * A Guild Hall gift's level-ups as one float, not one a skill: the levels gained in all (`levels`),
+ * added to a gift float still up, with every perk they reached.
+ */
+function addTogetherFloat(kept, levelUps, now, held) {
+    const i = kept.findIndex(f => f.key === TOGETHER_KEY);
+    const earlier = i === -1 ? null : kept[i];
+    let levels = earlier ? earlier.levels : 0;
+    let perks = earlier?.perks;
+    for (const { skillId, oldLevel, newLevel } of levelUps) {
+        levels += Math.max(0, newLevel - oldLevel);
+        perks = withPerks(perks, perksReachedBy(skillId, oldLevel, newLevel));
+    }
+    const next = { key: TOGETHER_KEY, together: true, levels, at: now, held, perks: perks || NO_PERKS };
     if (i === -1) return [...kept, next];
     return kept.map((f, j) => (j === i ? next : f));
 }
