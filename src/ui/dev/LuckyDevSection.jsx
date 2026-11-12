@@ -28,7 +28,7 @@ export function LuckyDevSection() {
                     onClick={() => {
                         const r = setUpLuckyScene();
                         setStatus(r.ok
-                            ? 'Lower row: a Lucky Vein beside a Lucky Charm (its 5 % rare table raised to 50 %), a second vein the QA Lucky Finds star reaches (10 % raised to 20 %), and a QA Lucky Goblin the star reaches too (25 % raised to 50 %). A miner works each vein and a fighter takes on the Goblin. A rare find (Quartz or Gold Ore) twinkles as it lands. Hover a vein or the Goblin for its rare finds and their chances; hover the Charm and the star for their rule text.'
+                            ? 'Lower row: a Lucky Vein beside a Lucky Charm (its 5 % rare table raised to 50 %), a second vein the QA Lucky Finds star reaches (10 % raised to 20 %), and a QA Lucky Goblin the star reaches too (25 % raised to 50 %). A miner works each vein and a fighter takes on the Goblin. A rare find (Quartz or Gold Ore) lands beside the Token like any loot; it is marked for the rare twinkle, which is switched off for now. Hover a vein or the Goblin for its rare finds and their chances; hover the Charm and the star for their rule text.'
                             : r.error);
                     }}
                 >

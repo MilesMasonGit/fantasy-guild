@@ -25,9 +25,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * The QA panel's Lucky button (brief 590 P3): the owner's way to see, by clicking, rare finds that
- * twinkle off a vein a Lucky building raises, a vein a Lucky Hall star raises, and an enemy the star
- * raises too; and the rare finds with their chances on each Token's card.
+ * The QA panel's Lucky button (brief 590 P3): the owner's way to see, by clicking, rare finds
+ * landing off a vein a Lucky building raises, a vein a Lucky Hall star raises and an enemy the star
+ * raises too, each marked for the rare twinkle; and the finds with their chances on each Token's card.
  */
 
 beforeAll(() => { BoardRunner.init(); Flags.init(); LoadoutMoments.init(); });
@@ -57,7 +57,7 @@ const numberIn = (line, pattern) => Number(line.match(pattern)[1]);
 const instanceOf = (typeId) => BoardState.tokens().find(t => t.typeId === typeId);
 
 describe('the Lucky scene', () => {
-    it('raises each table as it says, and finds land and twinkle on both veins and the Goblin', () => {
+    it('raises each table as it says, and finds land, marked for the twinkle, on both veins and the Goblin', () => {
         expect(setUpLuckyScene()).toEqual({ ok: true });
         for (const typeId of [QA_LUCKY.NEAR_VEIN, QA_LUCKY.STAR_VEIN, QA_LUCKY.CHARM, QA_LUCKY.GOBLIN]) {
             expect(instanceOf(typeId), typeId).toBeDefined();
@@ -70,7 +70,7 @@ describe('the Lucky scene', () => {
         for (const line of [near, star, goblin]) expect(numberIn(line, /, (\d+) rare finds/), line).toBeGreaterThan(0);
         expect(numberIn(goblin, /; (\d+) kills/)).toBeGreaterThan(3);
         const finds = [near, star, goblin].reduce((sum, line) => sum + numberIn(line, /, (\d+) rare finds/), 0);
-        expect(numberIn(twinkles, /: (\d+)$/)).toBe(finds);
+        expect(numberIn(twinkles, /twinkle: (\d+)/)).toBe(finds);
     });
 
     it('each Token\'s card lists its rare finds with their chances, Lucky counted', () => {

@@ -124,7 +124,8 @@ const isFind = (itemId) => FINDS.some(f => f.itemId === itemId);
  * The mat's lower row: a QA Lucky Vein beside a QA Lucky Charm (its 5 % table at 50 %), a second
  * vein the QA Lucky Finds star reaches (10 % at 20 %), and a QA Lucky Goblin the star reaches too
  * (25 % at 50 %), a miner on each vein and a fighter on the Goblin. Finds are Quartz and Gold Ore
- * and twinkle as they land. ⚠️ Changes the game, like Spawn Party.
+ * and are marked for the rare twinkle as they land (the twinkle itself is switched off in
+ * `lootEffects.js`). ⚠️ Changes the game, like Spawn Party.
  * @returns {{ok: boolean, error?: string}}
  */
 export function setUpLuckyScene() {
@@ -202,6 +203,6 @@ export function luckyReadout() {
         tokenLine(scene.near, 'the Charm beside it', 'cycles'),
         tokenLine(scene.star, `the QA Lucky Finds star, rank ${rank}`, 'cycles'),
         tokenLine(scene.goblin, `the QA Lucky Finds star, rank ${rank}`, 'kills'),
-        `Rare finds that twinkled: ${scene.twinkles}`
+        `Rare finds marked for the twinkle: ${scene.twinkles} (the twinkle is switched off in lootEffects.js)`
     ].filter(Boolean);
 }

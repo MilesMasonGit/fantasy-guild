@@ -176,8 +176,8 @@ Token.
   cycle in percent, decimals allowed (0.5), and finds with a weight and a
   quantity range. Each finished cycle (each kill, for an enemy) rolls it once,
   after the Token's own outputs; on a hit one find, picked by weight, drops like
-  any output (Yield, Double Loot and Double Item work on it) and twinkles as it
-  lands. A failed cycle and a build roll nothing. **Lucky** (§7) raises the
+  any output (Yield, Double Loot and Double Item work on it) and is marked for
+  the rare twinkle as it lands (the twinkle is switched off for now, `lootEffects.js`). A failed cycle and a build roll nothing. **Lucky** (§7) raises the
   chance. The Token's card and the Encyclopedia list each find at its own chance
   (the table's times its share). *(`rareTables.js`, `RareTables.js`)*
 - **Charges** (`uses`): one is spent per cycle by default; at 0 the Token is

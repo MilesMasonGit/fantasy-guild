@@ -28,7 +28,7 @@ export function noteDrop(sprite, chance) {
 
 /**
  * Say that loot `sprite` came off its Token's rare drop table (`RareTables`): always a find,
- * whatever its chance, so it always twinkles.
+ * whatever its chance, so it is always marked for the twinkle (which `lootEffects.js` switches).
  * @param {object|null} sprite
  * @param {number} chance the percent this entry drops a cycle, Lucky counted
  */

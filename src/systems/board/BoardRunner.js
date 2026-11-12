@@ -350,7 +350,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
 
     // The Token's rare drop table, after its own lines: one roll at its chance widened by Lucky,
     // and on a hit one find by weight, landed as any line is (Double Loot doubles it, Double Item
-    // works on it) and always twinkling. A failed cycle rolls nothing, a build drops nothing, and
+    // works on it) and always marked a rare find for the mat's twinkle (`RareDrops.noteRareFind`;
+    // the twinkle itself is switched off in `lootEffects.js`). A failed cycle rolls nothing, a build drops nothing, and
     // a Token with no table draws nothing.
     if (!failed && !buildTypeId) {
         const find = RareTables.rollRareTable(id, def, config.skill);

@@ -44,7 +44,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * Rare drop tables and Lucky (brief 590 P3). A Token's rare table rolls once a cycle (or a kill),
  * after its own lines, at its chance widened by Lucky; on a hit one entry, picked by weight, lands
- * as any line does: Double Loot doubles it, Double Item works on it, and it twinkles. A failed cycle
+ * as any line does: Double Loot doubles it, Double Item works on it, and it is marked for the twinkle. A failed cycle
  * rolls nothing; a Token with no table draws nothing, Lucky or not.
  */
 
@@ -142,7 +142,7 @@ const VEIN = { x: 800, y: 500 };
 const BESIDE = { x: 940, y: 500 };
 const BELOW = { x: 800, y: 640 };
 
-/** Counts a Token's cycles and the rare finds that twinkled off it. */
+/** Counts a Token's cycles and the rare finds marked for the twinkle off it. */
 function watch(instanceId) {
     const seen = { cycles: 0, failed: 0, finds: [] };
     const offs = [
@@ -230,7 +230,7 @@ describe('a rare table, as authored', () => {
 });
 
 describe('a rare table on a gathering Token', () => {
-    it('at 100 %, every cycle lands its own line and then one find, which twinkles', () => {
+    it('at 100 %, every cycle lands its own line and then one find, marked for the twinkle', () => {
         const v = scene('rt_sure');
         const seen = watch(v.id);
         run(6200);
@@ -394,7 +394,7 @@ describe('Lucky', () => {
 });
 
 describe('a rare table on an enemy', () => {
-    it('one roll a kill, beside its loot: one find by weight, which twinkles', () => {
+    it('one roll a kill, beside its loot: one find by weight, marked for the twinkle', () => {
         const e = put('rt_enemy', VEIN);
         const finds = [];
         const off = EventBus.subscribe(BOARD_EVENTS.RARE_DROP, (p) => finds.push(p));
