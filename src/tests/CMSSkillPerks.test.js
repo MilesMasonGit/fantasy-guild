@@ -149,7 +149,7 @@ describe('the audits name a perk that does nothing', () => {
             expect.stringMatching(/^leadership: has a perk table, but "leadership" is not a skill/),
             expect.stringMatching(/^forestry: has a perk at level 1, which no hero reaches/),
             expect.stringMatching(/^forestry: its level 25 perk points at the effect "effect_gone", which does not exist/),
-            expect.stringMatching(/^forestry: its level 50 perk \(Quick Hands\) changes Work Time on every skill's work, not only Forestry's/)
+            expect.stringMatching(/^forestry: its level 50 perk \(Quick Hands\) changes Speed on every skill's work, not only Forestry's/)
         ]);
     });
 

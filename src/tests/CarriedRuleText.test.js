@@ -66,7 +66,7 @@ describe('a carried rule reads as the hero\'s and names its skill', () => {
     });
 
     it('⚠️ the same rule on a Token keeps the Token\'s words', () => {
-        expect(renderStatement(provides('LOOT_MULT', 'flat', 5, 'mining'))).toBe('Makes every nearby Token have a 5% chance of double loot.');
+        expect(renderStatement(provides('LOOT_MULT', 'flat', 5, 'mining'))).toBe('Makes every nearby Token have a 5% chance of double loot, but only for Mining work.');
         const rule = S(KEYWORD.APPLIES, {
             when: { event: 'COMBAT_ENGAGED', scope: 'nearby' },
             payload: { effectId: 'fx_valor', forFight: true, chance: 100 }

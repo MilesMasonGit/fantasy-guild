@@ -175,7 +175,7 @@ describe('CMS smoke — the screens mount without throwing', () => {
         // The seeded Work Time value is −0.05. Work Time is `inverted`, so the
         // editor must read that back as a buff rather than leaving the author
         // to remember which axis runs backwards.
-        expect(text).toContain('5% less work time — a buff.');
+        expect(text).toContain('work 5% faster — a buff.');
 
         /**
          * Tag suggestions are still offered — the assertion that matters, and

@@ -32,7 +32,7 @@ export function SkillLoopsDevSection() {
                             : r.error);
                     }}
                 >
-                    Grow Time, the floor and never-wearing stations (test Tokens, gone on reload)
+                    Growth, the floor and never-wearing stations (test Tokens, gone on reload)
                 </button>
                 <button
                     type="button"

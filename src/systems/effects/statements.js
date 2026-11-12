@@ -68,7 +68,7 @@ export const KEYWORDS = Object.freeze([
     {
         id: KEYWORD.PROVIDES,
         label: 'Provides',
-        blurb: 'Changes a number on nearby Tokens — yield, work time, XP and the rest.',
+        blurb: 'Changes a number on nearby Tokens — yield, speed, XP and the rest.',
         filter: true,
         reach: true,
         when: WHEN.NEVER,

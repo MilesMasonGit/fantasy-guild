@@ -128,7 +128,7 @@ afterEach(() => {
 describe('the Grow Time axis, as authored', () => {
     it('is offered: a percentage, a reduction is the buff, narrowable to a skill', () => {
         const entry = getPaletteEntry(EFFECT_TYPES.GROW_TIME);
-        expect(entry).toMatchObject({ label: 'Grow Time', inverted: true, categories: 'skill', when: 'never' });
+        expect(entry).toMatchObject({ label: 'Growth', inverted: true, categories: 'skill', when: 'never' });
         expect(bucketsFor(entry)).toEqual(['percentage']);
         expect(describeModifierDirection(entry, -0.2).isBuff).toBe(true);
         expect(describeModifierDirection(entry, 0.2).isBuff).toBe(false);
