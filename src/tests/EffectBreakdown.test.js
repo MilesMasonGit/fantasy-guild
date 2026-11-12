@@ -459,6 +459,23 @@ describe('the badges are what the engine does', () => {
         expect(new Set(lengths)).toEqual(new Set([badge(effectBreakdown(vein.id), EFFECT_KEY.SPEED).final]));
     });
 
+    it('the Efficiency badges are what a cycle takes from the Bank', () => {
+        hire({ equipment: [] });
+        const smithy = arrive(SMITHY);
+        arrive('eb_rack', NEAR);
+        for (const id of [ORE, COAL, FLUX]) InventoryManager.addItem(id, 100);
+        const paid = Object.fromEntries(effectBreakdown(smithy.id).inputs.map(n => [n.itemId, n.effects[0].final]));
+        expect(paid).toEqual({ [ORE]: 2, [COAL]: 8, [FLUX]: 1 });
+
+        Orders.orderAt(HERO, AT);
+        let cycles = 0;
+        const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, ({ instanceId }) => { if (instanceId === smithy.id) cycles++; });
+        for (let i = 0; i < 101 && !cycles; i++) BoardRunner.tick(100);
+        off();
+        expect(cycles).toBe(1);
+        for (const id of [ORE, COAL, FLUX]) expect(100 - InventoryManager.getItemCount(id), id).toBe(paid[id]);
+    });
+
     it('explainAxis resolves exactly as resolveAxis, every bucket and scope at once', () => {
         hire();
         const vein = arrive(VEIN);

@@ -158,8 +158,8 @@ const ROWS = [
     { key: EFFECT_KEY.GROWTH, typeKey: 'GROW_TIME', unit: UNIT.PERCENT, sign: -1, measure: measureGrowth },
     { key: EFFECT_KEY.XP, typeKey: 'XP_BONUS', unit: UNIT.PERCENT, sign: 1, measure: measureXp },
     { key: EFFECT_KEY.DOUBLE_LOOT, typeKey: 'LOOT_MULT', unit: UNIT.CHANCE, sign: 1, measure: measureDoubleLoot },
-    chanceRow(EFFECT_KEY.PRESERVATION, 'PRESERVATION', (ctx) => ctx.works && !ctx.isHall && (ctx.io?.inputs || []).length > 0),
-    chanceRow(EFFECT_KEY.REFRESH, 'REFRESH', (ctx) => ctx.works && !ctx.isHall
+    chanceRow(EFFECT_KEY.PRESERVATION, 'PRESERVATION', (ctx) => ctx.works && (ctx.io?.inputs || []).length > 0),
+    chanceRow(EFFECT_KEY.REFRESH, 'REFRESH', (ctx) => ctx.works
         && (ctx.instance.usesRemaining != null || Fields.isField(ctx.def))),
     // ⚠️ Off until rare tables exist: `luckyBase` gives the table's chance once they do.
     { key: EFFECT_KEY.LUCKY, typeKey: 'LUCKY', unit: UNIT.PERCENT, sign: 1, measure: measureLucky },
@@ -362,10 +362,11 @@ export function effectBreakdown(instanceId) {
 
     const inputs = [];
     const efficiency = typeOf(EFFICIENCY);
-    if (efficiency && ctx.works && !ctx.isHall) {
+    if (efficiency && ctx.works) {
         for (const input of ctx.io?.inputs || []) {
             if (!input?.itemId) continue;
-            // As `BoardRunner.completeCycle` pays it: never under one, rounded to whole items.
+            // ⚠️ As `BoardRunner.completeCycle` pays it, inline there: rounded to whole items, never
+            // under one. Keep the two the same (the test runs a cycle and checks the Bank).
             const base = input.quantity || 1;
             const { resolved, contributions } = TileModifiers.explainAxis(ctx.id, efficiency, base, ctx.skill);
             const final = Math.max(1, Math.round(resolved));
