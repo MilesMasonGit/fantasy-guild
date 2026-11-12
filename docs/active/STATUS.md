@@ -18,6 +18,7 @@ build green) · bench-queued · eye-check · merged.*
 | 590 P2: Refresh | builder | `feat/effects-590` (`fx`) 718dd4af | ready: 647 files green (agent), director reran its tests and read the engine diff; no draw without a rule; QA panel scene checked in game by the agent; bench at the end of 590 | Wed | Wed |
 | 590 P1: Preservation | engineer | same branch 8454e483, 3d2b22c2 | ready: 649 files green (agent); director read the cycle diff and reran the new tests (88 green); with a Preservation chance offered the failure roll moves ahead of paying, without one the order is unchanged (pinned by tests); kinds ammo, food, drink, potion, elixir, bait; QA scenes checked in game by the agent; owner question: a Field's owed seed on a hit (below); bench at the end of 590 | Wed | Wed |
 | 590 P1b: Efficiency rounds by chance (owner 2026-11-11: 10 Coal at −12 % takes 9 Coal 80 % of the time and 8 Coal 20 %; no minimum of 1; draws only on a fraction) | engineer | same branch e943f6ed | ready: 650 files green (agent); shared `roundByChance` in `RNG.js` (combat's rollFraction uses it, same draws); start check uses the cost rounded up; exact cost for B2 in `InputCost.exactInputQuantity`; recipe rows still show the authored cost (T-406) | Wed | Wed |
+| 590 P1c: owner rulings, seed never paid on a hit, self-spending items covered | engineer | same branch | queued after P3 (sent to the P3 engineer) | Wed | |
 | 590 P3: Lucky and rare tables | engineer | same branch | building (also fixes the luck-dependent Refresh test under seed c) | Wed | |
 | 600 B1: badge look page | builder | `feat/badge-look` (`b1`) 2ef50210 | ready: three looks (A chips, B inline strip, C named list), screenshots sent to the owner; builder recommends A; **owner pick 2026-11-11: A, chips, laid out as a stat block: a grid of 3 columns (2 rows on a busy card, more rows only if more than six badges); Lucky in the main row and on the Rare finds heading** | Wed | Wed |
 | 600 B2: the breakdown | engineer | `feat/effect-breakdown` (`b2`) dc29debf | **bench-queued** (01:00 window; it reroutes `resolveAxis` and `growTimeOf` through one shared walk, so the work check plus an engine timing compare against main): 647 files green (agent); director read the `TileModifiers` diff (same bucket order and sums); 590 plugs in by key; Efficiency badge question answered by the owner's chance-rounding rule (P1b): the badge shows the exact amount; B2 switches to P1b's exact-quantity function after both merge | Wed | Wed |
@@ -288,9 +289,7 @@ None open.
 
 ## Questions for the owner
 
-- **A Field's seed under Preservation** (590 P1, 2026-11-11): as built, a Preservation hit only puts off paying the Field's seed, so the seed is saved only if every harvest of the crop hits (about 1.6 % at 25 % with 3 harvests). A (recommended): a hit on the harvest that owes the seed means it is never paid. B: keep it as built.
-- **Healing potions that fire on a rule** (590 P1, 2026-11-11): a carried rule that spends its own item when it fires (a healing potion on Health Below) is not covered by Preservation. A (recommended): cover it too, one rule everywhere. B: leave it out.
-
+- ~~A Field's seed under Preservation; healing potions that fire on a rule~~ **Answered 2026-11-11: A and A** (a hit on the harvest that owes the seed means it is never paid; self-spending carried items are covered too). Built as 590 P1c after P3.
 - ~~The empty War Camp~~ **Answered 2026-11-11: delete the constellation too** (owner, in the CMS with the 13 Lore stars, then Sync on main).
 
 - ~~Native buttons that can be dragged are still Tab stops~~ answered 2026-11-10: keep them (A).
