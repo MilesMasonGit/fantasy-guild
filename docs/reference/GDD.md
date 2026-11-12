@@ -1396,8 +1396,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   enemy's table is raised by Lucky aimed at the enemy), **catch weight** (a percentage on one fish's weight in a
   water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens; **camp reach** is
   retired: every camp works the standard reach, so a rule carrying it does nothing, the editors no
-  longer offer it and the audits name it); **wound time** and **loadout slots** (guild-only: read from
-  Guild Hall stars, §8, never offered on a Token or item); accuracy,
+  longer offer it and the audits name it); **wound time**, **loadout slots** and **XP for Everyone**
+  (guild-only: read from Guild Hall stars, §8, never offered on a Token or item); accuracy,
   damage, **dodge, crit chance**, **Type Damage %** (the bearer's hits of a
   type or group, or every type: "Poisoner's Cloak: Poison 15"), **Type
   Resistance %** (hits of that type the bearer takes; negative is a weakness;
@@ -1483,11 +1483,28 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   that style; Token upgrades aimed at a Token or tag:
   Grow Time for a vein's rest or a tree's regrowth (a star's Camp Reach rule is retired and left
   out: the boot audit and the CMS Audit tab name a star carrying one, to delete); the guild-only Wound Time
-  for the Infirmary, Loadout Slots for one more of a loadout kind, and Lap Time for the
-  Passive Production lap), and **lines** of
+  for the Infirmary, Loadout Slots for one more of a loadout kind, Lap Time for the
+  Passive Production lap, and XP for Everyone, below), and **lines** of
   Passive Production the Hall pays each lap beside the Wishing Well's Water. The sky grows to
   hold its constellations and is dragged when it does not fit.
   *(`guildUpgrades.js`, `hallStars.js`, `progression/HallRules.js`)*
+- **XP for Everyone** (brief 620 E2; guild-only, a flat amount): a rank bought gives **every hero on
+  the roster** XP **in every skill**, once, at the purchase; a hero who **joins later** (Bunk Beds,
+  or any hero added) arrives with the whole of the ranks held, at full health. As for every star a
+  rank lists the star's whole gift so far (rank 3 of 100 a rank lists 300), so a purchase gives
+  what its ranks add (several ranks at once give what as many single buys give) and a recruit the
+  held rank's figure; a rank listing no more than the one before gives nothing, and the boot audit
+  names it. Nothing is saved for it: the gift stays in the heroes' own XP, a recruit's is worked out
+  from the stars and the saved ranks as they join, and a load, a travel or a re-read of the ranks
+  gives nothing. The gift is not counted in a hero's XP an hour, and raises max HP as headroom, not
+  a heal. Its level-ups are said **once a hero**, not once a skill: one float over the hero (the
+  Upgrade icon and the levels gained in all, "+12"), one hero-bar alert ("+12 levels!"), one
+  level-up sound for the purchase, and one recipe banner for what the whole gift unlocked. A
+  recruit's arrival is not a level-up: their own banner says they came. Read off the held ranks,
+  never the guild-wide aggregator, so a Region's rule on it gives nothing. The ledger does not rate
+  it (it adds no work rate).
+  *(`progression/hallModifiers.js` `xpForEveryoneOf`, `GuildUpgradeManager.purchaseRanks`,
+  `hero/logic/HeroLifecycle.js`, `hero/everySkillXp.js`)*
 - **Ring stars** (brief 380 M4): a star whose `opensRing` names a ring of the world map lets the
   guild settle that ring once its first rank is bought. Ring 1 is open from the start; a star per
   ring from ring 2, the wild rings too, each linked to the one before so they light in order. A
