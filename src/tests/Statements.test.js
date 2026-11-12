@@ -317,3 +317,23 @@ describe('Old-shape content breaks visibly, never silently', () => {
         expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.HP_REGEN, 10)).toBe(10);
     });
 });
+
+describe('a narrowed rule names its skill whatever the effect\'s own wording', () => {
+    const narrowed = (type) => renderStatement(
+        makeStatement(KEYWORD.PROVIDES, { payload: { type, bucket: 'flat', value: 5, category: 'mining' } }), names);
+
+    it.each([
+        [EFFECT_TYPES.LOOT_MULT],
+        [EFFECT_TYPES.FAIL_CHANCE],
+        [EFFECT_TYPES.XP_BONUS],
+        [EFFECT_TYPES.REFRESH]
+    ])('%s ends with the Mining narrowing', (type) => {
+        expect(narrowed(type)).toMatch(/, but only for Mining work\.$/);
+    });
+
+    it('a rule with no narrowing says nothing of a skill', () => {
+        const plain = renderStatement(
+            makeStatement(KEYWORD.PROVIDES, { payload: { type: EFFECT_TYPES.LOOT_MULT, bucket: 'flat', value: 5 } }), names);
+        expect(plain).not.toMatch(/only for/);
+    });
+});

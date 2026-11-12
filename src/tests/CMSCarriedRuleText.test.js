@@ -94,7 +94,7 @@ describe('the effect editor', () => {
 
     it('⚠️ keeps the Token\'s words on an effect a Token uses too', () => {
         const text = open('effect_cc_shared', 'effect', EffectEditor);
-        expect(text).toContain('Makes every nearby Token have a 5% chance of double loot.');
+        expect(text).toContain('Makes every nearby Token have a 5% chance of double loot, but only for Forestry work.');
         expect(text).not.toContain('Gives the hero');
     });
 });

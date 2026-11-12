@@ -203,7 +203,7 @@ describe('the migration', () => {
         // WORK_TIME is inverted — a NEGATIVE value is the buff — so naming by
         // sign alone would label half of them backwards.
         expect(provisionalName(statementFor(KEYWORD.PROVIDES, { type: 'WORK_TIME', value: -0.05 })))
-            .toBe('Work Time Bonus');
+            .toBe('Speed Bonus');
         expect(provisionalName(statementFor(KEYWORD.PROVIDES, { type: 'YIELD', value: -0.05 })))
             .toBe('Yield Penalty');
     });

@@ -159,18 +159,19 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.WORK_TIME,
         reads: { up: (n) => `work ${n} slower`, down: (n) => `work ${n} faster` },
-        label: 'Work Time',
+        label: 'Speed',
         when: 'never',
         scales: 'value',
         categories: 'skill',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         inverted: true,
-        hint: 'How long a cycle takes. A negative value is faster.'
+        hint: 'How long a cycle takes, shown as Speed. A negative value is faster.'
     },
     {
         type: EFFECT_TYPES.INPUT_COST,
-        label: 'Input Cost',
+        reads: { up: (n) => `use ${n} more of every input`, down: (n) => `use ${n} less of every input` },
+        label: 'Efficiency',
         when: 'never',
         scales: 'value',
         categories: 'skill',
@@ -188,7 +189,7 @@ export const MODIFIER_PALETTE = [
          */
         type: EFFECT_TYPES.GROW_TIME,
         reads: { up: (n) => `grow and refill ${n} slower`, down: (n) => `grow and refill ${n} faster` },
-        label: 'Grow Time',
+        label: 'Growth',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
@@ -209,7 +210,7 @@ export const MODIFIER_PALETTE = [
             up: (n, size) => `hold ${n} more ${size === '1' ? 'harvest' : 'harvests'} when ripe`,
             down: (n, size) => `hold ${n} fewer ${size === '1' ? 'harvest' : 'harvests'} when ripe`
         },
-        label: 'Crop Load',
+        label: 'Abundance',
         when: 'never',
         scales: 'value',
         buckets: ['flat', 'percentage'],
@@ -295,7 +296,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.XP_BONUS,
         reads: { up: (n) => `award ${n} more XP`, down: (n) => `award ${n} less XP` },
         heroReads: { up: (n) => `${n} more XP`, down: (n) => `${n} less XP` },
-        label: 'XP Bonus',
+        label: 'XP',
         when: 'never',
         scales: 'value',
         categories: 'skill',
@@ -310,7 +311,7 @@ export const MODIFIER_PALETTE = [
             down: (n) => `have ${n} less chance of double loot`
         },
         heroReads: { up: (n) => `a ${n} chance of double loot`, down: (n) => `${n} less chance of double loot` },
-        label: 'Double Loot Chance',
+        label: 'Double Loot',
         when: 'never',
         scales: 'value',
         categories: 'skill',
@@ -341,7 +342,7 @@ export const MODIFIER_PALETTE = [
          * id as the category, so a rule naming Raw Beef never touches the Bones beside it.
          */
         type: EFFECT_TYPES.DOUBLE_DROP,
-        label: 'Double Item Chance',
+        label: 'Double Item',
         when: 'never',
         scales: 'value',
         // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
@@ -746,10 +747,12 @@ export function describeModifierDirection(entry, value, bucket = 'percentage') {
         : `${Math.abs(n)}`;
     const direction = n < 0 ? 'less' : 'more';
 
-    return {
-        isBuff,
-        text: `${magnitude} ${direction} ${entry.label.toLowerCase()} — ${isBuff ? 'a buff' : 'a penalty'}.`
-    };
+    // An inverted axis stores a time or a cost, so its short name (Speed, Efficiency) would read
+    // backwards beside the sign: it says what happens in its own words, as its rules text does.
+    const said = entry.inverted && entry.reads
+        ? (n < 0 ? entry.reads.down : entry.reads.up)(magnitude, magnitude)
+        : `${magnitude} ${direction} ${entry.label.toLowerCase()}`;
+    return { isBuff, text: `${said} — ${isBuff ? 'a buff' : 'a penalty'}.` };
 }
 
 /** Palette entry for an effect type, or null if it is not authorable. */

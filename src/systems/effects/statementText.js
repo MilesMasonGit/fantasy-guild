@@ -205,7 +205,8 @@ function effectSegments(statement, names, onHero = false) {
         return segs(d(`${size} ${more}`, 'value'), ' ', d(size === '1' ? 'bite' : 'bites', 'type'), ' of ', d(fish, categorySlot(statement)));
     }
 
-    const label = entry.label.toLowerCase();
+    // "no change to XP": an all-capitals name stays as written.
+    const label = entry.label === entry.label.toUpperCase() ? entry.label : entry.label.toLowerCase();
     const value = Number(payload.value);
 
     if (!value) return segs('no change to ', d(label, 'type'));
@@ -641,7 +642,9 @@ function bodySegments(statement, names) {
                     const verb = entry.heroReads || !Number(payload.value) ? 'Gives' : 'Makes';
                     return segs(d(verb, K), ' the hero ', effectSegments(statement, names, true), heroSkillSegments(statement));
                 }
-                return segs(d('Makes', K), ' ', targetSegments(statement, names, ''), ' ', effectSegments(statement, names));
+                // An axis with a skill narrowing and no wording of its own for it names it after the filter.
+                const scope = entry.categories === 'skill' ? skillScopeSegments(statement) : [];
+                return segs(d('Makes', K), ' ', targetSegments(statement, names, ''), ' ', effectSegments(statement, names), scope);
             }
 
             /**
