@@ -22,7 +22,7 @@ build green) · bench-queued · eye-check · merged.*
 | 590 P3: Lucky and rare tables | engineer | same branch | building (also fixes the luck-dependent Refresh test under seed c) | Wed | |
 | 600 B1: badge look page | builder | `feat/badge-look` (`b1`) 2ef50210 | ready: three looks (A chips, B inline strip, C named list), screenshots sent to the owner; builder recommends A; **owner pick 2026-11-11: A, chips, laid out as a stat block: a grid of 3 columns (2 rows on a busy card, more rows only if more than six badges); Lucky in the main row and on the Rare finds heading** | Wed | Wed |
 | 600 B2: the breakdown | engineer | `feat/effect-breakdown` (`b2`) dc29debf | **bench-queued** (01:00 window; it reroutes `resolveAxis` and `growTimeOf` through one shared walk, so the work check plus an engine timing compare against main): 647 files green (agent); director read the `TileModifiers` diff (same bucket order and sums); 590 plugs in by key; Efficiency badge question answered by the owner's chance-rounding rule (P1b): the badge shows the exact amount; B2 switches to P1b's exact-quantity function after both merge | Wed | Wed |
-| 610 S1: selecting (click selects, double-click inspects, gold outline) | builder | `feat/rts-controls` (`rt`) cbdc6b6c | ready: suite green but for `HallStarStagger` (main's, from the Lore star Sync; fixed on main 47ea0237); director read the selection store and a screenshot; checked in game by the agent; owner question: enemies selectable? | Wed | Wed |
+| 610 S1: selecting (click selects, double-click inspects, gold outline) | builder | `feat/rts-controls` (`rt`) cbdc6b6c | ready: suite green but for `HallStarStagger` (main's, from the Lore star Sync; fixed on main 47ea0237); director read the selection store and a screenshot; checked in game by the agent; owner 2026-11-11: enemies selectable (done in S2) | Wed | Wed |
 | 610 S2: right-click hero orders | engineer | same branch | building | Wed | |
 | 610 S3: right-click Token moves | builder | same branch | queued after S2 | | |
 | T-403: effect names | builder-lite | tbd | queued after 590 | | |
@@ -290,7 +290,7 @@ None open.
 
 ## Questions for the owner
 
-- **Enemies and selecting** (610 S1, 2026-11-11): enemies can be dragged today, but the concept lists them as unmovable, so S1 never selects them (a click on one clears the selection, a double-click inspects). A (recommended): keep it so, select only what you can usefully move or order. B: make enemies selectable like other draggable Tokens.
+- ~~Enemies and selecting~~ **Answered 2026-11-11: B, enemies are selectable** like any draggable Token (sent to the S2 engineer).
 
 - ~~A Field's seed under Preservation; healing potions that fire on a rule~~ **Answered 2026-11-11: A and A** (a hit on the harvest that owes the seed means it is never paid; self-spending carried items are covered too). Built as 590 P1c after P3.
 - ~~The empty War Camp~~ **Answered 2026-11-11: delete the constellation too** (owner, in the CMS with the 13 Lore stars, then Sync on main).
