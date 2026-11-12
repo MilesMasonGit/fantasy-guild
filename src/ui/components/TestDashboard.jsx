@@ -20,10 +20,10 @@ import * as Landmarks from '../../systems/board/Landmarks.js';
 export const QA_PANEL_FIT_CLASS = 'max-h-[calc(100dvh-2rem)]';
 export const QA_PANEL_BODY_CLASS = 'flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1';
 
-const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
+const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-0.5';
 const inputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
-const sectionClass = 'mb-3 pb-3 border-b border-gi-border space-y-1.5';
+const sectionClass = 'mb-2 pb-2 border-b border-gi-border space-y-1';
 
 /** Remembered on this device by the Starter Camp tool: where the CMS runs. */
 const CMS_URL_KEY = 'fantasy_guild_dev_cms_url';
@@ -46,9 +46,9 @@ function Picker({ testId, choices, placeholder, selectedId, onPick, Icon }) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={placeholder}
                 aria-label={placeholder}
-                className={cn(inputClass, 'w-full mb-1')}
+                className={cn(inputClass, 'w-full mb-0.5')}
             />
-            <ul className="h-28 overflow-y-auto custom-scrollbar rounded border border-gi-border bg-gi-base">
+            <ul className="h-24 overflow-y-auto custom-scrollbar rounded border border-gi-border bg-gi-base">
                 {matches.length === 0 && <li className="px-2 py-1 text-xs text-gi-muted">Nothing by that name</li>}
                 {matches.slice(0, PICKER_ROWS).map(c => (
                     <li key={c.id}>
@@ -82,7 +82,8 @@ const TokenPickIcon = ({ id }) => <TokenSprite typeId={id} surface={TOKEN_SURFAC
  * The QA panel: give items, change the heroes, put Tokens and enemies on the mat, and the
  * owner's two art and authoring tools. Off in a ship build (`QA_TOOLS`, where it is rendered).
  */
-export const TestDashboard = React.memo(() => {
+// ⚠️ Marked pure so a ship build, where nothing renders the panel, drops it and all it imports.
+export const TestDashboard = /* @__PURE__ */ React.memo(() => {
     const [isOpen, setIsOpen] = useState(false);
     const [showAnimationStudio, setShowAnimationStudio] = useState(false);
     const [item, setItem] = useState(null);
@@ -158,7 +159,7 @@ export const TestDashboard = React.memo(() => {
             ) : (
                 <div
                     data-testid="qa-panel"
-                    className={`fixed bottom-4 right-4 z-(--z-dev-tools) w-72 ${QA_PANEL_FIT_CLASS} bg-gi-surface/95 border border-gi-primary rounded-xl p-3 flex flex-col pointer-events-auto`}
+                    className={`fixed bottom-4 right-4 z-(--z-dev-tools) w-96 max-w-[calc(100vw-2rem)] ${QA_PANEL_FIT_CLASS} bg-gi-surface/95 border border-gi-primary rounded-xl p-3 flex flex-col pointer-events-auto`}
                 >
                     <div className="shrink-0 flex items-center justify-between mb-3 border-b border-gi-border pb-2">
                         <div className="flex items-center gap-2 text-gi-primary font-bold">
@@ -241,29 +242,29 @@ export const TestDashboard = React.memo(() => {
                             </button>
                         </div>
 
-                        <div className="space-y-1.5" data-testid="qa-tools" data-qa-group>
+                        <div className="space-y-1" data-testid="qa-tools" data-qa-group>
                             <div className={labelClass}>Tools</div>
                             <div className="grid grid-cols-2 gap-1">
                                 <button className={buttonClass} onClick={() => setShowAnimationStudio(true)}>
                                     Animation Studio
                                 </button>
-                                <button className={buttonClass} onClick={onSaveCamp} disabled={saving}>
-                                    Save as Starter Camp
+                                <button className={buttonClass} onClick={onSaveCamp} disabled={saving} title="Save this mat as the Starter Camp, to review on the CMS's Starter Camp page">
+                                    Save camp to CMS
                                 </button>
                             </div>
-                            <label className="flex items-center gap-2 text-xs text-gi-text cursor-pointer select-none">
+                            <label className="flex items-center gap-2 text-xs text-gi-text cursor-pointer select-none" title="Lets the landmarks and the Tokens the camp laid be dragged and removed">
                                 <input type="checkbox" checked={layoutEditing} onChange={(e) => onLayoutEditing(e.target.checked)} />
-                                Move and remove landmarks and camp Tokens
+                                Move landmarks
                             </label>
                         </div>
 
                         {status && (
-                            <div className="mt-2 ui-text-body text-gi-muted break-words" role="status">{status}</div>
+                            <div className="mt-0.5 ui-text-body text-gi-muted break-words" role="status">{status}</div>
                         )}
 
                         {/** The perf HUD and stress boards: dev or perf builds only, never a test build. */}
                         {(import.meta.env.DEV || import.meta.env.MODE === 'perf') && (
-                            <details className="mt-3 pt-2 border-t border-gi-border">
+                            <details className="mt-1 pt-1 border-t border-gi-border">
                                 <summary className={cn(labelClass, 'cursor-pointer')}>Perf HUD and stress boards</summary>
                                 <PerfDevSection />
                             </details>

@@ -203,6 +203,6 @@ describe('only the essentials', () => {
         expect(labels).toEqual(['Give items', 'Heroes', 'Place a Token or enemy', 'Tools']);
         expect([...body.querySelectorAll('[data-qa-group]')].map(g => g.textContent).join(' ')).not.toMatch(/dev only/i);
         expect(view.getByText('Animation Studio')).toBeTruthy();
-        expect(view.getByText('Save as Starter Camp')).toBeTruthy();
+        expect(view.getByText('Save camp to CMS')).toBeTruthy();
     });
 });

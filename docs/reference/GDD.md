@@ -60,7 +60,7 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
 
 1. **A new game** opens in the **Starter Camp** (Atlas A7): the Tokens, their
    points and the opening Bank the owner laid out in a dev game, saved with the
-   QA panel's Save as Starter Camp, reviewed on the CMS's Starter
+   QA panel's Save camp to CMS, reviewed on the CMS's Starter
    Camp page and synced into `data/starterCamp.json`. Until one is synced it is
    the built-in camp: the Guild Hall in the middle of the mat, an Oak Forest and
    a Copper Mine either side (320 u away), and 3 Oak Seed, 10 Oak Wood and
