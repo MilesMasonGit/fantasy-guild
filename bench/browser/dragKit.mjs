@@ -236,7 +236,11 @@ export function installDragKit() {
 
     /**
      * An open spot on the mat (mat units), varied: the best-cleared of 40 random points, kept clear
-     * of every open drawer (a drop over a drawer is a cancel by design).
+     * of every open drawer (a drop over a drawer is a cancel by design) and off every Token's body.
+     * ⚠️ Off the body as the drop reads it (`Flags.tokenAtPoint` at the whole pixel the release
+     * lands on), not by clearance alone: clearance counts from Token centres, and S2's Guild Hall
+     * is a 2×2 whose art circle lies inside the empty ring around it, so the best-cleared point was
+     * often on the Hall, where a hero let go is sent home instead of given a spot.
      */
     kit.freeSpot = () => {
         const el = matEl();
@@ -250,6 +254,7 @@ export function installDragKit() {
             const p = { x: w * (0.08 + 0.84 * Math.random()), y: h * (0.1 + 0.8 * Math.random()) };
             const sp = kit.matToScreen(p);
             if (drawers.some(r => inRect(sp, r, 24))) continue;
+            if (G.Flags.tokenAtPoint(kit.screenToMat(sp))) continue;
             let clear = Infinity;
             for (const o of others) clear = Math.min(clear, Math.hypot(o.x - p.x, o.y - p.y));
             if (!best || clear > best.clear) best = { p, clear };
