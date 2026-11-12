@@ -6,7 +6,7 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { getUpgradePrice, getLockDetail, LOCK_KIND } from '../../../config/guildUpgrades.js';
 import { starSentence, starAmount } from '../../../systems/progression/hallStarText.js';
-import { formatCompact } from '../../../utils/Formatters.js';
+import { formatCompact, toRoman } from '../../../utils/Formatters.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { KitButton } from '../base/KitButton.jsx';
@@ -30,22 +30,6 @@ const DRAWER_ICON_MAX_PX = 96;
  * drawer's last line stops above it.
  */
 export const HERO_BAR_CLEAR_PX = 64;
-
-const ROMAN = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
-
-/** A rank in Roman numerals: 1 → "I", 4 → "IV", 14 → "XIV". */
-function toRoman(n) {
-    let left = Math.floor(Number(n) || 0);
-    if (left <= 0) return String(n);
-    let out = '';
-    for (const [value, letters] of ROMAN) {
-        while (left >= value) {
-            out += letters;
-            left -= value;
-        }
-    }
-    return out;
-}
 
 /** The whole-pixel scale at which art `w`×`h` px fits `max` px (at least 1×). */
 function iconScale(w, h, max = DRAWER_ICON_MAX_PX) {

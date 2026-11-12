@@ -26,6 +26,18 @@ import { rankOf } from '../../config/hallStars.js';
 /** Why `hallRulesOf` leaves out a rule on an axis the game no longer reads (`modifierPalette` `retired`). */
 export const RETIRED_AXIS = 'an axis the game no longer reads';
 
+/** The owner part of a star rule's source id; `hallSourceOf` reads it back. */
+const ownerOf = (starId, index) => `hall:${starId}#${index}`;
+
+/**
+ * The star a modifier from {@link hallRulesOf} came from, read off its `source`: `{ starId, index }`
+ * (the rule's place in its rank), or null for any other source.
+ */
+export function hallSourceOf(source) {
+    const match = /^hall:([^#]+)#(\d+):/.exec(typeof source === 'string' ? source : '');
+    return match ? { starId: match[1], index: Number(match[2]) } : null;
+}
+
 /** A rule's Token selector when it names only some Tokens, else null. */
 function aimOf(statement) {
     const to = statement?.to;
@@ -75,7 +87,7 @@ export function hallRulesOf(stars, ranks) {
             const modifier = {
                 ...rest,
                 value,
-                source: auraSourceId(`hall:${star.id}#${index}`, statement.id || 'rule'),
+                source: auraSourceId(ownerOf(star.id, index), statement.id || 'rule'),
                 ...(category ? { target: { category } } : {})
             };
             if (to) aimed.push({ to, modifier });

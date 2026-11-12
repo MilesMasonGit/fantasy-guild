@@ -462,8 +462,9 @@ export function rebuildToken(instanceId) {
         // `BoardRunner` passes the Token's own `config.skill` as the category on every
         // `resolveAxis` call, which is what makes +10% yield to Mining only resolve.
         const { category, ...payload } = statement.payload;
+        // `fromTokenId` names the Token the rule came from for the effect breakdown; nothing sums it.
         agg.addModifier({
-            ...payload, source,
+            ...payload, source, fromTokenId: neighbour,
             ...(category ? { target: { category } } : {})
         });
     }
@@ -790,14 +791,72 @@ export function rebuildAll() {
     if (boardReachLive) rememberWholeRebuild(index, boardSignature(index));
 }
 
+/** Where one contribution to an axis came from (`explainAxis`). */
+export const AXIS_SCOPE = Object.freeze({ TOKEN: 'token', GUILD: 'guild', HERO: 'hero' });
+
+/**
+ * One axis's contributions at Token `instanceId`, as the three buckets `applyThreeBucket` takes,
+ * from every scope in the order they are summed:
+ * - the Token's own inbound modifiers (its neighbours' buffs, the stars aimed at it)
+ * - the guild-wide aggregator (Guild Hall stars, the Region's rules)
+ * - the loadout of the hero working it, unless `withHero` is false
+ *
+ * ⚠️ The one walk every reader of an axis takes: `resolveAxis`, `growTimeOf` and the effect
+ * breakdown (`explainAxis`), so a badge cannot sum differently from the engine. `trace`, when given,
+ * receives each contribution with its scope, from the same loops that sum it; the engine passes none.
+ */
+function collectAxis(instanceId, effectType, category, withHero, trace) {
+    const tile = getTokenAggregator(instanceId);
+    const guild = getGlobalAggregator();
+    const tileTrace = trace ? [] : null;
+    const guildTrace = trace ? [] : null;
+    const heroTrace = trace && withHero ? [] : null;
+
+    let buckets;
+    if (withHero) {
+        const hero = heroContributions(instanceId, effectType, category, heroTrace);
+        buckets = {
+            flat: [
+                tile.getFlat(effectType, category, tileTrace),
+                guild.getFlat(effectType, category, guildTrace),
+                hero.flat
+            ],
+            multipliers: [
+                ...tile.collectMultipliers(effectType, category, tileTrace),
+                ...guild.collectMultipliers(effectType, category, guildTrace),
+                ...hero.multipliers
+            ],
+            percentages: [
+                ...tile.collectPercentages(effectType, category, tileTrace),
+                ...guild.collectPercentages(effectType, category, guildTrace),
+                ...hero.percentages
+            ]
+        };
+    } else {
+        buckets = {
+            flat: [tile.getFlat(effectType, category, tileTrace), guild.getFlat(effectType, category, guildTrace)],
+            multipliers: [
+                ...tile.collectMultipliers(effectType, category, tileTrace),
+                ...guild.collectMultipliers(effectType, category, guildTrace)
+            ],
+            percentages: [
+                ...tile.collectPercentages(effectType, category, tileTrace),
+                ...guild.collectPercentages(effectType, category, guildTrace)
+            ]
+        };
+    }
+
+    if (trace) {
+        for (const entry of tileTrace) trace.push({ ...entry, scope: AXIS_SCOPE.TOKEN });
+        for (const entry of guildTrace) trace.push({ ...entry, scope: AXIS_SCOPE.GUILD });
+        for (const entry of heroTrace || []) trace.push({ ...entry, scope: AXIS_SCOPE.HERO });
+    }
+    return buckets;
+}
+
 /**
  * Resolve one effect axis for a Token, merging EVERY scope into one set of buckets before applying
- * the three-bucket formula.
- *
- * Scopes, all contributing to the same buckets:
- * - the Token's own inbound modifiers (its neighbours' buffs)
- * - the guild-wide aggregator (Guild Hall Global upgrades)
- * - the loadout of the hero working it
+ * the three-bucket formula ({@link collectAxis}).
  *
  * @param {string} instanceId the Token, by instance id
  * @param {string} effectType EFFECT_TYPES key
@@ -805,27 +864,24 @@ export function rebuildAll() {
  * @param {string} [category] skill category, for targeted buffs
  */
 export function resolveAxis(instanceId, effectType, base, category = TARGET_CATEGORIES.ALL) {
-    const tile = getTokenAggregator(instanceId);
-    const guild = getGlobalAggregator();
-    const hero = heroContributions(instanceId, effectType, category);
+    return applyThreeBucket(base, collectAxis(instanceId, effectType, category, true, null));
+}
 
-    const flat = [
-        tile.getFlat(effectType, category),
-        guild.getFlat(effectType, category),
-        hero.flat
-    ];
-    const multipliers = [
-        ...tile.collectMultipliers(effectType, category),
-        ...guild.collectMultipliers(effectType, category),
-        ...hero.multipliers
-    ];
-    const percentages = [
-        ...tile.collectPercentages(effectType, category),
-        ...guild.collectPercentages(effectType, category),
-        ...hero.percentages
-    ];
-
-    return applyThreeBucket(base, { flat, multipliers, percentages });
+/**
+ * One axis at a Token exactly as {@link resolveAxis} resolves it, with where every part came from:
+ * read only, for the effect breakdown (brief 600's badges).
+ *
+ * `contributions` lists each counted rule once per bucket it adds to (a bare entry twice), as
+ * `{ scope, bucket, value }` plus, for the Token's and the guild's scopes, the `modifier` (its
+ * `source`, and `fromTokenId` for a neighbour's), and for the hero's, the `statement`, the `heroId`
+ * and `carried` (a live effect rather than a loadout rule).
+ *
+ * @returns {{ resolved: number, contributions: Array<object> }}
+ */
+export function explainAxis(instanceId, effectType, base, category = TARGET_CATEGORIES.ALL) {
+    const contributions = [];
+    const resolved = applyThreeBucket(base, collectAxis(instanceId, effectType, category, true, contributions));
+    return { resolved, contributions };
 }
 
 // The floors live in a pure module the progression ledger's rate calculator shares; kept exported here for every older reader.
@@ -898,28 +954,55 @@ export function growTimeOf(instance, baseMs) {
         // Read afresh. Only a Token on the mat has neighbours (and an aggregator to make).
         if (!BoardState.getTokenById(id)) return base;
         const agg = getTokenAggregator(id);
-        const category = growSkillOf(instance.typeId);
-        const type = EFFECT_TYPES.GROW_TIME;
-        const flat = agg.getFlat(type, category) + guild.getFlat(type, category);
-        const multipliers = [...agg.collectMultipliers(type, category), ...guild.collectMultipliers(type, category)];
-        const percentages = [...agg.collectPercentages(type, category), ...guild.collectPercentages(type, category)];
         entry = {
             agg, aggVersion: agg.version, guildVersion: guild.version, regVersion,
-            flat,
-            multiplier: combineMultipliers(multipliers),
-            percentage: combinePercentages(percentages),
-            any: flat !== 0 || multipliers.length > 0 || percentages.length > 0,
+            ...growSums(collectAxis(id, EFFECT_TYPES.GROW_TIME, growSkillOf(instance.typeId), false, null)),
             base: null, ms: null
         };
         growTimes.set(id, entry);
     }
     if (!entry.any) return base;
     if (entry.base !== base) {
-        // `applyThreeBucket` over the same buckets, its sums already taken; kept for this base.
         entry.base = base;
-        entry.ms = floorSpeedUp(base, (base + entry.flat) * entry.multiplier * entry.percentage);
+        entry.ms = floorSpeedUp(base, growResolved(base, entry));
     }
     return entry.ms;
+}
+
+/**
+ * A Grow Time's buckets, their sums taken once (`growTimeOf` keeps them): the Token's and the
+ * guild's scopes only ({@link collectAxis} without a hero).
+ */
+function growSums({ flat, multipliers, percentages }) {
+    const flatSum = flat[0] + flat[1];
+    return {
+        flat: flatSum,
+        multiplier: combineMultipliers(multipliers),
+        percentage: combinePercentages(percentages),
+        any: flatSum !== 0 || multipliers.length > 0 || percentages.length > 0
+    };
+}
+
+/** `applyThreeBucket` over a Grow Time's kept sums, before the floor. */
+function growResolved(base, sums) {
+    return (base + sums.flat) * sums.multiplier * sums.percentage;
+}
+
+/**
+ * A Token's Grow Time from `baseMs` exactly as {@link growTimeOf} reads it, with where every part
+ * came from: read only, for the effect breakdown. `resolved` is before the floor, `final` after
+ * (`growTimeOf`'s own answer); `contributions` as {@link explainAxis} gives them.
+ *
+ * @returns {{ resolved: number, final: number, contributions: Array<object> }}
+ */
+export function explainGrowTime(instance, baseMs) {
+    const base = Number(baseMs) || 0;
+    const contributions = [];
+    if (instance?.id == null || !BoardState.getTokenById(instance.id)) {
+        return { resolved: base, final: growTimeOf(instance, base), contributions };
+    }
+    const sums = growSums(collectAxis(instance.id, EFFECT_TYPES.GROW_TIME, growSkillOf(instance.typeId), false, contributions));
+    return { resolved: sums.any ? growResolved(base, sums) : base, final: growTimeOf(instance, base), contributions };
 }
 
 /**
@@ -977,7 +1060,7 @@ export function nearbyGateMet(instance, typeIds) {
  * thing a number could be about: the work being done here. Any filter authored on it is ignored
  * rather than obeyed, because there is nothing for it to choose between.
  */
-function heroContributions(instanceId, effectType, category = TARGET_CATEGORIES.ALL) {
+function heroContributions(instanceId, effectType, category = TARGET_CATEGORIES.ALL, trace = null) {
     const sums = { flat: 0, multipliers: [], percentages: [] };
 
     const heroId = BoardState.workerOf(instanceId);
@@ -991,31 +1074,46 @@ function heroContributions(instanceId, effectType, category = TARGET_CATEGORIES.
     // outlive it. This is what makes Cookout (+10% gathering yield for a while) expressible as an
     // ordinary library effect.
     // A carried effect bound to another Token's cycle ("for the cycle") does not reach this one.
-    addHeroProvides(sums, HeroEffects.loadoutStatements(hero), effectType, category);
-    addHeroProvides(sums, LiveEffects.modifierStatements(hero, instanceId), effectType, category);
+    addHeroProvides(sums, HeroEffects.loadoutStatements(hero), effectType, category, trace, heroId, false);
+    addHeroProvides(sums, LiveEffects.modifierStatements(hero, instanceId), effectType, category, trace, heroId, true);
     return sums;
 }
 
-/** Add the `Provides` of one axis among `statements` into `sums`' buckets, in order. */
-function addHeroProvides(sums, statements, effectType, category) {
+/** The bucket one carried statement adds to on this axis and category, or null when it adds nothing. */
+function heroBucketOf(statement, effectType, category) {
+    if (statement.keyword !== KEYWORD.PROVIDES) return null;
+
+    const payload = statement.payload || {};
+    if (payload.type !== effectType) return null;
+
+    // ⚠️ The narrowing field, honoured here by hand. Everything else on this path bypasses
+    // `ModifierAggregator` (the loadout is read off the hero, not an aggregator), so it also
+    // bypasses `_forEachMatching`, which is where a category is normally matched. An item scoped
+    // to Mining would otherwise apply to Fishing, silently, and only when carried rather than
+    // when placed. A list asks for any of its names (an item and its kind).
+    if (payload.category && !(Array.isArray(category) ? category.includes(payload.category) : payload.category === category)) return null;
+
+    if (!Number.isFinite(Number(payload.value))) return null;
+
+    if (payload.bucket === 'flat') return 'flat';
+    if (payload.bucket === 'multiplier') return 'multiplier';
+    return 'percentage';
+}
+
+/**
+ * Add the `Provides` of one axis among `statements` into `sums`' buckets, in order; and, for the
+ * effect breakdown, into `trace` (`carried`: a live effect rather than a loadout rule).
+ */
+function addHeroProvides(sums, statements, effectType, category, trace, heroId, carried) {
     for (const statement of statements) {
-        if (statement.keyword !== KEYWORD.PROVIDES) continue;
+        const bucket = heroBucketOf(statement, effectType, category);
+        if (!bucket) continue;
+        const value = Number(statement.payload.value);
 
-        const payload = statement.payload || {};
-        if (payload.type !== effectType) continue;
-
-        // ⚠️ The narrowing field, honoured here by hand. Everything else on this path bypasses
-        // `ModifierAggregator` (the loadout is read off the hero, not an aggregator), so it also
-        // bypasses `_forEachMatching`, which is where a category is normally matched. An item scoped
-        // to Mining would otherwise apply to Fishing, silently, and only when carried rather than
-        // when placed. A list asks for any of its names (an item and its kind).
-        if (payload.category && !(Array.isArray(category) ? category.includes(payload.category) : payload.category === category)) continue;
-
-        const value = Number(payload.value);
-        if (!Number.isFinite(value)) continue;
-
-        if (payload.bucket === 'flat') sums.flat += value;
-        else if (payload.bucket === 'multiplier') sums.multipliers.push(value);
+        if (bucket === 'flat') sums.flat += value;
+        else if (bucket === 'multiplier') sums.multipliers.push(value);
         else sums.percentages.push(value);
+
+        if (trace && (value !== 0 || bucket === 'multiplier')) trace.push({ bucket, value, statement, heroId, carried });
     }
 }

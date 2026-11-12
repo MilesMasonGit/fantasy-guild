@@ -701,5 +701,31 @@
         "playtime": "Time here",
         "playtimeTip": "How long the guild has spent here, time away included.",
         "tokensTip": "Tokens on this place's mat, of the Token cap"
+    },
+    "effectBadges": {
+        "effect": {
+            "speed": "Speed",
+            "yield": "Yield",
+            "growth": "Growth",
+            "xp": "XP",
+            "doubleLoot": "Double Loot",
+            "doubleItem": "Double Item",
+            "preservation": "Preservation",
+            "refresh": "Refresh",
+            "lucky": "Lucky",
+            "efficiency": "Efficiency",
+            "abundance": "Abundance"
+        },
+        "source": {
+            "star": "Hall star {star} {rank}",
+            "nearby": "{token} nearby",
+            "onMat": "{token} on the mat",
+            "self": "{token} itself",
+            "region": "{region} rule",
+            "gear": "{hero}'s {item}",
+            "perk": "{hero}'s {perk}",
+            "carried": "{hero}'s {effect}",
+            "guild": "The guild"
+        }
     }
 }

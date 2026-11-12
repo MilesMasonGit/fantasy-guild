@@ -5,6 +5,18 @@ import { auraSourceId } from '../effects/GuildModifiers.js';
 
 /** Pure: `RegionRules.apply` registers these, and the progression ledger's rate calculator reads them the same way. */
 
+/** The owner part of a Region rule's source id; `regionSourceOf` reads it back. */
+const ownerOf = (regionId, index) => `region:${regionId}#${index}`;
+
+/**
+ * The Region a modifier from {@link modifiersOf} came from, read off its `source`: `{ regionId,
+ * index }` (the rule's place in the Region's rules), or null for any other source.
+ */
+export function regionSourceOf(source) {
+    const match = /^region:([^#]+)#(\d+):/.exec(typeof source === 'string' ? source : '');
+    return match ? { regionId: match[1], index: Number(match[2]) } : null;
+}
+
 /** Whether a rule names only some Tokens: by id, type or tag, or through a filter. */
 function narrowed(statement) {
     const to = statement?.to;
@@ -36,7 +48,7 @@ export function modifiersOf(rules, regionId) {
         modifiers.push({
             ...rest,
             value: Number(payload.value),
-            source: auraSourceId(`region:${regionId}#${index}`, statement.id || 'rule'),
+            source: auraSourceId(ownerOf(regionId, index), statement.id || 'rule'),
             ...(category ? { target: { category } } : {})
         });
     });
