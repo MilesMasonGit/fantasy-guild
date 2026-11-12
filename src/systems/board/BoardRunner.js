@@ -172,9 +172,9 @@ function hasRoomForTokenOutputs(id, io) {
 
 /**
  * A Token output makes exactly what it rolled, beside the station: never widened by YIELD,
- * doubled by LOOT_MULT or multiplied by GIANT_HARVEST, because room was reserved for the recipe's authored maximum before the
- * cycle paid, and a Token must never be made with nowhere to stand. It is not pushed to `produced`:
- * that list is matched against item ids (`TriggerSystem.producedMatches`).
+ * doubled by LOOT_MULT or multiplied by GIANT_HARVEST, because room was reserved for the recipe's
+ * authored maximum before the cycle paid, and a Token must never be made with nowhere to stand. It
+ * is not pushed to `produced`: that list is matched against item ids (`TriggerSystem.producedMatches`).
  */
 function placeTokenOutput(instance, output) {
     const copies = rollOutputQuantity(output);

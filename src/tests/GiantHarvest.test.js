@@ -11,6 +11,8 @@ import * as TimedChanges from '../systems/board/TimedChanges.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as OutputRules from '../systems/board/OutputRules.js';
+import * as Fields from '../systems/board/Fields.js';
+import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as HallRules from '../systems/progression/HallRules.js';
 import { effectBreakdown, EFFECT_KEY, UNIT } from '../systems/board/EffectBreakdown.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
@@ -24,6 +26,7 @@ import { KEYWORD, paletteForKeyword, makeStatement } from '../systems/effects/st
 import { renderStatement } from '../systems/effects/statementText.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
+import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
 import { isGatheringSkill, getAllSkillIds, getSkill, SKILL_TRADES } from '../config/registries/skillRegistry.js';
 import { HALL_NODE, getUpgradeDef } from '../config/guildUpgrades.js';
@@ -57,11 +60,25 @@ const ORE = 'fixture_gh_ore';
 const GEM = 'fixture_gh_gem';
 const LOG = 'fixture_gh_log';
 const BAR = 'fixture_gh_bar';
+const SEED = 'fixture_gh_seed';
+const WHEAT = 'fixture_gh_wheat';
 const item = (id, name) => ({
     id, name, type: 'material', sprite: 'i_wheat', description: '', tags: [],
     stackable: true, restoreAmount: 0, restoreType: '', regen: 0, equipSlot: '', value: 1
 });
-registerItems({ [ORE]: item(ORE, 'GH Ore'), [GEM]: item(GEM, 'GH Gem'), [LOG]: item(LOG, 'GH Log'), [BAR]: item(BAR, 'GH Bar') });
+registerItems({
+    [ORE]: item(ORE, 'GH Ore'), [GEM]: item(GEM, 'GH Gem'), [LOG]: item(LOG, 'GH Log'), [BAR]: item(BAR, 'GH Bar'),
+    [SEED]: item(SEED, 'GH Seed'), [WHEAT]: item(WHEAT, 'GH Wheat')
+});
+const WHEAT_RECIPE = 'gh_recipe_wheat';
+registerRecipePools({
+    farming: [{
+        id: WHEAT_RECIPE, name: 'GH Wheat', levelRequirement: 1, durationMs: 1000, xp: 2, stationKinds: ['field'],
+        inputs: [{ itemId: SEED, quantity: 1 }],
+        outputs: [{ itemId: WHEAT, chance: 100, minQty: 1, maxQty: 1 }],
+        crop: { growMs: 20000, load: 3 }
+    }]
+});
 
 const work = (id, skill, itemId, extra = {}) => ({
     id, name: id, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
@@ -86,7 +103,13 @@ registerTokenTypes({
     gh_anvil: work('gh_anvil', 'smithing', BAR),
     gh_looter: building('gh_looter', [provides(ALL, EFFECT_TYPES.LOOT_MULT, 100)]),
     gh_jinx: building('gh_jinx', [provides(ALL, EFFECT_TYPES.FAIL_CHANCE, 100)]),
-    gh_giant_well: building('gh_giant_well', [provides(ALL, EFFECT_TYPES.GIANT_HARVEST, 100)])
+    gh_giant_well: building('gh_giant_well', [provides(ALL, EFFECT_TYPES.GIANT_HARVEST, 100)]),
+    gh_field: {
+        id: 'gh_field', name: 'GH Field', tokenType: 'station', rarity: 'common', theme: 'fixture', uses: null, sprite: 't_farmland',
+        requiresHero: true, field: {},
+        config: { skill: 'farming', skillRequired: 1, cycleTimeMs: 1000, xp: 1, inputs: [], outputs: [] },
+        statements: [{ id: 'stm_gh_field', keyword: KEYWORD.STATION, payload: { skill: 'farming', stationKind: 'field' } }]
+    }
 });
 
 /** A Hall star, rank 1 held, giving Giant Harvest `value` %, guild-wide unless `to` aims it. */
@@ -176,7 +199,7 @@ function fresh() {
     TileModifiers.clearAll();
     SpriteLayer.init();
     BoardRunner.init();
-    GameState.state.heroes = [hero('worker', { mining: 10, forestry: 10, smithing: 10 })];
+    GameState.state.heroes = [hero('worker', { mining: 10, forestry: 10, smithing: 10, farming: 10 })];
     GameState.state.inventory.maxSlots = 50;
 }
 
@@ -276,6 +299,22 @@ describe('only gathering work rolls it', () => {
         holdStar(100);
         threeCycles('gh_tree');
         expect(made(LOG)).toBe(30);
+    });
+
+    it('a Field\'s harvest is a gathering cycle: each harvest of its load comes in at ten times', () => {
+        holdStar(100, { category: 'farming' });
+        InventoryManager.addItem(SEED, 1);
+        const field = put('gh_field', AT);
+        expect(StationRecipe.setSelectedRecipe(field, WHEAT_RECIPE)).toBe(true);
+        run(20200);
+        expect(Fields.stageOf(field)).toBe(Fields.STAGE.RIPE);
+        expect(Orders.orderAt('worker', AT).success).toBe(true);
+        const seen = watch(field.id);
+        run(2100);
+        seen.off();
+        expect(seen.cycles).toBe(2);
+        expect(made(WHEAT)).toBe(20);
+        expect(seen.giants).toHaveLength(2);
     });
 
     it('a smithing cycle never rolls it, from a guild-wide star or one narrowed to Smithing, and draws nothing for it', () => {

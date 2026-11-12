@@ -176,7 +176,7 @@ Token.
   cycle in percent, decimals allowed (0.5), and finds with a weight and a
   quantity range. Each finished cycle (each kill, for an enemy) rolls it once,
   after the Token's own outputs; on a hit one find, picked by weight, drops like
-  any output (Yield, Double Loot and Double Item work on it) and is marked for
+  any output (Yield, Double Loot, Giant Harvest and Double Item work on it) and is marked for
   the rare twinkle as it lands (the twinkle is switched off for now, `lootEffects.js`). A failed cycle and a build roll nothing. **Lucky** (§7) raises the
   chance. The Token's card and the Encyclopedia list each find at its own chance
   (the table's times its share). *(`rareTables.js`, `RareTables.js`)*
@@ -1393,7 +1393,14 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   table, §3, with the table's own chance as the base: a percentage moves it in proportion,
   +10 % turns 1 % into 1.1 %, and the CMS offers it first; a flat amount adds points, +1
   turns 1 % into 2 %. Aimed by the rule's Token; a Token with no table ignores it, and an
-  enemy's table is raised by Lucky aimed at the enemy), **catch weight** (a percentage on one fish's weight in a
+  enemy's table is raised by Lucky aimed at the enemy), **Giant Harvest** (a chance a gathering
+  cycle's drops come in at ten times: every line and the rare table's find, and with Double Loot
+  both apply, twenty times; rolled once per finished cycle after Double Loot, only on work whose
+  skill is a gathering skill (Mining, Forestry, Fishing, Farming), never on a failed cycle, the
+  Guild Hall's lap or a kill; a Token output made beside a station is not multiplied. A hit is
+  celebrated on the mat over the Token: a gold burst and a "Giant!" float. From a Hall star (its
+  owner's place, brief 620) or a building in reach, narrowed by skill; owner 2026-11-12),
+  **catch weight** (a percentage on one fish's weight in a
   water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens; **camp reach** is
   retired: every camp works the standard reach, so a rule carrying it does nothing, the editors no
   longer offer it and the audits name it); **wound time**, **loadout slots** and **XP for Everyone**
