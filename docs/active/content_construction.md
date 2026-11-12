@@ -15,6 +15,13 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - **One War Camp for all combat styles. No building for Construction.**
 - **Kept from before**: Crafting makes items, Construction builds every Token; a better station is a new building, with no upgrade in place; recipes are gated by the skill's level, not the station.
 
+## Amended 2026-11-12 (owner, [brief 630](briefs/630_building_upgrades.md))
+
+- Base buildings carry **no effect**; the variants are the upgrades.
+- The variant menu uses the effect names (UI_STYLE): Speed, Preservation, Double Loot, Growth, Lucky, XP; **Wider Reach is gone** (one standard reach, brief 560) and becomes **Refresh**; Efficiency and Abundance join. The content agent redraws the variant table below for the owner to approve.
+- **One Neighbours variant per skill**: Speed to nearby Tokens of the skills it trades with.
+- XP stays on the planned skill variants (Barracks, Arcane Library, Master's Study).
+
 ## Costs by tier
 
 | From level | Wood part | Stone | Other parts |

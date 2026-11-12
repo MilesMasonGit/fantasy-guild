@@ -74,6 +74,8 @@ Token and every kind of Token, with as few exceptions as possible. A rare drop
 is a drop like any other, so Double Loot doubles it; enemies have rare tables
 too.
 
+**Upgrades interview** (owner, 2026-11-12; briefs [620](briefs/620_star_upgrades.md) and [630](briefs/630_building_upgrades.md)): Star ranks are about 1 % as a baseline, sized by kind; a few ranks per material tier; per skill, in each constellation; Giant Harvest on any gathering cycle; XP for Everyone gives every skill each rank, recruits included; Long-lasting Brews and Strong Drink cover work drinks, potions and fight elixirs; a combat constellation per style (Damage, Attack Speed, Accuracy). Buildings: one per skill first (T-307), no effects on the base buildings, the variant menu redrawn with the effect names (Wider Reach becomes Refresh), XP from the planned skill variants, one Neighbours variant per skill (Speed to linked skills nearby), support buildings kept and retuned.
+
 **Still open** (later sessions): the rank sizes per Star (about 1 % is the
 rule of thumb), each Building version's strength, and which building gives
 the XP bonus (the content agent, with the buildings, T-307).
