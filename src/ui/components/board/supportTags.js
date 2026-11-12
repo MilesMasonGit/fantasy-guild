@@ -50,6 +50,7 @@ export function supportTag(payload, itemName = (id) => getItem(id)?.name || null
         case EFFECT_TYPES.INPUT_COST: return `${amount(payload)} input`;
         case EFFECT_TYPES.FAIL_CHANCE: return `${signOf(v)}${round1(Math.abs(v))} % fail`;
         case EFFECT_TYPES.REFRESH: return `${signOf(v)}${round1(Math.abs(v))} % Refresh`;
+        case EFFECT_TYPES.PRESERVATION: return `${signOf(v)}${round1(Math.abs(v))} % Preservation`;
         case EFFECT_TYPES.CATCH_WEIGHT: return `${amount(payload)} ${itemNameOf(payload.category, itemName) || 'bites'}`;
         default: {
             const label = getPaletteEntry(payload?.type)?.label || String(payload?.type || '').toLowerCase();

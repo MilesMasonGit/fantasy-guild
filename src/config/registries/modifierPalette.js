@@ -118,6 +118,9 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * * `'equipCategory'` — `loadoutCaps.js` passes a loadout category's id
  *   (`equipmentCategories.js`), which is how `LOADOUT_SLOTS` names the kind of
  *   item it makes room for.
+ * * `'skillOrCarried'` — `CycleSavings` passes a cycle's skill, or a carried item's id together
+ *   with its kind (`carriedKinds.js`: ammo, Food…), which is how `PRESERVATION` names the work whose
+ *   materials it keeps, or the things a hero carries it keeps.
  *
  * ## `retired` — still read as a sentence, never offered
  *
@@ -372,6 +375,34 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'A chance a cycle spends none of the Token\'s charges. In percent; a Field keeps its harvest. Aim it at Tokens; the skill narrows it further.'
+    },
+    {
+        /**
+         * Read by `CycleSavings`: once per completed cycle that would pay inputs, before it pays
+         * (`BoardRunner.completeCycle`; a failed cycle pays and never rolls), with the Token's skill;
+         * and each time a hero would use up ammo, Food, a drink's or potion's new dose, a fight
+         * elixir's or bait, with the item and its kind (`carriedKinds.js`), at the Token they work or
+         * the enemy they fight. The sentence is its own (`statementText`), since the narrowing
+         * changes what it covers.
+         */
+        type: EFFECT_TYPES.PRESERVATION,
+        reads: {
+            up: (n) => `have a ${n} chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`,
+            down: (n) => `have ${n} less chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`
+        },
+        heroReads: {
+            up: (n) => `a ${n} chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`,
+            down: (n) => `${n} less chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`
+        },
+        label: 'Preservation',
+        when: 'never',
+        scales: 'value',
+        // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
+        buckets: ['flat'],
+        categories: 'skillOrCarried',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'A chance a cycle uses none of its materials; it also keeps ammo, Food, drinks, potions and bait from being used up. In percent. Pick a skill to keep only that work\'s materials, or a kind of carried thing (Ammo, Food…) or one item to keep only those.'
     },
     {
         /**

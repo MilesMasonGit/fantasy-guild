@@ -63,7 +63,7 @@ const READ_AXES = new Set([
 ]);
 
 /** Axes the board reads on some work this calculator does not model yet: reaching one is reported. */
-const UNREAD_WORK_AXES = new Set([EFFECT_TYPES.REFRESH]);
+const UNREAD_WORK_AXES = new Set([EFFECT_TYPES.REFRESH, EFFECT_TYPES.PRESERVATION]);
 
 /** The kinds of factor, as the switches name them. */
 export const FACTOR = Object.freeze({

@@ -3,7 +3,9 @@
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getGrid, categoryOfItem, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
 import { arrowOf } from '../../config/registries/damageTypes.js';
+import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
+import * as CycleSavings from '../board/CycleSavings.js';
 import { getHeroCombatStyle } from './CombatFormulas.js';
 
 /**
@@ -47,11 +49,14 @@ export function nextArrowOf(hero) {
 
 /**
  * Spend one arrow for a shot. Returns the arrow's id and its part of the shot, or null when no
- * arrow was shot.
- * @returns {{itemId: string, arrow: {damage: number, damageType: string}}|null}
+ * arrow was shot. A Preservation hit shoots the arrow and leaves it in the Bank (`kept: true`), read
+ * at `instanceId`, the enemy Token the hero is fighting: one draw when a rule offers the chance.
+ * @returns {{itemId: string, arrow: {damage: number, damageType: string}, kept: boolean}|null}
  */
-export function spendArrow(hero) {
+export function spendArrow(hero, instanceId = null) {
     const itemId = nextArrowOf(hero);
-    if (!itemId || !InventoryManager.removeItem(itemId, 1)) return null;
-    return { itemId, arrow: arrowOf(getItem(itemId)) };
+    if (!itemId) return null;
+    const kept = CycleSavings.keepsCarried(instanceId, itemId, CARRIED_KIND.AMMO);
+    if (!kept && !InventoryManager.removeItem(itemId, 1)) return null;
+    return { itemId, arrow: arrowOf(getItem(itemId)), kept };
 }

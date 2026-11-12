@@ -18,6 +18,7 @@ import { FILTER_KINDS, filtersOf } from '../../../../src/config/registries/filte
 import { MAGNITUDE_KIND, statsForRoles } from '../../../../src/config/registries/magnitudeRegistry.js';
 import { PLACEMENTS, placementOf } from '../../../../src/config/registries/placementRegistry.js';
 import { getAllSkills } from '../../../../src/config/registries/skillRegistry.js';
+import { CARRIED_KINDS } from '../../../../src/config/registries/carriedKinds.js';
 import { DAMAGE_GROUPS, DAMAGE_TYPES, typesOfGroup, damageTypeLabel } from '../../../../src/config/registries/damageTypes.js';
 import { STATION_KINDS, stationKindLabel } from '../../../../src/config/registries/tokenConstants.js';
 
@@ -91,6 +92,17 @@ function roleOptions(statement) {
 
 /** Every skill, as options — from the game registry, so the CMS can never offer one it lacks. */
 const skillOptions = () => Object.values(getAllSkills() || {}).map(s => option(s.id, s.name || s.id));
+
+/**
+ * What Preservation may keep: everything, a skill's materials, a kind of thing a hero carries, or
+ * one item (`ctx.items`).
+ */
+const carriedOptions = (ctx) => [
+    option('', 'Everything', 'A cycle\'s materials, and ammo, Food, drinks, potions and bait.'),
+    ...skillOptions().map(o => ({ ...o, hint: `Only the materials of ${o.label} work.` })),
+    ...CARRIED_KINDS.map(k => option(k.id, k.label, k.hint)),
+    ...Object.values(ctx?.items || {}).map(i => option(i.id, i.name || i.id, 'Only this item, when a hero would use one up.'))
+];
 
 /**
  * A `Provides` payload rebuilt for a newly chosen axis.
@@ -335,6 +347,8 @@ function payloadSlots(statement, ctx) {
                         : entry.categories === 'item'
                             ? [option('', 'Any item', 'Every item that drops rolls on its own.'),
                                 ...Object.values(ctx?.items || {}).map(i => option(i.id, i.name || i.id))]
+                        : entry.categories === 'skillOrCarried'
+                            ? carriedOptions(ctx)
                             : [option('', 'Any skill', 'No narrowing — the usual case.'), ...skillOptions()],
                     patch: v => {
                         const next = { ...payload };

@@ -60,7 +60,7 @@ function perkEffectFindings(effect, skillId, push) {
         const payload = statement?.payload || {};
         const palette = statement?.keyword === KEYWORD.PROVIDES ? getPaletteEntry(payload.type) : null;
         const unscoped = !payload.category || payload.category === TARGET_CATEGORIES.ALL;
-        if (palette?.categories === 'skill' && unscoped) {
+        if ((palette?.categories === 'skill' || palette?.categories === 'skillOrCarried') && unscoped) {
             push(`changes ${palette.label} on every skill's work, not only ${skillName}'s. Narrow the rule to ${skillName} in the CMS if that is not meant.`);
         }
     }

@@ -276,12 +276,13 @@ export function clockFired(instance, def) {
  * spent is a harvest spent). The cycle has paid its inputs by then, an owed seed among them. One
  * fewer left; the last sows the pick again, its growth counting from the moment the cycle ended
  * (`overMs` of the tick after it), or stops the Field without a seed. A `refreshed` harvest (Refresh
- * hit) keeps its load as it was; the seed it paid is still paid.
+ * hit) keeps its load as it was; the seed it paid is still paid. A `preserved` harvest (Preservation
+ * hit) paid nothing, so a seed it owed is still owed by the next harvest.
  */
-export function harvested(instance, def, { overMs = 0, refreshed = false } = {}) {
+export function harvested(instance, def, { overMs = 0, refreshed = false, preserved = false } = {}) {
     if (stageOf(instance, def) !== STAGE.RIPE) return;
     const state = settle(instance, def);
-    delete state.seedOwed;
+    if (!preserved) delete state.seedOwed;
     if (refreshed) return;
     state.load = Math.max(0, (Number(state.load) || 0) - 1);
     if (state.load > 0) return;

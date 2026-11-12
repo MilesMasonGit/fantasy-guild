@@ -9,6 +9,7 @@ import { RETIRED_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
 import { moveProblems } from '../../config/registries/enemyMoves.js';
 import { statusBlockOf } from '../effects/effectLibrary.js';
 import { isConsumableCategory } from '../../config/registries/equipmentCategories.js';
+import { isCarriedKind } from '../../config/registries/carriedKinds.js';
 import { statementsOf, stationSkillOf, KEYWORD } from '../effects/statements.js';
 import { TARGET_CATEGORIES, EFFECT_TYPES } from '../effects/constants.js';
 
@@ -46,17 +47,24 @@ function isScopeCategory(category) {
     return isSkillId(category) || category === TARGET_CATEGORIES.COMBAT || category === TARGET_CATEGORIES.ALL;
 }
 
-/** Findings for one bearer's statements (a Token or an item). */
-function statementFindings(def, push) {
+/**
+ * Findings for one bearer's statements (a Token or an item). `isItemId` answers whether an item
+ * exists, or is null when the caller gave no items (an item narrowing is then not checked).
+ */
+function statementFindings(def, push, isItemId = null) {
     for (const statement of statementsOf(def)) {
         const payload = statement?.payload || {};
         if (statement?.keyword === KEYWORD.PROMOTES) {
             const job = hasValue(payload.jobId) ? ` to "${payload.jobId}"` : '';
             push('statements', `one of its rules promotes the hero${job}: jobs are retired (every hero holds every skill), so it does nothing. Delete the rule in the CMS, or the Token if it has no other use.`);
         }
-        if (hasValue(payload.category) && getPaletteEntry(payload.type)?.categories === 'skill'
-            && !isScopeCategory(payload.category)) {
+        const vocabulary = hasValue(payload.category) ? getPaletteEntry(payload.type)?.categories : null;
+        if (vocabulary === 'skill' && !isScopeCategory(payload.category)) {
             push('statements', `one of its rules is narrowed to the skill "${payload.category}", which does not exist — the rule matches nothing. Pick the skill again in the CMS.`);
+        }
+        if (vocabulary === 'skillOrCarried' && isItemId && !isScopeCategory(payload.category)
+            && !isCarriedKind(payload.category) && !isItemId(payload.category)) {
+            push('statements', `one of its rules is narrowed to "${payload.category}", which is no skill, kind of carried thing or item — the rule matches nothing. Pick it again in the CMS.`);
         }
     }
 }
@@ -162,6 +170,8 @@ export function findUnknownRefs({ tokens, items, recipes, effects } = {}) {
     const library = effectById
         ? { hasEffect: (id) => effectById.has(id), isStatus: (id) => !!statusBlockOf(effectById.get(id)) }
         : {};
+    const itemIds = !items ? null : new Set(Array.isArray(items) ? items.map(i => i?.id).filter(Boolean) : Object.keys(items));
+    const isItemId = itemIds ? (id) => itemIds.has(id) : null;
 
     for (const entry of asList(effects)) {
         if (!entry || typeof entry !== 'object') continue;
@@ -191,7 +201,7 @@ export function findUnknownRefs({ tokens, items, recipes, effects } = {}) {
         enemyKindFindings(def, push);
         enemyResistanceFindings(def, push);
         enemyMoveFindings(def, push, library);
-        statementFindings(def, push);
+        statementFindings(def, push, isItemId);
     }
 
     for (const def of asList(items)) {
@@ -218,7 +228,7 @@ export function findUnknownRefs({ tokens, items, recipes, effects } = {}) {
             push('styles', `names ${authoredWeaponStyles(def).length} styles; a weapon has one, so it fights as ${first} (the first). Pick its one style in the CMS.`);
         }
         damageTypeFindings(def, push);
-        statementFindings(def, push);
+        statementFindings(def, push, isItemId);
     }
 
     for (const recipe of asList(recipes)) {

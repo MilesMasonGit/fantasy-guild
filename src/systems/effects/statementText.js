@@ -14,6 +14,7 @@ import { damageTypeLabel } from '../../config/registries/damageTypes.js';
 import { articleOf } from './toolNames.js';
 import { stationKindLabel } from '../../config/registries/tokenConstants.js';
 import { getCategoryInfo } from '../../config/registries/equipmentCategories.js';
+import { getCarriedKind } from '../../config/registries/carriedKinds.js';
 
 /**
  * The rules text: generated, read-only, and the only text a Token has. The sentence IS the
@@ -209,6 +210,21 @@ function effectSegments(statement, names, onHero = false) {
 
     if (!value) return segs('no change to ', d(label, 'type'));
 
+    // "a 25% chance a Mining cycle uses none of its materials", "a 25% chance ammo is not used up":
+    // Preservation's narrowing changes what it keeps, so the phrase says it. With none it keeps all.
+    if (payload.type === EFFECT_TYPES.PRESERVATION && payload.category) {
+        const C = categorySlot(statement);
+        const lead = value < 0
+            ? segs(d(onHero ? '' : 'have ', 'type'), d(size, 'value'), d(' less chance ', 'type'))
+            : segs(d(onHero ? 'a ' : 'have a ', 'type'), d(size, 'value'), d(' chance ', 'type'));
+        const skill = getSkill(payload.category);
+        if (skill) return segs(lead, d(`${articleOf(skill.name)} `, 'type'), d(skill.name, C), d(' cycle uses none of its materials', 'type'));
+        const kind = getCarriedKind(payload.category);
+        if (kind) return segs(lead, d(kind.phrase, C), d(' is not used up', 'type'));
+        const item = names.item(payload.category);
+        return segs(lead, d(`${articleOf(item)} `, 'type'), d(item, C), d(' is not used up', 'type'));
+    }
+
     const reads = (onHero && entry.heroReads) || entry.reads;
     if (reads) {
         const read = value < 0 ? reads.down : reads.up;
@@ -402,7 +418,7 @@ function skillScopeSegments(statement) {
     const category = statement?.payload?.category;
     if (!category) return [];
     // An item narrowing is already named inside the effect phrase ("a 10% chance of double Raw Beef").
-    if (effectEntryOf(statement)?.categories === 'item') return [];
+    if (namesItsNarrowing(statement)) return [];
     const skill = getSkill(category);
     return segs(', but only for ', d(skill?.name || category, categorySlot(statement)), ' work');
 }
@@ -410,8 +426,14 @@ function skillScopeSegments(statement) {
 /** " at Mining" — a carried rule's skill narrowing: the hero's work at that skill, or nothing. */
 function heroSkillSegments(statement) {
     const category = statement?.payload?.category;
-    if (!category || effectEntryOf(statement)?.categories === 'item') return [];
+    if (!category || namesItsNarrowing(statement)) return [];
     return segs(' at ', d(getSkill(category)?.name || category, categorySlot(statement)));
+}
+
+/** Whether the effect phrase already names the rule's narrowing: an item's, or Preservation's own. */
+function namesItsNarrowing(statement) {
+    const categories = effectEntryOf(statement)?.categories;
+    return categories === 'item' || categories === 'skillOrCarried';
 }
 
 /**

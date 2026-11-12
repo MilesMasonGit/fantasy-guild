@@ -125,6 +125,7 @@ describe('eating mid-combat (D-27)', () => {
     it('asks for food only: an equipped drink does not heal in a fight', async () => {
         const { tryEat } = await import('../systems/hero/ConsumptionSystem.js');
         handleHeroAttack(makeCard(), hero, enemy, ATTACK_SPEED);
-        expect(tryEat).toHaveBeenCalledWith('h1', { inFight: true });
+        // With the fight's enemy Token, where a Preservation rule is read: none on this bare card.
+        expect(tryEat).toHaveBeenCalledWith('h1', { inFight: true, instanceId: null });
     });
 });

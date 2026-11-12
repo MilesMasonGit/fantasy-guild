@@ -254,7 +254,15 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         return;
     }
 
-    if (!InputAllocator.consumeInputs(inputs)) {
+    // PRESERVATION: a chance a cycle that works uses none of its materials. Asked before anything is
+    // paid; with no chance offered (or nothing to pay) the cycle pays exactly as it always has.
+    // ⚠️ With a chance offered the inputs are paid AFTER the failure roll, since a failed cycle pays
+    // and never rolls: only checked here, then paid below unless the roll hits. Paying moves the Bank,
+    // and an On Bank Holds rule fires (and may draw) the moment it moves, so the order without a
+    // chance must stay pay-then-fail or the bench's work check would see a different stream.
+    const keepChance = inputs.length ? CycleSavings.preservationChance(id, config.skill) : 0;
+    const affordable = keepChance > 0 ? InputAllocator.checkInputs(inputs).ok : InputAllocator.consumeInputs(inputs);
+    if (!affordable) {
         // Raced by another Token between the availability check and here.
         // Keep the progress and wait — the cycle is not lost, only delayed.
         setAlert(instance,ALERT.INPUTS);
@@ -272,6 +280,12 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         id, EFFECT_TYPES.FAIL_CHANCE, 0, config.skill
     );
     const failed = failChance > 0 && Math.random() * 100 < failChance;
+
+    // The cycle still runs, makes its outputs and spends its charges; a Field's owed seed stays
+    // owed, and a build that kept its materials remembers paying nothing.
+    const preserved = keepChance > 0 && !failed && CycleSavings.rollChance(keepChance);
+    if (keepChance > 0 && !preserved) InputAllocator.consumeInputs(inputs);
+    const paidInputs = preserved ? [] : inputs;
 
     // Item output lands on the BOARD, not in the Bank: it is not banked until collected, and if the
     // Bank is full it simply waits there. A Token output stands on the mat beside the station.
@@ -377,7 +391,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
 
     // A Field spends one harvest of its load; the last sows its crop again, growing from the moment
     // this cycle ended (`overMs` into the tick), or stops it without a seed (`Fields.js`).
-    if (isField) Fields.harvested(instance, def, { overMs, refreshed });
+    if (isField) Fields.harvested(instance, def, { overMs, refreshed, preserved });
 
     // The board's universal unit of work. One kill counts as one cycle too, so combat feeds this
     // exactly as production does.
@@ -404,7 +418,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         const fromTypeId = instance.typeId;
         // The paid `inputs` go with it: the built Token remembers its Foundation and build cost for
         // the discard refund.
-        const built = Foundations.buildInPlace(instance, buildTypeId, inputs);
+        const built = Foundations.buildInPlace(instance, buildTypeId, paidInputs);
         if (built) {
             noteTokenBuilt(buildTypeId);
             EventBus.publish(BOARD_EVENTS.TOKEN_BUILT, {

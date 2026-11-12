@@ -227,9 +227,12 @@ export class ModifierAggregator {
 
     /**
      * Iterate every matching modifier (effect-type filtering and category/parent matching in one place).
+     * `category` may be a list: a modifier matches when it names any of them (an item and its kind,
+     * `CycleSavings.keepsCarried`).
      * @private
      */
     _forEachMatching(effectType, category, fn) {
+        const many = Array.isArray(category);
         for (const mods of this.modifiers.values()) {
             for (let i = mods.length - 1; i >= 0; i--) {
                 const mod = mods[i];
@@ -239,8 +242,9 @@ export class ModifierAggregator {
 
                 const matches =
                     targetCat === TARGET_CATEGORIES.ALL ||
-                    targetCat === category ||
-                    this._isParentOf(targetCat, category);
+                    (many
+                        ? category.some(c => targetCat === c || this._isParentOf(targetCat, c))
+                        : targetCat === category || this._isParentOf(targetCat, category));
 
                 if (matches) fn(mod);
             }

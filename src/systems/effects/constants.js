@@ -27,6 +27,10 @@ export const EFFECT_TYPES = {
     // Refresh: a chance a completed cycle spends none of the Token's charges (a Field: none of its
     // load); narrowed to the Token's skill — CycleSavings.rollRefresh.
     REFRESH: 'REFRESH',
+    // Preservation: a chance a completed cycle uses none of its materials (narrowed to the Token's
+    // skill), and a chance a hero's ammo, Food, drink, potion or bait is not used up (narrowed to the
+    // item or its kind, `carriedKinds.js`) — CycleSavings.
+    PRESERVATION: 'PRESERVATION',
     // How often ONE fish bites from a water's catch pool, as a percentage on its weight; the item is
     // the rule's category (`Fishing.catchOf`).
     CATCH_WEIGHT: 'CATCH_WEIGHT',

@@ -84,8 +84,9 @@ export function fire(instanceId, heroId, eventId) {
     const skill = workStart ? cycleSkillOf(instanceId) : '';
     if (workStart) LiveEffects.endHeroOtherCycleEffects(heroId, instanceId);
 
-    const doses = fightStart ? ConsumptionSystem.startFightElixirs(heroId)
-        : workStart ? ConsumptionSystem.startWorkDoses(heroId, skill) : [];
+    // Preservation on a fresh dose is read here: the enemy Token, or the Token whose cycle starts.
+    const doses = fightStart ? ConsumptionSystem.startFightElixirs(heroId, instanceId)
+        : workStart ? ConsumptionSystem.startWorkDoses(heroId, skill, instanceId) : [];
     const isDoseItem = fightStart ? (id) => isConsumableCategory(categoryOfItem(id))
         : workStart ? ConsumptionSystem.isWorkDose : null;
     // ⚠️ A perk names no item, and `[].every` is true: without the length check a perk's own
