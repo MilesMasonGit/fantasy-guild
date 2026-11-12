@@ -194,14 +194,14 @@ describe('⭐ the banner', () => {
 });
 
 describe('⭐ the mode on the mat', () => {
-    it('with no mode on, a click inspects and changes nothing; a shift-click does the same', () => {
+    it('with no mode on, a double-click inspects and changes nothing; a shift-double-click does the same', () => {
         const oak = placeAt(WORKABLE, 400, 200);
         const other = placeAt(WORKABLE, 560, 200);
         const onInspectToken = vi.fn();
         const { container } = mountMat({ onInspectToken });
-        fireEvent.click(artOf(container, oak.id));
+        fireEvent.doubleClick(artOf(container, oak.id));
         expect(onInspectToken).toHaveBeenCalledTimes(1);
-        fireEvent.click(artOf(container, other.id), { shiftKey: true });
+        fireEvent.doubleClick(artOf(container, other.id), { shiftKey: true });
         expect(onInspectToken).toHaveBeenCalledTimes(2);
         expect([oak, other].map(marked)).toEqual([false, false]);
         expect([oak, other].some(t => 'disallowed' in BoardState.getTokenById(t.id))).toBe(false);

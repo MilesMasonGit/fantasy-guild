@@ -709,11 +709,11 @@ describe('⭐ a fight\'s health bars draw over the loot (owner, 2026-10-25: drop
         expect(container.querySelector(`[data-work-plate="${enemyId}"]`)).toBeNull();
     });
 
-    it('a click on the hero\'s bar still opens the hero', async () => {
+    it('a double-click on the hero\'s bar still opens the hero', async () => {
         const { container, heroId } = await matInFight();
         const inspected = [];
         const off = EventBus.subscribe('inspect_hero', (p) => inspected.push(p.heroId));
-        fireEvent.click(bars(container, 'hero', heroId)[0].querySelector('[data-health-label]'));
+        fireEvent.doubleClick(bars(container, 'hero', heroId)[0].querySelector('[data-health-label]'));
         off();
         expect(inspected).toEqual([heroId]);
     });

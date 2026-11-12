@@ -155,8 +155,10 @@ export const MatToken = React.memo(function MatToken({
     isHovered = false,
     isRested = false,
     selected = false,
+    picked = false,
     hasHero = false,
     onInspectToken,
+    onPick,
     onClearInspect,
     onOpenRecipes,
     onRecallHero,
@@ -471,7 +473,7 @@ export const MatToken = React.memo(function MatToken({
         }, UI_LISTENER);
     }, [isHall]);
 
-    // A sharp coloured outline: white hovered or selected, red in alert, green worked
+    // A sharp coloured outline: gold picked, white hovered or inspected, red in alert, green worked
     // (`spriteOutline.js`). It is a generated picture under the art, not a filter.
     // In a map mode the hovered Token takes the mode's colour, or muted grey where the mode cannot
     // act on it.
@@ -481,7 +483,7 @@ export const MatToken = React.memo(function MatToken({
     const orderLit = useOrderLit(id);
     const outline = orderLit === 'workable' && !isHovered
         ? 'work'
-        : tokenOutline({ hovered: isHovered, selected, lit: lit || orderLit === 'job', alert: !!alert, working: staffed, mode: mapMode, unavailable: modeUnavailable });
+        : tokenOutline({ picked, hovered: isHovered, selected, lit: lit || orderLit === 'job', alert: !!alert, working: staffed, mode: mapMode, unavailable: modeUnavailable });
     const gearState = gearStateOf(detail || {});
     const gear = React.useMemo(
         () => (gearState.show ? {
@@ -560,7 +562,7 @@ export const MatToken = React.memo(function MatToken({
                 data-token-fixed={fixed ? 'true' : undefined}
                 data-token-protected={demolishProtected ? 'true' : undefined}
                 onContextMenu={handleContextMenu}
-                onClick={(e) => {
+                onClick={() => {
                     if (dragging) return;
                     // In a map mode a click acts on the Token and does nothing else; it never
                     // claims a quest.
@@ -579,10 +581,12 @@ export const MatToken = React.memo(function MatToken({
                         }
                         return;
                     }
-                    onInspectToken?.(typeId, e.currentTarget.getBoundingClientRect(), id);
+                    // A single click picks (selects a movable Token); a double-click inspects.
+                    onPick?.(id);
                 }}
                 onDoubleClick={(e) => {
-                    if (mapMode) return;
+                    if (mapMode || dragging) return;
+                    onPick?.(id);
                     onInspectToken?.(typeId, e.currentTarget.getBoundingClientRect(), id);
                 }}
                 style={{

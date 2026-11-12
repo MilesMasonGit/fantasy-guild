@@ -138,11 +138,11 @@ describe('⭐ a fixed Token refuses a drag; the press still inspects', () => {
         expect(artOf(container, hall.id).getAttribute('data-token-fixed')).toBeNull();
     });
 
-    it('a click on a map node still inspects it', () => {
+    it('a double-click on a map node still inspects it', () => {
         const node = fixtureAt(600, 500);
         const onInspectToken = vi.fn();
         const { container } = mount({ onInspectToken });
-        fireEvent.click(hitOf(container, node.id), { clientX: 600, clientY: 500 });
+        fireEvent.doubleClick(hitOf(container, node.id), { clientX: 600, clientY: 500 });
         expect(onInspectToken).toHaveBeenCalledWith('fixture_producer', expect.anything(), node.id);
     });
 

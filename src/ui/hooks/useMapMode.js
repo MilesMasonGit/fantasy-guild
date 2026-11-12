@@ -37,14 +37,15 @@ export function toggleMapMode(which) {
 export const isMapModeOn = () => mode !== null;
 export const isDemolishMode = () => mode === MAP_MODE.DEMOLISH;
 
-function subscribe(listener) {
+/** Hear the mode change. Returns the undo. */
+export function subscribeMapMode(listener) {
     listeners.add(listener);
     return () => listeners.delete(listener);
 }
 
 /** React hook: the mode that is on, re-rendering the consumer when it changes. */
 export function useMapMode() {
-    return useSyncExternalStore(subscribe, getMapMode, getMapMode);
+    return useSyncExternalStore(subscribeMapMode, getMapMode, getMapMode);
 }
 
 /**

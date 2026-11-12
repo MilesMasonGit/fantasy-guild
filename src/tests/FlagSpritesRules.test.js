@@ -189,7 +189,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         expect(workTileOf('h1')).toBe(15);
     });
 
-    it('left-click on a board hero still opens the sheet, right-click sends them home', () => {
+    it('a double-click on a board hero opens the sheet, right-click sends them home', () => {
         put(15, FOREST);
         Orders.orderAt('h1', C(15));
         const inspected = [];
@@ -198,6 +198,8 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         const drawn = container.querySelector('[data-board-hero="h1"]');
 
         fireEvent.click(drawn);
+        expect(inspected).toEqual([]);
+        fireEvent.doubleClick(drawn);
         fireEvent.contextMenu(drawn);
         unsub();
 

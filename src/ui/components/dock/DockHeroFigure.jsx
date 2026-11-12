@@ -9,6 +9,7 @@ import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetMan
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
+import { PixelArt } from '../base/TokenSprite.jsx';
 import { FlagMark } from '../board/FlagMark.jsx';
 import { rosterStateOf, rosterAlertOf, rosterBubbleLine, ROSTER_ALERT } from '../board/flagText.js';
 import { setRosterHover } from '../board/orderLit.js';
@@ -40,7 +41,8 @@ import { onPoll } from '../board/frameClock.js';
  * The sprite writes its frames straight to the element (the shared sprite clock), so an idle
  * frame re-renders nothing: not this figure, and not the slot, whose reorder animation would
  * measure its layout again.
- * Click finds the hero (outlined on the mat, their sheet open); hovering outlines them and lights
+ * A click selects the hero (`useMatSelection.js`: a gold outline here and on the mat, their job
+ * lit); a double-click opens their Hero drawer too. Hovering outlines them and lights
  * their job; dragging carries their flag, as on the mat: dropped on the mat it gives an order,
  * dropped on another roster hero it reorders. Drop an item to equip.
  * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
@@ -98,6 +100,7 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
             heroId={heroId}
             artPx={props.artPx}
             isSelected={props.isSelected}
+            picked={props.picked}
             onSelect={props.onSelect}
             onDoubleClick={props.onDoubleClick}
             hero={hero}
@@ -145,6 +148,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
     hero,
     artPx = 128,
     isSelected = false,
+    picked = false,
     onSelect,
     onDoubleClick,
     lifted = false,
@@ -203,6 +207,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
             data-dock-alert={roster.alert || undefined}
             data-dock-hover={lifted ? 'true' : 'false'}
             data-dock-selected={isSelected ? 'true' : undefined}
+            data-dock-picked={picked ? 'true' : undefined}
             data-dock-wounded={isWounded ? 'true' : undefined}
             data-dock-art-offset={offset}
             onClick={() => {
@@ -283,13 +288,14 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                             alt={hero.name || 'Hero'}
                             size={artPx}
                             animationState="idle"
+                            outline={picked ? 'select' : null}
                         />
                     ) : staticArt ? (
-                        <img
+                        <PixelArt
                             src={staticArt.startsWith('/') ? staticArt : `/${staticArt}`}
                             alt={hero.name || 'Hero'}
-                            draggable={false}
-                            style={{ width: artPx, height: artPx, maxWidth: 'none', imageRendering: 'pixelated' }}
+                            size={artPx}
+                            outline={picked ? 'select' : null}
                         />
                     ) : null}
                 </div>

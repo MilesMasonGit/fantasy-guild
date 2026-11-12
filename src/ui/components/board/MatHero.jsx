@@ -245,6 +245,7 @@ const MatHeroBody = memo(function MatHeroBody({
     z,
     outline = null,
     onHover,
+    onPick,
     onRecall,
     animationState = 'idle',
     moving = false,
@@ -318,9 +319,16 @@ const MatHeroBody = memo(function MatHeroBody({
             data-hero-limp={limp ? 'true' : undefined}
             data-outline={outline || undefined}
             aria-label={name || 'Hero'}
+            // A single click selects the hero; a double-click opens their Hero drawer too.
             onClick={(e) => {
                 if (!opaque(e)) return;
                 e.stopPropagation();
+                onPick?.(heroId);
+            }}
+            onDoubleClick={(e) => {
+                if (!opaque(e)) return;
+                e.stopPropagation();
+                onPick?.(heroId);
                 EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId });
             }}
             onContextMenu={(e) => {

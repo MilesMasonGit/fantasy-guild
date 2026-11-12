@@ -750,9 +750,26 @@ Heroes do not choose their own work: **the player sends each hero to a job by
 dragging them** (hero orders, brief 260; owner 2026-10-28: one hero, one job,
 less micromanagement than area flags).
 - **Heroes live on the mat.** One with no job waits in a row in front of the
-  Guild Hall. The hero bar is the roster: it finds a hero on the mat, opens
-  their sheet, says on hover what they are doing, wears a yellow alert when only
-  the player can get them going or a red one when wounded, and can be dragged from.
+  Guild Hall. The hero bar is the roster: a click selects a hero, a double-click
+  opens their Hero drawer; it says on hover what they are doing, wears a yellow
+  alert when only the player can get them going or a red one when wounded, and
+  can be dragged from.
+- **Selecting** (brief 610 S1; owner, 2026-11-11). One thing is selected at a
+  time: a hero, or a Token the player could drag (never an enemy or a Token
+  that stays where it stands). **A single click selects**, on the mat or on the
+  hero bar (from any screen); **a double-click inspects** (a Token's card, a
+  hero's drawer) and selects too. The selected one wears a **gold outline**, one
+  art pixel like the white hover outline, on the mat and on the hero's bar card,
+  and a selected hero's job lights as on hover. A single click on an enemy or a
+  fixed Token only clears the selection; a double-click still inspects it. The
+  selection clears on a click on blank mat, Escape (once no panel is open over
+  it), a new pick, leaving the mat (the World Map, the Guild Hall, travel, a
+  load) or a map mode coming on (Demolish); opening the Bank, the Shop or the
+  Encyclopedia keeps it. An open Token card or Hero drawer closes on a single
+  click of something else; a click of its own Token or hero keeps it. Other
+  single clicks on a Token are unchanged: the recipe gear and the problem mark
+  open the recipes, a finished quest is claimed. Drag and drop work as before,
+  with or without a selection. The selection is not saved.
 - **Drag a hero onto a Token** they can work (their figure, their job flag, or
   their figure on the hero bar): they walk there and work **only that Token**,
   a tree, a vein, a station, a Field, an enemy or a boss (a retired Promotion

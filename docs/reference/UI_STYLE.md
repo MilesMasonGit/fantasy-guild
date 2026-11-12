@@ -131,8 +131,8 @@ normal text colour; a new meaning needs the owner's OK.
 |---|---|
 | Red | short, can't, danger |
 | Green | ready, enough |
-| Gold | alert, attention, upgrade, the selected tab |
-| White | hover, selection |
+| Gold | alert, attention, upgrade, the selected tab, the mat's selection (a hero or Token picked by a click) |
+| White | hover, inspection |
 | Muted grey | locked, unavailable |
 
 - **Hover is a 1-art-pixel white outline**; **attention is a gold one**
