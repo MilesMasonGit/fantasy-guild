@@ -953,7 +953,8 @@ export function waitingFor(heroId) {
 /**
  * What a hero is doing, for the roster and the marks: `docked` (no order: at the Guild Hall),
  * `returning` (no order, still walking home), `working`, `walking` (on the way: to a claimed Token,
- * `instanceId` set, or back to their order's spot, `instanceId` null) and `idle` (at their order's
+ * `instanceId` set, also for the tick after it left the mat, or back to their order's spot,
+ * `instanceId` null) and `idle` (at their order's
  * spot or beside its Token, nothing to do). `instanceId` is the Token they work or walk to (or
  * null), `point` where their job is. `order` is `'token'`, `'spot'` or null (home), `needsJob`
  * says the ordered Token is gone for good, and `campId` names the camp they work from (or null).
@@ -975,7 +976,10 @@ export function statusOf(heroId) {
         };
     }
     const claim = BoardState.claimOfHero(heroId);
-    if (claim && BoardState.getTokenById(claim.instanceId)) {
+    // ⚠️ A claim whose Token left the mat this tick (an enemy beaten, a Token used up) is let go
+    // on the next pass, which chooses again at once: the hero is between jobs, not idle. Read as
+    // idle, every kill at an enemy camp or War Camp raised a one-tick idle line and mark.
+    if (claim) {
         return {
             state: 'walking', instanceId: claim.instanceId,
             point: { x: claim.x, y: claim.y }, typeId: claim.typeId, flag, ...extra

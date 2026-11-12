@@ -51,7 +51,8 @@ export function stackOf(moments, now) {
 /** The lines for each moment. Plain and factual. */
 export const momentText = {
     arrived: (token) => `Working at ${token}.`,
-    idle: () => 'Nothing to work here.',
+    // At a War Camp (`fights`), whose work is fights, the same moment in its own words.
+    idle: (fights = false) => (fights ? 'Nothing to fight here.' : 'Nothing to work here.'),
     // Going idle because the fight they were sent to is taken: every fight is one-on-one. Also the
     // Token an order names, which another hero is working.
     waiting: (enemy) => `Waiting for ${enemy}.`,
@@ -80,14 +81,14 @@ export const GEAR_BROKE_KEY = 'gearBroke';
  * * a node that is resting or growing back, or an enemy camp's next spawn: nothing. They wait
  * silently and work it when it is back; the flag's hover and the roster say "Waiting for Copper
  * Vein" ("Waiting for Goblin");
- * * otherwise: "Nothing to work here."
+ * * otherwise: "Nothing to work here.", or at a War Camp (`fights`) "Nothing to fight here."
  */
-export function idleMomentOf(waiting, name = null, { order = null, needsJob = false } = {}) {
+export function idleMomentOf(waiting, name = null, { order = null, needsJob = false, fights = false } = {}) {
     if (needsJob) return { kind: 'needsJob', key: 'idle', text: momentText.needsJob() };
     if (order === 'spot') return null;
     if (waiting?.kind === 'node' || waiting?.kind === 'spawn') return null;
     if (waiting?.kind === 'fight' || waiting?.kind === 'busy') return { kind: 'waiting', key: 'idle', text: momentText.waiting(name) };
-    return { kind: 'idle', key: 'idle', text: momentText.idle() };
+    return { kind: 'idle', key: 'idle', text: momentText.idle(fights) };
 }
 
 /**

@@ -27,7 +27,11 @@ import { campOf, isWarCamp } from '../config/registries/tokenConstants.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { flagStatusLine } from '../ui/components/board/flagText.js';
+import React from 'react';
+import { render, cleanup, act } from '@testing-library/react';
+import { flagStatusLine, rosterAlertOf } from '../ui/components/board/flagText.js';
+import { idleMomentOf, momentText } from '../ui/components/board/heroSpeech.js';
+import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { cardLifecycle } from '../ui/components/board/tokenCard.js';
 import { marksFor } from '../ui/components/board/dragHints.js';
 import * as fixtures from '../../bench/fixtures.mjs';
@@ -75,6 +79,11 @@ registerTokenTypes({
     wc_tree: {
         id: 'wc_tree', name: 'WC Tree', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: 3, sprite: 's_nature',
         requiresHero: true, config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 1000, xp: 1, inputs: [], outputs: [] }
+    },
+    /** An enemy camp holding three goblins at once. */
+    wc_den3: {
+        id: 'wc_den3', name: 'WC Den of Three', tokenType: 'spawner', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_crime',
+        spawner: { spawns: [{ typeId: 'wc_goblin', weight: 1 }], allowance: 3, intervalMs: 3000, upkeep: [] }
     },
     wc_den: {
         id: 'wc_den', name: 'WC Den', tokenType: 'spawner', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_crime',
@@ -148,6 +157,7 @@ beforeAll(() => {
 });
 
 afterEach(() => {
+    cleanup();
     BoardState.setInstantArrival(true);
     SaveManager.currentSlot = null;
     if (SaveManager.autoSaveTimer) clearInterval(SaveManager.autoSaveTimer);
@@ -543,5 +553,123 @@ describe('⭐ what the player reads', () => {
         expect(Flags.statusOf(h.id)).toMatchObject({ state: 'idle', campId: c.id });
         expect(flagStatusLine(h.id)).toBe('Nothing to work near WC Logging Camp');
         expect(HeroMotion.idleSpot(BoardState.flagOf(h.id))).toBeTruthy();
+    });
+});
+
+/** Each tick's reading of `heroId` (`Flags.statusOf`), as the mat's hero list reads it after every tick, while `going()` holds. */
+function statesOver(heroId, maxMs, going) {
+    const states = [];
+    for (let t = 0; t < maxMs && going(); t += 100) {
+        GameLoop.runHandlers(100);
+        states.push(Flags.statusOf(heroId).state);
+    }
+    return states;
+}
+
+/** How many times a hero read idle for one tick between two busy ones: each was an idle line and mark. */
+function oneTickIdles(states) {
+    const busy = (s) => s === 'working' || s === 'walking';
+    let n = 0;
+    for (let i = 1; i < states.length - 1; i++) if (states[i] === 'idle' && busy(states[i - 1]) && busy(states[i + 1])) n++;
+    return n;
+}
+
+describe('⭐ between two fights a hero is never idle', () => {
+    it('a War Camp hero: the tick each enemy falls reads as between jobs, with no idle line, mark or alert; only the true end is idle', () => {
+        const [h] = newBoard();
+        const c = fixtures.placeAt('wc_war', CAMP.x, CAMP.y);
+        const ids = [
+            placeEnemy('wc_goblin', CAMP.x + 120, CAMP.y),
+            placeEnemy('wc_goblin', CAMP.x, CAMP.y + 160),
+            placeEnemy('wc_goblin', CAMP.x - 140, CAMP.y - 60)
+        ].map(t => t.id);
+        Orders.orderAt(h.id, CAMP);
+        const kills = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.COMBAT_RESOLVED, (p) => { if (p.outcome === 'victory') kills.push(p.instanceId); });
+        const states = [];
+        const afterKill = [];
+        for (let t = 0; t < 180_000 && ids.some(id => BoardState.getTokenById(id)); t += 100) {
+            const before = kills.length;
+            GameLoop.runHandlers(100);
+            states.push(Flags.statusOf(h.id).state);
+            // Read right after the tick a kill lands in.
+            if (kills.length > before) {
+                afterKill.push({ state: Flags.statusOf(h.id).state, idleMark: BoardRunner.isHeroIdle(h.id), alert: rosterAlertOf(h.id), line: flagStatusLine(h.id) });
+            }
+        }
+        off();
+        expect(kills).toHaveLength(3);
+        expect(afterKill).toHaveLength(3);
+        expect(oneTickIdles(states)).toBe(0);
+        // Once out at work, never idle until the reach is clear.
+        expect(states.slice(states.findIndex(s => s !== 'idle')).filter(s => s === 'idle')).toEqual([]);
+        for (const k of afterKill) {
+            expect(k).toMatchObject({ state: 'walking', idleMark: false, alert: null });
+            expect(k.line).toBe('Walking to: WC Goblin');
+        }
+        // The last one down: the next pass lets go and finds nothing, and only now are they idle.
+        GameLoop.runHandlers(100);
+        expect(Flags.statusOf(h.id)).toMatchObject({ state: 'idle', campId: c.id });
+        expect(BoardRunner.isHeroIdle(h.id)).toBe(true);
+    });
+
+    it('⭐ the Goblin Camp hunter too: kill after kill at a camp of three, never a one-tick idle', () => {
+        const [h] = newBoard();
+        const den = fixtures.placeAt('wc_den3', 600, 500);
+        for (let i = 0; i < 3; i++) SpawnerSystem.attemptSpawn(den, getTokenType('wc_den3'));
+        expect(BoardState.tokens().filter(t => t.tether === den.id)).toHaveLength(3);
+        const w = watchFights();
+        Orders.orderAt(h.id, { x: den.x, y: den.y });
+        const states = statesOver(h.id, 60_000, () => true);
+        w.stop();
+        expect(w.kills.length).toBeGreaterThan(3);
+        expect(oneTickIdles(states)).toBe(0);
+    });
+
+    it('a work camp moving on from a Token used up and gone: never idle between them either', () => {
+        const [h] = newBoard();
+        fixtures.placeAt('wc_logging', CAMP.x, CAMP.y);
+        const trees = [fixtures.placeAt('wc_tree', CAMP.x + 120, CAMP.y), fixtures.placeAt('wc_tree', CAMP.x, CAMP.y + 150)].map(t => t.id);
+        Orders.orderAt(h.id, CAMP);
+        const states = statesOver(h.id, 30_000, () => trees.some(id => BoardState.getTokenById(id)));
+        expect(trees.filter(id => BoardState.getTokenById(id))).toEqual([]);
+        expect(oneTickIdles(states)).toBe(0);
+    });
+});
+
+describe('⭐ what a War Camp hero says on going idle', () => {
+    it('"Nothing to fight here." at a War Camp; "Nothing to work here." anywhere else', () => {
+        expect(momentText.idle(true)).toBe('Nothing to fight here.');
+        expect(momentText.idle()).toBe('Nothing to work here.');
+        expect(idleMomentOf(null, null, { order: 'token', fights: true })).toMatchObject({ kind: 'idle', text: 'Nothing to fight here.' });
+        expect(idleMomentOf(null, null, { order: 'token' })).toMatchObject({ kind: 'idle', text: 'Nothing to work here.' });
+        // Waiting for another hero's fight is said the same at a War Camp.
+        expect(idleMomentOf({ kind: 'fight' }, 'WC Goblin', { order: 'token', fights: true }).text).toBe('Waiting for WC Goblin.');
+    });
+
+    it('through the mat speech layer: the War Camp hand says it once the reach is clear, never at a kill', () => {
+        const [h] = newBoard();
+        fixtures.placeAt('wc_war', CAMP.x, CAMP.y);
+        const ids = [placeEnemy('wc_goblin', CAMP.x + 120, CAMP.y), placeEnemy('wc_goblin', CAMP.x, CAMP.y + 160)].map(t => t.id);
+        Orders.orderAt(h.id, CAMP);
+        // The hero list as the mat hands it to the layer, read after each tick.
+        const row = () => {
+            const s = Flags.statusOf(h.id);
+            const body = BoardState.heroBodyOf(h.id);
+            return [{ heroId: h.id, state: s.state, x: body?.x ?? CAMP.x, y: body?.y ?? CAMP.y, moving: false, tokenId: s.state === 'working' ? s.instanceId : null }];
+        };
+        const view = render(React.createElement(HeroBubbleLayer, { heroes: row() }));
+        const said = () => view.container.textContent;
+        let early = null;
+        for (let t = 0; t < 180_000 && ids.some(id => BoardState.getTokenById(id)); t += 100) {
+            GameLoop.runHandlers(100);
+            act(() => { view.rerender(React.createElement(HeroBubbleLayer, { heroes: row() })); });
+            if (!early && /Nothing to (fight|work) here/.test(said())) early = said();
+        }
+        expect(early).toBe(null);
+        GameLoop.runHandlers(100);
+        act(() => { view.rerender(React.createElement(HeroBubbleLayer, { heroes: row() })); });
+        expect(said()).toContain('Nothing to fight here.');
+        expect(said()).not.toContain('Nothing to work here.');
     });
 });

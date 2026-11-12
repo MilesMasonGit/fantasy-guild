@@ -862,7 +862,9 @@ less micromanagement than area flags).
   longer has a reach of its own, and nothing widens it. A hero sent
   to a camp works the **nearest free Token of its skill they can work within
   its reach**, finishes each cycle and keeps the Token while it can run, then
-  moves to the next; with only resting or growing Tokens left they wait
+  moves to the next (never idle in between: the moment a Token is used up or
+  an enemy beaten counts as between jobs, with no idle line or mark); with
+  only resting or growing Tokens left they wait
   silently by the camp; with everything taken they say "Nothing to work near
   Logging Camp". **Any number of heroes** may work from one camp, one hero per
   Token. A drop on a camp whose Tokens the hero can work none of says why; an
@@ -881,7 +883,8 @@ less micromanagement than area flags).
   falls (every life of an enemy with several), even if a crowded fight's step
   or the player's move carries it outside the reach; only the next choice reads
   the reach again. With none left they wait at the camp ("Nothing to fight
-  near War Camp"), and take any enemy that later comes into its reach, placed
+  near War Camp"; they say "Nothing to fight here."), and take any enemy that
+  later comes into its reach, placed
   or spawned. A knocked-out hero stops as anywhere. It takes anyone who can
   fight; an enemy another hero fights (sent straight at it, or from an enemy
   camp or another War Camp) is passed over, never shared. While a place is held
