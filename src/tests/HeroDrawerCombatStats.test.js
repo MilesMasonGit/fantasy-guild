@@ -26,8 +26,13 @@ import en from '../i18n/en.json';
 
 const h = React.createElement;
 
-/** An aggregator standing in for the engine's: what the hero carries, by `type:category`. */
-const carrying = (table) => ({ query: (type, category) => table[`${type}:${category ?? ''}`] || 0 });
+/**
+ * An aggregator standing in for the engine's: what the hero carries, by `type:category`. As in the
+ * engine, an entry with no category (`type:`) counts whatever category is asked for.
+ */
+const carrying = (table) => ({
+    query: (type, category) => (table[`${type}:${category ?? ''}`] ?? (category ? table[`${type}:`] : 0)) || 0
+});
 
 const fighter = (extra = {}) => ({
     id: 'h1', name: 'Aldric', spriteId: 'hn_recruit_por', hp: { current: 20, max: 30 }, status: 'idle',

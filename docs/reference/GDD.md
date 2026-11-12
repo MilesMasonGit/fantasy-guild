@@ -1407,7 +1407,12 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   higher: the Hide Vest's Venom −1; at 0 it cannot land), **swing time** and
   **food healing** (percentages, on a lingering effect: an enrage, Burn)
   (heroes, and enemies through effects on them). Most combat rows are flat
-  amounts, and a new rule on one starts flat. **Retired**: Block (a miss is
+  amounts, and a new rule on one starts flat. **Damage, swing time and accuracy** may be narrowed
+  to a **combat style** (Melee, Ranged, Magic, Stealth): the rule then counts only while the hero
+  fights in that style (the weapon's; barehanded is Melee), "but only for Melee fighters"; with
+  no style it counts in every style. These three are the only combat rows a hero also reads from
+  the guild (Guild Hall stars, a Region's rules, §8), for the style they fight in; enemies never
+  do. **Retired**: Block (a miss is
   the only failed hit), and Armor, flat Resistance and Pierce (brief 280:
   defence is percentages by type, Pierce became the Sunder status); they are
   no longer offered, do nothing, and the audits name any rule that still
@@ -1505,6 +1510,16 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   it (it adds no work rate).
   *(`progression/hallModifiers.js` `xpForEveryoneOf`, `GuildUpgradeManager.purchaseRanks`,
   `hero/logic/HeroLifecycle.js`, `hero/everySkillXp.js`)*
+- **Combat stars** (brief 620 E4): a constellation per combat style, **Melee, Ranged, Magic and
+  Stealth**, with Damage, Attack Speed (a negative Swing Time) and Accuracy stars for the heroes
+  fighting in that style (the rule narrowed to the style, §7). A star naming no style helps every
+  fighter; enemies are never helped. The fight window's hit and swing, and the Hero drawer's combat
+  numbers, include them. The star reads "Every Melee fighter hits harder" (swings faster, misses
+  less), its rank "10% more damage", and the Hall's effects "Gives every Melee fighter 10% more
+  damage in combat." The constellations are content (the CMS pack, brief 620 C1); the boot audit
+  names a style rule narrowed to a work skill, and any other combat rule on a star (it reaches no
+  one from the Hall). The ledger does not model fights, so it does not rate them.
+  *(`combat/CombatFormulas.js`, `progression/hallStarText.js`)*
 - **Ring stars** (brief 380 M4): a star whose `opensRing` names a ring of the world map lets the
   guild settle that ring once its first rank is bought. Ring 1 is open from the start; a star per
   ring from ring 2, the wild rings too, each linked to the one before so they light in order. A
