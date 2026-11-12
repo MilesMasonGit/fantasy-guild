@@ -69,6 +69,11 @@ name each, kept in [UI_STYLE.md](../reference/UI_STYLE.md#effect-names-owner-202
 Speed, Yield, Growth, XP, Double Loot, Double Item, Preservation, Refresh,
 Lucky, Efficiency, Abundance. The families above use them from now on.
 
+**One rule everywhere** (owner, 2026-11-11): effects work the same on every
+Token and every kind of Token, with as few exceptions as possible. A rare drop
+is a drop like any other, so Double Loot doubles it; enemies have rare tables
+too.
+
 **Still open** (later sessions): the rank sizes per Star (about 1 % is the
 rule of thumb), each Building version's strength, and which building gives
 the XP bonus (the content agent, with the buildings, T-307).
