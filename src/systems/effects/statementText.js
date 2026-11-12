@@ -225,6 +225,18 @@ function effectSegments(statement, names, onHero = false) {
         return segs(lead, d(`${articleOf(item)} `, 'type'), d(item, C), d(' is not used up', 'type'));
     }
 
+    // "have 1% added to their rare drop table's chance": a flat Lucky adds points to the table's
+    // chance, unlike its percentage (`reads`), which raises it in proportion.
+    if (payload.type === EFFECT_TYPES.LUCKY && payload.bucket && payload.bucket !== 'percentage') {
+        const whose = onHero ? 'the Token\'s' : 'their';
+        const have = onHero ? '' : 'have ';
+        if (payload.bucket === 'multiplier') {
+            return segs(d(have, 'type'), d(`×${Math.abs(value)}`, 'value'), d(` the chance on ${whose} rare drop table`, 'type'));
+        }
+        const change = value < 0 ? ' taken off ' : ' added to ';
+        return segs(d(have, 'type'), d(`${Math.abs(value)}%`, 'value'), d(`${change}${whose} rare drop table's chance`, 'type'));
+    }
+
     const reads = (onHero && entry.heroReads) || entry.reads;
     if (reads) {
         const read = value < 0 ? reads.down : reads.up;

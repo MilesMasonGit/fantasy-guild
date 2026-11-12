@@ -174,6 +174,26 @@
             }
           }
         },
+        "rareTable": {
+          "type": "object",
+          "description": "Its rare drop table (src/config/registries/rareTables.js rareTableOf; rolled by src/systems/board/RareTables.js after its own lines, on every cycle or kill, never on a failed cycle). On a hit one entry, picked by weight, lands like any output. Lucky widens the chance. Written by cms/src/components/editors/RareTableBlock.jsx only while it has an entry.",
+          "properties": {
+            "chance": { "type": "number", "minimum": 0, "maximum": 100, "description": "Percent a cycle or kill rolls the table, decimals allowed (0.5). 0 is no table." },
+            "entries": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["itemId"],
+                "properties": {
+                  "itemId": { "type": "string", "description": "The item dropped (data/items.json)." },
+                  "weight": { "type": "number", "minimum": 0, "description": "Relative weight among the entries; 0 never drops." },
+                  "minQty": { "type": "number", "minimum": 0, "description": "Smallest roll (whole number), default 1." },
+                  "maxQty": { "type": "number", "minimum": 0, "description": "Largest roll (whole number), default minQty." }
+                }
+              }
+            }
+          }
+        },
         "field": {
           "description": "A field that grows crops (tokenConstants.js fieldOf; src/systems/board/Fields.js). Blank strings are dropped.",
           "type": "object",

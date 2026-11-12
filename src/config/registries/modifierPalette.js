@@ -406,6 +406,35 @@ export const MODIFIER_PALETTE = [
     },
     {
         /**
+         * Read by `RareTables.luckyChance` once per cycle or kill that rolls a rare table, with the
+         * table's own chance as the base: a percentage moves it in proportion (+10 % turns 1 % into
+         * 1.1 %), a flat adds points (+1 turns 1 % into 2 %). A Token with no table never reads it.
+         * Aimed at Tokens by the rule's `to`.
+         *
+         * ⚠️ Deterministic, not `proc`, though it ends in a roll: a proc is a chance resolved from 0,
+         * so the CMS stores its percentage as typed and starts it flat. Lucky's percentage is a share
+         * of the table's chance (typed 10, stored 0.1), and the CMS starts it there. The sentence is
+         * its own (`statementText`), since a flat reads in points.
+         */
+        type: EFFECT_TYPES.LUCKY,
+        reads: {
+            up: (n) => `have a ${n} higher chance on their rare drop table`,
+            down: (n) => `have a ${n} lower chance on their rare drop table`
+        },
+        heroReads: {
+            up: (n) => `a ${n} higher chance on the Token's rare drop table`,
+            down: (n) => `a ${n} lower chance on the Token's rare drop table`
+        },
+        label: 'Lucky',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage', 'flat'],
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Support',
+        hint: 'A higher chance on the Token\'s rare drop table. A percentage raises it in proportion (+10% turns 1% into 1.1%); a flat amount adds points (+1 turns 1% into 2%). Aim it at Tokens; one without a table ignores it.'
+    },
+    {
+        /**
          * A better rod's bonus: one fish bites more often from a water's catch pool. Its weight in
          * the pool is widened by this percentage before the pick (`Fishing.catchOf` resolves the axis
          * once per catch in the pool, with the item id as the category), so +100 % on a Dolphin

@@ -25,3 +25,14 @@ export function noteDrop(sprite, chance) {
     if (!sprite?.id || !isRareChance(chance)) return;
     EventBus.publish(BOARD_EVENTS.RARE_DROP, { spriteId: sprite.id, itemId: sprite.refId, chance: Number(chance) });
 }
+
+/**
+ * Say that loot `sprite` came off its Token's rare drop table (`RareTables`): always a find,
+ * whatever its chance, so it always twinkles.
+ * @param {object|null} sprite
+ * @param {number} chance the percent this entry drops a cycle, Lucky counted
+ */
+export function noteRareFind(sprite, chance) {
+    if (!sprite?.id) return;
+    EventBus.publish(BOARD_EVENTS.RARE_DROP, { spriteId: sprite.id, itemId: sprite.refId, chance: Number(chance) || 0 });
+}

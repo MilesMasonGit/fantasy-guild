@@ -171,6 +171,15 @@ Token.
 - **Work cycle**: `config` = skill, level required, cycle time, XP, inputs,
   outputs (each output a chance and a quantity range). Example: Oak Tree,
   forestry 1, 3 s, 1–2 Oak Wood + 20 % Oak Seed, 5 charges.
+- **Rare drop table** (`rareTable`, owner 2026-11-11, brief 590): any Token with
+  drops (a vein, a tree, a station, water, an enemy) may carry one: a chance a
+  cycle in percent, decimals allowed (0.5), and finds with a weight and a
+  quantity range. Each finished cycle (each kill, for an enemy) rolls it once,
+  after the Token's own outputs; on a hit one find, picked by weight, drops like
+  any output (Yield, Double Loot and Double Item work on it) and twinkles as it
+  lands. A failed cycle and a build roll nothing. **Lucky** (§7) raises the
+  chance. The Token's card and the Encyclopedia list each find at its own chance
+  (the table's times its share). *(`rareTables.js`, `RareTables.js`)*
 - **Charges** (`uses`): one is spent per cycle by default; at 0 the Token is
   removed, unless its type **respawns** (below). `null` = unlimited (Workbench,
   Furnace, Cooking Pot).
@@ -1322,7 +1331,11 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   or bait from being used up, read at the Token the hero works or the enemy they fight.
   From a building in reach or a Hall star, aimed by the rule's Token; narrowed to a skill
   (that work's materials), or to an item or a kind of carried thing: Ammo, Food, Drink,
-  Work potion, Fight elixir, Bait), **catch weight** (a percentage on one fish's weight in a
+  Work potion, Fight elixir, Bait), **Lucky** (a higher chance on the Token's rare drop
+  table, §3, with the table's own chance as the base: a percentage moves it in proportion,
+  +10 % turns 1 % into 1.1 %, and the CMS offers it first; a flat amount adds points, +1
+  turns 1 % into 2 %. Aimed by the rule's Token; a Token with no table ignores it, and an
+  enemy's table is raised by Lucky aimed at the enemy), **catch weight** (a percentage on one fish's weight in a
   water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens; **camp reach** is
   retired: every camp works the standard reach, so a rule carrying it does nothing, the editors no
   longer offer it and the audits name it); **wound time** and **loadout slots** (guild-only: read from

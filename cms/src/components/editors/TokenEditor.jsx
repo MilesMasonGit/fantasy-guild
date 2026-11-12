@@ -11,6 +11,7 @@ import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import LifecycleBlocks from './LifecycleBlocks';
 import CatchPoolsBlock from './CatchPoolsBlock';
+import RareTableBlock from './RareTableBlock';
 import EnemyMovesFields from './EnemyMovesFields';
 import PlanFields from '../shared/PlanFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
@@ -364,6 +365,8 @@ export default function TokenEditor() {
       </Section>
 
       <CatchPoolsBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
+
+      <RareTableBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
 
       <Section title="Lifecycle" icon={<Timer size={14} />}>
         <div className="grid grid-cols-2 gap-4">

@@ -37,6 +37,7 @@ import { ForestryDevSection } from '../dev/ForestryDevSection.jsx';
 import { MiningDevSection } from '../dev/MiningDevSection.jsx';
 import { RefreshDevSection } from '../dev/RefreshDevSection.jsx';
 import { PreservationDevSection } from '../dev/PreservationDevSection.jsx';
+import { LuckyDevSection } from '../dev/LuckyDevSection.jsx';
 import { OrchardDevSection } from '../dev/OrchardDevSection.jsx';
 import { FishingDevSection } from '../dev/FishingDevSection.jsx';
 import { StationsDevSection } from '../dev/StationsDevSection.jsx';
@@ -337,6 +338,7 @@ export const TestDashboard = React.memo(() => {
                         {import.meta.env.DEV && <MiningDevSection />}
                         {import.meta.env.DEV && <RefreshDevSection />}
                         {import.meta.env.DEV && <PreservationDevSection />}
+                        {import.meta.env.DEV && <LuckyDevSection />}
                         {import.meta.env.DEV && <OrchardDevSection />}
                         {import.meta.env.DEV && <AnimationDevSection />}
                         {import.meta.env.DEV && <NotificationsDevSection />}

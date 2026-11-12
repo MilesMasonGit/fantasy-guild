@@ -31,6 +31,9 @@ export const EFFECT_TYPES = {
     // skill), and a chance a hero's ammo, Food, drink, potion or bait is not used up (narrowed to the
     // item or its kind, `carriedKinds.js`) — CycleSavings.
     PRESERVATION: 'PRESERVATION',
+    // Lucky: the chance on a Token's own rare drop table, widened from that chance as its base (a
+    // percentage in proportion, a flat in points) — RareTables.
+    LUCKY: 'LUCKY',
     // How often ONE fish bites from a water's catch pool, as a percentage on its weight; the item is
     // the rule's category (`Fishing.catchOf`).
     CATCH_WEIGHT: 'CATCH_WEIGHT',

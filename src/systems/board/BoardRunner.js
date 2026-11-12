@@ -30,6 +30,7 @@ import * as MatPlacement from './MatPlacement.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
+import * as RareTables from './RareTables.js';
 import * as OutputRules from './OutputRules.js';
 import * as CycleSavings from './CycleSavings.js';
 import * as InputCost from './InputCost.js';
@@ -314,6 +315,27 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         outputs = caught ? [{ itemId: caught.itemId, chance: 100, minQty: 1, maxQty: 1 }] : [];
     }
 
+    // One item line, once its chance has landed: the authored range rolled, then the cycle's rules.
+    // Every drop lands this way, the rare table's too. `note` hears the sprite (for the twinkle).
+    const landLine = (output, note) => {
+        // Roll the authored range FIRST, then widen it, so a 1-5 output buffs a lucky cycle more
+        // than an unlucky one.
+        const rolled = isGuildHall
+            ? OutputRules.roundUp(rollOutputQuantity(output))
+            : OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
+        const widened = doubled ? rolled * 2 : rolled;
+        // A chance that this one item comes out doubled, after everything else (not at the Hall).
+        const quantity = (isGuildHall || !output.itemId) ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
+        if (quantity <= 0) return;
+
+        // An output names a Token or an item. One that names neither pays nothing: the cycle still
+        // runs and still takes its inputs.
+        if (output.itemId) {
+            note(SpriteLayer.addSprite('item', output.itemId, quantity, id));
+            produced.push(output.itemId);
+        }
+    };
+
     // A build makes its Token by becoming it (below), never as a sprite.
     for (const output of outputs) {
         const chance = output.chance ?? 100;
@@ -323,23 +345,16 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
             placeTokenOutput(instance, output);
             continue;
         }
+        landLine(output, (sprite) => RareDrops.noteDrop(sprite, chance));
+    }
 
-        // Roll the authored range FIRST, then widen it, so a 1-5 output buffs a lucky cycle more
-        // than an unlucky one.
-        const rolled = isGuildHall
-            ? OutputRules.roundUp(rollOutputQuantity(output))
-            : OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
-        const widened = doubled ? rolled * 2 : rolled;
-        // A chance that this one item comes out doubled, after everything else (not at the Hall).
-        const quantity = (isGuildHall || !output.itemId) ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
-        if (quantity <= 0) continue;
-
-        // An output names a Token or an item. One that names neither pays nothing: the cycle still
-        // runs and still takes its inputs.
-        if (output.itemId) {
-            RareDrops.noteDrop(SpriteLayer.addSprite('item', output.itemId, quantity, id), chance);
-            produced.push(output.itemId);
-        }
+    // The Token's rare drop table, after its own lines: one roll at its chance widened by Lucky,
+    // and on a hit one find by weight, landed as any line is (Double Loot doubles it, Double Item
+    // works on it) and always twinkling. A failed cycle rolls nothing, a build drops nothing, and
+    // a Token with no table draws nothing.
+    if (!failed && !buildTypeId) {
+        const find = RareTables.rollRareTable(id, def, config.skill);
+        if (find) landLine(find.entry, (sprite) => RareDrops.noteRareFind(sprite, find.chance));
     }
 
     // BONUS_DROP, skipped entirely on a failed cycle: nothing happened, so nothing drops.

@@ -91,8 +91,8 @@ function renameInTokenConfig(token, oldId, newId) {
     if (next.effectBlocks) next.effectBlocks = remapItemIdsDeep(next.effectBlocks, oldId, newId, mark);
     if (next.buff) next.buff = remapItemIdsDeep(next.buff, oldId, newId, mark);
 
-    // `catchPools`: a water's catches (`itemId`) and baits (`bait`).
-    for (const key of ['spawner', 'shop', 'trickle', 'catchPools']) {
+    // `catchPools`: a water's catches (`itemId`) and baits (`bait`); `rareTable`: its finds (`itemId`).
+    for (const key of ['spawner', 'shop', 'trickle', 'catchPools', 'rareTable']) {
         if (next[key]) next[key] = remapItemIdsDeep(next[key], oldId, newId, mark);
     }
 

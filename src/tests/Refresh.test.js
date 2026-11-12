@@ -349,15 +349,33 @@ describe('a vein that rests', () => {
     it('rests later, never sooner: it rests only once five charges are spent, however many cycles that takes', () => {
         const v = scene({ beside: 'rf_well_50' });
         const seen = watch(v.id);
+        // Every draw before the first cycle ends reads 0.1, under the 50 % Refresh, so at least one
+        // cycle spends nothing whatever the test seed; later cycles draw from the seeded stream.
+        let firstCycle = true;
+        const seeded = Math.random;
+        const spy = vi.spyOn(Math, 'random').mockImplementation(() => (firstCycle ? 0.1 : seeded()));
+        // A cycle that spent nothing: no charge went between it and the cycle before.
+        let refreshed = 0;
+        let spentBefore = 0;
+        const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (e) => {
+            if (e.instanceId !== v.id) return;
+            firstCycle = false;
+            if (seen.spent === spentBefore) refreshed += 1;
+            spentBefore = seen.spent;
+        });
         let restedAfter = null;
         for (let t = 0; t < 40000 && restedAfter == null; t += 100) {
             BoardRunner.tick(100);
             if (Respawn.isResting(v)) restedAfter = seen.cycles;
         }
+        off();
+        spy.mockRestore();
         seen.off();
         expect(restedAfter).not.toBeNull();
         expect(seen.spent).toBe(USES);
-        expect(restedAfter).toBeGreaterThan(USES);
+        expect(refreshed).toBeGreaterThanOrEqual(1);
+        // Later by exactly the cycles that kept their charge, never sooner.
+        expect(restedAfter).toBe(USES + refreshed);
     });
 
     it('at 0 %, it rests after exactly five cycles, as without the rule', () => {
