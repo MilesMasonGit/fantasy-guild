@@ -1,5 +1,5 @@
-// The QA panel's world map tools: pay for the frontier without playing for it
-// ⚠️ QA BUILDS ONLY: TestDashboard renders the Atlas section behind `QA_TOOLS`.
+// World fixtures for tests: pay for the frontier without playing for it, the ring stars, and a
+// ring-1 place of any kit.
 
 import * as World from '../../systems/world/World.js';
 import { CELL_STATE } from '../../systems/world/frontier.js';
@@ -8,18 +8,9 @@ import * as HeroManager from '../../systems/hero/HeroManager.js';
 import { addXP, getSkillLevel } from '../../systems/hero/SkillSystem.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import { GameState } from '../../state/GameState.js';
-import { EventBus } from '../../systems/core/EventBus.js';
-import * as CatchUp from '../../systems/core/CatchUp.js';
-import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
-import * as BoardState from '../../systems/board/BoardState.js';
-import * as BoardCombat from '../../systems/board/BoardCombat.js';
-import * as Occupation from '../../systems/board/Occupation.js';
-import * as Atlas from '../../systems/atlas/Atlas.js';
 import { seedFromText } from '../../systems/atlas/seededRandom.js';
 import { ORIGIN_ROLE } from '../../systems/world/generate.js';
 import { worldTables } from '../../config/registries/worldTablesRegistry.js';
-import { TUTORIAL_QUESTS, tutorialTemplate } from '../../systems/quests/tutorialQuests.js';
-import * as QuestTokens from '../../systems/quests/QuestTokens.js';
 import { authoredHallSky, registerHallSky } from '../../config/registries/hallStarRegistry.js';
 import { authoredStars, getUpgradeDef, getUpgradePrice } from '../../config/guildUpgrades.js';
 import { ringStarsOf } from '../../systems/world/ringStars.js';
@@ -118,68 +109,4 @@ export function fixtureCell(kitId, { ring = 1 } = {}) {
         requires: { items: [], skills: [] }, payFrom: [], extreme: null,
         arrival: enemy ? [{ typeId: enemy, count: table.count[1] }] : []
     };
-}
-
-/**
- * Settle a fixture place of kit `kitId` for free (`fixtureCell`): written as a world cell's place
- * is, the guild taken there, its arrival put on the darkened mat.
- *
- * @returns {{success: boolean, reason?: string, region?: object, enemies?: number}}
- */
-export function settleFixture(kitId) {
-    if (!GameState.state) return { success: false, reason: 'No game' };
-    if (CatchUp.isRunning()) return { success: false, reason: 'Wait until the time away has played' };
-    const cell = fixtureCell(kitId);
-    const written = World.writePlace(cell, { cellId: null });
-    if (!written.success) return written;
-    const { travel, arrival } = World.arriveAt(written.region, written.mat);
-    if (!travel.success) return { success: false, reason: travel.reason };
-    return { success: true, region: written.region, enemies: arrival.ids.length };
-}
-
-/**
- * Beat every arrival enemy still standing on this mat at once, as if each had been fought: taken
- * off with the same announcement a kill makes, so the mat brightens through its own path.
- *
- * @returns {{success: boolean, reason?: string, beaten?: number}}
- */
-export function beatArrival() {
-    if (!Occupation.isOccupied()) return { success: false, reason: 'Nothing holds this mat' };
-    const standing = Occupation.standingEnemies();
-    for (const enemy of standing) {
-        const { id, typeId, x, y } = enemy;
-        BoardState.removeToken(id);
-        BoardCombat.endFight(id);
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, typeId });
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: id, x, y, typeId, exhaustedBy: 'qa' });
-    }
-    return { success: true, beaten: standing.length };
-}
-
-/** The tutorial's last step: the one that opens the world map. */
-const LAST_STEP = TUTORIAL_QUESTS.find(t => t.opensWorld)?.id || null;
-
-/**
- * Skip the tutorial to its last step: every step before it counted as claimed, the step on the
- * mat taken off, and the last one brought on, which opens the world map as it arrives. Only on
- * the Starter Camp, where the chain is played.
- *
- * @returns {{success: boolean, reason?: string}}
- */
-export function jumpTutorialToWorld() {
-    const quests = GameState.state?.quests;
-    if (!quests || !LAST_STEP) return { success: false, reason: 'No game' };
-    if (Atlas.activeRegion()?.kind !== Atlas.REGION_KIND.STARTER) return { success: false, reason: 'Travel to the Starter Camp first' };
-    if (!Array.isArray(quests.completedTutorials)) quests.completedTutorials = [];
-    for (const step of TUTORIAL_QUESTS) {
-        if (step.id === LAST_STEP) break;
-        if (!quests.completedTutorials.includes(step.id)) quests.completedTutorials.push(step.id);
-    }
-    quests.completedTutorials = quests.completedTutorials.filter(id => id !== LAST_STEP);
-    quests.tutorialStep = quests.completedTutorials.filter(id => tutorialTemplate(id)).length;
-    for (const token of QuestTokens.tutorialTokens()) {
-        BoardState.removeToken(token.id);
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: token.id, typeId: token.typeId });
-    }
-    return QuestTokens.ensureTutorial() ? { success: true } : { success: false, reason: 'No room beside the Hall for the quest' };
 }

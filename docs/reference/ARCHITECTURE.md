@@ -75,8 +75,8 @@ top folders by import count from `npm run depcruise` (JSON output, 604 modules, 
 | `src/systems/notifications/` | 6 / 1,015 | Banners and item stubs as small module stores; `routing.js` decides where each engine event goes. | `routing.js` (wired by `core/NotificationSubscriptions.js`) | config, core, state |
 | `src/ui/ReactRoot.jsx` + root files | 3 / 528 | Root component; `drawingPause.js`. | `ReactRoot.jsx` | ui/components (32), hooks |
 | `src/ui/components/board/` | 133 / 23,102 | The mat as drawn: `MatBoard.jsx`, `MatToken.jsx`, `MatHero.jsx`, `TerrainCanvas.jsx`, `AmbientLife.jsx`, the frame clocks, flags, bubbles, fx; the ground-picture painters and their dev tuner (`terrain/`, §5.3); also the Guild Hall sky (`GuildHallBoard.jsx`, `HallSky.jsx`). | `Board.jsx`, `MatBoard.jsx` | systems/board, config |
-| `src/ui/components/` (other) | 105 / 18,194 | `atlas/` (Atlas and world map, 3,054), `base/` (shared widgets, 2,615), `combat/` (2,410), `encyclopedia/` (2,485), `drawer/` (Bank, 2,373), `dock/` (hero bar, 1,955), `notifications/` (923), `hud/`, `nav/`, `title/`, `dev/` (788), `TestDashboard.jsx` (the QA panel host, 439). | — | config (201 edges), systems/board (170), systems/core (92) |
-| `src/ui/dev/` | 73 / 9,716 | QA panel sections and fixtures, the Perf HUD and stress boards (`perf/`). QA sections render in dev and test builds (`QA_TOOLS`, `src/config/buildFlags.js`; off in a ship build); the perf harness only in dev or perf builds (`src/main.jsx:121-123`). | `perf/perfHarness.js` | systems/board, config, core |
+| `src/ui/components/` (other) | 105 / 18,194 | `atlas/` (Atlas and world map, 3,054), `base/` (shared widgets, 2,615), `combat/` (2,410), `encyclopedia/` (2,485), `drawer/` (Bank, 2,373), `dock/` (hero bar, 1,955), `notifications/` (923), `hud/`, `nav/`, `title/`, `dev/` (the Sprite Animation Studio, 666), `TestDashboard.jsx` (the QA panel, 285). | — | config (201 edges), systems/board (170), systems/core (92) |
+| `src/ui/dev/` | 10 / 1,580 | The QA panel's actions (`qaTools.js`: give items, the heroes buttons, place a Token or enemy, clear the board) and its Starter Camp save (`starterCampDev.js`), the Perf HUD and stress boards (`perf/`). The panel renders in dev and test builds (`QA_TOOLS`, `src/config/buildFlags.js`; off in a ship build); the perf harness only in dev or perf builds (`src/main.jsx:121-123`). | `perf/perfHarness.js` | systems/board, config, core |
 | `src/ui/hooks/`, `dnd/`, `modals/`, `utils/` | 13/865, 4/944, 4/816, 8/843 | Store hooks (`useGameState.js`, `structuralShare.js`), dnd-kit wiring (`DndKit.jsx`), slot/settings/hero modals, hit-testing and loot flight helpers. | `hooks/useGameState.js`, `dnd/DndKit.jsx` | systems/core, ui/components |
 | `src/styles/`, `src/tailwind.css` | 3 CSS files / 1,851 | Tailwind v4 plus hand CSS; 27 `@keyframes`. | — | — |
 
@@ -100,7 +100,6 @@ top folders by import count from `npm run depcruise` (JSON output, 604 modules, 
     (`statementSlots` above all), but nothing under `src/` outside `src/tests/` does.
   - Loaded another way: `src/ui/components/atlas/worldPicture.worker.js` (a Worker made with
     `new URL(…)`, `src/ui/components/atlas/WorldMap.jsx:100`).
-  - **Imported by tests only**: `src/ui/dev/terrainDev.js`.
     Candidates for the review, not verdicts.
 
 ---
@@ -167,9 +166,9 @@ notifications fade timer (`src/systems/notifications/routing.js:54`), and the UI
   `ALERT` (17) in `src/systems/board/boardEvents.js`. Raw-string event names are refused by
   `EngineEventNames.test.js` and `BoardEventNames.test.js`. Counts are from importing the
   modules (2026-11-06).
-- **Who publishes**: `EventBus.publish(` appears 268 times outside tests: 189 in the engine
-  (`systems`, `state`, `config`, `utils`), 28 in `src/ui` outside `ui/dev` (UI events, `audio:play`, and the
-  QA panel `TestDashboard.jsx:164,262,275`), 51 in `src/ui/dev`. The rule "the UI never
+- **Who publishes**: `EventBus.publish(` appears 216 times outside tests (2026-11-12): 184 in
+  the engine (`systems`, `state`, `config`, `utils`), 25 in `src/ui` outside `ui/dev` (UI events
+  and `audio:play`), 7 in `src/ui/dev` (the QA panel's `qaTools.js`). The rule "the UI never
   publishes an engine event" except dev panels is in `engineEvents.js:12-16` and enforced by
   `UiEventOwnership.test.js`.
 - **Who subscribes**: `EventBus.subscribe(` 79 times in the engine and 79 in the UI (73 outside
@@ -504,7 +503,7 @@ ui, lower never importing higher.
 | utils → config | 2 | **does not hold**: `AssetManager` reads the sprite manifest |
 | utils → systems | 0 | holds |
 | i18n → anything but utils | 0 | holds |
-| ui/components → ui/dev | 45 | production components import `ui/dev/perf/drawSwitches.js` (13) and `PerfProfiler.jsx` (2); `TestDashboard.jsx` imports every dev section |
+| ui/components → ui/dev | 45 | production components import `ui/dev/perf/drawSwitches.js` (13) and `PerfProfiler.jsx` (2); `TestDashboard.jsx` imports `qaTools.js`, `starterCampDev.js` and the perf section |
 
 **The real order** is: `utils` + `config` + a **pure kernel** of `systems` (the 13 modules above
 and what they import: 18 `systems` modules plus `AssetManager` and `XPCurve`, none touching
@@ -552,7 +551,7 @@ names or comments only.
 | **Tiles as a grid on the mat** | No mat grid: Tokens sit at points (`StateSchema.js:28-35,56`, `MatPlacement.js` header). Residue: `TileModifiers`, `TILE_CHANGED`, `TILE_EVENT_ALERT`, "tile aggregators"; the word "tile" appears on 437 non-test lines in 111 files. `FreeMatGuards.test.js` forbids a `tile` field in engine event payloads (`boardEvents.js:8-11`). |
 | **"Tile" caveat** (`docs/archive/review_v3/code_review_v3_master_plan.md` §2.D) | Legitimate grids still exist: the **terrain cell lattice** under the ground picture (`src/ui/components/board/terrain/TerrainLattice.js`, 32 u cells; it no longer uses the word "tile" at all, 0 hits, against 122 in that review), sprite sheets (`sprite-manifest.js` has 0 "tile" hits now too), and **the hex world map** (`src/systems/world/hex.js`; "tile" is its art word, `WorldMap.jsx`, `worldPicture.js`). **§2.D is stale on the Guild Hall**: it is no longer a 7×7 board but a web of stars at unit coordinates around the Hall (`GuildHallBoard.jsx` `WEB_W`/`WEB_UNIT_PX`, `config/guildUpgrades.js`); no 7×7 Hall grid was found. |
 | **Exploration** | No system. Only a retired skill id "Explore" in a comment (`src/systems/core/unknownRefRule.js:20`) and the word in `QuestManager.js:160`. |
-| **Themes** | No theme system. `gameplay.themeMode` is a retired setting dropped on load (`SettingsManager.js:24`); a Token `theme` field is written by dev fixtures (`src/ui/dev/*Dev.js`) and one data entry; no `.theme` read was found in `src/` or `cms/src` (grep). |
+| **Themes** | No theme system. `gameplay.themeMode` is a retired setting dropped on load (`SettingsManager.js:24`); a Token `theme` field is written by test fixtures (`src/tests/fixtures/`) and one data entry; no `.theme` read was found in `src/` or `cms/src` (grep). |
 | **Biomes** | **Live, not gone**: a Region records biome weights from the map kits it was written from (`StateSchema.js:107-109`, `src/systems/atlas/Budget.js:40-43`), world cells carry a kit biome (`src/systems/world/cellMat.js:107,306`). Residue only: `progress.discoveredTasksByBiome` is declared and never read (`StateSchema.js:219`). |
 | **`quests.json`** | No such file and no loader. Quests are code (`src/systems/quests/tutorialQuests.js`, `questBounties.js`) and live as **Tokens on the mat** (`QuestTokens.js`, `QuestManager.js:25-30`). |
 | **`data/maps.json`, Map bursts, the Cartographer** | `maps.json` is `{}` and read by nothing; Map bursts and purchase are retired, their save fields dropped (`SaveMigration.js:68-78`). |

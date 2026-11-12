@@ -1,12 +1,8 @@
-// QA plans for the Guild Hall's upgrade ceremony: the ranks that leave the sky one purchase short
-// of each moment, and the star to buy. `GuildHallDevSection` writes the ranks and puts the star's
-// price in the Bank; the purchase itself is the player's click (the star, then Upgrade), so the
-// ceremony plays as it does in play.
-// ⚠️ QA BUILDS ONLY: reached from `GuildHallDevSection`, which TestDashboard renders behind
-// `QA_TOOLS`.
+// Test plans for the Guild Hall's upgrade ceremony: the ranks that leave the sky one purchase short
+// of each moment, and the star to buy.
 
 import { CONSTELLATIONS, GUILD_UPGRADES, getUpgradeDef, isUpgradeAccessible } from '../../config/guildUpgrades.js';
-import { ceremonyFor, constellationStars } from '../components/board/hallCeremony.js';
+import { ceremonyFor, constellationStars } from '../../ui/components/board/hallCeremony.js';
 
 const open = (id, ranks) => (ranks[id] || 0) < getUpgradeDef(id).maxRank && isUpgradeAccessible(id, ranks);
 

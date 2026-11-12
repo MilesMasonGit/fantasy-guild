@@ -12,7 +12,7 @@ import {
     ceremonyFor, burstFrames, burstMs, runSteps, constellationStars, CEREMONY_PX, STAR_CHIME, CONSTELLATION_CHIME
 } from '../ui/components/board/hallCeremony.js';
 import { ceremonyMs } from '../ui/components/board/HallCeremony.jsx';
-import { planStarThatOpens, planConstellationOneShort } from '../ui/dev/hallCeremonyDev.js';
+import { planStarThatOpens, planConstellationOneShort } from './fixtures/hallCeremonyPlans.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';

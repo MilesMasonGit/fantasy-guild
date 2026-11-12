@@ -13,7 +13,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { getUpgradeDef, GUILD_UPGRADES } from '../config/guildUpgrades.js';
 import { normaliseStar } from '../config/hallStars.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
-import { qaHallSky } from '../ui/dev/qaHallSky.js';
+import { qaHallSky } from './fixtures/qaHallSky.js';
 import { starSentence, starAmount } from '../systems/progression/hallStarText.js';
 import { outlineSpriteName, outlineSrc, edgeCells } from '../ui/components/board/hallStarOutline.js';
 import { GuildHallEffectsList } from '../ui/components/board/GuildHallEffectsPopover.jsx';

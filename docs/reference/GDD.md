@@ -60,7 +60,7 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
 
 1. **A new game** opens in the **Starter Camp** (Atlas A7): the Tokens, their
    points and the opening Bank the owner laid out in a dev game, saved with the
-   QA panel's Save this mat as the Starter Camp, reviewed on the CMS's Starter
+   QA panel's Save as Starter Camp, reviewed on the CMS's Starter
    Camp page and synced into `data/starterCamp.json`. Until one is synced it is
    the built-in camp: the Guild Hall in the middle of the mat, an Oak Forest and
    a Copper Mine either side (320 u away), and 3 Oak Seed, 10 Oak Wood and
@@ -101,8 +101,7 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
   front; a Token being worked in front of those at rest. **Heroes are always on top of
   every Token and flag**, working, idle or walking, lower on the mat in front of each
   other. Over the heroes: loot, plates, numbers, callouts, bubbles. **Hovering a Token
-  doesn't move it** in the stack (the Mat Tuner's "Hover lifts a Token" brings the old
-  jump back); only its name and gear come up over the rest. A press goes to the Token
+  doesn't move it** in the stack; only its name and gear come up over the rest. A press goes to the Token
   whose centre is nearest the pointer, whichever is drawn on top, except on a hero's
   drawn pixel, which is the hero's. *(`matLayers.js`, `pressRouting.js`)*
 - **A Forest or Orchard plants with room for the tree**: within its reach, a Token that grows lands
@@ -220,8 +219,8 @@ for everything that reaches: a `nearby` rule (the supports: a Mine, Minecart,
 Well, Composter, Beehive, Dock), a camp's work, where a Forest or Orchard
 plants and what it counts, a growth or rest that needs a Token in reach, and a
 "Stands near" or `Cannot` rule. Nothing in play changes it: Camp Reach is
-retired. There is no Close/Far. In a dev build the Mat Tuner's **Reach** row
-overrides it on that device; a shipped build always uses 240.
+retired. There is no Close/Far. A dev or perf build can tune it
+(`matTuning.js`, for tests and the benches); a test or shipped build always uses 240.
 *(`reachRegistry.js` `STANDARD_REACH_U`, `nearby.reachRadius`)*
 - **Seeing reach** (brief 560 R2): hovering or dragging a Token that uses reach
   (a Foundation, a work camp, a Token with a `nearby` rule or a need of a Token
@@ -531,8 +530,7 @@ the load names it in the log. The generation engine still writes a
 Region from recipes (`Budget.js` → `Layout.js`, `Cartography.js`), each biome
 its own ground and water: meadow, forest, mountain, coast, flower meadow,
 cherry grove, Yellowstone, volcano, and the **Bog**, dark grass and mud with
-a marsh of many small ponds (`terrainRegistry.js`); the QA panel's Terrain
-views use it. Map bursts, the Map shop, the Explore skill and the old Map
+a marsh of many small ponds (`terrainRegistry.js`). Map bursts, the Map shop, the Explore skill and the old Map
 catalogue are retired too; the last Map Token, **Volcanic
 Island**, does nothing and is the owner's to delete in the CMS.
 
@@ -1261,8 +1259,6 @@ On a monster's own rule "the enemy" is that monster and "the hero" the hero it
 fights; "itself" is the monster. Enemies read flat and percentage Damage and
 Swing Time from the effects on them, as heroes do. A fight moment spends no
 charge and has no cooldown; a move says its effect's name over the enemy.
-The QA panel's Statuses and boss moves section sets up a Venomous goblin, a
-burning imp and a four-move warlord, with a live readout of the statuses.
 *(`board/FightMoments.js`, `combat/FightHooks.js`)*
 
 ### The combat screen — Built (brief 220 C6)
@@ -1292,9 +1288,6 @@ Statuses are not drawn on the board.
   ticks in red with a drop or a flame. The hit's types, "Weak!" and
   "Resisted" are the fight window's and the log's. Two at once on one fighter
   stack downward.
-- **The QA panel's Combat screen section** sets up a crowd of seven fights
-  below the Guild Hall, to judge the motion of a busy mat and see the fights
-  that would cover one another step apart as their heroes arrive.
 - **The fight windows** (owner's picks, 2026-11-05: window B "the slim card",
   tab D "faces and bars"): one window per hero, opened by the fight button
   between the two bars, several open at once. A
@@ -1341,9 +1334,7 @@ Statuses are not drawn on the board.
   dropped is in the item list).
 - A catch-up records and draws none of it (every listener is a UI listener);
   a fight still running after one is picked up at its next event, or when its
-  panel opens. Placeholder icons are drawn in code (`owner_art_list.md`). The
-  QA panel's Combat screen section sets up two fights and an enemy nobody has
-  fought, and plays 20 minutes away.
+  panel opens. Placeholder icons are drawn in code (`owner_art_list.md`).
   *(`ui/components/combat/` (the windows: `FightPanelPopup.jsx`, `FightPanel.jsx`,
   `FightTab.jsx`, `fightPanelStore.js`), `board/FightLayer.jsx`, `board/fx/fightFloats.js`,
   `board/HealthBar.jsx`, `hud/CatchUpOverlay.jsx`)*
@@ -1852,15 +1843,10 @@ drawers**. The menu can be flipped to the right.
   standing, so heroes sent at them keep fighting while the player is away;
   the last one beaten brightens the mat ("The enemies are beaten: … is the
   guild's to work"). The board keeps it (`board.arrival`), so it travels and
-  saves with the Region. The QA panel's Atlas section settles a fixture place
-  of each kit for free, beats its arrival at once, and jumps the tutorial to
-  its last step. *(`world/cellMat.js`, `world/cellRegion.js`, `world/Arrival.js`,
+  saves with the Region. *(`world/cellMat.js`, `world/cellRegion.js`, `world/Arrival.js`,
   `board/Occupation.js`, `HeroMotion.walkIn`)* The tables are placeholder
   until the CMS syncs `data/world.json` (W6). A save made before worlds has
-  none: the world map says so. The QA panel's Atlas section meets the
-  frontier's prices at a click (with the price of a ring star a frontier cell
-  waits for, to buy in the Hall), puts the ring stars' pack in the sky until it
-  is synced, and shows a world in words. *(`src/systems/world/`,
+  none: the world map says so. *(`src/systems/world/`,
   `worldTablesShape.js`, `ui/components/atlas/WorldScreen.jsx`, `WorldMap.jsx`,
   `WorldDrawer.jsx`, `GroundDials.jsx`, `world/placeGround.js`, `WorldCamera.jsx`, `worldPicture.js`; the art it reads,
   `config/worldMapArt.js`)*
@@ -1883,12 +1869,16 @@ drawers**. The menu can be flipped to the right.
     12–20 s, slow 20–30 s, heavy 30–120 s; slower by `1 + (level−1)/70`.
   - The simulator still speaks of "gold per hour" as an abstract design
     currency; the game has no gold.
-- **Dev tools** (dev and test builds, or a perf build with Debug Mode on; a ship build, `tauri:build:ship`, has none): QA panel (give
-  items, advance time, hire heroes, …), **Mat Tuner** (mat size, Token cap,
-  quest cap, radii, speeds — stored per device, not in the save), FPS counter.
-  Dev build only: the **Perf HUD** and stress boards (`?stress=realistic`), and
-  the **Starter Camp** tools (place any Token, move and remove landmarks, save
-  the mat to the CMS).
+- **Dev tools** (dev and test builds, or a perf build with Debug Mode on; a ship build, `tauri:build:ship`, has none): the QA panel
+  (owner's picks, 2026-11-12: the essentials only) gives any item (Bank first, the
+  rest on the mat), one of every item or a full Bank; hires a hero or a party of
+  four, levels every skill, heals everyone or knocks a hero out; puts any Token or
+  enemy on the mat or clears it; and holds the owner's two tools, the Sprite
+  Animation Studio (also Shift+A) and the **Starter Camp** save (move and remove
+  landmarks, save the mat to the CMS). FPS counter. Dev build only: the
+  **Perf HUD** and stress boards (`?stress=realistic`). The mat's tuning numbers
+  (`matTuning.js`: mat size, Token cap, quest cap, radii, speeds) are set only by
+  tests, the benches and the stress boards, in a dev or perf build.
 - **Bench** (`npm run bench`): 7 headless scenarios; `--compare` fails if the
   game got slower or **behaves differently**. See
   [TESTING](TESTING.md).

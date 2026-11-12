@@ -505,12 +505,10 @@ Two kinds, nothing else:
 - **Don't repeat what the layout shows** ("Apple Juice makes 1 Apple Juice").
 - Only a **blocking reason** shows inline, in red: `Needs Fishing 20/99`.
 
-## The style sheet page
+## New pieces
 
-- A **Dev Tools screen shows every standard piece live** (text sizes, colours,
-  outlines, ribbon, pill, header and X, both buttons, tabs, arrow bars,
-  frames, bars, the tooltip). Builders copy from it; the owner eye-checks the
-  whole kit there.
-- **A piece the guide doesn't cover**: the builder builds it, adds it to the
-  style sheet page marked *new, unapproved*, and lists it in the eye-check.
-  The owner approves it into this page or asks for a change; work doesn't stop.
+- The style sheet page is gone (owner, 2026-11-12: the QA panel keeps only its
+  essentials). Builders copy the standard pieces from where the game uses them.
+- **A piece the guide doesn't cover**: the builder builds it and lists it in
+  the eye-check, marked *new, unapproved*.
+  The owner approves it into this guide or asks for a change; work doesn't stop.

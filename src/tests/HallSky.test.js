@@ -15,10 +15,10 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import {
-    GUILD_UPGRADES, CONSTELLATIONS, BUILT_IN_CONSTELLATIONS, HALL_NODE, UPGRADE_SPRITES, getUpgradeDef
+    GUILD_UPGRADES, CONSTELLATIONS, BUILT_IN_CONSTELLATIONS, HALL_NODE, UPGRADE_SPRITES, getUpgradeDef, totalPrice
 } from '../config/guildUpgrades.js';
 import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
-import { SKY_SAMPLE_RANKS, SKY_SAMPLE_PAID, devGiveNextPrice } from '../ui/dev/GuildHallDevSection.jsx';
+import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { withOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
 
@@ -31,6 +31,23 @@ const star = (container, id) => container.querySelector(`[data-hall-node="${id}"
 const src = (rel) => readFileSync(resolve(__dirname, rel), 'utf8');
 
 withOuterUpgrade();
+
+/**
+ * Every star state at once: Bunk Beds bought, the Wishing Well maxed, Bank Tabs buyable, a star
+ * beyond a bought one opened and one beyond an unbought one still locked.
+ */
+const SKY_SAMPLE_RANKS = { roster_size: 1, wishing_well: 10 };
+/** The stars the sample makes blue, by putting their next price in the Bank. */
+const SKY_SAMPLE_PAID = ['bank_tabs'];
+
+/** Put each upgrade's next price in the Bank, so the Bank can pay for it now. */
+function devGiveNextPrice(ids) {
+    for (const id of ids) {
+        for (const { itemId, quantity } of totalPrice(GuildUpgradeManager.getNextCost(id))) {
+            InventoryManager.addItem(itemId, quantity);
+        }
+    }
+}
 
 beforeEach(() => {
     GameState.initNew();

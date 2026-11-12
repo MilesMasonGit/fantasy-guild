@@ -1,5 +1,4 @@
-// the QA panel's combat screen check: two fights with elixirs and a status, an enemy nobody has fought, a crowd of fights, and time away
-// ⚠️ QA BUILDS ONLY: reached from `CombatScreenDevSection`, which TestDashboard renders behind `QA_TOOLS`.
+// A crowd of fights below the Guild Hall, for the fight step tests.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
@@ -8,7 +7,6 @@ import * as Placement from '../../systems/board/Placement.js';
 import { qaOrder } from './qaOrders.js';
 import * as HeroManager from '../../systems/hero/HeroManager.js';
 import * as EquipmentManager from '../../systems/equipment/EquipmentManager.js';
-import * as CatchUp from '../../systems/core/CatchUp.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
@@ -21,17 +19,7 @@ import { makeStatement, KEYWORD } from '../../systems/effects/statements.js';
 import { heroMaxHpFromSkills } from '../../systems/combat/CombatFormulas.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 
-/**
- * The combat screen's scene, everything made in memory for this check only (never written to
- * `data/`, gone on reload). The content's own items where it has them (Copper Sword, Leather Chest,
- * the Valor and Ironskin elixirs, Shrimp, Venom), test stand-ins where it does not:
- * - **Aela**, a Melee 20 Fighter with the sword, the chest, both elixirs and Shrimp, pinned on a
- *   **Goblin Warlord** (level 20, Brute and Venomous: big hits every 4 s, each landing a stack of
- *   Venom), 40 health: a long duel with hits both ways, misses, crits, poison ticks and meals;
- * - **Bram**, a Melee 40 Fighter with both elixirs, pinned on a **Cow** (the one enemy with an
- *   animation sheet, so it moves in the panel's strip);
- * - a **Goblin Scout** (Swift) nobody has fought, standing alone: its card says "? fight one to learn".
- */
+/** The two fixture enemies, made in memory for the test only. */
 export const QA_ENEMIES = Object.freeze({ WARLORD: 'qa_c6_warlord', SCOUT: 'qa_c6_scout' });
 
 const tick = (id) => ({
@@ -101,53 +89,13 @@ export function placeBesideHall(typeId, dx, dy) {
 }
 
 /**
- * The scene: the Warlord below-left of the Guild Hall with Aela pinned on it, a Cow below-right
- * with Bram, and the Scout alone below the Hall. ⚠️ Changes the game, like Spawn Party.
- * @returns {{ok: boolean, error?: string}}
- */
-export function setUpCombatScreenScene() {
-    registerQaContent();
-    const warlord = placeBesideHall(QA_ENEMIES.WARLORD, -300, 230);
-    const cow = getTokenType('token_cow') ? placeBesideHall('token_cow', 320, 230) : null;
-    const scout = placeBesideHall(QA_ENEMIES.SCOUT, 20, 330);
-    if (!warlord || !scout) return { ok: false, error: 'No room below the Guild Hall for the scene' };
-
-    const ranks = GuildUpgradeManager.getRanks();
-    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 2);
-    GuildUpgradeManager.recompute();
-
-    InventoryManager.addItem('item_elixir_of_valor', 30);
-    InventoryManager.addItem('item_elixir_of_ironskin', 30);
-    InventoryManager.addItem('item_copper_sword', 2);
-    if (getItem('item_leather_chest')) InventoryManager.addItem('item_leather_chest', 1);
-    if (getItem('item_shrimp')) InventoryManager.addItem('item_shrimp', 40);
-
-    const aela = fighterAt(20, 'Aela');
-    if (HeroManager.addHero(aela)) {
-        for (const id of ['item_copper_sword', 'item_leather_chest', 'item_elixir_of_valor', 'item_elixir_of_ironskin', 'item_shrimp']) {
-            if (getItem(id)) EquipmentManager.equipItem(aela.id, id);
-        }
-        qaOrder(aela.id, { x: warlord.x, y: warlord.y });
-    }
-    if (cow) {
-        const bram = fighterAt(40, 'Bram');
-        if (HeroManager.addHero(bram)) {
-            for (const id of ['item_copper_sword', 'item_elixir_of_valor', 'item_elixir_of_ironskin']) EquipmentManager.equipItem(bram.id, id);
-            qaOrder(bram.id, { x: cow.x, y: cow.y });
-        }
-    }
-    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_combat_screen_scene' });
-    return { ok: true };
-}
-
-/**
  * The crowd: seven fights packed below the Guild Hall, as close as the mat lets them stand, so the
  * motion of a busy mat can be judged: the fights that would cover one another stepping apart as
  * their heroes arrive (`FightRoom`), bars, the fight buttons, floats, the Bee's Flutter said in a
  * bubble while every plain hit is not (only special moves bubble), and the Goblin Warlord's Venom
  * landing on Cora ("Venom!"). The content's own enemies
  * where it has them; heroes matched to their enemy, Shrimp to eat so the fights last, elixirs on
- * some. ⚠️ Changes the game, like Spawn Party.
+ * some.
  * @returns {{ok: boolean, fights?: number, error?: string}}
  */
 export const CROWD = Object.freeze([
@@ -183,19 +131,4 @@ export function setUpCombatCrowd() {
     }
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_combat_crowd' });
     return fights ? { ok: true, fights } : { ok: false, error: 'No room below the Guild Hall for the crowd' };
-}
-
-/** How long "time away" plays. */
-export const AWAY_MS = 20 * 60 * 1000;
-
-/**
- * Play `AWAY_MS` of time away now, as a closed game coming back would: the loading bar, then "While
- * you were away" with its fights block. Not saved (the catch-up's own save is off).
- * @returns {Promise<{ok: boolean, error?: string}>}
- */
-export async function playTimeAway(ms = AWAY_MS) {
-    if (CatchUp.isRunning()) return { ok: false, error: 'A catch-up is already playing' };
-    const now = Date.now();
-    await CatchUp.run({ savedAt: now - ms, now, save: false });
-    return { ok: true };
 }

@@ -42,7 +42,7 @@ import {
     authoredStars, skyVersion, setHallSky
 } from '../config/guildUpgrades.js';
 import { normaliseHallSky, hallStarsFile } from '../config/hallStars.js';
-import { qaHallSky } from '../ui/dev/hallStarsDev.js';
+import { qaHallSky } from './fixtures/qaHallSky.js';
 
 /**
  * Brief 320 H1: the Guild Hall's stars as data. A constellation per skill linked to the Hall; a

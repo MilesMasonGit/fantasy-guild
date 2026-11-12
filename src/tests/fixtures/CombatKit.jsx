@@ -1,18 +1,18 @@
-// The combat screen on the style sheet page, drawn by the real components fed a fixture fight
+// The combat screen drawn by the real components fed a fixture fight
 // (`combatKit.js`): the fight's pieces on the mat (bars, button, a move's bubble, every float), the fight window
 // with its log closed and open, a minimized window's tab mid-fight and after a win, and the enemy
 // card fought and never fought.
 
 import { useLayoutEffect, useRef, useState } from 'react';
-import { HealthBar } from '../components/board/HealthBar.jsx';
-import { SpeechFrame } from '../components/board/SpeechFrame.jsx';
-import { CHIP, CHIP_PX, MAT_BAR } from '../components/board/healthBar.js';
-import { buildFloat } from '../components/board/fx/fightFloats.js';
-import { FightPanelView } from '../components/combat/FightPanel.jsx';
-import { EnemyCardRows } from '../components/combat/EnemyCard.jsx';
-import { FightTabView } from '../components/combat/FightTab.jsx';
-import { PixelFrame, FRAME_KIND } from '../components/base/PixelFrame.jsx';
-import { glyphSrc, GLYPH_COLOUR } from '../components/combat/combatGlyphs.js';
+import { HealthBar } from '../../ui/components/board/HealthBar.jsx';
+import { SpeechFrame } from '../../ui/components/board/SpeechFrame.jsx';
+import { CHIP, CHIP_PX, MAT_BAR } from '../../ui/components/board/healthBar.js';
+import { buildFloat } from '../../ui/components/board/fx/fightFloats.js';
+import { FightPanelView } from '../../ui/components/combat/FightPanel.jsx';
+import { EnemyCardRows } from '../../ui/components/combat/EnemyCard.jsx';
+import { FightTabView } from '../../ui/components/combat/FightTab.jsx';
+import { PixelFrame, FRAME_KIND } from '../../ui/components/base/PixelFrame.jsx';
+import { glyphSrc, GLYPH_COLOUR } from '../../ui/components/combat/combatGlyphs.js';
 import { KIT_FIGHTS, KIT_FLOATS, KIT_CARDS, KIT_TABS, kitPanelView } from './combatKit.js';
 
 /** The grass under the mat pieces: the mat's own mean green (the real mat is textured). */

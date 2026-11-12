@@ -1,8 +1,11 @@
 // The QA fixture sky for the Guild Hall's stars: a constellation per skill and every star kind.
-// Pure, so the game's QA scene (`hallStarsDev.js`), the ledger's tests and the CMS capture all read
-// the same stars. ⚠️ Never written to `data/`: a fixture, gone on reload.
+// ⚠️ Never written to `data/`: a test fixture.
 
 import { EFFECT_TYPES } from '../../systems/effects/constants.js';
+import { EventBus } from '../../systems/core/EventBus.js';
+import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
+import { authoredHallSky, registerHallSky } from '../../config/registries/hallStarRegistry.js';
 
 export const QA_VEIN = 'token_copper_ore_vein';
 export const QA_MINING_CAMP = 'token_mining_camp';
@@ -83,4 +86,17 @@ export function qaHallSky() {
         },
         stars: Object.fromEntries(stars.map(s => [s.id, s]))
     };
+}
+
+/** Put the fixture sky beside the authored one (the fixture wins an id they share), and redraw. */
+export function installQaSky() {
+    const authored = authoredHallSky();
+    const qa = qaHallSky();
+    const put = registerHallSky({
+        constellations: { ...authored.constellations, ...qa.constellations },
+        stars: { ...authored.stars, ...qa.stars }
+    });
+    GuildUpgradeManager.recompute();
+    EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, {});
+    return { constellations: put.constellations.length, stars: put.stars.length };
 }

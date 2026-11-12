@@ -8,7 +8,7 @@ import {
 } from '../ui/components/combat/fightPanelStore.js';
 import { FightPanelPopup, keepOnScreen, panelPlace } from '../ui/components/combat/FightPanelPopup.jsx';
 import { FightTabStrip } from '../ui/components/combat/FightTab.jsx';
-import { CombatKit } from '../ui/dev/CombatKit.jsx';
+import { CombatKit } from './fixtures/CombatKit.jsx';
 import { pushEscapeLayer, escapeLayerCount } from '../ui/utils/escapeLayers.js';
 
 /**

@@ -124,7 +124,7 @@ export const MapModeBanner = ({ fallback = null }) => {
 };
 
 /**
- * The banner for `mode`, drawn without reading the live mode (the style sheet page shows it too).
+ * The banner for `mode`, drawn without reading the live mode.
  * ⚠️ The words wrap, up to three lines, rather than being cut: Demolish's last sentence is the
  * warning, and the bar is only as wide as the mat, so its centre is narrower than one line of it.
  * In a small window (1366 px) even three lines cannot hold it and the rest is on hover.

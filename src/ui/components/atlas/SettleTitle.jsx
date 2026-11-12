@@ -34,7 +34,7 @@ export function playFanfare() {
  * place's banner at the top bar's 3× in it fading out at both ends, gold lines at its edges, and
  * over it the place's name in the display size with the hard outline, its land and line under it.
  * A press skips it (`onSkip`); under reduced motion (`still`) it neither opens nor closes. `band`
- * places it (the style sheet page fills its own box).
+ * places it.
  *
  * @param {{ title: {id: string, name: string, practical: string, banner: string|null},
  *   closing?: boolean, still?: boolean, onSkip?: () => void, band?: object }} props

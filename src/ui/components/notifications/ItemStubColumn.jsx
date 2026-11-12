@@ -103,7 +103,7 @@ const frameClass = (stub, shine = true) => cn(
 );
 
 /**
- * One stub at rest. Exported for the style sheet page, which leaves out the handlers. With
+ * One stub at rest. With
  * `openRate` (the per-hour rate to show) it is drawn open: a pinned stub always is.
  */
 export const Stub = memo(function Stub({ stub, onHover, onLeave, onCleared, interactive = true, openRate }) {

@@ -20,7 +20,7 @@ import { xpForLevel } from '../utils/XPCurve.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import * as World from '../systems/world/World.js';
 import * as Arrival from '../systems/world/Arrival.js';
-import { fixtureCell } from '../ui/dev/worldDev.js';
+import { fixtureCell } from './fixtures/worldQa.js';
 import { worldTables } from '../config/registries/worldTablesRegistry.js';
 import { MAX_ARRIVAL } from '../config/worldTablesShape.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';

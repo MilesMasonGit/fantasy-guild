@@ -29,7 +29,7 @@ import { GuildUpgradeInspection } from '../ui/components/drawer/GuildUpgradeInsp
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { TokenCard } from '../ui/components/board/TokenCard.jsx';
 import { FightPanelView } from '../ui/components/combat/FightPanel.jsx';
-import { KIT_FIGHTS, kitPanelView } from '../ui/dev/combatKit.js';
+import { KIT_FIGHTS, kitPanelView } from './fixtures/combatKit.js';
 import { EncyclopediaScreen } from '../ui/components/encyclopedia/EncyclopediaScreen.jsx';
 import { ShopPanel } from '../ui/components/drawer/ShopPanel.jsx';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';

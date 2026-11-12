@@ -8,7 +8,7 @@ import * as Flags from '../systems/board/Flags.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { placeReachEdge } from '../ui/dev/campsDev.js';
+import { placeReachEdge } from './fixtures/campReachEdge.js';
 import { clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

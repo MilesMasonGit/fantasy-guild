@@ -7,9 +7,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GameState } from '../state/GameState.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { KIT_SECTIONS } from '../ui/dev/StyleSheetPage.jsx';
-import { CombatKit } from '../ui/dev/CombatKit.jsx';
-import { KIT_CURRENT, KIT_LAST, kitPanelView } from '../ui/dev/combatKit.js';
+import { CombatKit } from './fixtures/CombatKit.jsx';
+import { KIT_CURRENT, KIT_LAST, kitPanelView } from './fixtures/combatKit.js';
 import { FightPanelView } from '../ui/components/combat/FightPanel.jsx';
 import { buildFloat } from '../ui/components/board/fx/fightFloats.js';
 import { MOMENT, statusIcon } from '../ui/components/combat/fightWatch.js';
@@ -289,12 +288,8 @@ describe('where the fight button and the panel stand', () => {
     });
 });
 
-describe('the style sheet', () => {
-    it('shows the combat screen drawn by the real components; the mock-ups are gone', () => {
-        const entry = KIT_SECTIONS.find(s => s.id === 'combat-screen');
-        expect(entry.status).toBe('unapproved');
-        expect(entry.Demo).toBe(CombatKit);
-        expect(existsSync(path.join(HERE, '..', 'ui', 'dev', 'CombatMockups.jsx'))).toBe(false);
+describe('the combat screen as a whole', () => {
+    it('is drawn by the real components', () => {
         const root = render(React.createElement(CombatKit)).container;
         expect(root.querySelectorAll('[data-kit-combat="mat"] [data-health-bar]')).toHaveLength(2);
         expect(root.querySelectorAll('[data-kit-float]')).toHaveLength(9);
