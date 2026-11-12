@@ -7,6 +7,18 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, the QA panel, T-336, then briefs 620 and 630 (owner, 2026-11-12: stars' small effects first)
+
+*Thu 12 Nov, 14:45. Where we are: 610 (select and right-click, after the owner's fixes), 600 B3 and B4 (badges) and the QA panel in test builds are merged (109ab4e4, work same, drag 100 %, draw as main's control) and pushed; eye-checks now live on the Guild Eye-checks page (https://claude.ai/artifact/7BxeTfaxXYvH9fiX2jZZDJ). Next: the slim QA panel (owner look, desktop build `_builds/2026-11-12-qa-panel`), T-336 merges on the gate; batch 1 of 620 building (E1 Giant Harvest, E2 XP for Everyone). Then E4 + 630 B2, then 630 B1 + 620 E3. Owner: look at the slim QA panel. Blockers: none.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| QA panel in test builds (`QA_TOOLS`, `tauri:build:ship`) | builder | `fix/qa-in-builds` (`t1`) cc7588f0 | **merged** 109ab4e4, pushed | Thu | Thu |
+| QA panel slim: give items, heroes, place a Token or enemy, two owner tools | builder | `feat/qa-panel-slim` (`t2`) d570beff | ready (8326 green, agent); bench and desktop build running; eye-check next | Thu | |
+| T-336: the ledger judges rare finds by finds a day; rare-find boost targets (x3 at plan tier 6) | builder | `fix/rare-find-labels` (`b2`) 750d21b5 | ready; gate and work check running; merges on the gate (CMS ledger only) | Thu | |
+| 620 E1: Giant Harvest | engineer | `feat/giant-harvest` (`fx`) | building | Thu | |
+| 620 E2: XP for Everyone | engineer | `feat/xp-for-everyone` (`rt`) | building | Thu | |
+
 ## Director, briefs 590 and 600 (owner, 2026-11-11: both at once; effect renames T-403 after 590; retirements T-400 to T-402 checked now, owner deletes in the CMS)
 
 *Thu 12 Nov, 06:30. Where we are: merged and pushed today: 590 (the three effects), 600 B2 (badge sums), T-403/T-404 (effect names, narrowed rules name their skill), T-401 (Restocks code gone). Two eye-checks wait for the owner, each with a desktop build: 610 (select and right-click controls) and 600 B3+B4 (the badges). Next: merge both after the looks; T-402 waits for the rod's new buff; retake the engine and draw baselines in the next quiet window. Owner: the two eye-checks. Blockers: none.*
