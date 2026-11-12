@@ -24,6 +24,9 @@ export const EFFECT_TYPES = {
     LOOT_MULT: 'LOOT_MULT',   // Chance for double loot
     // A chance to double ONE item a cycle or kill drops; the item is the rule's category (`OutputRules`).
     DOUBLE_DROP: 'DOUBLE_DROP',
+    // Refresh: a chance a completed cycle spends none of the Token's charges (a Field: none of its
+    // load); narrowed to the Token's skill — CycleSavings.rollRefresh.
+    REFRESH: 'REFRESH',
     // How often ONE fish bites from a water's catch pool, as a percentage on its weight; the item is
     // the rule's category (`Fishing.catchOf`).
     CATCH_WEIGHT: 'CATCH_WEIGHT',

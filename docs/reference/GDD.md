@@ -1308,7 +1308,10 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   a Composter, §3 Farming; read once as it ripens), XP bonus (a positive bonus always adds at least 1 XP),
   double loot, **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the
-  Cleaver's Raw Beef), **catch weight** (a percentage on one fish's weight in a
+  Cleaver's Raw Beef), **Refresh** (a chance a cycle spends none of the Token's
+  charges, and a Field's harvest none of its load; a failed cycle still spends; rolled
+  once per finished cycle, from a building in reach or a Hall star, aimed by the rule's
+  Token and narrowed by skill), **catch weight** (a percentage on one fish's weight in a
   water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens; **camp reach** is
   retired: every camp works the standard reach, so a rule carrying it does nothing, the editors no
   longer offer it and the audits name it); **wound time** and **loadout slots** (guild-only: read from

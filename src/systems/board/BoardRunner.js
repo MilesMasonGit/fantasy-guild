@@ -31,6 +31,7 @@ import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
 import * as OutputRules from './OutputRules.js';
+import * as CycleSavings from './CycleSavings.js';
 import * as Fishing from './Fishing.js';
 import * as Fields from './Fields.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
@@ -364,13 +365,19 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // ⚠️ Nothing near the Token pays for this cycle: help is free (owner, 2026-10-24). A support or
     // a context Token never wears out, and a gathering node that helps its neighbours spends its
     // charges only on its own gathering (`Charges.planContextCharges`, `wearRule.js`).
-    Charges.commitPlan(chargePlan, { heroId });
+    // Refresh: a cycle that succeeded and would spend something may spend nothing. A failed cycle
+    // still burns its charge and never rolls, and neither does one with nothing to spend.
+    const isField = Fields.isField(def);
+    const spends = chargePlan.debits.length > 0 || (isField && Fields.stageOf(instance, def) === Fields.STAGE.RIPE);
+    const refreshed = !failed && spends
+        && CycleSavings.rollRefresh(id, config.skill);
+    if (!refreshed) Charges.commitPlan(chargePlan, { heroId });
     // Used up just now: its rest began when this cycle ended, `overMs` before the tick's end.
     Respawn.restBeganEarlier(instance, overMs);
 
     // A Field spends one harvest of its load; the last sows its crop again, growing from the moment
     // this cycle ended (`overMs` into the tick), or stops it without a seed (`Fields.js`).
-    if (Fields.isField(def)) Fields.harvested(instance, def, { overMs });
+    if (isField) Fields.harvested(instance, def, { overMs, refreshed });
 
     // The board's universal unit of work. One kill counts as one cycle too, so combat feeds this
     // exactly as production does.

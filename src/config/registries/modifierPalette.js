@@ -350,6 +350,31 @@ export const MODIFIER_PALETTE = [
     },
     {
         /**
+         * Read by `CycleSavings.rollRefresh` once per completed cycle, before the Token pays its
+         * charges: on a hit it pays none, and a Field's harvest leaves its load as it was. A failed
+         * cycle never rolls. Aimed at Tokens by the rule's `to`; the skill narrows further.
+         */
+        type: EFFECT_TYPES.REFRESH,
+        reads: {
+            up: (n) => `have a ${n} chance a cycle spends none of their charges`,
+            down: (n) => `have ${n} less chance a cycle spends none of their charges`
+        },
+        heroReads: {
+            up: (n) => `a ${n} chance a cycle spends none of the Token's charges`,
+            down: (n) => `${n} less chance a cycle spends none of the Token's charges`
+        },
+        label: 'Refresh',
+        when: 'never',
+        scales: 'value',
+        // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'A chance a cycle spends none of the Token\'s charges. In percent; a Field keeps its harvest. Aim it at Tokens; the skill narrows it further.'
+    },
+    {
+        /**
          * A better rod's bonus: one fish bites more often from a water's catch pool. Its weight in
          * the pool is widened by this percentage before the pick (`Fishing.catchOf` resolves the axis
          * once per catch in the pool, with the item id as the category), so +100 % on a Dolphin
