@@ -20,7 +20,7 @@ export function BadgesDevSection() {
                     onClick={() => {
                         const r = setUpBadgeScene();
                         setStatus(r.ok
-                            ? 'Middle row, left to right. QA Badge Furnace beside the QA Badge Forge, with the QA Badge Training star and a smith in the QA Quick Cap: its card shows Speed (three sources and the cap), XP, Preservation, Refresh, Lucky and the smith\'s Hero Effects badge; Double Item on the ingot, Efficiency on the ore (9 a cycle, not 10), and a Rare finds group to click open. QA Badge Mine beside the QA Badge Rush: Speed held at the limit, in gold. QA Badge Goblin beside the QA Loot Banner: Double Loot and XP, Double Item on its Bones. Click a Token for its card and hover the badges; the Forge\'s card still lists what it Boosts.'
+                            ? 'Middle row, left to right. QA Badge Furnace beside the QA Badge Forge, with the QA Badge Training star and a smith in the QA Quick Cap: its card shows Speed (three sources and the cap), XP, Preservation, Refresh, Lucky and the smith\'s Hero Effects badge; Double Item on the ingot, Efficiency on the ore (9 a cycle, not 10), and a Rare finds group to click open. QA Badge Mine beside the QA Badge Rush: Speed held at the limit, in gold. QA Badge Goblin beside the QA Loot Banner: Double Loot and XP, Double Item on its Bones. The smith also carries arrows, bread and a quiver: open their Hero drawer and hover the Preservation chip on the arrows and the bread. Click a Token for its card and hover the badges; the Forge\'s card still lists what it Boosts.'
                             : r.error);
                     }}
                 >

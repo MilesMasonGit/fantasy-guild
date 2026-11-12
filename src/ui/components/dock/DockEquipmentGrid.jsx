@@ -13,6 +13,30 @@ import { equipOrAnnounce, unequipOrAnnounce } from './dockEquip.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { slotIconOf } from '../base/slotIcons.js';
 import { itemTintStyle } from '../base/itemTint.js';
+import { EffectChip } from '../board/EffectBadges.jsx';
+import { onPoll } from '../board/frameClock.js';
+import { carriedPreservation } from '../../../systems/board/EffectBreakdown.js';
+
+/** How often a slot's Preservation badge looks again: a building placed or a hero arriving changes it. */
+const BADGE_REFRESH_MS = 1000;
+
+/** The Preservation badge of a carried item (`carriedPreservation`), or null; redrawn only when it changes. */
+function useCarriedBadge(heroId, itemId) {
+    const [badge, setBadge] = useState(() => (itemId ? carriedPreservation(heroId, itemId) : null));
+    useEffect(() => {
+        if (!itemId) {
+            setBadge(null);
+            return undefined;
+        }
+        const look = () => {
+            const next = carriedPreservation(heroId, itemId);
+            setBadge(prev => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+        };
+        look();
+        return onPoll(look, BADGE_REFRESH_MS);
+    }, [heroId, itemId]);
+    return badge;
+}
 
 /** How long a slot keeps its shine layer after an item lands: the sweep plus a little slack. */
 export const EQUIP_SHINE_MS = 400;
@@ -151,6 +175,7 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
     const category = itemId ? categoryOfItem(itemId) : null;
     const info = getCategoryInfo(category);
     const showQuantity = item && info.kind && info.kind !== CATEGORY_KINDS.GEAR;
+    const badge = useCarriedBadge(heroId, itemId);
 
     return (
         <div
@@ -186,6 +211,11 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
             {shineKey != null && <span key={shineKey} data-equip-shine className="ui-shine ui-shine-once" />}
             {category && (
                 <SlotMark category={category} />
+            )}
+            {badge && (
+                <span className="absolute top-0.5 left-0.5" data-slot-badge>
+                    <EffectChip badge={badge} small />
+                </span>
             )}
             {showQuantity && (
                 <span className={cn(

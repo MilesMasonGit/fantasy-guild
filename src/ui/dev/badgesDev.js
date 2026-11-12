@@ -20,6 +20,7 @@ import { HALL_NODE } from '../../config/guildUpgrades.js';
 import { EFFECT_TYPES } from '../../systems/effects/constants.js';
 import { KEYWORD, makeStatement } from '../../systems/effects/statements.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
+import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
 import { qaOrder } from './qaOrders.js';
 import { fighterAt } from './combatScreenDev.js';
 
@@ -33,6 +34,8 @@ import { fighterAt } from './combatScreenDev.js';
  * - **QA Badge Mine** beside the **QA Badge Rush** (Speed +90 %): its Speed held at the limit;
  * - **QA Badge Goblin** beside the **QA Loot Banner** (Double Loot 5 %, Double Item on Bones 12 %),
  *   a fighter on it.
+ * The smith also carries **QA Badge Arrows** and **QA Badge Bread** in the Hero drawer, kept by the
+ * star (10 %, ammo and Food) and, for the arrows, by the **QA Badge Quiver** (15 % on ammo).
  */
 export const QA_BADGES = Object.freeze({
     FURNACE: 'qa_badge_furnace',
@@ -43,7 +46,11 @@ export const QA_BADGES = Object.freeze({
     BANNER: 'qa_badge_banner',
     STAR: 'qa_badge_star',
     CAP: 'qa_badge_cap',
-    CAP_EFFECT: 'qa_badge_quick_cap'
+    CAP_EFFECT: 'qa_badge_quick_cap',
+    QUIVER: 'qa_badge_quiver',
+    QUIVER_EFFECT: 'qa_badge_quiver_care',
+    ARROWS: 'qa_badge_arrows',
+    BREAD: 'qa_badge_bread'
 });
 const T = QA_BADGES;
 const TAG = 'QA Badge';
@@ -63,12 +70,28 @@ function registerQaContent() {
         [T.CAP_EFFECT]: {
             id: T.CAP_EFFECT, name: 'Quick Hands',
             statements: [{ ...makeStatement(KEYWORD.PROVIDES), payload: { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.05 } }]
+        },
+        [T.QUIVER_EFFECT]: {
+            id: T.QUIVER_EFFECT, name: 'Quiver Care',
+            statements: [{ ...makeStatement(KEYWORD.PROVIDES), payload: { type: EFFECT_TYPES.PRESERVATION, bucket: 'flat', value: 15, category: CARRIED_KIND.AMMO } }]
         }
     });
     registerItems({
         [T.CAP]: {
             id: T.CAP, name: 'QA Quick Cap', type: 'armor', equipSlot: 'hat', stackable: true, sprite: 'i_armor_plate_copper',
             tags: [], effects: [{ effectId: T.CAP_EFFECT, scale: 1 }]
+        },
+        [T.QUIVER]: {
+            id: T.QUIVER, name: 'QA Badge Quiver', type: 'armor', equipSlot: 'trinket', stackable: true, sprite: 'i_armor_plate_copper',
+            tags: [], effects: [{ effectId: T.QUIVER_EFFECT, scale: 1 }]
+        },
+        [T.ARROWS]: {
+            id: T.ARROWS, name: 'QA Badge Arrows', type: 'consumable', equipSlot: 'consumable', stackable: true, sprite: 'i_wheat',
+            tags: [], arrow: { damage: 2 }
+        },
+        [T.BREAD]: {
+            id: T.BREAD, name: 'QA Badge Bread', type: 'food', equipSlot: 'food', stackable: true, sprite: 'i_wheat',
+            tags: ['Food'], restoreAmount: 5
         }
     });
     registerTokenTypes({
@@ -126,7 +149,9 @@ function installQaStar() {
             tier: 1, price: [], lines: [],
             rules: [
                 rule('stm_qa_badge_star_speed', { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.03 }),
-                rule('stm_qa_badge_star_xp', { type: EFFECT_TYPES.XP_BONUS, bucket: 'percentage', value: 0.1 })
+                rule('stm_qa_badge_star_xp', { type: EFFECT_TYPES.XP_BONUS, bucket: 'percentage', value: 0.1 }),
+                rule('stm_qa_badge_star_ammo', { type: EFFECT_TYPES.PRESERVATION, bucket: 'flat', value: 10, category: CARRIED_KIND.AMMO }),
+                rule('stm_qa_badge_star_food', { type: EFFECT_TYPES.PRESERVATION, bucket: 'flat', value: 10, category: CARRIED_KIND.FOOD })
             ]
         }]
     };
@@ -198,6 +223,10 @@ export function setUpBadgeScene() {
     used.add(smith.id);
     InventoryManager.addItem(T.CAP, 1);
     EquipmentManager.equipItem(smith.id, T.CAP);
+    for (const carried of [T.QUIVER, T.ARROWS, T.BREAD]) {
+        InventoryManager.addItem(carried, carried === T.QUIVER ? 1 : 200);
+        EquipmentManager.equipItem(smith.id, carried);
+    }
     qaOrder(smith.id, { x: placed.furnace.x, y: placed.furnace.y });
 
     const fighter = heroFor(fighterAt(40, 'QA Badge Fighter'), 'melee', used);

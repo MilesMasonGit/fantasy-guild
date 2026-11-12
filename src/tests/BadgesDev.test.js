@@ -12,7 +12,8 @@ import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { effectBreakdown } from '../systems/board/EffectBreakdown.js';
+import { effectBreakdown, carriedPreservation } from '../systems/board/EffectBreakdown.js';
+import * as HeroManager from '../systems/hero/HeroManager.js';
 import { tokenCardModel, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
 import { setUpBadgeScene, QA_BADGES } from '../ui/dev/badgesDev.js';
 import { clearMat } from './fixtures/mat.js';
@@ -77,5 +78,14 @@ describe('the badge scene', () => {
         const goblin = effectBreakdown(instanceOf(QA_BADGES.GOBLIN).id);
         expect(keys(goblin)).toEqual(['xp', 'doubleLoot']);
         expect(goblin.outputs[0]).toMatchObject({ itemId: 'item_bones' });
+    });
+
+    it('the smith carries arrows and bread that wear a Preservation badge in the Hero drawer', () => {
+        expect(setUpBadgeScene()).toEqual({ ok: true });
+        const smith = HeroManager.getAllHeroes().find(h => h.name === 'QA Badge Smith');
+        const arrows = carriedPreservation(smith.id, QA_BADGES.ARROWS);
+        expect(arrows.total).toBe(31);
+        expect(arrows.sources.map(s => s.amount).sort((a, b) => a - b)).toEqual([6, 10, 15]);
+        expect(carriedPreservation(smith.id, QA_BADGES.BREAD).total).toBe(16);
     });
 });
