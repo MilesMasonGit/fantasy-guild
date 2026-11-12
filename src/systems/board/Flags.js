@@ -791,24 +791,36 @@ export function furl(heroId, reason = 'recall') {
 
 /**
  * The weapon `heroId` swung broke at their kill (`GEAR_BROKE`, `use: 'fight'`). Anyone may fight
- * barehanded, so a kept order would have them punch on: the order lapses where they stand
- * ({@link stop}), and their fight ends with the kill. A broken tool needs nothing here: the order
- * stays, and the hero lets go of a Token they can no longer work.
+ * barehanded, so a kept order would have them punch on: the order lapses at their body's point,
+ * marked `needsJob` as a job gone for good is, and their fight ends with the kill. A broken tool
+ * needs nothing here: the order stays, and the hero lets go of a Token they can no longer work.
  */
 function stopAfterBrokenWeapon({ heroId, use } = {}) {
     if (use !== 'fight') return;
-    stop(heroId);
+    lapseWhereStanding(heroId, (at) => at);
 }
 
 /**
- * Stop `heroId` where they stand: their Token order lapses at their body's point, marked
- * `needsJob` as a job gone for good is (the yellow mark), and they wait there for a new order.
- * What they leave is let go as a recall lets it go: the Token's progress resets and a fight ends
- * at once, the enemy whole again for the next to engage it. A hero with no Token order (waiting
- * on bare ground, or home) has nothing to stop.
+ * Stop `heroId` where they stand (the player's stop, a right-click on their own job): their Token
+ * order lapses, marked `needsJob` as a job gone for good is (the yellow mark), its point placed so
+ * the spot they idle at (`HeroMotion.idleSpot`) is where they stand now, and they wait there for a
+ * new order. What they leave is let go as a recall lets it go: the Token's progress resets and a
+ * fight ends at once, the enemy whole again for the next to engage it. A hero with no Token order
+ * (waiting on bare ground, or home) has nothing to stop.
  * @returns {boolean} whether there was an order to stop
  */
 export function stop(heroId) {
+    const { dx, dy } = HeroMotion.IDLE_SPOT;
+    return lapseWhereStanding(heroId, (at) => ({ x: at.x - dx, y: at.y - dy }));
+}
+
+/**
+ * Let `heroId`'s Token order lapse where they stand: released (progress reset, fight ended), the
+ * order turned into a spot marked `needsJob` at `pointFor(body)` (their body's point, or the
+ * order's own without a body).
+ * @returns {boolean} whether there was a Token order to lapse
+ */
+function lapseWhereStanding(heroId, pointFor) {
     const r = rt();
     const flag = BoardState.flagOf(heroId);
     if (!r || !flag || isSpot(flag)) return false;
@@ -819,7 +831,7 @@ export function stop(heroId) {
         clearSkips(r, heroId);
         r.nextTryAt.delete(heroId);
         const body = BoardState.heroBodyOf(heroId);
-        const at = body && Number.isFinite(body.x) && Number.isFinite(body.y) ? body : flag;
+        const at = pointFor(body && Number.isFinite(body.x) && Number.isFinite(body.y) ? body : flag);
         const { pinnedTo: _left, ...rest } = flag;
         BoardState.setFlag(heroId, { ...rest, x: at.x, y: at.y, spot: true, needsJob: true });
         r.dirty = true;
